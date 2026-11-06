@@ -1,0 +1,76 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het aantal duinkavels van de Jutter
+function Object waarde_aantalDuinkavels(Object $aantal_vouw_4) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_4), Integer.valueOf(0), "aantal duinkavels", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal duinkavels"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "aantal duinkavels: vouw 0", subject == $onderwerp ); $aantal_vouw_4 : count() )
+then
+    Object v = waarde_aantalDuinkavels($aantal_vouw_4);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal duinkavels", ComputeHelpers.designate(v, "aantal duinkavels")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal duinkavels", false), v, "aantal duinkavels"));
+        }
+    }
+end
+
+// het aantal vat van de Jutter
+function Object waarde_aantalGeborgenVaten(Object $aantal_vouw_9) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_9), Integer.valueOf(0), "aantal geborgen vaten", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal geborgen vaten"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_6 : Contribution( fold == "aantal geborgen vaten: vouw 1", subject == $onderwerp ); $aantal_vouw_9 : count() )
+then
+    Object v = waarde_aantalGeborgenVaten($aantal_vouw_9);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal geborgen vaten", ComputeHelpers.designate(v, "aantal geborgen vaten")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal geborgen vaten", false), v, "aantal geborgen vaten"));
+        }
+    }
+end
+
+rule "aantal duinkavels: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Duinkavel( pachter == $vouwonderwerp )
+then
+    insertLogical(new Contribution("aantal duinkavels: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "aantal geborgen vaten: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vat( berger == $vouwonderwerp )
+then
+    insertLogical(new Contribution("aantal geborgen vaten: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+

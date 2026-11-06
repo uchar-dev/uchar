@@ -1,0 +1,337 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMaximumFunction exactMax;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.FilterFault;
+import dev.uchar.regelspraak.transpiler.tms.ListPlace;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de eerste van de maand van alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit
+function Object waarde_eersteKlachtvrijeMaand(Object $aantal_vouw_26, Object $vouw_vouw_28, Object $eerste_filterfout_vouw_33) {
+    try {
+        return vouwlezing_eersteKlachtvrijeMaand($aantal_vouw_26, $vouw_vouw_28, $eerste_filterfout_vouw_33);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de eerste van de maand van alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit
+function Object vouwlezing_eersteKlachtvrijeMaand(Object $aantal_vouw_26, Object $vouw_vouw_28, Object $eerste_filterfout_vouw_33) {
+    if ($eerste_filterfout_vouw_33 != null) {
+        throw ((FilterFault) $eerste_filterfout_vouw_33).fault();
+    }
+    return ComputeHelpers.foldValue($aantal_vouw_26, $vouw_vouw_28, null);
+}
+
+rule "eerste klachtvrije maand"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    accumulate( $bijdrage_vouw_23 : Contribution( fold == "eerste klachtvrije maand: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_27 : value ); $aantal_vouw_26 : count(), $vouw_vouw_28 : exactMin($bijdragewaarde_vouw_27) )
+    accumulate( $filterfout_vouw_29 : FilterFault( fold == "eerste klachtvrije maand: vouw 0", subject == $onderwerp ); $filterfouten_vouw_32 : count(), $eerste_filterfout_vouw_33 : exactMin($filterfout_vouw_29) )
+then
+    Object v = waarde_eersteKlachtvrijeMaand($aantal_vouw_26, $vouw_vouw_28, $eerste_filterfout_vouw_33);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "eerste klachtvrije maand", ComputeHelpers.designate(v, "eerste klachtvrije maand")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "eerste klachtvrije maand", false), v, "eerste klachtvrije maand"));
+        }
+    }
+end
+
+// de eerste van de maand van alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de schuit van de Lading in-een-maand
+function Object waarde_eersteKlachtvrijeMaandViaDeLading(Object $aantal_vouw_60, Object $vouw_vouw_62, Object $eerste_filterfout_vouw_67) {
+    try {
+        return vouwlezing_eersteKlachtvrijeMaandViaDeLading($aantal_vouw_60, $vouw_vouw_62, $eerste_filterfout_vouw_67);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de eerste van de maand van alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de schuit van de Lading in-een-maand
+function Object vouwlezing_eersteKlachtvrijeMaandViaDeLading(Object $aantal_vouw_60, Object $vouw_vouw_62, Object $eerste_filterfout_vouw_67) {
+    if ($eerste_filterfout_vouw_67 != null) {
+        throw ((FilterFault) $eerste_filterfout_vouw_67).fault();
+    }
+    return ComputeHelpers.foldValue($aantal_vouw_60, $vouw_vouw_62, null);
+}
+
+rule "eerste klachtvrije maand via de lading"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    accumulate( $bijdrage_vouw_57 : Contribution( fold == "eerste klachtvrije maand via de lading: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_61 : value ); $aantal_vouw_60 : count(), $vouw_vouw_62 : exactMin($bijdragewaarde_vouw_61) )
+    accumulate( $filterfout_vouw_63 : FilterFault( fold == "eerste klachtvrije maand via de lading: vouw 2", subject == $onderwerp ); $filterfouten_vouw_66 : count(), $eerste_filterfout_vouw_67 : exactMin($filterfout_vouw_63) )
+then
+    Object v = waarde_eersteKlachtvrijeMaandViaDeLading($aantal_vouw_60, $vouw_vouw_62, $eerste_filterfout_vouw_67);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "eerste klachtvrije maand via de lading", ComputeHelpers.designate(v, "eerste klachtvrije maand via de lading")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "eerste klachtvrije maand via de lading", false), v, "eerste klachtvrije maand via de lading"));
+        }
+    }
+end
+
+// de eerste van de maand van alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de afmeerdag van de Schuit
+function Object waarde_eersteMaandNaHetAfmeren(Object $aantal_vouw_73, Object $vouw_vouw_75) {
+    try {
+        return ComputeHelpers.foldValue($aantal_vouw_73, $vouw_vouw_75, null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "eerste maand na het afmeren"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    accumulate( $bijdrage_vouw_70 : Contribution( fold == "eerste maand na het afmeren: vouw 4", subject == $onderwerp, $bijdragewaarde_vouw_74 : value ); $aantal_vouw_73 : count(), $vouw_vouw_75 : exactMin($bijdragewaarde_vouw_74) )
+then
+    Object v = waarde_eersteMaandNaHetAfmeren($aantal_vouw_73, $vouw_vouw_75);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "eerste maand na het afmeren", ComputeHelpers.designate(v, "eerste maand na het afmeren")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "eerste maand na het afmeren", false), v, "eerste maand na het afmeren"));
+        }
+    }
+end
+
+// de eerste van de maand van alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de afmeerdag van de schuit van de Lading in-een-maand
+function Object waarde_eersteMaandNaHetAfmerenViaDeLading(Object $aantal_vouw_81, Object $vouw_vouw_83) {
+    try {
+        return ComputeHelpers.foldValue($aantal_vouw_81, $vouw_vouw_83, null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "eerste maand na het afmeren via de lading"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    accumulate( $bijdrage_vouw_78 : Contribution( fold == "eerste maand na het afmeren via de lading: vouw 5", subject == $onderwerp, $bijdragewaarde_vouw_82 : value ); $aantal_vouw_81 : count(), $vouw_vouw_83 : exactMin($bijdragewaarde_vouw_82) )
+then
+    Object v = waarde_eersteMaandNaHetAfmerenViaDeLading($aantal_vouw_81, $vouw_vouw_83);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "eerste maand na het afmeren via de lading", ComputeHelpers.designate(v, "eerste maand na het afmeren via de lading")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "eerste maand na het afmeren via de lading", false), v, "eerste maand na het afmeren via de lading"));
+        }
+    }
+end
+
+// aan de volgende voorwaarde voldoen: zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit
+function boolean toets_eersteKlachtvrijeMaandBijdrageAanVouw0(Object $maand, Object $aantal_vouw_5, Object $vouw_vouw_7) {
+    try {
+        return ComputeHelpers.dateCompare(ComputeHelpers.dateStep($maand, new java.math.BigDecimal("1"), "MONTHS", Boolean.TRUE), ComputeHelpers.foldValue($aantal_vouw_5, $vouw_vouw_7, null), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "eerste klachtvrije maand: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $onderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand( schuit == $vouwonderwerp, $maand : maand )
+    accumulate( $bijdrage_vouw_2 : Contribution( fold == "eerste klachtvrije maand: vouw 1", subject == $vouwonderwerp, $bijdragewaarde_vouw_6 : value ); $aantal_vouw_5 : count(), $vouw_vouw_7 : exactMax($bijdragewaarde_vouw_6) )
+    eval( toets_eersteKlachtvrijeMaandBijdrageAanVouw0($maand, $aantal_vouw_5, $vouw_vouw_7) )
+then
+    Object v = ComputeHelpers.contribution("eerste klachtvrije maand: vouw 0", $vouwonderwerp, $onderwerp, $maand, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta_eersteKlachtvrijeMaandFilterfoutInVouw0(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// aan de volgende voorwaarde voldoen: zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit
+function boolean toets_eersteKlachtvrijeMaandFilterfoutInVouw0(Object $maand, Object $aantal_vouw_19, Object $vouw_vouw_21) {
+    try {
+        boolean uitkomst = ComputeHelpers.dateCompare(ComputeHelpers.dateStep($maand, new java.math.BigDecimal("1"), "MONTHS", Boolean.TRUE), ComputeHelpers.foldValue($aantal_vouw_19, $vouw_vouw_21, null), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// aan de volgende voorwaarde voldoen: zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit
+function RuntimeException fout_eersteKlachtvrijeMaandFilterfoutInVouw0(Object $lijstplaatsen_plaats_12, Object $plaats_plaats_13, Object $maand, Object $aantal_vouw_19, Object $vouw_vouw_21, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.dateCompare(ComputeHelpers.dateStep($maand, new java.math.BigDecimal("1"), "MONTHS", Boolean.TRUE), ComputeHelpers.foldValue($aantal_vouw_19, $vouw_vouw_21, null), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+function java.util.List plaats_eersteKlachtvrijeMaandFilterfoutInVouw0(Object $onderwerp, Object $lijstplaatsen_plaats_12, Object $plaats_plaats_13) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.FILTER_FAULT, "eerste klachtvrije maand: vouw 0", $onderwerp, 0, java.util.Arrays.asList("schuit"), java.util.Arrays.asList($lijstplaatsen_plaats_12), java.util.Arrays.asList($plaats_plaats_13));
+}
+
+rule "eerste klachtvrije maand: filterfout in vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $onderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand( schuit == $vouwonderwerp, $maand : maand )
+    accumulate( $lijstplaats_plaats_10 : ListPlace( field == "schuit", beta_eersteKlachtvrijeMaandFilterfoutInVouw0(this, $onderwerp), $lijstplaatswaarde_plaats_11 : place ); $lijstplaatsen_plaats_12 : count(), $plaats_plaats_13 : exactMin($lijstplaatswaarde_plaats_11) )
+    accumulate( $bijdrage_vouw_16 : Contribution( fold == "eerste klachtvrije maand: vouw 1", subject == $vouwonderwerp, $bijdragewaarde_vouw_20 : value ); $aantal_vouw_19 : count(), $vouw_vouw_21 : exactMax($bijdragewaarde_vouw_20) )
+    eval( toets_eersteKlachtvrijeMaandFilterfoutInVouw0($maand, $aantal_vouw_19, $vouw_vouw_21) )
+then
+    RuntimeException f = fout_eersteKlachtvrijeMaandFilterfoutInVouw0($lijstplaatsen_plaats_12, $plaats_plaats_13, $maand, $aantal_vouw_19, $vouw_vouw_21, $onderwerp);
+    if (f == null) {
+        ComputeHelpers.contractBreach("het filter van eerste klachtvrije maand: vouw 0 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new FilterFault("eerste klachtvrije maand: vouw 0", $vouwonderwerp, $onderwerp, f, plaats_eersteKlachtvrijeMaandFilterfoutInVouw0($onderwerp, $lijstplaatsen_plaats_12, $plaats_plaats_13)));
+end
+
+rule "eerste klachtvrije maand: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $onderwerp : dev.uchar.regelspraak.facts.Klacht( beklaagdeSchuit == $vouwonderwerp, $einddag : einddag )
+then
+    Object v = ComputeHelpers.contribution("eerste klachtvrije maand: vouw 1", $vouwonderwerp, $onderwerp, $einddag, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+// aan de volgende voorwaarde voldoen: zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de schuit van de Lading in-een-maand
+function boolean toets_eersteKlachtvrijeMaandViaDeLadingBijdrageAanVouw2(Object $maand, Object $aantal_vouw_39, Object $vouw_vouw_41) {
+    try {
+        return ComputeHelpers.dateCompare(ComputeHelpers.dateStep($maand, new java.math.BigDecimal("1"), "MONTHS", Boolean.TRUE), ComputeHelpers.foldValue($aantal_vouw_39, $vouw_vouw_41, null), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "eerste klachtvrije maand via de lading: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $onderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand( schuit == $vouwonderwerp, $maand : maand )
+    accumulate( $bijdrage_vouw_36 : Contribution( fold == "eerste klachtvrije maand via de lading: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_40 : value ); $aantal_vouw_39 : count(), $vouw_vouw_41 : exactMax($bijdragewaarde_vouw_40) )
+    eval( toets_eersteKlachtvrijeMaandViaDeLadingBijdrageAanVouw2($maand, $aantal_vouw_39, $vouw_vouw_41) )
+then
+    Object v = ComputeHelpers.contribution("eerste klachtvrije maand via de lading: vouw 2", $vouwonderwerp, $onderwerp, $maand, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta_eersteKlachtvrijeMaandViaDeLadingFilterfoutInVouw2(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// aan de volgende voorwaarde voldoen: zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de schuit van de Lading in-een-maand
+function boolean toets_eersteKlachtvrijeMaandViaDeLadingFilterfoutInVouw2(Object $maand, Object $aantal_vouw_53, Object $vouw_vouw_55) {
+    try {
+        boolean uitkomst = ComputeHelpers.dateCompare(ComputeHelpers.dateStep($maand, new java.math.BigDecimal("1"), "MONTHS", Boolean.TRUE), ComputeHelpers.foldValue($aantal_vouw_53, $vouw_vouw_55, null), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// aan de volgende voorwaarde voldoen: zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de schuit van de Lading in-een-maand
+function RuntimeException fout_eersteKlachtvrijeMaandViaDeLadingFilterfoutInVouw2(Object $lijstplaatsen_plaats_46, Object $plaats_plaats_47, Object $maand, Object $aantal_vouw_53, Object $vouw_vouw_55, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.dateCompare(ComputeHelpers.dateStep($maand, new java.math.BigDecimal("1"), "MONTHS", Boolean.TRUE), ComputeHelpers.foldValue($aantal_vouw_53, $vouw_vouw_55, null), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+function java.util.List plaats_eersteKlachtvrijeMaandViaDeLadingFilterfoutInVouw2(Object $onderwerp, Object $lijstplaatsen_plaats_46, Object $plaats_plaats_47) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.FILTER_FAULT, "eerste klachtvrije maand via de lading: vouw 2", $onderwerp, 0, java.util.Arrays.asList("schuit"), java.util.Arrays.asList($lijstplaatsen_plaats_46), java.util.Arrays.asList($plaats_plaats_47));
+}
+
+rule "eerste klachtvrije maand via de lading: filterfout in vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $onderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand( schuit == $vouwonderwerp, $maand : maand )
+    accumulate( $lijstplaats_plaats_44 : ListPlace( field == "schuit", beta_eersteKlachtvrijeMaandViaDeLadingFilterfoutInVouw2(this, $onderwerp), $lijstplaatswaarde_plaats_45 : place ); $lijstplaatsen_plaats_46 : count(), $plaats_plaats_47 : exactMin($lijstplaatswaarde_plaats_45) )
+    accumulate( $bijdrage_vouw_50 : Contribution( fold == "eerste klachtvrije maand via de lading: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_54 : value ); $aantal_vouw_53 : count(), $vouw_vouw_55 : exactMax($bijdragewaarde_vouw_54) )
+    eval( toets_eersteKlachtvrijeMaandViaDeLadingFilterfoutInVouw2($maand, $aantal_vouw_53, $vouw_vouw_55) )
+then
+    RuntimeException f = fout_eersteKlachtvrijeMaandViaDeLadingFilterfoutInVouw2($lijstplaatsen_plaats_46, $plaats_plaats_47, $maand, $aantal_vouw_53, $vouw_vouw_55, $onderwerp);
+    if (f == null) {
+        ComputeHelpers.contractBreach("het filter van eerste klachtvrije maand via de lading: vouw 2 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new FilterFault("eerste klachtvrije maand via de lading: vouw 2", $vouwonderwerp, $onderwerp, f, plaats_eersteKlachtvrijeMaandViaDeLadingFilterfoutInVouw2($onderwerp, $lijstplaatsen_plaats_46, $plaats_plaats_47)));
+end
+
+function boolean beta_eersteKlachtvrijeMaandViaDeLadingBijdrageAanVouw3(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("beklaagdeSchuit"), java.util.Arrays.asList("schuit"));
+}
+
+rule "eerste klachtvrije maand via de lading: bijdrage aan vouw 3"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand()
+    $onderwerp : dev.uchar.regelspraak.facts.Klacht( beta_eersteKlachtvrijeMaandViaDeLadingBijdrageAanVouw3(this, $vouwonderwerp), $einddag : einddag )
+then
+    Object v = ComputeHelpers.contribution("eerste klachtvrije maand via de lading: vouw 3", $vouwonderwerp, $onderwerp, $einddag, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+// aan de volgende voorwaarde voldoen: zijn maand is later dan de afmeerdag van de Schuit
+function boolean toets_eersteMaandNaHetAfmerenBijdrageAanVouw4(Object $maand, Object $afmeerdag) {
+    return ComputeHelpers.dateCompare($maand, $afmeerdag, dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+}
+
+rule "eerste maand na het afmeren: bijdrage aan vouw 4"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schuit( $afmeerdag : afmeerdag )
+    $onderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand( schuit == $vouwonderwerp, $maand : maand )
+    eval( toets_eersteMaandNaHetAfmerenBijdrageAanVouw4($maand, $afmeerdag) )
+then
+    Object v = ComputeHelpers.contribution("eerste maand na het afmeren: vouw 4", $vouwonderwerp, $onderwerp, $maand, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function Object pad_eersteMaandNaHetAfmerenViaDeLadingBijdrageAanVouw5(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("schuit"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "afmeerdag");
+}
+
+// aan de volgende voorwaarde voldoen: zijn maand is later dan de afmeerdag van de schuit van de Lading in-een-maand
+function boolean toets_eersteMaandNaHetAfmerenViaDeLadingBijdrageAanVouw5(Object $maand, Object $schuitAfmeerdag) {
+    return ComputeHelpers.dateCompare($maand, $schuitAfmeerdag, dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+}
+
+rule "eerste maand na het afmeren via de lading: bijdrage aan vouw 5"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $onderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand( schuit == $vouwonderwerp, $maand : maand, $schuitAfmeerdag : (pad_eersteMaandNaHetAfmerenViaDeLadingBijdrageAanVouw5(this)) )
+    eval( toets_eersteMaandNaHetAfmerenViaDeLadingBijdrageAanVouw5($maand, $schuitAfmeerdag) )
+then
+    Object v = ComputeHelpers.contribution("eerste maand na het afmeren via de lading: vouw 5", $vouwonderwerp, $onderwerp, $maand, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+

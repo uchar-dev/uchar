@@ -1,0 +1,306 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.UniquenessKey;
+import dev.uchar.regelspraak.transpiler.tms.UniquenessViolation;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het aantal kavels van de Gemeente
+function Object waarde_kavelaantalVanEenGemeente(Object $aantal_vouw_4) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_4), Integer.valueOf(0), "kavelaantal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "kavelaantal van een gemeente"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Gemeente()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "kavelaantal van een gemeente: vouw 0", subject == $onderwerp ); $aantal_vouw_4 : count() )
+then
+    Object v = waarde_kavelaantalVanEenGemeente($aantal_vouw_4);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "kavelaantal van een gemeente", ComputeHelpers.designate(v, "kavelaantal van een gemeente")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("gemeente", "kavelaantal", false), v, "kavelaantal van een gemeente"));
+        }
+    }
+end
+
+function boolean toets_eenmaligKaveletiketSleutelVanKavel1(Object $etiket, Object $gemeente) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($etiket, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($gemeente, Boolean.FALSE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+function java.util.List componenten_eenmaligKaveletiketSleutelVanKavel1(Object $etiket, Object $gemeente) {
+    java.util.List waarden = new java.util.ArrayList();
+    waarden.add($etiket);
+    return waarden;
+}
+
+rule "eenmalig kaveletiket: sleutel van Kavel 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Kavel( $etiket : etiket, $gemeente : gemeente )
+    eval( toets_eenmaligKaveletiketSleutelVanKavel1($etiket, $gemeente) )
+then
+    for (Object k : ComputeHelpers.uniquenessKeys("eenmalig kaveletiket", 0, $onderwerp, $gemeente, componenten_eenmaligKaveletiketSleutelVanKavel1($etiket, $gemeente), -1)) {
+        insertLogical(k);
+    }
+end
+
+function boolean beta_eenmaligKaveletiket(Object eigen, Object ander) {
+    return ComputeHelpers.collidesWith(eigen, ander);
+}
+
+function boolean toets_eenmaligKaveletiket(Object $botsingen) {
+    return ComputeHelpers.duplicate($botsingen);
+}
+
+rule "eenmalig kaveletiket"
+    dialect "mvel"
+when
+    $sleutel : UniquenessKey( uniqueness == "eenmalig kaveletiket", $element : element )
+    accumulate( $ander : UniquenessKey( uniqueness == "eenmalig kaveletiket", beta_eenmaligKaveletiket(this, $sleutel) ); $botsingen : count() )
+    eval( toets_eenmaligKaveletiket($botsingen) )
+then
+    insertLogical(new UniquenessViolation("eenmalig kaveletiket", $element));
+end
+
+rule "eenmalig kaveletiket: kanaal"
+    dialect "mvel"
+when
+    $schending : UniquenessViolation( uniqueness == "eenmalig kaveletiket", $subject : element )
+then
+    insertLogical(ComputeHelpers.inconsistency("eenmalig kaveletiket", $subject, ComputeHelpers.list1("EF-026")));
+end
+
+function boolean toets_eenmaligeSectiecodeSleutelVanKavel1(Object $sectiecode, Object $gemeente) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($sectiecode, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($gemeente, Boolean.FALSE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+function java.util.List componenten_eenmaligeSectiecodeSleutelVanKavel1(Object $sectiecode, Object $gemeente) {
+    java.util.List waarden = new java.util.ArrayList();
+    waarden.add($sectiecode);
+    return waarden;
+}
+
+rule "eenmalige sectiecode: sleutel van Kavel 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Kavel( $sectiecode : sectiecode, $gemeente : gemeente )
+    eval( toets_eenmaligeSectiecodeSleutelVanKavel1($sectiecode, $gemeente) )
+then
+    for (Object k : ComputeHelpers.uniquenessKeys("eenmalige sectiecode", 0, $onderwerp, $gemeente, componenten_eenmaligeSectiecodeSleutelVanKavel1($sectiecode, $gemeente), -1)) {
+        insertLogical(k);
+    }
+end
+
+function boolean beta_eenmaligeSectiecode(Object eigen, Object ander) {
+    return ComputeHelpers.collidesWith(eigen, ander);
+}
+
+function boolean toets_eenmaligeSectiecode(Object $botsingen) {
+    return ComputeHelpers.duplicate($botsingen);
+}
+
+rule "eenmalige sectiecode"
+    dialect "mvel"
+when
+    $sleutel : UniquenessKey( uniqueness == "eenmalige sectiecode", $element : element )
+    accumulate( $ander : UniquenessKey( uniqueness == "eenmalige sectiecode", beta_eenmaligeSectiecode(this, $sleutel) ); $botsingen : count() )
+    eval( toets_eenmaligeSectiecode($botsingen) )
+then
+    insertLogical(new UniquenessViolation("eenmalige sectiecode", $element));
+end
+
+rule "eenmalige sectiecode: kanaal"
+    dialect "mvel"
+when
+    $schending : UniquenessViolation( uniqueness == "eenmalige sectiecode", $subject : element )
+then
+    insertLogical(ComputeHelpers.inconsistency("eenmalige sectiecode", $subject, ComputeHelpers.list1("EF-026")));
+end
+
+function boolean toets_eenmaligVondstnummerSleutelVanStrandvondst1(Object $vondstnummer) {
+    return ComputeHelpers.emptyTest($vondstnummer, Boolean.FALSE);
+}
+
+function java.util.List componenten_eenmaligVondstnummerSleutelVanStrandvondst1(Object $vondstnummer) {
+    java.util.List waarden = new java.util.ArrayList();
+    waarden.add($vondstnummer);
+    return waarden;
+}
+
+rule "eenmalig vondstnummer: sleutel van Strandvondst 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst( $vondstnummer : vondstnummer )
+    eval( toets_eenmaligVondstnummerSleutelVanStrandvondst1($vondstnummer) )
+then
+    for (Object k : ComputeHelpers.uniquenessKeys("eenmalig vondstnummer", 0, $onderwerp, null, componenten_eenmaligVondstnummerSleutelVanStrandvondst1($vondstnummer), -1)) {
+        insertLogical(k);
+    }
+end
+
+function boolean toets_eenmaligVondstnummerSleutelVanWrakvondst2(Object $vondstnummer) {
+    return ComputeHelpers.emptyTest($vondstnummer, Boolean.FALSE);
+}
+
+function java.util.List componenten_eenmaligVondstnummerSleutelVanWrakvondst2(Object $vondstnummer) {
+    java.util.List waarden = new java.util.ArrayList();
+    waarden.add($vondstnummer);
+    return waarden;
+}
+
+rule "eenmalig vondstnummer: sleutel van Wrakvondst 2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakvondst( $vondstnummer : vondstnummer )
+    eval( toets_eenmaligVondstnummerSleutelVanWrakvondst2($vondstnummer) )
+then
+    for (Object k : ComputeHelpers.uniquenessKeys("eenmalig vondstnummer", 1, $onderwerp, null, componenten_eenmaligVondstnummerSleutelVanWrakvondst2($vondstnummer), -1)) {
+        insertLogical(k);
+    }
+end
+
+function boolean beta_eenmaligVondstnummer(Object eigen, Object ander) {
+    return ComputeHelpers.collidesWith(eigen, ander);
+}
+
+function boolean toets_eenmaligVondstnummer(Object $botsingen) {
+    return ComputeHelpers.duplicate($botsingen);
+}
+
+rule "eenmalig vondstnummer"
+    dialect "mvel"
+when
+    $sleutel : UniquenessKey( uniqueness == "eenmalig vondstnummer", $element : element )
+    accumulate( $ander : UniquenessKey( uniqueness == "eenmalig vondstnummer", beta_eenmaligVondstnummer(this, $sleutel) ); $botsingen : count() )
+    eval( toets_eenmaligVondstnummer($botsingen) )
+then
+    insertLogical(new UniquenessViolation("eenmalig vondstnummer", $element));
+end
+
+rule "eenmalig vondstnummer: kanaal"
+    dialect "mvel"
+when
+    $schending : UniquenessViolation( uniqueness == "eenmalig vondstnummer", $subject : element )
+then
+    insertLogical(ComputeHelpers.inconsistency("eenmalig vondstnummer", $subject, ComputeHelpers.list1("EF-026")));
+end
+
+function boolean toets_eenmaligeBakencodeSleutelVanBaken1(Object $landcode) {
+    return ComputeHelpers.emptyTest($landcode, Boolean.FALSE);
+}
+
+function java.util.List componenten_eenmaligeBakencodeSleutelVanBaken1(Object $landcode) {
+    java.util.List waarden = new java.util.ArrayList();
+    waarden.add($landcode);
+    return waarden;
+}
+
+rule "eenmalige bakencode: sleutel van Baken 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Baken( $landcode : landcode )
+    eval( toets_eenmaligeBakencodeSleutelVanBaken1($landcode) )
+then
+    for (Object k : ComputeHelpers.uniquenessKeys("eenmalige bakencode", 0, $onderwerp, null, componenten_eenmaligeBakencodeSleutelVanBaken1($landcode), -1)) {
+        insertLogical(k);
+    }
+end
+
+function boolean toets_eenmaligeBakencodeSleutelVanBaken2(Object $zeecode) {
+    return ComputeHelpers.emptyTest($zeecode, Boolean.FALSE);
+}
+
+function java.util.List componenten_eenmaligeBakencodeSleutelVanBaken2(Object $zeecode) {
+    java.util.List waarden = new java.util.ArrayList();
+    waarden.add($zeecode);
+    return waarden;
+}
+
+rule "eenmalige bakencode: sleutel van Baken 2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Baken( $zeecode : zeecode )
+    eval( toets_eenmaligeBakencodeSleutelVanBaken2($zeecode) )
+then
+    for (Object k : ComputeHelpers.uniquenessKeys("eenmalige bakencode", 1, $onderwerp, null, componenten_eenmaligeBakencodeSleutelVanBaken2($zeecode), -1)) {
+        insertLogical(k);
+    }
+end
+
+function boolean beta_eenmaligeBakencode(Object eigen, Object ander) {
+    return ComputeHelpers.collidesWith(eigen, ander);
+}
+
+function boolean toets_eenmaligeBakencode(Object $botsingen) {
+    return ComputeHelpers.duplicate($botsingen);
+}
+
+rule "eenmalige bakencode"
+    dialect "mvel"
+when
+    $sleutel : UniquenessKey( uniqueness == "eenmalige bakencode", $element : element )
+    accumulate( $ander : UniquenessKey( uniqueness == "eenmalige bakencode", beta_eenmaligeBakencode(this, $sleutel) ); $botsingen : count() )
+    eval( toets_eenmaligeBakencode($botsingen) )
+then
+    insertLogical(new UniquenessViolation("eenmalige bakencode", $element));
+end
+
+rule "eenmalige bakencode: kanaal"
+    dialect "mvel"
+when
+    $schending : UniquenessViolation( uniqueness == "eenmalige bakencode", $subject : element )
+then
+    insertLogical(ComputeHelpers.inconsistency("eenmalige bakencode", $subject, ComputeHelpers.list1("EF-026")));
+end
+
+rule "kavelaantal van een gemeente: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Gemeente()
+    $onderwerp : dev.uchar.regelspraak.facts.Kavel( gemeente == $vouwonderwerp )
+then
+    insertLogical(new Contribution("kavelaantal van een gemeente: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+

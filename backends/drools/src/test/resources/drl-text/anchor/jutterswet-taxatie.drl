@@ -1,0 +1,108 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de opbrengst van de Kavel gedeeld door abs de partijen van de Kavel
+function Object waarde_stukprijsVanEenKavel(Object $opbrengst, Object $partijen, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.dividedAbs($opbrengst, $partijen, sonde), Integer.valueOf(5), "stukprijs", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "stukprijs van een kavel"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Kavel( $opbrengst : opbrengst, $partijen : partijen )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_stukprijsVanEenKavel($opbrengst, $partijen, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "stukprijs van een kavel", ComputeHelpers.designate(v, "stukprijs van een kavel")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("stukprijs van een kavel", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("kavel", "stukprijs", false), v, "stukprijs van een kavel"));
+        }
+    }
+end
+
+// (de zijde van de Kavel tot de macht 2) rekenkundig afgerond op 2 decimalen
+function Object waarde_oppervlakteVanEenKavel(Object $zijde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsMacht($zijde, Integer.valueOf(2)), Integer.valueOf(2), java.math.RoundingMode.HALF_UP), Integer.valueOf(2), "oppervlakte", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "oppervlakte van een kavel"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Kavel( $zijde : zijde )
+then
+    Object v = waarde_oppervlakteVanEenKavel($zijde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "oppervlakte van een kavel", ComputeHelpers.designate(v, "oppervlakte van een kavel")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("kavel", "oppervlakte", false), v, "oppervlakte van een kavel"));
+        }
+    }
+end
+
+// (de ribbe van de Kavel tot de macht 3) rekenkundig afgerond op 0 decimalen
+function Object waarde_inhoudVanEenKavel(Object $ribbe) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsMacht($ribbe, Integer.valueOf(3)), Integer.valueOf(0), java.math.RoundingMode.HALF_UP), Integer.valueOf(0), "inhoud", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "inhoud van een kavel"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Kavel( $ribbe : ribbe )
+then
+    Object v = waarde_inhoudVanEenKavel($ribbe);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "inhoud van een kavel", ComputeHelpers.designate(v, "inhoud van een kavel")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("kavel", "inhoud", false), v, "inhoud van een kavel"));
+        }
+    }
+end
+
+// (de krimp van de Kavel tot de macht 3) rekenkundig afgerond op 0 decimalen
+function Object waarde_krimpmaatVanEenKavel(Object $krimp) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsMacht($krimp, Integer.valueOf(3)), Integer.valueOf(0), java.math.RoundingMode.HALF_UP), Integer.valueOf(0), "krimpmaat", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "krimpmaat van een kavel"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Kavel( $krimp : krimp )
+then
+    Object v = waarde_krimpmaatVanEenKavel($krimp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "krimpmaat van een kavel", ComputeHelpers.designate(v, "krimpmaat van een kavel")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("kavel", "krimpmaat", false), v, "krimpmaat van een kavel"));
+        }
+    }
+end
+

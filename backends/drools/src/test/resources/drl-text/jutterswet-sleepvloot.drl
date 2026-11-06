@@ -1,0 +1,482 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.ListPlace;
+import dev.uchar.regelspraak.transpiler.tms.MemberTest;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de sleeptijd van ten minste 2 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20
+function boolean toets_inzetbaarBijSleeptijd(Object $aantal_vouw_12, Object $vouw_vouw_14) {
+    try {
+        return ((Boolean) kwantorlezing_inzetbaarBijSleeptijd($aantal_vouw_12, $vouw_vouw_14));
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// de sleeptijd van ten minste 2 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing_inzetbaarBijSleeptijd(Object $aantal_vouw_12, Object $vouw_vouw_14) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_12, $vouw_vouw_14, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(2), null);
+}
+
+rule "inzetbaar bij sleeptijd"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleepvloot()
+    accumulate( $bijdrage_vouw_9 : Contribution( fold == "inzetbaar bij sleeptijd: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_13 : value ); $aantal_vouw_12 : count(), $vouw_vouw_14 : collectList($bijdragewaarde_vouw_13) )
+    eval( toets_inzetbaarBijSleeptijd($aantal_vouw_12, $vouw_vouw_14) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("sleepvloot", "inzetbaar", true)));
+end
+
+// de sleeptijd van ten minste 2 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20
+function boolean toets_inzetbaarBijSleeptijdFoutInDeVoorwaarde(Object $aantal_vouw_19, Object $vouw_vouw_21) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing1_inzetbaarBijSleeptijdFoutInDeVoorwaarde($aantal_vouw_19, $vouw_vouw_21));
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de sleeptijd van ten minste 2 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing1_inzetbaarBijSleeptijdFoutInDeVoorwaarde(Object $aantal_vouw_19, Object $vouw_vouw_21) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_19, $vouw_vouw_21, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(2), null);
+}
+
+// de sleeptijd van ten minste 2 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20
+function Object fout_inzetbaarBijSleeptijdFoutInDeVoorwaarde(Object $aantal_vouw_19, Object $vouw_vouw_21) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing2_inzetbaarBijSleeptijdFoutInDeVoorwaarde($aantal_vouw_19, $vouw_vouw_21));
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de sleeptijd van ten minste 2 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing2_inzetbaarBijSleeptijdFoutInDeVoorwaarde(Object $aantal_vouw_19, Object $vouw_vouw_21) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_19, $vouw_vouw_21, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(2), null);
+}
+
+rule "inzetbaar bij sleeptijd: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleepvloot()
+    accumulate( $bijdrage_vouw_16 : Contribution( fold == "inzetbaar bij sleeptijd: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_20 : value ); $aantal_vouw_19 : count(), $vouw_vouw_21 : collectList($bijdragewaarde_vouw_20) )
+    eval( toets_inzetbaarBijSleeptijdFoutInDeVoorwaarde($aantal_vouw_19, $vouw_vouw_21) )
+then
+    Object f = fout_inzetbaarBijSleeptijdFoutInDeVoorwaarde($aantal_vouw_19, $vouw_vouw_21);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"inzetbaar bij sleeptijd\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "inzetbaar bij sleeptijd", ComputeHelpers.designate(f, "inzetbaar bij sleeptijd")));
+end
+
+// de sleeptijd van ten hoogste 1 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20
+function boolean toets_krapBijSleeptijd(Object $aantal_vouw_35, Object $vouw_vouw_37) {
+    try {
+        return ((Boolean) kwantorlezing_krapBijSleeptijd($aantal_vouw_35, $vouw_vouw_37));
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// de sleeptijd van ten hoogste 1 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing_krapBijSleeptijd(Object $aantal_vouw_35, Object $vouw_vouw_37) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_35, $vouw_vouw_37, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, Integer.valueOf(1), null);
+}
+
+rule "krap bij sleeptijd"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleepvloot()
+    accumulate( $bijdrage_vouw_32 : Contribution( fold == "krap bij sleeptijd: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_36 : value ); $aantal_vouw_35 : count(), $vouw_vouw_37 : collectList($bijdragewaarde_vouw_36) )
+    eval( toets_krapBijSleeptijd($aantal_vouw_35, $vouw_vouw_37) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("sleepvloot", "krap", true)));
+end
+
+// de sleeptijd van ten hoogste 1 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20
+function boolean toets_krapBijSleeptijdFoutInDeVoorwaarde(Object $aantal_vouw_42, Object $vouw_vouw_44) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing1_krapBijSleeptijdFoutInDeVoorwaarde($aantal_vouw_42, $vouw_vouw_44));
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de sleeptijd van ten hoogste 1 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing1_krapBijSleeptijdFoutInDeVoorwaarde(Object $aantal_vouw_42, Object $vouw_vouw_44) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_42, $vouw_vouw_44, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, Integer.valueOf(1), null);
+}
+
+// de sleeptijd van ten hoogste 1 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20
+function Object fout_krapBijSleeptijdFoutInDeVoorwaarde(Object $aantal_vouw_42, Object $vouw_vouw_44) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing2_krapBijSleeptijdFoutInDeVoorwaarde($aantal_vouw_42, $vouw_vouw_44));
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de sleeptijd van ten hoogste 1 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing2_krapBijSleeptijdFoutInDeVoorwaarde(Object $aantal_vouw_42, Object $vouw_vouw_44) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_42, $vouw_vouw_44, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, Integer.valueOf(1), null);
+}
+
+rule "krap bij sleeptijd: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleepvloot()
+    accumulate( $bijdrage_vouw_39 : Contribution( fold == "krap bij sleeptijd: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_43 : value ); $aantal_vouw_42 : count(), $vouw_vouw_44 : collectList($bijdragewaarde_vouw_43) )
+    eval( toets_krapBijSleeptijdFoutInDeVoorwaarde($aantal_vouw_42, $vouw_vouw_44) )
+then
+    Object f = fout_krapBijSleeptijdFoutInDeVoorwaarde($aantal_vouw_42, $vouw_vouw_44);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"krap bij sleeptijd\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "krap bij sleeptijd", ComputeHelpers.designate(f, "krap bij sleeptijd")));
+end
+
+// de sleeptijd van precies 1 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20
+function boolean toets_paraatBijSleeptijd(Object $aantal_vouw_58, Object $vouw_vouw_60) {
+    try {
+        return ((Boolean) kwantorlezing_paraatBijSleeptijd($aantal_vouw_58, $vouw_vouw_60));
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// de sleeptijd van precies 1 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing_paraatBijSleeptijd(Object $aantal_vouw_58, Object $vouw_vouw_60) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_58, $vouw_vouw_60, dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, Integer.valueOf(1), null);
+}
+
+rule "paraat bij sleeptijd"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleepvloot()
+    accumulate( $bijdrage_vouw_55 : Contribution( fold == "paraat bij sleeptijd: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_59 : value ); $aantal_vouw_58 : count(), $vouw_vouw_60 : collectList($bijdragewaarde_vouw_59) )
+    eval( toets_paraatBijSleeptijd($aantal_vouw_58, $vouw_vouw_60) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("sleepvloot", "paraat", true)));
+end
+
+// de sleeptijd van precies 1 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20
+function boolean toets_paraatBijSleeptijdFoutInDeVoorwaarde(Object $aantal_vouw_65, Object $vouw_vouw_67) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing1_paraatBijSleeptijdFoutInDeVoorwaarde($aantal_vouw_65, $vouw_vouw_67));
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de sleeptijd van precies 1 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing1_paraatBijSleeptijdFoutInDeVoorwaarde(Object $aantal_vouw_65, Object $vouw_vouw_67) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_65, $vouw_vouw_67, dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, Integer.valueOf(1), null);
+}
+
+// de sleeptijd van precies 1 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20
+function Object fout_paraatBijSleeptijdFoutInDeVoorwaarde(Object $aantal_vouw_65, Object $vouw_vouw_67) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing2_paraatBijSleeptijdFoutInDeVoorwaarde($aantal_vouw_65, $vouw_vouw_67));
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de sleeptijd van precies 1 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing2_paraatBijSleeptijdFoutInDeVoorwaarde(Object $aantal_vouw_65, Object $vouw_vouw_67) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_65, $vouw_vouw_67, dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, Integer.valueOf(1), null);
+}
+
+rule "paraat bij sleeptijd: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleepvloot()
+    accumulate( $bijdrage_vouw_62 : Contribution( fold == "paraat bij sleeptijd: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_66 : value ); $aantal_vouw_65 : count(), $vouw_vouw_67 : collectList($bijdragewaarde_vouw_66) )
+    eval( toets_paraatBijSleeptijdFoutInDeVoorwaarde($aantal_vouw_65, $vouw_vouw_67) )
+then
+    Object f = fout_paraatBijSleeptijdFoutInDeVoorwaarde($aantal_vouw_65, $vouw_vouw_67);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"paraat bij sleeptijd\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "paraat bij sleeptijd", ComputeHelpers.designate(f, "paraat bij sleeptijd")));
+end
+
+// de sleeptijd van ten minste 2 van de boten van de Sleepvloot die gekeurd zijn niet gedurende het gehele jaar groter is dan 20
+function boolean toets_geschiktBijSleeptijd(Object $aantal_vouw_82, Object $vouw_vouw_84) {
+    try {
+        return ((Boolean) kwantorlezing_geschiktBijSleeptijd($aantal_vouw_82, $vouw_vouw_84));
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// de sleeptijd van ten minste 2 van de boten van de Sleepvloot die gekeurd zijn niet gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing_geschiktBijSleeptijd(Object $aantal_vouw_82, Object $vouw_vouw_84) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_82, $vouw_vouw_84, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(2), null);
+}
+
+rule "geschikt bij sleeptijd"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleepvloot()
+    accumulate( $bijdrage_vouw_79 : Contribution( fold == "geschikt bij sleeptijd: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_83 : value ); $aantal_vouw_82 : count(), $vouw_vouw_84 : collectList($bijdragewaarde_vouw_83) )
+    eval( toets_geschiktBijSleeptijd($aantal_vouw_82, $vouw_vouw_84) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("sleepvloot", "geschikt", true)));
+end
+
+// de sleeptijd van ten minste 2 van de boten van de Sleepvloot die gekeurd zijn niet gedurende het gehele jaar groter is dan 20
+function boolean toets_geschiktBijSleeptijdFoutInDeVoorwaarde(Object $aantal_vouw_89, Object $vouw_vouw_91) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing1_geschiktBijSleeptijdFoutInDeVoorwaarde($aantal_vouw_89, $vouw_vouw_91));
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de sleeptijd van ten minste 2 van de boten van de Sleepvloot die gekeurd zijn niet gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing1_geschiktBijSleeptijdFoutInDeVoorwaarde(Object $aantal_vouw_89, Object $vouw_vouw_91) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_89, $vouw_vouw_91, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(2), null);
+}
+
+// de sleeptijd van ten minste 2 van de boten van de Sleepvloot die gekeurd zijn niet gedurende het gehele jaar groter is dan 20
+function Object fout_geschiktBijSleeptijdFoutInDeVoorwaarde(Object $aantal_vouw_89, Object $vouw_vouw_91) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing2_geschiktBijSleeptijdFoutInDeVoorwaarde($aantal_vouw_89, $vouw_vouw_91));
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de sleeptijd van ten minste 2 van de boten van de Sleepvloot die gekeurd zijn niet gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing2_geschiktBijSleeptijdFoutInDeVoorwaarde(Object $aantal_vouw_89, Object $vouw_vouw_91) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_89, $vouw_vouw_91, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(2), null);
+}
+
+rule "geschikt bij sleeptijd: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleepvloot()
+    accumulate( $bijdrage_vouw_86 : Contribution( fold == "geschikt bij sleeptijd: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_90 : value ); $aantal_vouw_89 : count(), $vouw_vouw_91 : collectList($bijdragewaarde_vouw_90) )
+    eval( toets_geschiktBijSleeptijdFoutInDeVoorwaarde($aantal_vouw_89, $vouw_vouw_91) )
+then
+    Object f = fout_geschiktBijSleeptijdFoutInDeVoorwaarde($aantal_vouw_89, $vouw_vouw_91);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"geschikt bij sleeptijd\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "geschikt bij sleeptijd", ComputeHelpers.designate(f, "geschikt bij sleeptijd")));
+end
+
+// het aantal boten van de Sleepvloot
+function Object waarde_bootalVanEenSleepvloot(Object $aantal_vouw_97) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_97), Integer.valueOf(0), "bootal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bootal van een sleepvloot"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleepvloot()
+    accumulate( $bijdrage_vouw_94 : Contribution( fold == "bootal van een sleepvloot: vouw 4", subject == $onderwerp ); $aantal_vouw_97 : count() )
+then
+    Object v = waarde_bootalVanEenSleepvloot($aantal_vouw_97);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bootal van een sleepvloot", ComputeHelpers.designate(v, "bootal van een sleepvloot")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("sleepvloot", "bootal", false), v, "bootal van een sleepvloot"));
+        }
+    }
+end
+
+function boolean beta_inzetbaarBijSleeptijdBijdrageAanVouw0(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// de sleeptijd van ten minste 2 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20
+function Object lidtoets_inzetbaarBijSleeptijdBijdrageAanVouw0(Object $onderwerp, Object $tijdlijn_1, Object $lijstplaatsen_plaats_5, Object $plaats_plaats_6) {
+    java.util.List plaats = plaats_inzetbaarBijSleeptijdBijdrageAanVouw0($onderwerp, $lijstplaatsen_plaats_5, $plaats_plaats_6);
+    Boolean waar = null;
+    RuntimeException fout = null;
+    try {
+        waar = Boolean.valueOf(ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_1, "the whole-period qualifier over \"sleeptijd\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "sleeptijd", Boolean.TRUE), new java.math.BigDecimal("20"), "JAAR", Integer.valueOf(2), Boolean.TRUE));
+    } catch (RuntimeException e) {
+        fout = ComputeHelpers.caught(e);
+    }
+    return new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null));
+}
+
+function java.util.List plaats_inzetbaarBijSleeptijdBijdrageAanVouw0(Object $onderwerp, Object $lijstplaatsen_plaats_5, Object $plaats_plaats_6) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER, "inzetbaar bij sleeptijd: vouw 0", $onderwerp, 0, java.util.Arrays.asList("vloot"), java.util.Arrays.asList($lijstplaatsen_plaats_5), java.util.Arrays.asList($plaats_plaats_6));
+}
+
+rule "inzetbaar bij sleeptijd: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Sleepvloot()
+    $onderwerp : dev.uchar.regelspraak.facts.Sleepboot( vloot == $vouwonderwerp )
+    accumulate( $lijstplaats_plaats_3 : ListPlace( field == "vloot", beta_inzetbaarBijSleeptijdBijdrageAanVouw0(this, $onderwerp), $lijstplaatswaarde_plaats_4 : place ); $lijstplaatsen_plaats_5 : count(), $plaats_plaats_6 : exactMin($lijstplaatswaarde_plaats_4) )
+    $stand_1 : State( attribute == ElementKey.of("sleepboot", "sleeptijd", false), subject == $onderwerp, $tijdlijn_1 : value )
+then
+    insertLogical(new Contribution("inzetbaar bij sleeptijd: vouw 0", $vouwonderwerp, $onderwerp, lidtoets_inzetbaarBijSleeptijdBijdrageAanVouw0($onderwerp, $tijdlijn_1, $lijstplaatsen_plaats_5, $plaats_plaats_6)));
+end
+
+function boolean beta_krapBijSleeptijdBijdrageAanVouw1(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// de sleeptijd van ten hoogste 1 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20
+function Object lidtoets_krapBijSleeptijdBijdrageAanVouw1(Object $onderwerp, Object $tijdlijn_1, Object $lijstplaatsen_plaats_28, Object $plaats_plaats_29) {
+    java.util.List plaats = plaats_krapBijSleeptijdBijdrageAanVouw1($onderwerp, $lijstplaatsen_plaats_28, $plaats_plaats_29);
+    Boolean waar = null;
+    RuntimeException fout = null;
+    try {
+        waar = Boolean.valueOf(ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_1, "the whole-period qualifier over \"sleeptijd\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "sleeptijd", Boolean.TRUE), new java.math.BigDecimal("20"), "JAAR", Integer.valueOf(2), Boolean.TRUE));
+    } catch (RuntimeException e) {
+        fout = ComputeHelpers.caught(e);
+    }
+    return new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null));
+}
+
+function java.util.List plaats_krapBijSleeptijdBijdrageAanVouw1(Object $onderwerp, Object $lijstplaatsen_plaats_28, Object $plaats_plaats_29) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER, "krap bij sleeptijd: vouw 1", $onderwerp, 0, java.util.Arrays.asList("vloot"), java.util.Arrays.asList($lijstplaatsen_plaats_28), java.util.Arrays.asList($plaats_plaats_29));
+}
+
+rule "krap bij sleeptijd: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Sleepvloot()
+    $onderwerp : dev.uchar.regelspraak.facts.Sleepboot( vloot == $vouwonderwerp )
+    accumulate( $lijstplaats_plaats_26 : ListPlace( field == "vloot", beta_krapBijSleeptijdBijdrageAanVouw1(this, $onderwerp), $lijstplaatswaarde_plaats_27 : place ); $lijstplaatsen_plaats_28 : count(), $plaats_plaats_29 : exactMin($lijstplaatswaarde_plaats_27) )
+    $stand_1 : State( attribute == ElementKey.of("sleepboot", "sleeptijd", false), subject == $onderwerp, $tijdlijn_1 : value )
+then
+    insertLogical(new Contribution("krap bij sleeptijd: vouw 1", $vouwonderwerp, $onderwerp, lidtoets_krapBijSleeptijdBijdrageAanVouw1($onderwerp, $tijdlijn_1, $lijstplaatsen_plaats_28, $plaats_plaats_29)));
+end
+
+function boolean beta_paraatBijSleeptijdBijdrageAanVouw2(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// de sleeptijd van precies 1 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20
+function Object lidtoets_paraatBijSleeptijdBijdrageAanVouw2(Object $onderwerp, Object $tijdlijn_1, Object $lijstplaatsen_plaats_51, Object $plaats_plaats_52) {
+    java.util.List plaats = plaats_paraatBijSleeptijdBijdrageAanVouw2($onderwerp, $lijstplaatsen_plaats_51, $plaats_plaats_52);
+    Boolean waar = null;
+    RuntimeException fout = null;
+    try {
+        waar = Boolean.valueOf(ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_1, "the whole-period qualifier over \"sleeptijd\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "sleeptijd", Boolean.TRUE), new java.math.BigDecimal("20"), "JAAR", Integer.valueOf(2), Boolean.TRUE));
+    } catch (RuntimeException e) {
+        fout = ComputeHelpers.caught(e);
+    }
+    return new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null));
+}
+
+function java.util.List plaats_paraatBijSleeptijdBijdrageAanVouw2(Object $onderwerp, Object $lijstplaatsen_plaats_51, Object $plaats_plaats_52) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER, "paraat bij sleeptijd: vouw 2", $onderwerp, 0, java.util.Arrays.asList("vloot"), java.util.Arrays.asList($lijstplaatsen_plaats_51), java.util.Arrays.asList($plaats_plaats_52));
+}
+
+rule "paraat bij sleeptijd: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Sleepvloot()
+    $onderwerp : dev.uchar.regelspraak.facts.Sleepboot( vloot == $vouwonderwerp )
+    accumulate( $lijstplaats_plaats_49 : ListPlace( field == "vloot", beta_paraatBijSleeptijdBijdrageAanVouw2(this, $onderwerp), $lijstplaatswaarde_plaats_50 : place ); $lijstplaatsen_plaats_51 : count(), $plaats_plaats_52 : exactMin($lijstplaatswaarde_plaats_50) )
+    $stand_1 : State( attribute == ElementKey.of("sleepboot", "sleeptijd", false), subject == $onderwerp, $tijdlijn_1 : value )
+then
+    insertLogical(new Contribution("paraat bij sleeptijd: vouw 2", $vouwonderwerp, $onderwerp, lidtoets_paraatBijSleeptijdBijdrageAanVouw2($onderwerp, $tijdlijn_1, $lijstplaatsen_plaats_51, $plaats_plaats_52)));
+end
+
+function boolean beta_geschiktBijSleeptijdBijdrageAanVouw3(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// gekeurd zijn
+function boolean toets_geschiktBijSleeptijdBijdrageAanVouw3(Object $gekeurd) {
+    return ComputeHelpers.characteristic($gekeurd, Boolean.TRUE);
+}
+
+// de sleeptijd van ten minste 2 van de boten van de Sleepvloot die gekeurd zijn niet gedurende het gehele jaar groter is dan 20
+function Object lidtoets_geschiktBijSleeptijdBijdrageAanVouw3(Object $onderwerp, Object $tijdlijn_2, Object $lijstplaatsen_plaats_74, Object $plaats_plaats_75) {
+    java.util.List plaats = plaats_geschiktBijSleeptijdBijdrageAanVouw3($onderwerp, $lijstplaatsen_plaats_74, $plaats_plaats_75);
+    Boolean waar = null;
+    RuntimeException fout = null;
+    try {
+        waar = Boolean.valueOf(ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_2, "the whole-period qualifier over \"sleeptijd\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "sleeptijd", Boolean.TRUE), new java.math.BigDecimal("20"), "JAAR", Integer.valueOf(2), Boolean.TRUE));
+    } catch (RuntimeException e) {
+        fout = ComputeHelpers.caught(e);
+    }
+    return new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null));
+}
+
+function java.util.List plaats_geschiktBijSleeptijdBijdrageAanVouw3(Object $onderwerp, Object $lijstplaatsen_plaats_74, Object $plaats_plaats_75) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER, "geschikt bij sleeptijd: vouw 3", $onderwerp, 0, java.util.Arrays.asList("vloot"), java.util.Arrays.asList($lijstplaatsen_plaats_74), java.util.Arrays.asList($plaats_plaats_75));
+}
+
+rule "geschikt bij sleeptijd: bijdrage aan vouw 3"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Sleepvloot()
+    $onderwerp : dev.uchar.regelspraak.facts.Sleepboot( vloot == $vouwonderwerp, $gekeurd : (ComputeHelpers.holds(gekeurd)) )
+    accumulate( $lijstplaats_plaats_72 : ListPlace( field == "vloot", beta_geschiktBijSleeptijdBijdrageAanVouw3(this, $onderwerp), $lijstplaatswaarde_plaats_73 : place ); $lijstplaatsen_plaats_74 : count(), $plaats_plaats_75 : exactMin($lijstplaatswaarde_plaats_73) )
+    $stand_2 : State( attribute == ElementKey.of("sleepboot", "sleeptijd", false), subject == $onderwerp, $tijdlijn_2 : value )
+    eval( toets_geschiktBijSleeptijdBijdrageAanVouw3($gekeurd) )
+then
+    insertLogical(new Contribution("geschikt bij sleeptijd: vouw 3", $vouwonderwerp, $onderwerp, lidtoets_geschiktBijSleeptijdBijdrageAanVouw3($onderwerp, $tijdlijn_2, $lijstplaatsen_plaats_74, $plaats_plaats_75)));
+end
+
+rule "bootal van een sleepvloot: bijdrage aan vouw 4"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Sleepvloot()
+    $onderwerp : dev.uchar.regelspraak.facts.Sleepboot( vloot == $vouwonderwerp )
+then
+    insertLogical(new Contribution("bootal van een sleepvloot: vouw 4", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "stand Sleepboot.sleeptijd: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleepboot( $invoer : (ComputeHelpers.periods(sleeptijd)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("sleepboot", "sleeptijd", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("sleepboot", "sleeptijd", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("sleepboot", "sleeptijd", false), $invoer));
+end
+
+rule "stand Sleepboot.sleeptijd: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleepboot( $invoer : (ComputeHelpers.periods(sleeptijd)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("sleepboot", "sleeptijd", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("sleepboot", "sleeptijd", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("sleepboot", "sleeptijd", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+

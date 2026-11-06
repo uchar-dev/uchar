@@ -1,0 +1,106 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn vondstgewicht in voorjaar
+function Object waarde_najaarsgewichtVanEenJutter(Object $vondstgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.cell($vondstgewicht, java.util.Arrays.asList("voorjaar")), Integer.valueOf(2), "vondstgewicht[najaar]", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "najaarsgewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht )
+then
+    Object v = waarde_najaarsgewichtVanEenJutter($vondstgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "najaarsgewicht van een jutter", ComputeHelpers.designate(v, "najaarsgewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "vondstgewicht[najaar]", false), v, "najaarsgewicht van een jutter"));
+        }
+    }
+end
+
+function boolean toets_najaarsaanvangVanEenJutter(Object $onderwerp) {
+    return ComputeHelpers.emptyTest(ComputeHelpers.cell(ComputeHelpers.readProperty($onderwerp, "vondstgewicht"), java.util.Arrays.asList("najaar")), Boolean.TRUE);
+}
+
+// 1 kg
+function Object waarde_najaarsaanvangVanEenJutter() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("1"), Integer.valueOf(2), "vondstgewicht[najaar]", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "najaarsaanvang van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    not( $andere_schrijver : Value( attribute == ElementKey.of("jutter", "vondstgewicht[najaar]", false) && writer != "najaarsaanvang van een jutter", subject == $onderwerp ) )
+    eval( toets_najaarsaanvangVanEenJutter($onderwerp) )
+then
+    Object v = waarde_najaarsaanvangVanEenJutter();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "najaarsaanvang van een jutter", ComputeHelpers.designate(v, "najaarsaanvang van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "vondstgewicht[najaar]", false), v, "najaarsaanvang van een jutter"));
+        }
+    }
+end
+
+// de som van zijn vondstgewicht over alle seizoenen
+function Object waarde_jaargewichtVanEenJutter(Object $vondstgewicht, Object $vondstgewicht2) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsDimSom(ComputeHelpers.map(ComputeHelpers.withCell($vondstgewicht, java.util.Arrays.asList("najaar"), $vondstgewicht2)), java.util.Arrays.asList(java.util.Arrays.asList("voorjaar"), java.util.Arrays.asList("zomer"), java.util.Arrays.asList("najaar"))), Integer.valueOf(2), "jaargewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "jaargewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht )
+    $stand_1 : State( attribute == ElementKey.of("jutter", "vondstgewicht[najaar]", false), subject == $onderwerp, $vondstgewicht2 : value )
+then
+    Object v = waarde_jaargewichtVanEenJutter($vondstgewicht, $vondstgewicht2);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "jaargewicht van een jutter", ComputeHelpers.designate(v, "jaargewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "jaargewicht", false), v, "jaargewicht van een jutter"));
+        }
+    }
+end
+
+rule "stand Jutter.vondstgewicht[najaar]: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $waarde : Value( attribute == ElementKey.of("jutter", "vondstgewicht[najaar]", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "vondstgewicht[najaar]", false), $v));
+end
+
+rule "stand Jutter.vondstgewicht[najaar]: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : vondstgewicht )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "vondstgewicht[najaar]", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "vondstgewicht[najaar]", false), ComputeHelpers.cell($invoer, java.util.Arrays.asList("najaar"))));
+end
+

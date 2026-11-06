@@ -1,0 +1,225 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.ParameterState;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.math.BigDecimal premietarief;
+
+// het vondstgewicht van het Recht op premie groter is dan 2
+function boolean toets_toekenningVanEenRechtOpPremie(Object $vondstgewicht) {
+    return RegelSpraakRuntime.rsAggVergelijk($vondstgewicht, new java.math.BigDecimal("2"), ">");
+}
+
+rule "toekenning van een recht op premie"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.RechtOpPremie( $vondstgewicht : vondstgewicht )
+    eval( toets_toekenningVanEenRechtOpPremie($vondstgewicht) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("recht op premie", "toegekend", true)));
+end
+
+// het Recht op premie toegekend is
+function boolean toets_premieVanEenRechtOpPremie(Object $toegekend) {
+    return ComputeHelpers.characteristic($toegekend, Boolean.TRUE);
+}
+
+// het vondstgewicht van het Recht op premie maal het premietarief
+function Object waarde_premieVanEenRechtOpPremie(Object $vondstgewicht, Object $premietarief) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($vondstgewicht, $premietarief), Integer.valueOf(0), "premie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "premie van een recht op premie"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.RechtOpPremie( $vondstgewicht : vondstgewicht )
+    $parameter_2 : ParameterState( parameter == "premietarief", $premietarief : value )
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("recht op premie", "toegekend", true), subject == $onderwerp, $toegekend : holds )
+    eval( toets_premieVanEenRechtOpPremie($toegekend) )
+then
+    Object v = waarde_premieVanEenRechtOpPremie($vondstgewicht, $premietarief);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "premie van een recht op premie", ComputeHelpers.designate(v, "premie van een recht op premie")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("recht op premie", "premie", false), v, "premie van een recht op premie"));
+        }
+    }
+end
+
+// de som van de premie van alle rechten op premie van de Jutter of 0 als die er niet zijn
+function Object waarde_premiebedragVanEenJutter(Object $aantal_vouw_11, Object $vouw_vouw_13) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_11, $vouw_vouw_13, new java.math.BigDecimal("0")), Integer.valueOf(0), "premiebedrag", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "premiebedrag van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_8 : Contribution( fold == "premiebedrag van een jutter: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_12 : value ); $aantal_vouw_11 : count(), $vouw_vouw_13 : exactSum($bijdragewaarde_vouw_12) )
+then
+    Object v = waarde_premiebedragVanEenJutter($aantal_vouw_11, $vouw_vouw_13);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "premiebedrag van een jutter", ComputeHelpers.designate(v, "premiebedrag van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "premiebedrag", false), v, "premiebedrag van een jutter"));
+        }
+    }
+end
+
+// het aantal rechten op premie van de Jutter die toegekend zijn
+function Object waarde_aantalToegekendeRechten(Object $aantal_vouw_21) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_21), Integer.valueOf(0), "aantal toegekende rechten", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal toegekende rechten"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_18 : Contribution( fold == "aantal toegekende rechten: vouw 1", subject == $onderwerp ); $aantal_vouw_21 : count() )
+then
+    Object v = waarde_aantalToegekendeRechten($aantal_vouw_21);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal toegekende rechten", ComputeHelpers.designate(v, "aantal toegekende rechten")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal toegekende rechten", false), v, "aantal toegekende rechten"));
+        }
+    }
+end
+
+// zijn premiebedrag groter is dan 20
+function boolean toets_premiegerechtigdheid(Object $premiebedrag) {
+    return RegelSpraakRuntime.rsAggVergelijk($premiebedrag, new java.math.BigDecimal("20"), ">");
+}
+
+rule "premiegerechtigdheid"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "premiebedrag", false), subject == $onderwerp, $premiebedrag : value )
+    eval( toets_premiegerechtigdheid($premiebedrag) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "premiegerechtigd", true)));
+end
+
+rule "premiebedrag van een jutter: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.RechtOpPremie( rechthebbende == $vouwonderwerp )
+    $stand_1 : State( attribute == ElementKey.of("recht op premie", "premie", false), subject == $onderwerp, $premie : value )
+then
+    Object v = ComputeHelpers.contribution("premiebedrag van een jutter: vouw 0", $vouwonderwerp, $onderwerp, $premie, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+// toegekend zijn
+function boolean toets_aantalToegekendeRechtenBijdrageAanVouw1(Object $toegekend) {
+    return ComputeHelpers.characteristic($toegekend, Boolean.TRUE);
+}
+
+rule "aantal toegekende rechten: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.RechtOpPremie( rechthebbende == $vouwonderwerp )
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("recht op premie", "toegekend", true), subject == $onderwerp, $toegekend : holds )
+    eval( toets_aantalToegekendeRechtenBijdrageAanVouw1($toegekend) )
+then
+    insertLogical(new Contribution("aantal toegekende rechten: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "kenmerkstand Recht op premie.toegekend: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.RechtOpPremie( ComputeHelpers.holds(toegekend) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("recht op premie", "toegekend", true), true));
+end
+
+rule "kenmerkstand Recht op premie.toegekend: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.RechtOpPremie()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("recht op premie", "toegekend", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("recht op premie", "toegekend", true), true));
+end
+
+rule "kenmerkstand Recht op premie.toegekend: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.RechtOpPremie( ComputeHelpers.holds(toegekend) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("recht op premie", "toegekend", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("recht op premie", "toegekend", true), false));
+end
+
+rule "stand Recht op premie.premie: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.RechtOpPremie()
+    $waarde : Value( attribute == ElementKey.of("recht op premie", "premie", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("recht op premie", "premie", false), $v));
+end
+
+rule "stand Recht op premie.premie: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.RechtOpPremie( $invoer : premie )
+    not( $waarde : Value( attribute == ElementKey.of("recht op premie", "premie", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("recht op premie", "premie", false), $invoer));
+end
+
+rule "stand Jutter.premiebedrag: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $waarde : Value( attribute == ElementKey.of("jutter", "premiebedrag", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "premiebedrag", false), $v));
+end
+
+rule "stand Jutter.premiebedrag: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : premiebedrag )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "premiebedrag", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "premiebedrag", false), $invoer));
+end
+
+rule "parameterstand premietarief"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("premietarief", premietarief));
+end
+

@@ -1,0 +1,84 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMaximumFunction exactMax;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de eerste van de vondstdatum van alle vondsten van de Jutter
+function Object waarde_eersteVondstdagVanEenJutter(Object $aantal_vouw_4, Object $vouw_vouw_6) {
+    try {
+        return ComputeHelpers.foldValue($aantal_vouw_4, $vouw_vouw_6, null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "eerste vondstdag van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "eerste vondstdag van een jutter: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_5 : value ); $aantal_vouw_4 : count(), $vouw_vouw_6 : exactMin($bijdragewaarde_vouw_5) )
+then
+    Object v = waarde_eersteVondstdagVanEenJutter($aantal_vouw_4, $vouw_vouw_6);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "eerste vondstdag van een jutter", ComputeHelpers.designate(v, "eerste vondstdag van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "eerste vondstdag", false), v, "eerste vondstdag van een jutter"));
+        }
+    }
+end
+
+// de laatste van de vondstdatum van alle vondsten van de Jutter
+function Object waarde_laatsteVondstdagVanEenJutter(Object $aantal_vouw_11, Object $vouw_vouw_13) {
+    try {
+        return ComputeHelpers.foldValue($aantal_vouw_11, $vouw_vouw_13, null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "laatste vondstdag van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_8 : Contribution( fold == "laatste vondstdag van een jutter: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_12 : value ); $aantal_vouw_11 : count(), $vouw_vouw_13 : exactMax($bijdragewaarde_vouw_12) )
+then
+    Object v = waarde_laatsteVondstdagVanEenJutter($aantal_vouw_11, $vouw_vouw_13);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "laatste vondstdag van een jutter", ComputeHelpers.designate(v, "laatste vondstdag van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "laatste vondstdag", false), v, "laatste vondstdag van een jutter"));
+        }
+    }
+end
+
+rule "eerste vondstdag van een jutter: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp, $vondstdatum : vondstdatum )
+then
+    Object v = ComputeHelpers.contribution("eerste vondstdag van een jutter: vouw 0", $vouwonderwerp, $onderwerp, $vondstdatum, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "laatste vondstdag van een jutter: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp, $vondstdatum : vondstdatum )
+then
+    Object v = ComputeHelpers.contribution("laatste vondstdag van een jutter: vouw 1", $vouwonderwerp, $onderwerp, $vondstdatum, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+

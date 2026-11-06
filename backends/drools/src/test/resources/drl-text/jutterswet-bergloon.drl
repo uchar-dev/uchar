@@ -1,0 +1,112 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// 20% van de opbrengst van de Berging
+function Object waarde_premieVanEenBerging(Object $opbrengst) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPercentageVan(new java.math.BigDecimal("20"), $opbrengst), Integer.valueOf(2), "premie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "premie van een berging"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( $opbrengst : opbrengst )
+then
+    Object v = waarde_premieVanEenBerging($opbrengst);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "premie van een berging", ComputeHelpers.designate(v, "premie van een berging")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("berging", "premie", false), v, "premie van een berging"));
+        }
+    }
+end
+
+// de opbrengst van de Berging gedeeld door het helpersaantal van de Berging rekenkundig afgerond op 0 decimalen
+function Object waarde_helpersdeelVanEenBerging(Object $opbrengst, Object $helpersaantal, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($opbrengst, $helpersaantal, sonde), Integer.valueOf(0), java.math.RoundingMode.HALF_UP), Integer.valueOf(0), "helpersdeel", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "helpersdeel van een berging"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( $opbrengst : opbrengst, $helpersaantal : helpersaantal )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_helpersdeelVanEenBerging($opbrengst, $helpersaantal, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "helpersdeel van een berging", ComputeHelpers.designate(v, "helpersdeel van een berging")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("helpersdeel van een berging", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("berging", "helpersdeel", false), v, "helpersdeel van een berging"));
+        }
+    }
+end
+
+// de opbrengst van de Berging gedeeld door de vermenigvuldiger van de Berging naar beneden afgerond op 0 decimalen
+function Object waarde_dagdeelVanEenBerging(Object $opbrengst, Object $vermenigvuldiger, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($opbrengst, $vermenigvuldiger, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), Integer.valueOf(0), "dagdeel", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "dagdeel van een berging"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( $opbrengst : opbrengst, $vermenigvuldiger : vermenigvuldiger )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_dagdeelVanEenBerging($opbrengst, $vermenigvuldiger, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "dagdeel van een berging", ComputeHelpers.designate(v, "dagdeel van een berging")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("dagdeel van een berging", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("berging", "dagdeel", false), v, "dagdeel van een berging"));
+        }
+    }
+end
+
+// de waarde van de Berging maal de vermenigvuldiger van de Berging
+function Object waarde_productVanEenBerging(Object $waarde2, Object $vermenigvuldiger) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($waarde2, $vermenigvuldiger), Integer.valueOf(0), "product", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "product van een berging"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( $waarde2 : waarde, $vermenigvuldiger : vermenigvuldiger )
+then
+    Object v = waarde_productVanEenBerging($waarde2, $vermenigvuldiger);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "product van een berging", ComputeHelpers.designate(v, "product van een berging")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("berging", "product", false), v, "product van een berging"));
+        }
+    }
+end
+

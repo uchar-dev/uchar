@@ -1,0 +1,237 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Outcome;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// hij grondY heeft
+function boolean toets_defaultsAJutterHeffingDefault000(Object $grondY) {
+    return ComputeHelpers.characteristic($grondY, Boolean.TRUE);
+}
+
+rule "defaults A:Jutter.heffing: default 0.0.0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $grondY : (ComputeHelpers.holds(grondY)) )
+    eval( toets_defaultsAJutterHeffingDefault000($grondY) )
+then
+    // 10.00
+    Object v = new java.math.BigDecimal("10");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Jutter.heffing", 1, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// hij grondQ heeft
+function boolean toets_defaultsAJutterHeffingDefault01000(Object $grondQ) {
+    return ComputeHelpers.characteristic($grondQ, Boolean.TRUE);
+}
+
+rule "defaults A:Jutter.heffing: default 0.1.0.0.0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $grondQ : (ComputeHelpers.holds(grondQ)) )
+    eval( toets_defaultsAJutterHeffingDefault01000($grondQ) )
+then
+    // 5.00
+    Object v = new java.math.BigDecimal("5");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Jutter.heffing", 3, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// hij grondR heeft
+function boolean toets_defaultsAJutterHeffingDefault01010(Object $grondR) {
+    return ComputeHelpers.characteristic($grondR, Boolean.TRUE);
+}
+
+rule "defaults A:Jutter.heffing: default 0.1.0.1.0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $grondR : (ComputeHelpers.holds(grondR)) )
+    eval( toets_defaultsAJutterHeffingDefault01010($grondR) )
+then
+    // 25.00
+    Object v = new java.math.BigDecimal("25");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Jutter.heffing", 4, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function boolean beta1_defaultsAJutterHeffingVerschil010(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsAJutterHeffingVerschil010(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+function Object conflict_defaultsAJutterHeffingVerschil010() {
+    return "Jutter.heffing/0/0";
+}
+
+rule "defaults A:Jutter.heffing: verschil 0.1.0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Jutter.heffing" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 3 && chain < 5, $onderwerp : subject )
+    not( $uitkomst_7 : Outcome( stack == "defaults A:Jutter.heffing" && chain >= 3 && chain < 5 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsAJutterHeffingVerschil010(this, $besluit) ) )
+    exists( $uitkomst_10 : Outcome( stack == "defaults A:Jutter.heffing" && chain >= 3 && chain < 5 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsAJutterHeffingVerschil010(this, $besluit) ) )
+then
+    Object v = conflict_defaultsAJutterHeffingVerschil010();
+    insertLogical(new Outcome($onderwerp, "defaults A:Jutter.heffing", 2, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT, null, (String) v));
+end
+
+function boolean beta1_defaultsAJutterHeffingEens010(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsAJutterHeffingEens010(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults A:Jutter.heffing: eens 0.1.0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Jutter.heffing" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 3 && chain < 5, $onderwerp : subject, $waarde : value )
+    not( $uitkomst_14 : Outcome( stack == "defaults A:Jutter.heffing" && chain >= 3 && chain < 5 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsAJutterHeffingEens010(this, $besluit) ) )
+    not( $uitkomst_17 : Outcome( stack == "defaults A:Jutter.heffing" && chain >= 3 && chain < 5 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsAJutterHeffingEens010(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Jutter.heffing", 2, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// hij grondP heeft
+function boolean toets_defaultsAJutterHeffingTerugval010(Object $grondP) {
+    return ComputeHelpers.characteristic($grondP, Boolean.TRUE);
+}
+
+rule "defaults A:Jutter.heffing: terugval 0.1.0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $grondP : (ComputeHelpers.holds(grondP)) )
+    not( $uitkomst_21 : Outcome( stack == "defaults A:Jutter.heffing" && chain >= 3 && chain < 5, subject == $onderwerp ) )
+    eval( toets_defaultsAJutterHeffingTerugval010($grondP) )
+then
+    // 30.00
+    Object v = new java.math.BigDecimal("30");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Jutter.heffing", 2, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function boolean beta_defaultsAJutterHeffingDoorgeven0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function Object conflict_defaultsAJutterHeffingDoorgeven0(Object $sleutel) {
+    return $sleutel;
+}
+
+rule "defaults A:Jutter.heffing: doorgeven 0"
+    dialect "mvel"
+when
+    $conflict : Outcome( stack == "defaults A:Jutter.heffing" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT && chain >= 1 && chain < 3, $onderwerp : subject, $sleutel : key )
+    not( $uitkomst_25 : Outcome( stack == "defaults A:Jutter.heffing" && chain >= 1 && chain < 3 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT, subject != null, subject == $onderwerp, beta_defaultsAJutterHeffingDoorgeven0(this, $conflict) ) )
+then
+    Object v = conflict_defaultsAJutterHeffingDoorgeven0($sleutel);
+    insertLogical(new Outcome($onderwerp, "defaults A:Jutter.heffing", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT, null, (String) v));
+end
+
+function boolean beta1_defaultsAJutterHeffingVerschil0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsAJutterHeffingVerschil0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+function Object conflict_defaultsAJutterHeffingVerschil0() {
+    return "Jutter.heffing/0";
+}
+
+rule "defaults A:Jutter.heffing: verschil 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Jutter.heffing" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 1 && chain < 3, $onderwerp : subject )
+    not( $uitkomst_29 : Outcome( stack == "defaults A:Jutter.heffing" && chain >= 1 && chain < 3 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsAJutterHeffingVerschil0(this, $besluit) ) )
+    not( $uitkomst_32 : Outcome( stack == "defaults A:Jutter.heffing" && chain >= 1 && chain < 3 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT, subject != null, subject == $onderwerp ) )
+    exists( $uitkomst_34 : Outcome( stack == "defaults A:Jutter.heffing" && chain >= 1 && chain < 3 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsAJutterHeffingVerschil0(this, $besluit) ) )
+then
+    Object v = conflict_defaultsAJutterHeffingVerschil0();
+    insertLogical(new Outcome($onderwerp, "defaults A:Jutter.heffing", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT, null, (String) v));
+end
+
+function boolean beta1_defaultsAJutterHeffingEens0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsAJutterHeffingEens0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults A:Jutter.heffing: eens 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Jutter.heffing" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 1 && chain < 3, $onderwerp : subject, $waarde : value )
+    not( $uitkomst_38 : Outcome( stack == "defaults A:Jutter.heffing" && chain >= 1 && chain < 3 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsAJutterHeffingEens0(this, $besluit) ) )
+    not( $uitkomst_41 : Outcome( stack == "defaults A:Jutter.heffing" && chain >= 1 && chain < 3 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT, subject != null, subject == $onderwerp ) )
+    not( $uitkomst_43 : Outcome( stack == "defaults A:Jutter.heffing" && chain >= 1 && chain < 3 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsAJutterHeffingEens0(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Jutter.heffing", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// hij grondX heeft
+function boolean toets_defaultsAJutterHeffingTerugval0(Object $grondX) {
+    return ComputeHelpers.characteristic($grondX, Boolean.TRUE);
+}
+
+rule "defaults A:Jutter.heffing: terugval 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $grondX : (ComputeHelpers.holds(grondX)) )
+    not( $uitkomst_47 : Outcome( stack == "defaults A:Jutter.heffing" && chain >= 1 && chain < 3, subject == $onderwerp ) )
+    eval( toets_defaultsAJutterHeffingTerugval0($grondX) )
+then
+    // 40.00
+    Object v = new java.math.BigDecimal("40");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Jutter.heffing", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function Object conflict_defaultsAJutterHeffingDoorgevenWortel(Object $sleutel) {
+    return $sleutel;
+}
+
+rule "defaults A:Jutter.heffing: doorgeven wortel"
+    dialect "mvel"
+when
+    $conflict : Outcome( stack == "defaults A:Jutter.heffing" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT && chain >= 0 && chain < 1, $onderwerp : subject, $sleutel : key )
+then
+    Object v = conflict_defaultsAJutterHeffingDoorgevenWortel($sleutel);
+    insertLogical(ComputeHelpers.inconsistency((String) v, $onderwerp, ComputeHelpers.list1("EF-027")));
+end
+
+rule "defaults A:Jutter.heffing: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Jutter.heffing" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 1, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "heffing");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Jutter.heffing", ComputeHelpers.designate(passend, "defaults A:Jutter.heffing")));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "heffing", false), passend, "defaults A:Jutter.heffing"));
+        }
+    }
+end
+

@@ -1,0 +1,134 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de datum met jaar: het jaar uit zijn gewenste dag, maand: de maand uit zijn gewenste dag en dag: 1
+function Object waarde_gewensteMaand(Object $gewensteDag) {
+    try {
+        return ComputeHelpers.dateWith("dateWith", RegelSpraakRuntime.rsDatumDeel($gewensteDag, java.time.temporal.ChronoField.YEAR), RegelSpraakRuntime.rsDatumDeel($gewensteDag, java.time.temporal.ChronoField.MONTH_OF_YEAR), new java.math.BigDecimal("1"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "gewenste maand"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( $gewensteDag : gewensteDag )
+then
+    Object v = waarde_gewensteMaand($gewensteDag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "gewenste maand", ComputeHelpers.designate(v, "gewenste maand")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "gewenste maand", false), v, "gewenste maand"));
+        }
+    }
+end
+
+// de datumtijd met jaar: het jaar uit zijn gewenste dag, maand: de maand uit zijn gewenste dag, dag: de dag uit zijn gewenste dag, uur: zijn aanleguur, minuut: 30, seconde: 0 en milliseconde: 0
+function Object waarde_aanlegtijdstip(Object $gewensteDag, Object $aanleguur) {
+    try {
+        return ComputeHelpers.dateTimeWith("dateTimeWith", RegelSpraakRuntime.rsDatumDeel($gewensteDag, java.time.temporal.ChronoField.YEAR), RegelSpraakRuntime.rsDatumDeel($gewensteDag, java.time.temporal.ChronoField.MONTH_OF_YEAR), RegelSpraakRuntime.rsDatumDeel($gewensteDag, java.time.temporal.ChronoField.DAY_OF_MONTH), $aanleguur, new java.math.BigDecimal("30"), new java.math.BigDecimal("0"), new java.math.BigDecimal("0"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aanlegtijdstip"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( $gewensteDag : gewensteDag, $aanleguur : aanleguur )
+then
+    Object v = waarde_aanlegtijdstip($gewensteDag, $aanleguur);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aanlegtijdstip", ComputeHelpers.designate(v, "aanlegtijdstip")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "aanlegtijdstip", false), v, "aanlegtijdstip"));
+        }
+    }
+end
+
+// de datum met jaar: zijn schrikkeljaar, maand: 2 en dag: 29
+function Object waarde_schrikkeldag(Object $schrikkeljaar) {
+    try {
+        return ComputeHelpers.dateWith("dateWith", $schrikkeljaar, new java.math.BigDecimal("2"), new java.math.BigDecimal("29"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "schrikkeldag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( $schrikkeljaar : schrikkeljaar )
+then
+    Object v = waarde_schrikkeldag($schrikkeljaar);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "schrikkeldag", ComputeHelpers.designate(v, "schrikkeldag")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "schrikkeldag", false), v, "schrikkeldag"));
+        }
+    }
+end
+
+// de datum met jaar: zijn verre jaar, maand: de maand uit zijn gewenste dag en dag: 1 later is dan zijn gewenste dag
+function boolean toets_verVooruit(Object $verreJaar, Object $gewensteDag) {
+    try {
+        return ComputeHelpers.dateCompare(ComputeHelpers.dateWith("dateWith", $verreJaar, RegelSpraakRuntime.rsDatumDeel($gewensteDag, java.time.temporal.ChronoField.MONTH_OF_YEAR), new java.math.BigDecimal("1")), $gewensteDag, dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "ver vooruit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( $verreJaar : verreJaar, $gewensteDag : gewensteDag )
+    eval( toets_verVooruit($verreJaar, $gewensteDag) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("schuit", "ver vooruit", true)));
+end
+
+// de datum met jaar: zijn verre jaar, maand: de maand uit zijn gewenste dag en dag: 1 later is dan zijn gewenste dag
+function boolean toets_verVooruitFoutInDeVoorwaarde(Object $verreJaar, Object $gewensteDag) {
+    try {
+        boolean uitkomst = ComputeHelpers.dateCompare(ComputeHelpers.dateWith("dateWith", $verreJaar, RegelSpraakRuntime.rsDatumDeel($gewensteDag, java.time.temporal.ChronoField.MONTH_OF_YEAR), new java.math.BigDecimal("1")), $gewensteDag, dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de datum met jaar: zijn verre jaar, maand: de maand uit zijn gewenste dag en dag: 1 later is dan zijn gewenste dag
+function Object fout_verVooruitFoutInDeVoorwaarde(Object $verreJaar, Object $gewensteDag) {
+    try {
+        boolean uitkomst = ComputeHelpers.dateCompare(ComputeHelpers.dateWith("dateWith", $verreJaar, RegelSpraakRuntime.rsDatumDeel($gewensteDag, java.time.temporal.ChronoField.MONTH_OF_YEAR), new java.math.BigDecimal("1")), $gewensteDag, dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "ver vooruit: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( $verreJaar : verreJaar, $gewensteDag : gewensteDag )
+    eval( toets_verVooruitFoutInDeVoorwaarde($verreJaar, $gewensteDag) )
+then
+    Object f = fout_verVooruitFoutInDeVoorwaarde($verreJaar, $gewensteDag);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"ver vooruit\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "ver vooruit", ComputeHelpers.designate(f, "ver vooruit")));
+end
+

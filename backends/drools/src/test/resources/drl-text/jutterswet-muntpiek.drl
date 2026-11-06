@@ -1,0 +1,84 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMaximumFunction exactMax;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de minimale waarde van het gewicht van alle munten van de Jutter
+function Object waarde_laagsteMuntgewicht(Object $aantal_vouw_4, Object $vouw_vouw_6) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_4, $vouw_vouw_6, null), Integer.valueOf(2), "laagste muntgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "laagste muntgewicht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "laagste muntgewicht: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_5 : value ); $aantal_vouw_4 : count(), $vouw_vouw_6 : exactMin($bijdragewaarde_vouw_5) )
+then
+    Object v = waarde_laagsteMuntgewicht($aantal_vouw_4, $vouw_vouw_6);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "laagste muntgewicht", ComputeHelpers.designate(v, "laagste muntgewicht")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "laagste muntgewicht", false), v, "laagste muntgewicht"));
+        }
+    }
+end
+
+// de maximale waarde van het gewicht van alle munten van de Jutter
+function Object waarde_hoogsteMuntgewicht(Object $aantal_vouw_11, Object $vouw_vouw_13) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_11, $vouw_vouw_13, null), Integer.valueOf(2), "hoogste muntgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "hoogste muntgewicht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_8 : Contribution( fold == "hoogste muntgewicht: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_12 : value ); $aantal_vouw_11 : count(), $vouw_vouw_13 : exactMax($bijdragewaarde_vouw_12) )
+then
+    Object v = waarde_hoogsteMuntgewicht($aantal_vouw_11, $vouw_vouw_13);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "hoogste muntgewicht", ComputeHelpers.designate(v, "hoogste muntgewicht")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "hoogste muntgewicht", false), v, "hoogste muntgewicht"));
+        }
+    }
+end
+
+rule "laagste muntgewicht: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Munt( aanmelder == $vouwonderwerp, $gewicht : gewicht )
+then
+    Object v = ComputeHelpers.contribution("laagste muntgewicht: vouw 0", $vouwonderwerp, $onderwerp, $gewicht, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "hoogste muntgewicht: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Munt( aanmelder == $vouwonderwerp, $gewicht : gewicht )
+then
+    Object v = ComputeHelpers.contribution("hoogste muntgewicht: vouw 1", $vouwonderwerp, $onderwerp, $gewicht, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+

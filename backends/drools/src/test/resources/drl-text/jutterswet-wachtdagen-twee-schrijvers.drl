@@ -1,0 +1,72 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Period;
+import dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic;
+import dev.uchar.regelspraak.transpiler.tms.PeriodCondition;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// 30
+function Object waarde_wachtdagenInEenVolleMaand(Object $tijdlijn_0) {
+    try {
+        return PeriodArithmetic.written(PeriodArithmetic.clipped(PeriodCondition.wholeBuckets(PeriodCondition.truePeriods($tijdlijn_0), "MAAND", Boolean.FALSE), PeriodArithmetic.scalar(new java.math.BigDecimal("30"))), Integer.valueOf(0), "wachtdagen");
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "wachtdagen in een volle maand"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $tijdlijn_0 : (ComputeHelpers.periods(wachtplichtig)) )
+then
+    Object v = waarde_wachtdagenInEenVolleMaand($tijdlijn_0);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "wachtdagen in een volle maand", ComputeHelpers.designate(v, "wachtdagen in een volle maand")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "wachtdagen", false), v, "wachtdagen in een volle maand"));
+        }
+    }
+end
+
+function Object waarde_wachtdagenInEenGedeeltelijkeMaand(Object $tijdlijn_0) {
+    try {
+        return PeriodArithmetic.clipped(PeriodCondition.wholeBuckets(PeriodCondition.truePeriods($tijdlijn_0), "MAAND", Boolean.TRUE), PeriodArithmetic.dayCount(RegelSpraakRuntime.rsAantalDagenIn(((java.util.List) $tijdlijn_0), "MAAND", Period.class)));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "wachtdagen in een gedeeltelijke maand"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $tijdlijn_0 : (ComputeHelpers.periods(wachtplichtig)) )
+then
+    Object v = waarde_wachtdagenInEenGedeeltelijkeMaand($tijdlijn_0);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "wachtdagen in een gedeeltelijke maand", ComputeHelpers.designate(v, "wachtdagen in een gedeeltelijke maand")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "wachtdagen", false), v, "wachtdagen in een gedeeltelijke maand"));
+        }
+    }
+end
+
+function boolean toets_schrijversJutterWachtdagenVerschil(Object $waarden) {
+    return ComputeHelpers.differ($waarden);
+}
+
+rule "schrijvers Jutter.wachtdagen: verschil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $waarde : Value( attribute == ElementKey.of("jutter", "wachtdagen", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+    eval( toets_schrijversJutterWachtdagenVerschil($waarden) )
+then
+    insertLogical(ComputeHelpers.writersConflict($onderwerp, $waarden, "wachtdagen", ComputeHelpers.list2("wachtdagen in een volle maand", "wachtdagen in een gedeeltelijke maand"), ComputeHelpers.list1("Jutter"), ComputeHelpers.list1("Jutter")));
+end
+

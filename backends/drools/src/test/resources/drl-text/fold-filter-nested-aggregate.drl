@@ -1,0 +1,566 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMaximumFunction exactMax;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.FilterFault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.ListPlace;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de eerste van de maand van alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function Object waarde_eersteMaandNaDeAfmeerdag(Object $aantal_vouw_13, Object $vouw_vouw_15, Object $eerste_filterfout_vouw_20) {
+    try {
+        return vouwlezing_eersteMaandNaDeAfmeerdag($aantal_vouw_13, $vouw_vouw_15, $eerste_filterfout_vouw_20);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de eerste van de maand van alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function Object vouwlezing_eersteMaandNaDeAfmeerdag(Object $aantal_vouw_13, Object $vouw_vouw_15, Object $eerste_filterfout_vouw_20) {
+    if ($eerste_filterfout_vouw_20 != null) {
+        throw ((FilterFault) $eerste_filterfout_vouw_20).fault();
+    }
+    return ComputeHelpers.foldValue($aantal_vouw_13, $vouw_vouw_15, null);
+}
+
+rule "eerste maand na de afmeerdag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    accumulate( $bijdrage_vouw_10 : Contribution( fold == "eerste maand na de afmeerdag: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_14 : value ); $aantal_vouw_13 : count(), $vouw_vouw_15 : exactMin($bijdragewaarde_vouw_14) )
+    accumulate( $filterfout_vouw_16 : FilterFault( fold == "eerste maand na de afmeerdag: vouw 0", subject == $onderwerp ); $filterfouten_vouw_19 : count(), $eerste_filterfout_vouw_20 : exactMin($filterfout_vouw_16) )
+then
+    Object v = waarde_eersteMaandNaDeAfmeerdag($aantal_vouw_13, $vouw_vouw_15, $eerste_filterfout_vouw_20);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "eerste maand na de afmeerdag", ComputeHelpers.designate(v, "eerste maand na de afmeerdag")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "eerste maand na de afmeerdag", false), v, "eerste maand na de afmeerdag"));
+        }
+    }
+end
+
+// het aantal ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function Object waarde_aantalLateLadingen(Object $aantal_vouw_34, Object $eerste_filterfout_vouw_39) {
+    try {
+        return ComputeHelpers.fitTarget(vouwlezing_aantalLateLadingen($aantal_vouw_34, $eerste_filterfout_vouw_39), Integer.valueOf(0), "aantal late ladingen", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// het aantal ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function Object vouwlezing_aantalLateLadingen(Object $aantal_vouw_34, Object $eerste_filterfout_vouw_39) {
+    if ($eerste_filterfout_vouw_39 != null) {
+        throw ((FilterFault) $eerste_filterfout_vouw_39).fault();
+    }
+    return ComputeHelpers.countOf($aantal_vouw_34);
+}
+
+rule "aantal late ladingen"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    accumulate( $bijdrage_vouw_31 : Contribution( fold == "aantal late ladingen: vouw 1", subject == $onderwerp ); $aantal_vouw_34 : count() )
+    accumulate( $filterfout_vouw_35 : FilterFault( fold == "aantal late ladingen: vouw 1", subject == $onderwerp ); $filterfouten_vouw_38 : count(), $eerste_filterfout_vouw_39 : exactMin($filterfout_vouw_35) )
+then
+    Object v = waarde_aantalLateLadingen($aantal_vouw_34, $eerste_filterfout_vouw_39);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal late ladingen", ComputeHelpers.designate(v, "aantal late ladingen")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "aantal late ladingen", false), v, "aantal late ladingen"));
+        }
+    }
+end
+
+// de som van het gewicht van alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function Object waarde_lateGewicht(Object $aantal_vouw_53, Object $vouw_vouw_55, Object $eerste_filterfout_vouw_60) {
+    try {
+        return ComputeHelpers.fitTarget(vouwlezing_lateGewicht($aantal_vouw_53, $vouw_vouw_55, $eerste_filterfout_vouw_60), Integer.valueOf(0), "late gewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de som van het gewicht van alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function Object vouwlezing_lateGewicht(Object $aantal_vouw_53, Object $vouw_vouw_55, Object $eerste_filterfout_vouw_60) {
+    if ($eerste_filterfout_vouw_60 != null) {
+        throw ((FilterFault) $eerste_filterfout_vouw_60).fault();
+    }
+    return ComputeHelpers.foldValue($aantal_vouw_53, $vouw_vouw_55, null);
+}
+
+rule "late gewicht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    accumulate( $bijdrage_vouw_50 : Contribution( fold == "late gewicht: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_54 : value ); $aantal_vouw_53 : count(), $vouw_vouw_55 : exactSum($bijdragewaarde_vouw_54) )
+    accumulate( $filterfout_vouw_56 : FilterFault( fold == "late gewicht: vouw 2", subject == $onderwerp ); $filterfouten_vouw_59 : count(), $eerste_filterfout_vouw_60 : exactMin($filterfout_vouw_56) )
+then
+    Object v = waarde_lateGewicht($aantal_vouw_53, $vouw_vouw_55, $eerste_filterfout_vouw_60);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "late gewicht", ComputeHelpers.designate(v, "late gewicht")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "late gewicht", false), v, "late gewicht"));
+        }
+    }
+end
+
+// de maximale waarde van het gewicht van alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function Object waarde_zwaarsteLateGewicht(Object $aantal_vouw_74, Object $vouw_vouw_76, Object $eerste_filterfout_vouw_81) {
+    try {
+        return ComputeHelpers.fitTarget(vouwlezing_zwaarsteLateGewicht($aantal_vouw_74, $vouw_vouw_76, $eerste_filterfout_vouw_81), Integer.valueOf(0), "zwaarste late gewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de maximale waarde van het gewicht van alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function Object vouwlezing_zwaarsteLateGewicht(Object $aantal_vouw_74, Object $vouw_vouw_76, Object $eerste_filterfout_vouw_81) {
+    if ($eerste_filterfout_vouw_81 != null) {
+        throw ((FilterFault) $eerste_filterfout_vouw_81).fault();
+    }
+    return ComputeHelpers.foldValue($aantal_vouw_74, $vouw_vouw_76, null);
+}
+
+rule "zwaarste late gewicht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    accumulate( $bijdrage_vouw_71 : Contribution( fold == "zwaarste late gewicht: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_75 : value ); $aantal_vouw_74 : count(), $vouw_vouw_76 : exactMax($bijdragewaarde_vouw_75) )
+    accumulate( $filterfout_vouw_77 : FilterFault( fold == "zwaarste late gewicht: vouw 3", subject == $onderwerp ); $filterfouten_vouw_80 : count(), $eerste_filterfout_vouw_81 : exactMin($filterfout_vouw_77) )
+then
+    Object v = waarde_zwaarsteLateGewicht($aantal_vouw_74, $vouw_vouw_76, $eerste_filterfout_vouw_81);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "zwaarste late gewicht", ComputeHelpers.designate(v, "zwaarste late gewicht")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "zwaarste late gewicht", false), v, "zwaarste late gewicht"));
+        }
+    }
+end
+
+// het gewicht van ten minste één van de ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd) groter is dan 100
+function boolean toets_laatBeladen(Object $aantal_vouw_95, Object $vouw_vouw_97, Object $eerste_filterfout_vouw_102) {
+    try {
+        return ((Boolean) vouwlezing_laatBeladen($aantal_vouw_95, $vouw_vouw_97, $eerste_filterfout_vouw_102));
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// het gewicht van ten minste één van de ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd) groter is dan 100
+function Object vouwlezing_laatBeladen(Object $aantal_vouw_95, Object $vouw_vouw_97, Object $eerste_filterfout_vouw_102) {
+    if ($eerste_filterfout_vouw_102 != null) {
+        throw ((FilterFault) $eerste_filterfout_vouw_102).fault();
+    }
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_95, $vouw_vouw_97, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(1));
+}
+
+rule "laat beladen"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    accumulate( $bijdrage_vouw_92 : Contribution( fold == "laat beladen: vouw 4", subject == $onderwerp, $bijdragewaarde_vouw_96 : value ); $aantal_vouw_95 : count(), $vouw_vouw_97 : exactSum($bijdragewaarde_vouw_96) )
+    accumulate( $filterfout_vouw_98 : FilterFault( fold == "laat beladen: vouw 4", subject == $onderwerp ); $filterfouten_vouw_101 : count(), $eerste_filterfout_vouw_102 : exactMin($filterfout_vouw_98) )
+    eval( toets_laatBeladen($aantal_vouw_95, $vouw_vouw_97, $eerste_filterfout_vouw_102) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("schuit", "laat beladen", true)));
+end
+
+// het gewicht van ten minste één van de ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd) groter is dan 100
+function boolean toets_laatBeladenFoutInDeVoorwaarde(Object $aantal_vouw_107, Object $vouw_vouw_109, Object $eerste_filterfout_vouw_114) {
+    try {
+        boolean uitkomst = ((Boolean) vouwlezing1_laatBeladenFoutInDeVoorwaarde($aantal_vouw_107, $vouw_vouw_109, $eerste_filterfout_vouw_114));
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// het gewicht van ten minste één van de ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd) groter is dan 100
+function Object vouwlezing1_laatBeladenFoutInDeVoorwaarde(Object $aantal_vouw_107, Object $vouw_vouw_109, Object $eerste_filterfout_vouw_114) {
+    if ($eerste_filterfout_vouw_114 != null) {
+        throw ((FilterFault) $eerste_filterfout_vouw_114).fault();
+    }
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_107, $vouw_vouw_109, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(1));
+}
+
+// het gewicht van ten minste één van de ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd) groter is dan 100
+function Object fout_laatBeladenFoutInDeVoorwaarde(Object $aantal_vouw_107, Object $vouw_vouw_109, Object $eerste_filterfout_vouw_114) {
+    try {
+        boolean uitkomst = ((Boolean) vouwlezing2_laatBeladenFoutInDeVoorwaarde($aantal_vouw_107, $vouw_vouw_109, $eerste_filterfout_vouw_114));
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// het gewicht van ten minste één van de ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd) groter is dan 100
+function Object vouwlezing2_laatBeladenFoutInDeVoorwaarde(Object $aantal_vouw_107, Object $vouw_vouw_109, Object $eerste_filterfout_vouw_114) {
+    if ($eerste_filterfout_vouw_114 != null) {
+        throw ((FilterFault) $eerste_filterfout_vouw_114).fault();
+    }
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_107, $vouw_vouw_109, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(1));
+}
+
+rule "laat beladen: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    accumulate( $bijdrage_vouw_104 : Contribution( fold == "laat beladen: vouw 4", subject == $onderwerp, $bijdragewaarde_vouw_108 : value ); $aantal_vouw_107 : count(), $vouw_vouw_109 : exactSum($bijdragewaarde_vouw_108) )
+    accumulate( $filterfout_vouw_110 : FilterFault( fold == "laat beladen: vouw 4", subject == $onderwerp ); $filterfouten_vouw_113 : count(), $eerste_filterfout_vouw_114 : exactMin($filterfout_vouw_110) )
+    eval( toets_laatBeladenFoutInDeVoorwaarde($aantal_vouw_107, $vouw_vouw_109, $eerste_filterfout_vouw_114) )
+then
+    Object f = fout_laatBeladenFoutInDeVoorwaarde($aantal_vouw_107, $vouw_vouw_109, $eerste_filterfout_vouw_114);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"laat beladen\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "laat beladen", ComputeHelpers.designate(f, "laat beladen")));
+end
+
+// aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function boolean toets_eersteMaandNaDeAfmeerdagBijdrageAanVouw0(Object $maand, Object $afmeerdag) {
+    try {
+        return ComputeHelpers.dateCompare($maand, ComputeHelpers.largest(ComputeHelpers.largest(null, ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("1"), "MONTHS", Boolean.FALSE)), ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("2"), "MONTHS", Boolean.FALSE)), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "eerste maand na de afmeerdag: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schuit( $afmeerdag : afmeerdag )
+    $onderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand( schuit == $vouwonderwerp, $maand : maand )
+    eval( toets_eersteMaandNaDeAfmeerdagBijdrageAanVouw0($maand, $afmeerdag) )
+then
+    Object v = ComputeHelpers.contribution("eerste maand na de afmeerdag: vouw 0", $vouwonderwerp, $onderwerp, $maand, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta_eersteMaandNaDeAfmeerdagFilterfoutInVouw0(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function boolean toets_eersteMaandNaDeAfmeerdagFilterfoutInVouw0(Object $maand, Object $afmeerdag) {
+    try {
+        boolean uitkomst = ComputeHelpers.dateCompare($maand, ComputeHelpers.largest(ComputeHelpers.largest(null, ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("1"), "MONTHS", Boolean.FALSE)), ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("2"), "MONTHS", Boolean.FALSE)), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function RuntimeException fout_eersteMaandNaDeAfmeerdagFilterfoutInVouw0(Object $lijstplaatsen_plaats_5, Object $plaats_plaats_6, Object $maand, Object $afmeerdag, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.dateCompare($maand, ComputeHelpers.largest(ComputeHelpers.largest(null, ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("1"), "MONTHS", Boolean.FALSE)), ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("2"), "MONTHS", Boolean.FALSE)), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+function java.util.List plaats_eersteMaandNaDeAfmeerdagFilterfoutInVouw0(Object $onderwerp, Object $lijstplaatsen_plaats_5, Object $plaats_plaats_6) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.FILTER_FAULT, "eerste maand na de afmeerdag: vouw 0", $onderwerp, 0, java.util.Arrays.asList("schuit"), java.util.Arrays.asList($lijstplaatsen_plaats_5), java.util.Arrays.asList($plaats_plaats_6));
+}
+
+rule "eerste maand na de afmeerdag: filterfout in vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schuit( $afmeerdag : afmeerdag )
+    $onderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand( schuit == $vouwonderwerp, $maand : maand )
+    accumulate( $lijstplaats_plaats_3 : ListPlace( field == "schuit", beta_eersteMaandNaDeAfmeerdagFilterfoutInVouw0(this, $onderwerp), $lijstplaatswaarde_plaats_4 : place ); $lijstplaatsen_plaats_5 : count(), $plaats_plaats_6 : exactMin($lijstplaatswaarde_plaats_4) )
+    eval( toets_eersteMaandNaDeAfmeerdagFilterfoutInVouw0($maand, $afmeerdag) )
+then
+    RuntimeException f = fout_eersteMaandNaDeAfmeerdagFilterfoutInVouw0($lijstplaatsen_plaats_5, $plaats_plaats_6, $maand, $afmeerdag, $onderwerp);
+    if (f == null) {
+        ComputeHelpers.contractBreach("het filter van eerste maand na de afmeerdag: vouw 0 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new FilterFault("eerste maand na de afmeerdag: vouw 0", $vouwonderwerp, $onderwerp, f, plaats_eersteMaandNaDeAfmeerdagFilterfoutInVouw0($onderwerp, $lijstplaatsen_plaats_5, $plaats_plaats_6)));
+end
+
+// aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function boolean toets_aantalLateLadingenBijdrageAanVouw1(Object $maand, Object $afmeerdag) {
+    try {
+        return ComputeHelpers.dateCompare($maand, ComputeHelpers.largest(ComputeHelpers.largest(null, ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("1"), "MONTHS", Boolean.FALSE)), ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("2"), "MONTHS", Boolean.FALSE)), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "aantal late ladingen: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schuit( $afmeerdag : afmeerdag )
+    $onderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand( schuit == $vouwonderwerp, $maand : maand )
+    eval( toets_aantalLateLadingenBijdrageAanVouw1($maand, $afmeerdag) )
+then
+    insertLogical(new Contribution("aantal late ladingen: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+
+function boolean beta_aantalLateLadingenFilterfoutInVouw1(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function boolean toets_aantalLateLadingenFilterfoutInVouw1(Object $maand, Object $afmeerdag) {
+    try {
+        boolean uitkomst = ComputeHelpers.dateCompare($maand, ComputeHelpers.largest(ComputeHelpers.largest(null, ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("1"), "MONTHS", Boolean.FALSE)), ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("2"), "MONTHS", Boolean.FALSE)), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function RuntimeException fout_aantalLateLadingenFilterfoutInVouw1(Object $lijstplaatsen_plaats_26, Object $plaats_plaats_27, Object $maand, Object $afmeerdag, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.dateCompare($maand, ComputeHelpers.largest(ComputeHelpers.largest(null, ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("1"), "MONTHS", Boolean.FALSE)), ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("2"), "MONTHS", Boolean.FALSE)), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+function java.util.List plaats_aantalLateLadingenFilterfoutInVouw1(Object $onderwerp, Object $lijstplaatsen_plaats_26, Object $plaats_plaats_27) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.FILTER_FAULT, "aantal late ladingen: vouw 1", $onderwerp, 0, java.util.Arrays.asList("schuit"), java.util.Arrays.asList($lijstplaatsen_plaats_26), java.util.Arrays.asList($plaats_plaats_27));
+}
+
+rule "aantal late ladingen: filterfout in vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schuit( $afmeerdag : afmeerdag )
+    $onderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand( schuit == $vouwonderwerp, $maand : maand )
+    accumulate( $lijstplaats_plaats_24 : ListPlace( field == "schuit", beta_aantalLateLadingenFilterfoutInVouw1(this, $onderwerp), $lijstplaatswaarde_plaats_25 : place ); $lijstplaatsen_plaats_26 : count(), $plaats_plaats_27 : exactMin($lijstplaatswaarde_plaats_25) )
+    eval( toets_aantalLateLadingenFilterfoutInVouw1($maand, $afmeerdag) )
+then
+    RuntimeException f = fout_aantalLateLadingenFilterfoutInVouw1($lijstplaatsen_plaats_26, $plaats_plaats_27, $maand, $afmeerdag, $onderwerp);
+    if (f == null) {
+        ComputeHelpers.contractBreach("het filter van aantal late ladingen: vouw 1 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new FilterFault("aantal late ladingen: vouw 1", $vouwonderwerp, $onderwerp, f, plaats_aantalLateLadingenFilterfoutInVouw1($onderwerp, $lijstplaatsen_plaats_26, $plaats_plaats_27)));
+end
+
+// aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function boolean toets_lateGewichtBijdrageAanVouw2(Object $maand, Object $afmeerdag) {
+    try {
+        return ComputeHelpers.dateCompare($maand, ComputeHelpers.largest(ComputeHelpers.largest(null, ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("1"), "MONTHS", Boolean.FALSE)), ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("2"), "MONTHS", Boolean.FALSE)), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "late gewicht: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schuit( $afmeerdag : afmeerdag )
+    $onderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand( schuit == $vouwonderwerp, $maand : maand, $gewicht : gewicht )
+    eval( toets_lateGewichtBijdrageAanVouw2($maand, $afmeerdag) )
+then
+    Object v = ComputeHelpers.contribution("late gewicht: vouw 2", $vouwonderwerp, $onderwerp, $gewicht, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta_lateGewichtFilterfoutInVouw2(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function boolean toets_lateGewichtFilterfoutInVouw2(Object $maand, Object $afmeerdag) {
+    try {
+        boolean uitkomst = ComputeHelpers.dateCompare($maand, ComputeHelpers.largest(ComputeHelpers.largest(null, ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("1"), "MONTHS", Boolean.FALSE)), ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("2"), "MONTHS", Boolean.FALSE)), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function RuntimeException fout_lateGewichtFilterfoutInVouw2(Object $lijstplaatsen_plaats_45, Object $plaats_plaats_46, Object $maand, Object $afmeerdag, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.dateCompare($maand, ComputeHelpers.largest(ComputeHelpers.largest(null, ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("1"), "MONTHS", Boolean.FALSE)), ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("2"), "MONTHS", Boolean.FALSE)), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+function java.util.List plaats_lateGewichtFilterfoutInVouw2(Object $onderwerp, Object $lijstplaatsen_plaats_45, Object $plaats_plaats_46) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.FILTER_FAULT, "late gewicht: vouw 2", $onderwerp, 0, java.util.Arrays.asList("schuit"), java.util.Arrays.asList($lijstplaatsen_plaats_45), java.util.Arrays.asList($plaats_plaats_46));
+}
+
+rule "late gewicht: filterfout in vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schuit( $afmeerdag : afmeerdag )
+    $onderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand( schuit == $vouwonderwerp, $maand : maand )
+    accumulate( $lijstplaats_plaats_43 : ListPlace( field == "schuit", beta_lateGewichtFilterfoutInVouw2(this, $onderwerp), $lijstplaatswaarde_plaats_44 : place ); $lijstplaatsen_plaats_45 : count(), $plaats_plaats_46 : exactMin($lijstplaatswaarde_plaats_44) )
+    eval( toets_lateGewichtFilterfoutInVouw2($maand, $afmeerdag) )
+then
+    RuntimeException f = fout_lateGewichtFilterfoutInVouw2($lijstplaatsen_plaats_45, $plaats_plaats_46, $maand, $afmeerdag, $onderwerp);
+    if (f == null) {
+        ComputeHelpers.contractBreach("het filter van late gewicht: vouw 2 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new FilterFault("late gewicht: vouw 2", $vouwonderwerp, $onderwerp, f, plaats_lateGewichtFilterfoutInVouw2($onderwerp, $lijstplaatsen_plaats_45, $plaats_plaats_46)));
+end
+
+// aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function boolean toets_zwaarsteLateGewichtBijdrageAanVouw3(Object $maand, Object $afmeerdag) {
+    try {
+        return ComputeHelpers.dateCompare($maand, ComputeHelpers.largest(ComputeHelpers.largest(null, ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("1"), "MONTHS", Boolean.FALSE)), ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("2"), "MONTHS", Boolean.FALSE)), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "zwaarste late gewicht: bijdrage aan vouw 3"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schuit( $afmeerdag : afmeerdag )
+    $onderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand( schuit == $vouwonderwerp, $maand : maand, $gewicht : gewicht )
+    eval( toets_zwaarsteLateGewichtBijdrageAanVouw3($maand, $afmeerdag) )
+then
+    Object v = ComputeHelpers.contribution("zwaarste late gewicht: vouw 3", $vouwonderwerp, $onderwerp, $gewicht, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta_zwaarsteLateGewichtFilterfoutInVouw3(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function boolean toets_zwaarsteLateGewichtFilterfoutInVouw3(Object $maand, Object $afmeerdag) {
+    try {
+        boolean uitkomst = ComputeHelpers.dateCompare($maand, ComputeHelpers.largest(ComputeHelpers.largest(null, ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("1"), "MONTHS", Boolean.FALSE)), ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("2"), "MONTHS", Boolean.FALSE)), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function RuntimeException fout_zwaarsteLateGewichtFilterfoutInVouw3(Object $lijstplaatsen_plaats_66, Object $plaats_plaats_67, Object $maand, Object $afmeerdag, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.dateCompare($maand, ComputeHelpers.largest(ComputeHelpers.largest(null, ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("1"), "MONTHS", Boolean.FALSE)), ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("2"), "MONTHS", Boolean.FALSE)), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+function java.util.List plaats_zwaarsteLateGewichtFilterfoutInVouw3(Object $onderwerp, Object $lijstplaatsen_plaats_66, Object $plaats_plaats_67) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.FILTER_FAULT, "zwaarste late gewicht: vouw 3", $onderwerp, 0, java.util.Arrays.asList("schuit"), java.util.Arrays.asList($lijstplaatsen_plaats_66), java.util.Arrays.asList($plaats_plaats_67));
+}
+
+rule "zwaarste late gewicht: filterfout in vouw 3"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schuit( $afmeerdag : afmeerdag )
+    $onderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand( schuit == $vouwonderwerp, $maand : maand )
+    accumulate( $lijstplaats_plaats_64 : ListPlace( field == "schuit", beta_zwaarsteLateGewichtFilterfoutInVouw3(this, $onderwerp), $lijstplaatswaarde_plaats_65 : place ); $lijstplaatsen_plaats_66 : count(), $plaats_plaats_67 : exactMin($lijstplaatswaarde_plaats_65) )
+    eval( toets_zwaarsteLateGewichtFilterfoutInVouw3($maand, $afmeerdag) )
+then
+    RuntimeException f = fout_zwaarsteLateGewichtFilterfoutInVouw3($lijstplaatsen_plaats_66, $plaats_plaats_67, $maand, $afmeerdag, $onderwerp);
+    if (f == null) {
+        ComputeHelpers.contractBreach("het filter van zwaarste late gewicht: vouw 3 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new FilterFault("zwaarste late gewicht: vouw 3", $vouwonderwerp, $onderwerp, f, plaats_zwaarsteLateGewichtFilterfoutInVouw3($onderwerp, $lijstplaatsen_plaats_66, $plaats_plaats_67)));
+end
+
+// aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function boolean toets_laatBeladenBijdrageAanVouw4(Object $maand, Object $afmeerdag) {
+    try {
+        return ComputeHelpers.dateCompare($maand, ComputeHelpers.largest(ComputeHelpers.largest(null, ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("1"), "MONTHS", Boolean.FALSE)), ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("2"), "MONTHS", Boolean.FALSE)), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// het gewicht van ten minste één van de ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd) groter is dan 100
+function boolean matrix_laatBeladenBijdrageAanVouw4(Object $onderwerp, Object $gewicht) {
+    return RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("100"), ">");
+}
+
+rule "laat beladen: bijdrage aan vouw 4"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schuit( $afmeerdag : afmeerdag )
+    $onderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand( schuit == $vouwonderwerp, $maand : maand, $gewicht : gewicht )
+    eval( toets_laatBeladenBijdrageAanVouw4($maand, $afmeerdag) )
+then
+    insertLogical(new Contribution("laat beladen: vouw 4", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_laatBeladenBijdrageAanVouw4($onderwerp, $gewicht))));
+end
+
+function boolean beta_laatBeladenFilterfoutInVouw4(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function boolean toets_laatBeladenFilterfoutInVouw4(Object $maand, Object $afmeerdag) {
+    try {
+        boolean uitkomst = ComputeHelpers.dateCompare($maand, ComputeHelpers.largest(ComputeHelpers.largest(null, ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("1"), "MONTHS", Boolean.FALSE)), ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("2"), "MONTHS", Boolean.FALSE)), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)
+function RuntimeException fout_laatBeladenFilterfoutInVouw4(Object $lijstplaatsen_plaats_87, Object $plaats_plaats_88, Object $maand, Object $afmeerdag, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.dateCompare($maand, ComputeHelpers.largest(ComputeHelpers.largest(null, ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("1"), "MONTHS", Boolean.FALSE)), ComputeHelpers.dateStep($afmeerdag, new java.math.BigDecimal("2"), "MONTHS", Boolean.FALSE)), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+function java.util.List plaats_laatBeladenFilterfoutInVouw4(Object $onderwerp, Object $lijstplaatsen_plaats_87, Object $plaats_plaats_88) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.FILTER_FAULT, "laat beladen: vouw 4", $onderwerp, 0, java.util.Arrays.asList("schuit"), java.util.Arrays.asList($lijstplaatsen_plaats_87), java.util.Arrays.asList($plaats_plaats_88));
+}
+
+rule "laat beladen: filterfout in vouw 4"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schuit( $afmeerdag : afmeerdag )
+    $onderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand( schuit == $vouwonderwerp, $maand : maand )
+    accumulate( $lijstplaats_plaats_85 : ListPlace( field == "schuit", beta_laatBeladenFilterfoutInVouw4(this, $onderwerp), $lijstplaatswaarde_plaats_86 : place ); $lijstplaatsen_plaats_87 : count(), $plaats_plaats_88 : exactMin($lijstplaatswaarde_plaats_86) )
+    eval( toets_laatBeladenFilterfoutInVouw4($maand, $afmeerdag) )
+then
+    RuntimeException f = fout_laatBeladenFilterfoutInVouw4($lijstplaatsen_plaats_87, $plaats_plaats_88, $maand, $afmeerdag, $onderwerp);
+    if (f == null) {
+        ComputeHelpers.contractBreach("het filter van laat beladen: vouw 4 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new FilterFault("laat beladen: vouw 4", $vouwonderwerp, $onderwerp, f, plaats_laatBeladenFilterfoutInVouw4($onderwerp, $lijstplaatsen_plaats_87, $plaats_plaats_88)));
+end
+

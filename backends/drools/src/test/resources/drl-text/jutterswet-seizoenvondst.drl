@@ -1,0 +1,31 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn vondstgewicht in voorjaar
+function Object waarde_voorjaarsgewichtVanEenJutter(Object $vondstgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.cell($vondstgewicht, java.util.Arrays.asList("voorjaar")), Integer.valueOf(2), "voorjaarsgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "voorjaarsgewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht )
+then
+    Object v = waarde_voorjaarsgewichtVanEenJutter($vondstgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "voorjaarsgewicht van een jutter", ComputeHelpers.designate(v, "voorjaarsgewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "voorjaarsgewicht", false), v, "voorjaarsgewicht van een jutter"));
+        }
+    }
+end
+

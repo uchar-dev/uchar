@@ -1,0 +1,66 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+
+// hij een wachtjutter heeft
+function boolean toets_bemandeWachtpost(Object $vullers_rol_1) {
+    return ComputeHelpers.roleCount($vullers_rol_1, Boolean.FALSE);
+}
+
+rule "bemande wachtpost"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachtpost()
+    accumulate( $vuller_rol_0 : dev.uchar.regelspraak.facts.Jutter( toegewezenWachtpost == $onderwerp ); $vullers_rol_1 : count() )
+    eval( toets_bemandeWachtpost($vullers_rol_1) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("wachtpost", "bemand", true)));
+end
+
+// hij geen wachtjutter heeft
+function boolean toets_onbemandeWachtpost(Object $vullers_rol_5) {
+    return ComputeHelpers.roleCount($vullers_rol_5, Boolean.TRUE);
+}
+
+rule "onbemande wachtpost"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachtpost()
+    accumulate( $vuller_rol_4 : dev.uchar.regelspraak.facts.Jutter( toegewezenWachtpost == $onderwerp ); $vullers_rol_5 : count() )
+    eval( toets_onbemandeWachtpost($vullers_rol_5) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("wachtpost", "onbemand", true)));
+end
+
+// hij een strandjutter heeft
+function boolean toets_strandbemandeWachtpost(Object $vullers_rol_9) {
+    return ComputeHelpers.roleCount($vullers_rol_9, Boolean.FALSE);
+}
+
+rule "strandbemande wachtpost"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachtpost()
+    accumulate( $vuller_rol_8 : dev.uchar.regelspraak.facts.Strandjutter( toegewezenWachtpost == $onderwerp ); $vullers_rol_9 : count() )
+    eval( toets_strandbemandeWachtpost($vullers_rol_9) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("wachtpost", "strandbemand", true)));
+end
+
+// hij geen strandjutter heeft
+function boolean toets_strandvrijeWachtpost(Object $vullers_rol_13) {
+    return ComputeHelpers.roleCount($vullers_rol_13, Boolean.TRUE);
+}
+
+rule "strandvrije wachtpost"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachtpost()
+    accumulate( $vuller_rol_12 : dev.uchar.regelspraak.facts.Strandjutter( toegewezenWachtpost == $onderwerp ); $vullers_rol_13 : count() )
+    eval( toets_strandvrijeWachtpost($vullers_rol_13) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("wachtpost", "strandvrij", true)));
+end
+

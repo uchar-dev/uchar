@@ -1,0 +1,80 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn gewicht maal 1_1/2
+function Object waarde_strandgeldVanEenVondst(Object $gewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($gewicht, new java.math.BigDecimal("1.5")), Integer.valueOf(2), "strandgeld", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "strandgeld van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht )
+then
+    Object v = waarde_strandgeldVanEenVondst($gewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "strandgeld van een vondst", ComputeHelpers.designate(v, "strandgeld van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "strandgeld", false), v, "strandgeld van een vondst"));
+        }
+    }
+end
+
+// zijn gewicht maal -0_1/2
+function Object waarde_gemeentekortingVanEenVondst(Object $gewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($gewicht, new java.math.BigDecimal("-0.5")), Integer.valueOf(2), "gemeentekorting", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "gemeentekorting van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht )
+then
+    Object v = waarde_gemeentekortingVanEenVondst($gewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "gemeentekorting van een vondst", ComputeHelpers.designate(v, "gemeentekorting van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "gemeentekorting", false), v, "gemeentekorting van een vondst"));
+        }
+    }
+end
+
+// zijn taxatie maal 3/4
+function Object waarde_gemeentedeelVanEenVondst(Object $taxatie) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($taxatie, new java.math.BigDecimal("0.75")), Integer.valueOf(2), "gemeentedeel", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "gemeentedeel van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $taxatie : taxatie )
+then
+    Object v = waarde_gemeentedeelVanEenVondst($taxatie);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "gemeentedeel van een vondst", ComputeHelpers.designate(v, "gemeentedeel van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "gemeentedeel", false), v, "gemeentedeel van een vondst"));
+        }
+    }
+end
+

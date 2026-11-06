@@ -1,0 +1,43 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+
+// ten minste 2 van de volgende gelden
+function boolean toets_gemengdBijTenminsteTwee(Object $toegewezenWachtpostGezet, Object $actief) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 0, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.roleField($toegewezenWachtpostGezet, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 1, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.roleField($toegewezenWachtpostGezet, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 2, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($actief, Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 3);
+}
+
+rule "gemengd bij tenminste twee"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $toegewezenWachtpostGezet : (ComputeHelpers.isSet(toegewezenWachtpost, null)), $actief : (ComputeHelpers.holds(actief)) )
+    eval( toets_gemengdBijTenminsteTwee($toegewezenWachtpostGezet, $actief) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "gemengd", true)));
+end
+

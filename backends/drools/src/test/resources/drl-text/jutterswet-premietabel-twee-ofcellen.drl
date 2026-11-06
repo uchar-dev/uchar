@@ -1,0 +1,155 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// hij aan alle volgende voorwaarden voldoet: • er voldoet aan tenminste één van de volgende voorwaarden: •• zijn soort gelijk is aan "touw" •• zijn soort gelijk is aan "glas" • er voldoet aan tenminste één van de volgende voorwaarden: •• zijn strook gelijk is aan "noord" •• zijn strook gelijk is aan "zuid"
+function boolean toets_vondstpremie1(Object $soort, Object $strook) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (samengesteld1_vondstpremie1($soort, $strook)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (samengesteld2_vondstpremie1($soort, $strook)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+// er voldoet aan tenminste één van de volgende voorwaarden: •• zijn soort gelijk is aan "touw" •• zijn soort gelijk is aan "glas"
+function boolean samengesteld1_vondstpremie1(Object $soort, Object $strook) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.textEqual($soort, "touw", Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.textEqual($soort, "glas", Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+}
+
+// er voldoet aan tenminste één van de volgende voorwaarden: •• zijn strook gelijk is aan "noord" •• zijn strook gelijk is aan "zuid"
+function boolean samengesteld2_vondstpremie1(Object $soort, Object $strook) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.textEqual($strook, "noord", Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.textEqual($strook, "zuid", Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+}
+
+// 10
+function Object waarde_vondstpremie1() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("10"), Integer.valueOf(0), "vondstpremie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vondstpremie 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $soort : soort, $strook : strook )
+    eval( toets_vondstpremie1($soort, $strook) )
+then
+    Object v = waarde_vondstpremie1();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vondstpremie 1", ComputeHelpers.designate(v, "vondstpremie 1")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "vondstpremie", false), v, "vondstpremie 1"));
+        }
+    }
+end
+
+// hij aan alle volgende voorwaarden voldoet: • zijn soort gelijk is aan "hout" • zijn strook gelijk is aan "noord"
+function boolean toets_vondstpremie2(Object $soort, Object $strook) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.textEqual($soort, "hout", Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.textEqual($strook, "noord", Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+// 3
+function Object waarde_vondstpremie2() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("3"), Integer.valueOf(0), "vondstpremie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vondstpremie 2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $soort : soort, $strook : strook )
+    eval( toets_vondstpremie2($soort, $strook) )
+then
+    Object v = waarde_vondstpremie2();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vondstpremie 2", ComputeHelpers.designate(v, "vondstpremie 2")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "vondstpremie", false), v, "vondstpremie 2"));
+        }
+    }
+end
+
+function boolean toets_schrijversVondstVondstpremieVerschil(Object $waarden) {
+    return ComputeHelpers.differ($waarden);
+}
+
+rule "schrijvers Vondst.vondstpremie: verschil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    accumulate( $waarde : Value( attribute == ElementKey.of("vondst", "vondstpremie", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+    eval( toets_schrijversVondstVondstpremieVerschil($waarden) )
+then
+    insertLogical(ComputeHelpers.writersConflict($onderwerp, $waarden, "vondstpremie", ComputeHelpers.list2("vondstpremie 1", "vondstpremie 2"), ComputeHelpers.list1("Vondst"), ComputeHelpers.list1("Vondst")));
+end
+

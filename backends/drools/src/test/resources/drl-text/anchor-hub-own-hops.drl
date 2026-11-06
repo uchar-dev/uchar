@@ -1,0 +1,146 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.PathState;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn basis plus zijn som
+function Object waarde_eind(Object $basis, Object $som) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($basis, $som), Integer.valueOf(0), "eind", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "eind"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( $basis : basis )
+    $stand_1 : State( attribute == ElementKey.of("vergunning", "som", false), subject == $onderwerp, $som : value )
+then
+    Object v = waarde_eind($basis, $som);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "eind", ComputeHelpers.designate(v, "eind")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vergunning", "eind", false), v, "eind"));
+        }
+    }
+end
+
+// de som van het tarief van alle vergunningen van het register van de Vergunning die aan de volgende voorwaarde voldoen die zijn tarief is kleiner dan het eind van de vorige vergunning van de Vergunning zelf
+function Object waarde_som(Object $aantal_vouw_9, Object $vouw_vouw_11) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_9, $vouw_vouw_11, new java.math.BigDecimal("0")), Integer.valueOf(0), "som", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "som"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    accumulate( $bijdrage_vouw_6 : Contribution( fold == "som: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_10 : value ); $aantal_vouw_9 : count(), $vouw_vouw_11 : exactSum($bijdragewaarde_vouw_10) )
+then
+    Object v = waarde_som($aantal_vouw_9, $vouw_vouw_11);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "som", ComputeHelpers.designate(v, "som")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vergunning", "som", false), v, "som"));
+        }
+    }
+end
+
+function boolean beta_somBijdrageAanVouw0(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("register"), java.util.Arrays.asList("register"));
+}
+
+// zijn tarief is kleiner dan het eind van de vorige vergunning van de Vergunning zelf
+function boolean toets_somBijdrageAanVouw0(Object $tarief, Object $vorigeVergunningEind) {
+    return RegelSpraakRuntime.rsAggVergelijk($tarief, $vorigeVergunningEind, "<");
+}
+
+rule "som: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( beta_somBijdrageAanVouw0(this, $vouwonderwerp), $tarief : tarief )
+    $padstand_1 : PathState( path == "Vergunning:vorige vergunning" && member == ElementKey.of("vergunning", "eind", false), subject == $vouwonderwerp, $vorigeVergunningEind : value )
+    eval( toets_somBijdrageAanVouw0($tarief, $vorigeVergunningEind) )
+then
+    Object v = ComputeHelpers.contribution("som: vouw 0", $vouwonderwerp, $onderwerp, $tarief, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function Object pad_padstandVergunningVorigeVergunningNaarVergunningEindLinkAanwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("vorigeVergunning"));
+}
+
+rule "padstand Vergunning.vorige vergunning naar Vergunning.eind: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( pad_padstandVergunningVorigeVergunningNaarVergunningEindLinkAanwezig(this) != null, $bereikt : vorigeVergunning )
+    $stand : State( attribute == ElementKey.of("vergunning", "eind", false), subject != null, subject == $bereikt, $v : value )
+then
+    insertLogical(new PathState($onderwerp, "Vergunning:vorige vergunning", ElementKey.of("vergunning", "eind", false), $v, $bereikt));
+end
+
+function Object pad_padstandVergunningVorigeVergunningNaarVergunningEindLinkAfwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("vorigeVergunning"));
+}
+
+rule "padstand Vergunning.vorige vergunning naar Vergunning.eind: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( pad_padstandVergunningVorigeVergunningNaarVergunningEindLinkAfwezig(this) == null )
+then
+    insertLogical(new PathState($onderwerp, "Vergunning:vorige vergunning", ElementKey.of("vergunning", "eind", false), null, null));
+end
+
+rule "stand Vergunning.som: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    $waarde : Value( attribute == ElementKey.of("vergunning", "som", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vergunning", "som", false), $v));
+end
+
+rule "stand Vergunning.som: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( $invoer : som )
+    not( $waarde : Value( attribute == ElementKey.of("vergunning", "som", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vergunning", "som", false), $invoer));
+end
+
+rule "stand Vergunning.eind: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    $waarde : Value( attribute == ElementKey.of("vergunning", "eind", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vergunning", "eind", false), $v));
+end
+
+rule "stand Vergunning.eind: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( $invoer : eind )
+    not( $waarde : Value( attribute == ElementKey.of("vergunning", "eind", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vergunning", "eind", false), $invoer));
+end
+

@@ -1,0 +1,602 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMaximumFunction exactMax;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Decides;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn gemelde sluitdag gevuld is
+function boolean toets_afrekendag(Object $gemeldeSluitdag) {
+    return ComputeHelpers.emptyTest($gemeldeSluitdag, Boolean.FALSE);
+}
+
+rule "afrekendag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( $gemeldeSluitdag : gemeldeSluitdag )
+    eval( toets_afrekendag($gemeldeSluitdag) )
+then
+    // zijn gemelde sluitdag
+    Object v = $gemeldeSluitdag;
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("berging", "berekende afrekendag", false), v, "afrekendag"));
+    }
+end
+
+// hij aan alle volgende voorwaarden voldoet: - zijn opgegeven uiterste meldingsdag is gevuld - zijn berekende uiterste meldingsdag is gevuld - zijn opgegeven uiterste meldingsdag is ongelijk aan zijn berekende uiterste meldingsdag
+function boolean toets_afwijkingOpgaveUitersteMeldingsdag(Object $opgegevenUitersteMeldingsdag, Object $berekendeUitersteMeldingsdag) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($opgegevenUitersteMeldingsdag, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($berekendeUitersteMeldingsdag, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.dateCompare($opgegevenUitersteMeldingsdag, $berekendeUitersteMeldingsdag, dev.uchar.regelspraak.ir.Condition.Operator.ONGELIJK)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+}
+
+rule "afwijking opgave uiterste meldingsdag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( $opgegevenUitersteMeldingsdag : opgegevenUitersteMeldingsdag )
+    $stand_1 : State( attribute == ElementKey.of("berging", "berekende uiterste meldingsdag", false), subject == $onderwerp, $berekendeUitersteMeldingsdag : value )
+    eval( toets_afwijkingOpgaveUitersteMeldingsdag($opgegevenUitersteMeldingsdag, $berekendeUitersteMeldingsdag) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("berging", "afwijkende opgave uiterste meldingsdag", true)));
+end
+
+// hij aan alle volgende voorwaarden voldoet: - zijn opgegeven afrekendag is gevuld - zijn berekende afrekendag is gevuld - zijn opgegeven afrekendag is ongelijk aan zijn berekende afrekendag
+function boolean toets_afwijkingOpgaveAfrekendag(Object $opgegevenAfrekendag, Object $berekendeAfrekendag) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($opgegevenAfrekendag, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($berekendeAfrekendag, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.dateCompare($opgegevenAfrekendag, $berekendeAfrekendag, dev.uchar.regelspraak.ir.Condition.Operator.ONGELIJK)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+}
+
+rule "afwijking opgave afrekendag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( $opgegevenAfrekendag : opgegevenAfrekendag )
+    $stand_1 : State( attribute == ElementKey.of("berging", "berekende afrekendag", false), subject == $onderwerp, $berekendeAfrekendag : value )
+    eval( toets_afwijkingOpgaveAfrekendag($opgegevenAfrekendag, $berekendeAfrekendag) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("berging", "afwijkende opgave afrekendag", true)));
+end
+
+// hij heeft geen afwijkende opgave uiterste meldingsdag
+function boolean toets_controleOpgaveUitersteMeldingsdag(Object $afwijkendeOpgaveUitersteMeldingsdag) {
+    return ComputeHelpers.not(ComputeHelpers.characteristic($afwijkendeOpgaveUitersteMeldingsdag, Boolean.FALSE));
+}
+
+rule "controle opgave uiterste meldingsdag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("berging", "afwijkende opgave uiterste meldingsdag", true), subject == $onderwerp, $afwijkendeOpgaveUitersteMeldingsdag : holds )
+    eval( toets_controleOpgaveUitersteMeldingsdag($afwijkendeOpgaveUitersteMeldingsdag) )
+then
+    insertLogical(ComputeHelpers.inconsistency("controle opgave uiterste meldingsdag", $onderwerp, ComputeHelpers.list1("EF-025")));
+end
+
+// hij heeft geen afwijkende opgave afrekendag
+function boolean toets_controleOpgaveAfrekendag(Object $afwijkendeOpgaveAfrekendag) {
+    return ComputeHelpers.not(ComputeHelpers.characteristic($afwijkendeOpgaveAfrekendag, Boolean.FALSE));
+}
+
+rule "controle opgave afrekendag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("berging", "afwijkende opgave afrekendag", true), subject == $onderwerp, $afwijkendeOpgaveAfrekendag : holds )
+    eval( toets_controleOpgaveAfrekendag($afwijkendeOpgaveAfrekendag) )
+then
+    insertLogical(ComputeHelpers.inconsistency("controle opgave afrekendag", $onderwerp, ComputeHelpers.list1("EF-025")));
+end
+
+// zijn gemelde sluitdag gevuld is
+function boolean toets_defaultsAKustwachtSluitdagDefault0(Object $gemeldeSluitdag) {
+    return ComputeHelpers.emptyTest($gemeldeSluitdag, Boolean.FALSE);
+}
+
+rule "defaults A:Kustwacht.sluitdag: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Kustwacht( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Kustwacht"), $gemeldeSluitdag : gemeldeSluitdag )
+    eval( toets_defaultsAKustwachtSluitdagDefault0($gemeldeSluitdag) )
+then
+    // zijn gemelde sluitdag
+    Object v = $gemeldeSluitdag;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("kustwacht", "sluitdag", false), v, "defaults A:Kustwacht.sluitdag"));
+        insertLogical(new Decides($onderwerp, "defaults A:Kustwacht.sluitdag", 0));
+    }
+end
+
+// de laatste van de bergdag van alle vondsten van alle bergingen van de Kustwacht
+function Object afloop_defaultsAKustwachtSluitdagDefault1(Object $aantal_vouw_20, Object $vouw_vouw_22) {
+    try {
+        return ComputeHelpers.foldValue($aantal_vouw_20, $vouw_vouw_22, null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Kustwacht.sluitdag: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Kustwacht( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Kustwacht") )
+    accumulate( $bijdrage_vouw_17 : Contribution( fold == "defaults A:Kustwacht.sluitdag: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_21 : value ); $aantal_vouw_20 : count(), $vouw_vouw_22 : exactMax($bijdragewaarde_vouw_21) )
+    not( $hoger_23 : Decides( stack == "defaults A:Kustwacht.sluitdag" && index < 1, subject == $onderwerp ) )
+then
+    Object v = afloop_defaultsAKustwachtSluitdagDefault1($aantal_vouw_20, $vouw_vouw_22);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Kustwacht.sluitdag", ComputeHelpers.designate(v, "defaults A:Kustwacht.sluitdag")));
+    } else if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("kustwacht", "sluitdag", false), v, "defaults A:Kustwacht.sluitdag"));
+        insertLogical(new Decides($onderwerp, "defaults A:Kustwacht.sluitdag", 1));
+    }
+end
+
+// zijn gemelde sluitdag gevuld is
+function boolean toets_defaultsABergingSluitdagDefault0(Object $gemeldeSluitdag) {
+    return ComputeHelpers.emptyTest($gemeldeSluitdag, Boolean.FALSE);
+}
+
+rule "defaults A:Berging.sluitdag: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Berging"), $gemeldeSluitdag : gemeldeSluitdag )
+    eval( toets_defaultsABergingSluitdagDefault0($gemeldeSluitdag) )
+then
+    // zijn gemelde sluitdag
+    Object v = $gemeldeSluitdag;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("berging", "sluitdag", false), v, "defaults A:Berging.sluitdag"));
+        insertLogical(new Decides($onderwerp, "defaults A:Berging.sluitdag", 0));
+    }
+end
+
+// de laatste van de bergdag van alle vondsten van de Berging
+function Object afloop_defaultsABergingSluitdagDefault1(Object $aantal_vouw_33, Object $vouw_vouw_35) {
+    try {
+        return ComputeHelpers.foldValue($aantal_vouw_33, $vouw_vouw_35, null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Berging.sluitdag: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Berging") )
+    accumulate( $bijdrage_vouw_30 : Contribution( fold == "defaults A:Berging.sluitdag: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_34 : value ); $aantal_vouw_33 : count(), $vouw_vouw_35 : exactMax($bijdragewaarde_vouw_34) )
+    not( $hoger_36 : Decides( stack == "defaults A:Berging.sluitdag" && index < 1, subject == $onderwerp ) )
+then
+    Object v = afloop_defaultsABergingSluitdagDefault1($aantal_vouw_33, $vouw_vouw_35);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Berging.sluitdag", ComputeHelpers.designate(v, "defaults A:Berging.sluitdag")));
+    } else if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("berging", "sluitdag", false), v, "defaults A:Berging.sluitdag"));
+        insertLogical(new Decides($onderwerp, "defaults A:Berging.sluitdag", 1));
+    }
+end
+
+// het aantal vondsten van de Berging groter is dan 2
+function boolean toets_defaultsABergingBerekendeUitersteMeldingsdagDefault0(Object $aantal_vouw_44) {
+    return RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.countOf($aantal_vouw_44), new java.math.BigDecimal("2"), ">");
+}
+
+rule "defaults A:Berging.berekende uiterste meldingsdag: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Berging") )
+    accumulate( $bijdrage_vouw_41 : Contribution( fold == "defaults A:Berging.berekende uiterste meldingsdag: vouw 2", subject == $onderwerp ); $aantal_vouw_44 : count() )
+    $stand_1 : State( attribute == ElementKey.of("berging", "sluitdag", false), subject == $onderwerp, $sluitdag : value )
+    eval( toets_defaultsABergingBerekendeUitersteMeldingsdagDefault0($aantal_vouw_44) )
+then
+    // zijn sluitdag
+    Object v = $sluitdag;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("berging", "berekende uiterste meldingsdag", false), v, "defaults A:Berging.berekende uiterste meldingsdag"));
+        insertLogical(new Decides($onderwerp, "defaults A:Berging.berekende uiterste meldingsdag", 0));
+    }
+end
+
+// (de laatste van de meldingsdag van alle vondsten van de Berging) plus 14 dagen
+function Object afloop_defaultsABergingBerekendeUitersteMeldingsdagDefault1(Object $aantal_vouw_53, Object $vouw_vouw_55) {
+    try {
+        return ComputeHelpers.dateStep(ComputeHelpers.foldValue($aantal_vouw_53, $vouw_vouw_55, null), new java.math.BigDecimal("14"), "DAYS", Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Berging.berekende uiterste meldingsdag: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Berging") )
+    accumulate( $bijdrage_vouw_50 : Contribution( fold == "defaults A:Berging.berekende uiterste meldingsdag: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_54 : value ); $aantal_vouw_53 : count(), $vouw_vouw_55 : exactMax($bijdragewaarde_vouw_54) )
+    not( $hoger_56 : Decides( stack == "defaults A:Berging.berekende uiterste meldingsdag" && index < 1, subject == $onderwerp ) )
+then
+    Object v = afloop_defaultsABergingBerekendeUitersteMeldingsdagDefault1($aantal_vouw_53, $vouw_vouw_55);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Berging.berekende uiterste meldingsdag", ComputeHelpers.designate(v, "defaults A:Berging.berekende uiterste meldingsdag")));
+    } else if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("berging", "berekende uiterste meldingsdag", false), v, "defaults A:Berging.berekende uiterste meldingsdag"));
+        insertLogical(new Decides($onderwerp, "defaults A:Berging.berekende uiterste meldingsdag", 1));
+    }
+end
+
+// zijn gemelde gewicht leeg is
+function boolean toets_defaultsABergingVrachtgewichtDefault0(Object $gemeldeGewicht) {
+    return ComputeHelpers.emptyTest($gemeldeGewicht, Boolean.TRUE);
+}
+
+// de som van het gewicht van alle vondsten van de Berging
+function Object afloop_defaultsABergingVrachtgewichtDefault0(Object $aantal_vouw_64, Object $vouw_vouw_66) {
+    try {
+        return ComputeHelpers.foldValue($aantal_vouw_64, $vouw_vouw_66, null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Berging.vrachtgewicht: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Berging"), $gemeldeGewicht : gemeldeGewicht )
+    accumulate( $bijdrage_vouw_61 : Contribution( fold == "defaults A:Berging.vrachtgewicht: vouw 4", subject == $onderwerp, $bijdragewaarde_vouw_65 : value ); $aantal_vouw_64 : count(), $vouw_vouw_66 : exactSum($bijdragewaarde_vouw_65) )
+    eval( toets_defaultsABergingVrachtgewichtDefault0($gemeldeGewicht) )
+then
+    Object v = afloop_defaultsABergingVrachtgewichtDefault0($aantal_vouw_64, $vouw_vouw_66);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Berging.vrachtgewicht", ComputeHelpers.designate(v, "defaults A:Berging.vrachtgewicht")));
+    } else if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "vrachtgewicht");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Berging.vrachtgewicht", ComputeHelpers.designate(passend, "defaults A:Berging.vrachtgewicht")));
+            insertLogical(new Decides($onderwerp, "defaults A:Berging.vrachtgewicht", 0));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("berging", "vrachtgewicht", false), passend, "defaults A:Berging.vrachtgewicht"));
+            insertLogical(new Decides($onderwerp, "defaults A:Berging.vrachtgewicht", 0));
+        }
+    }
+end
+
+rule "defaults A:Berging.vrachtgewicht: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Berging"), $gemeldeGewicht : gemeldeGewicht )
+    not( $hoger_69 : Decides( stack == "defaults A:Berging.vrachtgewicht" && index < 1, subject == $onderwerp ) )
+then
+    // zijn gemelde gewicht
+    Object v = $gemeldeGewicht;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "vrachtgewicht");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Berging.vrachtgewicht", ComputeHelpers.designate(passend, "defaults A:Berging.vrachtgewicht")));
+            insertLogical(new Decides($onderwerp, "defaults A:Berging.vrachtgewicht", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("berging", "vrachtgewicht", false), passend, "defaults A:Berging.vrachtgewicht"));
+            insertLogical(new Decides($onderwerp, "defaults A:Berging.vrachtgewicht", 1));
+        }
+    }
+end
+
+rule "defaults A:Berging.uiterste meldingsdag: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Berging"), $opgegevenUitersteMeldingsdag : opgegevenUitersteMeldingsdag )
+then
+    // zijn opgegeven uiterste meldingsdag
+    Object v = $opgegevenUitersteMeldingsdag;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("berging", "uiterste meldingsdag", false), v, "defaults A:Berging.uiterste meldingsdag"));
+        insertLogical(new Decides($onderwerp, "defaults A:Berging.uiterste meldingsdag", 0));
+    }
+end
+
+rule "defaults A:Berging.uiterste meldingsdag: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Berging") )
+    $stand_0 : State( attribute == ElementKey.of("berging", "berekende uiterste meldingsdag", false), subject == $onderwerp, $berekendeUitersteMeldingsdag : value )
+    not( $hoger_77 : Decides( stack == "defaults A:Berging.uiterste meldingsdag" && index < 1, subject == $onderwerp ) )
+then
+    // zijn berekende uiterste meldingsdag
+    Object v = $berekendeUitersteMeldingsdag;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("berging", "uiterste meldingsdag", false), v, "defaults A:Berging.uiterste meldingsdag"));
+        insertLogical(new Decides($onderwerp, "defaults A:Berging.uiterste meldingsdag", 1));
+    }
+end
+
+rule "defaults A:Berging.afrekendag: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Berging"), $opgegevenAfrekendag : opgegevenAfrekendag )
+then
+    // zijn opgegeven afrekendag
+    Object v = $opgegevenAfrekendag;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("berging", "afrekendag", false), v, "defaults A:Berging.afrekendag"));
+        insertLogical(new Decides($onderwerp, "defaults A:Berging.afrekendag", 0));
+    }
+end
+
+rule "defaults A:Berging.afrekendag: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Berging") )
+    $stand_0 : State( attribute == ElementKey.of("berging", "berekende afrekendag", false), subject == $onderwerp, $berekendeAfrekendag : value )
+    not( $hoger_85 : Decides( stack == "defaults A:Berging.afrekendag" && index < 1, subject == $onderwerp ) )
+then
+    // zijn berekende afrekendag
+    Object v = $berekendeAfrekendag;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("berging", "afrekendag", false), v, "defaults A:Berging.afrekendag"));
+        insertLogical(new Decides($onderwerp, "defaults A:Berging.afrekendag", 1));
+    }
+end
+
+// de laatste van (de laatste van de bergdag van alle vondsten van de Berging) en (de laatste van de meldingsdag van alle vondsten van de Berging)
+function Object afloop_defaultsABergingAfrekendagDefault2(Object $aantal_vouw_94, Object $vouw_vouw_96, Object $aantal_vouw_101, Object $vouw_vouw_103) {
+    try {
+        return ComputeHelpers.largest(ComputeHelpers.largest(null, ComputeHelpers.foldValue($aantal_vouw_94, $vouw_vouw_96, null)), ComputeHelpers.foldValue($aantal_vouw_101, $vouw_vouw_103, null));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Berging.afrekendag: default 2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Berging"), ComputeHelpers.readProperty(this, "afrekendag") == null )
+    accumulate( $bijdrage_vouw_91 : Contribution( fold == "defaults A:Berging.afrekendag: vouw 5", subject == $onderwerp, $bijdragewaarde_vouw_95 : value ); $aantal_vouw_94 : count(), $vouw_vouw_96 : exactMax($bijdragewaarde_vouw_95) )
+    accumulate( $bijdrage_vouw_98 : Contribution( fold == "defaults A:Berging.afrekendag: vouw 6", subject == $onderwerp, $bijdragewaarde_vouw_102 : value ); $aantal_vouw_101 : count(), $vouw_vouw_103 : exactMax($bijdragewaarde_vouw_102) )
+    not( $hoger_104 : Decides( stack == "defaults A:Berging.afrekendag" && index < 2, subject == $onderwerp ) )
+then
+    Object v = afloop_defaultsABergingAfrekendagDefault2($aantal_vouw_94, $vouw_vouw_96, $aantal_vouw_101, $vouw_vouw_103);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Berging.afrekendag", ComputeHelpers.designate(v, "defaults A:Berging.afrekendag")));
+    } else if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("berging", "afrekendag", false), v, "defaults A:Berging.afrekendag"));
+        insertLogical(new Decides($onderwerp, "defaults A:Berging.afrekendag", 2));
+    }
+end
+
+function boolean beta_defaultsAKustwachtSluitdagBijdrageAanVouw0(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("berging", "kustwacht"), java.util.Arrays.asList());
+}
+
+rule "defaults A:Kustwacht.sluitdag: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Kustwacht()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( beta_defaultsAKustwachtSluitdagBijdrageAanVouw0(this, $vouwonderwerp), $bergdag : bergdag )
+then
+    Object v = ComputeHelpers.contribution("defaults A:Kustwacht.sluitdag: vouw 0", $vouwonderwerp, $onderwerp, $bergdag, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "defaults A:Berging.sluitdag: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Berging()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( berging == $vouwonderwerp, $bergdag : bergdag )
+then
+    Object v = ComputeHelpers.contribution("defaults A:Berging.sluitdag: vouw 1", $vouwonderwerp, $onderwerp, $bergdag, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "defaults A:Berging.berekende uiterste meldingsdag: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Berging()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( berging == $vouwonderwerp )
+then
+    insertLogical(new Contribution("defaults A:Berging.berekende uiterste meldingsdag: vouw 2", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "defaults A:Berging.berekende uiterste meldingsdag: bijdrage aan vouw 3"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Berging()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( berging == $vouwonderwerp, $meldingsdag : meldingsdag )
+then
+    Object v = ComputeHelpers.contribution("defaults A:Berging.berekende uiterste meldingsdag: vouw 3", $vouwonderwerp, $onderwerp, $meldingsdag, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "defaults A:Berging.vrachtgewicht: bijdrage aan vouw 4"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Berging()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( berging == $vouwonderwerp, $gewicht : gewicht )
+then
+    Object v = ComputeHelpers.contribution("defaults A:Berging.vrachtgewicht: vouw 4", $vouwonderwerp, $onderwerp, $gewicht, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "defaults A:Berging.afrekendag: bijdrage aan vouw 5"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Berging()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( berging == $vouwonderwerp, $bergdag : bergdag )
+then
+    Object v = ComputeHelpers.contribution("defaults A:Berging.afrekendag: vouw 5", $vouwonderwerp, $onderwerp, $bergdag, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "defaults A:Berging.afrekendag: bijdrage aan vouw 6"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Berging()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( berging == $vouwonderwerp, $meldingsdag : meldingsdag )
+then
+    Object v = ComputeHelpers.contribution("defaults A:Berging.afrekendag: vouw 6", $vouwonderwerp, $onderwerp, $meldingsdag, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "stand Berging.berekende uiterste meldingsdag: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging()
+    $waarde : Value( attribute == ElementKey.of("berging", "berekende uiterste meldingsdag", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("berging", "berekende uiterste meldingsdag", false), $v));
+end
+
+rule "stand Berging.berekende uiterste meldingsdag: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( $invoer : berekendeUitersteMeldingsdag )
+    not( $waarde : Value( attribute == ElementKey.of("berging", "berekende uiterste meldingsdag", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("berging", "berekende uiterste meldingsdag", false), $invoer));
+end
+
+rule "stand Berging.berekende afrekendag: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging()
+    $waarde : Value( attribute == ElementKey.of("berging", "berekende afrekendag", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("berging", "berekende afrekendag", false), $v));
+end
+
+rule "stand Berging.berekende afrekendag: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( $invoer : berekendeAfrekendag )
+    not( $waarde : Value( attribute == ElementKey.of("berging", "berekende afrekendag", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("berging", "berekende afrekendag", false), $invoer));
+end
+
+rule "kenmerkstand Berging.afwijkende opgave uiterste meldingsdag: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( ComputeHelpers.holds(afwijkendeOpgaveUitersteMeldingsdag) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("berging", "afwijkende opgave uiterste meldingsdag", true), true));
+end
+
+rule "kenmerkstand Berging.afwijkende opgave uiterste meldingsdag: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("berging", "afwijkende opgave uiterste meldingsdag", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("berging", "afwijkende opgave uiterste meldingsdag", true), true));
+end
+
+rule "kenmerkstand Berging.afwijkende opgave uiterste meldingsdag: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( ComputeHelpers.holds(afwijkendeOpgaveUitersteMeldingsdag) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("berging", "afwijkende opgave uiterste meldingsdag", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("berging", "afwijkende opgave uiterste meldingsdag", true), false));
+end
+
+rule "kenmerkstand Berging.afwijkende opgave afrekendag: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( ComputeHelpers.holds(afwijkendeOpgaveAfrekendag) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("berging", "afwijkende opgave afrekendag", true), true));
+end
+
+rule "kenmerkstand Berging.afwijkende opgave afrekendag: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("berging", "afwijkende opgave afrekendag", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("berging", "afwijkende opgave afrekendag", true), true));
+end
+
+rule "kenmerkstand Berging.afwijkende opgave afrekendag: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( ComputeHelpers.holds(afwijkendeOpgaveAfrekendag) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("berging", "afwijkende opgave afrekendag", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("berging", "afwijkende opgave afrekendag", true), false));
+end
+
+rule "stand Berging.sluitdag: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging()
+    $waarde : Value( attribute == ElementKey.of("berging", "sluitdag", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("berging", "sluitdag", false), $v));
+end
+
+rule "stand Berging.sluitdag: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( $invoer : sluitdag )
+    not( $waarde : Value( attribute == ElementKey.of("berging", "sluitdag", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("berging", "sluitdag", false), $invoer));
+end
+

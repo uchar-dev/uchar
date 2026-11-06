@@ -1,0 +1,83 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het aantal erfvolgers van de Wachter
+function Object waarde_erfvolgeraantalVanEenWachter(Object $aantal_vouw_7) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_7), Integer.valueOf(0), "erfvolgeraantal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "erfvolgeraantal van een wachter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter()
+    accumulate( $bijdrage_vouw_4 : Contribution( fold == "erfvolgeraantal van een wachter: vouw 0", subject == $onderwerp ); $aantal_vouw_7 : count() )
+then
+    Object v = waarde_erfvolgeraantalVanEenWachter($aantal_vouw_7);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "erfvolgeraantal van een wachter", ComputeHelpers.designate(v, "erfvolgeraantal van een wachter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("wachter", "erfvolgeraantal", false), v, "erfvolgeraantal van een wachter"));
+        }
+    }
+end
+
+function boolean beta_erfDeDirecteOpvolger(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList(), java.util.Arrays.asList("opvolger"));
+}
+
+rule "erf de directe opvolger"
+    dialect "mvel"
+    agenda-group "uchar-feitcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter()
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    $stap_keten_9 : dev.uchar.regelspraak.facts.Wachter( beta_erfDeDirecteOpvolger(this, $onderwerp) )
+    not( $bestaand_feitcreatie_11 : RelationLink( relation == "erflijn", first == $onderwerp, second == $stap_keten_9 ) )
+then
+    insert(new RelationLink("erflijn", $onderwerp, $stap_keten_9, $fase));
+end
+
+function boolean beta1_erfestafetteErfDeLijnDoor(Object eigen, Object ander) {
+    return ComputeHelpers.notInPhase(eigen, ander);
+}
+
+function boolean beta2_erfestafetteErfDeLijnDoor(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList(), java.util.Arrays.asList("opvolger"));
+}
+
+rule "erfestafette: erf de lijn door"
+    dialect "mvel"
+    agenda-group "uchar-feitcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter()
+    $creatiefase : CreationPhase( stratum >= 1, $fase : number )
+    $koppeling_keten_17 : RelationLink( relation == "erflijn", first == $onderwerp, beta1_erfestafetteErfDeLijnDoor(this, $fase), $overzijde_keten_18 : second )
+    $stap_keten_16 : dev.uchar.regelspraak.facts.Wachter( this == $overzijde_keten_18 )
+    $stap_keten_23 : dev.uchar.regelspraak.facts.Wachter( beta2_erfestafetteErfDeLijnDoor(this, $stap_keten_16) )
+    not( $bestaand_feitcreatie_25 : RelationLink( relation == "erflijn", first == $onderwerp, second == $stap_keten_23 ) )
+then
+    insert(new RelationLink("erflijn", $onderwerp, $stap_keten_23, $fase));
+end
+
+rule "erfvolgeraantal van een wachter: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Wachter()
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter()
+    exists( $koppeling_bereik_0 : RelationLink( relation == "erflijn", second == $onderwerp, first == $vouwonderwerp ) )
+then
+    insertLogical(new Contribution("erfvolgeraantal van een wachter: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+

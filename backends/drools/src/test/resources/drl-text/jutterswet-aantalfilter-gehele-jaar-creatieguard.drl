@@ -1,0 +1,157 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
+import dev.uchar.regelspraak.transpiler.tms.CreationStamp;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.SecondFillingFault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het aantal uitgegeven wachtbrieven van het Kustvak
+function Object waarde_telDeWachtbrieven(Object $aantal_vouw_7) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_7), Integer.valueOf(0), "brieftal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "tel de wachtbrieven"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Kustvak()
+    accumulate( $bijdrage_vouw_4 : Contribution( fold == "tel de wachtbrieven: vouw 0", subject == $onderwerp ); $aantal_vouw_7 : count() )
+then
+    Object v = waarde_telDeWachtbrieven($aantal_vouw_7);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "tel de wachtbrieven", ComputeHelpers.designate(v, "tel de wachtbrieven")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("kustvak", "brieftal", false), v, "tel de wachtbrieven"));
+        }
+    }
+end
+
+function boolean beta_geefEenWachtbriefUit(Object eigen, Object ander) {
+    return ComputeHelpers.inPhase(eigen, ander);
+}
+
+// het aantal posten van het Kustvak die gedurende het gehele jaar bemand zijn groter is dan 0
+function boolean toets_geefEenWachtbriefUit(Object $aantal_vouw_13) {
+    return RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.countOf($aantal_vouw_13), new java.math.BigDecimal("0"), ">");
+}
+
+// 10
+function Object creatie_geefEenWachtbriefUit(Object $fase, Object $herkomsten_creatie_16, Object $onderwerp) {
+    int diepte = ComputeHelpers.creationDepth("geef een wachtbrief uit", 0, "Kustvak", (java.util.List) $herkomsten_creatie_16, 100);
+    Object i0 = null;
+    try {
+        i0 = ComputeHelpers.collapse(ComputeHelpers.fitTarget(new java.math.BigDecimal("10"), Integer.valueOf(0), "briefbedrag", "geef een wachtbrief uit"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+    Object nieuw = ComputeHelpers.newObject($onderwerp, "dev.uchar.regelspraak.facts.Wachtbrief");
+    ComputeHelpers.set(nieuw, "briefbedrag", i0);
+    int fase = ((Integer) $fase).intValue();
+    java.util.List feiten = new java.util.ArrayList();
+    feiten.add(nieuw);
+    feiten.add(new CreationStamp("geef een wachtbrief uit", $onderwerp, nieuw, fase, 0, diepte));
+    feiten.add(new RelationLink("briefuitgifte", $onderwerp, nieuw, fase));
+    return feiten;
+}
+
+rule "geef een wachtbrief uit"
+    dialect "mvel"
+    agenda-group "uchar-objectcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Kustvak( uitgegevenWachtbrief == null )
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    accumulate( $bijdrage_vouw_10 : Contribution( fold == "geef een wachtbrief uit: vouw 1", subject == $onderwerp ); $aantal_vouw_13 : count() )
+    accumulate( $herkomst_creatie_15 : CreationStamp( object == $onderwerp ); $herkomsten_creatie_16 : collectList($herkomst_creatie_15) )
+    not( $gemaakt_creatie_18 : CreationStamp( rule == "geef een wachtbrief uit", subject == $onderwerp ) )
+    not( $nieuw_creatie_19 : CreationStamp( object == $onderwerp, beta_geefEenWachtbriefUit(this, $fase) ) )
+    eval( toets_geefEenWachtbriefUit($aantal_vouw_13) )
+    not( $eigen_fout : Fault( rule == "geef een wachtbrief uit", subject == $onderwerp ) )
+then
+    Object v = creatie_geefEenWachtbriefUit($fase, $herkomsten_creatie_16, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insert(new Fault($onderwerp, "geef een wachtbrief uit", ComputeHelpers.designate(v, "geef een wachtbrief uit")));
+    } else {
+        java.util.List feiten = (java.util.List) v;
+        insert(feiten.get(0));
+        insert(feiten.get(1));
+        insert(feiten.get(2));
+    }
+end
+
+rule "tel de wachtbrieven: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Kustvak()
+    $onderwerp : dev.uchar.regelspraak.facts.Wachtbrief()
+    exists( $koppeling_bereik_0 : RelationLink( relation == "briefuitgifte", second == $onderwerp, first == $vouwonderwerp ) )
+then
+    insertLogical(new Contribution("tel de wachtbrieven: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+// gedurende het gehele jaar bemand zijn
+function boolean toets_geefEenWachtbriefUitBijdrageAanVouw1(Object $tijdlijn_0) {
+    return ComputeHelpers.wholePeriod($tijdlijn_0, null, "JAAR", Integer.valueOf(7), Boolean.FALSE);
+}
+
+rule "geef een wachtbrief uit: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Kustvak()
+    $onderwerp : dev.uchar.regelspraak.facts.Post( kustvak == $vouwonderwerp, $tijdlijn_0 : (ComputeHelpers.periods(bemand)) )
+    eval( toets_geefEenWachtbriefUitBijdrageAanVouw1($tijdlijn_0) )
+then
+    insertLogical(new Contribution("geef een wachtbrief uit: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "koppeling briefuitgifte uit de invoer: Kustvak.uitgegeven wachtbrief"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Kustvak( uitgegevenWachtbrief != null, $ander : uitgegevenWachtbrief )
+then
+    insertLogical(new RelationLink("briefuitgifte", $houder, $ander, 0));
+end
+
+rule "koppeling briefuitgifte uit de invoer: Wachtbrief.uitgevende kustvak"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Wachtbrief( uitgevendeKustvak != null, $ander : uitgevendeKustvak )
+then
+    insertLogical(new RelationLink("briefuitgifte", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingBriefuitgifteTweedeVullingVanUitgegevenWachtbrief(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "second");
+}
+
+rule "koppeling briefuitgifte: tweede vulling van uitgegeven wachtbrief"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "briefuitgifte", $nabij : first )
+    $twee : RelationLink( relation == "briefuitgifte", first != null, first == $een.first, beta_koppelingBriefuitgifteTweedeVullingVanUitgegevenWachtbrief(this, $een) )
+then
+    insertLogical(new Fault($nabij, "briefuitgifte", new SecondFillingFault("uitgegeven wachtbrief", $nabij)));
+end
+
+function boolean beta_koppelingBriefuitgifteTweedeVullingVanUitgevendeKustvak(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling briefuitgifte: tweede vulling van uitgevende kustvak"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "briefuitgifte", $nabij : second )
+    $twee : RelationLink( relation == "briefuitgifte", second != null, second == $een.second, beta_koppelingBriefuitgifteTweedeVullingVanUitgevendeKustvak(this, $een) )
+then
+    insertLogical(new Fault($nabij, "briefuitgifte", new SecondFillingFault("uitgevende kustvak", $nabij)));
+end
+

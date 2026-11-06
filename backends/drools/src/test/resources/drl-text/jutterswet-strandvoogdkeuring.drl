@@ -1,0 +1,215 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn diensttijd plus 1
+function Object waarde_rangVanEenJutter(Object $diensttijd) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($diensttijd, new java.math.BigDecimal("1")), Integer.valueOf(0), "rang", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "rang van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $diensttijd : diensttijd )
+then
+    Object v = waarde_rangVanEenJutter($diensttijd);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "rang van een jutter", ComputeHelpers.designate(v, "rang van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "rang", false), v, "rang van een jutter"));
+        }
+    }
+end
+
+function Object pad1_strandvoogdkeuring(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("strandpost"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "hoogte");
+}
+
+function Object pad2_strandvoogdkeuring(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("strandpost"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "zichtveld");
+}
+
+function Object pad3_strandvoogdkeuring(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("strandpost"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "kustlengte");
+}
+
+function Object pad4_strandvoogdkeuring(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("strandpost"));
+    return bereikt == null ? null : ComputeHelpers.holds(ComputeHelpers.readProperty(bereikt, "bemand"));
+}
+
+// hij aan alle volgende voorwaarden voldoet: - hij is ervaren - zijn diensttijd is groter dan 2 - zijn rang is groter dan 3 - zijn aantal vondsten is groter dan 4 - zijn aantal meldingen is groter dan 5 - zijn aantal bergingen is groter dan 6 - zijn aantal nachtdiensten is groter dan 7 - zijn aantal reddingen is groter dan 8 - zijn zwemvaardigheid is groter dan 9 - zijn kaartkennis is groter dan 10 - zijn getijkennis is groter dan 11 - zijn seinkennis is groter dan 12 - zijn knoopkennis is groter dan 13 - zijn leeftijd is groter dan 17 - de hoogte van zijn strandpost is groter dan 18 - het zichtveld van zijn strandpost is groter dan 19 - de kustlengte van zijn strandpost is groter dan 20 - zijn strandpost is bemand
+function boolean toets_strandvoogdkeuring(Object $ervaren, Object $diensttijd, Object $rang, Object $aantalVondsten, Object $aantalMeldingen, Object $aantalBergingen, Object $aantalNachtdiensten, Object $aantalReddingen, Object $zwemvaardigheid, Object $kaartkennis, Object $getijkennis, Object $seinkennis, Object $knoopkennis, Object $leeftijd, Object $strandpostHoogte, Object $strandpostZichtveld, Object $strandpostKustlengte, Object $strandpostBemand) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 18);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($ervaren, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 17);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($diensttijd, new java.math.BigDecimal("2"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 16);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($rang, new java.math.BigDecimal("3"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3, 15);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($aantalVondsten, new java.math.BigDecimal("4"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 4, 14);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($aantalMeldingen, new java.math.BigDecimal("5"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 5, 13);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($aantalBergingen, new java.math.BigDecimal("6"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 6, 12);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($aantalNachtdiensten, new java.math.BigDecimal("7"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 7, 11);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($aantalReddingen, new java.math.BigDecimal("8"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 8, 10);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($zwemvaardigheid, new java.math.BigDecimal("9"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 9, 9);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($kaartkennis, new java.math.BigDecimal("10"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 10, 8);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($getijkennis, new java.math.BigDecimal("11"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 11, 7);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($seinkennis, new java.math.BigDecimal("12"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 12, 6);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($knoopkennis, new java.math.BigDecimal("13"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 13, 5);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($leeftijd, new java.math.BigDecimal("17"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 14, 4);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($strandpostHoogte, new java.math.BigDecimal("18"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 15, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($strandpostZichtveld, new java.math.BigDecimal("19"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 16, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($strandpostKustlengte, new java.math.BigDecimal("20"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 17, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristicCheckAlongPath($strandpostBemand, Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 18);
+}
+
+rule "strandvoogdkeuring"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $ervaren : (ComputeHelpers.holds(ervaren)), $diensttijd : diensttijd, $aantalVondsten : aantalVondsten, $aantalMeldingen : aantalMeldingen, $aantalBergingen : aantalBergingen, $aantalNachtdiensten : aantalNachtdiensten, $aantalReddingen : aantalReddingen, $zwemvaardigheid : zwemvaardigheid, $kaartkennis : kaartkennis, $getijkennis : getijkennis, $seinkennis : seinkennis, $knoopkennis : knoopkennis, $leeftijd : leeftijd, $strandpostHoogte : (pad1_strandvoogdkeuring(this)), $strandpostZichtveld : (pad2_strandvoogdkeuring(this)), $strandpostKustlengte : (pad3_strandvoogdkeuring(this)), $strandpostBemand : (pad4_strandvoogdkeuring(this)) )
+    $stand_2 : State( attribute == ElementKey.of("jutter", "rang", false), subject == $onderwerp, $rang : value )
+    eval( toets_strandvoogdkeuring($ervaren, $diensttijd, $rang, $aantalVondsten, $aantalMeldingen, $aantalBergingen, $aantalNachtdiensten, $aantalReddingen, $zwemvaardigheid, $kaartkennis, $getijkennis, $seinkennis, $knoopkennis, $leeftijd, $strandpostHoogte, $strandpostZichtveld, $strandpostKustlengte, $strandpostBemand) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "strandvoogdwaardig", true)));
+end
+
+rule "stand Jutter.rang: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $waarde : Value( attribute == ElementKey.of("jutter", "rang", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "rang", false), $v));
+end
+
+rule "stand Jutter.rang: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : rang )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "rang", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "rang", false), $invoer));
+end
+

@@ -1,0 +1,37 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de Vondst gemeld is
+function boolean toets_waardestelling(Object $gemeld) {
+    return ComputeHelpers.characteristic($gemeld, Boolean.TRUE);
+}
+
+// de taxatiewaarde van de Vondst
+function Object waarde_waardestelling(Object $taxatiewaarde) {
+    try {
+        return ComputeHelpers.fitTarget($taxatiewaarde, Integer.valueOf(2), "geschatte waarde", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "Waardestelling"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gemeld : (ComputeHelpers.holds(gemeld)), $taxatiewaarde : taxatiewaarde )
+    eval( toets_waardestelling($gemeld) )
+then
+    Object v = waarde_waardestelling($taxatiewaarde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "Waardestelling", ComputeHelpers.designate(v, "Waardestelling")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "geschatte waarde", false), v, "Waardestelling"));
+        }
+    }
+end
+

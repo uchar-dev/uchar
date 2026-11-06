@@ -1,0 +1,80 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het ruwbedrag van de Jutter begrensd op minimaal 10
+function Object waarde_ondergrensVanEenJutter(Object $ruwbedrag) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsBegrens($ruwbedrag, new java.math.BigDecimal("10"), null), Integer.valueOf(2), "ondergrens", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "ondergrens van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $ruwbedrag : ruwbedrag )
+then
+    Object v = waarde_ondergrensVanEenJutter($ruwbedrag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "ondergrens van een jutter", ComputeHelpers.designate(v, "ondergrens van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "ondergrens", false), v, "ondergrens van een jutter"));
+        }
+    }
+end
+
+// het ruwbedrag van de Jutter begrensd op maximaal 100
+function Object waarde_bovengrensVanEenJutter(Object $ruwbedrag) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsBegrens($ruwbedrag, null, new java.math.BigDecimal("100")), Integer.valueOf(2), "bovengrens", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bovengrens van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $ruwbedrag : ruwbedrag )
+then
+    Object v = waarde_bovengrensVanEenJutter($ruwbedrag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bovengrens van een jutter", ComputeHelpers.designate(v, "bovengrens van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "bovengrens", false), v, "bovengrens van een jutter"));
+        }
+    }
+end
+
+// het ruwbedrag van de Jutter begrensd op minimaal 10 en maximaal 100
+function Object waarde_bandbreedteVanEenJutter(Object $ruwbedrag) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsBegrens($ruwbedrag, new java.math.BigDecimal("10"), new java.math.BigDecimal("100")), Integer.valueOf(2), "bandbreedte", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bandbreedte van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $ruwbedrag : ruwbedrag )
+then
+    Object v = waarde_bandbreedteVanEenJutter($ruwbedrag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bandbreedte van een jutter", ComputeHelpers.designate(v, "bandbreedte van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "bandbreedte", false), v, "bandbreedte van een jutter"));
+        }
+    }
+end
+

@@ -1,0 +1,426 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Decides;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+rule "melding na de keuring"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Barnsteenvondst( ComputeHelpers.classNotIn(this, ComputeHelpers.list1("dev.uchar.regelspraak.facts.Barnsteenvondst")), $keurdag : keurdag )
+then
+    // zijn keurdag
+    Object v = $keurdag;
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "berekende meldingsdatum", false), v, "melding na de keuring"));
+    }
+end
+
+// hij afwijkende opgave meldingsdatum heeft
+function boolean toets_controleBijAfwijkendeMeldingsdatum(Object $afwijkendeOpgaveMeldingsdatum) {
+    return ComputeHelpers.characteristic($afwijkendeOpgaveMeldingsdatum, Boolean.TRUE);
+}
+
+rule "controle bij afwijkende meldingsdatum"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "afwijkende opgave meldingsdatum", true), subject == $onderwerp, $afwijkendeOpgaveMeldingsdatum : holds )
+    eval( toets_controleBijAfwijkendeMeldingsdatum($afwijkendeOpgaveMeldingsdatum) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("strandvondst", "ter controle", true)));
+end
+
+// hij ter controle is
+function boolean toets_controledagBijAfwijkendeMeldingsdatum(Object $terControle) {
+    return ComputeHelpers.characteristic($terControle, Boolean.TRUE);
+}
+
+rule "controledag bij afwijkende meldingsdatum"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("strandvondst", "ter controle", true), subject == $onderwerp, $terControle : holds )
+    $stand_1 : State( attribute == ElementKey.of("vondst", "berekende meldingsdatum", false), subject == $onderwerp, $berekendeMeldingsdatum : value )
+    eval( toets_controledagBijAfwijkendeMeldingsdatum($terControle) )
+then
+    // zijn berekende meldingsdatum
+    Object v = $berekendeMeldingsdatum;
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("strandvondst", "controledag", false), v, "controledag bij afwijkende meldingsdatum"));
+    }
+end
+
+// de meldingsdatum van de Vondst plus 30 dagen
+function Object waarde_afhaaltermijn(Object $meldingsdatum) {
+    try {
+        return ComputeHelpers.dateStep($meldingsdatum, new java.math.BigDecimal("30"), "DAYS", Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "afhaaltermijn"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : State( attribute == ElementKey.of("vondst", "meldingsdatum", false), subject == $onderwerp, $meldingsdatum : value )
+then
+    Object v = waarde_afhaaltermijn($meldingsdatum);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "afhaaltermijn", ComputeHelpers.designate(v, "afhaaltermijn")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "uiterste afhaaldatum", false), v, "afhaaltermijn"));
+        }
+    }
+end
+
+// hij aan alle volgende voorwaarden voldoet: - zijn opgegeven meldingsdatum is gevuld - zijn berekende meldingsdatum is gevuld - zijn opgegeven meldingsdatum is ongelijk aan zijn berekende meldingsdatum
+function boolean toets_afwijkingOpgaveMeldingsdatum(Object $opgegevenMeldingsdatum, Object $berekendeMeldingsdatum) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($opgegevenMeldingsdatum, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($berekendeMeldingsdatum, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.dateCompare($opgegevenMeldingsdatum, $berekendeMeldingsdatum, dev.uchar.regelspraak.ir.Condition.Operator.ONGELIJK)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+}
+
+rule "afwijking opgave meldingsdatum"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $opgegevenMeldingsdatum : opgegevenMeldingsdatum )
+    $stand_1 : State( attribute == ElementKey.of("vondst", "berekende meldingsdatum", false), subject == $onderwerp, $berekendeMeldingsdatum : value )
+    eval( toets_afwijkingOpgaveMeldingsdatum($opgegevenMeldingsdatum, $berekendeMeldingsdatum) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "afwijkende opgave meldingsdatum", true)));
+end
+
+// hij heeft geen afwijkende opgave meldingsdatum
+function boolean toets_controleOpgaveMeldingsdatum(Object $afwijkendeOpgaveMeldingsdatum) {
+    return ComputeHelpers.not(ComputeHelpers.characteristic($afwijkendeOpgaveMeldingsdatum, Boolean.FALSE));
+}
+
+rule "controle opgave meldingsdatum"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "afwijkende opgave meldingsdatum", true), subject == $onderwerp, $afwijkendeOpgaveMeldingsdatum : holds )
+    eval( toets_controleOpgaveMeldingsdatum($afwijkendeOpgaveMeldingsdatum) )
+then
+    insertLogical(ComputeHelpers.inconsistency("controle opgave meldingsdatum", $onderwerp, ComputeHelpers.list1("EF-025")));
+end
+
+rule "defaults A:Vondst.meldingsdatum: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $opgegevenMeldingsdatum : opgegevenMeldingsdatum )
+then
+    // zijn opgegeven meldingsdatum
+    Object v = $opgegevenMeldingsdatum;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "meldingsdatum", false), v, "defaults A:Vondst.meldingsdatum"));
+        insertLogical(new Decides($onderwerp, "defaults A:Vondst.meldingsdatum", 0));
+    }
+end
+
+rule "defaults A:Vondst.meldingsdatum: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst") )
+    $stand_0 : State( attribute == ElementKey.of("vondst", "berekende meldingsdatum", false), subject == $onderwerp, $berekendeMeldingsdatum : value )
+    not( $hoger_22 : Decides( stack == "defaults A:Vondst.meldingsdatum" && index < 1, subject == $onderwerp ) )
+then
+    // zijn berekende meldingsdatum
+    Object v = $berekendeMeldingsdatum;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "meldingsdatum", false), v, "defaults A:Vondst.meldingsdatum"));
+        insertLogical(new Decides($onderwerp, "defaults A:Vondst.meldingsdatum", 1));
+    }
+end
+
+rule "defaults A:Vondst.meldingsdatum: default 2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), ComputeHelpers.readProperty(this, "meldingsdatum") == null )
+    not( $hoger_27 : Decides( stack == "defaults A:Vondst.meldingsdatum" && index < 2, subject == $onderwerp ) )
+then
+    // 01-03-2026
+    Object v = java.time.LocalDate.parse("2026-03-01");
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "meldingsdatum", false), v, "defaults A:Vondst.meldingsdatum"));
+        insertLogical(new Decides($onderwerp, "defaults A:Vondst.meldingsdatum", 2));
+    }
+end
+
+// hij beschadigd is
+function boolean toets_defaultsAStrandvondstBerekendeMeldingsdatumDefault0(Object $beschadigd) {
+    return ComputeHelpers.characteristic($beschadigd, Boolean.TRUE);
+}
+
+rule "defaults A:Strandvondst.berekende meldingsdatum: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Strandvondst"), $beschadigd : (ComputeHelpers.holds(beschadigd)), $aanspoeldag : aanspoeldag )
+    eval( toets_defaultsAStrandvondstBerekendeMeldingsdatumDefault0($beschadigd) )
+then
+    // zijn aanspoeldag
+    Object v = $aanspoeldag;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "berekende meldingsdatum", false), v, "defaults A:Strandvondst.berekende meldingsdatum"));
+        insertLogical(new Decides($onderwerp, "defaults A:Strandvondst.berekende meldingsdatum", 0));
+    }
+end
+
+// de aanspoeldag van de Strandvondst plus 2 dagen
+function Object afloop_defaultsAStrandvondstBerekendeMeldingsdatumDefault1(Object $aanspoeldag) {
+    try {
+        return ComputeHelpers.dateStep($aanspoeldag, new java.math.BigDecimal("2"), "DAYS", Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Strandvondst.berekende meldingsdatum: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Strandvondst"), $aanspoeldag : aanspoeldag )
+    not( $hoger_32 : Decides( stack == "defaults A:Strandvondst.berekende meldingsdatum" && index < 1, subject == $onderwerp ) )
+then
+    Object v = afloop_defaultsAStrandvondstBerekendeMeldingsdatumDefault1($aanspoeldag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Strandvondst.berekende meldingsdatum", ComputeHelpers.designate(v, "defaults A:Strandvondst.berekende meldingsdatum")));
+    } else if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "berekende meldingsdatum", false), v, "defaults A:Strandvondst.berekende meldingsdatum"));
+        insertLogical(new Decides($onderwerp, "defaults A:Strandvondst.berekende meldingsdatum", 1));
+    }
+end
+
+rule "defaults A:Strandvondst.meldingsdatum: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Strandvondst"), $opgegevenMeldingsdatum : opgegevenMeldingsdatum )
+then
+    // zijn opgegeven meldingsdatum
+    Object v = $opgegevenMeldingsdatum;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "meldingsdatum", false), v, "defaults A:Strandvondst.meldingsdatum"));
+        insertLogical(new Decides($onderwerp, "defaults A:Strandvondst.meldingsdatum", 0));
+    }
+end
+
+rule "defaults A:Strandvondst.meldingsdatum: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Strandvondst") )
+    $stand_0 : State( attribute == ElementKey.of("vondst", "berekende meldingsdatum", false), subject == $onderwerp, $berekendeMeldingsdatum : value )
+    not( $hoger_40 : Decides( stack == "defaults A:Strandvondst.meldingsdatum" && index < 1, subject == $onderwerp ) )
+then
+    // zijn berekende meldingsdatum
+    Object v = $berekendeMeldingsdatum;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "meldingsdatum", false), v, "defaults A:Strandvondst.meldingsdatum"));
+        insertLogical(new Decides($onderwerp, "defaults A:Strandvondst.meldingsdatum", 1));
+    }
+end
+
+rule "defaults A:Strandvondst.meldingsdatum: default 2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Strandvondst"), ComputeHelpers.readProperty(this, "meldingsdatum") == null )
+    not( $hoger_45 : Decides( stack == "defaults A:Strandvondst.meldingsdatum" && index < 2, subject == $onderwerp ) )
+then
+    // 01-03-2026
+    Object v = java.time.LocalDate.parse("2026-03-01");
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "meldingsdatum", false), v, "defaults A:Strandvondst.meldingsdatum"));
+        insertLogical(new Decides($onderwerp, "defaults A:Strandvondst.meldingsdatum", 2));
+    }
+end
+
+// hij beschadigd is
+function boolean toets_defaultsABarnsteenvondstBerekendeMeldingsdatumDefault0(Object $beschadigd) {
+    return ComputeHelpers.characteristic($beschadigd, Boolean.TRUE);
+}
+
+rule "defaults A:Barnsteenvondst.berekende meldingsdatum: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Barnsteenvondst"), $beschadigd : (ComputeHelpers.holds(beschadigd)), $aanspoeldag : aanspoeldag )
+    eval( toets_defaultsABarnsteenvondstBerekendeMeldingsdatumDefault0($beschadigd) )
+then
+    // zijn aanspoeldag
+    Object v = $aanspoeldag;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "berekende meldingsdatum", false), v, "defaults A:Barnsteenvondst.berekende meldingsdatum"));
+        insertLogical(new Decides($onderwerp, "defaults A:Barnsteenvondst.berekende meldingsdatum", 0));
+    }
+end
+
+rule "defaults A:Barnsteenvondst.berekende meldingsdatum: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Barnsteenvondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Barnsteenvondst"), $keurdag : keurdag )
+    not( $hoger_50 : Decides( stack == "defaults A:Barnsteenvondst.berekende meldingsdatum" && index < 1, subject == $onderwerp ) )
+then
+    // zijn keurdag
+    Object v = $keurdag;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "berekende meldingsdatum", false), v, "defaults A:Barnsteenvondst.berekende meldingsdatum"));
+        insertLogical(new Decides($onderwerp, "defaults A:Barnsteenvondst.berekende meldingsdatum", 1));
+    }
+end
+
+rule "defaults A:Barnsteenvondst.meldingsdatum: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Barnsteenvondst"), $opgegevenMeldingsdatum : opgegevenMeldingsdatum )
+then
+    // zijn opgegeven meldingsdatum
+    Object v = $opgegevenMeldingsdatum;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "meldingsdatum", false), v, "defaults A:Barnsteenvondst.meldingsdatum"));
+        insertLogical(new Decides($onderwerp, "defaults A:Barnsteenvondst.meldingsdatum", 0));
+    }
+end
+
+rule "defaults A:Barnsteenvondst.meldingsdatum: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Barnsteenvondst") )
+    $stand_0 : State( attribute == ElementKey.of("vondst", "berekende meldingsdatum", false), subject == $onderwerp, $berekendeMeldingsdatum : value )
+    not( $hoger_58 : Decides( stack == "defaults A:Barnsteenvondst.meldingsdatum" && index < 1, subject == $onderwerp ) )
+then
+    // zijn berekende meldingsdatum
+    Object v = $berekendeMeldingsdatum;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "meldingsdatum", false), v, "defaults A:Barnsteenvondst.meldingsdatum"));
+        insertLogical(new Decides($onderwerp, "defaults A:Barnsteenvondst.meldingsdatum", 1));
+    }
+end
+
+rule "defaults A:Barnsteenvondst.meldingsdatum: default 2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Barnsteenvondst"), ComputeHelpers.readProperty(this, "meldingsdatum") == null )
+    not( $hoger_63 : Decides( stack == "defaults A:Barnsteenvondst.meldingsdatum" && index < 2, subject == $onderwerp ) )
+then
+    // 01-03-2026
+    Object v = java.time.LocalDate.parse("2026-03-01");
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "meldingsdatum", false), v, "defaults A:Barnsteenvondst.meldingsdatum"));
+        insertLogical(new Decides($onderwerp, "defaults A:Barnsteenvondst.meldingsdatum", 2));
+    }
+end
+
+rule "kenmerkstand Vondst.afwijkende opgave meldingsdatum: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(afwijkendeOpgaveMeldingsdatum) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "afwijkende opgave meldingsdatum", true), true));
+end
+
+rule "kenmerkstand Vondst.afwijkende opgave meldingsdatum: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "afwijkende opgave meldingsdatum", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "afwijkende opgave meldingsdatum", true), true));
+end
+
+rule "kenmerkstand Vondst.afwijkende opgave meldingsdatum: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(afwijkendeOpgaveMeldingsdatum) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "afwijkende opgave meldingsdatum", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "afwijkende opgave meldingsdatum", true), false));
+end
+
+rule "kenmerkstand Strandvondst.ter controle: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst( ComputeHelpers.holds(terControle) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("strandvondst", "ter controle", true), true));
+end
+
+rule "kenmerkstand Strandvondst.ter controle: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("strandvondst", "ter controle", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("strandvondst", "ter controle", true), true));
+end
+
+rule "kenmerkstand Strandvondst.ter controle: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst( ComputeHelpers.holds(terControle) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("strandvondst", "ter controle", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("strandvondst", "ter controle", true), false));
+end
+
+rule "stand Vondst.berekende meldingsdatum: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $waarde : Value( attribute == ElementKey.of("vondst", "berekende meldingsdatum", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "berekende meldingsdatum", false), $v));
+end
+
+rule "stand Vondst.berekende meldingsdatum: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : berekendeMeldingsdatum )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "berekende meldingsdatum", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "berekende meldingsdatum", false), $invoer));
+end
+
+rule "stand Vondst.meldingsdatum: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $waarde : Value( attribute == ElementKey.of("vondst", "meldingsdatum", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "meldingsdatum", false), $v));
+end
+
+rule "stand Vondst.meldingsdatum: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : meldingsdatum )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "meldingsdatum", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "meldingsdatum", false), $invoer));
+end
+

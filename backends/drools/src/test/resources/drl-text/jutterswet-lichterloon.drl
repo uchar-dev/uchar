@@ -1,0 +1,51 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.EmptyBarrier;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het grondloon is het vrachttal van de Lichterbeurt maal het eenheidsloon van de Lichterbeurt
+function Object waarde_lichterloonVanEenLichterbeurt(Object $vrachttal, Object $eenheidsloon, Object $spoedtal) {
+    try {
+        return ComputeHelpers.fitTarget(let_lichterloonVanEenLichterbeurt($vrachttal, $eenheidsloon, $spoedtal), Integer.valueOf(0), "lichterloon", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// het grondloon is het vrachttal van de Lichterbeurt maal het eenheidsloon van de Lichterbeurt
+function Object let_lichterloonVanEenLichterbeurt(Object $vrachttal, Object $eenheidsloon, Object $spoedtal) {
+    Object cel_2 = ComputeHelpers.binderCell();
+    try {
+        return RegelSpraakRuntime.rsPlus(binder_lichterloonVanEenLichterbeurt($vrachttal, $eenheidsloon, $spoedtal, cel_2), RegelSpraakRuntime.rsMaal(binder_lichterloonVanEenLichterbeurt($vrachttal, $eenheidsloon, $spoedtal, cel_2), $spoedtal));
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_2);
+    }
+}
+
+// het vrachttal van de Lichterbeurt maal het eenheidsloon van de Lichterbeurt
+function Object binder_lichterloonVanEenLichterbeurt(Object $vrachttal, Object $eenheidsloon, Object $spoedtal, Object cel_2) {
+    if (!ComputeHelpers.binderCellFilled(cel_2)) {
+        ComputeHelpers.fillBinderCell(cel_2, RegelSpraakRuntime.rsMaal($vrachttal, $eenheidsloon));
+    }
+    return ComputeHelpers.binderValue(cel_2);
+}
+
+rule "lichterloon van een lichterbeurt"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Lichterbeurt( $vrachttal : vrachttal, $eenheidsloon : eenheidsloon, $spoedtal : spoedtal )
+then
+    Object v = waarde_lichterloonVanEenLichterbeurt($vrachttal, $eenheidsloon, $spoedtal);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "lichterloon van een lichterbeurt", ComputeHelpers.designate(v, "lichterloon van een lichterbeurt")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("lichterbeurt", "lichterloon", false), v, "lichterloon van een lichterbeurt"));
+        }
+    }
+end
+

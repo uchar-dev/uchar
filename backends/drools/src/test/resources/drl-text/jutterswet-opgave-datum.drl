@@ -1,0 +1,232 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Decides;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de vinddag van de Vondst plus 3 dagen
+function Object waarde_meldingNaDeVinddag(Object $vinddag) {
+    try {
+        return ComputeHelpers.dateStep($vinddag, new java.math.BigDecimal("3"), "DAYS", Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "melding na de vinddag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vinddag : vinddag )
+then
+    Object v = waarde_meldingNaDeVinddag($vinddag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "melding na de vinddag", ComputeHelpers.designate(v, "melding na de vinddag")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "berekende meldingsdatum", false), v, "melding na de vinddag"));
+        }
+    }
+end
+
+// hij afwijkende opgave meldingsdatum heeft
+function boolean toets_controleBijAfwijkendeMeldingsdatum(Object $afwijkendeOpgaveMeldingsdatum) {
+    return ComputeHelpers.characteristic($afwijkendeOpgaveMeldingsdatum, Boolean.TRUE);
+}
+
+rule "controle bij afwijkende meldingsdatum"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "afwijkende opgave meldingsdatum", true), subject == $onderwerp, $afwijkendeOpgaveMeldingsdatum : holds )
+    eval( toets_controleBijAfwijkendeMeldingsdatum($afwijkendeOpgaveMeldingsdatum) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "ter controle", true)));
+end
+
+// de meldingsdatum van de Vondst plus 30 dagen
+function Object waarde_afhaaltermijn(Object $meldingsdatum) {
+    try {
+        return ComputeHelpers.dateStep($meldingsdatum, new java.math.BigDecimal("30"), "DAYS", Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "afhaaltermijn"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : State( attribute == ElementKey.of("vondst", "meldingsdatum", false), subject == $onderwerp, $meldingsdatum : value )
+then
+    Object v = waarde_afhaaltermijn($meldingsdatum);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "afhaaltermijn", ComputeHelpers.designate(v, "afhaaltermijn")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "uiterste afhaaldatum", false), v, "afhaaltermijn"));
+        }
+    }
+end
+
+// hij aan alle volgende voorwaarden voldoet: - zijn opgegeven meldingsdatum is gevuld - zijn berekende meldingsdatum is gevuld - zijn opgegeven meldingsdatum is ongelijk aan zijn berekende meldingsdatum
+function boolean toets_afwijkingOpgaveMeldingsdatum(Object $opgegevenMeldingsdatum, Object $berekendeMeldingsdatum) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($opgegevenMeldingsdatum, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($berekendeMeldingsdatum, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.dateCompare($opgegevenMeldingsdatum, $berekendeMeldingsdatum, dev.uchar.regelspraak.ir.Condition.Operator.ONGELIJK)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+}
+
+rule "afwijking opgave meldingsdatum"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $opgegevenMeldingsdatum : opgegevenMeldingsdatum )
+    $stand_1 : State( attribute == ElementKey.of("vondst", "berekende meldingsdatum", false), subject == $onderwerp, $berekendeMeldingsdatum : value )
+    eval( toets_afwijkingOpgaveMeldingsdatum($opgegevenMeldingsdatum, $berekendeMeldingsdatum) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "afwijkende opgave meldingsdatum", true)));
+end
+
+// hij heeft geen afwijkende opgave meldingsdatum
+function boolean toets_controleOpgaveMeldingsdatum(Object $afwijkendeOpgaveMeldingsdatum) {
+    return ComputeHelpers.not(ComputeHelpers.characteristic($afwijkendeOpgaveMeldingsdatum, Boolean.FALSE));
+}
+
+rule "controle opgave meldingsdatum"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "afwijkende opgave meldingsdatum", true), subject == $onderwerp, $afwijkendeOpgaveMeldingsdatum : holds )
+    eval( toets_controleOpgaveMeldingsdatum($afwijkendeOpgaveMeldingsdatum) )
+then
+    insertLogical(ComputeHelpers.inconsistency("controle opgave meldingsdatum", $onderwerp, ComputeHelpers.list1("EF-025")));
+end
+
+rule "defaults A:Vondst.meldingsdatum: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $opgegevenMeldingsdatum : opgegevenMeldingsdatum )
+then
+    // zijn opgegeven meldingsdatum
+    Object v = $opgegevenMeldingsdatum;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "meldingsdatum", false), v, "defaults A:Vondst.meldingsdatum"));
+        insertLogical(new Decides($onderwerp, "defaults A:Vondst.meldingsdatum", 0));
+    }
+end
+
+rule "defaults A:Vondst.meldingsdatum: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst") )
+    $stand_0 : State( attribute == ElementKey.of("vondst", "berekende meldingsdatum", false), subject == $onderwerp, $berekendeMeldingsdatum : value )
+    not( $hoger_16 : Decides( stack == "defaults A:Vondst.meldingsdatum" && index < 1, subject == $onderwerp ) )
+then
+    // zijn berekende meldingsdatum
+    Object v = $berekendeMeldingsdatum;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "meldingsdatum", false), v, "defaults A:Vondst.meldingsdatum"));
+        insertLogical(new Decides($onderwerp, "defaults A:Vondst.meldingsdatum", 1));
+    }
+end
+
+rule "defaults A:Vondst.meldingsdatum: default 2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), ComputeHelpers.readProperty(this, "meldingsdatum") == null )
+    not( $hoger_21 : Decides( stack == "defaults A:Vondst.meldingsdatum" && index < 2, subject == $onderwerp ) )
+then
+    // 01-03-2026
+    Object v = java.time.LocalDate.parse("2026-03-01");
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "meldingsdatum", false), v, "defaults A:Vondst.meldingsdatum"));
+        insertLogical(new Decides($onderwerp, "defaults A:Vondst.meldingsdatum", 2));
+    }
+end
+
+rule "kenmerkstand Vondst.afwijkende opgave meldingsdatum: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(afwijkendeOpgaveMeldingsdatum) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "afwijkende opgave meldingsdatum", true), true));
+end
+
+rule "kenmerkstand Vondst.afwijkende opgave meldingsdatum: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "afwijkende opgave meldingsdatum", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "afwijkende opgave meldingsdatum", true), true));
+end
+
+rule "kenmerkstand Vondst.afwijkende opgave meldingsdatum: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(afwijkendeOpgaveMeldingsdatum) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "afwijkende opgave meldingsdatum", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "afwijkende opgave meldingsdatum", true), false));
+end
+
+rule "stand Vondst.meldingsdatum: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $waarde : Value( attribute == ElementKey.of("vondst", "meldingsdatum", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "meldingsdatum", false), $v));
+end
+
+rule "stand Vondst.meldingsdatum: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : meldingsdatum )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "meldingsdatum", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "meldingsdatum", false), $invoer));
+end
+
+rule "stand Vondst.berekende meldingsdatum: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $waarde : Value( attribute == ElementKey.of("vondst", "berekende meldingsdatum", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "berekende meldingsdatum", false), $v));
+end
+
+rule "stand Vondst.berekende meldingsdatum: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : berekendeMeldingsdatum )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "berekende meldingsdatum", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "berekende meldingsdatum", false), $invoer));
+end
+

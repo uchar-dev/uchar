@@ -1,0 +1,80 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het aantal munten van de Jutter
+function Object waarde_aantalMunten(Object $aantal_vouw_4) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_4), Integer.valueOf(0), "aantal munten", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal munten"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "aantal munten: vouw 0", subject == $onderwerp ); $aantal_vouw_4 : count() )
+then
+    Object v = waarde_aantalMunten($aantal_vouw_4);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal munten", ComputeHelpers.designate(v, "aantal munten")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal munten", false), v, "aantal munten"));
+        }
+    }
+end
+
+// de som van het gewicht van alle munten van de Jutter
+function Object waarde_muntgewicht(Object $aantal_vouw_9, Object $vouw_vouw_11) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_9, $vouw_vouw_11, new java.math.BigDecimal("0")), Integer.valueOf(2), "muntgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "muntgewicht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_6 : Contribution( fold == "muntgewicht: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_10 : value ); $aantal_vouw_9 : count(), $vouw_vouw_11 : exactSum($bijdragewaarde_vouw_10) )
+then
+    Object v = waarde_muntgewicht($aantal_vouw_9, $vouw_vouw_11);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "muntgewicht", ComputeHelpers.designate(v, "muntgewicht")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "muntgewicht", false), v, "muntgewicht"));
+        }
+    }
+end
+
+rule "aantal munten: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Munt( aanmelder == $vouwonderwerp )
+then
+    insertLogical(new Contribution("aantal munten: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "muntgewicht: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Munt( aanmelder == $vouwonderwerp, $gewicht : gewicht )
+then
+    Object v = ComputeHelpers.contribution("muntgewicht: vouw 1", $vouwonderwerp, $onderwerp, $gewicht, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+

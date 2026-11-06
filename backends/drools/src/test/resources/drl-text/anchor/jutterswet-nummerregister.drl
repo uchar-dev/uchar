@@ -1,0 +1,353 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.UniquenessKey;
+import dev.uchar.regelspraak.transpiler.tms.UniquenessViolation;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+function boolean toets_eenmaligVondstnummerSleutelVanStrandvondst1(Object $tijdlijn_0) {
+    return ComputeHelpers.bucketScalar($tijdlijn_0, Boolean.FALSE);
+}
+
+function java.util.List componenten_eenmaligVondstnummerSleutelVanStrandvondst1(Object $tijdlijn_0) {
+    java.util.List waarden = new java.util.ArrayList();
+    waarden.add($tijdlijn_0);
+    return waarden;
+}
+
+rule "eenmalig vondstnummer: sleutel van Strandvondst 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst()
+    $stand_0 : State( attribute == ElementKey.of("strandvondst", "vondstnummer", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_eenmaligVondstnummerSleutelVanStrandvondst1($tijdlijn_0) )
+then
+    for (Object k : ComputeHelpers.uniquenessKeys("eenmalig vondstnummer", 0, $onderwerp, null, componenten_eenmaligVondstnummerSleutelVanStrandvondst1($tijdlijn_0), 0)) {
+        insertLogical(k);
+    }
+end
+
+function boolean toets_eenmaligVondstnummerSleutelvormVanStrandvondst1(Object $tijdlijn_0) {
+    return ComputeHelpers.bucketScalar($tijdlijn_0, Boolean.TRUE);
+}
+
+rule "eenmalig vondstnummer: sleutelvorm van Strandvondst 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst()
+    $stand_0 : State( attribute == ElementKey.of("strandvondst", "vondstnummer", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_eenmaligVondstnummerSleutelvormVanStrandvondst1($tijdlijn_0) )
+then
+    insertLogical(new Fault($onderwerp, "eenmalig vondstnummer", ComputeHelpers.inputFormFault("vondstnummer", "the ever-unique key \"vondstnummer\" needs the full timeline; ", $onderwerp, " supplies only a scalar (ch. 5.9)", "eenmalig vondstnummer")));
+end
+
+function boolean toets_eenmaligVondstnummerSleutelVanWrakvondst2(Object $tijdlijn_0) {
+    return ComputeHelpers.bucketScalar($tijdlijn_0, Boolean.FALSE);
+}
+
+function java.util.List componenten_eenmaligVondstnummerSleutelVanWrakvondst2(Object $tijdlijn_0) {
+    java.util.List waarden = new java.util.ArrayList();
+    waarden.add($tijdlijn_0);
+    return waarden;
+}
+
+rule "eenmalig vondstnummer: sleutel van Wrakvondst 2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakvondst()
+    $stand_0 : State( attribute == ElementKey.of("wrakvondst", "vondstnummer", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_eenmaligVondstnummerSleutelVanWrakvondst2($tijdlijn_0) )
+then
+    for (Object k : ComputeHelpers.uniquenessKeys("eenmalig vondstnummer", 1, $onderwerp, null, componenten_eenmaligVondstnummerSleutelVanWrakvondst2($tijdlijn_0), 0)) {
+        insertLogical(k);
+    }
+end
+
+function boolean toets_eenmaligVondstnummerSleutelvormVanWrakvondst2(Object $tijdlijn_0) {
+    return ComputeHelpers.bucketScalar($tijdlijn_0, Boolean.TRUE);
+}
+
+rule "eenmalig vondstnummer: sleutelvorm van Wrakvondst 2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakvondst()
+    $stand_0 : State( attribute == ElementKey.of("wrakvondst", "vondstnummer", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_eenmaligVondstnummerSleutelvormVanWrakvondst2($tijdlijn_0) )
+then
+    insertLogical(new Fault($onderwerp, "eenmalig vondstnummer", ComputeHelpers.inputFormFault("vondstnummer", "the ever-unique key \"vondstnummer\" needs the full timeline; ", $onderwerp, " supplies only a scalar (ch. 5.9)", "eenmalig vondstnummer")));
+end
+
+function boolean beta_eenmaligVondstnummer(Object eigen, Object ander) {
+    return ComputeHelpers.collidesWith(eigen, ander);
+}
+
+function boolean toets_eenmaligVondstnummer(Object $botsingen) {
+    return ComputeHelpers.duplicate($botsingen);
+}
+
+rule "eenmalig vondstnummer"
+    dialect "mvel"
+when
+    $sleutel : UniquenessKey( uniqueness == "eenmalig vondstnummer", $element : element )
+    accumulate( $ander : UniquenessKey( uniqueness == "eenmalig vondstnummer", beta_eenmaligVondstnummer(this, $sleutel) ); $botsingen : count() )
+    eval( toets_eenmaligVondstnummer($botsingen) )
+then
+    insertLogical(new UniquenessViolation("eenmalig vondstnummer", $element));
+end
+
+rule "eenmalig vondstnummer: kanaal"
+    dialect "mvel"
+when
+    $schending : UniquenessViolation( uniqueness == "eenmalig vondstnummer", $subject : element )
+then
+    insertLogical(ComputeHelpers.inconsistency("eenmalig vondstnummer", $subject, ComputeHelpers.list1("EF-026")));
+end
+
+function boolean toets_eenmaligeReekscodeSleutelVanStrandvondst1(Object $reekscode, Object $tijdlijn_1) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($reekscode, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.bucketScalar($tijdlijn_1, Boolean.FALSE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+function java.util.List componenten_eenmaligeReekscodeSleutelVanStrandvondst1(Object $reekscode, Object $tijdlijn_1) {
+    java.util.List waarden = new java.util.ArrayList();
+    waarden.add($reekscode);
+    waarden.add($tijdlijn_1);
+    return waarden;
+}
+
+rule "eenmalige reekscode: sleutel van Strandvondst 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst( $reekscode : reekscode )
+    $stand_1 : State( attribute == ElementKey.of("strandvondst", "volgnummer", false), subject == $onderwerp, $tijdlijn_1 : value )
+    eval( toets_eenmaligeReekscodeSleutelVanStrandvondst1($reekscode, $tijdlijn_1) )
+then
+    for (Object k : ComputeHelpers.uniquenessKeys("eenmalige reekscode", 0, $onderwerp, null, componenten_eenmaligeReekscodeSleutelVanStrandvondst1($reekscode, $tijdlijn_1), 1)) {
+        insertLogical(k);
+    }
+end
+
+function boolean toets_eenmaligeReekscodeSleutelvormVanStrandvondst1(Object $reekscode, Object $tijdlijn_1) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($reekscode, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.bucketScalar($tijdlijn_1, Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "eenmalige reekscode: sleutelvorm van Strandvondst 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst( $reekscode : reekscode )
+    $stand_1 : State( attribute == ElementKey.of("strandvondst", "volgnummer", false), subject == $onderwerp, $tijdlijn_1 : value )
+    eval( toets_eenmaligeReekscodeSleutelvormVanStrandvondst1($reekscode, $tijdlijn_1) )
+then
+    insertLogical(new Fault($onderwerp, "eenmalige reekscode", ComputeHelpers.inputFormFault("volgnummer", "the ever-unique key \"volgnummer\" needs the full timeline; ", $onderwerp, " supplies only a scalar (ch. 5.9)", "eenmalige reekscode")));
+end
+
+function boolean toets_eenmaligeReekscodeSleutelVanWrakvondst2(Object $reekscode, Object $tijdlijn_1) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($reekscode, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.bucketScalar($tijdlijn_1, Boolean.FALSE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+function java.util.List componenten_eenmaligeReekscodeSleutelVanWrakvondst2(Object $reekscode, Object $tijdlijn_1) {
+    java.util.List waarden = new java.util.ArrayList();
+    waarden.add($reekscode);
+    waarden.add($tijdlijn_1);
+    return waarden;
+}
+
+rule "eenmalige reekscode: sleutel van Wrakvondst 2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakvondst( $reekscode : reekscode )
+    $stand_1 : State( attribute == ElementKey.of("wrakvondst", "volgnummer", false), subject == $onderwerp, $tijdlijn_1 : value )
+    eval( toets_eenmaligeReekscodeSleutelVanWrakvondst2($reekscode, $tijdlijn_1) )
+then
+    for (Object k : ComputeHelpers.uniquenessKeys("eenmalige reekscode", 1, $onderwerp, null, componenten_eenmaligeReekscodeSleutelVanWrakvondst2($reekscode, $tijdlijn_1), 1)) {
+        insertLogical(k);
+    }
+end
+
+function boolean toets_eenmaligeReekscodeSleutelvormVanWrakvondst2(Object $reekscode, Object $tijdlijn_1) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($reekscode, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.bucketScalar($tijdlijn_1, Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "eenmalige reekscode: sleutelvorm van Wrakvondst 2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakvondst( $reekscode : reekscode )
+    $stand_1 : State( attribute == ElementKey.of("wrakvondst", "volgnummer", false), subject == $onderwerp, $tijdlijn_1 : value )
+    eval( toets_eenmaligeReekscodeSleutelvormVanWrakvondst2($reekscode, $tijdlijn_1) )
+then
+    insertLogical(new Fault($onderwerp, "eenmalige reekscode", ComputeHelpers.inputFormFault("volgnummer", "the ever-unique key \"volgnummer\" needs the full timeline; ", $onderwerp, " supplies only a scalar (ch. 5.9)", "eenmalige reekscode")));
+end
+
+function boolean beta_eenmaligeReekscode(Object eigen, Object ander) {
+    return ComputeHelpers.collidesWith(eigen, ander);
+}
+
+function boolean toets_eenmaligeReekscode(Object $botsingen) {
+    return ComputeHelpers.duplicate($botsingen);
+}
+
+rule "eenmalige reekscode"
+    dialect "mvel"
+when
+    $sleutel : UniquenessKey( uniqueness == "eenmalige reekscode", $element : element )
+    accumulate( $ander : UniquenessKey( uniqueness == "eenmalige reekscode", beta_eenmaligeReekscode(this, $sleutel) ); $botsingen : count() )
+    eval( toets_eenmaligeReekscode($botsingen) )
+then
+    insertLogical(new UniquenessViolation("eenmalige reekscode", $element));
+end
+
+rule "eenmalige reekscode: kanaal"
+    dialect "mvel"
+when
+    $schending : UniquenessViolation( uniqueness == "eenmalige reekscode", $subject : element )
+then
+    insertLogical(ComputeHelpers.inconsistency("eenmalige reekscode", $subject, ComputeHelpers.list1("EF-026")));
+end
+
+rule "stand Strandvondst.vondstnummer: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst( $invoer : (ComputeHelpers.periods(vondstnummer)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("strandvondst", "vondstnummer", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("strandvondst", "vondstnummer", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("strandvondst", "vondstnummer", false), $invoer));
+end
+
+rule "stand Strandvondst.vondstnummer: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst( $invoer : (ComputeHelpers.periods(vondstnummer)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("strandvondst", "vondstnummer", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("strandvondst", "vondstnummer", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("strandvondst", "vondstnummer", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+rule "stand Wrakvondst.vondstnummer: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakvondst( $invoer : (ComputeHelpers.periods(vondstnummer)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("wrakvondst", "vondstnummer", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("wrakvondst", "vondstnummer", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("wrakvondst", "vondstnummer", false), $invoer));
+end
+
+rule "stand Wrakvondst.vondstnummer: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakvondst( $invoer : (ComputeHelpers.periods(vondstnummer)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("wrakvondst", "vondstnummer", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("wrakvondst", "vondstnummer", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("wrakvondst", "vondstnummer", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+rule "stand Strandvondst.volgnummer: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst( $invoer : (ComputeHelpers.periods(volgnummer)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("strandvondst", "volgnummer", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("strandvondst", "volgnummer", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("strandvondst", "volgnummer", false), $invoer));
+end
+
+rule "stand Strandvondst.volgnummer: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst( $invoer : (ComputeHelpers.periods(volgnummer)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("strandvondst", "volgnummer", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("strandvondst", "volgnummer", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("strandvondst", "volgnummer", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+rule "stand Wrakvondst.volgnummer: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakvondst( $invoer : (ComputeHelpers.periods(volgnummer)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("wrakvondst", "volgnummer", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("wrakvondst", "volgnummer", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("wrakvondst", "volgnummer", false), $invoer));
+end
+
+rule "stand Wrakvondst.volgnummer: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakvondst( $invoer : (ComputeHelpers.periods(volgnummer)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("wrakvondst", "volgnummer", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("wrakvondst", "volgnummer", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("wrakvondst", "volgnummer", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+

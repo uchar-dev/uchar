@@ -1,0 +1,283 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// hij aan ten hoogste twee van de volgende voorwaarden voldoet: - zijn ploegomvang is groter dan 100 - het aandeel is groter dan 0 - zijn vangstwaarde is groter dan 100000 - zijn ploegomvang is gelijk aan 0
+function boolean toets_stoptekenVanEenVacuumwacht(Object $ploegomvang, Object $vangstwaarde) {
+    try {
+        int raak = 0;
+        Boolean vast;
+        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 0, 4);
+        if (vast != null) {
+            return vast;
+        }
+        if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("100"), ">")) {
+            raak++;
+        }
+        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 1, 3);
+        if (vast != null) {
+            return vast;
+        }
+        if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
+            raak++;
+        }
+        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 2, 2);
+        if (vast != null) {
+            return vast;
+        }
+        if (RegelSpraakRuntime.rsAggVergelijk($vangstwaarde, new java.math.BigDecimal("100000"), ">")) {
+            raak++;
+        }
+        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 3, 1);
+        if (vast != null) {
+            return vast;
+        }
+        if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
+            raak++;
+        }
+        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 4);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// 1
+function Object waarde_stoptekenVanEenVacuumwacht(Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("1"), Integer.valueOf(0), "stopteken", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "stopteken van een vacuumwacht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vacuumwacht( $ploegomvang : ploegomvang, $vangstwaarde : vangstwaarde )
+    eval( toets_stoptekenVanEenVacuumwacht($ploegomvang, $vangstwaarde) )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_stoptekenVanEenVacuumwacht(sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "stopteken van een vacuumwacht", ComputeHelpers.designate(v, "stopteken van een vacuumwacht")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("stopteken van een vacuumwacht", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vacuumwacht", "stopteken", false), v, "stopteken van een vacuumwacht"));
+        }
+    }
+end
+
+// hij aan ten hoogste twee van de volgende voorwaarden voldoet: - zijn ploegomvang is groter dan 100 - het aandeel is groter dan 0 - zijn vangstwaarde is groter dan 100000 - zijn ploegomvang is gelijk aan 0
+function boolean toets_stoptekenVanEenVacuumwachtFoutInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde) {
+    try {
+        boolean uitkomst = samengesteld1_stoptekenVanEenVacuumwachtFoutInDeVoorwaarde($ploegomvang, $vangstwaarde);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// hij aan ten hoogste twee van de volgende voorwaarden voldoet: - zijn ploegomvang is groter dan 100 - het aandeel is groter dan 0 - zijn vangstwaarde is groter dan 100000 - zijn ploegomvang is gelijk aan 0
+function boolean samengesteld1_stoptekenVanEenVacuumwachtFoutInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 0, 4);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("100"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 1, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 2, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($vangstwaarde, new java.math.BigDecimal("100000"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 3, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 4);
+}
+
+// hij aan ten hoogste twee van de volgende voorwaarden voldoet: - zijn ploegomvang is groter dan 100 - het aandeel is groter dan 0 - zijn vangstwaarde is groter dan 100000 - zijn ploegomvang is gelijk aan 0
+function Object fout_stoptekenVanEenVacuumwachtFoutInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde) {
+    try {
+        boolean uitkomst = samengesteld2_stoptekenVanEenVacuumwachtFoutInDeVoorwaarde($ploegomvang, $vangstwaarde);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// hij aan ten hoogste twee van de volgende voorwaarden voldoet: - zijn ploegomvang is groter dan 100 - het aandeel is groter dan 0 - zijn vangstwaarde is groter dan 100000 - zijn ploegomvang is gelijk aan 0
+function boolean samengesteld2_stoptekenVanEenVacuumwachtFoutInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 0, 4);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("100"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 1, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 2, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($vangstwaarde, new java.math.BigDecimal("100000"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 3, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 4);
+}
+
+rule "stopteken van een vacuumwacht: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vacuumwacht( $ploegomvang : ploegomvang, $vangstwaarde : vangstwaarde )
+    eval( toets_stoptekenVanEenVacuumwachtFoutInDeVoorwaarde($ploegomvang, $vangstwaarde) )
+then
+    Object f = fout_stoptekenVanEenVacuumwachtFoutInDeVoorwaarde($ploegomvang, $vangstwaarde);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"stopteken van een vacuumwacht\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "stopteken van een vacuumwacht", ComputeHelpers.designate(f, "stopteken van een vacuumwacht")));
+end
+
+// hij aan ten hoogste twee van de volgende voorwaarden voldoet: - zijn ploegomvang is groter dan 100 - het aandeel is groter dan 0 - zijn vangstwaarde is groter dan 100000 - zijn ploegomvang is gelijk aan 0
+function boolean toets_stoptekenVanEenVacuumwachtDeponeringInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde, Object sonde) {
+    try {
+        boolean uitkomst = samengesteld1_stoptekenVanEenVacuumwachtDeponeringInDeVoorwaarde($ploegomvang, $vangstwaarde, sonde);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    return ComputeHelpers.reported(sonde);
+}
+
+// hij aan ten hoogste twee van de volgende voorwaarden voldoet: - zijn ploegomvang is groter dan 100 - het aandeel is groter dan 0 - zijn vangstwaarde is groter dan 100000 - zijn ploegomvang is gelijk aan 0
+function boolean samengesteld1_stoptekenVanEenVacuumwachtDeponeringInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde, Object sonde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 0, 4);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("100"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 1, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 2, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($vangstwaarde, new java.math.BigDecimal("100000"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 3, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 4);
+}
+
+// hij aan ten hoogste twee van de volgende voorwaarden voldoet: - zijn ploegomvang is groter dan 100 - het aandeel is groter dan 0 - zijn vangstwaarde is groter dan 100000 - zijn ploegomvang is gelijk aan 0
+function java.util.List deponering_stoptekenVanEenVacuumwachtDeponeringInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde, Object sonde) {
+    try {
+        boolean uitkomst = samengesteld2_stoptekenVanEenVacuumwachtDeponeringInDeVoorwaarde($ploegomvang, $vangstwaarde, sonde);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    if (!ComputeHelpers.reported(sonde)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"stopteken van een vacuumwacht\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    return ComputeHelpers.depositCodes(sonde);
+}
+
+// hij aan ten hoogste twee van de volgende voorwaarden voldoet: - zijn ploegomvang is groter dan 100 - het aandeel is groter dan 0 - zijn vangstwaarde is groter dan 100000 - zijn ploegomvang is gelijk aan 0
+function boolean samengesteld2_stoptekenVanEenVacuumwachtDeponeringInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde, Object sonde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 0, 4);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("100"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 1, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 2, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($vangstwaarde, new java.math.BigDecimal("100000"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 3, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 2, raak, 4);
+}
+
+rule "stopteken van een vacuumwacht: deponering in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vacuumwacht( $ploegomvang : ploegomvang, $vangstwaarde : vangstwaarde )
+    eval( toets_stoptekenVanEenVacuumwachtDeponeringInDeVoorwaarde($ploegomvang, $vangstwaarde, ComputeHelpers.depositFlag()) )
+then
+    insertLogical(ComputeHelpers.inconsistency("stopteken van een vacuumwacht", $onderwerp, deponering_stoptekenVanEenVacuumwachtDeponeringInDeVoorwaarde($ploegomvang, $vangstwaarde, ComputeHelpers.depositFlag())));
+end
+

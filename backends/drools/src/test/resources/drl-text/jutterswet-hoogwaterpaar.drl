@@ -1,0 +1,55 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de eerste van zijn ochtendhoogwater en zijn avondhoogwater
+function Object waarde_eersteHoogwaterVanEenGetijdendag(Object $ochtendhoogwater, Object $avondhoogwater) {
+    try {
+        return ComputeHelpers.smallest(ComputeHelpers.smallest(null, $ochtendhoogwater), $avondhoogwater);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "eerste hoogwater van een getijdendag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Getijdendag( $ochtendhoogwater : ochtendhoogwater, $avondhoogwater : avondhoogwater )
+then
+    Object v = waarde_eersteHoogwaterVanEenGetijdendag($ochtendhoogwater, $avondhoogwater);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "eerste hoogwater van een getijdendag", ComputeHelpers.designate(v, "eerste hoogwater van een getijdendag")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("getijdendag", "eerstehoogwater", false), v, "eerste hoogwater van een getijdendag"));
+        }
+    }
+end
+
+// de laatste van zijn ochtendhoogwater en zijn avondhoogwater
+function Object waarde_laatsteHoogwaterVanEenGetijdendag(Object $ochtendhoogwater, Object $avondhoogwater) {
+    try {
+        return ComputeHelpers.largest(ComputeHelpers.largest(null, $ochtendhoogwater), $avondhoogwater);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "laatste hoogwater van een getijdendag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Getijdendag( $ochtendhoogwater : ochtendhoogwater, $avondhoogwater : avondhoogwater )
+then
+    Object v = waarde_laatsteHoogwaterVanEenGetijdendag($ochtendhoogwater, $avondhoogwater);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "laatste hoogwater van een getijdendag", ComputeHelpers.designate(v, "laatste hoogwater van een getijdendag")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("getijdendag", "laatstehoogwater", false), v, "laatste hoogwater van een getijdendag"));
+        }
+    }
+end
+

@@ -1,0 +1,177 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.EmptyBarrier;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// ink is het inkomen van de Jutter
+function Object waarde_aanslagVanEenJutter(Object $inkomen, Object $kindertal) {
+    try {
+        return ComputeHelpers.fitTarget(let1_aanslagVanEenJutter($inkomen, $kindertal), Integer.valueOf(2), "aanslag", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// ink is het inkomen van de Jutter
+function Object let1_aanslagVanEenJutter(Object $inkomen, Object $kindertal) {
+    Object cel_1 = ComputeHelpers.binderCell();
+    try {
+        return let2_aanslagVanEenJutter($inkomen, $kindertal, cel_1);
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_1);
+    }
+}
+
+// het inkomen van de Jutter
+function Object binder1_aanslagVanEenJutter(Object $inkomen, Object $kindertal, Object cel_1) {
+    if (!ComputeHelpers.binderCellFilled(cel_1)) {
+        ComputeHelpers.fillBinderCell(cel_1, $inkomen);
+    }
+    return ComputeHelpers.binderValue(cel_1);
+}
+
+// aftrek is het kindertal van de Jutter maal 250,00
+function Object let2_aanslagVanEenJutter(Object $inkomen, Object $kindertal, Object cel_1) {
+    Object cel_3 = ComputeHelpers.binderCell();
+    try {
+        return let3_aanslagVanEenJutter($inkomen, $kindertal, cel_1, cel_3);
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_3);
+    }
+}
+
+// het kindertal van de Jutter maal 250,00
+function Object binder2_aanslagVanEenJutter(Object $inkomen, Object $kindertal, Object cel_1, Object cel_3) {
+    if (!ComputeHelpers.binderCellFilled(cel_3)) {
+        ComputeHelpers.fillBinderCell(cel_3, RegelSpraakRuntime.rsMaal($kindertal, new java.math.BigDecimal("250")));
+    }
+    return ComputeHelpers.binderValue(cel_3);
+}
+
+// belasting is ink maal 0,2100 rekenkundig afgerond op 2 decimalen
+function Object let3_aanslagVanEenJutter(Object $inkomen, Object $kindertal, Object cel_1, Object cel_3) {
+    Object cel_4 = ComputeHelpers.binderCell();
+    try {
+        return (RegelSpraakRuntime.rsAggVergelijk(binder2_aanslagVanEenJutter($inkomen, $kindertal, cel_1, cel_3), binder3_aanslagVanEenJutter($inkomen, $kindertal, cel_1, cel_3, cel_4), ">") ? (Object) new java.math.BigDecimal("0") : (Object) RegelSpraakRuntime.rsMin(binder3_aanslagVanEenJutter($inkomen, $kindertal, cel_1, cel_3, cel_4), binder2_aanslagVanEenJutter($inkomen, $kindertal, cel_1, cel_3)));
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_4);
+    }
+}
+
+// ink maal 0,2100 rekenkundig afgerond op 2 decimalen
+function Object binder3_aanslagVanEenJutter(Object $inkomen, Object $kindertal, Object cel_1, Object cel_3, Object cel_4) {
+    if (!ComputeHelpers.binderCellFilled(cel_4)) {
+        ComputeHelpers.fillBinderCell(cel_4, RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsMaal(binder1_aanslagVanEenJutter($inkomen, $kindertal, cel_1), new java.math.BigDecimal("0.21")), Integer.valueOf(2), java.math.RoundingMode.HALF_UP));
+    }
+    return ComputeHelpers.binderValue(cel_4);
+}
+
+rule "aanslag van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $inkomen : inkomen, $kindertal : kindertal )
+then
+    Object v = waarde_aanslagVanEenJutter($inkomen, $kindertal);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aanslag van een jutter", ComputeHelpers.designate(v, "aanslag van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aanslag", false), v, "aanslag van een jutter"));
+        }
+    }
+end
+
+// 1,0000 plus het kindertal van de Jutter gedeeld door 2,0000
+function Object waarde_factorVanEenJutter(Object $kindertal, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus(new java.math.BigDecimal("1"), ComputeHelpers.divided($kindertal, new java.math.BigDecimal("2"), sonde)), Integer.valueOf(4), "factor", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "factor van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $kindertal : kindertal )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_factorVanEenJutter($kindertal, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "factor van een jutter", ComputeHelpers.designate(v, "factor van een jutter")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("factor van een jutter", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "factor", false), v, "factor van een jutter"));
+        }
+    }
+end
+
+// ink2 maal de factor van de Jutter rekenkundig afgerond op 2 decimalen
+function Object waarde_gewogenInkomenVanEenJutter(Object $inkomen, Object $factor) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(let_gewogenInkomenVanEenJutter($inkomen, $factor), Integer.valueOf(2), java.math.RoundingMode.HALF_UP), Integer.valueOf(2), "gewogen", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// ink2 is het inkomen van de Jutter
+function Object let_gewogenInkomenVanEenJutter(Object $inkomen, Object $factor) {
+    Object cel_1 = ComputeHelpers.binderCell();
+    try {
+        return RegelSpraakRuntime.rsMaal(binder_gewogenInkomenVanEenJutter($inkomen, $factor, cel_1), $factor);
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_1);
+    }
+}
+
+// het inkomen van de Jutter
+function Object binder_gewogenInkomenVanEenJutter(Object $inkomen, Object $factor, Object cel_1) {
+    if (!ComputeHelpers.binderCellFilled(cel_1)) {
+        ComputeHelpers.fillBinderCell(cel_1, $inkomen);
+    }
+    return ComputeHelpers.binderValue(cel_1);
+}
+
+rule "gewogen inkomen van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $inkomen : inkomen )
+    $stand_2 : State( attribute == ElementKey.of("jutter", "factor", false), subject == $onderwerp, $factor : value )
+then
+    Object v = waarde_gewogenInkomenVanEenJutter($inkomen, $factor);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "gewogen inkomen van een jutter", ComputeHelpers.designate(v, "gewogen inkomen van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "gewogen", false), v, "gewogen inkomen van een jutter"));
+        }
+    }
+end
+
+rule "stand Jutter.factor: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $waarde : Value( attribute == ElementKey.of("jutter", "factor", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "factor", false), $v));
+end
+
+rule "stand Jutter.factor: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : factor )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "factor", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "factor", false), $invoer));
+end
+

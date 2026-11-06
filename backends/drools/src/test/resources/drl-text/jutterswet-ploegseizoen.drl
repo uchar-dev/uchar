@@ -1,0 +1,364 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMaximumFunction exactMax;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.PathState;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn vondstgewicht in zomer maal 2
+function Object waarde_najaarsgewichtVanEenJutter(Object $vondstgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal(ComputeHelpers.cell($vondstgewicht, java.util.Arrays.asList("zomer")), new java.math.BigDecimal("2")), Integer.valueOf(2), "vondstgewicht[najaar]", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "najaarsgewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht )
+then
+    Object v = waarde_najaarsgewichtVanEenJutter($vondstgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "najaarsgewicht van een jutter", ComputeHelpers.designate(v, "najaarsgewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "vondstgewicht[najaar]", false), v, "najaarsgewicht van een jutter"));
+        }
+    }
+end
+
+function Object pad_leidersvoorjaarsgewichtVanEenPloeg(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("leider"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "vondstgewicht");
+}
+
+// het vondstgewicht in voorjaar van de leider van de Ploeg
+function Object waarde_leidersvoorjaarsgewichtVanEenPloeg(Object $leiderVondstgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.cell($leiderVondstgewicht, java.util.Arrays.asList("voorjaar")), Integer.valueOf(2), "leidersvoorjaarsgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "leidersvoorjaarsgewicht van een ploeg"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ploeg( $leiderVondstgewicht : (pad_leidersvoorjaarsgewichtVanEenPloeg(this)) )
+then
+    Object v = waarde_leidersvoorjaarsgewichtVanEenPloeg($leiderVondstgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "leidersvoorjaarsgewicht van een ploeg", ComputeHelpers.designate(v, "leidersvoorjaarsgewicht van een ploeg")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("ploeg", "leidersvoorjaarsgewicht", false), v, "leidersvoorjaarsgewicht van een ploeg"));
+        }
+    }
+end
+
+// het vondstgewicht in najaar van de leider van de Ploeg
+function Object waarde_leidersnajaarsgewichtVanEenPloeg(Object $leiderVondstgewicht) {
+    try {
+        return ComputeHelpers.fitTarget($leiderVondstgewicht, Integer.valueOf(2), "leidersnajaarsgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "leidersnajaarsgewicht van een ploeg"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ploeg()
+    $padstand_0 : PathState( path == "Ploeg:leider" && member == ElementKey.of("jutter", "vondstgewicht[najaar]", false), subject == $onderwerp, $leiderVondstgewicht : value )
+then
+    Object v = waarde_leidersnajaarsgewichtVanEenPloeg($leiderVondstgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "leidersnajaarsgewicht van een ploeg", ComputeHelpers.designate(v, "leidersnajaarsgewicht van een ploeg")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("ploeg", "leidersnajaarsgewicht", false), v, "leidersnajaarsgewicht van een ploeg"));
+        }
+    }
+end
+
+function Object pad_leidersjaargewichtVanEenPloeg(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("leider"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "vondstgewicht");
+}
+
+// de som van het vondstgewicht van de leider van de Ploeg over alle seizoenen
+function Object waarde_leidersjaargewichtVanEenPloeg(Object $leiderVondstgewicht, Object $leiderVondstgewicht2) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsDimSom(ComputeHelpers.map(ComputeHelpers.withCell($leiderVondstgewicht, java.util.Arrays.asList("najaar"), $leiderVondstgewicht2)), java.util.Arrays.asList(java.util.Arrays.asList("voorjaar"), java.util.Arrays.asList("zomer"), java.util.Arrays.asList("najaar"))), Integer.valueOf(2), "leidersjaargewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "leidersjaargewicht van een ploeg"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ploeg( $leiderVondstgewicht : (pad_leidersjaargewichtVanEenPloeg(this)) )
+    $padstand_1 : PathState( path == "Ploeg:leider" && member == ElementKey.of("jutter", "vondstgewicht[najaar]", false), subject == $onderwerp, $leiderVondstgewicht2 : value )
+then
+    Object v = waarde_leidersjaargewichtVanEenPloeg($leiderVondstgewicht, $leiderVondstgewicht2);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "leidersjaargewicht van een ploeg", ComputeHelpers.designate(v, "leidersjaargewicht van een ploeg")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("ploeg", "leidersjaargewicht", false), v, "leidersjaargewicht van een ploeg"));
+        }
+    }
+end
+
+function Object pad_laatsteLeidersgewichtVanEenPloeg(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("leider"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "vondstgewicht");
+}
+
+// de laatste van het vondstgewicht van de leider van de Ploeg over alle seizoenen
+function Object waarde_laatsteLeidersgewichtVanEenPloeg(Object $leiderVondstgewicht, Object $leiderVondstgewicht2) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.lastCell(ComputeHelpers.map(ComputeHelpers.withCell($leiderVondstgewicht, java.util.Arrays.asList("najaar"), $leiderVondstgewicht2)), java.util.Arrays.asList(java.util.Arrays.asList("voorjaar"), java.util.Arrays.asList("zomer"), java.util.Arrays.asList("najaar"))), Integer.valueOf(2), "laatste leidersgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "laatste leidersgewicht van een ploeg"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ploeg( $leiderVondstgewicht : (pad_laatsteLeidersgewichtVanEenPloeg(this)) )
+    $padstand_1 : PathState( path == "Ploeg:leider" && member == ElementKey.of("jutter", "vondstgewicht[najaar]", false), subject == $onderwerp, $leiderVondstgewicht2 : value )
+then
+    Object v = waarde_laatsteLeidersgewichtVanEenPloeg($leiderVondstgewicht, $leiderVondstgewicht2);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "laatste leidersgewicht van een ploeg", ComputeHelpers.designate(v, "laatste leidersgewicht van een ploeg")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("ploeg", "laatste leidersgewicht", false), v, "laatste leidersgewicht van een ploeg"));
+        }
+    }
+end
+
+// de som van het vondstgewicht in voorjaar van alle leden van de Ploeg
+function Object waarde_ploegvoorjaarsgewichtVanEenPloeg(Object $aantal_vouw_10, Object $vouw_vouw_12) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_10, $vouw_vouw_12, null), Integer.valueOf(2), "ploegvoorjaarsgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "ploegvoorjaarsgewicht van een ploeg"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ploeg()
+    accumulate( $bijdrage_vouw_7 : Contribution( fold == "ploegvoorjaarsgewicht van een ploeg: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_11 : value ); $aantal_vouw_10 : count(), $vouw_vouw_12 : exactSum($bijdragewaarde_vouw_11) )
+then
+    Object v = waarde_ploegvoorjaarsgewichtVanEenPloeg($aantal_vouw_10, $vouw_vouw_12);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "ploegvoorjaarsgewicht van een ploeg", ComputeHelpers.designate(v, "ploegvoorjaarsgewicht van een ploeg")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("ploeg", "ploegvoorjaarsgewicht", false), v, "ploegvoorjaarsgewicht van een ploeg"));
+        }
+    }
+end
+
+// de maximale waarde van het vondstgewicht in najaar van alle leden van de Ploeg
+function Object waarde_zwaarsteLedennajaarsgewichtVanEenPloeg(Object $aantal_vouw_19, Object $vouw_vouw_21) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_19, $vouw_vouw_21, null), Integer.valueOf(2), "zwaarste ledennajaarsgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "zwaarste ledennajaarsgewicht van een ploeg"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ploeg()
+    accumulate( $bijdrage_vouw_16 : Contribution( fold == "zwaarste ledennajaarsgewicht van een ploeg: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_20 : value ); $aantal_vouw_19 : count(), $vouw_vouw_21 : exactMax($bijdragewaarde_vouw_20) )
+then
+    Object v = waarde_zwaarsteLedennajaarsgewichtVanEenPloeg($aantal_vouw_19, $vouw_vouw_21);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "zwaarste ledennajaarsgewicht van een ploeg", ComputeHelpers.designate(v, "zwaarste ledennajaarsgewicht van een ploeg")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("ploeg", "zwaarste ledennajaarsgewicht", false), v, "zwaarste ledennajaarsgewicht van een ploeg"));
+        }
+    }
+end
+
+// het aantal gevulde waarden van het vondstgewicht in voorjaar van alle leden van de Ploeg
+function Object waarde_aantalVoorjaarsledenVanEenPloeg(Object $aantal_vouw_26) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_26), Integer.valueOf(0), "aantal voorjaarsleden", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal voorjaarsleden van een ploeg"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ploeg()
+    accumulate( $bijdrage_vouw_23 : Contribution( fold == "aantal voorjaarsleden van een ploeg: vouw 2", subject == $onderwerp ); $aantal_vouw_26 : count() )
+then
+    Object v = waarde_aantalVoorjaarsledenVanEenPloeg($aantal_vouw_26);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal voorjaarsleden van een ploeg", ComputeHelpers.designate(v, "aantal voorjaarsleden van een ploeg")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("ploeg", "aantal voorjaarsleden", false), v, "aantal voorjaarsleden van een ploeg"));
+        }
+    }
+end
+
+function Object pad_leiderssoortVanEenPloeg(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("leider"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "vondstsoort");
+}
+
+// de vondstsoort in zomer van de leider van de Ploeg
+function Object waarde_leiderssoortVanEenPloeg(Object $leiderVondstsoort) {
+    try {
+        return ComputeHelpers.cell($leiderVondstsoort, java.util.Arrays.asList("zomer"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "leiderssoort van een ploeg"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ploeg( $leiderVondstsoort : (pad_leiderssoortVanEenPloeg(this)) )
+then
+    Object v = waarde_leiderssoortVanEenPloeg($leiderVondstsoort);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "leiderssoort van een ploeg", ComputeHelpers.designate(v, "leiderssoort van een ploeg")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("ploeg", "leiderssoort", false), v, "leiderssoort van een ploeg"));
+        }
+    }
+end
+
+function Object pad_eersteLeiderssoortVanEenPloeg(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("leider"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "vondstsoort");
+}
+
+// de eerste van de vondstsoort van de leider van de Ploeg over alle seizoenen
+function Object waarde_eersteLeiderssoortVanEenPloeg(Object $leiderVondstsoort) {
+    try {
+        return ComputeHelpers.firstCell(ComputeHelpers.map($leiderVondstsoort), java.util.Arrays.asList(java.util.Arrays.asList("voorjaar"), java.util.Arrays.asList("zomer"), java.util.Arrays.asList("najaar")));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "eerste leiderssoort van een ploeg"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ploeg( $leiderVondstsoort : (pad_eersteLeiderssoortVanEenPloeg(this)) )
+then
+    Object v = waarde_eersteLeiderssoortVanEenPloeg($leiderVondstsoort);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "eerste leiderssoort van een ploeg", ComputeHelpers.designate(v, "eerste leiderssoort van een ploeg")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("ploeg", "eerste leiderssoort", false), v, "eerste leiderssoort van een ploeg"));
+        }
+    }
+end
+
+rule "ploegvoorjaarsgewicht van een ploeg: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Ploeg()
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ploeg == $vouwonderwerp, $vondstgewicht : vondstgewicht )
+then
+    Object v = ComputeHelpers.contribution("ploegvoorjaarsgewicht van een ploeg: vouw 0", $vouwonderwerp, $onderwerp, ComputeHelpers.cell($vondstgewicht, java.util.Arrays.asList("voorjaar")), null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "zwaarste ledennajaarsgewicht van een ploeg: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Ploeg()
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ploeg == $vouwonderwerp )
+    $stand_1 : State( attribute == ElementKey.of("jutter", "vondstgewicht[najaar]", false), subject == $onderwerp, $vondstgewicht : value )
+then
+    Object v = ComputeHelpers.contribution("zwaarste ledennajaarsgewicht van een ploeg: vouw 1", $vouwonderwerp, $onderwerp, $vondstgewicht, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "aantal voorjaarsleden van een ploeg: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Ploeg()
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ploeg == $vouwonderwerp, $vondstgewicht : vondstgewicht )
+then
+    Object v = ComputeHelpers.contribution("aantal voorjaarsleden van een ploeg: vouw 2", $vouwonderwerp, $onderwerp, ComputeHelpers.cell($vondstgewicht, java.util.Arrays.asList("voorjaar")), null, null, true, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function Object pad_padstandPloegLeiderNaarJutterVondstgewichtLinkAanwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("leider"));
+}
+
+rule "padstand Ploeg.leider naar Jutter.vondstgewicht: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ploeg( pad_padstandPloegLeiderNaarJutterVondstgewichtLinkAanwezig(this) != null, $bereikt : leider )
+    $stand : State( attribute == ElementKey.of("jutter", "vondstgewicht[najaar]", false), subject != null, subject == $bereikt, $v : value )
+then
+    insertLogical(new PathState($onderwerp, "Ploeg:leider", ElementKey.of("jutter", "vondstgewicht[najaar]", false), $v, $bereikt));
+end
+
+function Object pad_padstandPloegLeiderNaarJutterVondstgewichtLinkAfwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("leider"));
+}
+
+rule "padstand Ploeg.leider naar Jutter.vondstgewicht: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ploeg( pad_padstandPloegLeiderNaarJutterVondstgewichtLinkAfwezig(this) == null )
+then
+    insertLogical(new PathState($onderwerp, "Ploeg:leider", ElementKey.of("jutter", "vondstgewicht[najaar]", false), null, null));
+end
+
+rule "stand Jutter.vondstgewicht[najaar]: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $waarde : Value( attribute == ElementKey.of("jutter", "vondstgewicht[najaar]", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "vondstgewicht[najaar]", false), $v));
+end
+
+rule "stand Jutter.vondstgewicht[najaar]: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : vondstgewicht )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "vondstgewicht[najaar]", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "vondstgewicht[najaar]", false), ComputeHelpers.cell($invoer, java.util.Arrays.asList("najaar"))));
+end
+

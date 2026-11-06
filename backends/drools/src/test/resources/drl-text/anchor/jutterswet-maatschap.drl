@@ -1,0 +1,80 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het aantal maten van de Jutter
+function Object waarde_aantalMatenVanEenJutter(Object $aantal_vouw_4) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_4), Integer.valueOf(0), "aantal maten", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal maten van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "aantal maten van een jutter: vouw 0", subject == $onderwerp ); $aantal_vouw_4 : count() )
+then
+    Object v = waarde_aantalMatenVanEenJutter($aantal_vouw_4);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal maten van een jutter", ComputeHelpers.designate(v, "aantal maten van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal maten", false), v, "aantal maten van een jutter"));
+        }
+    }
+end
+
+// de som van de vondstwaarde van alle maten van de Jutter of 0 als die er niet zijn
+function Object waarde_maatwaardeVanEenJutter(Object $aantal_vouw_9, Object $vouw_vouw_11) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_9, $vouw_vouw_11, new java.math.BigDecimal("0")), Integer.valueOf(0), "maatwaarde", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "maatwaarde van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_6 : Contribution( fold == "maatwaarde van een jutter: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_10 : value ); $aantal_vouw_9 : count(), $vouw_vouw_11 : exactSum($bijdragewaarde_vouw_10) )
+then
+    Object v = waarde_maatwaardeVanEenJutter($aantal_vouw_9, $vouw_vouw_11);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "maatwaarde van een jutter", ComputeHelpers.designate(v, "maatwaarde van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "maatwaarde", false), v, "maatwaarde van een jutter"));
+        }
+    }
+end
+
+rule "aantal maten van een jutter: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( this == $vouwonderwerp.maat )
+then
+    insertLogical(new Contribution("aantal maten van een jutter: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "maatwaarde van een jutter: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( this == $vouwonderwerp.maat, $vondstwaarde : vondstwaarde )
+then
+    Object v = ComputeHelpers.contribution("maatwaarde van een jutter: vouw 1", $vouwonderwerp, $onderwerp, $vondstwaarde, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+

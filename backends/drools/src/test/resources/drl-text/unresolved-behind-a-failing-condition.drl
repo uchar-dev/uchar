@@ -1,0 +1,261 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// hij actief is
+function boolean toets_waarderingVanEenVondst(Object $actief) {
+    return ComputeHelpers.characteristic($actief, Boolean.TRUE);
+}
+
+// de waardering volgens het niet-gemodelleerde protocol
+function Object waarde_waarderingVanEenVondst() {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.fail("Unresolved reached in evaluation: this rule fails observably"), Integer.valueOf(0), "waardering", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "waardering van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $actief : (ComputeHelpers.holds(actief)) )
+    eval( toets_waarderingVanEenVondst($actief) )
+then
+    Object v = waarde_waarderingVanEenVondst();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "waardering van een vondst", ComputeHelpers.designate(v, "waardering van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "waardering", false), v, "waardering van een vondst"));
+        }
+    }
+end
+
+// hij aan ten minste een van de volgende voorwaarden voldoet
+function boolean toets_bijzondereVondst(Object $actief) {
+    try {
+        int raak = 0;
+        Boolean vast;
+        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
+        if (vast != null) {
+            return vast;
+        }
+        if (ComputeHelpers.characteristic($actief, Boolean.FALSE)) {
+            raak++;
+        }
+        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
+        if (vast != null) {
+            return vast;
+        }
+        if (((Boolean) ComputeHelpers.fail("Unresolved condition reached in evaluation"))) {
+            raak++;
+        }
+        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "bijzondere vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $actief : (ComputeHelpers.holds(actief)) )
+    eval( toets_bijzondereVondst($actief) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "bijzonder", true)));
+end
+
+// hij aan ten minste een van de volgende voorwaarden voldoet
+function boolean toets_bijzondereVondstFoutInDeVoorwaarde(Object $actief) {
+    try {
+        boolean uitkomst = samengesteld1_bijzondereVondstFoutInDeVoorwaarde($actief);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// hij aan ten minste een van de volgende voorwaarden voldoet
+function boolean samengesteld1_bijzondereVondstFoutInDeVoorwaarde(Object $actief) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($actief, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (((Boolean) ComputeHelpers.fail("Unresolved condition reached in evaluation"))) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+}
+
+// hij aan ten minste een van de volgende voorwaarden voldoet
+function Object fout_bijzondereVondstFoutInDeVoorwaarde(Object $actief) {
+    try {
+        boolean uitkomst = samengesteld2_bijzondereVondstFoutInDeVoorwaarde($actief);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// hij aan ten minste een van de volgende voorwaarden voldoet
+function boolean samengesteld2_bijzondereVondstFoutInDeVoorwaarde(Object $actief) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($actief, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (((Boolean) ComputeHelpers.fail("Unresolved condition reached in evaluation"))) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+}
+
+rule "bijzondere vondst: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $actief : (ComputeHelpers.holds(actief)) )
+    eval( toets_bijzondereVondstFoutInDeVoorwaarde($actief) )
+then
+    Object f = fout_bijzondereVondstFoutInDeVoorwaarde($actief);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"bijzondere vondst\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "bijzondere vondst", ComputeHelpers.designate(f, "bijzondere vondst")));
+end
+
+// hij aan ten minste een van de volgende voorwaarden voldoet
+function boolean toets_zwareVondst(Object $actief) {
+    try {
+        int raak = 0;
+        Boolean vast;
+        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
+        if (vast != null) {
+            return vast;
+        }
+        if (ComputeHelpers.characteristic($actief, Boolean.FALSE)) {
+            raak++;
+        }
+        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
+        if (vast != null) {
+            return vast;
+        }
+        if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.fail("Unresolved reached in evaluation: this rule fails observably"), new java.math.BigDecimal("5"), ">")) {
+            raak++;
+        }
+        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "zware vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $actief : (ComputeHelpers.holds(actief)) )
+    eval( toets_zwareVondst($actief) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "zwaar", true)));
+end
+
+// hij aan ten minste een van de volgende voorwaarden voldoet
+function boolean toets_zwareVondstFoutInDeVoorwaarde(Object $actief) {
+    try {
+        boolean uitkomst = samengesteld1_zwareVondstFoutInDeVoorwaarde($actief);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// hij aan ten minste een van de volgende voorwaarden voldoet
+function boolean samengesteld1_zwareVondstFoutInDeVoorwaarde(Object $actief) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($actief, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.fail("Unresolved reached in evaluation: this rule fails observably"), new java.math.BigDecimal("5"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+}
+
+// hij aan ten minste een van de volgende voorwaarden voldoet
+function Object fout_zwareVondstFoutInDeVoorwaarde(Object $actief) {
+    try {
+        boolean uitkomst = samengesteld2_zwareVondstFoutInDeVoorwaarde($actief);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// hij aan ten minste een van de volgende voorwaarden voldoet
+function boolean samengesteld2_zwareVondstFoutInDeVoorwaarde(Object $actief) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($actief, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.fail("Unresolved reached in evaluation: this rule fails observably"), new java.math.BigDecimal("5"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+}
+
+rule "zware vondst: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $actief : (ComputeHelpers.holds(actief)) )
+    eval( toets_zwareVondstFoutInDeVoorwaarde($actief) )
+then
+    Object f = fout_zwareVondstFoutInDeVoorwaarde($actief);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"zware vondst\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "zware vondst", ComputeHelpers.designate(f, "zware vondst")));
+end
+

@@ -1,0 +1,198 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de waardering van de Vondst maal de factor van de Vondst
+function Object waarde_loonVanEenVondst(Object $waardering, Object $factor) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($waardering, $factor), Integer.valueOf(0), "loon", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "loon van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $waardering : waardering, $factor : factor )
+then
+    Object v = waarde_loonVanEenVondst($waardering, $factor);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "loon van een vondst", ComputeHelpers.designate(v, "loon van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "loon", false), v, "loon van een vondst"));
+        }
+    }
+end
+
+// 20% van de opbrengst van de Vondst
+function Object waarde_vindersloonVanEenVondst(Object $opbrengst) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPercentageVan(new java.math.BigDecimal("20"), $opbrengst), Integer.valueOf(2), "vindersloon", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vindersloon van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $opbrengst : opbrengst )
+then
+    Object v = waarde_vindersloonVanEenVondst($opbrengst);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vindersloon van een vondst", ComputeHelpers.designate(v, "vindersloon van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "vindersloon", false), v, "vindersloon van een vondst"));
+        }
+    }
+end
+
+// (de opbrengst van de Vondst gedeeld door het aandeel van de Vondst) rekenkundig afgerond op 0 decimalen
+function Object waarde_deelVanEenVondst(Object $opbrengst, Object $aandeel, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($opbrengst, $aandeel, sonde), Integer.valueOf(0), java.math.RoundingMode.HALF_UP), Integer.valueOf(0), "deel", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "deel van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $opbrengst : opbrengst, $aandeel : aandeel )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_deelVanEenVondst($opbrengst, $aandeel, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "deel van een vondst", ComputeHelpers.designate(v, "deel van een vondst")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("deel van een vondst", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "deel", false), v, "deel van een vondst"));
+        }
+    }
+end
+
+// de opbrengst van de Vondst gedeeld door de weging van de Vondst naar beneden afgerond op 0 decimalen
+function Object waarde_portieVanEenVondst(Object $opbrengst, Object $weging, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($opbrengst, $weging, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), Integer.valueOf(0), "portie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "portie van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $opbrengst : opbrengst, $weging : weging )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_portieVanEenVondst($opbrengst, $weging, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "portie van een vondst", ComputeHelpers.designate(v, "portie van een vondst")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("portie van een vondst", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "portie", false), v, "portie van een vondst"));
+        }
+    }
+end
+
+// de waardering van de Vondst is groter of gelijk aan 100
+function boolean toets_bonusVanEenVondst(Object $waardering) {
+    return RegelSpraakRuntime.rsAggVergelijk($waardering, new java.math.BigDecimal("100"), ">=");
+}
+
+// (de opbrengst van de Vondst gedeeld door het kaveldeel van de Vondst) rekenkundig afgerond op 0 decimalen
+function Object waarde_bonusVanEenVondst(Object $opbrengst, Object $kaveldeel, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($opbrengst, $kaveldeel, sonde), Integer.valueOf(0), java.math.RoundingMode.HALF_UP), Integer.valueOf(0), "bonus", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bonus van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $waardering : waardering, $opbrengst : opbrengst, $kaveldeel : kaveldeel )
+    eval( toets_bonusVanEenVondst($waardering) )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_bonusVanEenVondst($opbrengst, $kaveldeel, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bonus van een vondst", ComputeHelpers.designate(v, "bonus van een vondst")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("bonus van een vondst", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "bonus", false), v, "bonus van een vondst"));
+        }
+    }
+end
+
+// (de koopsom van de Vondst gedeeld door de partijen van de Vondst) rekenkundig afgerond op 2 decimalen
+function Object waarde_middenprijsVanEenVondst(Object $koopsom, Object $partijen, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($koopsom, $partijen, sonde), Integer.valueOf(2), java.math.RoundingMode.HALF_UP), Integer.valueOf(2), "middenprijs", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "middenprijs van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $koopsom : koopsom, $partijen : partijen )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_middenprijsVanEenVondst($koopsom, $partijen, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "middenprijs van een vondst", ComputeHelpers.designate(v, "middenprijs van een vondst")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("middenprijs van een vondst", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "middenprijs", false), v, "middenprijs van een vondst"));
+        }
+    }
+end
+
+// (de spanwijdte van de Vondst maal de rek van de Vondst) rekenkundig afgerond op 1 decimalen
+function Object waarde_krimpVanEenVondst(Object $spanwijdte, Object $rek) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsMaal($spanwijdte, $rek), Integer.valueOf(1), java.math.RoundingMode.HALF_UP), Integer.valueOf(1), "krimp", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "krimp van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $spanwijdte : spanwijdte, $rek : rek )
+then
+    Object v = waarde_krimpVanEenVondst($spanwijdte, $rek);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "krimp van een vondst", ComputeHelpers.designate(v, "krimp van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "krimp", false), v, "krimp van een vondst"));
+        }
+    }
+end
+

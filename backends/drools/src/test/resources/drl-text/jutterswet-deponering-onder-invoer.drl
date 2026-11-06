@@ -1,0 +1,139 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// 5 gedeeld door zijn b leeg is
+function boolean toets_heffingVanEenJutter(Object $b) {
+    try {
+        return ComputeHelpers.emptyTest(ComputeHelpers.divided(new java.math.BigDecimal("5"), $b, null), Boolean.TRUE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// 7
+function Object waarde_heffingVanEenJutter(Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("7"), Integer.valueOf(2), "heffing", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "heffing van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( heffing == null, $b : b )
+    eval( toets_heffingVanEenJutter($b) )
+    not( $andere_schrijver : Value( attribute == ElementKey.of("jutter", "heffing", false) && writer != "heffing van een jutter", subject == $onderwerp ) )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_heffingVanEenJutter(sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "heffing van een jutter", ComputeHelpers.designate(v, "heffing van een jutter")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("heffing van een jutter", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "heffing", false), v, "heffing van een jutter"));
+        }
+    }
+end
+
+// 5 gedeeld door zijn b leeg is
+function boolean toets_heffingVanEenJutterFoutInDeVoorwaarde(Object $b) {
+    try {
+        boolean uitkomst = ComputeHelpers.emptyTest(ComputeHelpers.divided(new java.math.BigDecimal("5"), $b, null), Boolean.TRUE);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// 5 gedeeld door zijn b leeg is
+function Object fout_heffingVanEenJutterFoutInDeVoorwaarde(Object $b) {
+    try {
+        boolean uitkomst = ComputeHelpers.emptyTest(ComputeHelpers.divided(new java.math.BigDecimal("5"), $b, null), Boolean.TRUE);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "heffing van een jutter: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( heffing == null, $b : b )
+    eval( toets_heffingVanEenJutterFoutInDeVoorwaarde($b) )
+    not( $andere_schrijver : Value( attribute == ElementKey.of("jutter", "heffing", false) && writer != "heffing van een jutter", subject == $onderwerp ) )
+then
+    Object f = fout_heffingVanEenJutterFoutInDeVoorwaarde($b);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"heffing van een jutter\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "heffing van een jutter", ComputeHelpers.designate(f, "heffing van een jutter")));
+end
+
+// 5 gedeeld door zijn b leeg is
+function boolean toets_heffingVanEenJutterDeponeringInDeVoorwaarde(Object $b, Object sonde) {
+    try {
+        boolean uitkomst = ComputeHelpers.emptyTest(ComputeHelpers.divided(new java.math.BigDecimal("5"), $b, sonde), Boolean.TRUE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    return ComputeHelpers.reported(sonde);
+}
+
+// 5 gedeeld door zijn b leeg is
+function java.util.List deponering_heffingVanEenJutterDeponeringInDeVoorwaarde(Object $b, Object sonde) {
+    try {
+        boolean uitkomst = ComputeHelpers.emptyTest(ComputeHelpers.divided(new java.math.BigDecimal("5"), $b, sonde), Boolean.TRUE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    if (!ComputeHelpers.reported(sonde)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"heffing van een jutter\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    return ComputeHelpers.depositCodes(sonde);
+}
+
+rule "heffing van een jutter: deponering in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( heffing == null, $b : b )
+    eval( toets_heffingVanEenJutterDeponeringInDeVoorwaarde($b, ComputeHelpers.depositFlag()) )
+    not( $andere_schrijver : Value( attribute == ElementKey.of("jutter", "heffing", false) && writer != "heffing van een jutter", subject == $onderwerp ) )
+then
+    insertLogical(ComputeHelpers.inconsistency("heffing van een jutter", $onderwerp, deponering_heffingVanEenJutterDeponeringInDeVoorwaarde($b, ComputeHelpers.depositFlag())));
+end
+
+// 3
+function Object waarde_grondslagVanEenJutter() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("3"), Integer.valueOf(2), "grondslag", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "grondslag van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+then
+    Object v = waarde_grondslagVanEenJutter();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "grondslag van een jutter", ComputeHelpers.designate(v, "grondslag van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "grondslag", false), v, "grondslag van een jutter"));
+        }
+    }
+end
+

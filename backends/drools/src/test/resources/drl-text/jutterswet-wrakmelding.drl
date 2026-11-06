@@ -1,0 +1,297 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Recipient;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+function Object pad_gemeldeWaardeVanEenMelding(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("vondst"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "waarde");
+}
+
+// de waarde van de vondst van de Melding
+function Object waarde_gemeldeWaardeVanEenMelding(Object $vondstWaarde) {
+    try {
+        return ComputeHelpers.fitTarget($vondstWaarde, Integer.valueOf(0), "gemelde waarde", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "gemelde waarde van een melding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Melding( $vondstWaarde : (pad_gemeldeWaardeVanEenMelding(this)) )
+then
+    Object v = waarde_gemeldeWaardeVanEenMelding($vondstWaarde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "gemelde waarde van een melding", ComputeHelpers.designate(v, "gemelde waarde van een melding")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("melding", "gemelde waarde", false), v, "gemelde waarde van een melding"));
+        }
+    }
+end
+
+// het aantal meldingen van de Wrakvondst
+function Object waarde_aantalMeldingenVanEenWrakvondst(Object $aantal_vouw_4) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_4), Integer.valueOf(0), "aantal meldingen", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal meldingen van een wrakvondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakvondst()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "aantal meldingen van een wrakvondst: vouw 0", subject == $onderwerp ); $aantal_vouw_4 : count() )
+then
+    Object v = waarde_aantalMeldingenVanEenWrakvondst($aantal_vouw_4);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal meldingen van een wrakvondst", ComputeHelpers.designate(v, "aantal meldingen van een wrakvondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("wrakvondst", "aantal meldingen", false), v, "aantal meldingen van een wrakvondst"));
+        }
+    }
+end
+
+// het aantal meldingen van de Vondst
+function Object waarde_meldingentalVanEenVondst(Object $aantal_vouw_9) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_9), Integer.valueOf(0), "meldingental", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "meldingental van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    accumulate( $bijdrage_vouw_6 : Contribution( fold == "meldingental van een vondst: vouw 1", subject == $onderwerp ); $aantal_vouw_9 : count() )
+then
+    Object v = waarde_meldingentalVanEenVondst($aantal_vouw_9);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "meldingental van een vondst", ComputeHelpers.designate(v, "meldingental van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "meldingental", false), v, "meldingental van een vondst"));
+        }
+    }
+end
+
+// de som van de ernst van alle meldingen van de Wrakvondst
+function Object waarde_meldsomVanEenWrakvondst(Object $aantal_vouw_14, Object $vouw_vouw_16) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_14, $vouw_vouw_16, null), Integer.valueOf(0), "meldsom", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "meldsom van een wrakvondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakvondst()
+    accumulate( $bijdrage_vouw_11 : Contribution( fold == "meldsom van een wrakvondst: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_15 : value ); $aantal_vouw_14 : count(), $vouw_vouw_16 : exactSum($bijdragewaarde_vouw_15) )
+then
+    Object v = waarde_meldsomVanEenWrakvondst($aantal_vouw_14, $vouw_vouw_16);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "meldsom van een wrakvondst", ComputeHelpers.designate(v, "meldsom van een wrakvondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("wrakvondst", "meldsom", false), v, "meldsom van een wrakvondst"));
+        }
+    }
+end
+
+// de ernst van ten minste 2 van de meldingen van de Wrakvondst groter is dan 3
+function boolean toets_veelgemeldBijErnst(Object $aantal_vouw_21, Object $vouw_vouw_23) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_21, $vouw_vouw_23, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(2));
+}
+
+rule "veelgemeld bij ernst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakvondst()
+    accumulate( $bijdrage_vouw_18 : Contribution( fold == "veelgemeld bij ernst: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_22 : value ); $aantal_vouw_21 : count(), $vouw_vouw_23 : exactSum($bijdragewaarde_vouw_22) )
+    eval( toets_veelgemeldBijErnst($aantal_vouw_21, $vouw_vouw_23) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("wrakvondst", "veelgemeld", true)));
+end
+
+// hij een vondst is
+function boolean toets_gemeldAlsVondst(Object $vullers_rol_26) {
+    return ComputeHelpers.roleCount($vullers_rol_26, Boolean.FALSE);
+}
+
+rule "gemeld als vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakvondst()
+    accumulate( $vuller_rol_25 : dev.uchar.regelspraak.facts.Melding( vondst == $onderwerp ); $vullers_rol_26 : count() )
+    eval( toets_gemeldAlsVondst($vullers_rol_26) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("wrakvondst", "gemeld", true)));
+end
+
+function Object pad_rapportwaardeVanEenRapport(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("gerapporteerdeVondst"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "waarde");
+}
+
+// de waarde van de gerapporteerde vondst van het Rapport
+function Object waarde_rapportwaardeVanEenRapport(Object $gerapporteerdeVondstWaarde) {
+    try {
+        return ComputeHelpers.fitTarget($gerapporteerdeVondstWaarde, Integer.valueOf(0), "rapportwaarde", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "rapportwaarde van een rapport"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Rapport( $gerapporteerdeVondstWaarde : (pad_rapportwaardeVanEenRapport(this)) )
+then
+    Object v = waarde_rapportwaardeVanEenRapport($gerapporteerdeVondstWaarde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "rapportwaarde van een rapport", ComputeHelpers.designate(v, "rapportwaarde van een rapport")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("rapport", "rapportwaarde", false), v, "rapportwaarde van een rapport"));
+        }
+    }
+end
+
+function Object pad_wrakcijferVanEenWrakvondst(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("rapport"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "cijfer");
+}
+
+// het cijfer van het rapport van de Wrakvondst
+function Object waarde_wrakcijferVanEenWrakvondst(Object $rapportCijfer) {
+    try {
+        return ComputeHelpers.fitTarget($rapportCijfer, Integer.valueOf(0), "wrakcijfer", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "wrakcijfer van een wrakvondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakvondst( $rapportCijfer : (pad_wrakcijferVanEenWrakvondst(this)) )
+then
+    Object v = waarde_wrakcijferVanEenWrakvondst($rapportCijfer);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "wrakcijfer van een wrakvondst", ComputeHelpers.designate(v, "wrakcijfer van een wrakvondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("wrakvondst", "wrakcijfer", false), v, "wrakcijfer van een wrakvondst"));
+        }
+    }
+end
+
+function Object pad_rapportcijferVanEenVondst(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("rapport"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "cijfer");
+}
+
+// het cijfer van het rapport van de Vondst
+function Object waarde_rapportcijferVanEenVondst(Object $rapportCijfer) {
+    try {
+        return ComputeHelpers.fitTarget($rapportCijfer, Integer.valueOf(0), "rapportcijfer", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "rapportcijfer van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $rapportCijfer : (pad_rapportcijferVanEenVondst(this)) )
+then
+    Object v = waarde_rapportcijferVanEenVondst($rapportCijfer);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "rapportcijfer van een vondst", ComputeHelpers.designate(v, "rapportcijfer van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "rapportcijfer", false), v, "rapportcijfer van een vondst"));
+        }
+    }
+end
+
+rule "verdeel het meldgeld: ontvanger"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Wrakvondst()
+    $onderwerp : dev.uchar.regelspraak.facts.Melding( vondst == $vouwonderwerp )
+then
+    insertLogical(new Recipient("verdeel het meldgeld", $vouwonderwerp, $onderwerp, null, null, null));
+end
+
+rule "verdeel het meldgeld"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakvondst( $meldgeld : meldgeld )
+    accumulate( $ontvanger_verdeling_30 : Recipient( allocation == "verdeel het meldgeld", source == $onderwerp ); $ontvangers_verdeling_31 : collectList($ontvanger_verdeling_30) )
+then
+    for (Object feit : ComputeHelpers.payout("verdeel het meldgeld", $onderwerp, dev.uchar.regelspraak.ir.ResolvedAllocation.Method.GELIJKE_DELEN, $meldgeld, $ontvangers_verdeling_31, false, false, false, Integer.valueOf(0), ElementKey.of("melding", "meldaandeel", false), ElementKey.of("wrakvondst", "meldrest", false), "verdeel het meldgeld", Integer.valueOf(0), Integer.valueOf(0), "verdeel het meldgeld")) {
+        insertLogical(feit);
+    }
+end
+
+rule "aantal meldingen van een wrakvondst: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Wrakvondst()
+    $onderwerp : dev.uchar.regelspraak.facts.Melding( vondst == $vouwonderwerp )
+then
+    insertLogical(new Contribution("aantal meldingen van een wrakvondst: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "meldingental van een vondst: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $onderwerp : dev.uchar.regelspraak.facts.Melding( vondst == $vouwonderwerp )
+then
+    insertLogical(new Contribution("meldingental van een vondst: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "meldsom van een wrakvondst: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Wrakvondst()
+    $onderwerp : dev.uchar.regelspraak.facts.Melding( vondst == $vouwonderwerp, $ernst : ernst )
+then
+    Object v = ComputeHelpers.contribution("meldsom van een wrakvondst: vouw 2", $vouwonderwerp, $onderwerp, $ernst, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+// de ernst van ten minste 2 van de meldingen van de Wrakvondst groter is dan 3
+function boolean matrix_veelgemeldBijErnstBijdrageAanVouw3(Object $onderwerp, Object $ernst) {
+    return RegelSpraakRuntime.rsAggVergelijk($ernst, new java.math.BigDecimal("3"), ">");
+}
+
+rule "veelgemeld bij ernst: bijdrage aan vouw 3"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Wrakvondst()
+    $onderwerp : dev.uchar.regelspraak.facts.Melding( vondst == $vouwonderwerp, $ernst : ernst )
+then
+    insertLogical(new Contribution("veelgemeld bij ernst: vouw 3", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_veelgemeldBijErnstBijdrageAanVouw3($onderwerp, $ernst))));
+end
+

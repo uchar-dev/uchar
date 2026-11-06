@@ -1,0 +1,170 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.EvaluationDate;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.time.LocalDate rekendatum;
+
+// het Rekenjaar
+function Object waarde_meldjaar(Object $rekendatumwaarde_0) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsRekenjaar(((java.time.LocalDate) ComputeHelpers.required($rekendatumwaarde_0, "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"))), Integer.valueOf(0), "meldjaar", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "meldjaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $rekendatum_0 : EvaluationDate( $rekendatumwaarde_0 : date )
+then
+    Object v = waarde_meldjaar($rekendatumwaarde_0);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "meldjaar", ComputeHelpers.designate(v, "meldjaar")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "meldjaar", false), v, "meldjaar"));
+        }
+    }
+end
+
+// zijn vondstjaar kleiner of gelijk is aan het Rekenjaar
+function boolean toets_aantalVerstrekenPenningjaren(Object $vondstjaar, Object $rekendatumwaarde_1) {
+    try {
+        return RegelSpraakRuntime.rsAggVergelijk($vondstjaar, RegelSpraakRuntime.rsRekenjaar(((java.time.LocalDate) ComputeHelpers.required($rekendatumwaarde_1, "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"))), "<=");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// het Rekenjaar min zijn vondstjaar
+function Object waarde_aantalVerstrekenPenningjaren(Object $vondstjaar, Object $rekendatumwaarde_1) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMin(RegelSpraakRuntime.rsRekenjaar(((java.time.LocalDate) ComputeHelpers.required($rekendatumwaarde_1, "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"))), $vondstjaar), Integer.valueOf(0), "aantal verstreken penningjaren", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal verstreken penningjaren"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vondstjaar : vondstjaar )
+    $rekendatum_1 : EvaluationDate( $rekendatumwaarde_1 : date )
+    eval( toets_aantalVerstrekenPenningjaren($vondstjaar, $rekendatumwaarde_1) )
+then
+    Object v = waarde_aantalVerstrekenPenningjaren($vondstjaar, $rekendatumwaarde_1);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal verstreken penningjaren", ComputeHelpers.designate(v, "aantal verstreken penningjaren")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "aantal verstreken penningjaren", false), v, "aantal verstreken penningjaren"));
+        }
+    }
+end
+
+// zijn vondstjaar kleiner of gelijk is aan het Rekenjaar
+function boolean toets_aantalVerstrekenPenningjarenFoutInDeVoorwaarde(Object $vondstjaar, Object $rekendatumwaarde_1) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk($vondstjaar, RegelSpraakRuntime.rsRekenjaar(((java.time.LocalDate) ComputeHelpers.required($rekendatumwaarde_1, "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"))), "<=");
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn vondstjaar kleiner of gelijk is aan het Rekenjaar
+function Object fout_aantalVerstrekenPenningjarenFoutInDeVoorwaarde(Object $vondstjaar, Object $rekendatumwaarde_1) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk($vondstjaar, RegelSpraakRuntime.rsRekenjaar(((java.time.LocalDate) ComputeHelpers.required($rekendatumwaarde_1, "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"))), "<=");
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal verstreken penningjaren: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vondstjaar : vondstjaar )
+    $rekendatum_1 : EvaluationDate( $rekendatumwaarde_1 : date )
+    eval( toets_aantalVerstrekenPenningjarenFoutInDeVoorwaarde($vondstjaar, $rekendatumwaarde_1) )
+then
+    Object f = fout_aantalVerstrekenPenningjarenFoutInDeVoorwaarde($vondstjaar, $rekendatumwaarde_1);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"aantal verstreken penningjaren\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "aantal verstreken penningjaren", ComputeHelpers.designate(f, "aantal verstreken penningjaren")));
+end
+
+// het Rekenjaar groter is dan zijn vondstjaar
+function boolean toets_kenmerktoekenningLaatGemeld(Object $rekendatumwaarde_0, Object $vondstjaar) {
+    try {
+        return RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsRekenjaar(((java.time.LocalDate) ComputeHelpers.required($rekendatumwaarde_0, "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"))), $vondstjaar, ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "Kenmerktoekenning laat gemeld"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vondstjaar : vondstjaar )
+    $rekendatum_0 : EvaluationDate( $rekendatumwaarde_0 : date )
+    eval( toets_kenmerktoekenningLaatGemeld($rekendatumwaarde_0, $vondstjaar) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "laat gemeld", true)));
+end
+
+// het Rekenjaar groter is dan zijn vondstjaar
+function boolean toets_kenmerktoekenningLaatGemeldFoutInDeVoorwaarde(Object $rekendatumwaarde_0, Object $vondstjaar) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsRekenjaar(((java.time.LocalDate) ComputeHelpers.required($rekendatumwaarde_0, "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"))), $vondstjaar, ">");
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// het Rekenjaar groter is dan zijn vondstjaar
+function Object fout_kenmerktoekenningLaatGemeldFoutInDeVoorwaarde(Object $rekendatumwaarde_0, Object $vondstjaar) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsRekenjaar(((java.time.LocalDate) ComputeHelpers.required($rekendatumwaarde_0, "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"))), $vondstjaar, ">");
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "Kenmerktoekenning laat gemeld: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vondstjaar : vondstjaar )
+    $rekendatum_0 : EvaluationDate( $rekendatumwaarde_0 : date )
+    eval( toets_kenmerktoekenningLaatGemeldFoutInDeVoorwaarde($rekendatumwaarde_0, $vondstjaar) )
+then
+    Object f = fout_kenmerktoekenningLaatGemeldFoutInDeVoorwaarde($rekendatumwaarde_0, $vondstjaar);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"Kenmerktoekenning laat gemeld\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "Kenmerktoekenning laat gemeld", ComputeHelpers.designate(f, "Kenmerktoekenning laat gemeld")));
+end
+
+rule "rekendatumstand"
+    dialect "mvel"
+when
+then
+    insertLogical(new EvaluationDate(rekendatum));
+end
+

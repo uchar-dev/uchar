@@ -1,0 +1,103 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de eerste van haar vondstdatum en haar melddatum
+function Object waarde_peildatumVanEenVondst(Object $vondstdatum, Object $melddatum) {
+    try {
+        return ComputeHelpers.smallest(ComputeHelpers.smallest(null, $vondstdatum), $melddatum);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "peildatum van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vondstdatum : vondstdatum, $melddatum : melddatum )
+then
+    Object v = waarde_peildatumVanEenVondst($vondstdatum, $melddatum);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "peildatum van een vondst", ComputeHelpers.designate(v, "peildatum van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "peildatum", false), v, "peildatum van een vondst"));
+        }
+    }
+end
+
+// de laatste van haar vondstdatum en haar melddatum
+function Object waarde_sluitdatumVanEenVondst(Object $vondstdatum, Object $melddatum) {
+    try {
+        return ComputeHelpers.largest(ComputeHelpers.largest(null, $vondstdatum), $melddatum);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "sluitdatum van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vondstdatum : vondstdatum, $melddatum : melddatum )
+then
+    Object v = waarde_sluitdatumVanEenVondst($vondstdatum, $melddatum);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "sluitdatum van een vondst", ComputeHelpers.designate(v, "sluitdatum van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "sluitdatum", false), v, "sluitdatum van een vondst"));
+        }
+    }
+end
+
+// de eerste van haar bergloon en haar meldloon
+function Object waarde_laagsteLoonVanEenVondst(Object $bergloon, Object $meldloon) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.smallest(ComputeHelpers.smallest(null, $bergloon), $meldloon), Integer.valueOf(0), "laagloon", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "laagste loon van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $bergloon : bergloon, $meldloon : meldloon )
+then
+    Object v = waarde_laagsteLoonVanEenVondst($bergloon, $meldloon);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "laagste loon van een vondst", ComputeHelpers.designate(v, "laagste loon van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "laagloon", false), v, "laagste loon van een vondst"));
+        }
+    }
+end
+
+// de laatste van haar bergloon en haar meldloon
+function Object waarde_hoogsteLoonVanEenVondst(Object $bergloon, Object $meldloon) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.largest(ComputeHelpers.largest(null, $bergloon), $meldloon), Integer.valueOf(0), "hoogloon", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "hoogste loon van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $bergloon : bergloon, $meldloon : meldloon )
+then
+    Object v = waarde_hoogsteLoonVanEenVondst($bergloon, $meldloon);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "hoogste loon van een vondst", ComputeHelpers.designate(v, "hoogste loon van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "hoogloon", false), v, "hoogste loon van een vondst"));
+        }
+    }
+end
+

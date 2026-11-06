@@ -1,0 +1,34 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+
+// haar meldstip eerder is dan 15-03-2026 12:00:00.000
+function boolean toets_kenmerktoekenningTijdig(Object $meldstip) {
+    return ComputeHelpers.dateCompare($meldstip, java.time.LocalDateTime.parse("2026-03-15T12:00"), dev.uchar.regelspraak.ir.Condition.Operator.EERDER);
+}
+
+rule "Kenmerktoekenning tijdig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Aanmelding( $meldstip : meldstip )
+    eval( toets_kenmerktoekenningTijdig($meldstip) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("aanmelding", "tijdig", true)));
+end
+
+// haar meldstip later is dan 15-03-2026 12:00:00.000
+function boolean toets_kenmerktoekenningVerlaat(Object $meldstip) {
+    return ComputeHelpers.dateCompare($meldstip, java.time.LocalDateTime.parse("2026-03-15T12:00"), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+}
+
+rule "Kenmerktoekenning verlaat"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Aanmelding( $meldstip : meldstip )
+    eval( toets_kenmerktoekenningVerlaat($meldstip) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("aanmelding", "verlaat", true)));
+end
+

@@ -1,0 +1,89 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// geen van: geclaimd, bezwaren boven 0
+function boolean toets_vrijgaveZonderBeletsel(Object $geclaimd, Object $bezwaren) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($geclaimd, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($bezwaren, new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 2);
+}
+
+rule "vrijgave zonder beletsel"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Bergingszaak( $geclaimd : (ComputeHelpers.holds(geclaimd)), $bezwaren : bezwaren )
+    eval( toets_vrijgaveZonderBeletsel($geclaimd, $bezwaren) )
+then
+    // 'vrijgegeven'
+    Object v = "vrijgegeven";
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("bergingszaak", "status", false), v, "vrijgave zonder beletsel"));
+    }
+end
+
+// ten minste één van: geclaimd, bezwaren boven 0
+function boolean toets_aanhoudingBijBeletsel(Object $geclaimd, Object $bezwaren) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($geclaimd, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($bezwaren, new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+}
+
+rule "aanhouding bij beletsel"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Bergingszaak( $geclaimd : (ComputeHelpers.holds(geclaimd)), $bezwaren : bezwaren )
+    eval( toets_aanhoudingBijBeletsel($geclaimd, $bezwaren) )
+then
+    // 'aangehouden'
+    Object v = "aangehouden";
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("bergingszaak", "status", false), v, "aanhouding bij beletsel"));
+    }
+end
+
+function boolean toets_schrijversBergingszaakStatusVerschil(Object $waarden) {
+    return ComputeHelpers.differ($waarden);
+}
+
+rule "schrijvers Bergingszaak.status: verschil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Bergingszaak()
+    accumulate( $waarde : Value( attribute == ElementKey.of("bergingszaak", "status", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+    eval( toets_schrijversBergingszaakStatusVerschil($waarden) )
+then
+    insertLogical(ComputeHelpers.writersConflict($onderwerp, $waarden, "status", ComputeHelpers.list2("vrijgave zonder beletsel", "aanhouding bij beletsel"), ComputeHelpers.list1("Bergingszaak"), ComputeHelpers.list1("Bergingszaak")));
+end
+

@@ -1,0 +1,495 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.EvaluationDate;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Period;
+import dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.time.LocalDate rekendatum;
+
+// het aantal dagen in het jaar dat hij wachtplichtig is
+function Object waarde_stormwachtdagenVanEenJutter(Object $tijdlijn_0) {
+    try {
+        return PeriodArithmetic.dayCount(RegelSpraakRuntime.rsAantalDagenInVanaf(((java.util.List) $tijdlijn_0), "JAAR", java.time.LocalDate.parse("2000-10-01"), Period.class));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "stormwachtdagen van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $tijdlijn_0 : (ComputeHelpers.periods(wachtplichtig)) )
+then
+    Object v = waarde_stormwachtdagenVanEenJutter($tijdlijn_0);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "stormwachtdagen van een jutter", ComputeHelpers.designate(v, "stormwachtdagen van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "stormwachtdagen", false), v, "stormwachtdagen van een jutter"));
+        }
+    }
+end
+
+// het aantal dagen in de maand dat hij wachtplichtig is
+function Object waarde_maandwachtdagenVanEenJutter(Object $tijdlijn_0) {
+    try {
+        return PeriodArithmetic.dayCount(RegelSpraakRuntime.rsAantalDagenInVanaf(((java.util.List) $tijdlijn_0), "MAAND", java.time.LocalDate.parse("2000-01-31"), Period.class));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "maandwachtdagen van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $tijdlijn_0 : (ComputeHelpers.periods(wachtplichtig)) )
+then
+    Object v = waarde_maandwachtdagenVanEenJutter($tijdlijn_0);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "maandwachtdagen van een jutter", ComputeHelpers.designate(v, "maandwachtdagen van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "maandwachtdagen", false), v, "maandwachtdagen van een jutter"));
+        }
+    }
+end
+
+// (het totaal van zijn stormtoelage gedurende de tijd dat hij wachtplichtig is) rekenkundig afgerond op 2 decimalen
+function Object waarde_toelagesomVanEenJutter(Object $tijdlijn_0, Object $onderwerp, Object $tijdlijn_2) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(PeriodArithmetic.total(RegelSpraakRuntime.rsTijdKnip(ComputeHelpers.complete($tijdlijn_0, "the gedurende clip of \"stormtoelage\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "stormtoelage", Boolean.TRUE), ((java.util.List) $tijdlijn_2), Period.class), "JAAR", "--10-01", null, "stormtoelage", $onderwerp), Integer.valueOf(2), java.math.RoundingMode.HALF_UP), Integer.valueOf(2), "toelagesom", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "toelagesom van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $tijdlijn_2 : (ComputeHelpers.periods(wachtplichtig)) )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "stormtoelage", false), subject == $onderwerp, $tijdlijn_0 : value )
+then
+    Object v = waarde_toelagesomVanEenJutter($tijdlijn_0, $onderwerp, $tijdlijn_2);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "toelagesom van een jutter", ComputeHelpers.designate(v, "toelagesom van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "toelagesom", false), v, "toelagesom van een jutter"));
+        }
+    }
+end
+
+// het totaal van zijn maandtoelage
+function Object waarde_maandtoelagesomVanEenJutter(Object $tijdlijn_0, Object $onderwerp, Object $rekendatumwaarde_2) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.ownTotal($tijdlijn_0, $onderwerp, $rekendatumwaarde_2, "maandtoelage", "MAAND", "--01-31", null), Integer.valueOf(0), "maandtoelagesom", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "maandtoelagesom van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $rekendatum_2 : EvaluationDate( $rekendatumwaarde_2 : date )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "maandtoelage", false), subject == $onderwerp, $tijdlijn_0 : value )
+then
+    Object v = waarde_maandtoelagesomVanEenJutter($tijdlijn_0, $onderwerp, $rekendatumwaarde_2);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "maandtoelagesom van een jutter", ComputeHelpers.designate(v, "maandtoelagesom van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "maandtoelagesom", false), v, "maandtoelagesom van een jutter"));
+        }
+    }
+end
+
+// zijn stormwachtdagen gedurende het gehele jaar gevuld is
+function boolean toets_stormpremieVanEenJutter(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        return ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"stormwachtdagen\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "stormwachtdagen", Boolean.TRUE), null, "JAAR", Integer.valueOf(6), Boolean.FALSE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// 50
+function Object waarde_stormpremieVanEenJutter() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("50"), Integer.valueOf(0), "stormpremie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "stormpremie van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "stormwachtdagen", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_stormpremieVanEenJutter($tijdlijn_0, $onderwerp) )
+then
+    Object v = waarde_stormpremieVanEenJutter();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "stormpremie van een jutter", ComputeHelpers.designate(v, "stormpremie van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "stormpremie", false), v, "stormpremie van een jutter"));
+        }
+    }
+end
+
+// zijn stormwachtdagen gedurende het gehele jaar gevuld is
+function boolean toets_stormpremieVanEenJutterFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"stormwachtdagen\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "stormwachtdagen", Boolean.TRUE), null, "JAAR", Integer.valueOf(6), Boolean.FALSE);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn stormwachtdagen gedurende het gehele jaar gevuld is
+function Object fout_stormpremieVanEenJutterFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"stormwachtdagen\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "stormwachtdagen", Boolean.TRUE), null, "JAAR", Integer.valueOf(6), Boolean.FALSE);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "stormpremie van een jutter: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "stormwachtdagen", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_stormpremieVanEenJutterFoutInDeVoorwaarde($tijdlijn_0, $onderwerp) )
+then
+    Object f = fout_stormpremieVanEenJutterFoutInDeVoorwaarde($tijdlijn_0, $onderwerp);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"stormpremie van een jutter\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "stormpremie van een jutter", ComputeHelpers.designate(f, "stormpremie van een jutter")));
+end
+
+// zijn maandwachtdagen gedurende de gehele maand groter is dan 0
+function boolean toets_maandpremieVanEenJutter(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        return ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"maandwachtdagen\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "maandwachtdagen", Boolean.TRUE), new java.math.BigDecimal("0"), "MAAND", Integer.valueOf(2), Boolean.FALSE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// 20
+function Object waarde_maandpremieVanEenJutter() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("20"), Integer.valueOf(0), "maandpremie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "maandpremie van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "maandwachtdagen", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_maandpremieVanEenJutter($tijdlijn_0, $onderwerp) )
+then
+    Object v = waarde_maandpremieVanEenJutter();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "maandpremie van een jutter", ComputeHelpers.designate(v, "maandpremie van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "maandpremie", false), v, "maandpremie van een jutter"));
+        }
+    }
+end
+
+// zijn maandwachtdagen gedurende de gehele maand groter is dan 0
+function boolean toets_maandpremieVanEenJutterFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"maandwachtdagen\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "maandwachtdagen", Boolean.TRUE), new java.math.BigDecimal("0"), "MAAND", Integer.valueOf(2), Boolean.FALSE);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn maandwachtdagen gedurende de gehele maand groter is dan 0
+function Object fout_maandpremieVanEenJutterFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"maandwachtdagen\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "maandwachtdagen", Boolean.TRUE), new java.math.BigDecimal("0"), "MAAND", Integer.valueOf(2), Boolean.FALSE);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "maandpremie van een jutter: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "maandwachtdagen", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_maandpremieVanEenJutterFoutInDeVoorwaarde($tijdlijn_0, $onderwerp) )
+then
+    Object f = fout_maandpremieVanEenJutterFoutInDeVoorwaarde($tijdlijn_0, $onderwerp);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"maandpremie van een jutter\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "maandpremie van een jutter", ComputeHelpers.designate(f, "maandpremie van een jutter")));
+end
+
+// het totaal van zijn weektoelage
+function Object waarde_weektoelagesomVanEenJutter(Object $tijdlijn_0, Object $onderwerp, Object $rekendatumwaarde_2) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.ownTotal($tijdlijn_0, $onderwerp, $rekendatumwaarde_2, "weektoelage", "WEEK", "2024-09-30", null), Integer.valueOf(0), "weektoelagesom", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "weektoelagesom van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $rekendatum_2 : EvaluationDate( $rekendatumwaarde_2 : date )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "weektoelage", false), subject == $onderwerp, $tijdlijn_0 : value )
+then
+    Object v = waarde_weektoelagesomVanEenJutter($tijdlijn_0, $onderwerp, $rekendatumwaarde_2);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "weektoelagesom van een jutter", ComputeHelpers.designate(v, "weektoelagesom van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "weektoelagesom", false), v, "weektoelagesom van een jutter"));
+        }
+    }
+end
+
+// het totaal van zijn kwartaaltoelage
+function Object waarde_kwartaaltoelagesomVanEenJutter(Object $tijdlijn_0, Object $onderwerp, Object $rekendatumwaarde_2) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.ownTotal($tijdlijn_0, $onderwerp, $rekendatumwaarde_2, "kwartaaltoelage", "KWARTAAL", "--05-31", null), Integer.valueOf(0), "kwartaaltoelagesom", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "kwartaaltoelagesom van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $rekendatum_2 : EvaluationDate( $rekendatumwaarde_2 : date )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "kwartaaltoelage", false), subject == $onderwerp, $tijdlijn_0 : value )
+then
+    Object v = waarde_kwartaaltoelagesomVanEenJutter($tijdlijn_0, $onderwerp, $rekendatumwaarde_2);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "kwartaaltoelagesom van een jutter", ComputeHelpers.designate(v, "kwartaaltoelagesom van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "kwartaaltoelagesom", false), v, "kwartaaltoelagesom van een jutter"));
+        }
+    }
+end
+
+rule "stand Jutter.stormtoelage: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(stormtoelage)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "stormtoelage", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "stormtoelage", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "stormtoelage", false), $invoer));
+end
+
+rule "stand Jutter.stormtoelage: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(stormtoelage)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "stormtoelage", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "stormtoelage", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "stormtoelage", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+rule "stand Jutter.maandtoelage: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(maandtoelage)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "maandtoelage", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "maandtoelage", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "maandtoelage", false), $invoer));
+end
+
+rule "stand Jutter.maandtoelage: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(maandtoelage)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "maandtoelage", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "maandtoelage", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "maandtoelage", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+function java.util.List lijst_standJutterStormwachtdagenDeVerenigingVanDeSchrijvers() {
+    return java.util.Arrays.asList("stormwachtdagen van een jutter", "maandwachtdagen van een jutter", "toelagesom van een jutter", "maandtoelagesom van een jutter", "stormpremie van een jutter", "maandpremie van een jutter", "weektoelagesom van een jutter", "kwartaaltoelagesom van een jutter");
+}
+
+rule "stand Jutter.stormwachtdagen: de vereniging van de schrijvers"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(stormwachtdagen)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "stormwachtdagen", false), subject == $onderwerp ) )
+    exists( $schrijver : Value( attribute == ElementKey.of("jutter", "stormwachtdagen", false), subject == $onderwerp ) )
+    accumulate( $waarde : Value( attribute == ElementKey.of("jutter", "stormwachtdagen", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+then
+    insertLogical(ComputeHelpers.writersUnion($onderwerp, ElementKey.of("jutter", "stormwachtdagen", false), $waarden, $invoer, lijst_standJutterStormwachtdagenDeVerenigingVanDeSchrijvers()));
+end
+
+function java.util.List lijst_standJutterStormwachtdagenDeVerenigingVanDeSchrijversEenEmmerscalair() {
+    return java.util.Arrays.asList("stormwachtdagen van een jutter", "maandwachtdagen van een jutter", "toelagesom van een jutter", "maandtoelagesom van een jutter", "stormpremie van een jutter", "maandpremie van een jutter", "weektoelagesom van een jutter", "kwartaaltoelagesom van een jutter");
+}
+
+rule "stand Jutter.stormwachtdagen: de vereniging van de schrijvers, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "stormwachtdagen", false), subject == $onderwerp ) )
+    exists( $schrijver : Value( attribute == ElementKey.of("jutter", "stormwachtdagen", false), subject == $onderwerp ) )
+    accumulate( $waarde : Value( attribute == ElementKey.of("jutter", "stormwachtdagen", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+then
+    insertLogical(ComputeHelpers.writersUnion($onderwerp, ElementKey.of("jutter", "stormwachtdagen", false), $waarden, null, lijst_standJutterStormwachtdagenDeVerenigingVanDeSchrijversEenEmmerscalair()));
+end
+
+rule "stand Jutter.stormwachtdagen: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(stormwachtdagen)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "stormwachtdagen", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "stormwachtdagen", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "stormwachtdagen", false), $invoer));
+end
+
+rule "stand Jutter.stormwachtdagen: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(stormwachtdagen)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "stormwachtdagen", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "stormwachtdagen", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "stormwachtdagen", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+function java.util.List lijst_standJutterMaandwachtdagenDeVerenigingVanDeSchrijvers() {
+    return java.util.Arrays.asList("stormwachtdagen van een jutter", "maandwachtdagen van een jutter", "toelagesom van een jutter", "maandtoelagesom van een jutter", "stormpremie van een jutter", "maandpremie van een jutter", "weektoelagesom van een jutter", "kwartaaltoelagesom van een jutter");
+}
+
+rule "stand Jutter.maandwachtdagen: de vereniging van de schrijvers"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(maandwachtdagen)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "maandwachtdagen", false), subject == $onderwerp ) )
+    exists( $schrijver : Value( attribute == ElementKey.of("jutter", "maandwachtdagen", false), subject == $onderwerp ) )
+    accumulate( $waarde : Value( attribute == ElementKey.of("jutter", "maandwachtdagen", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+then
+    insertLogical(ComputeHelpers.writersUnion($onderwerp, ElementKey.of("jutter", "maandwachtdagen", false), $waarden, $invoer, lijst_standJutterMaandwachtdagenDeVerenigingVanDeSchrijvers()));
+end
+
+function java.util.List lijst_standJutterMaandwachtdagenDeVerenigingVanDeSchrijversEenEmmerscalair() {
+    return java.util.Arrays.asList("stormwachtdagen van een jutter", "maandwachtdagen van een jutter", "toelagesom van een jutter", "maandtoelagesom van een jutter", "stormpremie van een jutter", "maandpremie van een jutter", "weektoelagesom van een jutter", "kwartaaltoelagesom van een jutter");
+}
+
+rule "stand Jutter.maandwachtdagen: de vereniging van de schrijvers, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "maandwachtdagen", false), subject == $onderwerp ) )
+    exists( $schrijver : Value( attribute == ElementKey.of("jutter", "maandwachtdagen", false), subject == $onderwerp ) )
+    accumulate( $waarde : Value( attribute == ElementKey.of("jutter", "maandwachtdagen", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+then
+    insertLogical(ComputeHelpers.writersUnion($onderwerp, ElementKey.of("jutter", "maandwachtdagen", false), $waarden, null, lijst_standJutterMaandwachtdagenDeVerenigingVanDeSchrijversEenEmmerscalair()));
+end
+
+rule "stand Jutter.maandwachtdagen: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(maandwachtdagen)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "maandwachtdagen", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "maandwachtdagen", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "maandwachtdagen", false), $invoer));
+end
+
+rule "stand Jutter.maandwachtdagen: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(maandwachtdagen)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "maandwachtdagen", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "maandwachtdagen", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "maandwachtdagen", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+rule "stand Jutter.weektoelage: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(weektoelage)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "weektoelage", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "weektoelage", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "weektoelage", false), $invoer));
+end
+
+rule "stand Jutter.weektoelage: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(weektoelage)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "weektoelage", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "weektoelage", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "weektoelage", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+rule "stand Jutter.kwartaaltoelage: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(kwartaaltoelage)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "kwartaaltoelage", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "kwartaaltoelage", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "kwartaaltoelage", false), $invoer));
+end
+
+rule "stand Jutter.kwartaaltoelage: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(kwartaaltoelage)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "kwartaaltoelage", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "kwartaaltoelage", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "kwartaaltoelage", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+rule "rekendatumstand"
+    dialect "mvel"
+when
+then
+    insertLogical(new EvaluationDate(rekendatum));
+end
+

@@ -1,0 +1,41 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+
+// het aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter groter is dan 2
+function boolean toets_ruimVoorzienBijMeerDanTweeStukken(Object $aantal_vouw_5) {
+    return RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.countOf($aantal_vouw_5), new java.math.BigDecimal("2"), ">");
+}
+
+rule "ruim voorzien bij meer dan twee stukken"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_2 : Contribution( fold == "ruim voorzien bij meer dan twee stukken: vouw 0", subject == $onderwerp ); $aantal_vouw_5 : count() )
+    eval( toets_ruimVoorzienBijMeerDanTweeStukken($aantal_vouw_5) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "ruim voorzien", true)));
+end
+
+rule "ruim voorzien bij meer dan twee stukken: bijdrage aan vouw 0, selectie 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp )
+then
+    insertLogical(new Contribution("ruim voorzien bij meer dan twee stukken: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "ruim voorzien bij meer dan twee stukken: bijdrage aan vouw 0, selectie 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( berger == $vouwonderwerp )
+then
+    insertLogical(new Contribution("ruim voorzien bij meer dan twee stukken: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+

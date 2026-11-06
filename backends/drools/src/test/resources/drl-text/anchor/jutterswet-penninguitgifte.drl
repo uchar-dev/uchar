@@ -1,0 +1,373 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
+import dev.uchar.regelspraak.transpiler.tms.CreationStamp;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.SecondFillingFault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het aantal penningen van de Jutter
+function Object waarde_aantalPenningenVanEenJutter(Object $aantal_vouw_7) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_7), Integer.valueOf(0), "aantal penningen", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal penningen van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_4 : Contribution( fold == "aantal penningen van een jutter: vouw 0", subject == $onderwerp ); $aantal_vouw_7 : count() )
+then
+    Object v = waarde_aantalPenningenVanEenJutter($aantal_vouw_7);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal penningen van een jutter", ComputeHelpers.designate(v, "aantal penningen van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal penningen", false), v, "aantal penningen van een jutter"));
+        }
+    }
+end
+
+// de som van het bedrag van alle penningen van de Jutter of 0 als die er niet zijn
+function Object waarde_penningtotaalVanEenJutter(Object $aantal_vouw_17, Object $vouw_vouw_19) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_17, $vouw_vouw_19, new java.math.BigDecimal("0")), Integer.valueOf(0), "penningtotaal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "penningtotaal van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_14 : Contribution( fold == "penningtotaal van een jutter: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_18 : value ); $aantal_vouw_17 : count(), $vouw_vouw_19 : exactSum($bijdragewaarde_vouw_18) )
+then
+    Object v = waarde_penningtotaalVanEenJutter($aantal_vouw_17, $vouw_vouw_19);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "penningtotaal van een jutter", ComputeHelpers.designate(v, "penningtotaal van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "penningtotaal", false), v, "penningtotaal van een jutter"));
+        }
+    }
+end
+
+// het aantal dossiers van de Jutter
+function Object waarde_aantalDossiersVanEenJutter(Object $aantal_vouw_27) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_27), Integer.valueOf(0), "aantal dossiers", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal dossiers van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_24 : Contribution( fold == "aantal dossiers van een jutter: vouw 2", subject == $onderwerp ); $aantal_vouw_27 : count() )
+then
+    Object v = waarde_aantalDossiersVanEenJutter($aantal_vouw_27);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal dossiers van een jutter", ComputeHelpers.designate(v, "aantal dossiers van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal dossiers", false), v, "aantal dossiers van een jutter"));
+        }
+    }
+end
+
+// de Penning is uitgereikt
+function boolean toets_penningcontrole(Object $uitgereikt) {
+    return ComputeHelpers.not(ComputeHelpers.characteristic($uitgereikt, Boolean.TRUE));
+}
+
+rule "penningcontrole"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Penning()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("penning", "uitgereikt", true), subject == $onderwerp, $uitgereikt : holds )
+    eval( toets_penningcontrole($uitgereikt) )
+then
+    insertLogical(ComputeHelpers.inconsistency("penningcontrole", $onderwerp, ComputeHelpers.list1("EF-025")));
+end
+
+// het aantal houder van de Penning is groter of gelijk aan 1
+function boolean toets_houderscontrole(Object $aantal_vouw_38) {
+    return ComputeHelpers.not(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.countOf($aantal_vouw_38), new java.math.BigDecimal("1"), ">="));
+}
+
+rule "houderscontrole"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Penning()
+    accumulate( $bijdrage_vouw_35 : Contribution( fold == "houderscontrole: vouw 3", subject == $onderwerp ); $aantal_vouw_38 : count() )
+    eval( toets_houderscontrole($aantal_vouw_38) )
+then
+    insertLogical(ComputeHelpers.inconsistency("houderscontrole", $onderwerp, ComputeHelpers.list1("EF-025")));
+end
+
+function boolean beta_penningVoorEenGerechtigdeJutter(Object eigen, Object ander) {
+    return ComputeHelpers.inPhase(eigen, ander);
+}
+
+// de Jutter is penninggerechtigd
+function boolean toets_penningVoorEenGerechtigdeJutter(Object $penninggerechtigd) {
+    return ComputeHelpers.characteristic($penninggerechtigd, Boolean.TRUE);
+}
+
+// de vondstwaarde van de Jutter; waar
+function Object creatie_penningVoorEenGerechtigdeJutter(Object $vondstwaarde, Object $fase, Object $herkomsten_creatie_42, Object $onderwerp) {
+    int diepte = ComputeHelpers.creationDepth("penning voor een gerechtigde jutter", 0, "Jutter", (java.util.List) $herkomsten_creatie_42, 100);
+    Object i0 = null;
+    Object i1 = null;
+    try {
+        i0 = ComputeHelpers.collapse(ComputeHelpers.fitTarget($vondstwaarde, Integer.valueOf(0), "bedrag", "penning voor een gerechtigde jutter"));
+        i1 = ComputeHelpers.collapse(Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+    Object nieuw = ComputeHelpers.newObject($onderwerp, "dev.uchar.regelspraak.facts.Penning");
+    ComputeHelpers.set(nieuw, "bedrag", i0);
+    int fase = ((Integer) $fase).intValue();
+    java.util.List feiten = new java.util.ArrayList();
+    feiten.add(nieuw);
+    feiten.add(new CreationStamp("penning voor een gerechtigde jutter", $onderwerp, nieuw, fase, 0, diepte));
+    feiten.add(new RelationLink("penningbezit", $onderwerp, nieuw, fase));
+    feiten.add(Boolean.TRUE.equals(i1) ? new HasCharacteristic(nieuw, ElementKey.of("penning", "uitgereikt", true)) : null);
+    return feiten;
+}
+
+rule "penning voor een gerechtigde jutter"
+    dialect "mvel"
+    agenda-group "uchar-objectcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $penninggerechtigd : (ComputeHelpers.holds(penninggerechtigd)), $vondstwaarde : vondstwaarde )
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    accumulate( $herkomst_creatie_41 : CreationStamp( object == $onderwerp ); $herkomsten_creatie_42 : collectList($herkomst_creatie_41) )
+    not( $gemaakt_creatie_44 : CreationStamp( rule == "penning voor een gerechtigde jutter", subject == $onderwerp ) )
+    not( $nieuw_creatie_45 : CreationStamp( object == $onderwerp, beta_penningVoorEenGerechtigdeJutter(this, $fase) ) )
+    eval( toets_penningVoorEenGerechtigdeJutter($penninggerechtigd) )
+    not( $eigen_fout : Fault( rule == "penning voor een gerechtigde jutter", subject == $onderwerp ) )
+then
+    Object v = creatie_penningVoorEenGerechtigdeJutter($vondstwaarde, $fase, $herkomsten_creatie_42, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insert(new Fault($onderwerp, "penning voor een gerechtigde jutter", ComputeHelpers.designate(v, "penning voor een gerechtigde jutter")));
+    } else {
+        java.util.List feiten = (java.util.List) v;
+        insert(feiten.get(0));
+        insert(feiten.get(1));
+        insert(feiten.get(2));
+        if (feiten.get(3) != null) {
+            insert(feiten.get(3));
+        }
+    }
+end
+
+function boolean beta_dossierVoorEenGerechtigdeJutter(Object eigen, Object ander) {
+    return ComputeHelpers.inPhase(eigen, ander);
+}
+
+// de Jutter is penninggerechtigd
+function boolean toets_dossierVoorEenGerechtigdeJutter(Object $penninggerechtigd) {
+    return ComputeHelpers.characteristic($penninggerechtigd, Boolean.TRUE);
+}
+
+function Object creatie_dossierVoorEenGerechtigdeJutter(Object $fase, Object $herkomsten_creatie_55, Object $onderwerp) {
+    int diepte = ComputeHelpers.creationDepth("dossier voor een gerechtigde jutter", 0, "Jutter", (java.util.List) $herkomsten_creatie_55, 100);
+    Object nieuw = ComputeHelpers.newObject($onderwerp, "dev.uchar.regelspraak.facts.Dossier");
+    int fase = ((Integer) $fase).intValue();
+    java.util.List feiten = new java.util.ArrayList();
+    feiten.add(nieuw);
+    feiten.add(new CreationStamp("dossier voor een gerechtigde jutter", $onderwerp, nieuw, fase, 0, diepte));
+    feiten.add(new RelationLink("dossiervoering", $onderwerp, nieuw, fase));
+    return feiten;
+}
+
+rule "dossier voor een gerechtigde jutter"
+    dialect "mvel"
+    agenda-group "uchar-objectcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( dossier == null, $penninggerechtigd : (ComputeHelpers.holds(penninggerechtigd)) )
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    accumulate( $herkomst_creatie_54 : CreationStamp( object == $onderwerp ); $herkomsten_creatie_55 : collectList($herkomst_creatie_54) )
+    not( $gemaakt_creatie_57 : CreationStamp( rule == "dossier voor een gerechtigde jutter", subject == $onderwerp ) )
+    not( $nieuw_creatie_58 : CreationStamp( object == $onderwerp, beta_dossierVoorEenGerechtigdeJutter(this, $fase) ) )
+    eval( toets_dossierVoorEenGerechtigdeJutter($penninggerechtigd) )
+    not( $eigen_fout : Fault( rule == "dossier voor een gerechtigde jutter", subject == $onderwerp ) )
+then
+    Object v = creatie_dossierVoorEenGerechtigdeJutter($fase, $herkomsten_creatie_55, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insert(new Fault($onderwerp, "dossier voor een gerechtigde jutter", ComputeHelpers.designate(v, "dossier voor een gerechtigde jutter")));
+    } else {
+        java.util.List feiten = (java.util.List) v;
+        insert(feiten.get(0));
+        insert(feiten.get(1));
+        insert(feiten.get(2));
+    }
+end
+
+rule "aantal penningen van een jutter: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Penning()
+    exists( $koppeling_bereik_0 : RelationLink( relation == "penningbezit", second == $onderwerp, first == $vouwonderwerp ) )
+then
+    insertLogical(new Contribution("aantal penningen van een jutter: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "penningtotaal van een jutter: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Penning()
+    exists( $koppeling_bereik_8 : RelationLink( relation == "penningbezit", second == $onderwerp, first == $vouwonderwerp ) )
+    $stand_1 : State( attribute == ElementKey.of("penning", "bedrag", false), subject == $onderwerp, $bedrag : value )
+then
+    Object v = ComputeHelpers.contribution("penningtotaal van een jutter: vouw 1", $vouwonderwerp, $onderwerp, $bedrag, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "aantal dossiers van een jutter: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Dossier()
+    exists( $koppeling_bereik_20 : RelationLink( relation == "dossiervoering", second == $onderwerp, first == $vouwonderwerp ) )
+then
+    insertLogical(new Contribution("aantal dossiers van een jutter: vouw 2", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "houderscontrole: bijdrage aan vouw 3"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Penning()
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    exists( $koppeling_bereik_31 : RelationLink( relation == "penningbezit", first == $onderwerp, second == $vouwonderwerp ) )
+then
+    insertLogical(new Contribution("houderscontrole: vouw 3", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "koppeling penningbezit uit de invoer: Penning.houder"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Penning( houder != null, $ander : houder )
+then
+    insertLogical(new RelationLink("penningbezit", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingPenningbezitTweedeVullingVanHouder(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling penningbezit: tweede vulling van houder"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "penningbezit", $nabij : second )
+    $twee : RelationLink( relation == "penningbezit", second != null, second == $een.second, beta_koppelingPenningbezitTweedeVullingVanHouder(this, $een) )
+then
+    insertLogical(new Fault($nabij, "penningbezit", new SecondFillingFault("houder", $nabij)));
+end
+
+rule "koppeling dossiervoering uit de invoer: Jutter.dossier"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Jutter( dossier != null, $ander : dossier )
+then
+    insertLogical(new RelationLink("dossiervoering", $houder, $ander, 0));
+end
+
+rule "koppeling dossiervoering uit de invoer: Dossier.dossierhouder"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Dossier( dossierhouder != null, $ander : dossierhouder )
+then
+    insertLogical(new RelationLink("dossiervoering", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingDossiervoeringTweedeVullingVanDossier(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "second");
+}
+
+rule "koppeling dossiervoering: tweede vulling van dossier"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "dossiervoering", $nabij : first )
+    $twee : RelationLink( relation == "dossiervoering", first != null, first == $een.first, beta_koppelingDossiervoeringTweedeVullingVanDossier(this, $een) )
+then
+    insertLogical(new Fault($nabij, "dossiervoering", new SecondFillingFault("dossier", $nabij)));
+end
+
+function boolean beta_koppelingDossiervoeringTweedeVullingVanDossierhouder(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling dossiervoering: tweede vulling van dossierhouder"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "dossiervoering", $nabij : second )
+    $twee : RelationLink( relation == "dossiervoering", second != null, second == $een.second, beta_koppelingDossiervoeringTweedeVullingVanDossierhouder(this, $een) )
+then
+    insertLogical(new Fault($nabij, "dossiervoering", new SecondFillingFault("dossierhouder", $nabij)));
+end
+
+rule "stand Penning.bedrag: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Penning()
+    $waarde : Value( attribute == ElementKey.of("penning", "bedrag", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("penning", "bedrag", false), $v));
+end
+
+rule "stand Penning.bedrag: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Penning( $invoer : bedrag )
+    not( $waarde : Value( attribute == ElementKey.of("penning", "bedrag", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("penning", "bedrag", false), $invoer));
+end
+
+rule "kenmerkstand Penning.uitgereikt: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Penning( ComputeHelpers.holds(uitgereikt) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("penning", "uitgereikt", true), true));
+end
+
+rule "kenmerkstand Penning.uitgereikt: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Penning()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("penning", "uitgereikt", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("penning", "uitgereikt", true), true));
+end
+
+rule "kenmerkstand Penning.uitgereikt: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Penning( ComputeHelpers.holds(uitgereikt) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("penning", "uitgereikt", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("penning", "uitgereikt", true), false));
+end
+

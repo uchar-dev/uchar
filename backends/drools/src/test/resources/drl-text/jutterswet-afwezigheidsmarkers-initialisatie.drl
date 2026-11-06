@@ -1,0 +1,120 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.EmptyBarrier;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic;
+import dev.uchar.regelspraak.transpiler.tms.PeriodCondition;
+import dev.uchar.regelspraak.transpiler.tms.PeriodDefaults;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// 10
+function Object waarde_opslagInHetVoorjaar() {
+    try {
+        return PeriodArithmetic.writtenValues(PeriodArithmetic.clipped(PeriodCondition.window(java.time.LocalDate.parse("2025-03-01"), Boolean.TRUE, java.time.LocalDate.parse("2025-06-01"), Boolean.TRUE, Boolean.FALSE), PeriodArithmetic.scalar(ComputeHelpers.construct("waarde", new java.math.BigDecimal("10")))));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "opslag in het voorjaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+then
+    Object v = waarde_opslagInHetVoorjaar();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "opslag in het voorjaar", ComputeHelpers.designate(v, "opslag in het voorjaar")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "opslagkosten", false), v, "opslag in het voorjaar"));
+        }
+    }
+end
+
+function Object afloop_opslagOnbekend(Object $andere_schrijvers_schrijvers_1, Object $opslagkostenInvoer, Object $emmerinvoeren_dagen_5, Object $onderwerp) {
+    try {
+        return let_opslagOnbekend($andere_schrijvers_schrijvers_1, $opslagkostenInvoer, $emmerinvoeren_dagen_5, $onderwerp);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+function Object let_opslagOnbekend(Object $andere_schrijvers_schrijvers_1, Object $opslagkostenInvoer, Object $emmerinvoeren_dagen_5, Object $onderwerp) {
+    Object cel_4 = ComputeHelpers.binderCell();
+    try {
+        return PeriodDefaults.initialisedValues(binder_opslagOnbekend($andere_schrijvers_schrijvers_1, $opslagkostenInvoer, $emmerinvoeren_dagen_5, $onderwerp, cel_4), PeriodArithmetic.scalar(ComputeHelpers.constructorValue("onbekend")));
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_4);
+    }
+}
+
+function Object binder_opslagOnbekend(Object $andere_schrijvers_schrijvers_1, Object $opslagkostenInvoer, Object $emmerinvoeren_dagen_5, Object $onderwerp, Object cel_4) {
+    if (!ComputeHelpers.binderCellFilled(cel_4)) {
+        ComputeHelpers.fillBinderCell(cel_4, PeriodDefaults.initialisationDays($andere_schrijvers_schrijvers_1, $opslagkostenInvoer, $emmerinvoeren_dagen_5, "opslagkosten", $onderwerp));
+    }
+    return ComputeHelpers.binderValue(cel_4);
+}
+
+rule "opslag onbekend"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $opslagkostenInvoer : (ComputeHelpers.periods(opslagkosten)) )
+    accumulate( $andere_schrijver_schrijvers_0 : Value( attribute == ElementKey.of("vondst", "opslagkosten", false) && writer != "opslag onbekend", subject == $onderwerp ); $andere_schrijvers_schrijvers_1 : collectList($andere_schrijver_schrijvers_0) )
+    accumulate( $emmerinvoer_dagen_4 : BucketInput( attribute == ElementKey.of("vondst", "opslagkosten", false), subject == $onderwerp ); $emmerinvoeren_dagen_5 : count() )
+then
+    Object v = afloop_opslagOnbekend($andere_schrijvers_schrijvers_1, $opslagkostenInvoer, $emmerinvoeren_dagen_5, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "opslag onbekend", ComputeHelpers.designate(v, "opslag onbekend")));
+    } else if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "opslagkosten", false), v, "opslag onbekend"));
+    }
+end
+
+// hij ongekeurd is
+function boolean toets_keuringOnbekend(Object $ongekeurd) {
+    return ComputeHelpers.characteristic($ongekeurd, Boolean.TRUE);
+}
+
+function Object afloop_keuringOnbekend(Object $andere_schrijvers_schrijvers_9, Object $keurkostenInvoer, Object $emmerinvoeren_dagen_13, Object $onderwerp) {
+    try {
+        return let_keuringOnbekend($andere_schrijvers_schrijvers_9, $keurkostenInvoer, $emmerinvoeren_dagen_13, $onderwerp);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+function Object let_keuringOnbekend(Object $andere_schrijvers_schrijvers_9, Object $keurkostenInvoer, Object $emmerinvoeren_dagen_13, Object $onderwerp) {
+    Object cel_5 = ComputeHelpers.binderCell();
+    try {
+        return PeriodDefaults.initialisedValues(binder_keuringOnbekend($andere_schrijvers_schrijvers_9, $keurkostenInvoer, $emmerinvoeren_dagen_13, $onderwerp, cel_5), PeriodArithmetic.scalar(ComputeHelpers.constructorValue("onbekend")));
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_5);
+    }
+}
+
+function Object binder_keuringOnbekend(Object $andere_schrijvers_schrijvers_9, Object $keurkostenInvoer, Object $emmerinvoeren_dagen_13, Object $onderwerp, Object cel_5) {
+    if (!ComputeHelpers.binderCellFilled(cel_5)) {
+        ComputeHelpers.fillBinderCell(cel_5, PeriodDefaults.initialisationDays($andere_schrijvers_schrijvers_9, $keurkostenInvoer, $emmerinvoeren_dagen_13, "keurkosten", $onderwerp));
+    }
+    return ComputeHelpers.binderValue(cel_5);
+}
+
+rule "keuring onbekend"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $ongekeurd : (ComputeHelpers.holds(ongekeurd)), $keurkostenInvoer : (ComputeHelpers.periods(keurkosten)) )
+    accumulate( $andere_schrijver_schrijvers_8 : Value( attribute == ElementKey.of("vondst", "keurkosten", false) && writer != "keuring onbekend", subject == $onderwerp ); $andere_schrijvers_schrijvers_9 : collectList($andere_schrijver_schrijvers_8) )
+    accumulate( $emmerinvoer_dagen_12 : BucketInput( attribute == ElementKey.of("vondst", "keurkosten", false), subject == $onderwerp ); $emmerinvoeren_dagen_13 : count() )
+    eval( toets_keuringOnbekend($ongekeurd) )
+then
+    Object v = afloop_keuringOnbekend($andere_schrijvers_schrijvers_9, $keurkostenInvoer, $emmerinvoeren_dagen_13, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "keuring onbekend", ComputeHelpers.designate(v, "keuring onbekend")));
+    } else if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "keurkosten", false), v, "keuring onbekend"));
+    }
+end
+

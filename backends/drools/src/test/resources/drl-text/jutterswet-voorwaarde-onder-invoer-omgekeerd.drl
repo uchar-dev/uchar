@@ -1,0 +1,131 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn opbrengst gedeeld door zijn aantal deelnemers groter is dan 10
+function boolean toets_standaardtoeslag(Object $opbrengst, Object $aantalDeelnemers) {
+    try {
+        return RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($opbrengst, $aantalDeelnemers, null), new java.math.BigDecimal("10"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// 5
+function Object waarde_standaardtoeslag(Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("5"), Integer.valueOf(0), "toeslag", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "standaardtoeslag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( toeslag == null, $opbrengst : opbrengst, $aantalDeelnemers : aantalDeelnemers )
+    eval( toets_standaardtoeslag($opbrengst, $aantalDeelnemers) )
+    not( $andere_schrijver : Value( attribute == ElementKey.of("vondst", "toeslag", false) && writer != "standaardtoeslag", subject == $onderwerp ) )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_standaardtoeslag(sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "standaardtoeslag", ComputeHelpers.designate(v, "standaardtoeslag")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("standaardtoeslag", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "toeslag", false), v, "standaardtoeslag"));
+        }
+    }
+end
+
+// zijn opbrengst gedeeld door zijn aantal deelnemers groter is dan 10
+function boolean toets_standaardtoeslagFoutInDeVoorwaarde(Object $opbrengst, Object $aantalDeelnemers) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($opbrengst, $aantalDeelnemers, null), new java.math.BigDecimal("10"), ">");
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn opbrengst gedeeld door zijn aantal deelnemers groter is dan 10
+function Object fout_standaardtoeslagFoutInDeVoorwaarde(Object $opbrengst, Object $aantalDeelnemers) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($opbrengst, $aantalDeelnemers, null), new java.math.BigDecimal("10"), ">");
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "standaardtoeslag: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( toeslag == null, $opbrengst : opbrengst, $aantalDeelnemers : aantalDeelnemers )
+    eval( toets_standaardtoeslagFoutInDeVoorwaarde($opbrengst, $aantalDeelnemers) )
+    not( $andere_schrijver : Value( attribute == ElementKey.of("vondst", "toeslag", false) && writer != "standaardtoeslag", subject == $onderwerp ) )
+then
+    Object f = fout_standaardtoeslagFoutInDeVoorwaarde($opbrengst, $aantalDeelnemers);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"standaardtoeslag\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "standaardtoeslag", ComputeHelpers.designate(f, "standaardtoeslag")));
+end
+
+// zijn opbrengst gedeeld door zijn aantal deelnemers groter is dan 10
+function boolean toets_standaardtoeslagDeponeringInDeVoorwaarde(Object $opbrengst, Object $aantalDeelnemers, Object sonde) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($opbrengst, $aantalDeelnemers, sonde), new java.math.BigDecimal("10"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    return ComputeHelpers.reported(sonde);
+}
+
+// zijn opbrengst gedeeld door zijn aantal deelnemers groter is dan 10
+function java.util.List deponering_standaardtoeslagDeponeringInDeVoorwaarde(Object $opbrengst, Object $aantalDeelnemers, Object sonde) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($opbrengst, $aantalDeelnemers, sonde), new java.math.BigDecimal("10"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    if (!ComputeHelpers.reported(sonde)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"standaardtoeslag\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    return ComputeHelpers.depositCodes(sonde);
+}
+
+rule "standaardtoeslag: deponering in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( toeslag == null, $opbrengst : opbrengst, $aantalDeelnemers : aantalDeelnemers )
+    eval( toets_standaardtoeslagDeponeringInDeVoorwaarde($opbrengst, $aantalDeelnemers, ComputeHelpers.depositFlag()) )
+    not( $andere_schrijver : Value( attribute == ElementKey.of("vondst", "toeslag", false) && writer != "standaardtoeslag", subject == $onderwerp ) )
+then
+    insertLogical(ComputeHelpers.inconsistency("standaardtoeslag", $onderwerp, deponering_standaardtoeslagDeponeringInDeVoorwaarde($opbrengst, $aantalDeelnemers, ComputeHelpers.depositFlag())));
+end
+
+// hij gemeld is
+function boolean toets_erkenning(Object $gemeld) {
+    return ComputeHelpers.characteristic($gemeld, Boolean.TRUE);
+}
+
+rule "erkenning"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gemeld : (ComputeHelpers.holds(gemeld)) )
+    eval( toets_erkenning($gemeld) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "erkend", true)));
+end
+

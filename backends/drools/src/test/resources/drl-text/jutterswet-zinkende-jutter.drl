@@ -1,0 +1,300 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+
+// alle vondsten van de Jutter geen drijfvermogen hebben
+function boolean toets_zinkendeJutter(Object $aantal_vouw_4, Object $vouw_vouw_6) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_4, $vouw_vouw_6, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0));
+}
+
+rule "zinkende jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "zinkende jutter: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_5 : value ); $aantal_vouw_4 : count(), $vouw_vouw_6 : exactSum($bijdragewaarde_vouw_5) )
+    eval( toets_zinkendeJutter($aantal_vouw_4, $vouw_vouw_6) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "zinkend", true)));
+end
+
+// alle vondsten van de Jutter niet waardevol zijn
+function boolean toets_berooideJutter(Object $aantal_vouw_12, Object $vouw_vouw_14) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_12, $vouw_vouw_14, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0));
+}
+
+rule "berooide jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_9 : Contribution( fold == "berooide jutter: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_13 : value ); $aantal_vouw_12 : count(), $vouw_vouw_14 : exactSum($bijdragewaarde_vouw_13) )
+    eval( toets_berooideJutter($aantal_vouw_12, $vouw_vouw_14) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "berooid", true)));
+end
+
+// geen van de vondsten van de Jutter geen drijfvermogen heeft
+function boolean toets_drijvendeJutter(Object $aantal_vouw_20, Object $vouw_vouw_22) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_20, $vouw_vouw_22, dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, Integer.valueOf(0));
+}
+
+rule "drijvende jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_17 : Contribution( fold == "drijvende jutter: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_21 : value ); $aantal_vouw_20 : count(), $vouw_vouw_22 : exactSum($bijdragewaarde_vouw_21) )
+    eval( toets_drijvendeJutter($aantal_vouw_20, $vouw_vouw_22) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "drijvend", true)));
+end
+
+// ten minste één van de vondsten van de Jutter drijfvermogen heeft
+function boolean toets_vlotteJutter(Object $aantal_vouw_28, Object $vouw_vouw_30) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_28, $vouw_vouw_30, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(1));
+}
+
+rule "vlotte jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_25 : Contribution( fold == "vlotte jutter: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_29 : value ); $aantal_vouw_28 : count(), $vouw_vouw_30 : exactSum($bijdragewaarde_vouw_29) )
+    eval( toets_vlotteJutter($aantal_vouw_28, $vouw_vouw_30) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "vlot", true)));
+end
+
+// ten minste één van de vondsten van de Jutter geen recht op berging heeft
+function boolean toets_meldplichtigeJutter(Object $aantal_vouw_36, Object $vouw_vouw_38) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_36, $vouw_vouw_38, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(1));
+}
+
+rule "meldplichtige jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_33 : Contribution( fold == "meldplichtige jutter: vouw 4", subject == $onderwerp, $bijdragewaarde_vouw_37 : value ); $aantal_vouw_36 : count(), $vouw_vouw_38 : exactSum($bijdragewaarde_vouw_37) )
+    eval( toets_meldplichtigeJutter($aantal_vouw_36, $vouw_vouw_38) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "meldplichtig", true)));
+end
+
+// geen van de vondsten van de Jutter waardevol is
+function boolean toets_onvermogendeJutter(Object $aantal_vouw_44, Object $vouw_vouw_46) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_44, $vouw_vouw_46, dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, Integer.valueOf(0));
+}
+
+rule "onvermogende jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_41 : Contribution( fold == "onvermogende jutter: vouw 5", subject == $onderwerp, $bijdragewaarde_vouw_45 : value ); $aantal_vouw_44 : count(), $vouw_vouw_46 : exactSum($bijdragewaarde_vouw_45) )
+    eval( toets_onvermogendeJutter($aantal_vouw_44, $vouw_vouw_46) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "onvermogend", true)));
+end
+
+// alle vondsten van de vinder dubbel gekeurd zijn
+function boolean toets_vrijgegevenJutter(Object $aantal_vouw_52, Object $vouw_vouw_54) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_52, $vouw_vouw_54, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0));
+}
+
+rule "vrijgegeven jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_49 : Contribution( fold == "vrijgegeven jutter: vouw 6", subject == $onderwerp, $bijdragewaarde_vouw_53 : value ); $aantal_vouw_52 : count(), $vouw_vouw_54 : exactSum($bijdragewaarde_vouw_53) )
+    eval( toets_vrijgegevenJutter($aantal_vouw_52, $vouw_vouw_54) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "vrijgegeven", true)));
+end
+
+// hij aan alle volgende voorwaarden voldoet: - alle vondsten van de Jutter geen drijfvermogen hebben - ten minste één van de vondsten van de Jutter waardevol is
+function boolean toets_duikplichtigeJutter(Object $aantal_vouw_60, Object $vouw_vouw_62, Object $aantal_vouw_67, Object $vouw_vouw_69) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.quantifierVerdict($aantal_vouw_60, $vouw_vouw_62, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0))) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.quantifierVerdict($aantal_vouw_67, $vouw_vouw_69, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(1))) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "duikplichtige jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_57 : Contribution( fold == "duikplichtige jutter: vouw 7", subject == $onderwerp, $bijdragewaarde_vouw_61 : value ); $aantal_vouw_60 : count(), $vouw_vouw_62 : exactSum($bijdragewaarde_vouw_61) )
+    accumulate( $bijdrage_vouw_64 : Contribution( fold == "duikplichtige jutter: vouw 8", subject == $onderwerp, $bijdragewaarde_vouw_68 : value ); $aantal_vouw_67 : count(), $vouw_vouw_69 : exactSum($bijdragewaarde_vouw_68) )
+    eval( toets_duikplichtigeJutter($aantal_vouw_60, $vouw_vouw_62, $aantal_vouw_67, $vouw_vouw_69) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "duikplichtig", true)));
+end
+
+// ten minste één van de vondsten van de Jutter niet gekeurd is
+function boolean toets_keurplichtigeJutter(Object $aantal_vouw_75, Object $vouw_vouw_77) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_75, $vouw_vouw_77, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(1));
+}
+
+rule "keurplichtige jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_72 : Contribution( fold == "keurplichtige jutter: vouw 9", subject == $onderwerp, $bijdragewaarde_vouw_76 : value ); $aantal_vouw_75 : count(), $vouw_vouw_77 : exactSum($bijdragewaarde_vouw_76) )
+    eval( toets_keurplichtigeJutter($aantal_vouw_75, $vouw_vouw_77) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "keurplichtig", true)));
+end
+
+// alle vondsten van de Jutter geen drijfvermogen hebben
+function boolean matrix_zinkendeJutterBijdrageAanVouw0(Object $onderwerp, Object $drijfvermogen) {
+    return ComputeHelpers.characteristic($drijfvermogen, Boolean.FALSE);
+}
+
+rule "zinkende jutter: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( vinder == $vouwonderwerp, $drijfvermogen : (ComputeHelpers.holds(drijfvermogen)) )
+then
+    insertLogical(new Contribution("zinkende jutter: vouw 0", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_zinkendeJutterBijdrageAanVouw0($onderwerp, $drijfvermogen))));
+end
+
+// alle vondsten van de Jutter niet waardevol zijn
+function boolean matrix_berooideJutterBijdrageAanVouw1(Object $onderwerp, Object $waardevol) {
+    return ComputeHelpers.characteristic($waardevol, Boolean.FALSE);
+}
+
+rule "berooide jutter: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( vinder == $vouwonderwerp, $waardevol : (ComputeHelpers.holds(waardevol)) )
+then
+    insertLogical(new Contribution("berooide jutter: vouw 1", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_berooideJutterBijdrageAanVouw1($onderwerp, $waardevol))));
+end
+
+// geen van de vondsten van de Jutter geen drijfvermogen heeft
+function boolean matrix_drijvendeJutterBijdrageAanVouw2(Object $onderwerp, Object $drijfvermogen) {
+    return ComputeHelpers.characteristic($drijfvermogen, Boolean.FALSE);
+}
+
+rule "drijvende jutter: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( vinder == $vouwonderwerp, $drijfvermogen : (ComputeHelpers.holds(drijfvermogen)) )
+then
+    insertLogical(new Contribution("drijvende jutter: vouw 2", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_drijvendeJutterBijdrageAanVouw2($onderwerp, $drijfvermogen))));
+end
+
+// ten minste één van de vondsten van de Jutter drijfvermogen heeft
+function boolean matrix_vlotteJutterBijdrageAanVouw3(Object $onderwerp, Object $drijfvermogen) {
+    return ComputeHelpers.characteristic($drijfvermogen, Boolean.TRUE);
+}
+
+rule "vlotte jutter: bijdrage aan vouw 3"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( vinder == $vouwonderwerp, $drijfvermogen : (ComputeHelpers.holds(drijfvermogen)) )
+then
+    insertLogical(new Contribution("vlotte jutter: vouw 3", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_vlotteJutterBijdrageAanVouw3($onderwerp, $drijfvermogen))));
+end
+
+// ten minste één van de vondsten van de Jutter geen recht op berging heeft
+function boolean matrix_meldplichtigeJutterBijdrageAanVouw4(Object $onderwerp, Object $rechtOpBerging) {
+    return ComputeHelpers.characteristic($rechtOpBerging, Boolean.FALSE);
+}
+
+rule "meldplichtige jutter: bijdrage aan vouw 4"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( vinder == $vouwonderwerp, $rechtOpBerging : (ComputeHelpers.holds(rechtOpBerging)) )
+then
+    insertLogical(new Contribution("meldplichtige jutter: vouw 4", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_meldplichtigeJutterBijdrageAanVouw4($onderwerp, $rechtOpBerging))));
+end
+
+// geen van de vondsten van de Jutter waardevol is
+function boolean matrix_onvermogendeJutterBijdrageAanVouw5(Object $onderwerp, Object $waardevol) {
+    return ComputeHelpers.characteristic($waardevol, Boolean.TRUE);
+}
+
+rule "onvermogende jutter: bijdrage aan vouw 5"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( vinder == $vouwonderwerp, $waardevol : (ComputeHelpers.holds(waardevol)) )
+then
+    insertLogical(new Contribution("onvermogende jutter: vouw 5", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_onvermogendeJutterBijdrageAanVouw5($onderwerp, $waardevol))));
+end
+
+// alle vondsten van de vinder dubbel gekeurd zijn
+function boolean matrix_vrijgegevenJutterBijdrageAanVouw6(Object $onderwerp, Object $dubbelGekeurd) {
+    return ComputeHelpers.characteristic($dubbelGekeurd, Boolean.TRUE);
+}
+
+rule "vrijgegeven jutter: bijdrage aan vouw 6"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( vinder == $vouwonderwerp, $dubbelGekeurd : (ComputeHelpers.holds(dubbelGekeurd)) )
+then
+    insertLogical(new Contribution("vrijgegeven jutter: vouw 6", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_vrijgegevenJutterBijdrageAanVouw6($onderwerp, $dubbelGekeurd))));
+end
+
+// alle vondsten van de Jutter geen drijfvermogen hebben
+function boolean matrix_duikplichtigeJutterBijdrageAanVouw7(Object $onderwerp, Object $drijfvermogen) {
+    return ComputeHelpers.characteristic($drijfvermogen, Boolean.FALSE);
+}
+
+rule "duikplichtige jutter: bijdrage aan vouw 7"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( vinder == $vouwonderwerp, $drijfvermogen : (ComputeHelpers.holds(drijfvermogen)) )
+then
+    insertLogical(new Contribution("duikplichtige jutter: vouw 7", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_duikplichtigeJutterBijdrageAanVouw7($onderwerp, $drijfvermogen))));
+end
+
+// ten minste één van de vondsten van de Jutter waardevol is
+function boolean matrix_duikplichtigeJutterBijdrageAanVouw8(Object $onderwerp, Object $waardevol) {
+    return ComputeHelpers.characteristic($waardevol, Boolean.TRUE);
+}
+
+rule "duikplichtige jutter: bijdrage aan vouw 8"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( vinder == $vouwonderwerp, $waardevol : (ComputeHelpers.holds(waardevol)) )
+then
+    insertLogical(new Contribution("duikplichtige jutter: vouw 8", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_duikplichtigeJutterBijdrageAanVouw8($onderwerp, $waardevol))));
+end
+
+// ten minste één van de vondsten van de Jutter niet gekeurd is
+function boolean matrix_keurplichtigeJutterBijdrageAanVouw9(Object $onderwerp, Object $gekeurd) {
+    return ComputeHelpers.characteristic($gekeurd, Boolean.FALSE);
+}
+
+rule "keurplichtige jutter: bijdrage aan vouw 9"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( vinder == $vouwonderwerp, $gekeurd : (ComputeHelpers.holds(gekeurd)) )
+then
+    insertLogical(new Contribution("keurplichtige jutter: vouw 9", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_keurplichtigeJutterBijdrageAanVouw9($onderwerp, $gekeurd))));
+end
+

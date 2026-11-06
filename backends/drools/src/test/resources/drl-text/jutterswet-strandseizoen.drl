@@ -1,0 +1,274 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn vondstgewicht in voorjaar op zuid
+function Object waarde_zuidvoorjaarsgewichtVanEenJutter(Object $vondstgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.cell($vondstgewicht, java.util.Arrays.asList("voorjaar", "zuid")), Integer.valueOf(2), "zuidvoorjaarsgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "zuidvoorjaarsgewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht )
+then
+    Object v = waarde_zuidvoorjaarsgewichtVanEenJutter($vondstgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "zuidvoorjaarsgewicht van een jutter", ComputeHelpers.designate(v, "zuidvoorjaarsgewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "zuidvoorjaarsgewicht", false), v, "zuidvoorjaarsgewicht van een jutter"));
+        }
+    }
+end
+
+// zijn vondstgewicht op noord en in najaar
+function Object waarde_noordnajaarsgewichtVanEenJutter(Object $vondstgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.cell($vondstgewicht, java.util.Arrays.asList("najaar", "noord")), Integer.valueOf(2), "noordnajaarsgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "noordnajaarsgewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht )
+then
+    Object v = waarde_noordnajaarsgewichtVanEenJutter($vondstgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "noordnajaarsgewicht van een jutter", ComputeHelpers.designate(v, "noordnajaarsgewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "noordnajaarsgewicht", false), v, "noordnajaarsgewicht van een jutter"));
+        }
+    }
+end
+
+// de som van zijn vondstgewicht over alle seizoenen over de stranden in {noord}
+function Object waarde_noordgewichtVanEenJutter(Object $vondstgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsDimSom(ComputeHelpers.map($vondstgewicht), java.util.Arrays.asList(java.util.Arrays.asList("voorjaar", "noord"), java.util.Arrays.asList("zomer", "noord"), java.util.Arrays.asList("najaar", "noord"))), Integer.valueOf(2), "noordgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "noordgewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht )
+then
+    Object v = waarde_noordgewichtVanEenJutter($vondstgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "noordgewicht van een jutter", ComputeHelpers.designate(v, "noordgewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "noordgewicht", false), v, "noordgewicht van een jutter"));
+        }
+    }
+end
+
+// de maximale waarde van zijn vondstgewicht over de stranden in {zuid} over de seizoenen vanaf voorjaar t/m zomer
+function Object waarde_zuidpiekgewichtVanEenJutter(Object $vondstgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsDimMax(ComputeHelpers.map($vondstgewicht), java.util.Arrays.asList(java.util.Arrays.asList("voorjaar", "zuid"), java.util.Arrays.asList("zomer", "zuid"))), Integer.valueOf(2), "zuidpiekgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "zuidpiekgewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht )
+then
+    Object v = waarde_zuidpiekgewichtVanEenJutter($vondstgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "zuidpiekgewicht van een jutter", ComputeHelpers.designate(v, "zuidpiekgewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "zuidpiekgewicht", false), v, "zuidpiekgewicht van een jutter"));
+        }
+    }
+end
+
+// de minimale waarde van zijn vondstgewicht over de seizoenen vanaf zomer t/m najaar over alle stranden
+function Object waarde_dalgewichtVanEenJutter(Object $vondstgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsDimMin(ComputeHelpers.map($vondstgewicht), java.util.Arrays.asList(java.util.Arrays.asList("zomer", "noord"), java.util.Arrays.asList("zomer", "zuid"), java.util.Arrays.asList("najaar", "noord"), java.util.Arrays.asList("najaar", "zuid"))), Integer.valueOf(2), "dalgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "dalgewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht )
+then
+    Object v = waarde_dalgewichtVanEenJutter($vondstgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "dalgewicht van een jutter", ComputeHelpers.designate(v, "dalgewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "dalgewicht", false), v, "dalgewicht van een jutter"));
+        }
+    }
+end
+
+// de som van zijn vondstgewicht over alle seizoenen over alle stranden
+function Object waarde_jaargewichtVanEenJutter(Object $vondstgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsDimSom(ComputeHelpers.map($vondstgewicht), java.util.Arrays.asList(java.util.Arrays.asList("voorjaar", "noord"), java.util.Arrays.asList("voorjaar", "zuid"), java.util.Arrays.asList("zomer", "noord"), java.util.Arrays.asList("zomer", "zuid"), java.util.Arrays.asList("najaar", "noord"), java.util.Arrays.asList("najaar", "zuid"))), Integer.valueOf(2), "jaargewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "jaargewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht )
+then
+    Object v = waarde_jaargewichtVanEenJutter($vondstgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "jaargewicht van een jutter", ComputeHelpers.designate(v, "jaargewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "jaargewicht", false), v, "jaargewicht van een jutter"));
+        }
+    }
+end
+
+// zijn vondstgewicht in voorjaar op zuid plus zijn vondstgewicht in zomer en op zuid
+function Object waarde_zuidzeeaanvoerVanEenJutter(Object $vondstgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus(ComputeHelpers.cell($vondstgewicht, java.util.Arrays.asList("voorjaar", "zuid")), ComputeHelpers.cell($vondstgewicht, java.util.Arrays.asList("zomer", "zuid"))), Integer.valueOf(2), "aanvoer[zuid, zee]", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "zuidzeeaanvoer van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht )
+then
+    Object v = waarde_zuidzeeaanvoerVanEenJutter($vondstgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "zuidzeeaanvoer van een jutter", ComputeHelpers.designate(v, "zuidzeeaanvoer van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aanvoer[zuid, zee]", false), v, "zuidzeeaanvoer van een jutter"));
+        }
+    }
+end
+
+function boolean toets_zuidrivieraanvoerVanEenJutter(Object $onderwerp) {
+    return ComputeHelpers.emptyTest(ComputeHelpers.cell(ComputeHelpers.readProperty($onderwerp, "aanvoer"), java.util.Arrays.asList("zuid", "rivier")), Boolean.TRUE);
+}
+
+// 0 kg
+function Object waarde_zuidrivieraanvoerVanEenJutter() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("0"), Integer.valueOf(2), "aanvoer[zuid, rivier]", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "zuidrivieraanvoer van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    not( $andere_schrijver : Value( attribute == ElementKey.of("jutter", "aanvoer[zuid, rivier]", false) && writer != "zuidrivieraanvoer van een jutter", subject == $onderwerp ) )
+    eval( toets_zuidrivieraanvoerVanEenJutter($onderwerp) )
+then
+    Object v = waarde_zuidrivieraanvoerVanEenJutter();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "zuidrivieraanvoer van een jutter", ComputeHelpers.designate(v, "zuidrivieraanvoer van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aanvoer[zuid, rivier]", false), v, "zuidrivieraanvoer van een jutter"));
+        }
+    }
+end
+
+// zijn aanvoer uit rivier op noord
+function Object waarde_noordriviergewichtVanEenJutter(Object $aanvoer) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.cell($aanvoer, java.util.Arrays.asList("noord", "rivier")), Integer.valueOf(2), "noordriviergewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "noordriviergewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $aanvoer : aanvoer )
+then
+    Object v = waarde_noordriviergewichtVanEenJutter($aanvoer);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "noordriviergewicht van een jutter", ComputeHelpers.designate(v, "noordriviergewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "noordriviergewicht", false), v, "noordriviergewicht van een jutter"));
+        }
+    }
+end
+
+// de som van zijn aanvoer over alle stranden over de herkomsten in {zee}
+function Object waarde_zeeaanvoergewichtVanEenJutter(Object $aanvoer, Object $aanvoer2) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsDimSom(ComputeHelpers.map(ComputeHelpers.withCell($aanvoer, java.util.Arrays.asList("zuid", "zee"), $aanvoer2)), java.util.Arrays.asList(java.util.Arrays.asList("noord", "zee"), java.util.Arrays.asList("zuid", "zee"))), Integer.valueOf(2), "zeeaanvoergewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "zeeaanvoergewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $aanvoer : aanvoer )
+    $stand_1 : State( attribute == ElementKey.of("jutter", "aanvoer[zuid, zee]", false), subject == $onderwerp, $aanvoer2 : value )
+then
+    Object v = waarde_zeeaanvoergewichtVanEenJutter($aanvoer, $aanvoer2);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "zeeaanvoergewicht van een jutter", ComputeHelpers.designate(v, "zeeaanvoergewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "zeeaanvoergewicht", false), v, "zeeaanvoergewicht van een jutter"));
+        }
+    }
+end
+
+rule "stand Jutter.aanvoer[zuid, zee]: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $waarde : Value( attribute == ElementKey.of("jutter", "aanvoer[zuid, zee]", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "aanvoer[zuid, zee]", false), $v));
+end
+
+rule "stand Jutter.aanvoer[zuid, zee]: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : aanvoer )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "aanvoer[zuid, zee]", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "aanvoer[zuid, zee]", false), ComputeHelpers.cell($invoer, java.util.Arrays.asList("zuid", "zee"))));
+end
+

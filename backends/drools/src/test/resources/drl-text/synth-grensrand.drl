@@ -1,0 +1,86 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de factorEen van de Meting maal de factorTwee van de Meting
+function Object waarde_grensproductVanEenMeting(Object $factorEen, Object $factorTwee) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($factorEen, $factorTwee), Integer.valueOf(0), "grensproduct", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "grensproduct van een meting"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Meting( $factorEen : factorEen, $factorTwee : factorTwee )
+then
+    Object v = waarde_grensproductVanEenMeting($factorEen, $factorTwee);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "grensproduct van een meting", ComputeHelpers.designate(v, "grensproduct van een meting")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("meting", "grensproduct", false), v, "grensproduct van een meting"));
+        }
+    }
+end
+
+// de lengteA van de Meting plus de lengteB van de Meting
+function Object waarde_totaalVanEenMeting(Object $lengteA, Object $lengteB) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($lengteA, $lengteB), Integer.valueOf(0), "totaal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "totaal van een meting"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Meting( $lengteA : lengteA, $lengteB : lengteB )
+then
+    Object v = waarde_totaalVanEenMeting($lengteA, $lengteB);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "totaal van een meting", ComputeHelpers.designate(v, "totaal van een meting")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("meting", "totaal", false), v, "totaal van een meting"));
+        }
+    }
+end
+
+// de lengteA van de Meting is groter of gelijk aan de lengteB van de Meting
+function boolean toets_indicatieVanEenMeting(Object $lengteA, Object $lengteB) {
+    return RegelSpraakRuntime.rsAggVergelijk($lengteA, $lengteB, ">=");
+}
+
+// 1
+function Object waarde_indicatieVanEenMeting() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("1"), Integer.valueOf(0), "indicatie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "indicatie van een meting"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Meting( $lengteA : lengteA, $lengteB : lengteB )
+    eval( toets_indicatieVanEenMeting($lengteA, $lengteB) )
+then
+    Object v = waarde_indicatieVanEenMeting();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "indicatie van een meting", ComputeHelpers.designate(v, "indicatie van een meting")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("meting", "indicatie", false), v, "indicatie van een meting"));
+        }
+    }
+end
+

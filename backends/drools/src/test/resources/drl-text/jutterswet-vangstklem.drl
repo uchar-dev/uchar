@@ -1,0 +1,80 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het ruwgewicht van de Vangst, met een minimum van 1 t
+function Object waarde_ondergewichtVanEenVangst(Object $ruwgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsBegrens($ruwgewicht, ComputeHelpers.restateExact(new java.math.BigDecimal("1"), new java.math.BigDecimal("1000"), new java.math.BigDecimal("1")), null), Integer.valueOf(2), "ondergewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "ondergewicht van een vangst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangst( $ruwgewicht : ruwgewicht )
+then
+    Object v = waarde_ondergewichtVanEenVangst($ruwgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "ondergewicht van een vangst", ComputeHelpers.designate(v, "ondergewicht van een vangst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vangst", "ondergewicht", false), v, "ondergewicht van een vangst"));
+        }
+    }
+end
+
+// het ruwgewicht van de Vangst, met een maximum van 2,50 t
+function Object waarde_bovengewichtVanEenVangst(Object $ruwgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsBegrens($ruwgewicht, null, ComputeHelpers.restateExact(new java.math.BigDecimal("2.5"), new java.math.BigDecimal("1000"), new java.math.BigDecimal("1"))), Integer.valueOf(2), "bovengewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bovengewicht van een vangst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangst( $ruwgewicht : ruwgewicht )
+then
+    Object v = waarde_bovengewichtVanEenVangst($ruwgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bovengewicht van een vangst", ComputeHelpers.designate(v, "bovengewicht van een vangst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vangst", "bovengewicht", false), v, "bovengewicht van een vangst"));
+        }
+    }
+end
+
+// het ruwgewicht van de Vangst, met een minimum van 1 t en een maximum van 2500 kg
+function Object waarde_bandgewichtVanEenVangst(Object $ruwgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsBegrens($ruwgewicht, ComputeHelpers.restateExact(new java.math.BigDecimal("1"), new java.math.BigDecimal("1000"), new java.math.BigDecimal("1")), new java.math.BigDecimal("2500")), Integer.valueOf(2), "bandgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bandgewicht van een vangst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangst( $ruwgewicht : ruwgewicht )
+then
+    Object v = waarde_bandgewichtVanEenVangst($ruwgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bandgewicht van een vangst", ComputeHelpers.designate(v, "bandgewicht van een vangst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vangst", "bandgewicht", false), v, "bandgewicht van een vangst"));
+        }
+    }
+end
+

@@ -1,0 +1,181 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Decides;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn grondslag
+function Object waarde_uitkeringVanEenStrandrecht(Object $grondslag) {
+    try {
+        return ComputeHelpers.fitTarget($grondslag, Integer.valueOf(2), "uitkering", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "uitkering van een strandrecht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht( ComputeHelpers.classNotIn(this, ComputeHelpers.list2("dev.uchar.regelspraak.facts.Wrakrecht", "dev.uchar.regelspraak.facts.Diepwrak")), $grondslag : grondslag )
+then
+    Object v = waarde_uitkeringVanEenStrandrecht($grondslag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "uitkering van een strandrecht", ComputeHelpers.designate(v, "uitkering van een strandrecht")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandrecht", "uitkering", false), v, "uitkering van een strandrecht"));
+        }
+    }
+end
+
+// zijn grondslag maal 3
+function Object waarde_uitkeringVanEenDiepwrak(Object $grondslag) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($grondslag, new java.math.BigDecimal("3")), Integer.valueOf(2), "uitkering", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "uitkering van een diepwrak"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Diepwrak( ComputeHelpers.classNotIn(this, ComputeHelpers.list1("dev.uchar.regelspraak.facts.Diepwrak")), $grondslag : grondslag )
+then
+    Object v = waarde_uitkeringVanEenDiepwrak($grondslag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "uitkering van een diepwrak", ComputeHelpers.designate(v, "uitkering van een diepwrak")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandrecht", "uitkering", false), v, "uitkering van een diepwrak"));
+        }
+    }
+end
+
+// het Wrakrecht betwist is
+function boolean toets_defaultsAWrakrechtUitkeringDefault0(Object $betwist) {
+    return ComputeHelpers.characteristic($betwist, Boolean.TRUE);
+}
+
+rule "defaults A:Wrakrecht.uitkering: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakrecht( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Wrakrecht"), $betwist : (ComputeHelpers.holds(betwist)) )
+    eval( toets_defaultsAWrakrechtUitkeringDefault0($betwist) )
+then
+    // 99.00
+    Object v = new java.math.BigDecimal("99");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "uitkering");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Wrakrecht.uitkering", ComputeHelpers.designate(passend, "defaults A:Wrakrecht.uitkering")));
+            insertLogical(new Decides($onderwerp, "defaults A:Wrakrecht.uitkering", 0));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandrecht", "uitkering", false), passend, "defaults A:Wrakrecht.uitkering"));
+            insertLogical(new Decides($onderwerp, "defaults A:Wrakrecht.uitkering", 0));
+        }
+    }
+end
+
+// zijn grondslag maal 2
+function Object afloop_defaultsAWrakrechtUitkeringDefault1(Object $grondslag) {
+    try {
+        return RegelSpraakRuntime.rsMaal($grondslag, new java.math.BigDecimal("2"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Wrakrecht.uitkering: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakrecht( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Wrakrecht"), $grondslag : grondslag )
+    not( $hoger_5 : Decides( stack == "defaults A:Wrakrecht.uitkering" && index < 1, subject == $onderwerp ) )
+then
+    Object v = afloop_defaultsAWrakrechtUitkeringDefault1($grondslag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Wrakrecht.uitkering", ComputeHelpers.designate(v, "defaults A:Wrakrecht.uitkering")));
+    } else if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "uitkering");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Wrakrecht.uitkering", ComputeHelpers.designate(passend, "defaults A:Wrakrecht.uitkering")));
+            insertLogical(new Decides($onderwerp, "defaults A:Wrakrecht.uitkering", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandrecht", "uitkering", false), passend, "defaults A:Wrakrecht.uitkering"));
+            insertLogical(new Decides($onderwerp, "defaults A:Wrakrecht.uitkering", 1));
+        }
+    }
+end
+
+// het Wrakrecht betwist is
+function boolean toets_defaultsADiepwrakUitkeringDefault0(Object $betwist) {
+    return ComputeHelpers.characteristic($betwist, Boolean.TRUE);
+}
+
+rule "defaults A:Diepwrak.uitkering: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakrecht( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Diepwrak"), $betwist : (ComputeHelpers.holds(betwist)) )
+    eval( toets_defaultsADiepwrakUitkeringDefault0($betwist) )
+then
+    // 99.00
+    Object v = new java.math.BigDecimal("99");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "uitkering");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Diepwrak.uitkering", ComputeHelpers.designate(passend, "defaults A:Diepwrak.uitkering")));
+            insertLogical(new Decides($onderwerp, "defaults A:Diepwrak.uitkering", 0));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandrecht", "uitkering", false), passend, "defaults A:Diepwrak.uitkering"));
+            insertLogical(new Decides($onderwerp, "defaults A:Diepwrak.uitkering", 0));
+        }
+    }
+end
+
+// zijn grondslag maal 3
+function Object afloop_defaultsADiepwrakUitkeringDefault1(Object $grondslag) {
+    try {
+        return RegelSpraakRuntime.rsMaal($grondslag, new java.math.BigDecimal("3"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Diepwrak.uitkering: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Diepwrak( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Diepwrak"), $grondslag : grondslag )
+    not( $hoger_11 : Decides( stack == "defaults A:Diepwrak.uitkering" && index < 1, subject == $onderwerp ) )
+then
+    Object v = afloop_defaultsADiepwrakUitkeringDefault1($grondslag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Diepwrak.uitkering", ComputeHelpers.designate(v, "defaults A:Diepwrak.uitkering")));
+    } else if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "uitkering");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Diepwrak.uitkering", ComputeHelpers.designate(passend, "defaults A:Diepwrak.uitkering")));
+            insertLogical(new Decides($onderwerp, "defaults A:Diepwrak.uitkering", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandrecht", "uitkering", false), passend, "defaults A:Diepwrak.uitkering"));
+            insertLogical(new Decides($onderwerp, "defaults A:Diepwrak.uitkering", 1));
+        }
+    }
+end
+
+function boolean toets_schrijversStrandrechtUitkeringVerschil(Object $waarden) {
+    return ComputeHelpers.differ($waarden);
+}
+
+rule "schrijvers Strandrecht.uitkering: verschil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht()
+    accumulate( $waarde : Value( attribute == ElementKey.of("strandrecht", "uitkering", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+    eval( toets_schrijversStrandrechtUitkeringVerschil($waarden) )
+then
+    insertLogical(ComputeHelpers.writersConflict($onderwerp, $waarden, "uitkering", ComputeHelpers.list2("uitkering van een strandrecht", "uitkering van een diepwrak"), ComputeHelpers.list3("Strandrecht", "Wrakrecht", "Diepwrak"), ComputeHelpers.list3("Strandrecht", "Wrakrecht", "Diepwrak")));
+end
+

@@ -1,0 +1,34 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+
+// hij een wachtjutter is
+function boolean toets_wachtdoendBijWachtpost(Object $toegewezenWachtpostGezet) {
+    return ComputeHelpers.roleField($toegewezenWachtpostGezet, Boolean.FALSE);
+}
+
+rule "wachtdoend bij wachtpost"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $toegewezenWachtpostGezet : (ComputeHelpers.isSet(toegewezenWachtpost, null)) )
+    eval( toets_wachtdoendBijWachtpost($toegewezenWachtpostGezet) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "wachtdoend", true)));
+end
+
+// hij geen wachtjutter is
+function boolean toets_vrijgesteldZonderWachtpost(Object $toegewezenWachtpostGezet) {
+    return ComputeHelpers.roleField($toegewezenWachtpostGezet, Boolean.TRUE);
+}
+
+rule "vrijgesteld zonder wachtpost"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $toegewezenWachtpostGezet : (ComputeHelpers.isSet(toegewezenWachtpost, null)) )
+    eval( toets_vrijgesteldZonderWachtpost($toegewezenWachtpostGezet) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "vrijgesteld", true)));
+end
+

@@ -1,0 +1,157 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het aantal gevulde waarden van de waardering van alle vondsten van de Jutter
+function Object waarde_aantalGewaardeerdeVondsten(Object $aantal_vouw_4) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_4), Integer.valueOf(0), "aantal gewaardeerde vondsten", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal gewaardeerde vondsten"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "aantal gewaardeerde vondsten: vouw 0", subject == $onderwerp ); $aantal_vouw_4 : count() )
+then
+    Object v = waarde_aantalGewaardeerdeVondsten($aantal_vouw_4);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal gewaardeerde vondsten", ComputeHelpers.designate(v, "aantal gewaardeerde vondsten")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal gewaardeerde vondsten", false), v, "aantal gewaardeerde vondsten"));
+        }
+    }
+end
+
+// de som van de waardering van alle vondsten van de Jutter of 0 als die er niet zijn
+function Object waarde_vondstwaarde(Object $aantal_vouw_9, Object $vouw_vouw_11) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_9, $vouw_vouw_11, new java.math.BigDecimal("0")), Integer.valueOf(0), "vondstwaarde", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vondstwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_6 : Contribution( fold == "vondstwaarde: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_10 : value ); $aantal_vouw_9 : count(), $vouw_vouw_11 : exactSum($bijdragewaarde_vouw_10) )
+then
+    Object v = waarde_vondstwaarde($aantal_vouw_9, $vouw_vouw_11);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vondstwaarde", ComputeHelpers.designate(v, "vondstwaarde")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "vondstwaarde", false), v, "vondstwaarde"));
+        }
+    }
+end
+
+// het aantal gewaardeerde vondsten van de Jutter groter is dan 0
+function boolean toets_gemiddeldeVondstwaarde(Object $aantalGewaardeerdeVondsten) {
+    return RegelSpraakRuntime.rsAggVergelijk($aantalGewaardeerdeVondsten, new java.math.BigDecimal("0"), ">");
+}
+
+// (de vondstwaarde van de Jutter gedeeld door het aantal gewaardeerde vondsten van de Jutter) rekenkundig afgerond op 0 decimalen
+function Object waarde_gemiddeldeVondstwaarde(Object $aantalGewaardeerdeVondsten, Object $vondstwaarde, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vondstwaarde, $aantalGewaardeerdeVondsten, sonde), Integer.valueOf(0), java.math.RoundingMode.HALF_UP), Integer.valueOf(0), "gemiddelde vondstwaarde", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "gemiddelde vondstwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "aantal gewaardeerde vondsten", false), subject == $onderwerp, $aantalGewaardeerdeVondsten : value )
+    $stand_1 : State( attribute == ElementKey.of("jutter", "vondstwaarde", false), subject == $onderwerp, $vondstwaarde : value )
+    eval( toets_gemiddeldeVondstwaarde($aantalGewaardeerdeVondsten) )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_gemiddeldeVondstwaarde($aantalGewaardeerdeVondsten, $vondstwaarde, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "gemiddelde vondstwaarde", ComputeHelpers.designate(v, "gemiddelde vondstwaarde")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("gemiddelde vondstwaarde", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "gemiddelde vondstwaarde", false), v, "gemiddelde vondstwaarde"));
+        }
+    }
+end
+
+rule "aantal gewaardeerde vondsten: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp, $waardering : waardering )
+then
+    Object v = ComputeHelpers.contribution("aantal gewaardeerde vondsten: vouw 0", $vouwonderwerp, $onderwerp, $waardering, null, null, true, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "vondstwaarde: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp, $waardering : waardering )
+then
+    Object v = ComputeHelpers.contribution("vondstwaarde: vouw 1", $vouwonderwerp, $onderwerp, $waardering, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "stand Jutter.aantal gewaardeerde vondsten: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $waarde : Value( attribute == ElementKey.of("jutter", "aantal gewaardeerde vondsten", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "aantal gewaardeerde vondsten", false), $v));
+end
+
+rule "stand Jutter.aantal gewaardeerde vondsten: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : aantalGewaardeerdeVondsten )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "aantal gewaardeerde vondsten", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "aantal gewaardeerde vondsten", false), $invoer));
+end
+
+rule "stand Jutter.vondstwaarde: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $waarde : Value( attribute == ElementKey.of("jutter", "vondstwaarde", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "vondstwaarde", false), $v));
+end
+
+rule "stand Jutter.vondstwaarde: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : vondstwaarde )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "vondstwaarde", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "vondstwaarde", false), $invoer));
+end
+

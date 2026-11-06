@@ -1,0 +1,101 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+function Object pad_premieVanEenSchuit(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("werf"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "tarief");
+}
+
+// 20% van het tarief van de werf van de Schuit
+function Object waarde_premieVanEenSchuit(Object $werfTarief) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPercentageVan(new java.math.BigDecimal("20"), $werfTarief), Integer.valueOf(2), "premie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "premie van een schuit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( $werfTarief : (pad_premieVanEenSchuit(this)) )
+then
+    Object v = waarde_premieVanEenSchuit($werfTarief);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "premie van een schuit", ComputeHelpers.designate(v, "premie van een schuit")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "premie", false), v, "premie van een schuit"));
+        }
+    }
+end
+
+function Object pad_productVanEenSchuit(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("werf"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "tarief");
+}
+
+// de lengte van de Schuit maal het tarief van de werf van de Schuit
+function Object waarde_productVanEenSchuit(Object $lengte, Object $werfTarief) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($lengte, $werfTarief), Integer.valueOf(0), "product", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "product van een schuit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( $lengte : lengte, $werfTarief : (pad_productVanEenSchuit(this)) )
+then
+    Object v = waarde_productVanEenSchuit($lengte, $werfTarief);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "product van een schuit", ComputeHelpers.designate(v, "product van een schuit")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "product", false), v, "product van een schuit"));
+        }
+    }
+end
+
+function Object pad_toeslagVanEenSchuit(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("werf"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "tarief");
+}
+
+// de lengte van de Schuit groter is dan 5
+function boolean toets_toeslagVanEenSchuit(Object $lengte) {
+    return RegelSpraakRuntime.rsAggVergelijk($lengte, new java.math.BigDecimal("5"), ">");
+}
+
+// 10% van het tarief van de werf van de Schuit
+function Object waarde_toeslagVanEenSchuit(Object $werfTarief) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPercentageVan(new java.math.BigDecimal("10"), $werfTarief), Integer.valueOf(2), "toeslag", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "toeslag van een schuit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( $lengte : lengte, $werfTarief : (pad_toeslagVanEenSchuit(this)) )
+    eval( toets_toeslagVanEenSchuit($lengte) )
+then
+    Object v = waarde_toeslagVanEenSchuit($werfTarief);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "toeslag van een schuit", ComputeHelpers.designate(v, "toeslag van een schuit")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "toeslag", false), v, "toeslag van een schuit"));
+        }
+    }
+end
+

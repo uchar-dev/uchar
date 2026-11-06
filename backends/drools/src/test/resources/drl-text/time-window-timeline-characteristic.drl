@@ -1,0 +1,77 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Period;
+import dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic;
+import dev.uchar.regelspraak.transpiler.tms.PeriodCondition;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// van 1 januari 2024 tot 1 januari 2025
+function Object waarde_bergingVanEenVondst(Object $onderwerp) {
+    try {
+        return PeriodCondition.characteristicPeriods(PeriodCondition.window(java.time.LocalDate.parse("2024-01-01"), Boolean.TRUE, java.time.LocalDate.parse("2025-01-01"), Boolean.TRUE, Boolean.FALSE), ComputeHelpers.periods(ComputeHelpers.readProperty($onderwerp, "geborgen")), "geborgen", $onderwerp);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "berging van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+then
+    Object v = waarde_bergingVanEenVondst($onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "berging van een vondst", ComputeHelpers.designate(v, "berging van een vondst")));
+    } else {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "geborgen", true), v, "berging van een vondst"));
+    }
+end
+
+// het aantal dagen in het jaar dat hij geborgen is
+function Object waarde_bergdagenVanEenVondst(Object $tijdlijn_0) {
+    try {
+        return PeriodArithmetic.dayCount(RegelSpraakRuntime.rsAantalDagenIn(((java.util.List) $tijdlijn_0), "JAAR", Period.class));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bergdagen van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : State( attribute == ElementKey.of("vondst", "geborgen", true), subject == $onderwerp, $tijdlijn_0 : value )
+then
+    Object v = waarde_bergdagenVanEenVondst($tijdlijn_0);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bergdagen van een vondst", ComputeHelpers.designate(v, "bergdagen van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "bergdagen", false), v, "bergdagen van een vondst"));
+        }
+    }
+end
+
+rule "stand Vondst.geborgen: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $waarde : Value( attribute == ElementKey.of("vondst", "geborgen", true), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "geborgen", true), $v));
+end
+
+rule "stand Vondst.geborgen: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : (ComputeHelpers.periods(geborgen)) )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "geborgen", true), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "geborgen", true), $invoer));
+end
+

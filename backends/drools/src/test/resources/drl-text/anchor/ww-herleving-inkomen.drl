@@ -1,0 +1,314 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Outcome;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het maandloon van de Werknemer maal 0,8750 rekenkundig afgerond op 2 decimalen
+function Object waarde_inkomensgrensVanEenWerknemer(Object $maandloon) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsMaal($maandloon, new java.math.BigDecimal("0.875")), Integer.valueOf(2), java.math.RoundingMode.HALF_UP), Integer.valueOf(2), "inkomensgrens", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "inkomensgrens van een werknemer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Werknemer( $maandloon : maandloon )
+then
+    Object v = waarde_inkomensgrensVanEenWerknemer($maandloon);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "inkomensgrens van een werknemer", ComputeHelpers.designate(v, "inkomensgrens van een werknemer")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("werknemer", "inkomensgrens", false), v, "inkomensgrens van een werknemer"));
+        }
+    }
+end
+
+// de tijdsduur van zijn eindigingsdatum tot zijn vervaldatum in hele dagen
+function Object waarde_verstrekenPeriodeBijHerleving(Object $eindigingsdatum, Object $vervaldatum) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsTijdsduur(((java.time.temporal.Temporal) $eindigingsdatum), ((java.time.temporal.Temporal) $vervaldatum), "DAYS", Boolean.FALSE), Integer.valueOf(0), "verstreken periode", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "verstreken periode bij herleving"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Werknemer( $eindigingsdatum : eindigingsdatum, $vervaldatum : vervaldatum )
+then
+    Object v = waarde_verstrekenPeriodeBijHerleving($eindigingsdatum, $vervaldatum);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "verstreken periode bij herleving", ComputeHelpers.designate(v, "verstreken periode bij herleving")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("werknemer", "verstreken periode", false), v, "verstreken periode bij herleving"));
+        }
+    }
+end
+
+// zijn maxdatum plus zijn verstreken periode
+function Object waarde_nieuweMaxdatumBijHerleving(Object $maxdatum, Object $verstrekenPeriode) {
+    try {
+        return ComputeHelpers.dateStep($maxdatum, $verstrekenPeriode, "DAYS", Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "nieuwe maxdatum bij herleving"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Werknemer( $maxdatum : maxdatum )
+    $stand_1 : State( attribute == ElementKey.of("werknemer", "verstreken periode", false), subject == $onderwerp, $verstrekenPeriode : value )
+then
+    Object v = waarde_nieuweMaxdatumBijHerleving($maxdatum, $verstrekenPeriode);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "nieuwe maxdatum bij herleving", ComputeHelpers.designate(v, "nieuwe maxdatum bij herleving")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("werknemer", "nieuwe maxdatum", false), v, "nieuwe maxdatum bij herleving"));
+        }
+    }
+end
+
+// hij werkloos is, zijn maandinkomen groter is dan zijn inkomensgrens, de omstandigheid die tot het eindigen heeft geleid is vervallen en hij een nieuw recht heeft waarvan het maandloon boven de grens ligt
+function boolean toets_defaultsKWerknemerRechtOpUitkeringDefault0000000(Object $werkloos, Object $maandinkomen, Object $inkomensgrens, Object $omstandigheidVervallen, Object $nieuwRechtOntstaan, Object $nieuwMaandloon) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 5);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($werkloos, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 4);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($maandinkomen, $inkomensgrens, ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($omstandigheidVervallen, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($nieuwRechtOntstaan, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 4, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($nieuwMaandloon, $inkomensgrens, ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 5);
+}
+
+rule "defaults K:Werknemer.recht op uitkering: default 0.0.0.0.0.0.0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Werknemer( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Werknemer"), $werkloos : (ComputeHelpers.holds(werkloos)), $maandinkomen : maandinkomen, $omstandigheidVervallen : (ComputeHelpers.holds(omstandigheidVervallen)), $nieuwRechtOntstaan : (ComputeHelpers.holds(nieuwRechtOntstaan)), $nieuwMaandloon : nieuwMaandloon )
+    $stand_2 : State( attribute == ElementKey.of("werknemer", "inkomensgrens", false), subject == $onderwerp, $inkomensgrens : value )
+    eval( toets_defaultsKWerknemerRechtOpUitkeringDefault0000000($werkloos, $maandinkomen, $inkomensgrens, $omstandigheidVervallen, $nieuwRechtOntstaan, $nieuwMaandloon) )
+then
+    Object v = Boolean.FALSE;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Werknemer.recht op uitkering", 3, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults K:Werknemer.recht op uitkering: eens 0.0.0.0.0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Werknemer.recht op uitkering" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 3 && chain < 4, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Werknemer.recht op uitkering", 2, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// hij werkloos is, zijn maandinkomen groter is dan zijn inkomensgrens en de omstandigheid die tot het eindigen heeft geleid is vervallen
+function boolean toets_defaultsKWerknemerRechtOpUitkeringTerugval00000(Object $werkloos, Object $maandinkomen, Object $inkomensgrens, Object $omstandigheidVervallen) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($werkloos, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($maandinkomen, $inkomensgrens, ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($omstandigheidVervallen, Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+}
+
+rule "defaults K:Werknemer.recht op uitkering: terugval 0.0.0.0.0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Werknemer( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Werknemer"), $werkloos : (ComputeHelpers.holds(werkloos)), $maandinkomen : maandinkomen, $omstandigheidVervallen : (ComputeHelpers.holds(omstandigheidVervallen)) )
+    $stand_2 : State( attribute == ElementKey.of("werknemer", "inkomensgrens", false), subject == $onderwerp, $inkomensgrens : value )
+    not( $uitkomst_10 : Outcome( stack == "defaults K:Werknemer.recht op uitkering" && chain >= 3 && chain < 4, subject == $onderwerp ) )
+    eval( toets_defaultsKWerknemerRechtOpUitkeringTerugval00000($werkloos, $maandinkomen, $inkomensgrens, $omstandigheidVervallen) )
+then
+    Object v = Boolean.TRUE;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Werknemer.recht op uitkering", 2, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults K:Werknemer.recht op uitkering: eens 0.0.0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Werknemer.recht op uitkering" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 2 && chain < 3, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Werknemer.recht op uitkering", 1, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// hij werkloos is en zijn maandinkomen groter is dan zijn inkomensgrens
+function boolean toets_defaultsKWerknemerRechtOpUitkeringTerugval000(Object $werkloos, Object $maandinkomen, Object $inkomensgrens) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($werkloos, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($maandinkomen, $inkomensgrens, ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "defaults K:Werknemer.recht op uitkering: terugval 0.0.0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Werknemer( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Werknemer"), $werkloos : (ComputeHelpers.holds(werkloos)), $maandinkomen : maandinkomen )
+    $stand_2 : State( attribute == ElementKey.of("werknemer", "inkomensgrens", false), subject == $onderwerp, $inkomensgrens : value )
+    not( $uitkomst_17 : Outcome( stack == "defaults K:Werknemer.recht op uitkering" && chain >= 2 && chain < 3, subject == $onderwerp ) )
+    eval( toets_defaultsKWerknemerRechtOpUitkeringTerugval000($werkloos, $maandinkomen, $inkomensgrens) )
+then
+    Object v = Boolean.FALSE;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Werknemer.recht op uitkering", 1, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults K:Werknemer.recht op uitkering: eens 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Werknemer.recht op uitkering" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 1 && chain < 2, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Werknemer.recht op uitkering", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// hij werkloos is
+function boolean toets_defaultsKWerknemerRechtOpUitkeringTerugval0(Object $werkloos) {
+    return ComputeHelpers.characteristic($werkloos, Boolean.TRUE);
+}
+
+rule "defaults K:Werknemer.recht op uitkering: terugval 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Werknemer( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Werknemer"), $werkloos : (ComputeHelpers.holds(werkloos)) )
+    not( $uitkomst_22 : Outcome( stack == "defaults K:Werknemer.recht op uitkering" && chain >= 1 && chain < 2, subject == $onderwerp ) )
+    eval( toets_defaultsKWerknemerRechtOpUitkeringTerugval0($werkloos) )
+then
+    Object v = Boolean.TRUE;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Werknemer.recht op uitkering", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults K:Werknemer.recht op uitkering: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Werknemer.recht op uitkering" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 1 && value == true, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("werknemer", "recht op uitkering", true)));
+    }
+end
+
+rule "stand Werknemer.verstreken periode: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Werknemer()
+    $waarde : Value( attribute == ElementKey.of("werknemer", "verstreken periode", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("werknemer", "verstreken periode", false), $v));
+end
+
+rule "stand Werknemer.verstreken periode: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Werknemer( $invoer : verstrekenPeriode )
+    not( $waarde : Value( attribute == ElementKey.of("werknemer", "verstreken periode", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("werknemer", "verstreken periode", false), $invoer));
+end
+
+rule "stand Werknemer.inkomensgrens: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Werknemer()
+    $waarde : Value( attribute == ElementKey.of("werknemer", "inkomensgrens", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("werknemer", "inkomensgrens", false), $v));
+end
+
+rule "stand Werknemer.inkomensgrens: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Werknemer( $invoer : inkomensgrens )
+    not( $waarde : Value( attribute == ElementKey.of("werknemer", "inkomensgrens", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("werknemer", "inkomensgrens", false), $invoer));
+end
+

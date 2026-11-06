@@ -1,0 +1,74 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.UniquenessKey;
+import dev.uchar.regelspraak.transpiler.tms.UniquenessViolation;
+
+function boolean toets_eenmaligeReeksSleutelVanStrandvondst1(Object $reeks) {
+    return ComputeHelpers.emptyTest($reeks, Boolean.FALSE);
+}
+
+function java.util.List componenten_eenmaligeReeksSleutelVanStrandvondst1(Object $reeks) {
+    java.util.List waarden = new java.util.ArrayList();
+    waarden.add($reeks);
+    return waarden;
+}
+
+rule "eenmalige reeks: sleutel van Strandvondst 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst( $reeks : reeks )
+    eval( toets_eenmaligeReeksSleutelVanStrandvondst1($reeks) )
+then
+    for (Object k : ComputeHelpers.uniquenessKeys("eenmalige reeks", 0, $onderwerp, null, componenten_eenmaligeReeksSleutelVanStrandvondst1($reeks), -1)) {
+        insertLogical(k);
+    }
+end
+
+function boolean toets_eenmaligeReeksSleutelVanWrakvondst2(Object $reeks) {
+    return ComputeHelpers.emptyTest($reeks, Boolean.FALSE);
+}
+
+function java.util.List componenten_eenmaligeReeksSleutelVanWrakvondst2(Object $reeks) {
+    java.util.List waarden = new java.util.ArrayList();
+    waarden.add($reeks);
+    return waarden;
+}
+
+rule "eenmalige reeks: sleutel van Wrakvondst 2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakvondst( $reeks : reeks )
+    eval( toets_eenmaligeReeksSleutelVanWrakvondst2($reeks) )
+then
+    for (Object k : ComputeHelpers.uniquenessKeys("eenmalige reeks", 1, $onderwerp, null, componenten_eenmaligeReeksSleutelVanWrakvondst2($reeks), -1)) {
+        insertLogical(k);
+    }
+end
+
+function boolean beta_eenmaligeReeks(Object eigen, Object ander) {
+    return ComputeHelpers.collidesWith(eigen, ander);
+}
+
+function boolean toets_eenmaligeReeks(Object $botsingen) {
+    return ComputeHelpers.duplicate($botsingen);
+}
+
+rule "eenmalige reeks"
+    dialect "mvel"
+when
+    $sleutel : UniquenessKey( uniqueness == "eenmalige reeks", $element : element )
+    accumulate( $ander : UniquenessKey( uniqueness == "eenmalige reeks", beta_eenmaligeReeks(this, $sleutel) ); $botsingen : count() )
+    eval( toets_eenmaligeReeks($botsingen) )
+then
+    insertLogical(new UniquenessViolation("eenmalige reeks", $element));
+end
+
+rule "eenmalige reeks: kanaal"
+    dialect "mvel"
+when
+    $schending : UniquenessViolation( uniqueness == "eenmalige reeks", $subject : element )
+then
+    insertLogical(ComputeHelpers.inconsistency("eenmalige reeks", $subject, ComputeHelpers.list1("EF-026")));
+end
+

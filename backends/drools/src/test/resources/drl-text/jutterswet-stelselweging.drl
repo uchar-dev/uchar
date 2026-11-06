@@ -1,0 +1,179 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het ruwgewicht van de Vangst, met een minimum van 1 t
+function Object waarde_ondergewichtVanEenVangst(Object $ruwgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsBegrens($ruwgewicht, ComputeHelpers.restateExact(new java.math.BigDecimal("1"), new java.math.BigDecimal("1000"), new java.math.BigDecimal("1")), null), Integer.valueOf(2), "ondergewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "ondergewicht van een vangst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangst( $ruwgewicht : ruwgewicht )
+then
+    Object v = waarde_ondergewichtVanEenVangst($ruwgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "ondergewicht van een vangst", ComputeHelpers.designate(v, "ondergewicht van een vangst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vangst", "ondergewicht", false), v, "ondergewicht van een vangst"));
+        }
+    }
+end
+
+// het ruwgewicht van de Vangst
+function Object waarde_spiegelgewichtVanEenVangst(Object $ruwgewicht) {
+    try {
+        return ComputeHelpers.fitTarget($ruwgewicht, Integer.valueOf(2), "spiegelgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "spiegelgewicht van een vangst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangst( $ruwgewicht : ruwgewicht )
+then
+    Object v = waarde_spiegelgewichtVanEenVangst($ruwgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "spiegelgewicht van een vangst", ComputeHelpers.designate(v, "spiegelgewicht van een vangst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vangst", "spiegelgewicht", false), v, "spiegelgewicht van een vangst"));
+        }
+    }
+end
+
+// het ruwgewicht van de Vangst plus het spiegelgewicht van de Vangst
+function Object waarde_somgewichtVanEenVangst(Object $ruwgewicht, Object $spiegelgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($ruwgewicht, $spiegelgewicht), Integer.valueOf(2), "somgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "somgewicht van een vangst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangst( $ruwgewicht : ruwgewicht )
+    $stand_1 : State( attribute == ElementKey.of("vangst", "spiegelgewicht", false), subject == $onderwerp, $spiegelgewicht : value )
+then
+    Object v = waarde_somgewichtVanEenVangst($ruwgewicht, $spiegelgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "somgewicht van een vangst", ComputeHelpers.designate(v, "somgewicht van een vangst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vangst", "somgewicht", false), v, "somgewicht van een vangst"));
+        }
+    }
+end
+
+// het ruwgewicht van de Vangst plus 1 t
+function Object waarde_toeslaggewichtVanEenVangst(Object $ruwgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($ruwgewicht, ComputeHelpers.restateExact(new java.math.BigDecimal("1"), new java.math.BigDecimal("1000"), new java.math.BigDecimal("1"))), Integer.valueOf(2), "toeslaggewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "toeslaggewicht van een vangst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangst( $ruwgewicht : ruwgewicht )
+then
+    Object v = waarde_toeslaggewichtVanEenVangst($ruwgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "toeslaggewicht van een vangst", ComputeHelpers.designate(v, "toeslaggewicht van een vangst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vangst", "toeslaggewicht", false), v, "toeslaggewicht van een vangst"));
+        }
+    }
+end
+
+// het ruwgewicht van de Vangst, met een maximum van 2 t
+function Object waarde_lastgewichtVanEenVangst(Object $ruwgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsBegrens($ruwgewicht, null, ComputeHelpers.restateExact(new java.math.BigDecimal("2"), new java.math.BigDecimal("1000"), new java.math.BigDecimal("1"))), Integer.valueOf(2), "lastgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "lastgewicht van een vangst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangst( $ruwgewicht : ruwgewicht )
+then
+    Object v = waarde_lastgewichtVanEenVangst($ruwgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "lastgewicht van een vangst", ComputeHelpers.designate(v, "lastgewicht van een vangst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vangst", "lastgewicht", false), v, "lastgewicht van een vangst"));
+        }
+    }
+end
+
+// het spiegelgewicht van de Vangst groter is dan 1000 kg
+function boolean toets_keurgewichtVanEenVangst(Object $spiegelgewicht) {
+    return RegelSpraakRuntime.rsAggVergelijk($spiegelgewicht, new java.math.BigDecimal("1000"), ">");
+}
+
+// het ruwgewicht van de Vangst
+function Object waarde_keurgewichtVanEenVangst(Object $ruwgewicht) {
+    try {
+        return ComputeHelpers.fitTarget($ruwgewicht, Integer.valueOf(2), "keurgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "keurgewicht van een vangst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangst( $ruwgewicht : ruwgewicht )
+    $stand_0 : State( attribute == ElementKey.of("vangst", "spiegelgewicht", false), subject == $onderwerp, $spiegelgewicht : value )
+    eval( toets_keurgewichtVanEenVangst($spiegelgewicht) )
+then
+    Object v = waarde_keurgewichtVanEenVangst($ruwgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "keurgewicht van een vangst", ComputeHelpers.designate(v, "keurgewicht van een vangst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vangst", "keurgewicht", false), v, "keurgewicht van een vangst"));
+        }
+    }
+end
+
+rule "stand Vangst.spiegelgewicht: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangst()
+    $waarde : Value( attribute == ElementKey.of("vangst", "spiegelgewicht", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vangst", "spiegelgewicht", false), $v));
+end
+
+rule "stand Vangst.spiegelgewicht: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangst( $invoer : spiegelgewicht )
+    not( $waarde : Value( attribute == ElementKey.of("vangst", "spiegelgewicht", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vangst", "spiegelgewicht", false), $invoer));
+end
+

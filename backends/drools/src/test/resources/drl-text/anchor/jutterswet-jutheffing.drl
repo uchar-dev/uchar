@@ -1,0 +1,122 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.EvaluationDate;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.time.LocalDate rekendatum;
+
+// de aangiftewaarde van de Jutaangifte vermeerderd met 30
+function Object waarde_jutheffingNaarJaartarief1(Object $aangiftewaarde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($aangiftewaarde, new java.math.BigDecimal("30")), Integer.valueOf(0), "jutheffing", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "jutheffing naar jaartarief #1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutaangifte( $aangiftewaarde : aangiftewaarde )
+    $geldigheid_0 : EvaluationDate( ComputeHelpers.inside(date, "2025-01-01", "2025-12-31") )
+then
+    Object v = waarde_jutheffingNaarJaartarief1($aangiftewaarde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "jutheffing naar jaartarief #1", ComputeHelpers.designate(v, "jutheffing naar jaartarief #1")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutaangifte", "jutheffing", false), v, "jutheffing naar jaartarief #1"));
+        }
+    }
+end
+
+rule "jutheffing naar jaartarief #1: geen rekendatum"
+    dialect "mvel"
+when
+    $rekendatum : EvaluationDate( date == null )
+then
+    insertLogical(new Fault($rekendatum, "jutheffing naar jaartarief #1", ComputeHelpers.computeFault("a validity-bounded form needs an evaluation date; this session is time-free", "jutheffing naar jaartarief #1")));
+end
+
+// de aangiftewaarde van de Jutaangifte vermeerderd met 70
+function Object waarde_jutheffingNaarJaartarief2(Object $aangiftewaarde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($aangiftewaarde, new java.math.BigDecimal("70")), Integer.valueOf(0), "jutheffing", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "jutheffing naar jaartarief #2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutaangifte( $aangiftewaarde : aangiftewaarde )
+    $geldigheid_0 : EvaluationDate( ComputeHelpers.inside(date, "2026-01-01", "2026-12-31") )
+then
+    Object v = waarde_jutheffingNaarJaartarief2($aangiftewaarde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "jutheffing naar jaartarief #2", ComputeHelpers.designate(v, "jutheffing naar jaartarief #2")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutaangifte", "jutheffing", false), v, "jutheffing naar jaartarief #2"));
+        }
+    }
+end
+
+rule "jutheffing naar jaartarief #2: geen rekendatum"
+    dialect "mvel"
+when
+    $rekendatum : EvaluationDate( date == null )
+then
+    insertLogical(new Fault($rekendatum, "jutheffing naar jaartarief #2", ComputeHelpers.computeFault("a validity-bounded form needs an evaluation date; this session is time-free", "jutheffing naar jaartarief #2")));
+end
+
+// de aangiftewaarde van de Jutaangifte vermeerderd met 1
+function Object waarde_registratiegetalBijAangifte(Object $aangiftewaarde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($aangiftewaarde, new java.math.BigDecimal("1")), Integer.valueOf(0), "registratiegetal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "registratiegetal bij aangifte"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutaangifte( $aangiftewaarde : aangiftewaarde )
+then
+    Object v = waarde_registratiegetalBijAangifte($aangiftewaarde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "registratiegetal bij aangifte", ComputeHelpers.designate(v, "registratiegetal bij aangifte")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutaangifte", "registratiegetal", false), v, "registratiegetal bij aangifte"));
+        }
+    }
+end
+
+function boolean toets_schrijversJutaangifteJutheffingVerschil(Object $waarden) {
+    return ComputeHelpers.differ($waarden);
+}
+
+rule "schrijvers Jutaangifte.jutheffing: verschil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutaangifte()
+    accumulate( $waarde : Value( attribute == ElementKey.of("jutaangifte", "jutheffing", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+    eval( toets_schrijversJutaangifteJutheffingVerschil($waarden) )
+then
+    insertLogical(ComputeHelpers.writersConflict($onderwerp, $waarden, "jutheffing", ComputeHelpers.list3("jutheffing naar jaartarief #1", "jutheffing naar jaartarief #2", "registratiegetal bij aangifte"), ComputeHelpers.list1("Jutaangifte"), ComputeHelpers.list1("Jutaangifte")));
+end
+
+rule "rekendatumstand"
+    dialect "mvel"
+when
+then
+    insertLogical(new EvaluationDate(rekendatum));
+end
+

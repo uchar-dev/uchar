@@ -1,0 +1,151 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn aangiftedatum plus 2 weken
+function Object waarde_berekeningVervaldatum(Object $aangiftedatum) {
+    try {
+        return ComputeHelpers.dateStep($aangiftedatum, new java.math.BigDecimal("2"), "WEEKS", Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "Berekening vervaldatum"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $aangiftedatum : aangiftedatum )
+then
+    Object v = waarde_berekeningVervaldatum($aangiftedatum);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "Berekening vervaldatum", ComputeHelpers.designate(v, "Berekening vervaldatum")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "vervaldatum", false), v, "Berekening vervaldatum"));
+        }
+    }
+end
+
+// zijn aangiftedatum plus 1 maand
+function Object waarde_berekeningToetsdatum(Object $aangiftedatum) {
+    try {
+        return ComputeHelpers.dateStep($aangiftedatum, new java.math.BigDecimal("1"), "MONTHS", Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "Berekening toetsdatum"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $aangiftedatum : aangiftedatum )
+then
+    Object v = waarde_berekeningToetsdatum($aangiftedatum);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "Berekening toetsdatum", ComputeHelpers.designate(v, "Berekening toetsdatum")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "toetsdatum", false), v, "Berekening toetsdatum"));
+        }
+    }
+end
+
+// zijn aangiftedatum min 1 week
+function Object waarde_berekeningHerinneringsdatum(Object $aangiftedatum) {
+    try {
+        return ComputeHelpers.dateStep($aangiftedatum, new java.math.BigDecimal("1"), "WEEKS", Boolean.FALSE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "Berekening herinneringsdatum"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $aangiftedatum : aangiftedatum )
+then
+    Object v = waarde_berekeningHerinneringsdatum($aangiftedatum);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "Berekening herinneringsdatum", ComputeHelpers.designate(v, "Berekening herinneringsdatum")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "herinneringsdatum", false), v, "Berekening herinneringsdatum"));
+        }
+    }
+end
+
+// zijn aangiftedatum plus zijn uitsteldagen
+function Object waarde_berekeningGedoogdatum(Object $aangiftedatum, Object $uitsteldagen) {
+    try {
+        return ComputeHelpers.dateStep($aangiftedatum, $uitsteldagen, "DAYS", Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "Berekening gedoogdatum"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $aangiftedatum : aangiftedatum, $uitsteldagen : uitsteldagen )
+then
+    Object v = waarde_berekeningGedoogdatum($aangiftedatum, $uitsteldagen);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "Berekening gedoogdatum", ComputeHelpers.designate(v, "Berekening gedoogdatum")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "gedoogdatum", false), v, "Berekening gedoogdatum"));
+        }
+    }
+end
+
+// zijn aangiftedatum min 1,9 maanden
+function Object waarde_berekeningRespijtdatum(Object $aangiftedatum) {
+    try {
+        return ComputeHelpers.dateStep($aangiftedatum, new java.math.BigDecimal("1.9"), "MONTHS", Boolean.FALSE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "Berekening respijtdatum"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $aangiftedatum : aangiftedatum )
+then
+    Object v = waarde_berekeningRespijtdatum($aangiftedatum);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "Berekening respijtdatum", ComputeHelpers.designate(v, "Berekening respijtdatum")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "respijtdatum", false), v, "Berekening respijtdatum"));
+        }
+    }
+end
+
+// zijn aangiftedatum plus 1 kwartaal
+function Object waarde_berekeningOpschortdatum(Object $aangiftedatum) {
+    try {
+        return ComputeHelpers.dateStep($aangiftedatum, new java.math.BigDecimal("1"), "KWARTAAL", Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "Berekening opschortdatum"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $aangiftedatum : aangiftedatum )
+then
+    Object v = waarde_berekeningOpschortdatum($aangiftedatum);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "Berekening opschortdatum", ComputeHelpers.designate(v, "Berekening opschortdatum")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "opschortdatum", false), v, "Berekening opschortdatum"));
+        }
+    }
+end
+

@@ -1,0 +1,411 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMaximumFunction exactMax;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de eerste van de vinddag van alle vondsten van de Jutter
+function Object waarde_eersteVinddagVanEenJutter(Object $aantal_vouw_4, Object $vouw_vouw_6) {
+    try {
+        return ComputeHelpers.foldValue($aantal_vouw_4, $vouw_vouw_6, null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "eerste vinddag van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "eerste vinddag van een jutter: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_5 : value ); $aantal_vouw_4 : count(), $vouw_vouw_6 : exactMin($bijdragewaarde_vouw_5) )
+then
+    Object v = waarde_eersteVinddagVanEenJutter($aantal_vouw_4, $vouw_vouw_6);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "eerste vinddag van een jutter", ComputeHelpers.designate(v, "eerste vinddag van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "eerste vinddag", false), v, "eerste vinddag van een jutter"));
+        }
+    }
+end
+
+// de laatste van de vinddag van alle vondsten van de Jutter
+function Object waarde_laatsteVinddagVanEenJutter(Object $aantal_vouw_11, Object $vouw_vouw_13) {
+    try {
+        return ComputeHelpers.foldValue($aantal_vouw_11, $vouw_vouw_13, null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "laatste vinddag van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_8 : Contribution( fold == "laatste vinddag van een jutter: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_12 : value ); $aantal_vouw_11 : count(), $vouw_vouw_13 : exactMax($bijdragewaarde_vouw_12) )
+then
+    Object v = waarde_laatsteVinddagVanEenJutter($aantal_vouw_11, $vouw_vouw_13);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "laatste vinddag van een jutter", ComputeHelpers.designate(v, "laatste vinddag van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "laatste vinddag", false), v, "laatste vinddag van een jutter"));
+        }
+    }
+end
+
+// de eerste van de vinddag van alle vondsten van de Jutter die zwaar zijn
+function Object waarde_eersteZwareVinddag(Object $aantal_vouw_21, Object $vouw_vouw_23) {
+    try {
+        return ComputeHelpers.foldValue($aantal_vouw_21, $vouw_vouw_23, null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "eerste zware vinddag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_18 : Contribution( fold == "eerste zware vinddag: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_22 : value ); $aantal_vouw_21 : count(), $vouw_vouw_23 : exactMin($bijdragewaarde_vouw_22) )
+then
+    Object v = waarde_eersteZwareVinddag($aantal_vouw_21, $vouw_vouw_23);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "eerste zware vinddag", ComputeHelpers.designate(v, "eerste zware vinddag")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "eerste zware vinddag", false), v, "eerste zware vinddag"));
+        }
+    }
+end
+
+// (de eerste van de vinddag van alle vondsten van de Jutter) plus 30 dagen
+function Object waarde_meldgrens(Object $aantal_vouw_28, Object $vouw_vouw_30) {
+    try {
+        return ComputeHelpers.dateStep(ComputeHelpers.foldValue($aantal_vouw_28, $vouw_vouw_30, null), new java.math.BigDecimal("30"), "DAYS", Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "meldgrens"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_25 : Contribution( fold == "meldgrens: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_29 : value ); $aantal_vouw_28 : count(), $vouw_vouw_30 : exactMin($bijdragewaarde_vouw_29) )
+then
+    Object v = waarde_meldgrens($aantal_vouw_28, $vouw_vouw_30);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "meldgrens", ComputeHelpers.designate(v, "meldgrens")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "meldgrens", false), v, "meldgrens"));
+        }
+    }
+end
+
+// zijn startdag plus de maximale waarde van de zoekduur van alle vondsten van de Jutter
+function Object waarde_zoekgrens(Object $startdag, Object $aantal_vouw_35, Object $vouw_vouw_37) {
+    try {
+        return ComputeHelpers.dateStep($startdag, ComputeHelpers.foldValue($aantal_vouw_35, $vouw_vouw_37, null), "DAYS", Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "zoekgrens"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $startdag : startdag )
+    accumulate( $bijdrage_vouw_32 : Contribution( fold == "zoekgrens: vouw 4", subject == $onderwerp, $bijdragewaarde_vouw_36 : value ); $aantal_vouw_35 : count(), $vouw_vouw_37 : exactMax($bijdragewaarde_vouw_36) )
+then
+    Object v = waarde_zoekgrens($startdag, $aantal_vouw_35, $vouw_vouw_37);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "zoekgrens", ComputeHelpers.designate(v, "zoekgrens")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "zoekgrens", false), v, "zoekgrens"));
+        }
+    }
+end
+
+// de tijdsduur van de eerste van de vinddag van alle vondsten van de Jutter tot de laatste van de vinddag van alle vondsten van de Jutter in hele dagen
+function Object waarde_vondstspanne(Object $aantal_vouw_42, Object $vouw_vouw_44, Object $aantal_vouw_49, Object $vouw_vouw_51) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsTijdsduur(((java.time.temporal.Temporal) ComputeHelpers.foldValue($aantal_vouw_42, $vouw_vouw_44, null)), ((java.time.temporal.Temporal) ComputeHelpers.foldValue($aantal_vouw_49, $vouw_vouw_51, null)), "DAYS", Boolean.FALSE), Integer.valueOf(0), "vondstspanne", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vondstspanne"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_39 : Contribution( fold == "vondstspanne: vouw 5", subject == $onderwerp, $bijdragewaarde_vouw_43 : value ); $aantal_vouw_42 : count(), $vouw_vouw_44 : exactMin($bijdragewaarde_vouw_43) )
+    accumulate( $bijdrage_vouw_46 : Contribution( fold == "vondstspanne: vouw 6", subject == $onderwerp, $bijdragewaarde_vouw_50 : value ); $aantal_vouw_49 : count(), $vouw_vouw_51 : exactMax($bijdragewaarde_vouw_50) )
+then
+    Object v = waarde_vondstspanne($aantal_vouw_42, $vouw_vouw_44, $aantal_vouw_49, $vouw_vouw_51);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vondstspanne", ComputeHelpers.designate(v, "vondstspanne")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "vondstspanne", false), v, "vondstspanne"));
+        }
+    }
+end
+
+// (de minimale waarde van het gewicht van alle vondsten van de Jutter) plus 1
+function Object waarde_weeggrens(Object $aantal_vouw_56, Object $vouw_vouw_58) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus(ComputeHelpers.foldValue($aantal_vouw_56, $vouw_vouw_58, null), new java.math.BigDecimal("1")), Integer.valueOf(0), "weeggrens", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "weeggrens"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_53 : Contribution( fold == "weeggrens: vouw 7", subject == $onderwerp, $bijdragewaarde_vouw_57 : value ); $aantal_vouw_56 : count(), $vouw_vouw_58 : exactMin($bijdragewaarde_vouw_57) )
+then
+    Object v = waarde_weeggrens($aantal_vouw_56, $vouw_vouw_58);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "weeggrens", ComputeHelpers.designate(v, "weeggrens")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "weeggrens", false), v, "weeggrens"));
+        }
+    }
+end
+
+// 10% van de som van het gewicht van alle vondsten van de Jutter
+function Object waarde_heffing(Object $aantal_vouw_63, Object $vouw_vouw_65) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPercentageVan(new java.math.BigDecimal("10"), ComputeHelpers.foldValue($aantal_vouw_63, $vouw_vouw_65, null)), Integer.valueOf(2), "heffing", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "heffing"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_60 : Contribution( fold == "heffing: vouw 8", subject == $onderwerp, $bijdragewaarde_vouw_64 : value ); $aantal_vouw_63 : count(), $vouw_vouw_65 : exactSum($bijdragewaarde_vouw_64) )
+then
+    Object v = waarde_heffing($aantal_vouw_63, $vouw_vouw_65);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "heffing", ComputeHelpers.designate(v, "heffing")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "heffing", false), v, "heffing"));
+        }
+    }
+end
+
+// de eerste van de vinddag van alle vondsten van alle beheerde jutters van de Strandvoogd
+function Object waarde_eersteVinddagVanEenStrandvoogd(Object $aantal_vouw_70, Object $vouw_vouw_72) {
+    try {
+        return ComputeHelpers.foldValue($aantal_vouw_70, $vouw_vouw_72, null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "eerste vinddag van een strandvoogd"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvoogd()
+    accumulate( $bijdrage_vouw_67 : Contribution( fold == "eerste vinddag van een strandvoogd: vouw 9", subject == $onderwerp, $bijdragewaarde_vouw_71 : value ); $aantal_vouw_70 : count(), $vouw_vouw_72 : exactMin($bijdragewaarde_vouw_71) )
+then
+    Object v = waarde_eersteVinddagVanEenStrandvoogd($aantal_vouw_70, $vouw_vouw_72);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "eerste vinddag van een strandvoogd", ComputeHelpers.designate(v, "eerste vinddag van een strandvoogd")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandvoogd", "eerste vinddag", false), v, "eerste vinddag van een strandvoogd"));
+        }
+    }
+end
+
+// zijn gewicht groter is dan 5
+function boolean toets_zwaar(Object $gewicht) {
+    return RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("5"), ">");
+}
+
+rule "zwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht )
+    eval( toets_zwaar($gewicht) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "zwaar", true)));
+end
+
+rule "eerste vinddag van een jutter: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp, $vinddag : vinddag )
+then
+    Object v = ComputeHelpers.contribution("eerste vinddag van een jutter: vouw 0", $vouwonderwerp, $onderwerp, $vinddag, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "laatste vinddag van een jutter: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp, $vinddag : vinddag )
+then
+    Object v = ComputeHelpers.contribution("laatste vinddag van een jutter: vouw 1", $vouwonderwerp, $onderwerp, $vinddag, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+// zwaar zijn
+function boolean toets_eersteZwareVinddagBijdrageAanVouw2(Object $zwaar) {
+    return ComputeHelpers.characteristic($zwaar, Boolean.TRUE);
+}
+
+rule "eerste zware vinddag: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp, $vinddag : vinddag )
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "zwaar", true), subject == $onderwerp, $zwaar : holds )
+    eval( toets_eersteZwareVinddagBijdrageAanVouw2($zwaar) )
+then
+    Object v = ComputeHelpers.contribution("eerste zware vinddag: vouw 2", $vouwonderwerp, $onderwerp, $vinddag, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "meldgrens: bijdrage aan vouw 3"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp, $vinddag : vinddag )
+then
+    Object v = ComputeHelpers.contribution("meldgrens: vouw 3", $vouwonderwerp, $onderwerp, $vinddag, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "zoekgrens: bijdrage aan vouw 4"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp, $zoekduur : zoekduur )
+then
+    Object v = ComputeHelpers.contribution("zoekgrens: vouw 4", $vouwonderwerp, $onderwerp, $zoekduur, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "vondstspanne: bijdrage aan vouw 5"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp, $vinddag : vinddag )
+then
+    Object v = ComputeHelpers.contribution("vondstspanne: vouw 5", $vouwonderwerp, $onderwerp, $vinddag, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "vondstspanne: bijdrage aan vouw 6"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp, $vinddag : vinddag )
+then
+    Object v = ComputeHelpers.contribution("vondstspanne: vouw 6", $vouwonderwerp, $onderwerp, $vinddag, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "weeggrens: bijdrage aan vouw 7"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp, $gewicht : gewicht )
+then
+    Object v = ComputeHelpers.contribution("weeggrens: vouw 7", $vouwonderwerp, $onderwerp, $gewicht, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "heffing: bijdrage aan vouw 8"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp, $gewicht : gewicht )
+then
+    Object v = ComputeHelpers.contribution("heffing: vouw 8", $vouwonderwerp, $onderwerp, $gewicht, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta_eersteVinddagVanEenStrandvoogdBijdrageAanVouw9(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("jutter", "strandvoogd"), java.util.Arrays.asList());
+}
+
+rule "eerste vinddag van een strandvoogd: bijdrage aan vouw 9"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Strandvoogd()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( beta_eersteVinddagVanEenStrandvoogdBijdrageAanVouw9(this, $vouwonderwerp), $vinddag : vinddag )
+then
+    Object v = ComputeHelpers.contribution("eerste vinddag van een strandvoogd: vouw 9", $vouwonderwerp, $onderwerp, $vinddag, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "kenmerkstand Vondst.zwaar: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(zwaar) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "zwaar", true), true));
+end
+
+rule "kenmerkstand Vondst.zwaar: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "zwaar", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "zwaar", true), true));
+end
+
+rule "kenmerkstand Vondst.zwaar: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(zwaar) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "zwaar", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "zwaar", true), false));
+end
+

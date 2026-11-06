@@ -1,0 +1,56 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn ribbe tot de macht 2 naar beneden afgerond op 2 decimalen
+function Object waarde_zijvlakteVanEenWrakkist(Object $ribbe) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsMacht($ribbe, Integer.valueOf(2)), Integer.valueOf(2), java.math.RoundingMode.FLOOR), Integer.valueOf(2), "zijvlakte", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "zijvlakte van een wrakkist"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakkist( $ribbe : ribbe )
+then
+    Object v = waarde_zijvlakteVanEenWrakkist($ribbe);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "zijvlakte van een wrakkist", ComputeHelpers.designate(v, "zijvlakte van een wrakkist")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("wrakkist", "zijvlakte", false), v, "zijvlakte van een wrakkist"));
+        }
+    }
+end
+
+// zijn ribbe tot de macht 3 naar beneden afgerond op 2 decimalen
+function Object waarde_inhoudVanEenWrakkist(Object $ribbe) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsMacht($ribbe, Integer.valueOf(3)), Integer.valueOf(2), java.math.RoundingMode.FLOOR), Integer.valueOf(2), "inhoud", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "inhoud van een wrakkist"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakkist( $ribbe : ribbe )
+then
+    Object v = waarde_inhoudVanEenWrakkist($ribbe);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "inhoud van een wrakkist", ComputeHelpers.designate(v, "inhoud van een wrakkist")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("wrakkist", "inhoud", false), v, "inhoud van een wrakkist"));
+        }
+    }
+end
+

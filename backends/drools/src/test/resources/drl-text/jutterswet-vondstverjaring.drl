@@ -1,0 +1,20 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+
+// zijn vondstdag eerder is dan 31-01-2024
+function boolean toets_kenmerktoekenningVerjaard(Object $vondstdag) {
+    return ComputeHelpers.dateCompare($vondstdag, java.time.LocalDate.parse("2024-01-31"), dev.uchar.regelspraak.ir.Condition.Operator.EERDER);
+}
+
+rule "Kenmerktoekenning verjaard"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vondstdag : vondstdag )
+    eval( toets_kenmerktoekenningVerjaard($vondstdag) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "verjaard", true)));
+end
+

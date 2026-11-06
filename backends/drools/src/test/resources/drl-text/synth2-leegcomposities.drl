@@ -1,0 +1,90 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de grondslag van de Meting maal de factor van de Meting verminderd met de korting van de Meting
+function Object waarde_heffingVanEenMeting(Object $grondslag, Object $factor, Object $korting) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsVerminderd(RegelSpraakRuntime.rsMaal($grondslag, $factor), $korting), Integer.valueOf(0), "heffing", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "heffing van een meting"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Meting( $grondslag : grondslag, $factor : factor, $korting : korting )
+then
+    Object v = waarde_heffingVanEenMeting($grondslag, $factor, $korting);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "heffing van een meting", ComputeHelpers.designate(v, "heffing van een meting")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("meting", "heffing", false), v, "heffing van een meting"));
+        }
+    }
+end
+
+// de aftrek van de Meting verminderd met het tarief van de Meting maal het aantal van de Meting
+function Object waarde_restVanEenMeting(Object $aftrek, Object $tarief, Object $aantal) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsVerminderd($aftrek, RegelSpraakRuntime.rsMaal($tarief, $aantal)), Integer.valueOf(0), "rest", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "rest van een meting"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Meting( $aftrek : aftrek, $tarief : tarief, $aantal : aantal )
+then
+    Object v = waarde_restVanEenMeting($aftrek, $tarief, $aantal);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "rest van een meting", ComputeHelpers.designate(v, "rest van een meting")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("meting", "rest", false), v, "rest van een meting"));
+        }
+    }
+end
+
+// de Meting is actief
+function boolean toets_uitkomstVanEenMeting(Object $actief) {
+    return ComputeHelpers.characteristic($actief, Boolean.TRUE);
+}
+
+// (de som van de Meting gedeeld door de deler van de Meting plus de toeslag van de Meting) rekenkundig afgerond op 0 decimalen
+function Object waarde_uitkomstVanEenMeting(Object $som, Object $deler, Object $toeslag, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsPlus(ComputeHelpers.divided($som, $deler, sonde), $toeslag), Integer.valueOf(0), java.math.RoundingMode.HALF_UP), Integer.valueOf(0), "uitkomst", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "uitkomst van een meting"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Meting( $actief : (ComputeHelpers.holds(actief)), $som : som, $deler : deler, $toeslag : toeslag )
+    eval( toets_uitkomstVanEenMeting($actief) )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_uitkomstVanEenMeting($som, $deler, $toeslag, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "uitkomst van een meting", ComputeHelpers.designate(v, "uitkomst van een meting")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("uitkomst van een meting", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("meting", "uitkomst", false), v, "uitkomst van een meting"));
+        }
+    }
+end
+

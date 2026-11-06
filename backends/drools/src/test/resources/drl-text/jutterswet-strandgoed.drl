@@ -1,0 +1,136 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het gewicht van de Vondst groter is dan 10
+function boolean toets_waardevolBijGewicht(Object $gewicht) {
+    return RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("10"), ">");
+}
+
+rule "waardevol bij gewicht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht )
+    eval( toets_waardevolBijGewicht($gewicht) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "waardevol", true)));
+end
+
+// de som van het gewicht van alle vondsten van de Jutter die groter zijn dan 5 of 0 als die er niet zijn
+function Object waarde_zwaargewichtVanEenJutter(Object $aantal_vouw_6, Object $vouw_vouw_8) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_6, $vouw_vouw_8, new java.math.BigDecimal("0")), Integer.valueOf(0), "zwaargewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "zwaargewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_3 : Contribution( fold == "zwaargewicht van een jutter: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_7 : value ); $aantal_vouw_6 : count(), $vouw_vouw_8 : exactSum($bijdragewaarde_vouw_7) )
+then
+    Object v = waarde_zwaargewichtVanEenJutter($aantal_vouw_6, $vouw_vouw_8);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "zwaargewicht van een jutter", ComputeHelpers.designate(v, "zwaargewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "zwaargewicht", false), v, "zwaargewicht van een jutter"));
+        }
+    }
+end
+
+// het aantal vondsten van de Jutter die waardevol zijn
+function Object waarde_pronkstukaantalVanEenJutter(Object $aantal_vouw_16) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_16), Integer.valueOf(0), "pronkstukaantal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "pronkstukaantal van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_13 : Contribution( fold == "pronkstukaantal van een jutter: vouw 1", subject == $onderwerp ); $aantal_vouw_16 : count() )
+then
+    Object v = waarde_pronkstukaantalVanEenJutter($aantal_vouw_16);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "pronkstukaantal van een jutter", ComputeHelpers.designate(v, "pronkstukaantal van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "pronkstukaantal", false), v, "pronkstukaantal van een jutter"));
+        }
+    }
+end
+
+// groter zijn dan 5
+function boolean toets_zwaargewichtVanEenJutterBijdrageAanVouw0(Object $gewicht) {
+    return RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("5"), ">");
+}
+
+rule "zwaargewicht van een jutter: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmeldendeJutter == $vouwonderwerp, $gewicht : gewicht )
+    eval( toets_zwaargewichtVanEenJutterBijdrageAanVouw0($gewicht) )
+then
+    Object v = ComputeHelpers.contribution("zwaargewicht van een jutter: vouw 0", $vouwonderwerp, $onderwerp, $gewicht, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+// waardevol zijn
+function boolean toets_pronkstukaantalVanEenJutterBijdrageAanVouw1(Object $waardevol) {
+    return ComputeHelpers.characteristic($waardevol, Boolean.TRUE);
+}
+
+rule "pronkstukaantal van een jutter: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmeldendeJutter == $vouwonderwerp )
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "waardevol", true), subject == $onderwerp, $waardevol : holds )
+    eval( toets_pronkstukaantalVanEenJutterBijdrageAanVouw1($waardevol) )
+then
+    insertLogical(new Contribution("pronkstukaantal van een jutter: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "kenmerkstand Vondst.waardevol: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(waardevol) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "waardevol", true), true));
+end
+
+rule "kenmerkstand Vondst.waardevol: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "waardevol", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "waardevol", true), true));
+end
+
+rule "kenmerkstand Vondst.waardevol: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(waardevol) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "waardevol", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "waardevol", true), false));
+end
+

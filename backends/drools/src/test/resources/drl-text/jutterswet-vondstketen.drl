@@ -1,0 +1,50 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de minimale waarde van het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter
+function Object waarde_laagsteVondstgewichtVanEenJutter(Object $aantal_vouw_4, Object $vouw_vouw_6) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_4, $vouw_vouw_6, null), Integer.valueOf(2), "laagste vondstgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "laagste vondstgewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "laagste vondstgewicht van een jutter: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_5 : value ); $aantal_vouw_4 : count(), $vouw_vouw_6 : exactMin($bijdragewaarde_vouw_5) )
+then
+    Object v = waarde_laagsteVondstgewichtVanEenJutter($aantal_vouw_4, $vouw_vouw_6);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "laagste vondstgewicht van een jutter", ComputeHelpers.designate(v, "laagste vondstgewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "laagste vondstgewicht", false), v, "laagste vondstgewicht van een jutter"));
+        }
+    }
+end
+
+function boolean beta_laagsteVondstgewichtVanEenJutterBijdrageAanVouw0(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("bergendeBoot", "schipper"), java.util.Arrays.asList());
+}
+
+rule "laagste vondstgewicht van een jutter: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( beta_laagsteVondstgewichtVanEenJutterBijdrageAanVouw0(this, $vouwonderwerp), $gewicht : gewicht )
+then
+    Object v = ComputeHelpers.contribution("laagste vondstgewicht van een jutter: vouw 0", $vouwonderwerp, $onderwerp, $gewicht, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+

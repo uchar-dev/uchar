@@ -1,0 +1,418 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// hij aan geen van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
+function boolean toets_geentekenVanEenWacht(Object $ploegomvang, Object $vangstwaarde) {
+    try {
+        int raak = 0;
+        Boolean vast;
+        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 2);
+        if (vast != null) {
+            return vast;
+        }
+        if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
+            raak++;
+        }
+        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1, 1);
+        if (vast != null) {
+            return vast;
+        }
+        if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
+            raak++;
+        }
+        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 2);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// 1
+function Object waarde_geentekenVanEenWacht(Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("1"), Integer.valueOf(0), "geenteken", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "geenteken van een wacht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wacht( $ploegomvang : ploegomvang, $vangstwaarde : vangstwaarde )
+    eval( toets_geentekenVanEenWacht($ploegomvang, $vangstwaarde) )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_geentekenVanEenWacht(sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "geenteken van een wacht", ComputeHelpers.designate(v, "geenteken van een wacht")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("geenteken van een wacht", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("wacht", "geenteken", false), v, "geenteken van een wacht"));
+        }
+    }
+end
+
+// hij aan geen van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
+function boolean toets_geentekenVanEenWachtFoutInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde) {
+    try {
+        boolean uitkomst = samengesteld1_geentekenVanEenWachtFoutInDeVoorwaarde($ploegomvang, $vangstwaarde);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// hij aan geen van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
+function boolean samengesteld1_geentekenVanEenWachtFoutInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 2);
+}
+
+// hij aan geen van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
+function Object fout_geentekenVanEenWachtFoutInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde) {
+    try {
+        boolean uitkomst = samengesteld2_geentekenVanEenWachtFoutInDeVoorwaarde($ploegomvang, $vangstwaarde);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// hij aan geen van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
+function boolean samengesteld2_geentekenVanEenWachtFoutInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 2);
+}
+
+rule "geenteken van een wacht: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wacht( $ploegomvang : ploegomvang, $vangstwaarde : vangstwaarde )
+    eval( toets_geentekenVanEenWachtFoutInDeVoorwaarde($ploegomvang, $vangstwaarde) )
+then
+    Object f = fout_geentekenVanEenWachtFoutInDeVoorwaarde($ploegomvang, $vangstwaarde);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"geenteken van een wacht\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "geenteken van een wacht", ComputeHelpers.designate(f, "geenteken van een wacht")));
+end
+
+// hij aan geen van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
+function boolean toets_geentekenVanEenWachtDeponeringInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde, Object sonde) {
+    try {
+        boolean uitkomst = samengesteld1_geentekenVanEenWachtDeponeringInDeVoorwaarde($ploegomvang, $vangstwaarde, sonde);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    return ComputeHelpers.reported(sonde);
+}
+
+// hij aan geen van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
+function boolean samengesteld1_geentekenVanEenWachtDeponeringInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde, Object sonde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 2);
+}
+
+// hij aan geen van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
+function java.util.List deponering_geentekenVanEenWachtDeponeringInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde, Object sonde) {
+    try {
+        boolean uitkomst = samengesteld2_geentekenVanEenWachtDeponeringInDeVoorwaarde($ploegomvang, $vangstwaarde, sonde);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    if (!ComputeHelpers.reported(sonde)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"geenteken van een wacht\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    return ComputeHelpers.depositCodes(sonde);
+}
+
+// hij aan geen van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
+function boolean samengesteld2_geentekenVanEenWachtDeponeringInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde, Object sonde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 2);
+}
+
+rule "geenteken van een wacht: deponering in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wacht( $ploegomvang : ploegomvang, $vangstwaarde : vangstwaarde )
+    eval( toets_geentekenVanEenWachtDeponeringInDeVoorwaarde($ploegomvang, $vangstwaarde, ComputeHelpers.depositFlag()) )
+then
+    insertLogical(ComputeHelpers.inconsistency("geenteken van een wacht", $onderwerp, deponering_geentekenVanEenWachtDeponeringInDeVoorwaarde($ploegomvang, $vangstwaarde, ComputeHelpers.depositFlag())));
+end
+
+// hij aan ten minste één van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
+function boolean toets_minstetekenVanEenWacht(Object $ploegomvang, Object $vangstwaarde) {
+    try {
+        int raak = 0;
+        Boolean vast;
+        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
+        if (vast != null) {
+            return vast;
+        }
+        if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
+            raak++;
+        }
+        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
+        if (vast != null) {
+            return vast;
+        }
+        if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
+            raak++;
+        }
+        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// 1
+function Object waarde_minstetekenVanEenWacht(Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("1"), Integer.valueOf(0), "minsteteken", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "minsteteken van een wacht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wacht( $ploegomvang : ploegomvang, $vangstwaarde : vangstwaarde )
+    eval( toets_minstetekenVanEenWacht($ploegomvang, $vangstwaarde) )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_minstetekenVanEenWacht(sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "minsteteken van een wacht", ComputeHelpers.designate(v, "minsteteken van een wacht")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("minsteteken van een wacht", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("wacht", "minsteteken", false), v, "minsteteken van een wacht"));
+        }
+    }
+end
+
+// hij aan ten minste één van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
+function boolean toets_minstetekenVanEenWachtFoutInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde) {
+    try {
+        boolean uitkomst = samengesteld1_minstetekenVanEenWachtFoutInDeVoorwaarde($ploegomvang, $vangstwaarde);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// hij aan ten minste één van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
+function boolean samengesteld1_minstetekenVanEenWachtFoutInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+}
+
+// hij aan ten minste één van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
+function Object fout_minstetekenVanEenWachtFoutInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde) {
+    try {
+        boolean uitkomst = samengesteld2_minstetekenVanEenWachtFoutInDeVoorwaarde($ploegomvang, $vangstwaarde);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// hij aan ten minste één van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
+function boolean samengesteld2_minstetekenVanEenWachtFoutInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+}
+
+rule "minsteteken van een wacht: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wacht( $ploegomvang : ploegomvang, $vangstwaarde : vangstwaarde )
+    eval( toets_minstetekenVanEenWachtFoutInDeVoorwaarde($ploegomvang, $vangstwaarde) )
+then
+    Object f = fout_minstetekenVanEenWachtFoutInDeVoorwaarde($ploegomvang, $vangstwaarde);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"minsteteken van een wacht\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "minsteteken van een wacht", ComputeHelpers.designate(f, "minsteteken van een wacht")));
+end
+
+// hij aan ten minste één van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
+function boolean toets_minstetekenVanEenWachtDeponeringInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde, Object sonde) {
+    try {
+        boolean uitkomst = samengesteld1_minstetekenVanEenWachtDeponeringInDeVoorwaarde($ploegomvang, $vangstwaarde, sonde);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    return ComputeHelpers.reported(sonde);
+}
+
+// hij aan ten minste één van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
+function boolean samengesteld1_minstetekenVanEenWachtDeponeringInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde, Object sonde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+}
+
+// hij aan ten minste één van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
+function java.util.List deponering_minstetekenVanEenWachtDeponeringInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde, Object sonde) {
+    try {
+        boolean uitkomst = samengesteld2_minstetekenVanEenWachtDeponeringInDeVoorwaarde($ploegomvang, $vangstwaarde, sonde);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    if (!ComputeHelpers.reported(sonde)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"minsteteken van een wacht\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    return ComputeHelpers.depositCodes(sonde);
+}
+
+// hij aan ten minste één van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
+function boolean samengesteld2_minstetekenVanEenWachtDeponeringInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde, Object sonde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+}
+
+rule "minsteteken van een wacht: deponering in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wacht( $ploegomvang : ploegomvang, $vangstwaarde : vangstwaarde )
+    eval( toets_minstetekenVanEenWachtDeponeringInDeVoorwaarde($ploegomvang, $vangstwaarde, ComputeHelpers.depositFlag()) )
+then
+    insertLogical(ComputeHelpers.inconsistency("minsteteken van een wacht", $onderwerp, deponering_minstetekenVanEenWachtDeponeringInDeVoorwaarde($ploegomvang, $vangstwaarde, ComputeHelpers.depositFlag())));
+end
+

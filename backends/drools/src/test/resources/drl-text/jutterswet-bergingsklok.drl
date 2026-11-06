@@ -1,0 +1,106 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.util.function.Predicate rsDagsoort_Springtijdag;
+
+// zijn meldingsdatum plus zijn bergingsbestek
+function Object waarde_uitersteBergingsdatumVanEenBergingsploeg(Object $meldingsdatum, Object $bergingsbestek, java.util.function.Predicate rsDagsoort_Springtijdag) {
+    try {
+        return ComputeHelpers.dayKindStep($meldingsdatum, $bergingsbestek, rsDagsoort_Springtijdag, Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "uiterste bergingsdatum van een bergingsploeg"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Bergingsploeg( $meldingsdatum : meldingsdatum, $bergingsbestek : bergingsbestek )
+then
+    Object v = waarde_uitersteBergingsdatumVanEenBergingsploeg($meldingsdatum, $bergingsbestek, rsDagsoort_Springtijdag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "uiterste bergingsdatum van een bergingsploeg", ComputeHelpers.designate(v, "uiterste bergingsdatum van een bergingsploeg")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("bergingsploeg", "uiterste bergingsdatum", false), v, "uiterste bergingsdatum van een bergingsploeg"));
+        }
+    }
+end
+
+// zijn meldingsdatum min zijn bergingsbestek
+function Object waarde_vroegsteMeldingsdatumVanEenBergingsploeg(Object $meldingsdatum, Object $bergingsbestek, java.util.function.Predicate rsDagsoort_Springtijdag) {
+    try {
+        return ComputeHelpers.dayKindStep($meldingsdatum, $bergingsbestek, rsDagsoort_Springtijdag, Boolean.FALSE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vroegste meldingsdatum van een bergingsploeg"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Bergingsploeg( $meldingsdatum : meldingsdatum, $bergingsbestek : bergingsbestek )
+then
+    Object v = waarde_vroegsteMeldingsdatumVanEenBergingsploeg($meldingsdatum, $bergingsbestek, rsDagsoort_Springtijdag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vroegste meldingsdatum van een bergingsploeg", ComputeHelpers.designate(v, "vroegste meldingsdatum van een bergingsploeg")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("bergingsploeg", "vroegste meldingsdatum", false), v, "vroegste meldingsdatum van een bergingsploeg"));
+        }
+    }
+end
+
+// de tijdsduur van zijn meldingsdatum tot zijn opleverdatum in hele springtijdagen
+function Object waarde_bergingsspanneVanEenBergingsploeg(Object $meldingsdatum, Object $opleverdatum, java.util.function.Predicate rsDagsoort_Springtijdag) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsTijdsduurDagsoort(((java.time.LocalDate) $meldingsdatum), ((java.time.LocalDate) $opleverdatum), rsDagsoort_Springtijdag, Boolean.FALSE), Integer.valueOf(0), "bergingsspanne", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bergingsspanne van een bergingsploeg"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Bergingsploeg( $meldingsdatum : meldingsdatum, $opleverdatum : opleverdatum )
+then
+    Object v = waarde_bergingsspanneVanEenBergingsploeg($meldingsdatum, $opleverdatum, rsDagsoort_Springtijdag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bergingsspanne van een bergingsploeg", ComputeHelpers.designate(v, "bergingsspanne van een bergingsploeg")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("bergingsploeg", "bergingsspanne", false), v, "bergingsspanne van een bergingsploeg"));
+        }
+    }
+end
+
+// de absolute tijdsduur van zijn opleverdatum tot zijn meldingsdatum in hele springtijdagen
+function Object waarde_bergingsafstandVanEenBergingsploeg(Object $opleverdatum, Object $meldingsdatum, java.util.function.Predicate rsDagsoort_Springtijdag) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsTijdsduurDagsoort(((java.time.LocalDate) $opleverdatum), ((java.time.LocalDate) $meldingsdatum), rsDagsoort_Springtijdag, Boolean.TRUE), Integer.valueOf(0), "bergingsafstand", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bergingsafstand van een bergingsploeg"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Bergingsploeg( $opleverdatum : opleverdatum, $meldingsdatum : meldingsdatum )
+then
+    Object v = waarde_bergingsafstandVanEenBergingsploeg($opleverdatum, $meldingsdatum, rsDagsoort_Springtijdag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bergingsafstand van een bergingsploeg", ComputeHelpers.designate(v, "bergingsafstand van een bergingsploeg")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("bergingsploeg", "bergingsafstand", false), v, "bergingsafstand van een bergingsploeg"));
+        }
+    }
+end
+

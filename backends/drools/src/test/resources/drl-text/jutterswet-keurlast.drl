@@ -1,0 +1,168 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.ListPlace;
+import dev.uchar.regelspraak.transpiler.tms.MemberFault;
+import dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het totaal van het keurtarief van alle vondsten van de Jutter die gekeurd zijn
+function Object waarde_keurlastVanEenJutter(Object $aantal_vouw_27, Object $vouw_vouw_29, Object $eerste_lidfout_vouw_34) {
+    try {
+        return ComputeHelpers.fitTarget(vouwlezing_keurlastVanEenJutter($aantal_vouw_27, $vouw_vouw_29, $eerste_lidfout_vouw_34), Integer.valueOf(0), "keurlast", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// het totaal van het keurtarief van alle vondsten van de Jutter die gekeurd zijn
+function Object vouwlezing_keurlastVanEenJutter(Object $aantal_vouw_27, Object $vouw_vouw_29, Object $eerste_lidfout_vouw_34) {
+    if ($eerste_lidfout_vouw_34 != null) {
+        throw ((MemberFault) $eerste_lidfout_vouw_34).fault();
+    }
+    return ComputeHelpers.foldValue($aantal_vouw_27, $vouw_vouw_29, new java.math.BigDecimal("0"));
+}
+
+rule "keurlast van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_24 : Contribution( fold == "keurlast van een jutter: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_28 : value ); $aantal_vouw_27 : count(), $vouw_vouw_29 : exactSum($bijdragewaarde_vouw_28) )
+    accumulate( $lidfout_vouw_30 : MemberFault( fold == "keurlast van een jutter: vouw 0", subject == $onderwerp ); $lidfouten_vouw_33 : count(), $eerste_lidfout_vouw_34 : exactMin($lidfout_vouw_30) )
+then
+    Object v = waarde_keurlastVanEenJutter($aantal_vouw_27, $vouw_vouw_29, $eerste_lidfout_vouw_34);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "keurlast van een jutter", ComputeHelpers.designate(v, "keurlast van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "keurlast", false), v, "keurlast van een jutter"));
+        }
+    }
+end
+
+// gekeurd zijn
+function boolean toets_keurlastVanEenJutterBijdrageAanVouw0(Object $gekeurd) {
+    return ComputeHelpers.characteristic($gekeurd, Boolean.TRUE);
+}
+
+rule "keurlast van een jutter: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( keurendeJutter == $vouwonderwerp, $gekeurd : (ComputeHelpers.holds(gekeurd)) )
+    $stand_2 : State( attribute == ElementKey.of("vondst", "keurtarief", false), subject == $onderwerp, $tijdlijn_2 : value )
+    eval( toets_keurlastVanEenJutterBijdrageAanVouw0($gekeurd) )
+then
+    Object v = ComputeHelpers.contribution("keurlast van een jutter: vouw 0", $vouwonderwerp, $onderwerp, $tijdlijn_2, "MAAND", null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta_keurlastVanEenJutterLidfoutInVouw0(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+function boolean toets_keurlastVanEenJutterLidfoutInVouw0(Object $gekeurd, Object $tijdlijn_3) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($gekeurd, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.bucketScalar($tijdlijn_3, Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+function java.util.List plaats_keurlastVanEenJutterLidfoutInVouw0(Object $onderwerp, Object $lijstplaatsen_plaats_7, Object $plaats_plaats_8) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.MEMBER_FAULT, "keurlast van een jutter: vouw 0", $onderwerp, 0, java.util.Arrays.asList("keurendeJutter"), java.util.Arrays.asList($lijstplaatsen_plaats_7), java.util.Arrays.asList($plaats_plaats_8));
+}
+
+rule "keurlast van een jutter: lidfout in vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( keurendeJutter == $vouwonderwerp, $gekeurd : (ComputeHelpers.holds(gekeurd)) )
+    accumulate( $lijstplaats_plaats_5 : ListPlace( field == "keurendeJutter", beta_keurlastVanEenJutterLidfoutInVouw0(this, $onderwerp), $lijstplaatswaarde_plaats_6 : place ); $lijstplaatsen_plaats_7 : count(), $plaats_plaats_8 : exactMin($lijstplaatswaarde_plaats_6) )
+    $stand_3 : State( attribute == ElementKey.of("vondst", "keurtarief", false), subject == $onderwerp, $tijdlijn_3 : value )
+    eval( toets_keurlastVanEenJutterLidfoutInVouw0($gekeurd, $tijdlijn_3) )
+then
+    insertLogical(new MemberFault("keurlast van een jutter: vouw 0", $vouwonderwerp, $onderwerp, ComputeHelpers.bucketScalarFault("keurtarief", "the per-element temporal total of \"keurtarief\" over ", $onderwerp, ": the case supplies an asOfDate-bucket scalar, which carries no period of its own; a set fold needs each member's own timeline (ch. 3.6/§7.1, ch. 8.4)"), plaats_keurlastVanEenJutterLidfoutInVouw0($onderwerp, $lijstplaatsen_plaats_7, $plaats_plaats_8)));
+end
+
+function boolean beta_keurlastVanEenJutterLidfoutInVouw0OverEenOpenSegment(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+function boolean toets_keurlastVanEenJutterLidfoutInVouw0OverEenOpenSegment(Object $gekeurd, Object $tijdlijn_3) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($gekeurd, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (PeriodArithmetic.openNonZero($tijdlijn_3)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+function java.util.List plaats_keurlastVanEenJutterLidfoutInVouw0OverEenOpenSegment(Object $onderwerp, Object $lijstplaatsen_plaats_17, Object $plaats_plaats_18) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.MEMBER_FAULT, "keurlast van een jutter: vouw 0", $onderwerp, 0, java.util.Arrays.asList("keurendeJutter"), java.util.Arrays.asList($lijstplaatsen_plaats_17), java.util.Arrays.asList($plaats_plaats_18));
+}
+
+rule "keurlast van een jutter: lidfout in vouw 0 over een open segment"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( keurendeJutter == $vouwonderwerp, $gekeurd : (ComputeHelpers.holds(gekeurd)) )
+    accumulate( $lijstplaats_plaats_15 : ListPlace( field == "keurendeJutter", beta_keurlastVanEenJutterLidfoutInVouw0OverEenOpenSegment(this, $onderwerp), $lijstplaatswaarde_plaats_16 : place ); $lijstplaatsen_plaats_17 : count(), $plaats_plaats_18 : exactMin($lijstplaatswaarde_plaats_16) )
+    $stand_3 : State( attribute == ElementKey.of("vondst", "keurtarief", false), subject == $onderwerp, $tijdlijn_3 : value )
+    eval( toets_keurlastVanEenJutterLidfoutInVouw0OverEenOpenSegment($gekeurd, $tijdlijn_3) )
+then
+    insertLogical(new MemberFault("keurlast van een jutter: vouw 0", $vouwonderwerp, $onderwerp, PeriodArithmetic.openSegmentFault("keurtarief", $onderwerp, $tijdlijn_3), plaats_keurlastVanEenJutterLidfoutInVouw0OverEenOpenSegment($onderwerp, $lijstplaatsen_plaats_17, $plaats_plaats_18)));
+end
+
+rule "stand Vondst.keurtarief: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : (ComputeHelpers.periods(keurtarief)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("vondst", "keurtarief", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "keurtarief", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "keurtarief", false), $invoer));
+end
+
+rule "stand Vondst.keurtarief: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : (ComputeHelpers.periods(keurtarief)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("vondst", "keurtarief", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "keurtarief", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "keurtarief", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+

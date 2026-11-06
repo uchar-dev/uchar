@@ -1,0 +1,259 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.PathState;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.SecondFillingFault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn vinddag later is dan de afgeleide openingsdag van de haven van de jutter van de Vondst
+function boolean toets_havendatum(Object $vinddag, Object $jutterHavenAfgeleideOpeningsdag) {
+    return ComputeHelpers.dateCompare($vinddag, $jutterHavenAfgeleideOpeningsdag, dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+}
+
+rule "havendatum"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vinddag : vinddag )
+    $padstand_1 : PathState( path == "Vondst:jutter.haven" && member == ElementKey.of("haven", "afgeleide openingsdag", false), subject == $onderwerp, $jutterHavenAfgeleideOpeningsdag : value )
+    eval( toets_havendatum($vinddag, $jutterHavenAfgeleideOpeningsdag) )
+then
+    // zijn vinddag
+    Object v = $vinddag;
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "havendatum", false), v, "havendatum"));
+    }
+end
+
+// de openingsdag van de haven van de jutter van de Vondst gevuld is
+function boolean toets_registerdatum(Object $jutterHavenOpeningsdag) {
+    return ComputeHelpers.emptyTest($jutterHavenOpeningsdag, Boolean.FALSE);
+}
+
+rule "registerdatum"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vinddag : vinddag )
+    $padstand_0 : PathState( path == "Vondst:jutter.haven" && member == ElementKey.of("haven", "openingsdag", false), subject == $onderwerp, $jutterHavenOpeningsdag : value )
+    eval( toets_registerdatum($jutterHavenOpeningsdag) )
+then
+    // zijn vinddag
+    Object v = $vinddag;
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "registerdatum", false), v, "registerdatum"));
+    }
+end
+
+function Object pad_wachtdatum(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("jutter"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "vergunningsdag");
+}
+
+// zijn vinddag min 6 mnd later is dan de vergunningsdag van de jutter van de Vondst
+function boolean toets_wachtdatum(Object $vinddag, Object $jutterVergunningsdag) {
+    try {
+        return ComputeHelpers.dateCompare(ComputeHelpers.dateStep($vinddag, new java.math.BigDecimal("6"), "MONTHS", Boolean.FALSE), $jutterVergunningsdag, dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "wachtdatum"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vinddag : vinddag, $jutterVergunningsdag : (pad_wachtdatum(this)) )
+    eval( toets_wachtdatum($vinddag, $jutterVergunningsdag) )
+then
+    // zijn vinddag
+    Object v = $vinddag;
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "wachtdatum", false), v, "wachtdatum"));
+    }
+end
+
+function Object pad_wachtdatumFoutInDeVoorwaarde(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("jutter"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "vergunningsdag");
+}
+
+// zijn vinddag min 6 mnd later is dan de vergunningsdag van de jutter van de Vondst
+function boolean toets_wachtdatumFoutInDeVoorwaarde(Object $vinddag, Object $jutterVergunningsdag) {
+    try {
+        boolean uitkomst = ComputeHelpers.dateCompare(ComputeHelpers.dateStep($vinddag, new java.math.BigDecimal("6"), "MONTHS", Boolean.FALSE), $jutterVergunningsdag, dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn vinddag min 6 mnd later is dan de vergunningsdag van de jutter van de Vondst
+function Object fout_wachtdatumFoutInDeVoorwaarde(Object $vinddag, Object $jutterVergunningsdag) {
+    try {
+        boolean uitkomst = ComputeHelpers.dateCompare(ComputeHelpers.dateStep($vinddag, new java.math.BigDecimal("6"), "MONTHS", Boolean.FALSE), $jutterVergunningsdag, dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "wachtdatum: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vinddag : vinddag, $jutterVergunningsdag : (pad_wachtdatumFoutInDeVoorwaarde(this)) )
+    eval( toets_wachtdatumFoutInDeVoorwaarde($vinddag, $jutterVergunningsdag) )
+then
+    Object f = fout_wachtdatumFoutInDeVoorwaarde($vinddag, $jutterVergunningsdag);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"wachtdatum\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "wachtdatum", ComputeHelpers.designate(f, "wachtdatum")));
+end
+
+rule "havenopening"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $padstand_0 : PathState( path == "Vondst:jutter.haven" && member == ElementKey.of("haven", "afgeleide openingsdag", false), subject == $onderwerp, $jutterHavenAfgeleideOpeningsdag : value )
+then
+    // de afgeleide openingsdag van de haven van de jutter van de Vondst
+    Object v = $jutterHavenAfgeleideOpeningsdag;
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "havenopening", false), v, "havenopening"));
+    }
+end
+
+rule "afgeleide openingsdag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven( $openingsdag : openingsdag )
+then
+    // zijn openingsdag
+    Object v = $openingsdag;
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("haven", "afgeleide openingsdag", false), v, "afgeleide openingsdag"));
+    }
+end
+
+function boolean beta1_werving(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList(), java.util.Arrays.asList("kustwacht"));
+}
+
+function boolean beta2_werving(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("werver"), java.util.Arrays.asList());
+}
+
+rule "werving"
+    dialect "mvel"
+    agenda-group "uchar-feitcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven()
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    $stap_keten_11 : dev.uchar.regelspraak.facts.Kustwacht( beta1_werving(this, $onderwerp) )
+    $stap_keten_13 : dev.uchar.regelspraak.facts.Jutter( beta2_werving(this, $stap_keten_11) )
+    not( $bestaand_feitcreatie_15 : RelationLink( relation == "havenheeftjutter", first == $onderwerp, second == $stap_keten_13 ) )
+then
+    insert(new RelationLink("havenheeftjutter", $onderwerp, $stap_keten_13, $fase));
+end
+
+rule "koppeling havenheeftjutter uit de invoer: Jutter.haven"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Jutter( haven != null, $ander : haven )
+then
+    insertLogical(new RelationLink("havenheeftjutter", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingHavenheeftjutterTweedeVullingVanHaven(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling havenheeftjutter: tweede vulling van haven"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "havenheeftjutter", $nabij : second )
+    $twee : RelationLink( relation == "havenheeftjutter", second != null, second == $een.second, beta_koppelingHavenheeftjutterTweedeVullingVanHaven(this, $een) )
+then
+    insertLogical(new Fault($nabij, "HavenHeeftJutter", new SecondFillingFault("haven", $nabij)));
+end
+
+function boolean beta_padstandVondstJutterHavenNaarHavenAfgeleideOpeningsdagLinkAanwezig(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList(), java.util.Arrays.asList("jutter"));
+}
+
+rule "padstand Vondst.jutter.haven naar Haven.afgeleide openingsdag: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stap_keten_24 : dev.uchar.regelspraak.facts.Jutter( beta_padstandVondstJutterHavenNaarHavenAfgeleideOpeningsdagLinkAanwezig(this, $onderwerp) )
+    $koppeling_keten_27 : RelationLink( relation == "havenheeftjutter", second == $stap_keten_24, $overzijde_keten_28 : first )
+    $stap_keten_26 : dev.uchar.regelspraak.facts.Haven( this == $overzijde_keten_28 )
+    $stand : State( attribute == ElementKey.of("haven", "afgeleide openingsdag", false), subject == $stap_keten_26, $v : value )
+then
+    insertLogical(new PathState($onderwerp, "Vondst:jutter.haven", ElementKey.of("haven", "afgeleide openingsdag", false), $v, $stap_keten_26));
+end
+
+function boolean beta_padstandVondstJutterHavenNaarHavenAfgeleideOpeningsdagLinkAfwezig(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList(), java.util.Arrays.asList("jutter"));
+}
+
+rule "padstand Vondst.jutter.haven naar Haven.afgeleide openingsdag: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    not( $stap_keten_34 : dev.uchar.regelspraak.facts.Jutter( beta_padstandVondstJutterHavenNaarHavenAfgeleideOpeningsdagLinkAfwezig(this, $onderwerp) ) and $koppeling_keten_37 : RelationLink( relation == "havenheeftjutter", second == $stap_keten_34, $overzijde_keten_38 : first ) and $stap_keten_36 : dev.uchar.regelspraak.facts.Haven( this == $overzijde_keten_38 ) )
+then
+    insertLogical(new PathState($onderwerp, "Vondst:jutter.haven", ElementKey.of("haven", "afgeleide openingsdag", false), null, null));
+end
+
+function boolean beta_padstandVondstJutterHavenNaarHavenOpeningsdagLinkAanwezig(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList(), java.util.Arrays.asList("jutter"));
+}
+
+rule "padstand Vondst.jutter.haven naar Haven.openingsdag: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stap_keten_42 : dev.uchar.regelspraak.facts.Jutter( beta_padstandVondstJutterHavenNaarHavenOpeningsdagLinkAanwezig(this, $onderwerp) )
+    $koppeling_keten_45 : RelationLink( relation == "havenheeftjutter", second == $stap_keten_42, $overzijde_keten_46 : first )
+    $stap_keten_44 : dev.uchar.regelspraak.facts.Haven( this == $overzijde_keten_46, $v : openingsdag )
+then
+    insertLogical(new PathState($onderwerp, "Vondst:jutter.haven", ElementKey.of("haven", "openingsdag", false), $v, $stap_keten_44));
+end
+
+function boolean beta_padstandVondstJutterHavenNaarHavenOpeningsdagLinkAfwezig(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList(), java.util.Arrays.asList("jutter"));
+}
+
+rule "padstand Vondst.jutter.haven naar Haven.openingsdag: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    not( $stap_keten_50 : dev.uchar.regelspraak.facts.Jutter( beta_padstandVondstJutterHavenNaarHavenOpeningsdagLinkAfwezig(this, $onderwerp) ) and $koppeling_keten_53 : RelationLink( relation == "havenheeftjutter", second == $stap_keten_50, $overzijde_keten_54 : first ) and $stap_keten_52 : dev.uchar.regelspraak.facts.Haven( this == $overzijde_keten_54 ) )
+then
+    insertLogical(new PathState($onderwerp, "Vondst:jutter.haven", ElementKey.of("haven", "openingsdag", false), null, null));
+end
+
+rule "stand Haven.afgeleide openingsdag: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven()
+    $waarde : Value( attribute == ElementKey.of("haven", "afgeleide openingsdag", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("haven", "afgeleide openingsdag", false), $v));
+end
+
+rule "stand Haven.afgeleide openingsdag: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven( $invoer : afgeleideOpeningsdag )
+    not( $waarde : Value( attribute == ElementKey.of("haven", "afgeleide openingsdag", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("haven", "afgeleide openingsdag", false), $invoer));
+end
+

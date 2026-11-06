@@ -1,0 +1,376 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
+import dev.uchar.regelspraak.transpiler.tms.CreationStamp;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.ParameterState;
+import dev.uchar.regelspraak.transpiler.tms.PathState;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.SecondFillingFault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.math.BigDecimal vondstdrempel;
+global java.math.BigDecimal penningbedrag;
+
+// zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel
+function boolean toets_penningrechtBijDrempel(Object $aantalAangemeldeVondsten, Object $vondstdrempel) {
+    return RegelSpraakRuntime.rsAggVergelijk($aantalAangemeldeVondsten, $vondstdrempel, ">=");
+}
+
+rule "penningrecht bij drempel"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $aantalAangemeldeVondsten : aantalAangemeldeVondsten )
+    $parameter_1 : ParameterState( parameter == "vondstdrempel", $vondstdrempel : value )
+    eval( toets_penningrechtBijDrempel($aantalAangemeldeVondsten, $vondstdrempel) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "penninggerechtigd", true)));
+end
+
+// het penningjaar van zijn begunstigde
+function Object waarde_besluitjaarVanHetPenningbesluit(Object $begunstigdePenningjaar) {
+    try {
+        return ComputeHelpers.fitTarget($begunstigdePenningjaar, Integer.valueOf(0), "besluitjaar", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "besluitjaar van het penningbesluit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Penningbesluit()
+    $padstand_0 : PathState( path == "Penningbesluit:begunstigde" && member == ElementKey.of("jutter", "penningjaar", false), subject == $onderwerp, $begunstigdePenningjaar : value )
+then
+    Object v = waarde_besluitjaarVanHetPenningbesluit($begunstigdePenningjaar);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "besluitjaar van het penningbesluit", ComputeHelpers.designate(v, "besluitjaar van het penningbesluit")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("penningbesluit", "besluitjaar", false), v, "besluitjaar van het penningbesluit"));
+        }
+    }
+end
+
+// het besluitbedrag van zijn toegekend besluit
+function Object waarde_uitkeringVolgensHetPenningbesluit(Object $toegekendBesluitBesluitbedrag) {
+    try {
+        return ComputeHelpers.fitTarget($toegekendBesluitBesluitbedrag, Integer.valueOf(0), "uitkering", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "uitkering volgens het penningbesluit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $padstand_0 : PathState( path == "Jutter:toegekend besluit" && member == ElementKey.of("penningbesluit", "besluitbedrag", false), subject == $onderwerp, $toegekendBesluitBesluitbedrag : value )
+then
+    Object v = waarde_uitkeringVolgensHetPenningbesluit($toegekendBesluitBesluitbedrag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "uitkering volgens het penningbesluit", ComputeHelpers.designate(v, "uitkering volgens het penningbesluit")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "uitkering", false), v, "uitkering volgens het penningbesluit"));
+        }
+    }
+end
+
+// het besluitjaar van zijn toegekend besluit
+function Object waarde_uitkeringsjaarVolgensHetPenningbesluit(Object $toegekendBesluitBesluitjaar) {
+    try {
+        return ComputeHelpers.fitTarget($toegekendBesluitBesluitjaar, Integer.valueOf(0), "uitkeringsjaar", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "uitkeringsjaar volgens het penningbesluit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $padstand_0 : PathState( path == "Jutter:toegekend besluit" && member == ElementKey.of("penningbesluit", "besluitjaar", false), subject == $onderwerp, $toegekendBesluitBesluitjaar : value )
+then
+    Object v = waarde_uitkeringsjaarVolgensHetPenningbesluit($toegekendBesluitBesluitjaar);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "uitkeringsjaar volgens het penningbesluit", ComputeHelpers.designate(v, "uitkeringsjaar volgens het penningbesluit")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "uitkeringsjaar", false), v, "uitkeringsjaar volgens het penningbesluit"));
+        }
+    }
+end
+
+// het aantal toegekende besluiten van de Jutter
+function Object waarde_telDePenningbesluiten(Object $aantal_vouw_15) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_15), Integer.valueOf(0), "aantal penningbesluiten", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "tel de penningbesluiten"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_12 : Contribution( fold == "tel de penningbesluiten: vouw 0", subject == $onderwerp ); $aantal_vouw_15 : count() )
+then
+    Object v = waarde_telDePenningbesluiten($aantal_vouw_15);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "tel de penningbesluiten", ComputeHelpers.designate(v, "tel de penningbesluiten")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal penningbesluiten", false), v, "tel de penningbesluiten"));
+        }
+    }
+end
+
+function boolean beta_stelHetPenningbesluitVast(Object eigen, Object ander) {
+    return ComputeHelpers.inPhase(eigen, ander);
+}
+
+// hij penninggerechtigd is
+function boolean toets_stelHetPenningbesluitVast(Object $penninggerechtigd) {
+    return ComputeHelpers.characteristic($penninggerechtigd, Boolean.TRUE);
+}
+
+// het penningbedrag
+function Object creatie_stelHetPenningbesluitVast(Object $penningbedrag, Object $fase, Object $herkomsten_creatie_21, Object $onderwerp) {
+    int diepte = ComputeHelpers.creationDepth("stel het penningbesluit vast", 0, "Jutter", (java.util.List) $herkomsten_creatie_21, 100);
+    Object i0 = null;
+    try {
+        i0 = ComputeHelpers.collapse(ComputeHelpers.fitTarget($penningbedrag, Integer.valueOf(0), "besluitbedrag", "stel het penningbesluit vast"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+    Object nieuw = ComputeHelpers.newObject($onderwerp, "dev.uchar.regelspraak.facts.Penningbesluit");
+    ComputeHelpers.set(nieuw, "besluitbedrag", i0);
+    int fase = ((Integer) $fase).intValue();
+    java.util.List feiten = new java.util.ArrayList();
+    feiten.add(nieuw);
+    feiten.add(new CreationStamp("stel het penningbesluit vast", $onderwerp, nieuw, fase, 0, diepte));
+    feiten.add(new RelationLink("penningtoekenning", $onderwerp, nieuw, fase));
+    return feiten;
+}
+
+rule "stel het penningbesluit vast"
+    dialect "mvel"
+    agenda-group "uchar-objectcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( toegekendBesluit == null )
+    $parameter_1 : ParameterState( parameter == "penningbedrag", $penningbedrag : value )
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("jutter", "penninggerechtigd", true), subject == $onderwerp, $penninggerechtigd : holds )
+    accumulate( $herkomst_creatie_20 : CreationStamp( object == $onderwerp ); $herkomsten_creatie_21 : collectList($herkomst_creatie_20) )
+    not( $gemaakt_creatie_23 : CreationStamp( rule == "stel het penningbesluit vast", subject == $onderwerp ) )
+    not( $nieuw_creatie_24 : CreationStamp( object == $onderwerp, beta_stelHetPenningbesluitVast(this, $fase) ) )
+    eval( toets_stelHetPenningbesluitVast($penninggerechtigd) )
+    not( $eigen_fout : Fault( rule == "stel het penningbesluit vast", subject == $onderwerp ) )
+then
+    Object v = creatie_stelHetPenningbesluitVast($penningbedrag, $fase, $herkomsten_creatie_21, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insert(new Fault($onderwerp, "stel het penningbesluit vast", ComputeHelpers.designate(v, "stel het penningbesluit vast")));
+    } else {
+        java.util.List feiten = (java.util.List) v;
+        insert(feiten.get(0));
+        insert(feiten.get(1));
+        insert(feiten.get(2));
+    }
+end
+
+rule "tel de penningbesluiten: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Penningbesluit()
+    exists( $koppeling_bereik_8 : RelationLink( relation == "penningtoekenning", second == $onderwerp, first == $vouwonderwerp ) )
+then
+    insertLogical(new Contribution("tel de penningbesluiten: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "koppeling penningtoekenning uit de invoer: Jutter.toegekend besluit"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Jutter( toegekendBesluit != null, $ander : toegekendBesluit )
+then
+    insertLogical(new RelationLink("penningtoekenning", $houder, $ander, 0));
+end
+
+rule "koppeling penningtoekenning uit de invoer: Penningbesluit.begunstigde"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Penningbesluit( begunstigde != null, $ander : begunstigde )
+then
+    insertLogical(new RelationLink("penningtoekenning", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingPenningtoekenningTweedeVullingVanToegekendBesluit(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "second");
+}
+
+rule "koppeling penningtoekenning: tweede vulling van toegekend besluit"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "penningtoekenning", $nabij : first )
+    $twee : RelationLink( relation == "penningtoekenning", first != null, first == $een.first, beta_koppelingPenningtoekenningTweedeVullingVanToegekendBesluit(this, $een) )
+then
+    insertLogical(new Fault($nabij, "penningtoekenning", new SecondFillingFault("toegekend besluit", $nabij)));
+end
+
+function boolean beta_koppelingPenningtoekenningTweedeVullingVanBegunstigde(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling penningtoekenning: tweede vulling van begunstigde"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "penningtoekenning", $nabij : second )
+    $twee : RelationLink( relation == "penningtoekenning", second != null, second == $een.second, beta_koppelingPenningtoekenningTweedeVullingVanBegunstigde(this, $een) )
+then
+    insertLogical(new Fault($nabij, "penningtoekenning", new SecondFillingFault("begunstigde", $nabij)));
+end
+
+rule "padstand Penningbesluit.begunstigde naar Jutter.penningjaar: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Penningbesluit()
+    $koppeling_keten_44 : RelationLink( relation == "penningtoekenning", second == $onderwerp, $overzijde_keten_45 : first )
+    $stap_keten_43 : dev.uchar.regelspraak.facts.Jutter( this == $overzijde_keten_45, $v : penningjaar )
+then
+    insertLogical(new PathState($onderwerp, "Penningbesluit:begunstigde", ElementKey.of("jutter", "penningjaar", false), $v, $stap_keten_43));
+end
+
+rule "padstand Penningbesluit.begunstigde naar Jutter.penningjaar: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Penningbesluit()
+    not( $koppeling_keten_50 : RelationLink( relation == "penningtoekenning", second == $onderwerp, $overzijde_keten_51 : first ) and $stap_keten_49 : dev.uchar.regelspraak.facts.Jutter( this == $overzijde_keten_51 ) )
+then
+    insertLogical(new PathState($onderwerp, "Penningbesluit:begunstigde", ElementKey.of("jutter", "penningjaar", false), null, null));
+end
+
+rule "padstand Jutter.toegekend besluit naar Penningbesluit.besluitbedrag: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $koppeling_keten_56 : RelationLink( relation == "penningtoekenning", first == $onderwerp, $overzijde_keten_57 : second )
+    $stap_keten_55 : dev.uchar.regelspraak.facts.Penningbesluit( this == $overzijde_keten_57 )
+    $stand : State( attribute == ElementKey.of("penningbesluit", "besluitbedrag", false), subject == $stap_keten_55, $v : value )
+then
+    insertLogical(new PathState($onderwerp, "Jutter:toegekend besluit", ElementKey.of("penningbesluit", "besluitbedrag", false), $v, $stap_keten_55));
+end
+
+rule "padstand Jutter.toegekend besluit naar Penningbesluit.besluitbedrag: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    not( $koppeling_keten_64 : RelationLink( relation == "penningtoekenning", first == $onderwerp, $overzijde_keten_65 : second ) and $stap_keten_63 : dev.uchar.regelspraak.facts.Penningbesluit( this == $overzijde_keten_65 ) )
+then
+    insertLogical(new PathState($onderwerp, "Jutter:toegekend besluit", ElementKey.of("penningbesluit", "besluitbedrag", false), null, null));
+end
+
+rule "padstand Jutter.toegekend besluit naar Penningbesluit.besluitjaar: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $koppeling_keten_70 : RelationLink( relation == "penningtoekenning", first == $onderwerp, $overzijde_keten_71 : second )
+    $stap_keten_69 : dev.uchar.regelspraak.facts.Penningbesluit( this == $overzijde_keten_71 )
+    $stand : State( attribute == ElementKey.of("penningbesluit", "besluitjaar", false), subject == $stap_keten_69, $v : value )
+then
+    insertLogical(new PathState($onderwerp, "Jutter:toegekend besluit", ElementKey.of("penningbesluit", "besluitjaar", false), $v, $stap_keten_69));
+end
+
+rule "padstand Jutter.toegekend besluit naar Penningbesluit.besluitjaar: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    not( $koppeling_keten_78 : RelationLink( relation == "penningtoekenning", first == $onderwerp, $overzijde_keten_79 : second ) and $stap_keten_77 : dev.uchar.regelspraak.facts.Penningbesluit( this == $overzijde_keten_79 ) )
+then
+    insertLogical(new PathState($onderwerp, "Jutter:toegekend besluit", ElementKey.of("penningbesluit", "besluitjaar", false), null, null));
+end
+
+rule "stand Penningbesluit.besluitbedrag: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Penningbesluit()
+    $waarde : Value( attribute == ElementKey.of("penningbesluit", "besluitbedrag", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("penningbesluit", "besluitbedrag", false), $v));
+end
+
+rule "stand Penningbesluit.besluitbedrag: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Penningbesluit( $invoer : besluitbedrag )
+    not( $waarde : Value( attribute == ElementKey.of("penningbesluit", "besluitbedrag", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("penningbesluit", "besluitbedrag", false), $invoer));
+end
+
+rule "stand Penningbesluit.besluitjaar: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Penningbesluit()
+    $waarde : Value( attribute == ElementKey.of("penningbesluit", "besluitjaar", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("penningbesluit", "besluitjaar", false), $v));
+end
+
+rule "stand Penningbesluit.besluitjaar: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Penningbesluit( $invoer : besluitjaar )
+    not( $waarde : Value( attribute == ElementKey.of("penningbesluit", "besluitjaar", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("penningbesluit", "besluitjaar", false), $invoer));
+end
+
+rule "kenmerkstand Jutter.penninggerechtigd: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.holds(penninggerechtigd) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("jutter", "penninggerechtigd", true), true));
+end
+
+rule "kenmerkstand Jutter.penninggerechtigd: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("jutter", "penninggerechtigd", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("jutter", "penninggerechtigd", true), true));
+end
+
+rule "kenmerkstand Jutter.penninggerechtigd: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.holds(penninggerechtigd) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("jutter", "penninggerechtigd", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("jutter", "penninggerechtigd", true), false));
+end
+
+rule "parameterstand vondstdrempel"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("vondstdrempel", vondstdrempel));
+end
+
+rule "parameterstand penningbedrag"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("penningbedrag", penningbedrag));
+end
+

@@ -1,0 +1,104 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Period;
+import dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic;
+import dev.uchar.regelspraak.transpiler.tms.PeriodCondition;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+function Object waarde_jaarpachtVanEenStrandpachter(Object $tijdlijn_0, Object $tijdlijn_1, Object $onderwerp) {
+    try {
+        return PeriodArithmetic.clipped(PeriodCondition.window(java.time.LocalDate.parse("2025-01-01"), Boolean.TRUE, null, Boolean.FALSE, Boolean.FALSE), Period.list(ComputeHelpers.proRata($tijdlijn_0, ComputeHelpers.complete($tijdlijn_1, "the pro-rata base \"pachttarief\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.7, ch. 8.4)", "pachttarief", Boolean.TRUE), "JAAR", Integer.valueOf(0), "jaarpacht")));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "jaarpacht van een strandpachter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandpachter( $tijdlijn_0 : (ComputeHelpers.periods(vergund)) )
+    $stand_1 : State( attribute == ElementKey.of("strandpachter", "pachttarief", false), subject == $onderwerp, $tijdlijn_1 : value )
+then
+    Object v = waarde_jaarpachtVanEenStrandpachter($tijdlijn_0, $tijdlijn_1, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "jaarpacht van een strandpachter", ComputeHelpers.designate(v, "jaarpacht van een strandpachter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandpachter", "jaarpacht", false), v, "jaarpacht van een strandpachter"));
+        }
+    }
+end
+
+function Object waarde_maandpachtVanEenStrandpachter(Object $tijdlijn_0, Object $tijdlijn_1, Object $onderwerp) {
+    try {
+        return PeriodArithmetic.clipped(PeriodCondition.window(java.time.LocalDate.parse("2025-03-01"), Boolean.TRUE, java.time.LocalDate.parse("2025-04-30"), Boolean.TRUE, Boolean.TRUE), Period.list(ComputeHelpers.proRata($tijdlijn_0, ComputeHelpers.complete($tijdlijn_1, "the pro-rata base \"pachttarief\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.7, ch. 8.4)", "pachttarief", Boolean.TRUE), "MAAND", Integer.valueOf(2), "maandpacht")));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "maandpacht van een strandpachter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandpachter( $tijdlijn_0 : (ComputeHelpers.periods(vergund)) )
+    $stand_1 : State( attribute == ElementKey.of("strandpachter", "pachttarief", false), subject == $onderwerp, $tijdlijn_1 : value )
+then
+    Object v = waarde_maandpachtVanEenStrandpachter($tijdlijn_0, $tijdlijn_1, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "maandpacht van een strandpachter", ComputeHelpers.designate(v, "maandpacht van een strandpachter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandpachter", "maandpacht", false), v, "maandpacht van een strandpachter"));
+        }
+    }
+end
+
+function Object waarde_zomerdagenVanEenStrandpachter(Object $ingangsdatum, Object $tijdlijn_1) {
+    try {
+        return PeriodArithmetic.clipped(PeriodCondition.window($ingangsdatum, Boolean.TRUE, java.time.LocalDate.parse("2025-09-01"), Boolean.TRUE, Boolean.FALSE), PeriodArithmetic.dayCount(RegelSpraakRuntime.rsAantalDagenIn(((java.util.List) $tijdlijn_1), "MAAND", Period.class)));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "zomerdagen van een strandpachter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandpachter( $ingangsdatum : ingangsdatum, $tijdlijn_1 : (ComputeHelpers.periods(aanwezig)) )
+then
+    Object v = waarde_zomerdagenVanEenStrandpachter($ingangsdatum, $tijdlijn_1);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "zomerdagen van een strandpachter", ComputeHelpers.designate(v, "zomerdagen van een strandpachter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandpachter", "zomerdagen", false), v, "zomerdagen van een strandpachter"));
+        }
+    }
+end
+
+rule "stand Strandpachter.pachttarief: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandpachter( $invoer : (ComputeHelpers.periods(pachttarief)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("strandpachter", "pachttarief", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("strandpachter", "pachttarief", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("strandpachter", "pachttarief", false), $invoer));
+end
+
+rule "stand Strandpachter.pachttarief: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandpachter( $invoer : (ComputeHelpers.periods(pachttarief)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("strandpachter", "pachttarief", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("strandpachter", "pachttarief", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("strandpachter", "pachttarief", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+

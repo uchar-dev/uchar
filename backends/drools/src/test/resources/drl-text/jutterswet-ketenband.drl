@@ -1,0 +1,71 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+function Object pad_voorliggerrang(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("voorligger"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "rangnummer");
+}
+
+// het rangnummer van de voorligger van de Wachter
+function Object waarde_voorliggerrang(Object $voorliggerRangnummer) {
+    try {
+        return ComputeHelpers.fitTarget($voorliggerRangnummer, Integer.valueOf(0), "voorliggerrang", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "voorliggerrang"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter( $voorliggerRangnummer : (pad_voorliggerrang(this)) )
+then
+    Object v = waarde_voorliggerrang($voorliggerRangnummer);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "voorliggerrang", ComputeHelpers.designate(v, "voorliggerrang")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("wachter", "voorliggerrang", false), v, "voorliggerrang"));
+        }
+    }
+end
+
+// het aantal opvolgers van de Wachter
+function Object waarde_opvolgeraantal(Object $aantal_vouw_4) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_4), Integer.valueOf(0), "opvolgeraantal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "opvolgeraantal"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "opvolgeraantal: vouw 0", subject == $onderwerp ); $aantal_vouw_4 : count() )
+then
+    Object v = waarde_opvolgeraantal($aantal_vouw_4);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "opvolgeraantal", ComputeHelpers.designate(v, "opvolgeraantal")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("wachter", "opvolgeraantal", false), v, "opvolgeraantal"));
+        }
+    }
+end
+
+rule "opvolgeraantal: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Wachter()
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter( voorligger == $vouwonderwerp )
+then
+    insertLogical(new Contribution("opvolgeraantal: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+

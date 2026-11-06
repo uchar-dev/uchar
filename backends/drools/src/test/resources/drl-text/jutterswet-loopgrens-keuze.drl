@@ -1,0 +1,51 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.EmptyBarrier;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de loop is de aanlooplengte van de Strook
+function Object waarde_schouwklasseVanEenStrook(Object $aanlooplengte) {
+    try {
+        return ComputeHelpers.fitTarget(let_schouwklasseVanEenStrook($aanlooplengte), Integer.valueOf(0), "schouwklasse", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de loop is de aanlooplengte van de Strook
+function Object let_schouwklasseVanEenStrook(Object $aanlooplengte) {
+    Object cel_1 = ComputeHelpers.binderCell();
+    try {
+        return (RegelSpraakRuntime.rsAggVergelijk(binder_schouwklasseVanEenStrook($aanlooplengte, cel_1), ComputeHelpers.restateExact(new java.math.BigDecimal("1"), new java.math.BigDecimal("1000"), new java.math.BigDecimal("1")), ">") ? (Object) new java.math.BigDecimal("1") : (Object) new java.math.BigDecimal("2"));
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_1);
+    }
+}
+
+// de aanlooplengte van de Strook
+function Object binder_schouwklasseVanEenStrook(Object $aanlooplengte, Object cel_1) {
+    if (!ComputeHelpers.binderCellFilled(cel_1)) {
+        ComputeHelpers.fillBinderCell(cel_1, $aanlooplengte);
+    }
+    return ComputeHelpers.binderValue(cel_1);
+}
+
+rule "schouwklasse van een strook"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strook( $aanlooplengte : aanlooplengte )
+then
+    Object v = waarde_schouwklasseVanEenStrook($aanlooplengte);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "schouwklasse van een strook", ComputeHelpers.designate(v, "schouwklasse van een strook")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("strook", "schouwklasse", false), v, "schouwklasse van een strook"));
+        }
+    }
+end
+

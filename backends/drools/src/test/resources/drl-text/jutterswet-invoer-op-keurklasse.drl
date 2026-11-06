@@ -1,0 +1,42 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// hij gemeld is
+function boolean toets_staatUitHerkeuring(Object $gemeld) {
+    return ComputeHelpers.characteristic($gemeld, Boolean.TRUE);
+}
+
+rule "staat uit herkeuring"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gemeld : (ComputeHelpers.holds(gemeld)), $herkeuring : herkeuring )
+    eval( toets_staatUitHerkeuring($gemeld) )
+then
+    // zijn herkeuring
+    Object v = $herkeuring;
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "staat", false), v, "staat uit herkeuring"));
+    }
+end
+
+// hij gemeld is
+function boolean toets_opmerkingUitNotitie(Object $gemeld) {
+    return ComputeHelpers.characteristic($gemeld, Boolean.TRUE);
+}
+
+rule "opmerking uit notitie"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gemeld : (ComputeHelpers.holds(gemeld)), $notitie : notitie )
+    eval( toets_opmerkingUitNotitie($gemeld) )
+then
+    // zijn notitie
+    Object v = $notitie;
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "opmerking", false), v, "opmerking uit notitie"));
+    }
+end
+

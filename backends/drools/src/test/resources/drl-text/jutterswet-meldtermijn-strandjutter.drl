@@ -1,0 +1,107 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Decides;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Outcome;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn vinddag gevuld is
+function boolean toets_defaultsAJutterMeldtermijnDefault0(Object $vinddag) {
+    return ComputeHelpers.emptyTest($vinddag, Boolean.FALSE);
+}
+
+// zijn vinddag plus 6 mnd
+function Object afloop_defaultsAJutterMeldtermijnDefault0(Object $vinddag) {
+    try {
+        return ComputeHelpers.dateStep($vinddag, new java.math.BigDecimal("6"), "MONTHS", Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Jutter.meldtermijn: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $vinddag : vinddag )
+    eval( toets_defaultsAJutterMeldtermijnDefault0($vinddag) )
+then
+    Object v = afloop_defaultsAJutterMeldtermijnDefault0($vinddag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Jutter.meldtermijn", ComputeHelpers.designate(v, "defaults A:Jutter.meldtermijn")));
+    } else if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("jutter", "meldtermijn", false), v, "defaults A:Jutter.meldtermijn"));
+        insertLogical(new Decides($onderwerp, "defaults A:Jutter.meldtermijn", 0));
+    }
+end
+
+// zijn vergunningseinde gevuld is
+function boolean toets_defaultsAStrandjutterMeldtermijnDefault000(Object $vergunningseinde) {
+    return ComputeHelpers.emptyTest($vergunningseinde, Boolean.FALSE);
+}
+
+rule "defaults A:Strandjutter.meldtermijn: default 0.0.0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandjutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Strandjutter"), $vergunningseinde : vergunningseinde )
+    eval( toets_defaultsAStrandjutterMeldtermijnDefault000($vergunningseinde) )
+then
+    // zijn vergunningseinde
+    Object v = $vergunningseinde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Strandjutter.meldtermijn", 1, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults A:Strandjutter.meldtermijn: eens 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Strandjutter.meldtermijn" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 1 && chain < 2, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Strandjutter.meldtermijn", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// zijn vinddag gevuld is
+function boolean toets_defaultsAStrandjutterMeldtermijnDefault1(Object $vinddag) {
+    return ComputeHelpers.emptyTest($vinddag, Boolean.FALSE);
+}
+
+// zijn vinddag plus 6 mnd
+function Object afloop_defaultsAStrandjutterMeldtermijnDefault1(Object $vinddag) {
+    try {
+        return ComputeHelpers.dateStep($vinddag, new java.math.BigDecimal("6"), "MONTHS", Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Strandjutter.meldtermijn: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Strandjutter"), $vinddag : vinddag )
+    not( $hoger_6 : Outcome( stack == "defaults A:Strandjutter.meldtermijn" && chain == 0 && position < 1, subject == $onderwerp ) )
+    eval( toets_defaultsAStrandjutterMeldtermijnDefault1($vinddag) )
+then
+    Object v = afloop_defaultsAStrandjutterMeldtermijnDefault1($vinddag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Strandjutter.meldtermijn", ComputeHelpers.designate(v, "defaults A:Strandjutter.meldtermijn")));
+    } else if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Strandjutter.meldtermijn", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults A:Strandjutter.meldtermijn: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Strandjutter.meldtermijn" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 1, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("jutter", "meldtermijn", false), v, "defaults A:Strandjutter.meldtermijn"));
+    }
+end
+

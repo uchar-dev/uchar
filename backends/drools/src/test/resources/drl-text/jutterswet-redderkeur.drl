@@ -1,0 +1,253 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// alle redders van de Reddingspost aan alle volgende voorwaarden voldoen
+function boolean toets_paraatBijPloegkeur(Object $aantal_vouw_4, Object $vouw_vouw_6) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_4, $vouw_vouw_6, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0));
+}
+
+rule "paraat bij ploegkeur"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Reddingspost()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "paraat bij ploegkeur: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_5 : value ); $aantal_vouw_4 : count(), $vouw_vouw_6 : exactSum($bijdragewaarde_vouw_5) )
+    eval( toets_paraatBijPloegkeur($aantal_vouw_4, $vouw_vouw_6) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("reddingspost", "paraat", true)));
+end
+
+// alle redders van de Reddingspost aan ten minste 1 van de volgende voorwaarden voldoen
+function boolean toets_geoefendBijPloegkeur(Object $aantal_vouw_12, Object $vouw_vouw_14) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_12, $vouw_vouw_14, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0));
+}
+
+rule "geoefend bij ploegkeur"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Reddingspost()
+    accumulate( $bijdrage_vouw_9 : Contribution( fold == "geoefend bij ploegkeur: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_13 : value ); $aantal_vouw_12 : count(), $vouw_vouw_14 : exactSum($bijdragewaarde_vouw_13) )
+    eval( toets_geoefendBijPloegkeur($aantal_vouw_12, $vouw_vouw_14) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("reddingspost", "geoefend", true)));
+end
+
+// geen van de redders van de Reddingspost aan alle volgende voorwaarden voldoet
+function boolean toets_stilBijPloegkeur(Object $aantal_vouw_20, Object $vouw_vouw_22) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_20, $vouw_vouw_22, dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, Integer.valueOf(0));
+}
+
+rule "stil bij ploegkeur"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Reddingspost()
+    accumulate( $bijdrage_vouw_17 : Contribution( fold == "stil bij ploegkeur: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_21 : value ); $aantal_vouw_20 : count(), $vouw_vouw_22 : exactSum($bijdragewaarde_vouw_21) )
+    eval( toets_stilBijPloegkeur($aantal_vouw_20, $vouw_vouw_22) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("reddingspost", "stil", true)));
+end
+
+// alle redders van de Reddingspost aan ten hoogste 1 van de volgende voorwaarden voldoen
+function boolean toets_wisselendBijPloegkeur(Object $aantal_vouw_28, Object $vouw_vouw_30) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_28, $vouw_vouw_30, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0));
+}
+
+rule "wisselend bij ploegkeur"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Reddingspost()
+    accumulate( $bijdrage_vouw_25 : Contribution( fold == "wisselend bij ploegkeur: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_29 : value ); $aantal_vouw_28 : count(), $vouw_vouw_30 : exactSum($bijdragewaarde_vouw_29) )
+    eval( toets_wisselendBijPloegkeur($aantal_vouw_28, $vouw_vouw_30) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("reddingspost", "wisselend", true)));
+end
+
+// het aantal redders van de Reddingspost
+function Object waarde_redderstalVanEenReddingspost(Object $aantal_vouw_36) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_36), Integer.valueOf(0), "redderstal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "redderstal van een reddingspost"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Reddingspost()
+    accumulate( $bijdrage_vouw_33 : Contribution( fold == "redderstal van een reddingspost: vouw 4", subject == $onderwerp ); $aantal_vouw_36 : count() )
+then
+    Object v = waarde_redderstalVanEenReddingspost($aantal_vouw_36);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "redderstal van een reddingspost", ComputeHelpers.designate(v, "redderstal van een reddingspost")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("reddingspost", "redderstal", false), v, "redderstal van een reddingspost"));
+        }
+    }
+end
+
+// hij aan alle volgende voorwaarden voldoet: - zijn dienstjaren groter zijn dan 5 - hij gediplomeerd is
+function boolean matrix_paraatBijPloegkeurBijdrageAanVouw0(Object $onderwerp, Object $dienstjaren, Object $gediplomeerd) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($dienstjaren, new java.math.BigDecimal("5"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($gediplomeerd, Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "paraat bij ploegkeur: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Reddingspost()
+    $onderwerp : dev.uchar.regelspraak.facts.Redder( post == $vouwonderwerp, $dienstjaren : dienstjaren, $gediplomeerd : (ComputeHelpers.holds(gediplomeerd)) )
+then
+    insertLogical(new Contribution("paraat bij ploegkeur: vouw 0", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_paraatBijPloegkeurBijdrageAanVouw0($onderwerp, $dienstjaren, $gediplomeerd))));
+end
+
+// hij aan ten minste 1 van de volgende voorwaarden voldoet: - zijn conditie groter is dan 7 - hij aan alle volgende voorwaarden voldoet: - hij gediplomeerd is - zijn dienstjaren groter zijn dan 2
+function boolean matrix_geoefendBijPloegkeurBijdrageAanVouw1(Object $onderwerp, Object $conditie, Object $gediplomeerd, Object $dienstjaren) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($conditie, new java.math.BigDecimal("7"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (samengesteld_geoefendBijPloegkeurBijdrageAanVouw1($onderwerp, $conditie, $gediplomeerd, $dienstjaren)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+}
+
+// hij aan alle volgende voorwaarden voldoet: - hij gediplomeerd is - zijn dienstjaren groter zijn dan 2
+function boolean samengesteld_geoefendBijPloegkeurBijdrageAanVouw1(Object $onderwerp, Object $conditie, Object $gediplomeerd, Object $dienstjaren) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($gediplomeerd, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($dienstjaren, new java.math.BigDecimal("2"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "geoefend bij ploegkeur: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Reddingspost()
+    $onderwerp : dev.uchar.regelspraak.facts.Redder( post == $vouwonderwerp, $conditie : conditie, $gediplomeerd : (ComputeHelpers.holds(gediplomeerd)), $dienstjaren : dienstjaren )
+then
+    insertLogical(new Contribution("geoefend bij ploegkeur: vouw 1", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_geoefendBijPloegkeurBijdrageAanVouw1($onderwerp, $conditie, $gediplomeerd, $dienstjaren))));
+end
+
+// hij aan alle volgende voorwaarden voldoet: - zijn dienstjaren groter zijn dan 5 - hij gediplomeerd is
+function boolean matrix_stilBijPloegkeurBijdrageAanVouw2(Object $onderwerp, Object $dienstjaren, Object $gediplomeerd) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($dienstjaren, new java.math.BigDecimal("5"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($gediplomeerd, Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "stil bij ploegkeur: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Reddingspost()
+    $onderwerp : dev.uchar.regelspraak.facts.Redder( post == $vouwonderwerp, $dienstjaren : dienstjaren, $gediplomeerd : (ComputeHelpers.holds(gediplomeerd)) )
+then
+    insertLogical(new Contribution("stil bij ploegkeur: vouw 2", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_stilBijPloegkeurBijdrageAanVouw2($onderwerp, $dienstjaren, $gediplomeerd))));
+end
+
+// hij aan ten hoogste 1 van de volgende voorwaarden voldoet: - hij gediplomeerd is - zijn conditie groter is dan 7 - zijn dienstjaren groter zijn dan 5
+function boolean matrix_wisselendBijPloegkeurBijdrageAanVouw3(Object $onderwerp, Object $gediplomeerd, Object $conditie, Object $dienstjaren) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, raak, 0, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($gediplomeerd, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, raak, 1, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($conditie, new java.math.BigDecimal("7"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, raak, 2, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($dienstjaren, new java.math.BigDecimal("5"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, raak, 3);
+}
+
+rule "wisselend bij ploegkeur: bijdrage aan vouw 3"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Reddingspost()
+    $onderwerp : dev.uchar.regelspraak.facts.Redder( post == $vouwonderwerp, $gediplomeerd : (ComputeHelpers.holds(gediplomeerd)), $conditie : conditie, $dienstjaren : dienstjaren )
+then
+    insertLogical(new Contribution("wisselend bij ploegkeur: vouw 3", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_wisselendBijPloegkeurBijdrageAanVouw3($onderwerp, $gediplomeerd, $conditie, $dienstjaren))));
+end
+
+rule "redderstal van een reddingspost: bijdrage aan vouw 4"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Reddingspost()
+    $onderwerp : dev.uchar.regelspraak.facts.Redder( post == $vouwonderwerp )
+then
+    insertLogical(new Contribution("redderstal van een reddingspost: vouw 4", $vouwonderwerp, $onderwerp, null));
+end
+

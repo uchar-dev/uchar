@@ -1,0 +1,26 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Recipient;
+
+rule "verdeel het penningbudget van een penningkas: ontvanger"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Penningkas()
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter( penningkas == $vouwonderwerp, $voorranggewicht : voorranggewicht, $wachtjaar : wachtjaar, $penningmaximum : penningmaximum )
+then
+    insertLogical(new Recipient("verdeel het penningbudget van een penningkas", $vouwonderwerp, $onderwerp, $voorranggewicht, $wachtjaar, $penningmaximum));
+end
+
+rule "verdeel het penningbudget van een penningkas"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Penningkas( $penningbudget : penningbudget )
+    accumulate( $ontvanger_verdeling_1 : Recipient( allocation == "verdeel het penningbudget van een penningkas", source == $onderwerp ); $ontvangers_verdeling_2 : collectList($ontvanger_verdeling_1) )
+then
+    for (Object feit : ComputeHelpers.payout("verdeel het penningbudget van een penningkas", $onderwerp, dev.uchar.regelspraak.ir.ResolvedAllocation.Method.OP_VOLGORDE, $penningbudget, $ontvangers_verdeling_2, true, true, false, Integer.valueOf(0), ElementKey.of("wachter", "penningtoewijzing", false), ElementKey.of("penningkas", "onuitgekeerd budget", false), "verdeel het penningbudget van een penningkas", Integer.valueOf(0), Integer.valueOf(0), "verdeel het penningbudget van een penningkas")) {
+        insertLogical(feit);
+    }
+end
+

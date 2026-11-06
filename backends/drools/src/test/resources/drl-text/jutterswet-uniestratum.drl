@@ -1,0 +1,155 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het aantal ongemerkte vondsten van de Jutter
+function Object waarde_ongemerktAantal(Object $aantal_vouw_11) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_11), Integer.valueOf(0), "ongemerkt aantal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "ongemerkt aantal"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_8 : Contribution( fold == "ongemerkt aantal: vouw 0", subject == $onderwerp ); $aantal_vouw_11 : count() )
+then
+    Object v = waarde_ongemerktAantal($aantal_vouw_11);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "ongemerkt aantal", ComputeHelpers.designate(v, "ongemerkt aantal")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "ongemerkt aantal", false), v, "ongemerkt aantal"));
+        }
+    }
+end
+
+// het aantal ongemerkte vondsten van de Jutter groter is dan 0
+function boolean toets_alarmerendBijOngemerkteVondsten(Object $aantal_vouw_23) {
+    return RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.countOf($aantal_vouw_23), new java.math.BigDecimal("0"), ">");
+}
+
+rule "alarmerend bij ongemerkte vondsten"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_20 : Contribution( fold == "alarmerend bij ongemerkte vondsten: vouw 1", subject == $onderwerp ); $aantal_vouw_23 : count() )
+    eval( toets_alarmerendBijOngemerkteVondsten($aantal_vouw_23) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "alarmerend", true)));
+end
+
+// het gewicht van de Vondst groter is dan 5
+function boolean toets_gemerktBijGewicht(Object $gewicht) {
+    return RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("5"), ">");
+}
+
+rule "gemerkt bij gewicht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht )
+    eval( toets_gemerktBijGewicht($gewicht) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "gemerkt", true)));
+end
+
+// niet gemerkt zijn
+function boolean toets_ongemerktAantalBijdrageAanVouw0Selectie0(Object $gemerkt) {
+    return ComputeHelpers.characteristic($gemerkt, Boolean.FALSE);
+}
+
+rule "ongemerkt aantal: bijdrage aan vouw 0, selectie 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp )
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "gemerkt", true), subject == $onderwerp, $gemerkt : holds )
+    eval( toets_ongemerktAantalBijdrageAanVouw0Selectie0($gemerkt) )
+then
+    insertLogical(new Contribution("ongemerkt aantal: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+// niet gemerkt zijn
+function boolean toets_ongemerktAantalBijdrageAanVouw0Selectie1(Object $gemerkt) {
+    return ComputeHelpers.characteristic($gemerkt, Boolean.FALSE);
+}
+
+rule "ongemerkt aantal: bijdrage aan vouw 0, selectie 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( berger == $vouwonderwerp )
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "gemerkt", true), subject == $onderwerp, $gemerkt : holds )
+    eval( toets_ongemerktAantalBijdrageAanVouw0Selectie1($gemerkt) )
+then
+    insertLogical(new Contribution("ongemerkt aantal: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+// niet gemerkt zijn
+function boolean toets_alarmerendBijOngemerkteVondstenBijdrageAanVouw1Selectie0(Object $gemerkt) {
+    return ComputeHelpers.characteristic($gemerkt, Boolean.FALSE);
+}
+
+rule "alarmerend bij ongemerkte vondsten: bijdrage aan vouw 1, selectie 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp )
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "gemerkt", true), subject == $onderwerp, $gemerkt : holds )
+    eval( toets_alarmerendBijOngemerkteVondstenBijdrageAanVouw1Selectie0($gemerkt) )
+then
+    insertLogical(new Contribution("alarmerend bij ongemerkte vondsten: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+
+// niet gemerkt zijn
+function boolean toets_alarmerendBijOngemerkteVondstenBijdrageAanVouw1Selectie1(Object $gemerkt) {
+    return ComputeHelpers.characteristic($gemerkt, Boolean.FALSE);
+}
+
+rule "alarmerend bij ongemerkte vondsten: bijdrage aan vouw 1, selectie 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( berger == $vouwonderwerp )
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "gemerkt", true), subject == $onderwerp, $gemerkt : holds )
+    eval( toets_alarmerendBijOngemerkteVondstenBijdrageAanVouw1Selectie1($gemerkt) )
+then
+    insertLogical(new Contribution("alarmerend bij ongemerkte vondsten: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "kenmerkstand Vondst.gemerkt: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(gemerkt) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "gemerkt", true), true));
+end
+
+rule "kenmerkstand Vondst.gemerkt: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "gemerkt", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "gemerkt", true), true));
+end
+
+rule "kenmerkstand Vondst.gemerkt: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(gemerkt) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "gemerkt", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "gemerkt", true), false));
+end
+

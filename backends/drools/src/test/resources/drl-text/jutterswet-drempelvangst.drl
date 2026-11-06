@@ -1,0 +1,116 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.EmptyBarrier;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de som van het gewicht van alle vondsten van de Jutter die groter zijn dan de drempel of 0 als die er niet zijn
+function Object waarde_drempelgewichtVanEenJutter(Object $aantal_vouw_5, Object $vouw_vouw_7) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_5, $vouw_vouw_7, new java.math.BigDecimal("0")), Integer.valueOf(0), "drempelgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "drempelgewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_2 : Contribution( fold == "drempelgewicht van een jutter: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_6 : value ); $aantal_vouw_5 : count(), $vouw_vouw_7 : exactSum($bijdragewaarde_vouw_6) )
+then
+    Object v = waarde_drempelgewichtVanEenJutter($aantal_vouw_5, $vouw_vouw_7);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "drempelgewicht van een jutter", ComputeHelpers.designate(v, "drempelgewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "drempelgewicht", false), v, "drempelgewicht van een jutter"));
+        }
+    }
+end
+
+// de vangst is het drempelgewicht van de Jutter
+function Object waarde_drempelaandeelVanEenJutter(Object $drempelgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(let_drempelaandeelVanEenJutter($drempelgewicht), Integer.valueOf(0), "drempelaandeel", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de vangst is het drempelgewicht van de Jutter
+function Object let_drempelaandeelVanEenJutter(Object $drempelgewicht) {
+    Object cel_1 = ComputeHelpers.binderCell();
+    try {
+        return RegelSpraakRuntime.rsPlus(binder_drempelaandeelVanEenJutter($drempelgewicht, cel_1), binder_drempelaandeelVanEenJutter($drempelgewicht, cel_1));
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_1);
+    }
+}
+
+// het drempelgewicht van de Jutter
+function Object binder_drempelaandeelVanEenJutter(Object $drempelgewicht, Object cel_1) {
+    if (!ComputeHelpers.binderCellFilled(cel_1)) {
+        ComputeHelpers.fillBinderCell(cel_1, $drempelgewicht);
+    }
+    return ComputeHelpers.binderValue(cel_1);
+}
+
+rule "drempelaandeel van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "drempelgewicht", false), subject == $onderwerp, $drempelgewicht : value )
+then
+    Object v = waarde_drempelaandeelVanEenJutter($drempelgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "drempelaandeel van een jutter", ComputeHelpers.designate(v, "drempelaandeel van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "drempelaandeel", false), v, "drempelaandeel van een jutter"));
+        }
+    }
+end
+
+// groter zijn dan de drempel
+function boolean toets_drempelgewichtVanEenJutterBijdrageAanVouw0(Object $gewicht) {
+    return RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("5"), ">");
+}
+
+rule "drempelgewicht van een jutter: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmeldendeJutter == $vouwonderwerp, $gewicht : gewicht )
+    eval( toets_drempelgewichtVanEenJutterBijdrageAanVouw0($gewicht) )
+then
+    Object v = ComputeHelpers.contribution("drempelgewicht van een jutter: vouw 0", $vouwonderwerp, $onderwerp, $gewicht, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "stand Jutter.drempelgewicht: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $waarde : Value( attribute == ElementKey.of("jutter", "drempelgewicht", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "drempelgewicht", false), $v));
+end
+
+rule "stand Jutter.drempelgewicht: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : drempelgewicht )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "drempelgewicht", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "drempelgewicht", false), $invoer));
+end
+

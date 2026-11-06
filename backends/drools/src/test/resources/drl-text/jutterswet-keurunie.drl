@@ -1,0 +1,112 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het aantal aangemelde vondsten van de Jutter die gemerkt zijn en aangemelde vondsten van de Jutter die gekeurd zijn
+function Object waarde_aantalKeurstukkenVanEenJutter(Object $aantal_vouw_7) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_7), Integer.valueOf(0), "aantal keurstukken", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal keurstukken van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_4 : Contribution( fold == "aantal keurstukken van een jutter: vouw 0", subject == $onderwerp ); $aantal_vouw_7 : count() )
+then
+    Object v = waarde_aantalKeurstukkenVanEenJutter($aantal_vouw_7);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal keurstukken van een jutter", ComputeHelpers.designate(v, "aantal keurstukken van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal keurstukken", false), v, "aantal keurstukken van een jutter"));
+        }
+    }
+end
+
+// het aantal aangemelde vondsten van de Jutter die gemerkt zijn en aangemelde vondsten van de Jutter
+function Object waarde_aantalGemeldeStukkenVanEenJutter(Object $aantal_vouw_14) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_14), Integer.valueOf(0), "aantal gemelde stukken", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal gemelde stukken van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_11 : Contribution( fold == "aantal gemelde stukken van een jutter: vouw 1", subject == $onderwerp ); $aantal_vouw_14 : count() )
+then
+    Object v = waarde_aantalGemeldeStukkenVanEenJutter($aantal_vouw_14);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal gemelde stukken van een jutter", ComputeHelpers.designate(v, "aantal gemelde stukken van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal gemelde stukken", false), v, "aantal gemelde stukken van een jutter"));
+        }
+    }
+end
+
+// gemerkt zijn
+function boolean toets_aantalKeurstukkenVanEenJutterBijdrageAanVouw0Selectie0(Object $gemerkt) {
+    return ComputeHelpers.characteristic($gemerkt, Boolean.TRUE);
+}
+
+rule "aantal keurstukken van een jutter: bijdrage aan vouw 0, selectie 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp, $gemerkt : (ComputeHelpers.holds(gemerkt)) )
+    eval( toets_aantalKeurstukkenVanEenJutterBijdrageAanVouw0Selectie0($gemerkt) )
+then
+    insertLogical(new Contribution("aantal keurstukken van een jutter: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+// gekeurd zijn
+function boolean toets_aantalKeurstukkenVanEenJutterBijdrageAanVouw0Selectie1(Object $gekeurd) {
+    return ComputeHelpers.characteristic($gekeurd, Boolean.TRUE);
+}
+
+rule "aantal keurstukken van een jutter: bijdrage aan vouw 0, selectie 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp, $gekeurd : (ComputeHelpers.holds(gekeurd)) )
+    eval( toets_aantalKeurstukkenVanEenJutterBijdrageAanVouw0Selectie1($gekeurd) )
+then
+    insertLogical(new Contribution("aantal keurstukken van een jutter: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+// gemerkt zijn
+function boolean toets_aantalGemeldeStukkenVanEenJutterBijdrageAanVouw1Selectie0(Object $gemerkt) {
+    return ComputeHelpers.characteristic($gemerkt, Boolean.TRUE);
+}
+
+rule "aantal gemelde stukken van een jutter: bijdrage aan vouw 1, selectie 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp, $gemerkt : (ComputeHelpers.holds(gemerkt)) )
+    eval( toets_aantalGemeldeStukkenVanEenJutterBijdrageAanVouw1Selectie0($gemerkt) )
+then
+    insertLogical(new Contribution("aantal gemelde stukken van een jutter: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "aantal gemelde stukken van een jutter: bijdrage aan vouw 1, selectie 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp )
+then
+    insertLogical(new Contribution("aantal gemelde stukken van een jutter: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+

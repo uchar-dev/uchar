@@ -1,0 +1,26 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Recipient;
+
+rule "verdeel de veilingopbrengst van een strandveiling: ontvanger"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Strandveiling()
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( strandveiling == $vouwonderwerp )
+then
+    insertLogical(new Recipient("verdeel de veilingopbrengst van een strandveiling", $vouwonderwerp, $onderwerp, null, null, null));
+end
+
+rule "verdeel de veilingopbrengst van een strandveiling"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandveiling( $veilingopbrengst : veilingopbrengst )
+    accumulate( $ontvanger_verdeling_1 : Recipient( allocation == "verdeel de veilingopbrengst van een strandveiling", source == $onderwerp ); $ontvangers_verdeling_2 : collectList($ontvanger_verdeling_1) )
+then
+    for (Object feit : ComputeHelpers.payout("verdeel de veilingopbrengst van een strandveiling", $onderwerp, dev.uchar.regelspraak.ir.ResolvedAllocation.Method.GELIJKE_DELEN, $veilingopbrengst, $ontvangers_verdeling_2, false, false, false, Integer.valueOf(0), ElementKey.of("jutter", "veilingdeel", false), ElementKey.of("strandveiling", "veilingrestant", false), "verdeel de veilingopbrengst van een strandveiling", Integer.valueOf(0), Integer.valueOf(0), "verdeel de veilingopbrengst van een strandveiling")) {
+        insertLogical(feit);
+    }
+end
+

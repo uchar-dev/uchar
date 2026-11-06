@@ -1,0 +1,315 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
+import dev.uchar.regelspraak.transpiler.tms.CreationStamp;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.SecondFillingFault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// hij drijfhout is
+function boolean toets_vasteTaxatie(Object $drijfhout) {
+    return ComputeHelpers.characteristic($drijfhout, Boolean.TRUE);
+}
+
+// 5,00
+function Object waarde_vasteTaxatie() {
+    try {
+        return ComputeHelpers.construct("waarde", new java.math.BigDecimal("5"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vaste taxatie"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $drijfhout : (ComputeHelpers.holds(drijfhout)) )
+    eval( toets_vasteTaxatie($drijfhout) )
+then
+    Object v = waarde_vasteTaxatie();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vaste taxatie", ComputeHelpers.designate(v, "vaste taxatie")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "taxatie", false), v, "vaste taxatie"));
+        }
+    }
+end
+
+// zijn taxatie onbekend is
+function boolean toets_ongetaxeerdeVondst(Object $taxatie) {
+    return ComputeHelpers.textEqual($taxatie, ComputeHelpers.constructorValue("onbekend"), Boolean.TRUE);
+}
+
+rule "ongetaxeerde vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : State( attribute == ElementKey.of("vondst", "taxatie", false), subject == $onderwerp, $taxatie : value )
+    eval( toets_ongetaxeerdeVondst($taxatie) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "ongetaxeerd", true)));
+end
+
+// de som van de taxatie van alle vondsten van de Jutter die een waarde hebben
+function Object waarde_getaxeerdTotaal(Object $aantal_vouw_14, Object $vouw_vouw_16) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_14, $vouw_vouw_16, null), Integer.valueOf(2), "getaxeerd totaal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "getaxeerd totaal"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_11 : Contribution( fold == "getaxeerd totaal: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_15 : value ); $aantal_vouw_14 : count(), $vouw_vouw_16 : exactSum($bijdragewaarde_vouw_15) )
+then
+    Object v = waarde_getaxeerdTotaal($aantal_vouw_14, $vouw_vouw_16);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "getaxeerd totaal", ComputeHelpers.designate(v, "getaxeerd totaal")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "getaxeerd totaal", false), v, "getaxeerd totaal"));
+        }
+    }
+end
+
+// het aantal vondsten van de Jutter die ongetaxeerd zijn
+function Object waarde_aantalOngetaxeerdeVondsten(Object $aantal_vouw_27) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_27), Integer.valueOf(0), "aantal ongetaxeerde vondsten", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal ongetaxeerde vondsten"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_24 : Contribution( fold == "aantal ongetaxeerde vondsten: vouw 1", subject == $onderwerp ); $aantal_vouw_27 : count() )
+then
+    Object v = waarde_aantalOngetaxeerdeVondsten($aantal_vouw_27);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal ongetaxeerde vondsten", ComputeHelpers.designate(v, "aantal ongetaxeerde vondsten")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal ongetaxeerde vondsten", false), v, "aantal ongetaxeerde vondsten"));
+        }
+    }
+end
+
+function boolean beta_onbekendeVondst(Object eigen, Object ander) {
+    return ComputeHelpers.inPhase(eigen, ander);
+}
+
+// hij actief is
+function boolean toets_onbekendeVondst(Object $actief) {
+    return ComputeHelpers.characteristic($actief, Boolean.TRUE);
+}
+
+// onbekend
+function Object creatie_onbekendeVondst(Object $fase, Object $herkomsten_creatie_30, Object $onderwerp) {
+    int diepte = ComputeHelpers.creationDepth("onbekende vondst", 0, "Jutter", (java.util.List) $herkomsten_creatie_30, 100);
+    Object i0 = null;
+    try {
+        i0 = ComputeHelpers.collapse(ComputeHelpers.constructorValue("onbekend"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+    Object nieuw = ComputeHelpers.newObject($onderwerp, "dev.uchar.regelspraak.facts.Vondst");
+    ComputeHelpers.set(nieuw, "taxatie", i0);
+    int fase = ((Integer) $fase).intValue();
+    java.util.List feiten = new java.util.ArrayList();
+    feiten.add(nieuw);
+    feiten.add(new CreationStamp("onbekende vondst", $onderwerp, nieuw, fase, 0, diepte));
+    feiten.add(new RelationLink("vangst", $onderwerp, nieuw, fase));
+    return feiten;
+}
+
+rule "onbekende vondst"
+    dialect "mvel"
+    agenda-group "uchar-objectcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $actief : (ComputeHelpers.holds(actief)) )
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    accumulate( $herkomst_creatie_29 : CreationStamp( object == $onderwerp ); $herkomsten_creatie_30 : collectList($herkomst_creatie_29) )
+    not( $gemaakt_creatie_32 : CreationStamp( rule == "onbekende vondst", subject == $onderwerp ) )
+    not( $nieuw_creatie_33 : CreationStamp( object == $onderwerp, beta_onbekendeVondst(this, $fase) ) )
+    eval( toets_onbekendeVondst($actief) )
+    not( $eigen_fout : Fault( rule == "onbekende vondst", subject == $onderwerp ) )
+then
+    Object v = creatie_onbekendeVondst($fase, $herkomsten_creatie_30, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insert(new Fault($onderwerp, "onbekende vondst", ComputeHelpers.designate(v, "onbekende vondst")));
+    } else {
+        java.util.List feiten = (java.util.List) v;
+        insert(feiten.get(0));
+        insert(feiten.get(1));
+        insert(feiten.get(2));
+    }
+end
+
+function boolean beta_getaxeerdeVondst(Object eigen, Object ander) {
+    return ComputeHelpers.inPhase(eigen, ander);
+}
+
+// hij ervaren is
+function boolean toets_getaxeerdeVondst(Object $ervaren) {
+    return ComputeHelpers.characteristic($ervaren, Boolean.TRUE);
+}
+
+// 12,50
+function Object creatie_getaxeerdeVondst(Object $fase, Object $herkomsten_creatie_43, Object $onderwerp) {
+    int diepte = ComputeHelpers.creationDepth("getaxeerde vondst", 0, "Jutter", (java.util.List) $herkomsten_creatie_43, 100);
+    Object i0 = null;
+    try {
+        i0 = ComputeHelpers.collapse(ComputeHelpers.construct("waarde", new java.math.BigDecimal("12.5")));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+    Object nieuw = ComputeHelpers.newObject($onderwerp, "dev.uchar.regelspraak.facts.Vondst");
+    ComputeHelpers.set(nieuw, "taxatie", i0);
+    int fase = ((Integer) $fase).intValue();
+    java.util.List feiten = new java.util.ArrayList();
+    feiten.add(nieuw);
+    feiten.add(new CreationStamp("getaxeerde vondst", $onderwerp, nieuw, fase, 0, diepte));
+    feiten.add(new RelationLink("vangst", $onderwerp, nieuw, fase));
+    return feiten;
+}
+
+rule "getaxeerde vondst"
+    dialect "mvel"
+    agenda-group "uchar-objectcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $ervaren : (ComputeHelpers.holds(ervaren)) )
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    accumulate( $herkomst_creatie_42 : CreationStamp( object == $onderwerp ); $herkomsten_creatie_43 : collectList($herkomst_creatie_42) )
+    not( $gemaakt_creatie_45 : CreationStamp( rule == "getaxeerde vondst", subject == $onderwerp ) )
+    not( $nieuw_creatie_46 : CreationStamp( object == $onderwerp, beta_getaxeerdeVondst(this, $fase) ) )
+    eval( toets_getaxeerdeVondst($ervaren) )
+    not( $eigen_fout : Fault( rule == "getaxeerde vondst", subject == $onderwerp ) )
+then
+    Object v = creatie_getaxeerdeVondst($fase, $herkomsten_creatie_43, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insert(new Fault($onderwerp, "getaxeerde vondst", ComputeHelpers.designate(v, "getaxeerde vondst")));
+    } else {
+        java.util.List feiten = (java.util.List) v;
+        insert(feiten.get(0));
+        insert(feiten.get(1));
+        insert(feiten.get(2));
+    }
+end
+
+// een waarde hebben
+function boolean toets_getaxeerdTotaalBijdrageAanVouw0(Object $taxatie) {
+    return ComputeHelpers.emptyTest(ComputeHelpers.payload($taxatie, "waarde"), Boolean.FALSE);
+}
+
+rule "getaxeerd totaal: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    exists( $koppeling_bereik_4 : RelationLink( relation == "vangst", second == $onderwerp, first == $vouwonderwerp ) )
+    $stand_0 : State( attribute == ElementKey.of("vondst", "taxatie", false), subject == $onderwerp, $taxatie : value )
+    eval( toets_getaxeerdTotaalBijdrageAanVouw0($taxatie) )
+then
+    Object v = ComputeHelpers.contribution("getaxeerd totaal: vouw 0", $vouwonderwerp, $onderwerp, ComputeHelpers.payload($taxatie, "waarde"), null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+// ongetaxeerd zijn
+function boolean toets_aantalOngetaxeerdeVondstenBijdrageAanVouw1(Object $ongetaxeerd) {
+    return ComputeHelpers.characteristic($ongetaxeerd, Boolean.TRUE);
+}
+
+rule "aantal ongetaxeerde vondsten: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    exists( $koppeling_bereik_17 : RelationLink( relation == "vangst", second == $onderwerp, first == $vouwonderwerp ) )
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "ongetaxeerd", true), subject == $onderwerp, $ongetaxeerd : holds )
+    eval( toets_aantalOngetaxeerdeVondstenBijdrageAanVouw1($ongetaxeerd) )
+then
+    insertLogical(new Contribution("aantal ongetaxeerde vondsten: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "koppeling vangst uit de invoer: Vondst.jutter"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Vondst( jutter != null, $ander : jutter )
+then
+    insertLogical(new RelationLink("vangst", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingVangstTweedeVullingVanJutter(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling vangst: tweede vulling van jutter"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "vangst", $nabij : second )
+    $twee : RelationLink( relation == "vangst", second != null, second == $een.second, beta_koppelingVangstTweedeVullingVanJutter(this, $een) )
+then
+    insertLogical(new Fault($nabij, "vangst", new SecondFillingFault("jutter", $nabij)));
+end
+
+rule "stand Vondst.taxatie: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $waarde : Value( attribute == ElementKey.of("vondst", "taxatie", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "taxatie", false), $v));
+end
+
+rule "stand Vondst.taxatie: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : taxatie )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "taxatie", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "taxatie", false), $invoer));
+end
+
+rule "kenmerkstand Vondst.ongetaxeerd: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(ongetaxeerd) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "ongetaxeerd", true), true));
+end
+
+rule "kenmerkstand Vondst.ongetaxeerd: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "ongetaxeerd", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "ongetaxeerd", true), true));
+end
+
+rule "kenmerkstand Vondst.ongetaxeerd: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(ongetaxeerd) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "ongetaxeerd", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "ongetaxeerd", true), false));
+end
+

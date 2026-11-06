@@ -1,0 +1,272 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.ListPlace;
+import dev.uchar.regelspraak.transpiler.tms.MemberTest;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de dagvergoeding van alle bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40
+function boolean toets_premiegerechtigdBijDagvergoeding(Object $aantal_vouw_12, Object $vouw_vouw_14) {
+    try {
+        return ((Boolean) kwantorlezing_premiegerechtigdBijDagvergoeding($aantal_vouw_12, $vouw_vouw_14));
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// de dagvergoeding van alle bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40
+function Object kwantorlezing_premiegerechtigdBijDagvergoeding(Object $aantal_vouw_12, Object $vouw_vouw_14) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_12, $vouw_vouw_14, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0), null);
+}
+
+rule "premiegerechtigd bij dagvergoeding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Bergingsploeg()
+    accumulate( $bijdrage_vouw_9 : Contribution( fold == "premiegerechtigd bij dagvergoeding: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_13 : value ); $aantal_vouw_12 : count(), $vouw_vouw_14 : collectList($bijdragewaarde_vouw_13) )
+    eval( toets_premiegerechtigdBijDagvergoeding($aantal_vouw_12, $vouw_vouw_14) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("bergingsploeg", "premiegerechtigd", true)));
+end
+
+// de dagvergoeding van alle bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40
+function boolean toets_premiegerechtigdBijDagvergoedingFoutInDeVoorwaarde(Object $aantal_vouw_19, Object $vouw_vouw_21) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing1_premiegerechtigdBijDagvergoedingFoutInDeVoorwaarde($aantal_vouw_19, $vouw_vouw_21));
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de dagvergoeding van alle bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40
+function Object kwantorlezing1_premiegerechtigdBijDagvergoedingFoutInDeVoorwaarde(Object $aantal_vouw_19, Object $vouw_vouw_21) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_19, $vouw_vouw_21, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0), null);
+}
+
+// de dagvergoeding van alle bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40
+function Object fout_premiegerechtigdBijDagvergoedingFoutInDeVoorwaarde(Object $aantal_vouw_19, Object $vouw_vouw_21) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing2_premiegerechtigdBijDagvergoedingFoutInDeVoorwaarde($aantal_vouw_19, $vouw_vouw_21));
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de dagvergoeding van alle bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40
+function Object kwantorlezing2_premiegerechtigdBijDagvergoedingFoutInDeVoorwaarde(Object $aantal_vouw_19, Object $vouw_vouw_21) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_19, $vouw_vouw_21, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0), null);
+}
+
+rule "premiegerechtigd bij dagvergoeding: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Bergingsploeg()
+    accumulate( $bijdrage_vouw_16 : Contribution( fold == "premiegerechtigd bij dagvergoeding: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_20 : value ); $aantal_vouw_19 : count(), $vouw_vouw_21 : collectList($bijdragewaarde_vouw_20) )
+    eval( toets_premiegerechtigdBijDagvergoedingFoutInDeVoorwaarde($aantal_vouw_19, $vouw_vouw_21) )
+then
+    Object f = fout_premiegerechtigdBijDagvergoedingFoutInDeVoorwaarde($aantal_vouw_19, $vouw_vouw_21);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"premiegerechtigd bij dagvergoeding\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "premiegerechtigd bij dagvergoeding", ComputeHelpers.designate(f, "premiegerechtigd bij dagvergoeding")));
+end
+
+// de dagvergoeding van geen van de bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40
+function boolean toets_wisselvalligBijDagvergoeding(Object $aantal_vouw_35, Object $vouw_vouw_37) {
+    try {
+        return ((Boolean) kwantorlezing_wisselvalligBijDagvergoeding($aantal_vouw_35, $vouw_vouw_37));
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// de dagvergoeding van geen van de bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40
+function Object kwantorlezing_wisselvalligBijDagvergoeding(Object $aantal_vouw_35, Object $vouw_vouw_37) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_35, $vouw_vouw_37, dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, Integer.valueOf(0), null);
+}
+
+rule "wisselvallig bij dagvergoeding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Bergingsploeg()
+    accumulate( $bijdrage_vouw_32 : Contribution( fold == "wisselvallig bij dagvergoeding: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_36 : value ); $aantal_vouw_35 : count(), $vouw_vouw_37 : collectList($bijdragewaarde_vouw_36) )
+    eval( toets_wisselvalligBijDagvergoeding($aantal_vouw_35, $vouw_vouw_37) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("bergingsploeg", "wisselvallig", true)));
+end
+
+// de dagvergoeding van geen van de bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40
+function boolean toets_wisselvalligBijDagvergoedingFoutInDeVoorwaarde(Object $aantal_vouw_42, Object $vouw_vouw_44) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing1_wisselvalligBijDagvergoedingFoutInDeVoorwaarde($aantal_vouw_42, $vouw_vouw_44));
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de dagvergoeding van geen van de bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40
+function Object kwantorlezing1_wisselvalligBijDagvergoedingFoutInDeVoorwaarde(Object $aantal_vouw_42, Object $vouw_vouw_44) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_42, $vouw_vouw_44, dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, Integer.valueOf(0), null);
+}
+
+// de dagvergoeding van geen van de bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40
+function Object fout_wisselvalligBijDagvergoedingFoutInDeVoorwaarde(Object $aantal_vouw_42, Object $vouw_vouw_44) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing2_wisselvalligBijDagvergoedingFoutInDeVoorwaarde($aantal_vouw_42, $vouw_vouw_44));
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de dagvergoeding van geen van de bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40
+function Object kwantorlezing2_wisselvalligBijDagvergoedingFoutInDeVoorwaarde(Object $aantal_vouw_42, Object $vouw_vouw_44) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_42, $vouw_vouw_44, dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, Integer.valueOf(0), null);
+}
+
+rule "wisselvallig bij dagvergoeding: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Bergingsploeg()
+    accumulate( $bijdrage_vouw_39 : Contribution( fold == "wisselvallig bij dagvergoeding: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_43 : value ); $aantal_vouw_42 : count(), $vouw_vouw_44 : collectList($bijdragewaarde_vouw_43) )
+    eval( toets_wisselvalligBijDagvergoedingFoutInDeVoorwaarde($aantal_vouw_42, $vouw_vouw_44) )
+then
+    Object f = fout_wisselvalligBijDagvergoedingFoutInDeVoorwaarde($aantal_vouw_42, $vouw_vouw_44);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"wisselvallig bij dagvergoeding\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "wisselvallig bij dagvergoeding", ComputeHelpers.designate(f, "wisselvallig bij dagvergoeding")));
+end
+
+// het aantal bergers van de Bergingsploeg
+function Object waarde_bergertalVanEenBergingsploeg(Object $aantal_vouw_50) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_50), Integer.valueOf(0), "bergertal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bergertal van een bergingsploeg"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Bergingsploeg()
+    accumulate( $bijdrage_vouw_47 : Contribution( fold == "bergertal van een bergingsploeg: vouw 2", subject == $onderwerp ); $aantal_vouw_50 : count() )
+then
+    Object v = waarde_bergertalVanEenBergingsploeg($aantal_vouw_50);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bergertal van een bergingsploeg", ComputeHelpers.designate(v, "bergertal van een bergingsploeg")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("bergingsploeg", "bergertal", false), v, "bergertal van een bergingsploeg"));
+        }
+    }
+end
+
+function boolean beta_premiegerechtigdBijDagvergoedingBijdrageAanVouw0(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// de dagvergoeding van alle bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40
+function Object lidtoets_premiegerechtigdBijDagvergoedingBijdrageAanVouw0(Object $onderwerp, Object $tijdlijn_1, Object $lijstplaatsen_plaats_5, Object $plaats_plaats_6) {
+    java.util.List plaats = plaats_premiegerechtigdBijDagvergoedingBijdrageAanVouw0($onderwerp, $lijstplaatsen_plaats_5, $plaats_plaats_6);
+    Boolean waar = null;
+    RuntimeException fout = null;
+    try {
+        waar = Boolean.valueOf(ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_1, "the whole-period qualifier over \"dagvergoeding\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "dagvergoeding", Boolean.TRUE), new java.math.BigDecimal("40"), "JAAR", Integer.valueOf(2), Boolean.FALSE));
+    } catch (RuntimeException e) {
+        fout = ComputeHelpers.caught(e);
+    }
+    return new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null));
+}
+
+function java.util.List plaats_premiegerechtigdBijDagvergoedingBijdrageAanVouw0(Object $onderwerp, Object $lijstplaatsen_plaats_5, Object $plaats_plaats_6) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER, "premiegerechtigd bij dagvergoeding: vouw 0", $onderwerp, 0, java.util.Arrays.asList("ploeg"), java.util.Arrays.asList($lijstplaatsen_plaats_5), java.util.Arrays.asList($plaats_plaats_6));
+}
+
+rule "premiegerechtigd bij dagvergoeding: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Bergingsploeg()
+    $onderwerp : dev.uchar.regelspraak.facts.Berger( ploeg == $vouwonderwerp )
+    accumulate( $lijstplaats_plaats_3 : ListPlace( field == "ploeg", beta_premiegerechtigdBijDagvergoedingBijdrageAanVouw0(this, $onderwerp), $lijstplaatswaarde_plaats_4 : place ); $lijstplaatsen_plaats_5 : count(), $plaats_plaats_6 : exactMin($lijstplaatswaarde_plaats_4) )
+    $stand_1 : State( attribute == ElementKey.of("berger", "dagvergoeding", false), subject == $onderwerp, $tijdlijn_1 : value )
+then
+    insertLogical(new Contribution("premiegerechtigd bij dagvergoeding: vouw 0", $vouwonderwerp, $onderwerp, lidtoets_premiegerechtigdBijDagvergoedingBijdrageAanVouw0($onderwerp, $tijdlijn_1, $lijstplaatsen_plaats_5, $plaats_plaats_6)));
+end
+
+function boolean beta_wisselvalligBijDagvergoedingBijdrageAanVouw1(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// de dagvergoeding van geen van de bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40
+function Object lidtoets_wisselvalligBijDagvergoedingBijdrageAanVouw1(Object $onderwerp, Object $tijdlijn_1, Object $lijstplaatsen_plaats_28, Object $plaats_plaats_29) {
+    java.util.List plaats = plaats_wisselvalligBijDagvergoedingBijdrageAanVouw1($onderwerp, $lijstplaatsen_plaats_28, $plaats_plaats_29);
+    Boolean waar = null;
+    RuntimeException fout = null;
+    try {
+        waar = Boolean.valueOf(ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_1, "the whole-period qualifier over \"dagvergoeding\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "dagvergoeding", Boolean.TRUE), new java.math.BigDecimal("40"), "JAAR", Integer.valueOf(2), Boolean.FALSE));
+    } catch (RuntimeException e) {
+        fout = ComputeHelpers.caught(e);
+    }
+    return new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null));
+}
+
+function java.util.List plaats_wisselvalligBijDagvergoedingBijdrageAanVouw1(Object $onderwerp, Object $lijstplaatsen_plaats_28, Object $plaats_plaats_29) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER, "wisselvallig bij dagvergoeding: vouw 1", $onderwerp, 0, java.util.Arrays.asList("ploeg"), java.util.Arrays.asList($lijstplaatsen_plaats_28), java.util.Arrays.asList($plaats_plaats_29));
+}
+
+rule "wisselvallig bij dagvergoeding: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Bergingsploeg()
+    $onderwerp : dev.uchar.regelspraak.facts.Berger( ploeg == $vouwonderwerp )
+    accumulate( $lijstplaats_plaats_26 : ListPlace( field == "ploeg", beta_wisselvalligBijDagvergoedingBijdrageAanVouw1(this, $onderwerp), $lijstplaatswaarde_plaats_27 : place ); $lijstplaatsen_plaats_28 : count(), $plaats_plaats_29 : exactMin($lijstplaatswaarde_plaats_27) )
+    $stand_1 : State( attribute == ElementKey.of("berger", "dagvergoeding", false), subject == $onderwerp, $tijdlijn_1 : value )
+then
+    insertLogical(new Contribution("wisselvallig bij dagvergoeding: vouw 1", $vouwonderwerp, $onderwerp, lidtoets_wisselvalligBijDagvergoedingBijdrageAanVouw1($onderwerp, $tijdlijn_1, $lijstplaatsen_plaats_28, $plaats_plaats_29)));
+end
+
+rule "bergertal van een bergingsploeg: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Bergingsploeg()
+    $onderwerp : dev.uchar.regelspraak.facts.Berger( ploeg == $vouwonderwerp )
+then
+    insertLogical(new Contribution("bergertal van een bergingsploeg: vouw 2", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "stand Berger.dagvergoeding: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berger( $invoer : (ComputeHelpers.periods(dagvergoeding)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("berger", "dagvergoeding", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("berger", "dagvergoeding", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("berger", "dagvergoeding", false), $invoer));
+end
+
+rule "stand Berger.dagvergoeding: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berger( $invoer : (ComputeHelpers.periods(dagvergoeding)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("berger", "dagvergoeding", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("berger", "dagvergoeding", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("berger", "dagvergoeding", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+

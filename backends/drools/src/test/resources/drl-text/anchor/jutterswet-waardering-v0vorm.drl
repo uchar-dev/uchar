@@ -1,0 +1,62 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// hij erkend is
+function boolean toets_waarderingVanErkendeJutters(Object $erkend) {
+    return ComputeHelpers.characteristic($erkend, Boolean.TRUE);
+}
+
+// zijn basisbedrag
+function Object waarde_waarderingVanErkendeJutters(Object $basisbedrag) {
+    try {
+        return ComputeHelpers.fitTarget($basisbedrag, Integer.valueOf(0), "waardering", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "waardering van erkende jutters"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $erkend : (ComputeHelpers.holds(erkend)), $basisbedrag : basisbedrag )
+    eval( toets_waarderingVanErkendeJutters($erkend) )
+then
+    Object v = waarde_waarderingVanErkendeJutters($basisbedrag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "waardering van erkende jutters", ComputeHelpers.designate(v, "waardering van erkende jutters")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "waardering", false), v, "waardering van erkende jutters"));
+        }
+    }
+end
+
+// 25
+function Object waarde_waarderingVooraf() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("25"), Integer.valueOf(0), "waardering", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "waardering vooraf"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( waardering == null )
+    not( $andere_schrijver : Value( attribute == ElementKey.of("jutter", "waardering", false) && writer != "waardering vooraf", subject == $onderwerp ) )
+then
+    Object v = waarde_waarderingVooraf();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "waardering vooraf", ComputeHelpers.designate(v, "waardering vooraf")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "waardering", false), v, "waardering vooraf"));
+        }
+    }
+end
+

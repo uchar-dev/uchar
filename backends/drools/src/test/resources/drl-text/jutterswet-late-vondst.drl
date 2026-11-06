@@ -1,0 +1,151 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.PathState;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de eerste van de vinddag van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn vinddag is later dan de sluitdag van de jutter van de Vondst
+function Object waarde_eersteLateVinddag(Object $aantal_vouw_7, Object $vouw_vouw_9) {
+    try {
+        return ComputeHelpers.foldValue($aantal_vouw_7, $vouw_vouw_9, null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "eerste late vinddag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_4 : Contribution( fold == "eerste late vinddag: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_8 : value ); $aantal_vouw_7 : count(), $vouw_vouw_9 : exactMin($bijdragewaarde_vouw_8) )
+then
+    Object v = waarde_eersteLateVinddag($aantal_vouw_7, $vouw_vouw_9);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "eerste late vinddag", ComputeHelpers.designate(v, "eerste late vinddag")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "eerste late vinddag", false), v, "eerste late vinddag"));
+        }
+    }
+end
+
+// het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn vinddag is later dan de sluitdag van de jutter van de Vondst
+function Object waarde_aantalLateVondsten(Object $aantal_vouw_17) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_17), Integer.valueOf(0), "aantal late vondsten", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal late vondsten"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_14 : Contribution( fold == "aantal late vondsten: vouw 1", subject == $onderwerp ); $aantal_vouw_17 : count() )
+then
+    Object v = waarde_aantalLateVondsten($aantal_vouw_17);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal late vondsten", ComputeHelpers.designate(v, "aantal late vondsten")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal late vondsten", false), v, "aantal late vondsten"));
+        }
+    }
+end
+
+rule "sluitdag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $startdag : startdag )
+then
+    // zijn startdag
+    Object v = $startdag;
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("jutter", "sluitdag", false), v, "sluitdag"));
+    }
+end
+
+// aan de volgende voorwaarde voldoen: zijn vinddag is later dan de sluitdag van de jutter van de Vondst
+function boolean toets_eersteLateVinddagBijdrageAanVouw0(Object $vinddag, Object $jutterSluitdag) {
+    return ComputeHelpers.dateCompare($vinddag, $jutterSluitdag, dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+}
+
+rule "eerste late vinddag: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp, $vinddag : vinddag )
+    $padstand_1 : PathState( path == "Vondst:jutter" && member == ElementKey.of("jutter", "sluitdag", false), subject == $onderwerp, $jutterSluitdag : value )
+    eval( toets_eersteLateVinddagBijdrageAanVouw0($vinddag, $jutterSluitdag) )
+then
+    Object v = ComputeHelpers.contribution("eerste late vinddag: vouw 0", $vouwonderwerp, $onderwerp, $vinddag, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+// aan de volgende voorwaarde voldoen: zijn vinddag is later dan de sluitdag van de jutter van de Vondst
+function boolean toets_aantalLateVondstenBijdrageAanVouw1(Object $vinddag, Object $jutterSluitdag) {
+    return ComputeHelpers.dateCompare($vinddag, $jutterSluitdag, dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+}
+
+rule "aantal late vondsten: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp, $vinddag : vinddag )
+    $padstand_1 : PathState( path == "Vondst:jutter" && member == ElementKey.of("jutter", "sluitdag", false), subject == $onderwerp, $jutterSluitdag : value )
+    eval( toets_aantalLateVondstenBijdrageAanVouw1($vinddag, $jutterSluitdag) )
+then
+    insertLogical(new Contribution("aantal late vondsten: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+
+function Object pad_padstandVondstJutterNaarJutterSluitdagLinkAanwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("jutter"));
+}
+
+rule "padstand Vondst.jutter naar Jutter.sluitdag: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( pad_padstandVondstJutterNaarJutterSluitdagLinkAanwezig(this) != null, $bereikt : jutter )
+    $stand : State( attribute == ElementKey.of("jutter", "sluitdag", false), subject != null, subject == $bereikt, $v : value )
+then
+    insertLogical(new PathState($onderwerp, "Vondst:jutter", ElementKey.of("jutter", "sluitdag", false), $v, $bereikt));
+end
+
+function Object pad_padstandVondstJutterNaarJutterSluitdagLinkAfwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("jutter"));
+}
+
+rule "padstand Vondst.jutter naar Jutter.sluitdag: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( pad_padstandVondstJutterNaarJutterSluitdagLinkAfwezig(this) == null )
+then
+    insertLogical(new PathState($onderwerp, "Vondst:jutter", ElementKey.of("jutter", "sluitdag", false), null, null));
+end
+
+rule "stand Jutter.sluitdag: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $waarde : Value( attribute == ElementKey.of("jutter", "sluitdag", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "sluitdag", false), $v));
+end
+
+rule "stand Jutter.sluitdag: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : sluitdag )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "sluitdag", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "sluitdag", false), $invoer));
+end
+

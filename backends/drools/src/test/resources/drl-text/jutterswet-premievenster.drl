@@ -1,0 +1,243 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.EvaluationDate;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.time.LocalDate rekendatum;
+
+// 1
+function Object waarde_basispremieVanEenVondst() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("1"), Integer.valueOf(0), "basispremie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "basispremie van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+then
+    Object v = waarde_basispremieVanEenVondst();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "basispremie van een vondst", ComputeHelpers.designate(v, "basispremie van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "basispremie", false), v, "basispremie van een vondst"));
+        }
+    }
+end
+
+// van 1 januari 2024 tot 1 januari 2025
+function boolean toets_vondstpremieVanEenVondst(Object $rekendatumwaarde_0) {
+    return ComputeHelpers.timeWindow(java.time.LocalDate.parse("2024-01-01"), Boolean.TRUE, java.time.LocalDate.parse("2025-01-01"), Boolean.TRUE, Boolean.FALSE, $rekendatumwaarde_0);
+}
+
+// 50
+function Object waarde_vondstpremieVanEenVondst() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("50"), Integer.valueOf(0), "vondstpremie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vondstpremie van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $rekendatum_0 : EvaluationDate( $rekendatumwaarde_0 : date )
+    eval( toets_vondstpremieVanEenVondst($rekendatumwaarde_0) )
+then
+    Object v = waarde_vondstpremieVanEenVondst();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vondstpremie van een vondst", ComputeHelpers.designate(v, "vondstpremie van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "vondstpremie", false), v, "vondstpremie van een vondst"));
+        }
+    }
+end
+
+// van 1 januari 2024 tot en met 31 december 2024
+function boolean toets_naseizoenpremieVanEenVondst(Object $rekendatumwaarde_0) {
+    return ComputeHelpers.timeWindow(java.time.LocalDate.parse("2024-01-01"), Boolean.TRUE, java.time.LocalDate.parse("2024-12-31"), Boolean.TRUE, Boolean.TRUE, $rekendatumwaarde_0);
+}
+
+// 20
+function Object waarde_naseizoenpremieVanEenVondst() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("20"), Integer.valueOf(0), "naseizoenpremie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "naseizoenpremie van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $rekendatum_0 : EvaluationDate( $rekendatumwaarde_0 : date )
+    eval( toets_naseizoenpremieVanEenVondst($rekendatumwaarde_0) )
+then
+    Object v = waarde_naseizoenpremieVanEenVondst();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "naseizoenpremie van een vondst", ComputeHelpers.designate(v, "naseizoenpremie van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "naseizoenpremie", false), v, "naseizoenpremie van een vondst"));
+        }
+    }
+end
+
+// vanaf 1 januari 2025
+function boolean toets_overgangspremieVanEenVondst(Object $rekendatumwaarde_0) {
+    return ComputeHelpers.timeWindow(java.time.LocalDate.parse("2025-01-01"), Boolean.TRUE, null, Boolean.FALSE, Boolean.FALSE, $rekendatumwaarde_0);
+}
+
+// 30
+function Object waarde_overgangspremieVanEenVondst() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("30"), Integer.valueOf(0), "overgangspremie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "overgangspremie van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $rekendatum_0 : EvaluationDate( $rekendatumwaarde_0 : date )
+    eval( toets_overgangspremieVanEenVondst($rekendatumwaarde_0) )
+then
+    Object v = waarde_overgangspremieVanEenVondst();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "overgangspremie van een vondst", ComputeHelpers.designate(v, "overgangspremie van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "overgangspremie", false), v, "overgangspremie van een vondst"));
+        }
+    }
+end
+
+// tot 1 januari 2024
+function boolean toets_aanlooppremieVanEenVondst(Object $rekendatumwaarde_0) {
+    return ComputeHelpers.timeWindow(null, Boolean.FALSE, java.time.LocalDate.parse("2024-01-01"), Boolean.TRUE, Boolean.FALSE, $rekendatumwaarde_0);
+}
+
+// 10
+function Object waarde_aanlooppremieVanEenVondst() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("10"), Integer.valueOf(0), "aanlooppremie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aanlooppremie van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $rekendatum_0 : EvaluationDate( $rekendatumwaarde_0 : date )
+    eval( toets_aanlooppremieVanEenVondst($rekendatumwaarde_0) )
+then
+    Object v = waarde_aanlooppremieVanEenVondst();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aanlooppremie van een vondst", ComputeHelpers.designate(v, "aanlooppremie van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "aanlooppremie", false), v, "aanlooppremie van een vondst"));
+        }
+    }
+end
+
+// vanaf de meldatum van de Vondst
+function boolean toets_bergloonVanEenVondst(Object $meldatum, Object $rekendatumwaarde_1) {
+    return ComputeHelpers.timeWindow($meldatum, Boolean.TRUE, null, Boolean.FALSE, Boolean.FALSE, $rekendatumwaarde_1);
+}
+
+// 5
+function Object waarde_bergloonVanEenVondst() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("5"), Integer.valueOf(0), "bergloon", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bergloon van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $meldatum : meldatum )
+    $rekendatum_1 : EvaluationDate( $rekendatumwaarde_1 : date )
+    eval( toets_bergloonVanEenVondst($meldatum, $rekendatumwaarde_1) )
+then
+    Object v = waarde_bergloonVanEenVondst();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bergloon van een vondst", ComputeHelpers.designate(v, "bergloon van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "bergloon", false), v, "bergloon van een vondst"));
+        }
+    }
+end
+
+// de Vondst geborgen is, en van 1 januari 2024 tot 1 januari 2025
+function boolean toets_borgpremieVanEenVondst(Object $geborgen, Object $rekendatumwaarde_1) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($geborgen, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.timeWindow(java.time.LocalDate.parse("2024-01-01"), Boolean.TRUE, java.time.LocalDate.parse("2025-01-01"), Boolean.TRUE, Boolean.FALSE, $rekendatumwaarde_1)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+// 15
+function Object waarde_borgpremieVanEenVondst() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("15"), Integer.valueOf(0), "borgpremie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "borgpremie van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $geborgen : (ComputeHelpers.holds(geborgen)) )
+    $rekendatum_1 : EvaluationDate( $rekendatumwaarde_1 : date )
+    eval( toets_borgpremieVanEenVondst($geborgen, $rekendatumwaarde_1) )
+then
+    Object v = waarde_borgpremieVanEenVondst();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "borgpremie van een vondst", ComputeHelpers.designate(v, "borgpremie van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "borgpremie", false), v, "borgpremie van een vondst"));
+        }
+    }
+end
+
+rule "rekendatumstand"
+    dialect "mvel"
+when
+then
+    insertLogical(new EvaluationDate(rekendatum));
+end
+

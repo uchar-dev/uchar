@@ -1,0 +1,339 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMaximumFunction exactMax;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.ParameterState;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.math.BigDecimal vaartijddrempel;
+
+function Object pad_vaartijd(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("logboek"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "zeeweken");
+}
+
+// de zeeweken van het logboek van het Wrakrecht groter of gelijk is aan de vaartijddrempel
+function boolean toets_vaartijd(Object $logboekZeeweken, Object $vaartijddrempel) {
+    return RegelSpraakRuntime.rsAggVergelijk($logboekZeeweken, $vaartijddrempel, ">=");
+}
+
+rule "vaartijd"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakrecht( $logboekZeeweken : (pad_vaartijd(this)) )
+    $parameter_1 : ParameterState( parameter == "vaartijddrempel", $vaartijddrempel : value )
+    eval( toets_vaartijd($logboekZeeweken, $vaartijddrempel) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("wrakrecht", "vaartijd", true)));
+end
+
+// de maximale waarde van het loon van alle rechten van de ploeg van het Jutrecht die aan alle volgende voorwaarden voldoen: - hij is niet het Jutrecht zelf - hij heeft de vaartijd
+function Object waarde_hoogsteVaarloon(Object $aantal_vouw_9, Object $vouw_vouw_11) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_9, $vouw_vouw_11, null), Integer.valueOf(2), "hoogste vaarloon", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "hoogste vaarloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutrecht()
+    accumulate( $bijdrage_vouw_6 : Contribution( fold == "hoogste vaarloon: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_10 : value ); $aantal_vouw_9 : count(), $vouw_vouw_11 : exactMax($bijdragewaarde_vouw_10) )
+then
+    Object v = waarde_hoogsteVaarloon($aantal_vouw_9, $vouw_vouw_11);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "hoogste vaarloon", ComputeHelpers.designate(v, "hoogste vaarloon")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutrecht", "hoogste vaarloon", false), v, "hoogste vaarloon"));
+        }
+    }
+end
+
+// de maximale waarde van het loon van alle rechten van de ploeg van het Jutrecht die aan alle volgende voorwaarden voldoen: - hij is niet het Jutrecht zelf - hij heeft geen vaartijd
+function Object waarde_hoogsteRustloon(Object $aantal_vouw_19, Object $vouw_vouw_21) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_19, $vouw_vouw_21, null), Integer.valueOf(2), "hoogste rustloon", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "hoogste rustloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutrecht()
+    accumulate( $bijdrage_vouw_16 : Contribution( fold == "hoogste rustloon: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_20 : value ); $aantal_vouw_19 : count(), $vouw_vouw_21 : exactMax($bijdragewaarde_vouw_20) )
+then
+    Object v = waarde_hoogsteRustloon($aantal_vouw_19, $vouw_vouw_21);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "hoogste rustloon", ComputeHelpers.designate(v, "hoogste rustloon")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutrecht", "hoogste rustloon", false), v, "hoogste rustloon"));
+        }
+    }
+end
+
+// hij aan alle volgende voorwaarden voldoet: - zijn grens is gevuld - (de maximale waarde van het loon van alle rechten van de ploeg van het Jutrecht die aan alle volgende voorwaarden voldoen: .. hij is niet het Jutrecht zelf .. het Strandrecht heeft de vaartijd) is groter dan zijn grens
+function boolean toets_blokkade(Object $grens, Object $aantal_vouw_29, Object $vouw_vouw_31) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($grens, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.foldValue($aantal_vouw_29, $vouw_vouw_31, null), $grens, ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "blokkade"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutrecht( $grens : grens )
+    accumulate( $bijdrage_vouw_26 : Contribution( fold == "blokkade: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_30 : value ); $aantal_vouw_29 : count(), $vouw_vouw_31 : exactMax($bijdragewaarde_vouw_30) )
+    eval( toets_blokkade($grens, $aantal_vouw_29, $vouw_vouw_31) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutrecht", "blokkade", true)));
+end
+
+// hij de vaartijd heeft
+function boolean toets_zeewaardig(Object $vaartijd) {
+    return ComputeHelpers.characteristic($vaartijd, Boolean.TRUE);
+}
+
+rule "zeewaardig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("wrakrecht", "vaartijd", true), subject == $onderwerp, $vaartijd : holds )
+    eval( toets_zeewaardig($vaartijd) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("strandrecht", "zeewaardig", true)));
+end
+
+// hij geen vaartijd heeft
+function boolean toets_landvast(Object $vaartijd) {
+    return ComputeHelpers.characteristic($vaartijd, Boolean.FALSE);
+}
+
+rule "landvast"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("wrakrecht", "vaartijd", true), subject == $onderwerp, $vaartijd : holds )
+    eval( toets_landvast($vaartijd) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("strandrecht", "landvast", true)));
+end
+
+// ten minste één van de rechten van de ploeg van het Jutrecht de vaartijd heeft
+function boolean toets_ploegvarend(Object $aantal_vouw_45, Object $vouw_vouw_47) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_45, $vouw_vouw_47, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(1));
+}
+
+rule "ploegvarend"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutrecht()
+    accumulate( $bijdrage_vouw_42 : Contribution( fold == "ploegvarend: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_46 : value ); $aantal_vouw_45 : count(), $vouw_vouw_47 : exactSum($bijdragewaarde_vouw_46) )
+    eval( toets_ploegvarend($aantal_vouw_45, $vouw_vouw_47) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutrecht", "ploegvarend", true)));
+end
+
+function boolean beta_hoogsteVaarloonBijdrageAanVouw0(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("ploeg"), java.util.Arrays.asList("ploeg"));
+}
+
+// aan alle volgende voorwaarden voldoen: - hij is niet het Jutrecht zelf - hij heeft de vaartijd
+function boolean toets_hoogsteVaarloonBijdrageAanVouw0(Object $vouwonderwerp, Object $onderwerp, Object $vaartijd) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($vaartijd, Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "hoogste vaarloon: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutrecht()
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht( beta_hoogsteVaarloonBijdrageAanVouw0(this, $vouwonderwerp), $loon : loon )
+    $stand_2 : CharacteristicState( characteristic == ElementKey.of("wrakrecht", "vaartijd", true), subject == $onderwerp, $vaartijd : holds )
+    eval( toets_hoogsteVaarloonBijdrageAanVouw0($vouwonderwerp, $onderwerp, $vaartijd) )
+then
+    Object v = ComputeHelpers.contribution("hoogste vaarloon: vouw 0", $vouwonderwerp, $onderwerp, $loon, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta_hoogsteRustloonBijdrageAanVouw1(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("ploeg"), java.util.Arrays.asList("ploeg"));
+}
+
+// aan alle volgende voorwaarden voldoen: - hij is niet het Jutrecht zelf - hij heeft geen vaartijd
+function boolean toets_hoogsteRustloonBijdrageAanVouw1(Object $vouwonderwerp, Object $onderwerp, Object $vaartijd) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($vaartijd, Boolean.FALSE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "hoogste rustloon: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutrecht()
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht( beta_hoogsteRustloonBijdrageAanVouw1(this, $vouwonderwerp), $loon : loon )
+    $stand_2 : CharacteristicState( characteristic == ElementKey.of("wrakrecht", "vaartijd", true), subject == $onderwerp, $vaartijd : holds )
+    eval( toets_hoogsteRustloonBijdrageAanVouw1($vouwonderwerp, $onderwerp, $vaartijd) )
+then
+    Object v = ComputeHelpers.contribution("hoogste rustloon: vouw 1", $vouwonderwerp, $onderwerp, $loon, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta_blokkadeBijdrageAanVouw2(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("ploeg"), java.util.Arrays.asList("ploeg"));
+}
+
+// aan alle volgende voorwaarden voldoen: .. hij is niet het Jutrecht zelf .. het Strandrecht heeft de vaartijd
+function boolean toets_blokkadeBijdrageAanVouw2(Object $vouwonderwerp, Object $onderwerp, Object $vaartijd) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($vaartijd, Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "blokkade: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutrecht()
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht( beta_blokkadeBijdrageAanVouw2(this, $vouwonderwerp), $loon : loon )
+    $stand_2 : CharacteristicState( characteristic == ElementKey.of("wrakrecht", "vaartijd", true), subject == $onderwerp, $vaartijd : holds )
+    eval( toets_blokkadeBijdrageAanVouw2($vouwonderwerp, $onderwerp, $vaartijd) )
+then
+    Object v = ComputeHelpers.contribution("blokkade: vouw 2", $vouwonderwerp, $onderwerp, $loon, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta_ploegvarendBijdrageAanVouw3(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("ploeg"), java.util.Arrays.asList("ploeg"));
+}
+
+// ten minste één van de rechten van de ploeg van het Jutrecht de vaartijd heeft
+function boolean matrix_ploegvarendBijdrageAanVouw3(Object $onderwerp, Object $vaartijd) {
+    return ComputeHelpers.characteristic($vaartijd, Boolean.TRUE);
+}
+
+rule "ploegvarend: bijdrage aan vouw 3"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutrecht()
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht( beta_ploegvarendBijdrageAanVouw3(this, $vouwonderwerp) )
+    $stand_1 : CharacteristicState( characteristic == ElementKey.of("wrakrecht", "vaartijd", true), subject == $onderwerp, $vaartijd : holds )
+then
+    insertLogical(new Contribution("ploegvarend: vouw 3", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_ploegvarendBijdrageAanVouw3($onderwerp, $vaartijd))));
+end
+
+rule "kenmerkstand Wrakrecht.vaartijd: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakrecht( ComputeHelpers.holds(vaartijd) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("wrakrecht", "vaartijd", true), true));
+end
+
+rule "kenmerkstand Wrakrecht.vaartijd: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakrecht()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("wrakrecht", "vaartijd", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("wrakrecht", "vaartijd", true), true));
+end
+
+rule "kenmerkstand Wrakrecht.vaartijd: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakrecht( ComputeHelpers.holds(vaartijd) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("wrakrecht", "vaartijd", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("wrakrecht", "vaartijd", true), false));
+end
+
+rule "kenmerkstand Wrakrecht.vaartijd: onwaar buiten Wrakrecht op Strandrecht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht( ComputeHelpers.classNotIn(this, ComputeHelpers.list1("dev.uchar.regelspraak.facts.Wrakrecht")) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("wrakrecht", "vaartijd", true), false));
+end
+
+rule "parameterstand vaartijddrempel"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("vaartijddrempel", vaartijddrempel));
+end
+

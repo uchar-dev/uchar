@@ -1,0 +1,67 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.UniquenessKey;
+import dev.uchar.regelspraak.transpiler.tms.UniquenessViolation;
+
+// De aanmelddatum van een Vondst moet later of gelijk zijn aan de vondstdag van de Vondst
+function boolean toets_aanmeldingNietVoorDeVondstdag(Object $aanmelddatum, Object $vondstdag) {
+    return ComputeHelpers.not(ComputeHelpers.dateCompare($aanmelddatum, $vondstdag, dev.uchar.regelspraak.ir.Condition.Operator.LATER_OF_GELIJK));
+}
+
+rule "aanmelding niet voor de vondstdag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $aanmelddatum : aanmelddatum, $vondstdag : vondstdag )
+    eval( toets_aanmeldingNietVoorDeVondstdag($aanmelddatum, $vondstdag) )
+then
+    insertLogical(ComputeHelpers.inconsistency("aanmelding niet voor de vondstdag", $onderwerp, ComputeHelpers.list1("EF-025")));
+end
+
+function boolean toets_eenmaligVondstnummerSleutelVanVondst1(Object $vondstnummer) {
+    return ComputeHelpers.emptyTest($vondstnummer, Boolean.FALSE);
+}
+
+function java.util.List componenten_eenmaligVondstnummerSleutelVanVondst1(Object $vondstnummer) {
+    java.util.List waarden = new java.util.ArrayList();
+    waarden.add($vondstnummer);
+    return waarden;
+}
+
+rule "eenmalig vondstnummer: sleutel van Vondst 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vondstnummer : vondstnummer )
+    eval( toets_eenmaligVondstnummerSleutelVanVondst1($vondstnummer) )
+then
+    for (Object k : ComputeHelpers.uniquenessKeys("eenmalig vondstnummer", 0, $onderwerp, null, componenten_eenmaligVondstnummerSleutelVanVondst1($vondstnummer), -1)) {
+        insertLogical(k);
+    }
+end
+
+function boolean beta_eenmaligVondstnummer(Object eigen, Object ander) {
+    return ComputeHelpers.collidesWith(eigen, ander);
+}
+
+function boolean toets_eenmaligVondstnummer(Object $botsingen) {
+    return ComputeHelpers.duplicate($botsingen);
+}
+
+rule "eenmalig vondstnummer"
+    dialect "mvel"
+when
+    $sleutel : UniquenessKey( uniqueness == "eenmalig vondstnummer", $element : element )
+    accumulate( $ander : UniquenessKey( uniqueness == "eenmalig vondstnummer", beta_eenmaligVondstnummer(this, $sleutel) ); $botsingen : count() )
+    eval( toets_eenmaligVondstnummer($botsingen) )
+then
+    insertLogical(new UniquenessViolation("eenmalig vondstnummer", $element));
+end
+
+rule "eenmalig vondstnummer: kanaal"
+    dialect "mvel"
+when
+    $schending : UniquenessViolation( uniqueness == "eenmalig vondstnummer", $subject : element )
+then
+    insertLogical(ComputeHelpers.inconsistency("eenmalig vondstnummer", $subject, ComputeHelpers.list1("EF-026")));
+end
+

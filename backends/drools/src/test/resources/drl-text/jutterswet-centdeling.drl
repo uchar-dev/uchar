@@ -1,0 +1,26 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Recipient;
+
+rule "verdeel de centopbrengst van een centpot: ontvanger"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Centpot()
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( centpot == $vouwonderwerp, $centgewicht : centgewicht )
+then
+    insertLogical(new Recipient("verdeel de centopbrengst van een centpot", $vouwonderwerp, $onderwerp, $centgewicht, null, null));
+end
+
+rule "verdeel de centopbrengst van een centpot"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Centpot( $centopbrengst : centopbrengst )
+    accumulate( $ontvanger_verdeling_1 : Recipient( allocation == "verdeel de centopbrengst van een centpot", source == $onderwerp ); $ontvangers_verdeling_2 : collectList($ontvanger_verdeling_1) )
+then
+    for (Object feit : ComputeHelpers.payout("verdeel de centopbrengst van een centpot", $onderwerp, dev.uchar.regelspraak.ir.ResolvedAllocation.Method.NAAR_RATO, $centopbrengst, $ontvangers_verdeling_2, true, false, false, Integer.valueOf(0), ElementKey.of("jutter", "centdeel", false), ElementKey.of("centpot", "centrest", false), "verdeel de centopbrengst van een centpot", Integer.valueOf(2), Integer.valueOf(2), "verdeel de centopbrengst van een centpot")) {
+        insertLogical(feit);
+    }
+end
+

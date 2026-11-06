@@ -1,0 +1,51 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter
+function Object waarde_aantalStrandvondstenVanEenJutter(Object $aantal_vouw_5) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_5), Integer.valueOf(0), "aantal strandvondsten", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal strandvondsten van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_2 : Contribution( fold == "aantal strandvondsten van een jutter: vouw 0", subject == $onderwerp ); $aantal_vouw_5 : count() )
+then
+    Object v = waarde_aantalStrandvondstenVanEenJutter($aantal_vouw_5);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal strandvondsten van een jutter", ComputeHelpers.designate(v, "aantal strandvondsten van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal strandvondsten", false), v, "aantal strandvondsten van een jutter"));
+        }
+    }
+end
+
+rule "aantal strandvondsten van een jutter: bijdrage aan vouw 0, selectie 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp )
+then
+    insertLogical(new Contribution("aantal strandvondsten van een jutter: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "aantal strandvondsten van een jutter: bijdrage aan vouw 0, selectie 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( berger == $vouwonderwerp )
+then
+    insertLogical(new Contribution("aantal strandvondsten van een jutter: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+

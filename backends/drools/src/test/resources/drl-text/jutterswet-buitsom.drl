@@ -1,0 +1,46 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de som van de waarde van alle vondsten van de Jutter
+function Object waarde_buitsomVanEenJutter(Object $aantal_vouw_4, Object $vouw_vouw_6) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_4, $vouw_vouw_6, null), Integer.valueOf(2), "buitsom", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "buitsom van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "buitsom van een jutter: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_5 : value ); $aantal_vouw_4 : count(), $vouw_vouw_6 : exactSum($bijdragewaarde_vouw_5) )
+then
+    Object v = waarde_buitsomVanEenJutter($aantal_vouw_4, $vouw_vouw_6);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "buitsom van een jutter", ComputeHelpers.designate(v, "buitsom van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "buitsom", false), v, "buitsom van een jutter"));
+        }
+    }
+end
+
+rule "buitsom van een jutter: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( bergendeJutter == $vouwonderwerp, $waarde2 : waarde )
+then
+    Object v = ComputeHelpers.contribution("buitsom van een jutter: vouw 0", $vouwonderwerp, $onderwerp, $waarde2, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+

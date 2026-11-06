@@ -1,0 +1,80 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de tijdsduur van zijn geboortedatum tot zijn peildatum in hele jaren
+function Object waarde_berekeningJutleeftijd(Object $geboortedatum, Object $peildatum) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsTijdsduur(((java.time.temporal.Temporal) $geboortedatum), ((java.time.temporal.Temporal) $peildatum), "YEARS", Boolean.FALSE), Integer.valueOf(0), "jutleeftijd", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "Berekening jutleeftijd"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $geboortedatum : geboortedatum, $peildatum : peildatum )
+then
+    Object v = waarde_berekeningJutleeftijd($geboortedatum, $peildatum);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "Berekening jutleeftijd", ComputeHelpers.designate(v, "Berekening jutleeftijd")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "jutleeftijd", false), v, "Berekening jutleeftijd"));
+        }
+    }
+end
+
+// de tijdsduur van zijn geboortedatum tot zijn peildatum in hele kwartalen
+function Object waarde_berekeningKwartaalspan(Object $geboortedatum, Object $peildatum) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsTijdsduur(((java.time.temporal.Temporal) $geboortedatum), ((java.time.temporal.Temporal) $peildatum), "KWARTAAL", Boolean.FALSE), Integer.valueOf(0), "kwartaalspan", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "Berekening kwartaalspan"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $geboortedatum : geboortedatum, $peildatum : peildatum )
+then
+    Object v = waarde_berekeningKwartaalspan($geboortedatum, $peildatum);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "Berekening kwartaalspan", ComputeHelpers.designate(v, "Berekening kwartaalspan")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "kwartaalspan", false), v, "Berekening kwartaalspan"));
+        }
+    }
+end
+
+// de absolute tijdsduur van zijn geboortedatum tot zijn peildatum in hele maanden
+function Object waarde_berekeningMaandafstand(Object $geboortedatum, Object $peildatum) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsTijdsduur(((java.time.temporal.Temporal) $geboortedatum), ((java.time.temporal.Temporal) $peildatum), "MONTHS", Boolean.TRUE), Integer.valueOf(0), "maandafstand", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "Berekening maandafstand"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $geboortedatum : geboortedatum, $peildatum : peildatum )
+then
+    Object v = waarde_berekeningMaandafstand($geboortedatum, $peildatum);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "Berekening maandafstand", ComputeHelpers.designate(v, "Berekening maandafstand")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "maandafstand", false), v, "Berekening maandafstand"));
+        }
+    }
+end
+

@@ -1,0 +1,324 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
+import dev.uchar.regelspraak.transpiler.tms.CreationStamp;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.PathState;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.SecondFillingFault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn vondstgewicht in voorjaar maal 2
+function Object waarde_najaarsgewichtVanEenJutter(Object $vondstgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal(ComputeHelpers.cell($vondstgewicht, java.util.Arrays.asList("voorjaar")), new java.math.BigDecimal("2")), Integer.valueOf(2), "vondstgewicht[najaar]", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "najaarsgewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht )
+then
+    Object v = waarde_najaarsgewichtVanEenJutter($vondstgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "najaarsgewicht van een jutter", ComputeHelpers.designate(v, "najaarsgewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "vondstgewicht[najaar]", false), v, "najaarsgewicht van een jutter"));
+        }
+    }
+end
+
+function boolean toets_zomergewichtVanEenJutter(Object $onderwerp) {
+    return ComputeHelpers.emptyTest(ComputeHelpers.cell(ComputeHelpers.readProperty($onderwerp, "vondstgewicht"), java.util.Arrays.asList("zomer")), Boolean.TRUE);
+}
+
+// 0 kg
+function Object waarde_zomergewichtVanEenJutter() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("0"), Integer.valueOf(2), "vondstgewicht[zomer]", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "zomergewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    not( $andere_schrijver : Value( attribute == ElementKey.of("jutter", "vondstgewicht[zomer]", false) && writer != "zomergewicht van een jutter", subject == $onderwerp ) )
+    eval( toets_zomergewichtVanEenJutter($onderwerp) )
+then
+    Object v = waarde_zomergewichtVanEenJutter();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "zomergewicht van een jutter", ComputeHelpers.designate(v, "zomergewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "vondstgewicht[zomer]", false), v, "zomergewicht van een jutter"));
+        }
+    }
+end
+
+// de som van zijn vondstgewicht over alle seizoenen
+function Object waarde_jaargewichtVanEenJutter(Object $vondstgewicht, Object $vondstgewicht2, Object $vondstgewicht3) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsDimSom(ComputeHelpers.map(ComputeHelpers.withCell(ComputeHelpers.withCell($vondstgewicht, java.util.Arrays.asList("zomer"), $vondstgewicht2), java.util.Arrays.asList("najaar"), $vondstgewicht3)), java.util.Arrays.asList(java.util.Arrays.asList("voorjaar"), java.util.Arrays.asList("zomer"), java.util.Arrays.asList("najaar"))), Integer.valueOf(2), "jaargewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "jaargewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht )
+    $stand_1 : State( attribute == ElementKey.of("jutter", "vondstgewicht[zomer]", false), subject == $onderwerp, $vondstgewicht2 : value )
+    $stand_2 : State( attribute == ElementKey.of("jutter", "vondstgewicht[najaar]", false), subject == $onderwerp, $vondstgewicht3 : value )
+then
+    Object v = waarde_jaargewichtVanEenJutter($vondstgewicht, $vondstgewicht2, $vondstgewicht3);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "jaargewicht van een jutter", ComputeHelpers.designate(v, "jaargewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "jaargewicht", false), v, "jaargewicht van een jutter"));
+        }
+    }
+end
+
+// de som van zijn vangstgewicht over alle seizoenen
+function Object waarde_vangsttotaalVanEenVangst(Object $vangstgewicht, Object $vangstgewicht2) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsDimSom(ComputeHelpers.map(ComputeHelpers.withCell($vangstgewicht, java.util.Arrays.asList("najaar"), $vangstgewicht2)), java.util.Arrays.asList(java.util.Arrays.asList("voorjaar"), java.util.Arrays.asList("zomer"), java.util.Arrays.asList("najaar"))), Integer.valueOf(2), "vangsttotaal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vangsttotaal van een vangst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangst( $vangstgewicht : vangstgewicht )
+    $stand_1 : State( attribute == ElementKey.of("vangst", "vangstgewicht[najaar]", false), subject == $onderwerp, $vangstgewicht2 : value )
+then
+    Object v = waarde_vangsttotaalVanEenVangst($vangstgewicht, $vangstgewicht2);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vangsttotaal van een vangst", ComputeHelpers.designate(v, "vangsttotaal van een vangst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vangst", "vangsttotaal", false), v, "vangsttotaal van een vangst"));
+        }
+    }
+end
+
+// het vangsttotaal van zijn geboekte vangst
+function Object waarde_geboekteGewichtVanEenJutter(Object $geboekteVangstVangsttotaal) {
+    try {
+        return ComputeHelpers.fitTarget($geboekteVangstVangsttotaal, Integer.valueOf(2), "geboekte gewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "geboekte gewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $padstand_0 : PathState( path == "Jutter:geboekte vangst" && member == ElementKey.of("vangst", "vangsttotaal", false), subject == $onderwerp, $geboekteVangstVangsttotaal : value )
+then
+    Object v = waarde_geboekteGewichtVanEenJutter($geboekteVangstVangsttotaal);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "geboekte gewicht van een jutter", ComputeHelpers.designate(v, "geboekte gewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "geboekte gewicht", false), v, "geboekte gewicht van een jutter"));
+        }
+    }
+end
+
+function boolean beta_boekEenVangstBijElkeJutter(Object eigen, Object ander) {
+    return ComputeHelpers.inPhase(eigen, ander);
+}
+
+// zijn vondstgewicht in najaar
+function Object creatie_boekEenVangstBijElkeJutter(Object $vondstgewicht, Object $fase, Object $herkomsten_creatie_15, Object $onderwerp) {
+    int diepte = ComputeHelpers.creationDepth("boek een vangst bij elke jutter", 1, "Jutter", (java.util.List) $herkomsten_creatie_15, 100);
+    Object i0 = null;
+    try {
+        i0 = ComputeHelpers.collapse(ComputeHelpers.fitTarget($vondstgewicht, Integer.valueOf(2), "vangstgewicht[najaar]", "boek een vangst bij elke jutter"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+    Object nieuw = ComputeHelpers.newObject($onderwerp, "dev.uchar.regelspraak.facts.Vangst");
+    ComputeHelpers.setCell(nieuw, "vangstgewicht", java.util.Arrays.asList("najaar"), i0);
+    int fase = ((Integer) $fase).intValue();
+    java.util.List feiten = new java.util.ArrayList();
+    feiten.add(nieuw);
+    feiten.add(new CreationStamp("boek een vangst bij elke jutter", $onderwerp, nieuw, fase, 1, diepte));
+    feiten.add(new RelationLink("vangstboeking", $onderwerp, nieuw, fase));
+    return feiten;
+}
+
+rule "boek een vangst bij elke jutter"
+    dialect "mvel"
+    agenda-group "uchar-objectcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( geboekteVangst == null )
+    $creatiefase : CreationPhase( stratum >= 1, $fase : number )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "vondstgewicht[najaar]", false), subject == $onderwerp, $vondstgewicht : value )
+    accumulate( $herkomst_creatie_14 : CreationStamp( object == $onderwerp ); $herkomsten_creatie_15 : collectList($herkomst_creatie_14) )
+    not( $gemaakt_creatie_17 : CreationStamp( rule == "boek een vangst bij elke jutter", subject == $onderwerp ) )
+    not( $nieuw_creatie_18 : CreationStamp( object == $onderwerp, beta_boekEenVangstBijElkeJutter(this, $fase) ) )
+    not( $eigen_fout : Fault( rule == "boek een vangst bij elke jutter", subject == $onderwerp ) )
+then
+    Object v = creatie_boekEenVangstBijElkeJutter($vondstgewicht, $fase, $herkomsten_creatie_15, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insert(new Fault($onderwerp, "boek een vangst bij elke jutter", ComputeHelpers.designate(v, "boek een vangst bij elke jutter")));
+    } else {
+        java.util.List feiten = (java.util.List) v;
+        insert(feiten.get(0));
+        insert(feiten.get(1));
+        insert(feiten.get(2));
+    }
+end
+
+rule "koppeling vangstboeking uit de invoer: Jutter.geboekte vangst"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Jutter( geboekteVangst != null, $ander : geboekteVangst )
+then
+    insertLogical(new RelationLink("vangstboeking", $houder, $ander, 0));
+end
+
+rule "koppeling vangstboeking uit de invoer: Vangst.boeker"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Vangst( boeker != null, $ander : boeker )
+then
+    insertLogical(new RelationLink("vangstboeking", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingVangstboekingTweedeVullingVanGeboekteVangst(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "second");
+}
+
+rule "koppeling vangstboeking: tweede vulling van geboekte vangst"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "vangstboeking", $nabij : first )
+    $twee : RelationLink( relation == "vangstboeking", first != null, first == $een.first, beta_koppelingVangstboekingTweedeVullingVanGeboekteVangst(this, $een) )
+then
+    insertLogical(new Fault($nabij, "vangstboeking", new SecondFillingFault("geboekte vangst", $nabij)));
+end
+
+function boolean beta_koppelingVangstboekingTweedeVullingVanBoeker(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling vangstboeking: tweede vulling van boeker"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "vangstboeking", $nabij : second )
+    $twee : RelationLink( relation == "vangstboeking", second != null, second == $een.second, beta_koppelingVangstboekingTweedeVullingVanBoeker(this, $een) )
+then
+    insertLogical(new Fault($nabij, "vangstboeking", new SecondFillingFault("boeker", $nabij)));
+end
+
+rule "padstand Jutter.geboekte vangst naar Vangst.vangsttotaal: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $koppeling_keten_37 : RelationLink( relation == "vangstboeking", first == $onderwerp, $overzijde_keten_38 : second )
+    $stap_keten_36 : dev.uchar.regelspraak.facts.Vangst( this == $overzijde_keten_38 )
+    $stand : State( attribute == ElementKey.of("vangst", "vangsttotaal", false), subject == $stap_keten_36, $v : value )
+then
+    insertLogical(new PathState($onderwerp, "Jutter:geboekte vangst", ElementKey.of("vangst", "vangsttotaal", false), $v, $stap_keten_36));
+end
+
+rule "padstand Jutter.geboekte vangst naar Vangst.vangsttotaal: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    not( $koppeling_keten_45 : RelationLink( relation == "vangstboeking", first == $onderwerp, $overzijde_keten_46 : second ) and $stap_keten_44 : dev.uchar.regelspraak.facts.Vangst( this == $overzijde_keten_46 ) )
+then
+    insertLogical(new PathState($onderwerp, "Jutter:geboekte vangst", ElementKey.of("vangst", "vangsttotaal", false), null, null));
+end
+
+rule "stand Jutter.vondstgewicht[zomer]: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $waarde : Value( attribute == ElementKey.of("jutter", "vondstgewicht[zomer]", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "vondstgewicht[zomer]", false), $v));
+end
+
+rule "stand Jutter.vondstgewicht[zomer]: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : vondstgewicht )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "vondstgewicht[zomer]", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "vondstgewicht[zomer]", false), ComputeHelpers.cell($invoer, java.util.Arrays.asList("zomer"))));
+end
+
+rule "stand Jutter.vondstgewicht[najaar]: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $waarde : Value( attribute == ElementKey.of("jutter", "vondstgewicht[najaar]", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "vondstgewicht[najaar]", false), $v));
+end
+
+rule "stand Jutter.vondstgewicht[najaar]: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : vondstgewicht )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "vondstgewicht[najaar]", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "vondstgewicht[najaar]", false), ComputeHelpers.cell($invoer, java.util.Arrays.asList("najaar"))));
+end
+
+rule "stand Vangst.vangstgewicht[najaar]: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangst()
+    $waarde : Value( attribute == ElementKey.of("vangst", "vangstgewicht[najaar]", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vangst", "vangstgewicht[najaar]", false), $v));
+end
+
+rule "stand Vangst.vangstgewicht[najaar]: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangst( $invoer : vangstgewicht )
+    not( $waarde : Value( attribute == ElementKey.of("vangst", "vangstgewicht[najaar]", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vangst", "vangstgewicht[najaar]", false), ComputeHelpers.cell($invoer, java.util.Arrays.asList("najaar"))));
+end
+
+rule "stand Vangst.vangsttotaal: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangst()
+    $waarde : Value( attribute == ElementKey.of("vangst", "vangsttotaal", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vangst", "vangsttotaal", false), $v));
+end
+
+rule "stand Vangst.vangsttotaal: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangst( $invoer : vangsttotaal )
+    not( $waarde : Value( attribute == ElementKey.of("vangst", "vangsttotaal", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vangst", "vangsttotaal", false), $invoer));
+end
+

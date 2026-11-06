@@ -1,0 +1,208 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Outcome;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// hij grondP heeft
+function boolean toets_defaultsAJutterKortingDefault000(Object $grondP) {
+    return ComputeHelpers.characteristic($grondP, Boolean.TRUE);
+}
+
+// de grondslag plus 20.00
+function Object afloop_defaultsAJutterKortingDefault000(Object $grondslag) {
+    try {
+        return RegelSpraakRuntime.rsPlus($grondslag, new java.math.BigDecimal("20"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Jutter.korting: default 0.0.0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $grondP : (ComputeHelpers.holds(grondP)), $grondslag : grondslag )
+    eval( toets_defaultsAJutterKortingDefault000($grondP) )
+then
+    Object v = afloop_defaultsAJutterKortingDefault000($grondslag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Jutter.korting", ComputeHelpers.designate(v, "defaults A:Jutter.korting")));
+    } else if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Jutter.korting", 1, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// hij grondQ heeft
+function boolean toets_defaultsAJutterKortingDefault010(Object $grondQ) {
+    return ComputeHelpers.characteristic($grondQ, Boolean.TRUE);
+}
+
+// de grondslag plus 35.00
+function Object afloop_defaultsAJutterKortingDefault010(Object $grondslag) {
+    try {
+        return RegelSpraakRuntime.rsPlus($grondslag, new java.math.BigDecimal("35"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Jutter.korting: default 0.1.0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $grondQ : (ComputeHelpers.holds(grondQ)), $grondslag : grondslag )
+    eval( toets_defaultsAJutterKortingDefault010($grondQ) )
+then
+    Object v = afloop_defaultsAJutterKortingDefault010($grondslag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Jutter.korting", ComputeHelpers.designate(v, "defaults A:Jutter.korting")));
+    } else if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Jutter.korting", 2, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// hij grondR heeft
+function boolean toets_defaultsAJutterKortingDefault020(Object $grondR) {
+    return ComputeHelpers.characteristic($grondR, Boolean.TRUE);
+}
+
+// die som plus 5.00
+function Object afloop_defaultsAJutterKortingDefault020(Object $grondslag) {
+    try {
+        return RegelSpraakRuntime.rsPlus(RegelSpraakRuntime.rsPlus($grondslag, new java.math.BigDecimal("15")), new java.math.BigDecimal("5"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Jutter.korting: default 0.2.0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $grondR : (ComputeHelpers.holds(grondR)), $grondslag : grondslag )
+    eval( toets_defaultsAJutterKortingDefault020($grondR) )
+then
+    Object v = afloop_defaultsAJutterKortingDefault020($grondslag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Jutter.korting", ComputeHelpers.designate(v, "defaults A:Jutter.korting")));
+    } else if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Jutter.korting", 3, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function boolean beta1_defaultsAJutterKortingVerschil0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsAJutterKortingVerschil0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+function Object conflict_defaultsAJutterKortingVerschil0() {
+    return "Jutter.korting/0";
+}
+
+rule "defaults A:Jutter.korting: verschil 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Jutter.korting" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 1 && chain < 4, $onderwerp : subject )
+    not( $uitkomst_7 : Outcome( stack == "defaults A:Jutter.korting" && chain >= 1 && chain < 4 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsAJutterKortingVerschil0(this, $besluit) ) )
+    exists( $uitkomst_10 : Outcome( stack == "defaults A:Jutter.korting" && chain >= 1 && chain < 4 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsAJutterKortingVerschil0(this, $besluit) ) )
+then
+    Object v = conflict_defaultsAJutterKortingVerschil0();
+    insertLogical(new Outcome($onderwerp, "defaults A:Jutter.korting", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT, null, (String) v));
+end
+
+function boolean beta1_defaultsAJutterKortingEens0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsAJutterKortingEens0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults A:Jutter.korting: eens 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Jutter.korting" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 1 && chain < 4, $onderwerp : subject, $waarde : value )
+    not( $uitkomst_14 : Outcome( stack == "defaults A:Jutter.korting" && chain >= 1 && chain < 4 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsAJutterKortingEens0(this, $besluit) ) )
+    not( $uitkomst_17 : Outcome( stack == "defaults A:Jutter.korting" && chain >= 1 && chain < 4 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsAJutterKortingEens0(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Jutter.korting", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// hij rechtA heeft
+function boolean toets_defaultsAJutterKortingTerugval0(Object $rechtA) {
+    return ComputeHelpers.characteristic($rechtA, Boolean.TRUE);
+}
+
+// de grondslag plus 90.00
+function Object afloop_defaultsAJutterKortingTerugval0(Object $grondslag) {
+    try {
+        return RegelSpraakRuntime.rsPlus($grondslag, new java.math.BigDecimal("90"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Jutter.korting: terugval 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $rechtA : (ComputeHelpers.holds(rechtA)), $grondslag : grondslag )
+    not( $uitkomst_21 : Outcome( stack == "defaults A:Jutter.korting" && chain >= 1 && chain < 4, subject == $onderwerp ) )
+    eval( toets_defaultsAJutterKortingTerugval0($rechtA) )
+then
+    Object v = afloop_defaultsAJutterKortingTerugval0($grondslag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Jutter.korting", ComputeHelpers.designate(v, "defaults A:Jutter.korting")));
+    } else if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Jutter.korting", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults A:Jutter.korting: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), ComputeHelpers.readProperty(this, "korting") == null )
+    not( $hoger_26 : Outcome( stack == "defaults A:Jutter.korting" && chain == 0 && position < 1, subject == $onderwerp ) )
+then
+    // 5.00
+    Object v = new java.math.BigDecimal("5");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Jutter.korting", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function Object conflict_defaultsAJutterKortingDoorgevenWortel(Object $sleutel) {
+    return $sleutel;
+}
+
+rule "defaults A:Jutter.korting: doorgeven wortel"
+    dialect "mvel"
+when
+    $conflict : Outcome( stack == "defaults A:Jutter.korting" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT && chain >= 0 && chain < 1, $onderwerp : subject, $sleutel : key )
+then
+    Object v = conflict_defaultsAJutterKortingDoorgevenWortel($sleutel);
+    insertLogical(ComputeHelpers.inconsistency((String) v, $onderwerp, ComputeHelpers.list1("EF-027")));
+end
+
+rule "defaults A:Jutter.korting: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Jutter.korting" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 1, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "korting");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Jutter.korting", ComputeHelpers.designate(passend, "defaults A:Jutter.korting")));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "korting", false), passend, "defaults A:Jutter.korting"));
+        }
+    }
+end
+

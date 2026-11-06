@@ -1,0 +1,146 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.UniquenessKey;
+import dev.uchar.regelspraak.transpiler.tms.UniquenessViolation;
+
+function boolean toets_eenmaligeReekscodeSleutelVanStrandvondst1(Object $reekscode, Object $volgnummer) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($reekscode, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($volgnummer, Boolean.FALSE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+function java.util.List componenten_eenmaligeReekscodeSleutelVanStrandvondst1(Object $reekscode, Object $volgnummer) {
+    java.util.List waarden = new java.util.ArrayList();
+    waarden.add($reekscode);
+    waarden.add($volgnummer);
+    return waarden;
+}
+
+rule "eenmalige reekscode: sleutel van Strandvondst 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst( $reekscode : reekscode, $volgnummer : volgnummer )
+    eval( toets_eenmaligeReekscodeSleutelVanStrandvondst1($reekscode, $volgnummer) )
+then
+    for (Object k : ComputeHelpers.uniquenessKeys("eenmalige reekscode", 0, $onderwerp, null, componenten_eenmaligeReekscodeSleutelVanStrandvondst1($reekscode, $volgnummer), -1)) {
+        insertLogical(k);
+    }
+end
+
+function boolean toets_eenmaligeReekscodeSleutelVanWrakvondst2(Object $reekscode, Object $volgnummer) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($reekscode, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($volgnummer, Boolean.FALSE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+function java.util.List componenten_eenmaligeReekscodeSleutelVanWrakvondst2(Object $reekscode, Object $volgnummer) {
+    java.util.List waarden = new java.util.ArrayList();
+    waarden.add($reekscode);
+    waarden.add($volgnummer);
+    return waarden;
+}
+
+rule "eenmalige reekscode: sleutel van Wrakvondst 2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakvondst( $reekscode : reekscode, $volgnummer : volgnummer )
+    eval( toets_eenmaligeReekscodeSleutelVanWrakvondst2($reekscode, $volgnummer) )
+then
+    for (Object k : ComputeHelpers.uniquenessKeys("eenmalige reekscode", 1, $onderwerp, null, componenten_eenmaligeReekscodeSleutelVanWrakvondst2($reekscode, $volgnummer), -1)) {
+        insertLogical(k);
+    }
+end
+
+function boolean toets_eenmaligeReekscodeSleutelVanDrijfvondst3(Object $reekscode, Object $volgnummer) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($reekscode, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($volgnummer, Boolean.FALSE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+function java.util.List componenten_eenmaligeReekscodeSleutelVanDrijfvondst3(Object $reekscode, Object $volgnummer) {
+    java.util.List waarden = new java.util.ArrayList();
+    waarden.add($reekscode);
+    waarden.add($volgnummer);
+    return waarden;
+}
+
+rule "eenmalige reekscode: sleutel van Drijfvondst 3"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Drijfvondst( $reekscode : reekscode, $volgnummer : volgnummer )
+    eval( toets_eenmaligeReekscodeSleutelVanDrijfvondst3($reekscode, $volgnummer) )
+then
+    for (Object k : ComputeHelpers.uniquenessKeys("eenmalige reekscode", 2, $onderwerp, null, componenten_eenmaligeReekscodeSleutelVanDrijfvondst3($reekscode, $volgnummer), -1)) {
+        insertLogical(k);
+    }
+end
+
+function boolean beta_eenmaligeReekscode(Object eigen, Object ander) {
+    return ComputeHelpers.collidesWith(eigen, ander);
+}
+
+function boolean toets_eenmaligeReekscode(Object $botsingen) {
+    return ComputeHelpers.duplicate($botsingen);
+}
+
+rule "eenmalige reekscode"
+    dialect "mvel"
+when
+    $sleutel : UniquenessKey( uniqueness == "eenmalige reekscode", $element : element )
+    accumulate( $ander : UniquenessKey( uniqueness == "eenmalige reekscode", beta_eenmaligeReekscode(this, $sleutel) ); $botsingen : count() )
+    eval( toets_eenmaligeReekscode($botsingen) )
+then
+    insertLogical(new UniquenessViolation("eenmalige reekscode", $element));
+end
+
+rule "eenmalige reekscode: kanaal"
+    dialect "mvel"
+when
+    $schending : UniquenessViolation( uniqueness == "eenmalige reekscode", $subject : element )
+then
+    insertLogical(ComputeHelpers.inconsistency("eenmalige reekscode", $subject, ComputeHelpers.list1("EF-026")));
+end
+

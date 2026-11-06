@@ -1,0 +1,58 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Period;
+import dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het aantal dagen in de maand dat hij borgplichtig is
+function Object waarde_borgdagenVanEenJutter(Object $tijdlijn_0) {
+    try {
+        return PeriodArithmetic.dayCount(RegelSpraakRuntime.rsAantalDagenIn(((java.util.List) $tijdlijn_0), "MAAND", Period.class));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "borgdagen van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $tijdlijn_0 : (ComputeHelpers.periods(borgplichtig)) )
+then
+    Object v = waarde_borgdagenVanEenJutter($tijdlijn_0);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "borgdagen van een jutter", ComputeHelpers.designate(v, "borgdagen van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "borgdagen", false), v, "borgdagen van een jutter"));
+        }
+    }
+end
+
+// het aantal dagen in het jaar dat hij borgplichtig is
+function Object waarde_jaardagenVanEenJutter(Object $tijdlijn_0) {
+    try {
+        return PeriodArithmetic.dayCount(RegelSpraakRuntime.rsAantalDagenIn(((java.util.List) $tijdlijn_0), "JAAR", Period.class));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "jaardagen van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $tijdlijn_0 : (ComputeHelpers.periods(borgplichtig)) )
+then
+    Object v = waarde_jaardagenVanEenJutter($tijdlijn_0);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "jaardagen van een jutter", ComputeHelpers.designate(v, "jaardagen van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "jaardagen", false), v, "jaardagen van een jutter"));
+        }
+    }
+end
+

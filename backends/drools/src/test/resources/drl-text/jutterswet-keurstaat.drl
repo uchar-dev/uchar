@@ -1,0 +1,94 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// haar staat gelijk is aan 'gaaf'
+function boolean toets_veilbaarheidNaarStaat(Object $staat) {
+    return ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam($staat), RegelSpraakRuntime.rsEnumNaam("gaaf"), Boolean.TRUE);
+}
+
+rule "veilbaarheid naar staat"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $staat : staat )
+    eval( toets_veilbaarheidNaarStaat($staat) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "veilbaar", true)));
+end
+
+// haar staat ongelijk is aan 'gaaf'
+function boolean toets_afkeuringNaarStaat(Object $staat) {
+    return ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam($staat), RegelSpraakRuntime.rsEnumNaam("gaaf"), Boolean.FALSE);
+}
+
+rule "afkeuring naar staat"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $staat : staat )
+    eval( toets_afkeuringNaarStaat($staat) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "afgekeurd", true)));
+end
+
+rule "oordeel volgt de staat"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $staat : staat )
+then
+    // de staat van de Vondst
+    Object v = $staat;
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "oordeel", false), v, "oordeel volgt de staat"));
+    }
+end
+
+// de Vondst is veilbaar
+function boolean toets_stempelVoorEenVeilbareVondst(Object $veilbaar) {
+    return ComputeHelpers.characteristic($veilbaar, Boolean.TRUE);
+}
+
+rule "stempel voor een veilbare vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "veilbaar", true), subject == $onderwerp, $veilbaar : holds )
+    eval( toets_stempelVoorEenVeilbareVondst($veilbaar) )
+then
+    // 'gaaf'
+    Object v = "gaaf";
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "stempel", false), v, "stempel voor een veilbare vondst"));
+    }
+end
+
+rule "kenmerkstand Vondst.veilbaar: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(veilbaar) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "veilbaar", true), true));
+end
+
+rule "kenmerkstand Vondst.veilbaar: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "veilbaar", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "veilbaar", true), true));
+end
+
+rule "kenmerkstand Vondst.veilbaar: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(veilbaar) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "veilbaar", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "veilbaar", true), false));
+end
+

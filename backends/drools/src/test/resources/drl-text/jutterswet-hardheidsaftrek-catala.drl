@@ -1,0 +1,312 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
+import dev.uchar.regelspraak.transpiler.tms.CreationStamp;
+import dev.uchar.regelspraak.transpiler.tms.Decides;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.PathState;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.SecondFillingFault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// 
+function Object waarde_berekeningHeffing(Object $bergingswaarde, Object $aftrek) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsVerminderd($bergingswaarde, $aftrek), Integer.valueOf(0), "heffing", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "berekening heffing"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Rekenkamer()
+    $stand_0 : State( attribute == ElementKey.of("rekenkamer", "bergingswaarde", false), subject == $onderwerp, $bergingswaarde : value )
+    $stand_1 : State( attribute == ElementKey.of("rekenkamer", "aftrek", false), subject == $onderwerp, $aftrek : value )
+then
+    Object v = waarde_berekeningHeffing($bergingswaarde, $aftrek);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "berekening heffing", ComputeHelpers.designate(v, "berekening heffing")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("rekenkamer", "heffing", false), v, "berekening heffing"));
+        }
+    }
+end
+
+// de heffing van de rekenkamer
+function Object waarde_berekeningVerschuldigd(Object $rekenkamerHeffing) {
+    try {
+        return ComputeHelpers.fitTarget($rekenkamerHeffing, Integer.valueOf(0), "verschuldigd", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "berekening verschuldigd"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Bergingsaanslag()
+    $padstand_0 : PathState( path == "Bergingsaanslag:rekenkamer" && member == ElementKey.of("rekenkamer", "heffing", false), subject == $onderwerp, $rekenkamerHeffing : value )
+then
+    Object v = waarde_berekeningVerschuldigd($rekenkamerHeffing);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "berekening verschuldigd", ComputeHelpers.designate(v, "berekening verschuldigd")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("bergingsaanslag", "verschuldigd", false), v, "berekening verschuldigd"));
+        }
+    }
+end
+
+function boolean beta_richtRekenkamerOp(Object eigen, Object ander) {
+    return ComputeHelpers.inPhase(eigen, ander);
+}
+
+// de bergingswaarde
+function Object creatie_richtRekenkamerOp(Object $bergingswaarde, Object $fase, Object $herkomsten_creatie_8, Object $onderwerp) {
+    int diepte = ComputeHelpers.creationDepth("richt rekenkamer op", 0, "Bergingsaanslag", (java.util.List) $herkomsten_creatie_8, 100);
+    Object i0 = null;
+    try {
+        i0 = ComputeHelpers.collapse(ComputeHelpers.fitTarget($bergingswaarde, Integer.valueOf(0), "bergingswaarde", "richt rekenkamer op"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+    Object nieuw = ComputeHelpers.newObject($onderwerp, "dev.uchar.regelspraak.facts.Rekenkamer");
+    ComputeHelpers.set(nieuw, "bergingswaarde", i0);
+    int fase = ((Integer) $fase).intValue();
+    java.util.List feiten = new java.util.ArrayList();
+    feiten.add(nieuw);
+    feiten.add(new CreationStamp("richt rekenkamer op", $onderwerp, nieuw, fase, 0, diepte));
+    feiten.add(new RelationLink("bergingsaanslag_rekenkamer", $onderwerp, nieuw, fase));
+    return feiten;
+}
+
+rule "richt rekenkamer op"
+    dialect "mvel"
+    agenda-group "uchar-objectcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Bergingsaanslag( rekenkamer == null, $bergingswaarde : bergingswaarde )
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    accumulate( $herkomst_creatie_7 : CreationStamp( object == $onderwerp ); $herkomsten_creatie_8 : collectList($herkomst_creatie_7) )
+    not( $gemaakt_creatie_10 : CreationStamp( rule == "richt rekenkamer op", subject == $onderwerp ) )
+    not( $nieuw_creatie_11 : CreationStamp( object == $onderwerp, beta_richtRekenkamerOp(this, $fase) ) )
+    not( $eigen_fout : Fault( rule == "richt rekenkamer op", subject == $onderwerp ) )
+then
+    Object v = creatie_richtRekenkamerOp($bergingswaarde, $fase, $herkomsten_creatie_8, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insert(new Fault($onderwerp, "richt rekenkamer op", ComputeHelpers.designate(v, "richt rekenkamer op")));
+    } else {
+        java.util.List feiten = (java.util.List) v;
+        insert(feiten.get(0));
+        insert(feiten.get(1));
+        insert(feiten.get(2));
+    }
+end
+
+// hardheid
+function boolean toets_defaultsARekenkamerAftrekDefault0(Object $rekenkamerHouderHardheid) {
+    return ComputeHelpers.characteristicCheckAlongPath($rekenkamerHouderHardheid, Boolean.TRUE);
+}
+
+rule "defaults A:Rekenkamer.aftrek: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Rekenkamer( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Rekenkamer") )
+    $padstand_0 : PathState( path == "Rekenkamer:rekenkamer_houder" && member == ElementKey.of("bergingsaanslag", "hardheid", true), subject == $onderwerp, $rekenkamerHouderHardheid : value )
+    $padstand_1 : PathState( path == "Rekenkamer:rekenkamer_houder" && member == ElementKey.of("bergingsaanslag", "hardheidsaftrek", false), subject == $onderwerp, $rekenkamerHouderHardheidsaftrek : value )
+    eval( toets_defaultsARekenkamerAftrekDefault0($rekenkamerHouderHardheid) )
+then
+    // de hardheidsaftrek
+    Object v = $rekenkamerHouderHardheidsaftrek;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "aftrek");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Rekenkamer.aftrek", ComputeHelpers.designate(passend, "defaults A:Rekenkamer.aftrek")));
+            insertLogical(new Decides($onderwerp, "defaults A:Rekenkamer.aftrek", 0));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("rekenkamer", "aftrek", false), passend, "defaults A:Rekenkamer.aftrek"));
+            insertLogical(new Decides($onderwerp, "defaults A:Rekenkamer.aftrek", 0));
+        }
+    }
+end
+
+rule "defaults A:Rekenkamer.aftrek: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Rekenkamer( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Rekenkamer") )
+    not( $hoger_26 : Decides( stack == "defaults A:Rekenkamer.aftrek" && index < 1, subject == $onderwerp ) )
+then
+    // 100
+    Object v = new java.math.BigDecimal("100");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "aftrek");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Rekenkamer.aftrek", ComputeHelpers.designate(passend, "defaults A:Rekenkamer.aftrek")));
+            insertLogical(new Decides($onderwerp, "defaults A:Rekenkamer.aftrek", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("rekenkamer", "aftrek", false), passend, "defaults A:Rekenkamer.aftrek"));
+            insertLogical(new Decides($onderwerp, "defaults A:Rekenkamer.aftrek", 1));
+        }
+    }
+end
+
+rule "koppeling bergingsaanslag_rekenkamer uit de invoer: Bergingsaanslag.rekenkamer"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Bergingsaanslag( rekenkamer != null, $ander : rekenkamer )
+then
+    insertLogical(new RelationLink("bergingsaanslag_rekenkamer", $houder, $ander, 0));
+end
+
+rule "koppeling bergingsaanslag_rekenkamer uit de invoer: Rekenkamer.rekenkamer_houder"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Rekenkamer( rekenkamerHouder != null, $ander : rekenkamerHouder )
+then
+    insertLogical(new RelationLink("bergingsaanslag_rekenkamer", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingBergingsaanslagRekenkamerTweedeVullingVanRekenkamer(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "second");
+}
+
+rule "koppeling bergingsaanslag_rekenkamer: tweede vulling van rekenkamer"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "bergingsaanslag_rekenkamer", $nabij : first )
+    $twee : RelationLink( relation == "bergingsaanslag_rekenkamer", first != null, first == $een.first, beta_koppelingBergingsaanslagRekenkamerTweedeVullingVanRekenkamer(this, $een) )
+then
+    insertLogical(new Fault($nabij, "Bergingsaanslag_rekenkamer", new SecondFillingFault("rekenkamer", $nabij)));
+end
+
+function boolean beta_koppelingBergingsaanslagRekenkamerTweedeVullingVanRekenkamerHouder(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling bergingsaanslag_rekenkamer: tweede vulling van rekenkamer_houder"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "bergingsaanslag_rekenkamer", $nabij : second )
+    $twee : RelationLink( relation == "bergingsaanslag_rekenkamer", second != null, second == $een.second, beta_koppelingBergingsaanslagRekenkamerTweedeVullingVanRekenkamerHouder(this, $een) )
+then
+    insertLogical(new Fault($nabij, "Bergingsaanslag_rekenkamer", new SecondFillingFault("rekenkamer_houder", $nabij)));
+end
+
+rule "padstand Bergingsaanslag.rekenkamer naar Rekenkamer.heffing: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Bergingsaanslag()
+    $koppeling_keten_40 : RelationLink( relation == "bergingsaanslag_rekenkamer", first == $onderwerp, $overzijde_keten_41 : second )
+    $stap_keten_39 : dev.uchar.regelspraak.facts.Rekenkamer( this == $overzijde_keten_41 )
+    $stand : State( attribute == ElementKey.of("rekenkamer", "heffing", false), subject == $stap_keten_39, $v : value )
+then
+    insertLogical(new PathState($onderwerp, "Bergingsaanslag:rekenkamer", ElementKey.of("rekenkamer", "heffing", false), $v, $stap_keten_39));
+end
+
+rule "padstand Bergingsaanslag.rekenkamer naar Rekenkamer.heffing: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Bergingsaanslag()
+    not( $koppeling_keten_48 : RelationLink( relation == "bergingsaanslag_rekenkamer", first == $onderwerp, $overzijde_keten_49 : second ) and $stap_keten_47 : dev.uchar.regelspraak.facts.Rekenkamer( this == $overzijde_keten_49 ) )
+then
+    insertLogical(new PathState($onderwerp, "Bergingsaanslag:rekenkamer", ElementKey.of("rekenkamer", "heffing", false), null, null));
+end
+
+rule "padstand Rekenkamer.rekenkamer_houder naar Bergingsaanslag.hardheid: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Rekenkamer()
+    $koppeling_keten_54 : RelationLink( relation == "bergingsaanslag_rekenkamer", second == $onderwerp, $overzijde_keten_55 : first )
+    $stap_keten_53 : dev.uchar.regelspraak.facts.Bergingsaanslag( this == $overzijde_keten_55, $v : (ComputeHelpers.holds(hardheid)) )
+then
+    insertLogical(new PathState($onderwerp, "Rekenkamer:rekenkamer_houder", ElementKey.of("bergingsaanslag", "hardheid", true), $v, $stap_keten_53));
+end
+
+rule "padstand Rekenkamer.rekenkamer_houder naar Bergingsaanslag.hardheid: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Rekenkamer()
+    not( $koppeling_keten_60 : RelationLink( relation == "bergingsaanslag_rekenkamer", second == $onderwerp, $overzijde_keten_61 : first ) and $stap_keten_59 : dev.uchar.regelspraak.facts.Bergingsaanslag( this == $overzijde_keten_61 ) )
+then
+    insertLogical(new PathState($onderwerp, "Rekenkamer:rekenkamer_houder", ElementKey.of("bergingsaanslag", "hardheid", true), null, null));
+end
+
+rule "padstand Rekenkamer.rekenkamer_houder naar Bergingsaanslag.hardheidsaftrek: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Rekenkamer()
+    $koppeling_keten_66 : RelationLink( relation == "bergingsaanslag_rekenkamer", second == $onderwerp, $overzijde_keten_67 : first )
+    $stap_keten_65 : dev.uchar.regelspraak.facts.Bergingsaanslag( this == $overzijde_keten_67, $v : hardheidsaftrek )
+then
+    insertLogical(new PathState($onderwerp, "Rekenkamer:rekenkamer_houder", ElementKey.of("bergingsaanslag", "hardheidsaftrek", false), $v, $stap_keten_65));
+end
+
+rule "padstand Rekenkamer.rekenkamer_houder naar Bergingsaanslag.hardheidsaftrek: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Rekenkamer()
+    not( $koppeling_keten_72 : RelationLink( relation == "bergingsaanslag_rekenkamer", second == $onderwerp, $overzijde_keten_73 : first ) and $stap_keten_71 : dev.uchar.regelspraak.facts.Bergingsaanslag( this == $overzijde_keten_73 ) )
+then
+    insertLogical(new PathState($onderwerp, "Rekenkamer:rekenkamer_houder", ElementKey.of("bergingsaanslag", "hardheidsaftrek", false), null, null));
+end
+
+rule "stand Rekenkamer.bergingswaarde: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Rekenkamer()
+    $waarde : Value( attribute == ElementKey.of("rekenkamer", "bergingswaarde", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("rekenkamer", "bergingswaarde", false), $v));
+end
+
+rule "stand Rekenkamer.bergingswaarde: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Rekenkamer( $invoer : bergingswaarde )
+    not( $waarde : Value( attribute == ElementKey.of("rekenkamer", "bergingswaarde", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("rekenkamer", "bergingswaarde", false), $invoer));
+end
+
+rule "stand Rekenkamer.aftrek: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Rekenkamer()
+    $waarde : Value( attribute == ElementKey.of("rekenkamer", "aftrek", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("rekenkamer", "aftrek", false), $v));
+end
+
+rule "stand Rekenkamer.aftrek: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Rekenkamer( $invoer : aftrek )
+    not( $waarde : Value( attribute == ElementKey.of("rekenkamer", "aftrek", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("rekenkamer", "aftrek", false), $invoer));
+end
+
+rule "stand Rekenkamer.heffing: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Rekenkamer()
+    $waarde : Value( attribute == ElementKey.of("rekenkamer", "heffing", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("rekenkamer", "heffing", false), $v));
+end
+
+rule "stand Rekenkamer.heffing: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Rekenkamer( $invoer : heffing )
+    not( $waarde : Value( attribute == ElementKey.of("rekenkamer", "heffing", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("rekenkamer", "heffing", false), $invoer));
+end
+

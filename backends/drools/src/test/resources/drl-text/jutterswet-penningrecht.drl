@@ -1,0 +1,51 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+
+// zijn aantal aangemelde vondsten groter of gelijk is aan 12
+function boolean toets_penninggerechtigdBijDrempel(Object $aantalAangemeldeVondsten) {
+    return RegelSpraakRuntime.rsAggVergelijk($aantalAangemeldeVondsten, new java.math.BigDecimal("12"), ">=");
+}
+
+rule "penninggerechtigd bij drempel"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $aantalAangemeldeVondsten : aantalAangemeldeVondsten )
+    eval( toets_penninggerechtigdBijDrempel($aantalAangemeldeVondsten) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "penninggerechtigd", true)));
+end
+
+// hij aan alle volgende voorwaarden voldoet: - hij is hardheid toegepast - zijn aantal aangemelde vondsten is groter of gelijk aan 6
+function boolean toets_penninggerechtigdBijHardheid(Object $hardheidToegepast, Object $aantalAangemeldeVondsten) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($hardheidToegepast, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($aantalAangemeldeVondsten, new java.math.BigDecimal("6"), ">=")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "penninggerechtigd bij hardheid"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $hardheidToegepast : (ComputeHelpers.holds(hardheidToegepast)), $aantalAangemeldeVondsten : aantalAangemeldeVondsten )
+    eval( toets_penninggerechtigdBijHardheid($hardheidToegepast, $aantalAangemeldeVondsten) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "penninggerechtigd", true)));
+end
+

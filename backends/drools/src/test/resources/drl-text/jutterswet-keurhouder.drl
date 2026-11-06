@@ -1,0 +1,42 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de Vondst gekeurd is
+function boolean toets_afslagVanEenGekeurdeVondst(Object $gekeurd) {
+    return ComputeHelpers.characteristic($gekeurd, Boolean.TRUE);
+}
+
+rule "afslag van een gekeurde vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gekeurd : (ComputeHelpers.holds(gekeurd)) )
+    eval( toets_afslagVanEenGekeurdeVondst($gekeurd) )
+then
+    // 'zeeveiling'
+    Object v = "zeeveiling";
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "afslag", false), v, "afslag van een gekeurde vondst"));
+    }
+end
+
+// de Vondst niet gekeurd is
+function boolean toets_keurstatusVanEenOngekeurdeVondst(Object $gekeurd) {
+    return ComputeHelpers.characteristic($gekeurd, Boolean.FALSE);
+}
+
+rule "keurstatus van een ongekeurde vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gekeurd : (ComputeHelpers.holds(gekeurd)) )
+    eval( toets_keurstatusVanEenOngekeurdeVondst($gekeurd) )
+then
+    // 'onbekeurd'
+    Object v = "onbekeurd";
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "keurstatus", false), v, "keurstatus van een ongekeurde vondst"));
+    }
+end
+

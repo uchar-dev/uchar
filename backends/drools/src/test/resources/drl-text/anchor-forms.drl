@@ -1,0 +1,1225 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMaximumFunction exactMax;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.FilterDeposit;
+import dev.uchar.regelspraak.transpiler.tms.FilterFault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.ListPlace;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; de Vergunning zelf is geschorst
+function Object waarde_tariefNaastGeschorste(Object $aantal_vouw_5, Object $vouw_vouw_7) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_5, $vouw_vouw_7, null), Integer.valueOf(0), "tarief naast geschorste", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "tarief naast geschorste"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    accumulate( $bijdrage_vouw_2 : Contribution( fold == "tarief naast geschorste: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_6 : value ); $aantal_vouw_5 : count(), $vouw_vouw_7 : exactMax($bijdragewaarde_vouw_6) )
+then
+    Object v = waarde_tariefNaastGeschorste($aantal_vouw_5, $vouw_vouw_7);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "tarief naast geschorste", ComputeHelpers.designate(v, "tarief naast geschorste")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vergunning", "tarief naast geschorste", false), v, "tarief naast geschorste"));
+        }
+    }
+end
+
+// voor alle vergunningen van het register van de Vergunning die niet de Vergunning zelf zijn geldt: de Vergunning zelf is niet geschorst
+function boolean toets_registerrust(Object $aantal_vouw_13, Object $vouw_vouw_15) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_13, $vouw_vouw_15, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0));
+}
+
+rule "registerrust"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    accumulate( $bijdrage_vouw_10 : Contribution( fold == "registerrust: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_14 : value ); $aantal_vouw_13 : count(), $vouw_vouw_15 : exactSum($bijdragewaarde_vouw_14) )
+    eval( toets_registerrust($aantal_vouw_13, $vouw_vouw_15) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vergunning", "registerrust", true)));
+end
+
+// de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die zijn tarief is groter dan het nummer van het register van de Vergunning zelf
+function Object waarde_tariefBovenRegisternummer(Object $aantal_vouw_22, Object $vouw_vouw_24) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_22, $vouw_vouw_24, null), Integer.valueOf(0), "tarief boven registernummer", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "tarief boven registernummer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    accumulate( $bijdrage_vouw_19 : Contribution( fold == "tarief boven registernummer: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_23 : value ); $aantal_vouw_22 : count(), $vouw_vouw_24 : exactMax($bijdragewaarde_vouw_23) )
+then
+    Object v = waarde_tariefBovenRegisternummer($aantal_vouw_22, $vouw_vouw_24);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "tarief boven registernummer", ComputeHelpers.designate(v, "tarief boven registernummer")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vergunning", "tarief boven registernummer", false), v, "tarief boven registernummer"));
+        }
+    }
+end
+
+// de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; ten minste een van de vergunningen van het register van de Vergunning zelf heeft een tarief van ten minste 20
+function Object waarde_tariefNaastDuurRegister(Object $aantal_vouw_37, Object $vouw_vouw_39) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_37, $vouw_vouw_39, null), Integer.valueOf(0), "tarief naast duur register", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "tarief naast duur register"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    accumulate( $bijdrage_vouw_34 : Contribution( fold == "tarief naast duur register: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_38 : value ); $aantal_vouw_37 : count(), $vouw_vouw_39 : exactMax($bijdragewaarde_vouw_38) )
+then
+    Object v = waarde_tariefNaastDuurRegister($aantal_vouw_37, $vouw_vouw_39);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "tarief naast duur register", ComputeHelpers.designate(v, "tarief naast duur register")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vergunning", "tarief naast duur register", false), v, "tarief naast duur register"));
+        }
+    }
+end
+
+// de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die hij is de Vergunning zelf
+function Object waarde_eigenTarief(Object $aantal_vouw_45, Object $vouw_vouw_47) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_45, $vouw_vouw_47, null), Integer.valueOf(0), "eigen tarief", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "eigen tarief"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    accumulate( $bijdrage_vouw_42 : Contribution( fold == "eigen tarief: vouw 5", subject == $onderwerp, $bijdragewaarde_vouw_46 : value ); $aantal_vouw_45 : count(), $vouw_vouw_47 : exactMax($bijdragewaarde_vouw_46) )
+then
+    Object v = waarde_eigenTarief($aantal_vouw_45, $vouw_vouw_47);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "eigen tarief", ComputeHelpers.designate(v, "eigen tarief")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vergunning", "eigen tarief", false), v, "eigen tarief"));
+        }
+    }
+end
+
+// de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
+function Object waarde_deelbaarTarief(Object $aantal_vouw_63, Object $vouw_vouw_65, Object $eerste_filterfout_vouw_70, Object $filterdeponeringen_vouw_74, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(vouwlezing_deelbaarTarief($aantal_vouw_63, $vouw_vouw_65, $eerste_filterfout_vouw_70, $filterdeponeringen_vouw_74, sonde), Integer.valueOf(0), "deelbaar tarief", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
+function Object vouwlezing_deelbaarTarief(Object $aantal_vouw_63, Object $vouw_vouw_65, Object $eerste_filterfout_vouw_70, Object $filterdeponeringen_vouw_74, Object sonde) {
+    ComputeHelpers.reportFilterDeposits(sonde, $filterdeponeringen_vouw_74);
+    if ($eerste_filterfout_vouw_70 != null) {
+        throw ((FilterFault) $eerste_filterfout_vouw_70).fault();
+    }
+    return ComputeHelpers.foldValue($aantal_vouw_63, $vouw_vouw_65, null);
+}
+
+rule "deelbaar tarief"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    accumulate( $bijdrage_vouw_60 : Contribution( fold == "deelbaar tarief: vouw 6", subject == $onderwerp, $bijdragewaarde_vouw_64 : value ); $aantal_vouw_63 : count(), $vouw_vouw_65 : exactMax($bijdragewaarde_vouw_64) )
+    accumulate( $filterfout_vouw_66 : FilterFault( fold == "deelbaar tarief: vouw 6", subject == $onderwerp ); $filterfouten_vouw_69 : count(), $eerste_filterfout_vouw_70 : exactMin($filterfout_vouw_66) )
+    accumulate( $filterdeponering_vouw_71 : FilterDeposit( fold == "deelbaar tarief: vouw 6", subject == $onderwerp ); $filterdeponeringen_vouw_74 : collectList($filterdeponering_vouw_71) )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_deelbaarTarief($aantal_vouw_63, $vouw_vouw_65, $eerste_filterfout_vouw_70, $filterdeponeringen_vouw_74, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "deelbaar tarief", ComputeHelpers.designate(v, "deelbaar tarief")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("deelbaar tarief", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vergunning", "deelbaar tarief", false), v, "deelbaar tarief"));
+        }
+    }
+end
+
+// de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief is gelijk aan de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning zelf die later ingaan dan de Vergunning zelf
+function Object waarde_gelijkAanLaterTarief(Object $aantal_vouw_88, Object $vouw_vouw_90) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_88, $vouw_vouw_90, null), Integer.valueOf(0), "gelijk aan later tarief", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "gelijk aan later tarief"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    accumulate( $bijdrage_vouw_85 : Contribution( fold == "gelijk aan later tarief: vouw 7", subject == $onderwerp, $bijdragewaarde_vouw_89 : value ); $aantal_vouw_88 : count(), $vouw_vouw_90 : exactMax($bijdragewaarde_vouw_89) )
+then
+    Object v = waarde_gelijkAanLaterTarief($aantal_vouw_88, $vouw_vouw_90);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "gelijk aan later tarief", ComputeHelpers.designate(v, "gelijk aan later tarief")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vergunning", "gelijk aan later tarief", false), v, "gelijk aan later tarief"));
+        }
+    }
+end
+
+// de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen: zijn korting is leeg; zijn tarief is gelijk aan de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning zelf die later ingaan dan de Vergunning zelf
+function Object waarde_laterTariefZonderKorting(Object $aantal_vouw_104, Object $vouw_vouw_106) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_104, $vouw_vouw_106, null), Integer.valueOf(0), "later tarief zonder korting", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "later tarief zonder korting"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    accumulate( $bijdrage_vouw_101 : Contribution( fold == "later tarief zonder korting: vouw 9", subject == $onderwerp, $bijdragewaarde_vouw_105 : value ); $aantal_vouw_104 : count(), $vouw_vouw_106 : exactMax($bijdragewaarde_vouw_105) )
+then
+    Object v = waarde_laterTariefZonderKorting($aantal_vouw_104, $vouw_vouw_106);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "later tarief zonder korting", ComputeHelpers.designate(v, "later tarief zonder korting")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vergunning", "later tarief zonder korting", false), v, "later tarief zonder korting"));
+        }
+    }
+end
+
+// de maximale waarde van het tarief van alle vergunningen van het Register die niet het Register zelf zijn
+function Object waarde_hoogsteTariefNaastZichzelf(Object $aantal_vouw_112, Object $vouw_vouw_114) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_112, $vouw_vouw_114, null), Integer.valueOf(0), "hoogste tarief naast zichzelf", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "hoogste tarief naast zichzelf"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Register()
+    accumulate( $bijdrage_vouw_109 : Contribution( fold == "hoogste tarief naast zichzelf: vouw 11", subject == $onderwerp, $bijdragewaarde_vouw_113 : value ); $aantal_vouw_112 : count(), $vouw_vouw_114 : exactMax($bijdragewaarde_vouw_113) )
+then
+    Object v = waarde_hoogsteTariefNaastZichzelf($aantal_vouw_112, $vouw_vouw_114);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "hoogste tarief naast zichzelf", ComputeHelpers.designate(v, "hoogste tarief naast zichzelf")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("register", "hoogste tarief naast zichzelf", false), v, "hoogste tarief naast zichzelf"));
+        }
+    }
+end
+
+// de maximale waarde van het tarief van alle vergunningen van het Register die het Register zelf zijn
+function Object waarde_hoogsteTariefDatZichzelfIs(Object $aantal_vouw_120, Object $vouw_vouw_122) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_120, $vouw_vouw_122, null), Integer.valueOf(0), "hoogste tarief dat zichzelf is", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "hoogste tarief dat zichzelf is"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Register()
+    accumulate( $bijdrage_vouw_117 : Contribution( fold == "hoogste tarief dat zichzelf is: vouw 12", subject == $onderwerp, $bijdragewaarde_vouw_121 : value ); $aantal_vouw_120 : count(), $vouw_vouw_122 : exactMax($bijdragewaarde_vouw_121) )
+then
+    Object v = waarde_hoogsteTariefDatZichzelfIs($aantal_vouw_120, $vouw_vouw_122);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "hoogste tarief dat zichzelf is", ComputeHelpers.designate(v, "hoogste tarief dat zichzelf is")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("register", "hoogste tarief dat zichzelf is", false), v, "hoogste tarief dat zichzelf is"));
+        }
+    }
+end
+
+// hij is niet geschorst
+function boolean toets_deelbaarLaterTarief(Object $geschorst) {
+    return ComputeHelpers.characteristic($geschorst, Boolean.FALSE);
+}
+
+// de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen: zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
+function Object waarde_deelbaarLaterTarief(Object $aantal_vouw_138, Object $vouw_vouw_140, Object $eerste_filterfout_vouw_145, Object $filterdeponeringen_vouw_149, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(vouwlezing_deelbaarLaterTarief($aantal_vouw_138, $vouw_vouw_140, $eerste_filterfout_vouw_145, $filterdeponeringen_vouw_149, sonde), Integer.valueOf(0), "deelbaar later tarief", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen: zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
+function Object vouwlezing_deelbaarLaterTarief(Object $aantal_vouw_138, Object $vouw_vouw_140, Object $eerste_filterfout_vouw_145, Object $filterdeponeringen_vouw_149, Object sonde) {
+    ComputeHelpers.reportFilterDeposits(sonde, $filterdeponeringen_vouw_149);
+    if ($eerste_filterfout_vouw_145 != null) {
+        throw ((FilterFault) $eerste_filterfout_vouw_145).fault();
+    }
+    return ComputeHelpers.foldValue($aantal_vouw_138, $vouw_vouw_140, null);
+}
+
+rule "deelbaar later tarief"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( $geschorst : (ComputeHelpers.holds(geschorst)) )
+    accumulate( $bijdrage_vouw_135 : Contribution( fold == "deelbaar later tarief: vouw 13", subject == $onderwerp, $bijdragewaarde_vouw_139 : value ); $aantal_vouw_138 : count(), $vouw_vouw_140 : exactMax($bijdragewaarde_vouw_139) )
+    accumulate( $filterfout_vouw_141 : FilterFault( fold == "deelbaar later tarief: vouw 13", subject == $onderwerp ); $filterfouten_vouw_144 : count(), $eerste_filterfout_vouw_145 : exactMin($filterfout_vouw_141) )
+    accumulate( $filterdeponering_vouw_146 : FilterDeposit( fold == "deelbaar later tarief: vouw 13", subject == $onderwerp ); $filterdeponeringen_vouw_149 : collectList($filterdeponering_vouw_146) )
+    eval( toets_deelbaarLaterTarief($geschorst) )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_deelbaarLaterTarief($aantal_vouw_138, $vouw_vouw_140, $eerste_filterfout_vouw_145, $filterdeponeringen_vouw_149, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "deelbaar later tarief", ComputeHelpers.designate(v, "deelbaar later tarief")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("deelbaar later tarief", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vergunning", "deelbaar later tarief", false), v, "deelbaar later tarief"));
+        }
+    }
+end
+
+// hij is niet geschorst
+function boolean toets_deelbaarTariefVanOngeschorste(Object $geschorst) {
+    return ComputeHelpers.characteristic($geschorst, Boolean.FALSE);
+}
+
+// de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die zijn tarief gedeeld door zijn teller is groter dan 1
+function Object waarde_deelbaarTariefVanOngeschorste(Object $aantal_vouw_166, Object $vouw_vouw_168, Object $eerste_filterfout_vouw_173, Object $filterdeponeringen_vouw_177, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(vouwlezing_deelbaarTariefVanOngeschorste($aantal_vouw_166, $vouw_vouw_168, $eerste_filterfout_vouw_173, $filterdeponeringen_vouw_177, sonde), Integer.valueOf(0), "deelbaar tarief van ongeschorste", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die zijn tarief gedeeld door zijn teller is groter dan 1
+function Object vouwlezing_deelbaarTariefVanOngeschorste(Object $aantal_vouw_166, Object $vouw_vouw_168, Object $eerste_filterfout_vouw_173, Object $filterdeponeringen_vouw_177, Object sonde) {
+    ComputeHelpers.reportFilterDeposits(sonde, $filterdeponeringen_vouw_177);
+    if ($eerste_filterfout_vouw_173 != null) {
+        throw ((FilterFault) $eerste_filterfout_vouw_173).fault();
+    }
+    return ComputeHelpers.foldValue($aantal_vouw_166, $vouw_vouw_168, null);
+}
+
+rule "deelbaar tarief van ongeschorste"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( $geschorst : (ComputeHelpers.holds(geschorst)) )
+    accumulate( $bijdrage_vouw_163 : Contribution( fold == "deelbaar tarief van ongeschorste: vouw 14", subject == $onderwerp, $bijdragewaarde_vouw_167 : value ); $aantal_vouw_166 : count(), $vouw_vouw_168 : exactMax($bijdragewaarde_vouw_167) )
+    accumulate( $filterfout_vouw_169 : FilterFault( fold == "deelbaar tarief van ongeschorste: vouw 14", subject == $onderwerp ); $filterfouten_vouw_172 : count(), $eerste_filterfout_vouw_173 : exactMin($filterfout_vouw_169) )
+    accumulate( $filterdeponering_vouw_174 : FilterDeposit( fold == "deelbaar tarief van ongeschorste: vouw 14", subject == $onderwerp ); $filterdeponeringen_vouw_177 : collectList($filterdeponering_vouw_174) )
+    eval( toets_deelbaarTariefVanOngeschorste($geschorst) )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_deelbaarTariefVanOngeschorste($aantal_vouw_166, $vouw_vouw_168, $eerste_filterfout_vouw_173, $filterdeponeringen_vouw_177, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "deelbaar tarief van ongeschorste", ComputeHelpers.designate(v, "deelbaar tarief van ongeschorste")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("deelbaar tarief van ongeschorste", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vergunning", "deelbaar tarief van ongeschorste", false), v, "deelbaar tarief van ongeschorste"));
+        }
+    }
+end
+
+function boolean beta_tariefNaastGeschorsteBijdrageAanVouw0(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("register"), java.util.Arrays.asList("register"));
+}
+
+// aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; de Vergunning zelf is geschorst
+function boolean toets_tariefNaastGeschorsteBijdrageAanVouw0(Object $vouwonderwerp, Object $onderwerp, Object $geschorst) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($geschorst, Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "tarief naast geschorste: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning( $geschorst : (ComputeHelpers.holds(geschorst)) )
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( beta_tariefNaastGeschorsteBijdrageAanVouw0(this, $vouwonderwerp), $tarief : tarief )
+    eval( toets_tariefNaastGeschorsteBijdrageAanVouw0($vouwonderwerp, $onderwerp, $geschorst) )
+then
+    Object v = ComputeHelpers.contribution("tarief naast geschorste: vouw 0", $vouwonderwerp, $onderwerp, $tarief, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta_registerrustBijdrageAanVouw1(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("register"), java.util.Arrays.asList("register"));
+}
+
+// die niet de Vergunning zelf zijn
+function boolean toets_registerrustBijdrageAanVouw1(Object $vouwonderwerp, Object $onderwerp) {
+    return ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE);
+}
+
+// de Vergunning zelf is niet geschorst
+function boolean matrix_registerrustBijdrageAanVouw1(Object $onderwerp, Object $geschorst) {
+    return ComputeHelpers.characteristic($geschorst, Boolean.FALSE);
+}
+
+rule "registerrust: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning( $geschorst : (ComputeHelpers.holds(geschorst)) )
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( beta_registerrustBijdrageAanVouw1(this, $vouwonderwerp) )
+    eval( toets_registerrustBijdrageAanVouw1($vouwonderwerp, $onderwerp) )
+then
+    insertLogical(new Contribution("registerrust: vouw 1", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_registerrustBijdrageAanVouw1($onderwerp, $geschorst))));
+end
+
+function Object pad_tariefBovenRegisternummerBijdrageAanVouw2(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("register"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "nummer");
+}
+
+function boolean beta_tariefBovenRegisternummerBijdrageAanVouw2(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("register"), java.util.Arrays.asList("register"));
+}
+
+// zijn tarief is groter dan het nummer van het register van de Vergunning zelf
+function boolean toets_tariefBovenRegisternummerBijdrageAanVouw2(Object $tarief, Object $registerNummer) {
+    return RegelSpraakRuntime.rsAggVergelijk($tarief, $registerNummer, ">");
+}
+
+rule "tarief boven registernummer: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning( $registerNummer : (pad_tariefBovenRegisternummerBijdrageAanVouw2(this)) )
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( beta_tariefBovenRegisternummerBijdrageAanVouw2(this, $vouwonderwerp), $tarief : tarief )
+    eval( toets_tariefBovenRegisternummerBijdrageAanVouw2($tarief, $registerNummer) )
+then
+    Object v = ComputeHelpers.contribution("tarief boven registernummer: vouw 2", $vouwonderwerp, $onderwerp, $tarief, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta_tariefNaastDuurRegisterBijdrageAanVouw3(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("register"), java.util.Arrays.asList("register"));
+}
+
+// aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; ten minste een van de vergunningen van het register van de Vergunning zelf heeft een tarief van ten minste 20
+function boolean toets_tariefNaastDuurRegisterBijdrageAanVouw3(Object $vouwonderwerp, Object $onderwerp, Object $aantal_vouw_30, Object $vouw_vouw_32) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.quantifierVerdict($aantal_vouw_30, $vouw_vouw_32, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(1))) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "tarief naast duur register: bijdrage aan vouw 3"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( beta_tariefNaastDuurRegisterBijdrageAanVouw3(this, $vouwonderwerp), $tarief : tarief )
+    accumulate( $bijdrage_vouw_27 : Contribution( fold == "tarief naast duur register: vouw 4", subject == $vouwonderwerp, $bijdragewaarde_vouw_31 : value ); $aantal_vouw_30 : count(), $vouw_vouw_32 : exactSum($bijdragewaarde_vouw_31) )
+    eval( toets_tariefNaastDuurRegisterBijdrageAanVouw3($vouwonderwerp, $onderwerp, $aantal_vouw_30, $vouw_vouw_32) )
+then
+    Object v = ComputeHelpers.contribution("tarief naast duur register: vouw 3", $vouwonderwerp, $onderwerp, $tarief, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta_tariefNaastDuurRegisterBijdrageAanVouw4(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("register"), java.util.Arrays.asList("register"));
+}
+
+// zijn tarief is groter dan of gelijk aan 20
+function boolean matrix_tariefNaastDuurRegisterBijdrageAanVouw4(Object $onderwerp, Object $tarief) {
+    return RegelSpraakRuntime.rsAggVergelijk($tarief, new java.math.BigDecimal("20"), ">=");
+}
+
+rule "tarief naast duur register: bijdrage aan vouw 4"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( beta_tariefNaastDuurRegisterBijdrageAanVouw4(this, $vouwonderwerp), $tarief : tarief )
+then
+    insertLogical(new Contribution("tarief naast duur register: vouw 4", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_tariefNaastDuurRegisterBijdrageAanVouw4($onderwerp, $tarief))));
+end
+
+function boolean beta_eigenTariefBijdrageAanVouw5(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("register"), java.util.Arrays.asList("register"));
+}
+
+// hij is de Vergunning zelf
+function boolean toets_eigenTariefBijdrageAanVouw5(Object $vouwonderwerp, Object $onderwerp) {
+    return ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.FALSE);
+}
+
+rule "eigen tarief: bijdrage aan vouw 5"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( beta_eigenTariefBijdrageAanVouw5(this, $vouwonderwerp), $tarief : tarief )
+    eval( toets_eigenTariefBijdrageAanVouw5($vouwonderwerp, $onderwerp) )
+then
+    Object v = ComputeHelpers.contribution("eigen tarief: vouw 5", $vouwonderwerp, $onderwerp, $tarief, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta_deelbaarTariefBijdrageAanVouw6(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("register"), java.util.Arrays.asList("register"));
+}
+
+// aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
+function boolean toets_deelbaarTariefBijdrageAanVouw6(Object $vouwonderwerp, Object $onderwerp, Object $tarief, Object $teller) {
+    try {
+        int raak = 0;
+        Boolean vast;
+        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+        if (vast != null) {
+            return vast;
+        }
+        if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
+            raak++;
+        }
+        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+        if (vast != null) {
+            return vast;
+        }
+        if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, null), new java.math.BigDecimal("1"), ">")) {
+            raak++;
+        }
+        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "deelbaar tarief: bijdrage aan vouw 6"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( beta_deelbaarTariefBijdrageAanVouw6(this, $vouwonderwerp), $tarief : tarief, $teller : teller )
+    eval( toets_deelbaarTariefBijdrageAanVouw6($vouwonderwerp, $onderwerp, $tarief, $teller) )
+then
+    Object v = ComputeHelpers.contribution("deelbaar tarief: vouw 6", $vouwonderwerp, $onderwerp, $tarief, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta1_deelbaarTariefFilterfoutInVouw6(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("register"), java.util.Arrays.asList("register"));
+}
+
+function boolean beta2_deelbaarTariefFilterfoutInVouw6(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
+function boolean toets_deelbaarTariefFilterfoutInVouw6(Object $vouwonderwerp, Object $onderwerp, Object $tarief, Object $teller) {
+    try {
+        boolean uitkomst = samengesteld1_deelbaarTariefFilterfoutInVouw6($vouwonderwerp, $onderwerp, $tarief, $teller);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
+function boolean samengesteld1_deelbaarTariefFilterfoutInVouw6(Object $vouwonderwerp, Object $onderwerp, Object $tarief, Object $teller) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, null), new java.math.BigDecimal("1"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+// aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
+function RuntimeException fout_deelbaarTariefFilterfoutInVouw6(Object $lijstplaatsen_plaats_53, Object $plaats_plaats_54, Object $vouwonderwerp, Object $onderwerp, Object $tarief, Object $teller) {
+    try {
+        boolean uitkomst = samengesteld2_deelbaarTariefFilterfoutInVouw6($lijstplaatsen_plaats_53, $plaats_plaats_54, $vouwonderwerp, $onderwerp, $tarief, $teller);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
+function boolean samengesteld2_deelbaarTariefFilterfoutInVouw6(Object $lijstplaatsen_plaats_53, Object $plaats_plaats_54, Object $vouwonderwerp, Object $onderwerp, Object $tarief, Object $teller) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, null), new java.math.BigDecimal("1"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+function java.util.List plaats_deelbaarTariefFilterfoutInVouw6(Object $onderwerp, Object $lijstplaatsen_plaats_53, Object $plaats_plaats_54) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.FILTER_FAULT, "deelbaar tarief: vouw 6", $onderwerp, 0, java.util.Arrays.asList("register"), java.util.Arrays.asList($lijstplaatsen_plaats_53), java.util.Arrays.asList($plaats_plaats_54));
+}
+
+rule "deelbaar tarief: filterfout in vouw 6"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( beta1_deelbaarTariefFilterfoutInVouw6(this, $vouwonderwerp), $tarief : tarief, $teller : teller )
+    accumulate( $lijstplaats_plaats_51 : ListPlace( field == "register", beta2_deelbaarTariefFilterfoutInVouw6(this, $onderwerp), $lijstplaatswaarde_plaats_52 : place ); $lijstplaatsen_plaats_53 : count(), $plaats_plaats_54 : exactMin($lijstplaatswaarde_plaats_52) )
+    eval( toets_deelbaarTariefFilterfoutInVouw6($vouwonderwerp, $onderwerp, $tarief, $teller) )
+then
+    RuntimeException f = fout_deelbaarTariefFilterfoutInVouw6($lijstplaatsen_plaats_53, $plaats_plaats_54, $vouwonderwerp, $onderwerp, $tarief, $teller);
+    if (f == null) {
+        ComputeHelpers.contractBreach("het filter van deelbaar tarief: vouw 6 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new FilterFault("deelbaar tarief: vouw 6", $vouwonderwerp, $onderwerp, f, plaats_deelbaarTariefFilterfoutInVouw6($onderwerp, $lijstplaatsen_plaats_53, $plaats_plaats_54)));
+end
+
+function boolean beta_deelbaarTariefFilterdeponeringInVouw6(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("register"), java.util.Arrays.asList("register"));
+}
+
+// aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
+function boolean toets_deelbaarTariefFilterdeponeringInVouw6(Object $vouwonderwerp, Object $onderwerp, Object $tarief, Object $teller, Object sonde) {
+    try {
+        boolean uitkomst = samengesteld1_deelbaarTariefFilterdeponeringInVouw6($vouwonderwerp, $onderwerp, $tarief, $teller, sonde);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    return ComputeHelpers.reported(sonde);
+}
+
+// aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
+function boolean samengesteld1_deelbaarTariefFilterdeponeringInVouw6(Object $vouwonderwerp, Object $onderwerp, Object $tarief, Object $teller, Object sonde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, sonde), new java.math.BigDecimal("1"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+// aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
+function java.util.List deponering_deelbaarTariefFilterdeponeringInVouw6(Object $vouwonderwerp, Object $onderwerp, Object $tarief, Object $teller, Object sonde) {
+    try {
+        boolean uitkomst = samengesteld2_deelbaarTariefFilterdeponeringInVouw6($vouwonderwerp, $onderwerp, $tarief, $teller, sonde);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    if (!ComputeHelpers.reported(sonde)) {
+        ComputeHelpers.contractBreach("het filter van deelbaar tarief: vouw 6 deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    return ComputeHelpers.depositCodes(sonde);
+}
+
+// aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
+function boolean samengesteld2_deelbaarTariefFilterdeponeringInVouw6(Object $vouwonderwerp, Object $onderwerp, Object $tarief, Object $teller, Object sonde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, sonde), new java.math.BigDecimal("1"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "deelbaar tarief: filterdeponering in vouw 6"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( beta_deelbaarTariefFilterdeponeringInVouw6(this, $vouwonderwerp), $tarief : tarief, $teller : teller )
+    eval( toets_deelbaarTariefFilterdeponeringInVouw6($vouwonderwerp, $onderwerp, $tarief, $teller, ComputeHelpers.depositFlag()) )
+then
+    insertLogical(new FilterDeposit("deelbaar tarief: vouw 6", $vouwonderwerp, $onderwerp, deponering_deelbaarTariefFilterdeponeringInVouw6($vouwonderwerp, $onderwerp, $tarief, $teller, ComputeHelpers.depositFlag())));
+end
+
+function boolean beta_gelijkAanLaterTariefBijdrageAanVouw7(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("register"), java.util.Arrays.asList("register"));
+}
+
+// aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief is gelijk aan de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning zelf die later ingaan dan de Vergunning zelf
+function boolean toets_gelijkAanLaterTariefBijdrageAanVouw7(Object $vouwonderwerp, Object $onderwerp, Object $tarief, Object $aantal_vouw_81, Object $vouw_vouw_83) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($tarief, ComputeHelpers.foldValue($aantal_vouw_81, $vouw_vouw_83, null), "==")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "gelijk aan later tarief: bijdrage aan vouw 7"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( beta_gelijkAanLaterTariefBijdrageAanVouw7(this, $vouwonderwerp), $tarief : tarief )
+    accumulate( $bijdrage_vouw_78 : Contribution( fold == "gelijk aan later tarief: vouw 8", subject == $vouwonderwerp, $bijdragewaarde_vouw_82 : value ); $aantal_vouw_81 : count(), $vouw_vouw_83 : exactMax($bijdragewaarde_vouw_82) )
+    eval( toets_gelijkAanLaterTariefBijdrageAanVouw7($vouwonderwerp, $onderwerp, $tarief, $aantal_vouw_81, $vouw_vouw_83) )
+then
+    Object v = ComputeHelpers.contribution("gelijk aan later tarief: vouw 7", $vouwonderwerp, $onderwerp, $tarief, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta_gelijkAanLaterTariefBijdrageAanVouw8(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("register"), java.util.Arrays.asList("register"));
+}
+
+// zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf
+function boolean toets_gelijkAanLaterTariefBijdrageAanVouw8(Object $ingangsdag, Object $ingangsdag2) {
+    return ComputeHelpers.dateCompare($ingangsdag, $ingangsdag2, dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+}
+
+rule "gelijk aan later tarief: bijdrage aan vouw 8"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning( $ingangsdag2 : ingangsdag )
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( beta_gelijkAanLaterTariefBijdrageAanVouw8(this, $vouwonderwerp), $ingangsdag : ingangsdag, $tarief : tarief )
+    eval( toets_gelijkAanLaterTariefBijdrageAanVouw8($ingangsdag, $ingangsdag2) )
+then
+    Object v = ComputeHelpers.contribution("gelijk aan later tarief: vouw 8", $vouwonderwerp, $onderwerp, $tarief, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta_laterTariefZonderKortingBijdrageAanVouw9(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("register"), java.util.Arrays.asList("register"));
+}
+
+// aan alle volgende voorwaarden voldoen: zijn korting is leeg; zijn tarief is gelijk aan de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning zelf die later ingaan dan de Vergunning zelf
+function boolean toets_laterTariefZonderKortingBijdrageAanVouw9(Object $korting, Object $tarief, Object $aantal_vouw_97, Object $vouw_vouw_99) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($korting, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($tarief, ComputeHelpers.foldValue($aantal_vouw_97, $vouw_vouw_99, null), "==")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "later tarief zonder korting: bijdrage aan vouw 9"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( beta_laterTariefZonderKortingBijdrageAanVouw9(this, $vouwonderwerp), $korting : korting, $tarief : tarief )
+    accumulate( $bijdrage_vouw_94 : Contribution( fold == "later tarief zonder korting: vouw 10", subject == $vouwonderwerp, $bijdragewaarde_vouw_98 : value ); $aantal_vouw_97 : count(), $vouw_vouw_99 : exactMax($bijdragewaarde_vouw_98) )
+    eval( toets_laterTariefZonderKortingBijdrageAanVouw9($korting, $tarief, $aantal_vouw_97, $vouw_vouw_99) )
+then
+    Object v = ComputeHelpers.contribution("later tarief zonder korting: vouw 9", $vouwonderwerp, $onderwerp, $tarief, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta_laterTariefZonderKortingBijdrageAanVouw10(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("register"), java.util.Arrays.asList("register"));
+}
+
+// zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf
+function boolean toets_laterTariefZonderKortingBijdrageAanVouw10(Object $ingangsdag, Object $ingangsdag2) {
+    return ComputeHelpers.dateCompare($ingangsdag, $ingangsdag2, dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+}
+
+rule "later tarief zonder korting: bijdrage aan vouw 10"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning( $ingangsdag2 : ingangsdag )
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( beta_laterTariefZonderKortingBijdrageAanVouw10(this, $vouwonderwerp), $ingangsdag : ingangsdag, $tarief : tarief )
+    eval( toets_laterTariefZonderKortingBijdrageAanVouw10($ingangsdag, $ingangsdag2) )
+then
+    Object v = ComputeHelpers.contribution("later tarief zonder korting: vouw 10", $vouwonderwerp, $onderwerp, $tarief, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+// die niet het Register zelf zijn
+function boolean toets_hoogsteTariefNaastZichzelfBijdrageAanVouw11(Object $vouwonderwerp, Object $onderwerp) {
+    return ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE);
+}
+
+rule "hoogste tarief naast zichzelf: bijdrage aan vouw 11"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Register()
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( register == $vouwonderwerp, $tarief : tarief )
+    eval( toets_hoogsteTariefNaastZichzelfBijdrageAanVouw11($vouwonderwerp, $onderwerp) )
+then
+    Object v = ComputeHelpers.contribution("hoogste tarief naast zichzelf: vouw 11", $vouwonderwerp, $onderwerp, $tarief, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+// die het Register zelf zijn
+function boolean toets_hoogsteTariefDatZichzelfIsBijdrageAanVouw12(Object $vouwonderwerp, Object $onderwerp) {
+    return ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.FALSE);
+}
+
+rule "hoogste tarief dat zichzelf is: bijdrage aan vouw 12"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Register()
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( register == $vouwonderwerp, $tarief : tarief )
+    eval( toets_hoogsteTariefDatZichzelfIsBijdrageAanVouw12($vouwonderwerp, $onderwerp) )
+then
+    Object v = ComputeHelpers.contribution("hoogste tarief dat zichzelf is: vouw 12", $vouwonderwerp, $onderwerp, $tarief, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta_deelbaarLaterTariefBijdrageAanVouw13(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("register"), java.util.Arrays.asList("register"));
+}
+
+// aan alle volgende voorwaarden voldoen: zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
+function boolean toets_deelbaarLaterTariefBijdrageAanVouw13(Object $ingangsdag, Object $ingangsdag2, Object $tarief, Object $teller) {
+    try {
+        int raak = 0;
+        Boolean vast;
+        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+        if (vast != null) {
+            return vast;
+        }
+        if (ComputeHelpers.dateCompare($ingangsdag, $ingangsdag2, dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
+            raak++;
+        }
+        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+        if (vast != null) {
+            return vast;
+        }
+        if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, null), new java.math.BigDecimal("1"), ">")) {
+            raak++;
+        }
+        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "deelbaar later tarief: bijdrage aan vouw 13"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning( $ingangsdag2 : ingangsdag )
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( beta_deelbaarLaterTariefBijdrageAanVouw13(this, $vouwonderwerp), $ingangsdag : ingangsdag, $tarief : tarief, $teller : teller )
+    eval( toets_deelbaarLaterTariefBijdrageAanVouw13($ingangsdag, $ingangsdag2, $tarief, $teller) )
+then
+    Object v = ComputeHelpers.contribution("deelbaar later tarief: vouw 13", $vouwonderwerp, $onderwerp, $tarief, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta1_deelbaarLaterTariefFilterfoutInVouw13(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("register"), java.util.Arrays.asList("register"));
+}
+
+function boolean beta2_deelbaarLaterTariefFilterfoutInVouw13(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// aan alle volgende voorwaarden voldoen: zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
+function boolean toets_deelbaarLaterTariefFilterfoutInVouw13(Object $ingangsdag, Object $ingangsdag2, Object $tarief, Object $teller) {
+    try {
+        boolean uitkomst = samengesteld1_deelbaarLaterTariefFilterfoutInVouw13($ingangsdag, $ingangsdag2, $tarief, $teller);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// aan alle volgende voorwaarden voldoen: zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
+function boolean samengesteld1_deelbaarLaterTariefFilterfoutInVouw13(Object $ingangsdag, Object $ingangsdag2, Object $tarief, Object $teller) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.dateCompare($ingangsdag, $ingangsdag2, dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, null), new java.math.BigDecimal("1"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+// aan alle volgende voorwaarden voldoen: zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
+function RuntimeException fout_deelbaarLaterTariefFilterfoutInVouw13(Object $lijstplaatsen_plaats_128, Object $plaats_plaats_129, Object $ingangsdag, Object $ingangsdag2, Object $tarief, Object $teller, Object $onderwerp) {
+    try {
+        boolean uitkomst = samengesteld2_deelbaarLaterTariefFilterfoutInVouw13($lijstplaatsen_plaats_128, $plaats_plaats_129, $ingangsdag, $ingangsdag2, $tarief, $teller, $onderwerp);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// aan alle volgende voorwaarden voldoen: zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
+function boolean samengesteld2_deelbaarLaterTariefFilterfoutInVouw13(Object $lijstplaatsen_plaats_128, Object $plaats_plaats_129, Object $ingangsdag, Object $ingangsdag2, Object $tarief, Object $teller, Object $onderwerp) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.dateCompare($ingangsdag, $ingangsdag2, dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, null), new java.math.BigDecimal("1"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+function java.util.List plaats_deelbaarLaterTariefFilterfoutInVouw13(Object $onderwerp, Object $lijstplaatsen_plaats_128, Object $plaats_plaats_129) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.FILTER_FAULT, "deelbaar later tarief: vouw 13", $onderwerp, 0, java.util.Arrays.asList("register"), java.util.Arrays.asList($lijstplaatsen_plaats_128), java.util.Arrays.asList($plaats_plaats_129));
+}
+
+rule "deelbaar later tarief: filterfout in vouw 13"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning( $ingangsdag2 : ingangsdag )
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( beta1_deelbaarLaterTariefFilterfoutInVouw13(this, $vouwonderwerp), $ingangsdag : ingangsdag, $tarief : tarief, $teller : teller )
+    accumulate( $lijstplaats_plaats_126 : ListPlace( field == "register", beta2_deelbaarLaterTariefFilterfoutInVouw13(this, $onderwerp), $lijstplaatswaarde_plaats_127 : place ); $lijstplaatsen_plaats_128 : count(), $plaats_plaats_129 : exactMin($lijstplaatswaarde_plaats_127) )
+    eval( toets_deelbaarLaterTariefFilterfoutInVouw13($ingangsdag, $ingangsdag2, $tarief, $teller) )
+then
+    RuntimeException f = fout_deelbaarLaterTariefFilterfoutInVouw13($lijstplaatsen_plaats_128, $plaats_plaats_129, $ingangsdag, $ingangsdag2, $tarief, $teller, $onderwerp);
+    if (f == null) {
+        ComputeHelpers.contractBreach("het filter van deelbaar later tarief: vouw 13 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new FilterFault("deelbaar later tarief: vouw 13", $vouwonderwerp, $onderwerp, f, plaats_deelbaarLaterTariefFilterfoutInVouw13($onderwerp, $lijstplaatsen_plaats_128, $plaats_plaats_129)));
+end
+
+function boolean beta_deelbaarLaterTariefFilterdeponeringInVouw13(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("register"), java.util.Arrays.asList("register"));
+}
+
+// aan alle volgende voorwaarden voldoen: zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
+function boolean toets_deelbaarLaterTariefFilterdeponeringInVouw13(Object $ingangsdag, Object $ingangsdag2, Object $tarief, Object $teller, Object sonde) {
+    try {
+        boolean uitkomst = samengesteld1_deelbaarLaterTariefFilterdeponeringInVouw13($ingangsdag, $ingangsdag2, $tarief, $teller, sonde);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    return ComputeHelpers.reported(sonde);
+}
+
+// aan alle volgende voorwaarden voldoen: zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
+function boolean samengesteld1_deelbaarLaterTariefFilterdeponeringInVouw13(Object $ingangsdag, Object $ingangsdag2, Object $tarief, Object $teller, Object sonde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.dateCompare($ingangsdag, $ingangsdag2, dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, sonde), new java.math.BigDecimal("1"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+// aan alle volgende voorwaarden voldoen: zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
+function java.util.List deponering_deelbaarLaterTariefFilterdeponeringInVouw13(Object $ingangsdag, Object $ingangsdag2, Object $tarief, Object $teller, Object $onderwerp, Object sonde) {
+    try {
+        boolean uitkomst = samengesteld2_deelbaarLaterTariefFilterdeponeringInVouw13($ingangsdag, $ingangsdag2, $tarief, $teller, $onderwerp, sonde);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    if (!ComputeHelpers.reported(sonde)) {
+        ComputeHelpers.contractBreach("het filter van deelbaar later tarief: vouw 13 deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    return ComputeHelpers.depositCodes(sonde);
+}
+
+// aan alle volgende voorwaarden voldoen: zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
+function boolean samengesteld2_deelbaarLaterTariefFilterdeponeringInVouw13(Object $ingangsdag, Object $ingangsdag2, Object $tarief, Object $teller, Object $onderwerp, Object sonde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.dateCompare($ingangsdag, $ingangsdag2, dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, sonde), new java.math.BigDecimal("1"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "deelbaar later tarief: filterdeponering in vouw 13"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning( $ingangsdag2 : ingangsdag )
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( beta_deelbaarLaterTariefFilterdeponeringInVouw13(this, $vouwonderwerp), $ingangsdag : ingangsdag, $tarief : tarief, $teller : teller )
+    eval( toets_deelbaarLaterTariefFilterdeponeringInVouw13($ingangsdag, $ingangsdag2, $tarief, $teller, ComputeHelpers.depositFlag()) )
+then
+    insertLogical(new FilterDeposit("deelbaar later tarief: vouw 13", $vouwonderwerp, $onderwerp, deponering_deelbaarLaterTariefFilterdeponeringInVouw13($ingangsdag, $ingangsdag2, $tarief, $teller, $onderwerp, ComputeHelpers.depositFlag())));
+end
+
+function boolean beta_deelbaarTariefVanOngeschorsteBijdrageAanVouw14(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("register"), java.util.Arrays.asList("register"));
+}
+
+// zijn tarief gedeeld door zijn teller is groter dan 1
+function boolean toets_deelbaarTariefVanOngeschorsteBijdrageAanVouw14(Object $tarief, Object $teller) {
+    try {
+        return RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, null), new java.math.BigDecimal("1"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "deelbaar tarief van ongeschorste: bijdrage aan vouw 14"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( beta_deelbaarTariefVanOngeschorsteBijdrageAanVouw14(this, $vouwonderwerp), $tarief : tarief, $teller : teller )
+    eval( toets_deelbaarTariefVanOngeschorsteBijdrageAanVouw14($tarief, $teller) )
+then
+    Object v = ComputeHelpers.contribution("deelbaar tarief van ongeschorste: vouw 14", $vouwonderwerp, $onderwerp, $tarief, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta1_deelbaarTariefVanOngeschorsteFilterfoutInVouw14(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("register"), java.util.Arrays.asList("register"));
+}
+
+function boolean beta2_deelbaarTariefVanOngeschorsteFilterfoutInVouw14(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// zijn tarief gedeeld door zijn teller is groter dan 1
+function boolean toets_deelbaarTariefVanOngeschorsteFilterfoutInVouw14(Object $tarief, Object $teller) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, null), new java.math.BigDecimal("1"), ">");
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn tarief gedeeld door zijn teller is groter dan 1
+function RuntimeException fout_deelbaarTariefVanOngeschorsteFilterfoutInVouw14(Object $lijstplaatsen_plaats_156, Object $plaats_plaats_157, Object $tarief, Object $teller, Object $onderwerp) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, null), new java.math.BigDecimal("1"), ">");
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+function java.util.List plaats_deelbaarTariefVanOngeschorsteFilterfoutInVouw14(Object $onderwerp, Object $lijstplaatsen_plaats_156, Object $plaats_plaats_157) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.FILTER_FAULT, "deelbaar tarief van ongeschorste: vouw 14", $onderwerp, 0, java.util.Arrays.asList("register"), java.util.Arrays.asList($lijstplaatsen_plaats_156), java.util.Arrays.asList($plaats_plaats_157));
+}
+
+rule "deelbaar tarief van ongeschorste: filterfout in vouw 14"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( beta1_deelbaarTariefVanOngeschorsteFilterfoutInVouw14(this, $vouwonderwerp), $tarief : tarief, $teller : teller )
+    accumulate( $lijstplaats_plaats_154 : ListPlace( field == "register", beta2_deelbaarTariefVanOngeschorsteFilterfoutInVouw14(this, $onderwerp), $lijstplaatswaarde_plaats_155 : place ); $lijstplaatsen_plaats_156 : count(), $plaats_plaats_157 : exactMin($lijstplaatswaarde_plaats_155) )
+    eval( toets_deelbaarTariefVanOngeschorsteFilterfoutInVouw14($tarief, $teller) )
+then
+    RuntimeException f = fout_deelbaarTariefVanOngeschorsteFilterfoutInVouw14($lijstplaatsen_plaats_156, $plaats_plaats_157, $tarief, $teller, $onderwerp);
+    if (f == null) {
+        ComputeHelpers.contractBreach("het filter van deelbaar tarief van ongeschorste: vouw 14 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new FilterFault("deelbaar tarief van ongeschorste: vouw 14", $vouwonderwerp, $onderwerp, f, plaats_deelbaarTariefVanOngeschorsteFilterfoutInVouw14($onderwerp, $lijstplaatsen_plaats_156, $plaats_plaats_157)));
+end
+
+function boolean beta_deelbaarTariefVanOngeschorsteFilterdeponeringInVouw14(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("register"), java.util.Arrays.asList("register"));
+}
+
+// zijn tarief gedeeld door zijn teller is groter dan 1
+function boolean toets_deelbaarTariefVanOngeschorsteFilterdeponeringInVouw14(Object $tarief, Object $teller, Object sonde) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, sonde), new java.math.BigDecimal("1"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    return ComputeHelpers.reported(sonde);
+}
+
+// zijn tarief gedeeld door zijn teller is groter dan 1
+function java.util.List deponering_deelbaarTariefVanOngeschorsteFilterdeponeringInVouw14(Object $tarief, Object $teller, Object $onderwerp, Object sonde) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, sonde), new java.math.BigDecimal("1"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    if (!ComputeHelpers.reported(sonde)) {
+        ComputeHelpers.contractBreach("het filter van deelbaar tarief van ongeschorste: vouw 14 deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    return ComputeHelpers.depositCodes(sonde);
+}
+
+rule "deelbaar tarief van ongeschorste: filterdeponering in vouw 14"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( beta_deelbaarTariefVanOngeschorsteFilterdeponeringInVouw14(this, $vouwonderwerp), $tarief : tarief, $teller : teller )
+    eval( toets_deelbaarTariefVanOngeschorsteFilterdeponeringInVouw14($tarief, $teller, ComputeHelpers.depositFlag()) )
+then
+    insertLogical(new FilterDeposit("deelbaar tarief van ongeschorste: vouw 14", $vouwonderwerp, $onderwerp, deponering_deelbaarTariefVanOngeschorsteFilterdeponeringInVouw14($tarief, $teller, $onderwerp, ComputeHelpers.depositFlag())));
+end
+

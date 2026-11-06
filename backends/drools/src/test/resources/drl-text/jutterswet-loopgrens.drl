@@ -1,0 +1,93 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.EmptyBarrier;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de loop is de aanlooplengte van de Strook
+function Object waarde_schouwlengteVanEenStrook(Object $aanlooplengte) {
+    try {
+        return ComputeHelpers.fitTarget(let_schouwlengteVanEenStrook($aanlooplengte), Integer.valueOf(0), "schouwlengte", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de loop is de aanlooplengte van de Strook
+function Object let_schouwlengteVanEenStrook(Object $aanlooplengte) {
+    Object cel_1 = ComputeHelpers.binderCell();
+    try {
+        return RegelSpraakRuntime.rsBegrens(binder_schouwlengteVanEenStrook($aanlooplengte, cel_1), ComputeHelpers.restateExact(new java.math.BigDecimal("1"), new java.math.BigDecimal("1000"), new java.math.BigDecimal("1")), null);
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_1);
+    }
+}
+
+// de aanlooplengte van de Strook
+function Object binder_schouwlengteVanEenStrook(Object $aanlooplengte, Object cel_1) {
+    if (!ComputeHelpers.binderCellFilled(cel_1)) {
+        ComputeHelpers.fillBinderCell(cel_1, $aanlooplengte);
+    }
+    return ComputeHelpers.binderValue(cel_1);
+}
+
+rule "schouwlengte van een strook"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strook( $aanlooplengte : aanlooplengte )
+then
+    Object v = waarde_schouwlengteVanEenStrook($aanlooplengte);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "schouwlengte van een strook", ComputeHelpers.designate(v, "schouwlengte van een strook")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("strook", "schouwlengte", false), v, "schouwlengte van een strook"));
+        }
+    }
+end
+
+// de loop is de aanlooplengte van de Strook
+function Object waarde_looplengteVanEenStrook(Object $aanlooplengte) {
+    try {
+        return ComputeHelpers.fitTarget(let_looplengteVanEenStrook($aanlooplengte), Integer.valueOf(0), "looplengte", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de loop is de aanlooplengte van de Strook
+function Object let_looplengteVanEenStrook(Object $aanlooplengte) {
+    Object cel_1 = ComputeHelpers.binderCell();
+    try {
+        return RegelSpraakRuntime.rsPlus(binder_looplengteVanEenStrook($aanlooplengte, cel_1), ComputeHelpers.restateExact(new java.math.BigDecimal("1"), new java.math.BigDecimal("1000"), new java.math.BigDecimal("1")));
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_1);
+    }
+}
+
+// de aanlooplengte van de Strook
+function Object binder_looplengteVanEenStrook(Object $aanlooplengte, Object cel_1) {
+    if (!ComputeHelpers.binderCellFilled(cel_1)) {
+        ComputeHelpers.fillBinderCell(cel_1, $aanlooplengte);
+    }
+    return ComputeHelpers.binderValue(cel_1);
+}
+
+rule "looplengte van een strook"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strook( $aanlooplengte : aanlooplengte )
+then
+    Object v = waarde_looplengteVanEenStrook($aanlooplengte);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "looplengte van een strook", ComputeHelpers.designate(v, "looplengte van een strook")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("strook", "looplengte", false), v, "looplengte van een strook"));
+        }
+    }
+end
+

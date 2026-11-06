@@ -1,0 +1,195 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.ParameterState;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.math.BigDecimal heffingspercentage;
+
+// zijn opbrengst gedeeld door zijn aantal deelnemers
+function Object waarde_ruwAandeel(Object $opbrengst, Object $aantalDeelnemers, Object sonde) {
+    try {
+        return ComputeHelpers.divided($opbrengst, $aantalDeelnemers, sonde);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "ruw aandeel"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $opbrengst : opbrengst, $aantalDeelnemers : aantalDeelnemers )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_ruwAandeel($opbrengst, $aantalDeelnemers, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "ruw aandeel", ComputeHelpers.designate(v, "ruw aandeel")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("ruw aandeel", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "ruwe aandeel", false), v, "ruw aandeel"));
+        }
+    }
+end
+
+// zijn ruwe aandeel naar beneden afgerond op 0 decimalen
+function Object waarde_aandeel(Object $ruweAandeel) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding($ruweAandeel, Integer.valueOf(0), java.math.RoundingMode.FLOOR), Integer.valueOf(0), "aandeel", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aandeel"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : State( attribute == ElementKey.of("vondst", "ruwe aandeel", false), subject == $onderwerp, $ruweAandeel : value )
+then
+    Object v = waarde_aandeel($ruweAandeel);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aandeel", ComputeHelpers.designate(v, "aandeel")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "aandeel", false), v, "aandeel"));
+        }
+    }
+end
+
+// zijn opbrengst gedeeld door 3 rekenkundig afgerond op 2 decimalen
+function Object waarde_derdeDeel(Object $opbrengst, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($opbrengst, new java.math.BigDecimal("3"), sonde), Integer.valueOf(2), java.math.RoundingMode.HALF_UP), Integer.valueOf(2), "derde deel", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "derde deel"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $opbrengst : opbrengst )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_derdeDeel($opbrengst, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "derde deel", ComputeHelpers.designate(v, "derde deel")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("derde deel", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "derde deel", false), v, "derde deel"));
+        }
+    }
+end
+
+// zijn opbrengst gedeeld door 4
+function Object waarde_kwart(Object $opbrengst, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.divided($opbrengst, new java.math.BigDecimal("4"), sonde), Integer.valueOf(2), "kwart", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "kwart"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $opbrengst : opbrengst )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_kwart($opbrengst, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "kwart", ComputeHelpers.designate(v, "kwart")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("kwart", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "kwart", false), v, "kwart"));
+        }
+    }
+end
+
+// (het heffingspercentage van zijn taxatie) naar beneden afgerond op 2 decimalen
+function Object waarde_heffing(Object $heffingspercentage, Object $taxatie) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsPercentageVan($heffingspercentage, $taxatie), Integer.valueOf(2), java.math.RoundingMode.FLOOR), Integer.valueOf(2), "heffing", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "heffing"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $taxatie : taxatie )
+    $parameter_0 : ParameterState( parameter == "heffingspercentage", $heffingspercentage : value )
+then
+    Object v = waarde_heffing($heffingspercentage, $taxatie);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "heffing", ComputeHelpers.designate(v, "heffing")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "heffing", false), v, "heffing"));
+        }
+    }
+end
+
+// zijn taxatie maal 100
+function Object waarde_taxatiewaarde(Object $taxatie) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($taxatie, new java.math.BigDecimal("100")), Integer.valueOf(0), "taxatiewaarde", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "taxatiewaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $taxatie : taxatie )
+then
+    Object v = waarde_taxatiewaarde($taxatie);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "taxatiewaarde", ComputeHelpers.designate(v, "taxatiewaarde")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "taxatiewaarde", false), v, "taxatiewaarde"));
+        }
+    }
+end
+
+rule "stand Vondst.ruwe aandeel: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $waarde : Value( attribute == ElementKey.of("vondst", "ruwe aandeel", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "ruwe aandeel", false), $v));
+end
+
+rule "stand Vondst.ruwe aandeel: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : ruweAandeel )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "ruwe aandeel", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "ruwe aandeel", false), $invoer));
+end
+
+rule "parameterstand heffingspercentage"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("heffingspercentage", heffingspercentage));
+end
+

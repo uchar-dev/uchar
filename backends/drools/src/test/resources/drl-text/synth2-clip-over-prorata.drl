@@ -1,0 +1,124 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Period;
+import dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het tijdsevenredig deel per maand van zijn borgtarief gedurende de tijd dat hij borgplichtig is
+function Object waarde_borgdeelVanEenJutter(Object $tijdlijn_0, Object $tijdlijn_1, Object $onderwerp) {
+    try {
+        return Period.list(ComputeHelpers.proRata($tijdlijn_0, ComputeHelpers.complete($tijdlijn_1, "the pro-rata base \"borgtarief\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.7, ch. 8.4)", "borgtarief", Boolean.TRUE), "MAAND", Integer.valueOf(2), "borgdeel"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "borgdeel van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $tijdlijn_0 : (ComputeHelpers.periods(borgplichtig)) )
+    $stand_1 : State( attribute == ElementKey.of("jutter", "borgtarief", false), subject == $onderwerp, $tijdlijn_1 : value )
+then
+    Object v = waarde_borgdeelVanEenJutter($tijdlijn_0, $tijdlijn_1, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "borgdeel van een jutter", ComputeHelpers.designate(v, "borgdeel van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "borgdeel", false), v, "borgdeel van een jutter"));
+        }
+    }
+end
+
+// (het totaal van zijn borgdeel gedurende de tijd dat hij borgplichtig is) rekenkundig afgerond op 2 decimalen
+function Object waarde_wachtsomVanEenJutter(Object $tijdlijn_0, Object $onderwerp, Object $tijdlijn_2) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(PeriodArithmetic.total(RegelSpraakRuntime.rsTijdKnip(ComputeHelpers.complete($tijdlijn_0, "the gedurende clip of \"borgdeel\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "borgdeel", Boolean.TRUE), ((java.util.List) $tijdlijn_2), Period.class), "MAAND", null, null, "borgdeel", $onderwerp), Integer.valueOf(2), java.math.RoundingMode.HALF_UP), Integer.valueOf(2), "wachtsom", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "wachtsom van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $tijdlijn_2 : (ComputeHelpers.periods(borgplichtig)) )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "borgdeel", false), subject == $onderwerp, $tijdlijn_0 : value )
+then
+    Object v = waarde_wachtsomVanEenJutter($tijdlijn_0, $onderwerp, $tijdlijn_2);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "wachtsom van een jutter", ComputeHelpers.designate(v, "wachtsom van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "wachtsom", false), v, "wachtsom van een jutter"));
+        }
+    }
+end
+
+rule "stand Jutter.borgtarief: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(borgtarief)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "borgtarief", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "borgtarief", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "borgtarief", false), $invoer));
+end
+
+rule "stand Jutter.borgtarief: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(borgtarief)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "borgtarief", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "borgtarief", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "borgtarief", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+rule "stand Jutter.borgdeel: de vereniging van de schrijvers"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(borgdeel)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "borgdeel", false), subject == $onderwerp ) )
+    exists( $schrijver : Value( attribute == ElementKey.of("jutter", "borgdeel", false), subject == $onderwerp ) )
+    accumulate( $waarde : Value( attribute == ElementKey.of("jutter", "borgdeel", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+then
+    insertLogical(ComputeHelpers.writersUnion($onderwerp, ElementKey.of("jutter", "borgdeel", false), $waarden, $invoer, ComputeHelpers.list2("borgdeel van een jutter", "wachtsom van een jutter")));
+end
+
+rule "stand Jutter.borgdeel: de vereniging van de schrijvers, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "borgdeel", false), subject == $onderwerp ) )
+    exists( $schrijver : Value( attribute == ElementKey.of("jutter", "borgdeel", false), subject == $onderwerp ) )
+    accumulate( $waarde : Value( attribute == ElementKey.of("jutter", "borgdeel", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+then
+    insertLogical(ComputeHelpers.writersUnion($onderwerp, ElementKey.of("jutter", "borgdeel", false), $waarden, null, ComputeHelpers.list2("borgdeel van een jutter", "wachtsom van een jutter")));
+end
+
+rule "stand Jutter.borgdeel: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(borgdeel)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "borgdeel", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "borgdeel", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "borgdeel", false), $invoer));
+end
+
+rule "stand Jutter.borgdeel: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(borgdeel)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "borgdeel", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "borgdeel", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "borgdeel", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+

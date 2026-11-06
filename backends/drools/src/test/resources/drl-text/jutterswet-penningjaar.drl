@@ -1,0 +1,152 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.EvaluationDate;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.ParameterState;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.time.LocalDate rekendatum;
+global java.math.BigDecimal vondstdrempel;
+
+// het totaal van zijn aantal aangemelde vondsten
+function Object waarde_totaalAangemeldeVondsten(Object $tijdlijn_0, Object $onderwerp, Object $rekendatumwaarde_2) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.ownTotal($tijdlijn_0, $onderwerp, $rekendatumwaarde_2, "aantal aangemelde vondsten", "JAAR", null, null), Integer.valueOf(0), "totaal aangemelde vondsten", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "totaal aangemelde vondsten"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $rekendatum_2 : EvaluationDate( $rekendatumwaarde_2 : date )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "aantal aangemelde vondsten", false), subject == $onderwerp, $tijdlijn_0 : value )
+then
+    Object v = waarde_totaalAangemeldeVondsten($tijdlijn_0, $onderwerp, $rekendatumwaarde_2);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "totaal aangemelde vondsten", ComputeHelpers.designate(v, "totaal aangemelde vondsten")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "totaal aangemelde vondsten", false), v, "totaal aangemelde vondsten"));
+        }
+    }
+end
+
+// zijn totaal aangemelde vondsten groter of gelijk is aan de vondstdrempel
+function boolean toets_kenmerktoekenningPenninggerechtigd(Object $totaalAangemeldeVondsten, Object $vondstdrempel) {
+    return RegelSpraakRuntime.rsAggVergelijk($totaalAangemeldeVondsten, $vondstdrempel, ">=");
+}
+
+rule "Kenmerktoekenning penninggerechtigd"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $parameter_1 : ParameterState( parameter == "vondstdrempel", $vondstdrempel : value )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "totaal aangemelde vondsten", false), subject == $onderwerp, $totaalAangemeldeVondsten : value )
+    eval( toets_kenmerktoekenningPenninggerechtigd($totaalAangemeldeVondsten, $vondstdrempel) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "penninggerechtigd", true)));
+end
+
+// hij niet penninggerechtigd is
+function boolean toets_kenmerktoekenningAanmeldplichtig(Object $penninggerechtigd) {
+    return ComputeHelpers.characteristic($penninggerechtigd, Boolean.FALSE);
+}
+
+rule "Kenmerktoekenning aanmeldplichtig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("jutter", "penninggerechtigd", true), subject == $onderwerp, $penninggerechtigd : holds )
+    eval( toets_kenmerktoekenningAanmeldplichtig($penninggerechtigd) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "aanmeldplichtig", true)));
+end
+
+rule "stand Jutter.aantal aangemelde vondsten: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(aantalAangemeldeVondsten)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "aantal aangemelde vondsten", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "aantal aangemelde vondsten", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "aantal aangemelde vondsten", false), $invoer));
+end
+
+rule "stand Jutter.aantal aangemelde vondsten: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(aantalAangemeldeVondsten)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "aantal aangemelde vondsten", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "aantal aangemelde vondsten", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "aantal aangemelde vondsten", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+rule "stand Jutter.totaal aangemelde vondsten: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $waarde : Value( attribute == ElementKey.of("jutter", "totaal aangemelde vondsten", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "totaal aangemelde vondsten", false), $v));
+end
+
+rule "stand Jutter.totaal aangemelde vondsten: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : totaalAangemeldeVondsten )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "totaal aangemelde vondsten", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "totaal aangemelde vondsten", false), $invoer));
+end
+
+rule "kenmerkstand Jutter.penninggerechtigd: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.holds(penninggerechtigd) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("jutter", "penninggerechtigd", true), true));
+end
+
+rule "kenmerkstand Jutter.penninggerechtigd: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("jutter", "penninggerechtigd", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("jutter", "penninggerechtigd", true), true));
+end
+
+rule "kenmerkstand Jutter.penninggerechtigd: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.holds(penninggerechtigd) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("jutter", "penninggerechtigd", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("jutter", "penninggerechtigd", true), false));
+end
+
+rule "parameterstand vondstdrempel"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("vondstdrempel", vondstdrempel));
+end
+
+rule "rekendatumstand"
+    dialect "mvel"
+when
+then
+    insertLogical(new EvaluationDate(rekendatum));
+end
+

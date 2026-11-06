@@ -1,0 +1,159 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Outcome;
+
+// hij nx heeft en hij ny heeft
+function boolean toets_defaultsKJutterVrijgesteldDefault000(Object $nx, Object $ny) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($nx, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($ny, Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "defaults K:Jutter.vrijgesteld: default 0.0.0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $nx : (ComputeHelpers.holds(nx)), $ny : (ComputeHelpers.holds(ny)) )
+    eval( toets_defaultsKJutterVrijgesteldDefault000($nx, $ny) )
+then
+    Object v = Boolean.FALSE;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Jutter.vrijgesteld", 1, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// hij nx heeft en hij nz heeft
+function boolean toets_defaultsKJutterVrijgesteldDefault010(Object $nx, Object $nz) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($nx, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($nz, Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "defaults K:Jutter.vrijgesteld: default 0.1.0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $nx : (ComputeHelpers.holds(nx)), $nz : (ComputeHelpers.holds(nz)) )
+    eval( toets_defaultsKJutterVrijgesteldDefault010($nx, $nz) )
+then
+    Object v = Boolean.TRUE;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Jutter.vrijgesteld", 2, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function boolean beta1_defaultsKJutterVrijgesteldVerschil0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsKJutterVrijgesteldVerschil0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+function Object conflict_defaultsKJutterVrijgesteldVerschil0() {
+    return "Jutter.vrijgesteld/0";
+}
+
+rule "defaults K:Jutter.vrijgesteld: verschil 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Jutter.vrijgesteld" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 1 && chain < 3, $onderwerp : subject )
+    not( $uitkomst_5 : Outcome( stack == "defaults K:Jutter.vrijgesteld" && chain >= 1 && chain < 3 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsKJutterVrijgesteldVerschil0(this, $besluit) ) )
+    exists( $uitkomst_8 : Outcome( stack == "defaults K:Jutter.vrijgesteld" && chain >= 1 && chain < 3 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsKJutterVrijgesteldVerschil0(this, $besluit) ) )
+then
+    Object v = conflict_defaultsKJutterVrijgesteldVerschil0();
+    insertLogical(new Outcome($onderwerp, "defaults K:Jutter.vrijgesteld", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT, null, (String) v));
+end
+
+function boolean beta1_defaultsKJutterVrijgesteldEens0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsKJutterVrijgesteldEens0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Jutter.vrijgesteld: eens 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Jutter.vrijgesteld" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 1 && chain < 3, $onderwerp : subject, $waarde : value )
+    not( $uitkomst_12 : Outcome( stack == "defaults K:Jutter.vrijgesteld" && chain >= 1 && chain < 3 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsKJutterVrijgesteldEens0(this, $besluit) ) )
+    not( $uitkomst_15 : Outcome( stack == "defaults K:Jutter.vrijgesteld" && chain >= 1 && chain < 3 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsKJutterVrijgesteldEens0(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Jutter.vrijgesteld", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// hij nx heeft
+function boolean toets_defaultsKJutterVrijgesteldTerugval0(Object $nx) {
+    return ComputeHelpers.characteristic($nx, Boolean.TRUE);
+}
+
+rule "defaults K:Jutter.vrijgesteld: terugval 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $nx : (ComputeHelpers.holds(nx)) )
+    not( $uitkomst_19 : Outcome( stack == "defaults K:Jutter.vrijgesteld" && chain >= 1 && chain < 3, subject == $onderwerp ) )
+    eval( toets_defaultsKJutterVrijgesteldTerugval0($nx) )
+then
+    Object v = Boolean.TRUE;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Jutter.vrijgesteld", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function Object conflict_defaultsKJutterVrijgesteldDoorgevenWortel(Object $sleutel) {
+    return $sleutel;
+}
+
+rule "defaults K:Jutter.vrijgesteld: doorgeven wortel"
+    dialect "mvel"
+when
+    $conflict : Outcome( stack == "defaults K:Jutter.vrijgesteld" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT && chain >= 0 && chain < 1, $onderwerp : subject, $sleutel : key )
+then
+    Object v = conflict_defaultsKJutterVrijgesteldDoorgevenWortel($sleutel);
+    insertLogical(ComputeHelpers.inconsistency((String) v, $onderwerp, ComputeHelpers.list1("EF-027")));
+end
+
+rule "defaults K:Jutter.vrijgesteld: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Jutter.vrijgesteld" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 1 && value == true, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "vrijgesteld", true)));
+    }
+end
+

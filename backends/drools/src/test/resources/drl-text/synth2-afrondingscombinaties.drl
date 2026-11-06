@@ -1,0 +1,88 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de vracht van de Partij gedeeld door de eenheden van de Partij naar beneden afgerond op 0 decimalen plus de toeslag van de Partij
+function Object waarde_totaalVanEenPartij(Object $vracht, Object $eenheden, Object $toeslag, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vracht, $eenheden, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), $toeslag), Integer.valueOf(0), "totaal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "totaal van een partij"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Partij( $vracht : vracht, $eenheden : eenheden, $toeslag : toeslag )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_totaalVanEenPartij($vracht, $eenheden, $toeslag, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "totaal van een partij", ComputeHelpers.designate(v, "totaal van een partij")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("totaal van een partij", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("partij", "totaal", false), v, "totaal van een partij"));
+        }
+    }
+end
+
+// de omzet van de Partij gedeeld door de posten van de Partij rekenkundig afgerond op 1 decimaal verminderd met de aftrek van de Partij
+function Object waarde_margeVanEenPartij(Object $omzet, Object $posten, Object $aftrek, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsVerminderd(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($omzet, $posten, sonde), Integer.valueOf(1), java.math.RoundingMode.HALF_UP), $aftrek), Integer.valueOf(1), "marge", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "marge van een partij"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Partij( $omzet : omzet, $posten : posten, $aftrek : aftrek )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_margeVanEenPartij($omzet, $posten, $aftrek, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "marge van een partij", ComputeHelpers.designate(v, "marge van een partij")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("marge van een partij", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("partij", "marge", false), v, "marge van een partij"));
+        }
+    }
+end
+
+// 20% van de grondslag van de Partij naar beneden afgerond op 0 decimalen
+function Object waarde_premieVanEenPartij(Object $grondslag) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPercentageVan(new java.math.BigDecimal("20"), RegelSpraakRuntime.rsAfronding($grondslag, Integer.valueOf(0), java.math.RoundingMode.FLOOR)), Integer.valueOf(2), "premie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "premie van een partij"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Partij( $grondslag : grondslag )
+then
+    Object v = waarde_premieVanEenPartij($grondslag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "premie van een partij", ComputeHelpers.designate(v, "premie van een partij")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("partij", "premie", false), v, "premie van een partij"));
+        }
+    }
+end
+

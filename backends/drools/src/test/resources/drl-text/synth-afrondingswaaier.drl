@@ -1,0 +1,176 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde naar beneden afgerond op 0 decimalen
+function Object waarde_prijsBenedenafVanEenVeilingronde(Object $opbrengst, Object $kavels, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($opbrengst, $kavels, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), Integer.valueOf(0), "prijsBenedenaf", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "prijs benedenaf van een veilingronde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Veilingronde( $opbrengst : opbrengst, $kavels : kavels )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_prijsBenedenafVanEenVeilingronde($opbrengst, $kavels, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "prijs benedenaf van een veilingronde", ComputeHelpers.designate(v, "prijs benedenaf van een veilingronde")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("prijs benedenaf van een veilingronde", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("veilingronde", "prijsbenedenaf", false), v, "prijs benedenaf van een veilingronde"));
+        }
+    }
+end
+
+// de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde naar boven afgerond op 0 decimalen
+function Object waarde_prijsBovenafVanEenVeilingronde(Object $opbrengst, Object $kavels, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($opbrengst, $kavels, sonde), Integer.valueOf(0), java.math.RoundingMode.CEILING), Integer.valueOf(0), "prijsBovenaf", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "prijs bovenaf van een veilingronde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Veilingronde( $opbrengst : opbrengst, $kavels : kavels )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_prijsBovenafVanEenVeilingronde($opbrengst, $kavels, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "prijs bovenaf van een veilingronde", ComputeHelpers.designate(v, "prijs bovenaf van een veilingronde")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("prijs bovenaf van een veilingronde", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("veilingronde", "prijsbovenaf", false), v, "prijs bovenaf van een veilingronde"));
+        }
+    }
+end
+
+// de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde rekenkundig afgerond op 0 decimalen
+function Object waarde_prijsRekenkundigVanEenVeilingronde(Object $opbrengst, Object $kavels, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($opbrengst, $kavels, sonde), Integer.valueOf(0), java.math.RoundingMode.HALF_UP), Integer.valueOf(0), "prijsRekenkundig", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "prijs rekenkundig van een veilingronde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Veilingronde( $opbrengst : opbrengst, $kavels : kavels )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_prijsRekenkundigVanEenVeilingronde($opbrengst, $kavels, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "prijs rekenkundig van een veilingronde", ComputeHelpers.designate(v, "prijs rekenkundig van een veilingronde")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("prijs rekenkundig van een veilingronde", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("veilingronde", "prijsrekenkundig", false), v, "prijs rekenkundig van een veilingronde"));
+        }
+    }
+end
+
+// de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde richting nul afgerond op 0 decimalen
+function Object waarde_prijsNaarNulVanEenVeilingronde(Object $opbrengst, Object $kavels, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($opbrengst, $kavels, sonde), Integer.valueOf(0), java.math.RoundingMode.DOWN), Integer.valueOf(0), "prijsNaarNul", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "prijs naar nul van een veilingronde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Veilingronde( $opbrengst : opbrengst, $kavels : kavels )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_prijsNaarNulVanEenVeilingronde($opbrengst, $kavels, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "prijs naar nul van een veilingronde", ComputeHelpers.designate(v, "prijs naar nul van een veilingronde")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("prijs naar nul van een veilingronde", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("veilingronde", "prijsnaarnul", false), v, "prijs naar nul van een veilingronde"));
+        }
+    }
+end
+
+// de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde weg van nul afgerond op 0 decimalen
+function Object waarde_prijsVanNulVanEenVeilingronde(Object $opbrengst, Object $kavels, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($opbrengst, $kavels, sonde), Integer.valueOf(0), java.math.RoundingMode.UP), Integer.valueOf(0), "prijsVanNul", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "prijs van nul van een veilingronde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Veilingronde( $opbrengst : opbrengst, $kavels : kavels )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_prijsVanNulVanEenVeilingronde($opbrengst, $kavels, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "prijs van nul van een veilingronde", ComputeHelpers.designate(v, "prijs van nul van een veilingronde")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("prijs van nul van een veilingronde", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("veilingronde", "prijsvannul", false), v, "prijs van nul van een veilingronde"));
+        }
+    }
+end
+
+// de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde rekenkundig afgerond op 1 decimaal
+function Object waarde_prijsFijnVanEenVeilingronde(Object $opbrengst, Object $kavels, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($opbrengst, $kavels, sonde), Integer.valueOf(1), java.math.RoundingMode.HALF_UP), Integer.valueOf(1), "prijsFijn", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "prijs fijn van een veilingronde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Veilingronde( $opbrengst : opbrengst, $kavels : kavels )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_prijsFijnVanEenVeilingronde($opbrengst, $kavels, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "prijs fijn van een veilingronde", ComputeHelpers.designate(v, "prijs fijn van een veilingronde")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("prijs fijn van een veilingronde", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("veilingronde", "prijsfijn", false), v, "prijs fijn van een veilingronde"));
+        }
+    }
+end
+

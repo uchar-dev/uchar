@@ -1,0 +1,535 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Decides;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Outcome;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn gewogen gewicht gevuld is
+function boolean toets_defaultsAVondstVerhoudingDefault0(Object $gewogenGewicht) {
+    return ComputeHelpers.emptyTest($gewogenGewicht, Boolean.FALSE);
+}
+
+// zijn gewogen gewicht gedeeld door zijn geschatte gewicht rekenkundig afgerond op 2 decimalen
+function Object afloop_defaultsAVondstVerhoudingDefault0(Object $gewogenGewicht, Object $geschatteGewicht, Object sonde) {
+    try {
+        return RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($gewogenGewicht, $geschatteGewicht, sonde), Integer.valueOf(2), java.math.RoundingMode.HALF_UP);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Vondst.verhouding: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $gewogenGewicht : gewogenGewicht, $geschatteGewicht : geschatteGewicht )
+    eval( toets_defaultsAVondstVerhoudingDefault0($gewogenGewicht) )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = afloop_defaultsAVondstVerhoudingDefault0($gewogenGewicht, $geschatteGewicht, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Vondst.verhouding", ComputeHelpers.designate(v, "defaults A:Vondst.verhouding")));
+    } else if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "verhouding");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondst.verhouding", ComputeHelpers.designate(passend, "defaults A:Vondst.verhouding")));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.verhouding", 0));
+        } else {
+            if (ComputeHelpers.reported(sonde)) {
+                insertLogical(ComputeHelpers.inconsistency("Vondst.verhouding", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+            }
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "verhouding", false), passend, "defaults A:Vondst.verhouding"));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.verhouding", 0));
+        }
+    }
+end
+
+rule "defaults A:Vondst.verhouding: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst") )
+    not( $hoger_3 : Decides( stack == "defaults A:Vondst.verhouding" && index < 1, subject == $onderwerp ) )
+then
+    // 1,00
+    Object v = new java.math.BigDecimal("1");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "verhouding");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondst.verhouding", ComputeHelpers.designate(passend, "defaults A:Vondst.verhouding")));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.verhouding", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "verhouding", false), passend, "defaults A:Vondst.verhouding"));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.verhouding", 1));
+        }
+    }
+end
+
+// zijn toeslaggrond gevuld is en hij gemerkt is
+function boolean toets_defaultsAVondstToeslagDefault000(Object $toeslaggrond, Object $gemerkt) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($toeslaggrond, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($gemerkt, Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "defaults A:Vondst.toeslag: default 0.0.0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $toeslaggrond : toeslaggrond, $gemerkt : (ComputeHelpers.holds(gemerkt)) )
+    eval( toets_defaultsAVondstToeslagDefault000($toeslaggrond, $gemerkt) )
+then
+    // 2,00
+    Object v = new java.math.BigDecimal("2");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.toeslag", 1, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults A:Vondst.toeslag: eens 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Vondst.toeslag" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 1 && chain < 2, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.toeslag", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// zijn toeslaggrond gevuld is
+function boolean toets_defaultsAVondstToeslagTerugval0(Object $toeslaggrond) {
+    return ComputeHelpers.emptyTest($toeslaggrond, Boolean.FALSE);
+}
+
+// (zijn toeslaggrond gedeeld door zijn geschatte gewicht rekenkundig afgerond op 2 decimalen) plus 5,00
+function Object afloop_defaultsAVondstToeslagTerugval0(Object $toeslaggrond, Object $geschatteGewicht, Object sonde) {
+    try {
+        return RegelSpraakRuntime.rsPlus(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($toeslaggrond, $geschatteGewicht, sonde), Integer.valueOf(2), java.math.RoundingMode.HALF_UP), new java.math.BigDecimal("5"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Vondst.toeslag: terugval 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $toeslaggrond : toeslaggrond, $geschatteGewicht : geschatteGewicht )
+    not( $uitkomst_10 : Outcome( stack == "defaults A:Vondst.toeslag" && chain >= 1 && chain < 2, subject == $onderwerp ) )
+    eval( toets_defaultsAVondstToeslagTerugval0($toeslaggrond) )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = afloop_defaultsAVondstToeslagTerugval0($toeslaggrond, $geschatteGewicht, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Vondst.toeslag", ComputeHelpers.designate(v, "defaults A:Vondst.toeslag")));
+    } else if (v != null) {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("Vondst.toeslag", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.toeslag", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults A:Vondst.toeslag: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst") )
+    not( $hoger_14 : Outcome( stack == "defaults A:Vondst.toeslag" && chain == 0 && position < 1, subject == $onderwerp ) )
+then
+    // 1,00
+    Object v = new java.math.BigDecimal("1");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.toeslag", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults A:Vondst.toeslag: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Vondst.toeslag" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 1, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "toeslag");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondst.toeslag", ComputeHelpers.designate(passend, "defaults A:Vondst.toeslag")));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "toeslag", false), passend, "defaults A:Vondst.toeslag"));
+        }
+    }
+end
+
+// zijn kortinggrond gedeeld door zijn geschatte gewicht leeg is
+function boolean toets_defaultsAVondstKortingDefault0(Object $kortinggrond, Object $geschatteGewicht) {
+    try {
+        return ComputeHelpers.emptyTest(ComputeHelpers.divided($kortinggrond, $geschatteGewicht, null), Boolean.TRUE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "defaults A:Vondst.korting: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $kortinggrond : kortinggrond, $geschatteGewicht : geschatteGewicht )
+    eval( toets_defaultsAVondstKortingDefault0($kortinggrond, $geschatteGewicht) )
+then
+    // 7,00
+    Object v = new java.math.BigDecimal("7");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "korting");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondst.korting", ComputeHelpers.designate(passend, "defaults A:Vondst.korting")));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.korting", 0));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "korting", false), passend, "defaults A:Vondst.korting"));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.korting", 0));
+        }
+    }
+end
+
+// zijn kortinggrond gedeeld door zijn geschatte gewicht leeg is
+function boolean toets_defaultsAVondstKortingDefault0FoutInDeVoorwaarde(Object $kortinggrond, Object $geschatteGewicht) {
+    try {
+        boolean uitkomst = ComputeHelpers.emptyTest(ComputeHelpers.divided($kortinggrond, $geschatteGewicht, null), Boolean.TRUE);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn kortinggrond gedeeld door zijn geschatte gewicht leeg is
+function Object fout_defaultsAVondstKortingDefault0FoutInDeVoorwaarde(Object $kortinggrond, Object $geschatteGewicht) {
+    try {
+        boolean uitkomst = ComputeHelpers.emptyTest(ComputeHelpers.divided($kortinggrond, $geschatteGewicht, null), Boolean.TRUE);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Vondst.korting: default 0: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $kortinggrond : kortinggrond, $geschatteGewicht : geschatteGewicht )
+    eval( toets_defaultsAVondstKortingDefault0FoutInDeVoorwaarde($kortinggrond, $geschatteGewicht) )
+then
+    Object f = fout_defaultsAVondstKortingDefault0FoutInDeVoorwaarde($kortinggrond, $geschatteGewicht);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"defaults A:Vondst.korting\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "defaults A:Vondst.korting", ComputeHelpers.designate(f, "defaults A:Vondst.korting")));
+end
+
+// zijn kortinggrond gedeeld door zijn geschatte gewicht leeg is
+function boolean toets_defaultsAVondstKortingDefault0DeponeringInDeVoorwaarde(Object $kortinggrond, Object $geschatteGewicht, Object sonde) {
+    try {
+        boolean uitkomst = ComputeHelpers.emptyTest(ComputeHelpers.divided($kortinggrond, $geschatteGewicht, sonde), Boolean.TRUE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    return ComputeHelpers.reported(sonde);
+}
+
+// zijn kortinggrond gedeeld door zijn geschatte gewicht leeg is
+function java.util.List deponering_defaultsAVondstKortingDefault0DeponeringInDeVoorwaarde(Object $kortinggrond, Object $geschatteGewicht, Object sonde) {
+    try {
+        boolean uitkomst = ComputeHelpers.emptyTest(ComputeHelpers.divided($kortinggrond, $geschatteGewicht, sonde), Boolean.TRUE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    if (!ComputeHelpers.reported(sonde)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"Vondst.korting\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    return ComputeHelpers.depositCodes(sonde);
+}
+
+rule "defaults A:Vondst.korting: default 0: deponering in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $kortinggrond : kortinggrond, $geschatteGewicht : geschatteGewicht )
+    eval( toets_defaultsAVondstKortingDefault0DeponeringInDeVoorwaarde($kortinggrond, $geschatteGewicht, ComputeHelpers.depositFlag()) )
+    exists( $beslist_24 : Decides( stack == "defaults A:Vondst.korting" && index == 0, subject == $onderwerp ) )
+then
+    insertLogical(ComputeHelpers.inconsistency("Vondst.korting", $onderwerp, deponering_defaultsAVondstKortingDefault0DeponeringInDeVoorwaarde($kortinggrond, $geschatteGewicht, ComputeHelpers.depositFlag())));
+end
+
+rule "defaults A:Vondst.korting: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst") )
+    not( $hoger_27 : Decides( stack == "defaults A:Vondst.korting" && index < 1, subject == $onderwerp ) )
+then
+    // 1,00
+    Object v = new java.math.BigDecimal("1");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "korting");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondst.korting", ComputeHelpers.designate(passend, "defaults A:Vondst.korting")));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.korting", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "korting", false), passend, "defaults A:Vondst.korting"));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.korting", 1));
+        }
+    }
+end
+
+// hij gemerkt is
+function boolean toets_defaultsAVondstVerlagingDefault0(Object $gemerkt) {
+    return ComputeHelpers.characteristic($gemerkt, Boolean.TRUE);
+}
+
+rule "defaults A:Vondst.verlaging: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $gemerkt : (ComputeHelpers.holds(gemerkt)) )
+    eval( toets_defaultsAVondstVerlagingDefault0($gemerkt) )
+then
+    // 4,00
+    Object v = new java.math.BigDecimal("4");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "verlaging");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondst.verlaging", ComputeHelpers.designate(passend, "defaults A:Vondst.verlaging")));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.verlaging", 0));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "verlaging", false), passend, "defaults A:Vondst.verlaging"));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.verlaging", 0));
+        }
+    }
+end
+
+// zijn toeslaggrond gedeeld door zijn geschatte gewicht leeg is
+function boolean toets_defaultsAVondstVerlagingDefault1(Object $toeslaggrond, Object $geschatteGewicht) {
+    try {
+        return ComputeHelpers.emptyTest(ComputeHelpers.divided($toeslaggrond, $geschatteGewicht, null), Boolean.TRUE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "defaults A:Vondst.verlaging: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $toeslaggrond : toeslaggrond, $geschatteGewicht : geschatteGewicht )
+    not( $hoger_33 : Decides( stack == "defaults A:Vondst.verlaging" && index < 1, subject == $onderwerp ) )
+    eval( toets_defaultsAVondstVerlagingDefault1($toeslaggrond, $geschatteGewicht) )
+then
+    // 3,00
+    Object v = new java.math.BigDecimal("3");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "verlaging");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondst.verlaging", ComputeHelpers.designate(passend, "defaults A:Vondst.verlaging")));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.verlaging", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "verlaging", false), passend, "defaults A:Vondst.verlaging"));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.verlaging", 1));
+        }
+    }
+end
+
+// zijn toeslaggrond gedeeld door zijn geschatte gewicht leeg is
+function boolean toets_defaultsAVondstVerlagingDefault1FoutInDeVoorwaarde(Object $toeslaggrond, Object $geschatteGewicht) {
+    try {
+        boolean uitkomst = ComputeHelpers.emptyTest(ComputeHelpers.divided($toeslaggrond, $geschatteGewicht, null), Boolean.TRUE);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn toeslaggrond gedeeld door zijn geschatte gewicht leeg is
+function Object fout_defaultsAVondstVerlagingDefault1FoutInDeVoorwaarde(Object $toeslaggrond, Object $geschatteGewicht) {
+    try {
+        boolean uitkomst = ComputeHelpers.emptyTest(ComputeHelpers.divided($toeslaggrond, $geschatteGewicht, null), Boolean.TRUE);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Vondst.verlaging: default 1: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $toeslaggrond : toeslaggrond, $geschatteGewicht : geschatteGewicht )
+    eval( toets_defaultsAVondstVerlagingDefault1FoutInDeVoorwaarde($toeslaggrond, $geschatteGewicht) )
+    not( $hoger_38 : Decides( stack == "defaults A:Vondst.verlaging" && index < 1, subject == $onderwerp ) )
+then
+    Object f = fout_defaultsAVondstVerlagingDefault1FoutInDeVoorwaarde($toeslaggrond, $geschatteGewicht);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"defaults A:Vondst.verlaging\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "defaults A:Vondst.verlaging", ComputeHelpers.designate(f, "defaults A:Vondst.verlaging")));
+end
+
+// zijn toeslaggrond gedeeld door zijn geschatte gewicht leeg is
+function boolean toets_defaultsAVondstVerlagingDefault1DeponeringInDeVoorwaarde(Object $toeslaggrond, Object $geschatteGewicht, Object sonde) {
+    try {
+        boolean uitkomst = ComputeHelpers.emptyTest(ComputeHelpers.divided($toeslaggrond, $geschatteGewicht, sonde), Boolean.TRUE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    return ComputeHelpers.reported(sonde);
+}
+
+// zijn toeslaggrond gedeeld door zijn geschatte gewicht leeg is
+function java.util.List deponering_defaultsAVondstVerlagingDefault1DeponeringInDeVoorwaarde(Object $toeslaggrond, Object $geschatteGewicht, Object sonde) {
+    try {
+        boolean uitkomst = ComputeHelpers.emptyTest(ComputeHelpers.divided($toeslaggrond, $geschatteGewicht, sonde), Boolean.TRUE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    if (!ComputeHelpers.reported(sonde)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"Vondst.verlaging\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    return ComputeHelpers.depositCodes(sonde);
+}
+
+rule "defaults A:Vondst.verlaging: default 1: deponering in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $toeslaggrond : toeslaggrond, $geschatteGewicht : geschatteGewicht )
+    eval( toets_defaultsAVondstVerlagingDefault1DeponeringInDeVoorwaarde($toeslaggrond, $geschatteGewicht, ComputeHelpers.depositFlag()) )
+    not( $hoger_42 : Decides( stack == "defaults A:Vondst.verlaging" && index < 1, subject == $onderwerp ) )
+    exists( $beslist_44 : Decides( stack == "defaults A:Vondst.verlaging" && index == 1, subject == $onderwerp ) )
+then
+    insertLogical(ComputeHelpers.inconsistency("Vondst.verlaging", $onderwerp, deponering_defaultsAVondstVerlagingDefault1DeponeringInDeVoorwaarde($toeslaggrond, $geschatteGewicht, ComputeHelpers.depositFlag())));
+end
+
+// zijn premiegrond gedeeld door zijn geschatte gewicht groter is dan 1
+function boolean toets_defaultsAVondstPremieDefault0(Object $premiegrond, Object $geschatteGewicht) {
+    try {
+        return RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($premiegrond, $geschatteGewicht, null), new java.math.BigDecimal("1"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "defaults A:Vondst.premie: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $premiegrond : premiegrond, $geschatteGewicht : geschatteGewicht )
+    eval( toets_defaultsAVondstPremieDefault0($premiegrond, $geschatteGewicht) )
+then
+    // 9,00
+    Object v = new java.math.BigDecimal("9");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "premie");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondst.premie", ComputeHelpers.designate(passend, "defaults A:Vondst.premie")));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.premie", 0));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "premie", false), passend, "defaults A:Vondst.premie"));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.premie", 0));
+        }
+    }
+end
+
+// zijn premiegrond gedeeld door zijn geschatte gewicht groter is dan 1
+function boolean toets_defaultsAVondstPremieDefault0FoutInDeVoorwaarde(Object $premiegrond, Object $geschatteGewicht) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($premiegrond, $geschatteGewicht, null), new java.math.BigDecimal("1"), ">");
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn premiegrond gedeeld door zijn geschatte gewicht groter is dan 1
+function Object fout_defaultsAVondstPremieDefault0FoutInDeVoorwaarde(Object $premiegrond, Object $geschatteGewicht) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($premiegrond, $geschatteGewicht, null), new java.math.BigDecimal("1"), ">");
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Vondst.premie: default 0: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $premiegrond : premiegrond, $geschatteGewicht : geschatteGewicht )
+    eval( toets_defaultsAVondstPremieDefault0FoutInDeVoorwaarde($premiegrond, $geschatteGewicht) )
+then
+    Object f = fout_defaultsAVondstPremieDefault0FoutInDeVoorwaarde($premiegrond, $geschatteGewicht);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"defaults A:Vondst.premie\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "defaults A:Vondst.premie", ComputeHelpers.designate(f, "defaults A:Vondst.premie")));
+end
+
+// zijn premiegrond gedeeld door zijn geschatte gewicht groter is dan 1
+function boolean toets_defaultsAVondstPremieDefault0DeponeringInDeVoorwaarde(Object $premiegrond, Object $geschatteGewicht, Object sonde) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($premiegrond, $geschatteGewicht, sonde), new java.math.BigDecimal("1"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    return ComputeHelpers.reported(sonde);
+}
+
+// zijn premiegrond gedeeld door zijn geschatte gewicht groter is dan 1
+function java.util.List deponering_defaultsAVondstPremieDefault0DeponeringInDeVoorwaarde(Object $premiegrond, Object $geschatteGewicht, Object sonde) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($premiegrond, $geschatteGewicht, sonde), new java.math.BigDecimal("1"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    if (!ComputeHelpers.reported(sonde)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"Vondst.premie\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    return ComputeHelpers.depositCodes(sonde);
+}
+
+rule "defaults A:Vondst.premie: default 0: deponering in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $premiegrond : premiegrond, $geschatteGewicht : geschatteGewicht )
+    eval( toets_defaultsAVondstPremieDefault0DeponeringInDeVoorwaarde($premiegrond, $geschatteGewicht, ComputeHelpers.depositFlag()) )
+    exists( $beslist_52 : Decides( stack == "defaults A:Vondst.premie" && index == 0, subject == $onderwerp ) )
+then
+    insertLogical(ComputeHelpers.inconsistency("Vondst.premie", $onderwerp, deponering_defaultsAVondstPremieDefault0DeponeringInDeVoorwaarde($premiegrond, $geschatteGewicht, ComputeHelpers.depositFlag())));
+end
+
+rule "defaults A:Vondst.premie: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst") )
+    not( $hoger_55 : Decides( stack == "defaults A:Vondst.premie" && index < 1, subject == $onderwerp ) )
+then
+    // 1,00
+    Object v = new java.math.BigDecimal("1");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "premie");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondst.premie", ComputeHelpers.designate(passend, "defaults A:Vondst.premie")));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.premie", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "premie", false), passend, "defaults A:Vondst.premie"));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.premie", 1));
+        }
+    }
+end
+

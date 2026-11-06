@@ -1,0 +1,87 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de lengte van de Schuit niet leeg is
+function boolean toets_meldpremieVanEenSchuit(Object $lengte) {
+    return ComputeHelpers.emptyTest($lengte, Boolean.FALSE);
+}
+
+// 40
+function Object waarde_meldpremieVanEenSchuit() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("40"), Integer.valueOf(2), "meldpremie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "meldpremie van een schuit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( $lengte : lengte )
+    eval( toets_meldpremieVanEenSchuit($lengte) )
+then
+    Object v = waarde_meldpremieVanEenSchuit();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "meldpremie van een schuit", ComputeHelpers.designate(v, "meldpremie van een schuit")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "meldpremie", false), v, "meldpremie van een schuit"));
+        }
+    }
+end
+
+// de lengte van de Schuit niet gevuld is
+function boolean toets_ongemetenSchuit(Object $lengte) {
+    return ComputeHelpers.emptyTest($lengte, Boolean.TRUE);
+}
+
+rule "ongemeten schuit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( $lengte : lengte )
+    eval( toets_ongemetenSchuit($lengte) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("schuit", "ongemeten", true)));
+end
+
+function Object pad_werfpremieVanEenSchuit(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("werf"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "tarief");
+}
+
+// het tarief van de werf van de Schuit niet leeg is
+function boolean toets_werfpremieVanEenSchuit(Object $werfTarief) {
+    return ComputeHelpers.emptyTest($werfTarief, Boolean.FALSE);
+}
+
+// 25
+function Object waarde_werfpremieVanEenSchuit() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("25"), Integer.valueOf(2), "werfpremie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "werfpremie van een schuit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( $werfTarief : (pad_werfpremieVanEenSchuit(this)) )
+    eval( toets_werfpremieVanEenSchuit($werfTarief) )
+then
+    Object v = waarde_werfpremieVanEenSchuit();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "werfpremie van een schuit", ComputeHelpers.designate(v, "werfpremie van een schuit")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "werfpremie", false), v, "werfpremie van een schuit"));
+        }
+    }
+end
+

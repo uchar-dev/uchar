@@ -1,0 +1,32 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het basisbedrag van de Vondst plus het stuktal van de Vondst maal de stukprijs van de Vondst
+function Object waarde_opbrengstVanEenVondst(Object $basisbedrag, Object $stuktal, Object $stukprijs) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($basisbedrag, RegelSpraakRuntime.rsMaal($stuktal, $stukprijs)), Integer.valueOf(0), "opbrengst", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "opbrengst van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $basisbedrag : basisbedrag, $stuktal : stuktal, $stukprijs : stukprijs )
+then
+    Object v = waarde_opbrengstVanEenVondst($basisbedrag, $stuktal, $stukprijs);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "opbrengst van een vondst", ComputeHelpers.designate(v, "opbrengst van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "opbrengst", false), v, "opbrengst van een vondst"));
+        }
+    }
+end
+

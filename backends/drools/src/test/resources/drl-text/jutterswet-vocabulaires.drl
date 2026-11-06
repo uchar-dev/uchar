@@ -1,0 +1,218 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.ParameterState;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.math.BigDecimal premietarief;
+
+// zijn gewicht maal het premietarief
+function Object waarde_premieberekeningPremieVanEenVondst(Object $gewicht, Object $premietarief) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($gewicht, $premietarief), Integer.valueOf(2), "premie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "premieberekening: premie van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht )
+    $parameter_1 : ParameterState( parameter == "premietarief", $premietarief : value )
+then
+    Object v = waarde_premieberekeningPremieVanEenVondst($gewicht, $premietarief);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "premie van een vondst", ComputeHelpers.designate(v, "premieberekening: premie van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "premie", false), v, "premie van een vondst"));
+        }
+    }
+end
+
+// de som van de premie van alle vondsten van de Jutter of 0 als die er niet zijn
+function Object waarde_premieberekeningVondstbedragVanEenJutter(Object $aantal_vouw_7, Object $vouw_vouw_9) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_7, $vouw_vouw_9, new java.math.BigDecimal("0")), Integer.valueOf(2), "vondstbedrag", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "premieberekening: vondstbedrag van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_4 : Contribution( fold == "vondstbedrag van een jutter: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_8 : value ); $aantal_vouw_7 : count(), $vouw_vouw_9 : exactSum($bijdragewaarde_vouw_8) )
+then
+    Object v = waarde_premieberekeningVondstbedragVanEenJutter($aantal_vouw_7, $vouw_vouw_9);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vondstbedrag van een jutter", ComputeHelpers.designate(v, "premieberekening: vondstbedrag van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "vondstbedrag", false), v, "vondstbedrag van een jutter"));
+        }
+    }
+end
+
+// zijn soort gelijk is aan 'barnsteen'
+function boolean toets_premieberekeningWaardevolleVondst(Object $soort) {
+    return ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam($soort), RegelSpraakRuntime.rsEnumNaam("barnsteen"), Boolean.TRUE);
+}
+
+rule "premieberekening: waardevolle vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $soort : soort )
+    eval( toets_premieberekeningWaardevolleVondst($soort) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "waardevol", true)));
+end
+
+// het aantal vondsten van de Jutter die waardevol zijn
+function Object waarde_premieberekeningAantalWaardevolleVondsten(Object $aantal_vouw_18) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_18), Integer.valueOf(0), "aantal waardevolle vondsten", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "premieberekening: aantal waardevolle vondsten"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_15 : Contribution( fold == "aantal waardevolle vondsten: vouw 1", subject == $onderwerp ); $aantal_vouw_18 : count() )
+then
+    Object v = waarde_premieberekeningAantalWaardevolleVondsten($aantal_vouw_18);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal waardevolle vondsten", ComputeHelpers.designate(v, "premieberekening: aantal waardevolle vondsten")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal waardevolle vondsten", false), v, "aantal waardevolle vondsten"));
+        }
+    }
+end
+
+// zijn vondstbedrag groter is dan 10
+function boolean toets_premieberekeningPremiewaardigheid(Object $vondstbedrag) {
+    return RegelSpraakRuntime.rsAggVergelijk($vondstbedrag, new java.math.BigDecimal("10"), ">");
+}
+
+rule "premieberekening: premiewaardigheid"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "vondstbedrag", false), subject == $onderwerp, $vondstbedrag : value )
+    eval( toets_premieberekeningPremiewaardigheid($vondstbedrag) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "premiewaardig", true)));
+end
+
+rule "premieberekening: vondstbedrag van een jutter: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp )
+    $stand_1 : State( attribute == ElementKey.of("vondst", "premie", false), subject == $onderwerp, $premie : value )
+then
+    Object v = ComputeHelpers.contribution("vondstbedrag van een jutter: vouw 0", $vouwonderwerp, $onderwerp, $premie, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+// waardevol zijn
+function boolean toets_premieberekeningAantalWaardevolleVondstenBijdrageAanVouw1(Object $waardevol) {
+    return ComputeHelpers.characteristic($waardevol, Boolean.TRUE);
+}
+
+rule "premieberekening: aantal waardevolle vondsten: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp )
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "waardevol", true), subject == $onderwerp, $waardevol : holds )
+    eval( toets_premieberekeningAantalWaardevolleVondstenBijdrageAanVouw1($waardevol) )
+then
+    insertLogical(new Contribution("aantal waardevolle vondsten: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "stand Vondst.premie: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $waarde : Value( attribute == ElementKey.of("vondst", "premie", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "premie", false), $v));
+end
+
+rule "stand Vondst.premie: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : premie )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "premie", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "premie", false), $invoer));
+end
+
+rule "kenmerkstand Vondst.waardevol: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(waardevol) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "waardevol", true), true));
+end
+
+rule "kenmerkstand Vondst.waardevol: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "waardevol", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "waardevol", true), true));
+end
+
+rule "kenmerkstand Vondst.waardevol: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(waardevol) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "waardevol", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "waardevol", true), false));
+end
+
+rule "stand Jutter.vondstbedrag: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $waarde : Value( attribute == ElementKey.of("jutter", "vondstbedrag", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "vondstbedrag", false), $v));
+end
+
+rule "stand Jutter.vondstbedrag: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : vondstbedrag )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "vondstbedrag", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "vondstbedrag", false), $invoer));
+end
+
+rule "parameterstand premietarief"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("premietarief", premietarief));
+end
+

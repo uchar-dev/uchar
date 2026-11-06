@@ -1,0 +1,202 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn vondstsoort in zomer
+function Object waarde_najaarssoortVanEenJutter(Object $vondstsoort) {
+    try {
+        return ComputeHelpers.cell($vondstsoort, java.util.Arrays.asList("zomer"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "najaarssoort van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstsoort : vondstsoort )
+then
+    Object v = waarde_najaarssoortVanEenJutter($vondstsoort);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "najaarssoort van een jutter", ComputeHelpers.designate(v, "najaarssoort van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "vondstsoort[najaar]", false), v, "najaarssoort van een jutter"));
+        }
+    }
+end
+
+// zijn vondstsoort in voorjaar
+function Object waarde_voorjaarssoortVanEenJutter(Object $vondstsoort) {
+    try {
+        return ComputeHelpers.cell($vondstsoort, java.util.Arrays.asList("voorjaar"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "voorjaarssoort van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstsoort : vondstsoort )
+then
+    Object v = waarde_voorjaarssoortVanEenJutter($vondstsoort);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "voorjaarssoort van een jutter", ComputeHelpers.designate(v, "voorjaarssoort van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "voorjaarssoort", false), v, "voorjaarssoort van een jutter"));
+        }
+    }
+end
+
+// de eerste van zijn vondstsoort over alle seizoenen
+function Object waarde_eersteSoortVanEenJutter(Object $vondstsoort, Object $vondstsoort2) {
+    try {
+        return ComputeHelpers.firstCell(ComputeHelpers.map(ComputeHelpers.withCell($vondstsoort, java.util.Arrays.asList("najaar"), $vondstsoort2)), java.util.Arrays.asList(java.util.Arrays.asList("voorjaar"), java.util.Arrays.asList("zomer"), java.util.Arrays.asList("najaar")));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "eerste soort van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstsoort : vondstsoort )
+    $stand_1 : State( attribute == ElementKey.of("jutter", "vondstsoort[najaar]", false), subject == $onderwerp, $vondstsoort2 : value )
+then
+    Object v = waarde_eersteSoortVanEenJutter($vondstsoort, $vondstsoort2);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "eerste soort van een jutter", ComputeHelpers.designate(v, "eerste soort van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "eerste soort", false), v, "eerste soort van een jutter"));
+        }
+    }
+end
+
+// het aantal voorkomens van zijn vondstsoort over alle seizoenen
+function Object waarde_aantalSoortseizoenenVanEenJutter(Object $vondstsoort, Object $vondstsoort2) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.filledCells(ComputeHelpers.map(ComputeHelpers.withCell($vondstsoort, java.util.Arrays.asList("najaar"), $vondstsoort2)), java.util.Arrays.asList(java.util.Arrays.asList("voorjaar"), java.util.Arrays.asList("zomer"), java.util.Arrays.asList("najaar"))), Integer.valueOf(0), "aantal soortseizoenen", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal soortseizoenen van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstsoort : vondstsoort )
+    $stand_1 : State( attribute == ElementKey.of("jutter", "vondstsoort[najaar]", false), subject == $onderwerp, $vondstsoort2 : value )
+then
+    Object v = waarde_aantalSoortseizoenenVanEenJutter($vondstsoort, $vondstsoort2);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal soortseizoenen van een jutter", ComputeHelpers.designate(v, "aantal soortseizoenen van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal soortseizoenen", false), v, "aantal soortseizoenen van een jutter"));
+        }
+    }
+end
+
+// zijn meldingsdatum in najaar
+function Object waarde_najaarsmeldingVanEenJutter(Object $meldingsdatum) {
+    try {
+        return ComputeHelpers.cell($meldingsdatum, java.util.Arrays.asList("najaar"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "najaarsmelding van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $meldingsdatum : meldingsdatum )
+then
+    Object v = waarde_najaarsmeldingVanEenJutter($meldingsdatum);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "najaarsmelding van een jutter", ComputeHelpers.designate(v, "najaarsmelding van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "najaarsmelding", false), v, "najaarsmelding van een jutter"));
+        }
+    }
+end
+
+// de laatste van zijn meldingsdatum over alle seizoenen
+function Object waarde_laatsteMeldingVanEenJutter(Object $meldingsdatum) {
+    try {
+        return ComputeHelpers.lastCell(ComputeHelpers.map($meldingsdatum), java.util.Arrays.asList(java.util.Arrays.asList("voorjaar"), java.util.Arrays.asList("zomer"), java.util.Arrays.asList("najaar")));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "laatste melding van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $meldingsdatum : meldingsdatum )
+then
+    Object v = waarde_laatsteMeldingVanEenJutter($meldingsdatum);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "laatste melding van een jutter", ComputeHelpers.designate(v, "laatste melding van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "laatste melding", false), v, "laatste melding van een jutter"));
+        }
+    }
+end
+
+// zijn vergunning in zomer gelijk is aan waar
+function boolean toets_zomertariefVanEenJutter(Object $vergunning) {
+    return ComputeHelpers.textEqual(ComputeHelpers.cell($vergunning, java.util.Arrays.asList("zomer")), Boolean.TRUE, Boolean.TRUE);
+}
+
+// 2
+function Object waarde_zomertariefVanEenJutter() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("2"), Integer.valueOf(0), "zomertarief", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "zomertarief van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vergunning : vergunning )
+    eval( toets_zomertariefVanEenJutter($vergunning) )
+then
+    Object v = waarde_zomertariefVanEenJutter();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "zomertarief van een jutter", ComputeHelpers.designate(v, "zomertarief van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "zomertarief", false), v, "zomertarief van een jutter"));
+        }
+    }
+end
+
+rule "stand Jutter.vondstsoort[najaar]: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $waarde : Value( attribute == ElementKey.of("jutter", "vondstsoort[najaar]", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "vondstsoort[najaar]", false), $v));
+end
+
+rule "stand Jutter.vondstsoort[najaar]: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : vondstsoort )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "vondstsoort[najaar]", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "vondstsoort[najaar]", false), ComputeHelpers.cell($invoer, java.util.Arrays.asList("najaar"))));
+end
+

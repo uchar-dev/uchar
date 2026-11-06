@@ -1,0 +1,140 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het jaar uit zijn vondstdatum
+function Object waarde_berekeningVondstjaar(Object $vondstdatum) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsDatumDeel($vondstdatum, java.time.temporal.ChronoField.YEAR), Integer.valueOf(0), "vondstjaar", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "Berekening vondstjaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vondstdatum : vondstdatum )
+then
+    Object v = waarde_berekeningVondstjaar($vondstdatum);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "Berekening vondstjaar", ComputeHelpers.designate(v, "Berekening vondstjaar")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "vondstjaar", false), v, "Berekening vondstjaar"));
+        }
+    }
+end
+
+// de dag uit zijn vondstdatum
+function Object waarde_berekeningVondstdag(Object $vondstdatum) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsDatumDeel($vondstdatum, java.time.temporal.ChronoField.DAY_OF_MONTH), Integer.valueOf(0), "vondstdag", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "Berekening vondstdag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vondstdatum : vondstdatum )
+then
+    Object v = waarde_berekeningVondstdag($vondstdatum);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "Berekening vondstdag", ComputeHelpers.designate(v, "Berekening vondstdag")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "vondstdag", false), v, "Berekening vondstdag"));
+        }
+    }
+end
+
+// hij aan ten minste een van de volgende voorwaarden voldoet
+function boolean toets_kenmerktoekenningVondstZomervondst(Object $vondstdatum) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsDatumDeel($vondstdatum, java.time.temporal.ChronoField.MONTH_OF_YEAR), new java.math.BigDecimal("7"), "==")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsDatumDeel($vondstdatum, java.time.temporal.ChronoField.MONTH_OF_YEAR), new java.math.BigDecimal("8"), "==")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+}
+
+rule "Kenmerktoekenning vondst zomervondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vondstdatum : vondstdatum )
+    eval( toets_kenmerktoekenningVondstZomervondst($vondstdatum) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "zomervondst", true)));
+end
+
+// zijn vondstdatum gelijk is aan de eerste paasdag van het jaar uit zijn vondstdatum
+function boolean toets_kenmerktoekenningVondstPaasvondst(Object $vondstdatum) {
+    try {
+        return ComputeHelpers.dateCompare($vondstdatum, ComputeHelpers.easterSunday(RegelSpraakRuntime.rsDatumDeel($vondstdatum, java.time.temporal.ChronoField.YEAR)), dev.uchar.regelspraak.ir.Condition.Operator.GELIJK);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "Kenmerktoekenning vondst paasvondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vondstdatum : vondstdatum )
+    eval( toets_kenmerktoekenningVondstPaasvondst($vondstdatum) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "paasvondst", true)));
+end
+
+// zijn vondstdatum gelijk is aan de eerste paasdag van het jaar uit zijn vondstdatum
+function boolean toets_kenmerktoekenningVondstPaasvondstFoutInDeVoorwaarde(Object $vondstdatum) {
+    try {
+        boolean uitkomst = ComputeHelpers.dateCompare($vondstdatum, ComputeHelpers.easterSunday(RegelSpraakRuntime.rsDatumDeel($vondstdatum, java.time.temporal.ChronoField.YEAR)), dev.uchar.regelspraak.ir.Condition.Operator.GELIJK);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn vondstdatum gelijk is aan de eerste paasdag van het jaar uit zijn vondstdatum
+function Object fout_kenmerktoekenningVondstPaasvondstFoutInDeVoorwaarde(Object $vondstdatum) {
+    try {
+        boolean uitkomst = ComputeHelpers.dateCompare($vondstdatum, ComputeHelpers.easterSunday(RegelSpraakRuntime.rsDatumDeel($vondstdatum, java.time.temporal.ChronoField.YEAR)), dev.uchar.regelspraak.ir.Condition.Operator.GELIJK);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "Kenmerktoekenning vondst paasvondst: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vondstdatum : vondstdatum )
+    eval( toets_kenmerktoekenningVondstPaasvondstFoutInDeVoorwaarde($vondstdatum) )
+then
+    Object f = fout_kenmerktoekenningVondstPaasvondstFoutInDeVoorwaarde($vondstdatum);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"Kenmerktoekenning vondst paasvondst\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "Kenmerktoekenning vondst paasvondst", ComputeHelpers.designate(f, "Kenmerktoekenning vondst paasvondst")));
+end
+

@@ -1,0 +1,238 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Decides;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+
+// zijn gewicht groter is dan 10
+function boolean toets_zwareVondst(Object $gewicht) {
+    return RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("10"), ">");
+}
+
+rule "zware vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht )
+    eval( toets_zwareVondst($gewicht) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "zwaar", true)));
+end
+
+// ten minste één van de vondsten van de melder van de Melding zwaar is
+function boolean toets_dringendeMelding(Object $aantal_vouw_7, Object $vouw_vouw_9) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_7, $vouw_vouw_9, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(1));
+}
+
+rule "dringende melding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Melding()
+    accumulate( $bijdrage_vouw_4 : Contribution( fold == "dringende melding: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_8 : value ); $aantal_vouw_7 : count(), $vouw_vouw_9 : exactSum($bijdragewaarde_vouw_8) )
+    eval( toets_dringendeMelding($aantal_vouw_7, $vouw_vouw_9) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("melding", "dringend", true)));
+end
+
+// de weegdatum van ten minste één van de wegingen van alle vondsten van de melder van de Melding gevuld is
+function boolean toets_gewogenMelding(Object $aantal_vouw_15, Object $vouw_vouw_17) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_15, $vouw_vouw_17, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(1));
+}
+
+rule "gewogen melding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Melding()
+    accumulate( $bijdrage_vouw_12 : Contribution( fold == "gewogen melding: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_16 : value ); $aantal_vouw_15 : count(), $vouw_vouw_17 : exactSum($bijdragewaarde_vouw_16) )
+    eval( toets_gewogenMelding($aantal_vouw_15, $vouw_vouw_17) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("melding", "gewogen", true)));
+end
+
+// het gewicht van alle vondsten van alle jutters van de Ploeg groter is dan 10
+function boolean toets_zwaarbeladenPloeg(Object $aantal_vouw_23, Object $vouw_vouw_25) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_23, $vouw_vouw_25, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0));
+}
+
+rule "zwaarbeladen ploeg"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ploeg()
+    accumulate( $bijdrage_vouw_20 : Contribution( fold == "zwaarbeladen ploeg: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_24 : value ); $aantal_vouw_23 : count(), $vouw_vouw_25 : exactSum($bijdragewaarde_vouw_24) )
+    eval( toets_zwaarbeladenPloeg($aantal_vouw_23, $vouw_vouw_25) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("ploeg", "zwaarbeladen", true)));
+end
+
+// ten minste twee van de kisten van de vondsten van de Jutter vol zijn
+function boolean toets_kistplicht(Object $aantal_vouw_33, Object $vouw_vouw_35) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_33, $vouw_vouw_35, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(2));
+}
+
+rule "kistplicht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_30 : Contribution( fold == "kistplicht: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_34 : value ); $aantal_vouw_33 : count(), $vouw_vouw_35 : exactSum($bijdragewaarde_vouw_34) )
+    eval( toets_kistplicht($aantal_vouw_33, $vouw_vouw_35) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "kistplichtig", true)));
+end
+
+// ten minste één van de vondsten van de melder van de Melding een wrakstuk is
+function boolean toets_defaultsKMeldingVoorrangDefault0(Object $aantal_vouw_42, Object $vouw_vouw_44) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_42, $vouw_vouw_44, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(1));
+}
+
+rule "defaults K:Melding.voorrang: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Melding( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Melding") )
+    accumulate( $bijdrage_vouw_39 : Contribution( fold == "defaults K:Melding.voorrang: vouw 4", subject == $onderwerp, $bijdragewaarde_vouw_43 : value ); $aantal_vouw_42 : count(), $vouw_vouw_44 : exactSum($bijdragewaarde_vouw_43) )
+    eval( toets_defaultsKMeldingVoorrangDefault0($aantal_vouw_42, $vouw_vouw_44) )
+then
+    Object v = Boolean.FALSE;
+    if (v != null) {
+        insertLogical(new Decides($onderwerp, "defaults K:Melding.voorrang", 0));
+    }
+end
+
+rule "defaults K:Melding.voorrang: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Melding( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Melding") )
+    not( $hoger_47 : Decides( stack == "defaults K:Melding.voorrang" && index < 1, subject == $onderwerp ) )
+then
+    Object v = Boolean.TRUE;
+    if (v != null) {
+        insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("melding", "voorrang", true)));
+        insertLogical(new Decides($onderwerp, "defaults K:Melding.voorrang", 1));
+    }
+end
+
+function boolean beta_dringendeMeldingBijdrageAanVouw0(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("vinder"), java.util.Arrays.asList("melder"));
+}
+
+// ten minste één van de vondsten van de melder van de Melding zwaar is
+function boolean matrix_dringendeMeldingBijdrageAanVouw0(Object $onderwerp, Object $zwaar) {
+    return ComputeHelpers.characteristic($zwaar, Boolean.TRUE);
+}
+
+rule "dringende melding: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Melding()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( beta_dringendeMeldingBijdrageAanVouw0(this, $vouwonderwerp) )
+    $stand_1 : CharacteristicState( characteristic == ElementKey.of("vondst", "zwaar", true), subject == $onderwerp, $zwaar : holds )
+then
+    insertLogical(new Contribution("dringende melding: vouw 0", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_dringendeMeldingBijdrageAanVouw0($onderwerp, $zwaar))));
+end
+
+function boolean beta_gewogenMeldingBijdrageAanVouw1(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("gewogenVondst", "vinder"), java.util.Arrays.asList("melder"));
+}
+
+// de weegdatum van ten minste één van de wegingen van alle vondsten van de melder van de Melding gevuld is
+function boolean matrix_gewogenMeldingBijdrageAanVouw1(Object $onderwerp, Object $weegdatum) {
+    return ComputeHelpers.emptyTest($weegdatum, Boolean.FALSE);
+}
+
+rule "gewogen melding: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Melding()
+    $onderwerp : dev.uchar.regelspraak.facts.Weging( beta_gewogenMeldingBijdrageAanVouw1(this, $vouwonderwerp), $weegdatum : weegdatum )
+then
+    insertLogical(new Contribution("gewogen melding: vouw 1", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_gewogenMeldingBijdrageAanVouw1($onderwerp, $weegdatum))));
+end
+
+function boolean beta_zwaarbeladenPloegBijdrageAanVouw2(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("vinder", "ploeg"), java.util.Arrays.asList());
+}
+
+// het gewicht van alle vondsten van alle jutters van de Ploeg groter is dan 10
+function boolean matrix_zwaarbeladenPloegBijdrageAanVouw2(Object $onderwerp, Object $gewicht) {
+    return RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("10"), ">");
+}
+
+rule "zwaarbeladen ploeg: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Ploeg()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( beta_zwaarbeladenPloegBijdrageAanVouw2(this, $vouwonderwerp), $gewicht : gewicht )
+then
+    insertLogical(new Contribution("zwaarbeladen ploeg: vouw 2", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_zwaarbeladenPloegBijdrageAanVouw2($onderwerp, $gewicht))));
+end
+
+function boolean beta1_kistplichtBijdrageAanVouw3(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("vinder"), java.util.Arrays.asList());
+}
+
+function boolean beta2_kistplichtBijdrageAanVouw3(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("kist"), java.util.Arrays.asList());
+}
+
+// ten minste twee van de kisten van de vondsten van de Jutter vol zijn
+function boolean matrix_kistplichtBijdrageAanVouw3(Object $onderwerp, Object $vol) {
+    return ComputeHelpers.characteristic($vol, Boolean.TRUE);
+}
+
+rule "kistplicht: bijdrage aan vouw 3"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Kist( $vol : (ComputeHelpers.holds(vol)) )
+    exists( $tussen_pad_27 : dev.uchar.regelspraak.facts.Vondst( beta1_kistplichtBijdrageAanVouw3(this, $vouwonderwerp), beta2_kistplichtBijdrageAanVouw3(this, $onderwerp) ) )
+then
+    insertLogical(new Contribution("kistplicht: vouw 3", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_kistplichtBijdrageAanVouw3($onderwerp, $vol))));
+end
+
+function boolean beta_defaultsKMeldingVoorrangBijdrageAanVouw4(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("vinder"), java.util.Arrays.asList("melder"));
+}
+
+// ten minste één van de vondsten van de melder van de Melding een wrakstuk is
+function boolean matrix_defaultsKMeldingVoorrangBijdrageAanVouw4(Object $onderwerp, Object $wrakstuk) {
+    return ComputeHelpers.characteristic($wrakstuk, Boolean.TRUE);
+}
+
+rule "defaults K:Melding.voorrang: bijdrage aan vouw 4"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Melding()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( beta_defaultsKMeldingVoorrangBijdrageAanVouw4(this, $vouwonderwerp), $wrakstuk : (ComputeHelpers.holds(wrakstuk)) )
+then
+    insertLogical(new Contribution("defaults K:Melding.voorrang: vouw 4", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_defaultsKMeldingVoorrangBijdrageAanVouw4($onderwerp, $wrakstuk))));
+end
+
+rule "kenmerkstand Vondst.zwaar: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(zwaar) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "zwaar", true), true));
+end
+
+rule "kenmerkstand Vondst.zwaar: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "zwaar", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "zwaar", true), true));
+end
+
+rule "kenmerkstand Vondst.zwaar: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(zwaar) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "zwaar", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "zwaar", true), false));
+end
+

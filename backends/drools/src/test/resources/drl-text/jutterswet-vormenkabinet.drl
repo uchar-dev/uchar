@@ -1,0 +1,119 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.EvaluationDate;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.time.LocalDate rekendatum;
+
+// de opbrengst in het voorjaar
+function Object waarde_vakcijferUitVoorjaarsopbrengst(Object $opbrengst) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.cell($opbrengst, java.util.Arrays.asList("voorjaar")), Integer.valueOf(0), "vakcijfer", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vakcijfer uit voorjaarsopbrengst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schouwveld( $opbrengst : opbrengst )
+then
+    Object v = waarde_vakcijferUitVoorjaarsopbrengst($opbrengst);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vakcijfer uit voorjaarsopbrengst", ComputeHelpers.designate(v, "vakcijfer uit voorjaarsopbrengst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schouwveld", "vakcijfer", false), v, "vakcijfer uit voorjaarsopbrengst"));
+        }
+    }
+end
+
+// de aanspoeling in het voorjaar uit zee
+function Object waarde_zeecijferUitVoorjaarsaanspoeling(Object $aanspoeling) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.cell($aanspoeling, java.util.Arrays.asList("voorjaar", "zee")), Integer.valueOf(0), "zeecijfer", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "zeecijfer uit voorjaarsaanspoeling"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schouwveld( $aanspoeling : aanspoeling )
+then
+    Object v = waarde_zeecijferUitVoorjaarsaanspoeling($aanspoeling);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "zeecijfer uit voorjaarsaanspoeling", ComputeHelpers.designate(v, "zeecijfer uit voorjaarsaanspoeling")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schouwveld", "zeecijfer", false), v, "zeecijfer uit voorjaarsaanspoeling"));
+        }
+    }
+end
+
+// bewaakt, omheind, en vanaf 1 januari 2026
+function boolean toets_peilingBijDubbeleBorging(Object $bewaakt, Object $omheind, Object $rekendatumwaarde_2) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($bewaakt, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($omheind, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.timeWindow(java.time.LocalDate.parse("2026-01-01"), Boolean.TRUE, null, Boolean.FALSE, Boolean.FALSE, $rekendatumwaarde_2)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+}
+
+// 1
+function Object waarde_peilingBijDubbeleBorging() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("1"), Integer.valueOf(0), "peiling", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "peiling bij dubbele borging"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schouwveld( $bewaakt : (ComputeHelpers.holds(bewaakt)), $omheind : (ComputeHelpers.holds(omheind)) )
+    $rekendatum_2 : EvaluationDate( $rekendatumwaarde_2 : date )
+    eval( toets_peilingBijDubbeleBorging($bewaakt, $omheind, $rekendatumwaarde_2) )
+then
+    Object v = waarde_peilingBijDubbeleBorging();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "peiling bij dubbele borging", ComputeHelpers.designate(v, "peiling bij dubbele borging")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schouwveld", "peiling", false), v, "peiling bij dubbele borging"));
+        }
+    }
+end
+
+rule "rekendatumstand"
+    dialect "mvel"
+when
+then
+    insertLogical(new EvaluationDate(rekendatum));
+end
+

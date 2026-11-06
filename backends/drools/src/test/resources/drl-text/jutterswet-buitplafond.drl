@@ -1,0 +1,26 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Recipient;
+
+rule "verdeel de buitopbrengst van een strandbuit: ontvanger"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Strandbuit()
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( strandbuit == $vouwonderwerp, $aandeelgewicht : aandeelgewicht, $buitplafond : buitplafond )
+then
+    insertLogical(new Recipient("verdeel de buitopbrengst van een strandbuit", $vouwonderwerp, $onderwerp, $aandeelgewicht, null, $buitplafond));
+end
+
+rule "verdeel de buitopbrengst van een strandbuit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandbuit( $buitopbrengst : buitopbrengst )
+    accumulate( $ontvanger_verdeling_1 : Recipient( allocation == "verdeel de buitopbrengst van een strandbuit", source == $onderwerp ); $ontvangers_verdeling_2 : collectList($ontvanger_verdeling_1) )
+then
+    for (Object feit : ComputeHelpers.payout("verdeel de buitopbrengst van een strandbuit", $onderwerp, dev.uchar.regelspraak.ir.ResolvedAllocation.Method.NAAR_RATO, $buitopbrengst, $ontvangers_verdeling_2, true, true, false, null, ElementKey.of("jutter", "buitdeel", false), ElementKey.of("strandbuit", "buitrest", false), "verdeel de buitopbrengst van een strandbuit", Integer.valueOf(0), Integer.valueOf(0), "verdeel de buitopbrengst van een strandbuit")) {
+        insertLogical(feit);
+    }
+end
+

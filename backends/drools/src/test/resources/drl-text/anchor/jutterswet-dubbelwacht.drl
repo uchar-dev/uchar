@@ -1,0 +1,57 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Period;
+import dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij borgplichtig en aangesteld is) rekenkundig afgerond op 0 decimalen
+function Object waarde_dubbelwachtsomVanEenJutter(Object $tijdlijn_0, Object $onderwerp, Object $tijdlijn_2, Object $tijdlijn_3) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(PeriodArithmetic.total(RegelSpraakRuntime.rsTijdKnip(RegelSpraakRuntime.rsTijdKnip(ComputeHelpers.complete($tijdlijn_0, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), ((java.util.List) $tijdlijn_2), Period.class), ((java.util.List) $tijdlijn_3), Period.class), "MAAND", null, null, "wachtvergoeding per maand", $onderwerp), Integer.valueOf(0), java.math.RoundingMode.HALF_UP), Integer.valueOf(0), "dubbelwachtsom", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "dubbelwachtsom van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $tijdlijn_2 : (ComputeHelpers.periods(borgplichtig)), $tijdlijn_3 : (ComputeHelpers.periods(aangesteld)) )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "wachtvergoeding per maand", false), subject == $onderwerp, $tijdlijn_0 : value )
+then
+    Object v = waarde_dubbelwachtsomVanEenJutter($tijdlijn_0, $onderwerp, $tijdlijn_2, $tijdlijn_3);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "dubbelwachtsom van een jutter", ComputeHelpers.designate(v, "dubbelwachtsom van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "dubbelwachtsom", false), v, "dubbelwachtsom van een jutter"));
+        }
+    }
+end
+
+rule "stand Jutter.wachtvergoeding per maand: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(wachtvergoedingPerMaand)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "wachtvergoeding per maand", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "wachtvergoeding per maand", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "wachtvergoeding per maand", false), $invoer));
+end
+
+rule "stand Jutter.wachtvergoeding per maand: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(wachtvergoedingPerMaand)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "wachtvergoeding per maand", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "wachtvergoeding per maand", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "wachtvergoeding per maand", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+

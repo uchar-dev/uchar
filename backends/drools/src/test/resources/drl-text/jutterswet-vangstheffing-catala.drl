@@ -1,0 +1,162 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Decides;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de aangebrachte_waarde
+function Object waarde_berekeningVangstheffingBruto(Object $aangebrachteWaarde) {
+    try {
+        return ComputeHelpers.fitTarget($aangebrachteWaarde, Integer.valueOf(2), "vangstheffing bruto", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "berekening vangstheffing bruto"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangstheffing( $aangebrachteWaarde : aangebrachteWaarde )
+then
+    Object v = waarde_berekeningVangstheffingBruto($aangebrachteWaarde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "berekening vangstheffing bruto", ComputeHelpers.designate(v, "berekening vangstheffing bruto")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vangstheffing", "vangstheffing bruto", false), v, "berekening vangstheffing bruto"));
+        }
+    }
+end
+
+// 
+function Object waarde_berekeningVangstheffingNaOpslag(Object $vangstheffingBruto) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($vangstheffingBruto, new java.math.BigDecimal("5")), Integer.valueOf(2), "vangstheffing na_opslag", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "berekening vangstheffing na_opslag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangstheffing()
+    $stand_0 : State( attribute == ElementKey.of("vangstheffing", "vangstheffing bruto", false), subject == $onderwerp, $vangstheffingBruto : value )
+then
+    Object v = waarde_berekeningVangstheffingNaOpslag($vangstheffingBruto);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "berekening vangstheffing na_opslag", ComputeHelpers.designate(v, "berekening vangstheffing na_opslag")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vangstheffing", "vangstheffing na_opslag", false), v, "berekening vangstheffing na_opslag"));
+        }
+    }
+end
+
+// grootvangst
+function boolean toets_defaultsAVangstheffingVangstheffingNettoDefault0(Object $grootvangst) {
+    return ComputeHelpers.characteristic($grootvangst, Boolean.TRUE);
+}
+
+// 
+function Object afloop_defaultsAVangstheffingVangstheffingNettoDefault0(Object $vangstheffingNaOpslag) {
+    try {
+        return RegelSpraakRuntime.rsPlus($vangstheffingNaOpslag, new java.math.BigDecimal("20"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Vangstheffing.vangstheffing netto: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangstheffing( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vangstheffing"), $grootvangst : (ComputeHelpers.holds(grootvangst)) )
+    $stand_1 : State( attribute == ElementKey.of("vangstheffing", "vangstheffing na_opslag", false), subject == $onderwerp, $vangstheffingNaOpslag : value )
+    eval( toets_defaultsAVangstheffingVangstheffingNettoDefault0($grootvangst) )
+then
+    Object v = afloop_defaultsAVangstheffingVangstheffingNettoDefault0($vangstheffingNaOpslag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Vangstheffing.vangstheffing netto", ComputeHelpers.designate(v, "defaults A:Vangstheffing.vangstheffing netto")));
+    } else if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "vangstheffing netto");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vangstheffing.vangstheffing netto", ComputeHelpers.designate(passend, "defaults A:Vangstheffing.vangstheffing netto")));
+            insertLogical(new Decides($onderwerp, "defaults A:Vangstheffing.vangstheffing netto", 0));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vangstheffing", "vangstheffing netto", false), passend, "defaults A:Vangstheffing.vangstheffing netto"));
+            insertLogical(new Decides($onderwerp, "defaults A:Vangstheffing.vangstheffing netto", 0));
+        }
+    }
+end
+
+// 
+function Object afloop_defaultsAVangstheffingVangstheffingNettoDefault1(Object $vangstheffingNaOpslag) {
+    try {
+        return RegelSpraakRuntime.rsVerminderd($vangstheffingNaOpslag, new java.math.BigDecimal("12"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Vangstheffing.vangstheffing netto: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangstheffing( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vangstheffing") )
+    $stand_0 : State( attribute == ElementKey.of("vangstheffing", "vangstheffing na_opslag", false), subject == $onderwerp, $vangstheffingNaOpslag : value )
+    not( $hoger_9 : Decides( stack == "defaults A:Vangstheffing.vangstheffing netto" && index < 1, subject == $onderwerp ) )
+then
+    Object v = afloop_defaultsAVangstheffingVangstheffingNettoDefault1($vangstheffingNaOpslag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Vangstheffing.vangstheffing netto", ComputeHelpers.designate(v, "defaults A:Vangstheffing.vangstheffing netto")));
+    } else if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "vangstheffing netto");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vangstheffing.vangstheffing netto", ComputeHelpers.designate(passend, "defaults A:Vangstheffing.vangstheffing netto")));
+            insertLogical(new Decides($onderwerp, "defaults A:Vangstheffing.vangstheffing netto", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vangstheffing", "vangstheffing netto", false), passend, "defaults A:Vangstheffing.vangstheffing netto"));
+            insertLogical(new Decides($onderwerp, "defaults A:Vangstheffing.vangstheffing netto", 1));
+        }
+    }
+end
+
+rule "stand Vangstheffing.vangstheffing bruto: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangstheffing()
+    $waarde : Value( attribute == ElementKey.of("vangstheffing", "vangstheffing bruto", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vangstheffing", "vangstheffing bruto", false), $v));
+end
+
+rule "stand Vangstheffing.vangstheffing bruto: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangstheffing( $invoer : vangstheffingBruto )
+    not( $waarde : Value( attribute == ElementKey.of("vangstheffing", "vangstheffing bruto", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vangstheffing", "vangstheffing bruto", false), $invoer));
+end
+
+rule "stand Vangstheffing.vangstheffing na_opslag: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangstheffing()
+    $waarde : Value( attribute == ElementKey.of("vangstheffing", "vangstheffing na_opslag", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vangstheffing", "vangstheffing na_opslag", false), $v));
+end
+
+rule "stand Vangstheffing.vangstheffing na_opslag: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangstheffing( $invoer : vangstheffingNaOpslag )
+    not( $waarde : Value( attribute == ElementKey.of("vangstheffing", "vangstheffing na_opslag", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vangstheffing", "vangstheffing na_opslag", false), $invoer));
+end
+

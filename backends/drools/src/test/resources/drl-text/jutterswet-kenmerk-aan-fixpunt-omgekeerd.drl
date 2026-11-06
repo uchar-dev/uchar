@@ -1,0 +1,139 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn aantal getuigen
+function Object waarde_meldingsgetal(Object $aantalGetuigen) {
+    try {
+        return ComputeHelpers.fitTarget($aantalGetuigen, Integer.valueOf(0), "meldingsgetal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "meldingsgetal"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $aantalGetuigen : aantalGetuigen )
+then
+    Object v = waarde_meldingsgetal($aantalGetuigen);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "meldingsgetal", ComputeHelpers.designate(v, "meldingsgetal")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "meldingsgetal", false), v, "meldingsgetal"));
+        }
+    }
+end
+
+// zijn boete groter is dan 10
+function boolean toets_spoedeisendheidBijHogeBoete(Object $boete) {
+    return RegelSpraakRuntime.rsAggVergelijk($boete, new java.math.BigDecimal("10"), ">");
+}
+
+rule "spoedeisendheid bij hoge boete"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $boete : boete )
+    eval( toets_spoedeisendheidBijHogeBoete($boete) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "spoedeisend", true)));
+end
+
+// zijn meldingsgetal kleiner is dan 5
+function boolean toets_spoedeisendheidBijWeinigMeldingen(Object $meldingsgetal) {
+    return RegelSpraakRuntime.rsAggVergelijk($meldingsgetal, new java.math.BigDecimal("5"), "<");
+}
+
+rule "spoedeisendheid bij weinig meldingen"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : State( attribute == ElementKey.of("vondst", "meldingsgetal", false), subject == $onderwerp, $meldingsgetal : value )
+    eval( toets_spoedeisendheidBijWeinigMeldingen($meldingsgetal) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "spoedeisend", true)));
+end
+
+// hij spoedeisend is
+function boolean toets_spoedpremie(Object $spoedeisend) {
+    return ComputeHelpers.characteristic($spoedeisend, Boolean.TRUE);
+}
+
+// 1
+function Object waarde_spoedpremie() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("1"), Integer.valueOf(0), "spoedpremie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "spoedpremie"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "spoedeisend", true), subject == $onderwerp, $spoedeisend : holds )
+    eval( toets_spoedpremie($spoedeisend) )
+then
+    Object v = waarde_spoedpremie();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "spoedpremie", ComputeHelpers.designate(v, "spoedpremie")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "spoedpremie", false), v, "spoedpremie"));
+        }
+    }
+end
+
+rule "stand Vondst.meldingsgetal: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $waarde : Value( attribute == ElementKey.of("vondst", "meldingsgetal", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "meldingsgetal", false), $v));
+end
+
+rule "stand Vondst.meldingsgetal: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : meldingsgetal )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "meldingsgetal", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "meldingsgetal", false), $invoer));
+end
+
+rule "kenmerkstand Vondst.spoedeisend: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(spoedeisend) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "spoedeisend", true), true));
+end
+
+rule "kenmerkstand Vondst.spoedeisend: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "spoedeisend", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "spoedeisend", true), true));
+end
+
+rule "kenmerkstand Vondst.spoedeisend: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(spoedeisend) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "spoedeisend", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "spoedeisend", true), false));
+end
+

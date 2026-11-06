@@ -1,0 +1,242 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn wachtdagen gedurende het gehele jaar gelijk is aan zijn wachtgrens
+function boolean toets_gelijkpremieVanEenJutter(Object $tijdlijn_0, Object $wachtgrens, Object $onderwerp) {
+    try {
+        return ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"wachtdagen\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "wachtdagen", Boolean.TRUE), $wachtgrens, "JAAR", Integer.valueOf(4), Boolean.FALSE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// 20
+function Object waarde_gelijkpremieVanEenJutter() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("20"), Integer.valueOf(0), "gelijkpremie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "gelijkpremie van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $wachtgrens : wachtgrens )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "wachtdagen", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_gelijkpremieVanEenJutter($tijdlijn_0, $wachtgrens, $onderwerp) )
+then
+    Object v = waarde_gelijkpremieVanEenJutter();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "gelijkpremie van een jutter", ComputeHelpers.designate(v, "gelijkpremie van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "gelijkpremie", false), v, "gelijkpremie van een jutter"));
+        }
+    }
+end
+
+// zijn wachtdagen gedurende het gehele jaar gelijk is aan zijn wachtgrens
+function boolean toets_gelijkpremieVanEenJutterFoutInDeVoorwaarde(Object $tijdlijn_0, Object $wachtgrens, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"wachtdagen\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "wachtdagen", Boolean.TRUE), $wachtgrens, "JAAR", Integer.valueOf(4), Boolean.FALSE);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn wachtdagen gedurende het gehele jaar gelijk is aan zijn wachtgrens
+function Object fout_gelijkpremieVanEenJutterFoutInDeVoorwaarde(Object $tijdlijn_0, Object $wachtgrens, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"wachtdagen\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "wachtdagen", Boolean.TRUE), $wachtgrens, "JAAR", Integer.valueOf(4), Boolean.FALSE);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "gelijkpremie van een jutter: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $wachtgrens : wachtgrens )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "wachtdagen", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_gelijkpremieVanEenJutterFoutInDeVoorwaarde($tijdlijn_0, $wachtgrens, $onderwerp) )
+then
+    Object f = fout_gelijkpremieVanEenJutterFoutInDeVoorwaarde($tijdlijn_0, $wachtgrens, $onderwerp);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"gelijkpremie van een jutter\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "gelijkpremie van een jutter", ComputeHelpers.designate(f, "gelijkpremie van een jutter")));
+end
+
+// zijn wachtdagen gedurende het gehele jaar ongelijk is aan zijn wachtgrens
+function boolean toets_ongelijkpremieVanEenJutter(Object $tijdlijn_0, Object $wachtgrens, Object $onderwerp) {
+    try {
+        return ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"wachtdagen\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "wachtdagen", Boolean.TRUE), $wachtgrens, "JAAR", Integer.valueOf(5), Boolean.FALSE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// 10
+function Object waarde_ongelijkpremieVanEenJutter() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("10"), Integer.valueOf(0), "ongelijkpremie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "ongelijkpremie van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $wachtgrens : wachtgrens )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "wachtdagen", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_ongelijkpremieVanEenJutter($tijdlijn_0, $wachtgrens, $onderwerp) )
+then
+    Object v = waarde_ongelijkpremieVanEenJutter();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "ongelijkpremie van een jutter", ComputeHelpers.designate(v, "ongelijkpremie van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "ongelijkpremie", false), v, "ongelijkpremie van een jutter"));
+        }
+    }
+end
+
+// zijn wachtdagen gedurende het gehele jaar ongelijk is aan zijn wachtgrens
+function boolean toets_ongelijkpremieVanEenJutterFoutInDeVoorwaarde(Object $tijdlijn_0, Object $wachtgrens, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"wachtdagen\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "wachtdagen", Boolean.TRUE), $wachtgrens, "JAAR", Integer.valueOf(5), Boolean.FALSE);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn wachtdagen gedurende het gehele jaar ongelijk is aan zijn wachtgrens
+function Object fout_ongelijkpremieVanEenJutterFoutInDeVoorwaarde(Object $tijdlijn_0, Object $wachtgrens, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"wachtdagen\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "wachtdagen", Boolean.TRUE), $wachtgrens, "JAAR", Integer.valueOf(5), Boolean.FALSE);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "ongelijkpremie van een jutter: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $wachtgrens : wachtgrens )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "wachtdagen", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_ongelijkpremieVanEenJutterFoutInDeVoorwaarde($tijdlijn_0, $wachtgrens, $onderwerp) )
+then
+    Object f = fout_ongelijkpremieVanEenJutterFoutInDeVoorwaarde($tijdlijn_0, $wachtgrens, $onderwerp);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"ongelijkpremie van een jutter\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "ongelijkpremie van een jutter", ComputeHelpers.designate(f, "ongelijkpremie van een jutter")));
+end
+
+// zijn wachtdagen niet gedurende het gehele jaar ongelijk is aan zijn wachtgrens
+function boolean toets_afwijkpremieVanEenJutter(Object $tijdlijn_0, Object $wachtgrens, Object $onderwerp) {
+    try {
+        return ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"wachtdagen\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "wachtdagen", Boolean.TRUE), $wachtgrens, "JAAR", Integer.valueOf(5), Boolean.TRUE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// 30
+function Object waarde_afwijkpremieVanEenJutter() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("30"), Integer.valueOf(0), "afwijkpremie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "afwijkpremie van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $wachtgrens : wachtgrens )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "wachtdagen", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_afwijkpremieVanEenJutter($tijdlijn_0, $wachtgrens, $onderwerp) )
+then
+    Object v = waarde_afwijkpremieVanEenJutter();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "afwijkpremie van een jutter", ComputeHelpers.designate(v, "afwijkpremie van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "afwijkpremie", false), v, "afwijkpremie van een jutter"));
+        }
+    }
+end
+
+// zijn wachtdagen niet gedurende het gehele jaar ongelijk is aan zijn wachtgrens
+function boolean toets_afwijkpremieVanEenJutterFoutInDeVoorwaarde(Object $tijdlijn_0, Object $wachtgrens, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"wachtdagen\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "wachtdagen", Boolean.TRUE), $wachtgrens, "JAAR", Integer.valueOf(5), Boolean.TRUE);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn wachtdagen niet gedurende het gehele jaar ongelijk is aan zijn wachtgrens
+function Object fout_afwijkpremieVanEenJutterFoutInDeVoorwaarde(Object $tijdlijn_0, Object $wachtgrens, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"wachtdagen\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "wachtdagen", Boolean.TRUE), $wachtgrens, "JAAR", Integer.valueOf(5), Boolean.TRUE);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "afwijkpremie van een jutter: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $wachtgrens : wachtgrens )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "wachtdagen", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_afwijkpremieVanEenJutterFoutInDeVoorwaarde($tijdlijn_0, $wachtgrens, $onderwerp) )
+then
+    Object f = fout_afwijkpremieVanEenJutterFoutInDeVoorwaarde($tijdlijn_0, $wachtgrens, $onderwerp);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"afwijkpremie van een jutter\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "afwijkpremie van een jutter", ComputeHelpers.designate(f, "afwijkpremie van een jutter")));
+end
+
+rule "stand Jutter.wachtdagen: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(wachtdagen)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "wachtdagen", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "wachtdagen", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "wachtdagen", false), $invoer));
+end
+
+rule "stand Jutter.wachtdagen: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(wachtdagen)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "wachtdagen", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "wachtdagen", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "wachtdagen", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+

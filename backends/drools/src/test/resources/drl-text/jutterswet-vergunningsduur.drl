@@ -1,0 +1,32 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// 2 jaar plus de basisduur van de Bergingsvergunning
+function Object waarde_looptijdVanEenBergingsvergunning(Object $basisduur) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.restateExact(RegelSpraakRuntime.rsPlus(new java.math.BigDecimal("2"), ComputeHelpers.restateExact($basisduur, new java.math.BigDecimal("1"), new java.math.BigDecimal("12"))), new java.math.BigDecimal("12"), new java.math.BigDecimal("1")), Integer.valueOf(0), "looptijd", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "looptijd van een bergingsvergunning"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Bergingsvergunning( $basisduur : basisduur )
+then
+    Object v = waarde_looptijdVanEenBergingsvergunning($basisduur);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "looptijd van een bergingsvergunning", ComputeHelpers.designate(v, "looptijd van een bergingsvergunning")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("bergingsvergunning", "looptijd", false), v, "looptijd van een bergingsvergunning"));
+        }
+    }
+end
+

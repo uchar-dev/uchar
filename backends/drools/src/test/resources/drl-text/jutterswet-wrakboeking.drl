@@ -1,0 +1,161 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
+import dev.uchar.regelspraak.transpiler.tms.CreationStamp;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.SecondFillingFault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn grondslag
+function Object waarde_berekenDeBergingsvergoedingVanEenWrakrecht(Object $grondslag) {
+    try {
+        return ComputeHelpers.fitTarget($grondslag, Integer.valueOf(2), "bergingsvergoeding", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bereken de bergingsvergoeding van een wrakrecht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakrecht()
+    $stand_0 : State( attribute == ElementKey.of("strandrecht", "grondslag", false), subject == $onderwerp, $grondslag : value )
+then
+    Object v = waarde_berekenDeBergingsvergoedingVanEenWrakrecht($grondslag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bereken de bergingsvergoeding van een wrakrecht", ComputeHelpers.designate(v, "bereken de bergingsvergoeding van een wrakrecht")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("wrakrecht", "bergingsvergoeding", false), v, "bereken de bergingsvergoeding van een wrakrecht"));
+        }
+    }
+end
+
+function boolean beta_boekEenStrandrechtBijElkWrakrecht(Object eigen, Object ander) {
+    return ComputeHelpers.inPhase(eigen, ander);
+}
+
+// zijn bergingsvergoeding
+function Object creatie_boekEenStrandrechtBijElkWrakrecht(Object $bergingsvergoeding, Object $fase, Object $herkomsten_creatie_6, Object $onderwerp) {
+    int diepte = ComputeHelpers.creationDepth("boek een strandrecht bij elk wrakrecht", 1, "Wrakrecht", (java.util.List) $herkomsten_creatie_6, 100);
+    Object i0 = null;
+    try {
+        i0 = ComputeHelpers.collapse(ComputeHelpers.fitTarget($bergingsvergoeding, Integer.valueOf(2), "grondslag", "boek een strandrecht bij elk wrakrecht"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+    Object nieuw = ComputeHelpers.newObject($onderwerp, "dev.uchar.regelspraak.facts.Strandrecht");
+    ComputeHelpers.set(nieuw, "grondslag", i0);
+    int fase = ((Integer) $fase).intValue();
+    java.util.List feiten = new java.util.ArrayList();
+    feiten.add(nieuw);
+    feiten.add(new CreationStamp("boek een strandrecht bij elk wrakrecht", $onderwerp, nieuw, fase, 1, diepte));
+    feiten.add(new RelationLink("wrakboeking", $onderwerp, nieuw, fase));
+    return feiten;
+}
+
+rule "boek een strandrecht bij elk wrakrecht"
+    dialect "mvel"
+    agenda-group "uchar-objectcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakrecht( geboektStrandrecht == null )
+    $creatiefase : CreationPhase( stratum >= 1, $fase : number )
+    $stand_0 : State( attribute == ElementKey.of("wrakrecht", "bergingsvergoeding", false), subject == $onderwerp, $bergingsvergoeding : value )
+    accumulate( $herkomst_creatie_5 : CreationStamp( object == $onderwerp ); $herkomsten_creatie_6 : collectList($herkomst_creatie_5) )
+    not( $gemaakt_creatie_8 : CreationStamp( rule == "boek een strandrecht bij elk wrakrecht", subject == $onderwerp ) )
+    not( $nieuw_creatie_9 : CreationStamp( object == $onderwerp, beta_boekEenStrandrechtBijElkWrakrecht(this, $fase) ) )
+    not( $eigen_fout : Fault( rule == "boek een strandrecht bij elk wrakrecht", subject == $onderwerp ) )
+then
+    Object v = creatie_boekEenStrandrechtBijElkWrakrecht($bergingsvergoeding, $fase, $herkomsten_creatie_6, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insert(new Fault($onderwerp, "boek een strandrecht bij elk wrakrecht", ComputeHelpers.designate(v, "boek een strandrecht bij elk wrakrecht")));
+    } else {
+        java.util.List feiten = (java.util.List) v;
+        insert(feiten.get(0));
+        insert(feiten.get(1));
+        insert(feiten.get(2));
+    }
+end
+
+rule "koppeling wrakboeking uit de invoer: Wrakrecht.geboekt strandrecht"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Wrakrecht( geboektStrandrecht != null, $ander : geboektStrandrecht )
+then
+    insertLogical(new RelationLink("wrakboeking", $houder, $ander, 0));
+end
+
+rule "koppeling wrakboeking uit de invoer: Strandrecht.boeker"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Strandrecht( boeker != null, $ander : boeker )
+then
+    insertLogical(new RelationLink("wrakboeking", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingWrakboekingTweedeVullingVanGeboektStrandrecht(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "second");
+}
+
+rule "koppeling wrakboeking: tweede vulling van geboekt strandrecht"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "wrakboeking", $nabij : first )
+    $twee : RelationLink( relation == "wrakboeking", first != null, first == $een.first, beta_koppelingWrakboekingTweedeVullingVanGeboektStrandrecht(this, $een) )
+then
+    insertLogical(new Fault($nabij, "wrakboeking", new SecondFillingFault("geboekt strandrecht", $nabij)));
+end
+
+function boolean beta_koppelingWrakboekingTweedeVullingVanBoeker(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling wrakboeking: tweede vulling van boeker"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "wrakboeking", $nabij : second )
+    $twee : RelationLink( relation == "wrakboeking", second != null, second == $een.second, beta_koppelingWrakboekingTweedeVullingVanBoeker(this, $een) )
+then
+    insertLogical(new Fault($nabij, "wrakboeking", new SecondFillingFault("boeker", $nabij)));
+end
+
+rule "stand Strandrecht.grondslag: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht()
+    $waarde : Value( attribute == ElementKey.of("strandrecht", "grondslag", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("strandrecht", "grondslag", false), $v));
+end
+
+rule "stand Strandrecht.grondslag: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht( $invoer : grondslag )
+    not( $waarde : Value( attribute == ElementKey.of("strandrecht", "grondslag", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("strandrecht", "grondslag", false), $invoer));
+end
+
+rule "stand Wrakrecht.bergingsvergoeding: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakrecht()
+    $waarde : Value( attribute == ElementKey.of("wrakrecht", "bergingsvergoeding", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("wrakrecht", "bergingsvergoeding", false), $v));
+end
+
+rule "stand Wrakrecht.bergingsvergoeding: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakrecht( $invoer : bergingsvergoeding )
+    not( $waarde : Value( attribute == ElementKey.of("wrakrecht", "bergingsvergoeding", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("wrakrecht", "bergingsvergoeding", false), $invoer));
+end
+

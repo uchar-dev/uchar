@@ -1,0 +1,572 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.PathState;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de bemanning van de Schuit gedurende het gehele jaar leeg is
+function boolean toets_leegtoeslagVanEenSchuit(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        return ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"bemanning\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "bemanning", Boolean.TRUE), null, "JAAR", Integer.valueOf(8), Boolean.FALSE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// 10
+function Object waarde_leegtoeslagVanEenSchuit() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("10"), Integer.valueOf(0), "leegtoeslag", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "leegtoeslag van een schuit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $stand_0 : State( attribute == ElementKey.of("schuit", "bemanning", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_leegtoeslagVanEenSchuit($tijdlijn_0, $onderwerp) )
+then
+    Object v = waarde_leegtoeslagVanEenSchuit();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "leegtoeslag van een schuit", ComputeHelpers.designate(v, "leegtoeslag van een schuit")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "leegtoeslag", false), v, "leegtoeslag van een schuit"));
+        }
+    }
+end
+
+// de bemanning van de Schuit gedurende het gehele jaar leeg is
+function boolean toets_leegtoeslagVanEenSchuitFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"bemanning\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "bemanning", Boolean.TRUE), null, "JAAR", Integer.valueOf(8), Boolean.FALSE);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de bemanning van de Schuit gedurende het gehele jaar leeg is
+function Object fout_leegtoeslagVanEenSchuitFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"bemanning\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "bemanning", Boolean.TRUE), null, "JAAR", Integer.valueOf(8), Boolean.FALSE);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "leegtoeslag van een schuit: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $stand_0 : State( attribute == ElementKey.of("schuit", "bemanning", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_leegtoeslagVanEenSchuitFoutInDeVoorwaarde($tijdlijn_0, $onderwerp) )
+then
+    Object f = fout_leegtoeslagVanEenSchuitFoutInDeVoorwaarde($tijdlijn_0, $onderwerp);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"leegtoeslag van een schuit\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "leegtoeslag van een schuit", ComputeHelpers.designate(f, "leegtoeslag van een schuit")));
+end
+
+// de bemanning van de Schuit gedurende het gehele jaar gevuld is
+function boolean toets_vultoeslagVanEenSchuit(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        return ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"bemanning\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "bemanning", Boolean.TRUE), null, "JAAR", Integer.valueOf(6), Boolean.FALSE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// 20
+function Object waarde_vultoeslagVanEenSchuit() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("20"), Integer.valueOf(0), "vultoeslag", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vultoeslag van een schuit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $stand_0 : State( attribute == ElementKey.of("schuit", "bemanning", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_vultoeslagVanEenSchuit($tijdlijn_0, $onderwerp) )
+then
+    Object v = waarde_vultoeslagVanEenSchuit();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vultoeslag van een schuit", ComputeHelpers.designate(v, "vultoeslag van een schuit")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "vultoeslag", false), v, "vultoeslag van een schuit"));
+        }
+    }
+end
+
+// de bemanning van de Schuit gedurende het gehele jaar gevuld is
+function boolean toets_vultoeslagVanEenSchuitFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"bemanning\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "bemanning", Boolean.TRUE), null, "JAAR", Integer.valueOf(6), Boolean.FALSE);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de bemanning van de Schuit gedurende het gehele jaar gevuld is
+function Object fout_vultoeslagVanEenSchuitFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"bemanning\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "bemanning", Boolean.TRUE), null, "JAAR", Integer.valueOf(6), Boolean.FALSE);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vultoeslag van een schuit: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $stand_0 : State( attribute == ElementKey.of("schuit", "bemanning", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_vultoeslagVanEenSchuitFoutInDeVoorwaarde($tijdlijn_0, $onderwerp) )
+then
+    Object f = fout_vultoeslagVanEenSchuitFoutInDeVoorwaarde($tijdlijn_0, $onderwerp);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"vultoeslag van een schuit\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "vultoeslag van een schuit", ComputeHelpers.designate(f, "vultoeslag van een schuit")));
+end
+
+// de bemanning van de Schuit gedurende het gehele jaar niet leeg is
+function boolean toets_nietleegtoeslagVanEenSchuit(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        return ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"bemanning\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "bemanning", Boolean.TRUE), null, "JAAR", Integer.valueOf(6), Boolean.FALSE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// 30
+function Object waarde_nietleegtoeslagVanEenSchuit() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("30"), Integer.valueOf(0), "nietleegtoeslag", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "nietleegtoeslag van een schuit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $stand_0 : State( attribute == ElementKey.of("schuit", "bemanning", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_nietleegtoeslagVanEenSchuit($tijdlijn_0, $onderwerp) )
+then
+    Object v = waarde_nietleegtoeslagVanEenSchuit();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "nietleegtoeslag van een schuit", ComputeHelpers.designate(v, "nietleegtoeslag van een schuit")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "nietleegtoeslag", false), v, "nietleegtoeslag van een schuit"));
+        }
+    }
+end
+
+// de bemanning van de Schuit gedurende het gehele jaar niet leeg is
+function boolean toets_nietleegtoeslagVanEenSchuitFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"bemanning\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "bemanning", Boolean.TRUE), null, "JAAR", Integer.valueOf(6), Boolean.FALSE);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de bemanning van de Schuit gedurende het gehele jaar niet leeg is
+function Object fout_nietleegtoeslagVanEenSchuitFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"bemanning\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "bemanning", Boolean.TRUE), null, "JAAR", Integer.valueOf(6), Boolean.FALSE);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "nietleegtoeslag van een schuit: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $stand_0 : State( attribute == ElementKey.of("schuit", "bemanning", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_nietleegtoeslagVanEenSchuitFoutInDeVoorwaarde($tijdlijn_0, $onderwerp) )
+then
+    Object f = fout_nietleegtoeslagVanEenSchuitFoutInDeVoorwaarde($tijdlijn_0, $onderwerp);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"nietleegtoeslag van een schuit\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "nietleegtoeslag van een schuit", ComputeHelpers.designate(f, "nietleegtoeslag van een schuit")));
+end
+
+// de bemanning van de Schuit gedurende het gehele jaar niet gevuld is
+function boolean toets_nietvultoeslagVanEenSchuit(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        return ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"bemanning\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "bemanning", Boolean.TRUE), null, "JAAR", Integer.valueOf(8), Boolean.FALSE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// 40
+function Object waarde_nietvultoeslagVanEenSchuit() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("40"), Integer.valueOf(0), "nietvultoeslag", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "nietvultoeslag van een schuit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $stand_0 : State( attribute == ElementKey.of("schuit", "bemanning", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_nietvultoeslagVanEenSchuit($tijdlijn_0, $onderwerp) )
+then
+    Object v = waarde_nietvultoeslagVanEenSchuit();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "nietvultoeslag van een schuit", ComputeHelpers.designate(v, "nietvultoeslag van een schuit")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "nietvultoeslag", false), v, "nietvultoeslag van een schuit"));
+        }
+    }
+end
+
+// de bemanning van de Schuit gedurende het gehele jaar niet gevuld is
+function boolean toets_nietvultoeslagVanEenSchuitFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"bemanning\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "bemanning", Boolean.TRUE), null, "JAAR", Integer.valueOf(8), Boolean.FALSE);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de bemanning van de Schuit gedurende het gehele jaar niet gevuld is
+function Object fout_nietvultoeslagVanEenSchuitFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"bemanning\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "bemanning", Boolean.TRUE), null, "JAAR", Integer.valueOf(8), Boolean.FALSE);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "nietvultoeslag van een schuit: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $stand_0 : State( attribute == ElementKey.of("schuit", "bemanning", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_nietvultoeslagVanEenSchuitFoutInDeVoorwaarde($tijdlijn_0, $onderwerp) )
+then
+    Object f = fout_nietvultoeslagVanEenSchuitFoutInDeVoorwaarde($tijdlijn_0, $onderwerp);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"nietvultoeslag van een schuit\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "nietvultoeslag van een schuit", ComputeHelpers.designate(f, "nietvultoeslag van een schuit")));
+end
+
+// de bemanning van de Schuit niet gedurende het gehele jaar leeg is
+function boolean toets_onderbrekingstoeslagVanEenSchuit(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        return ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"bemanning\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "bemanning", Boolean.TRUE), null, "JAAR", Integer.valueOf(8), Boolean.TRUE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// 50
+function Object waarde_onderbrekingstoeslagVanEenSchuit() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("50"), Integer.valueOf(0), "onderbrekingstoeslag", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "onderbrekingstoeslag van een schuit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $stand_0 : State( attribute == ElementKey.of("schuit", "bemanning", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_onderbrekingstoeslagVanEenSchuit($tijdlijn_0, $onderwerp) )
+then
+    Object v = waarde_onderbrekingstoeslagVanEenSchuit();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "onderbrekingstoeslag van een schuit", ComputeHelpers.designate(v, "onderbrekingstoeslag van een schuit")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "onderbrekingstoeslag", false), v, "onderbrekingstoeslag van een schuit"));
+        }
+    }
+end
+
+// de bemanning van de Schuit niet gedurende het gehele jaar leeg is
+function boolean toets_onderbrekingstoeslagVanEenSchuitFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"bemanning\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "bemanning", Boolean.TRUE), null, "JAAR", Integer.valueOf(8), Boolean.TRUE);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de bemanning van de Schuit niet gedurende het gehele jaar leeg is
+function Object fout_onderbrekingstoeslagVanEenSchuitFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"bemanning\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "bemanning", Boolean.TRUE), null, "JAAR", Integer.valueOf(8), Boolean.TRUE);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "onderbrekingstoeslag van een schuit: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $stand_0 : State( attribute == ElementKey.of("schuit", "bemanning", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_onderbrekingstoeslagVanEenSchuitFoutInDeVoorwaarde($tijdlijn_0, $onderwerp) )
+then
+    Object f = fout_onderbrekingstoeslagVanEenSchuitFoutInDeVoorwaarde($tijdlijn_0, $onderwerp);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"onderbrekingstoeslag van een schuit\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "onderbrekingstoeslag van een schuit", ComputeHelpers.designate(f, "onderbrekingstoeslag van een schuit")));
+end
+
+// de bemanning van de Schuit gedurende de gehele maand gevuld is
+function boolean toets_maandtoeslagVanEenSchuit(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        return ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"bemanning\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "bemanning", Boolean.TRUE), null, "MAAND", Integer.valueOf(6), Boolean.FALSE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// 60
+function Object waarde_maandtoeslagVanEenSchuit() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("60"), Integer.valueOf(0), "maandtoeslag", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "maandtoeslag van een schuit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $stand_0 : State( attribute == ElementKey.of("schuit", "bemanning", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_maandtoeslagVanEenSchuit($tijdlijn_0, $onderwerp) )
+then
+    Object v = waarde_maandtoeslagVanEenSchuit();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "maandtoeslag van een schuit", ComputeHelpers.designate(v, "maandtoeslag van een schuit")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "maandtoeslag", false), v, "maandtoeslag van een schuit"));
+        }
+    }
+end
+
+// de bemanning van de Schuit gedurende de gehele maand gevuld is
+function boolean toets_maandtoeslagVanEenSchuitFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"bemanning\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "bemanning", Boolean.TRUE), null, "MAAND", Integer.valueOf(6), Boolean.FALSE);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de bemanning van de Schuit gedurende de gehele maand gevuld is
+function Object fout_maandtoeslagVanEenSchuitFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"bemanning\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "bemanning", Boolean.TRUE), null, "MAAND", Integer.valueOf(6), Boolean.FALSE);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "maandtoeslag van een schuit: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $stand_0 : State( attribute == ElementKey.of("schuit", "bemanning", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_maandtoeslagVanEenSchuitFoutInDeVoorwaarde($tijdlijn_0, $onderwerp) )
+then
+    Object f = fout_maandtoeslagVanEenSchuitFoutInDeVoorwaarde($tijdlijn_0, $onderwerp);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"maandtoeslag van een schuit\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "maandtoeslag van een schuit", ComputeHelpers.designate(f, "maandtoeslag van een schuit")));
+end
+
+// het havengeld van de werf van de Schuit gedurende het gehele jaar gevuld is
+function boolean toets_werftoeslagVanEenSchuit(Object $werfHavengeld, Object $onderwerp) {
+    try {
+        return ComputeHelpers.wholePeriod(ComputeHelpers.complete($werfHavengeld, "the whole-period qualifier over \"havengeld\" needs the full timeline; the werf of ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "havengeld", Boolean.FALSE), null, "JAAR", Integer.valueOf(6), Boolean.FALSE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// 70
+function Object waarde_werftoeslagVanEenSchuit() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("70"), Integer.valueOf(0), "werftoeslag", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "werftoeslag van een schuit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $padstand_0 : PathState( path == "Schuit:werf" && member == ElementKey.of("werf", "havengeld", false), subject == $onderwerp, $werfHavengeld : value )
+    eval( toets_werftoeslagVanEenSchuit($werfHavengeld, $onderwerp) )
+then
+    Object v = waarde_werftoeslagVanEenSchuit();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "werftoeslag van een schuit", ComputeHelpers.designate(v, "werftoeslag van een schuit")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "werftoeslag", false), v, "werftoeslag van een schuit"));
+        }
+    }
+end
+
+// het havengeld van de werf van de Schuit gedurende het gehele jaar gevuld is
+function boolean toets_werftoeslagVanEenSchuitFoutInDeVoorwaarde(Object $werfHavengeld, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($werfHavengeld, "the whole-period qualifier over \"havengeld\" needs the full timeline; the werf of ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "havengeld", Boolean.FALSE), null, "JAAR", Integer.valueOf(6), Boolean.FALSE);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// het havengeld van de werf van de Schuit gedurende het gehele jaar gevuld is
+function Object fout_werftoeslagVanEenSchuitFoutInDeVoorwaarde(Object $werfHavengeld, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriod(ComputeHelpers.complete($werfHavengeld, "the whole-period qualifier over \"havengeld\" needs the full timeline; the werf of ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "havengeld", Boolean.FALSE), null, "JAAR", Integer.valueOf(6), Boolean.FALSE);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "werftoeslag van een schuit: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $padstand_0 : PathState( path == "Schuit:werf" && member == ElementKey.of("werf", "havengeld", false), subject == $onderwerp, $werfHavengeld : value )
+    eval( toets_werftoeslagVanEenSchuitFoutInDeVoorwaarde($werfHavengeld, $onderwerp) )
+then
+    Object f = fout_werftoeslagVanEenSchuitFoutInDeVoorwaarde($werfHavengeld, $onderwerp);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"werftoeslag van een schuit\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "werftoeslag van een schuit", ComputeHelpers.designate(f, "werftoeslag van een schuit")));
+end
+
+function Object pad_padstandSchuitWerfNaarWerfHavengeldLinkAanwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("werf"));
+}
+
+rule "padstand Schuit.werf naar Werf.havengeld: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( pad_padstandSchuitWerfNaarWerfHavengeldLinkAanwezig(this) != null, $bereikt : werf )
+    $stand : State( attribute == ElementKey.of("werf", "havengeld", false), subject != null, subject == $bereikt, $v : value )
+then
+    insertLogical(new PathState($onderwerp, "Schuit:werf", ElementKey.of("werf", "havengeld", false), $v, $bereikt));
+end
+
+function Object pad_padstandSchuitWerfNaarWerfHavengeldLinkAfwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("werf"));
+}
+
+rule "padstand Schuit.werf naar Werf.havengeld: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( pad_padstandSchuitWerfNaarWerfHavengeldLinkAfwezig(this) == null )
+then
+    insertLogical(new PathState($onderwerp, "Schuit:werf", ElementKey.of("werf", "havengeld", false), null, null));
+end
+
+rule "stand Schuit.bemanning: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( $invoer : (ComputeHelpers.periods(bemanning)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("schuit", "bemanning", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("schuit", "bemanning", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("schuit", "bemanning", false), $invoer));
+end
+
+rule "stand Schuit.bemanning: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( $invoer : (ComputeHelpers.periods(bemanning)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("schuit", "bemanning", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("schuit", "bemanning", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("schuit", "bemanning", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+rule "stand Werf.havengeld: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Werf( $invoer : (ComputeHelpers.periods(havengeld)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("werf", "havengeld", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("werf", "havengeld", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("werf", "havengeld", false), $invoer));
+end
+
+rule "stand Werf.havengeld: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Werf( $invoer : (ComputeHelpers.periods(havengeld)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("werf", "havengeld", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("werf", "havengeld", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("werf", "havengeld", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+

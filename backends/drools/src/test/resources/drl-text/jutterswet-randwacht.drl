@@ -1,0 +1,100 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - zijn grootgetal is gelijk aan zijn bedrag
+function boolean toets_gelijktekenVanEenRandwacht(Object $ploegomvang, Object $grootgetal, Object $bedrag) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($grootgetal, $bedrag, "==")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+// 1
+function Object waarde_gelijktekenVanEenRandwacht() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("1"), Integer.valueOf(0), "gelijkteken", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "gelijkteken van een randwacht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Randwacht( $ploegomvang : ploegomvang, $grootgetal : grootgetal, $bedrag : bedrag )
+    eval( toets_gelijktekenVanEenRandwacht($ploegomvang, $grootgetal, $bedrag) )
+then
+    Object v = waarde_gelijktekenVanEenRandwacht();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "gelijkteken van een randwacht", ComputeHelpers.designate(v, "gelijkteken van een randwacht")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("randwacht", "gelijkteken", false), v, "gelijkteken van een randwacht"));
+        }
+    }
+end
+
+// hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - zijn grootgetal is groter dan zijn bedrag
+function boolean toets_ordetekenVanEenRandwacht(Object $ploegomvang, Object $grootgetal, Object $bedrag) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($grootgetal, $bedrag, ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+// 1
+function Object waarde_ordetekenVanEenRandwacht() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("1"), Integer.valueOf(0), "ordeteken", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "ordeteken van een randwacht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Randwacht( $ploegomvang : ploegomvang, $grootgetal : grootgetal, $bedrag : bedrag )
+    eval( toets_ordetekenVanEenRandwacht($ploegomvang, $grootgetal, $bedrag) )
+then
+    Object v = waarde_ordetekenVanEenRandwacht();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "ordeteken van een randwacht", ComputeHelpers.designate(v, "ordeteken van een randwacht")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("randwacht", "ordeteken", false), v, "ordeteken van een randwacht"));
+        }
+    }
+end
+

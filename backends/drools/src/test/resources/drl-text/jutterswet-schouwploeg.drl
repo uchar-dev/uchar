@@ -1,0 +1,161 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de dienstjaren van alle wachten van de Schouwploeg groter zijn dan 5
+function boolean toets_ervarenBijDienstjaren(Object $aantal_vouw_4, Object $vouw_vouw_6) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_4, $vouw_vouw_6, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0));
+}
+
+rule "ervaren bij dienstjaren"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schouwploeg()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "ervaren bij dienstjaren: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_5 : value ); $aantal_vouw_4 : count(), $vouw_vouw_6 : exactSum($bijdragewaarde_vouw_5) )
+    eval( toets_ervarenBijDienstjaren($aantal_vouw_4, $vouw_vouw_6) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("schouwploeg", "ervaren", true)));
+end
+
+// de dienstjaren van geen van de wachten van de Schouwploeg groter zijn dan 5
+function boolean toets_onervarenBijDienstjaren(Object $aantal_vouw_12, Object $vouw_vouw_14) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_12, $vouw_vouw_14, dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, Integer.valueOf(0));
+}
+
+rule "onervaren bij dienstjaren"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schouwploeg()
+    accumulate( $bijdrage_vouw_9 : Contribution( fold == "onervaren bij dienstjaren: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_13 : value ); $aantal_vouw_12 : count(), $vouw_vouw_14 : exactSum($bijdragewaarde_vouw_13) )
+    eval( toets_onervarenBijDienstjaren($aantal_vouw_12, $vouw_vouw_14) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("schouwploeg", "onervaren", true)));
+end
+
+// alle wachten van de Schouwploeg gediplomeerd zijn
+function boolean toets_bevoegdBijDiploma(Object $aantal_vouw_20, Object $vouw_vouw_22) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_20, $vouw_vouw_22, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0));
+}
+
+rule "bevoegd bij diploma"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schouwploeg()
+    accumulate( $bijdrage_vouw_17 : Contribution( fold == "bevoegd bij diploma: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_21 : value ); $aantal_vouw_20 : count(), $vouw_vouw_22 : exactSum($bijdragewaarde_vouw_21) )
+    eval( toets_bevoegdBijDiploma($aantal_vouw_20, $vouw_vouw_22) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("schouwploeg", "bevoegd", true)));
+end
+
+// geen van de wachten van de Schouwploeg niet gediplomeerd is
+function boolean toets_sluitendBijDiploma(Object $aantal_vouw_28, Object $vouw_vouw_30) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_28, $vouw_vouw_30, dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, Integer.valueOf(0));
+}
+
+rule "sluitend bij diploma"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schouwploeg()
+    accumulate( $bijdrage_vouw_25 : Contribution( fold == "sluitend bij diploma: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_29 : value ); $aantal_vouw_28 : count(), $vouw_vouw_30 : exactSum($bijdragewaarde_vouw_29) )
+    eval( toets_sluitendBijDiploma($aantal_vouw_28, $vouw_vouw_30) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("schouwploeg", "sluitend", true)));
+end
+
+// het aantal wachten van de Schouwploeg
+function Object waarde_wachttalVanEenSchouwploeg(Object $aantal_vouw_36) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_36), Integer.valueOf(0), "wachttal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "wachttal van een schouwploeg"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schouwploeg()
+    accumulate( $bijdrage_vouw_33 : Contribution( fold == "wachttal van een schouwploeg: vouw 4", subject == $onderwerp ); $aantal_vouw_36 : count() )
+then
+    Object v = waarde_wachttalVanEenSchouwploeg($aantal_vouw_36);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "wachttal van een schouwploeg", ComputeHelpers.designate(v, "wachttal van een schouwploeg")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schouwploeg", "wachttal", false), v, "wachttal van een schouwploeg"));
+        }
+    }
+end
+
+// de dienstjaren van alle wachten van de Schouwploeg groter zijn dan 5
+function boolean matrix_ervarenBijDienstjarenBijdrageAanVouw0(Object $onderwerp, Object $dienstjaren) {
+    return RegelSpraakRuntime.rsAggVergelijk($dienstjaren, new java.math.BigDecimal("5"), ">");
+}
+
+rule "ervaren bij dienstjaren: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schouwploeg()
+    $onderwerp : dev.uchar.regelspraak.facts.Strandwacht( ploeg == $vouwonderwerp, $dienstjaren : dienstjaren )
+then
+    insertLogical(new Contribution("ervaren bij dienstjaren: vouw 0", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_ervarenBijDienstjarenBijdrageAanVouw0($onderwerp, $dienstjaren))));
+end
+
+// de dienstjaren van geen van de wachten van de Schouwploeg groter zijn dan 5
+function boolean matrix_onervarenBijDienstjarenBijdrageAanVouw1(Object $onderwerp, Object $dienstjaren) {
+    return RegelSpraakRuntime.rsAggVergelijk($dienstjaren, new java.math.BigDecimal("5"), ">");
+}
+
+rule "onervaren bij dienstjaren: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schouwploeg()
+    $onderwerp : dev.uchar.regelspraak.facts.Strandwacht( ploeg == $vouwonderwerp, $dienstjaren : dienstjaren )
+then
+    insertLogical(new Contribution("onervaren bij dienstjaren: vouw 1", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_onervarenBijDienstjarenBijdrageAanVouw1($onderwerp, $dienstjaren))));
+end
+
+// alle wachten van de Schouwploeg gediplomeerd zijn
+function boolean matrix_bevoegdBijDiplomaBijdrageAanVouw2(Object $onderwerp, Object $gediplomeerd) {
+    return ComputeHelpers.characteristic($gediplomeerd, Boolean.TRUE);
+}
+
+rule "bevoegd bij diploma: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schouwploeg()
+    $onderwerp : dev.uchar.regelspraak.facts.Strandwacht( ploeg == $vouwonderwerp, $gediplomeerd : (ComputeHelpers.holds(gediplomeerd)) )
+then
+    insertLogical(new Contribution("bevoegd bij diploma: vouw 2", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_bevoegdBijDiplomaBijdrageAanVouw2($onderwerp, $gediplomeerd))));
+end
+
+// geen van de wachten van de Schouwploeg niet gediplomeerd is
+function boolean matrix_sluitendBijDiplomaBijdrageAanVouw3(Object $onderwerp, Object $gediplomeerd) {
+    return ComputeHelpers.characteristic($gediplomeerd, Boolean.FALSE);
+}
+
+rule "sluitend bij diploma: bijdrage aan vouw 3"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schouwploeg()
+    $onderwerp : dev.uchar.regelspraak.facts.Strandwacht( ploeg == $vouwonderwerp, $gediplomeerd : (ComputeHelpers.holds(gediplomeerd)) )
+then
+    insertLogical(new Contribution("sluitend bij diploma: vouw 3", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_sluitendBijDiplomaBijdrageAanVouw3($onderwerp, $gediplomeerd))));
+end
+
+rule "wachttal van een schouwploeg: bijdrage aan vouw 4"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schouwploeg()
+    $onderwerp : dev.uchar.regelspraak.facts.Strandwacht( ploeg == $vouwonderwerp )
+then
+    insertLogical(new Contribution("wachttal van een schouwploeg: vouw 4", $vouwonderwerp, $onderwerp, null));
+end
+

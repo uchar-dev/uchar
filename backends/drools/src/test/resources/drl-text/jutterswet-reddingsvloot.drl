@@ -1,0 +1,482 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.ListPlace;
+import dev.uchar.regelspraak.transpiler.tms.MemberTest;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20
+function boolean toets_inzetbaarBijVaartijd(Object $aantal_vouw_12, Object $vouw_vouw_14) {
+    try {
+        return ((Boolean) kwantorlezing_inzetbaarBijVaartijd($aantal_vouw_12, $vouw_vouw_14));
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing_inzetbaarBijVaartijd(Object $aantal_vouw_12, Object $vouw_vouw_14) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_12, $vouw_vouw_14, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(2), null);
+}
+
+rule "inzetbaar bij vaartijd"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Reddingsvloot()
+    accumulate( $bijdrage_vouw_9 : Contribution( fold == "inzetbaar bij vaartijd: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_13 : value ); $aantal_vouw_12 : count(), $vouw_vouw_14 : collectList($bijdragewaarde_vouw_13) )
+    eval( toets_inzetbaarBijVaartijd($aantal_vouw_12, $vouw_vouw_14) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("reddingsvloot", "inzetbaar", true)));
+end
+
+// de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20
+function boolean toets_inzetbaarBijVaartijdFoutInDeVoorwaarde(Object $aantal_vouw_19, Object $vouw_vouw_21) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing1_inzetbaarBijVaartijdFoutInDeVoorwaarde($aantal_vouw_19, $vouw_vouw_21));
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing1_inzetbaarBijVaartijdFoutInDeVoorwaarde(Object $aantal_vouw_19, Object $vouw_vouw_21) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_19, $vouw_vouw_21, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(2), null);
+}
+
+// de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20
+function Object fout_inzetbaarBijVaartijdFoutInDeVoorwaarde(Object $aantal_vouw_19, Object $vouw_vouw_21) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing2_inzetbaarBijVaartijdFoutInDeVoorwaarde($aantal_vouw_19, $vouw_vouw_21));
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing2_inzetbaarBijVaartijdFoutInDeVoorwaarde(Object $aantal_vouw_19, Object $vouw_vouw_21) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_19, $vouw_vouw_21, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(2), null);
+}
+
+rule "inzetbaar bij vaartijd: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Reddingsvloot()
+    accumulate( $bijdrage_vouw_16 : Contribution( fold == "inzetbaar bij vaartijd: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_20 : value ); $aantal_vouw_19 : count(), $vouw_vouw_21 : collectList($bijdragewaarde_vouw_20) )
+    eval( toets_inzetbaarBijVaartijdFoutInDeVoorwaarde($aantal_vouw_19, $vouw_vouw_21) )
+then
+    Object f = fout_inzetbaarBijVaartijdFoutInDeVoorwaarde($aantal_vouw_19, $vouw_vouw_21);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"inzetbaar bij vaartijd\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "inzetbaar bij vaartijd", ComputeHelpers.designate(f, "inzetbaar bij vaartijd")));
+end
+
+// de vaartijd van ten hoogste 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20
+function boolean toets_krapBijVaartijd(Object $aantal_vouw_35, Object $vouw_vouw_37) {
+    try {
+        return ((Boolean) kwantorlezing_krapBijVaartijd($aantal_vouw_35, $vouw_vouw_37));
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// de vaartijd van ten hoogste 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing_krapBijVaartijd(Object $aantal_vouw_35, Object $vouw_vouw_37) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_35, $vouw_vouw_37, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, Integer.valueOf(1), null);
+}
+
+rule "krap bij vaartijd"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Reddingsvloot()
+    accumulate( $bijdrage_vouw_32 : Contribution( fold == "krap bij vaartijd: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_36 : value ); $aantal_vouw_35 : count(), $vouw_vouw_37 : collectList($bijdragewaarde_vouw_36) )
+    eval( toets_krapBijVaartijd($aantal_vouw_35, $vouw_vouw_37) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("reddingsvloot", "krap", true)));
+end
+
+// de vaartijd van ten hoogste 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20
+function boolean toets_krapBijVaartijdFoutInDeVoorwaarde(Object $aantal_vouw_42, Object $vouw_vouw_44) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing1_krapBijVaartijdFoutInDeVoorwaarde($aantal_vouw_42, $vouw_vouw_44));
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de vaartijd van ten hoogste 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing1_krapBijVaartijdFoutInDeVoorwaarde(Object $aantal_vouw_42, Object $vouw_vouw_44) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_42, $vouw_vouw_44, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, Integer.valueOf(1), null);
+}
+
+// de vaartijd van ten hoogste 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20
+function Object fout_krapBijVaartijdFoutInDeVoorwaarde(Object $aantal_vouw_42, Object $vouw_vouw_44) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing2_krapBijVaartijdFoutInDeVoorwaarde($aantal_vouw_42, $vouw_vouw_44));
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de vaartijd van ten hoogste 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing2_krapBijVaartijdFoutInDeVoorwaarde(Object $aantal_vouw_42, Object $vouw_vouw_44) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_42, $vouw_vouw_44, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, Integer.valueOf(1), null);
+}
+
+rule "krap bij vaartijd: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Reddingsvloot()
+    accumulate( $bijdrage_vouw_39 : Contribution( fold == "krap bij vaartijd: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_43 : value ); $aantal_vouw_42 : count(), $vouw_vouw_44 : collectList($bijdragewaarde_vouw_43) )
+    eval( toets_krapBijVaartijdFoutInDeVoorwaarde($aantal_vouw_42, $vouw_vouw_44) )
+then
+    Object f = fout_krapBijVaartijdFoutInDeVoorwaarde($aantal_vouw_42, $vouw_vouw_44);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"krap bij vaartijd\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "krap bij vaartijd", ComputeHelpers.designate(f, "krap bij vaartijd")));
+end
+
+// de vaartijd van precies 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20
+function boolean toets_paraatBijVaartijd(Object $aantal_vouw_58, Object $vouw_vouw_60) {
+    try {
+        return ((Boolean) kwantorlezing_paraatBijVaartijd($aantal_vouw_58, $vouw_vouw_60));
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// de vaartijd van precies 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing_paraatBijVaartijd(Object $aantal_vouw_58, Object $vouw_vouw_60) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_58, $vouw_vouw_60, dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, Integer.valueOf(1), null);
+}
+
+rule "paraat bij vaartijd"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Reddingsvloot()
+    accumulate( $bijdrage_vouw_55 : Contribution( fold == "paraat bij vaartijd: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_59 : value ); $aantal_vouw_58 : count(), $vouw_vouw_60 : collectList($bijdragewaarde_vouw_59) )
+    eval( toets_paraatBijVaartijd($aantal_vouw_58, $vouw_vouw_60) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("reddingsvloot", "paraat", true)));
+end
+
+// de vaartijd van precies 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20
+function boolean toets_paraatBijVaartijdFoutInDeVoorwaarde(Object $aantal_vouw_65, Object $vouw_vouw_67) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing1_paraatBijVaartijdFoutInDeVoorwaarde($aantal_vouw_65, $vouw_vouw_67));
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de vaartijd van precies 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing1_paraatBijVaartijdFoutInDeVoorwaarde(Object $aantal_vouw_65, Object $vouw_vouw_67) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_65, $vouw_vouw_67, dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, Integer.valueOf(1), null);
+}
+
+// de vaartijd van precies 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20
+function Object fout_paraatBijVaartijdFoutInDeVoorwaarde(Object $aantal_vouw_65, Object $vouw_vouw_67) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing2_paraatBijVaartijdFoutInDeVoorwaarde($aantal_vouw_65, $vouw_vouw_67));
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de vaartijd van precies 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing2_paraatBijVaartijdFoutInDeVoorwaarde(Object $aantal_vouw_65, Object $vouw_vouw_67) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_65, $vouw_vouw_67, dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, Integer.valueOf(1), null);
+}
+
+rule "paraat bij vaartijd: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Reddingsvloot()
+    accumulate( $bijdrage_vouw_62 : Contribution( fold == "paraat bij vaartijd: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_66 : value ); $aantal_vouw_65 : count(), $vouw_vouw_67 : collectList($bijdragewaarde_vouw_66) )
+    eval( toets_paraatBijVaartijdFoutInDeVoorwaarde($aantal_vouw_65, $vouw_vouw_67) )
+then
+    Object f = fout_paraatBijVaartijdFoutInDeVoorwaarde($aantal_vouw_65, $vouw_vouw_67);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"paraat bij vaartijd\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "paraat bij vaartijd", ComputeHelpers.designate(f, "paraat bij vaartijd")));
+end
+
+// de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot die gekeurd zijn gedurende het gehele jaar groter is dan 20
+function boolean toets_geschiktBijVaartijd(Object $aantal_vouw_82, Object $vouw_vouw_84) {
+    try {
+        return ((Boolean) kwantorlezing_geschiktBijVaartijd($aantal_vouw_82, $vouw_vouw_84));
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot die gekeurd zijn gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing_geschiktBijVaartijd(Object $aantal_vouw_82, Object $vouw_vouw_84) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_82, $vouw_vouw_84, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(2), null);
+}
+
+rule "geschikt bij vaartijd"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Reddingsvloot()
+    accumulate( $bijdrage_vouw_79 : Contribution( fold == "geschikt bij vaartijd: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_83 : value ); $aantal_vouw_82 : count(), $vouw_vouw_84 : collectList($bijdragewaarde_vouw_83) )
+    eval( toets_geschiktBijVaartijd($aantal_vouw_82, $vouw_vouw_84) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("reddingsvloot", "geschikt", true)));
+end
+
+// de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot die gekeurd zijn gedurende het gehele jaar groter is dan 20
+function boolean toets_geschiktBijVaartijdFoutInDeVoorwaarde(Object $aantal_vouw_89, Object $vouw_vouw_91) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing1_geschiktBijVaartijdFoutInDeVoorwaarde($aantal_vouw_89, $vouw_vouw_91));
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot die gekeurd zijn gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing1_geschiktBijVaartijdFoutInDeVoorwaarde(Object $aantal_vouw_89, Object $vouw_vouw_91) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_89, $vouw_vouw_91, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(2), null);
+}
+
+// de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot die gekeurd zijn gedurende het gehele jaar groter is dan 20
+function Object fout_geschiktBijVaartijdFoutInDeVoorwaarde(Object $aantal_vouw_89, Object $vouw_vouw_91) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing2_geschiktBijVaartijdFoutInDeVoorwaarde($aantal_vouw_89, $vouw_vouw_91));
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot die gekeurd zijn gedurende het gehele jaar groter is dan 20
+function Object kwantorlezing2_geschiktBijVaartijdFoutInDeVoorwaarde(Object $aantal_vouw_89, Object $vouw_vouw_91) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_89, $vouw_vouw_91, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(2), null);
+}
+
+rule "geschikt bij vaartijd: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Reddingsvloot()
+    accumulate( $bijdrage_vouw_86 : Contribution( fold == "geschikt bij vaartijd: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_90 : value ); $aantal_vouw_89 : count(), $vouw_vouw_91 : collectList($bijdragewaarde_vouw_90) )
+    eval( toets_geschiktBijVaartijdFoutInDeVoorwaarde($aantal_vouw_89, $vouw_vouw_91) )
+then
+    Object f = fout_geschiktBijVaartijdFoutInDeVoorwaarde($aantal_vouw_89, $vouw_vouw_91);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"geschikt bij vaartijd\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "geschikt bij vaartijd", ComputeHelpers.designate(f, "geschikt bij vaartijd")));
+end
+
+// het aantal sloepen van de Reddingsvloot
+function Object waarde_sloeptalVanEenReddingsvloot(Object $aantal_vouw_97) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_97), Integer.valueOf(0), "sloeptal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "sloeptal van een reddingsvloot"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Reddingsvloot()
+    accumulate( $bijdrage_vouw_94 : Contribution( fold == "sloeptal van een reddingsvloot: vouw 4", subject == $onderwerp ); $aantal_vouw_97 : count() )
+then
+    Object v = waarde_sloeptalVanEenReddingsvloot($aantal_vouw_97);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "sloeptal van een reddingsvloot", ComputeHelpers.designate(v, "sloeptal van een reddingsvloot")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("reddingsvloot", "sloeptal", false), v, "sloeptal van een reddingsvloot"));
+        }
+    }
+end
+
+function boolean beta_inzetbaarBijVaartijdBijdrageAanVouw0(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20
+function Object lidtoets_inzetbaarBijVaartijdBijdrageAanVouw0(Object $onderwerp, Object $tijdlijn_1, Object $lijstplaatsen_plaats_5, Object $plaats_plaats_6) {
+    java.util.List plaats = plaats_inzetbaarBijVaartijdBijdrageAanVouw0($onderwerp, $lijstplaatsen_plaats_5, $plaats_plaats_6);
+    Boolean waar = null;
+    RuntimeException fout = null;
+    try {
+        waar = Boolean.valueOf(ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_1, "the whole-period qualifier over \"vaartijd\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "vaartijd", Boolean.TRUE), new java.math.BigDecimal("20"), "JAAR", Integer.valueOf(2), Boolean.FALSE));
+    } catch (RuntimeException e) {
+        fout = ComputeHelpers.caught(e);
+    }
+    return new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null));
+}
+
+function java.util.List plaats_inzetbaarBijVaartijdBijdrageAanVouw0(Object $onderwerp, Object $lijstplaatsen_plaats_5, Object $plaats_plaats_6) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER, "inzetbaar bij vaartijd: vouw 0", $onderwerp, 0, java.util.Arrays.asList("vloot"), java.util.Arrays.asList($lijstplaatsen_plaats_5), java.util.Arrays.asList($plaats_plaats_6));
+}
+
+rule "inzetbaar bij vaartijd: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Reddingsvloot()
+    $onderwerp : dev.uchar.regelspraak.facts.Reddingssloep( vloot == $vouwonderwerp )
+    accumulate( $lijstplaats_plaats_3 : ListPlace( field == "vloot", beta_inzetbaarBijVaartijdBijdrageAanVouw0(this, $onderwerp), $lijstplaatswaarde_plaats_4 : place ); $lijstplaatsen_plaats_5 : count(), $plaats_plaats_6 : exactMin($lijstplaatswaarde_plaats_4) )
+    $stand_1 : State( attribute == ElementKey.of("reddingssloep", "vaartijd", false), subject == $onderwerp, $tijdlijn_1 : value )
+then
+    insertLogical(new Contribution("inzetbaar bij vaartijd: vouw 0", $vouwonderwerp, $onderwerp, lidtoets_inzetbaarBijVaartijdBijdrageAanVouw0($onderwerp, $tijdlijn_1, $lijstplaatsen_plaats_5, $plaats_plaats_6)));
+end
+
+function boolean beta_krapBijVaartijdBijdrageAanVouw1(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// de vaartijd van ten hoogste 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20
+function Object lidtoets_krapBijVaartijdBijdrageAanVouw1(Object $onderwerp, Object $tijdlijn_1, Object $lijstplaatsen_plaats_28, Object $plaats_plaats_29) {
+    java.util.List plaats = plaats_krapBijVaartijdBijdrageAanVouw1($onderwerp, $lijstplaatsen_plaats_28, $plaats_plaats_29);
+    Boolean waar = null;
+    RuntimeException fout = null;
+    try {
+        waar = Boolean.valueOf(ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_1, "the whole-period qualifier over \"vaartijd\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "vaartijd", Boolean.TRUE), new java.math.BigDecimal("20"), "JAAR", Integer.valueOf(2), Boolean.FALSE));
+    } catch (RuntimeException e) {
+        fout = ComputeHelpers.caught(e);
+    }
+    return new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null));
+}
+
+function java.util.List plaats_krapBijVaartijdBijdrageAanVouw1(Object $onderwerp, Object $lijstplaatsen_plaats_28, Object $plaats_plaats_29) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER, "krap bij vaartijd: vouw 1", $onderwerp, 0, java.util.Arrays.asList("vloot"), java.util.Arrays.asList($lijstplaatsen_plaats_28), java.util.Arrays.asList($plaats_plaats_29));
+}
+
+rule "krap bij vaartijd: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Reddingsvloot()
+    $onderwerp : dev.uchar.regelspraak.facts.Reddingssloep( vloot == $vouwonderwerp )
+    accumulate( $lijstplaats_plaats_26 : ListPlace( field == "vloot", beta_krapBijVaartijdBijdrageAanVouw1(this, $onderwerp), $lijstplaatswaarde_plaats_27 : place ); $lijstplaatsen_plaats_28 : count(), $plaats_plaats_29 : exactMin($lijstplaatswaarde_plaats_27) )
+    $stand_1 : State( attribute == ElementKey.of("reddingssloep", "vaartijd", false), subject == $onderwerp, $tijdlijn_1 : value )
+then
+    insertLogical(new Contribution("krap bij vaartijd: vouw 1", $vouwonderwerp, $onderwerp, lidtoets_krapBijVaartijdBijdrageAanVouw1($onderwerp, $tijdlijn_1, $lijstplaatsen_plaats_28, $plaats_plaats_29)));
+end
+
+function boolean beta_paraatBijVaartijdBijdrageAanVouw2(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// de vaartijd van precies 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20
+function Object lidtoets_paraatBijVaartijdBijdrageAanVouw2(Object $onderwerp, Object $tijdlijn_1, Object $lijstplaatsen_plaats_51, Object $plaats_plaats_52) {
+    java.util.List plaats = plaats_paraatBijVaartijdBijdrageAanVouw2($onderwerp, $lijstplaatsen_plaats_51, $plaats_plaats_52);
+    Boolean waar = null;
+    RuntimeException fout = null;
+    try {
+        waar = Boolean.valueOf(ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_1, "the whole-period qualifier over \"vaartijd\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "vaartijd", Boolean.TRUE), new java.math.BigDecimal("20"), "JAAR", Integer.valueOf(2), Boolean.FALSE));
+    } catch (RuntimeException e) {
+        fout = ComputeHelpers.caught(e);
+    }
+    return new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null));
+}
+
+function java.util.List plaats_paraatBijVaartijdBijdrageAanVouw2(Object $onderwerp, Object $lijstplaatsen_plaats_51, Object $plaats_plaats_52) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER, "paraat bij vaartijd: vouw 2", $onderwerp, 0, java.util.Arrays.asList("vloot"), java.util.Arrays.asList($lijstplaatsen_plaats_51), java.util.Arrays.asList($plaats_plaats_52));
+}
+
+rule "paraat bij vaartijd: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Reddingsvloot()
+    $onderwerp : dev.uchar.regelspraak.facts.Reddingssloep( vloot == $vouwonderwerp )
+    accumulate( $lijstplaats_plaats_49 : ListPlace( field == "vloot", beta_paraatBijVaartijdBijdrageAanVouw2(this, $onderwerp), $lijstplaatswaarde_plaats_50 : place ); $lijstplaatsen_plaats_51 : count(), $plaats_plaats_52 : exactMin($lijstplaatswaarde_plaats_50) )
+    $stand_1 : State( attribute == ElementKey.of("reddingssloep", "vaartijd", false), subject == $onderwerp, $tijdlijn_1 : value )
+then
+    insertLogical(new Contribution("paraat bij vaartijd: vouw 2", $vouwonderwerp, $onderwerp, lidtoets_paraatBijVaartijdBijdrageAanVouw2($onderwerp, $tijdlijn_1, $lijstplaatsen_plaats_51, $plaats_plaats_52)));
+end
+
+function boolean beta_geschiktBijVaartijdBijdrageAanVouw3(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// gekeurd zijn
+function boolean toets_geschiktBijVaartijdBijdrageAanVouw3(Object $gekeurd) {
+    return ComputeHelpers.characteristic($gekeurd, Boolean.TRUE);
+}
+
+// de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot die gekeurd zijn gedurende het gehele jaar groter is dan 20
+function Object lidtoets_geschiktBijVaartijdBijdrageAanVouw3(Object $onderwerp, Object $tijdlijn_2, Object $lijstplaatsen_plaats_74, Object $plaats_plaats_75) {
+    java.util.List plaats = plaats_geschiktBijVaartijdBijdrageAanVouw3($onderwerp, $lijstplaatsen_plaats_74, $plaats_plaats_75);
+    Boolean waar = null;
+    RuntimeException fout = null;
+    try {
+        waar = Boolean.valueOf(ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_2, "the whole-period qualifier over \"vaartijd\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "vaartijd", Boolean.TRUE), new java.math.BigDecimal("20"), "JAAR", Integer.valueOf(2), Boolean.FALSE));
+    } catch (RuntimeException e) {
+        fout = ComputeHelpers.caught(e);
+    }
+    return new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null));
+}
+
+function java.util.List plaats_geschiktBijVaartijdBijdrageAanVouw3(Object $onderwerp, Object $lijstplaatsen_plaats_74, Object $plaats_plaats_75) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER, "geschikt bij vaartijd: vouw 3", $onderwerp, 0, java.util.Arrays.asList("vloot"), java.util.Arrays.asList($lijstplaatsen_plaats_74), java.util.Arrays.asList($plaats_plaats_75));
+}
+
+rule "geschikt bij vaartijd: bijdrage aan vouw 3"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Reddingsvloot()
+    $onderwerp : dev.uchar.regelspraak.facts.Reddingssloep( vloot == $vouwonderwerp, $gekeurd : (ComputeHelpers.holds(gekeurd)) )
+    accumulate( $lijstplaats_plaats_72 : ListPlace( field == "vloot", beta_geschiktBijVaartijdBijdrageAanVouw3(this, $onderwerp), $lijstplaatswaarde_plaats_73 : place ); $lijstplaatsen_plaats_74 : count(), $plaats_plaats_75 : exactMin($lijstplaatswaarde_plaats_73) )
+    $stand_2 : State( attribute == ElementKey.of("reddingssloep", "vaartijd", false), subject == $onderwerp, $tijdlijn_2 : value )
+    eval( toets_geschiktBijVaartijdBijdrageAanVouw3($gekeurd) )
+then
+    insertLogical(new Contribution("geschikt bij vaartijd: vouw 3", $vouwonderwerp, $onderwerp, lidtoets_geschiktBijVaartijdBijdrageAanVouw3($onderwerp, $tijdlijn_2, $lijstplaatsen_plaats_74, $plaats_plaats_75)));
+end
+
+rule "sloeptal van een reddingsvloot: bijdrage aan vouw 4"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Reddingsvloot()
+    $onderwerp : dev.uchar.regelspraak.facts.Reddingssloep( vloot == $vouwonderwerp )
+then
+    insertLogical(new Contribution("sloeptal van een reddingsvloot: vouw 4", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "stand Reddingssloep.vaartijd: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Reddingssloep( $invoer : (ComputeHelpers.periods(vaartijd)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("reddingssloep", "vaartijd", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("reddingssloep", "vaartijd", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("reddingssloep", "vaartijd", false), $invoer));
+end
+
+rule "stand Reddingssloep.vaartijd: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Reddingssloep( $invoer : (ComputeHelpers.periods(vaartijd)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("reddingssloep", "vaartijd", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("reddingssloep", "vaartijd", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("reddingssloep", "vaartijd", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+

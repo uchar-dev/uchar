@@ -1,0 +1,331 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
+import dev.uchar.regelspraak.transpiler.tms.EvaluationDate;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.PathState;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.SecondFillingFault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.time.LocalDate rekendatum;
+
+// het aantal liggers van de Haven
+function Object waarde_liggertalVanEenHaven(Object $aantal_vouw_4) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_4), Integer.valueOf(0), "liggertal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "liggertal van een haven"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "liggertal van een haven: vouw 0", subject == $onderwerp ); $aantal_vouw_4 : count() )
+then
+    Object v = waarde_liggertalVanEenHaven($aantal_vouw_4);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "liggertal van een haven", ComputeHelpers.designate(v, "liggertal van een haven")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("haven", "liggertal", false), v, "liggertal van een haven"));
+        }
+    }
+end
+
+// het aantal winterschuiten van de Haven
+function Object waarde_wintertalVanEenHaven(Object $aantal_vouw_12) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_12), Integer.valueOf(0), "wintertal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "wintertal van een haven"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven()
+    accumulate( $bijdrage_vouw_9 : Contribution( fold == "wintertal van een haven: vouw 1", subject == $onderwerp ); $aantal_vouw_12 : count() )
+then
+    Object v = waarde_wintertalVanEenHaven($aantal_vouw_12);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "wintertal van een haven", ComputeHelpers.designate(v, "wintertal van een haven")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("haven", "wintertal", false), v, "wintertal van een haven"));
+        }
+    }
+end
+
+// het aantal keurschuiten van de Haven
+function Object waarde_keurtalVanEenHaven(Object $aantal_vouw_20) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_20), Integer.valueOf(0), "keurtal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "keurtal van een haven"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven()
+    accumulate( $bijdrage_vouw_17 : Contribution( fold == "keurtal van een haven: vouw 2", subject == $onderwerp ); $aantal_vouw_20 : count() )
+then
+    Object v = waarde_keurtalVanEenHaven($aantal_vouw_20);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "keurtal van een haven", ComputeHelpers.designate(v, "keurtal van een haven")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("haven", "keurtal", false), v, "keurtal van een haven"));
+        }
+    }
+end
+
+// de Schuit gekeurd is
+function boolean toets_ligprijsVanEenSchuit(Object $gekeurd) {
+    return ComputeHelpers.characteristic($gekeurd, Boolean.TRUE);
+}
+
+// het kadegeld van de winterhaven van de Schuit
+function Object waarde_ligprijsVanEenSchuit(Object $winterhavenKadegeld) {
+    try {
+        return ComputeHelpers.fitTarget($winterhavenKadegeld, Integer.valueOf(0), "ligprijs", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "ligprijs van een schuit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( $gekeurd : (ComputeHelpers.holds(gekeurd)) )
+    $padstand_1 : PathState( path == "Schuit:winterhaven" && member == ElementKey.of("haven", "kadegeld", false), subject == $onderwerp, $winterhavenKadegeld : value )
+    eval( toets_ligprijsVanEenSchuit($gekeurd) )
+then
+    Object v = waarde_ligprijsVanEenSchuit($winterhavenKadegeld);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "ligprijs van een schuit", ComputeHelpers.designate(v, "ligprijs van een schuit")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "ligprijs", false), v, "ligprijs van een schuit"));
+        }
+    }
+end
+
+function Object pad_vlagprijsVanEenSchuit(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("vlaghaven"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "kadegeld");
+}
+
+// het kadegeld van de vlaghaven van de Schuit
+function Object waarde_vlagprijsVanEenSchuit(Object $vlaghavenKadegeld) {
+    try {
+        return ComputeHelpers.fitTarget($vlaghavenKadegeld, Integer.valueOf(0), "vlagprijs", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vlagprijs van een schuit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( $vlaghavenKadegeld : (pad_vlagprijsVanEenSchuit(this)) )
+then
+    Object v = waarde_vlagprijsVanEenSchuit($vlaghavenKadegeld);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vlagprijs van een schuit", ComputeHelpers.designate(v, "vlagprijs van een schuit")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "vlagprijs", false), v, "vlagprijs van een schuit"));
+        }
+    }
+end
+
+function Object pad_vlaglengteVanEenHaven(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("vlaggenschip"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "romplengte");
+}
+
+// de romplengte van het vlaggenschip van de Haven
+function Object waarde_vlaglengteVanEenHaven(Object $vlaggenschipRomplengte) {
+    try {
+        return ComputeHelpers.fitTarget($vlaggenschipRomplengte, Integer.valueOf(0), "vlaglengte", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vlaglengte van een haven"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven( $vlaggenschipRomplengte : (pad_vlaglengteVanEenHaven(this)) )
+then
+    Object v = waarde_vlaglengteVanEenHaven($vlaggenschipRomplengte);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vlaglengte van een haven", ComputeHelpers.designate(v, "vlaglengte van een haven")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("haven", "vlaglengte", false), v, "vlaglengte van een haven"));
+        }
+    }
+end
+
+// de Haven veilig is
+function boolean toets_winterbergingDoorDeHaven(Object $veilig) {
+    return ComputeHelpers.characteristic($veilig, Boolean.TRUE);
+}
+
+function boolean beta_winterbergingDoorDeHaven(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("thuishaven"), java.util.Arrays.asList());
+}
+
+rule "winterberging door de haven"
+    dialect "mvel"
+    agenda-group "uchar-feitcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven( $veilig : (ComputeHelpers.holds(veilig)) )
+    $geldigheid_0 : EvaluationDate( ComputeHelpers.inside(date, "2026-03-01", null) )
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    eval( toets_winterbergingDoorDeHaven($veilig) )
+    $stap_keten_27 : dev.uchar.regelspraak.facts.Schuit( beta_winterbergingDoorDeHaven(this, $onderwerp) )
+    not( $bestaand_feitcreatie_29 : RelationLink( relation == "winterberging", first == $onderwerp, second == $stap_keten_27 ) )
+then
+    insert(new RelationLink("winterberging", $onderwerp, $stap_keten_27, $fase));
+end
+
+rule "winterberging door de haven: geen rekendatum"
+    dialect "mvel"
+when
+    $rekendatum : EvaluationDate( date == null )
+then
+    insertLogical(new Fault($rekendatum, "winterberging door de haven", ComputeHelpers.computeFault("a validity-bounded form needs an evaluation date; this session is time-free", "winterberging door de haven")));
+end
+
+// het kadegeld van de Haven groter is dan 30
+function boolean toets_keurbergingDoorDeHaven(Object $kadegeld) {
+    return RegelSpraakRuntime.rsAggVergelijk($kadegeld, new java.math.BigDecimal("30"), ">");
+}
+
+function boolean beta_keurbergingDoorDeHaven(Object eigen, Object ander) {
+    return ComputeHelpers.notInPhase(eigen, ander);
+}
+
+rule "keurberging door de haven"
+    dialect "mvel"
+    agenda-group "uchar-feitcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven( $kadegeld : kadegeld )
+    $creatiefase : CreationPhase( stratum >= 1, $fase : number )
+    eval( toets_keurbergingDoorDeHaven($kadegeld) )
+    $koppeling_keten_37 : RelationLink( relation == "winterberging", first == $onderwerp, beta_keurbergingDoorDeHaven(this, $fase), $overzijde_keten_38 : second )
+    $stap_keten_36 : dev.uchar.regelspraak.facts.Schuit( this == $overzijde_keten_38 )
+    not( $bestaand_feitcreatie_43 : RelationLink( relation == "keurberging", first == $onderwerp, second == $stap_keten_36 ) )
+then
+    insert(new RelationLink("keurberging", $onderwerp, $stap_keten_36, $fase));
+end
+
+rule "liggertal van een haven: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Haven()
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( thuishaven == $vouwonderwerp )
+then
+    insertLogical(new Contribution("liggertal van een haven: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "wintertal van een haven: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Haven()
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    exists( $koppeling_bereik_5 : RelationLink( relation == "winterberging", second == $onderwerp, first == $vouwonderwerp ) )
+then
+    insertLogical(new Contribution("wintertal van een haven: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "keurtal van een haven: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Haven()
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    exists( $koppeling_bereik_13 : RelationLink( relation == "keurberging", second == $onderwerp, first == $vouwonderwerp ) )
+then
+    insertLogical(new Contribution("keurtal van een haven: vouw 2", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "koppeling winterberging uit de invoer: Schuit.winterhaven"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Schuit( winterhaven != null, $ander : winterhaven )
+then
+    insertLogical(new RelationLink("winterberging", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingWinterbergingTweedeVullingVanWinterhaven(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling winterberging: tweede vulling van winterhaven"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "winterberging", $nabij : second )
+    $twee : RelationLink( relation == "winterberging", second != null, second == $een.second, beta_koppelingWinterbergingTweedeVullingVanWinterhaven(this, $een) )
+then
+    insertLogical(new Fault($nabij, "winterberging", new SecondFillingFault("winterhaven", $nabij)));
+end
+
+rule "koppeling keurberging uit de invoer: Schuit.keurhaven"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Schuit( keurhaven != null, $ander : keurhaven )
+then
+    insertLogical(new RelationLink("keurberging", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingKeurbergingTweedeVullingVanKeurhaven(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling keurberging: tweede vulling van keurhaven"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "keurberging", $nabij : second )
+    $twee : RelationLink( relation == "keurberging", second != null, second == $een.second, beta_koppelingKeurbergingTweedeVullingVanKeurhaven(this, $een) )
+then
+    insertLogical(new Fault($nabij, "keurberging", new SecondFillingFault("keurhaven", $nabij)));
+end
+
+rule "padstand Schuit.winterhaven naar Haven.kadegeld: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $koppeling_keten_58 : RelationLink( relation == "winterberging", second == $onderwerp, $overzijde_keten_59 : first )
+    $stap_keten_57 : dev.uchar.regelspraak.facts.Haven( this == $overzijde_keten_59, $v : kadegeld )
+then
+    insertLogical(new PathState($onderwerp, "Schuit:winterhaven", ElementKey.of("haven", "kadegeld", false), $v, $stap_keten_57));
+end
+
+rule "padstand Schuit.winterhaven naar Haven.kadegeld: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    not( $koppeling_keten_64 : RelationLink( relation == "winterberging", second == $onderwerp, $overzijde_keten_65 : first ) and $stap_keten_63 : dev.uchar.regelspraak.facts.Haven( this == $overzijde_keten_65 ) )
+then
+    insertLogical(new PathState($onderwerp, "Schuit:winterhaven", ElementKey.of("haven", "kadegeld", false), null, null));
+end
+
+rule "rekendatumstand"
+    dialect "mvel"
+when
+then
+    insertLogical(new EvaluationDate(rekendatum));
+end
+

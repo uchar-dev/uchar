@@ -1,0 +1,67 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.ParameterState;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.math.BigDecimal aanvoerdrempel;
+global java.math.BigDecimal aanvoertarief;
+
+// zijn aangevoerd gewicht groter of gelijk is aan de aanvoerdrempel
+function boolean toets_aanvoerplichtigBijDrempel(Object $aangevoerdGewicht, Object $aanvoerdrempel) {
+    return RegelSpraakRuntime.rsAggVergelijk($aangevoerdGewicht, $aanvoerdrempel, ">=");
+}
+
+rule "aanvoerplichtig bij drempel"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $aangevoerdGewicht : aangevoerdGewicht )
+    $parameter_1 : ParameterState( parameter == "aanvoerdrempel", $aanvoerdrempel : value )
+    eval( toets_aanvoerplichtigBijDrempel($aangevoerdGewicht, $aanvoerdrempel) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "aanvoerplichtig", true)));
+end
+
+// zijn aanvoerwaarde plus het aanvoertarief
+function Object waarde_aanvoergeldVanEenJutter(Object $aanvoerwaarde, Object $aanvoertarief) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($aanvoerwaarde, $aanvoertarief), Integer.valueOf(2), "aanvoergeld", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aanvoergeld van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $aanvoerwaarde : aanvoerwaarde )
+    $parameter_1 : ParameterState( parameter == "aanvoertarief", $aanvoertarief : value )
+then
+    Object v = waarde_aanvoergeldVanEenJutter($aanvoerwaarde, $aanvoertarief);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aanvoergeld van een jutter", ComputeHelpers.designate(v, "aanvoergeld van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aanvoergeld", false), v, "aanvoergeld van een jutter"));
+        }
+    }
+end
+
+rule "parameterstand aanvoerdrempel"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("aanvoerdrempel", aanvoerdrempel));
+end
+
+rule "parameterstand aanvoertarief"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("aanvoertarief", aanvoertarief));
+end
+

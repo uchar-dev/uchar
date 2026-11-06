@@ -1,0 +1,94 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Decides;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+
+// zijn aantal aangemelde vondsten groter of gelijk is aan 12 en hij vergunning geweigerd is
+function boolean toets_defaultsKJutterRechtOpDePenningDefault0(Object $aantalAangemeldeVondsten, Object $vergunningGeweigerd) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($aantalAangemeldeVondsten, new java.math.BigDecimal("12"), ">=")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($vergunningGeweigerd, Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "defaults K:Jutter.recht op de penning: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $aantalAangemeldeVondsten : aantalAangemeldeVondsten, $vergunningGeweigerd : (ComputeHelpers.holds(vergunningGeweigerd)) )
+    eval( toets_defaultsKJutterRechtOpDePenningDefault0($aantalAangemeldeVondsten, $vergunningGeweigerd) )
+then
+    Object v = Boolean.FALSE;
+    if (v != null) {
+        insertLogical(new Decides($onderwerp, "defaults K:Jutter.recht op de penning", 0));
+    }
+end
+
+// zijn aantal aangemelde vondsten groter of gelijk is aan 12 en hij vergunning geschorst is
+function boolean toets_defaultsKJutterRechtOpDePenningDefault1(Object $aantalAangemeldeVondsten, Object $vergunningGeschorst) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($aantalAangemeldeVondsten, new java.math.BigDecimal("12"), ">=")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($vergunningGeschorst, Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "defaults K:Jutter.recht op de penning: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $aantalAangemeldeVondsten : aantalAangemeldeVondsten, $vergunningGeschorst : (ComputeHelpers.holds(vergunningGeschorst)) )
+    not( $hoger_3 : Decides( stack == "defaults K:Jutter.recht op de penning" && index < 1, subject == $onderwerp ) )
+    eval( toets_defaultsKJutterRechtOpDePenningDefault1($aantalAangemeldeVondsten, $vergunningGeschorst) )
+then
+    Object v = Boolean.FALSE;
+    if (v != null) {
+        insertLogical(new Decides($onderwerp, "defaults K:Jutter.recht op de penning", 1));
+    }
+end
+
+// zijn aantal aangemelde vondsten groter of gelijk is aan 12
+function boolean toets_defaultsKJutterRechtOpDePenningDefault2(Object $aantalAangemeldeVondsten) {
+    return RegelSpraakRuntime.rsAggVergelijk($aantalAangemeldeVondsten, new java.math.BigDecimal("12"), ">=");
+}
+
+rule "defaults K:Jutter.recht op de penning: default 2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $aantalAangemeldeVondsten : aantalAangemeldeVondsten )
+    not( $hoger_7 : Decides( stack == "defaults K:Jutter.recht op de penning" && index < 2, subject == $onderwerp ) )
+    eval( toets_defaultsKJutterRechtOpDePenningDefault2($aantalAangemeldeVondsten) )
+then
+    Object v = Boolean.TRUE;
+    if (v != null) {
+        insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "recht op de penning", true)));
+        insertLogical(new Decides($onderwerp, "defaults K:Jutter.recht op de penning", 2));
+    }
+end
+

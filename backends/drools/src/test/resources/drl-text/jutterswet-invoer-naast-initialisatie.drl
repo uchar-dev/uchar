@@ -1,0 +1,112 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// hij gemeld is
+function boolean toets_taxatieUitOpgave(Object $gemeld) {
+    return ComputeHelpers.characteristic($gemeld, Boolean.TRUE);
+}
+
+// zijn opgave
+function Object waarde_taxatieUitOpgave(Object $opgave) {
+    try {
+        return ComputeHelpers.fitTarget($opgave, Integer.valueOf(0), "taxatie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "taxatie uit opgave"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gemeld : (ComputeHelpers.holds(gemeld)), $opgave : opgave )
+    eval( toets_taxatieUitOpgave($gemeld) )
+then
+    Object v = waarde_taxatieUitOpgave($opgave);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "taxatie uit opgave", ComputeHelpers.designate(v, "taxatie uit opgave")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "taxatie", false), v, "taxatie uit opgave"));
+        }
+    }
+end
+
+// hij erkend is
+function boolean toets_taxatieUitSchatting(Object $erkend) {
+    return ComputeHelpers.characteristic($erkend, Boolean.TRUE);
+}
+
+// zijn schatting
+function Object waarde_taxatieUitSchatting(Object $schatting) {
+    try {
+        return ComputeHelpers.fitTarget($schatting, Integer.valueOf(0), "taxatie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "taxatie uit schatting"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $erkend : (ComputeHelpers.holds(erkend)), $schatting : schatting )
+    eval( toets_taxatieUitSchatting($erkend) )
+then
+    Object v = waarde_taxatieUitSchatting($schatting);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "taxatie uit schatting", ComputeHelpers.designate(v, "taxatie uit schatting")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "taxatie", false), v, "taxatie uit schatting"));
+        }
+    }
+end
+
+// hij gemeld is
+function boolean toets_standaardtaxatie(Object $gemeld) {
+    return ComputeHelpers.characteristic($gemeld, Boolean.TRUE);
+}
+
+// 25
+function Object waarde_standaardtaxatie() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("25"), Integer.valueOf(0), "taxatie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "standaardtaxatie"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( taxatie == null, $gemeld : (ComputeHelpers.holds(gemeld)) )
+    eval( toets_standaardtaxatie($gemeld) )
+    not( $andere_schrijver : Value( attribute == ElementKey.of("vondst", "taxatie", false) && writer != "standaardtaxatie", subject == $onderwerp ) )
+then
+    Object v = waarde_standaardtaxatie();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "standaardtaxatie", ComputeHelpers.designate(v, "standaardtaxatie")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "taxatie", false), v, "standaardtaxatie"));
+        }
+    }
+end
+
+function boolean toets_schrijversVondstTaxatieVerschil(Object $waarden) {
+    return ComputeHelpers.differ($waarden);
+}
+
+rule "schrijvers Vondst.taxatie: verschil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    accumulate( $waarde : Value( attribute == ElementKey.of("vondst", "taxatie", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+    eval( toets_schrijversVondstTaxatieVerschil($waarden) )
+then
+    insertLogical(ComputeHelpers.writersConflict($onderwerp, $waarden, "taxatie", ComputeHelpers.list3("taxatie uit opgave", "taxatie uit schatting", "standaardtaxatie"), ComputeHelpers.list1("Vondst"), ComputeHelpers.list1("Vondst")));
+end
+

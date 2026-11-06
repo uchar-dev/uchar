@@ -1,0 +1,303 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.SecondFillingFault;
+import dev.uchar.regelspraak.transpiler.tms.UniquenessKey;
+import dev.uchar.regelspraak.transpiler.tms.UniquenessViolation;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+function Object pad_uitkijkbonusVanEenWachter(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("post"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "hoogte");
+}
+
+// de hoogte van zijn post
+function Object waarde_uitkijkbonusVanEenWachter(Object $postHoogte) {
+    try {
+        return ComputeHelpers.fitTarget($postHoogte, Integer.valueOf(0), "uitkijkbonus", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "uitkijkbonus van een wachter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter( $postHoogte : (pad_uitkijkbonusVanEenWachter(this)) )
+then
+    Object v = waarde_uitkijkbonusVanEenWachter($postHoogte);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "uitkijkbonus van een wachter", ComputeHelpers.designate(v, "uitkijkbonus van een wachter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("wachter", "uitkijkbonus", false), v, "uitkijkbonus van een wachter"));
+        }
+    }
+end
+
+function Object pad_gevarenrangVanEenWachter(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("post", "kustvak"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "gevarenklasse");
+}
+
+// de gevarenklasse van het kustvak van zijn post
+function Object waarde_gevarenrangVanEenWachter(Object $postKustvakGevarenklasse) {
+    try {
+        return ComputeHelpers.fitTarget($postKustvakGevarenklasse, Integer.valueOf(0), "gevarenrang", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "gevarenrang van een wachter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter( $postKustvakGevarenklasse : (pad_gevarenrangVanEenWachter(this)) )
+then
+    Object v = waarde_gevarenrangVanEenWachter($postKustvakGevarenklasse);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "gevarenrang van een wachter", ComputeHelpers.designate(v, "gevarenrang van een wachter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("wachter", "gevarenrang", false), v, "gevarenrang van een wachter"));
+        }
+    }
+end
+
+function Object pad_seingerechtigdBijRisicopost(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("post"));
+    return bereikt == null ? null : ComputeHelpers.holds(ComputeHelpers.readProperty(bereikt, "risicopost"));
+}
+
+// zijn post risicopost is
+function boolean toets_seingerechtigdBijRisicopost(Object $postRisicopost) {
+    return ComputeHelpers.characteristicCheckAlongPath($postRisicopost, Boolean.TRUE);
+}
+
+rule "seingerechtigd bij risicopost"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter( $postRisicopost : (pad_seingerechtigdBijRisicopost(this)) )
+    eval( toets_seingerechtigdBijRisicopost($postRisicopost) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("wachter", "seingerechtigd", true)));
+end
+
+// het aantal seinen van de post
+function Object waarde_seinaantalVanEenPost(Object $aantal_vouw_5) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_5), Integer.valueOf(0), "seinaantal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "seinaantal van een post"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Post()
+    accumulate( $bijdrage_vouw_2 : Contribution( fold == "seinaantal van een post: vouw 0", subject == $onderwerp ); $aantal_vouw_5 : count() )
+then
+    Object v = waarde_seinaantalVanEenPost($aantal_vouw_5);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "seinaantal van een post", ComputeHelpers.designate(v, "seinaantal van een post")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("post", "seinaantal", false), v, "seinaantal van een post"));
+        }
+    }
+end
+
+// de som van het gewicht van alle seinen van de post of 0 als die er niet zijn
+function Object waarde_seingewichtVanEenPost(Object $aantal_vouw_10, Object $vouw_vouw_12) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_10, $vouw_vouw_12, new java.math.BigDecimal("0")), Integer.valueOf(0), "seingewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "seingewicht van een post"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Post()
+    accumulate( $bijdrage_vouw_7 : Contribution( fold == "seingewicht van een post: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_11 : value ); $aantal_vouw_10 : count(), $vouw_vouw_12 : exactSum($bijdragewaarde_vouw_11) )
+then
+    Object v = waarde_seingewichtVanEenPost($aantal_vouw_10, $vouw_vouw_12);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "seingewicht van een post", ComputeHelpers.designate(v, "seingewicht van een post")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("post", "seingewicht", false), v, "seingewicht van een post"));
+        }
+    }
+end
+
+// het aantal vakseinen van het kustvak
+function Object waarde_vakseinaantalVanEenKustvak(Object $aantal_vouw_20) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_20), Integer.valueOf(0), "vakseinaantal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vakseinaantal van een kustvak"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Kustvak()
+    accumulate( $bijdrage_vouw_17 : Contribution( fold == "vakseinaantal van een kustvak: vouw 2", subject == $onderwerp ); $aantal_vouw_20 : count() )
+then
+    Object v = waarde_vakseinaantalVanEenKustvak($aantal_vouw_20);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vakseinaantal van een kustvak", ComputeHelpers.designate(v, "vakseinaantal van een kustvak")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("kustvak", "vakseinaantal", false), v, "vakseinaantal van een kustvak"));
+        }
+    }
+end
+
+function boolean toets_wachtnummerUniekPerPostSleutelVanWachter1(Object $wachtnummer, Object $post) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($wachtnummer, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($post, Boolean.FALSE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+function java.util.List componenten_wachtnummerUniekPerPostSleutelVanWachter1(Object $wachtnummer, Object $post) {
+    java.util.List waarden = new java.util.ArrayList();
+    waarden.add($wachtnummer);
+    return waarden;
+}
+
+rule "wachtnummer uniek per post: sleutel van Wachter 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter( $wachtnummer : wachtnummer, $post : post )
+    eval( toets_wachtnummerUniekPerPostSleutelVanWachter1($wachtnummer, $post) )
+then
+    for (Object k : ComputeHelpers.uniquenessKeys("wachtnummer uniek per post", 0, $onderwerp, $post, componenten_wachtnummerUniekPerPostSleutelVanWachter1($wachtnummer, $post), -1)) {
+        insertLogical(k);
+    }
+end
+
+function boolean beta_wachtnummerUniekPerPost(Object eigen, Object ander) {
+    return ComputeHelpers.collidesWith(eigen, ander);
+}
+
+function boolean toets_wachtnummerUniekPerPost(Object $botsingen) {
+    return ComputeHelpers.duplicate($botsingen);
+}
+
+rule "wachtnummer uniek per post"
+    dialect "mvel"
+when
+    $sleutel : UniquenessKey( uniqueness == "wachtnummer uniek per post", $element : element )
+    accumulate( $ander : UniquenessKey( uniqueness == "wachtnummer uniek per post", beta_wachtnummerUniekPerPost(this, $sleutel) ); $botsingen : count() )
+    eval( toets_wachtnummerUniekPerPost($botsingen) )
+then
+    insertLogical(new UniquenessViolation("wachtnummer uniek per post", $element));
+end
+
+rule "wachtnummer uniek per post: kanaal"
+    dialect "mvel"
+when
+    $schending : UniquenessViolation( uniqueness == "wachtnummer uniek per post", $subject : element )
+then
+    insertLogical(ComputeHelpers.inconsistency("wachtnummer uniek per post", $subject, ComputeHelpers.list1("EF-026")));
+end
+
+function boolean beta1_vakbeseiningDoorHetKustvak(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("kustvak"), java.util.Arrays.asList());
+}
+
+function boolean beta2_vakbeseiningDoorHetKustvak(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("post"), java.util.Arrays.asList());
+}
+
+rule "vakbeseining door het kustvak"
+    dialect "mvel"
+    agenda-group "uchar-feitcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Kustvak()
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    $stap_keten_28 : dev.uchar.regelspraak.facts.Post( beta1_vakbeseiningDoorHetKustvak(this, $onderwerp) )
+    $stap_keten_30 : dev.uchar.regelspraak.facts.Sein( beta2_vakbeseiningDoorHetKustvak(this, $stap_keten_28) )
+    not( $bestaand_feitcreatie_32 : RelationLink( relation == "vakbeseining", first == $onderwerp, second == $stap_keten_30 ) )
+then
+    insert(new RelationLink("vakbeseining", $onderwerp, $stap_keten_30, $fase));
+end
+
+rule "seinaantal van een post: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Post()
+    $onderwerp : dev.uchar.regelspraak.facts.Sein( post == $vouwonderwerp )
+then
+    insertLogical(new Contribution("seinaantal van een post: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "seingewicht van een post: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Post()
+    $onderwerp : dev.uchar.regelspraak.facts.Sein( post == $vouwonderwerp, $gewicht : gewicht )
+then
+    Object v = ComputeHelpers.contribution("seingewicht van een post: vouw 1", $vouwonderwerp, $onderwerp, $gewicht, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "vakseinaantal van een kustvak: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Kustvak()
+    $onderwerp : dev.uchar.regelspraak.facts.Sein()
+    exists( $koppeling_bereik_13 : RelationLink( relation == "vakbeseining", second == $onderwerp, first == $vouwonderwerp ) )
+then
+    insertLogical(new Contribution("vakseinaantal van een kustvak: vouw 2", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "koppeling vakbeseining uit de invoer: Sein.seinvak"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Sein( seinvak != null, $ander : seinvak )
+then
+    insertLogical(new RelationLink("vakbeseining", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingVakbeseiningTweedeVullingVanSeinvak(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling vakbeseining: tweede vulling van seinvak"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "vakbeseining", $nabij : second )
+    $twee : RelationLink( relation == "vakbeseining", second != null, second == $een.second, beta_koppelingVakbeseiningTweedeVullingVanSeinvak(this, $een) )
+then
+    insertLogical(new Fault($nabij, "vakbeseining", new SecondFillingFault("seinvak", $nabij)));
+end
+

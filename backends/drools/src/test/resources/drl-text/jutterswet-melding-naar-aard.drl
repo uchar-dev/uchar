@@ -1,0 +1,176 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn aanspoeldatum leeg is
+function boolean toets_meldingNaVinden(Object $aanspoeldatum) {
+    return ComputeHelpers.emptyTest($aanspoeldatum, Boolean.TRUE);
+}
+
+rule "melding na vinden"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $aanspoeldatum : aanspoeldatum, $vinddatum : vinddatum )
+    eval( toets_meldingNaVinden($aanspoeldatum) )
+then
+    // zijn vinddatum
+    Object v = $vinddatum;
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "meldingsdatum", false), v, "melding na vinden"));
+    }
+end
+
+// zijn aanspoeldatum gevuld is
+function boolean toets_meldingNaAanspoelen(Object $aanspoeldatum) {
+    return ComputeHelpers.emptyTest($aanspoeldatum, Boolean.FALSE);
+}
+
+rule "melding na aanspoelen"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst( $aanspoeldatum : aanspoeldatum )
+    eval( toets_meldingNaAanspoelen($aanspoeldatum) )
+then
+    // zijn aanspoeldatum
+    Object v = $aanspoeldatum;
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "meldingsdatum", false), v, "melding na aanspoelen"));
+    }
+end
+
+// zijn gewicht groter is dan 5,00
+function boolean toets_loonVoorEenZwareVondst(Object $gewicht) {
+    return RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("5"), ">");
+}
+
+// 25,00
+function Object waarde_loonVoorEenZwareVondst() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("25"), Integer.valueOf(2), "vindersloon", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "loon voor een zware vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht )
+    eval( toets_loonVoorEenZwareVondst($gewicht) )
+then
+    Object v = waarde_loonVoorEenZwareVondst();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "loon voor een zware vondst", ComputeHelpers.designate(v, "loon voor een zware vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "vindersloon", false), v, "loon voor een zware vondst"));
+        }
+    }
+end
+
+// zijn gewicht kleiner of gelijk is aan 5,00
+function boolean toets_loonVoorEenLichteVondst(Object $gewicht) {
+    return RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("5"), "<=");
+}
+
+// 10,00
+function Object waarde_loonVoorEenLichteVondst() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("10"), Integer.valueOf(2), "vindersloon", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "loon voor een lichte vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht )
+    eval( toets_loonVoorEenLichteVondst($gewicht) )
+then
+    Object v = waarde_loonVoorEenLichteVondst();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "loon voor een lichte vondst", ComputeHelpers.designate(v, "loon voor een lichte vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "vindersloon", false), v, "loon voor een lichte vondst"));
+        }
+    }
+end
+
+// zijn meldingsdatum plus 30 dagen
+function Object waarde_afhaaltermijn(Object $meldingsdatum) {
+    try {
+        return ComputeHelpers.dateStep($meldingsdatum, new java.math.BigDecimal("30"), "DAYS", Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "afhaaltermijn"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : State( attribute == ElementKey.of("vondst", "meldingsdatum", false), subject == $onderwerp, $meldingsdatum : value )
+then
+    Object v = waarde_afhaaltermijn($meldingsdatum);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "afhaaltermijn", ComputeHelpers.designate(v, "afhaaltermijn")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "uiterste afhaaldatum", false), v, "afhaaltermijn"));
+        }
+    }
+end
+
+function boolean toets_schrijversVondstMeldingsdatumVerschil(Object $waarden) {
+    return ComputeHelpers.differ($waarden);
+}
+
+rule "schrijvers Vondst.meldingsdatum: verschil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    accumulate( $waarde : Value( attribute == ElementKey.of("vondst", "meldingsdatum", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+    eval( toets_schrijversVondstMeldingsdatumVerschil($waarden) )
+then
+    insertLogical(ComputeHelpers.writersConflict($onderwerp, $waarden, "meldingsdatum", ComputeHelpers.list5("melding na vinden", "melding na aanspoelen", "loon voor een zware vondst", "loon voor een lichte vondst", "afhaaltermijn"), ComputeHelpers.list2("Vondst", "Strandvondst"), ComputeHelpers.list2("Vondst", "Strandvondst")));
+end
+
+function boolean toets_schrijversVondstVindersloonVerschil(Object $waarden) {
+    return ComputeHelpers.differ($waarden);
+}
+
+rule "schrijvers Vondst.vindersloon: verschil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    accumulate( $waarde : Value( attribute == ElementKey.of("vondst", "vindersloon", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+    eval( toets_schrijversVondstVindersloonVerschil($waarden) )
+then
+    insertLogical(ComputeHelpers.writersConflict($onderwerp, $waarden, "vindersloon", ComputeHelpers.list5("melding na vinden", "melding na aanspoelen", "loon voor een zware vondst", "loon voor een lichte vondst", "afhaaltermijn"), ComputeHelpers.list2("Vondst", "Strandvondst"), ComputeHelpers.list2("Vondst", "Strandvondst")));
+end
+
+rule "stand Vondst.meldingsdatum: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $waarde : Value( attribute == ElementKey.of("vondst", "meldingsdatum", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "meldingsdatum", false), $v));
+end
+
+rule "stand Vondst.meldingsdatum: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : meldingsdatum )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "meldingsdatum", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "meldingsdatum", false), $invoer));
+end
+

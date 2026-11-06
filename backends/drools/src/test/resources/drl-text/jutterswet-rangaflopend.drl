@@ -1,0 +1,26 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Recipient;
+
+rule "verdeel de sluitpremie van een sluitkas: ontvanger"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Sluitkas()
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( sluitkas == $vouwonderwerp, $strandrang : strandrang )
+then
+    insertLogical(new Recipient("verdeel de sluitpremie van een sluitkas", $vouwonderwerp, $onderwerp, null, $strandrang, null));
+end
+
+rule "verdeel de sluitpremie van een sluitkas"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sluitkas( $sluitpremie : sluitpremie )
+    accumulate( $ontvanger_verdeling_1 : Recipient( allocation == "verdeel de sluitpremie van een sluitkas", source == $onderwerp ); $ontvangers_verdeling_2 : collectList($ontvanger_verdeling_1) )
+then
+    for (Object feit : ComputeHelpers.payout("verdeel de sluitpremie van een sluitkas", $onderwerp, dev.uchar.regelspraak.ir.ResolvedAllocation.Method.OP_VOLGORDE, $sluitpremie, $ontvangers_verdeling_2, false, false, true, Integer.valueOf(0), ElementKey.of("jutter", "sluitdeel", false), ElementKey.of("sluitkas", "sluitrest", false), "verdeel de sluitpremie van een sluitkas", Integer.valueOf(0), Integer.valueOf(0), "verdeel de sluitpremie van een sluitkas")) {
+        insertLogical(feit);
+    }
+end
+

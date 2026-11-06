@@ -1,0 +1,46 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de som van het gewichtsaandeel van alle bergers van de Berging
+function Object waarde_verdeeldAandeelVanEenBerging(Object $aantal_vouw_4, Object $vouw_vouw_6) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_4, $vouw_vouw_6, null), Integer.valueOf(0), "verdeeld aandeel", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "verdeeld aandeel van een berging"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "verdeeld aandeel van een berging: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_5 : value ); $aantal_vouw_4 : count(), $vouw_vouw_6 : exactSum($bijdragewaarde_vouw_5) )
+then
+    Object v = waarde_verdeeldAandeelVanEenBerging($aantal_vouw_4, $vouw_vouw_6);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "verdeeld aandeel van een berging", ComputeHelpers.designate(v, "verdeeld aandeel van een berging")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("berging", "verdeeld aandeel", false), v, "verdeeld aandeel van een berging"));
+        }
+    }
+end
+
+rule "verdeeld aandeel van een berging: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Berging()
+    $onderwerp : dev.uchar.regelspraak.facts.Berger( berging == $vouwonderwerp, $gewichtsaandeel : gewichtsaandeel )
+then
+    Object v = ComputeHelpers.contribution("verdeeld aandeel van een berging: vouw 0", $vouwonderwerp, $onderwerp, $gewichtsaandeel, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+

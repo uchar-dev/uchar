@@ -1,0 +1,729 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Decides;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Outcome;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de waarde van de Vondst maal 2
+function Object waarde_premie(Object $waarde2) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($waarde2, new java.math.BigDecimal("2")), Integer.valueOf(2), "premie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "premie"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : State( attribute == ElementKey.of("vondst", "waarde", false), subject == $onderwerp, $waarde2 : value )
+then
+    Object v = waarde_premie($waarde2);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "premie", ComputeHelpers.designate(v, "premie")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "premie", false), v, "premie"));
+        }
+    }
+end
+
+// zijn soort gelijk is aan "zeewier"
+function boolean toets_stukprijsVanEenAanspoelsel1(Object $soort) {
+    return ComputeHelpers.textEqual($soort, "zeewier", Boolean.TRUE);
+}
+
+// 2,50
+function Object waarde_stukprijsVanEenAanspoelsel1() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("2.5"), Integer.valueOf(2), "berekende stukprijs", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "stukprijs van een aanspoelsel 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Aanspoelsel( $soort : soort )
+    eval( toets_stukprijsVanEenAanspoelsel1($soort) )
+then
+    Object v = waarde_stukprijsVanEenAanspoelsel1();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "stukprijs van een aanspoelsel 1", ComputeHelpers.designate(v, "stukprijs van een aanspoelsel 1")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("aanspoelsel", "berekende stukprijs", false), v, "stukprijs van een aanspoelsel 1"));
+        }
+    }
+end
+
+// zijn soort gelijk is aan "wrakhout"
+function boolean toets_stukprijsVanEenAanspoelsel2(Object $soort) {
+    return ComputeHelpers.textEqual($soort, "wrakhout", Boolean.TRUE);
+}
+
+// 7,00
+function Object waarde_stukprijsVanEenAanspoelsel2() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("7"), Integer.valueOf(2), "berekende stukprijs", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "stukprijs van een aanspoelsel 2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Aanspoelsel( $soort : soort )
+    eval( toets_stukprijsVanEenAanspoelsel2($soort) )
+then
+    Object v = waarde_stukprijsVanEenAanspoelsel2();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "stukprijs van een aanspoelsel 2", ComputeHelpers.designate(v, "stukprijs van een aanspoelsel 2")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("aanspoelsel", "berekende stukprijs", false), v, "stukprijs van een aanspoelsel 2"));
+        }
+    }
+end
+
+// hij aan alle volgende voorwaarden voldoet: - zijn opgegeven waarde is gevuld - zijn berekende waarde is gevuld - zijn opgegeven waarde is ongelijk aan zijn berekende waarde
+function boolean toets_afwijkingOpgaveWaarde(Object $opgegevenWaarde, Object $berekendeWaarde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($opgegevenWaarde, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($berekendeWaarde, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($opgegevenWaarde, $berekendeWaarde, "!=")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+}
+
+rule "afwijking opgave waarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $opgegevenWaarde : opgegevenWaarde )
+    $stand_1 : State( attribute == ElementKey.of("vondst", "berekende waarde", false), subject == $onderwerp, $berekendeWaarde : value )
+    eval( toets_afwijkingOpgaveWaarde($opgegevenWaarde, $berekendeWaarde) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "afwijkende opgave waarde", true)));
+end
+
+// hij aan alle volgende voorwaarden voldoet: - zijn opgegeven wachtgeld is gevuld - zijn berekende wachtgeld is gevuld - zijn opgegeven wachtgeld is ongelijk aan zijn berekende wachtgeld
+function boolean toets_afwijkingOpgaveWachtgeld(Object $opgegevenWachtgeld, Object $berekendeWachtgeld) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($opgegevenWachtgeld, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($berekendeWachtgeld, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($opgegevenWachtgeld, $berekendeWachtgeld, "!=")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+}
+
+rule "afwijking opgave wachtgeld"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $opgegevenWachtgeld : opgegevenWachtgeld )
+    $stand_1 : State( attribute == ElementKey.of("jutter", "berekende wachtgeld", false), subject == $onderwerp, $berekendeWachtgeld : value )
+    eval( toets_afwijkingOpgaveWachtgeld($opgegevenWachtgeld, $berekendeWachtgeld) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "afwijkende opgave wachtgeld", true)));
+end
+
+// hij aan alle volgende voorwaarden voldoet: - zijn opgegeven stukprijs is gevuld - zijn berekende stukprijs is gevuld - zijn opgegeven stukprijs is ongelijk aan zijn berekende stukprijs
+function boolean toets_afwijkingOpgaveStukprijs(Object $opgegevenStukprijs, Object $berekendeStukprijs) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($opgegevenStukprijs, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($berekendeStukprijs, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($opgegevenStukprijs, $berekendeStukprijs, "!=")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+}
+
+rule "afwijking opgave stukprijs"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Aanspoelsel( $opgegevenStukprijs : opgegevenStukprijs )
+    $stand_1 : State( attribute == ElementKey.of("aanspoelsel", "berekende stukprijs", false), subject == $onderwerp, $berekendeStukprijs : value )
+    eval( toets_afwijkingOpgaveStukprijs($opgegevenStukprijs, $berekendeStukprijs) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("aanspoelsel", "afwijkende opgave stukprijs", true)));
+end
+
+// hij heeft geen afwijkende opgave waarde
+function boolean toets_controleOpgaveWaarde(Object $afwijkendeOpgaveWaarde) {
+    return ComputeHelpers.not(ComputeHelpers.characteristic($afwijkendeOpgaveWaarde, Boolean.FALSE));
+}
+
+rule "controle opgave waarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "afwijkende opgave waarde", true), subject == $onderwerp, $afwijkendeOpgaveWaarde : holds )
+    eval( toets_controleOpgaveWaarde($afwijkendeOpgaveWaarde) )
+then
+    insertLogical(ComputeHelpers.inconsistency("controle opgave waarde", $onderwerp, ComputeHelpers.list1("EF-025")));
+end
+
+// hij heeft geen afwijkende opgave wachtgeld
+function boolean toets_controleOpgaveWachtgeld(Object $afwijkendeOpgaveWachtgeld) {
+    return ComputeHelpers.not(ComputeHelpers.characteristic($afwijkendeOpgaveWachtgeld, Boolean.FALSE));
+}
+
+rule "controle opgave wachtgeld"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("jutter", "afwijkende opgave wachtgeld", true), subject == $onderwerp, $afwijkendeOpgaveWachtgeld : holds )
+    eval( toets_controleOpgaveWachtgeld($afwijkendeOpgaveWachtgeld) )
+then
+    insertLogical(ComputeHelpers.inconsistency("controle opgave wachtgeld", $onderwerp, ComputeHelpers.list1("EF-025")));
+end
+
+// hij heeft geen afwijkende opgave stukprijs
+function boolean toets_controleOpgaveStukprijs(Object $afwijkendeOpgaveStukprijs) {
+    return ComputeHelpers.not(ComputeHelpers.characteristic($afwijkendeOpgaveStukprijs, Boolean.FALSE));
+}
+
+rule "controle opgave stukprijs"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Aanspoelsel()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("aanspoelsel", "afwijkende opgave stukprijs", true), subject == $onderwerp, $afwijkendeOpgaveStukprijs : holds )
+    eval( toets_controleOpgaveStukprijs($afwijkendeOpgaveStukprijs) )
+then
+    insertLogical(ComputeHelpers.inconsistency("controle opgave stukprijs", $onderwerp, ComputeHelpers.list1("EF-025")));
+end
+
+// de taxatie van de Vondst kleiner is dan 10,00 en hij museaal is
+function boolean toets_defaultsAVondstBerekendeWaardeDefault000(Object $taxatie, Object $museaal) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($taxatie, new java.math.BigDecimal("10"), "<")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($museaal, Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "defaults A:Vondst.berekende waarde: default 0.0.0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $taxatie : taxatie, $museaal : (ComputeHelpers.holds(museaal)) )
+    eval( toets_defaultsAVondstBerekendeWaardeDefault000($taxatie, $museaal) )
+then
+    // 100,00
+    Object v = new java.math.BigDecimal("100");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.berekende waarde", 1, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults A:Vondst.berekende waarde: eens 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Vondst.berekende waarde" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 1 && chain < 2, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.berekende waarde", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// de taxatie van de Vondst kleiner is dan 10,00
+function boolean toets_defaultsAVondstBerekendeWaardeTerugval0(Object $taxatie) {
+    return RegelSpraakRuntime.rsAggVergelijk($taxatie, new java.math.BigDecimal("10"), "<");
+}
+
+rule "defaults A:Vondst.berekende waarde: terugval 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $taxatie : taxatie )
+    not( $uitkomst_26 : Outcome( stack == "defaults A:Vondst.berekende waarde" && chain >= 1 && chain < 2, subject == $onderwerp ) )
+    eval( toets_defaultsAVondstBerekendeWaardeTerugval0($taxatie) )
+then
+    // 1,00
+    Object v = new java.math.BigDecimal("1");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.berekende waarde", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// de taxatie van de Vondst verminderd met 5,00
+function Object afloop_defaultsAVondstBerekendeWaardeDefault1(Object $taxatie) {
+    try {
+        return RegelSpraakRuntime.rsVerminderd($taxatie, new java.math.BigDecimal("5"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Vondst.berekende waarde: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $taxatie : taxatie )
+    not( $hoger_30 : Outcome( stack == "defaults A:Vondst.berekende waarde" && chain == 0 && position < 1, subject == $onderwerp ) )
+then
+    Object v = afloop_defaultsAVondstBerekendeWaardeDefault1($taxatie);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Vondst.berekende waarde", ComputeHelpers.designate(v, "defaults A:Vondst.berekende waarde")));
+    } else if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.berekende waarde", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults A:Vondst.berekende waarde: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Vondst.berekende waarde" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 1, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "berekende waarde");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondst.berekende waarde", ComputeHelpers.designate(passend, "defaults A:Vondst.berekende waarde")));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "berekende waarde", false), passend, "defaults A:Vondst.berekende waarde"));
+        }
+    }
+end
+
+rule "defaults A:Vondst.waarde: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $opgegevenWaarde : opgegevenWaarde )
+then
+    // zijn opgegeven waarde
+    Object v = $opgegevenWaarde;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "waarde");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondst.waarde", ComputeHelpers.designate(passend, "defaults A:Vondst.waarde")));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.waarde", 0));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "waarde", false), passend, "defaults A:Vondst.waarde"));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.waarde", 0));
+        }
+    }
+end
+
+rule "defaults A:Vondst.waarde: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst") )
+    $stand_0 : State( attribute == ElementKey.of("vondst", "berekende waarde", false), subject == $onderwerp, $berekendeWaarde : value )
+    not( $hoger_39 : Decides( stack == "defaults A:Vondst.waarde" && index < 1, subject == $onderwerp ) )
+then
+    // zijn berekende waarde
+    Object v = $berekendeWaarde;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "waarde");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondst.waarde", ComputeHelpers.designate(passend, "defaults A:Vondst.waarde")));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.waarde", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "waarde", false), passend, "defaults A:Vondst.waarde"));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.waarde", 1));
+        }
+    }
+end
+
+// hij kustwacht is
+function boolean toets_defaultsAJutterBerekendeWachtgeldDefault00(Object $kustwacht) {
+    return ComputeHelpers.characteristic($kustwacht, Boolean.TRUE);
+}
+
+rule "defaults A:Jutter.berekende wachtgeld: default 0:0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $kustwacht : (ComputeHelpers.holds(kustwacht)) )
+    eval( toets_defaultsAJutterBerekendeWachtgeldDefault00($kustwacht) )
+then
+    // 30
+    Object v = new java.math.BigDecimal("30");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Jutter.berekende wachtgeld", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// hij havenmeester is
+function boolean toets_defaultsAJutterBerekendeWachtgeldDefault10(Object $havenmeester) {
+    return ComputeHelpers.characteristic($havenmeester, Boolean.TRUE);
+}
+
+rule "defaults A:Jutter.berekende wachtgeld: default 1:0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $havenmeester : (ComputeHelpers.holds(havenmeester)) )
+    eval( toets_defaultsAJutterBerekendeWachtgeldDefault10($havenmeester) )
+then
+    // 45
+    Object v = new java.math.BigDecimal("45");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Jutter.berekende wachtgeld", 1, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function boolean beta1_defaultsAJutterBerekendeWachtgeldVerschilWortel(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsAJutterBerekendeWachtgeldVerschilWortel(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+function Object conflict_defaultsAJutterBerekendeWachtgeldVerschilWortel() {
+    return "Jutter.berekende wachtgeld";
+}
+
+rule "defaults A:Jutter.berekende wachtgeld: verschil wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Jutter.berekende wachtgeld" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 2, $onderwerp : subject )
+    not( $uitkomst_47 : Outcome( stack == "defaults A:Jutter.berekende wachtgeld" && chain >= 0 && chain < 2 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsAJutterBerekendeWachtgeldVerschilWortel(this, $besluit) ) )
+    exists( $uitkomst_50 : Outcome( stack == "defaults A:Jutter.berekende wachtgeld" && chain >= 0 && chain < 2 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsAJutterBerekendeWachtgeldVerschilWortel(this, $besluit) ) )
+then
+    Object v = conflict_defaultsAJutterBerekendeWachtgeldVerschilWortel();
+    insertLogical(ComputeHelpers.inconsistency((String) v, $onderwerp, ComputeHelpers.list1("EF-027")));
+end
+
+function boolean beta1_defaultsAJutterBerekendeWachtgeldEensWortel(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsAJutterBerekendeWachtgeldEensWortel(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults A:Jutter.berekende wachtgeld: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Jutter.berekende wachtgeld" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 2, $onderwerp : subject, $waarde : value )
+    not( $uitkomst_54 : Outcome( stack == "defaults A:Jutter.berekende wachtgeld" && chain >= 0 && chain < 2 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsAJutterBerekendeWachtgeldEensWortel(this, $besluit) ) )
+    not( $uitkomst_57 : Outcome( stack == "defaults A:Jutter.berekende wachtgeld" && chain >= 0 && chain < 2 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsAJutterBerekendeWachtgeldEensWortel(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "berekende wachtgeld");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Jutter.berekende wachtgeld", ComputeHelpers.designate(passend, "defaults A:Jutter.berekende wachtgeld")));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "berekende wachtgeld", false), passend, "defaults A:Jutter.berekende wachtgeld"));
+        }
+    }
+end
+
+rule "defaults A:Jutter.wachtgeld: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $opgegevenWachtgeld : opgegevenWachtgeld )
+then
+    // zijn opgegeven wachtgeld
+    Object v = $opgegevenWachtgeld;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "wachtgeld");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Jutter.wachtgeld", ComputeHelpers.designate(passend, "defaults A:Jutter.wachtgeld")));
+            insertLogical(new Decides($onderwerp, "defaults A:Jutter.wachtgeld", 0));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "wachtgeld", false), passend, "defaults A:Jutter.wachtgeld"));
+            insertLogical(new Decides($onderwerp, "defaults A:Jutter.wachtgeld", 0));
+        }
+    }
+end
+
+rule "defaults A:Jutter.wachtgeld: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter") )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "berekende wachtgeld", false), subject == $onderwerp, $berekendeWachtgeld : value )
+    not( $hoger_65 : Decides( stack == "defaults A:Jutter.wachtgeld" && index < 1, subject == $onderwerp ) )
+then
+    // zijn berekende wachtgeld
+    Object v = $berekendeWachtgeld;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "wachtgeld");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Jutter.wachtgeld", ComputeHelpers.designate(passend, "defaults A:Jutter.wachtgeld")));
+            insertLogical(new Decides($onderwerp, "defaults A:Jutter.wachtgeld", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "wachtgeld", false), passend, "defaults A:Jutter.wachtgeld"));
+            insertLogical(new Decides($onderwerp, "defaults A:Jutter.wachtgeld", 1));
+        }
+    }
+end
+
+rule "defaults A:Aanspoelsel.stukprijs: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Aanspoelsel( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Aanspoelsel"), $opgegevenStukprijs : opgegevenStukprijs )
+then
+    // zijn opgegeven stukprijs
+    Object v = $opgegevenStukprijs;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "stukprijs");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Aanspoelsel.stukprijs", ComputeHelpers.designate(passend, "defaults A:Aanspoelsel.stukprijs")));
+            insertLogical(new Decides($onderwerp, "defaults A:Aanspoelsel.stukprijs", 0));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("aanspoelsel", "stukprijs", false), passend, "defaults A:Aanspoelsel.stukprijs"));
+            insertLogical(new Decides($onderwerp, "defaults A:Aanspoelsel.stukprijs", 0));
+        }
+    }
+end
+
+rule "defaults A:Aanspoelsel.stukprijs: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Aanspoelsel( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Aanspoelsel") )
+    $stand_0 : State( attribute == ElementKey.of("aanspoelsel", "berekende stukprijs", false), subject == $onderwerp, $berekendeStukprijs : value )
+    not( $hoger_73 : Decides( stack == "defaults A:Aanspoelsel.stukprijs" && index < 1, subject == $onderwerp ) )
+then
+    // zijn berekende stukprijs
+    Object v = $berekendeStukprijs;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "stukprijs");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Aanspoelsel.stukprijs", ComputeHelpers.designate(passend, "defaults A:Aanspoelsel.stukprijs")));
+            insertLogical(new Decides($onderwerp, "defaults A:Aanspoelsel.stukprijs", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("aanspoelsel", "stukprijs", false), passend, "defaults A:Aanspoelsel.stukprijs"));
+            insertLogical(new Decides($onderwerp, "defaults A:Aanspoelsel.stukprijs", 1));
+        }
+    }
+end
+
+function boolean toets_schrijversAanspoelselBerekendeStukprijsVerschil(Object $waarden) {
+    return ComputeHelpers.differ($waarden);
+}
+
+rule "schrijvers Aanspoelsel.berekende stukprijs: verschil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Aanspoelsel()
+    accumulate( $waarde : Value( attribute == ElementKey.of("aanspoelsel", "berekende stukprijs", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+    eval( toets_schrijversAanspoelselBerekendeStukprijsVerschil($waarden) )
+then
+    insertLogical(ComputeHelpers.writersConflict($onderwerp, $waarden, "berekende stukprijs", ComputeHelpers.list6("premie", "stukprijs van een aanspoelsel 1", "stukprijs van een aanspoelsel 2", "afwijking opgave waarde", "afwijking opgave wachtgeld", "afwijking opgave stukprijs"), ComputeHelpers.list3("Vondst", "Jutter", "Aanspoelsel"), ComputeHelpers.list3("Vondst", "Jutter", "Aanspoelsel")));
+end
+
+rule "stand Vondst.waarde: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $waarde : Value( attribute == ElementKey.of("vondst", "waarde", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "waarde", false), $v));
+end
+
+rule "stand Vondst.waarde: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : waarde )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "waarde", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "waarde", false), $invoer));
+end
+
+rule "stand Vondst.berekende waarde: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $waarde : Value( attribute == ElementKey.of("vondst", "berekende waarde", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "berekende waarde", false), $v));
+end
+
+rule "stand Vondst.berekende waarde: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : berekendeWaarde )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "berekende waarde", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "berekende waarde", false), $invoer));
+end
+
+rule "stand Jutter.berekende wachtgeld: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $waarde : Value( attribute == ElementKey.of("jutter", "berekende wachtgeld", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "berekende wachtgeld", false), $v));
+end
+
+rule "stand Jutter.berekende wachtgeld: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : berekendeWachtgeld )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "berekende wachtgeld", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "berekende wachtgeld", false), $invoer));
+end
+
+rule "stand Aanspoelsel.berekende stukprijs: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Aanspoelsel()
+    $waarde : Value( attribute == ElementKey.of("aanspoelsel", "berekende stukprijs", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("aanspoelsel", "berekende stukprijs", false), $v));
+end
+
+rule "stand Aanspoelsel.berekende stukprijs: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Aanspoelsel( $invoer : berekendeStukprijs )
+    not( $waarde : Value( attribute == ElementKey.of("aanspoelsel", "berekende stukprijs", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("aanspoelsel", "berekende stukprijs", false), $invoer));
+end
+
+rule "kenmerkstand Vondst.afwijkende opgave waarde: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(afwijkendeOpgaveWaarde) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "afwijkende opgave waarde", true), true));
+end
+
+rule "kenmerkstand Vondst.afwijkende opgave waarde: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "afwijkende opgave waarde", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "afwijkende opgave waarde", true), true));
+end
+
+rule "kenmerkstand Vondst.afwijkende opgave waarde: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(afwijkendeOpgaveWaarde) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "afwijkende opgave waarde", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "afwijkende opgave waarde", true), false));
+end
+
+rule "kenmerkstand Jutter.afwijkende opgave wachtgeld: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.holds(afwijkendeOpgaveWachtgeld) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("jutter", "afwijkende opgave wachtgeld", true), true));
+end
+
+rule "kenmerkstand Jutter.afwijkende opgave wachtgeld: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("jutter", "afwijkende opgave wachtgeld", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("jutter", "afwijkende opgave wachtgeld", true), true));
+end
+
+rule "kenmerkstand Jutter.afwijkende opgave wachtgeld: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.holds(afwijkendeOpgaveWachtgeld) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("jutter", "afwijkende opgave wachtgeld", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("jutter", "afwijkende opgave wachtgeld", true), false));
+end
+
+rule "kenmerkstand Aanspoelsel.afwijkende opgave stukprijs: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Aanspoelsel( ComputeHelpers.holds(afwijkendeOpgaveStukprijs) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("aanspoelsel", "afwijkende opgave stukprijs", true), true));
+end
+
+rule "kenmerkstand Aanspoelsel.afwijkende opgave stukprijs: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Aanspoelsel()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("aanspoelsel", "afwijkende opgave stukprijs", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("aanspoelsel", "afwijkende opgave stukprijs", true), true));
+end
+
+rule "kenmerkstand Aanspoelsel.afwijkende opgave stukprijs: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Aanspoelsel( ComputeHelpers.holds(afwijkendeOpgaveStukprijs) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("aanspoelsel", "afwijkende opgave stukprijs", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("aanspoelsel", "afwijkende opgave stukprijs", true), false));
+end
+

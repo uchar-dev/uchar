@@ -1,0 +1,61 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// haar vondstdatum gelijk is aan 21-06-2026
+function boolean toets_midzomerseVondst(Object $vondstdatum) {
+    return ComputeHelpers.dateCompare($vondstdatum, java.time.LocalDate.parse("2026-06-21"), dev.uchar.regelspraak.ir.Condition.Operator.GELIJK);
+}
+
+rule "midzomerse vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vondstdatum : vondstdatum )
+    eval( toets_midzomerseVondst($vondstdatum) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "midzomers", true)));
+end
+
+// haar vondstdatum ongelijk is aan 21-06-2026
+function boolean toets_nagekomenVondst(Object $vondstdatum) {
+    return ComputeHelpers.dateCompare($vondstdatum, java.time.LocalDate.parse("2026-06-21"), dev.uchar.regelspraak.ir.Condition.Operator.ONGELIJK);
+}
+
+rule "nagekomen vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vondstdatum : vondstdatum )
+    eval( toets_nagekomenVondst($vondstdatum) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "nagekomen", true)));
+end
+
+// haar vondstdatum eerder is dan 01-06-2026
+function boolean toets_vroegeVondst(Object $vondstdatum) {
+    return ComputeHelpers.dateCompare($vondstdatum, java.time.LocalDate.parse("2026-06-01"), dev.uchar.regelspraak.ir.Condition.Operator.EERDER);
+}
+
+rule "vroege vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vondstdatum : vondstdatum )
+    eval( toets_vroegeVondst($vondstdatum) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "vroeg", true)));
+end
+
+rule "keurdatum volgt de vondstdatum"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vondstdatum : vondstdatum )
+then
+    // de vondstdatum van de Vondst
+    Object v = $vondstdatum;
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "keurdatum", false), v, "keurdatum volgt de vondstdatum"));
+    }
+end
+

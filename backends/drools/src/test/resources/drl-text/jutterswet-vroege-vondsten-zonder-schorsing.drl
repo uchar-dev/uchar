@@ -1,0 +1,166 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// hij niet geschorst is
+function boolean toets_vroegeVondstgewicht(Object $geschorst) {
+    return ComputeHelpers.characteristic($geschorst, Boolean.FALSE);
+}
+
+// de som van het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn vinddag is eerder dan de peildag van de jutter van de Vondst
+function Object waarde_vroegeVondstgewicht(Object $aantal_vouw_5, Object $vouw_vouw_7) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_5, $vouw_vouw_7, null), Integer.valueOf(0), "vroege vondstgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vroege vondstgewicht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $geschorst : (ComputeHelpers.holds(geschorst)) )
+    accumulate( $bijdrage_vouw_2 : Contribution( fold == "vroege vondstgewicht: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_6 : value ); $aantal_vouw_5 : count(), $vouw_vouw_7 : exactSum($bijdragewaarde_vouw_6) )
+    eval( toets_vroegeVondstgewicht($geschorst) )
+then
+    Object v = waarde_vroegeVondstgewicht($aantal_vouw_5, $vouw_vouw_7);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vroege vondstgewicht", ComputeHelpers.designate(v, "vroege vondstgewicht")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "vroege vondstgewicht", false), v, "vroege vondstgewicht"));
+        }
+    }
+end
+
+// hij aan alle volgende voorwaarden voldoet: - hij is niet geschorst - het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn vinddag is eerder dan de peildag van de jutter van de Vondst is groter dan 0
+function boolean toets_vroegActief(Object $geschorst, Object $aantal_vouw_14) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($geschorst, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.countOf($aantal_vouw_14), new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "vroeg actief"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $geschorst : (ComputeHelpers.holds(geschorst)) )
+    accumulate( $bijdrage_vouw_11 : Contribution( fold == "vroeg actief: vouw 1", subject == $onderwerp ); $aantal_vouw_14 : count() )
+    eval( toets_vroegActief($geschorst, $aantal_vouw_14) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "vroeg actief", true)));
+end
+
+// hij aan alle volgende voorwaarden voldoet: - hij is niet geschorst - de vinddag van alle vondsten van de Jutter is eerder dan de peildag van de jutter van de Vondst
+function boolean toets_vroegKlaar(Object $geschorst, Object $aantal_vouw_20, Object $vouw_vouw_22) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($geschorst, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.quantifierVerdict($aantal_vouw_20, $vouw_vouw_22, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0))) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "vroeg klaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $geschorst : (ComputeHelpers.holds(geschorst)) )
+    accumulate( $bijdrage_vouw_17 : Contribution( fold == "vroeg klaar: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_21 : value ); $aantal_vouw_20 : count(), $vouw_vouw_22 : exactSum($bijdragewaarde_vouw_21) )
+    eval( toets_vroegKlaar($geschorst, $aantal_vouw_20, $vouw_vouw_22) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "vroeg klaar", true)));
+end
+
+function Object pad_vroegeVondstgewichtBijdrageAanVouw0(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("jutter"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "peildag");
+}
+
+// aan de volgende voorwaarde voldoen: zijn vinddag is eerder dan de peildag van de jutter van de Vondst
+function boolean toets_vroegeVondstgewichtBijdrageAanVouw0(Object $vinddag, Object $jutterPeildag) {
+    return ComputeHelpers.dateCompare($vinddag, $jutterPeildag, dev.uchar.regelspraak.ir.Condition.Operator.EERDER);
+}
+
+rule "vroege vondstgewicht: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp, $vinddag : vinddag, $jutterPeildag : (pad_vroegeVondstgewichtBijdrageAanVouw0(this)), $gewicht : gewicht )
+    eval( toets_vroegeVondstgewichtBijdrageAanVouw0($vinddag, $jutterPeildag) )
+then
+    Object v = ComputeHelpers.contribution("vroege vondstgewicht: vouw 0", $vouwonderwerp, $onderwerp, $gewicht, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function Object pad_vroegActiefBijdrageAanVouw1(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("jutter"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "peildag");
+}
+
+// aan de volgende voorwaarde voldoen: zijn vinddag is eerder dan de peildag van de jutter van de Vondst
+function boolean toets_vroegActiefBijdrageAanVouw1(Object $vinddag, Object $jutterPeildag) {
+    return ComputeHelpers.dateCompare($vinddag, $jutterPeildag, dev.uchar.regelspraak.ir.Condition.Operator.EERDER);
+}
+
+rule "vroeg actief: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp, $vinddag : vinddag, $jutterPeildag : (pad_vroegActiefBijdrageAanVouw1(this)) )
+    eval( toets_vroegActiefBijdrageAanVouw1($vinddag, $jutterPeildag) )
+then
+    insertLogical(new Contribution("vroeg actief: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+
+function Object pad_vroegKlaarBijdrageAanVouw2(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("jutter"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "peildag");
+}
+
+// de vinddag van alle vondsten van de Jutter is eerder dan de peildag van de jutter van de Vondst
+function boolean matrix_vroegKlaarBijdrageAanVouw2(Object $onderwerp, Object $vinddag, Object $jutterPeildag) {
+    return ComputeHelpers.dateCompare($vinddag, $jutterPeildag, dev.uchar.regelspraak.ir.Condition.Operator.EERDER);
+}
+
+rule "vroeg klaar: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp, $vinddag : vinddag, $jutterPeildag : (pad_vroegKlaarBijdrageAanVouw2(this)) )
+then
+    insertLogical(new Contribution("vroeg klaar: vouw 2", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_vroegKlaarBijdrageAanVouw2($onderwerp, $vinddag, $jutterPeildag))));
+end
+

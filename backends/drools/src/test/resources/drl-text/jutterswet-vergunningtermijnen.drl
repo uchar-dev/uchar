@@ -1,0 +1,390 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.PathState;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// hij aan alle volgende voorwaarden voldoet: - zijn begindag is eerder dan de verlengde einddag van zijn houder - de verlengde einddag van zijn houder is eerder dan zijn einddag
+function boolean toets_overschot(Object $begindag, Object $houderVerlengdeEinddag, Object $einddag) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.dateCompare($begindag, $houderVerlengdeEinddag, dev.uchar.regelspraak.ir.Condition.Operator.EERDER)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.dateCompare($houderVerlengdeEinddag, $einddag, dev.uchar.regelspraak.ir.Condition.Operator.EERDER)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+// de tijdsduur van de verlengde einddag van zijn houder tot zijn einddag in hele dagen
+function Object waarde_overschot(Object $houderVerlengdeEinddag, Object $einddag) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsTijdsduur(((java.time.temporal.Temporal) $houderVerlengdeEinddag), ((java.time.temporal.Temporal) $einddag), "DAYS", Boolean.FALSE), Integer.valueOf(0), "overschot", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "overschot"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Termijn( $begindag : begindag, $einddag : einddag )
+    $padstand_1 : PathState( path == "Termijn:houder" && member == ElementKey.of("vergunning", "verlengde einddag", false), subject == $onderwerp, $houderVerlengdeEinddag : value )
+    eval( toets_overschot($begindag, $houderVerlengdeEinddag, $einddag) )
+then
+    Object v = waarde_overschot($houderVerlengdeEinddag, $einddag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "overschot", ComputeHelpers.designate(v, "overschot")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("termijn", "overschot", false), v, "overschot"));
+        }
+    }
+end
+
+// de som van de overschotten van alle termijnen van de Vergunning die aan de volgende voorwaarde voldoen: zijn begindag is eerder dan de verlengde einddag van de Vergunning
+function Object waarde_restant(Object $aantal_vouw_12, Object $vouw_vouw_14) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_12, $vouw_vouw_14, null), Integer.valueOf(0), "restant", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "restant"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    accumulate( $bijdrage_vouw_9 : Contribution( fold == "restant: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_13 : value ); $aantal_vouw_12 : count(), $vouw_vouw_14 : exactSum($bijdragewaarde_vouw_13) )
+then
+    Object v = waarde_restant($aantal_vouw_12, $vouw_vouw_14);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "restant", ComputeHelpers.designate(v, "restant")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vergunning", "restant", false), v, "restant"));
+        }
+    }
+end
+
+// de einddag van alle termijnen van de Vergunning eerder is dan de verlengde einddag van de Vergunning
+function boolean toets_afgewikkeld(Object $aantal_vouw_21, Object $vouw_vouw_23) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_21, $vouw_vouw_23, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0));
+}
+
+rule "afgewikkeld"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    accumulate( $bijdrage_vouw_18 : Contribution( fold == "afgewikkeld: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_22 : value ); $aantal_vouw_21 : count(), $vouw_vouw_23 : exactSum($bijdragewaarde_vouw_22) )
+    eval( toets_afgewikkeld($aantal_vouw_21, $vouw_vouw_23) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vergunning", "afgewikkeld", true)));
+end
+
+// hij aan alle volgende voorwaarden voldoet: - het restant van de vorige vergunning van de Vergunning is gevuld - de vorige vergunning van de Vergunning is niet afgewikkeld
+function boolean toets_verlengdeEinddag(Object $vorigeVergunningRestant, Object $vorigeVergunningAfgewikkeld) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($vorigeVergunningRestant, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristicCheckAlongPath($vorigeVergunningAfgewikkeld, Boolean.FALSE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+// zijn basiseinddag plus de som van de overschotten van alle termijnen van de vorige vergunning van de Vergunning
+function Object waarde_verlengdeEinddag(Object $basiseinddag, Object $aantal_vouw_35, Object $vouw_vouw_37) {
+    try {
+        return ComputeHelpers.dateStep($basiseinddag, ComputeHelpers.foldValue($aantal_vouw_35, $vouw_vouw_37, null), "DAYS", Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "verlengde einddag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( $basiseinddag : basiseinddag )
+    $padstand_0 : PathState( path == "Vergunning:vorige vergunning" && member == ElementKey.of("vergunning", "restant", false), subject == $onderwerp, $vorigeVergunningRestant : value )
+    $padstand_1 : PathState( path == "Vergunning:vorige vergunning" && member == ElementKey.of("vergunning", "afgewikkeld", true), subject == $onderwerp, $vorigeVergunningAfgewikkeld : value )
+    accumulate( $bijdrage_vouw_32 : Contribution( fold == "verlengde einddag: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_36 : value ); $aantal_vouw_35 : count(), $vouw_vouw_37 : exactSum($bijdragewaarde_vouw_36) )
+    eval( toets_verlengdeEinddag($vorigeVergunningRestant, $vorigeVergunningAfgewikkeld) )
+then
+    Object v = waarde_verlengdeEinddag($basiseinddag, $aantal_vouw_35, $vouw_vouw_37);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "verlengde einddag", ComputeHelpers.designate(v, "verlengde einddag")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vergunning", "verlengde einddag", false), v, "verlengde einddag"));
+        }
+    }
+end
+
+// het restant van de vorige vergunning van de Vergunning leeg is
+function boolean toets_verlengdeEinddagZonderRestant(Object $vorigeVergunningRestant) {
+    return ComputeHelpers.emptyTest($vorigeVergunningRestant, Boolean.TRUE);
+}
+
+rule "verlengde einddag zonder restant"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( $basiseinddag : basiseinddag )
+    $padstand_0 : PathState( path == "Vergunning:vorige vergunning" && member == ElementKey.of("vergunning", "restant", false), subject == $onderwerp, $vorigeVergunningRestant : value )
+    eval( toets_verlengdeEinddagZonderRestant($vorigeVergunningRestant) )
+then
+    // zijn basiseinddag
+    Object v = $basiseinddag;
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vergunning", "verlengde einddag", false), v, "verlengde einddag zonder restant"));
+    }
+end
+
+function boolean toets_schrijversVergunningVerlengdeEinddagVerschil(Object $waarden) {
+    return ComputeHelpers.differ($waarden);
+}
+
+rule "schrijvers Vergunning.verlengde einddag: verschil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    accumulate( $waarde : Value( attribute == ElementKey.of("vergunning", "verlengde einddag", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+    eval( toets_schrijversVergunningVerlengdeEinddagVerschil($waarden) )
+then
+    insertLogical(ComputeHelpers.writersConflict($onderwerp, $waarden, "verlengde einddag", ComputeHelpers.list5("overschot", "restant", "afgewikkeld", "verlengde einddag", "verlengde einddag zonder restant"), ComputeHelpers.list2("Vergunning", "Termijn"), ComputeHelpers.list2("Vergunning", "Termijn")));
+end
+
+// aan de volgende voorwaarde voldoen: zijn begindag is eerder dan de verlengde einddag van de Vergunning
+function boolean toets_restantBijdrageAanVouw0(Object $begindag, Object $verlengdeEinddag) {
+    return ComputeHelpers.dateCompare($begindag, $verlengdeEinddag, dev.uchar.regelspraak.ir.Condition.Operator.EERDER);
+}
+
+rule "restant: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    $onderwerp : dev.uchar.regelspraak.facts.Termijn( houder == $vouwonderwerp, $begindag : begindag )
+    $stand_1 : State( attribute == ElementKey.of("vergunning", "verlengde einddag", false), subject == $vouwonderwerp, $verlengdeEinddag : value )
+    $stand_3 : State( attribute == ElementKey.of("termijn", "overschot", false), subject == $onderwerp, $overschot : value )
+    eval( toets_restantBijdrageAanVouw0($begindag, $verlengdeEinddag) )
+then
+    Object v = ComputeHelpers.contribution("restant: vouw 0", $vouwonderwerp, $onderwerp, $overschot, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+// de einddag van alle termijnen van de Vergunning eerder is dan de verlengde einddag van de Vergunning
+function boolean matrix_afgewikkeldBijdrageAanVouw1(Object $onderwerp, Object $einddag, Object $verlengdeEinddag) {
+    return ComputeHelpers.dateCompare($einddag, $verlengdeEinddag, dev.uchar.regelspraak.ir.Condition.Operator.EERDER);
+}
+
+rule "afgewikkeld: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    $onderwerp : dev.uchar.regelspraak.facts.Termijn( houder == $vouwonderwerp, $einddag : einddag )
+    $stand_2 : State( attribute == ElementKey.of("vergunning", "verlengde einddag", false), subject == $vouwonderwerp, $verlengdeEinddag : value )
+then
+    insertLogical(new Contribution("afgewikkeld: vouw 1", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_afgewikkeldBijdrageAanVouw1($onderwerp, $einddag, $verlengdeEinddag))));
+end
+
+function boolean beta_verlengdeEinddagBijdrageAanVouw2(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("houder"), java.util.Arrays.asList("vorigeVergunning"));
+}
+
+rule "verlengde einddag: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    $onderwerp : dev.uchar.regelspraak.facts.Termijn( beta_verlengdeEinddagBijdrageAanVouw2(this, $vouwonderwerp) )
+    $stand_1 : State( attribute == ElementKey.of("termijn", "overschot", false), subject == $onderwerp, $overschot : value )
+then
+    Object v = ComputeHelpers.contribution("verlengde einddag: vouw 2", $vouwonderwerp, $onderwerp, $overschot, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function Object pad_padstandTermijnHouderNaarVergunningVerlengdeEinddagLinkAanwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("houder"));
+}
+
+rule "padstand Termijn.houder naar Vergunning.verlengde einddag: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Termijn( pad_padstandTermijnHouderNaarVergunningVerlengdeEinddagLinkAanwezig(this) != null, $bereikt : houder )
+    $stand : State( attribute == ElementKey.of("vergunning", "verlengde einddag", false), subject != null, subject == $bereikt, $v : value )
+then
+    insertLogical(new PathState($onderwerp, "Termijn:houder", ElementKey.of("vergunning", "verlengde einddag", false), $v, $bereikt));
+end
+
+function Object pad_padstandTermijnHouderNaarVergunningVerlengdeEinddagLinkAfwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("houder"));
+}
+
+rule "padstand Termijn.houder naar Vergunning.verlengde einddag: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Termijn( pad_padstandTermijnHouderNaarVergunningVerlengdeEinddagLinkAfwezig(this) == null )
+then
+    insertLogical(new PathState($onderwerp, "Termijn:houder", ElementKey.of("vergunning", "verlengde einddag", false), null, null));
+end
+
+function Object pad_padstandVergunningVorigeVergunningNaarVergunningRestantLinkAanwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("vorigeVergunning"));
+}
+
+rule "padstand Vergunning.vorige vergunning naar Vergunning.restant: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( pad_padstandVergunningVorigeVergunningNaarVergunningRestantLinkAanwezig(this) != null, $bereikt : vorigeVergunning )
+    $stand : State( attribute == ElementKey.of("vergunning", "restant", false), subject != null, subject == $bereikt, $v : value )
+then
+    insertLogical(new PathState($onderwerp, "Vergunning:vorige vergunning", ElementKey.of("vergunning", "restant", false), $v, $bereikt));
+end
+
+function Object pad_padstandVergunningVorigeVergunningNaarVergunningRestantLinkAfwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("vorigeVergunning"));
+}
+
+rule "padstand Vergunning.vorige vergunning naar Vergunning.restant: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( pad_padstandVergunningVorigeVergunningNaarVergunningRestantLinkAfwezig(this) == null )
+then
+    insertLogical(new PathState($onderwerp, "Vergunning:vorige vergunning", ElementKey.of("vergunning", "restant", false), null, null));
+end
+
+function Object pad_padstandVergunningVorigeVergunningNaarVergunningAfgewikkeldLinkAanwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("vorigeVergunning"));
+}
+
+rule "padstand Vergunning.vorige vergunning naar Vergunning.afgewikkeld: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( pad_padstandVergunningVorigeVergunningNaarVergunningAfgewikkeldLinkAanwezig(this) != null, $bereikt : vorigeVergunning )
+    $stand : CharacteristicState( characteristic == ElementKey.of("vergunning", "afgewikkeld", true), subject != null, subject == $bereikt, $v : holds )
+then
+    insertLogical(new PathState($onderwerp, "Vergunning:vorige vergunning", ElementKey.of("vergunning", "afgewikkeld", true), $v, $bereikt));
+end
+
+function Object pad_padstandVergunningVorigeVergunningNaarVergunningAfgewikkeldLinkAfwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("vorigeVergunning"));
+}
+
+rule "padstand Vergunning.vorige vergunning naar Vergunning.afgewikkeld: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( pad_padstandVergunningVorigeVergunningNaarVergunningAfgewikkeldLinkAfwezig(this) == null )
+then
+    insertLogical(new PathState($onderwerp, "Vergunning:vorige vergunning", ElementKey.of("vergunning", "afgewikkeld", true), null, null));
+end
+
+rule "stand Vergunning.verlengde einddag: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    $waarde : Value( attribute == ElementKey.of("vergunning", "verlengde einddag", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vergunning", "verlengde einddag", false), $v));
+end
+
+rule "stand Vergunning.verlengde einddag: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( $invoer : verlengdeEinddag )
+    not( $waarde : Value( attribute == ElementKey.of("vergunning", "verlengde einddag", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vergunning", "verlengde einddag", false), $invoer));
+end
+
+rule "stand Termijn.overschot: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Termijn()
+    $waarde : Value( attribute == ElementKey.of("termijn", "overschot", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("termijn", "overschot", false), $v));
+end
+
+rule "stand Termijn.overschot: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Termijn( $invoer : overschot )
+    not( $waarde : Value( attribute == ElementKey.of("termijn", "overschot", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("termijn", "overschot", false), $invoer));
+end
+
+rule "stand Vergunning.restant: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    $waarde : Value( attribute == ElementKey.of("vergunning", "restant", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vergunning", "restant", false), $v));
+end
+
+rule "stand Vergunning.restant: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( $invoer : restant )
+    not( $waarde : Value( attribute == ElementKey.of("vergunning", "restant", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vergunning", "restant", false), $invoer));
+end
+
+rule "kenmerkstand Vergunning.afgewikkeld: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( ComputeHelpers.holds(afgewikkeld) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vergunning", "afgewikkeld", true), true));
+end
+
+rule "kenmerkstand Vergunning.afgewikkeld: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vergunning", "afgewikkeld", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vergunning", "afgewikkeld", true), true));
+end
+
+rule "kenmerkstand Vergunning.afgewikkeld: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( ComputeHelpers.holds(afgewikkeld) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vergunning", "afgewikkeld", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vergunning", "afgewikkeld", true), false));
+end
+

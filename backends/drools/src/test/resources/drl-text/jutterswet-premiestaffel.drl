@@ -1,0 +1,442 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMaximumFunction exactMax;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Decides;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.ParameterState;
+import dev.uchar.regelspraak.transpiler.tms.PathState;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.math.BigDecimal zwaartegrens;
+
+// het gewicht van de Vondst groter is dan 5
+function boolean toets_zwaarte(Object $gewicht) {
+    return RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("5"), ">");
+}
+
+rule "zwaarte"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht )
+    eval( toets_zwaarte($gewicht) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "zwaar", true)));
+end
+
+// de premie van de jutter van de vondst van de Melding groter is dan 15
+function boolean toets_defaultsAMeldingGemeldePremieDefault0(Object $vondstJutterPremie) {
+    return RegelSpraakRuntime.rsAggVergelijk($vondstJutterPremie, new java.math.BigDecimal("15"), ">");
+}
+
+rule "defaults A:Melding.gemelde premie: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Melding( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Melding") )
+    $padstand_0 : PathState( path == "Melding:vondst.jutter" && member == ElementKey.of("jutter", "premie", false), subject == $onderwerp, $vondstJutterPremie : value )
+    eval( toets_defaultsAMeldingGemeldePremieDefault0($vondstJutterPremie) )
+then
+    // 20
+    Object v = new java.math.BigDecimal("20");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "gemelde premie");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Melding.gemelde premie", ComputeHelpers.designate(passend, "defaults A:Melding.gemelde premie")));
+            insertLogical(new Decides($onderwerp, "defaults A:Melding.gemelde premie", 0));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("melding", "gemelde premie", false), passend, "defaults A:Melding.gemelde premie"));
+            insertLogical(new Decides($onderwerp, "defaults A:Melding.gemelde premie", 0));
+        }
+    }
+end
+
+rule "defaults A:Melding.gemelde premie: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Melding( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Melding") )
+    not( $hoger_6 : Decides( stack == "defaults A:Melding.gemelde premie" && index < 1, subject == $onderwerp ) )
+then
+    // 10
+    Object v = new java.math.BigDecimal("10");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "gemelde premie");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Melding.gemelde premie", ComputeHelpers.designate(passend, "defaults A:Melding.gemelde premie")));
+            insertLogical(new Decides($onderwerp, "defaults A:Melding.gemelde premie", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("melding", "gemelde premie", false), passend, "defaults A:Melding.gemelde premie"));
+            insertLogical(new Decides($onderwerp, "defaults A:Melding.gemelde premie", 1));
+        }
+    }
+end
+
+// de premie van de jutter van de vondst van de Melding groter is dan 25
+function boolean toets_defaultsKMeldingDringendDefault0(Object $vondstJutterPremie) {
+    return RegelSpraakRuntime.rsAggVergelijk($vondstJutterPremie, new java.math.BigDecimal("25"), ">");
+}
+
+rule "defaults K:Melding.dringend: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Melding( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Melding") )
+    $padstand_0 : PathState( path == "Melding:vondst.jutter" && member == ElementKey.of("jutter", "premie", false), subject == $onderwerp, $vondstJutterPremie : value )
+    eval( toets_defaultsKMeldingDringendDefault0($vondstJutterPremie) )
+then
+    Object v = Boolean.FALSE;
+    if (v != null) {
+        insertLogical(new Decides($onderwerp, "defaults K:Melding.dringend", 0));
+    }
+end
+
+rule "defaults K:Melding.dringend: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Melding( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Melding") )
+    not( $hoger_14 : Decides( stack == "defaults K:Melding.dringend" && index < 1, subject == $onderwerp ) )
+then
+    Object v = Boolean.TRUE;
+    if (v != null) {
+        insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("melding", "dringend", true)));
+        insertLogical(new Decides($onderwerp, "defaults K:Melding.dringend", 1));
+    }
+end
+
+// de premie van de jutter van de vondst van de melding van de Controle groter is dan 15
+function boolean toets_defaultsAControleControlepremieDefault0(Object $meldingVondstJutterPremie) {
+    return RegelSpraakRuntime.rsAggVergelijk($meldingVondstJutterPremie, new java.math.BigDecimal("15"), ">");
+}
+
+rule "defaults A:Controle.controlepremie: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Controle( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Controle") )
+    $padstand_0 : PathState( path == "Controle:melding.vondst.jutter" && member == ElementKey.of("jutter", "premie", false), subject == $onderwerp, $meldingVondstJutterPremie : value )
+    eval( toets_defaultsAControleControlepremieDefault0($meldingVondstJutterPremie) )
+then
+    // 15
+    Object v = new java.math.BigDecimal("15");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "controlepremie");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Controle.controlepremie", ComputeHelpers.designate(passend, "defaults A:Controle.controlepremie")));
+            insertLogical(new Decides($onderwerp, "defaults A:Controle.controlepremie", 0));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("controle", "controlepremie", false), passend, "defaults A:Controle.controlepremie"));
+            insertLogical(new Decides($onderwerp, "defaults A:Controle.controlepremie", 0));
+        }
+    }
+end
+
+rule "defaults A:Controle.controlepremie: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Controle( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Controle") )
+    not( $hoger_22 : Decides( stack == "defaults A:Controle.controlepremie" && index < 1, subject == $onderwerp ) )
+then
+    // 5
+    Object v = new java.math.BigDecimal("5");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "controlepremie");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Controle.controlepremie", ComputeHelpers.designate(passend, "defaults A:Controle.controlepremie")));
+            insertLogical(new Decides($onderwerp, "defaults A:Controle.controlepremie", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("controle", "controlepremie", false), passend, "defaults A:Controle.controlepremie"));
+            insertLogical(new Decides($onderwerp, "defaults A:Controle.controlepremie", 1));
+        }
+    }
+end
+
+// de som van het gewicht van alle vondsten van de Jutter die zwaar zijn groter is dan de zwaartegrens
+function boolean toets_defaultsAJutterPremieDefault0(Object $aantal_vouw_33, Object $vouw_vouw_35, Object $zwaartegrens) {
+    return RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.foldValue($aantal_vouw_33, $vouw_vouw_35, null), $zwaartegrens, ">");
+}
+
+rule "defaults A:Jutter.premie: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter") )
+    $parameter_2 : ParameterState( parameter == "zwaartegrens", $zwaartegrens : value )
+    accumulate( $bijdrage_vouw_30 : Contribution( fold == "defaults A:Jutter.premie: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_34 : value ); $aantal_vouw_33 : count(), $vouw_vouw_35 : exactSum($bijdragewaarde_vouw_34) )
+    eval( toets_defaultsAJutterPremieDefault0($aantal_vouw_33, $vouw_vouw_35, $zwaartegrens) )
+then
+    // 30
+    Object v = new java.math.BigDecimal("30");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "premie");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Jutter.premie", ComputeHelpers.designate(passend, "defaults A:Jutter.premie")));
+            insertLogical(new Decides($onderwerp, "defaults A:Jutter.premie", 0));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "premie", false), passend, "defaults A:Jutter.premie"));
+            insertLogical(new Decides($onderwerp, "defaults A:Jutter.premie", 0));
+        }
+    }
+end
+
+// het aantal vondsten van de Jutter groter is dan 2
+function boolean toets_defaultsAJutterPremieDefault1(Object $aantal_vouw_43) {
+    return RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.countOf($aantal_vouw_43), new java.math.BigDecimal("2"), ">");
+}
+
+rule "defaults A:Jutter.premie: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter") )
+    accumulate( $bijdrage_vouw_40 : Contribution( fold == "defaults A:Jutter.premie: vouw 1", subject == $onderwerp ); $aantal_vouw_43 : count() )
+    not( $hoger_44 : Decides( stack == "defaults A:Jutter.premie" && index < 1, subject == $onderwerp ) )
+    eval( toets_defaultsAJutterPremieDefault1($aantal_vouw_43) )
+then
+    // 20
+    Object v = new java.math.BigDecimal("20");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "premie");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Jutter.premie", ComputeHelpers.designate(passend, "defaults A:Jutter.premie")));
+            insertLogical(new Decides($onderwerp, "defaults A:Jutter.premie", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "premie", false), passend, "defaults A:Jutter.premie"));
+            insertLogical(new Decides($onderwerp, "defaults A:Jutter.premie", 1));
+        }
+    }
+end
+
+rule "defaults A:Jutter.premie: default 2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter") )
+    not( $hoger_48 : Decides( stack == "defaults A:Jutter.premie" && index < 2, subject == $onderwerp ) )
+then
+    // 10
+    Object v = new java.math.BigDecimal("10");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "premie");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Jutter.premie", ComputeHelpers.designate(passend, "defaults A:Jutter.premie")));
+            insertLogical(new Decides($onderwerp, "defaults A:Jutter.premie", 2));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "premie", false), passend, "defaults A:Jutter.premie"));
+            insertLogical(new Decides($onderwerp, "defaults A:Jutter.premie", 2));
+        }
+    }
+end
+
+// hij aan ten minste één van de volgende voorwaarden voldoet: - de minimale waarde van het gewicht van alle vondsten van de Jutter is kleiner dan 2 - de maximale waarde van het gewicht van alle vondsten van de Jutter is kleiner dan 5
+function boolean toets_defaultsKJutterIjverigDefault0(Object $aantal_vouw_56, Object $vouw_vouw_58, Object $aantal_vouw_63, Object $vouw_vouw_65) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.foldValue($aantal_vouw_56, $vouw_vouw_58, null), new java.math.BigDecimal("2"), "<")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.foldValue($aantal_vouw_63, $vouw_vouw_65, null), new java.math.BigDecimal("5"), "<")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+}
+
+rule "defaults K:Jutter.ijverig: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter") )
+    accumulate( $bijdrage_vouw_53 : Contribution( fold == "defaults K:Jutter.ijverig: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_57 : value ); $aantal_vouw_56 : count(), $vouw_vouw_58 : exactMin($bijdragewaarde_vouw_57) )
+    accumulate( $bijdrage_vouw_60 : Contribution( fold == "defaults K:Jutter.ijverig: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_64 : value ); $aantal_vouw_63 : count(), $vouw_vouw_65 : exactMax($bijdragewaarde_vouw_64) )
+    eval( toets_defaultsKJutterIjverigDefault0($aantal_vouw_56, $vouw_vouw_58, $aantal_vouw_63, $vouw_vouw_65) )
+then
+    Object v = Boolean.FALSE;
+    if (v != null) {
+        insertLogical(new Decides($onderwerp, "defaults K:Jutter.ijverig", 0));
+    }
+end
+
+rule "defaults K:Jutter.ijverig: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter") )
+    not( $hoger_68 : Decides( stack == "defaults K:Jutter.ijverig" && index < 1, subject == $onderwerp ) )
+then
+    Object v = Boolean.TRUE;
+    if (v != null) {
+        insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "ijverig", true)));
+        insertLogical(new Decides($onderwerp, "defaults K:Jutter.ijverig", 1));
+    }
+end
+
+// zwaar zijn
+function boolean toets_defaultsAJutterPremieBijdrageAanVouw0(Object $zwaar) {
+    return ComputeHelpers.characteristic($zwaar, Boolean.TRUE);
+}
+
+rule "defaults A:Jutter.premie: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp, $gewicht : gewicht )
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "zwaar", true), subject == $onderwerp, $zwaar : holds )
+    eval( toets_defaultsAJutterPremieBijdrageAanVouw0($zwaar) )
+then
+    Object v = ComputeHelpers.contribution("defaults A:Jutter.premie: vouw 0", $vouwonderwerp, $onderwerp, $gewicht, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "defaults A:Jutter.premie: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp )
+then
+    insertLogical(new Contribution("defaults A:Jutter.premie: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "defaults K:Jutter.ijverig: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp, $gewicht : gewicht )
+then
+    Object v = ComputeHelpers.contribution("defaults K:Jutter.ijverig: vouw 2", $vouwonderwerp, $onderwerp, $gewicht, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "defaults K:Jutter.ijverig: bijdrage aan vouw 3"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp, $gewicht : gewicht )
+then
+    Object v = ComputeHelpers.contribution("defaults K:Jutter.ijverig: vouw 3", $vouwonderwerp, $onderwerp, $gewicht, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function Object pad1_padstandMeldingVondstJutterNaarJutterPremieLinkAanwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("vondst", "jutter"));
+}
+
+function Object pad2_padstandMeldingVondstJutterNaarJutterPremieLinkAanwezig(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("vondst"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "jutter");
+}
+
+rule "padstand Melding.vondst.jutter naar Jutter.premie: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Melding( pad1_padstandMeldingVondstJutterNaarJutterPremieLinkAanwezig(this) != null, $bereikt : (pad2_padstandMeldingVondstJutterNaarJutterPremieLinkAanwezig(this)) )
+    $stand : State( attribute == ElementKey.of("jutter", "premie", false), subject != null, subject == $bereikt, $v : value )
+then
+    insertLogical(new PathState($onderwerp, "Melding:vondst.jutter", ElementKey.of("jutter", "premie", false), $v, $bereikt));
+end
+
+function Object pad_padstandMeldingVondstJutterNaarJutterPremieLinkAfwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("vondst", "jutter"));
+}
+
+rule "padstand Melding.vondst.jutter naar Jutter.premie: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Melding( pad_padstandMeldingVondstJutterNaarJutterPremieLinkAfwezig(this) == null )
+then
+    insertLogical(new PathState($onderwerp, "Melding:vondst.jutter", ElementKey.of("jutter", "premie", false), null, null));
+end
+
+function Object pad1_padstandControleMeldingVondstJutterNaarJutterPremieLinkAanwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("melding", "vondst", "jutter"));
+}
+
+function Object pad2_padstandControleMeldingVondstJutterNaarJutterPremieLinkAanwezig(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("melding", "vondst"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "jutter");
+}
+
+rule "padstand Controle.melding.vondst.jutter naar Jutter.premie: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Controle( pad1_padstandControleMeldingVondstJutterNaarJutterPremieLinkAanwezig(this) != null, $bereikt : (pad2_padstandControleMeldingVondstJutterNaarJutterPremieLinkAanwezig(this)) )
+    $stand : State( attribute == ElementKey.of("jutter", "premie", false), subject != null, subject == $bereikt, $v : value )
+then
+    insertLogical(new PathState($onderwerp, "Controle:melding.vondst.jutter", ElementKey.of("jutter", "premie", false), $v, $bereikt));
+end
+
+function Object pad_padstandControleMeldingVondstJutterNaarJutterPremieLinkAfwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("melding", "vondst", "jutter"));
+}
+
+rule "padstand Controle.melding.vondst.jutter naar Jutter.premie: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Controle( pad_padstandControleMeldingVondstJutterNaarJutterPremieLinkAfwezig(this) == null )
+then
+    insertLogical(new PathState($onderwerp, "Controle:melding.vondst.jutter", ElementKey.of("jutter", "premie", false), null, null));
+end
+
+rule "stand Jutter.premie: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $waarde : Value( attribute == ElementKey.of("jutter", "premie", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "premie", false), $v));
+end
+
+rule "stand Jutter.premie: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : premie )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "premie", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "premie", false), $invoer));
+end
+
+rule "kenmerkstand Vondst.zwaar: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(zwaar) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "zwaar", true), true));
+end
+
+rule "kenmerkstand Vondst.zwaar: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "zwaar", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "zwaar", true), true));
+end
+
+rule "kenmerkstand Vondst.zwaar: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(zwaar) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "zwaar", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "zwaar", true), false));
+end
+
+rule "parameterstand zwaartegrens"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("zwaartegrens", zwaartegrens));
+end
+

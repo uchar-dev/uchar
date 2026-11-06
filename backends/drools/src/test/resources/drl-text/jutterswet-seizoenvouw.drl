@@ -1,0 +1,248 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de som van zijn vondstgewicht over alle seizoenen
+function Object waarde_jaargewichtVanEenJutter(Object $vondstgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsDimSom(ComputeHelpers.map($vondstgewicht), java.util.Arrays.asList(java.util.Arrays.asList("voorjaar"), java.util.Arrays.asList("zomer"), java.util.Arrays.asList("najaar"))), Integer.valueOf(2), "jaargewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "jaargewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht )
+then
+    Object v = waarde_jaargewichtVanEenJutter($vondstgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "jaargewicht van een jutter", ComputeHelpers.designate(v, "jaargewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "jaargewicht", false), v, "jaargewicht van een jutter"));
+        }
+    }
+end
+
+// de som van zijn vondstgewicht vanaf voorjaar t/m zomer
+function Object waarde_groeigewichtVanEenJutter(Object $vondstgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsDimSom(ComputeHelpers.map($vondstgewicht), java.util.Arrays.asList(java.util.Arrays.asList("voorjaar"), java.util.Arrays.asList("zomer"))), Integer.valueOf(2), "groeigewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "groeigewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht )
+then
+    Object v = waarde_groeigewichtVanEenJutter($vondstgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "groeigewicht van een jutter", ComputeHelpers.designate(v, "groeigewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "groeigewicht", false), v, "groeigewicht van een jutter"));
+        }
+    }
+end
+
+// de maximale waarde van zijn vondstgewicht over de seizoenen in {voorjaar, zomer en najaar}
+function Object waarde_piekgewichtVanEenJutter(Object $vondstgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsDimMax(ComputeHelpers.map($vondstgewicht), java.util.Arrays.asList(java.util.Arrays.asList("voorjaar"), java.util.Arrays.asList("zomer"), java.util.Arrays.asList("najaar"))), Integer.valueOf(2), "piekgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "piekgewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht )
+then
+    Object v = waarde_piekgewichtVanEenJutter($vondstgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "piekgewicht van een jutter", ComputeHelpers.designate(v, "piekgewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "piekgewicht", false), v, "piekgewicht van een jutter"));
+        }
+    }
+end
+
+// de minimale waarde van zijn vondstgewicht over de seizoenen vanaf zomer t/m najaar
+function Object waarde_dalgewichtVanEenJutter(Object $vondstgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsDimMin(ComputeHelpers.map($vondstgewicht), java.util.Arrays.asList(java.util.Arrays.asList("zomer"), java.util.Arrays.asList("najaar"))), Integer.valueOf(2), "dalgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "dalgewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht )
+then
+    Object v = waarde_dalgewichtVanEenJutter($vondstgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "dalgewicht van een jutter", ComputeHelpers.designate(v, "dalgewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "dalgewicht", false), v, "dalgewicht van een jutter"));
+        }
+    }
+end
+
+// de eerste van zijn vondstgewicht over alle seizoenen
+function Object waarde_openingsgewichtVanEenJutter(Object $vondstgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.firstCell(ComputeHelpers.map($vondstgewicht), java.util.Arrays.asList(java.util.Arrays.asList("voorjaar"), java.util.Arrays.asList("zomer"), java.util.Arrays.asList("najaar"))), Integer.valueOf(2), "openingsgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "openingsgewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht )
+then
+    Object v = waarde_openingsgewichtVanEenJutter($vondstgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "openingsgewicht van een jutter", ComputeHelpers.designate(v, "openingsgewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "openingsgewicht", false), v, "openingsgewicht van een jutter"));
+        }
+    }
+end
+
+// de laatste van zijn vondstgewicht over alle seizoenen
+function Object waarde_slotgewichtVanEenJutter(Object $vondstgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.lastCell(ComputeHelpers.map($vondstgewicht), java.util.Arrays.asList(java.util.Arrays.asList("voorjaar"), java.util.Arrays.asList("zomer"), java.util.Arrays.asList("najaar"))), Integer.valueOf(2), "slotgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "slotgewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht )
+then
+    Object v = waarde_slotgewichtVanEenJutter($vondstgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "slotgewicht van een jutter", ComputeHelpers.designate(v, "slotgewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "slotgewicht", false), v, "slotgewicht van een jutter"));
+        }
+    }
+end
+
+// de eerste van zijn vondstgewicht over de seizoenen in {najaar en voorjaar}
+function Object waarde_najaarsvoorrangsgewichtVanEenJutter(Object $vondstgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.firstCell(ComputeHelpers.map($vondstgewicht), java.util.Arrays.asList(java.util.Arrays.asList("najaar"), java.util.Arrays.asList("voorjaar"))), Integer.valueOf(2), "najaarsvoorrangsgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "najaarsvoorrangsgewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht )
+then
+    Object v = waarde_najaarsvoorrangsgewichtVanEenJutter($vondstgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "najaarsvoorrangsgewicht van een jutter", ComputeHelpers.designate(v, "najaarsvoorrangsgewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "najaarsvoorrangsgewicht", false), v, "najaarsvoorrangsgewicht van een jutter"));
+        }
+    }
+end
+
+// het aantal voorkomens van zijn vondstgewicht over alle seizoenen
+function Object waarde_aantalVondstseizoenenVanEenJutter(Object $vondstgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.filledCells(ComputeHelpers.map($vondstgewicht), java.util.Arrays.asList(java.util.Arrays.asList("voorjaar"), java.util.Arrays.asList("zomer"), java.util.Arrays.asList("najaar"))), Integer.valueOf(0), "aantal vondstseizoenen", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal vondstseizoenen van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht )
+then
+    Object v = waarde_aantalVondstseizoenenVanEenJutter($vondstgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal vondstseizoenen van een jutter", ComputeHelpers.designate(v, "aantal vondstseizoenen van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal vondstseizoenen", false), v, "aantal vondstseizoenen van een jutter"));
+        }
+    }
+end
+
+// de som van zijn vondstgewicht over alle seizoenen of 0,50 kg als die er niet zijn
+function Object waarde_basisgewichtVanEenJutter(Object $vondstgewicht) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.fallback(RegelSpraakRuntime.rsDimSom(ComputeHelpers.map($vondstgewicht), java.util.Arrays.asList(java.util.Arrays.asList("voorjaar"), java.util.Arrays.asList("zomer"), java.util.Arrays.asList("najaar"))), new java.math.BigDecimal("0.5")), Integer.valueOf(2), "basisgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "basisgewicht van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht )
+then
+    Object v = waarde_basisgewichtVanEenJutter($vondstgewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "basisgewicht van een jutter", ComputeHelpers.designate(v, "basisgewicht van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "basisgewicht", false), v, "basisgewicht van een jutter"));
+        }
+    }
+end
+
+// (de som van zijn vondstgewicht over alle seizoenen of 0 als die er niet zijn) maal zijn kiloprijs
+function Object waarde_vrachtprijsVanEenJutter(Object $vondstgewicht, Object $kiloprijs) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal(ComputeHelpers.fallback(RegelSpraakRuntime.rsDimSom(ComputeHelpers.map($vondstgewicht), java.util.Arrays.asList(java.util.Arrays.asList("voorjaar"), java.util.Arrays.asList("zomer"), java.util.Arrays.asList("najaar"))), new java.math.BigDecimal("0")), $kiloprijs), Integer.valueOf(4), "vrachtprijs", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vrachtprijs van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstgewicht : vondstgewicht, $kiloprijs : kiloprijs )
+then
+    Object v = waarde_vrachtprijsVanEenJutter($vondstgewicht, $kiloprijs);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vrachtprijs van een jutter", ComputeHelpers.designate(v, "vrachtprijs van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "vrachtprijs", false), v, "vrachtprijs van een jutter"));
+        }
+    }
+end
+

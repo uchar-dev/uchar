@@ -1,0 +1,61 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het strandtegoed van de aanmelder plus 2
+function Object waarde_meldkredietVanEenJutter(Object $strandtegoed) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($strandtegoed, new java.math.BigDecimal("2")), Integer.valueOf(0), "meldkrediet", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "meldkrediet van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $strandtegoed : strandtegoed )
+then
+    Object v = waarde_meldkredietVanEenJutter($strandtegoed);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "meldkrediet van een jutter", ComputeHelpers.designate(v, "meldkrediet van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "meldkrediet", false), v, "meldkrediet van een jutter"));
+        }
+    }
+end
+
+function Object pad_maatdelingVanEenJutter(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("strandmaat"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "strandtegoed");
+}
+
+// het strandtegoed van zijn strandmaat
+function Object waarde_maatdelingVanEenJutter(Object $strandmaatStrandtegoed) {
+    try {
+        return ComputeHelpers.fitTarget($strandmaatStrandtegoed, Integer.valueOf(0), "maatdeling", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "maatdeling van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $strandmaatStrandtegoed : (pad_maatdelingVanEenJutter(this)) )
+then
+    Object v = waarde_maatdelingVanEenJutter($strandmaatStrandtegoed);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "maatdeling van een jutter", ComputeHelpers.designate(v, "maatdeling van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "maatdeling", false), v, "maatdeling van een jutter"));
+        }
+    }
+end
+

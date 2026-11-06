@@ -1,0 +1,213 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - het aandeel is groter dan 0
+function boolean toets_bergingsaandeelVanEenJutter(Object $ploegomvang, Object $vangstwaarde) {
+    try {
+        int raak = 0;
+        Boolean vast;
+        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+        if (vast != null) {
+            return vast;
+        }
+        if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "!=")) {
+            raak++;
+        }
+        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+        if (vast != null) {
+            return vast;
+        }
+        if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
+            raak++;
+        }
+        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// 1
+function Object waarde_bergingsaandeelVanEenJutter(Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("1"), Integer.valueOf(0), "bergingsaandeel", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bergingsaandeel van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $ploegomvang : ploegomvang, $vangstwaarde : vangstwaarde )
+    eval( toets_bergingsaandeelVanEenJutter($ploegomvang, $vangstwaarde) )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_bergingsaandeelVanEenJutter(sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bergingsaandeel van een jutter", ComputeHelpers.designate(v, "bergingsaandeel van een jutter")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("bergingsaandeel van een jutter", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "bergingsaandeel", false), v, "bergingsaandeel van een jutter"));
+        }
+    }
+end
+
+// hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - het aandeel is groter dan 0
+function boolean toets_bergingsaandeelVanEenJutterFoutInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde) {
+    try {
+        boolean uitkomst = samengesteld1_bergingsaandeelVanEenJutterFoutInDeVoorwaarde($ploegomvang, $vangstwaarde);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - het aandeel is groter dan 0
+function boolean samengesteld1_bergingsaandeelVanEenJutterFoutInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "!=")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+// hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - het aandeel is groter dan 0
+function Object fout_bergingsaandeelVanEenJutterFoutInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde) {
+    try {
+        boolean uitkomst = samengesteld2_bergingsaandeelVanEenJutterFoutInDeVoorwaarde($ploegomvang, $vangstwaarde);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - het aandeel is groter dan 0
+function boolean samengesteld2_bergingsaandeelVanEenJutterFoutInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "!=")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "bergingsaandeel van een jutter: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $ploegomvang : ploegomvang, $vangstwaarde : vangstwaarde )
+    eval( toets_bergingsaandeelVanEenJutterFoutInDeVoorwaarde($ploegomvang, $vangstwaarde) )
+then
+    Object f = fout_bergingsaandeelVanEenJutterFoutInDeVoorwaarde($ploegomvang, $vangstwaarde);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"bergingsaandeel van een jutter\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "bergingsaandeel van een jutter", ComputeHelpers.designate(f, "bergingsaandeel van een jutter")));
+end
+
+// hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - het aandeel is groter dan 0
+function boolean toets_bergingsaandeelVanEenJutterDeponeringInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde, Object sonde) {
+    try {
+        boolean uitkomst = samengesteld1_bergingsaandeelVanEenJutterDeponeringInDeVoorwaarde($ploegomvang, $vangstwaarde, sonde);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    return ComputeHelpers.reported(sonde);
+}
+
+// hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - het aandeel is groter dan 0
+function boolean samengesteld1_bergingsaandeelVanEenJutterDeponeringInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde, Object sonde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "!=")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+// hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - het aandeel is groter dan 0
+function java.util.List deponering_bergingsaandeelVanEenJutterDeponeringInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde, Object sonde) {
+    try {
+        boolean uitkomst = samengesteld2_bergingsaandeelVanEenJutterDeponeringInDeVoorwaarde($ploegomvang, $vangstwaarde, sonde);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    if (!ComputeHelpers.reported(sonde)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"bergingsaandeel van een jutter\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    return ComputeHelpers.depositCodes(sonde);
+}
+
+// hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - het aandeel is groter dan 0
+function boolean samengesteld2_bergingsaandeelVanEenJutterDeponeringInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde, Object sonde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "!=")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "bergingsaandeel van een jutter: deponering in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $ploegomvang : ploegomvang, $vangstwaarde : vangstwaarde )
+    eval( toets_bergingsaandeelVanEenJutterDeponeringInDeVoorwaarde($ploegomvang, $vangstwaarde, ComputeHelpers.depositFlag()) )
+then
+    insertLogical(ComputeHelpers.inconsistency("bergingsaandeel van een jutter", $onderwerp, deponering_bergingsaandeelVanEenJutterDeponeringInDeVoorwaarde($ploegomvang, $vangstwaarde, ComputeHelpers.depositFlag())));
+end
+

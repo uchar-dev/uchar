@@ -1,0 +1,93 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// haar etiket gelijk is aan 'zeevondst'
+function boolean toets_erkenningNaarEtiket(Object $etiket) {
+    return ComputeHelpers.textEqual($etiket, "zeevondst", Boolean.TRUE);
+}
+
+rule "erkenning naar etiket"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $etiket : etiket )
+    eval( toets_erkenningNaarEtiket($etiket) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "erkend", true)));
+end
+
+// haar etiket ongelijk is aan 'zeevondst'
+function boolean toets_betwistingNaarEtiket(Object $etiket) {
+    return ComputeHelpers.textEqual($etiket, "zeevondst", Boolean.FALSE);
+}
+
+rule "betwisting naar etiket"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $etiket : etiket )
+    eval( toets_betwistingNaarEtiket($etiket) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "omstreden", true)));
+end
+
+// de Vondst is erkend
+function boolean toets_rubriceringVanEenErkendeVondst(Object $erkend) {
+    return ComputeHelpers.characteristic($erkend, Boolean.TRUE);
+}
+
+rule "rubricering van een erkende vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "erkend", true), subject == $onderwerp, $erkend : holds )
+    eval( toets_rubriceringVanEenErkendeVondst($erkend) )
+then
+    // 'strandgoed'
+    Object v = "strandgoed";
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "rubriek", false), v, "rubricering van een erkende vondst"));
+    }
+end
+
+rule "afschrift van het etiket"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $etiket : etiket )
+then
+    // het etiket van de Vondst
+    Object v = $etiket;
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "afschrift", false), v, "afschrift van het etiket"));
+    }
+end
+
+rule "kenmerkstand Vondst.erkend: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(erkend) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "erkend", true), true));
+end
+
+rule "kenmerkstand Vondst.erkend: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "erkend", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "erkend", true), true));
+end
+
+rule "kenmerkstand Vondst.erkend: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(erkend) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "erkend", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "erkend", true), false));
+end
+

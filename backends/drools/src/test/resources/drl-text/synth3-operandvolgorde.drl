@@ -1,0 +1,55 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.EmptyBarrier;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// (het deel is zijn deelvangst) rekenkundig afgerond op 0 decimalen
+function Object waarde_vangstsomVanEenVangst(Object $deelvangst, Object $teller, Object $noemer, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(let_vangstsomVanEenVangst($deelvangst, $teller, $noemer, sonde), Integer.valueOf(0), java.math.RoundingMode.HALF_UP), Integer.valueOf(0), "vangstsom", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// het deel is zijn deelvangst
+function Object let_vangstsomVanEenVangst(Object $deelvangst, Object $teller, Object $noemer, Object sonde) {
+    Object cel_1 = ComputeHelpers.binderCell();
+    try {
+        return RegelSpraakRuntime.rsPlus(binder_vangstsomVanEenVangst($deelvangst, $teller, $noemer, sonde, cel_1), ComputeHelpers.divided($teller, $noemer, sonde));
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_1);
+    }
+}
+
+// zijn deelvangst
+function Object binder_vangstsomVanEenVangst(Object $deelvangst, Object $teller, Object $noemer, Object sonde, Object cel_1) {
+    if (!ComputeHelpers.binderCellFilled(cel_1)) {
+        ComputeHelpers.fillBinderCell(cel_1, $deelvangst);
+    }
+    return ComputeHelpers.binderValue(cel_1);
+}
+
+rule "vangstsom van een vangst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vangst( $deelvangst : deelvangst, $teller : teller, $noemer : noemer )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_vangstsomVanEenVangst($deelvangst, $teller, $noemer, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vangstsom van een vangst", ComputeHelpers.designate(v, "vangstsom van een vangst")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("vangstsom van een vangst", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vangst", "vangstsom", false), v, "vangstsom van een vangst"));
+        }
+    }
+end
+

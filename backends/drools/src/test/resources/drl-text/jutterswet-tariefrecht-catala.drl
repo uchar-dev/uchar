@@ -1,0 +1,226 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.EmptyBarrier;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Outcome;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// aftrek
+function Object waarde_berekeningAanslag(Object $kindertal, Object $inkomen, Object $tarief) {
+    try {
+        return ComputeHelpers.fitTarget(let1_berekeningAanslag($kindertal, $inkomen, $tarief), Integer.valueOf(2), "aanslag", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// aftrek
+function Object let1_berekeningAanslag(Object $kindertal, Object $inkomen, Object $tarief) {
+    Object cel_1 = ComputeHelpers.binderCell();
+    try {
+        return let2_berekeningAanslag($kindertal, $inkomen, $tarief, cel_1);
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_1);
+    }
+}
+
+// 
+function Object binder1_berekeningAanslag(Object $kindertal, Object $inkomen, Object $tarief, Object cel_1) {
+    if (!ComputeHelpers.binderCellFilled(cel_1)) {
+        ComputeHelpers.fillBinderCell(cel_1, RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsMaal(new java.math.BigDecimal("250"), $kindertal), Integer.valueOf(2), java.math.RoundingMode.HALF_UP));
+    }
+    return ComputeHelpers.binderValue(cel_1);
+}
+
+// belasting
+function Object let2_berekeningAanslag(Object $kindertal, Object $inkomen, Object $tarief, Object cel_1) {
+    Object cel_4 = ComputeHelpers.binderCell();
+    try {
+        return (RegelSpraakRuntime.rsAggVergelijk(binder1_berekeningAanslag($kindertal, $inkomen, $tarief, cel_1), binder2_berekeningAanslag($kindertal, $inkomen, $tarief, cel_1, cel_4), ">") ? (Object) new java.math.BigDecimal("0") : (Object) RegelSpraakRuntime.rsVerminderd(binder2_berekeningAanslag($kindertal, $inkomen, $tarief, cel_1, cel_4), binder1_berekeningAanslag($kindertal, $inkomen, $tarief, cel_1)));
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_4);
+    }
+}
+
+// 
+function Object binder2_berekeningAanslag(Object $kindertal, Object $inkomen, Object $tarief, Object cel_1, Object cel_4) {
+    if (!ComputeHelpers.binderCellFilled(cel_4)) {
+        ComputeHelpers.fillBinderCell(cel_4, RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsMaal($inkomen, $tarief), Integer.valueOf(2), java.math.RoundingMode.HALF_UP));
+    }
+    return ComputeHelpers.binderValue(cel_4);
+}
+
+rule "berekening aanslag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Penningplichtige( $kindertal : kindertal, $inkomen : inkomen )
+    $stand_3 : State( attribute == ElementKey.of("penningplichtige", "tarief", false), subject == $onderwerp, $tarief : value )
+then
+    Object v = waarde_berekeningAanslag($kindertal, $inkomen, $tarief);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "berekening aanslag", ComputeHelpers.designate(v, "berekening aanslag")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("penningplichtige", "aanslag", false), v, "berekening aanslag"));
+        }
+    }
+end
+
+// 
+function boolean toets_defaultsAPenningplichtigeTariefDefault000(Object $kindertal) {
+    return RegelSpraakRuntime.rsAggVergelijk($kindertal, new java.math.BigDecimal("4"), ">=");
+}
+
+rule "defaults A:Penningplichtige.tarief: default 0.0.0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Penningplichtige( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Penningplichtige"), $kindertal : kindertal )
+    eval( toets_defaultsAPenningplichtigeTariefDefault000($kindertal) )
+then
+    // 0.1
+    Object v = new java.math.BigDecimal("0.1");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Penningplichtige.tarief", 1, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// 
+function boolean toets_defaultsAPenningplichtigeTariefDefault010(Object $inkomen) {
+    return RegelSpraakRuntime.rsAggVergelijk($inkomen, new java.math.BigDecimal("10000"), "<=");
+}
+
+rule "defaults A:Penningplichtige.tarief: default 0.1.0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Penningplichtige( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Penningplichtige"), $inkomen : inkomen )
+    eval( toets_defaultsAPenningplichtigeTariefDefault010($inkomen) )
+then
+    // 0
+    Object v = new java.math.BigDecimal("0");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Penningplichtige.tarief", 2, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function boolean beta1_defaultsAPenningplichtigeTariefVerschil0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsAPenningplichtigeTariefVerschil0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+function Object conflict_defaultsAPenningplichtigeTariefVerschil0() {
+    return "Penningplichtige.tarief/0";
+}
+
+rule "defaults A:Penningplichtige.tarief: verschil 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Penningplichtige.tarief" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 1 && chain < 3, $onderwerp : subject )
+    not( $uitkomst_7 : Outcome( stack == "defaults A:Penningplichtige.tarief" && chain >= 1 && chain < 3 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsAPenningplichtigeTariefVerschil0(this, $besluit) ) )
+    exists( $uitkomst_10 : Outcome( stack == "defaults A:Penningplichtige.tarief" && chain >= 1 && chain < 3 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsAPenningplichtigeTariefVerschil0(this, $besluit) ) )
+then
+    Object v = conflict_defaultsAPenningplichtigeTariefVerschil0();
+    insertLogical(new Outcome($onderwerp, "defaults A:Penningplichtige.tarief", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT, null, (String) v));
+end
+
+function boolean beta1_defaultsAPenningplichtigeTariefEens0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsAPenningplichtigeTariefEens0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults A:Penningplichtige.tarief: eens 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Penningplichtige.tarief" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 1 && chain < 3, $onderwerp : subject, $waarde : value )
+    not( $uitkomst_14 : Outcome( stack == "defaults A:Penningplichtige.tarief" && chain >= 1 && chain < 3 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsAPenningplichtigeTariefEens0(this, $besluit) ) )
+    not( $uitkomst_17 : Outcome( stack == "defaults A:Penningplichtige.tarief" && chain >= 1 && chain < 3 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsAPenningplichtigeTariefEens0(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Penningplichtige.tarief", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// 
+function boolean toets_defaultsAPenningplichtigeTariefTerugval0(Object $kindertal) {
+    return RegelSpraakRuntime.rsAggVergelijk($kindertal, new java.math.BigDecimal("2"), ">=");
+}
+
+rule "defaults A:Penningplichtige.tarief: terugval 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Penningplichtige( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Penningplichtige"), $kindertal : kindertal )
+    not( $uitkomst_21 : Outcome( stack == "defaults A:Penningplichtige.tarief" && chain >= 1 && chain < 3, subject == $onderwerp ) )
+    eval( toets_defaultsAPenningplichtigeTariefTerugval0($kindertal) )
+then
+    // 0.15
+    Object v = new java.math.BigDecimal("0.15");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Penningplichtige.tarief", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults A:Penningplichtige.tarief: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Penningplichtige( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Penningplichtige") )
+    not( $hoger_25 : Outcome( stack == "defaults A:Penningplichtige.tarief" && chain == 0 && position < 1, subject == $onderwerp ) )
+then
+    // 0.2
+    Object v = new java.math.BigDecimal("0.2");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Penningplichtige.tarief", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function Object conflict_defaultsAPenningplichtigeTariefDoorgevenWortel(Object $sleutel) {
+    return $sleutel;
+}
+
+rule "defaults A:Penningplichtige.tarief: doorgeven wortel"
+    dialect "mvel"
+when
+    $conflict : Outcome( stack == "defaults A:Penningplichtige.tarief" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT && chain >= 0 && chain < 1, $onderwerp : subject, $sleutel : key )
+then
+    Object v = conflict_defaultsAPenningplichtigeTariefDoorgevenWortel($sleutel);
+    insertLogical(ComputeHelpers.inconsistency((String) v, $onderwerp, ComputeHelpers.list1("EF-027")));
+end
+
+rule "defaults A:Penningplichtige.tarief: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Penningplichtige.tarief" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 1, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("penningplichtige", "tarief", false), v, "defaults A:Penningplichtige.tarief"));
+    }
+end
+
+rule "stand Penningplichtige.tarief: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Penningplichtige()
+    $waarde : Value( attribute == ElementKey.of("penningplichtige", "tarief", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("penningplichtige", "tarief", false), $v));
+end
+
+rule "stand Penningplichtige.tarief: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Penningplichtige( $invoer : tarief )
+    not( $waarde : Value( attribute == ElementKey.of("penningplichtige", "tarief", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("penningplichtige", "tarief", false), $invoer));
+end
+

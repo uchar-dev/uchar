@@ -1,0 +1,65 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+function Object pad_noordbuurbreedte(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("noordbuur"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "kavelbreedte");
+}
+
+// de kavelbreedte van de noordbuur van het Duinkavel
+function Object waarde_noordbuurbreedte(Object $noordbuurKavelbreedte) {
+    try {
+        return ComputeHelpers.fitTarget($noordbuurKavelbreedte, Integer.valueOf(0), "noordbuurbreedte", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "noordbuurbreedte"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Duinkavel( $noordbuurKavelbreedte : (pad_noordbuurbreedte(this)) )
+then
+    Object v = waarde_noordbuurbreedte($noordbuurKavelbreedte);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "noordbuurbreedte", ComputeHelpers.designate(v, "noordbuurbreedte")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("duinkavel", "noordbuurbreedte", false), v, "noordbuurbreedte"));
+        }
+    }
+end
+
+function Object pad_zuidbuurbreedte(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("zuidbuur"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "kavelbreedte");
+}
+
+// de kavelbreedte van de zuidbuur van het Duinkavel
+function Object waarde_zuidbuurbreedte(Object $zuidbuurKavelbreedte) {
+    try {
+        return ComputeHelpers.fitTarget($zuidbuurKavelbreedte, Integer.valueOf(0), "zuidbuurbreedte", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "zuidbuurbreedte"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Duinkavel( $zuidbuurKavelbreedte : (pad_zuidbuurbreedte(this)) )
+then
+    Object v = waarde_zuidbuurbreedte($zuidbuurKavelbreedte);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "zuidbuurbreedte", ComputeHelpers.designate(v, "zuidbuurbreedte")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("duinkavel", "zuidbuurbreedte", false), v, "zuidbuurbreedte"));
+        }
+    }
+end
+

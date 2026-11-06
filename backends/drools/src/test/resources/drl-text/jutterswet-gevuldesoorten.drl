@@ -1,0 +1,190 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het aantal vondsten van de Jutter
+function Object waarde_aantalAangemeldeVondsten(Object $aantal_vouw_4) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_4), Integer.valueOf(0), "aantal aangemelde vondsten", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal aangemelde vondsten"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "aantal aangemelde vondsten: vouw 0", subject == $onderwerp ); $aantal_vouw_4 : count() )
+then
+    Object v = waarde_aantalAangemeldeVondsten($aantal_vouw_4);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal aangemelde vondsten", ComputeHelpers.designate(v, "aantal aangemelde vondsten")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal aangemelde vondsten", false), v, "aantal aangemelde vondsten"));
+        }
+    }
+end
+
+// het aantal gevulde waarden van de vindplaats van alle vondsten van de Jutter
+function Object waarde_aantalGevuldeVindplaatsen(Object $aantal_vouw_9) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_9), Integer.valueOf(0), "aantal gevulde vindplaatsen", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal gevulde vindplaatsen"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_6 : Contribution( fold == "aantal gevulde vindplaatsen: vouw 1", subject == $onderwerp ); $aantal_vouw_9 : count() )
+then
+    Object v = waarde_aantalGevuldeVindplaatsen($aantal_vouw_9);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal gevulde vindplaatsen", ComputeHelpers.designate(v, "aantal gevulde vindplaatsen")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal gevulde vindplaatsen", false), v, "aantal gevulde vindplaatsen"));
+        }
+    }
+end
+
+// het aantal gevulde waarden van de vondstdag van alle vondsten van de Jutter
+function Object waarde_aantalGevuldeVondstdagen(Object $aantal_vouw_14) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_14), Integer.valueOf(0), "aantal gevulde vondstdagen", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal gevulde vondstdagen"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_11 : Contribution( fold == "aantal gevulde vondstdagen: vouw 2", subject == $onderwerp ); $aantal_vouw_14 : count() )
+then
+    Object v = waarde_aantalGevuldeVondstdagen($aantal_vouw_14);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal gevulde vondstdagen", ComputeHelpers.designate(v, "aantal gevulde vondstdagen")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal gevulde vondstdagen", false), v, "aantal gevulde vondstdagen"));
+        }
+    }
+end
+
+// het aantal gevulde waarden van het kustvak van alle vondsten van de Jutter
+function Object waarde_aantalGevuldeKustvakken(Object $aantal_vouw_19) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_19), Integer.valueOf(0), "aantal gevulde kustvakken", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal gevulde kustvakken"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_16 : Contribution( fold == "aantal gevulde kustvakken: vouw 3", subject == $onderwerp ); $aantal_vouw_19 : count() )
+then
+    Object v = waarde_aantalGevuldeKustvakken($aantal_vouw_19);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal gevulde kustvakken", ComputeHelpers.designate(v, "aantal gevulde kustvakken")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal gevulde kustvakken", false), v, "aantal gevulde kustvakken"));
+        }
+    }
+end
+
+// het aantal gevulde waarden van geborgen van alle vondsten van de Jutter
+function Object waarde_aantalGevuldeBergingsvlaggen(Object $aantal_vouw_24) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_24), Integer.valueOf(0), "aantal gevulde bergingsvlaggen", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal gevulde bergingsvlaggen"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_21 : Contribution( fold == "aantal gevulde bergingsvlaggen: vouw 4", subject == $onderwerp ); $aantal_vouw_24 : count() )
+then
+    Object v = waarde_aantalGevuldeBergingsvlaggen($aantal_vouw_24);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal gevulde bergingsvlaggen", ComputeHelpers.designate(v, "aantal gevulde bergingsvlaggen")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal gevulde bergingsvlaggen", false), v, "aantal gevulde bergingsvlaggen"));
+        }
+    }
+end
+
+rule "aantal aangemelde vondsten: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp )
+then
+    insertLogical(new Contribution("aantal aangemelde vondsten: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "aantal gevulde vindplaatsen: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp, $vindplaats : vindplaats )
+then
+    Object v = ComputeHelpers.contribution("aantal gevulde vindplaatsen: vouw 1", $vouwonderwerp, $onderwerp, $vindplaats, null, null, true, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "aantal gevulde vondstdagen: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp, $vondstdag : vondstdag )
+then
+    Object v = ComputeHelpers.contribution("aantal gevulde vondstdagen: vouw 2", $vouwonderwerp, $onderwerp, $vondstdag, null, null, true, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "aantal gevulde kustvakken: bijdrage aan vouw 3"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp, $kustvak : kustvak )
+then
+    Object v = ComputeHelpers.contribution("aantal gevulde kustvakken: vouw 3", $vouwonderwerp, $onderwerp, $kustvak, null, null, true, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "aantal gevulde bergingsvlaggen: bijdrage aan vouw 4"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp, $geborgen : geborgen )
+then
+    Object v = ComputeHelpers.contribution("aantal gevulde bergingsvlaggen: vouw 4", $vouwonderwerp, $onderwerp, $geborgen, null, null, true, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+

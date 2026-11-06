@@ -1,0 +1,92 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn klasse gelijk is aan 'drijfgoed'
+function boolean toets_bestemmingVanDrijfgoed(Object $klasse) {
+    return ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam($klasse), RegelSpraakRuntime.rsEnumNaam("drijfgoed"), Boolean.TRUE);
+}
+
+rule "bestemming van drijfgoed"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $klasse : klasse )
+    eval( toets_bestemmingVanDrijfgoed($klasse) )
+then
+    // 'wrakgoed'
+    Object v = "wrakgoed";
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "bestemming", false), v, "bestemming van drijfgoed"));
+    }
+end
+
+// zijn klasse ongelijk is aan 'drijfgoed'
+function boolean toets_bestemmingVanOverigGoed(Object $klasse) {
+    return ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam($klasse), RegelSpraakRuntime.rsEnumNaam("drijfgoed"), Boolean.FALSE);
+}
+
+rule "bestemming van overig goed"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $klasse : klasse )
+    eval( toets_bestemmingVanOverigGoed($klasse) )
+then
+    // zijn klasse
+    Object v = $klasse;
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "bestemming", false), v, "bestemming van overig goed"));
+    }
+end
+
+// zijn bestemming gelijk is aan 'wrakgoed'
+function boolean toets_bergingsplicht(Object $bestemming) {
+    return ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam($bestemming), RegelSpraakRuntime.rsEnumNaam("wrakgoed"), Boolean.TRUE);
+}
+
+rule "bergingsplicht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : State( attribute == ElementKey.of("vondst", "bestemming", false), subject == $onderwerp, $bestemming : value )
+    eval( toets_bergingsplicht($bestemming) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "bergingsplichtig", true)));
+end
+
+function boolean toets_schrijversVondstBestemmingVerschil(Object $waarden) {
+    return ComputeHelpers.differ($waarden);
+}
+
+rule "schrijvers Vondst.bestemming: verschil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    accumulate( $waarde : Value( attribute == ElementKey.of("vondst", "bestemming", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+    eval( toets_schrijversVondstBestemmingVerschil($waarden) )
+then
+    insertLogical(ComputeHelpers.writersConflict($onderwerp, $waarden, "bestemming", ComputeHelpers.list3("bestemming van drijfgoed", "bestemming van overig goed", "bergingsplicht"), ComputeHelpers.list1("Vondst"), ComputeHelpers.list1("Vondst")));
+end
+
+rule "stand Vondst.bestemming: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $waarde : Value( attribute == ElementKey.of("vondst", "bestemming", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "bestemming", false), $v));
+end
+
+rule "stand Vondst.bestemming: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : bestemming )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "bestemming", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "bestemming", false), $invoer));
+end
+

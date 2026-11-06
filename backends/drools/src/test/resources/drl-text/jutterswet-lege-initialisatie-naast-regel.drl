@@ -1,0 +1,62 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// hij gemeld is
+function boolean toets_standaardbergloon(Object $gemeld) {
+    return ComputeHelpers.characteristic($gemeld, Boolean.TRUE);
+}
+
+// zijn taxatie
+function Object waarde_standaardbergloon(Object $taxatie) {
+    try {
+        return ComputeHelpers.fitTarget($taxatie, Integer.valueOf(0), "bergloon", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "standaardbergloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( bergloon == null, $gemeld : (ComputeHelpers.holds(gemeld)), $taxatie : taxatie )
+    eval( toets_standaardbergloon($gemeld) )
+    not( $andere_schrijver : Value( attribute == ElementKey.of("vondst", "bergloon", false) && writer != "standaardbergloon", subject == $onderwerp ) )
+then
+    Object v = waarde_standaardbergloon($taxatie);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "standaardbergloon", ComputeHelpers.designate(v, "standaardbergloon")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "bergloon", false), v, "standaardbergloon"));
+        }
+    }
+end
+
+// zijn opbrengst
+function Object waarde_bergloon(Object $opbrengst) {
+    try {
+        return ComputeHelpers.fitTarget($opbrengst, Integer.valueOf(0), "bergloon", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bergloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $opbrengst : opbrengst )
+then
+    Object v = waarde_bergloon($opbrengst);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bergloon", ComputeHelpers.designate(v, "bergloon")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "bergloon", false), v, "bergloon"));
+        }
+    }
+end
+

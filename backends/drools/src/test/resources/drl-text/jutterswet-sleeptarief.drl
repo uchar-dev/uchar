@@ -1,0 +1,219 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn sleeptarief maal zijn sleepdagen maal zijn sleeplengte
+function Object waarde_sleepkosten(Object $sleeptarief, Object $sleepdagen, Object $sleeplengte) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal(RegelSpraakRuntime.rsMaal($sleeptarief, $sleepdagen), $sleeplengte), Integer.valueOf(0), "sleepkosten", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "sleepkosten"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleep( $sleeptarief : sleeptarief, $sleepdagen : sleepdagen, $sleeplengte : sleeplengte )
+then
+    Object v = waarde_sleepkosten($sleeptarief, $sleepdagen, $sleeplengte);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "sleepkosten", ComputeHelpers.designate(v, "sleepkosten")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("sleep", "sleepkosten", false), v, "sleepkosten"));
+        }
+    }
+end
+
+// zijn sleeptarief maal zijn sleeplengte
+function Object waarde_daggeld(Object $sleeptarief, Object $sleeplengte) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($sleeptarief, $sleeplengte), Integer.valueOf(0), "daggeld", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "daggeld"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleep( $sleeptarief : sleeptarief, $sleeplengte : sleeplengte )
+then
+    Object v = waarde_daggeld($sleeptarief, $sleeplengte);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "daggeld", ComputeHelpers.designate(v, "daggeld")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("sleep", "daggeld", false), v, "daggeld"));
+        }
+    }
+end
+
+// zijn daggeld gedeeld door zijn sleepdagen naar beneden afgerond op 0 decimalen
+function Object waarde_daggeldstijging(Object $daggeld, Object $sleepdagen, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($daggeld, $sleepdagen, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), Integer.valueOf(0), "daggeldstijging", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "daggeldstijging"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleep( $sleepdagen : sleepdagen )
+    $stand_0 : State( attribute == ElementKey.of("sleep", "daggeld", false), subject == $onderwerp, $daggeld : value )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_daggeldstijging($daggeld, $sleepdagen, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "daggeldstijging", ComputeHelpers.designate(v, "daggeldstijging")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("daggeldstijging", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("sleep", "daggeldstijging", false), v, "daggeldstijging"));
+        }
+    }
+end
+
+// 2/dg
+function Object waarde_normtempo() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("2"), Integer.valueOf(0), "normtempo", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "normtempo"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleep()
+then
+    Object v = waarde_normtempo();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "normtempo", ComputeHelpers.designate(v, "normtempo")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("sleep", "normtempo", false), v, "normtempo"));
+        }
+    }
+end
+
+// zijn opgegeven tempo groter is dan 2/dg
+function boolean toets_vlot(Object $opgegevenTempo) {
+    return RegelSpraakRuntime.rsAggVergelijk($opgegevenTempo, new java.math.BigDecimal("2"), ">");
+}
+
+rule "vlot"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleep( $opgegevenTempo : opgegevenTempo )
+    eval( toets_vlot($opgegevenTempo) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("sleep", "vlot", true)));
+end
+
+// zijn sleepkosten maal zijn sleeplengte
+function Object waarde_lengtegeld(Object $sleepkosten, Object $sleeplengte) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($sleepkosten, $sleeplengte), Integer.valueOf(0), "lengtegeld", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "lengtegeld"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleep( $sleeplengte : sleeplengte )
+    $stand_0 : State( attribute == ElementKey.of("sleep", "sleepkosten", false), subject == $onderwerp, $sleepkosten : value )
+then
+    Object v = waarde_lengtegeld($sleepkosten, $sleeplengte);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "lengtegeld", ComputeHelpers.designate(v, "lengtegeld")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("sleep", "lengtegeld", false), v, "lengtegeld"));
+        }
+    }
+end
+
+// zijn lengtegeld groter is dan 200 m*€
+function boolean toets_zwaar(Object $lengtegeld) {
+    return RegelSpraakRuntime.rsAggVergelijk($lengtegeld, new java.math.BigDecimal("200"), ">");
+}
+
+rule "zwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleep()
+    $stand_0 : State( attribute == ElementKey.of("sleep", "lengtegeld", false), subject == $onderwerp, $lengtegeld : value )
+    eval( toets_zwaar($lengtegeld) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("sleep", "zwaar", true)));
+end
+
+rule "stand Sleep.daggeld: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleep()
+    $waarde : Value( attribute == ElementKey.of("sleep", "daggeld", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("sleep", "daggeld", false), $v));
+end
+
+rule "stand Sleep.daggeld: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleep( $invoer : daggeld )
+    not( $waarde : Value( attribute == ElementKey.of("sleep", "daggeld", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("sleep", "daggeld", false), $invoer));
+end
+
+rule "stand Sleep.sleepkosten: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleep()
+    $waarde : Value( attribute == ElementKey.of("sleep", "sleepkosten", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("sleep", "sleepkosten", false), $v));
+end
+
+rule "stand Sleep.sleepkosten: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleep( $invoer : sleepkosten )
+    not( $waarde : Value( attribute == ElementKey.of("sleep", "sleepkosten", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("sleep", "sleepkosten", false), $invoer));
+end
+
+rule "stand Sleep.lengtegeld: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleep()
+    $waarde : Value( attribute == ElementKey.of("sleep", "lengtegeld", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("sleep", "lengtegeld", false), $v));
+end
+
+rule "stand Sleep.lengtegeld: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleep( $invoer : lengtegeld )
+    not( $waarde : Value( attribute == ElementKey.of("sleep", "lengtegeld", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("sleep", "lengtegeld", false), $invoer));
+end
+

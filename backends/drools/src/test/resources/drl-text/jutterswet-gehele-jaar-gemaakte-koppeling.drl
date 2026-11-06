@@ -1,0 +1,180 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.PathState;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.SecondFillingFault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de standpost van de Jutter gedurende het gehele jaar bemand is
+function boolean toets_wachtvergoedingVanEenJutter(Object $standpostBemand) {
+    return ComputeHelpers.wholePeriod($standpostBemand, null, "JAAR", Integer.valueOf(7), Boolean.FALSE);
+}
+
+// zijn dienstjaren
+function Object waarde_wachtvergoedingVanEenJutter(Object $dienstjaren) {
+    try {
+        return ComputeHelpers.fitTarget($dienstjaren, Integer.valueOf(0), "wachtvergoeding", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "wachtvergoeding van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $dienstjaren : dienstjaren )
+    $padstand_0 : PathState( path == "Jutter:standpost" && member == ElementKey.of("strandpost", "bemand", true), subject == $onderwerp, $standpostBemand : value )
+    eval( toets_wachtvergoedingVanEenJutter($standpostBemand) )
+then
+    Object v = waarde_wachtvergoedingVanEenJutter($dienstjaren);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "wachtvergoeding van een jutter", ComputeHelpers.designate(v, "wachtvergoeding van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "wachtvergoeding", false), v, "wachtvergoeding van een jutter"));
+        }
+    }
+end
+
+// de standpost van de Jutter niet gedurende het gehele jaar bemand is
+function boolean toets_wachtkortingVanEenJutter(Object $standpostBemand) {
+    return ComputeHelpers.wholePeriod($standpostBemand, null, "JAAR", Integer.valueOf(7), Boolean.TRUE);
+}
+
+// zijn dienstjaren
+function Object waarde_wachtkortingVanEenJutter(Object $dienstjaren) {
+    try {
+        return ComputeHelpers.fitTarget($dienstjaren, Integer.valueOf(0), "wachtkorting", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "wachtkorting van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $dienstjaren : dienstjaren )
+    $padstand_0 : PathState( path == "Jutter:standpost" && member == ElementKey.of("strandpost", "bemand", true), subject == $onderwerp, $standpostBemand : value )
+    eval( toets_wachtkortingVanEenJutter($standpostBemand) )
+then
+    Object v = waarde_wachtkortingVanEenJutter($dienstjaren);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "wachtkorting van een jutter", ComputeHelpers.designate(v, "wachtkorting van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "wachtkorting", false), v, "wachtkorting van een jutter"));
+        }
+    }
+end
+
+// de diepte van de standpost van de Jutter ongelijk is aan 5
+function boolean toets_dieptegeldVanEenJutter(Object $standpostDiepte) {
+    return RegelSpraakRuntime.rsAggVergelijk($standpostDiepte, new java.math.BigDecimal("5"), "!=");
+}
+
+// zijn dienstjaren
+function Object waarde_dieptegeldVanEenJutter(Object $dienstjaren) {
+    try {
+        return ComputeHelpers.fitTarget($dienstjaren, Integer.valueOf(0), "dieptegeld", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "dieptegeld van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $dienstjaren : dienstjaren )
+    $padstand_0 : PathState( path == "Jutter:standpost" && member == ElementKey.of("strandpost", "diepte", false), subject == $onderwerp, $standpostDiepte : value )
+    eval( toets_dieptegeldVanEenJutter($standpostDiepte) )
+then
+    Object v = waarde_dieptegeldVanEenJutter($dienstjaren);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "dieptegeld van een jutter", ComputeHelpers.designate(v, "dieptegeld van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "dieptegeld", false), v, "dieptegeld van een jutter"));
+        }
+    }
+end
+
+function boolean beta_standplaatsVanEenJutter(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("aanmeldpost"), java.util.Arrays.asList());
+}
+
+rule "standplaats van een jutter"
+    dialect "mvel"
+    agenda-group "uchar-feitcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandpost()
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    $stap_keten_10 : dev.uchar.regelspraak.facts.Jutter( beta_standplaatsVanEenJutter(this, $onderwerp) )
+    not( $bestaand_feitcreatie_12 : RelationLink( relation == "standplaats", first == $onderwerp, second == $stap_keten_10 ) )
+then
+    insert(new RelationLink("standplaats", $onderwerp, $stap_keten_10, $fase));
+end
+
+rule "koppeling standplaats uit de invoer: Jutter.standpost"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Jutter( standpost != null, $ander : standpost )
+then
+    insertLogical(new RelationLink("standplaats", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingStandplaatsTweedeVullingVanStandpost(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling standplaats: tweede vulling van standpost"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "standplaats", $nabij : second )
+    $twee : RelationLink( relation == "standplaats", second != null, second == $een.second, beta_koppelingStandplaatsTweedeVullingVanStandpost(this, $een) )
+then
+    insertLogical(new Fault($nabij, "standplaats", new SecondFillingFault("standpost", $nabij)));
+end
+
+rule "padstand Jutter.standpost naar Strandpost.bemand: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $koppeling_keten_22 : RelationLink( relation == "standplaats", second == $onderwerp, $overzijde_keten_23 : first )
+    $stap_keten_21 : dev.uchar.regelspraak.facts.Strandpost( this == $overzijde_keten_23, $v : (ComputeHelpers.periods(bemand)) )
+then
+    insertLogical(new PathState($onderwerp, "Jutter:standpost", ElementKey.of("strandpost", "bemand", true), $v, $stap_keten_21));
+end
+
+rule "padstand Jutter.standpost naar Strandpost.bemand: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    not( $koppeling_keten_28 : RelationLink( relation == "standplaats", second == $onderwerp, $overzijde_keten_29 : first ) and $stap_keten_27 : dev.uchar.regelspraak.facts.Strandpost( this == $overzijde_keten_29 ) )
+then
+    insertLogical(new PathState($onderwerp, "Jutter:standpost", ElementKey.of("strandpost", "bemand", true), null, null));
+end
+
+rule "padstand Jutter.standpost naar Strandpost.diepte: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $koppeling_keten_34 : RelationLink( relation == "standplaats", second == $onderwerp, $overzijde_keten_35 : first )
+    $stap_keten_33 : dev.uchar.regelspraak.facts.Strandpost( this == $overzijde_keten_35, $v : diepte )
+then
+    insertLogical(new PathState($onderwerp, "Jutter:standpost", ElementKey.of("strandpost", "diepte", false), $v, $stap_keten_33));
+end
+
+rule "padstand Jutter.standpost naar Strandpost.diepte: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    not( $koppeling_keten_40 : RelationLink( relation == "standplaats", second == $onderwerp, $overzijde_keten_41 : first ) and $stap_keten_39 : dev.uchar.regelspraak.facts.Strandpost( this == $overzijde_keten_41 ) )
+then
+    insertLogical(new PathState($onderwerp, "Jutter:standpost", ElementKey.of("strandpost", "diepte", false), null, null));
+end
+

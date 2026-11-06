@@ -1,0 +1,88 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de Vondst is is
+function boolean toets_inVanEenVondst(Object $is) {
+    return ComputeHelpers.characteristic($is, Boolean.TRUE);
+}
+
+// de m² van de Vondst
+function Object waarde_inVanEenVondst(Object $m2) {
+    try {
+        return ComputeHelpers.fitTarget($m2, Integer.valueOf(2), "in", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "in van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $is : (ComputeHelpers.holds(isIs())), $m2 : m2 )
+    eval( toets_inVanEenVondst($is) )
+then
+    Object v = waarde_inVanEenVondst($m2);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "in van een vondst", ComputeHelpers.designate(v, "in van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "in", false), v, "in van een vondst"));
+        }
+    }
+end
+
+// de final van de Vondst groter is dan 0
+function boolean toets_x3eLidVanEenVondst(Object $final) {
+    return RegelSpraakRuntime.rsAggVergelijk($final, new java.math.BigDecimal("0"), ">");
+}
+
+// de in van de Vondst
+function Object waarde_x3eLidVanEenVondst(Object $in) {
+    try {
+        return ComputeHelpers.fitTarget($in, Integer.valueOf(2), "3e lid", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "3e lid van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $final : getFinal() )
+    $stand_1 : State( attribute == ElementKey.of("vondst", "in", false), subject == $onderwerp, $in : value )
+    eval( toets_x3eLidVanEenVondst($final) )
+then
+    Object v = waarde_x3eLidVanEenVondst($in);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "3e lid van een vondst", ComputeHelpers.designate(v, "3e lid van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "3e lid", false), v, "3e lid van een vondst"));
+        }
+    }
+end
+
+rule "stand Vondst.in: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $waarde : Value( attribute == ElementKey.of("vondst", "in", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "in", false), $v));
+end
+
+rule "stand Vondst.in: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : getIn() )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "in", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "in", false), $invoer));
+end
+

@@ -1,0 +1,75 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.EmptyBarrier;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.ParameterState;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.math.BigDecimal drempel;
+global java.math.BigDecimal basisheffing;
+
+// (de k is k) rekenkundig afgerond op 2 decimalen
+function Object waarde_heffingVanEenJutter(Object $inkomen, Object $drempel, Object $basisheffing, Object $restpost, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(let_heffingVanEenJutter($inkomen, $drempel, $basisheffing, $restpost, sonde), Integer.valueOf(2), java.math.RoundingMode.HALF_UP), Integer.valueOf(2), "heffing", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de k is k
+function Object let_heffingVanEenJutter(Object $inkomen, Object $drempel, Object $basisheffing, Object $restpost, Object sonde) {
+    Object cel_1 = ComputeHelpers.binderCell();
+    try {
+        return RegelSpraakRuntime.rsPlus((RegelSpraakRuntime.rsAggVergelijk(binder_heffingVanEenJutter($inkomen, $drempel, $basisheffing, $restpost, sonde, cel_1), $drempel, ">") ? (Object) $basisheffing : (Object) ComputeHelpers.divided(binder_heffingVanEenJutter($inkomen, $drempel, $basisheffing, $restpost, sonde, cel_1), $restpost, sonde)), $basisheffing);
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_1);
+    }
+}
+
+// zijn inkomen
+function Object binder_heffingVanEenJutter(Object $inkomen, Object $drempel, Object $basisheffing, Object $restpost, Object sonde, Object cel_1) {
+    if (!ComputeHelpers.binderCellFilled(cel_1)) {
+        ComputeHelpers.fillBinderCell(cel_1, $inkomen);
+    }
+    return ComputeHelpers.binderValue(cel_1);
+}
+
+rule "heffing van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $inkomen : inkomen, $restpost : restpost )
+    $parameter_2 : ParameterState( parameter == "drempel", $drempel : value )
+    $parameter_3 : ParameterState( parameter == "basisheffing", $basisheffing : value )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_heffingVanEenJutter($inkomen, $drempel, $basisheffing, $restpost, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "heffing van een jutter", ComputeHelpers.designate(v, "heffing van een jutter")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("heffing van een jutter", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "heffing", false), v, "heffing van een jutter"));
+        }
+    }
+end
+
+rule "parameterstand drempel"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("drempel", drempel));
+end
+
+rule "parameterstand basisheffing"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("basisheffing", basisheffing));
+end
+

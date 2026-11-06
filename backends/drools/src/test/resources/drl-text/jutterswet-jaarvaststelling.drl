@@ -1,0 +1,169 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.ParameterState;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.math.BigDecimal vondstdrempel;
+global java.math.BigDecimal penningbedrag;
+global java.math.BigDecimal fondspercentage;
+global java.time.LocalDate uitbetaaldag;
+
+// zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel
+function boolean toets_penningrechtBijDrempel(Object $aantalAangemeldeVondsten, Object $vondstdrempel) {
+    return RegelSpraakRuntime.rsAggVergelijk($aantalAangemeldeVondsten, $vondstdrempel, ">=");
+}
+
+rule "penningrecht bij drempel"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $aantalAangemeldeVondsten : aantalAangemeldeVondsten )
+    $parameter_1 : ParameterState( parameter == "vondstdrempel", $vondstdrempel : value )
+    eval( toets_penningrechtBijDrempel($aantalAangemeldeVondsten, $vondstdrempel) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "penninggerechtigd", true)));
+end
+
+// hij penninggerechtigd is
+function boolean toets_uitkeringVanDePenning(Object $penninggerechtigd) {
+    return ComputeHelpers.characteristic($penninggerechtigd, Boolean.TRUE);
+}
+
+// het penningbedrag
+function Object waarde_uitkeringVanDePenning(Object $penningbedrag) {
+    try {
+        return ComputeHelpers.fitTarget($penningbedrag, Integer.valueOf(0), "uitkering", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "uitkering van de penning"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $parameter_1 : ParameterState( parameter == "penningbedrag", $penningbedrag : value )
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("jutter", "penninggerechtigd", true), subject == $onderwerp, $penninggerechtigd : holds )
+    eval( toets_uitkeringVanDePenning($penninggerechtigd) )
+then
+    Object v = waarde_uitkeringVanDePenning($penningbedrag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "uitkering van de penning", ComputeHelpers.designate(v, "uitkering van de penning")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "uitkering", false), v, "uitkering van de penning"));
+        }
+    }
+end
+
+// hij penninggerechtigd is
+function boolean toets_afdrachtAanHetEilandfonds(Object $penninggerechtigd) {
+    return ComputeHelpers.characteristic($penninggerechtigd, Boolean.TRUE);
+}
+
+// het fondspercentage
+function Object waarde_afdrachtAanHetEilandfonds(Object $fondspercentage) {
+    try {
+        return ComputeHelpers.fitTarget($fondspercentage, Integer.valueOf(0), "afdrachtpercentage", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "afdracht aan het eilandfonds"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $parameter_1 : ParameterState( parameter == "fondspercentage", $fondspercentage : value )
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("jutter", "penninggerechtigd", true), subject == $onderwerp, $penninggerechtigd : holds )
+    eval( toets_afdrachtAanHetEilandfonds($penninggerechtigd) )
+then
+    Object v = waarde_afdrachtAanHetEilandfonds($fondspercentage);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "afdracht aan het eilandfonds", ComputeHelpers.designate(v, "afdracht aan het eilandfonds")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "afdrachtpercentage", false), v, "afdracht aan het eilandfonds"));
+        }
+    }
+end
+
+// hij penninggerechtigd is
+function boolean toets_betaaldatumVanDePenning(Object $penninggerechtigd) {
+    return ComputeHelpers.characteristic($penninggerechtigd, Boolean.TRUE);
+}
+
+rule "betaaldatum van de penning"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $parameter_1 : ParameterState( parameter == "uitbetaaldag", $uitbetaaldag : value )
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("jutter", "penninggerechtigd", true), subject == $onderwerp, $penninggerechtigd : holds )
+    eval( toets_betaaldatumVanDePenning($penninggerechtigd) )
+then
+    // de uitbetaaldag
+    Object v = $uitbetaaldag;
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("jutter", "betaaldatum", false), v, "betaaldatum van de penning"));
+    }
+end
+
+rule "kenmerkstand Jutter.penninggerechtigd: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.holds(penninggerechtigd) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("jutter", "penninggerechtigd", true), true));
+end
+
+rule "kenmerkstand Jutter.penninggerechtigd: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("jutter", "penninggerechtigd", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("jutter", "penninggerechtigd", true), true));
+end
+
+rule "kenmerkstand Jutter.penninggerechtigd: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.holds(penninggerechtigd) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("jutter", "penninggerechtigd", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("jutter", "penninggerechtigd", true), false));
+end
+
+rule "parameterstand vondstdrempel"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("vondstdrempel", vondstdrempel));
+end
+
+rule "parameterstand penningbedrag"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("penningbedrag", penningbedrag));
+end
+
+rule "parameterstand fondspercentage"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("fondspercentage", fondspercentage));
+end
+
+rule "parameterstand uitbetaaldag"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("uitbetaaldag", uitbetaaldag));
+end
+

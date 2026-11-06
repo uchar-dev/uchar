@@ -1,0 +1,104 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de tijdsduur van zijn aankomst tot zijn vertrek in hele uren
+function Object waarde_berekeningUurspanne(Object $aankomst, Object $vertrek) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsTijdsduur(((java.time.temporal.Temporal) $aankomst), ((java.time.temporal.Temporal) $vertrek), "HOURS", Boolean.FALSE), Integer.valueOf(0), "uurspanne", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "Berekening uurspanne"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Getijdenpaar( $aankomst : aankomst, $vertrek : vertrek )
+then
+    Object v = waarde_berekeningUurspanne($aankomst, $vertrek);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "Berekening uurspanne", ComputeHelpers.designate(v, "Berekening uurspanne")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("getijdenpaar", "uurspanne", false), v, "Berekening uurspanne"));
+        }
+    }
+end
+
+// de tijdsduur van zijn aankomst tot zijn vertrek in hele dagen
+function Object waarde_berekeningDagspanne(Object $aankomst, Object $vertrek) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsTijdsduur(((java.time.temporal.Temporal) $aankomst), ((java.time.temporal.Temporal) $vertrek), "DAYS", Boolean.FALSE), Integer.valueOf(0), "dagspanne", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "Berekening dagspanne"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Getijdenpaar( $aankomst : aankomst, $vertrek : vertrek )
+then
+    Object v = waarde_berekeningDagspanne($aankomst, $vertrek);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "Berekening dagspanne", ComputeHelpers.designate(v, "Berekening dagspanne")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("getijdenpaar", "dagspanne", false), v, "Berekening dagspanne"));
+        }
+    }
+end
+
+// zijn aankomst plus 26 uur
+function Object waarde_berekeningHersteltijd(Object $aankomst) {
+    try {
+        return ComputeHelpers.dateStep($aankomst, new java.math.BigDecimal("26"), "HOURS", Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "Berekening hersteltijd"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Getijdenpaar( $aankomst : aankomst )
+then
+    Object v = waarde_berekeningHersteltijd($aankomst);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "Berekening hersteltijd", ComputeHelpers.designate(v, "Berekening hersteltijd")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("getijdenpaar", "hersteltijd", false), v, "Berekening hersteltijd"));
+        }
+    }
+end
+
+// zijn aankomst plus 1 maand
+function Object waarde_berekeningIjkdatum(Object $aankomst) {
+    try {
+        return ComputeHelpers.dateStep($aankomst, new java.math.BigDecimal("1"), "MONTHS", Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "Berekening ijkdatum"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Getijdenpaar( $aankomst : aankomst )
+then
+    Object v = waarde_berekeningIjkdatum($aankomst);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "Berekening ijkdatum", ComputeHelpers.designate(v, "Berekening ijkdatum")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("getijdenpaar", "ijkdatum", false), v, "Berekening ijkdatum"));
+        }
+    }
+end
+

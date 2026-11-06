@@ -1,0 +1,32 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// 2,5 km plus de aanloop van de Sleepbaan
+function Object waarde_sleeplengteVanEenSleepbaan(Object $aanloop) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.restateExact(RegelSpraakRuntime.rsPlus(new java.math.BigDecimal("2.5"), ComputeHelpers.restateExact($aanloop, new java.math.BigDecimal("1"), new java.math.BigDecimal("1000"))), new java.math.BigDecimal("1000"), new java.math.BigDecimal("1")), Integer.valueOf(0), "sleeplengte", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "sleeplengte van een sleepbaan"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Sleepbaan( $aanloop : aanloop )
+then
+    Object v = waarde_sleeplengteVanEenSleepbaan($aanloop);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "sleeplengte van een sleepbaan", ComputeHelpers.designate(v, "sleeplengte van een sleepbaan")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("sleepbaan", "sleeplengte", false), v, "sleeplengte van een sleepbaan"));
+        }
+    }
+end
+

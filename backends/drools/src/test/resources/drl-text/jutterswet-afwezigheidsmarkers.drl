@@ -1,0 +1,466 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic;
+import dev.uchar.regelspraak.transpiler.tms.PeriodCondition;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn schatting
+function Object waarde_taxatieUitSchatting(Object $schatting) {
+    try {
+        return ComputeHelpers.construct("waarde", $schatting);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "taxatie uit schatting"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $schatting : schatting )
+then
+    Object v = waarde_taxatieUitSchatting($schatting);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "taxatie uit schatting", ComputeHelpers.designate(v, "taxatie uit schatting")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "taxatie", false), v, "taxatie uit schatting"));
+        }
+    }
+end
+
+// hij onleesbaar is
+function boolean toets_taxatieOnbekend(Object $onleesbaar) {
+    return ComputeHelpers.characteristic($onleesbaar, Boolean.TRUE);
+}
+
+// onbekend
+function Object waarde_taxatieOnbekend() {
+    try {
+        return ComputeHelpers.constructorValue("onbekend");
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "taxatie onbekend"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $onleesbaar : (ComputeHelpers.holds(onleesbaar)) )
+    eval( toets_taxatieOnbekend($onleesbaar) )
+then
+    Object v = waarde_taxatieOnbekend();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "taxatie onbekend", ComputeHelpers.designate(v, "taxatie onbekend")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "taxatie", false), v, "taxatie onbekend"));
+        }
+    }
+end
+
+// hij drijfhout is
+function boolean toets_taxatieNietVanToepassing(Object $drijfhout) {
+    return ComputeHelpers.characteristic($drijfhout, Boolean.TRUE);
+}
+
+// niet van toepassing
+function Object waarde_taxatieNietVanToepassing() {
+    try {
+        return ComputeHelpers.constructorValue("niet van toepassing");
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "taxatie niet van toepassing"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $drijfhout : (ComputeHelpers.holds(drijfhout)) )
+    eval( toets_taxatieNietVanToepassing($drijfhout) )
+then
+    Object v = waarde_taxatieNietVanToepassing();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "taxatie niet van toepassing", ComputeHelpers.designate(v, "taxatie niet van toepassing")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "taxatie", false), v, "taxatie niet van toepassing"));
+        }
+    }
+end
+
+// zijn taxatie een waarde heeft
+function boolean toets_vindloonNaarTaxatie(Object $taxatie) {
+    return ComputeHelpers.emptyTest(ComputeHelpers.payload($taxatie, "waarde"), Boolean.FALSE);
+}
+
+// zijn taxatie gedeeld door 10 rekenkundig afgerond op 2 decimalen
+function Object waarde_vindloonNaarTaxatie(Object $taxatie, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided(ComputeHelpers.payload($taxatie, "waarde"), new java.math.BigDecimal("10"), sonde), Integer.valueOf(2), java.math.RoundingMode.HALF_UP), Integer.valueOf(2), "vindloon", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vindloon naar taxatie"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : State( attribute == ElementKey.of("vondst", "taxatie", false), subject == $onderwerp, $taxatie : value )
+    eval( toets_vindloonNaarTaxatie($taxatie) )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_vindloonNaarTaxatie($taxatie, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vindloon naar taxatie", ComputeHelpers.designate(v, "vindloon naar taxatie")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("vindloon naar taxatie", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "vindloon", false), v, "vindloon naar taxatie"));
+        }
+    }
+end
+
+// zijn taxatie onbekend is
+function boolean toets_forfaitairVindloon(Object $taxatie) {
+    return ComputeHelpers.textEqual($taxatie, ComputeHelpers.constructorValue("onbekend"), Boolean.TRUE);
+}
+
+// 25,00
+function Object waarde_forfaitairVindloon() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("25"), Integer.valueOf(2), "vindloon", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "forfaitair vindloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : State( attribute == ElementKey.of("vondst", "taxatie", false), subject == $onderwerp, $taxatie : value )
+    eval( toets_forfaitairVindloon($taxatie) )
+then
+    Object v = waarde_forfaitairVindloon();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "forfaitair vindloon", ComputeHelpers.designate(v, "forfaitair vindloon")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "vindloon", false), v, "forfaitair vindloon"));
+        }
+    }
+end
+
+// zijn taxatie niet van toepassing is
+function boolean toets_geenVindloon(Object $taxatie) {
+    return ComputeHelpers.textEqual($taxatie, ComputeHelpers.constructorValue("niet van toepassing"), Boolean.TRUE);
+}
+
+// 0,00
+function Object waarde_geenVindloon() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("0"), Integer.valueOf(2), "vindloon", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "geen vindloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : State( attribute == ElementKey.of("vondst", "taxatie", false), subject == $onderwerp, $taxatie : value )
+    eval( toets_geenVindloon($taxatie) )
+then
+    Object v = waarde_geenVindloon();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "geen vindloon", ComputeHelpers.designate(v, "geen vindloon")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "vindloon", false), v, "geen vindloon"));
+        }
+    }
+end
+
+// hij aan alle volgende voorwaarden voldoet: - zijn taxatie heeft een waarde - zijn taxatie is groter dan 1000,00
+function boolean toets_kostbareVondst(Object $taxatie) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest(ComputeHelpers.payload($taxatie, "waarde"), Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.payload($taxatie, "waarde"), new java.math.BigDecimal("1000"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "kostbare vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : State( attribute == ElementKey.of("vondst", "taxatie", false), subject == $onderwerp, $taxatie : value )
+    eval( toets_kostbareVondst($taxatie) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "kostbaar", true)));
+end
+
+// de som van de taxatie van alle vondsten van de Jutter die een waarde hebben
+function Object waarde_getaxeerdTotaal(Object $aantal_vouw_21, Object $vouw_vouw_23) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_21, $vouw_vouw_23, null), Integer.valueOf(2), "getaxeerd totaal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "getaxeerd totaal"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_18 : Contribution( fold == "getaxeerd totaal: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_22 : value ); $aantal_vouw_21 : count(), $vouw_vouw_23 : exactSum($bijdragewaarde_vouw_22) )
+then
+    Object v = waarde_getaxeerdTotaal($aantal_vouw_21, $vouw_vouw_23);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "getaxeerd totaal", ComputeHelpers.designate(v, "getaxeerd totaal")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "getaxeerd totaal", false), v, "getaxeerd totaal"));
+        }
+    }
+end
+
+// onbekend
+function Object waarde_opslagOnbekendInDeWinter() {
+    try {
+        return PeriodArithmetic.writtenValues(PeriodArithmetic.clipped(PeriodCondition.window(java.time.LocalDate.parse("2025-01-01"), Boolean.TRUE, java.time.LocalDate.parse("2025-03-01"), Boolean.TRUE, Boolean.FALSE), PeriodArithmetic.scalar(ComputeHelpers.constructorValue("onbekend"))));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "opslag onbekend in de winter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+then
+    Object v = waarde_opslagOnbekendInDeWinter();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "opslag onbekend in de winter", ComputeHelpers.designate(v, "opslag onbekend in de winter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "opslagkosten", false), v, "opslag onbekend in de winter"));
+        }
+    }
+end
+
+// niet van toepassing
+function Object waarde_opslagNietVanToepassingNaVerkoop(Object $tijdlijn_0) {
+    try {
+        return PeriodArithmetic.writtenValues(PeriodArithmetic.clipped(PeriodCondition.truePeriods($tijdlijn_0), PeriodArithmetic.scalar(ComputeHelpers.constructorValue("niet van toepassing"))));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "opslag niet van toepassing na verkoop"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $tijdlijn_0 : (ComputeHelpers.periods(verkocht)) )
+then
+    Object v = waarde_opslagNietVanToepassingNaVerkoop($tijdlijn_0);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "opslag niet van toepassing na verkoop", ComputeHelpers.designate(v, "opslag niet van toepassing na verkoop")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "opslagkosten", false), v, "opslag niet van toepassing na verkoop"));
+        }
+    }
+end
+
+// 7
+function Object waarde_opslagtoeslag(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        return PeriodArithmetic.written(PeriodArithmetic.clipped(PeriodCondition.whereEqual(ComputeHelpers.complete($tijdlijn_0, "a condition per period reads the time-dependent attribute \"opslagkosten\" of ", $onderwerp, " whole; the case supplies only the asOfDate-bucket scalar, which carries no period", "opslagkosten", Boolean.TRUE), ComputeHelpers.constructorValue("onbekend"), Boolean.TRUE, Boolean.TRUE), PeriodArithmetic.scalar(new java.math.BigDecimal("7"))), Integer.valueOf(0), "opslagtoeslag");
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "opslagtoeslag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : State( attribute == ElementKey.of("vondst", "opslagkosten", false), subject == $onderwerp, $tijdlijn_0 : value )
+then
+    Object v = waarde_opslagtoeslag($tijdlijn_0, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "opslagtoeslag", ComputeHelpers.designate(v, "opslagtoeslag")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "opslagtoeslag", false), v, "opslagtoeslag"));
+        }
+    }
+end
+
+function boolean toets_schrijversVondstTaxatieVerschil(Object $waarden) {
+    return ComputeHelpers.differ($waarden);
+}
+
+function java.util.List lijst_schrijversVondstTaxatieVerschil() {
+    return java.util.Arrays.asList("taxatie uit schatting", "taxatie onbekend", "taxatie niet van toepassing", "vindloon naar taxatie", "forfaitair vindloon", "geen vindloon", "kostbare vondst", "getaxeerd totaal", "opslag onbekend in de winter", "opslag niet van toepassing na verkoop", "opslagtoeslag");
+}
+
+rule "schrijvers Vondst.taxatie: verschil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    accumulate( $waarde : Value( attribute == ElementKey.of("vondst", "taxatie", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+    eval( toets_schrijversVondstTaxatieVerschil($waarden) )
+then
+    insertLogical(ComputeHelpers.writersConflict($onderwerp, $waarden, "taxatie", lijst_schrijversVondstTaxatieVerschil(), ComputeHelpers.list2("Jutter", "Vondst"), ComputeHelpers.list2("Jutter", "Vondst")));
+end
+
+function boolean toets_schrijversVondstVindloonVerschil(Object $waarden) {
+    return ComputeHelpers.differ($waarden);
+}
+
+function java.util.List lijst_schrijversVondstVindloonVerschil() {
+    return java.util.Arrays.asList("taxatie uit schatting", "taxatie onbekend", "taxatie niet van toepassing", "vindloon naar taxatie", "forfaitair vindloon", "geen vindloon", "kostbare vondst", "getaxeerd totaal", "opslag onbekend in de winter", "opslag niet van toepassing na verkoop", "opslagtoeslag");
+}
+
+rule "schrijvers Vondst.vindloon: verschil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    accumulate( $waarde : Value( attribute == ElementKey.of("vondst", "vindloon", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+    eval( toets_schrijversVondstVindloonVerschil($waarden) )
+then
+    insertLogical(ComputeHelpers.writersConflict($onderwerp, $waarden, "vindloon", lijst_schrijversVondstVindloonVerschil(), ComputeHelpers.list2("Jutter", "Vondst"), ComputeHelpers.list2("Jutter", "Vondst")));
+end
+
+function boolean toets_schrijversVondstOpslagkostenVerschil(Object $waarden) {
+    return ComputeHelpers.differ($waarden);
+}
+
+function java.util.List lijst_schrijversVondstOpslagkostenVerschil() {
+    return java.util.Arrays.asList("taxatie uit schatting", "taxatie onbekend", "taxatie niet van toepassing", "vindloon naar taxatie", "forfaitair vindloon", "geen vindloon", "kostbare vondst", "getaxeerd totaal", "opslag onbekend in de winter", "opslag niet van toepassing na verkoop", "opslagtoeslag");
+}
+
+rule "schrijvers Vondst.opslagkosten: verschil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    accumulate( $waarde : Value( attribute == ElementKey.of("vondst", "opslagkosten", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+    eval( toets_schrijversVondstOpslagkostenVerschil($waarden) )
+then
+    insertLogical(ComputeHelpers.writersConflict($onderwerp, $waarden, "opslagkosten", lijst_schrijversVondstOpslagkostenVerschil(), ComputeHelpers.list2("Jutter", "Vondst"), ComputeHelpers.list2("Jutter", "Vondst")));
+end
+
+// een waarde hebben
+function boolean toets_getaxeerdTotaalBijdrageAanVouw0(Object $taxatie) {
+    return ComputeHelpers.emptyTest(ComputeHelpers.payload($taxatie, "waarde"), Boolean.FALSE);
+}
+
+rule "getaxeerd totaal: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp )
+    $stand_0 : State( attribute == ElementKey.of("vondst", "taxatie", false), subject == $onderwerp, $taxatie : value )
+    eval( toets_getaxeerdTotaalBijdrageAanVouw0($taxatie) )
+then
+    Object v = ComputeHelpers.contribution("getaxeerd totaal: vouw 0", $vouwonderwerp, $onderwerp, ComputeHelpers.payload($taxatie, "waarde"), null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "stand Vondst.taxatie: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $waarde : Value( attribute == ElementKey.of("vondst", "taxatie", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "taxatie", false), $v));
+end
+
+rule "stand Vondst.taxatie: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : taxatie )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "taxatie", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "taxatie", false), $invoer));
+end
+
+function java.util.List lijst_standVondstOpslagkostenDeVerenigingVanDeSchrijvers() {
+    return java.util.Arrays.asList("taxatie uit schatting", "taxatie onbekend", "taxatie niet van toepassing", "vindloon naar taxatie", "forfaitair vindloon", "geen vindloon", "kostbare vondst", "getaxeerd totaal", "opslag onbekend in de winter", "opslag niet van toepassing na verkoop", "opslagtoeslag");
+}
+
+rule "stand Vondst.opslagkosten: de vereniging van de schrijvers"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : (ComputeHelpers.periods(opslagkosten)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("vondst", "opslagkosten", false), subject == $onderwerp ) )
+    exists( $schrijver : Value( attribute == ElementKey.of("vondst", "opslagkosten", false), subject == $onderwerp ) )
+    accumulate( $waarde : Value( attribute == ElementKey.of("vondst", "opslagkosten", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+then
+    insertLogical(ComputeHelpers.writersUnion($onderwerp, ElementKey.of("vondst", "opslagkosten", false), $waarden, $invoer, lijst_standVondstOpslagkostenDeVerenigingVanDeSchrijvers()));
+end
+
+function java.util.List lijst_standVondstOpslagkostenDeVerenigingVanDeSchrijversEenEmmerscalair() {
+    return java.util.Arrays.asList("taxatie uit schatting", "taxatie onbekend", "taxatie niet van toepassing", "vindloon naar taxatie", "forfaitair vindloon", "geen vindloon", "kostbare vondst", "getaxeerd totaal", "opslag onbekend in de winter", "opslag niet van toepassing na verkoop", "opslagtoeslag");
+}
+
+rule "stand Vondst.opslagkosten: de vereniging van de schrijvers, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("vondst", "opslagkosten", false), subject == $onderwerp ) )
+    exists( $schrijver : Value( attribute == ElementKey.of("vondst", "opslagkosten", false), subject == $onderwerp ) )
+    accumulate( $waarde : Value( attribute == ElementKey.of("vondst", "opslagkosten", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+then
+    insertLogical(ComputeHelpers.writersUnion($onderwerp, ElementKey.of("vondst", "opslagkosten", false), $waarden, null, lijst_standVondstOpslagkostenDeVerenigingVanDeSchrijversEenEmmerscalair()));
+end
+
+rule "stand Vondst.opslagkosten: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : (ComputeHelpers.periods(opslagkosten)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("vondst", "opslagkosten", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "opslagkosten", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "opslagkosten", false), $invoer));
+end
+
+rule "stand Vondst.opslagkosten: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : (ComputeHelpers.periods(opslagkosten)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("vondst", "opslagkosten", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "opslagkosten", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "opslagkosten", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+

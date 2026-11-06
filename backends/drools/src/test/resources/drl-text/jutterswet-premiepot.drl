@@ -1,0 +1,343 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
+import dev.uchar.regelspraak.transpiler.tms.CreationStamp;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.ParameterState;
+import dev.uchar.regelspraak.transpiler.tms.PathState;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.SecondFillingFault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.math.BigDecimal premiePerHavenjutter;
+
+// het aantal premiejutters van de Premiepot
+function Object waarde_jutteraantal(Object $aantal_vouw_7) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_7), Integer.valueOf(0), "jutteraantal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "jutteraantal"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Premiepot()
+    accumulate( $bijdrage_vouw_4 : Contribution( fold == "jutteraantal: vouw 0", subject == $onderwerp ); $aantal_vouw_7 : count() )
+then
+    Object v = waarde_jutteraantal($aantal_vouw_7);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "jutteraantal", ComputeHelpers.designate(v, "jutteraantal")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("premiepot", "jutteraantal", false), v, "jutteraantal"));
+        }
+    }
+end
+
+// de pot van de premiepot van de Haven
+function Object waarde_premietotaal(Object $premiepotPot) {
+    try {
+        return ComputeHelpers.fitTarget($premiepotPot, Integer.valueOf(0), "premietotaal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "premietotaal"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven()
+    $padstand_0 : PathState( path == "Haven:premiepot" && member == ElementKey.of("premiepot", "pot", false), subject == $onderwerp, $premiepotPot : value )
+then
+    Object v = waarde_premietotaal($premiepotPot);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "premietotaal", ComputeHelpers.designate(v, "premietotaal")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("haven", "premietotaal", false), v, "premietotaal"));
+        }
+    }
+end
+
+// het jutteraantal van de premiepot van de Haven
+function Object waarde_premietal(Object $premiepotJutteraantal) {
+    try {
+        return ComputeHelpers.fitTarget($premiepotJutteraantal, Integer.valueOf(0), "premietal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "premietal"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven()
+    $padstand_0 : PathState( path == "Haven:premiepot" && member == ElementKey.of("premiepot", "jutteraantal", false), subject == $onderwerp, $premiepotJutteraantal : value )
+then
+    Object v = waarde_premietal($premiepotJutteraantal);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "premietal", ComputeHelpers.designate(v, "premietal")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("haven", "premietal", false), v, "premietal"));
+        }
+    }
+end
+
+// hij een premiejutter is
+function boolean toets_premiegerechtigd(Object $rolkoppelingen_rol_13) {
+    return ComputeHelpers.roleCount($rolkoppelingen_rol_13, Boolean.FALSE);
+}
+
+rule "premiegerechtigd"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $rolkoppeling_rol_12 : RelationLink( relation == "premiepotvoorjutters", second == $onderwerp ); $rolkoppelingen_rol_13 : count() )
+    eval( toets_premiegerechtigd($rolkoppelingen_rol_13) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "premiegerechtigd", true)));
+end
+
+function boolean beta_premiepot(Object eigen, Object ander) {
+    return ComputeHelpers.inPhase(eigen, ander);
+}
+
+// het aantal havenjutters van de Haven maal de premie per havenjutter
+function Object creatie_premiepot(Object $aantal_vouw_21, Object $premiePerHavenjutter, Object $fase, Object $herkomsten_creatie_25, Object $onderwerp) {
+    int diepte = ComputeHelpers.creationDepth("premiepot", 0, "Haven", (java.util.List) $herkomsten_creatie_25, 100);
+    Object i0 = null;
+    try {
+        i0 = ComputeHelpers.collapse(ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal(ComputeHelpers.countOf($aantal_vouw_21), $premiePerHavenjutter), Integer.valueOf(0), "pot", "premiepot"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+    Object nieuw = ComputeHelpers.newObject($onderwerp, "dev.uchar.regelspraak.facts.Premiepot");
+    ComputeHelpers.set(nieuw, "pot", i0);
+    int fase = ((Integer) $fase).intValue();
+    java.util.List feiten = new java.util.ArrayList();
+    feiten.add(nieuw);
+    feiten.add(new CreationStamp("premiepot", $onderwerp, nieuw, fase, 0, diepte));
+    feiten.add(new RelationLink("havenheeftpremiepot", $onderwerp, nieuw, fase));
+    return feiten;
+}
+
+rule "premiepot"
+    dialect "mvel"
+    agenda-group "uchar-objectcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven( premiepot == null )
+    $parameter_1 : ParameterState( parameter == "premiePerHavenjutter", $premiePerHavenjutter : value )
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    accumulate( $bijdrage_vouw_18 : Contribution( fold == "premiepot: vouw 1", subject == $onderwerp ); $aantal_vouw_21 : count() )
+    accumulate( $herkomst_creatie_24 : CreationStamp( object == $onderwerp ); $herkomsten_creatie_25 : collectList($herkomst_creatie_24) )
+    not( $gemaakt_creatie_27 : CreationStamp( rule == "premiepot", subject == $onderwerp ) )
+    not( $nieuw_creatie_28 : CreationStamp( object == $onderwerp, beta_premiepot(this, $fase) ) )
+    not( $eigen_fout : Fault( rule == "premiepot", subject == $onderwerp ) )
+then
+    Object v = creatie_premiepot($aantal_vouw_21, $premiePerHavenjutter, $fase, $herkomsten_creatie_25, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insert(new Fault($onderwerp, "premiepot", ComputeHelpers.designate(v, "premiepot")));
+    } else {
+        java.util.List feiten = (java.util.List) v;
+        insert(feiten.get(0));
+        insert(feiten.get(1));
+        insert(feiten.get(2));
+    }
+end
+
+function boolean beta1_premiejutters(Object eigen, Object ander) {
+    return ComputeHelpers.notInPhase(eigen, ander);
+}
+
+function boolean beta2_premiejutters(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("haven"), java.util.Arrays.asList());
+}
+
+rule "premiejutters"
+    dialect "mvel"
+    agenda-group "uchar-feitcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Premiepot()
+    $creatiefase : CreationPhase( stratum >= 1, $fase : number )
+    $koppeling_keten_38 : RelationLink( relation == "havenheeftpremiepot", second == $onderwerp, beta1_premiejutters(this, $fase), $overzijde_keten_39 : first )
+    $stap_keten_37 : dev.uchar.regelspraak.facts.Haven( this == $overzijde_keten_39 )
+    $stap_keten_44 : dev.uchar.regelspraak.facts.Jutter( beta2_premiejutters(this, $stap_keten_37) )
+    not( $bestaand_feitcreatie_46 : RelationLink( relation == "premiepotvoorjutters", first == $onderwerp, second == $stap_keten_44 ) )
+then
+    insert(new RelationLink("premiepotvoorjutters", $onderwerp, $stap_keten_44, $fase));
+end
+
+rule "jutteraantal: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Premiepot()
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    exists( $koppeling_bereik_0 : RelationLink( relation == "premiepotvoorjutters", second == $onderwerp, first == $vouwonderwerp ) )
+then
+    insertLogical(new Contribution("jutteraantal: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "premiepot: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Haven()
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( haven == $vouwonderwerp )
+then
+    insertLogical(new Contribution("premiepot: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "koppeling havenheeftpremiepot uit de invoer: Haven.premiepot"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Haven( premiepot != null, $ander : premiepot )
+then
+    insertLogical(new RelationLink("havenheeftpremiepot", $houder, $ander, 0));
+end
+
+rule "koppeling havenheeftpremiepot uit de invoer: Premiepot.premiehaven"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Premiepot( premiehaven != null, $ander : premiehaven )
+then
+    insertLogical(new RelationLink("havenheeftpremiepot", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingHavenheeftpremiepotTweedeVullingVanPremiepot(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "second");
+}
+
+rule "koppeling havenheeftpremiepot: tweede vulling van premiepot"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "havenheeftpremiepot", $nabij : first )
+    $twee : RelationLink( relation == "havenheeftpremiepot", first != null, first == $een.first, beta_koppelingHavenheeftpremiepotTweedeVullingVanPremiepot(this, $een) )
+then
+    insertLogical(new Fault($nabij, "HavenHeeftPremiepot", new SecondFillingFault("premiepot", $nabij)));
+end
+
+function boolean beta_koppelingHavenheeftpremiepotTweedeVullingVanPremiehaven(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling havenheeftpremiepot: tweede vulling van premiehaven"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "havenheeftpremiepot", $nabij : second )
+    $twee : RelationLink( relation == "havenheeftpremiepot", second != null, second == $een.second, beta_koppelingHavenheeftpremiepotTweedeVullingVanPremiehaven(this, $een) )
+then
+    insertLogical(new Fault($nabij, "HavenHeeftPremiepot", new SecondFillingFault("premiehaven", $nabij)));
+end
+
+rule "koppeling premiepotvoorjutters uit de invoer: Jutter.verdeelde premiepot"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Jutter( verdeeldePremiepot != null, $ander : verdeeldePremiepot )
+then
+    insertLogical(new RelationLink("premiepotvoorjutters", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingPremiepotvoorjuttersTweedeVullingVanVerdeeldePremiepot(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling premiepotvoorjutters: tweede vulling van verdeelde premiepot"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "premiepotvoorjutters", $nabij : second )
+    $twee : RelationLink( relation == "premiepotvoorjutters", second != null, second == $een.second, beta_koppelingPremiepotvoorjuttersTweedeVullingVanVerdeeldePremiepot(this, $een) )
+then
+    insertLogical(new Fault($nabij, "PremiepotVoorJutters", new SecondFillingFault("verdeelde premiepot", $nabij)));
+end
+
+rule "padstand Haven.premiepot naar Premiepot.pot: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven()
+    $koppeling_keten_66 : RelationLink( relation == "havenheeftpremiepot", first == $onderwerp, $overzijde_keten_67 : second )
+    $stap_keten_65 : dev.uchar.regelspraak.facts.Premiepot( this == $overzijde_keten_67 )
+    $stand : State( attribute == ElementKey.of("premiepot", "pot", false), subject == $stap_keten_65, $v : value )
+then
+    insertLogical(new PathState($onderwerp, "Haven:premiepot", ElementKey.of("premiepot", "pot", false), $v, $stap_keten_65));
+end
+
+rule "padstand Haven.premiepot naar Premiepot.pot: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven()
+    not( $koppeling_keten_74 : RelationLink( relation == "havenheeftpremiepot", first == $onderwerp, $overzijde_keten_75 : second ) and $stap_keten_73 : dev.uchar.regelspraak.facts.Premiepot( this == $overzijde_keten_75 ) )
+then
+    insertLogical(new PathState($onderwerp, "Haven:premiepot", ElementKey.of("premiepot", "pot", false), null, null));
+end
+
+rule "padstand Haven.premiepot naar Premiepot.jutteraantal: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven()
+    $koppeling_keten_80 : RelationLink( relation == "havenheeftpremiepot", first == $onderwerp, $overzijde_keten_81 : second )
+    $stap_keten_79 : dev.uchar.regelspraak.facts.Premiepot( this == $overzijde_keten_81 )
+    $stand : State( attribute == ElementKey.of("premiepot", "jutteraantal", false), subject == $stap_keten_79, $v : value )
+then
+    insertLogical(new PathState($onderwerp, "Haven:premiepot", ElementKey.of("premiepot", "jutteraantal", false), $v, $stap_keten_79));
+end
+
+rule "padstand Haven.premiepot naar Premiepot.jutteraantal: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven()
+    not( $koppeling_keten_88 : RelationLink( relation == "havenheeftpremiepot", first == $onderwerp, $overzijde_keten_89 : second ) and $stap_keten_87 : dev.uchar.regelspraak.facts.Premiepot( this == $overzijde_keten_89 ) )
+then
+    insertLogical(new PathState($onderwerp, "Haven:premiepot", ElementKey.of("premiepot", "jutteraantal", false), null, null));
+end
+
+rule "stand Premiepot.pot: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Premiepot()
+    $waarde : Value( attribute == ElementKey.of("premiepot", "pot", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("premiepot", "pot", false), $v));
+end
+
+rule "stand Premiepot.pot: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Premiepot( $invoer : pot )
+    not( $waarde : Value( attribute == ElementKey.of("premiepot", "pot", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("premiepot", "pot", false), $invoer));
+end
+
+rule "stand Premiepot.jutteraantal: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Premiepot()
+    $waarde : Value( attribute == ElementKey.of("premiepot", "jutteraantal", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("premiepot", "jutteraantal", false), $v));
+end
+
+rule "stand Premiepot.jutteraantal: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Premiepot( $invoer : jutteraantal )
+    not( $waarde : Value( attribute == ElementKey.of("premiepot", "jutteraantal", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("premiepot", "jutteraantal", false), $invoer));
+end
+
+rule "parameterstand premiePerHavenjutter"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("premiePerHavenjutter", premiePerHavenjutter));
+end
+

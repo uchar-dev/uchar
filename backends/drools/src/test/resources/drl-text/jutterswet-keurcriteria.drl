@@ -1,0 +1,282 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+
+// zijn jaartal kleiner is dan 1900
+function boolean toets_ouderdomVanEenVondst(Object $jaartal) {
+    return RegelSpraakRuntime.rsAggVergelijk($jaartal, new java.math.BigDecimal("1900"), "<");
+}
+
+rule "ouderdom van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $jaartal : jaartal )
+    eval( toets_ouderdomVanEenVondst($jaartal) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "oud", true)));
+end
+
+// hij aan precies één van de volgende voorwaarden voldoet: - zijn lengte is groter dan 20 - hij voldoet aan ten minste één van de volgende voorwaarden: .. zijn gewicht is groter dan 50 .. zijn jaartal is kleiner dan 1860
+function boolean toets_keurigheidVanEenVondst(Object $lengte, Object $gewicht, Object $jaartal) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 1, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($lengte, new java.math.BigDecimal("20"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 1, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (samengesteld_keurigheidVanEenVondst($lengte, $gewicht, $jaartal)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 1, raak, 2);
+}
+
+// hij voldoet aan ten minste één van de volgende voorwaarden: .. zijn gewicht is groter dan 50 .. zijn jaartal is kleiner dan 1860
+function boolean samengesteld_keurigheidVanEenVondst(Object $lengte, Object $gewicht, Object $jaartal) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("50"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($jaartal, new java.math.BigDecimal("1860"), "<")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+}
+
+rule "keurigheid van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $lengte : lengte, $gewicht : gewicht, $jaartal : jaartal )
+    eval( toets_keurigheidVanEenVondst($lengte, $gewicht, $jaartal) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "keurig", true)));
+end
+
+// Een Vondst moet voldoen aan ten minste twee van de volgende criteria: - zijn gewicht is groter dan 0 - zijn lengte is groter dan 10 - zijn jaartal is kleiner dan 1900
+function boolean toets_keuringNaarTenMinsteTweeCriteria(Object $gewicht, Object $lengte, Object $jaartal) {
+    return ComputeHelpers.not(Boolean.valueOf(samengesteld_keuringNaarTenMinsteTweeCriteria($gewicht, $lengte, $jaartal)));
+}
+
+// Een Vondst moet voldoen aan ten minste twee van de volgende criteria: - zijn gewicht is groter dan 0 - zijn lengte is groter dan 10 - zijn jaartal is kleiner dan 1900
+function boolean samengesteld_keuringNaarTenMinsteTweeCriteria(Object $gewicht, Object $lengte, Object $jaartal) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 0, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 1, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($lengte, new java.math.BigDecimal("10"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 2, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($jaartal, new java.math.BigDecimal("1900"), "<")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 3);
+}
+
+rule "keuring naar ten minste twee criteria"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht, $lengte : lengte, $jaartal : jaartal )
+    eval( toets_keuringNaarTenMinsteTweeCriteria($gewicht, $lengte, $jaartal) )
+then
+    insertLogical(ComputeHelpers.inconsistency("keuring naar ten minste twee criteria", $onderwerp, ComputeHelpers.list1("EF-025")));
+end
+
+// Een Vondst moet voldoen aan ten hoogste één van de volgende criteria: - zijn gewicht is groter dan 50 - zijn lengte is groter dan 50 - zijn jaartal is kleiner dan 1500
+function boolean toets_keuringNaarTenHoogsteEenCriterium(Object $gewicht, Object $lengte, Object $jaartal) {
+    return ComputeHelpers.not(Boolean.valueOf(samengesteld_keuringNaarTenHoogsteEenCriterium($gewicht, $lengte, $jaartal)));
+}
+
+// Een Vondst moet voldoen aan ten hoogste één van de volgende criteria: - zijn gewicht is groter dan 50 - zijn lengte is groter dan 50 - zijn jaartal is kleiner dan 1500
+function boolean samengesteld_keuringNaarTenHoogsteEenCriterium(Object $gewicht, Object $lengte, Object $jaartal) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, raak, 0, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("50"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, raak, 1, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($lengte, new java.math.BigDecimal("50"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, raak, 2, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($jaartal, new java.math.BigDecimal("1500"), "<")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, raak, 3);
+}
+
+rule "keuring naar ten hoogste een criterium"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht, $lengte : lengte, $jaartal : jaartal )
+    eval( toets_keuringNaarTenHoogsteEenCriterium($gewicht, $lengte, $jaartal) )
+then
+    insertLogical(ComputeHelpers.inconsistency("keuring naar ten hoogste een criterium", $onderwerp, ComputeHelpers.list1("EF-025")));
+end
+
+// Een Vondst moet voldoen aan precies één van de volgende criteria: - zijn gewicht is groter dan 1 - zijn lengte is groter dan 20
+function boolean toets_keuringNaarPreciesEenCriterium(Object $gewicht, Object $lengte) {
+    return ComputeHelpers.not(Boolean.valueOf(samengesteld_keuringNaarPreciesEenCriterium($gewicht, $lengte)));
+}
+
+// Een Vondst moet voldoen aan precies één van de volgende criteria: - zijn gewicht is groter dan 1 - zijn lengte is groter dan 20
+function boolean samengesteld_keuringNaarPreciesEenCriterium(Object $gewicht, Object $lengte) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 1, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("1"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 1, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($lengte, new java.math.BigDecimal("20"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 1, raak, 2);
+}
+
+rule "keuring naar precies een criterium"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht, $lengte : lengte )
+    eval( toets_keuringNaarPreciesEenCriterium($gewicht, $lengte) )
+then
+    insertLogical(ComputeHelpers.inconsistency("keuring naar precies een criterium", $onderwerp, ComputeHelpers.list1("EF-025")));
+end
+
+// Een Vondst moet voldoen aan geen van de volgende criteria: - zijn gewicht is kleiner dan 0 - zijn lengte is kleiner dan 0
+function boolean toets_keuringNaarGeenCriterium(Object $gewicht, Object $lengte) {
+    return ComputeHelpers.not(Boolean.valueOf(samengesteld_keuringNaarGeenCriterium($gewicht, $lengte)));
+}
+
+// Een Vondst moet voldoen aan geen van de volgende criteria: - zijn gewicht is kleiner dan 0 - zijn lengte is kleiner dan 0
+function boolean samengesteld_keuringNaarGeenCriterium(Object $gewicht, Object $lengte) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("0"), "<")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($lengte, new java.math.BigDecimal("0"), "<")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 2);
+}
+
+rule "keuring naar geen criterium"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht, $lengte : lengte )
+    eval( toets_keuringNaarGeenCriterium($gewicht, $lengte) )
+then
+    insertLogical(ComputeHelpers.inconsistency("keuring naar geen criterium", $onderwerp, ComputeHelpers.list1("EF-025")));
+end
+
+// Een Vondst moet voldoen aan precies één van de volgende criteria: - zijn lengte is groter dan 20 - er wordt voldaan aan ten minste één van de volgende criteria: .. zijn gewicht is groter dan 50 .. zijn jaartal is kleiner dan 1860
+function boolean toets_keuringNaarEenSamengesteldCriterium(Object $lengte, Object $gewicht, Object $jaartal) {
+    return ComputeHelpers.not(Boolean.valueOf(samengesteld1_keuringNaarEenSamengesteldCriterium($lengte, $gewicht, $jaartal)));
+}
+
+// Een Vondst moet voldoen aan precies één van de volgende criteria: - zijn lengte is groter dan 20 - er wordt voldaan aan ten minste één van de volgende criteria: .. zijn gewicht is groter dan 50 .. zijn jaartal is kleiner dan 1860
+function boolean samengesteld1_keuringNaarEenSamengesteldCriterium(Object $lengte, Object $gewicht, Object $jaartal) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 1, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($lengte, new java.math.BigDecimal("20"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 1, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (samengesteld2_keuringNaarEenSamengesteldCriterium($lengte, $gewicht, $jaartal)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 1, raak, 2);
+}
+
+// er wordt voldaan aan ten minste één van de volgende criteria: .. zijn gewicht is groter dan 50 .. zijn jaartal is kleiner dan 1860
+function boolean samengesteld2_keuringNaarEenSamengesteldCriterium(Object $lengte, Object $gewicht, Object $jaartal) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("50"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($jaartal, new java.math.BigDecimal("1860"), "<")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+}
+
+rule "keuring naar een samengesteld criterium"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $lengte : lengte, $gewicht : gewicht, $jaartal : jaartal )
+    eval( toets_keuringNaarEenSamengesteldCriterium($lengte, $gewicht, $jaartal) )
+then
+    insertLogical(ComputeHelpers.inconsistency("keuring naar een samengesteld criterium", $onderwerp, ComputeHelpers.list1("EF-025")));
+end
+

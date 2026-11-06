@@ -1,0 +1,58 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Recipient;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de Hoofdberger gemachtigd is
+function boolean toets_toeslagVanEenHoofdberger(Object $gemachtigd) {
+    return ComputeHelpers.characteristic($gemachtigd, Boolean.TRUE);
+}
+
+// 25 €
+function Object waarde_toeslagVanEenHoofdberger() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("25"), Integer.valueOf(0), "toeslag", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "toeslag van een hoofdberger"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Hoofdberger( $gemachtigd : (ComputeHelpers.holds(gemachtigd)) )
+    eval( toets_toeslagVanEenHoofdberger($gemachtigd) )
+then
+    Object v = waarde_toeslagVanEenHoofdberger();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "toeslag van een hoofdberger", ComputeHelpers.designate(v, "toeslag van een hoofdberger")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("hoofdberger", "toeslag", false), v, "toeslag van een hoofdberger"));
+        }
+    }
+end
+
+rule "verdeel de opbrengst van een berging: ontvanger"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Berging()
+    $onderwerp : dev.uchar.regelspraak.facts.Hoofdberger( hoofdberging == $vouwonderwerp )
+then
+    insertLogical(new Recipient("verdeel de opbrengst van een berging", $vouwonderwerp, $onderwerp, null, null, null));
+end
+
+rule "verdeel de opbrengst van een berging"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( $opbrengst : opbrengst )
+    accumulate( $ontvanger_verdeling_2 : Recipient( allocation == "verdeel de opbrengst van een berging", source == $onderwerp ); $ontvangers_verdeling_3 : collectList($ontvanger_verdeling_2) )
+then
+    for (Object feit : ComputeHelpers.payout("verdeel de opbrengst van een berging", $onderwerp, dev.uchar.regelspraak.ir.ResolvedAllocation.Method.GELIJKE_DELEN, $opbrengst, $ontvangers_verdeling_3, false, false, false, Integer.valueOf(0), ElementKey.of("berger", "bergingsaandeel", false), ElementKey.of("berging", "onverdeelde rest", false), "verdeel de opbrengst van een berging", Integer.valueOf(0), Integer.valueOf(0), "verdeel de opbrengst van een berging")) {
+        insertLogical(feit);
+    }
+end
+

@@ -1,0 +1,350 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMaximumFunction exactMax;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn startdag gevuld is
+function boolean toets_actief(Object $startdag) {
+    return ComputeHelpers.emptyTest($startdag, Boolean.FALSE);
+}
+
+rule "actief"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $startdag : startdag )
+    eval( toets_actief($startdag) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "actief", true)));
+end
+
+// de maximale waarde van het gewicht van de weging van de vondst van alle jutters van de Ploeg die aan de volgende voorwaarde voldoen: hij is actief
+function Object waarde_zwaarsteGewicht(Object $aantal_vouw_10, Object $vouw_vouw_12) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_10, $vouw_vouw_12, null), Integer.valueOf(0), "zwaarste gewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "zwaarste gewicht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ploeg()
+    accumulate( $bijdrage_vouw_7 : Contribution( fold == "zwaarste gewicht: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_11 : value ); $aantal_vouw_10 : count(), $vouw_vouw_12 : exactMax($bijdragewaarde_vouw_11) )
+then
+    Object v = waarde_zwaarsteGewicht($aantal_vouw_10, $vouw_vouw_12);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "zwaarste gewicht", ComputeHelpers.designate(v, "zwaarste gewicht")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("ploeg", "zwaarste gewicht", false), v, "zwaarste gewicht"));
+        }
+    }
+end
+
+// de eerste van de vinddag van de vondst van alle jutters van de Ploeg
+function Object waarde_eersteVinddag(Object $aantal_vouw_19, Object $vouw_vouw_21) {
+    try {
+        return ComputeHelpers.foldValue($aantal_vouw_19, $vouw_vouw_21, null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "eerste vinddag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ploeg()
+    accumulate( $bijdrage_vouw_16 : Contribution( fold == "eerste vinddag: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_20 : value ); $aantal_vouw_19 : count(), $vouw_vouw_21 : exactMin($bijdragewaarde_vouw_20) )
+then
+    Object v = waarde_eersteVinddag($aantal_vouw_19, $vouw_vouw_21);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "eerste vinddag", ComputeHelpers.designate(v, "eerste vinddag")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("ploeg", "eerste vinddag", false), v, "eerste vinddag"));
+        }
+    }
+end
+
+// de som van het laadvermogen van de boot van alle jutters van de Ploeg
+function Object waarde_bootcapaciteit(Object $aantal_vouw_28, Object $vouw_vouw_30) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_28, $vouw_vouw_30, null), Integer.valueOf(0), "bootcapaciteit", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bootcapaciteit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ploeg()
+    accumulate( $bijdrage_vouw_25 : Contribution( fold == "bootcapaciteit: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_29 : value ); $aantal_vouw_28 : count(), $vouw_vouw_30 : exactSum($bijdragewaarde_vouw_29) )
+then
+    Object v = waarde_bootcapaciteit($aantal_vouw_28, $vouw_vouw_30);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bootcapaciteit", ComputeHelpers.designate(v, "bootcapaciteit")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("ploeg", "bootcapaciteit", false), v, "bootcapaciteit"));
+        }
+    }
+end
+
+// de som van het laadvermogen van alle boten van alle jutters van de Ploeg
+function Object waarde_vlootcapaciteit(Object $aantal_vouw_37, Object $vouw_vouw_39) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_37, $vouw_vouw_39, null), Integer.valueOf(0), "vlootcapaciteit", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vlootcapaciteit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ploeg()
+    accumulate( $bijdrage_vouw_34 : Contribution( fold == "vlootcapaciteit: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_38 : value ); $aantal_vouw_37 : count(), $vouw_vouw_39 : exactSum($bijdragewaarde_vouw_38) )
+then
+    Object v = waarde_vlootcapaciteit($aantal_vouw_37, $vouw_vouw_39);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vlootcapaciteit", ComputeHelpers.designate(v, "vlootcapaciteit")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("ploeg", "vlootcapaciteit", false), v, "vlootcapaciteit"));
+        }
+    }
+end
+
+function Object pad_gewichtViaVondstEnWeging(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("vondst", "weging"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "gewicht");
+}
+
+// het gewicht van de weging van de vondst van de Jutter
+function Object waarde_gewichtViaVondstEnWeging(Object $vondstWegingGewicht) {
+    try {
+        return ComputeHelpers.fitTarget($vondstWegingGewicht, Integer.valueOf(0), "gewicht via vondst en weging", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "gewicht via vondst en weging"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstWegingGewicht : (pad_gewichtViaVondstEnWeging(this)) )
+then
+    Object v = waarde_gewichtViaVondstEnWeging($vondstWegingGewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "gewicht via vondst en weging", ComputeHelpers.designate(v, "gewicht via vondst en weging")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "gewicht via vondst en weging", false), v, "gewicht via vondst en weging"));
+        }
+    }
+end
+
+function Object pad_vinddagViaVondst(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("vondst"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "vinddag");
+}
+
+rule "vinddag via vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstVinddag : (pad_vinddagViaVondst(this)) )
+then
+    // de vinddag van de vondst van de Jutter
+    Object v = $vondstVinddag;
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("jutter", "vinddag via vondst", false), v, "vinddag via vondst"));
+    }
+end
+
+function Object pad_laadvermogenViaBoot(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("boot"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "laadvermogen");
+}
+
+// het laadvermogen van de boot van de Jutter
+function Object waarde_laadvermogenViaBoot(Object $bootLaadvermogen) {
+    try {
+        return ComputeHelpers.fitTarget($bootLaadvermogen, Integer.valueOf(0), "laadvermogen via boot", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "laadvermogen via boot"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $bootLaadvermogen : (pad_laadvermogenViaBoot(this)) )
+then
+    Object v = waarde_laadvermogenViaBoot($bootLaadvermogen);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "laadvermogen via boot", ComputeHelpers.designate(v, "laadvermogen via boot")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "laadvermogen via boot", false), v, "laadvermogen via boot"));
+        }
+    }
+end
+
+// aan de volgende voorwaarde voldoen: hij is actief
+function boolean toets_zwaarsteGewichtBijdrageAanVouw0(Object $actief) {
+    return ComputeHelpers.characteristic($actief, Boolean.TRUE);
+}
+
+rule "zwaarste gewicht: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Ploeg()
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ploeg == $vouwonderwerp )
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("jutter", "actief", true), subject == $onderwerp, $actief : holds )
+    $stand_2 : State( attribute == ElementKey.of("jutter", "gewicht via vondst en weging", false), subject == $onderwerp, $gewichtViaVondstEnWeging : value )
+    eval( toets_zwaarsteGewichtBijdrageAanVouw0($actief) )
+then
+    Object v = ComputeHelpers.contribution("zwaarste gewicht: vouw 0", $vouwonderwerp, $onderwerp, $gewichtViaVondstEnWeging, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "eerste vinddag: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Ploeg()
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ploeg == $vouwonderwerp )
+    $stand_1 : State( attribute == ElementKey.of("jutter", "vinddag via vondst", false), subject == $onderwerp, $vinddagViaVondst : value )
+then
+    Object v = ComputeHelpers.contribution("eerste vinddag: vouw 1", $vouwonderwerp, $onderwerp, $vinddagViaVondst, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "bootcapaciteit: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Ploeg()
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ploeg == $vouwonderwerp )
+    $stand_1 : State( attribute == ElementKey.of("jutter", "laadvermogen via boot", false), subject == $onderwerp, $laadvermogenViaBoot : value )
+then
+    Object v = ComputeHelpers.contribution("bootcapaciteit: vouw 2", $vouwonderwerp, $onderwerp, $laadvermogenViaBoot, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta1_vlootcapaciteitBijdrageAanVouw3(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("ploeg"), java.util.Arrays.asList());
+}
+
+function boolean beta2_vlootcapaciteitBijdrageAanVouw3(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("boot"), java.util.Arrays.asList());
+}
+
+rule "vlootcapaciteit: bijdrage aan vouw 3"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Ploeg()
+    $onderwerp : dev.uchar.regelspraak.facts.Boot( $laadvermogen : laadvermogen )
+    exists( $tussen_pad_31 : dev.uchar.regelspraak.facts.Jutter( beta1_vlootcapaciteitBijdrageAanVouw3(this, $vouwonderwerp), beta2_vlootcapaciteitBijdrageAanVouw3(this, $onderwerp) ) )
+then
+    Object v = ComputeHelpers.contribution("vlootcapaciteit: vouw 3", $vouwonderwerp, $onderwerp, $laadvermogen, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "kenmerkstand Jutter.actief: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.holds(actief) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("jutter", "actief", true), true));
+end
+
+rule "kenmerkstand Jutter.actief: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("jutter", "actief", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("jutter", "actief", true), true));
+end
+
+rule "kenmerkstand Jutter.actief: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.holds(actief) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("jutter", "actief", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("jutter", "actief", true), false));
+end
+
+rule "stand Jutter.gewicht via vondst en weging: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $waarde : Value( attribute == ElementKey.of("jutter", "gewicht via vondst en weging", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "gewicht via vondst en weging", false), $v));
+end
+
+rule "stand Jutter.gewicht via vondst en weging: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : gewichtViaVondstEnWeging )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "gewicht via vondst en weging", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "gewicht via vondst en weging", false), $invoer));
+end
+
+rule "stand Jutter.vinddag via vondst: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $waarde : Value( attribute == ElementKey.of("jutter", "vinddag via vondst", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "vinddag via vondst", false), $v));
+end
+
+rule "stand Jutter.vinddag via vondst: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : vinddagViaVondst )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "vinddag via vondst", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "vinddag via vondst", false), $invoer));
+end
+
+rule "stand Jutter.laadvermogen via boot: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $waarde : Value( attribute == ElementKey.of("jutter", "laadvermogen via boot", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "laadvermogen via boot", false), $v));
+end
+
+rule "stand Jutter.laadvermogen via boot: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : laadvermogenViaBoot )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "laadvermogen via boot", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "laadvermogen via boot", false), $invoer));
+end
+

@@ -356,7 +356,7 @@ class DrlRenderingWitnessTest {
     }
 
     /** The goldens with cases, in order: those the replay can play. */
-    private static List<Path> goldens() throws Exception {
+    static List<Path> goldens() throws Exception {
         List<Path> out = new ArrayList<>();
         try (Stream<Path> s = Files.walk(GOLDEN)) {
             for (Path ir : s.filter(p -> p.getFileName().toString().equals("ir.json")).sorted().toList())

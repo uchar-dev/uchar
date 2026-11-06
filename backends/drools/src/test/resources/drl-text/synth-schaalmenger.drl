@@ -1,0 +1,108 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de hoogte van het Zeil maal de breedte van het Zeil
+function Object waarde_oppervlakVanEenZeil(Object $hoogte, Object $breedte) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($hoogte, $breedte), Integer.valueOf(2), "oppervlak", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "oppervlak van een zeil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Zeil( $hoogte : hoogte, $breedte : breedte )
+then
+    Object v = waarde_oppervlakVanEenZeil($hoogte, $breedte);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "oppervlak van een zeil", ComputeHelpers.designate(v, "oppervlak van een zeil")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("zeil", "oppervlak", false), v, "oppervlak van een zeil"));
+        }
+    }
+end
+
+// (de naadtoeslag van het Zeil plus de basiszoom van het Zeil) rekenkundig afgerond op 1 decimalen
+function Object waarde_zoomlengteVanEenZeil(Object $naadtoeslag, Object $basiszoom) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsPlus($naadtoeslag, $basiszoom), Integer.valueOf(1), java.math.RoundingMode.HALF_UP), Integer.valueOf(1), "zoomlengte", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "zoomlengte van een zeil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Zeil( $naadtoeslag : naadtoeslag, $basiszoom : basiszoom )
+then
+    Object v = waarde_zoomlengteVanEenZeil($naadtoeslag, $basiszoom);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "zoomlengte van een zeil", ComputeHelpers.designate(v, "zoomlengte van een zeil")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("zeil", "zoomlengte", false), v, "zoomlengte van een zeil"));
+        }
+    }
+end
+
+// (de materiaalkosten van het Zeil gedeeld door de panelen van het Zeil) rekenkundig afgerond op 2 decimalen
+function Object waarde_stukprijsVanEenZeil(Object $materiaalkosten, Object $panelen, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($materiaalkosten, $panelen, sonde), Integer.valueOf(2), java.math.RoundingMode.HALF_UP), Integer.valueOf(2), "stukprijs", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "stukprijs van een zeil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Zeil( $materiaalkosten : materiaalkosten, $panelen : panelen )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_stukprijsVanEenZeil($materiaalkosten, $panelen, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "stukprijs van een zeil", ComputeHelpers.designate(v, "stukprijs van een zeil")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("stukprijs van een zeil", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("zeil", "stukprijs", false), v, "stukprijs van een zeil"));
+        }
+    }
+end
+
+// de rollengte van het Zeil verminderd met de baanlengte van het Zeil maal het aantalBanen van het Zeil
+function Object waarde_restlengteVanEenZeil(Object $rollengte, Object $baanlengte, Object $aantalBanen) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsVerminderd($rollengte, RegelSpraakRuntime.rsMaal($baanlengte, $aantalBanen)), Integer.valueOf(1), "restlengte", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "restlengte van een zeil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Zeil( $rollengte : rollengte, $baanlengte : baanlengte, $aantalBanen : aantalBanen )
+then
+    Object v = waarde_restlengteVanEenZeil($rollengte, $baanlengte, $aantalBanen);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "restlengte van een zeil", ComputeHelpers.designate(v, "restlengte van een zeil")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("zeil", "restlengte", false), v, "restlengte van een zeil"));
+        }
+    }
+end
+

@@ -1,0 +1,56 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het brutogewicht van de Vondst plus 1 t
+function Object waarde_aangegevenGewichtVanEenVondst(Object $brutogewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($brutogewicht, ComputeHelpers.restateExact(new java.math.BigDecimal("1"), new java.math.BigDecimal("1000"), new java.math.BigDecimal("1"))), Integer.valueOf(2), "aangegeven gewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aangegeven gewicht van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $brutogewicht : brutogewicht )
+then
+    Object v = waarde_aangegevenGewichtVanEenVondst($brutogewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aangegeven gewicht van een vondst", ComputeHelpers.designate(v, "aangegeven gewicht van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "aangegeven gewicht", false), v, "aangegeven gewicht van een vondst"));
+        }
+    }
+end
+
+// het brutogewicht van de Munt plus 1 t
+function Object waarde_geborgenGewichtVanEenMunt(Object $brutogewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($brutogewicht, ComputeHelpers.restateExact(new java.math.BigDecimal("1"), new java.math.BigDecimal("1000"), new java.math.BigDecimal("1"))), Integer.valueOf(2), "geborgen gewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "geborgen gewicht van een munt"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Munt( $brutogewicht : brutogewicht )
+then
+    Object v = waarde_geborgenGewichtVanEenMunt($brutogewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "geborgen gewicht van een munt", ComputeHelpers.designate(v, "geborgen gewicht van een munt")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "geborgen gewicht", false), v, "geborgen gewicht van een munt"));
+        }
+    }
+end
+

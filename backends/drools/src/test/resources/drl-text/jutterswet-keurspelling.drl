@@ -1,0 +1,126 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.UniquenessKey;
+import dev.uchar.regelspraak.transpiler.tms.UniquenessViolation;
+
+// zijn staat gelijk is aan 'gaaf'
+function boolean toets_veilbaarheidNaarStaat(Object $staat) {
+    return ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam($staat), RegelSpraakRuntime.rsEnumNaam("gaaf"), Boolean.TRUE);
+}
+
+rule "veilbaarheid naar staat"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $staat : staat )
+    eval( toets_veilbaarheidNaarStaat($staat) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "veilbaar", true)));
+end
+
+// zijn staat ongelijk is aan 'gaaf'
+function boolean toets_afkeuringNaarStaat(Object $staat) {
+    return ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam($staat), RegelSpraakRuntime.rsEnumNaam("gaaf"), Boolean.FALSE);
+}
+
+rule "afkeuring naar staat"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $staat : staat )
+    eval( toets_afkeuringNaarStaat($staat) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "afgekeurd", true)));
+end
+
+// zijn herkeuring gelijk is aan zijn staat
+function boolean toets_herkeuringBevestigtDeStaat(Object $herkeuring, Object $staat) {
+    return ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam($herkeuring), RegelSpraakRuntime.rsEnumNaam($staat), Boolean.TRUE);
+}
+
+rule "herkeuring bevestigt de staat"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $herkeuring : herkeuring, $staat : staat )
+    eval( toets_herkeuringBevestigtDeStaat($herkeuring, $staat) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "bevestigd", true)));
+end
+
+// De staat van een Vondst moet ongelijk zijn aan 'wrakhout'
+function boolean toets_geenWrakhoutTerKeuring(Object $staat) {
+    return ComputeHelpers.not(ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam($staat), RegelSpraakRuntime.rsEnumNaam("wrakhout"), Boolean.FALSE));
+}
+
+rule "geen wrakhout ter keuring"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $staat : staat )
+    eval( toets_geenWrakhoutTerKeuring($staat) )
+then
+    insertLogical(ComputeHelpers.inconsistency("geen wrakhout ter keuring", $onderwerp, ComputeHelpers.list1("EF-025")));
+end
+
+// De herkeuring van een Vondst moet gelijk zijn aan de staat van de Vondst
+function boolean toets_herkeuringVolgtDeStaat(Object $herkeuring, Object $staat) {
+    return ComputeHelpers.not(ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam($herkeuring), RegelSpraakRuntime.rsEnumNaam($staat), Boolean.TRUE));
+}
+
+rule "herkeuring volgt de staat"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $herkeuring : herkeuring, $staat : staat )
+    eval( toets_herkeuringVolgtDeStaat($herkeuring, $staat) )
+then
+    insertLogical(ComputeHelpers.inconsistency("herkeuring volgt de staat", $onderwerp, ComputeHelpers.list1("EF-025")));
+end
+
+function boolean toets_eenmaligeStaatSleutelVanVondst1(Object $staat) {
+    return ComputeHelpers.emptyTest($staat, Boolean.FALSE);
+}
+
+function java.util.List componenten_eenmaligeStaatSleutelVanVondst1(Object $staat) {
+    java.util.List waarden = new java.util.ArrayList();
+    waarden.add(RegelSpraakRuntime.rsEnumNaam($staat));
+    return waarden;
+}
+
+rule "eenmalige staat: sleutel van Vondst 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $staat : staat )
+    eval( toets_eenmaligeStaatSleutelVanVondst1($staat) )
+then
+    for (Object k : ComputeHelpers.uniquenessKeys("eenmalige staat", 0, $onderwerp, null, componenten_eenmaligeStaatSleutelVanVondst1($staat), -1)) {
+        insertLogical(k);
+    }
+end
+
+function boolean beta_eenmaligeStaat(Object eigen, Object ander) {
+    return ComputeHelpers.collidesWith(eigen, ander);
+}
+
+function boolean toets_eenmaligeStaat(Object $botsingen) {
+    return ComputeHelpers.duplicate($botsingen);
+}
+
+rule "eenmalige staat"
+    dialect "mvel"
+when
+    $sleutel : UniquenessKey( uniqueness == "eenmalige staat", $element : element )
+    accumulate( $ander : UniquenessKey( uniqueness == "eenmalige staat", beta_eenmaligeStaat(this, $sleutel) ); $botsingen : count() )
+    eval( toets_eenmaligeStaat($botsingen) )
+then
+    insertLogical(new UniquenessViolation("eenmalige staat", $element));
+end
+
+rule "eenmalige staat: kanaal"
+    dialect "mvel"
+when
+    $schending : UniquenessViolation( uniqueness == "eenmalige staat", $subject : element )
+then
+    insertLogical(ComputeHelpers.inconsistency("eenmalige staat", $subject, ComputeHelpers.list1("EF-026")));
+end
+

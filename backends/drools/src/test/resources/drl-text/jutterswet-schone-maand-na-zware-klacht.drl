@@ -1,0 +1,236 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMaximumFunction exactMax;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.FilterFault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.ListPlace;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn gewicht groter is dan 100
+function boolean toets_overlading(Object $gewicht) {
+    return RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("100"), ">");
+}
+
+rule "overlading"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand( $gewicht : gewicht )
+    eval( toets_overlading($gewicht) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("lading in-een-maand", "overlading", true)));
+end
+
+// de eerste van de maand van alle ladingen van de Schuit die aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'
+function Object waarde_eersteSchoneMaandVanafDeEindmaand(Object $aantal_vouw_32, Object $vouw_vouw_34, Object $eerste_filterfout_vouw_39) {
+    try {
+        return vouwlezing_eersteSchoneMaandVanafDeEindmaand($aantal_vouw_32, $vouw_vouw_34, $eerste_filterfout_vouw_39);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de eerste van de maand van alle ladingen van de Schuit die aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'
+function Object vouwlezing_eersteSchoneMaandVanafDeEindmaand(Object $aantal_vouw_32, Object $vouw_vouw_34, Object $eerste_filterfout_vouw_39) {
+    if ($eerste_filterfout_vouw_39 != null) {
+        throw ((FilterFault) $eerste_filterfout_vouw_39).fault();
+    }
+    return ComputeHelpers.foldValue($aantal_vouw_32, $vouw_vouw_34, null);
+}
+
+rule "eerste schone maand vanaf de eindmaand"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit()
+    accumulate( $bijdrage_vouw_29 : Contribution( fold == "eerste schone maand vanaf de eindmaand: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_33 : value ); $aantal_vouw_32 : count(), $vouw_vouw_34 : exactMin($bijdragewaarde_vouw_33) )
+    accumulate( $filterfout_vouw_35 : FilterFault( fold == "eerste schone maand vanaf de eindmaand: vouw 0", subject == $onderwerp ); $filterfouten_vouw_38 : count(), $eerste_filterfout_vouw_39 : exactMin($filterfout_vouw_35) )
+then
+    Object v = waarde_eersteSchoneMaandVanafDeEindmaand($aantal_vouw_32, $vouw_vouw_34, $eerste_filterfout_vouw_39);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "eerste schone maand vanaf de eindmaand", ComputeHelpers.designate(v, "eerste schone maand vanaf de eindmaand")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("schuit", "eerste schone maand vanaf-de-eindmaand", false), v, "eerste schone maand vanaf de eindmaand"));
+        }
+    }
+end
+
+// aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'
+function boolean toets_eersteSchoneMaandVanafDeEindmaandBijdrageAanVouw0(Object $overlading, Object $maand, Object $aantal_vouw_9, Object $vouw_vouw_11) {
+    try {
+        int raak = 0;
+        Boolean vast;
+        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+        if (vast != null) {
+            return vast;
+        }
+        if (ComputeHelpers.characteristic($overlading, Boolean.FALSE)) {
+            raak++;
+        }
+        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+        if (vast != null) {
+            return vast;
+        }
+        if (ComputeHelpers.dateCompare(ComputeHelpers.dateStep($maand, new java.math.BigDecimal("1"), "MONTHS", Boolean.TRUE), ComputeHelpers.foldValue($aantal_vouw_9, $vouw_vouw_11, null), dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
+            raak++;
+        }
+        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "eerste schone maand vanaf de eindmaand: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $onderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand( schuit == $vouwonderwerp, $maand : maand )
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("lading in-een-maand", "overlading", true), subject == $onderwerp, $overlading : holds )
+    accumulate( $bijdrage_vouw_6 : Contribution( fold == "eerste schone maand vanaf de eindmaand: vouw 1", subject == $vouwonderwerp, $bijdragewaarde_vouw_10 : value ); $aantal_vouw_9 : count(), $vouw_vouw_11 : exactMax($bijdragewaarde_vouw_10) )
+    eval( toets_eersteSchoneMaandVanafDeEindmaandBijdrageAanVouw0($overlading, $maand, $aantal_vouw_9, $vouw_vouw_11) )
+then
+    Object v = ComputeHelpers.contribution("eerste schone maand vanaf de eindmaand: vouw 0", $vouwonderwerp, $onderwerp, $maand, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta_eersteSchoneMaandVanafDeEindmaandFilterfoutInVouw0(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'
+function boolean toets_eersteSchoneMaandVanafDeEindmaandFilterfoutInVouw0(Object $overlading, Object $maand, Object $aantal_vouw_25, Object $vouw_vouw_27) {
+    try {
+        boolean uitkomst = samengesteld1_eersteSchoneMaandVanafDeEindmaandFilterfoutInVouw0($overlading, $maand, $aantal_vouw_25, $vouw_vouw_27);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'
+function boolean samengesteld1_eersteSchoneMaandVanafDeEindmaandFilterfoutInVouw0(Object $overlading, Object $maand, Object $aantal_vouw_25, Object $vouw_vouw_27) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($overlading, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.dateCompare(ComputeHelpers.dateStep($maand, new java.math.BigDecimal("1"), "MONTHS", Boolean.TRUE), ComputeHelpers.foldValue($aantal_vouw_25, $vouw_vouw_27, null), dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+// aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'
+function RuntimeException fout_eersteSchoneMaandVanafDeEindmaandFilterfoutInVouw0(Object $lijstplaatsen_plaats_16, Object $plaats_plaats_17, Object $overlading, Object $maand, Object $aantal_vouw_25, Object $vouw_vouw_27, Object $onderwerp) {
+    try {
+        boolean uitkomst = samengesteld2_eersteSchoneMaandVanafDeEindmaandFilterfoutInVouw0($lijstplaatsen_plaats_16, $plaats_plaats_17, $overlading, $maand, $aantal_vouw_25, $vouw_vouw_27, $onderwerp);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'
+function boolean samengesteld2_eersteSchoneMaandVanafDeEindmaandFilterfoutInVouw0(Object $lijstplaatsen_plaats_16, Object $plaats_plaats_17, Object $overlading, Object $maand, Object $aantal_vouw_25, Object $vouw_vouw_27, Object $onderwerp) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($overlading, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.dateCompare(ComputeHelpers.dateStep($maand, new java.math.BigDecimal("1"), "MONTHS", Boolean.TRUE), ComputeHelpers.foldValue($aantal_vouw_25, $vouw_vouw_27, null), dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+function java.util.List plaats_eersteSchoneMaandVanafDeEindmaandFilterfoutInVouw0(Object $onderwerp, Object $lijstplaatsen_plaats_16, Object $plaats_plaats_17) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.FILTER_FAULT, "eerste schone maand vanaf de eindmaand: vouw 0", $onderwerp, 0, java.util.Arrays.asList("schuit"), java.util.Arrays.asList($lijstplaatsen_plaats_16), java.util.Arrays.asList($plaats_plaats_17));
+}
+
+rule "eerste schone maand vanaf de eindmaand: filterfout in vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $onderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand( schuit == $vouwonderwerp, $maand : maand )
+    accumulate( $lijstplaats_plaats_14 : ListPlace( field == "schuit", beta_eersteSchoneMaandVanafDeEindmaandFilterfoutInVouw0(this, $onderwerp), $lijstplaatswaarde_plaats_15 : place ); $lijstplaatsen_plaats_16 : count(), $plaats_plaats_17 : exactMin($lijstplaatswaarde_plaats_15) )
+    $stand_2 : CharacteristicState( characteristic == ElementKey.of("lading in-een-maand", "overlading", true), subject == $onderwerp, $overlading : holds )
+    accumulate( $bijdrage_vouw_22 : Contribution( fold == "eerste schone maand vanaf de eindmaand: vouw 1", subject == $vouwonderwerp, $bijdragewaarde_vouw_26 : value ); $aantal_vouw_25 : count(), $vouw_vouw_27 : exactMax($bijdragewaarde_vouw_26) )
+    eval( toets_eersteSchoneMaandVanafDeEindmaandFilterfoutInVouw0($overlading, $maand, $aantal_vouw_25, $vouw_vouw_27) )
+then
+    RuntimeException f = fout_eersteSchoneMaandVanafDeEindmaandFilterfoutInVouw0($lijstplaatsen_plaats_16, $plaats_plaats_17, $overlading, $maand, $aantal_vouw_25, $vouw_vouw_27, $onderwerp);
+    if (f == null) {
+        ComputeHelpers.contractBreach("het filter van eerste schone maand vanaf de eindmaand: vouw 0 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new FilterFault("eerste schone maand vanaf de eindmaand: vouw 0", $vouwonderwerp, $onderwerp, f, plaats_eersteSchoneMaandVanafDeEindmaandFilterfoutInVouw0($onderwerp, $lijstplaatsen_plaats_16, $plaats_plaats_17)));
+end
+
+// aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'
+function boolean toets_eersteSchoneMaandVanafDeEindmaandBijdrageAanVouw1(Object $soort) {
+    return ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam($soort), RegelSpraakRuntime.rsEnumNaam("Zwaar"), Boolean.TRUE);
+}
+
+rule "eerste schone maand vanaf de eindmaand: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Schuit()
+    $onderwerp : dev.uchar.regelspraak.facts.Klacht( beklaagdeSchuit == $vouwonderwerp, $soort : soort, $einddag : einddag )
+    eval( toets_eersteSchoneMaandVanafDeEindmaandBijdrageAanVouw1($soort) )
+then
+    Object v = ComputeHelpers.contribution("eerste schone maand vanaf de eindmaand: vouw 1", $vouwonderwerp, $onderwerp, $einddag, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "kenmerkstand Lading in-een-maand.overlading: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand( ComputeHelpers.holds(overlading) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("lading in-een-maand", "overlading", true), true));
+end
+
+rule "kenmerkstand Lading in-een-maand.overlading: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("lading in-een-maand", "overlading", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("lading in-een-maand", "overlading", true), true));
+end
+
+rule "kenmerkstand Lading in-een-maand.overlading: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.LadingInEenMaand( ComputeHelpers.holds(overlading) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("lading in-een-maand", "overlading", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("lading in-een-maand", "overlading", true), false));
+end
+

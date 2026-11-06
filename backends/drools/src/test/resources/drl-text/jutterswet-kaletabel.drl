@@ -1,0 +1,32 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het wrakkental van de Jutter maal 15
+function Object waarde_wrakkenloonVanEenJutter(Object $wrakkental) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($wrakkental, new java.math.BigDecimal("15")), Integer.valueOf(0), "wrakkenloon", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "wrakkenloon van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $wrakkental : wrakkental )
+then
+    Object v = waarde_wrakkenloonVanEenJutter($wrakkental);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "wrakkenloon van een jutter", ComputeHelpers.designate(v, "wrakkenloon van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "wrakkenloon", false), v, "wrakkenloon van een jutter"));
+        }
+    }
+end
+

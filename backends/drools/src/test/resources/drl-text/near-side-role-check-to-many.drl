@@ -1,0 +1,21 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+
+// hij een toegewezen wachtpost is
+function boolean toets_bemandMetJutter(Object $vullers_rol_1) {
+    return ComputeHelpers.roleCount($vullers_rol_1, Boolean.FALSE);
+}
+
+rule "bemand met jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachtpost()
+    accumulate( $vuller_rol_0 : dev.uchar.regelspraak.facts.Jutter( toegewezenWachtpost == $onderwerp ); $vullers_rol_1 : count() )
+    eval( toets_bemandMetJutter($vullers_rol_1) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("wachtpost", "bemand", true)));
+end
+

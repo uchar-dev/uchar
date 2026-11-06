@@ -1,0 +1,79 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn grondwaarde
+function Object waarde_vergoedingVanEenStrandvondst(Object $grondwaarde) {
+    try {
+        return ComputeHelpers.fitTarget($grondwaarde, Integer.valueOf(2), "vergoeding", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vergoeding van een strandvondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst( $grondwaarde : grondwaarde )
+then
+    Object v = waarde_vergoedingVanEenStrandvondst($grondwaarde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vergoeding van een strandvondst", ComputeHelpers.designate(v, "vergoeding van een strandvondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandvondst", "vergoeding", false), v, "vergoeding van een strandvondst"));
+        }
+    }
+end
+
+// 12.50
+function Object waarde_toeslagVanEenWrakstuk() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("12.5"), Integer.valueOf(2), "toeslag", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "toeslag van een wrakstuk"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakstuk()
+then
+    Object v = waarde_toeslagVanEenWrakstuk();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "toeslag van een wrakstuk", ComputeHelpers.designate(v, "toeslag van een wrakstuk")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("wrakstuk", "toeslag", false), v, "toeslag van een wrakstuk"));
+        }
+    }
+end
+
+// 3
+function Object waarde_toeslagVanEenDrijfhout() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("3"), Integer.valueOf(0), "toeslag", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "toeslag van een drijfhout"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Drijfhout()
+then
+    Object v = waarde_toeslagVanEenDrijfhout();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "toeslag van een drijfhout", ComputeHelpers.designate(v, "toeslag van een drijfhout")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("drijfhout", "toeslag", false), v, "toeslag van een drijfhout"));
+        }
+    }
+end
+

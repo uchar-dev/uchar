@@ -1,0 +1,183 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
+import dev.uchar.regelspraak.transpiler.tms.CreationStamp;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.SecondFillingFault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn toeslag
+function Object waarde_waardeUitToeslag(Object $toeslag) {
+    try {
+        return ComputeHelpers.fitTarget($toeslag, Integer.valueOf(0), "waarde", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "waarde uit toeslag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Melding()
+    $stand_0 : State( attribute == ElementKey.of("melding", "toeslag", false), subject == $onderwerp, $toeslag : value )
+then
+    Object v = waarde_waardeUitToeslag($toeslag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "waarde uit toeslag", ComputeHelpers.designate(v, "waarde uit toeslag")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("melding", "waarde", false), v, "waarde uit toeslag"));
+        }
+    }
+end
+
+// de som van de waarde van alle meldingen van de Jutter
+function Object waarde_terugVanEenJutter(Object $aantal_vouw_11, Object $vouw_vouw_13) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_11, $vouw_vouw_13, null), Integer.valueOf(0), "terug", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "terug van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_8 : Contribution( fold == "terug van een jutter: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_12 : value ); $aantal_vouw_11 : count(), $vouw_vouw_13 : exactSum($bijdragewaarde_vouw_12) )
+then
+    Object v = waarde_terugVanEenJutter($aantal_vouw_11, $vouw_vouw_13);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "terug van een jutter", ComputeHelpers.designate(v, "terug van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "terug", false), v, "terug van een jutter"));
+        }
+    }
+end
+
+function boolean beta_meldDeVangst(Object eigen, Object ander) {
+    return ComputeHelpers.inPhase(eigen, ander);
+}
+
+// zijn vangst; zijn bonus
+function Object creatie_meldDeVangst(Object $vangst, Object $bonus, Object $fase, Object $herkomsten_creatie_16, Object $onderwerp) {
+    int diepte = ComputeHelpers.creationDepth("meld de vangst", 0, "Jutter", (java.util.List) $herkomsten_creatie_16, 100);
+    Object i0 = null;
+    Object i1 = null;
+    try {
+        i0 = ComputeHelpers.collapse(ComputeHelpers.fitTarget($vangst, Integer.valueOf(0), "waarde", "meld de vangst"));
+        i1 = ComputeHelpers.collapse(ComputeHelpers.fitTarget($bonus, Integer.valueOf(0), "toeslag", "meld de vangst"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+    Object nieuw = ComputeHelpers.newObject($onderwerp, "dev.uchar.regelspraak.facts.Melding");
+    ComputeHelpers.set(nieuw, "waarde", i0);
+    ComputeHelpers.set(nieuw, "toeslag", i1);
+    int fase = ((Integer) $fase).intValue();
+    java.util.List feiten = new java.util.ArrayList();
+    feiten.add(nieuw);
+    feiten.add(new CreationStamp("meld de vangst", $onderwerp, nieuw, fase, 0, diepte));
+    feiten.add(new RelationLink("jutmelding", $onderwerp, nieuw, fase));
+    return feiten;
+}
+
+rule "meld de vangst"
+    dialect "mvel"
+    agenda-group "uchar-objectcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vangst : vangst, $bonus : bonus )
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    accumulate( $herkomst_creatie_15 : CreationStamp( object == $onderwerp ); $herkomsten_creatie_16 : collectList($herkomst_creatie_15) )
+    not( $gemaakt_creatie_18 : CreationStamp( rule == "meld de vangst", subject == $onderwerp ) )
+    not( $nieuw_creatie_19 : CreationStamp( object == $onderwerp, beta_meldDeVangst(this, $fase) ) )
+    not( $eigen_fout : Fault( rule == "meld de vangst", subject == $onderwerp ) )
+then
+    Object v = creatie_meldDeVangst($vangst, $bonus, $fase, $herkomsten_creatie_16, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insert(new Fault($onderwerp, "meld de vangst", ComputeHelpers.designate(v, "meld de vangst")));
+    } else {
+        java.util.List feiten = (java.util.List) v;
+        insert(feiten.get(0));
+        insert(feiten.get(1));
+        insert(feiten.get(2));
+    }
+end
+
+rule "terug van een jutter: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Melding()
+    exists( $koppeling_bereik_2 : RelationLink( relation == "jutmelding", second == $onderwerp, first == $vouwonderwerp ) )
+    $stand_1 : State( attribute == ElementKey.of("melding", "waarde", false), subject == $onderwerp, $waarde2 : value )
+then
+    Object v = ComputeHelpers.contribution("terug van een jutter: vouw 0", $vouwonderwerp, $onderwerp, $waarde2, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "koppeling jutmelding uit de invoer: Melding.melder"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Melding( melder != null, $ander : melder )
+then
+    insertLogical(new RelationLink("jutmelding", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingJutmeldingTweedeVullingVanMelder(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling jutmelding: tweede vulling van melder"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "jutmelding", $nabij : second )
+    $twee : RelationLink( relation == "jutmelding", second != null, second == $een.second, beta_koppelingJutmeldingTweedeVullingVanMelder(this, $een) )
+then
+    insertLogical(new Fault($nabij, "jutmelding", new SecondFillingFault("melder", $nabij)));
+end
+
+rule "stand Melding.toeslag: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Melding()
+    $waarde : Value( attribute == ElementKey.of("melding", "toeslag", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("melding", "toeslag", false), $v));
+end
+
+rule "stand Melding.toeslag: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Melding( $invoer : toeslag )
+    not( $waarde : Value( attribute == ElementKey.of("melding", "toeslag", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("melding", "toeslag", false), $invoer));
+end
+
+rule "stand Melding.waarde: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Melding()
+    $waarde : Value( attribute == ElementKey.of("melding", "waarde", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("melding", "waarde", false), $v));
+end
+
+rule "stand Melding.waarde: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Melding( $invoer : waarde )
+    not( $waarde : Value( attribute == ElementKey.of("melding", "waarde", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("melding", "waarde", false), $invoer));
+end
+

@@ -1,0 +1,73 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// precies twee van: gemerkt, gewogen, zegels vanaf 2
+function boolean toets_oordeelBijTweevoudigeKeur(Object $gemerkt, Object $gewogen, Object $zegels) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 2, raak, 0, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($gemerkt, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 2, raak, 1, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($gewogen, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 2, raak, 2, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($zegels, new java.math.BigDecimal("2"), ">=")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 2, raak, 3);
+}
+
+rule "oordeel bij tweevoudige keur"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Keurstuk( $gemerkt : (ComputeHelpers.holds(gemerkt)), $gewogen : (ComputeHelpers.holds(gewogen)), $zegels : zegels )
+    eval( toets_oordeelBijTweevoudigeKeur($gemerkt, $gewogen, $zegels) )
+then
+    // 'tweevoudig'
+    Object v = "tweevoudig";
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("keurstuk", "oordeel", false), v, "oordeel bij tweevoudige keur"));
+    }
+end
+
+// de zegels van het Keurstuk
+function Object waarde_afschriftVanDeZegels(Object $zegels) {
+    try {
+        return ComputeHelpers.fitTarget($zegels, Integer.valueOf(0), "zegelafschrift", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "afschrift van de zegels"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Keurstuk( $zegels : zegels )
+then
+    Object v = waarde_afschriftVanDeZegels($zegels);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "afschrift van de zegels", ComputeHelpers.designate(v, "afschrift van de zegels")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("keurstuk", "zegelafschrift", false), v, "afschrift van de zegels"));
+        }
+    }
+end
+

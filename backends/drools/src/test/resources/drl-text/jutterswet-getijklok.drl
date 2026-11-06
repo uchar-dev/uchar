@@ -1,0 +1,57 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.util.function.Predicate rsDagsoort_Springtijdag;
+
+// zijn meldtijdstip plus zijn wachttermijn
+function Object waarde_sluittijdstipVanEenGetijpost(Object $meldtijdstip, Object $wachttermijn, java.util.function.Predicate rsDagsoort_Springtijdag) {
+    try {
+        return ComputeHelpers.dateTimeDayKindStep($meldtijdstip, $wachttermijn, rsDagsoort_Springtijdag, Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "sluittijdstip van een getijpost"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Getijpost( $meldtijdstip : meldtijdstip, $wachttermijn : wachttermijn )
+then
+    Object v = waarde_sluittijdstipVanEenGetijpost($meldtijdstip, $wachttermijn, rsDagsoort_Springtijdag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "sluittijdstip van een getijpost", ComputeHelpers.designate(v, "sluittijdstip van een getijpost")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("getijpost", "sluittijdstip", false), v, "sluittijdstip van een getijpost"));
+        }
+    }
+end
+
+// zijn meldtijdstip min zijn wachttermijn
+function Object waarde_openingstijdstipVanEenGetijpost(Object $meldtijdstip, Object $wachttermijn, java.util.function.Predicate rsDagsoort_Springtijdag) {
+    try {
+        return ComputeHelpers.dateTimeDayKindStep($meldtijdstip, $wachttermijn, rsDagsoort_Springtijdag, Boolean.FALSE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "openingstijdstip van een getijpost"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Getijpost( $meldtijdstip : meldtijdstip, $wachttermijn : wachttermijn )
+then
+    Object v = waarde_openingstijdstipVanEenGetijpost($meldtijdstip, $wachttermijn, rsDagsoort_Springtijdag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "openingstijdstip van een getijpost", ComputeHelpers.designate(v, "openingstijdstip van een getijpost")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("getijpost", "openingstijdstip", false), v, "openingstijdstip van een getijpost"));
+        }
+    }
+end
+

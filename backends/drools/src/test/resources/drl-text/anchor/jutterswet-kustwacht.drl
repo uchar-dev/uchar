@@ -1,0 +1,197 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.PathState;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+function Object pad_uitkijkbonusVanEenWachter(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("post"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "hoogte");
+}
+
+// de hoogte van zijn post
+function Object waarde_uitkijkbonusVanEenWachter(Object $postHoogte) {
+    try {
+        return ComputeHelpers.fitTarget($postHoogte, Integer.valueOf(0), "uitkijkbonus", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "uitkijkbonus van een wachter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter( $postHoogte : (pad_uitkijkbonusVanEenWachter(this)) )
+then
+    Object v = waarde_uitkijkbonusVanEenWachter($postHoogte);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "uitkijkbonus van een wachter", ComputeHelpers.designate(v, "uitkijkbonus van een wachter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("wachter", "uitkijkbonus", false), v, "uitkijkbonus van een wachter"));
+        }
+    }
+end
+
+function Object pad_risicotoeslagVanEenWachter(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("post", "kustvak"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "gevarenklasse");
+}
+
+// de gevarenklasse van het kustvak van zijn post
+function Object waarde_risicotoeslagVanEenWachter(Object $postKustvakGevarenklasse) {
+    try {
+        return ComputeHelpers.fitTarget($postKustvakGevarenklasse, Integer.valueOf(0), "risicotoeslag", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "risicotoeslag van een wachter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter( $postKustvakGevarenklasse : (pad_risicotoeslagVanEenWachter(this)) )
+then
+    Object v = waarde_risicotoeslagVanEenWachter($postKustvakGevarenklasse);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "risicotoeslag van een wachter", ComputeHelpers.designate(v, "risicotoeslag van een wachter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("wachter", "risicotoeslag", false), v, "risicotoeslag van een wachter"));
+        }
+    }
+end
+
+function Object pad_vakklasseVanEenPost(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("kustvak"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "gevarenklasse");
+}
+
+// de gevarenklasse van het Kustvak
+function Object waarde_vakklasseVanEenPost(Object $kustvakGevarenklasse) {
+    try {
+        return ComputeHelpers.fitTarget($kustvakGevarenklasse, Integer.valueOf(0), "vakklasse", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vakklasse van een post"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Post( $kustvakGevarenklasse : (pad_vakklasseVanEenPost(this)) )
+then
+    Object v = waarde_vakklasseVanEenPost($kustvakGevarenklasse);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vakklasse van een post", ComputeHelpers.designate(v, "vakklasse van een post")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("post", "vakklasse", false), v, "vakklasse van een post"));
+        }
+    }
+end
+
+function Object pad_risicopostBijVerraderlijkVak(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("kustvak"));
+    return bereikt == null ? null : ComputeHelpers.holds(ComputeHelpers.readProperty(bereikt, "verraderlijk"));
+}
+
+// zijn kustvak verraderlijk is
+function boolean toets_risicopostBijVerraderlijkVak(Object $kustvakVerraderlijk) {
+    return ComputeHelpers.characteristicCheckAlongPath($kustvakVerraderlijk, Boolean.TRUE);
+}
+
+rule "risicopost bij verraderlijk vak"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Post( $kustvakVerraderlijk : (pad_risicopostBijVerraderlijkVak(this)) )
+    eval( toets_risicopostBijVerraderlijkVak($kustvakVerraderlijk) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("post", "risicopost", true)));
+end
+
+// zijn post risicopost is
+function boolean toets_gevarenwachtBijRisicopost(Object $postRisicopost) {
+    return ComputeHelpers.characteristicCheckAlongPath($postRisicopost, Boolean.TRUE);
+}
+
+rule "gevarenwacht bij risicopost"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter()
+    $padstand_0 : PathState( path == "Wachter:post" && member == ElementKey.of("post", "risicopost", true), subject == $onderwerp, $postRisicopost : value )
+    eval( toets_gevarenwachtBijRisicopost($postRisicopost) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("wachter", "gevarenwacht", true)));
+end
+
+// zijn post geen risicopost is
+function boolean toets_rustwachtBuitenRisicopost(Object $postRisicopost) {
+    return ComputeHelpers.characteristicCheckAlongPath($postRisicopost, Boolean.FALSE);
+}
+
+rule "rustwacht buiten risicopost"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter()
+    $padstand_0 : PathState( path == "Wachter:post" && member == ElementKey.of("post", "risicopost", true), subject == $onderwerp, $postRisicopost : value )
+    eval( toets_rustwachtBuitenRisicopost($postRisicopost) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("wachter", "rustwacht", true)));
+end
+
+function Object pad_padstandWachterPostNaarPostRisicopostLinkAanwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("post"));
+}
+
+rule "padstand Wachter.post naar Post.risicopost: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter( pad_padstandWachterPostNaarPostRisicopostLinkAanwezig(this) != null, $bereikt : post )
+    $stand : CharacteristicState( characteristic == ElementKey.of("post", "risicopost", true), subject != null, subject == $bereikt, $v : holds )
+then
+    insertLogical(new PathState($onderwerp, "Wachter:post", ElementKey.of("post", "risicopost", true), $v, $bereikt));
+end
+
+function Object pad_padstandWachterPostNaarPostRisicopostLinkAfwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("post"));
+}
+
+rule "padstand Wachter.post naar Post.risicopost: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter( pad_padstandWachterPostNaarPostRisicopostLinkAfwezig(this) == null )
+then
+    insertLogical(new PathState($onderwerp, "Wachter:post", ElementKey.of("post", "risicopost", true), null, null));
+end
+
+rule "kenmerkstand Post.risicopost: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Post( ComputeHelpers.holds(risicopost) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("post", "risicopost", true), true));
+end
+
+rule "kenmerkstand Post.risicopost: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Post()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("post", "risicopost", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("post", "risicopost", true), true));
+end
+
+rule "kenmerkstand Post.risicopost: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Post( ComputeHelpers.holds(risicopost) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("post", "risicopost", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("post", "risicopost", true), false));
+end
+

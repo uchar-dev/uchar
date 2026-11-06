@@ -1,0 +1,470 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.EmptyBarrier;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic;
+import dev.uchar.regelspraak.transpiler.tms.PeriodCondition;
+import dev.uchar.regelspraak.transpiler.tms.PeriodDefaults;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+function Object afloop_standaardstrandloon(Object $andere_schrijvers_schrijvers_1, Object $strandloonInvoer, Object $emmerinvoeren_dagen_5, Object $onderwerp) {
+    try {
+        return let_standaardstrandloon($andere_schrijvers_schrijvers_1, $strandloonInvoer, $emmerinvoeren_dagen_5, $onderwerp);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+function Object let_standaardstrandloon(Object $andere_schrijvers_schrijvers_1, Object $strandloonInvoer, Object $emmerinvoeren_dagen_5, Object $onderwerp) {
+    Object cel_4 = ComputeHelpers.binderCell();
+    try {
+        return PeriodDefaults.initialised(binder_standaardstrandloon($andere_schrijvers_schrijvers_1, $strandloonInvoer, $emmerinvoeren_dagen_5, $onderwerp, cel_4), PeriodArithmetic.scalar(new java.math.BigDecimal("5")), Integer.valueOf(0), "strandloon");
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_4);
+    }
+}
+
+function Object binder_standaardstrandloon(Object $andere_schrijvers_schrijvers_1, Object $strandloonInvoer, Object $emmerinvoeren_dagen_5, Object $onderwerp, Object cel_4) {
+    if (!ComputeHelpers.binderCellFilled(cel_4)) {
+        ComputeHelpers.fillBinderCell(cel_4, PeriodDefaults.initialisationDays($andere_schrijvers_schrijvers_1, $strandloonInvoer, $emmerinvoeren_dagen_5, "strandloon", $onderwerp));
+    }
+    return ComputeHelpers.binderValue(cel_4);
+}
+
+rule "standaardstrandloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $strandloonInvoer : (ComputeHelpers.periods(strandloon)) )
+    accumulate( $andere_schrijver_schrijvers_0 : Value( attribute == ElementKey.of("jutter", "strandloon", false) && writer != "standaardstrandloon", subject == $onderwerp ); $andere_schrijvers_schrijvers_1 : collectList($andere_schrijver_schrijvers_0) )
+    accumulate( $emmerinvoer_dagen_4 : BucketInput( attribute == ElementKey.of("jutter", "strandloon", false), subject == $onderwerp ); $emmerinvoeren_dagen_5 : count() )
+then
+    Object v = afloop_standaardstrandloon($andere_schrijvers_schrijvers_1, $strandloonInvoer, $emmerinvoeren_dagen_5, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "standaardstrandloon", ComputeHelpers.designate(v, "standaardstrandloon")));
+    } else if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("jutter", "strandloon", false), v, "standaardstrandloon"));
+    }
+end
+
+// 20
+function Object waarde_voorjaarsloon() {
+    try {
+        return PeriodArithmetic.written(PeriodArithmetic.clipped(PeriodCondition.window(java.time.LocalDate.parse("2025-03-01"), Boolean.TRUE, java.time.LocalDate.parse("2025-06-01"), Boolean.TRUE, Boolean.FALSE), PeriodArithmetic.scalar(new java.math.BigDecimal("20"))), Integer.valueOf(0), "voorjaarsloon");
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "voorjaarsloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+then
+    Object v = waarde_voorjaarsloon();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "voorjaarsloon", ComputeHelpers.designate(v, "voorjaarsloon")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "voorjaarsloon", false), v, "voorjaarsloon"));
+        }
+    }
+end
+
+function Object afloop_standaardvoorjaarsloon(Object $andere_schrijvers_schrijvers_9, Object $voorjaarsloonInvoer, Object $emmerinvoeren_dagen_13, Object $onderwerp) {
+    try {
+        return let_standaardvoorjaarsloon($andere_schrijvers_schrijvers_9, $voorjaarsloonInvoer, $emmerinvoeren_dagen_13, $onderwerp);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+function Object let_standaardvoorjaarsloon(Object $andere_schrijvers_schrijvers_9, Object $voorjaarsloonInvoer, Object $emmerinvoeren_dagen_13, Object $onderwerp) {
+    Object cel_4 = ComputeHelpers.binderCell();
+    try {
+        return PeriodDefaults.initialised(binder_standaardvoorjaarsloon($andere_schrijvers_schrijvers_9, $voorjaarsloonInvoer, $emmerinvoeren_dagen_13, $onderwerp, cel_4), PeriodArithmetic.scalar(new java.math.BigDecimal("5")), Integer.valueOf(0), "voorjaarsloon");
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_4);
+    }
+}
+
+function Object binder_standaardvoorjaarsloon(Object $andere_schrijvers_schrijvers_9, Object $voorjaarsloonInvoer, Object $emmerinvoeren_dagen_13, Object $onderwerp, Object cel_4) {
+    if (!ComputeHelpers.binderCellFilled(cel_4)) {
+        ComputeHelpers.fillBinderCell(cel_4, PeriodDefaults.initialisationDays($andere_schrijvers_schrijvers_9, $voorjaarsloonInvoer, $emmerinvoeren_dagen_13, "voorjaarsloon", $onderwerp));
+    }
+    return ComputeHelpers.binderValue(cel_4);
+}
+
+rule "standaardvoorjaarsloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $voorjaarsloonInvoer : (ComputeHelpers.periods(voorjaarsloon)) )
+    accumulate( $andere_schrijver_schrijvers_8 : Value( attribute == ElementKey.of("jutter", "voorjaarsloon", false) && writer != "standaardvoorjaarsloon", subject == $onderwerp ); $andere_schrijvers_schrijvers_9 : collectList($andere_schrijver_schrijvers_8) )
+    accumulate( $emmerinvoer_dagen_12 : BucketInput( attribute == ElementKey.of("jutter", "voorjaarsloon", false), subject == $onderwerp ); $emmerinvoeren_dagen_13 : count() )
+then
+    Object v = afloop_standaardvoorjaarsloon($andere_schrijvers_schrijvers_9, $voorjaarsloonInvoer, $emmerinvoeren_dagen_13, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "standaardvoorjaarsloon", ComputeHelpers.designate(v, "standaardvoorjaarsloon")));
+    } else if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("jutter", "voorjaarsloon", false), v, "standaardvoorjaarsloon"));
+    }
+end
+
+function Object afloop_standaardzomerloon(Object $andere_schrijvers_schrijvers_17, Object $zomerloonInvoer, Object $emmerinvoeren_dagen_21, Object $onderwerp) {
+    try {
+        return let_standaardzomerloon($andere_schrijvers_schrijvers_17, $zomerloonInvoer, $emmerinvoeren_dagen_21, $onderwerp);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+function Object let_standaardzomerloon(Object $andere_schrijvers_schrijvers_17, Object $zomerloonInvoer, Object $emmerinvoeren_dagen_21, Object $onderwerp) {
+    Object cel_4 = ComputeHelpers.binderCell();
+    try {
+        return PeriodDefaults.initialised(binder_standaardzomerloon($andere_schrijvers_schrijvers_17, $zomerloonInvoer, $emmerinvoeren_dagen_21, $onderwerp, cel_4), PeriodArithmetic.scalar(new java.math.BigDecimal("5")), Integer.valueOf(0), "zomerloon");
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_4);
+    }
+}
+
+function Object binder_standaardzomerloon(Object $andere_schrijvers_schrijvers_17, Object $zomerloonInvoer, Object $emmerinvoeren_dagen_21, Object $onderwerp, Object cel_4) {
+    if (!ComputeHelpers.binderCellFilled(cel_4)) {
+        ComputeHelpers.fillBinderCell(cel_4, PeriodDefaults.initialisationDays($andere_schrijvers_schrijvers_17, $zomerloonInvoer, $emmerinvoeren_dagen_21, "zomerloon", $onderwerp));
+    }
+    return ComputeHelpers.binderValue(cel_4);
+}
+
+rule "standaardzomerloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $zomerloonInvoer : (ComputeHelpers.periods(zomerloon)) )
+    accumulate( $andere_schrijver_schrijvers_16 : Value( attribute == ElementKey.of("jutter", "zomerloon", false) && writer != "standaardzomerloon", subject == $onderwerp ); $andere_schrijvers_schrijvers_17 : collectList($andere_schrijver_schrijvers_16) )
+    accumulate( $emmerinvoer_dagen_20 : BucketInput( attribute == ElementKey.of("jutter", "zomerloon", false), subject == $onderwerp ); $emmerinvoeren_dagen_21 : count() )
+then
+    Object v = afloop_standaardzomerloon($andere_schrijvers_schrijvers_17, $zomerloonInvoer, $emmerinvoeren_dagen_21, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "standaardzomerloon", ComputeHelpers.designate(v, "standaardzomerloon")));
+    } else if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("jutter", "zomerloon", false), v, "standaardzomerloon"));
+    }
+end
+
+// 20
+function Object waarde_zomerloon() {
+    try {
+        return PeriodArithmetic.written(PeriodArithmetic.clipped(PeriodCondition.window(java.time.LocalDate.parse("2025-03-01"), Boolean.TRUE, java.time.LocalDate.parse("2025-06-01"), Boolean.TRUE, Boolean.FALSE), PeriodArithmetic.scalar(new java.math.BigDecimal("20"))), Integer.valueOf(0), "zomerloon");
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "zomerloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+then
+    Object v = waarde_zomerloon();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "zomerloon", ComputeHelpers.designate(v, "zomerloon")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "zomerloon", false), v, "zomerloon"));
+        }
+    }
+end
+
+function Object afloop_standaardwachtloon(Object $andere_schrijvers_schrijvers_25, Object $wachtloonInvoer, Object $emmerinvoeren_dagen_29, Object $onderwerp) {
+    try {
+        return let_standaardwachtloon($andere_schrijvers_schrijvers_25, $wachtloonInvoer, $emmerinvoeren_dagen_29, $onderwerp);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+function Object let_standaardwachtloon(Object $andere_schrijvers_schrijvers_25, Object $wachtloonInvoer, Object $emmerinvoeren_dagen_29, Object $onderwerp) {
+    Object cel_4 = ComputeHelpers.binderCell();
+    try {
+        return PeriodDefaults.initialised(binder_standaardwachtloon($andere_schrijvers_schrijvers_25, $wachtloonInvoer, $emmerinvoeren_dagen_29, $onderwerp, cel_4), PeriodArithmetic.scalar(new java.math.BigDecimal("5")), Integer.valueOf(0), "wachtloon");
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_4);
+    }
+}
+
+function Object binder_standaardwachtloon(Object $andere_schrijvers_schrijvers_25, Object $wachtloonInvoer, Object $emmerinvoeren_dagen_29, Object $onderwerp, Object cel_4) {
+    if (!ComputeHelpers.binderCellFilled(cel_4)) {
+        ComputeHelpers.fillBinderCell(cel_4, PeriodDefaults.initialisationDays($andere_schrijvers_schrijvers_25, $wachtloonInvoer, $emmerinvoeren_dagen_29, "wachtloon", $onderwerp));
+    }
+    return ComputeHelpers.binderValue(cel_4);
+}
+
+rule "standaardwachtloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $wachtloonInvoer : (ComputeHelpers.periods(wachtloon)) )
+    accumulate( $andere_schrijver_schrijvers_24 : Value( attribute == ElementKey.of("jutter", "wachtloon", false) && writer != "standaardwachtloon", subject == $onderwerp ); $andere_schrijvers_schrijvers_25 : collectList($andere_schrijver_schrijvers_24) )
+    accumulate( $emmerinvoer_dagen_28 : BucketInput( attribute == ElementKey.of("jutter", "wachtloon", false), subject == $onderwerp ); $emmerinvoeren_dagen_29 : count() )
+then
+    Object v = afloop_standaardwachtloon($andere_schrijvers_schrijvers_25, $wachtloonInvoer, $emmerinvoeren_dagen_29, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "standaardwachtloon", ComputeHelpers.designate(v, "standaardwachtloon")));
+    } else if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("jutter", "wachtloon", false), v, "standaardwachtloon"));
+    }
+end
+
+// zijn basisloon
+function Object waarde_kustloon(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        return PeriodArithmetic.written(PeriodArithmetic.clipped(PeriodCondition.window(java.time.LocalDate.parse("2025-03-01"), Boolean.TRUE, java.time.LocalDate.parse("2025-09-01"), Boolean.TRUE, Boolean.FALSE), ComputeHelpers.complete($tijdlijn_0, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"basisloon\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "basisloon", Boolean.TRUE)), Integer.valueOf(0), "kustloon");
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "kustloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "basisloon", false), subject == $onderwerp, $tijdlijn_0 : value )
+then
+    Object v = waarde_kustloon($tijdlijn_0, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "kustloon", ComputeHelpers.designate(v, "kustloon")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "kustloon", false), v, "kustloon"));
+        }
+    }
+end
+
+function Object afloop_standaardkustloon(Object $andere_schrijvers_schrijvers_35, Object $kustloonInvoer, Object $emmerinvoeren_dagen_39, Object $onderwerp) {
+    try {
+        return let_standaardkustloon($andere_schrijvers_schrijvers_35, $kustloonInvoer, $emmerinvoeren_dagen_39, $onderwerp);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+function Object let_standaardkustloon(Object $andere_schrijvers_schrijvers_35, Object $kustloonInvoer, Object $emmerinvoeren_dagen_39, Object $onderwerp) {
+    Object cel_4 = ComputeHelpers.binderCell();
+    try {
+        return PeriodDefaults.initialised(binder_standaardkustloon($andere_schrijvers_schrijvers_35, $kustloonInvoer, $emmerinvoeren_dagen_39, $onderwerp, cel_4), PeriodArithmetic.scalar(new java.math.BigDecimal("5")), Integer.valueOf(0), "kustloon");
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_4);
+    }
+}
+
+function Object binder_standaardkustloon(Object $andere_schrijvers_schrijvers_35, Object $kustloonInvoer, Object $emmerinvoeren_dagen_39, Object $onderwerp, Object cel_4) {
+    if (!ComputeHelpers.binderCellFilled(cel_4)) {
+        ComputeHelpers.fillBinderCell(cel_4, PeriodDefaults.initialisationDays($andere_schrijvers_schrijvers_35, $kustloonInvoer, $emmerinvoeren_dagen_39, "kustloon", $onderwerp));
+    }
+    return ComputeHelpers.binderValue(cel_4);
+}
+
+rule "standaardkustloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $kustloonInvoer : (ComputeHelpers.periods(kustloon)) )
+    accumulate( $andere_schrijver_schrijvers_34 : Value( attribute == ElementKey.of("jutter", "kustloon", false) && writer != "standaardkustloon", subject == $onderwerp ); $andere_schrijvers_schrijvers_35 : collectList($andere_schrijver_schrijvers_34) )
+    accumulate( $emmerinvoer_dagen_38 : BucketInput( attribute == ElementKey.of("jutter", "kustloon", false), subject == $onderwerp ); $emmerinvoeren_dagen_39 : count() )
+then
+    Object v = afloop_standaardkustloon($andere_schrijvers_schrijvers_35, $kustloonInvoer, $emmerinvoeren_dagen_39, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "standaardkustloon", ComputeHelpers.designate(v, "standaardkustloon")));
+    } else if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("jutter", "kustloon", false), v, "standaardkustloon"));
+    }
+end
+
+function Object afloop_standaardhavenloon(Object $andere_schrijvers_schrijvers_43, Object $havenloonInvoer, Object $emmerinvoeren_dagen_47, Object $onderwerp) {
+    try {
+        return let_standaardhavenloon($andere_schrijvers_schrijvers_43, $havenloonInvoer, $emmerinvoeren_dagen_47, $onderwerp);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+function Object let_standaardhavenloon(Object $andere_schrijvers_schrijvers_43, Object $havenloonInvoer, Object $emmerinvoeren_dagen_47, Object $onderwerp) {
+    Object cel_4 = ComputeHelpers.binderCell();
+    try {
+        return PeriodDefaults.initialised(binder_standaardhavenloon($andere_schrijvers_schrijvers_43, $havenloonInvoer, $emmerinvoeren_dagen_47, $onderwerp, cel_4), PeriodArithmetic.scalar(new java.math.BigDecimal("5")), Integer.valueOf(0), "havenloon");
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_4);
+    }
+}
+
+function Object binder_standaardhavenloon(Object $andere_schrijvers_schrijvers_43, Object $havenloonInvoer, Object $emmerinvoeren_dagen_47, Object $onderwerp, Object cel_4) {
+    if (!ComputeHelpers.binderCellFilled(cel_4)) {
+        ComputeHelpers.fillBinderCell(cel_4, PeriodDefaults.initialisationDays($andere_schrijvers_schrijvers_43, $havenloonInvoer, $emmerinvoeren_dagen_47, "havenloon", $onderwerp));
+    }
+    return ComputeHelpers.binderValue(cel_4);
+}
+
+rule "standaardhavenloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $havenloonInvoer : (ComputeHelpers.periods(havenloon)) )
+    accumulate( $andere_schrijver_schrijvers_42 : Value( attribute == ElementKey.of("jutter", "havenloon", false) && writer != "standaardhavenloon", subject == $onderwerp ); $andere_schrijvers_schrijvers_43 : collectList($andere_schrijver_schrijvers_42) )
+    accumulate( $emmerinvoer_dagen_46 : BucketInput( attribute == ElementKey.of("jutter", "havenloon", false), subject == $onderwerp ); $emmerinvoeren_dagen_47 : count() )
+then
+    Object v = afloop_standaardhavenloon($andere_schrijvers_schrijvers_43, $havenloonInvoer, $emmerinvoeren_dagen_47, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "standaardhavenloon", ComputeHelpers.designate(v, "standaardhavenloon")));
+    } else if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("jutter", "havenloon", false), v, "standaardhavenloon"));
+    }
+end
+
+// zijn basisloon
+function Object waarde_havenloon(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        return PeriodArithmetic.written(PeriodArithmetic.clipped(PeriodCondition.window(java.time.LocalDate.parse("2025-03-01"), Boolean.TRUE, java.time.LocalDate.parse("2025-09-01"), Boolean.TRUE, Boolean.FALSE), ComputeHelpers.complete($tijdlijn_0, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"basisloon\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "basisloon", Boolean.TRUE)), Integer.valueOf(0), "havenloon");
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "havenloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "basisloon", false), subject == $onderwerp, $tijdlijn_0 : value )
+then
+    Object v = waarde_havenloon($tijdlijn_0, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "havenloon", ComputeHelpers.designate(v, "havenloon")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "havenloon", false), v, "havenloon"));
+        }
+    }
+end
+
+// 20
+function Object waarde_stormloon() {
+    try {
+        return PeriodArithmetic.written(PeriodArithmetic.clipped(PeriodCondition.window(java.time.LocalDate.parse("2025-03-01"), Boolean.TRUE, java.time.LocalDate.parse("2025-06-01"), Boolean.TRUE, Boolean.FALSE), PeriodArithmetic.scalar(new java.math.BigDecimal("20"))), Integer.valueOf(0), "stormloon");
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "stormloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+then
+    Object v = waarde_stormloon();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "stormloon", ComputeHelpers.designate(v, "stormloon")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "stormloon", false), v, "stormloon"));
+        }
+    }
+end
+
+// 30
+function Object waarde_stormloonInDeHerfst() {
+    try {
+        return PeriodArithmetic.written(PeriodArithmetic.clipped(PeriodCondition.window(java.time.LocalDate.parse("2025-09-01"), Boolean.TRUE, java.time.LocalDate.parse("2025-11-01"), Boolean.TRUE, Boolean.FALSE), PeriodArithmetic.scalar(new java.math.BigDecimal("30"))), Integer.valueOf(0), "stormloon");
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "stormloon in de herfst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+then
+    Object v = waarde_stormloonInDeHerfst();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "stormloon in de herfst", ComputeHelpers.designate(v, "stormloon in de herfst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "stormloon", false), v, "stormloon in de herfst"));
+        }
+    }
+end
+
+function Object afloop_standaardstormloon(Object $tijdlijn_0, Object $andere_schrijvers_schrijvers_53, Object $stormloonInvoer, Object $emmerinvoeren_dagen_57, Object $onderwerp) {
+    try {
+        return let_standaardstormloon($tijdlijn_0, $andere_schrijvers_schrijvers_53, $stormloonInvoer, $emmerinvoeren_dagen_57, $onderwerp);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+function Object let_standaardstormloon(Object $tijdlijn_0, Object $andere_schrijvers_schrijvers_53, Object $stormloonInvoer, Object $emmerinvoeren_dagen_57, Object $onderwerp) {
+    Object cel_5 = ComputeHelpers.binderCell();
+    try {
+        return PeriodDefaults.initialised(binder_standaardstormloon($tijdlijn_0, $andere_schrijvers_schrijvers_53, $stormloonInvoer, $emmerinvoeren_dagen_57, $onderwerp, cel_5), PeriodArithmetic.scalar(new java.math.BigDecimal("5")), Integer.valueOf(0), "stormloon");
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_5);
+    }
+}
+
+function Object binder_standaardstormloon(Object $tijdlijn_0, Object $andere_schrijvers_schrijvers_53, Object $stormloonInvoer, Object $emmerinvoeren_dagen_57, Object $onderwerp, Object cel_5) {
+    if (!ComputeHelpers.binderCellFilled(cel_5)) {
+        ComputeHelpers.fillBinderCell(cel_5, PeriodDefaults.within(PeriodCondition.truePeriods($tijdlijn_0), PeriodDefaults.initialisationDays($andere_schrijvers_schrijvers_53, $stormloonInvoer, $emmerinvoeren_dagen_57, "stormloon", $onderwerp)));
+    }
+    return ComputeHelpers.binderValue(cel_5);
+}
+
+rule "standaardstormloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $tijdlijn_0 : (ComputeHelpers.periods(stormwacht)), $stormloonInvoer : (ComputeHelpers.periods(stormloon)) )
+    accumulate( $andere_schrijver_schrijvers_52 : Value( attribute == ElementKey.of("jutter", "stormloon", false) && writer != "standaardstormloon", subject == $onderwerp ); $andere_schrijvers_schrijvers_53 : collectList($andere_schrijver_schrijvers_52) )
+    accumulate( $emmerinvoer_dagen_56 : BucketInput( attribute == ElementKey.of("jutter", "stormloon", false), subject == $onderwerp ); $emmerinvoeren_dagen_57 : count() )
+then
+    Object v = afloop_standaardstormloon($tijdlijn_0, $andere_schrijvers_schrijvers_53, $stormloonInvoer, $emmerinvoeren_dagen_57, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "standaardstormloon", ComputeHelpers.designate(v, "standaardstormloon")));
+    } else if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("jutter", "stormloon", false), v, "standaardstormloon"));
+    }
+end
+
+function boolean toets_schrijversJutterStormloonVerschil(Object $waarden) {
+    return ComputeHelpers.differ($waarden);
+}
+
+function java.util.List lijst_schrijversJutterStormloonVerschil() {
+    return java.util.Arrays.asList("standaardstrandloon", "voorjaarsloon", "standaardvoorjaarsloon", "standaardzomerloon", "zomerloon", "standaardwachtloon", "kustloon", "standaardkustloon", "standaardhavenloon", "havenloon", "stormloon", "stormloon in de herfst", "standaardstormloon");
+}
+
+rule "schrijvers Jutter.stormloon: verschil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $waarde : Value( attribute == ElementKey.of("jutter", "stormloon", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+    eval( toets_schrijversJutterStormloonVerschil($waarden) )
+then
+    insertLogical(ComputeHelpers.writersConflict($onderwerp, $waarden, "stormloon", lijst_schrijversJutterStormloonVerschil(), ComputeHelpers.list1("Jutter"), ComputeHelpers.list1("Jutter")));
+end
+
+rule "stand Jutter.basisloon: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(basisloon)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "basisloon", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "basisloon", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "basisloon", false), $invoer));
+end
+
+rule "stand Jutter.basisloon: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(basisloon)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "basisloon", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "basisloon", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "basisloon", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+

@@ -1,0 +1,104 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het gewicht van de Vondst plus 5
+function Object waarde_brutoVanEenVondst(Object $gewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($gewicht, new java.math.BigDecimal("5")), Integer.valueOf(0), "bruto", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bruto van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht )
+then
+    Object v = waarde_brutoVanEenVondst($gewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bruto van een vondst", ComputeHelpers.designate(v, "bruto van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "bruto", false), v, "bruto van een vondst"));
+        }
+    }
+end
+
+// het gewicht van de Vondst min de korting
+function Object waarde_margeVanEenVondst(Object $gewicht, Object $korting) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMin($gewicht, $korting), Integer.valueOf(0), "marge", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "marge van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht, $korting : korting )
+then
+    Object v = waarde_margeVanEenVondst($gewicht, $korting);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "marge van een vondst", ComputeHelpers.designate(v, "marge van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "marge", false), v, "marge van een vondst"));
+        }
+    }
+end
+
+// het gewicht van de Vondst verminderd met de korting
+function Object waarde_nettoVanEenVondst(Object $gewicht, Object $korting) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsVerminderd($gewicht, $korting), Integer.valueOf(0), "netto", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "netto van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht, $korting : korting )
+then
+    Object v = waarde_nettoVanEenVondst($gewicht, $korting);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "netto van een vondst", ComputeHelpers.designate(v, "netto van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "netto", false), v, "netto van een vondst"));
+        }
+    }
+end
+
+// 5 plus de korting van de Vondst
+function Object waarde_somVanEenVondst(Object $korting) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus(new java.math.BigDecimal("5"), $korting), Integer.valueOf(0), "som", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "som van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $korting : korting )
+then
+    Object v = waarde_somVanEenVondst($korting);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "som van een vondst", ComputeHelpers.designate(v, "som van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "som", false), v, "som van een vondst"));
+        }
+    }
+end
+

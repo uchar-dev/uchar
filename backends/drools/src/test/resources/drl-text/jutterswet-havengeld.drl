@@ -1,0 +1,163 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.EmptyBarrier;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.ParameterState;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.math.BigDecimal percentageHavengeld;
+global java.math.BigDecimal percentageKadegeld;
+global java.math.BigDecimal drempel;
+global java.math.BigDecimal percentageToeslag;
+
+function Object pad_havengeld(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("taxatie"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "taxatiebedrag");
+}
+
+// (het percentage havengeld van het taxatiebedrag van de taxatie van de Vondst) naar beneden afgerond op 2 decimalen
+function Object waarde_havengeld(Object $percentageHavengeld, Object $taxatieTaxatiebedrag) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsPercentageVan($percentageHavengeld, $taxatieTaxatiebedrag), Integer.valueOf(2), java.math.RoundingMode.FLOOR), Integer.valueOf(2), "havengeld", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "havengeld"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $taxatieTaxatiebedrag : (pad_havengeld(this)) )
+    $parameter_0 : ParameterState( parameter == "percentageHavengeld", $percentageHavengeld : value )
+then
+    Object v = waarde_havengeld($percentageHavengeld, $taxatieTaxatiebedrag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "havengeld", ComputeHelpers.designate(v, "havengeld")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "havengeld", false), v, "havengeld"));
+        }
+    }
+end
+
+function Object pad1_kadegeld(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("taxatie"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "taxatiebedrag");
+}
+
+function Object pad2_kadegeld(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("taxatie"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "herstelbedrag");
+}
+
+// (het percentage kadegeld van (het taxatiebedrag van de taxatie van de Vondst plus het herstelbedrag van de taxatie van de Vondst)) naar beneden afgerond op 2 decimalen
+function Object waarde_kadegeld(Object $percentageKadegeld, Object $taxatieTaxatiebedrag, Object $taxatieHerstelbedrag) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsPercentageVan($percentageKadegeld, RegelSpraakRuntime.rsPlus($taxatieTaxatiebedrag, $taxatieHerstelbedrag)), Integer.valueOf(2), java.math.RoundingMode.FLOOR), Integer.valueOf(2), "kadegeld", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "kadegeld"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $taxatieTaxatiebedrag : (pad1_kadegeld(this)), $taxatieHerstelbedrag : (pad2_kadegeld(this)) )
+    $parameter_0 : ParameterState( parameter == "percentageKadegeld", $percentageKadegeld : value )
+then
+    Object v = waarde_kadegeld($percentageKadegeld, $taxatieTaxatiebedrag, $taxatieHerstelbedrag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "kadegeld", ComputeHelpers.designate(v, "kadegeld")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "kadegeld", false), v, "kadegeld"));
+        }
+    }
+end
+
+function Object pad_toeslag(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("taxatie"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "taxatiebedrag");
+}
+
+// het meerbedrag groter is dan 0
+function boolean toets_toeslag(Object $taxatieTaxatiebedrag, Object $drempel) {
+    return RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsVerminderd($taxatieTaxatiebedrag, $drempel), new java.math.BigDecimal("0"), ">");
+}
+
+// het meerbedrag is het taxatiebedrag van de taxatie van de Vondst verminderd met de drempel
+function Object waarde_toeslag(Object $taxatieTaxatiebedrag, Object $drempel, Object $percentageToeslag) {
+    try {
+        return ComputeHelpers.fitTarget(let_toeslag($taxatieTaxatiebedrag, $drempel, $percentageToeslag), Integer.valueOf(2), "toeslag", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// het meerbedrag is het taxatiebedrag van de taxatie van de Vondst verminderd met de drempel
+function Object let_toeslag(Object $taxatieTaxatiebedrag, Object $drempel, Object $percentageToeslag) {
+    Object cel_2 = ComputeHelpers.binderCell();
+    try {
+        return RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsPercentageVan($percentageToeslag, binder_toeslag($taxatieTaxatiebedrag, $drempel, $percentageToeslag, cel_2)), Integer.valueOf(2), java.math.RoundingMode.FLOOR);
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_2);
+    }
+}
+
+// het taxatiebedrag van de taxatie van de Vondst verminderd met de drempel
+function Object binder_toeslag(Object $taxatieTaxatiebedrag, Object $drempel, Object $percentageToeslag, Object cel_2) {
+    if (!ComputeHelpers.binderCellFilled(cel_2)) {
+        ComputeHelpers.fillBinderCell(cel_2, RegelSpraakRuntime.rsVerminderd($taxatieTaxatiebedrag, $drempel));
+    }
+    return ComputeHelpers.binderValue(cel_2);
+}
+
+rule "toeslag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $taxatieTaxatiebedrag : (pad_toeslag(this)) )
+    $parameter_1 : ParameterState( parameter == "drempel", $drempel : value )
+    $parameter_3 : ParameterState( parameter == "percentageToeslag", $percentageToeslag : value )
+    eval( toets_toeslag($taxatieTaxatiebedrag, $drempel) )
+then
+    Object v = waarde_toeslag($taxatieTaxatiebedrag, $drempel, $percentageToeslag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "toeslag", ComputeHelpers.designate(v, "toeslag")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "toeslag", false), v, "toeslag"));
+        }
+    }
+end
+
+rule "parameterstand percentageHavengeld"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("percentageHavengeld", percentageHavengeld));
+end
+
+rule "parameterstand percentageKadegeld"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("percentageKadegeld", percentageKadegeld));
+end
+
+rule "parameterstand drempel"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("drempel", drempel));
+end
+
+rule "parameterstand percentageToeslag"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("percentageToeslag", percentageToeslag));
+end
+

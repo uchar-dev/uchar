@@ -1,0 +1,275 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.ParameterState;
+import dev.uchar.regelspraak.transpiler.tms.Period;
+import dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic;
+import dev.uchar.regelspraak.transpiler.tms.PeriodCondition;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.util.List verzuimrentevoet;
+global java.math.BigDecimal rentejaar;
+global java.util.function.Predicate rsDagsoort_Schrikkeldag;
+
+// van zijn vervaldatum plus 1 dg tot en met zijn betaaldatum
+function Object waarde_rentedragend(Object $vervaldatum, Object $betaaldatum, Object $onderwerp) {
+    try {
+        return PeriodCondition.characteristicPeriods(PeriodCondition.window(ComputeHelpers.dateStep($vervaldatum, new java.math.BigDecimal("1"), "DAYS", Boolean.TRUE), Boolean.TRUE, $betaaldatum, Boolean.TRUE, Boolean.TRUE), ComputeHelpers.periods(ComputeHelpers.readProperty($onderwerp, "rentedragend")), "rentedragend", $onderwerp);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "rentedragend"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afdracht( $vervaldatum : vervaldatum, $betaaldatum : betaaldatum )
+then
+    Object v = waarde_rentedragend($vervaldatum, $betaaldatum, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "rentedragend", ComputeHelpers.designate(v, "rentedragend")));
+    } else {
+        insertLogical(new Value($onderwerp, ElementKey.of("afdracht", "rentedragend", true), v, "rentedragend"));
+    }
+end
+
+// 30 dg/mnd
+function Object waarde_rentedagenInEenGeheleMaand(Object $tijdlijn_0) {
+    try {
+        return PeriodArithmetic.written(PeriodArithmetic.clipped(PeriodCondition.wholeBuckets(PeriodCondition.truePeriods($tijdlijn_0), "MAAND", Boolean.FALSE), PeriodArithmetic.scalar(new java.math.BigDecimal("30"))), Integer.valueOf(0), "rentedagen");
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "rentedagen in een gehele maand"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afdracht()
+    $stand_0 : State( attribute == ElementKey.of("afdracht", "rentedragend", true), subject == $onderwerp, $tijdlijn_0 : value )
+then
+    Object v = waarde_rentedagenInEenGeheleMaand($tijdlijn_0);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "rentedagen in een gehele maand", ComputeHelpers.designate(v, "rentedagen in een gehele maand")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("afdracht", "rentedagen", false), v, "rentedagen in een gehele maand"));
+        }
+    }
+end
+
+function Object waarde_rentedagenInEenGedeeltelijkeMaand(Object $tijdlijn_0, java.util.function.Predicate rsDagsoort_Schrikkeldag) {
+    try {
+        return PeriodArithmetic.clipped(PeriodCondition.wholeBuckets(PeriodCondition.truePeriods($tijdlijn_0), "MAAND", Boolean.TRUE), PeriodArithmetic.dayCount(RegelSpraakRuntime.rsAantalDagenIn(PeriodCondition.dayKind($tijdlijn_0, rsDagsoort_Schrikkeldag, Boolean.TRUE), "MAAND", Period.class)));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "rentedagen in een gedeeltelijke maand"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afdracht()
+    $stand_0 : State( attribute == ElementKey.of("afdracht", "rentedragend", true), subject == $onderwerp, $tijdlijn_0 : value )
+then
+    Object v = waarde_rentedagenInEenGedeeltelijkeMaand($tijdlijn_0, rsDagsoort_Schrikkeldag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "rentedagen in een gedeeltelijke maand", ComputeHelpers.designate(v, "rentedagen in een gedeeltelijke maand")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("afdracht", "rentedagen", false), v, "rentedagen in een gedeeltelijke maand"));
+        }
+    }
+end
+
+// (de verzuimrentevoet maal zijn rentedagen maal zijn afdrachtbedrag gedeeld door het rentejaar) rekenkundig afgerond op 3 decimalen
+function Object waarde_maandrente(Object $verzuimrentevoet, Object $tijdlijn_1, Object $onderwerp, Object $afdrachtbedrag, Object $rentejaar, Object sonde) {
+    try {
+        return PeriodArithmetic.written(PeriodArithmetic.rounded(PeriodArithmetic.divided(PeriodArithmetic.times(PeriodArithmetic.times(PeriodArithmetic.parameter($verzuimrentevoet, "verzuimrentevoet"), ComputeHelpers.complete($tijdlijn_1, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"rentedagen\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "rentedagen", Boolean.TRUE)), PeriodArithmetic.scalar($afdrachtbedrag)), PeriodArithmetic.scalar($rentejaar), sonde), Integer.valueOf(3), java.math.RoundingMode.HALF_UP), Integer.valueOf(3), "maandrente");
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "maandrente"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afdracht( $afdrachtbedrag : afdrachtbedrag )
+    $parameter_0 : ParameterState( parameter == "verzuimrentevoet", $verzuimrentevoet : value )
+    $parameter_4 : ParameterState( parameter == "rentejaar", $rentejaar : value )
+    $stand_1 : State( attribute == ElementKey.of("afdracht", "rentedagen", false), subject == $onderwerp, $tijdlijn_1 : value )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_maandrente($verzuimrentevoet, $tijdlijn_1, $onderwerp, $afdrachtbedrag, $rentejaar, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "maandrente", ComputeHelpers.designate(v, "maandrente")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("maandrente", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("afdracht", "maandrente", false), v, "maandrente"));
+        }
+    }
+end
+
+// (het totaal van zijn maandrente) rekenkundig afgerond op 2 decimalen
+function Object waarde_verzuimrente(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(PeriodArithmetic.total(ComputeHelpers.complete($tijdlijn_0, "the temporal total of \"maandrente\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", "maandrente", Boolean.TRUE), "MAAND", null, null, "maandrente", $onderwerp), Integer.valueOf(2), java.math.RoundingMode.HALF_UP), Integer.valueOf(2), "verzuimrente", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "verzuimrente"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afdracht()
+    $stand_0 : State( attribute == ElementKey.of("afdracht", "maandrente", false), subject == $onderwerp, $tijdlijn_0 : value )
+then
+    Object v = waarde_verzuimrente($tijdlijn_0, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "verzuimrente", ComputeHelpers.designate(v, "verzuimrente")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("afdracht", "verzuimrente", false), v, "verzuimrente"));
+        }
+    }
+end
+
+function boolean toets_schrijversAfdrachtRentedagenVerschil(Object $waarden) {
+    return ComputeHelpers.differ($waarden);
+}
+
+rule "schrijvers Afdracht.rentedagen: verschil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afdracht()
+    accumulate( $waarde : Value( attribute == ElementKey.of("afdracht", "rentedagen", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+    eval( toets_schrijversAfdrachtRentedagenVerschil($waarden) )
+then
+    insertLogical(ComputeHelpers.writersConflict($onderwerp, $waarden, "rentedagen", ComputeHelpers.list5("rentedragend", "rentedagen in een gehele maand", "rentedagen in een gedeeltelijke maand", "maandrente", "verzuimrente"), ComputeHelpers.list1("Afdracht"), ComputeHelpers.list1("Afdracht")));
+end
+
+rule "stand Afdracht.rentedragend: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afdracht()
+    $waarde : Value( attribute == ElementKey.of("afdracht", "rentedragend", true), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("afdracht", "rentedragend", true), $v));
+end
+
+rule "stand Afdracht.rentedragend: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afdracht( $invoer : (ComputeHelpers.periods(rentedragend)) )
+    not( $waarde : Value( attribute == ElementKey.of("afdracht", "rentedragend", true), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("afdracht", "rentedragend", true), $invoer));
+end
+
+rule "stand Afdracht.rentedagen: de vereniging van de schrijvers"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afdracht( $invoer : (ComputeHelpers.periods(rentedagen)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("afdracht", "rentedagen", false), subject == $onderwerp ) )
+    exists( $schrijver : Value( attribute == ElementKey.of("afdracht", "rentedagen", false), subject == $onderwerp ) )
+    accumulate( $waarde : Value( attribute == ElementKey.of("afdracht", "rentedagen", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+then
+    insertLogical(ComputeHelpers.writersUnion($onderwerp, ElementKey.of("afdracht", "rentedagen", false), $waarden, $invoer, ComputeHelpers.list5("rentedragend", "rentedagen in een gehele maand", "rentedagen in een gedeeltelijke maand", "maandrente", "verzuimrente")));
+end
+
+rule "stand Afdracht.rentedagen: de vereniging van de schrijvers, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afdracht()
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("afdracht", "rentedagen", false), subject == $onderwerp ) )
+    exists( $schrijver : Value( attribute == ElementKey.of("afdracht", "rentedagen", false), subject == $onderwerp ) )
+    accumulate( $waarde : Value( attribute == ElementKey.of("afdracht", "rentedagen", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+then
+    insertLogical(ComputeHelpers.writersUnion($onderwerp, ElementKey.of("afdracht", "rentedagen", false), $waarden, null, ComputeHelpers.list5("rentedragend", "rentedagen in een gehele maand", "rentedagen in een gedeeltelijke maand", "maandrente", "verzuimrente")));
+end
+
+rule "stand Afdracht.rentedagen: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afdracht( $invoer : (ComputeHelpers.periods(rentedagen)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("afdracht", "rentedagen", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("afdracht", "rentedagen", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("afdracht", "rentedagen", false), $invoer));
+end
+
+rule "stand Afdracht.rentedagen: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afdracht( $invoer : (ComputeHelpers.periods(rentedagen)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("afdracht", "rentedagen", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("afdracht", "rentedagen", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("afdracht", "rentedagen", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+rule "stand Afdracht.maandrente: de vereniging van de schrijvers"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afdracht( $invoer : (ComputeHelpers.periods(maandrente)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("afdracht", "maandrente", false), subject == $onderwerp ) )
+    exists( $schrijver : Value( attribute == ElementKey.of("afdracht", "maandrente", false), subject == $onderwerp ) )
+    accumulate( $waarde : Value( attribute == ElementKey.of("afdracht", "maandrente", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+then
+    insertLogical(ComputeHelpers.writersUnion($onderwerp, ElementKey.of("afdracht", "maandrente", false), $waarden, $invoer, ComputeHelpers.list5("rentedragend", "rentedagen in een gehele maand", "rentedagen in een gedeeltelijke maand", "maandrente", "verzuimrente")));
+end
+
+rule "stand Afdracht.maandrente: de vereniging van de schrijvers, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afdracht()
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("afdracht", "maandrente", false), subject == $onderwerp ) )
+    exists( $schrijver : Value( attribute == ElementKey.of("afdracht", "maandrente", false), subject == $onderwerp ) )
+    accumulate( $waarde : Value( attribute == ElementKey.of("afdracht", "maandrente", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+then
+    insertLogical(ComputeHelpers.writersUnion($onderwerp, ElementKey.of("afdracht", "maandrente", false), $waarden, null, ComputeHelpers.list5("rentedragend", "rentedagen in een gehele maand", "rentedagen in een gedeeltelijke maand", "maandrente", "verzuimrente")));
+end
+
+rule "stand Afdracht.maandrente: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afdracht( $invoer : (ComputeHelpers.periods(maandrente)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("afdracht", "maandrente", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("afdracht", "maandrente", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("afdracht", "maandrente", false), $invoer));
+end
+
+rule "stand Afdracht.maandrente: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afdracht( $invoer : (ComputeHelpers.periods(maandrente)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("afdracht", "maandrente", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("afdracht", "maandrente", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("afdracht", "maandrente", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+rule "parameterstand verzuimrentevoet"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("verzuimrentevoet", verzuimrentevoet));
+end
+
+rule "parameterstand rentejaar"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("rentejaar", rentejaar));
+end
+

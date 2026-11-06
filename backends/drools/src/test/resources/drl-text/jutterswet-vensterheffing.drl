@@ -1,0 +1,84 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.EvaluationDate;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.time.LocalDate rekendatum;
+
+// de meldwaarde van de Vondstmelding vermeerderd met 25
+function Object waarde_vensterheffingIn2026(Object $meldwaarde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($meldwaarde, new java.math.BigDecimal("25")), Integer.valueOf(0), "vensterheffing", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vensterheffing in 2026"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondstmelding( $meldwaarde : meldwaarde )
+    $geldigheid_0 : EvaluationDate( ComputeHelpers.inside(date, "2026-01-01", "2026-12-31") )
+then
+    Object v = waarde_vensterheffingIn2026($meldwaarde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vensterheffing in 2026", ComputeHelpers.designate(v, "vensterheffing in 2026")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondstmelding", "vensterheffing", false), v, "vensterheffing in 2026"));
+        }
+    }
+end
+
+rule "vensterheffing in 2026: geen rekendatum"
+    dialect "mvel"
+when
+    $rekendatum : EvaluationDate( date == null )
+then
+    insertLogical(new Fault($rekendatum, "vensterheffing in 2026", ComputeHelpers.computeFault("a validity-bounded form needs an evaluation date; this session is time-free", "vensterheffing in 2026")));
+end
+
+// de meldwaarde van de Vondstmelding vermeerderd met 40
+function Object waarde_overgangsheffingTotEnMet2025(Object $meldwaarde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($meldwaarde, new java.math.BigDecimal("40")), Integer.valueOf(0), "overgangsheffing", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "overgangsheffing tot en met 2025"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondstmelding( $meldwaarde : meldwaarde )
+    $geldigheid_0 : EvaluationDate( ComputeHelpers.inside(date, null, "2025-12-31") )
+then
+    Object v = waarde_overgangsheffingTotEnMet2025($meldwaarde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "overgangsheffing tot en met 2025", ComputeHelpers.designate(v, "overgangsheffing tot en met 2025")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondstmelding", "overgangsheffing", false), v, "overgangsheffing tot en met 2025"));
+        }
+    }
+end
+
+rule "overgangsheffing tot en met 2025: geen rekendatum"
+    dialect "mvel"
+when
+    $rekendatum : EvaluationDate( date == null )
+then
+    insertLogical(new Fault($rekendatum, "overgangsheffing tot en met 2025", ComputeHelpers.computeFault("a validity-bounded form needs an evaluation date; this session is time-free", "overgangsheffing tot en met 2025")));
+end
+
+rule "rekendatumstand"
+    dialect "mvel"
+when
+then
+    insertLogical(new EvaluationDate(rekendatum));
+end
+

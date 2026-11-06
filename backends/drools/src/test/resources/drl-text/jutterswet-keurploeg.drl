@@ -1,0 +1,284 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.ListPlace;
+import dev.uchar.regelspraak.transpiler.tms.MemberTest;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40
+function boolean toets_premiewaardigBijKeurvergoeding(Object $aantal_vouw_13, Object $vouw_vouw_15) {
+    try {
+        return ((Boolean) kwantorlezing_premiewaardigBijKeurvergoeding($aantal_vouw_13, $vouw_vouw_15));
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40
+function Object kwantorlezing_premiewaardigBijKeurvergoeding(Object $aantal_vouw_13, Object $vouw_vouw_15) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_13, $vouw_vouw_15, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0), null);
+}
+
+rule "premiewaardig bij keurvergoeding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Keurploeg()
+    accumulate( $bijdrage_vouw_10 : Contribution( fold == "premiewaardig bij keurvergoeding: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_14 : value ); $aantal_vouw_13 : count(), $vouw_vouw_15 : collectList($bijdragewaarde_vouw_14) )
+    eval( toets_premiewaardigBijKeurvergoeding($aantal_vouw_13, $vouw_vouw_15) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("keurploeg", "premiewaardig", true)));
+end
+
+// de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40
+function boolean toets_premiewaardigBijKeurvergoedingFoutInDeVoorwaarde(Object $aantal_vouw_20, Object $vouw_vouw_22) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing1_premiewaardigBijKeurvergoedingFoutInDeVoorwaarde($aantal_vouw_20, $vouw_vouw_22));
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40
+function Object kwantorlezing1_premiewaardigBijKeurvergoedingFoutInDeVoorwaarde(Object $aantal_vouw_20, Object $vouw_vouw_22) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_20, $vouw_vouw_22, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0), null);
+}
+
+// de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40
+function Object fout_premiewaardigBijKeurvergoedingFoutInDeVoorwaarde(Object $aantal_vouw_20, Object $vouw_vouw_22) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing2_premiewaardigBijKeurvergoedingFoutInDeVoorwaarde($aantal_vouw_20, $vouw_vouw_22));
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40
+function Object kwantorlezing2_premiewaardigBijKeurvergoedingFoutInDeVoorwaarde(Object $aantal_vouw_20, Object $vouw_vouw_22) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_20, $vouw_vouw_22, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0), null);
+}
+
+rule "premiewaardig bij keurvergoeding: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Keurploeg()
+    accumulate( $bijdrage_vouw_17 : Contribution( fold == "premiewaardig bij keurvergoeding: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_21 : value ); $aantal_vouw_20 : count(), $vouw_vouw_22 : collectList($bijdragewaarde_vouw_21) )
+    eval( toets_premiewaardigBijKeurvergoedingFoutInDeVoorwaarde($aantal_vouw_20, $vouw_vouw_22) )
+then
+    Object f = fout_premiewaardigBijKeurvergoedingFoutInDeVoorwaarde($aantal_vouw_20, $vouw_vouw_22);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"premiewaardig bij keurvergoeding\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "premiewaardig bij keurvergoeding", ComputeHelpers.designate(f, "premiewaardig bij keurvergoeding")));
+end
+
+// de keurvergoeding van geen van de keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40
+function boolean toets_stilliggendBijKeurvergoeding(Object $aantal_vouw_37, Object $vouw_vouw_39) {
+    try {
+        return ((Boolean) kwantorlezing_stilliggendBijKeurvergoeding($aantal_vouw_37, $vouw_vouw_39));
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// de keurvergoeding van geen van de keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40
+function Object kwantorlezing_stilliggendBijKeurvergoeding(Object $aantal_vouw_37, Object $vouw_vouw_39) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_37, $vouw_vouw_39, dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, Integer.valueOf(0), null);
+}
+
+rule "stilliggend bij keurvergoeding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Keurploeg()
+    accumulate( $bijdrage_vouw_34 : Contribution( fold == "stilliggend bij keurvergoeding: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_38 : value ); $aantal_vouw_37 : count(), $vouw_vouw_39 : collectList($bijdragewaarde_vouw_38) )
+    eval( toets_stilliggendBijKeurvergoeding($aantal_vouw_37, $vouw_vouw_39) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("keurploeg", "stilliggend", true)));
+end
+
+// de keurvergoeding van geen van de keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40
+function boolean toets_stilliggendBijKeurvergoedingFoutInDeVoorwaarde(Object $aantal_vouw_44, Object $vouw_vouw_46) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing1_stilliggendBijKeurvergoedingFoutInDeVoorwaarde($aantal_vouw_44, $vouw_vouw_46));
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de keurvergoeding van geen van de keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40
+function Object kwantorlezing1_stilliggendBijKeurvergoedingFoutInDeVoorwaarde(Object $aantal_vouw_44, Object $vouw_vouw_46) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_44, $vouw_vouw_46, dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, Integer.valueOf(0), null);
+}
+
+// de keurvergoeding van geen van de keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40
+function Object fout_stilliggendBijKeurvergoedingFoutInDeVoorwaarde(Object $aantal_vouw_44, Object $vouw_vouw_46) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing2_stilliggendBijKeurvergoedingFoutInDeVoorwaarde($aantal_vouw_44, $vouw_vouw_46));
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de keurvergoeding van geen van de keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40
+function Object kwantorlezing2_stilliggendBijKeurvergoedingFoutInDeVoorwaarde(Object $aantal_vouw_44, Object $vouw_vouw_46) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_44, $vouw_vouw_46, dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, Integer.valueOf(0), null);
+}
+
+rule "stilliggend bij keurvergoeding: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Keurploeg()
+    accumulate( $bijdrage_vouw_41 : Contribution( fold == "stilliggend bij keurvergoeding: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_45 : value ); $aantal_vouw_44 : count(), $vouw_vouw_46 : collectList($bijdragewaarde_vouw_45) )
+    eval( toets_stilliggendBijKeurvergoedingFoutInDeVoorwaarde($aantal_vouw_44, $vouw_vouw_46) )
+then
+    Object f = fout_stilliggendBijKeurvergoedingFoutInDeVoorwaarde($aantal_vouw_44, $vouw_vouw_46);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"stilliggend bij keurvergoeding\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "stilliggend bij keurvergoeding", ComputeHelpers.designate(f, "stilliggend bij keurvergoeding")));
+end
+
+// het aantal keurmeesters van de Keurploeg
+function Object waarde_keurtalVanEenKeurploeg(Object $aantal_vouw_52) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_52), Integer.valueOf(0), "keurtal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "keurtal van een keurploeg"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Keurploeg()
+    accumulate( $bijdrage_vouw_49 : Contribution( fold == "keurtal van een keurploeg: vouw 2", subject == $onderwerp ); $aantal_vouw_52 : count() )
+then
+    Object v = waarde_keurtalVanEenKeurploeg($aantal_vouw_52);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "keurtal van een keurploeg", ComputeHelpers.designate(v, "keurtal van een keurploeg")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("keurploeg", "keurtal", false), v, "keurtal van een keurploeg"));
+        }
+    }
+end
+
+function boolean beta_premiewaardigBijKeurvergoedingBijdrageAanVouw0(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// aangemeld zijn
+function boolean toets_premiewaardigBijKeurvergoedingBijdrageAanVouw0(Object $aangemeld) {
+    return ComputeHelpers.characteristic($aangemeld, Boolean.TRUE);
+}
+
+// de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40
+function Object lidtoets_premiewaardigBijKeurvergoedingBijdrageAanVouw0(Object $onderwerp, Object $tijdlijn_2, Object $lijstplaatsen_plaats_5, Object $plaats_plaats_6) {
+    java.util.List plaats = plaats_premiewaardigBijKeurvergoedingBijdrageAanVouw0($onderwerp, $lijstplaatsen_plaats_5, $plaats_plaats_6);
+    Boolean waar = null;
+    RuntimeException fout = null;
+    try {
+        waar = Boolean.valueOf(ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_2, "the whole-period qualifier over \"keurvergoeding\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "keurvergoeding", Boolean.TRUE), new java.math.BigDecimal("40"), "JAAR", Integer.valueOf(2), Boolean.FALSE));
+    } catch (RuntimeException e) {
+        fout = ComputeHelpers.caught(e);
+    }
+    return new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null));
+}
+
+function java.util.List plaats_premiewaardigBijKeurvergoedingBijdrageAanVouw0(Object $onderwerp, Object $lijstplaatsen_plaats_5, Object $plaats_plaats_6) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER, "premiewaardig bij keurvergoeding: vouw 0", $onderwerp, 0, java.util.Arrays.asList("ploeg"), java.util.Arrays.asList($lijstplaatsen_plaats_5), java.util.Arrays.asList($plaats_plaats_6));
+}
+
+rule "premiewaardig bij keurvergoeding: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Keurploeg()
+    $onderwerp : dev.uchar.regelspraak.facts.Keurmeester( ploeg == $vouwonderwerp, $aangemeld : (ComputeHelpers.holds(aangemeld)) )
+    accumulate( $lijstplaats_plaats_3 : ListPlace( field == "ploeg", beta_premiewaardigBijKeurvergoedingBijdrageAanVouw0(this, $onderwerp), $lijstplaatswaarde_plaats_4 : place ); $lijstplaatsen_plaats_5 : count(), $plaats_plaats_6 : exactMin($lijstplaatswaarde_plaats_4) )
+    $stand_2 : State( attribute == ElementKey.of("keurmeester", "keurvergoeding", false), subject == $onderwerp, $tijdlijn_2 : value )
+    eval( toets_premiewaardigBijKeurvergoedingBijdrageAanVouw0($aangemeld) )
+then
+    insertLogical(new Contribution("premiewaardig bij keurvergoeding: vouw 0", $vouwonderwerp, $onderwerp, lidtoets_premiewaardigBijKeurvergoedingBijdrageAanVouw0($onderwerp, $tijdlijn_2, $lijstplaatsen_plaats_5, $plaats_plaats_6)));
+end
+
+function boolean beta_stilliggendBijKeurvergoedingBijdrageAanVouw1(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// aangemeld zijn
+function boolean toets_stilliggendBijKeurvergoedingBijdrageAanVouw1(Object $aangemeld) {
+    return ComputeHelpers.characteristic($aangemeld, Boolean.TRUE);
+}
+
+// de keurvergoeding van geen van de keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40
+function Object lidtoets_stilliggendBijKeurvergoedingBijdrageAanVouw1(Object $onderwerp, Object $tijdlijn_2, Object $lijstplaatsen_plaats_29, Object $plaats_plaats_30) {
+    java.util.List plaats = plaats_stilliggendBijKeurvergoedingBijdrageAanVouw1($onderwerp, $lijstplaatsen_plaats_29, $plaats_plaats_30);
+    Boolean waar = null;
+    RuntimeException fout = null;
+    try {
+        waar = Boolean.valueOf(ComputeHelpers.wholePeriod(ComputeHelpers.complete($tijdlijn_2, "the whole-period qualifier over \"keurvergoeding\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "keurvergoeding", Boolean.TRUE), new java.math.BigDecimal("40"), "JAAR", Integer.valueOf(2), Boolean.FALSE));
+    } catch (RuntimeException e) {
+        fout = ComputeHelpers.caught(e);
+    }
+    return new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null));
+}
+
+function java.util.List plaats_stilliggendBijKeurvergoedingBijdrageAanVouw1(Object $onderwerp, Object $lijstplaatsen_plaats_29, Object $plaats_plaats_30) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER, "stilliggend bij keurvergoeding: vouw 1", $onderwerp, 0, java.util.Arrays.asList("ploeg"), java.util.Arrays.asList($lijstplaatsen_plaats_29), java.util.Arrays.asList($plaats_plaats_30));
+}
+
+rule "stilliggend bij keurvergoeding: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Keurploeg()
+    $onderwerp : dev.uchar.regelspraak.facts.Keurmeester( ploeg == $vouwonderwerp, $aangemeld : (ComputeHelpers.holds(aangemeld)) )
+    accumulate( $lijstplaats_plaats_27 : ListPlace( field == "ploeg", beta_stilliggendBijKeurvergoedingBijdrageAanVouw1(this, $onderwerp), $lijstplaatswaarde_plaats_28 : place ); $lijstplaatsen_plaats_29 : count(), $plaats_plaats_30 : exactMin($lijstplaatswaarde_plaats_28) )
+    $stand_2 : State( attribute == ElementKey.of("keurmeester", "keurvergoeding", false), subject == $onderwerp, $tijdlijn_2 : value )
+    eval( toets_stilliggendBijKeurvergoedingBijdrageAanVouw1($aangemeld) )
+then
+    insertLogical(new Contribution("stilliggend bij keurvergoeding: vouw 1", $vouwonderwerp, $onderwerp, lidtoets_stilliggendBijKeurvergoedingBijdrageAanVouw1($onderwerp, $tijdlijn_2, $lijstplaatsen_plaats_29, $plaats_plaats_30)));
+end
+
+rule "keurtal van een keurploeg: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Keurploeg()
+    $onderwerp : dev.uchar.regelspraak.facts.Keurmeester( ploeg == $vouwonderwerp )
+then
+    insertLogical(new Contribution("keurtal van een keurploeg: vouw 2", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "stand Keurmeester.keurvergoeding: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Keurmeester( $invoer : (ComputeHelpers.periods(keurvergoeding)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("keurmeester", "keurvergoeding", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("keurmeester", "keurvergoeding", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("keurmeester", "keurvergoeding", false), $invoer));
+end
+
+rule "stand Keurmeester.keurvergoeding: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Keurmeester( $invoer : (ComputeHelpers.periods(keurvergoeding)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("keurmeester", "keurvergoeding", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("keurmeester", "keurvergoeding", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("keurmeester", "keurvergoeding", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+

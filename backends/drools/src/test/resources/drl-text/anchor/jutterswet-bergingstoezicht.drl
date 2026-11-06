@@ -1,0 +1,67 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Recipient;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de som van de opbrengst van alle bewaakte bergingen van de Berger of 0 als die er niet zijn
+function Object waarde_toezichtopbrengstVanEenBerger(Object $aantal_vouw_4, Object $vouw_vouw_6) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_4, $vouw_vouw_6, new java.math.BigDecimal("0")), Integer.valueOf(0), "toezichtopbrengst", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "toezichtopbrengst van een berger"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berger()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "toezichtopbrengst van een berger: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_5 : value ); $aantal_vouw_4 : count(), $vouw_vouw_6 : exactSum($bijdragewaarde_vouw_5) )
+then
+    Object v = waarde_toezichtopbrengstVanEenBerger($aantal_vouw_4, $vouw_vouw_6);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "toezichtopbrengst van een berger", ComputeHelpers.designate(v, "toezichtopbrengst van een berger")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("berger", "toezichtopbrengst", false), v, "toezichtopbrengst van een berger"));
+        }
+    }
+end
+
+rule "verdeel de opbrengst van een berging: ontvanger"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Berging()
+    $onderwerp : dev.uchar.regelspraak.facts.Berger( berging == $vouwonderwerp, $geborgenGewicht : geborgenGewicht )
+then
+    insertLogical(new Recipient("verdeel de opbrengst van een berging", $vouwonderwerp, $onderwerp, $geborgenGewicht, null, null));
+end
+
+rule "verdeel de opbrengst van een berging"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( $opbrengst : opbrengst )
+    accumulate( $ontvanger_verdeling_8 : Recipient( allocation == "verdeel de opbrengst van een berging", source == $onderwerp ); $ontvangers_verdeling_9 : collectList($ontvanger_verdeling_8) )
+then
+    for (Object feit : ComputeHelpers.payout("verdeel de opbrengst van een berging", $onderwerp, dev.uchar.regelspraak.ir.ResolvedAllocation.Method.NAAR_RATO, $opbrengst, $ontvangers_verdeling_9, true, false, false, null, ElementKey.of("berger", "bergingsaandeel", false), null, "verdeel de opbrengst van een berging", Integer.valueOf(0), null, "verdeel de opbrengst van een berging")) {
+        insertLogical(feit);
+    }
+end
+
+rule "toezichtopbrengst van een berger: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Berger()
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( toezichthouder == $vouwonderwerp, $opbrengst : opbrengst )
+then
+    Object v = ComputeHelpers.contribution("toezichtopbrengst van een berger: vouw 0", $vouwonderwerp, $onderwerp, $opbrengst, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+

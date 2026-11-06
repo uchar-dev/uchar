@@ -1,0 +1,79 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Decides;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// hij erkend is
+function boolean toets_defaultsAJutterWaarderingDefault0(Object $erkend) {
+    return ComputeHelpers.characteristic($erkend, Boolean.TRUE);
+}
+
+rule "defaults A:Jutter.waardering: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $erkend : (ComputeHelpers.holds(erkend)), $basisbedrag : basisbedrag )
+    eval( toets_defaultsAJutterWaarderingDefault0($erkend) )
+then
+    // zijn basisbedrag
+    Object v = $basisbedrag;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "waardering");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Jutter.waardering", ComputeHelpers.designate(passend, "defaults A:Jutter.waardering")));
+            insertLogical(new Decides($onderwerp, "defaults A:Jutter.waardering", 0));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "waardering", false), passend, "defaults A:Jutter.waardering"));
+            insertLogical(new Decides($onderwerp, "defaults A:Jutter.waardering", 0));
+        }
+    }
+end
+
+// hij kandidaat is
+function boolean toets_defaultsAJutterWaarderingDefault1(Object $kandidaat) {
+    return ComputeHelpers.characteristic($kandidaat, Boolean.TRUE);
+}
+
+rule "defaults A:Jutter.waardering: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $kandidaat : (ComputeHelpers.holds(kandidaat)), $kandidaatbedrag : kandidaatbedrag )
+    not( $hoger_3 : Decides( stack == "defaults A:Jutter.waardering" && index < 1, subject == $onderwerp ) )
+    eval( toets_defaultsAJutterWaarderingDefault1($kandidaat) )
+then
+    // zijn kandidaatbedrag
+    Object v = $kandidaatbedrag;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "waardering");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Jutter.waardering", ComputeHelpers.designate(passend, "defaults A:Jutter.waardering")));
+            insertLogical(new Decides($onderwerp, "defaults A:Jutter.waardering", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "waardering", false), passend, "defaults A:Jutter.waardering"));
+            insertLogical(new Decides($onderwerp, "defaults A:Jutter.waardering", 1));
+        }
+    }
+end
+
+rule "defaults A:Jutter.waardering: default 2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), ComputeHelpers.readProperty(this, "waardering") == null )
+    not( $hoger_8 : Decides( stack == "defaults A:Jutter.waardering" && index < 2, subject == $onderwerp ) )
+then
+    // 25
+    Object v = new java.math.BigDecimal("25");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "waardering");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Jutter.waardering", ComputeHelpers.designate(passend, "defaults A:Jutter.waardering")));
+            insertLogical(new Decides($onderwerp, "defaults A:Jutter.waardering", 2));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "waardering", false), passend, "defaults A:Jutter.waardering"));
+            insertLogical(new Decides($onderwerp, "defaults A:Jutter.waardering", 2));
+        }
+    }
+end
+

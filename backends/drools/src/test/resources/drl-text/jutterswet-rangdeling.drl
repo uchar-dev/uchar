@@ -1,0 +1,26 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Recipient;
+
+rule "verdeel de bergingscapaciteit van een kustpost: ontvanger"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Kustpost()
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( kustpost == $vouwonderwerp, $aanmeldjaar : aanmeldjaar )
+then
+    insertLogical(new Recipient("verdeel de bergingscapaciteit van een kustpost", $vouwonderwerp, $onderwerp, null, $aanmeldjaar, null));
+end
+
+rule "verdeel de bergingscapaciteit van een kustpost"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Kustpost( $bergingscapaciteit : bergingscapaciteit )
+    accumulate( $ontvanger_verdeling_1 : Recipient( allocation == "verdeel de bergingscapaciteit van een kustpost", source == $onderwerp ); $ontvangers_verdeling_2 : collectList($ontvanger_verdeling_1) )
+then
+    for (Object feit : ComputeHelpers.payout("verdeel de bergingscapaciteit van een kustpost", $onderwerp, dev.uchar.regelspraak.ir.ResolvedAllocation.Method.OP_VOLGORDE, $bergingscapaciteit, $ontvangers_verdeling_2, false, false, false, Integer.valueOf(0), ElementKey.of("jutter", "toegewezen capaciteit", false), ElementKey.of("kustpost", "restcapaciteit", false), "verdeel de bergingscapaciteit van een kustpost", Integer.valueOf(0), Integer.valueOf(0), "verdeel de bergingscapaciteit van een kustpost")) {
+        insertLogical(feit);
+    }
+end
+

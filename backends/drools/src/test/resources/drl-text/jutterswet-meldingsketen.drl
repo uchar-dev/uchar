@@ -1,0 +1,297 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Decides;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.ParameterState;
+import dev.uchar.regelspraak.transpiler.tms.PathState;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.time.LocalDate meldtermijngrens;
+
+// de erkende meldingsdatum van de vinder van de Vondst gevuld is
+function boolean toets_aanmelddatumVanEenVondst(Object $vinderErkendeMeldingsdatum) {
+    return ComputeHelpers.emptyTest($vinderErkendeMeldingsdatum, Boolean.FALSE);
+}
+
+rule "aanmelddatum van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vinddag : vinddag )
+    $padstand_0 : PathState( path == "Vondst:vinder" && member == ElementKey.of("jutter", "erkende meldingsdatum", false), subject == $onderwerp, $vinderErkendeMeldingsdatum : value )
+    eval( toets_aanmelddatumVanEenVondst($vinderErkendeMeldingsdatum) )
+then
+    // de vinddag van de Vondst
+    Object v = $vinddag;
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "aanmelddatum", false), v, "aanmelddatum van een vondst"));
+    }
+end
+
+// hij aan alle volgende voorwaarden voldoet: - het gewicht van de Vondst is groter dan 0 - de erkende meldingsdatum van de vinder van de Vondst is later dan de vinddag van de Vondst
+function boolean toets_controledatumVanEenVondst(Object $gewicht, Object $vinderErkendeMeldingsdatum, Object $vinddag) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.dateCompare($vinderErkendeMeldingsdatum, $vinddag, dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+// de vinddag van de Vondst plus 14 dagen
+function Object waarde_controledatumVanEenVondst(Object $vinddag) {
+    try {
+        return ComputeHelpers.dateStep($vinddag, new java.math.BigDecimal("14"), "DAYS", Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "controledatum van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht, $vinddag : vinddag )
+    $padstand_1 : PathState( path == "Vondst:vinder" && member == ElementKey.of("jutter", "erkende meldingsdatum", false), subject == $onderwerp, $vinderErkendeMeldingsdatum : value )
+    eval( toets_controledatumVanEenVondst($gewicht, $vinderErkendeMeldingsdatum, $vinddag) )
+then
+    Object v = waarde_controledatumVanEenVondst($vinddag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "controledatum van een vondst", ComputeHelpers.designate(v, "controledatum van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "controledatum", false), v, "controledatum van een vondst"));
+        }
+    }
+end
+
+// de erkende meldingsdatum van de vinder van de Vondst eerder is dan de meldtermijngrens
+function boolean toets_tijdigeAanmelding(Object $vinderErkendeMeldingsdatum, Object $meldtermijngrens) {
+    return ComputeHelpers.dateCompare($vinderErkendeMeldingsdatum, $meldtermijngrens, dev.uchar.regelspraak.ir.Condition.Operator.EERDER);
+}
+
+rule "tijdige aanmelding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $parameter_1 : ParameterState( parameter == "meldtermijngrens", $meldtermijngrens : value )
+    $padstand_0 : PathState( path == "Vondst:vinder" && member == ElementKey.of("jutter", "erkende meldingsdatum", false), subject == $onderwerp, $vinderErkendeMeldingsdatum : value )
+    eval( toets_tijdigeAanmelding($vinderErkendeMeldingsdatum, $meldtermijngrens) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "tijdig aangemeld", true)));
+end
+
+// zijn vinder erkend is
+function boolean toets_meldingsgewichtVanEenVondst(Object $vinderErkend) {
+    return ComputeHelpers.characteristicCheckAlongPath($vinderErkend, Boolean.TRUE);
+}
+
+// het gewicht van de Vondst gedeeld door de weegfactor van de Vondst rekenkundig afgerond op 2 decimalen
+function Object waarde_meldingsgewichtVanEenVondst(Object $gewicht, Object $weegfactor, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($gewicht, $weegfactor, sonde), Integer.valueOf(2), java.math.RoundingMode.HALF_UP), Integer.valueOf(2), "meldingsgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "meldingsgewicht van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht, $weegfactor : weegfactor )
+    $padstand_0 : PathState( path == "Vondst:vinder" && member == ElementKey.of("jutter", "erkend", true), subject == $onderwerp, $vinderErkend : value )
+    eval( toets_meldingsgewichtVanEenVondst($vinderErkend) )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_meldingsgewichtVanEenVondst($gewicht, $weegfactor, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "meldingsgewicht van een vondst", ComputeHelpers.designate(v, "meldingsgewicht van een vondst")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("meldingsgewicht van een vondst", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "meldingsgewicht", false), v, "meldingsgewicht van een vondst"));
+        }
+    }
+end
+
+// zijn vinder niet erkend is
+function boolean toets_ongemeldeVondst(Object $vinderErkend) {
+    return ComputeHelpers.characteristicCheckAlongPath($vinderErkend, Boolean.FALSE);
+}
+
+rule "ongemelde vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $padstand_0 : PathState( path == "Vondst:vinder" && member == ElementKey.of("jutter", "erkend", true), subject == $onderwerp, $vinderErkend : value )
+    eval( toets_ongemeldeVondst($vinderErkend) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "ongemeld", true)));
+end
+
+// de erkende meldingsdatum van de Jutter gevuld is
+function boolean toets_erkenningVanDeMelder(Object $erkendeMeldingsdatum) {
+    return ComputeHelpers.emptyTest($erkendeMeldingsdatum, Boolean.FALSE);
+}
+
+rule "erkenning van de melder"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "erkende meldingsdatum", false), subject == $onderwerp, $erkendeMeldingsdatum : value )
+    eval( toets_erkenningVanDeMelder($erkendeMeldingsdatum) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "erkend", true)));
+end
+
+// de herstelde meldingsdatum van de Jutter gevuld is
+function boolean toets_defaultsAJutterErkendeMeldingsdatumDefault0(Object $hersteldeMeldingsdatum) {
+    return ComputeHelpers.emptyTest($hersteldeMeldingsdatum, Boolean.FALSE);
+}
+
+rule "defaults A:Jutter.erkende meldingsdatum: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $hersteldeMeldingsdatum : hersteldeMeldingsdatum )
+    eval( toets_defaultsAJutterErkendeMeldingsdatumDefault0($hersteldeMeldingsdatum) )
+then
+    // de herstelde meldingsdatum van de Jutter
+    Object v = $hersteldeMeldingsdatum;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("jutter", "erkende meldingsdatum", false), v, "defaults A:Jutter.erkende meldingsdatum"));
+        insertLogical(new Decides($onderwerp, "defaults A:Jutter.erkende meldingsdatum", 0));
+    }
+end
+
+rule "defaults A:Jutter.erkende meldingsdatum: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $meldingsdatum : meldingsdatum )
+    not( $hoger_22 : Decides( stack == "defaults A:Jutter.erkende meldingsdatum" && index < 1, subject == $onderwerp ) )
+then
+    // de meldingsdatum van de Jutter
+    Object v = $meldingsdatum;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("jutter", "erkende meldingsdatum", false), v, "defaults A:Jutter.erkende meldingsdatum"));
+        insertLogical(new Decides($onderwerp, "defaults A:Jutter.erkende meldingsdatum", 1));
+    }
+end
+
+function Object pad_padstandVondstVinderNaarJutterErkendeMeldingsdatumLinkAanwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("vinder"));
+}
+
+rule "padstand Vondst.vinder naar Jutter.erkende meldingsdatum: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( pad_padstandVondstVinderNaarJutterErkendeMeldingsdatumLinkAanwezig(this) != null, $bereikt : vinder )
+    $stand : State( attribute == ElementKey.of("jutter", "erkende meldingsdatum", false), subject != null, subject == $bereikt, $v : value )
+then
+    insertLogical(new PathState($onderwerp, "Vondst:vinder", ElementKey.of("jutter", "erkende meldingsdatum", false), $v, $bereikt));
+end
+
+function Object pad_padstandVondstVinderNaarJutterErkendeMeldingsdatumLinkAfwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("vinder"));
+}
+
+rule "padstand Vondst.vinder naar Jutter.erkende meldingsdatum: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( pad_padstandVondstVinderNaarJutterErkendeMeldingsdatumLinkAfwezig(this) == null )
+then
+    insertLogical(new PathState($onderwerp, "Vondst:vinder", ElementKey.of("jutter", "erkende meldingsdatum", false), null, null));
+end
+
+function Object pad_padstandVondstVinderNaarJutterErkendLinkAanwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("vinder"));
+}
+
+rule "padstand Vondst.vinder naar Jutter.erkend: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( pad_padstandVondstVinderNaarJutterErkendLinkAanwezig(this) != null, $bereikt : vinder )
+    $stand : CharacteristicState( characteristic == ElementKey.of("jutter", "erkend", true), subject != null, subject == $bereikt, $v : holds )
+then
+    insertLogical(new PathState($onderwerp, "Vondst:vinder", ElementKey.of("jutter", "erkend", true), $v, $bereikt));
+end
+
+function Object pad_padstandVondstVinderNaarJutterErkendLinkAfwezig(Object o) {
+    return ComputeHelpers.along(o, java.util.Arrays.asList("vinder"));
+}
+
+rule "padstand Vondst.vinder naar Jutter.erkend: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( pad_padstandVondstVinderNaarJutterErkendLinkAfwezig(this) == null )
+then
+    insertLogical(new PathState($onderwerp, "Vondst:vinder", ElementKey.of("jutter", "erkend", true), null, null));
+end
+
+rule "stand Jutter.erkende meldingsdatum: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $waarde : Value( attribute == ElementKey.of("jutter", "erkende meldingsdatum", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "erkende meldingsdatum", false), $v));
+end
+
+rule "stand Jutter.erkende meldingsdatum: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : erkendeMeldingsdatum )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "erkende meldingsdatum", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "erkende meldingsdatum", false), $invoer));
+end
+
+rule "kenmerkstand Jutter.erkend: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.holds(erkend) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("jutter", "erkend", true), true));
+end
+
+rule "kenmerkstand Jutter.erkend: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("jutter", "erkend", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("jutter", "erkend", true), true));
+end
+
+rule "kenmerkstand Jutter.erkend: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.holds(erkend) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("jutter", "erkend", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("jutter", "erkend", true), false));
+end
+
+rule "parameterstand meldtermijngrens"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("meldtermijngrens", meldtermijngrens));
+end
+

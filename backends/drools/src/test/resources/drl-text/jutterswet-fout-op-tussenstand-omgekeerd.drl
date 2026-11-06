@@ -1,0 +1,149 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de datum met jaar: 2025, maand: zijn vervalmaand en dag: zijn bergtermijn
+function Object waarde_vervaldag(Object $vervalmaand, Object $bergtermijn) {
+    try {
+        return ComputeHelpers.dateWith("dateWith", new java.math.BigDecimal("2025"), $vervalmaand, $bergtermijn);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vervaldag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vervalmaand : vervalmaand )
+    $stand_1 : State( attribute == ElementKey.of("vondst", "bergtermijn", false), subject == $onderwerp, $bergtermijn : value )
+then
+    Object v = waarde_vervaldag($vervalmaand, $bergtermijn);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vervaldag", ComputeHelpers.designate(v, "vervaldag")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "vervaldag", false), v, "vervaldag"));
+        }
+    }
+end
+
+// 30
+function Object waarde_standaardbergtermijn() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("30"), Integer.valueOf(0), "bergtermijn", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "standaardbergtermijn"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( bergtermijn == null )
+    not( $andere_schrijver : Value( attribute == ElementKey.of("vondst", "bergtermijn", false) && writer != "standaardbergtermijn", subject == $onderwerp ) )
+then
+    Object v = waarde_standaardbergtermijn();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "standaardbergtermijn", ComputeHelpers.designate(v, "standaardbergtermijn")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "bergtermijn", false), v, "standaardbergtermijn"));
+        }
+    }
+end
+
+// hij erkend is
+function boolean toets_bergtermijn(Object $erkend) {
+    return ComputeHelpers.characteristic($erkend, Boolean.TRUE);
+}
+
+// zijn opgegeven termijn
+function Object waarde_bergtermijn(Object $opgegevenTermijn) {
+    try {
+        return ComputeHelpers.fitTarget($opgegevenTermijn, Integer.valueOf(0), "bergtermijn", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bergtermijn"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $opgegevenTermijn : opgegevenTermijn )
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "erkend", true), subject == $onderwerp, $erkend : holds )
+    eval( toets_bergtermijn($erkend) )
+then
+    Object v = waarde_bergtermijn($opgegevenTermijn);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bergtermijn", ComputeHelpers.designate(v, "bergtermijn")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "bergtermijn", false), v, "bergtermijn"));
+        }
+    }
+end
+
+// hij gemeld is
+function boolean toets_erkenning(Object $gemeld) {
+    return ComputeHelpers.characteristic($gemeld, Boolean.TRUE);
+}
+
+rule "erkenning"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gemeld : (ComputeHelpers.holds(gemeld)) )
+    eval( toets_erkenning($gemeld) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "erkend", true)));
+end
+
+rule "stand Vondst.bergtermijn: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $waarde : Value( attribute == ElementKey.of("vondst", "bergtermijn", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "bergtermijn", false), $v));
+end
+
+rule "stand Vondst.bergtermijn: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : bergtermijn )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "bergtermijn", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "bergtermijn", false), $invoer));
+end
+
+rule "kenmerkstand Vondst.erkend: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(erkend) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "erkend", true), true));
+end
+
+rule "kenmerkstand Vondst.erkend: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "erkend", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "erkend", true), true));
+end
+
+rule "kenmerkstand Vondst.erkend: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(erkend) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "erkend", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "erkend", true), false));
+end
+

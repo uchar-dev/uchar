@@ -1,0 +1,48 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+
+// haar geborgd gelijk is aan waar
+function boolean toets_afhandelingVanEenGeborgenBerging(Object $geborgd) {
+    return ComputeHelpers.textEqual($geborgd, Boolean.TRUE, Boolean.TRUE);
+}
+
+rule "afhandeling van een geborgen berging"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( $geborgd : geborgd )
+    eval( toets_afhandelingVanEenGeborgenBerging($geborgd) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("berging", "afgehandeld", true)));
+end
+
+// haar geborgd gelijk is aan onwaar
+function boolean toets_openstellingVanEenOngeborgenBerging(Object $geborgd) {
+    return ComputeHelpers.textEqual($geborgd, Boolean.FALSE, Boolean.TRUE);
+}
+
+rule "openstelling van een ongeborgen berging"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( $geborgd : geborgd )
+    eval( toets_openstellingVanEenOngeborgenBerging($geborgd) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("berging", "openstaand", true)));
+end
+
+// haar geborgd ongelijk is aan waar
+function boolean toets_betwistingBijAfwijkendeBorging(Object $geborgd) {
+    return ComputeHelpers.textEqual($geborgd, Boolean.TRUE, Boolean.FALSE);
+}
+
+rule "betwisting bij afwijkende borging"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( $geborgd : geborgd )
+    eval( toets_betwistingBijAfwijkendeBorging($geborgd) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("berging", "betwist", true)));
+end
+

@@ -1,0 +1,186 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.EvaluationDate;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.ListPlace;
+import dev.uchar.regelspraak.transpiler.tms.MemberFault;
+import dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.time.LocalDate rekendatum;
+
+// het totaal van zijn havengeldtarief
+function Object waarde_havengeldPerMeter(Object $tijdlijn_0, Object $onderwerp, Object $rekendatumwaarde_2) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.ownTotal($tijdlijn_0, $onderwerp, $rekendatumwaarde_2, "havengeldtarief", "MAAND", null, null), Integer.valueOf(0), "havengeld per meter", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "havengeld per meter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven()
+    $rekendatum_2 : EvaluationDate( $rekendatumwaarde_2 : date )
+    $stand_0 : State( attribute == ElementKey.of("haven", "havengeldtarief", false), subject == $onderwerp, $tijdlijn_0 : value )
+then
+    Object v = waarde_havengeldPerMeter($tijdlijn_0, $onderwerp, $rekendatumwaarde_2);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "havengeld per meter", ComputeHelpers.designate(v, "havengeld per meter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("haven", "havengeld per meter", false), v, "havengeld per meter"));
+        }
+    }
+end
+
+// het totaal van het kadetarief van alle schuiten van de Haven
+function Object waarde_kadeopbrengstPerMeter(Object $aantal_vouw_28, Object $vouw_vouw_30, Object $eerste_lidfout_vouw_35) {
+    try {
+        return ComputeHelpers.fitTarget(vouwlezing_kadeopbrengstPerMeter($aantal_vouw_28, $vouw_vouw_30, $eerste_lidfout_vouw_35), Integer.valueOf(0), "kadeopbrengst per meter", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// het totaal van het kadetarief van alle schuiten van de Haven
+function Object vouwlezing_kadeopbrengstPerMeter(Object $aantal_vouw_28, Object $vouw_vouw_30, Object $eerste_lidfout_vouw_35) {
+    if ($eerste_lidfout_vouw_35 != null) {
+        throw ((MemberFault) $eerste_lidfout_vouw_35).fault();
+    }
+    return ComputeHelpers.foldValue($aantal_vouw_28, $vouw_vouw_30, new java.math.BigDecimal("0"));
+}
+
+rule "kadeopbrengst per meter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven()
+    accumulate( $bijdrage_vouw_25 : Contribution( fold == "kadeopbrengst per meter: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_29 : value ); $aantal_vouw_28 : count(), $vouw_vouw_30 : exactSum($bijdragewaarde_vouw_29) )
+    accumulate( $lidfout_vouw_31 : MemberFault( fold == "kadeopbrengst per meter: vouw 0", subject == $onderwerp ); $lidfouten_vouw_34 : count(), $eerste_lidfout_vouw_35 : exactMin($lidfout_vouw_31) )
+then
+    Object v = waarde_kadeopbrengstPerMeter($aantal_vouw_28, $vouw_vouw_30, $eerste_lidfout_vouw_35);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "kadeopbrengst per meter", ComputeHelpers.designate(v, "kadeopbrengst per meter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("haven", "kadeopbrengst per meter", false), v, "kadeopbrengst per meter"));
+        }
+    }
+end
+
+rule "kadeopbrengst per meter: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Haven()
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( thuishaven == $vouwonderwerp )
+    $stand_1 : State( attribute == ElementKey.of("schuit", "kadetarief", false), subject == $onderwerp, $tijdlijn_1 : value )
+then
+    Object v = ComputeHelpers.contribution("kadeopbrengst per meter: vouw 0", $vouwonderwerp, $onderwerp, $tijdlijn_1, "MAAND", null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta_kadeopbrengstPerMeterLidfoutInVouw0(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+function boolean toets_kadeopbrengstPerMeterLidfoutInVouw0(Object $tijdlijn_2) {
+    return ComputeHelpers.bucketScalar($tijdlijn_2, Boolean.TRUE);
+}
+
+function java.util.List plaats_kadeopbrengstPerMeterLidfoutInVouw0(Object $onderwerp, Object $lijstplaatsen_plaats_8, Object $plaats_plaats_9) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.MEMBER_FAULT, "kadeopbrengst per meter: vouw 0", $onderwerp, 0, java.util.Arrays.asList("thuishaven"), java.util.Arrays.asList($lijstplaatsen_plaats_8), java.util.Arrays.asList($plaats_plaats_9));
+}
+
+rule "kadeopbrengst per meter: lidfout in vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Haven()
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( thuishaven == $vouwonderwerp )
+    accumulate( $lijstplaats_plaats_6 : ListPlace( field == "thuishaven", beta_kadeopbrengstPerMeterLidfoutInVouw0(this, $onderwerp), $lijstplaatswaarde_plaats_7 : place ); $lijstplaatsen_plaats_8 : count(), $plaats_plaats_9 : exactMin($lijstplaatswaarde_plaats_7) )
+    $stand_2 : State( attribute == ElementKey.of("schuit", "kadetarief", false), subject == $onderwerp, $tijdlijn_2 : value )
+    eval( toets_kadeopbrengstPerMeterLidfoutInVouw0($tijdlijn_2) )
+then
+    insertLogical(new MemberFault("kadeopbrengst per meter: vouw 0", $vouwonderwerp, $onderwerp, ComputeHelpers.bucketScalarFault("kadetarief", "the per-element temporal total of \"kadetarief\" over ", $onderwerp, ": the case supplies an asOfDate-bucket scalar, which carries no period of its own; a set fold needs each member's own timeline (ch. 3.6/§7.1, ch. 8.4)"), plaats_kadeopbrengstPerMeterLidfoutInVouw0($onderwerp, $lijstplaatsen_plaats_8, $plaats_plaats_9)));
+end
+
+function boolean beta_kadeopbrengstPerMeterLidfoutInVouw0OverEenOpenSegment(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+function boolean toets_kadeopbrengstPerMeterLidfoutInVouw0OverEenOpenSegment(Object $tijdlijn_2) {
+    return PeriodArithmetic.openNonZero($tijdlijn_2);
+}
+
+function java.util.List plaats_kadeopbrengstPerMeterLidfoutInVouw0OverEenOpenSegment(Object $onderwerp, Object $lijstplaatsen_plaats_18, Object $plaats_plaats_19) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.MEMBER_FAULT, "kadeopbrengst per meter: vouw 0", $onderwerp, 0, java.util.Arrays.asList("thuishaven"), java.util.Arrays.asList($lijstplaatsen_plaats_18), java.util.Arrays.asList($plaats_plaats_19));
+}
+
+rule "kadeopbrengst per meter: lidfout in vouw 0 over een open segment"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Haven()
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( thuishaven == $vouwonderwerp )
+    accumulate( $lijstplaats_plaats_16 : ListPlace( field == "thuishaven", beta_kadeopbrengstPerMeterLidfoutInVouw0OverEenOpenSegment(this, $onderwerp), $lijstplaatswaarde_plaats_17 : place ); $lijstplaatsen_plaats_18 : count(), $plaats_plaats_19 : exactMin($lijstplaatswaarde_plaats_17) )
+    $stand_2 : State( attribute == ElementKey.of("schuit", "kadetarief", false), subject == $onderwerp, $tijdlijn_2 : value )
+    eval( toets_kadeopbrengstPerMeterLidfoutInVouw0OverEenOpenSegment($tijdlijn_2) )
+then
+    insertLogical(new MemberFault("kadeopbrengst per meter: vouw 0", $vouwonderwerp, $onderwerp, PeriodArithmetic.openSegmentFault("kadetarief", $onderwerp, $tijdlijn_2), plaats_kadeopbrengstPerMeterLidfoutInVouw0OverEenOpenSegment($onderwerp, $lijstplaatsen_plaats_18, $plaats_plaats_19)));
+end
+
+rule "stand Haven.havengeldtarief: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven( $invoer : (ComputeHelpers.periods(havengeldtarief)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("haven", "havengeldtarief", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("haven", "havengeldtarief", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("haven", "havengeldtarief", false), $invoer));
+end
+
+rule "stand Haven.havengeldtarief: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven( $invoer : (ComputeHelpers.periods(havengeldtarief)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("haven", "havengeldtarief", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("haven", "havengeldtarief", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("haven", "havengeldtarief", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+rule "stand Schuit.kadetarief: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( $invoer : (ComputeHelpers.periods(kadetarief)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("schuit", "kadetarief", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("schuit", "kadetarief", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("schuit", "kadetarief", false), $invoer));
+end
+
+rule "stand Schuit.kadetarief: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Schuit( $invoer : (ComputeHelpers.periods(kadetarief)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("schuit", "kadetarief", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("schuit", "kadetarief", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("schuit", "kadetarief", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+rule "rekendatumstand"
+    dialect "mvel"
+when
+then
+    insertLogical(new EvaluationDate(rekendatum));
+end
+

@@ -1,0 +1,113 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMaximumFunction exactMax;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen: - hij is niet de Vergunning zelf - zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf
+function Object waarde_hoogsteLatereTarief(Object $aantal_vouw_5, Object $vouw_vouw_7) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_5, $vouw_vouw_7, null), Integer.valueOf(0), "hoogste latere tarief", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "hoogste latere tarief"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    accumulate( $bijdrage_vouw_2 : Contribution( fold == "hoogste latere tarief: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_6 : value ); $aantal_vouw_5 : count(), $vouw_vouw_7 : exactMax($bijdragewaarde_vouw_6) )
+then
+    Object v = waarde_hoogsteLatereTarief($aantal_vouw_5, $vouw_vouw_7);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "hoogste latere tarief", ComputeHelpers.designate(v, "hoogste latere tarief")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vergunning", "hoogste latere tarief", false), v, "hoogste latere tarief"));
+        }
+    }
+end
+
+// de ingangsdag van alle vergunningen van het register van de Vergunning die niet de Vergunning zelf zijn later is dan de ingangsdag van de Vergunning zelf
+function boolean toets_voorrang(Object $aantal_vouw_13, Object $vouw_vouw_15) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_13, $vouw_vouw_15, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0));
+}
+
+rule "voorrang"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning()
+    accumulate( $bijdrage_vouw_10 : Contribution( fold == "voorrang: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_14 : value ); $aantal_vouw_13 : count(), $vouw_vouw_15 : exactSum($bijdragewaarde_vouw_14) )
+    eval( toets_voorrang($aantal_vouw_13, $vouw_vouw_15) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vergunning", "voorrang", true)));
+end
+
+function boolean beta_hoogsteLatereTariefBijdrageAanVouw0(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("register"), java.util.Arrays.asList("register"));
+}
+
+// aan alle volgende voorwaarden voldoen: - hij is niet de Vergunning zelf - zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf
+function boolean toets_hoogsteLatereTariefBijdrageAanVouw0(Object $vouwonderwerp, Object $onderwerp, Object $ingangsdag, Object $ingangsdag2) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.dateCompare($ingangsdag, $ingangsdag2, dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "hoogste latere tarief: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning( $ingangsdag2 : ingangsdag )
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( beta_hoogsteLatereTariefBijdrageAanVouw0(this, $vouwonderwerp), $ingangsdag : ingangsdag, $tarief : tarief )
+    eval( toets_hoogsteLatereTariefBijdrageAanVouw0($vouwonderwerp, $onderwerp, $ingangsdag, $ingangsdag2) )
+then
+    Object v = ComputeHelpers.contribution("hoogste latere tarief: vouw 0", $vouwonderwerp, $onderwerp, $tarief, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta_voorrangBijdrageAanVouw1(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("register"), java.util.Arrays.asList("register"));
+}
+
+// niet de Vergunning zelf zijn
+function boolean toets_voorrangBijdrageAanVouw1(Object $vouwonderwerp, Object $onderwerp) {
+    return ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE);
+}
+
+// de ingangsdag van alle vergunningen van het register van de Vergunning die niet de Vergunning zelf zijn later is dan de ingangsdag van de Vergunning zelf
+function boolean matrix_voorrangBijdrageAanVouw1(Object $onderwerp, Object $ingangsdag, Object $ingangsdag2) {
+    return ComputeHelpers.dateCompare($ingangsdag, $ingangsdag2, dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+}
+
+rule "voorrang: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vergunning( $ingangsdag2 : ingangsdag )
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( beta_voorrangBijdrageAanVouw1(this, $vouwonderwerp), $ingangsdag : ingangsdag )
+    eval( toets_voorrangBijdrageAanVouw1($vouwonderwerp, $onderwerp) )
+then
+    insertLogical(new Contribution("voorrang: vouw 1", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_voorrangBijdrageAanVouw1($onderwerp, $ingangsdag, $ingangsdag2))));
+end
+

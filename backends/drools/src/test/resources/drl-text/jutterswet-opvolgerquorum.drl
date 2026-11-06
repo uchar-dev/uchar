@@ -1,0 +1,215 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
+import dev.uchar.regelspraak.transpiler.tms.CreationStamp;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.SecondFillingFault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het aantal opvolgers van de Wachter
+function Object waarde_merkVanEenWachter(Object $aantal_vouw_7) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_7), Integer.valueOf(0), "merk", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "merk van een wachter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter()
+    accumulate( $bijdrage_vouw_4 : Contribution( fold == "merk van een wachter: vouw 0", subject == $onderwerp ); $aantal_vouw_7 : count() )
+then
+    Object v = waarde_merkVanEenWachter($aantal_vouw_7);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "merk van een wachter", ComputeHelpers.designate(v, "merk van een wachter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("wachter", "merk", false), v, "merk van een wachter"));
+        }
+    }
+end
+
+function boolean beta_estafetteWerfEenOpvolger(Object eigen, Object ander) {
+    return ComputeHelpers.inPhase(eigen, ander);
+}
+
+// de rang van de Wachter is kleiner dan 5, ten minste 1 opvolger van de Wachter heeft een rang groter dan 3 en alle ploegleden van de Wachter hebben een merk groter dan 1
+function boolean toets_estafetteWerfEenOpvolger(Object $rang, Object $aantal_vouw_19, Object $vouw_vouw_21, Object $aantal_vouw_28, Object $vouw_vouw_30) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($rang, new java.math.BigDecimal("5"), "<")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.quantifierVerdict($aantal_vouw_19, $vouw_vouw_21, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(1))) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.quantifierVerdict($aantal_vouw_28, $vouw_vouw_30, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0))) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+}
+
+// de rang van de Wachter plus 1
+function Object creatie_estafetteWerfEenOpvolger(Object $rang, Object $fase, Object $herkomsten_creatie_33, Object $onderwerp) {
+    int diepte = ComputeHelpers.creationDepth("werf een opvolger", 0, "Wachter", (java.util.List) $herkomsten_creatie_33, 100);
+    Object i0 = null;
+    try {
+        i0 = ComputeHelpers.collapse(ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($rang, new java.math.BigDecimal("1")), Integer.valueOf(0), "rang", "werf een opvolger"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+    Object nieuw = ComputeHelpers.newObject($onderwerp, "dev.uchar.regelspraak.facts.Wachter");
+    ComputeHelpers.set(nieuw, "rang", i0);
+    int fase = ((Integer) $fase).intValue();
+    java.util.List feiten = new java.util.ArrayList();
+    feiten.add(nieuw);
+    feiten.add(new CreationStamp("werf een opvolger", $onderwerp, nieuw, fase, 0, diepte));
+    feiten.add(new RelationLink("opvolging", $onderwerp, nieuw, fase));
+    return feiten;
+}
+
+rule "estafette: werf een opvolger"
+    dialect "mvel"
+    agenda-group "uchar-objectcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter()
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    $stand_0 : State( attribute == ElementKey.of("wachter", "rang", false), subject == $onderwerp, $rang : value )
+    accumulate( $bijdrage_vouw_16 : Contribution( fold == "werf een opvolger: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_20 : value ); $aantal_vouw_19 : count(), $vouw_vouw_21 : exactSum($bijdragewaarde_vouw_20) )
+    accumulate( $bijdrage_vouw_25 : Contribution( fold == "werf een opvolger: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_29 : value ); $aantal_vouw_28 : count(), $vouw_vouw_30 : exactSum($bijdragewaarde_vouw_29) )
+    accumulate( $herkomst_creatie_32 : CreationStamp( object == $onderwerp ); $herkomsten_creatie_33 : collectList($herkomst_creatie_32) )
+    not( $gemaakt_creatie_35 : CreationStamp( rule == "werf een opvolger", subject == $onderwerp ) )
+    not( $nieuw_creatie_36 : CreationStamp( object == $onderwerp, beta_estafetteWerfEenOpvolger(this, $fase) ) )
+    eval( toets_estafetteWerfEenOpvolger($rang, $aantal_vouw_19, $vouw_vouw_21, $aantal_vouw_28, $vouw_vouw_30) )
+    not( $eigen_fout : Fault( rule == "werf een opvolger", subject == $onderwerp ) )
+then
+    Object v = creatie_estafetteWerfEenOpvolger($rang, $fase, $herkomsten_creatie_33, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insert(new Fault($onderwerp, "werf een opvolger", ComputeHelpers.designate(v, "estafette: werf een opvolger")));
+    } else {
+        java.util.List feiten = (java.util.List) v;
+        insert(feiten.get(0));
+        insert(feiten.get(1));
+        insert(feiten.get(2));
+    }
+end
+
+rule "merk van een wachter: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Wachter()
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter()
+    exists( $koppeling_bereik_0 : RelationLink( relation == "opvolging", second == $onderwerp, first == $vouwonderwerp ) )
+then
+    insertLogical(new Contribution("merk van een wachter: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+// de rang is groter dan 3
+function boolean matrix_estafetteWerfEenOpvolgerBijdrageAanVouw1(Object $onderwerp, Object $rang) {
+    return RegelSpraakRuntime.rsAggVergelijk($rang, new java.math.BigDecimal("3"), ">");
+}
+
+rule "estafette: werf een opvolger: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Wachter()
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter()
+    exists( $koppeling_bereik_12 : RelationLink( relation == "opvolging", second == $onderwerp, first == $vouwonderwerp ) )
+    $stand_1 : State( attribute == ElementKey.of("wachter", "rang", false), subject == $onderwerp, $rang : value )
+then
+    insertLogical(new Contribution("werf een opvolger: vouw 1", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_estafetteWerfEenOpvolgerBijdrageAanVouw1($onderwerp, $rang))));
+end
+
+// het merk is groter dan 1
+function boolean matrix_estafetteWerfEenOpvolgerBijdrageAanVouw2(Object $onderwerp, Object $merk) {
+    return RegelSpraakRuntime.rsAggVergelijk($merk, new java.math.BigDecimal("1"), ">");
+}
+
+rule "estafette: werf een opvolger: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Wachter()
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter( ploegleider == $vouwonderwerp )
+    $stand_1 : State( attribute == ElementKey.of("wachter", "merk", false), subject == $onderwerp, $merk : value )
+then
+    insertLogical(new Contribution("werf een opvolger: vouw 2", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_estafetteWerfEenOpvolgerBijdrageAanVouw2($onderwerp, $merk))));
+end
+
+rule "koppeling opvolging uit de invoer: Wachter.voorganger"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Wachter( voorganger != null, $ander : voorganger )
+then
+    insertLogical(new RelationLink("opvolging", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingOpvolgingTweedeVullingVanVoorganger(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling opvolging: tweede vulling van voorganger"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "opvolging", $nabij : second )
+    $twee : RelationLink( relation == "opvolging", second != null, second == $een.second, beta_koppelingOpvolgingTweedeVullingVanVoorganger(this, $een) )
+then
+    insertLogical(new Fault($nabij, "opvolging", new SecondFillingFault("voorganger", $nabij)));
+end
+
+rule "stand Wachter.rang: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter()
+    $waarde : Value( attribute == ElementKey.of("wachter", "rang", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("wachter", "rang", false), $v));
+end
+
+rule "stand Wachter.rang: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter( $invoer : rang )
+    not( $waarde : Value( attribute == ElementKey.of("wachter", "rang", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("wachter", "rang", false), $invoer));
+end
+
+rule "stand Wachter.merk: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter()
+    $waarde : Value( attribute == ElementKey.of("wachter", "merk", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("wachter", "merk", false), $v));
+end
+
+rule "stand Wachter.merk: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wachter( $invoer : merk )
+    not( $waarde : Value( attribute == ElementKey.of("wachter", "merk", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("wachter", "merk", false), $invoer));
+end
+

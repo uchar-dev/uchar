@@ -1,0 +1,109 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Decides;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// hij berger en wachter is en zijn wachtgeld hoger is dan zijn berggeld
+function boolean toets_defaultsAJutterVergoedingDefault0(Object $berger, Object $wachter, Object $wachtgeld, Object $berggeld) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($berger, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($wachter, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($wachtgeld, $berggeld, ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+}
+
+rule "defaults A:Jutter.vergoeding: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $berger : (ComputeHelpers.holds(berger)), $wachter : (ComputeHelpers.holds(wachter)), $wachtgeld : wachtgeld, $berggeld : berggeld )
+    eval( toets_defaultsAJutterVergoedingDefault0($berger, $wachter, $wachtgeld, $berggeld) )
+then
+    // zijn wachtgeld
+    Object v = $wachtgeld;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "vergoeding");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Jutter.vergoeding", ComputeHelpers.designate(passend, "defaults A:Jutter.vergoeding")));
+            insertLogical(new Decides($onderwerp, "defaults A:Jutter.vergoeding", 0));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "vergoeding", false), passend, "defaults A:Jutter.vergoeding"));
+            insertLogical(new Decides($onderwerp, "defaults A:Jutter.vergoeding", 0));
+        }
+    }
+end
+
+// hij berger is
+function boolean toets_defaultsAJutterVergoedingDefault1(Object $berger) {
+    return ComputeHelpers.characteristic($berger, Boolean.TRUE);
+}
+
+rule "defaults A:Jutter.vergoeding: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $berger : (ComputeHelpers.holds(berger)), $berggeld : berggeld )
+    not( $hoger_3 : Decides( stack == "defaults A:Jutter.vergoeding" && index < 1, subject == $onderwerp ) )
+    eval( toets_defaultsAJutterVergoedingDefault1($berger) )
+then
+    // zijn berggeld
+    Object v = $berggeld;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "vergoeding");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Jutter.vergoeding", ComputeHelpers.designate(passend, "defaults A:Jutter.vergoeding")));
+            insertLogical(new Decides($onderwerp, "defaults A:Jutter.vergoeding", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "vergoeding", false), passend, "defaults A:Jutter.vergoeding"));
+            insertLogical(new Decides($onderwerp, "defaults A:Jutter.vergoeding", 1));
+        }
+    }
+end
+
+// hij wachter is
+function boolean toets_defaultsAJutterVergoedingDefault2(Object $wachter) {
+    return ComputeHelpers.characteristic($wachter, Boolean.TRUE);
+}
+
+rule "defaults A:Jutter.vergoeding: default 2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $wachter : (ComputeHelpers.holds(wachter)), $wachtgeld : wachtgeld )
+    not( $hoger_7 : Decides( stack == "defaults A:Jutter.vergoeding" && index < 2, subject == $onderwerp ) )
+    eval( toets_defaultsAJutterVergoedingDefault2($wachter) )
+then
+    // zijn wachtgeld
+    Object v = $wachtgeld;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "vergoeding");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Jutter.vergoeding", ComputeHelpers.designate(passend, "defaults A:Jutter.vergoeding")));
+            insertLogical(new Decides($onderwerp, "defaults A:Jutter.vergoeding", 2));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "vergoeding", false), passend, "defaults A:Jutter.vergoeding"));
+            insertLogical(new Decides($onderwerp, "defaults A:Jutter.vergoeding", 2));
+        }
+    }
+end
+

@@ -1,0 +1,91 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Recipient;
+import dev.uchar.regelspraak.transpiler.tms.UniquenessKey;
+import dev.uchar.regelspraak.transpiler.tms.UniquenessViolation;
+
+function boolean toets_rangPerBergingSleutelVanHoofdberger1(Object $rang, Object $berging) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($rang, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($berging, Boolean.FALSE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+function java.util.List componenten_rangPerBergingSleutelVanHoofdberger1(Object $rang, Object $berging) {
+    java.util.List waarden = new java.util.ArrayList();
+    waarden.add($rang);
+    return waarden;
+}
+
+rule "rang per berging: sleutel van Hoofdberger 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Hoofdberger( $rang : rang, $berging : berging )
+    eval( toets_rangPerBergingSleutelVanHoofdberger1($rang, $berging) )
+then
+    for (Object k : ComputeHelpers.uniquenessKeys("rang per berging", 0, $onderwerp, $berging, componenten_rangPerBergingSleutelVanHoofdberger1($rang, $berging), -1)) {
+        insertLogical(k);
+    }
+end
+
+function boolean beta_rangPerBerging(Object eigen, Object ander) {
+    return ComputeHelpers.collidesWith(eigen, ander);
+}
+
+function boolean toets_rangPerBerging(Object $botsingen) {
+    return ComputeHelpers.duplicate($botsingen);
+}
+
+rule "rang per berging"
+    dialect "mvel"
+when
+    $sleutel : UniquenessKey( uniqueness == "rang per berging", $element : element )
+    accumulate( $ander : UniquenessKey( uniqueness == "rang per berging", beta_rangPerBerging(this, $sleutel) ); $botsingen : count() )
+    eval( toets_rangPerBerging($botsingen) )
+then
+    insertLogical(new UniquenessViolation("rang per berging", $element));
+end
+
+rule "rang per berging: kanaal"
+    dialect "mvel"
+when
+    $schending : UniquenessViolation( uniqueness == "rang per berging", $subject : element )
+then
+    insertLogical(ComputeHelpers.inconsistency("rang per berging", $subject, ComputeHelpers.list1("EF-026")));
+end
+
+rule "verdeel de opbrengst van een berging over de hoofdbergers: ontvanger"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Berging()
+    $onderwerp : dev.uchar.regelspraak.facts.Hoofdberger( berging == $vouwonderwerp )
+then
+    insertLogical(new Recipient("verdeel de opbrengst van een berging over de hoofdbergers", $vouwonderwerp, $onderwerp, null, null, null));
+end
+
+rule "verdeel de opbrengst van een berging over de hoofdbergers"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( $opbrengst : opbrengst )
+    accumulate( $ontvanger_verdeling_7 : Recipient( allocation == "verdeel de opbrengst van een berging over de hoofdbergers", source == $onderwerp ); $ontvangers_verdeling_8 : collectList($ontvanger_verdeling_7) )
+then
+    for (Object feit : ComputeHelpers.payout("verdeel de opbrengst van een berging over de hoofdbergers", $onderwerp, dev.uchar.regelspraak.ir.ResolvedAllocation.Method.GELIJKE_DELEN, $opbrengst, $ontvangers_verdeling_8, false, false, false, Integer.valueOf(0), ElementKey.of("berger", "bergingsaandeel", false), ElementKey.of("berging", "onverdeelde rest", false), "verdeel de opbrengst van een berging over de hoofdbergers", Integer.valueOf(0), Integer.valueOf(0), "verdeel de opbrengst van een berging over de hoofdbergers")) {
+        insertLogical(feit);
+    }
+end
+

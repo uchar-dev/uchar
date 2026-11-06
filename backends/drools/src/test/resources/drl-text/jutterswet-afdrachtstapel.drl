@@ -1,0 +1,35 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+
+// het bergloonpercentage van het Wrakstuk plus het havengeldpercentage van het Wrakstuk groter is dan 50%
+function boolean toets_overbelastBijGezamenlijkeAfdracht(Object $bergloonpercentage, Object $havengeldpercentage) {
+    return RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsPlus($bergloonpercentage, $havengeldpercentage), new java.math.BigDecimal("50"), ">");
+}
+
+rule "overbelast bij gezamenlijke afdracht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakstuk( $bergloonpercentage : bergloonpercentage, $havengeldpercentage : havengeldpercentage )
+    eval( toets_overbelastBijGezamenlijkeAfdracht($bergloonpercentage, $havengeldpercentage) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("wrakstuk", "overbelast", true)));
+end
+
+// het bergloonpercentage van het Wrakstuk min het havengeldpercentage van het Wrakstuk groter is dan 20%
+function boolean toets_bergergunstigBijAfdrachtverschil(Object $bergloonpercentage, Object $havengeldpercentage) {
+    return RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsMin($bergloonpercentage, $havengeldpercentage), new java.math.BigDecimal("20"), ">");
+}
+
+rule "bergergunstig bij afdrachtverschil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakstuk( $bergloonpercentage : bergloonpercentage, $havengeldpercentage : havengeldpercentage )
+    eval( toets_bergergunstigBijAfdrachtverschil($bergloonpercentage, $havengeldpercentage) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("wrakstuk", "bergergunstig", true)));
+end
+

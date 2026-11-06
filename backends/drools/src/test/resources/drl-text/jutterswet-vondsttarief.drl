@@ -1,0 +1,47 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// 21%
+function Object waarde_bergingstariefVanEenVondst() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("21"), Integer.valueOf(0), "bergingstarief", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bergingstarief van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+then
+    Object v = waarde_bergingstariefVanEenVondst();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bergingstarief van een vondst", ComputeHelpers.designate(v, "bergingstarief van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "bergingstarief", false), v, "bergingstarief van een vondst"));
+        }
+    }
+end
+
+// het vondsttarief van de Vondst gelijk is aan 21%
+function boolean toets_standaardbelastBijTarief(Object $vondsttarief) {
+    return RegelSpraakRuntime.rsAggVergelijk($vondsttarief, new java.math.BigDecimal("21"), "==");
+}
+
+rule "standaardbelast bij tarief"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vondsttarief : vondsttarief )
+    eval( toets_standaardbelastBijTarief($vondsttarief) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "standaardbelast", true)));
+end
+

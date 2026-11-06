@@ -1,0 +1,336 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
+import dev.uchar.regelspraak.transpiler.tms.CreationStamp;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.PathState;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.SecondFillingFault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// 1
+function Object waarde_yVanEenHaven() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("1"), Integer.valueOf(0), "y", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "y van een haven"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven()
+then
+    Object v = waarde_yVanEenHaven();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "y van een haven", ComputeHelpers.designate(v, "y van een haven")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("haven", "y", false), v, "y van een haven"));
+        }
+    }
+end
+
+// 5
+function Object waarde_aVanEenPost() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("5"), Integer.valueOf(0), "a", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "a van een post"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Post()
+then
+    Object v = waarde_aVanEenPost();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "a van een post", ComputeHelpers.designate(v, "a van een post")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("post", "a", false), v, "a van een post"));
+        }
+    }
+end
+
+// zijn y groter is dan 1
+function boolean toets_geslotenHaven(Object $y) {
+    return RegelSpraakRuntime.rsAggVergelijk($y, new java.math.BigDecimal("1"), ">");
+}
+
+rule "gesloten haven"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven()
+    $stand_0 : State( attribute == ElementKey.of("haven", "y", false), subject == $onderwerp, $y : value )
+    eval( toets_geslotenHaven($y) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("haven", "gesloten", true)));
+end
+
+// hij niet gesloten is
+function boolean toets_openHaven(Object $gesloten) {
+    return ComputeHelpers.characteristic($gesloten, Boolean.FALSE);
+}
+
+rule "open haven"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("haven", "gesloten", true), subject == $onderwerp, $gesloten : holds )
+    eval( toets_openHaven($gesloten) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("haven", "open", true)));
+end
+
+// de a van zijn post
+function Object waarde_postwaardeVanEenHaven(Object $postA) {
+    try {
+        return ComputeHelpers.fitTarget($postA, Integer.valueOf(0), "postwaarde", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "postwaarde van een haven"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven()
+    $padstand_0 : PathState( path == "Haven:post" && member == ElementKey.of("post", "a", false), subject == $onderwerp, $postA : value )
+then
+    Object v = waarde_postwaardeVanEenHaven($postA);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "postwaarde van een haven", ComputeHelpers.designate(v, "postwaarde van een haven")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("haven", "postwaarde", false), v, "postwaarde van een haven"));
+        }
+    }
+end
+
+// De a van een Post moet kleiner zijn dan 5
+function boolean toets_controlePost(Object $a) {
+    return ComputeHelpers.not(RegelSpraakRuntime.rsAggVergelijk($a, new java.math.BigDecimal("5"), "<"));
+}
+
+rule "controle post"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Post()
+    $stand_0 : State( attribute == ElementKey.of("post", "a", false), subject == $onderwerp, $a : value )
+    eval( toets_controlePost($a) )
+then
+    insertLogical(ComputeHelpers.inconsistency("controle post", $onderwerp, ComputeHelpers.list1("EF-025")));
+end
+
+function boolean beta_postVoorEenOpenHaven(Object eigen, Object ander) {
+    return ComputeHelpers.inPhase(eigen, ander);
+}
+
+// hij open is
+function boolean toets_postVoorEenOpenHaven(Object $open) {
+    return ComputeHelpers.characteristic($open, Boolean.TRUE);
+}
+
+// 1
+function Object creatie_postVoorEenOpenHaven(Object $fase, Object $herkomsten_creatie_15, Object $onderwerp) {
+    int diepte = ComputeHelpers.creationDepth("post voor een open haven", 2, "Haven", (java.util.List) $herkomsten_creatie_15, 100);
+    Object i0 = null;
+    try {
+        i0 = ComputeHelpers.collapse(ComputeHelpers.fitTarget(new java.math.BigDecimal("1"), Integer.valueOf(0), "nummer", "post voor een open haven"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+    Object nieuw = ComputeHelpers.newObject($onderwerp, "dev.uchar.regelspraak.facts.Post");
+    ComputeHelpers.set(nieuw, "nummer", i0);
+    int fase = ((Integer) $fase).intValue();
+    java.util.List feiten = new java.util.ArrayList();
+    feiten.add(nieuw);
+    feiten.add(new CreationStamp("post voor een open haven", $onderwerp, nieuw, fase, 2, diepte));
+    feiten.add(new RelationLink("havenpost", $onderwerp, nieuw, fase));
+    return feiten;
+}
+
+rule "post voor een open haven"
+    dialect "mvel"
+    agenda-group "uchar-objectcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven( post == null )
+    $creatiefase : CreationPhase( stratum >= 2, $fase : number )
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("haven", "open", true), subject == $onderwerp, $open : holds )
+    accumulate( $herkomst_creatie_14 : CreationStamp( object == $onderwerp ); $herkomsten_creatie_15 : collectList($herkomst_creatie_14) )
+    not( $gemaakt_creatie_17 : CreationStamp( rule == "post voor een open haven", subject == $onderwerp ) )
+    not( $nieuw_creatie_18 : CreationStamp( object == $onderwerp, beta_postVoorEenOpenHaven(this, $fase) ) )
+    eval( toets_postVoorEenOpenHaven($open) )
+    not( $eigen_fout : Fault( rule == "post voor een open haven", subject == $onderwerp ) )
+then
+    Object v = creatie_postVoorEenOpenHaven($fase, $herkomsten_creatie_15, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insert(new Fault($onderwerp, "post voor een open haven", ComputeHelpers.designate(v, "post voor een open haven")));
+    } else {
+        java.util.List feiten = (java.util.List) v;
+        insert(feiten.get(0));
+        insert(feiten.get(1));
+        insert(feiten.get(2));
+    }
+end
+
+rule "koppeling havenpost uit de invoer: Haven.post"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Haven( post != null, $ander : post )
+then
+    insertLogical(new RelationLink("havenpost", $houder, $ander, 0));
+end
+
+rule "koppeling havenpost uit de invoer: Post.haven"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Post( haven != null, $ander : haven )
+then
+    insertLogical(new RelationLink("havenpost", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingHavenpostTweedeVullingVanPost(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "second");
+}
+
+rule "koppeling havenpost: tweede vulling van post"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "havenpost", $nabij : first )
+    $twee : RelationLink( relation == "havenpost", first != null, first == $een.first, beta_koppelingHavenpostTweedeVullingVanPost(this, $een) )
+then
+    insertLogical(new Fault($nabij, "havenpost", new SecondFillingFault("post", $nabij)));
+end
+
+function boolean beta_koppelingHavenpostTweedeVullingVanHaven(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling havenpost: tweede vulling van haven"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "havenpost", $nabij : second )
+    $twee : RelationLink( relation == "havenpost", second != null, second == $een.second, beta_koppelingHavenpostTweedeVullingVanHaven(this, $een) )
+then
+    insertLogical(new Fault($nabij, "havenpost", new SecondFillingFault("haven", $nabij)));
+end
+
+rule "padstand Haven.post naar Post.a: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven()
+    $koppeling_keten_38 : RelationLink( relation == "havenpost", first == $onderwerp, $overzijde_keten_39 : second )
+    $stap_keten_37 : dev.uchar.regelspraak.facts.Post( this == $overzijde_keten_39 )
+    $stand : State( attribute == ElementKey.of("post", "a", false), subject == $stap_keten_37, $v : value )
+then
+    insertLogical(new PathState($onderwerp, "Haven:post", ElementKey.of("post", "a", false), $v, $stap_keten_37));
+end
+
+rule "padstand Haven.post naar Post.a: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven()
+    not( $koppeling_keten_46 : RelationLink( relation == "havenpost", first == $onderwerp, $overzijde_keten_47 : second ) and $stap_keten_45 : dev.uchar.regelspraak.facts.Post( this == $overzijde_keten_47 ) )
+then
+    insertLogical(new PathState($onderwerp, "Haven:post", ElementKey.of("post", "a", false), null, null));
+end
+
+rule "stand Haven.y: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven()
+    $waarde : Value( attribute == ElementKey.of("haven", "y", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("haven", "y", false), $v));
+end
+
+rule "stand Haven.y: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven( $invoer : y )
+    not( $waarde : Value( attribute == ElementKey.of("haven", "y", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("haven", "y", false), $invoer));
+end
+
+rule "kenmerkstand Haven.gesloten: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven( ComputeHelpers.holds(gesloten) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("haven", "gesloten", true), true));
+end
+
+rule "kenmerkstand Haven.gesloten: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("haven", "gesloten", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("haven", "gesloten", true), true));
+end
+
+rule "kenmerkstand Haven.gesloten: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven( ComputeHelpers.holds(gesloten) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("haven", "gesloten", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("haven", "gesloten", true), false));
+end
+
+rule "stand Post.a: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Post()
+    $waarde : Value( attribute == ElementKey.of("post", "a", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("post", "a", false), $v));
+end
+
+rule "stand Post.a: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Post( $invoer : a )
+    not( $waarde : Value( attribute == ElementKey.of("post", "a", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("post", "a", false), $invoer));
+end
+
+rule "kenmerkstand Haven.open: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven( ComputeHelpers.holds(open) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("haven", "open", true), true));
+end
+
+rule "kenmerkstand Haven.open: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("haven", "open", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("haven", "open", true), true));
+end
+
+rule "kenmerkstand Haven.open: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven( ComputeHelpers.holds(open) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("haven", "open", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("haven", "open", true), false));
+end
+

@@ -1,0 +1,47 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+rule "Sluitstip"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+then
+    // dd. 1-7-2026 08:30:00.000
+    Object v = java.time.LocalDateTime.parse("2026-07-01T08:30");
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "sluitstip", false), v, "Sluitstip"));
+    }
+end
+
+// zijn afgiftestip eerder is dan 01-07-2026 08:30:00.000
+function boolean toets_kenmerktoekenningTijdig(Object $afgiftestip) {
+    return ComputeHelpers.dateCompare($afgiftestip, java.time.LocalDateTime.parse("2026-07-01T08:30"), dev.uchar.regelspraak.ir.Condition.Operator.EERDER);
+}
+
+rule "Kenmerktoekenning tijdig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $afgiftestip : afgiftestip )
+    eval( toets_kenmerktoekenningTijdig($afgiftestip) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "tijdig", true)));
+end
+
+// zijn afgiftestip later is dan 1-07-2026 08:30:00.000
+function boolean toets_kenmerktoekenningVerlaat(Object $afgiftestip) {
+    return ComputeHelpers.dateCompare($afgiftestip, java.time.LocalDateTime.parse("2026-07-01T08:30"), dev.uchar.regelspraak.ir.Condition.Operator.LATER);
+}
+
+rule "Kenmerktoekenning verlaat"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $afgiftestip : afgiftestip )
+    eval( toets_kenmerktoekenningVerlaat($afgiftestip) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "verlaat", true)));
+end
+

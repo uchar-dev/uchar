@@ -1,0 +1,175 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.ParameterState;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.math.BigDecimal keurgrens;
+
+// de ervaring van alle loodsen van de Loodspost groter is dan de keurgrens
+function boolean toets_bekwaamBijKeurgrens(Object $aantal_vouw_5, Object $vouw_vouw_7) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_5, $vouw_vouw_7, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0));
+}
+
+rule "bekwaam bij keurgrens"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Loodspost()
+    accumulate( $bijdrage_vouw_2 : Contribution( fold == "bekwaam bij keurgrens: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_6 : value ); $aantal_vouw_5 : count(), $vouw_vouw_7 : exactSum($bijdragewaarde_vouw_6) )
+    eval( toets_bekwaamBijKeurgrens($aantal_vouw_5, $vouw_vouw_7) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("loodspost", "bekwaam", true)));
+end
+
+// de ervaring van geen van de loodsen van de Loodspost groter is dan de keurgrens
+function boolean toets_onbekwaamBijKeurgrens(Object $aantal_vouw_14, Object $vouw_vouw_16) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_14, $vouw_vouw_16, dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, Integer.valueOf(0));
+}
+
+rule "onbekwaam bij keurgrens"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Loodspost()
+    accumulate( $bijdrage_vouw_11 : Contribution( fold == "onbekwaam bij keurgrens: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_15 : value ); $aantal_vouw_14 : count(), $vouw_vouw_16 : exactSum($bijdragewaarde_vouw_15) )
+    eval( toets_onbekwaamBijKeurgrens($aantal_vouw_14, $vouw_vouw_16) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("loodspost", "onbekwaam", true)));
+end
+
+// de ervaring van ten minste 2 van de loodsen van de Loodspost groter is dan de keurgrens
+function boolean toets_merendeelsBijKeurgrens(Object $aantal_vouw_23, Object $vouw_vouw_25) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_23, $vouw_vouw_25, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(2));
+}
+
+rule "merendeels bij keurgrens"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Loodspost()
+    accumulate( $bijdrage_vouw_20 : Contribution( fold == "merendeels bij keurgrens: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_24 : value ); $aantal_vouw_23 : count(), $vouw_vouw_25 : exactSum($bijdragewaarde_vouw_24) )
+    eval( toets_merendeelsBijKeurgrens($aantal_vouw_23, $vouw_vouw_25) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("loodspost", "merendeels", true)));
+end
+
+// de keurgrens kleiner is dan de ervaring van alle loodsen van de Loodspost
+function boolean toets_gangbaarBijKeurgrens(Object $aantal_vouw_32, Object $vouw_vouw_34) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_32, $vouw_vouw_34, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0));
+}
+
+rule "gangbaar bij keurgrens"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Loodspost()
+    accumulate( $bijdrage_vouw_29 : Contribution( fold == "gangbaar bij keurgrens: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_33 : value ); $aantal_vouw_32 : count(), $vouw_vouw_34 : exactSum($bijdragewaarde_vouw_33) )
+    eval( toets_gangbaarBijKeurgrens($aantal_vouw_32, $vouw_vouw_34) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("loodspost", "gangbaar", true)));
+end
+
+// het aantal loodsen van de Loodspost
+function Object waarde_loodstalVanEenLoodspost(Object $aantal_vouw_40) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_40), Integer.valueOf(0), "loodstal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "loodstal van een loodspost"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Loodspost()
+    accumulate( $bijdrage_vouw_37 : Contribution( fold == "loodstal van een loodspost: vouw 4", subject == $onderwerp ); $aantal_vouw_40 : count() )
+then
+    Object v = waarde_loodstalVanEenLoodspost($aantal_vouw_40);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "loodstal van een loodspost", ComputeHelpers.designate(v, "loodstal van een loodspost")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("loodspost", "loodstal", false), v, "loodstal van een loodspost"));
+        }
+    }
+end
+
+// de ervaring van alle loodsen van de Loodspost groter is dan de keurgrens
+function boolean matrix_bekwaamBijKeurgrensBijdrageAanVouw0(Object $onderwerp, Object $ervaring, Object $keurgrens) {
+    return RegelSpraakRuntime.rsAggVergelijk($ervaring, $keurgrens, ">");
+}
+
+rule "bekwaam bij keurgrens: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Loodspost()
+    $onderwerp : dev.uchar.regelspraak.facts.Loods( post == $vouwonderwerp, $ervaring : ervaring )
+    $parameter_2 : ParameterState( parameter == "keurgrens", $keurgrens : value )
+then
+    insertLogical(new Contribution("bekwaam bij keurgrens: vouw 0", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_bekwaamBijKeurgrensBijdrageAanVouw0($onderwerp, $ervaring, $keurgrens))));
+end
+
+// de ervaring van geen van de loodsen van de Loodspost groter is dan de keurgrens
+function boolean matrix_onbekwaamBijKeurgrensBijdrageAanVouw1(Object $onderwerp, Object $ervaring, Object $keurgrens) {
+    return RegelSpraakRuntime.rsAggVergelijk($ervaring, $keurgrens, ">");
+}
+
+rule "onbekwaam bij keurgrens: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Loodspost()
+    $onderwerp : dev.uchar.regelspraak.facts.Loods( post == $vouwonderwerp, $ervaring : ervaring )
+    $parameter_2 : ParameterState( parameter == "keurgrens", $keurgrens : value )
+then
+    insertLogical(new Contribution("onbekwaam bij keurgrens: vouw 1", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_onbekwaamBijKeurgrensBijdrageAanVouw1($onderwerp, $ervaring, $keurgrens))));
+end
+
+// de ervaring van ten minste 2 van de loodsen van de Loodspost groter is dan de keurgrens
+function boolean matrix_merendeelsBijKeurgrensBijdrageAanVouw2(Object $onderwerp, Object $ervaring, Object $keurgrens) {
+    return RegelSpraakRuntime.rsAggVergelijk($ervaring, $keurgrens, ">");
+}
+
+rule "merendeels bij keurgrens: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Loodspost()
+    $onderwerp : dev.uchar.regelspraak.facts.Loods( post == $vouwonderwerp, $ervaring : ervaring )
+    $parameter_2 : ParameterState( parameter == "keurgrens", $keurgrens : value )
+then
+    insertLogical(new Contribution("merendeels bij keurgrens: vouw 2", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_merendeelsBijKeurgrensBijdrageAanVouw2($onderwerp, $ervaring, $keurgrens))));
+end
+
+// de keurgrens kleiner is dan de ervaring van alle loodsen van de Loodspost
+function boolean matrix_gangbaarBijKeurgrensBijdrageAanVouw3(Object $onderwerp, Object $keurgrens, Object $ervaring) {
+    return RegelSpraakRuntime.rsAggVergelijk($keurgrens, $ervaring, "<");
+}
+
+rule "gangbaar bij keurgrens: bijdrage aan vouw 3"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Loodspost()
+    $onderwerp : dev.uchar.regelspraak.facts.Loods( post == $vouwonderwerp, $ervaring : ervaring )
+    $parameter_1 : ParameterState( parameter == "keurgrens", $keurgrens : value )
+then
+    insertLogical(new Contribution("gangbaar bij keurgrens: vouw 3", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_gangbaarBijKeurgrensBijdrageAanVouw3($onderwerp, $keurgrens, $ervaring))));
+end
+
+rule "loodstal van een loodspost: bijdrage aan vouw 4"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Loodspost()
+    $onderwerp : dev.uchar.regelspraak.facts.Loods( post == $vouwonderwerp )
+then
+    insertLogical(new Contribution("loodstal van een loodspost: vouw 4", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "parameterstand keurgrens"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("keurgrens", keurgrens));
+end
+

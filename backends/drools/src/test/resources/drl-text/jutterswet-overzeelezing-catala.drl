@@ -1,0 +1,239 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
+import dev.uchar.regelspraak.transpiler.tms.CreationStamp;
+import dev.uchar.regelspraak.transpiler.tms.Decides;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.PathState;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.SecondFillingFault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// 
+function boolean toets_kenmerktoekenningOverzees(Object $registratiezone) {
+    return RegelSpraakRuntime.rsAggVergelijk($registratiezone, new java.math.BigDecimal("100"), ">");
+}
+
+rule "kenmerktoekenning overzees"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Eigenaar()
+    $stand_0 : State( attribute == ElementKey.of("eigenaar", "registratiezone", false), subject == $onderwerp, $registratiezone : value )
+    eval( toets_kenmerktoekenningOverzees($registratiezone) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("eigenaar", "overzees", true)));
+end
+
+function boolean beta_richtEigenaarOp(Object eigen, Object ander) {
+    return ComputeHelpers.inPhase(eigen, ander);
+}
+
+// de registratiezone
+function Object creatie_richtEigenaarOp(Object $registratiezone, Object $fase, Object $herkomsten_creatie_5, Object $onderwerp) {
+    int diepte = ComputeHelpers.creationDepth("richt eigenaar op", 0, "Vondstaanslag", (java.util.List) $herkomsten_creatie_5, 100);
+    Object i0 = null;
+    try {
+        i0 = ComputeHelpers.collapse(ComputeHelpers.fitTarget($registratiezone, Integer.valueOf(0), "registratiezone", "richt eigenaar op"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+    Object nieuw = ComputeHelpers.newObject($onderwerp, "dev.uchar.regelspraak.facts.Eigenaar");
+    ComputeHelpers.set(nieuw, "registratiezone", i0);
+    int fase = ((Integer) $fase).intValue();
+    java.util.List feiten = new java.util.ArrayList();
+    feiten.add(nieuw);
+    feiten.add(new CreationStamp("richt eigenaar op", $onderwerp, nieuw, fase, 0, diepte));
+    feiten.add(new RelationLink("vondstaanslag_eigenaar", $onderwerp, nieuw, fase));
+    return feiten;
+}
+
+rule "richt eigenaar op"
+    dialect "mvel"
+    agenda-group "uchar-objectcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondstaanslag( eigenaar == null, $registratiezone : registratiezone )
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    accumulate( $herkomst_creatie_4 : CreationStamp( object == $onderwerp ); $herkomsten_creatie_5 : collectList($herkomst_creatie_4) )
+    not( $gemaakt_creatie_7 : CreationStamp( rule == "richt eigenaar op", subject == $onderwerp ) )
+    not( $nieuw_creatie_8 : CreationStamp( object == $onderwerp, beta_richtEigenaarOp(this, $fase) ) )
+    not( $eigen_fout : Fault( rule == "richt eigenaar op", subject == $onderwerp ) )
+then
+    Object v = creatie_richtEigenaarOp($registratiezone, $fase, $herkomsten_creatie_5, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insert(new Fault($onderwerp, "richt eigenaar op", ComputeHelpers.designate(v, "richt eigenaar op")));
+    } else {
+        java.util.List feiten = (java.util.List) v;
+        insert(feiten.get(0));
+        insert(feiten.get(1));
+        insert(feiten.get(2));
+    }
+end
+
+// de eigenaar is overzees
+function boolean toets_defaultsAVondstaanslagHeffingDefault0(Object $eigenaarOverzees) {
+    return ComputeHelpers.characteristicCheckAlongPath($eigenaarOverzees, Boolean.TRUE);
+}
+
+// 
+function Object afloop_defaultsAVondstaanslagHeffingDefault0(Object $vondstwaarde) {
+    try {
+        return RegelSpraakRuntime.rsMaal($vondstwaarde, new java.math.BigDecimal("2"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Vondstaanslag.heffing: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondstaanslag( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondstaanslag"), $vondstwaarde : vondstwaarde )
+    $padstand_0 : PathState( path == "Vondstaanslag:eigenaar" && member == ElementKey.of("eigenaar", "overzees", true), subject == $onderwerp, $eigenaarOverzees : value )
+    eval( toets_defaultsAVondstaanslagHeffingDefault0($eigenaarOverzees) )
+then
+    Object v = afloop_defaultsAVondstaanslagHeffingDefault0($vondstwaarde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Vondstaanslag.heffing", ComputeHelpers.designate(v, "defaults A:Vondstaanslag.heffing")));
+    } else if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "heffing");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondstaanslag.heffing", ComputeHelpers.designate(passend, "defaults A:Vondstaanslag.heffing")));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondstaanslag.heffing", 0));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondstaanslag", "heffing", false), passend, "defaults A:Vondstaanslag.heffing"));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondstaanslag.heffing", 0));
+        }
+    }
+end
+
+rule "defaults A:Vondstaanslag.heffing: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondstaanslag( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondstaanslag"), $vondstwaarde : vondstwaarde )
+    not( $hoger_21 : Decides( stack == "defaults A:Vondstaanslag.heffing" && index < 1, subject == $onderwerp ) )
+then
+    // de vondstwaarde
+    Object v = $vondstwaarde;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "heffing");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondstaanslag.heffing", ComputeHelpers.designate(passend, "defaults A:Vondstaanslag.heffing")));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondstaanslag.heffing", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondstaanslag", "heffing", false), passend, "defaults A:Vondstaanslag.heffing"));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondstaanslag.heffing", 1));
+        }
+    }
+end
+
+rule "koppeling vondstaanslag_eigenaar uit de invoer: Vondstaanslag.eigenaar"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Vondstaanslag( eigenaar != null, $ander : eigenaar )
+then
+    insertLogical(new RelationLink("vondstaanslag_eigenaar", $houder, $ander, 0));
+end
+
+rule "koppeling vondstaanslag_eigenaar uit de invoer: Eigenaar.eigenaar_houder"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Eigenaar( eigenaarHouder != null, $ander : eigenaarHouder )
+then
+    insertLogical(new RelationLink("vondstaanslag_eigenaar", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingVondstaanslagEigenaarTweedeVullingVanEigenaar(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "second");
+}
+
+rule "koppeling vondstaanslag_eigenaar: tweede vulling van eigenaar"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "vondstaanslag_eigenaar", $nabij : first )
+    $twee : RelationLink( relation == "vondstaanslag_eigenaar", first != null, first == $een.first, beta_koppelingVondstaanslagEigenaarTweedeVullingVanEigenaar(this, $een) )
+then
+    insertLogical(new Fault($nabij, "Vondstaanslag_eigenaar", new SecondFillingFault("eigenaar", $nabij)));
+end
+
+function boolean beta_koppelingVondstaanslagEigenaarTweedeVullingVanEigenaarHouder(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling vondstaanslag_eigenaar: tweede vulling van eigenaar_houder"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "vondstaanslag_eigenaar", $nabij : second )
+    $twee : RelationLink( relation == "vondstaanslag_eigenaar", second != null, second == $een.second, beta_koppelingVondstaanslagEigenaarTweedeVullingVanEigenaarHouder(this, $een) )
+then
+    insertLogical(new Fault($nabij, "Vondstaanslag_eigenaar", new SecondFillingFault("eigenaar_houder", $nabij)));
+end
+
+rule "padstand Vondstaanslag.eigenaar naar Eigenaar.overzees: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondstaanslag()
+    $koppeling_keten_35 : RelationLink( relation == "vondstaanslag_eigenaar", first == $onderwerp, $overzijde_keten_36 : second )
+    $stap_keten_34 : dev.uchar.regelspraak.facts.Eigenaar( this == $overzijde_keten_36 )
+    $stand : CharacteristicState( characteristic == ElementKey.of("eigenaar", "overzees", true), subject == $stap_keten_34, $v : holds )
+then
+    insertLogical(new PathState($onderwerp, "Vondstaanslag:eigenaar", ElementKey.of("eigenaar", "overzees", true), $v, $stap_keten_34));
+end
+
+rule "padstand Vondstaanslag.eigenaar naar Eigenaar.overzees: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondstaanslag()
+    not( $koppeling_keten_43 : RelationLink( relation == "vondstaanslag_eigenaar", first == $onderwerp, $overzijde_keten_44 : second ) and $stap_keten_42 : dev.uchar.regelspraak.facts.Eigenaar( this == $overzijde_keten_44 ) )
+then
+    insertLogical(new PathState($onderwerp, "Vondstaanslag:eigenaar", ElementKey.of("eigenaar", "overzees", true), null, null));
+end
+
+rule "stand Eigenaar.registratiezone: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Eigenaar()
+    $waarde : Value( attribute == ElementKey.of("eigenaar", "registratiezone", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("eigenaar", "registratiezone", false), $v));
+end
+
+rule "stand Eigenaar.registratiezone: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Eigenaar( $invoer : registratiezone )
+    not( $waarde : Value( attribute == ElementKey.of("eigenaar", "registratiezone", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("eigenaar", "registratiezone", false), $invoer));
+end
+
+rule "kenmerkstand Eigenaar.overzees: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Eigenaar( ComputeHelpers.holds(overzees) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("eigenaar", "overzees", true), true));
+end
+
+rule "kenmerkstand Eigenaar.overzees: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Eigenaar()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("eigenaar", "overzees", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("eigenaar", "overzees", true), true));
+end
+
+rule "kenmerkstand Eigenaar.overzees: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Eigenaar( ComputeHelpers.holds(overzees) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("eigenaar", "overzees", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("eigenaar", "overzees", true), false));
+end
+

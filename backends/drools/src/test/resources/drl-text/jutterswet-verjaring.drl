@@ -1,0 +1,34 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+
+// zijn peildatum eerder is dan 2000-01-01
+function boolean toets_kenmerktoekenningJutterVerjaard(Object $peildatum) {
+    return ComputeHelpers.dateCompare($peildatum, java.time.LocalDate.parse("2000-01-01"), dev.uchar.regelspraak.ir.Condition.Operator.EERDER);
+}
+
+rule "Kenmerktoekenning jutter verjaard"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $peildatum : peildatum )
+    eval( toets_kenmerktoekenningJutterVerjaard($peildatum) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "verjaard", true)));
+end
+
+// zijn peildatum niet eerder is dan 2000-01-01
+function boolean toets_kenmerktoekenningJutterActueel(Object $peildatum) {
+    return ComputeHelpers.dateCompare($peildatum, java.time.LocalDate.parse("2000-01-01"), dev.uchar.regelspraak.ir.Condition.Operator.LATER_OF_GELIJK);
+}
+
+rule "Kenmerktoekenning jutter actueel"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $peildatum : peildatum )
+    eval( toets_kenmerktoekenningJutterActueel($peildatum) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "actueel", true)));
+end
+

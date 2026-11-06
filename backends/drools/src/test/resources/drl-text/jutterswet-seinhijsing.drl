@@ -1,0 +1,199 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.SecondFillingFault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het aantal seinen van de post
+function Object waarde_seinaantalVanEenPost(Object $aantal_vouw_4) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_4), Integer.valueOf(0), "seinaantal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "seinaantal van een post"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Post()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "seinaantal van een post: vouw 0", subject == $onderwerp ); $aantal_vouw_4 : count() )
+then
+    Object v = waarde_seinaantalVanEenPost($aantal_vouw_4);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "seinaantal van een post", ComputeHelpers.designate(v, "seinaantal van een post")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("post", "seinaantal", false), v, "seinaantal van een post"));
+        }
+    }
+end
+
+// het aantal vakseinen van het kustvak
+function Object waarde_vakseinaantalVanEenKustvak(Object $aantal_vouw_12) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_12), Integer.valueOf(0), "vakseinaantal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vakseinaantal van een kustvak"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Kustvak()
+    accumulate( $bijdrage_vouw_9 : Contribution( fold == "vakseinaantal van een kustvak: vouw 1", subject == $onderwerp ); $aantal_vouw_12 : count() )
+then
+    Object v = waarde_vakseinaantalVanEenKustvak($aantal_vouw_12);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vakseinaantal van een kustvak", ComputeHelpers.designate(v, "vakseinaantal van een kustvak")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("kustvak", "vakseinaantal", false), v, "vakseinaantal van een kustvak"));
+        }
+    }
+end
+
+// het aantal duisterseinen van het kustvak
+function Object waarde_duisteraantalVanEenKustvak(Object $aantal_vouw_20) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_20), Integer.valueOf(0), "duisteraantal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "duisteraantal van een kustvak"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Kustvak()
+    accumulate( $bijdrage_vouw_17 : Contribution( fold == "duisteraantal van een kustvak: vouw 2", subject == $onderwerp ); $aantal_vouw_20 : count() )
+then
+    Object v = waarde_duisteraantalVanEenKustvak($aantal_vouw_20);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "duisteraantal van een kustvak", ComputeHelpers.designate(v, "duisteraantal van een kustvak")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("kustvak", "duisteraantal", false), v, "duisteraantal van een kustvak"));
+        }
+    }
+end
+
+function boolean beta1_vakbeseiningDoorHetKustvak(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("kustvak"), java.util.Arrays.asList());
+}
+
+function boolean beta2_vakbeseiningDoorHetKustvak(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("post"), java.util.Arrays.asList());
+}
+
+rule "vakbeseining door het kustvak"
+    dialect "mvel"
+    agenda-group "uchar-feitcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Kustvak()
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    $stap_keten_22 : dev.uchar.regelspraak.facts.Post( beta1_vakbeseiningDoorHetKustvak(this, $onderwerp) )
+    $stap_keten_24 : dev.uchar.regelspraak.facts.Sein( beta2_vakbeseiningDoorHetKustvak(this, $stap_keten_22), ComputeHelpers.isA(this, "dev.uchar.regelspraak.facts.Sein"), ComputeHelpers.holds(ComputeHelpers.readProperty(this, "gehesen")) == true )
+    not( $bestaand_feitcreatie_28 : RelationLink( relation == "vakbeseining", first == $onderwerp, second == $stap_keten_24 ) )
+then
+    insert(new RelationLink("vakbeseining", $onderwerp, $stap_keten_24, $fase));
+end
+
+function boolean beta1_vakverduisteringDoorHetKustvak(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("kustvak"), java.util.Arrays.asList());
+}
+
+function boolean beta2_vakverduisteringDoorHetKustvak(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("post"), java.util.Arrays.asList());
+}
+
+rule "vakverduistering door het kustvak"
+    dialect "mvel"
+    agenda-group "uchar-feitcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Kustvak()
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    $stap_keten_33 : dev.uchar.regelspraak.facts.Post( beta1_vakverduisteringDoorHetKustvak(this, $onderwerp) )
+    $stap_keten_35 : dev.uchar.regelspraak.facts.Sein( beta2_vakverduisteringDoorHetKustvak(this, $stap_keten_33), ComputeHelpers.isA(this, "dev.uchar.regelspraak.facts.Sein"), ComputeHelpers.holds(ComputeHelpers.readProperty(this, "gehesen")) == false )
+    not( $bestaand_feitcreatie_39 : RelationLink( relation == "vakverduistering", first == $onderwerp, second == $stap_keten_35 ) )
+then
+    insert(new RelationLink("vakverduistering", $onderwerp, $stap_keten_35, $fase));
+end
+
+rule "seinaantal van een post: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Post()
+    $onderwerp : dev.uchar.regelspraak.facts.Sein( post == $vouwonderwerp )
+then
+    insertLogical(new Contribution("seinaantal van een post: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "vakseinaantal van een kustvak: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Kustvak()
+    $onderwerp : dev.uchar.regelspraak.facts.Sein()
+    exists( $koppeling_bereik_5 : RelationLink( relation == "vakbeseining", second == $onderwerp, first == $vouwonderwerp ) )
+then
+    insertLogical(new Contribution("vakseinaantal van een kustvak: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "duisteraantal van een kustvak: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Kustvak()
+    $onderwerp : dev.uchar.regelspraak.facts.Sein()
+    exists( $koppeling_bereik_13 : RelationLink( relation == "vakverduistering", second == $onderwerp, first == $vouwonderwerp ) )
+then
+    insertLogical(new Contribution("duisteraantal van een kustvak: vouw 2", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "koppeling vakbeseining uit de invoer: Sein.seinvak"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Sein( seinvak != null, $ander : seinvak )
+then
+    insertLogical(new RelationLink("vakbeseining", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingVakbeseiningTweedeVullingVanSeinvak(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling vakbeseining: tweede vulling van seinvak"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "vakbeseining", $nabij : second )
+    $twee : RelationLink( relation == "vakbeseining", second != null, second == $een.second, beta_koppelingVakbeseiningTweedeVullingVanSeinvak(this, $een) )
+then
+    insertLogical(new Fault($nabij, "vakbeseining", new SecondFillingFault("seinvak", $nabij)));
+end
+
+rule "koppeling vakverduistering uit de invoer: Sein.duistervak"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Sein( duistervak != null, $ander : duistervak )
+then
+    insertLogical(new RelationLink("vakverduistering", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingVakverduisteringTweedeVullingVanDuistervak(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling vakverduistering: tweede vulling van duistervak"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "vakverduistering", $nabij : second )
+    $twee : RelationLink( relation == "vakverduistering", second != null, second == $een.second, beta_koppelingVakverduisteringTweedeVullingVanDuistervak(this, $een) )
+then
+    insertLogical(new Fault($nabij, "vakverduistering", new SecondFillingFault("duistervak", $nabij)));
+end
+

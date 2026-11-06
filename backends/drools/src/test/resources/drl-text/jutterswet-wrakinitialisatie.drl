@@ -1,0 +1,143 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Decides;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn gewicht groter is dan 10
+function boolean toets_standaardbergloon(Object $gewicht) {
+    return RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("10"), ">");
+}
+
+// 2 maal zijn gewicht
+function Object waarde_standaardbergloon(Object $gewicht) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal(new java.math.BigDecimal("2"), $gewicht), Integer.valueOf(2), "bergloon", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "standaardbergloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classNotIn(this, ComputeHelpers.list1("dev.uchar.regelspraak.facts.Wrakvondst")), bergloon == null, $gewicht : gewicht )
+    eval( toets_standaardbergloon($gewicht) )
+    not( $andere_schrijver : Value( attribute == ElementKey.of("vondst", "bergloon", false) && writer != "standaardbergloon", subject == $onderwerp ) )
+then
+    Object v = waarde_standaardbergloon($gewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "standaardbergloon", ComputeHelpers.designate(v, "standaardbergloon")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "bergloon", false), v, "standaardbergloon"));
+        }
+    }
+end
+
+// zijn gewicht groter is dan 50 en zijn gewicht groter is dan 100
+function boolean toets_defaultsAWrakvondstBergloonDefault0(Object $gewicht) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("50"), ">")) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("100"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "defaults A:Wrakvondst.bergloon: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakvondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Wrakvondst"), $gewicht : gewicht )
+    eval( toets_defaultsAWrakvondstBergloonDefault0($gewicht) )
+then
+    // 9,00
+    Object v = new java.math.BigDecimal("9");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "bergloon");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Wrakvondst.bergloon", ComputeHelpers.designate(passend, "defaults A:Wrakvondst.bergloon")));
+            insertLogical(new Decides($onderwerp, "defaults A:Wrakvondst.bergloon", 0));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "bergloon", false), passend, "defaults A:Wrakvondst.bergloon"));
+            insertLogical(new Decides($onderwerp, "defaults A:Wrakvondst.bergloon", 0));
+        }
+    }
+end
+
+// zijn gewicht groter is dan 50
+function boolean toets_defaultsAWrakvondstBergloonDefault1(Object $gewicht) {
+    return RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("50"), ">");
+}
+
+rule "defaults A:Wrakvondst.bergloon: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakvondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Wrakvondst"), $gewicht : gewicht )
+    not( $hoger_8 : Decides( stack == "defaults A:Wrakvondst.bergloon" && index < 1, subject == $onderwerp ) )
+    eval( toets_defaultsAWrakvondstBergloonDefault1($gewicht) )
+then
+    // 5,00
+    Object v = new java.math.BigDecimal("5");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "bergloon");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Wrakvondst.bergloon", ComputeHelpers.designate(passend, "defaults A:Wrakvondst.bergloon")));
+            insertLogical(new Decides($onderwerp, "defaults A:Wrakvondst.bergloon", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "bergloon", false), passend, "defaults A:Wrakvondst.bergloon"));
+            insertLogical(new Decides($onderwerp, "defaults A:Wrakvondst.bergloon", 1));
+        }
+    }
+end
+
+// zijn gewicht groter is dan 10
+function boolean toets_defaultsAWrakvondstBergloonDefault2(Object $gewicht) {
+    return RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("10"), ">");
+}
+
+// 2 maal zijn gewicht
+function Object afloop_defaultsAWrakvondstBergloonDefault2(Object $gewicht) {
+    try {
+        return RegelSpraakRuntime.rsMaal(new java.math.BigDecimal("2"), $gewicht);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Wrakvondst.bergloon: default 2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Wrakvondst"), ComputeHelpers.readProperty(this, "bergloon") == null, $gewicht : gewicht )
+    not( $hoger_13 : Decides( stack == "defaults A:Wrakvondst.bergloon" && index < 2, subject == $onderwerp ) )
+    eval( toets_defaultsAWrakvondstBergloonDefault2($gewicht) )
+then
+    Object v = afloop_defaultsAWrakvondstBergloonDefault2($gewicht);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Wrakvondst.bergloon", ComputeHelpers.designate(v, "defaults A:Wrakvondst.bergloon")));
+    } else if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "bergloon");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Wrakvondst.bergloon", ComputeHelpers.designate(passend, "defaults A:Wrakvondst.bergloon")));
+            insertLogical(new Decides($onderwerp, "defaults A:Wrakvondst.bergloon", 2));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "bergloon", false), passend, "defaults A:Wrakvondst.bergloon"));
+            insertLogical(new Decides($onderwerp, "defaults A:Wrakvondst.bergloon", 2));
+        }
+    }
+end
+

@@ -1,0 +1,178 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Outcome;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het Strandrecht betwist is
+function boolean toets_defaultsAStrandrechtUitkeringDefault00(Object $betwist) {
+    return ComputeHelpers.characteristic($betwist, Boolean.TRUE);
+}
+
+rule "defaults A:Strandrecht.uitkering: default 0:0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Strandrecht"), $betwist : (ComputeHelpers.holds(betwist)) )
+    eval( toets_defaultsAStrandrechtUitkeringDefault00($betwist) )
+then
+    // 99.00
+    Object v = new java.math.BigDecimal("99");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Strandrecht.uitkering", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// het Strandrecht geborgen is
+function boolean toets_defaultsAStrandrechtUitkeringDefault10(Object $geborgen) {
+    return ComputeHelpers.characteristic($geborgen, Boolean.TRUE);
+}
+
+rule "defaults A:Strandrecht.uitkering: default 1:0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Strandrecht"), $geborgen : (ComputeHelpers.holds(geborgen)) )
+    eval( toets_defaultsAStrandrechtUitkeringDefault10($geborgen) )
+then
+    // 44.00
+    Object v = new java.math.BigDecimal("44");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Strandrecht.uitkering", 1, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function boolean beta1_defaultsAStrandrechtUitkeringVerschilWortel(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsAStrandrechtUitkeringVerschilWortel(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+function Object conflict_defaultsAStrandrechtUitkeringVerschilWortel() {
+    return "Strandrecht.uitkering";
+}
+
+rule "defaults A:Strandrecht.uitkering: verschil wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Strandrecht.uitkering" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 2, $onderwerp : subject )
+    not( $uitkomst_5 : Outcome( stack == "defaults A:Strandrecht.uitkering" && chain >= 0 && chain < 2 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsAStrandrechtUitkeringVerschilWortel(this, $besluit) ) )
+    exists( $uitkomst_8 : Outcome( stack == "defaults A:Strandrecht.uitkering" && chain >= 0 && chain < 2 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsAStrandrechtUitkeringVerschilWortel(this, $besluit) ) )
+then
+    Object v = conflict_defaultsAStrandrechtUitkeringVerschilWortel();
+    insertLogical(ComputeHelpers.inconsistency((String) v, $onderwerp, ComputeHelpers.list1("EF-027")));
+end
+
+function boolean beta1_defaultsAStrandrechtUitkeringEensWortel(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsAStrandrechtUitkeringEensWortel(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults A:Strandrecht.uitkering: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Strandrecht.uitkering" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 2, $onderwerp : subject, $waarde : value )
+    not( $uitkomst_12 : Outcome( stack == "defaults A:Strandrecht.uitkering" && chain >= 0 && chain < 2 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsAStrandrechtUitkeringEensWortel(this, $besluit) ) )
+    not( $uitkomst_15 : Outcome( stack == "defaults A:Strandrecht.uitkering" && chain >= 0 && chain < 2 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsAStrandrechtUitkeringEensWortel(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "uitkering");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Strandrecht.uitkering", ComputeHelpers.designate(passend, "defaults A:Strandrecht.uitkering")));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandrecht", "uitkering", false), passend, "defaults A:Strandrecht.uitkering"));
+        }
+    }
+end
+
+// het Strandrecht betwist is
+function boolean toets_defaultsAWrakrechtUitkeringDefault00(Object $betwist) {
+    return ComputeHelpers.characteristic($betwist, Boolean.TRUE);
+}
+
+rule "defaults A:Wrakrecht.uitkering: default 0:0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Wrakrecht"), $betwist : (ComputeHelpers.holds(betwist)) )
+    eval( toets_defaultsAWrakrechtUitkeringDefault00($betwist) )
+then
+    // 99.00
+    Object v = new java.math.BigDecimal("99");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Wrakrecht.uitkering", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// het Strandrecht geborgen is
+function boolean toets_defaultsAWrakrechtUitkeringDefault10(Object $geborgen) {
+    return ComputeHelpers.characteristic($geborgen, Boolean.TRUE);
+}
+
+rule "defaults A:Wrakrecht.uitkering: default 1:0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Wrakrecht"), $geborgen : (ComputeHelpers.holds(geborgen)) )
+    eval( toets_defaultsAWrakrechtUitkeringDefault10($geborgen) )
+then
+    // 44.00
+    Object v = new java.math.BigDecimal("44");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Wrakrecht.uitkering", 1, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function boolean beta1_defaultsAWrakrechtUitkeringVerschilWortel(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsAWrakrechtUitkeringVerschilWortel(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+function Object conflict_defaultsAWrakrechtUitkeringVerschilWortel() {
+    return "Strandrecht.uitkering";
+}
+
+rule "defaults A:Wrakrecht.uitkering: verschil wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Wrakrecht.uitkering" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 2, $onderwerp : subject )
+    not( $uitkomst_23 : Outcome( stack == "defaults A:Wrakrecht.uitkering" && chain >= 0 && chain < 2 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsAWrakrechtUitkeringVerschilWortel(this, $besluit) ) )
+    exists( $uitkomst_26 : Outcome( stack == "defaults A:Wrakrecht.uitkering" && chain >= 0 && chain < 2 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsAWrakrechtUitkeringVerschilWortel(this, $besluit) ) )
+then
+    Object v = conflict_defaultsAWrakrechtUitkeringVerschilWortel();
+    insertLogical(ComputeHelpers.inconsistency((String) v, $onderwerp, ComputeHelpers.list1("EF-027")));
+end
+
+function boolean beta1_defaultsAWrakrechtUitkeringEensWortel(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsAWrakrechtUitkeringEensWortel(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults A:Wrakrecht.uitkering: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Wrakrecht.uitkering" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 2, $onderwerp : subject, $waarde : value )
+    not( $uitkomst_30 : Outcome( stack == "defaults A:Wrakrecht.uitkering" && chain >= 0 && chain < 2 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsAWrakrechtUitkeringEensWortel(this, $besluit) ) )
+    not( $uitkomst_33 : Outcome( stack == "defaults A:Wrakrecht.uitkering" && chain >= 0 && chain < 2 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsAWrakrechtUitkeringEensWortel(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "uitkering");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Wrakrecht.uitkering", ComputeHelpers.designate(passend, "defaults A:Wrakrecht.uitkering")));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandrecht", "uitkering", false), passend, "defaults A:Wrakrecht.uitkering"));
+        }
+    }
+end
+

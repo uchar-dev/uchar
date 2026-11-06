@@ -1,0 +1,639 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMaximumFunction exactMax;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
+import dev.uchar.regelspraak.transpiler.tms.CreationStamp;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.PathState;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.SecondFillingFault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de heffing van de afrekening van de Jutter
+function Object waarde_heffing(Object $afrekeningHeffing) {
+    try {
+        return ComputeHelpers.fitTarget($afrekeningHeffing, Integer.valueOf(2), "heffing", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "heffing"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $padstand_0 : PathState( path == "Jutter:afrekening" && member == ElementKey.of("afrekening", "heffing", false), subject == $onderwerp, $afrekeningHeffing : value )
+then
+    Object v = waarde_heffing($afrekeningHeffing);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "heffing", ComputeHelpers.designate(v, "heffing")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "heffing", false), v, "heffing"));
+        }
+    }
+end
+
+// de weeggrens van de afrekening van de Jutter
+function Object waarde_weeggrens(Object $afrekeningWeeggrens) {
+    try {
+        return ComputeHelpers.fitTarget($afrekeningWeeggrens, Integer.valueOf(0), "weeggrens", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "weeggrens"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $padstand_0 : PathState( path == "Jutter:afrekening" && member == ElementKey.of("afrekening", "weeggrens", false), subject == $onderwerp, $afrekeningWeeggrens : value )
+then
+    Object v = waarde_weeggrens($afrekeningWeeggrens);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "weeggrens", ComputeHelpers.designate(v, "weeggrens")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "weeggrens", false), v, "weeggrens"));
+        }
+    }
+end
+
+rule "afrekendag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $padstand_0 : PathState( path == "Jutter:afrekening" && member == ElementKey.of("afrekening", "afrekendag", false), subject == $onderwerp, $afrekeningAfrekendag : value )
+then
+    // de afrekendag van de afrekening van de Jutter
+    Object v = $afrekeningAfrekendag;
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("jutter", "afrekendag", false), v, "afrekendag"));
+    }
+end
+
+// de telling van de afrekening van de Jutter
+function Object waarde_telling(Object $afrekeningTelling) {
+    try {
+        return ComputeHelpers.fitTarget($afrekeningTelling, Integer.valueOf(0), "telling", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "telling"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $padstand_0 : PathState( path == "Jutter:afrekening" && member == ElementKey.of("afrekening", "telling", false), subject == $onderwerp, $afrekeningTelling : value )
+then
+    Object v = waarde_telling($afrekeningTelling);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "telling", ComputeHelpers.designate(v, "telling")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "telling", false), v, "telling"));
+        }
+    }
+end
+
+// de laatste van de slotdag van alle zeebrieven van de Jutter
+function Object waarde_slotdag(Object $aantal_vouw_17, Object $vouw_vouw_19) {
+    try {
+        return ComputeHelpers.foldValue($aantal_vouw_17, $vouw_vouw_19, null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "slotdag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_14 : Contribution( fold == "slotdag: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_18 : value ); $aantal_vouw_17 : count(), $vouw_vouw_19 : exactMax($bijdragewaarde_vouw_18) )
+then
+    Object v = waarde_slotdag($aantal_vouw_17, $vouw_vouw_19);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "slotdag", ComputeHelpers.designate(v, "slotdag")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "slotdag", false), v, "slotdag"));
+        }
+    }
+end
+
+// het aantal zeebrieven van de Jutter
+function Object waarde_aantalBrieven(Object $aantal_vouw_27) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_27), Integer.valueOf(0), "aantal brieven", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal brieven"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_24 : Contribution( fold == "aantal brieven: vouw 1", subject == $onderwerp ); $aantal_vouw_27 : count() )
+then
+    Object v = waarde_aantalBrieven($aantal_vouw_27);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal brieven", ComputeHelpers.designate(v, "aantal brieven")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "aantal brieven", false), v, "aantal brieven"));
+        }
+    }
+end
+
+// zijn gewicht groter is dan 5
+function boolean toets_zwaar(Object $gewicht) {
+    return RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("5"), ">");
+}
+
+rule "zwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht )
+    eval( toets_zwaar($gewicht) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "zwaar", true)));
+end
+
+function boolean beta_maakEenAfrekening(Object eigen, Object ander) {
+    return ComputeHelpers.inPhase(eigen, ander);
+}
+
+// 10% van de som van het gewicht van alle vondsten van de Jutter; (de minimale waarde van het gewicht van alle vondsten van de Jutter) plus 1; de eerste van de vinddag van alle vondsten van de Jutter; het aantal vondsten van de Jutter
+function Object creatie_maakEenAfrekening(Object $aantal_vouw_33, Object $vouw_vouw_35, Object $aantal_vouw_40, Object $vouw_vouw_42, Object $aantal_vouw_47, Object $vouw_vouw_49, Object $aantal_vouw_54, Object $fase, Object $herkomsten_creatie_57, Object $onderwerp) {
+    int diepte = ComputeHelpers.creationDepth("maak een afrekening", 0, "Jutter", (java.util.List) $herkomsten_creatie_57, 100);
+    Object i0 = null;
+    Object i1 = null;
+    Object i2 = null;
+    Object i3 = null;
+    try {
+        i0 = ComputeHelpers.collapse(ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPercentageVan(new java.math.BigDecimal("10"), ComputeHelpers.foldValue($aantal_vouw_33, $vouw_vouw_35, null)), Integer.valueOf(2), "heffing", "maak een afrekening"));
+        i1 = ComputeHelpers.collapse(ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus(ComputeHelpers.foldValue($aantal_vouw_40, $vouw_vouw_42, null), new java.math.BigDecimal("1")), Integer.valueOf(0), "weeggrens", "maak een afrekening"));
+        i2 = ComputeHelpers.collapse(ComputeHelpers.foldValue($aantal_vouw_47, $vouw_vouw_49, null));
+        i3 = ComputeHelpers.collapse(ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_54), Integer.valueOf(0), "telling", "maak een afrekening"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+    Object nieuw = ComputeHelpers.newObject($onderwerp, "dev.uchar.regelspraak.facts.Afrekening");
+    ComputeHelpers.set(nieuw, "heffing", i0);
+    ComputeHelpers.set(nieuw, "weeggrens", i1);
+    ComputeHelpers.set(nieuw, "afrekendag", i2);
+    ComputeHelpers.set(nieuw, "telling", i3);
+    int fase = ((Integer) $fase).intValue();
+    java.util.List feiten = new java.util.ArrayList();
+    feiten.add(nieuw);
+    feiten.add(new CreationStamp("maak een afrekening", $onderwerp, nieuw, fase, 0, diepte));
+    feiten.add(new RelationLink("jutterheeftafrekening", $onderwerp, nieuw, fase));
+    return feiten;
+}
+
+rule "maak een afrekening"
+    dialect "mvel"
+    agenda-group "uchar-objectcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( afrekening == null )
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    accumulate( $bijdrage_vouw_30 : Contribution( fold == "maak een afrekening: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_34 : value ); $aantal_vouw_33 : count(), $vouw_vouw_35 : exactSum($bijdragewaarde_vouw_34) )
+    accumulate( $bijdrage_vouw_37 : Contribution( fold == "maak een afrekening: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_41 : value ); $aantal_vouw_40 : count(), $vouw_vouw_42 : exactMin($bijdragewaarde_vouw_41) )
+    accumulate( $bijdrage_vouw_44 : Contribution( fold == "maak een afrekening: vouw 4", subject == $onderwerp, $bijdragewaarde_vouw_48 : value ); $aantal_vouw_47 : count(), $vouw_vouw_49 : exactMin($bijdragewaarde_vouw_48) )
+    accumulate( $bijdrage_vouw_51 : Contribution( fold == "maak een afrekening: vouw 5", subject == $onderwerp ); $aantal_vouw_54 : count() )
+    accumulate( $herkomst_creatie_56 : CreationStamp( object == $onderwerp ); $herkomsten_creatie_57 : collectList($herkomst_creatie_56) )
+    not( $gemaakt_creatie_59 : CreationStamp( rule == "maak een afrekening", subject == $onderwerp ) )
+    not( $nieuw_creatie_60 : CreationStamp( object == $onderwerp, beta_maakEenAfrekening(this, $fase) ) )
+    not( $eigen_fout : Fault( rule == "maak een afrekening", subject == $onderwerp ) )
+then
+    Object v = creatie_maakEenAfrekening($aantal_vouw_33, $vouw_vouw_35, $aantal_vouw_40, $vouw_vouw_42, $aantal_vouw_47, $vouw_vouw_49, $aantal_vouw_54, $fase, $herkomsten_creatie_57, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insert(new Fault($onderwerp, "maak een afrekening", ComputeHelpers.designate(v, "maak een afrekening")));
+    } else {
+        java.util.List feiten = (java.util.List) v;
+        insert(feiten.get(0));
+        insert(feiten.get(1));
+        insert(feiten.get(2));
+    }
+end
+
+function boolean beta_geefEenZeebrief(Object eigen, Object ander) {
+    return ComputeHelpers.inPhase(eigen, ander);
+}
+
+// het aantal vondsten van de Jutter groter is dan 0
+function boolean toets_geefEenZeebrief(Object $aantal_vouw_72) {
+    return RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.countOf($aantal_vouw_72), new java.math.BigDecimal("0"), ">");
+}
+
+// (de laatste van de vinddag van alle vondsten van de Jutter die zwaar zijn) plus 30 dagen
+function Object creatie_geefEenZeebrief(Object $aantal_vouw_80, Object $vouw_vouw_82, Object $fase, Object $herkomsten_creatie_85, Object $onderwerp) {
+    int diepte = ComputeHelpers.creationDepth("geef een zeebrief", 0, "Jutter", (java.util.List) $herkomsten_creatie_85, 100);
+    Object i0 = null;
+    try {
+        i0 = ComputeHelpers.collapse(ComputeHelpers.dateStep(ComputeHelpers.foldValue($aantal_vouw_80, $vouw_vouw_82, null), new java.math.BigDecimal("30"), "DAYS", Boolean.TRUE));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+    Object nieuw = ComputeHelpers.newObject($onderwerp, "dev.uchar.regelspraak.facts.Zeebrief");
+    ComputeHelpers.set(nieuw, "slotdag", i0);
+    int fase = ((Integer) $fase).intValue();
+    java.util.List feiten = new java.util.ArrayList();
+    feiten.add(nieuw);
+    feiten.add(new CreationStamp("geef een zeebrief", $onderwerp, nieuw, fase, 0, diepte));
+    feiten.add(new RelationLink("jutterheeftzeebrief", $onderwerp, nieuw, fase));
+    return feiten;
+}
+
+rule "geef een zeebrief"
+    dialect "mvel"
+    agenda-group "uchar-objectcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    accumulate( $bijdrage_vouw_69 : Contribution( fold == "geef een zeebrief: vouw 6", subject == $onderwerp ); $aantal_vouw_72 : count() )
+    accumulate( $bijdrage_vouw_77 : Contribution( fold == "geef een zeebrief: vouw 7", subject == $onderwerp, $bijdragewaarde_vouw_81 : value ); $aantal_vouw_80 : count(), $vouw_vouw_82 : exactMax($bijdragewaarde_vouw_81) )
+    accumulate( $herkomst_creatie_84 : CreationStamp( object == $onderwerp ); $herkomsten_creatie_85 : collectList($herkomst_creatie_84) )
+    not( $gemaakt_creatie_87 : CreationStamp( rule == "geef een zeebrief", subject == $onderwerp ) )
+    not( $nieuw_creatie_88 : CreationStamp( object == $onderwerp, beta_geefEenZeebrief(this, $fase) ) )
+    eval( toets_geefEenZeebrief($aantal_vouw_72) )
+    not( $eigen_fout : Fault( rule == "geef een zeebrief", subject == $onderwerp ) )
+then
+    Object v = creatie_geefEenZeebrief($aantal_vouw_80, $vouw_vouw_82, $fase, $herkomsten_creatie_85, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insert(new Fault($onderwerp, "geef een zeebrief", ComputeHelpers.designate(v, "geef een zeebrief")));
+    } else {
+        java.util.List feiten = (java.util.List) v;
+        insert(feiten.get(0));
+        insert(feiten.get(1));
+        insert(feiten.get(2));
+    }
+end
+
+rule "slotdag: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Zeebrief()
+    exists( $koppeling_bereik_8 : RelationLink( relation == "jutterheeftzeebrief", second == $onderwerp, first == $vouwonderwerp ) )
+    $stand_1 : State( attribute == ElementKey.of("zeebrief", "slotdag", false), subject == $onderwerp, $slotdag : value )
+then
+    Object v = ComputeHelpers.contribution("slotdag: vouw 0", $vouwonderwerp, $onderwerp, $slotdag, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "aantal brieven: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Zeebrief()
+    exists( $koppeling_bereik_20 : RelationLink( relation == "jutterheeftzeebrief", second == $onderwerp, first == $vouwonderwerp ) )
+then
+    insertLogical(new Contribution("aantal brieven: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "maak een afrekening: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp, $gewicht : gewicht )
+then
+    Object v = ComputeHelpers.contribution("maak een afrekening: vouw 2", $vouwonderwerp, $onderwerp, $gewicht, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "maak een afrekening: bijdrage aan vouw 3"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp, $gewicht : gewicht )
+then
+    Object v = ComputeHelpers.contribution("maak een afrekening: vouw 3", $vouwonderwerp, $onderwerp, $gewicht, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "maak een afrekening: bijdrage aan vouw 4"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp, $vinddag : vinddag )
+then
+    Object v = ComputeHelpers.contribution("maak een afrekening: vouw 4", $vouwonderwerp, $onderwerp, $vinddag, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "maak een afrekening: bijdrage aan vouw 5"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp )
+then
+    insertLogical(new Contribution("maak een afrekening: vouw 5", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "geef een zeebrief: bijdrage aan vouw 6"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp )
+then
+    insertLogical(new Contribution("geef een zeebrief: vouw 6", $vouwonderwerp, $onderwerp, null));
+end
+
+// zwaar zijn
+function boolean toets_geefEenZeebriefBijdrageAanVouw7(Object $zwaar) {
+    return ComputeHelpers.characteristic($zwaar, Boolean.TRUE);
+}
+
+rule "geef een zeebrief: bijdrage aan vouw 7"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( jutter == $vouwonderwerp, $vinddag : vinddag )
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "zwaar", true), subject == $onderwerp, $zwaar : holds )
+    eval( toets_geefEenZeebriefBijdrageAanVouw7($zwaar) )
+then
+    Object v = ComputeHelpers.contribution("geef een zeebrief: vouw 7", $vouwonderwerp, $onderwerp, $vinddag, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "koppeling jutterheeftafrekening uit de invoer: Jutter.afrekening"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Jutter( afrekening != null, $ander : afrekening )
+then
+    insertLogical(new RelationLink("jutterheeftafrekening", $houder, $ander, 0));
+end
+
+rule "koppeling jutterheeftafrekening uit de invoer: Afrekening.afrekenaar"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Afrekening( afrekenaar != null, $ander : afrekenaar )
+then
+    insertLogical(new RelationLink("jutterheeftafrekening", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingJutterheeftafrekeningTweedeVullingVanAfrekening(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "second");
+}
+
+rule "koppeling jutterheeftafrekening: tweede vulling van afrekening"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "jutterheeftafrekening", $nabij : first )
+    $twee : RelationLink( relation == "jutterheeftafrekening", first != null, first == $een.first, beta_koppelingJutterheeftafrekeningTweedeVullingVanAfrekening(this, $een) )
+then
+    insertLogical(new Fault($nabij, "JutterHeeftAfrekening", new SecondFillingFault("afrekening", $nabij)));
+end
+
+function boolean beta_koppelingJutterheeftafrekeningTweedeVullingVanAfrekenaar(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling jutterheeftafrekening: tweede vulling van afrekenaar"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "jutterheeftafrekening", $nabij : second )
+    $twee : RelationLink( relation == "jutterheeftafrekening", second != null, second == $een.second, beta_koppelingJutterheeftafrekeningTweedeVullingVanAfrekenaar(this, $een) )
+then
+    insertLogical(new Fault($nabij, "JutterHeeftAfrekening", new SecondFillingFault("afrekenaar", $nabij)));
+end
+
+rule "koppeling jutterheeftzeebrief uit de invoer: Zeebrief.briefhouder"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Zeebrief( briefhouder != null, $ander : briefhouder )
+then
+    insertLogical(new RelationLink("jutterheeftzeebrief", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingJutterheeftzeebriefTweedeVullingVanBriefhouder(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling jutterheeftzeebrief: tweede vulling van briefhouder"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "jutterheeftzeebrief", $nabij : second )
+    $twee : RelationLink( relation == "jutterheeftzeebrief", second != null, second == $een.second, beta_koppelingJutterheeftzeebriefTweedeVullingVanBriefhouder(this, $een) )
+then
+    insertLogical(new Fault($nabij, "JutterHeeftZeebrief", new SecondFillingFault("briefhouder", $nabij)));
+end
+
+rule "padstand Jutter.afrekening naar Afrekening.heffing: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $koppeling_keten_112 : RelationLink( relation == "jutterheeftafrekening", first == $onderwerp, $overzijde_keten_113 : second )
+    $stap_keten_111 : dev.uchar.regelspraak.facts.Afrekening( this == $overzijde_keten_113 )
+    $stand : State( attribute == ElementKey.of("afrekening", "heffing", false), subject == $stap_keten_111, $v : value )
+then
+    insertLogical(new PathState($onderwerp, "Jutter:afrekening", ElementKey.of("afrekening", "heffing", false), $v, $stap_keten_111));
+end
+
+rule "padstand Jutter.afrekening naar Afrekening.heffing: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    not( $koppeling_keten_120 : RelationLink( relation == "jutterheeftafrekening", first == $onderwerp, $overzijde_keten_121 : second ) and $stap_keten_119 : dev.uchar.regelspraak.facts.Afrekening( this == $overzijde_keten_121 ) )
+then
+    insertLogical(new PathState($onderwerp, "Jutter:afrekening", ElementKey.of("afrekening", "heffing", false), null, null));
+end
+
+rule "padstand Jutter.afrekening naar Afrekening.weeggrens: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $koppeling_keten_126 : RelationLink( relation == "jutterheeftafrekening", first == $onderwerp, $overzijde_keten_127 : second )
+    $stap_keten_125 : dev.uchar.regelspraak.facts.Afrekening( this == $overzijde_keten_127 )
+    $stand : State( attribute == ElementKey.of("afrekening", "weeggrens", false), subject == $stap_keten_125, $v : value )
+then
+    insertLogical(new PathState($onderwerp, "Jutter:afrekening", ElementKey.of("afrekening", "weeggrens", false), $v, $stap_keten_125));
+end
+
+rule "padstand Jutter.afrekening naar Afrekening.weeggrens: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    not( $koppeling_keten_134 : RelationLink( relation == "jutterheeftafrekening", first == $onderwerp, $overzijde_keten_135 : second ) and $stap_keten_133 : dev.uchar.regelspraak.facts.Afrekening( this == $overzijde_keten_135 ) )
+then
+    insertLogical(new PathState($onderwerp, "Jutter:afrekening", ElementKey.of("afrekening", "weeggrens", false), null, null));
+end
+
+rule "padstand Jutter.afrekening naar Afrekening.afrekendag: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $koppeling_keten_140 : RelationLink( relation == "jutterheeftafrekening", first == $onderwerp, $overzijde_keten_141 : second )
+    $stap_keten_139 : dev.uchar.regelspraak.facts.Afrekening( this == $overzijde_keten_141 )
+    $stand : State( attribute == ElementKey.of("afrekening", "afrekendag", false), subject == $stap_keten_139, $v : value )
+then
+    insertLogical(new PathState($onderwerp, "Jutter:afrekening", ElementKey.of("afrekening", "afrekendag", false), $v, $stap_keten_139));
+end
+
+rule "padstand Jutter.afrekening naar Afrekening.afrekendag: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    not( $koppeling_keten_148 : RelationLink( relation == "jutterheeftafrekening", first == $onderwerp, $overzijde_keten_149 : second ) and $stap_keten_147 : dev.uchar.regelspraak.facts.Afrekening( this == $overzijde_keten_149 ) )
+then
+    insertLogical(new PathState($onderwerp, "Jutter:afrekening", ElementKey.of("afrekening", "afrekendag", false), null, null));
+end
+
+rule "padstand Jutter.afrekening naar Afrekening.telling: link aanwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $koppeling_keten_154 : RelationLink( relation == "jutterheeftafrekening", first == $onderwerp, $overzijde_keten_155 : second )
+    $stap_keten_153 : dev.uchar.regelspraak.facts.Afrekening( this == $overzijde_keten_155 )
+    $stand : State( attribute == ElementKey.of("afrekening", "telling", false), subject == $stap_keten_153, $v : value )
+then
+    insertLogical(new PathState($onderwerp, "Jutter:afrekening", ElementKey.of("afrekening", "telling", false), $v, $stap_keten_153));
+end
+
+rule "padstand Jutter.afrekening naar Afrekening.telling: link afwezig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    not( $koppeling_keten_162 : RelationLink( relation == "jutterheeftafrekening", first == $onderwerp, $overzijde_keten_163 : second ) and $stap_keten_161 : dev.uchar.regelspraak.facts.Afrekening( this == $overzijde_keten_163 ) )
+then
+    insertLogical(new PathState($onderwerp, "Jutter:afrekening", ElementKey.of("afrekening", "telling", false), null, null));
+end
+
+rule "stand Afrekening.heffing: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afrekening()
+    $waarde : Value( attribute == ElementKey.of("afrekening", "heffing", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("afrekening", "heffing", false), $v));
+end
+
+rule "stand Afrekening.heffing: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afrekening( $invoer : heffing )
+    not( $waarde : Value( attribute == ElementKey.of("afrekening", "heffing", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("afrekening", "heffing", false), $invoer));
+end
+
+rule "stand Afrekening.weeggrens: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afrekening()
+    $waarde : Value( attribute == ElementKey.of("afrekening", "weeggrens", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("afrekening", "weeggrens", false), $v));
+end
+
+rule "stand Afrekening.weeggrens: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afrekening( $invoer : weeggrens )
+    not( $waarde : Value( attribute == ElementKey.of("afrekening", "weeggrens", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("afrekening", "weeggrens", false), $invoer));
+end
+
+rule "stand Afrekening.afrekendag: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afrekening()
+    $waarde : Value( attribute == ElementKey.of("afrekening", "afrekendag", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("afrekening", "afrekendag", false), $v));
+end
+
+rule "stand Afrekening.afrekendag: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afrekening( $invoer : afrekendag )
+    not( $waarde : Value( attribute == ElementKey.of("afrekening", "afrekendag", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("afrekening", "afrekendag", false), $invoer));
+end
+
+rule "stand Afrekening.telling: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afrekening()
+    $waarde : Value( attribute == ElementKey.of("afrekening", "telling", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("afrekening", "telling", false), $v));
+end
+
+rule "stand Afrekening.telling: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Afrekening( $invoer : telling )
+    not( $waarde : Value( attribute == ElementKey.of("afrekening", "telling", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("afrekening", "telling", false), $invoer));
+end
+
+rule "stand Zeebrief.slotdag: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Zeebrief()
+    $waarde : Value( attribute == ElementKey.of("zeebrief", "slotdag", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("zeebrief", "slotdag", false), $v));
+end
+
+rule "stand Zeebrief.slotdag: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Zeebrief( $invoer : slotdag )
+    not( $waarde : Value( attribute == ElementKey.of("zeebrief", "slotdag", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("zeebrief", "slotdag", false), $invoer));
+end
+
+rule "kenmerkstand Vondst.zwaar: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(zwaar) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "zwaar", true), true));
+end
+
+rule "kenmerkstand Vondst.zwaar: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "zwaar", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "zwaar", true), true));
+end
+
+rule "kenmerkstand Vondst.zwaar: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(zwaar) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "zwaar", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "zwaar", true), false));
+end
+

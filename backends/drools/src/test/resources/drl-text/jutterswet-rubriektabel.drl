@@ -1,0 +1,127 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// ten minste één van: soort 'zeewier', soort 'wrakhout'
+function boolean toets_rubriekBijOrganischeSoort(Object $soort) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.textEqual($soort, "zeewier", Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.textEqual($soort, "wrakhout", Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+}
+
+rule "rubriek bij organische soort"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Aanspoelsel( $soort : soort )
+    eval( toets_rubriekBijOrganischeSoort($soort) )
+then
+    // 'organisch'
+    Object v = "organisch";
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("aanspoelsel", "rubriek", false), v, "rubriek bij organische soort"));
+    }
+end
+
+// alle van: soort niet 'zeewier', soort niet 'wrakhout'
+function boolean toets_rubriekBijOverigeSoort(Object $soort) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.textEqual($soort, "zeewier", Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.textEqual($soort, "wrakhout", Boolean.FALSE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "rubriek bij overige soort"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Aanspoelsel( $soort : soort )
+    eval( toets_rubriekBijOverigeSoort($soort) )
+then
+    // 'overig'
+    Object v = "overig";
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("aanspoelsel", "rubriek", false), v, "rubriek bij overige soort"));
+    }
+end
+
+// ten minste twee van: gekeurd, geborgen, stuks vanaf 10
+function boolean toets_weegplichtBijDubbeleBorging(Object $gekeurd, Object $geborgen, Object $stuks) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 0, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($gekeurd, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 1, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($geborgen, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 2, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk($stuks, new java.math.BigDecimal("10"), ">=")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 3);
+}
+
+rule "weegplicht bij dubbele borging"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Aanspoelsel( $gekeurd : (ComputeHelpers.holds(gekeurd)), $geborgen : (ComputeHelpers.holds(geborgen)), $stuks : stuks )
+    eval( toets_weegplichtBijDubbeleBorging($gekeurd, $geborgen, $stuks) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("aanspoelsel", "weegplichtig", true)));
+end
+
+function boolean toets_schrijversAanspoelselRubriekVerschil(Object $waarden) {
+    return ComputeHelpers.differ($waarden);
+}
+
+rule "schrijvers Aanspoelsel.rubriek: verschil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Aanspoelsel()
+    accumulate( $waarde : Value( attribute == ElementKey.of("aanspoelsel", "rubriek", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+    eval( toets_schrijversAanspoelselRubriekVerschil($waarden) )
+then
+    insertLogical(ComputeHelpers.writersConflict($onderwerp, $waarden, "rubriek", ComputeHelpers.list3("rubriek bij organische soort", "rubriek bij overige soort", "weegplicht bij dubbele borging"), ComputeHelpers.list1("Aanspoelsel"), ComputeHelpers.list1("Aanspoelsel")));
+end
+

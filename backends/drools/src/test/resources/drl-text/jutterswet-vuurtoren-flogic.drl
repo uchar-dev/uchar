@@ -1,0 +1,167 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// count{?V | ?V = ?T.lampen, ?V.sterkte > 5} >= 2
+function boolean toets_helderBijSterkte(Object $aantal_vouw_4, Object $vouw_vouw_6) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_4, $vouw_vouw_6, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(2));
+}
+
+rule "helder bij sterkte"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vuurtoren()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "helder bij sterkte: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_5 : value ); $aantal_vouw_4 : count(), $vouw_vouw_6 : exactSum($bijdragewaarde_vouw_5) )
+    eval( toets_helderBijSterkte($aantal_vouw_4, $vouw_vouw_6) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vuurtoren", "helder", true)));
+end
+
+// count{?V | ?V = ?T.lampen, ?V.sterkte > 5} <= 1
+function boolean toets_zuinigBijSterkte(Object $aantal_vouw_12, Object $vouw_vouw_14) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_12, $vouw_vouw_14, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, Integer.valueOf(1));
+}
+
+rule "zuinig bij sterkte"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vuurtoren()
+    accumulate( $bijdrage_vouw_9 : Contribution( fold == "zuinig bij sterkte: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_13 : value ); $aantal_vouw_12 : count(), $vouw_vouw_14 : exactSum($bijdragewaarde_vouw_13) )
+    eval( toets_zuinigBijSterkte($aantal_vouw_12, $vouw_vouw_14) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vuurtoren", "zuinig", true)));
+end
+
+// count{?V | ?V = ?T.lampen, ?V.sterkte > 5} = 1
+function boolean toets_enkelvoudigBijSterkte(Object $aantal_vouw_20, Object $vouw_vouw_22) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_20, $vouw_vouw_22, dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, Integer.valueOf(1));
+}
+
+rule "enkelvoudig bij sterkte"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vuurtoren()
+    accumulate( $bijdrage_vouw_17 : Contribution( fold == "enkelvoudig bij sterkte: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_21 : value ); $aantal_vouw_20 : count(), $vouw_vouw_22 : exactSum($bijdragewaarde_vouw_21) )
+    eval( toets_enkelvoudigBijSterkte($aantal_vouw_20, $vouw_vouw_22) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vuurtoren", "enkelvoudig", true)));
+end
+
+// count{?V | ?V = ?T.lampen, ?V : gekeurd, ?V.sterkte > 5} >= 2
+function boolean toets_keurigBijSterkte(Object $aantal_vouw_29, Object $vouw_vouw_31) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_29, $vouw_vouw_31, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(2));
+}
+
+rule "keurig bij sterkte"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vuurtoren()
+    accumulate( $bijdrage_vouw_26 : Contribution( fold == "keurig bij sterkte: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_30 : value ); $aantal_vouw_29 : count(), $vouw_vouw_31 : exactSum($bijdragewaarde_vouw_30) )
+    eval( toets_keurigBijSterkte($aantal_vouw_29, $vouw_vouw_31) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vuurtoren", "keurig", true)));
+end
+
+// count{?V | ?V = ?T.lampen}
+function Object waarde_lampentalVanEenVuurtoren(Object $aantal_vouw_37) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_37), Integer.valueOf(0), "lampental", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "lampental van een vuurtoren"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vuurtoren()
+    accumulate( $bijdrage_vouw_34 : Contribution( fold == "lampental van een vuurtoren: vouw 4", subject == $onderwerp ); $aantal_vouw_37 : count() )
+then
+    Object v = waarde_lampentalVanEenVuurtoren($aantal_vouw_37);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "lampental van een vuurtoren", ComputeHelpers.designate(v, "lampental van een vuurtoren")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vuurtoren", "lampental", false), v, "lampental van een vuurtoren"));
+        }
+    }
+end
+
+// ?V.sterkte > 5
+function boolean matrix_helderBijSterkteBijdrageAanVouw0(Object $onderwerp, Object $sterkte) {
+    return RegelSpraakRuntime.rsAggVergelijk($sterkte, new java.math.BigDecimal("5"), ">");
+}
+
+rule "helder bij sterkte: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vuurtoren()
+    $onderwerp : dev.uchar.regelspraak.facts.Lamp( toren == $vouwonderwerp, $sterkte : sterkte )
+then
+    insertLogical(new Contribution("helder bij sterkte: vouw 0", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_helderBijSterkteBijdrageAanVouw0($onderwerp, $sterkte))));
+end
+
+// ?V.sterkte > 5
+function boolean matrix_zuinigBijSterkteBijdrageAanVouw1(Object $onderwerp, Object $sterkte) {
+    return RegelSpraakRuntime.rsAggVergelijk($sterkte, new java.math.BigDecimal("5"), ">");
+}
+
+rule "zuinig bij sterkte: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vuurtoren()
+    $onderwerp : dev.uchar.regelspraak.facts.Lamp( toren == $vouwonderwerp, $sterkte : sterkte )
+then
+    insertLogical(new Contribution("zuinig bij sterkte: vouw 1", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_zuinigBijSterkteBijdrageAanVouw1($onderwerp, $sterkte))));
+end
+
+// ?V.sterkte > 5
+function boolean matrix_enkelvoudigBijSterkteBijdrageAanVouw2(Object $onderwerp, Object $sterkte) {
+    return RegelSpraakRuntime.rsAggVergelijk($sterkte, new java.math.BigDecimal("5"), ">");
+}
+
+rule "enkelvoudig bij sterkte: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vuurtoren()
+    $onderwerp : dev.uchar.regelspraak.facts.Lamp( toren == $vouwonderwerp, $sterkte : sterkte )
+then
+    insertLogical(new Contribution("enkelvoudig bij sterkte: vouw 2", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_enkelvoudigBijSterkteBijdrageAanVouw2($onderwerp, $sterkte))));
+end
+
+// ?V : gekeurd
+function boolean toets_keurigBijSterkteBijdrageAanVouw3(Object $gekeurd) {
+    return ComputeHelpers.characteristic($gekeurd, Boolean.TRUE);
+}
+
+// ?V.sterkte > 5
+function boolean matrix_keurigBijSterkteBijdrageAanVouw3(Object $onderwerp, Object $sterkte) {
+    return RegelSpraakRuntime.rsAggVergelijk($sterkte, new java.math.BigDecimal("5"), ">");
+}
+
+rule "keurig bij sterkte: bijdrage aan vouw 3"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vuurtoren()
+    $onderwerp : dev.uchar.regelspraak.facts.Lamp( toren == $vouwonderwerp, $gekeurd : (ComputeHelpers.holds(gekeurd)), $sterkte : sterkte )
+    eval( toets_keurigBijSterkteBijdrageAanVouw3($gekeurd) )
+then
+    insertLogical(new Contribution("keurig bij sterkte: vouw 3", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_keurigBijSterkteBijdrageAanVouw3($onderwerp, $sterkte))));
+end
+
+rule "lampental van een vuurtoren: bijdrage aan vouw 4"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vuurtoren()
+    $onderwerp : dev.uchar.regelspraak.facts.Lamp( toren == $vouwonderwerp )
+then
+    insertLogical(new Contribution("lampental van een vuurtoren: vouw 4", $vouwonderwerp, $onderwerp, null));
+end
+

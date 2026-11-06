@@ -1,0 +1,67 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// haar keurmerk gelijk is aan 'merk "AA"'
+function boolean toets_keuringNaarKeurmerk(Object $keurmerk) {
+    return ComputeHelpers.textEqual($keurmerk, "merk \"AA\"", Boolean.TRUE);
+}
+
+rule "keuring naar keurmerk"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $keurmerk : keurmerk )
+    eval( toets_keuringNaarKeurmerk($keurmerk) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "gekeurd", true)));
+end
+
+// de Vondst is gekeurd
+function boolean toets_afslagVanEenGekeurdeVondst(Object $gekeurd) {
+    return ComputeHelpers.characteristic($gekeurd, Boolean.TRUE);
+}
+
+rule "afslag van een gekeurde vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "gekeurd", true), subject == $onderwerp, $gekeurd : holds )
+    eval( toets_afslagVanEenGekeurdeVondst($gekeurd) )
+then
+    // 'veiling "Zee"'
+    Object v = "veiling \"Zee\"";
+    if (!ComputeHelpers.isEmpty(v)) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "afslag", false), v, "afslag van een gekeurde vondst"));
+    }
+end
+
+rule "kenmerkstand Vondst.gekeurd: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(gekeurd) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "gekeurd", true), true));
+end
+
+rule "kenmerkstand Vondst.gekeurd: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "gekeurd", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "gekeurd", true), true));
+end
+
+rule "kenmerkstand Vondst.gekeurd: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(gekeurd) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "gekeurd", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "gekeurd", true), false));
+end
+

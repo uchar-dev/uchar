@@ -1,0 +1,46 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Recipient;
+
+rule "verdeel de opbrengst in gelijke delen: ontvanger"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Berging()
+    $onderwerp : dev.uchar.regelspraak.facts.Berger( berging == $vouwonderwerp )
+then
+    insertLogical(new Recipient("verdeel de opbrengst in gelijke delen", $vouwonderwerp, $onderwerp, null, null, null));
+end
+
+rule "verdeel de opbrengst in gelijke delen"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( $opbrengst : opbrengst )
+    accumulate( $ontvanger_verdeling_1 : Recipient( allocation == "verdeel de opbrengst in gelijke delen", source == $onderwerp ); $ontvangers_verdeling_2 : collectList($ontvanger_verdeling_1) )
+then
+    for (Object feit : ComputeHelpers.payout("verdeel de opbrengst in gelijke delen", $onderwerp, dev.uchar.regelspraak.ir.ResolvedAllocation.Method.GELIJKE_DELEN, $opbrengst, $ontvangers_verdeling_2, false, false, false, Integer.valueOf(0), ElementKey.of("berger", "gelijke aandeel", false), ElementKey.of("berging", "onverdeelde rest", false), "verdeel de opbrengst in gelijke delen", Integer.valueOf(0), Integer.valueOf(0), "verdeel de opbrengst in gelijke delen")) {
+        insertLogical(feit);
+    }
+end
+
+rule "verdeel de opbrengst naar rato: ontvanger"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Berging()
+    $onderwerp : dev.uchar.regelspraak.facts.Berger( berging == $vouwonderwerp, $geborgenGewicht : geborgenGewicht )
+then
+    insertLogical(new Recipient("verdeel de opbrengst naar rato", $vouwonderwerp, $onderwerp, $geborgenGewicht, null, null));
+end
+
+rule "verdeel de opbrengst naar rato"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( $opbrengst : opbrengst )
+    accumulate( $ontvanger_verdeling_6 : Recipient( allocation == "verdeel de opbrengst naar rato", source == $onderwerp ); $ontvangers_verdeling_7 : collectList($ontvanger_verdeling_6) )
+then
+    for (Object feit : ComputeHelpers.payout("verdeel de opbrengst naar rato", $onderwerp, dev.uchar.regelspraak.ir.ResolvedAllocation.Method.NAAR_RATO, $opbrengst, $ontvangers_verdeling_7, true, false, false, Integer.valueOf(0), ElementKey.of("berger", "rato-aandeel", false), ElementKey.of("berging", "ratorest", false), "verdeel de opbrengst naar rato", Integer.valueOf(0), Integer.valueOf(0), "verdeel de opbrengst naar rato")) {
+        insertLogical(feit);
+    }
+end
+

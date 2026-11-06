@@ -1,0 +1,163 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Outcome;
+
+// hij niet uitgesloten is
+function boolean toets_penninggerechtigdTenzijUitgesloten(Object $uitgesloten) {
+    return ComputeHelpers.characteristic($uitgesloten, Boolean.FALSE);
+}
+
+rule "penninggerechtigd tenzij uitgesloten"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("jutter", "uitgesloten", true), subject == $onderwerp, $uitgesloten : holds )
+    eval( toets_penninggerechtigdTenzijUitgesloten($uitgesloten) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "penninggerechtigd", true)));
+end
+
+// hij vergunning geweigerd is en hij weigering herroepen is en hij herroeping vervallen is
+function boolean toets_defaultsKJutterUitgeslotenDefault000(Object $vergunningGeweigerd, Object $weigeringHerroepen, Object $herroepingVervallen) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($vergunningGeweigerd, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($weigeringHerroepen, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($herroepingVervallen, Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+}
+
+rule "defaults K:Jutter.uitgesloten: default 0.0.0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $vergunningGeweigerd : (ComputeHelpers.holds(vergunningGeweigerd)), $weigeringHerroepen : (ComputeHelpers.holds(weigeringHerroepen)), $herroepingVervallen : (ComputeHelpers.holds(herroepingVervallen)) )
+    eval( toets_defaultsKJutterUitgeslotenDefault000($vergunningGeweigerd, $weigeringHerroepen, $herroepingVervallen) )
+then
+    Object v = Boolean.TRUE;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Jutter.uitgesloten", 1, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults K:Jutter.uitgesloten: eens 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Jutter.uitgesloten" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 1 && chain < 2, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Jutter.uitgesloten", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// hij vergunning geweigerd is en hij weigering herroepen is
+function boolean toets_defaultsKJutterUitgeslotenTerugval0(Object $vergunningGeweigerd, Object $weigeringHerroepen) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($vergunningGeweigerd, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($weigeringHerroepen, Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "defaults K:Jutter.uitgesloten: terugval 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $vergunningGeweigerd : (ComputeHelpers.holds(vergunningGeweigerd)), $weigeringHerroepen : (ComputeHelpers.holds(weigeringHerroepen)) )
+    not( $uitkomst_7 : Outcome( stack == "defaults K:Jutter.uitgesloten" && chain >= 1 && chain < 2, subject == $onderwerp ) )
+    eval( toets_defaultsKJutterUitgeslotenTerugval0($vergunningGeweigerd, $weigeringHerroepen) )
+then
+    Object v = Boolean.FALSE;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Jutter.uitgesloten", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// hij vergunning geweigerd is
+function boolean toets_defaultsKJutterUitgeslotenDefault1(Object $vergunningGeweigerd) {
+    return ComputeHelpers.characteristic($vergunningGeweigerd, Boolean.TRUE);
+}
+
+rule "defaults K:Jutter.uitgesloten: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $vergunningGeweigerd : (ComputeHelpers.holds(vergunningGeweigerd)) )
+    not( $hoger_11 : Outcome( stack == "defaults K:Jutter.uitgesloten" && chain == 0 && position < 1, subject == $onderwerp ) )
+    eval( toets_defaultsKJutterUitgeslotenDefault1($vergunningGeweigerd) )
+then
+    Object v = Boolean.TRUE;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Jutter.uitgesloten", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults K:Jutter.uitgesloten: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Jutter.uitgesloten" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 1 && value == true, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "uitgesloten", true)));
+    }
+end
+
+rule "kenmerkstand Jutter.uitgesloten: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.holds(uitgesloten) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("jutter", "uitgesloten", true), true));
+end
+
+rule "kenmerkstand Jutter.uitgesloten: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("jutter", "uitgesloten", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("jutter", "uitgesloten", true), true));
+end
+
+rule "kenmerkstand Jutter.uitgesloten: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.holds(uitgesloten) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("jutter", "uitgesloten", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("jutter", "uitgesloten", true), false));
+end
+

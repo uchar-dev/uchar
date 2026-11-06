@@ -1,0 +1,76 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het aantal Munten van de Jutter
+function Object waarde_muntaantalVanEenJutter(Object $aantal_vouw_4) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_4), Integer.valueOf(0), "muntaantal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "muntaantal van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "muntaantal van een jutter: vouw 0", subject == $onderwerp ); $aantal_vouw_4 : count() )
+then
+    Object v = waarde_muntaantalVanEenJutter($aantal_vouw_4);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "muntaantal van een jutter", ComputeHelpers.designate(v, "muntaantal van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "muntaantal", false), v, "muntaantal van een jutter"));
+        }
+    }
+end
+
+// het aantal gevonden munten van de Jutter
+function Object waarde_gecontroleerdMuntaantalVanEenJutter(Object $aantal_vouw_9) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_9), Integer.valueOf(0), "gecontroleerde muntaantal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "gecontroleerd muntaantal van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_6 : Contribution( fold == "gecontroleerd muntaantal van een jutter: vouw 1", subject == $onderwerp ); $aantal_vouw_9 : count() )
+then
+    Object v = waarde_gecontroleerdMuntaantalVanEenJutter($aantal_vouw_9);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "gecontroleerd muntaantal van een jutter", ComputeHelpers.designate(v, "gecontroleerd muntaantal van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "gecontroleerde muntaantal", false), v, "gecontroleerd muntaantal van een jutter"));
+        }
+    }
+end
+
+rule "muntaantal van een jutter: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Munt( vinder == $vouwonderwerp )
+then
+    insertLogical(new Contribution("muntaantal van een jutter: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "gecontroleerd muntaantal van een jutter: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Munt( vinder == $vouwonderwerp )
+then
+    insertLogical(new Contribution("gecontroleerd muntaantal van een jutter: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+

@@ -1,0 +1,524 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.FilterDeposit;
+import dev.uchar.regelspraak.transpiler.tms.FilterFault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.ListPlace;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het aantal vondsten van de Jutter
+function Object waarde_vondstental(Object $aantal_vouw_4) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_4), Integer.valueOf(0), "vondstental", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vondstental"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "vondstental: vouw 0", subject == $onderwerp ); $aantal_vouw_4 : count() )
+then
+    Object v = waarde_vondstental($aantal_vouw_4);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vondstental", ComputeHelpers.designate(v, "vondstental")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "vondstental", false), v, "vondstental"));
+        }
+    }
+end
+
+// hij actief is
+function boolean toets_zwareVondsten(Object $actief) {
+    return ComputeHelpers.characteristic($actief, Boolean.TRUE);
+}
+
+// het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
+function Object waarde_zwareVondsten(Object $aantal_vouw_20, Object $eerste_filterfout_vouw_25, Object $filterdeponeringen_vouw_29, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(vouwlezing_zwareVondsten($aantal_vouw_20, $eerste_filterfout_vouw_25, $filterdeponeringen_vouw_29, sonde), Integer.valueOf(0), "zware vondsten", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
+function Object vouwlezing_zwareVondsten(Object $aantal_vouw_20, Object $eerste_filterfout_vouw_25, Object $filterdeponeringen_vouw_29, Object sonde) {
+    ComputeHelpers.reportFilterDeposits(sonde, $filterdeponeringen_vouw_29);
+    if ($eerste_filterfout_vouw_25 != null) {
+        throw ((FilterFault) $eerste_filterfout_vouw_25).fault();
+    }
+    return ComputeHelpers.countOf($aantal_vouw_20);
+}
+
+rule "zware vondsten"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $actief : (ComputeHelpers.holds(actief)) )
+    accumulate( $bijdrage_vouw_17 : Contribution( fold == "zware vondsten: vouw 1", subject == $onderwerp ); $aantal_vouw_20 : count() )
+    accumulate( $filterfout_vouw_21 : FilterFault( fold == "zware vondsten: vouw 1", subject == $onderwerp ); $filterfouten_vouw_24 : count(), $eerste_filterfout_vouw_25 : exactMin($filterfout_vouw_21) )
+    accumulate( $filterdeponering_vouw_26 : FilterDeposit( fold == "zware vondsten: vouw 1", subject == $onderwerp ); $filterdeponeringen_vouw_29 : collectList($filterdeponering_vouw_26) )
+    eval( toets_zwareVondsten($actief) )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_zwareVondsten($aantal_vouw_20, $eerste_filterfout_vouw_25, $filterdeponeringen_vouw_29, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "zware vondsten", ComputeHelpers.designate(v, "zware vondsten")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("zware vondsten", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "zware vondsten", false), v, "zware vondsten"));
+        }
+    }
+end
+
+// hij aan alle volgende voorwaarden voldoet: - hij is actief - het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is groter dan 0
+function boolean toets_drukte(Object $actief, Object $aantal_vouw_46, Object $eerste_filterfout_vouw_51, Object $filterdeponeringen_vouw_55) {
+    try {
+        int raak = 0;
+        Boolean vast;
+        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+        if (vast != null) {
+            return vast;
+        }
+        if (ComputeHelpers.characteristic($actief, Boolean.TRUE)) {
+            raak++;
+        }
+        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+        if (vast != null) {
+            return vast;
+        }
+        if (RegelSpraakRuntime.rsAggVergelijk(vouwlezing_drukte($actief, $aantal_vouw_46, $eerste_filterfout_vouw_51, $filterdeponeringen_vouw_55), new java.math.BigDecimal("0"), ">")) {
+            raak++;
+        }
+        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
+function Object vouwlezing_drukte(Object $actief, Object $aantal_vouw_46, Object $eerste_filterfout_vouw_51, Object $filterdeponeringen_vouw_55) {
+    if ($eerste_filterfout_vouw_51 != null) {
+        throw ((FilterFault) $eerste_filterfout_vouw_51).fault();
+    }
+    return ComputeHelpers.countOf($aantal_vouw_46);
+}
+
+rule "drukte"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $actief : (ComputeHelpers.holds(actief)) )
+    accumulate( $bijdrage_vouw_43 : Contribution( fold == "drukte: vouw 2", subject == $onderwerp ); $aantal_vouw_46 : count() )
+    accumulate( $filterfout_vouw_47 : FilterFault( fold == "drukte: vouw 2", subject == $onderwerp ); $filterfouten_vouw_50 : count(), $eerste_filterfout_vouw_51 : exactMin($filterfout_vouw_47) )
+    accumulate( $filterdeponering_vouw_52 : FilterDeposit( fold == "drukte: vouw 2", subject == $onderwerp ); $filterdeponeringen_vouw_55 : collectList($filterdeponering_vouw_52) )
+    eval( toets_drukte($actief, $aantal_vouw_46, $eerste_filterfout_vouw_51, $filterdeponeringen_vouw_55) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "druk", true)));
+end
+
+// hij aan alle volgende voorwaarden voldoet: - hij is actief - het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is groter dan 0
+function boolean toets_drukteFoutInDeVoorwaarde(Object $actief, Object $aantal_vouw_60, Object $eerste_filterfout_vouw_65, Object $filterdeponeringen_vouw_69) {
+    try {
+        boolean uitkomst = samengesteld1_drukteFoutInDeVoorwaarde($actief, $aantal_vouw_60, $eerste_filterfout_vouw_65, $filterdeponeringen_vouw_69);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// hij aan alle volgende voorwaarden voldoet: - hij is actief - het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is groter dan 0
+function boolean samengesteld1_drukteFoutInDeVoorwaarde(Object $actief, Object $aantal_vouw_60, Object $eerste_filterfout_vouw_65, Object $filterdeponeringen_vouw_69) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($actief, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(vouwlezing1_drukteFoutInDeVoorwaarde($actief, $aantal_vouw_60, $eerste_filterfout_vouw_65, $filterdeponeringen_vouw_69), new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+// het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
+function Object vouwlezing1_drukteFoutInDeVoorwaarde(Object $actief, Object $aantal_vouw_60, Object $eerste_filterfout_vouw_65, Object $filterdeponeringen_vouw_69) {
+    if ($eerste_filterfout_vouw_65 != null) {
+        throw ((FilterFault) $eerste_filterfout_vouw_65).fault();
+    }
+    return ComputeHelpers.countOf($aantal_vouw_60);
+}
+
+// hij aan alle volgende voorwaarden voldoet: - hij is actief - het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is groter dan 0
+function Object fout_drukteFoutInDeVoorwaarde(Object $actief, Object $aantal_vouw_60, Object $eerste_filterfout_vouw_65, Object $filterdeponeringen_vouw_69) {
+    try {
+        boolean uitkomst = samengesteld2_drukteFoutInDeVoorwaarde($actief, $aantal_vouw_60, $eerste_filterfout_vouw_65, $filterdeponeringen_vouw_69);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// hij aan alle volgende voorwaarden voldoet: - hij is actief - het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is groter dan 0
+function boolean samengesteld2_drukteFoutInDeVoorwaarde(Object $actief, Object $aantal_vouw_60, Object $eerste_filterfout_vouw_65, Object $filterdeponeringen_vouw_69) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($actief, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(vouwlezing2_drukteFoutInDeVoorwaarde($actief, $aantal_vouw_60, $eerste_filterfout_vouw_65, $filterdeponeringen_vouw_69), new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+// het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
+function Object vouwlezing2_drukteFoutInDeVoorwaarde(Object $actief, Object $aantal_vouw_60, Object $eerste_filterfout_vouw_65, Object $filterdeponeringen_vouw_69) {
+    if ($eerste_filterfout_vouw_65 != null) {
+        throw ((FilterFault) $eerste_filterfout_vouw_65).fault();
+    }
+    return ComputeHelpers.countOf($aantal_vouw_60);
+}
+
+rule "drukte: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $actief : (ComputeHelpers.holds(actief)) )
+    accumulate( $bijdrage_vouw_57 : Contribution( fold == "drukte: vouw 2", subject == $onderwerp ); $aantal_vouw_60 : count() )
+    accumulate( $filterfout_vouw_61 : FilterFault( fold == "drukte: vouw 2", subject == $onderwerp ); $filterfouten_vouw_64 : count(), $eerste_filterfout_vouw_65 : exactMin($filterfout_vouw_61) )
+    accumulate( $filterdeponering_vouw_66 : FilterDeposit( fold == "drukte: vouw 2", subject == $onderwerp ); $filterdeponeringen_vouw_69 : collectList($filterdeponering_vouw_66) )
+    eval( toets_drukteFoutInDeVoorwaarde($actief, $aantal_vouw_60, $eerste_filterfout_vouw_65, $filterdeponeringen_vouw_69) )
+then
+    Object f = fout_drukteFoutInDeVoorwaarde($actief, $aantal_vouw_60, $eerste_filterfout_vouw_65, $filterdeponeringen_vouw_69);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"drukte\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "drukte", ComputeHelpers.designate(f, "drukte")));
+end
+
+// hij aan alle volgende voorwaarden voldoet: - hij is actief - het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is groter dan 0
+function boolean toets_drukteDeponeringInDeVoorwaarde(Object $actief, Object $aantal_vouw_74, Object $eerste_filterfout_vouw_79, Object $filterdeponeringen_vouw_83, Object sonde) {
+    try {
+        boolean uitkomst = samengesteld1_drukteDeponeringInDeVoorwaarde($actief, $aantal_vouw_74, $eerste_filterfout_vouw_79, $filterdeponeringen_vouw_83, sonde);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    return ComputeHelpers.reported(sonde);
+}
+
+// hij aan alle volgende voorwaarden voldoet: - hij is actief - het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is groter dan 0
+function boolean samengesteld1_drukteDeponeringInDeVoorwaarde(Object $actief, Object $aantal_vouw_74, Object $eerste_filterfout_vouw_79, Object $filterdeponeringen_vouw_83, Object sonde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($actief, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(vouwlezing1_drukteDeponeringInDeVoorwaarde($actief, $aantal_vouw_74, $eerste_filterfout_vouw_79, $filterdeponeringen_vouw_83, sonde), new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+// het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
+function Object vouwlezing1_drukteDeponeringInDeVoorwaarde(Object $actief, Object $aantal_vouw_74, Object $eerste_filterfout_vouw_79, Object $filterdeponeringen_vouw_83, Object sonde) {
+    ComputeHelpers.reportFilterDeposits(sonde, $filterdeponeringen_vouw_83);
+    if ($eerste_filterfout_vouw_79 != null) {
+        throw ((FilterFault) $eerste_filterfout_vouw_79).fault();
+    }
+    return ComputeHelpers.countOf($aantal_vouw_74);
+}
+
+// hij aan alle volgende voorwaarden voldoet: - hij is actief - het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is groter dan 0
+function java.util.List deponering_drukteDeponeringInDeVoorwaarde(Object $actief, Object $aantal_vouw_74, Object $eerste_filterfout_vouw_79, Object $filterdeponeringen_vouw_83, Object sonde) {
+    try {
+        boolean uitkomst = samengesteld2_drukteDeponeringInDeVoorwaarde($actief, $aantal_vouw_74, $eerste_filterfout_vouw_79, $filterdeponeringen_vouw_83, sonde);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    if (!ComputeHelpers.reported(sonde)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"drukte\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    return ComputeHelpers.depositCodes(sonde);
+}
+
+// hij aan alle volgende voorwaarden voldoet: - hij is actief - het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is groter dan 0
+function boolean samengesteld2_drukteDeponeringInDeVoorwaarde(Object $actief, Object $aantal_vouw_74, Object $eerste_filterfout_vouw_79, Object $filterdeponeringen_vouw_83, Object sonde) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($actief, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (RegelSpraakRuntime.rsAggVergelijk(vouwlezing2_drukteDeponeringInDeVoorwaarde($actief, $aantal_vouw_74, $eerste_filterfout_vouw_79, $filterdeponeringen_vouw_83, sonde), new java.math.BigDecimal("0"), ">")) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+// het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
+function Object vouwlezing2_drukteDeponeringInDeVoorwaarde(Object $actief, Object $aantal_vouw_74, Object $eerste_filterfout_vouw_79, Object $filterdeponeringen_vouw_83, Object sonde) {
+    ComputeHelpers.reportFilterDeposits(sonde, $filterdeponeringen_vouw_83);
+    if ($eerste_filterfout_vouw_79 != null) {
+        throw ((FilterFault) $eerste_filterfout_vouw_79).fault();
+    }
+    return ComputeHelpers.countOf($aantal_vouw_74);
+}
+
+rule "drukte: deponering in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $actief : (ComputeHelpers.holds(actief)) )
+    accumulate( $bijdrage_vouw_71 : Contribution( fold == "drukte: vouw 2", subject == $onderwerp ); $aantal_vouw_74 : count() )
+    accumulate( $filterfout_vouw_75 : FilterFault( fold == "drukte: vouw 2", subject == $onderwerp ); $filterfouten_vouw_78 : count(), $eerste_filterfout_vouw_79 : exactMin($filterfout_vouw_75) )
+    accumulate( $filterdeponering_vouw_80 : FilterDeposit( fold == "drukte: vouw 2", subject == $onderwerp ); $filterdeponeringen_vouw_83 : collectList($filterdeponering_vouw_80) )
+    eval( toets_drukteDeponeringInDeVoorwaarde($actief, $aantal_vouw_74, $eerste_filterfout_vouw_79, $filterdeponeringen_vouw_83, ComputeHelpers.depositFlag()) )
+then
+    insertLogical(ComputeHelpers.inconsistency("drukte", $onderwerp, deponering_drukteDeponeringInDeVoorwaarde($actief, $aantal_vouw_74, $eerste_filterfout_vouw_79, $filterdeponeringen_vouw_83, ComputeHelpers.depositFlag())));
+end
+
+rule "vondstental: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp )
+then
+    insertLogical(new Contribution("vondstental: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+// aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
+function boolean toets_zwareVondstenBijdrageAanVouw1(Object $gewicht, Object $deelnemers) {
+    try {
+        return RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($gewicht, $deelnemers, null), new java.math.BigDecimal("2"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "zware vondsten: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp, $gewicht : gewicht, $deelnemers : deelnemers )
+    eval( toets_zwareVondstenBijdrageAanVouw1($gewicht, $deelnemers) )
+then
+    insertLogical(new Contribution("zware vondsten: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+
+function boolean beta_zwareVondstenFilterfoutInVouw1(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
+function boolean toets_zwareVondstenFilterfoutInVouw1(Object $gewicht, Object $deelnemers) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($gewicht, $deelnemers, null), new java.math.BigDecimal("2"), ">");
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
+function RuntimeException fout_zwareVondstenFilterfoutInVouw1(Object $lijstplaatsen_plaats_10, Object $plaats_plaats_11, Object $gewicht, Object $deelnemers, Object $onderwerp) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($gewicht, $deelnemers, null), new java.math.BigDecimal("2"), ">");
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+function java.util.List plaats_zwareVondstenFilterfoutInVouw1(Object $onderwerp, Object $lijstplaatsen_plaats_10, Object $plaats_plaats_11) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.FILTER_FAULT, "zware vondsten: vouw 1", $onderwerp, 0, java.util.Arrays.asList("aanmelder"), java.util.Arrays.asList($lijstplaatsen_plaats_10), java.util.Arrays.asList($plaats_plaats_11));
+}
+
+rule "zware vondsten: filterfout in vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp, $gewicht : gewicht, $deelnemers : deelnemers )
+    accumulate( $lijstplaats_plaats_8 : ListPlace( field == "aanmelder", beta_zwareVondstenFilterfoutInVouw1(this, $onderwerp), $lijstplaatswaarde_plaats_9 : place ); $lijstplaatsen_plaats_10 : count(), $plaats_plaats_11 : exactMin($lijstplaatswaarde_plaats_9) )
+    eval( toets_zwareVondstenFilterfoutInVouw1($gewicht, $deelnemers) )
+then
+    RuntimeException f = fout_zwareVondstenFilterfoutInVouw1($lijstplaatsen_plaats_10, $plaats_plaats_11, $gewicht, $deelnemers, $onderwerp);
+    if (f == null) {
+        ComputeHelpers.contractBreach("het filter van zware vondsten: vouw 1 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new FilterFault("zware vondsten: vouw 1", $vouwonderwerp, $onderwerp, f, plaats_zwareVondstenFilterfoutInVouw1($onderwerp, $lijstplaatsen_plaats_10, $plaats_plaats_11)));
+end
+
+// aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
+function boolean toets_zwareVondstenFilterdeponeringInVouw1(Object $gewicht, Object $deelnemers, Object sonde) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($gewicht, $deelnemers, sonde), new java.math.BigDecimal("2"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    return ComputeHelpers.reported(sonde);
+}
+
+// aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
+function java.util.List deponering_zwareVondstenFilterdeponeringInVouw1(Object $gewicht, Object $deelnemers, Object $onderwerp, Object sonde) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($gewicht, $deelnemers, sonde), new java.math.BigDecimal("2"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    if (!ComputeHelpers.reported(sonde)) {
+        ComputeHelpers.contractBreach("het filter van zware vondsten: vouw 1 deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    return ComputeHelpers.depositCodes(sonde);
+}
+
+rule "zware vondsten: filterdeponering in vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp, $gewicht : gewicht, $deelnemers : deelnemers )
+    eval( toets_zwareVondstenFilterdeponeringInVouw1($gewicht, $deelnemers, ComputeHelpers.depositFlag()) )
+then
+    insertLogical(new FilterDeposit("zware vondsten: vouw 1", $vouwonderwerp, $onderwerp, deponering_zwareVondstenFilterdeponeringInVouw1($gewicht, $deelnemers, $onderwerp, ComputeHelpers.depositFlag())));
+end
+
+// aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
+function boolean toets_drukteBijdrageAanVouw2(Object $gewicht, Object $deelnemers) {
+    try {
+        return RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($gewicht, $deelnemers, null), new java.math.BigDecimal("2"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "drukte: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp, $gewicht : gewicht, $deelnemers : deelnemers )
+    eval( toets_drukteBijdrageAanVouw2($gewicht, $deelnemers) )
+then
+    insertLogical(new Contribution("drukte: vouw 2", $vouwonderwerp, $onderwerp, null));
+end
+
+function boolean beta_drukteFilterfoutInVouw2(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
+function boolean toets_drukteFilterfoutInVouw2(Object $gewicht, Object $deelnemers) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($gewicht, $deelnemers, null), new java.math.BigDecimal("2"), ">");
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
+function RuntimeException fout_drukteFilterfoutInVouw2(Object $lijstplaatsen_plaats_36, Object $plaats_plaats_37, Object $gewicht, Object $deelnemers, Object $onderwerp) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($gewicht, $deelnemers, null), new java.math.BigDecimal("2"), ">");
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+function java.util.List plaats_drukteFilterfoutInVouw2(Object $onderwerp, Object $lijstplaatsen_plaats_36, Object $plaats_plaats_37) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.FILTER_FAULT, "drukte: vouw 2", $onderwerp, 0, java.util.Arrays.asList("aanmelder"), java.util.Arrays.asList($lijstplaatsen_plaats_36), java.util.Arrays.asList($plaats_plaats_37));
+}
+
+rule "drukte: filterfout in vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp, $gewicht : gewicht, $deelnemers : deelnemers )
+    accumulate( $lijstplaats_plaats_34 : ListPlace( field == "aanmelder", beta_drukteFilterfoutInVouw2(this, $onderwerp), $lijstplaatswaarde_plaats_35 : place ); $lijstplaatsen_plaats_36 : count(), $plaats_plaats_37 : exactMin($lijstplaatswaarde_plaats_35) )
+    eval( toets_drukteFilterfoutInVouw2($gewicht, $deelnemers) )
+then
+    RuntimeException f = fout_drukteFilterfoutInVouw2($lijstplaatsen_plaats_36, $plaats_plaats_37, $gewicht, $deelnemers, $onderwerp);
+    if (f == null) {
+        ComputeHelpers.contractBreach("het filter van drukte: vouw 2 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new FilterFault("drukte: vouw 2", $vouwonderwerp, $onderwerp, f, plaats_drukteFilterfoutInVouw2($onderwerp, $lijstplaatsen_plaats_36, $plaats_plaats_37)));
+end
+
+// aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
+function boolean toets_drukteFilterdeponeringInVouw2(Object $gewicht, Object $deelnemers, Object sonde) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($gewicht, $deelnemers, sonde), new java.math.BigDecimal("2"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    return ComputeHelpers.reported(sonde);
+}
+
+// aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
+function java.util.List deponering_drukteFilterdeponeringInVouw2(Object $gewicht, Object $deelnemers, Object $onderwerp, Object sonde) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($gewicht, $deelnemers, sonde), new java.math.BigDecimal("2"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    if (!ComputeHelpers.reported(sonde)) {
+        ComputeHelpers.contractBreach("het filter van drukte: vouw 2 deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    return ComputeHelpers.depositCodes(sonde);
+}
+
+rule "drukte: filterdeponering in vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp, $gewicht : gewicht, $deelnemers : deelnemers )
+    eval( toets_drukteFilterdeponeringInVouw2($gewicht, $deelnemers, ComputeHelpers.depositFlag()) )
+then
+    insertLogical(new FilterDeposit("drukte: vouw 2", $vouwonderwerp, $onderwerp, deponering_drukteFilterdeponeringInVouw2($gewicht, $deelnemers, $onderwerp, ComputeHelpers.depositFlag())));
+end
+

@@ -1,0 +1,95 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het aantal posten van het Kustvak die gedurende het gehele jaar bemand zijn
+function Object waarde_postentalVanEenKustvak(Object $aantal_vouw_5) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_5), Integer.valueOf(0), "postental", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "postental van een kustvak"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Kustvak()
+    accumulate( $bijdrage_vouw_2 : Contribution( fold == "postental van een kustvak: vouw 0", subject == $onderwerp ); $aantal_vouw_5 : count() )
+then
+    Object v = waarde_postentalVanEenKustvak($aantal_vouw_5);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "postental van een kustvak", ComputeHelpers.designate(v, "postental van een kustvak")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("kustvak", "postental", false), v, "postental van een kustvak"));
+        }
+    }
+end
+
+// het aantal posten van het Kustvak die gedurende het gehele jaar bemand zijn groter is dan 0
+function boolean toets_waaktariefVanEenKustvak(Object $aantal_vouw_11) {
+    return RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.countOf($aantal_vouw_11), new java.math.BigDecimal("0"), ">");
+}
+
+// 10
+function Object waarde_waaktariefVanEenKustvak() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("10"), Integer.valueOf(0), "waaktarief", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "waaktarief van een kustvak"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Kustvak()
+    accumulate( $bijdrage_vouw_8 : Contribution( fold == "waaktarief van een kustvak: vouw 1", subject == $onderwerp ); $aantal_vouw_11 : count() )
+    eval( toets_waaktariefVanEenKustvak($aantal_vouw_11) )
+then
+    Object v = waarde_waaktariefVanEenKustvak();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "waaktarief van een kustvak", ComputeHelpers.designate(v, "waaktarief van een kustvak")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("kustvak", "waaktarief", false), v, "waaktarief van een kustvak"));
+        }
+    }
+end
+
+// gedurende het gehele jaar bemand zijn
+function boolean toets_postentalVanEenKustvakBijdrageAanVouw0(Object $tijdlijn_0) {
+    return ComputeHelpers.wholePeriod($tijdlijn_0, null, "JAAR", Integer.valueOf(7), Boolean.FALSE);
+}
+
+rule "postental van een kustvak: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Kustvak()
+    $onderwerp : dev.uchar.regelspraak.facts.Post( kustvak == $vouwonderwerp, $tijdlijn_0 : (ComputeHelpers.periods(bemand)) )
+    eval( toets_postentalVanEenKustvakBijdrageAanVouw0($tijdlijn_0) )
+then
+    insertLogical(new Contribution("postental van een kustvak: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+// gedurende het gehele jaar bemand zijn
+function boolean toets_waaktariefVanEenKustvakBijdrageAanVouw1(Object $tijdlijn_0) {
+    return ComputeHelpers.wholePeriod($tijdlijn_0, null, "JAAR", Integer.valueOf(7), Boolean.FALSE);
+}
+
+rule "waaktarief van een kustvak: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Kustvak()
+    $onderwerp : dev.uchar.regelspraak.facts.Post( kustvak == $vouwonderwerp, $tijdlijn_0 : (ComputeHelpers.periods(bemand)) )
+    eval( toets_waaktariefVanEenKustvakBijdrageAanVouw1($tijdlijn_0) )
+then
+    insertLogical(new Contribution("waaktarief van een kustvak: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+

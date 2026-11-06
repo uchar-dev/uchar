@@ -1,0 +1,180 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.EvaluationDate;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.ListPlace;
+import dev.uchar.regelspraak.transpiler.tms.MemberTest;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.time.LocalDate rekendatum;
+global java.util.function.Predicate rsDagsoort_Keurdag;
+
+// alle wachten van de Ploeg aan alle volgende voorwaarden voldoen
+function boolean toets_inzetbaarBijKeurtermijn(Object $aantal_vouw_10, Object $vouw_vouw_12) {
+    try {
+        return ((Boolean) kwantorlezing_inzetbaarBijKeurtermijn($aantal_vouw_10, $vouw_vouw_12));
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// alle wachten van de Ploeg aan alle volgende voorwaarden voldoen
+function Object kwantorlezing_inzetbaarBijKeurtermijn(Object $aantal_vouw_10, Object $vouw_vouw_12) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_10, $vouw_vouw_12, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0), null);
+}
+
+rule "inzetbaar bij keurtermijn"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ploeg()
+    accumulate( $bijdrage_vouw_7 : Contribution( fold == "inzetbaar bij keurtermijn: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_11 : value ); $aantal_vouw_10 : count(), $vouw_vouw_12 : collectList($bijdragewaarde_vouw_11) )
+    eval( toets_inzetbaarBijKeurtermijn($aantal_vouw_10, $vouw_vouw_12) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("ploeg", "inzetbaar", true)));
+end
+
+// alle wachten van de Ploeg aan alle volgende voorwaarden voldoen
+function boolean toets_inzetbaarBijKeurtermijnFoutInDeVoorwaarde(Object $aantal_vouw_17, Object $vouw_vouw_19) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing1_inzetbaarBijKeurtermijnFoutInDeVoorwaarde($aantal_vouw_17, $vouw_vouw_19));
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// alle wachten van de Ploeg aan alle volgende voorwaarden voldoen
+function Object kwantorlezing1_inzetbaarBijKeurtermijnFoutInDeVoorwaarde(Object $aantal_vouw_17, Object $vouw_vouw_19) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_17, $vouw_vouw_19, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0), null);
+}
+
+// alle wachten van de Ploeg aan alle volgende voorwaarden voldoen
+function Object fout_inzetbaarBijKeurtermijnFoutInDeVoorwaarde(Object $aantal_vouw_17, Object $vouw_vouw_19) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing2_inzetbaarBijKeurtermijnFoutInDeVoorwaarde($aantal_vouw_17, $vouw_vouw_19));
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// alle wachten van de Ploeg aan alle volgende voorwaarden voldoen
+function Object kwantorlezing2_inzetbaarBijKeurtermijnFoutInDeVoorwaarde(Object $aantal_vouw_17, Object $vouw_vouw_19) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_17, $vouw_vouw_19, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0), null);
+}
+
+rule "inzetbaar bij keurtermijn: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ploeg()
+    accumulate( $bijdrage_vouw_14 : Contribution( fold == "inzetbaar bij keurtermijn: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_18 : value ); $aantal_vouw_17 : count(), $vouw_vouw_19 : collectList($bijdragewaarde_vouw_18) )
+    eval( toets_inzetbaarBijKeurtermijnFoutInDeVoorwaarde($aantal_vouw_17, $vouw_vouw_19) )
+then
+    Object f = fout_inzetbaarBijKeurtermijnFoutInDeVoorwaarde($aantal_vouw_17, $vouw_vouw_19);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"inzetbaar bij keurtermijn\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "inzetbaar bij keurtermijn", ComputeHelpers.designate(f, "inzetbaar bij keurtermijn")));
+end
+
+// het aantal wachten van de Ploeg
+function Object waarde_wachttalVanEenPloeg(Object $aantal_vouw_25) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_25), Integer.valueOf(0), "wachttal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "wachttal van een ploeg"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ploeg()
+    accumulate( $bijdrage_vouw_22 : Contribution( fold == "wachttal van een ploeg: vouw 1", subject == $onderwerp ); $aantal_vouw_25 : count() )
+then
+    Object v = waarde_wachttalVanEenPloeg($aantal_vouw_25);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "wachttal van een ploeg", ComputeHelpers.designate(v, "wachttal van een ploeg")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("ploeg", "wachttal", false), v, "wachttal van een ploeg"));
+        }
+    }
+end
+
+function boolean beta_inzetbaarBijKeurtermijnBijdrageAanVouw0(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// hij aan alle volgende voorwaarden voldoet
+function Object lidtoets_inzetbaarBijKeurtermijnBijdrageAanVouw0(Object $onderwerp, Object $gekeurd, Object $keurdatum, Object $keurtermijn, Object $rekendatumwaarde_4, Object $lijstplaatsen_plaats_3, Object $plaats_plaats_4, java.util.function.Predicate rsDagsoort_Keurdag) {
+    java.util.List plaats = plaats_inzetbaarBijKeurtermijnBijdrageAanVouw0($onderwerp, $lijstplaatsen_plaats_3, $plaats_plaats_4);
+    Boolean waar = null;
+    RuntimeException fout = null;
+    try {
+        waar = Boolean.valueOf(samengesteld_inzetbaarBijKeurtermijnBijdrageAanVouw0($onderwerp, $gekeurd, $keurdatum, $keurtermijn, $rekendatumwaarde_4, $lijstplaatsen_plaats_3, $plaats_plaats_4, rsDagsoort_Keurdag));
+    } catch (RuntimeException e) {
+        fout = ComputeHelpers.caught(e);
+    }
+    return new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null));
+}
+
+function java.util.List plaats_inzetbaarBijKeurtermijnBijdrageAanVouw0(Object $onderwerp, Object $lijstplaatsen_plaats_3, Object $plaats_plaats_4) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER, "inzetbaar bij keurtermijn: vouw 0", $onderwerp, 0, java.util.Arrays.asList("ploeg"), java.util.Arrays.asList($lijstplaatsen_plaats_3), java.util.Arrays.asList($plaats_plaats_4));
+}
+
+// hij aan alle volgende voorwaarden voldoet
+function boolean samengesteld_inzetbaarBijKeurtermijnBijdrageAanVouw0(Object $onderwerp, Object $gekeurd, Object $keurdatum, Object $keurtermijn, Object $rekendatumwaarde_4, Object $lijstplaatsen_plaats_3, Object $plaats_plaats_4, java.util.function.Predicate rsDagsoort_Keurdag) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.characteristic($gekeurd, Boolean.TRUE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.dateCompare(ComputeHelpers.dayKindStep($keurdatum, $keurtermijn, rsDagsoort_Keurdag, Boolean.TRUE), ComputeHelpers.required($rekendatumwaarde_4, "the evaluationDate context value needs an evaluation date; the case carries asOfDate null"), dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "inzetbaar bij keurtermijn: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Ploeg()
+    $onderwerp : dev.uchar.regelspraak.facts.Strandwacht( ploeg == $vouwonderwerp, $gekeurd : (ComputeHelpers.holds(gekeurd)), $keurdatum : keurdatum, $keurtermijn : keurtermijn )
+    accumulate( $lijstplaats_plaats_1 : ListPlace( field == "ploeg", beta_inzetbaarBijKeurtermijnBijdrageAanVouw0(this, $onderwerp), $lijstplaatswaarde_plaats_2 : place ); $lijstplaatsen_plaats_3 : count(), $plaats_plaats_4 : exactMin($lijstplaatswaarde_plaats_2) )
+    $rekendatum_4 : EvaluationDate( $rekendatumwaarde_4 : date )
+then
+    insertLogical(new Contribution("inzetbaar bij keurtermijn: vouw 0", $vouwonderwerp, $onderwerp, lidtoets_inzetbaarBijKeurtermijnBijdrageAanVouw0($onderwerp, $gekeurd, $keurdatum, $keurtermijn, $rekendatumwaarde_4, $lijstplaatsen_plaats_3, $plaats_plaats_4, rsDagsoort_Keurdag)));
+end
+
+rule "wachttal van een ploeg: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Ploeg()
+    $onderwerp : dev.uchar.regelspraak.facts.Strandwacht( ploeg == $vouwonderwerp )
+then
+    insertLogical(new Contribution("wachttal van een ploeg: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "rekendatumstand"
+    dialect "mvel"
+when
+then
+    insertLogical(new EvaluationDate(rekendatum));
+end
+

@@ -1,0 +1,89 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.EmptyBarrier;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.ParameterState;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.math.BigDecimal drempel;
+global java.math.BigDecimal basisheffing;
+
+// de grondslag is zijn grondslag
+function Object waarde_heffingVanEenJutter(Object $grondslag, Object $opslag, Object $drempel, Object $basisheffing) {
+    try {
+        return ComputeHelpers.fitTarget(let1_heffingVanEenJutter($grondslag, $opslag, $drempel, $basisheffing), Integer.valueOf(2), "heffing", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de grondslag is zijn grondslag
+function Object let1_heffingVanEenJutter(Object $grondslag, Object $opslag, Object $drempel, Object $basisheffing) {
+    Object cel_1 = ComputeHelpers.binderCell();
+    try {
+        return let2_heffingVanEenJutter($grondslag, $opslag, $drempel, $basisheffing, cel_1);
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_1);
+    }
+}
+
+// zijn grondslag
+function Object binder1_heffingVanEenJutter(Object $grondslag, Object $opslag, Object $drempel, Object $basisheffing, Object cel_1) {
+    if (!ComputeHelpers.binderCellFilled(cel_1)) {
+        ComputeHelpers.fillBinderCell(cel_1, $grondslag);
+    }
+    return ComputeHelpers.binderValue(cel_1);
+}
+
+// de opslag is zijn opslag
+function Object let2_heffingVanEenJutter(Object $grondslag, Object $opslag, Object $drempel, Object $basisheffing, Object cel_1) {
+    Object cel_3 = ComputeHelpers.binderCell();
+    try {
+        return (RegelSpraakRuntime.rsAggVergelijk(binder1_heffingVanEenJutter($grondslag, $opslag, $drempel, $basisheffing, cel_1), $drempel, ">") ? (Object) $basisheffing : (Object) RegelSpraakRuntime.rsPlus($basisheffing, binder2_heffingVanEenJutter($grondslag, $opslag, $drempel, $basisheffing, cel_1, cel_3)));
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_3);
+    }
+}
+
+// zijn opslag
+function Object binder2_heffingVanEenJutter(Object $grondslag, Object $opslag, Object $drempel, Object $basisheffing, Object cel_1, Object cel_3) {
+    if (!ComputeHelpers.binderCellFilled(cel_3)) {
+        ComputeHelpers.fillBinderCell(cel_3, $opslag);
+    }
+    return ComputeHelpers.binderValue(cel_3);
+}
+
+rule "heffing van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $grondslag : grondslag, $opslag : opslag )
+    $parameter_4 : ParameterState( parameter == "drempel", $drempel : value )
+    $parameter_5 : ParameterState( parameter == "basisheffing", $basisheffing : value )
+then
+    Object v = waarde_heffingVanEenJutter($grondslag, $opslag, $drempel, $basisheffing);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "heffing van een jutter", ComputeHelpers.designate(v, "heffing van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "heffing", false), v, "heffing van een jutter"));
+        }
+    }
+end
+
+rule "parameterstand drempel"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("drempel", drempel));
+end
+
+rule "parameterstand basisheffing"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("basisheffing", basisheffing));
+end
+

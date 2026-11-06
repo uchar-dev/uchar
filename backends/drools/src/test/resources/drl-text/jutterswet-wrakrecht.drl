@@ -1,0 +1,252 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Decides;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// 5,00
+function Object waarde_registratiekostenVanEenStrandrecht() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("5"), Integer.valueOf(2), "registratiekosten", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "registratiekosten van een strandrecht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht()
+then
+    Object v = waarde_registratiekostenVanEenStrandrecht();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "registratiekosten van een strandrecht", ComputeHelpers.designate(v, "registratiekosten van een strandrecht")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandrecht", "registratiekosten", false), v, "registratiekosten van een strandrecht"));
+        }
+    }
+end
+
+// de som van de uitkering van alle geregistreerde strandrechten van de Kustgemeente of 0,00 als die er niet zijn
+function Object waarde_uitkeringstotaalVanEenKustgemeente(Object $aantal_vouw_6, Object $vouw_vouw_8) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_6, $vouw_vouw_8, new java.math.BigDecimal("0")), Integer.valueOf(2), "uitkeringstotaal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "uitkeringstotaal van een kustgemeente"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Kustgemeente()
+    accumulate( $bijdrage_vouw_3 : Contribution( fold == "uitkeringstotaal van een kustgemeente: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_7 : value ); $aantal_vouw_6 : count(), $vouw_vouw_8 : exactSum($bijdragewaarde_vouw_7) )
+then
+    Object v = waarde_uitkeringstotaalVanEenKustgemeente($aantal_vouw_6, $vouw_vouw_8);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "uitkeringstotaal van een kustgemeente", ComputeHelpers.designate(v, "uitkeringstotaal van een kustgemeente")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("kustgemeente", "uitkeringstotaal", false), v, "uitkeringstotaal van een kustgemeente"));
+        }
+    }
+end
+
+// het aantal geregistreerde strandrechten van de Kustgemeente
+function Object waarde_registertalVanEenKustgemeente(Object $aantal_vouw_13) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_13), Integer.valueOf(0), "registertal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "registertal van een kustgemeente"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Kustgemeente()
+    accumulate( $bijdrage_vouw_10 : Contribution( fold == "registertal van een kustgemeente: vouw 1", subject == $onderwerp ); $aantal_vouw_13 : count() )
+then
+    Object v = waarde_registertalVanEenKustgemeente($aantal_vouw_13);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "registertal van een kustgemeente", ComputeHelpers.designate(v, "registertal van een kustgemeente")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("kustgemeente", "registertal", false), v, "registertal van een kustgemeente"));
+        }
+    }
+end
+
+// het Strandrecht betwist is
+function boolean toets_defaultsAStrandrechtUitkeringDefault0(Object $betwist) {
+    return ComputeHelpers.characteristic($betwist, Boolean.TRUE);
+}
+
+rule "defaults A:Strandrecht.uitkering: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Strandrecht"), $betwist : (ComputeHelpers.holds(betwist)) )
+    eval( toets_defaultsAStrandrechtUitkeringDefault0($betwist) )
+then
+    // 99,00
+    Object v = new java.math.BigDecimal("99");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "uitkering");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Strandrecht.uitkering", ComputeHelpers.designate(passend, "defaults A:Strandrecht.uitkering")));
+            insertLogical(new Decides($onderwerp, "defaults A:Strandrecht.uitkering", 0));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandrecht", "uitkering", false), passend, "defaults A:Strandrecht.uitkering"));
+            insertLogical(new Decides($onderwerp, "defaults A:Strandrecht.uitkering", 0));
+        }
+    }
+end
+
+rule "defaults A:Strandrecht.uitkering: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Strandrecht"), $grondslag : grondslag )
+    not( $hoger_17 : Decides( stack == "defaults A:Strandrecht.uitkering" && index < 1, subject == $onderwerp ) )
+then
+    // zijn grondslag
+    Object v = $grondslag;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "uitkering");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Strandrecht.uitkering", ComputeHelpers.designate(passend, "defaults A:Strandrecht.uitkering")));
+            insertLogical(new Decides($onderwerp, "defaults A:Strandrecht.uitkering", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandrecht", "uitkering", false), passend, "defaults A:Strandrecht.uitkering"));
+            insertLogical(new Decides($onderwerp, "defaults A:Strandrecht.uitkering", 1));
+        }
+    }
+end
+
+// zijn bergingsdiepte groter is dan 20
+function boolean toets_defaultsAWrakrechtUitkeringDefault0(Object $bergingsdiepte) {
+    return RegelSpraakRuntime.rsAggVergelijk($bergingsdiepte, new java.math.BigDecimal("20"), ">");
+}
+
+rule "defaults A:Wrakrecht.uitkering: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakrecht( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Wrakrecht"), $bergingsdiepte : bergingsdiepte )
+    eval( toets_defaultsAWrakrechtUitkeringDefault0($bergingsdiepte) )
+then
+    // 55,00
+    Object v = new java.math.BigDecimal("55");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "uitkering");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Wrakrecht.uitkering", ComputeHelpers.designate(passend, "defaults A:Wrakrecht.uitkering")));
+            insertLogical(new Decides($onderwerp, "defaults A:Wrakrecht.uitkering", 0));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandrecht", "uitkering", false), passend, "defaults A:Wrakrecht.uitkering"));
+            insertLogical(new Decides($onderwerp, "defaults A:Wrakrecht.uitkering", 0));
+        }
+    }
+end
+
+// het Strandrecht betwist is
+function boolean toets_defaultsAWrakrechtUitkeringDefault1(Object $betwist) {
+    return ComputeHelpers.characteristic($betwist, Boolean.TRUE);
+}
+
+rule "defaults A:Wrakrecht.uitkering: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Wrakrecht"), $betwist : (ComputeHelpers.holds(betwist)) )
+    not( $hoger_23 : Decides( stack == "defaults A:Wrakrecht.uitkering" && index < 1, subject == $onderwerp ) )
+    eval( toets_defaultsAWrakrechtUitkeringDefault1($betwist) )
+then
+    // 99,00
+    Object v = new java.math.BigDecimal("99");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "uitkering");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Wrakrecht.uitkering", ComputeHelpers.designate(passend, "defaults A:Wrakrecht.uitkering")));
+            insertLogical(new Decides($onderwerp, "defaults A:Wrakrecht.uitkering", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandrecht", "uitkering", false), passend, "defaults A:Wrakrecht.uitkering"));
+            insertLogical(new Decides($onderwerp, "defaults A:Wrakrecht.uitkering", 1));
+        }
+    }
+end
+
+// zijn grondslag maal 2
+function Object afloop_defaultsAWrakrechtUitkeringDefault2(Object $grondslag) {
+    try {
+        return RegelSpraakRuntime.rsMaal($grondslag, new java.math.BigDecimal("2"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Wrakrecht.uitkering: default 2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakrecht( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Wrakrecht"), $grondslag : grondslag )
+    not( $hoger_27 : Decides( stack == "defaults A:Wrakrecht.uitkering" && index < 2, subject == $onderwerp ) )
+then
+    Object v = afloop_defaultsAWrakrechtUitkeringDefault2($grondslag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Wrakrecht.uitkering", ComputeHelpers.designate(v, "defaults A:Wrakrecht.uitkering")));
+    } else if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "uitkering");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Wrakrecht.uitkering", ComputeHelpers.designate(passend, "defaults A:Wrakrecht.uitkering")));
+            insertLogical(new Decides($onderwerp, "defaults A:Wrakrecht.uitkering", 2));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandrecht", "uitkering", false), passend, "defaults A:Wrakrecht.uitkering"));
+            insertLogical(new Decides($onderwerp, "defaults A:Wrakrecht.uitkering", 2));
+        }
+    }
+end
+
+rule "uitkeringstotaal van een kustgemeente: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Kustgemeente()
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht( registrerendeKustgemeente == $vouwonderwerp )
+    $stand_1 : State( attribute == ElementKey.of("strandrecht", "uitkering", false), subject == $onderwerp, $uitkering : value )
+then
+    Object v = ComputeHelpers.contribution("uitkeringstotaal van een kustgemeente: vouw 0", $vouwonderwerp, $onderwerp, $uitkering, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "registertal van een kustgemeente: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Kustgemeente()
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht( registrerendeKustgemeente == $vouwonderwerp )
+then
+    insertLogical(new Contribution("registertal van een kustgemeente: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "stand Strandrecht.uitkering: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht()
+    $waarde : Value( attribute == ElementKey.of("strandrecht", "uitkering", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("strandrecht", "uitkering", false), $v));
+end
+
+rule "stand Strandrecht.uitkering: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht( $invoer : uitkering )
+    not( $waarde : Value( attribute == ElementKey.of("strandrecht", "uitkering", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("strandrecht", "uitkering", false), $invoer));
+end
+

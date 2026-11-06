@@ -1,0 +1,96 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn lengte maal zijn breedte
+function Object waarde_oppervlakte(Object $lengte, Object $breedte) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($lengte, $breedte), Integer.valueOf(0), "oppervlakte", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "oppervlakte"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvak( $lengte : lengte, $breedte : breedte )
+then
+    Object v = waarde_oppervlakte($lengte, $breedte);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "oppervlakte", ComputeHelpers.designate(v, "oppervlakte")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandvak", "oppervlakte", false), v, "oppervlakte"));
+        }
+    }
+end
+
+// zijn oppervlakte gedeeld door zijn lengte naar beneden afgerond op 0 decimalen
+function Object waarde_teruggerekendeBreedte(Object $oppervlakte, Object $lengte, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($oppervlakte, $lengte, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), Integer.valueOf(0), "teruggerekende breedte", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "teruggerekende breedte"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvak( $lengte : lengte )
+    $stand_0 : State( attribute == ElementKey.of("strandvak", "oppervlakte", false), subject == $onderwerp, $oppervlakte : value )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_teruggerekendeBreedte($oppervlakte, $lengte, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "teruggerekende breedte", ComputeHelpers.designate(v, "teruggerekende breedte")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("teruggerekende breedte", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandvak", "teruggerekende breedte", false), v, "teruggerekende breedte"));
+        }
+    }
+end
+
+// zijn oppervlakte groter is dan 100 m^2
+function boolean toets_ruim(Object $oppervlakte) {
+    return RegelSpraakRuntime.rsAggVergelijk($oppervlakte, new java.math.BigDecimal("100"), ">");
+}
+
+rule "ruim"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvak()
+    $stand_0 : State( attribute == ElementKey.of("strandvak", "oppervlakte", false), subject == $onderwerp, $oppervlakte : value )
+    eval( toets_ruim($oppervlakte) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("strandvak", "ruim", true)));
+end
+
+rule "stand Strandvak.oppervlakte: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvak()
+    $waarde : Value( attribute == ElementKey.of("strandvak", "oppervlakte", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("strandvak", "oppervlakte", false), $v));
+end
+
+rule "stand Strandvak.oppervlakte: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvak( $invoer : oppervlakte )
+    not( $waarde : Value( attribute == ElementKey.of("strandvak", "oppervlakte", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("strandvak", "oppervlakte", false), $invoer));
+end
+

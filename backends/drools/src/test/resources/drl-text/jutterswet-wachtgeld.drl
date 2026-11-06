@@ -1,0 +1,111 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Outcome;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// hij kustwacht is
+function boolean toets_defaultsAJutterWachtgeldDefault00(Object $kustwacht) {
+    return ComputeHelpers.characteristic($kustwacht, Boolean.TRUE);
+}
+
+rule "defaults A:Jutter.wachtgeld: default 0:0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $kustwacht : (ComputeHelpers.holds(kustwacht)) )
+    eval( toets_defaultsAJutterWachtgeldDefault00($kustwacht) )
+then
+    // 30
+    Object v = new java.math.BigDecimal("30");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Jutter.wachtgeld", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// hij havenmeester is
+function boolean toets_defaultsAJutterWachtgeldDefault10(Object $havenmeester) {
+    return ComputeHelpers.characteristic($havenmeester, Boolean.TRUE);
+}
+
+rule "defaults A:Jutter.wachtgeld: default 1:0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $havenmeester : (ComputeHelpers.holds(havenmeester)) )
+    eval( toets_defaultsAJutterWachtgeldDefault10($havenmeester) )
+then
+    // 45
+    Object v = new java.math.BigDecimal("45");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Jutter.wachtgeld", 1, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// hij strandvoogd is
+function boolean toets_defaultsAJutterWachtgeldDefault20(Object $strandvoogd) {
+    return ComputeHelpers.characteristic($strandvoogd, Boolean.TRUE);
+}
+
+rule "defaults A:Jutter.wachtgeld: default 2:0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $strandvoogd : (ComputeHelpers.holds(strandvoogd)) )
+    eval( toets_defaultsAJutterWachtgeldDefault20($strandvoogd) )
+then
+    // 30
+    Object v = new java.math.BigDecimal("30");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Jutter.wachtgeld", 2, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function boolean beta1_defaultsAJutterWachtgeldVerschilWortel(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsAJutterWachtgeldVerschilWortel(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+function Object conflict_defaultsAJutterWachtgeldVerschilWortel() {
+    return "Jutter.wachtgeld";
+}
+
+rule "defaults A:Jutter.wachtgeld: verschil wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Jutter.wachtgeld" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 3, $onderwerp : subject )
+    not( $uitkomst_7 : Outcome( stack == "defaults A:Jutter.wachtgeld" && chain >= 0 && chain < 3 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsAJutterWachtgeldVerschilWortel(this, $besluit) ) )
+    exists( $uitkomst_10 : Outcome( stack == "defaults A:Jutter.wachtgeld" && chain >= 0 && chain < 3 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsAJutterWachtgeldVerschilWortel(this, $besluit) ) )
+then
+    Object v = conflict_defaultsAJutterWachtgeldVerschilWortel();
+    insertLogical(ComputeHelpers.inconsistency((String) v, $onderwerp, ComputeHelpers.list1("EF-027")));
+end
+
+function boolean beta1_defaultsAJutterWachtgeldEensWortel(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsAJutterWachtgeldEensWortel(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults A:Jutter.wachtgeld: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Jutter.wachtgeld" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 3, $onderwerp : subject, $waarde : value )
+    not( $uitkomst_14 : Outcome( stack == "defaults A:Jutter.wachtgeld" && chain >= 0 && chain < 3 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsAJutterWachtgeldEensWortel(this, $besluit) ) )
+    not( $uitkomst_17 : Outcome( stack == "defaults A:Jutter.wachtgeld" && chain >= 0 && chain < 3 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsAJutterWachtgeldEensWortel(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "wachtgeld");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Jutter.wachtgeld", ComputeHelpers.designate(passend, "defaults A:Jutter.wachtgeld")));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "wachtgeld", false), passend, "defaults A:Jutter.wachtgeld"));
+        }
+    }
+end
+

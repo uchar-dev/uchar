@@ -1,0 +1,141 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.EvaluationDate;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.time.LocalDate rekendatum;
+
+// het totaal van het bewaartarief van alle vondsten van de Jutter
+function Object waarde_bewaarlastVanEenJutter(Object $aantal_vouw_4, Object $vouw_vouw_6) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_4, $vouw_vouw_6, new java.math.BigDecimal("0")), Integer.valueOf(0), "bewaarlast", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bewaarlast van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_1 : Contribution( fold == "bewaarlast van een jutter: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_5 : value ); $aantal_vouw_4 : count(), $vouw_vouw_6 : exactSum($bijdragewaarde_vouw_5) )
+then
+    Object v = waarde_bewaarlastVanEenJutter($aantal_vouw_4, $vouw_vouw_6);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bewaarlast van een jutter", ComputeHelpers.designate(v, "bewaarlast van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "bewaarlast", false), v, "bewaarlast van een jutter"));
+        }
+    }
+end
+
+// de som van het bewaartarief van alle vondsten van de Jutter
+function Object waarde_bewaarsomVanEenJutter(Object $aantal_vouw_11, Object $vouw_vouw_13) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_11, $vouw_vouw_13, null), Integer.valueOf(0), "bewaarsom", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bewaarsom van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_8 : Contribution( fold == "bewaarsom van een jutter: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_12 : value ); $aantal_vouw_11 : count(), $vouw_vouw_13 : exactSum($bijdragewaarde_vouw_12) )
+then
+    Object v = waarde_bewaarsomVanEenJutter($aantal_vouw_11, $vouw_vouw_13);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bewaarsom van een jutter", ComputeHelpers.designate(v, "bewaarsom van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "bewaarsom", false), v, "bewaarsom van een jutter"));
+        }
+    }
+end
+
+// het totaal van zijn bewaarvergoeding per maand
+function Object waarde_bewaargeldVanEenJutter(Object $tijdlijn_0, Object $onderwerp, Object $rekendatumwaarde_2) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.ownTotal($tijdlijn_0, $onderwerp, $rekendatumwaarde_2, "bewaarvergoeding per maand", "MAAND", null, null), Integer.valueOf(0), "bewaargeld", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bewaargeld van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $rekendatum_2 : EvaluationDate( $rekendatumwaarde_2 : date )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "bewaarvergoeding per maand", false), subject == $onderwerp, $tijdlijn_0 : value )
+then
+    Object v = waarde_bewaargeldVanEenJutter($tijdlijn_0, $onderwerp, $rekendatumwaarde_2);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bewaargeld van een jutter", ComputeHelpers.designate(v, "bewaargeld van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "bewaargeld", false), v, "bewaargeld van een jutter"));
+        }
+    }
+end
+
+rule "bewaarlast van een jutter: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( bewarendeJutter == $vouwonderwerp, $bewaartarief : bewaartarief )
+then
+    Object v = ComputeHelpers.contribution("bewaarlast van een jutter: vouw 0", $vouwonderwerp, $onderwerp, $bewaartarief, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "bewaarsom van een jutter: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( bewarendeJutter == $vouwonderwerp, $bewaartarief : bewaartarief )
+then
+    Object v = ComputeHelpers.contribution("bewaarsom van een jutter: vouw 1", $vouwonderwerp, $onderwerp, $bewaartarief, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "stand Jutter.bewaarvergoeding per maand: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(bewaarvergoedingPerMaand)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "bewaarvergoeding per maand", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "bewaarvergoeding per maand", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "bewaarvergoeding per maand", false), $invoer));
+end
+
+rule "stand Jutter.bewaarvergoeding per maand: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(bewaarvergoedingPerMaand)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "bewaarvergoeding per maand", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "bewaarvergoeding per maand", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "bewaarvergoeding per maand", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+rule "rekendatumstand"
+    dialect "mvel"
+when
+then
+    insertLogical(new EvaluationDate(rekendatum));
+end
+

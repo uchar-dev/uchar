@@ -1,0 +1,163 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.ParameterState;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.math.BigDecimal meldingsdrempel;
+
+// zijn vondstental gedeeld door zijn zoekduur naar beneden afgerond op 2 decimalen
+function Object waarde_vondsttempo(Object $vondstental, Object $zoekduur, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vondstental, $zoekduur, sonde), Integer.valueOf(2), java.math.RoundingMode.FLOOR), Integer.valueOf(2), "vondsttempo", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vondsttempo"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstental : vondstental, $zoekduur : zoekduur )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_vondsttempo($vondstental, $zoekduur, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vondsttempo", ComputeHelpers.designate(v, "vondsttempo")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("vondsttempo", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "vondsttempo", false), v, "vondsttempo"));
+        }
+    }
+end
+
+// zijn vondsttempo maal zijn zoekduur
+function Object waarde_teruggerekendeVondsten(Object $vondsttempo, Object $zoekduur) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($vondsttempo, $zoekduur), Integer.valueOf(2), "teruggerekende vondsten", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "teruggerekende vondsten"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $zoekduur : zoekduur )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "vondsttempo", false), subject == $onderwerp, $vondsttempo : value )
+then
+    Object v = waarde_teruggerekendeVondsten($vondsttempo, $zoekduur);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "teruggerekende vondsten", ComputeHelpers.designate(v, "teruggerekende vondsten")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "teruggerekende vondsten", false), v, "teruggerekende vondsten"));
+        }
+    }
+end
+
+// zijn vondsttempo maal zijn seizoensduur
+function Object waarde_seizoensoogst(Object $vondsttempo, Object $seizoensduur) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($vondsttempo, ComputeHelpers.restateExact($seizoensduur, new java.math.BigDecimal("7"), new java.math.BigDecimal("1"))), Integer.valueOf(2), "seizoensoogst", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "seizoensoogst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $seizoensduur : seizoensduur )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "vondsttempo", false), subject == $onderwerp, $vondsttempo : value )
+then
+    Object v = waarde_seizoensoogst($vondsttempo, $seizoensduur);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "seizoensoogst", ComputeHelpers.designate(v, "seizoensoogst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "seizoensoogst", false), v, "seizoensoogst"));
+        }
+    }
+end
+
+// zijn vondsttempo groter is dan de meldingsdrempel
+function boolean toets_ijverig(Object $vondsttempo, Object $meldingsdrempel) {
+    return RegelSpraakRuntime.rsAggVergelijk($vondsttempo, ComputeHelpers.restateExact($meldingsdrempel, new java.math.BigDecimal("1"), new java.math.BigDecimal("7")), ">");
+}
+
+rule "ijverig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $parameter_1 : ParameterState( parameter == "meldingsdrempel", $meldingsdrempel : value )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "vondsttempo", false), subject == $onderwerp, $vondsttempo : value )
+    eval( toets_ijverig($vondsttempo, $meldingsdrempel) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "ijverig", true)));
+end
+
+// zijn vondsttempo gelijk is aan de meldingsdrempel
+function boolean toets_drempelhoudend(Object $vondsttempo, Object $meldingsdrempel) {
+    return RegelSpraakRuntime.rsAggVergelijk($vondsttempo, ComputeHelpers.restateExact($meldingsdrempel, new java.math.BigDecimal("1"), new java.math.BigDecimal("7")), "==");
+}
+
+rule "drempelhoudend"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $parameter_1 : ParameterState( parameter == "meldingsdrempel", $meldingsdrempel : value )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "vondsttempo", false), subject == $onderwerp, $vondsttempo : value )
+    eval( toets_drempelhoudend($vondsttempo, $meldingsdrempel) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "drempelhoudend", true)));
+end
+
+// zijn vondsttempo groter is dan 30 1/wk
+function boolean toets_onvermoeibaar(Object $vondsttempo) {
+    return RegelSpraakRuntime.rsAggVergelijk($vondsttempo, ComputeHelpers.restateExact(new java.math.BigDecimal("30"), new java.math.BigDecimal("1"), new java.math.BigDecimal("7")), ">");
+}
+
+rule "onvermoeibaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "vondsttempo", false), subject == $onderwerp, $vondsttempo : value )
+    eval( toets_onvermoeibaar($vondsttempo) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "onvermoeibaar", true)));
+end
+
+rule "stand Jutter.vondsttempo: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $waarde : Value( attribute == ElementKey.of("jutter", "vondsttempo", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "vondsttempo", false), $v));
+end
+
+rule "stand Jutter.vondsttempo: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : vondsttempo )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "vondsttempo", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "vondsttempo", false), $invoer));
+end
+
+rule "parameterstand meldingsdrempel"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("meldingsdrempel", meldingsdrempel));
+end
+

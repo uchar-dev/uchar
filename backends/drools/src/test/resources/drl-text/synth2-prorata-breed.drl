@@ -1,0 +1,152 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Period;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het tijdsevenredig deel per maand van haar jaarforfait gedurende de tijd dat zij bezet is
+function Object waarde_ligdeelVanEenLigplaats(Object $tijdlijn_0, Object $tijdlijn_1, Object $onderwerp) {
+    try {
+        return Period.list(ComputeHelpers.proRata($tijdlijn_0, ComputeHelpers.complete($tijdlijn_1, "the pro-rata base \"jaarforfait\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.7, ch. 8.4)", "jaarforfait", Boolean.TRUE), "MAAND", Integer.valueOf(2), "ligdeel"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "ligdeel van een ligplaats"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ligplaats( $tijdlijn_0 : (ComputeHelpers.periods(bezet)) )
+    $stand_1 : State( attribute == ElementKey.of("ligplaats", "jaarforfait", false), subject == $onderwerp, $tijdlijn_1 : value )
+then
+    Object v = waarde_ligdeelVanEenLigplaats($tijdlijn_0, $tijdlijn_1, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "ligdeel van een ligplaats", ComputeHelpers.designate(v, "ligdeel van een ligplaats")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("ligplaats", "ligdeel", false), v, "ligdeel van een ligplaats"));
+        }
+    }
+end
+
+// het tijdsevenredig deel per maand van haar staffelbasis gedurende de tijd dat zij bezet is
+function Object waarde_heffingdeelVanEenLigplaats(Object $tijdlijn_0, Object $tijdlijn_1, Object $onderwerp) {
+    try {
+        return Period.list(ComputeHelpers.proRata($tijdlijn_0, ComputeHelpers.complete($tijdlijn_1, "the pro-rata base \"staffelbasis\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.7, ch. 8.4)", "staffelbasis", Boolean.TRUE), "MAAND", Integer.valueOf(0), "heffingdeel"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "heffingdeel van een ligplaats"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ligplaats( $tijdlijn_0 : (ComputeHelpers.periods(bezet)) )
+    $stand_1 : State( attribute == ElementKey.of("ligplaats", "staffelbasis", false), subject == $onderwerp, $tijdlijn_1 : value )
+then
+    Object v = waarde_heffingdeelVanEenLigplaats($tijdlijn_0, $tijdlijn_1, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "heffingdeel van een ligplaats", ComputeHelpers.designate(v, "heffingdeel van een ligplaats")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("ligplaats", "heffingdeel", false), v, "heffingdeel van een ligplaats"));
+        }
+    }
+end
+
+// de lengte van de Ligplaats is groter of gelijk aan 15
+function boolean toets_toeslagdeelVanEenLigplaats(Object $lengte) {
+    return RegelSpraakRuntime.rsAggVergelijk($lengte, new java.math.BigDecimal("15"), ">=");
+}
+
+// het tijdsevenredig deel per maand van haar seizoenbasis gedurende de tijd dat zij bezet is
+function Object waarde_toeslagdeelVanEenLigplaats(Object $tijdlijn_1, Object $tijdlijn_2, Object $onderwerp) {
+    try {
+        return Period.list(ComputeHelpers.proRata($tijdlijn_1, ComputeHelpers.complete($tijdlijn_2, "the pro-rata base \"seizoenbasis\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.7, ch. 8.4)", "seizoenbasis", Boolean.TRUE), "MAAND", Integer.valueOf(2), "toeslagdeel"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "toeslagdeel van een ligplaats"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ligplaats( $lengte : lengte, $tijdlijn_1 : (ComputeHelpers.periods(bezet)) )
+    $stand_2 : State( attribute == ElementKey.of("ligplaats", "seizoenbasis", false), subject == $onderwerp, $tijdlijn_2 : value )
+    eval( toets_toeslagdeelVanEenLigplaats($lengte) )
+then
+    Object v = waarde_toeslagdeelVanEenLigplaats($tijdlijn_1, $tijdlijn_2, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "toeslagdeel van een ligplaats", ComputeHelpers.designate(v, "toeslagdeel van een ligplaats")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("ligplaats", "toeslagdeel", false), v, "toeslagdeel van een ligplaats"));
+        }
+    }
+end
+
+rule "stand Ligplaats.jaarforfait: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ligplaats( $invoer : (ComputeHelpers.periods(jaarforfait)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("ligplaats", "jaarforfait", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("ligplaats", "jaarforfait", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("ligplaats", "jaarforfait", false), $invoer));
+end
+
+rule "stand Ligplaats.jaarforfait: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ligplaats( $invoer : (ComputeHelpers.periods(jaarforfait)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("ligplaats", "jaarforfait", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("ligplaats", "jaarforfait", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("ligplaats", "jaarforfait", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+rule "stand Ligplaats.staffelbasis: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ligplaats( $invoer : (ComputeHelpers.periods(staffelbasis)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("ligplaats", "staffelbasis", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("ligplaats", "staffelbasis", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("ligplaats", "staffelbasis", false), $invoer));
+end
+
+rule "stand Ligplaats.staffelbasis: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ligplaats( $invoer : (ComputeHelpers.periods(staffelbasis)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("ligplaats", "staffelbasis", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("ligplaats", "staffelbasis", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("ligplaats", "staffelbasis", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+rule "stand Ligplaats.seizoenbasis: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ligplaats( $invoer : (ComputeHelpers.periods(seizoenbasis)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("ligplaats", "seizoenbasis", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("ligplaats", "seizoenbasis", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("ligplaats", "seizoenbasis", false), $invoer));
+end
+
+rule "stand Ligplaats.seizoenbasis: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Ligplaats( $invoer : (ComputeHelpers.periods(seizoenbasis)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("ligplaats", "seizoenbasis", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("ligplaats", "seizoenbasis", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("ligplaats", "seizoenbasis", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
