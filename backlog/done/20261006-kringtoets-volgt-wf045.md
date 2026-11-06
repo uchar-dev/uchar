@@ -186,3 +186,10 @@ WF-046 too where a negative edge lies between two forms of the cycle (negatief
    `20261006-bronvolgorde-restpunten.md`, punt (e).
 4. v1 `dagloon-ww` draagt twee positieve WF-045-kringen achter de twee ERRORs
    `1/dg`; wie die ERRORs oplost, krijgt de kringen als ERROR.
+
+## Keuring (hoofdsessie, 2026-11-06)
+
+De voorgestelde registertekst van `20261006-feitcreatie-zonder-populatie` staat sinds 2026-11-06 in
+`spec/CONSTRUCTS.md` rij 6, met de Engelse namen die de twee negatieven sinds de hernoeming dragen
+(`wf046-characteristics-read-each-other-negation`, `wf046-negated-role-check-recursive-creation`); het voorstel van
+`20261006-kringtoets-volgt-wf045` is daarmee vervallen. Kaart `20261006-besluit-registertekst-constructs-rij-6`.

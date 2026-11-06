@@ -257,3 +257,10 @@ check reads the relation it names, negated as a negative edge (negatief
 4. De pin volgt in de distributie en de werkbank. **Gebeurd op 2026-10-06**:
    regelspraak-toolchain `f9fc44c` pint uchar `0a378588`, de werkbank `e504fda`
    pint de toolchain op `f9fc44c`.
+
+## Keuring (hoofdsessie, 2026-11-06)
+
+De voorgestelde registertekst van `20261006-feitcreatie-zonder-populatie` staat sinds 2026-11-06 in
+`spec/CONSTRUCTS.md` rij 6, met de Engelse namen die de twee negatieven sinds de hernoeming dragen
+(`wf046-characteristics-read-each-other-negation`, `wf046-negated-role-check-recursive-creation`); het voorstel van
+`20261006-kringtoets-volgt-wf045` is daarmee vervallen. Kaart `20261006-besluit-registertekst-constructs-rij-6`.

@@ -56,3 +56,11 @@ May touch: `spec/CONSTRUCTS.md` (rij 6), de twee done-records (Keuring),
 kaartverplaatsing.
 Niet in deze kaart: andere rijen van CONSTRUCTS; de spec en DIVERGENCES (die
 zijn in de rondes zelf bijgewerkt).
+
+## Result
+
+Geplaatst door de hoofdsessie op 2026-11-06 (opruimronde na de backlog-triage). De bijzin van de Landed-alinea van
+2026-10-02 in rij 6 is vervangen door het voorstel van `20261006-feitcreatie-zonder-populatie`, met de Engelse namen
+van de negatieven. De slotzin over de exec-model-tak was al bijgewerkt bij `tms-omschakeling` (de tak weigert bij de
+bouw wat WF-045 en WF-046 weigeren, `Cycles`), dus de keuze in het tweede punt van "Mee te wegen" is vervallen. Beide
+records hebben een Keuring. Gate 1 groen.
