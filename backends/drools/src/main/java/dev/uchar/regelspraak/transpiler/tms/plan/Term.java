@@ -133,7 +133,7 @@ public sealed interface Term {
     record ListedFold(StaticFunction function, List<Term> operands, String source) implements Term {
         public ListedFold {
             if (function != StaticFunction.SMALLEST && function != StaticFunction.LARGEST)
-                throw new IllegalArgumentException("een gelijste vouw neemt KLEINSTE of GROOTSTE als stap, niet " + function);
+                throw new IllegalArgumentException("a listed fold takes KLEINSTE or GROOTSTE as step, not " + function);
             operands = List.copyOf(operands);
         }
     }
@@ -176,7 +176,7 @@ public sealed interface Term {
                          String source) implements Term {
         public QuantifierRead {
             if (function != StaticFunction.QUANTIFIER_READ)
-                throw new IllegalArgumentException("een kwantorlezing neemt KWANTORLEZING als functie, niet " + function);
+                throw new IllegalArgumentException("a quantifier reading takes KWANTORLEZING as function, not " + function);
         }
     }
 

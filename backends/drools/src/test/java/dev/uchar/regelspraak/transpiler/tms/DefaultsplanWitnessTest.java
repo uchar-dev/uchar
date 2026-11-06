@@ -652,12 +652,12 @@ class DefaultsplanWitnessTest {
                 Outcome.Kind.CONFLICT);
         Consequence.StackFact inconsistency = new Consequence.StackFact.Inconsistency();
         assertEquals(List.of("ok", "ok",
-                        "een besluit voegt ten minste één feit in",
-                        "een besluit voegt geen conflict in: " + conflict,
-                        "een besluit voegt geen conflict in: Inconsistency[]",
+                        "a decision inserts at least one fact",
+                        "a decision inserts no conflict: " + conflict,
+                        "a decision inserts no conflict: Inconsistency[]",
                         "ok", "ok",
-                        "een conflict voegt zijn uitkomst of de inconsistentie in, niet " + decides,
-                        "een conflict voegt zijn uitkomst of de inconsistentie in, niet " + value),
+                        "a conflict inserts its outcome or the inconsistency, not " + decides,
+                        "a conflict inserts its outcome or the inconsistency, not " + value),
                 List.of(decision(List.of(value)), decision(List.of(decides)), decision(List.of()),
                         decision(List.of(value, conflict)), decision(List.of(inconsistency)),
                         conflict(conflict), conflict(inconsistency), conflict(decides), conflict(value)));

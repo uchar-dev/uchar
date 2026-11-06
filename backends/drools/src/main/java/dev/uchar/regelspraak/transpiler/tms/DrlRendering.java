@@ -188,30 +188,30 @@ final class DrlRendering {
         for (RulePlan r : plan.rules()) {
             // the header escapes a name one to one, so two rules of one name in the text are two plans of one name
             if (!ruleNames.add(r.name()))
-                throw new IllegalStateException("twee regels van het plan heten " + str(r.name())
-                        + ", en een KieBase houdt één regel per naam");
+                throw new IllegalStateException("two rules of the plan are named " + str(r.name())
+                        + ", and a KieBase holds one rule per name");
             kinds.add(w.new Rule(r, null).kinds());
         }
         List<FunctionNames> names = functionNames(plan.rules(), kinds);
         Set<String> functionNames = new HashSet<>();
         for (int n = 0; n < plan.rules().size(); n++) {
             for (String f : names.get(n).names())
-                if (!functionNames.add(f)) throw new IllegalStateException("twee functies van de tekst heten " + f);
+                if (!functionNames.add(f)) throw new IllegalStateException("two functions of the text are named " + f);
             w.new Rule(plan.rules().get(n), names.get(n)).renderRule();
         }
         Set<String> declared = new HashSet<>();
         StringBuilder globals = new StringBuilder();
         for (Modelplan.Global g : plan.globals()) {
             if (!declared.add(g.name()))
-                throw new IllegalStateException("de global " + g.name() + " wordt twee keer gedeclareerd");
+                throw new IllegalStateException("the global " + g.name() + " is declared twice");
             globals.append("global ").append(w.typeName(g.javaClass())).append(' ').append(g.name()).append(";\n");
         }
         for (String d : w.dayKinds.keySet()) {
-            if (!declared.add(d)) throw new IllegalStateException("de global " + d + " wordt twee keer gedeclareerd");
+            if (!declared.add(d)) throw new IllegalStateException("the global " + d + " is declared twice");
             globals.append("global java.util.function.Predicate ").append(d).append(";\n");
         }
         for (String d : declared)
-            if (functionNames.contains(d)) throw new IllegalStateException("de functie " + d + " heet als een global");
+            if (functionNames.contains(d)) throw new IllegalStateException("the function " + d + " is named as a global");
         StringBuilder out = new StringBuilder("package ").append(TmsTranspiler.PKG).append(";\n\n");
         for (String i : w.imports) out.append("import ").append(i).append(";\n");
         if (!w.imports.isEmpty()) out.append('\n');
@@ -243,15 +243,15 @@ final class DrlRendering {
      *  name, imported. */
     private String typeName(Class<?> k) {
         if (k.isPrimitive()) return k.getName();
-        if (k.isArray()) throw new IllegalStateException("een DRL-tekst spelt geen arraytype: " + k.getName());
+        if (k.isArray()) throw new IllegalStateException("a DRL text spells no array type: " + k.getName());
         String canonical = k.getCanonicalName();
         if (isBean(k)) return canonical;
         if (k.getPackageName().startsWith("java."))
             return k.getPackageName().equals("java.lang") && k.getEnclosingClass() == null ? k.getSimpleName() : canonical;
         String earlier = bySimpleName.putIfAbsent(k.getSimpleName(), canonical);
         if (earlier != null && !earlier.equals(canonical))
-            throw new IllegalStateException("twee klassen heten " + k.getSimpleName() + " in de DRL-tekst: " + earlier
-                    + " en " + canonical);
+            throw new IllegalStateException("two classes are named " + k.getSimpleName() + " in the DRL text: " + earlier
+                    + " and " + canonical);
         imports.add(canonical);
         return k.getSimpleName();
     }
@@ -278,7 +278,7 @@ final class DrlRendering {
                 if (out != null) throw new IllegalStateException(javaClass.getName() + "." + name + " is overladen");
                 out = m;
             }
-        if (out == null) throw new IllegalStateException("geen publieke methode " + javaClass.getName() + "." + name);
+        if (out == null) throw new IllegalStateException("no public method " + javaClass.getName() + "." + name);
         return out;
     }
 
@@ -288,7 +288,7 @@ final class DrlRendering {
         if (k == int.class) return Integer.class;
         if (k == long.class) return Long.class;
         if (k == double.class) return Double.class;
-        throw new IllegalStateException("geen omhulling voor " + k);
+        throw new IllegalStateException("no wrapper for " + k);
     }
 
     /** An expression of the Java dialect with its static type, null for the null literal. */
@@ -300,7 +300,7 @@ final class DrlRendering {
         Class<?> target = wrap(p);
         if (e.type() == null) return p.isPrimitive() ? "((" + typeName(target) + ") null)" : e.text();
         if (target.isAssignableFrom(wrap(e.type()))) return e.text();
-        if (isBean(target)) throw new IllegalStateException("een functie kan niet naar de beanklasse " + target + " casten");
+        if (isBean(target)) throw new IllegalStateException("a function cannot cast to the bean class " + target);
         return "((" + typeName(target) + ") " + e.text() + ")";
     }
 
@@ -334,7 +334,7 @@ final class DrlRendering {
             for (Object x : l) parts.add(constant(x).text());
             return new Expr("java.util.Arrays.asList(" + String.join(", ", parts) + ")", List.class);
         }
-        throw new IllegalStateException("een constante van het type " + w.getClass().getName() + " in het plan");
+        throw new IllegalStateException("a constant of the type " + w.getClass().getName() + " in the plan");
     }
 
     /** A constant of the plan in an MVEL consequence, with its Java type: as {@link #constant} spells it in a function,
@@ -392,7 +392,7 @@ final class DrlRendering {
         if (w instanceof Boolean || w instanceof Integer) return w.toString();
         if (w instanceof ElementKey e) return key(e);
         if (w instanceof Enum<?> e) return enumlabel(e);
-        throw new IllegalStateException("een veldtoets met een constante van het type " + w.getClass().getName());
+        throw new IllegalStateException("a field test with a constant of the type " + w.getClass().getName());
     }
 
     /** The key of a member, as {@link ElementKey#of} makes every key of the plan. */
@@ -411,10 +411,10 @@ final class DrlRendering {
             throw new Refusal(DroolsCode.DAY_KIND_GLOBAL_INVALID.reason("category", DroolsCode.DAY_KIND_GLOBAL_INVALID.part("global-not-identifier", "dayKind", name)));
         Term.DayKind earlier = dayKinds.putIfAbsent(global, d);
         if (earlier != null && !earlier.name().equals(name))
-            throw new IllegalStateException("de dagsoorten '" + earlier.name() + "' en '" + name + "' delen de global "
+            throw new IllegalStateException("the day kinds '" + earlier.name() + "' and '" + name + "' share the global "
                     + global);
         if (earlier != null && earlier.datePredicate() != d.datePredicate())
-            throw new IllegalStateException("de dagsoort '" + name + "' heeft in het plan twee predicaten");
+            throw new IllegalStateException("the day kind '" + name + "' has two predicates in the plan");
         return global;
     }
 
@@ -496,7 +496,7 @@ final class DrlRendering {
 
         void parameter(String type, String name, String argument) {
             for (String[] p : parameters)
-                if (p[1].equals(name)) throw new IllegalStateException("de parameter " + name + " staat er twee keer");
+                if (p[1].equals(name)) throw new IllegalStateException("the parameter " + name + " stands there twice");
             parameters.add(new String[]{type, name, argument});
         }
 
@@ -591,17 +591,17 @@ final class DrlRendering {
             List<String> when = leftSide();
             String then = consequence(plan.consequence());
             if (!absorbed.isEmpty())
-                throw new IllegalStateException("de zinnen " + absorbed + " van " + plan.name()
-                        + " staan in geen functie");
+                throw new IllegalStateException("the sentences " + absorbed + " of " + plan.name()
+                        + " stand in no function");
             if (!kinds.equals(given.kinds()))
-                throw new IllegalStateException("de functies van " + plan.name() + " zijn " + kinds
-                        + ", in de eerste weergave " + given.kinds());
+                throw new IllegalStateException("the functions of " + plan.name() + " are " + kinds
+                        + ", in the first rendering " + given.kinds());
             int start = rules.length();
             List<TmsTranspiler.DrlPiece.DrlFunction> placed = new ArrayList<>();
             for (int place = 0; place < functions.size(); place++) {
                 String f = functions.get(place);
                 if (f == null || functionNames.get(place) == null)
-                    throw new IllegalStateException("een functie van " + plan.name() + " is niet geschreven");
+                    throw new IllegalStateException("a function of " + plan.name() + " is not written");
                 int at = rules.length();
                 rules.append(f).append('\n');
                 placed.add(new TmsTranspiler.DrlPiece.DrlFunction(functionNames.get(place), at,
@@ -636,11 +636,11 @@ final class DrlRendering {
          *  does not keep. */
         private String name(String kind, int place) {
             if (kinds.set(place, kind) != null)
-                throw new IllegalStateException("de functie op plaats " + place + " van " + plan.name()
-                        + " krijgt een tweede naam: " + kind);
+                throw new IllegalStateException("the function at place " + place + " of " + plan.name()
+                        + " gets a second name: " + kind);
             if (given != null && place >= given.names().size())
-                throw new IllegalStateException("de functie op plaats " + place + " van " + plan.name()
-                        + " is er in de eerste weergave niet: " + kind);
+                throw new IllegalStateException("the function at place " + place + " of " + plan.name()
+                        + " is absent from the first rendering: " + kind);
             String name = given == null ? kind : given.names().get(place);
             functionNames.set(place, name);
             return name;
@@ -681,7 +681,7 @@ final class DrlRendering {
         private String variable(int slot) {
             Read l = plan.readings().slots().get(slot);
             if (l.name() == null)
-                throw new IllegalStateException("slot " + slot + " van " + plan.name() + " heeft geen variabele: " + l);
+                throw new IllegalStateException("slot " + slot + " of " + plan.name() + " has no variable: " + l);
             return l.name();
         }
 
@@ -771,7 +771,7 @@ final class DrlRendering {
             Method m = method(b.function().javaClass(), b.function().method());
             Class<?>[] p = m.getParameterTypes();
             if (p.length != 2 + b.constants().size())
-                throw new IllegalStateException(b.function() + " neemt " + p.length + " argumenten, niet "
+                throw new IllegalStateException(b.function() + " takes " + p.length + " arguments, not "
                         + (2 + b.constants().size()));
             List<String> a = new ArrayList<>(List.of(cast(p[0], new Expr("eigen", Object.class)),
                     cast(p[1], new Expr("ander", Object.class))));
@@ -790,7 +790,7 @@ final class DrlRendering {
                 return b.target() + " : (" + pathFunction(b.path(), b.field().property(), b.form(), b.category()) + "(this))";
             if (!isBean(javaClass)) {
                 if (b.form() != Binding.ReadForm.VALUE)
-                    throw new IllegalStateException("een feit van de tak wordt gelezen zoals het is: " + b);
+                    throw new IllegalStateException("a fact of the branch is read as it is: " + b);
                 return b.target() + " : " + b.field().property();
             }
             boolean own = b.field().javaClass().isAssignableFrom(javaClass);
@@ -816,8 +816,8 @@ final class DrlRendering {
                 } catch (NoSuchMethodException e) {
                     // the other form of the getter
                 }
-            throw new IllegalStateException("het lid " + str(name) + " heeft geen getter " + n.getter() + " of "
-                    + n.isGetter() + " op " + javaClass.getName());
+            throw new IllegalStateException("the member " + str(name) + " has no getter " + n.getter() + " or "
+                    + n.isGetter() + " on " + javaClass.getName());
         }
 
         /** {@code read} read as {@code form}, through its route. */
@@ -998,15 +998,15 @@ final class DrlRendering {
                 case Term.SlotValue l -> {
                     String p = c.slots.get(l.slot());
                     if (p == null)
-                        throw new IllegalStateException("de term leest slot " + l.slot() + ", dat haar plaats in "
-                                + plan.name() + " niet doorgeeft");
+                        throw new IllegalStateException("the term reads slot " + l.slot() + ", which does not pass its place in "
+                                + plan.name());
                     yield new Expr(p, Object.class);
                 }
                 case Term.Input i -> new Expr(readForm(route(Route.READ) + "(" + value(i.object(), c).text() + ", "
                         + str(i.field().property()) + ")", i.form(), null), Object.class);
                 case Term.Binder b -> {
                     String call = c.binders.get(b.slot());
-                    if (call == null) throw new IllegalStateException("de binder " + b.name() + " buiten zijn Let");
+                    if (call == null) throw new IllegalStateException("the binder " + b.name() + " outside its Let");
                     yield new Expr(call, Object.class);
                 }
                 case Term.Let l -> new Expr(let(l, c), Object.class);
@@ -1039,7 +1039,7 @@ final class DrlRendering {
                 case Term.WithoutFault z -> new Expr("Boolean.valueOf(" + withoutFault(z, c) + ")", Boolean.class);
                 case Term.DayKind d -> {
                     String global = dayKind(d);
-                    if (!c.has(global)) throw new IllegalStateException("de dagsoort " + d.name() + " buiten haar context");
+                    if (!c.has(global)) throw new IllegalStateException("the day kind " + d.name() + " outside its context");
                     yield new Expr(global, java.util.function.Predicate.class);
                 }
             };
@@ -1049,8 +1049,8 @@ final class DrlRendering {
         private Expr depositFlag(int slot, Context c) {
             if (slot < 0) return new Expr("null", null);
             if (slot != c.depositFlag)
-                throw new IllegalStateException("een plaats in " + plan.name() + " meldt aan slot " + slot
-                        + ", niet aan de sonde van haar positie");
+                throw new IllegalStateException("a place in " + plan.name() + " reports to slot " + slot
+                        + ", not to the probe of its position");
             return new Expr(DEPOSIT_FLAG, Object.class);
         }
 
@@ -1068,7 +1068,7 @@ final class DrlRendering {
         private String argumentList(Method m, List<Expr> arguments) {
             Class<?>[] p = m.getParameterTypes();
             if (p.length != arguments.size())
-                throw new IllegalStateException(m.getName() + " neemt " + p.length + " argumenten, niet "
+                throw new IllegalStateException(m.getName() + " takes " + p.length + " arguments, not "
                         + arguments.size());
             List<String> a = new ArrayList<>();
             for (int i = 0; i < p.length; i++) a.add(cast(p[i], arguments.get(i)));
@@ -1154,7 +1154,7 @@ final class DrlRendering {
             StringBuilder b = new StringBuilder();
             if (v.depositFlag() >= 0) {
                 if (v.deposits() < 0)
-                    throw new IllegalStateException("een vouwlezing met een sonde en zonder deponeringen in " + plan.name());
+                    throw new IllegalStateException("a fold reading with a probe and without deposits in " + plan.name());
                 b.append("    ").append(route(Route.REPORT_FILTER_DEPOSITS)).append("(")
                         .append(depositFlag(v.depositFlag(), c).text()).append(", ").append(slot(v.deposits(), c))
                         .append(");\n");
@@ -1177,7 +1177,7 @@ final class DrlRendering {
         private String slot(int slot, Context c) {
             String p = c.slots.get(slot);
             if (p == null)
-                throw new IllegalStateException("slot " + slot + " staat niet in de context van een term van " + plan.name());
+                throw new IllegalStateException("slot " + slot + " stands in the context of no term of " + plan.name());
             return p;
         }
 
@@ -1235,7 +1235,7 @@ final class DrlRendering {
                         + str(x.form()) + ", " + x.subject() + ", " + list(texts(x.codes())) + ")");
                 case Consequence.ConditionDeposit x -> insert(b, "    ", x.insertion(), route(Route.INCONSISTENCY) + "("
                         + str(x.form()) + ", " + x.subject() + ", " + depositCodesAgain(x.condition(), x.depositFlag(),
-                                x.slots(), "de voorwaarde van \"" + x.form() + "\"") + ")");
+                                x.slots(), "the condition of \"" + x.form() + "\"") + ")");
                 case Consequence.WritersUnion x -> insert(b, "    ", x.insertion(), route(Route.WRITERS_UNION)
                         + "(" + x.subject() + ", " + key(x.attribute()) + ", " + variable(x.values()) + ", "
                         + (x.input() < 0 ? "null" : variable(x.input())) + ", " + list(texts(x.documentOrder())) + ")");
@@ -1263,7 +1263,7 @@ final class DrlRendering {
                 case Consequence.FilterDeposit x -> insert(b, "    ", x.insertion(), "new "
                         + typeName(FilterDeposit.class) + "(" + str(x.fold()) + ", " + x.subject() + ", "
                         + variable(x.member()) + ", " + depositCodesAgain(x.filter(), x.depositFlag(), x.slots(),
-                                "het filter van " + x.fold()) + ")");
+                                "the filter of " + x.fold()) + ")");
                 case Consequence.FilterFault x -> filterFault(x, b);
                 case Consequence.MemberFault x -> insert(b, "    ", x.insertion(), "new " + typeName(MemberFault.class) + "("
                         + str(x.fold()) + ", " + x.subject() + ", " + variable(x.member()) + ", "
@@ -1403,8 +1403,8 @@ final class DrlRendering {
             String body = tryCatch("        boolean uitkomst = " + bool(condition, c) + ";\n",
                     "        " + route(Route.CAUGHT) + "(e);\n")
                     + "    if (!" + route(Route.REPORTED) + "(" + DEPOSIT_FLAG + ")) {\n        "
-                    + route(Route.CONTRACT_BREACH) + "(" + str(what + " deponeerde in de toets en niet in het gevolg,"
-                            + " over dezelfde gebonden waarden") + ");\n    }\n"
+                    + route(Route.CONTRACT_BREACH) + "(" + str(what + " deposited in the test and not in the consequence,"
+                            + " over the same bound values") + ");\n    }\n"
                     + "    return " + route(Route.DEPOSIT_CODES) + "(" + DEPOSIT_FLAG + ");\n";
             fill(place, condition.source(), "java.util.List " + name + "(" + c.declaration() + ")", body);
             return name + "(" + c.arguments() + ")";
@@ -1422,8 +1422,8 @@ final class DrlRendering {
                             "        return " + route(Route.CAUGHT) + "(e);\n"));
             b.append("    Object f = ").append(name).append("(").append(c.arguments()).append(");\n");
             b.append("    if (!").append(route(Route.IS_EVALUATION_FAULT)).append("(f)) {\n        ")
-                    .append(route(Route.CONTRACT_BREACH)).append("(").append(str("de voorwaarde van \"" + x.fault().form()
-                            + "\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden"))
+                    .append(route(Route.CONTRACT_BREACH)).append("(").append(str("the condition of \"" + x.fault().form()
+                            + "\" failed in the test and not in the consequence, over the same bound values"))
                     .append(");\n    }\n");
             insert(b, "    ", x.insertion(), "new " + typeName(Fault.class) + "(" + x.subject() + ", "
                     + str(x.fault().form()) + ", " + route(Route.DESIGNATE) + "(f, " + str(x.fault().rule()) + "))");
@@ -1517,7 +1517,7 @@ final class DrlRendering {
         private void decisionOf(Consequence.Decision x, StringBuilder b) {
             Consequence.Deposit d = x.deposit();
             if (d != null && computesNothing(x.value()))
-                throw new IllegalStateException("een besluit dat niets uitrekent, deponeert niet");
+                throw new IllegalStateException("a decision that computes nothing does not deposit");
             Consequence.StackFact.Value write = PatternDslRendering.fittedWrite(x);
             if (computesNothing(x.value())) {
                 carried(x.value(), x.collapse(), x.slots(), b);
@@ -1737,8 +1737,8 @@ final class DrlRendering {
                             "        return " + route(Route.CAUGHT) + "(e);\n"));
             b.append("    RuntimeException f = ").append(name).append("(").append(c.arguments()).append(");\n");
             b.append("    if (f == null) {\n        ").append(route(Route.CONTRACT_BREACH)).append("(")
-                    .append(str("het filter van " + x.fold() + " faalde in de toets en niet in het gevolg, over"
-                            + " dezelfde gebonden waarden")).append(");\n    }\n");
+                    .append(str("the filter of " + x.fold() + " failed in the test and not in the consequence, over"
+                            + " the same bound values")).append(");\n    }\n");
             insert(b, "    ", x.insertion(), "new " + typeName(FilterFault.class) + "(" + str(x.fold()) + ", "
                     + x.subject() + ", " + variable(x.member()) + ", f, "
                     + foldPlace(x.place(), x.fold(), x.member(), null) + ")");
@@ -1766,8 +1766,8 @@ final class DrlRendering {
             if (c != null)
                 for (String v : parameters)
                     if (!c.has(v))
-                        throw new IllegalStateException("de plaats van een lid in " + plan.name() + " leest " + v
-                                + ", dat de functie van haar gevolg niet krijgt");
+                        throw new IllegalStateException("the place of a member in " + plan.name() + " reads " + v
+                                + ", which the function of its consequence does not get");
             List<String> declaration = new ArrayList<>();
             for (String v : parameters) declaration.add("Object " + v);
             fill(place, null, "java.util.List " + name + "(" + String.join(", ", declaration) + ")",

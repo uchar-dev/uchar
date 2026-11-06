@@ -77,7 +77,7 @@ when
 then
     Object f = fout_inzetbaarBijSleeptijdFoutInDeVoorwaarde($aantal_vouw_19, $vouw_vouw_21);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"inzetbaar bij sleeptijd\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"inzetbaar bij sleeptijd\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "inzetbaar bij sleeptijd", ComputeHelpers.designate(f, "inzetbaar bij sleeptijd")));
 end
@@ -147,7 +147,7 @@ when
 then
     Object f = fout_krapBijSleeptijdFoutInDeVoorwaarde($aantal_vouw_42, $vouw_vouw_44);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"krap bij sleeptijd\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"krap bij sleeptijd\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "krap bij sleeptijd", ComputeHelpers.designate(f, "krap bij sleeptijd")));
 end
@@ -217,7 +217,7 @@ when
 then
     Object f = fout_paraatBijSleeptijdFoutInDeVoorwaarde($aantal_vouw_65, $vouw_vouw_67);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"paraat bij sleeptijd\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"paraat bij sleeptijd\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "paraat bij sleeptijd", ComputeHelpers.designate(f, "paraat bij sleeptijd")));
 end
@@ -287,7 +287,7 @@ when
 then
     Object f = fout_geschiktBijSleeptijdFoutInDeVoorwaarde($aantal_vouw_89, $vouw_vouw_91);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"geschikt bij sleeptijd\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"geschikt bij sleeptijd\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "geschikt bij sleeptijd", ComputeHelpers.designate(f, "geschikt bij sleeptijd")));
 end

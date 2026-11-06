@@ -16,8 +16,8 @@ public record TestItem(String id, Role role, Term test, int depositFlag, List<In
     public TestItem {
         slots = List.copyOf(slots);
         if ((role == Role.DEPOSIT) != (depositFlag >= 0))
-            throw new IllegalArgumentException("alleen een deponeringstoets heeft een sonde, en zij altijd: " + role
-                    + " met sonde " + depositFlag);
+            throw new IllegalArgumentException("only a deposit test has a probe, and it always does: " + role
+                    + " with probe " + depositFlag);
     }
 
     /**

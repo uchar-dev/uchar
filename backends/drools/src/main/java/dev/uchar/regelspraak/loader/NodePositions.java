@@ -32,13 +32,13 @@ public final class NodePositions {
 
     void node(Object node, String pointer, int order, String kind) {
         if (nodes.put(node, new Position(pointer, order, kind)) != null)
-            throw new IllegalStateException("IrLoader: de knoop op " + pointer + " is twee keer gelezen");
+            throw new IllegalStateException("IrLoader: the node at " + pointer + " is read twice");
         inOrder = null;
     }
 
     void version(Object form, String pointer) {
         if (versions.put(form, pointer) != null)
-            throw new IllegalStateException("IrLoader: de versie op " + pointer + " is twee keer gelezen");
+            throw new IllegalStateException("IrLoader: the version at " + pointer + " is read twice");
     }
 
     /** The position of {@code node}, a record of the condition or the expression union this loader read; null for a
@@ -64,7 +64,7 @@ public final class NodePositions {
      *  document: a node before its fields, the fields in the order the document writes them, an array in its order. */
     public List<Object> subtree(Object root) {
         Position r = nodes.get(root);
-        if (r == null) throw new IllegalArgumentException("geen knoop van dit document: " + root);
+        if (r == null) throw new IllegalArgumentException("no node of this document: " + root);
         if (inOrder == null) {
             inOrder = new ArrayList<>(nodes.keySet());
             inOrder.sort(Comparator.comparingInt(n -> nodes.get(n).order()));

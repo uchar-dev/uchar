@@ -62,8 +62,8 @@ public final class WritersConflict extends IllegalStateException {
             // (RUNTIME-SEMANTICS ch. 5.7, "Two writers per day")
             PeriodCondition.Clash c = PeriodCondition.clash(ordered);
             if (c == null)
-                throw new IllegalStateException("de tijdlijnen van " + ordered.size() + " schrijvers van " + attribute
-                        + " verschillen op geen dag die twee van hen beslissen, en het conflict noemt ze");
+                throw new IllegalStateException("the timelines of " + ordered.size() + " writers of " + attribute
+                        + " differ on no day that two of them decide, and the conflict names them");
             acts.add(new WriteAct(ordered.get(c.first()).writer(), c.firstValue()));
             acts.add(new WriteAct(ordered.get(c.second()).writer(), c.secondValue()));
         } else for (Value w : ordered) acts.add(new WriteAct(w.writer(), w.value()));
@@ -98,7 +98,7 @@ public final class WritersConflict extends IllegalStateException {
                                Set<String> allocations, Msg object, String label) {
         super(sentence(writers, allocations, attribute, object).text());
         this.msg = sentence(writers, allocations, attribute, object);
-        if (writers.size() < 2) throw new IllegalArgumentException("een conflict heeft twee schrijvers: " + writers);
+        if (writers.size() < 2) throw new IllegalArgumentException("a conflict has two writers: " + writers);
         this.subject = subject;
         this.attribute = attribute;
         this.type = type;

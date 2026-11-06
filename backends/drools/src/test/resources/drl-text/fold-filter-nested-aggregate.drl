@@ -225,7 +225,7 @@ when
 then
     Object f = fout_laatBeladenFoutInDeVoorwaarde($aantal_vouw_107, $vouw_vouw_109, $eerste_filterfout_vouw_114);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"laat beladen\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"laat beladen\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "laat beladen", ComputeHelpers.designate(f, "laat beladen")));
 end
@@ -292,7 +292,7 @@ when
 then
     RuntimeException f = fout_eersteMaandNaDeAfmeerdagFilterfoutInVouw0($lijstplaatsen_plaats_5, $plaats_plaats_6, $maand, $afmeerdag, $onderwerp);
     if (f == null) {
-        ComputeHelpers.contractBreach("het filter van eerste maand na de afmeerdag: vouw 0 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of eerste maand na de afmeerdag: vouw 0 failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new FilterFault("eerste maand na de afmeerdag: vouw 0", $vouwonderwerp, $onderwerp, f, plaats_eersteMaandNaDeAfmeerdagFilterfoutInVouw0($onderwerp, $lijstplaatsen_plaats_5, $plaats_plaats_6)));
 end
@@ -356,7 +356,7 @@ when
 then
     RuntimeException f = fout_aantalLateLadingenFilterfoutInVouw1($lijstplaatsen_plaats_26, $plaats_plaats_27, $maand, $afmeerdag, $onderwerp);
     if (f == null) {
-        ComputeHelpers.contractBreach("het filter van aantal late ladingen: vouw 1 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of aantal late ladingen: vouw 1 failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new FilterFault("aantal late ladingen: vouw 1", $vouwonderwerp, $onderwerp, f, plaats_aantalLateLadingenFilterfoutInVouw1($onderwerp, $lijstplaatsen_plaats_26, $plaats_plaats_27)));
 end
@@ -423,7 +423,7 @@ when
 then
     RuntimeException f = fout_lateGewichtFilterfoutInVouw2($lijstplaatsen_plaats_45, $plaats_plaats_46, $maand, $afmeerdag, $onderwerp);
     if (f == null) {
-        ComputeHelpers.contractBreach("het filter van late gewicht: vouw 2 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of late gewicht: vouw 2 failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new FilterFault("late gewicht: vouw 2", $vouwonderwerp, $onderwerp, f, plaats_lateGewichtFilterfoutInVouw2($onderwerp, $lijstplaatsen_plaats_45, $plaats_plaats_46)));
 end
@@ -490,7 +490,7 @@ when
 then
     RuntimeException f = fout_zwaarsteLateGewichtFilterfoutInVouw3($lijstplaatsen_plaats_66, $plaats_plaats_67, $maand, $afmeerdag, $onderwerp);
     if (f == null) {
-        ComputeHelpers.contractBreach("het filter van zwaarste late gewicht: vouw 3 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of zwaarste late gewicht: vouw 3 failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new FilterFault("zwaarste late gewicht: vouw 3", $vouwonderwerp, $onderwerp, f, plaats_zwaarsteLateGewichtFilterfoutInVouw3($onderwerp, $lijstplaatsen_plaats_66, $plaats_plaats_67)));
 end
@@ -559,7 +559,7 @@ when
 then
     RuntimeException f = fout_laatBeladenFilterfoutInVouw4($lijstplaatsen_plaats_87, $plaats_plaats_88, $maand, $afmeerdag, $onderwerp);
     if (f == null) {
-        ComputeHelpers.contractBreach("het filter van laat beladen: vouw 4 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of laat beladen: vouw 4 failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new FilterFault("laat beladen: vouw 4", $vouwonderwerp, $onderwerp, f, plaats_laatBeladenFilterfoutInVouw4($onderwerp, $lijstplaatsen_plaats_87, $plaats_plaats_88)));
 end

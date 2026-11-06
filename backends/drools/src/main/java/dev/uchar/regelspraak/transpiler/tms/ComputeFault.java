@@ -203,6 +203,6 @@ public final class ComputeFault extends RuntimeException {
         if (fault instanceof WriteBoundaryFault w) return w.inRule(rule);
         if (fault instanceof OpenSegmentFault o) return o.inRule(rule);
         if (fault instanceof CharacteristicPeriodsFault k) return k.inRule(rule);
-        throw new IllegalArgumentException("geen evaluatiefout: " + fault, fault);
+        throw new IllegalArgumentException("no evaluation fault: " + fault, fault);
     }
 }

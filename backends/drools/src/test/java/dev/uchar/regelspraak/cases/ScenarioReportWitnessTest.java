@@ -218,7 +218,7 @@ class ScenarioReportWitnessTest {
         ScenarioResult red = of(report, "case1-buiten-raster.json");
         assertEquals(Status.FAIL, red.status(), red::toString);
         assertEquals("case1-buiten-raster.json: ERROR IllegalArgumentException: "
-                + "segmentgrens op 'maandloon' ligt niet op het MAAND-raster", red.diagnostic());
+                + "a segment bound on 'maandloon' does not lie on the MAAND grid", red.diagnostic());
         assertTrue(red.expectations().isEmpty() && red.trace().firings().isEmpty() && red.coverage().isEmpty(),
                 "een case die niet uitspeelde draagt geen verdicten: " + red);
         assertEquals(Status.PASS, of(report, "case2-tussenmaand.json").status());

@@ -141,7 +141,7 @@ final class SessionDump {
             byte[] d = MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(document));
             return HexFormat.of().formatHex(d).substring(0, 16);
         } catch (IOException e) {
-            throw new UncheckedIOException("de naad " + PROPERTY + " leest het document " + document + " niet", e);
+            throw new UncheckedIOException("the seam " + PROPERTY + " does not read the document " + document, e);
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
         }
@@ -172,7 +172,7 @@ final class SessionDump {
             Files.createDirectories(map);
             Files.writeString(map.resolve(key + "." + n + ".txt"), out.toString());
         } catch (IOException e) {
-            throw new UncheckedIOException("de naad " + PROPERTY + " schrijft niet in " + map, e);
+            throw new UncheckedIOException("the seam " + PROPERTY + " does not write into " + map, e);
         }
     }
 
@@ -318,8 +318,8 @@ final class SessionDump {
         /** The name of the subject of mark {@code g}, which an earlier phase or the input gave. */
         private Name subject(CreationStamp g) {
             Name n = name.get(g.subject());
-            if (n == null) throw new IllegalStateException("de dump heeft geen naam voor het onderwerp van de creatie "
-                    + quote(g.rule()) + " in fase " + g.phase() + ", een " + g.subject().getClass().getSimpleName());
+            if (n == null) throw new IllegalStateException("the dump has no name for the subject of the creation "
+                    + quote(g.rule()) + " in phase " + g.phase() + ", a " + g.subject().getClass().getSimpleName());
             return n;
         }
 
@@ -345,7 +345,7 @@ final class SessionDump {
                     try {
                         fields.add(f.getName() + "=" + render(f.get(o)));
                     } catch (IllegalAccessException e) {
-                        throw new IllegalStateException("het veld " + f + " van een bean is niet te lezen", e);
+                        throw new IllegalStateException("the field " + f + " of a bean cannot be read", e);
                     }
                 }
             fields.sort(Comparator.naturalOrder());
@@ -379,9 +379,9 @@ final class SessionDump {
             }
             for (Map.Entry<String, Object> i : identities.entrySet())
                 if (sentence.contains(i.getKey()))
-                    throw new IllegalStateException("de dump schrijft geen identiteit: de zin " + quote(sentence) + " noemt "
-                            + i.getKey() + ", " + (name.containsKey(i.getValue()) ? "het object "
-                            + name.get(i.getValue()).inTheDump() : "een object zonder naam") + " van de sessie");
+                    throw new IllegalStateException("the dump writes no identity: the sentence " + quote(sentence) + " names "
+                            + i.getKey() + ", " + (name.containsKey(i.getValue()) ? "the object "
+                            + name.get(i.getValue()).inTheDump() : "an object without a name") + " of the session");
             return quote(sentence);
         }
 
@@ -418,8 +418,8 @@ final class SessionDump {
                 if (type.equals("Segment"))
                     return "Segment(" + RegelSpraakRuntime.get(o, "van") + ", " + RegelSpraakRuntime.get(o, "tot") + ", "
                             + render(RegelSpraakRuntime.get(o, "waarde")) + ")";
-                throw new IllegalStateException("de dump heeft geen naam voor een bean van " + type
-                        + ": geen caselabel en geen creatie die haar maakte");
+                throw new IllegalStateException("the dump has no name for a bean of " + type
+                        + ": no case label and no creation that made it");
             }
             if (o instanceof BigDecimal d) return "BigDecimal(" + d + ")";
             if (o instanceof String s) return "String(" + quote(s) + ")";
@@ -457,7 +457,7 @@ final class SessionDump {
                         rc.getAccessor().setAccessible(true);
                         r.add(rc.getName() + "=" + render(rc.getAccessor().invoke(o)));
                     } catch (ReflectiveOperationException e) {
-                        throw new IllegalStateException("de component " + rc + " is niet te lezen", e);
+                        throw new IllegalStateException("the component " + rc + " cannot be read", e);
                     }
                 }
                 return javaClass.getSimpleName() + "(" + String.join(", ", r) + ")";
@@ -471,15 +471,15 @@ final class SessionDump {
                     try {
                         r.add(f.getName() + "=" + render(f.get(o)));
                     } catch (IllegalAccessException e) {
-                        throw new IllegalStateException("het veld " + f + " is niet te lezen", e);
+                        throw new IllegalStateException("the field " + f + " cannot be read", e);
                     }
                 }
                 return javaClass.getSimpleName() + "(" + String.join(", ", r) + ")";
             }
             try {
                 if (javaClass.getMethod("toString").getDeclaringClass() == Object.class)
-                    throw new IllegalStateException("de dump schrijft geen identiteit: een " + javaClass.getName()
-                            + " heeft geen tekst van zichzelf");
+                    throw new IllegalStateException("the dump writes no identity: a " + javaClass.getName()
+                            + " has no text of its own");
             } catch (NoSuchMethodException e) {
                 throw new IllegalStateException(e);
             }
@@ -585,7 +585,7 @@ final class SessionDump {
             r.sort(Comparator.naturalOrder());
             return "{" + String.join(", ", r) + "}";
         }
-        throw new IllegalStateException("de canonieke tekst van een lezing kent geen waarde van " + v.getClass().getName());
+        throw new IllegalStateException("the canonical text of a reading knows no value of " + v.getClass().getName());
     }
 
     private static boolean isBean(Object o) {

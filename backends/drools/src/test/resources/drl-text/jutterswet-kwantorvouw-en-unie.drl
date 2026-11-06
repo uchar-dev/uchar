@@ -124,7 +124,7 @@ when
 then
     Object f = fout_drukteFoutInDeVoorwaarde($aantal_vouw_45, $vouw_vouw_47);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"drukte\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"drukte\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "drukte", ComputeHelpers.designate(f, "drukte")));
 end
@@ -152,7 +152,7 @@ function java.util.List deponering_drukteDeponeringInDeVoorwaarde(Object $aantal
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"drukte\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"drukte\" deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }
@@ -246,7 +246,7 @@ when
 then
     RuntimeException f = fout_unietellingFilterfoutInVouw0Selectie1($lijstplaatsen_plaats_7, $plaats_plaats_8, $gewicht, $deelnemers, $onderwerp);
     if (f == null) {
-        ComputeHelpers.contractBreach("het filter van unietelling: vouw 0 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of unietelling: vouw 0 failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new FilterFault("unietelling: vouw 0", $vouwonderwerp, $onderwerp, f, plaats_unietellingFilterfoutInVouw0Selectie1($onderwerp, $lijstplaatsen_plaats_7, $plaats_plaats_8)));
 end
@@ -269,7 +269,7 @@ function java.util.List deponering_unietellingFilterdeponeringInVouw0Selectie1(O
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("het filter van unietelling: vouw 0 deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of unietelling: vouw 0 deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }

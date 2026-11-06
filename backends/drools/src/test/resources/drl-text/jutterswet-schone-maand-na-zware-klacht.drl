@@ -185,7 +185,7 @@ when
 then
     RuntimeException f = fout_eersteSchoneMaandVanafDeEindmaandFilterfoutInVouw0($lijstplaatsen_plaats_16, $plaats_plaats_17, $overlading, $maand, $aantal_vouw_25, $vouw_vouw_27, $onderwerp);
     if (f == null) {
-        ComputeHelpers.contractBreach("het filter van eerste schone maand vanaf de eindmaand: vouw 0 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of eerste schone maand vanaf de eindmaand: vouw 0 failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new FilterFault("eerste schone maand vanaf de eindmaand: vouw 0", $vouwonderwerp, $onderwerp, f, plaats_eersteSchoneMaandVanafDeEindmaandFilterfoutInVouw0($onderwerp, $lijstplaatsen_plaats_16, $plaats_plaats_17)));
 end

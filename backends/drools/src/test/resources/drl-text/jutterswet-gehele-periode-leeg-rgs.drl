@@ -74,7 +74,7 @@ when
 then
     Object f = fout_leegtoeslagVanEenSchuitFoutInDeVoorwaarde($tijdlijn_0, $onderwerp);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"leegtoeslag van een schuit\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"leegtoeslag van een schuit\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "leegtoeslag van een schuit", ComputeHelpers.designate(f, "leegtoeslag van een schuit")));
 end
@@ -145,7 +145,7 @@ when
 then
     Object f = fout_vultoeslagVanEenSchuitFoutInDeVoorwaarde($tijdlijn_0, $onderwerp);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"vultoeslag van een schuit\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"vultoeslag van een schuit\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "vultoeslag van een schuit", ComputeHelpers.designate(f, "vultoeslag van een schuit")));
 end
@@ -216,7 +216,7 @@ when
 then
     Object f = fout_onderbrekingstoeslagVanEenSchuitFoutInDeVoorwaarde($tijdlijn_0, $onderwerp);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"onderbrekingstoeslag van een schuit\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"onderbrekingstoeslag van een schuit\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "onderbrekingstoeslag van een schuit", ComputeHelpers.designate(f, "onderbrekingstoeslag van een schuit")));
 end
@@ -287,7 +287,7 @@ when
 then
     Object f = fout_maandtoeslagVanEenSchuitFoutInDeVoorwaarde($tijdlijn_0, $onderwerp);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"maandtoeslag van een schuit\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"maandtoeslag van een schuit\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "maandtoeslag van een schuit", ComputeHelpers.designate(f, "maandtoeslag van een schuit")));
 end
@@ -358,7 +358,7 @@ when
 then
     Object f = fout_werftoeslagVanEenSchuitFoutInDeVoorwaarde($werfHavengeld, $onderwerp);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"werftoeslag van een schuit\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"werftoeslag van een schuit\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "werftoeslag van een schuit", ComputeHelpers.designate(f, "werftoeslag van een schuit")));
 end

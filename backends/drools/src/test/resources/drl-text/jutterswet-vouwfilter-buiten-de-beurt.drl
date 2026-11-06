@@ -150,7 +150,7 @@ when
 then
     Object f = fout_rustFoutInDeVoorwaarde($actief, $aantal_vouw_31, $vouw_vouw_33, $eerste_filterfout_vouw_38, $filterdeponeringen_vouw_42);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"rust\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"rust\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "rust", ComputeHelpers.designate(f, "rust")));
 end
@@ -203,7 +203,7 @@ function java.util.List deponering_rustDeponeringInDeVoorwaarde(Object $actief, 
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"rust\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"rust\" deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }
@@ -429,7 +429,7 @@ when
 then
     RuntimeException f = fout_rustFilterfoutInVouw0($lijstplaatsen_plaats_5, $plaats_plaats_6, $gewicht, $deelnemers, $onderwerp);
     if (f == null) {
-        ComputeHelpers.contractBreach("het filter van rust: vouw 0 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of rust: vouw 0 failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new FilterFault("rust: vouw 0", $vouwonderwerp, $onderwerp, f, plaats_rustFilterfoutInVouw0($onderwerp, $lijstplaatsen_plaats_5, $plaats_plaats_6)));
 end
@@ -452,7 +452,7 @@ function java.util.List deponering_rustFilterdeponeringInVouw0(Object $gewicht, 
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("het filter van rust: vouw 0 deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of rust: vouw 0 deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }
@@ -537,7 +537,7 @@ when
 then
     RuntimeException f = fout_meldgewichtFilterfoutInVouw1($lijstplaatsen_plaats_65, $plaats_plaats_66, $gewicht, $deelnemers, $onderwerp);
     if (f == null) {
-        ComputeHelpers.contractBreach("het filter van meldgewicht: vouw 1 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of meldgewicht: vouw 1 failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new FilterFault("meldgewicht: vouw 1", $vouwonderwerp, $onderwerp, f, plaats_meldgewichtFilterfoutInVouw1($onderwerp, $lijstplaatsen_plaats_65, $plaats_plaats_66)));
 end
@@ -564,7 +564,7 @@ function java.util.List deponering_meldgewichtFilterdeponeringInVouw1(Object $ge
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("het filter van meldgewicht: vouw 1 deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of meldgewicht: vouw 1 deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }
@@ -638,7 +638,7 @@ when
 then
     RuntimeException f = fout_defaultsAJutterZwareVondstenFilterfoutInVouw2($lijstplaatsen_plaats_96, $plaats_plaats_97, $gewicht, $deelnemers, $onderwerp);
     if (f == null) {
-        ComputeHelpers.contractBreach("het filter van defaults A:Jutter.zware vondsten: vouw 2 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of defaults A:Jutter.zware vondsten: vouw 2 failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new FilterFault("defaults A:Jutter.zware vondsten: vouw 2", $vouwonderwerp, $onderwerp, f, plaats_defaultsAJutterZwareVondstenFilterfoutInVouw2($onderwerp, $lijstplaatsen_plaats_96, $plaats_plaats_97)));
 end
@@ -661,7 +661,7 @@ function java.util.List deponering_defaultsAJutterZwareVondstenFilterdeponeringI
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("het filter van defaults A:Jutter.zware vondsten: vouw 2 deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of defaults A:Jutter.zware vondsten: vouw 2 deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }

@@ -185,8 +185,8 @@ public final class CaseInput {
         JsonNode input = c.get("input");
         JsonNode instances = input == null ? null : input.get("instances");
         if (instances == null || !instances.isArray())
-            throw new IllegalArgumentException("CaseInput.of: de case draagt geen array input.instances, het deel van"
-                    + " een uchar-case-v0-case dat de invoer beschrijft");
+            throw new IllegalArgumentException("CaseInput.of: the case carries no array input.instances, the part of"
+                    + " a uchar-case-v0 case that describes the input");
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(build.beanLoader());
         try {
@@ -250,7 +250,7 @@ public final class CaseInput {
             bean = Class.forName(FactModelGenerator.PACKAGE + "." + Namen.ident(ot.name, true), true, cl)
                     .getConstructor().newInstance();
         } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("kon bean voor label '" + label + "' niet maken", e);
+            throw new RuntimeException("could not make a bean for label '" + label + "'", e);
         }
         labelToBean.put(label, bean);
         labelType.put(label, ot);
@@ -302,7 +302,7 @@ public final class CaseInput {
             // wrong, and the one classification that could keep it out of sight.
             if (Namen.containsName(ot.characteristicGranularityMembers(), k))
                 throw new IllegalArgumentException("scalar characteristic input '" + k + "' on the "
-                        + "time-dependent kenmerk of " + ot.name + ": deliver it as a characteristicTimelines "
+                        + "time-dependent characteristic of " + ot.name + ": deliver it as a characteristicTimelines "
                         + "entry — the static characteristics list asserts a scalar truth no temporal reader "
                         + "consults");
             reader.ownField(ot, k, true, "sets");
@@ -316,7 +316,7 @@ public final class CaseInput {
             // characteristic timeline on a non-temporal characteristic"), so it is hard here too; an
             // Excluded would file a broken corpus case under "not carried", silently green.
             if (!Namen.containsName(ot.characteristicGranularityMembers(), k))
-                throw new IllegalArgumentException("kenmerktijdlijn op niet-temporeel kenmerk '" + e.getKey() + "'");
+                throw new IllegalArgumentException("a characteristic timeline on the non-temporal characteristic '" + e.getKey() + "'");
             reader.ownField(ot, k, true, "sets");
             CaseRunner.call(bean, Namen.setter(k), List.class, characteristicTimeline(e.getValue(), e.getKey()));
         }
@@ -643,8 +643,7 @@ public final class CaseInput {
     private void setToOne(Object carrier, String role, Object target, RoleLink link) {
         Object current = CaseRunner.invokeGetter(carrier, Namen.getter(role));
         if (current != null && current != target)
-            throw new RoleCollision("to-one rol '" + role + "' krijgt een tweede, ander doel — "
-                    + "ref weigert die case bij het laden (WF-013)", link);
+            throw new RoleCollision(DroolsCode.ROLE_SECOND_TARGET.reason("role", role).text(), link);
         CaseRunner.call(carrier, Namen.setter(role), fieldClass(carrier, role), target);
         writers.computeIfAbsent(carrier, k -> new LinkedHashMap<>()).putIfAbsent(Namen.getter(role), link);
     }
@@ -656,7 +655,7 @@ public final class CaseInput {
         try {
             return carrier.getClass().getMethod(Namen.getter(role)).getReturnType();
         } catch (NoSuchMethodException e) {
-            throw new IllegalStateException("geen getter " + Namen.getter(role) + " op "
+            throw new IllegalStateException("no getter " + Namen.getter(role) + " on "
                     + carrier.getClass().getSimpleName(), e);
         }
     }
@@ -807,8 +806,7 @@ public final class CaseInput {
             Object readBack = CaseRunner.invokeGetter(partner, Namen.getter(role));
             if (readBack == bean) continue;
             if (readBack != null)
-                throw new RoleCollision("wederkerige rol '" + role + "': het doel is al verbonden met "
-                        + "een ander — de omgekeerde poot botst (WF-013 to-one)", writtenBy(bean, role));
+                throw new RoleCollision(DroolsCode.ROLE_RECIPROCAL_COLLISION.reason("role", role).text(), writtenBy(bean, role));
             CaseRunner.call(partner, Namen.setter(role), fieldClass(partner, role), bean);
         }
     }
@@ -817,15 +815,15 @@ public final class CaseInput {
     private RoleLink writtenBy(Object carrier, String role) {
         RoleLink link = writers.getOrDefault(carrier, Map.of()).get(Namen.getter(role));
         if (link == null)
-            throw new IllegalStateException("het veld '" + role + "' van " + carrier.getClass().getSimpleName()
-                    + " draagt een doel dat geen rol van de case schreef");
+            throw new IllegalStateException("the field '" + role + "' of " + carrier.getClass().getSimpleName()
+                    + " carries a target that no role of the case wrote");
         return link;
     }
 
     private ObjectType beanObjectType(Object bean) {
         for (ObjectType ot : model.objectTypes.values())
             if (Namen.ident(ot.name, true).equals(bean.getClass().getSimpleName())) return ot;
-        throw new IllegalStateException("geen objecttype voor bean " + bean.getClass());
+        throw new IllegalStateException("no object type for bean " + bean.getClass());
     }
 
     // ---------------- §13.3.6 temporal input (the List<Segment> bean members) ----------------
@@ -866,12 +864,12 @@ public final class CaseInput {
      *  its own true-period timelines that way (rsTijdOfUnie) and every consumer reads van/tot only (rsTijdKnip). */
     private List<Object> characteristicTimeline(JsonNode periodes, String characteristic) {
         if (periodes == null || !periodes.isArray())
-            throw new IllegalArgumentException("misvormde kenmerktijdlijn op '" + characteristic + "'");
+            throw new IllegalArgumentException("malformed characteristic timeline on '" + characteristic + "'");
         List<LocalDate[]> sorted = new ArrayList<>();
         for (JsonNode pj : periodes) {
             LocalDate van = CaseRunner.boundDate(pj, "from", characteristic), to = CaseRunner.boundDate(pj, "to", characteristic);
             if (!van.isBefore(to))
-                throw new IllegalArgumentException("periode 'to' op '" + characteristic + "' ligt niet na 'from'");
+                throw new IllegalArgumentException("period 'to' on '" + characteristic + "' does not lie after 'from'");
             sorted.add(new LocalDate[]{ van, to });
         }
         sorted.sort((a, b) -> a[0].equals(b[0]) ? a[1].compareTo(b[1]) : a[0].compareTo(b[0]));
@@ -879,7 +877,7 @@ public final class CaseInput {
         LocalDate previousTo = null;
         for (LocalDate[] p : sorted) {
             if (previousTo != null && p[0].isBefore(previousTo))
-                throw new IllegalArgumentException("perioden op '" + characteristic + "' overlappen");
+                throw new IllegalArgumentException("periods on '" + characteristic + "' overlap");
             previousTo = p[1];
             out.add(reader.segment(p[0], p[1], null));
         }

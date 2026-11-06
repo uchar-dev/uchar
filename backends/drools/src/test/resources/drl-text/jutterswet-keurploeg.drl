@@ -77,7 +77,7 @@ when
 then
     Object f = fout_premiewaardigBijKeurvergoedingFoutInDeVoorwaarde($aantal_vouw_20, $vouw_vouw_22);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"premiewaardig bij keurvergoeding\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"premiewaardig bij keurvergoeding\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "premiewaardig bij keurvergoeding", ComputeHelpers.designate(f, "premiewaardig bij keurvergoeding")));
 end
@@ -147,7 +147,7 @@ when
 then
     Object f = fout_stilliggendBijKeurvergoedingFoutInDeVoorwaarde($aantal_vouw_44, $vouw_vouw_46);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"stilliggend bij keurvergoeding\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"stilliggend bij keurvergoeding\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "stilliggend bij keurvergoeding", ComputeHelpers.designate(f, "stilliggend bij keurvergoeding")));
 end

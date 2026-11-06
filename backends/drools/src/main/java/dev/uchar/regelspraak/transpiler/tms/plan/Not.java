@@ -14,7 +14,7 @@ public record Not(List<FactPattern> patterns, List<String> inside, List<String> 
         patterns = List.copyOf(patterns);
         inside = List.copyOf(inside);
         outside = List.copyOf(outside);
-        Exists.scope("een niet-item", patterns, inside, outside);
+        Exists.scope("a not item", patterns, inside, outside);
     }
 
     /** The absence of an object that {@code pattern} matches, in the scope of that one pattern: what it declares lives

@@ -77,7 +77,7 @@ when
 then
     Object f = fout_premiegerechtigdBijDagvergoedingFoutInDeVoorwaarde($aantal_vouw_19, $vouw_vouw_21);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"premiegerechtigd bij dagvergoeding\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"premiegerechtigd bij dagvergoeding\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "premiegerechtigd bij dagvergoeding", ComputeHelpers.designate(f, "premiegerechtigd bij dagvergoeding")));
 end
@@ -147,7 +147,7 @@ when
 then
     Object f = fout_wisselvalligBijDagvergoedingFoutInDeVoorwaarde($aantal_vouw_42, $vouw_vouw_44);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"wisselvallig bij dagvergoeding\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"wisselvallig bij dagvergoeding\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "wisselvallig bij dagvergoeding", ComputeHelpers.designate(f, "wisselvallig bij dagvergoeding")));
 end

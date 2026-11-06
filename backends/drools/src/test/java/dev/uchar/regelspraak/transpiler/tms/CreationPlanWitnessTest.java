@@ -458,14 +458,14 @@ class CreationPlanWitnessTest {
         Consequence.Insert link = new Consequence.Insert.Link("uitgifte", true, Consequence.Insertion.STATED);
         Consequence.Insert characteristic = new Consequence.Insert.Characteristic(1, Consequence.Insertion.STATED);
         assertEquals(List.of("ok",
-                        "een creatie voegt eerst het nieuwe object in: [Mark[insertion=STATED],"
+                        "a creation inserts the new object first: [Mark[insertion=STATED],"
                                 + " New[insertion=STATED], Link[relation=uitgifte, newIsFirst=true,"
                                 + " insertion=STATED], Characteristic[assignment=1, insertion=STATED]]",
-                        "een lidtoekenning van een kenmerk wordt ingevoegd, niet gezet: " + uitgereikt,
-                        "een lidtoekenning van een attribuut wordt gezet, niet ingevoegd: " + amount,
-                        "de lidtoekenning van " + uitgereikt + " komt 0 keer in de constructie of de invoegingen,"
-                                + " niet één keer",
-                        "een creatie voegt het nieuwe object, zijn merk en zijn koppeling elk één keer in:"
+                        "a member assignment of a characteristic is inserted, not set: " + uitgereikt,
+                        "a member assignment of an attribute is set, not inserted: " + amount,
+                        "the member assignment of " + uitgereikt + " comes 0 times in the construction or the insertions,"
+                                + " not once",
+                        "a creation inserts the new object, its mark and its link each once:"
                                 + " [New[insertion=STATED], Mark[insertion=STATED], Characteristic[assignment=1,"
                                 + " insertion=STATED]]"),
                 List.of(creation(assignments, build, List.of(fresh, mark, link, characteristic)),
@@ -505,13 +505,13 @@ class CreationPlanWitnessTest {
         Consequence.Insert link = new Consequence.Insert.Link("uitgifte", true, Consequence.Insertion.STATED);
         Consequence.Insert first = new Consequence.Insert.Characteristic(1, Consequence.Insertion.STATED);
         Consequence.Insert second = new Consequence.Insert.Characteristic(2, Consequence.Insertion.STATED);
-        String expected = "een creatie voegt het nieuwe object, zijn merk, zijn koppeling en dan haar"
-                + " lidtoekenningen van kenmerken in hun volgorde in, [New, Mark, Link, Kenmerk 1, Kenmerk 2], niet ";
+        String expected = "a creation inserts the new object, its mark, its link and then its"
+                + " member assignments of characteristics in their order, [New, Mark, Link, Characteristic 1, Characteristic 2], not ";
         assertEquals(List.of("ok",
-                        expected + "[New, Link, Mark, Kenmerk 1, Kenmerk 2]",
-                        expected + "[New, Mark, Link, Kenmerk 2, Kenmerk 1]",
-                        expected + "[New, Mark, Kenmerk 1, Link, Kenmerk 2]",
-                        "een creatie zet haar lidtoekenningen van attributen in hun volgorde [0, 3], niet [3, 0]"),
+                        expected + "[New, Link, Mark, Characteristic 1, Characteristic 2]",
+                        expected + "[New, Mark, Link, Characteristic 2, Characteristic 1]",
+                        expected + "[New, Mark, Characteristic 1, Link, Characteristic 2]",
+                        "a creation sets its member assignments of attributes in their order [0, 3], not [3, 0]"),
                 List.of(creation(assignments, build, List.of(fresh, mark, link, first, second)),
                         creation(assignments, build, List.of(fresh, link, mark, first, second)),
                         creation(assignments, build, List.of(fresh, mark, link, second, first)),
@@ -541,14 +541,14 @@ class CreationPlanWitnessTest {
         Consequence.Insert mark = new Consequence.Insert.Mark(set);
         Consequence.Insert link = new Consequence.Insert.Link("uitgifte", true, set);
         Consequence.Insert characteristic = new Consequence.Insert.Characteristic(1, set);
-        String sentence = "een creatie stelt wat ze maakt, want dat vervalt nooit: ";
+        String sentence = "a creation states what it makes, as that never lapses: ";
         assertEquals(List.of("ok",
-                        sentence + "New[insertion=LOGICAL] is niet gesteld",
-                        sentence + "Mark[insertion=LOGICAL] is niet gesteld",
-                        sentence + "Link[relation=uitgifte, newIsFirst=true, insertion=LOGICAL] is niet gesteld",
-                        sentence + "Characteristic[assignment=1, insertion=LOGICAL] is niet gesteld",
-                        "een creatie stelt haar fout bij het maken, want die houdt haar regel tegen: de foutinvoeging"
-                                + " LOGICAL is niet gesteld"),
+                        sentence + "New[insertion=LOGICAL] is not stated",
+                        sentence + "Mark[insertion=LOGICAL] is not stated",
+                        sentence + "Link[relation=uitgifte, newIsFirst=true, insertion=LOGICAL] is not stated",
+                        sentence + "Characteristic[assignment=1, insertion=LOGICAL] is not stated",
+                        "a creation states its fault at the making, as that blocks its rule: the fault insertion"
+                                + " LOGICAL is not stated"),
                 List.of(creation(assignments, build, List.of(fresh, mark, link, characteristic)),
                         creation(assignments, build, List.of(new Consequence.Insert.New(logical), mark, link, characteristic)),
                         creation(assignments, build, List.of(fresh, new Consequence.Insert.Mark(logical), link, characteristic)),

@@ -3,15 +3,15 @@ package dev.uchar.regelspraak.refusal;
 import dev.uchar.regelspraak.message.Msg;
 
 /**
- * The register of the Drools backend's refusals: every place where the backend refuses a form or a case names one of
- * these codes and its parameters ({@link #reason}), never a sentence ({@code spec/proposals/MESSAGE-CODES.md} §2.3,
- * §3.1, §7). A report renders the code at its head, {@code EXCLUDE DROOLS-014: <sentence>}; the sentence is the entry
+ * The register of the Drools backend's refusals: every place where the backend refuses a form, a case or a call of its
+ * API names one of these codes and its parameters ({@link #reason}), never a sentence
+ * ({@code spec/proposals/MESSAGE-CODES.md} §2.3, §3.1, §7). A report renders the code at its head, {@code EXCLUDE DROOLS-014: <sentence>}; the sentence is the entry
  * of the catalogue ({@code messages-drools.<language>.tsv}) that the code names, in the language of the call or of the
  * system property {@code uchar.messages.locale}, English by default.
  *
  * <p>Numbered in order of arrival, never reused and never renumbered. The key names what is refused, in English,
  * and is unique; the kind says why ({@code refusal}: a form the backend does not carry; {@code limit}: a limit of its
- * own representation; {@code contract}: a document or case that breaks the contract the backend relies on;
+ * own representation; {@code contract}: a document, a case or a call of the API that breaks the contract the backend relies on;
  * {@code fallback}: the bottom arm of a dispatch; {@code retired}: a code no place raises any more, kept so that its
  * number is never reused). {@code ef} is the code of the normative table (RUNTIME-SEMANTICS
  * ch. 5.7b) where the refusal is the backend's way of declining that fault kind, and null otherwise. {@code params}
@@ -178,7 +178,7 @@ public enum DroolsCode {
     FACT_CREATION_WITHOUT_NAME("DROOLS-154", Kind.CONTRACT, "fact-creation-without-name", "", null),
     FACT_CREATION_UNRESOLVED_OPERAND("DROOLS-155", Kind.CONTRACT, "fact-creation-unresolved-operand", "", null),
     FACT_CREATION_NOT_BINARY("DROOLS-156", Kind.REFUSAL, "fact-creation-not-binary", "factType", null),
-    TARGET_CONDITION_NESTED_HOST("DROOLS-157", Kind.REFUSAL, "target-condition-nested-host", "reason", null),
+    TARGET_CONDITION_NESTED_HOST("DROOLS-157", Kind.REFUSAL, "target-condition-nested-host", "", null),
     STEP_NOT_ROLE_PAIR("DROOLS-158", Kind.REFUSAL, "step-not-role-pair", "description", null),
     STEP_ROLE_WITHOUT_FILLER("DROOLS-159", Kind.CONTRACT, "step-role-without-filler", "description,role", null),
     ONE_HOP_NO_FIELD("DROOLS-160", Kind.LIMIT, "one-hop-no-field", "description,reason", "EF-017"),
@@ -339,7 +339,56 @@ public enum DroolsCode {
     ALLOCATION_TIME_DEPENDENT_ATTRIBUTE("DROOLS-315", Kind.CONTRACT, "allocation-time-dependent-attribute", "allocation,field,attribute,objectType", null),
     TIME_TARGET_PRODUCER_VALUE("DROOLS-316", Kind.REFUSAL, "time-target-producer-value", "form,attribute,declarant,snippet", null),
     BEAN_GETTER_OF_OBJECT("DROOLS-317", Kind.LIMIT, "bean-getter-of-object", "property,objectType,getter", null),
-    MANY_TO_MANY_FOLD_ORDER("DROOLS-318", Kind.LIMIT, "many-to-many-fold-order", "factType,description", null);
+    MANY_TO_MANY_FOLD_ORDER("DROOLS-318", Kind.LIMIT, "many-to-many-fold-order", "factType,description", null),
+    INSERT_SESSION_NOT_FRESH("DROOLS-319", Kind.CONTRACT, "insert-session-not-fresh", "factCount", null),
+    INSERT_BEAN_TWICE("DROOLS-320", Kind.CONTRACT, "insert-bean-twice", "bean", null),
+    INSERT_NOT_A_BEAN("DROOLS-321", Kind.CONTRACT, "insert-not-a-bean", "bean", null),
+    REFERENCE_OUTSIDE_INPUT("DROOLS-322", Kind.CONTRACT, "reference-outside-input", "call,field,bean,objectType,target", null),
+    INSERT_BUCKET_OUTSIDE_INPUT("DROOLS-323", Kind.CONTRACT, "insert-bucket-outside-input", "attribute,bean", null),
+    INSERT_BUCKET_NO_ATTRIBUTE("DROOLS-324", Kind.CONTRACT, "insert-bucket-no-attribute", "attribute,bean,objectType", null),
+    INSERT_BUCKET_NOT_ON_TIMELINE("DROOLS-325", Kind.CONTRACT, "insert-bucket-not-on-timeline", "attribute,bean,objectType", null),
+    LIST_MEMBER_NOT_IN_INPUT("DROOLS-326", Kind.CONTRACT, "list-member-not-in-input", "description,member", null),
+    LIST_MEMBER_NO_FIELD("DROOLS-327", Kind.CONTRACT, "list-member-no-field", "description,member,objectType,field", null),
+    LIST_MEMBER_OTHER_HOLDER("DROOLS-328", Kind.CONTRACT, "list-member-other-holder", "description,member,field,target", null),
+    LIST_MEMBER_TWICE("DROOLS-329", Kind.CONTRACT, "list-member-twice", "description,member", null),
+    LIST_EMPTY_WITH_MEMBER("DROOLS-330", Kind.CONTRACT, "list-empty-with-member", "description,member,field", null),
+    LIST_GIVEN_TWICE("DROOLS-331", Kind.CONTRACT, "list-given-twice", "description", null),
+    LIST_MISSES_MEMBER("DROOLS-332", Kind.CONTRACT, "list-misses-member", "description,member,field", null),
+    OBSERVER_OTHER_SESSION("DROOLS-333", Kind.CONTRACT, "observer-other-session", "", null),
+    FORM_NOT_IN_MANIFEST("DROOLS-334", Kind.CONTRACT, "form-not-in-manifest", "form", null),
+    COMPARE_EXPECTATIONS_NOT_ARRAY("DROOLS-335", Kind.CONTRACT, "compare-expectations-not-array", "nodeType", null),
+    COMPARE_FIXPOINT_FAULTS("DROOLS-336", Kind.CONTRACT, "compare-fixpoint-faults", "count,rule,message", null),
+    COMPARE_NOT_WRITTEN_BACK("DROOLS-337", Kind.CONTRACT, "compare-not-written-back", "", null),
+    COMPARE_LABEL_TWO_BEANS("DROOLS-338", Kind.CONTRACT, "compare-label-two-beans", "label,first,second", null),
+    FIRE_AGAIN_WITH_CREATIONS("DROOLS-339", Kind.CONTRACT, "fire-again-with-creations", "", null),
+    FIRE_AFTER_WRITE_BACK("DROOLS-340", Kind.CONTRACT, "fire-after-write-back", "", null),
+    FIRE_WATCH_REMOVED("DROOLS-341", Kind.CONTRACT, "fire-watch-removed", "", null),
+    FIRE_INPUT_ON_OR_OFF("DROOLS-342", Kind.CONTRACT, "fire-input-on-or-off", "since,change", null),
+    FIRE_MORE_THAN_UPDATE("DROOLS-343", Kind.CONTRACT, "fire-more-than-update", "since,change", null),
+    FIRE_GLOBAL_CHANGED("DROOLS-344", Kind.CONTRACT, "fire-global-changed", "change", null),
+    FIRE_RELATION_CHANGED("DROOLS-345", Kind.CONTRACT, "fire-relation-changed", "change", null),
+    FIRING_CAP_REACHED("DROOLS-346", Kind.LIMIT, "firing-cap-reached", "cap", null),
+    FIRING_CAP_REACHED_SCALED("DROOLS-347", Kind.LIMIT, "firing-cap-reached-scaled", "cap,floor,factor,rules,facts", null),
+    RULE_NOT_IN_MODEL("DROOLS-348", Kind.CONTRACT, "rule-not-in-model", "rule", null),
+    FIXPOINT_NOT_FIRED("DROOLS-349", Kind.CONTRACT, "fixpoint-not-fired", "generations", null),
+    FIXPOINT_NOT_REACHED("DROOLS-350", Kind.CONTRACT, "fixpoint-not-reached", "noFixpoint", null),
+    FIXPOINT_WATCH_REMOVED("DROOLS-351", Kind.CONTRACT, "fixpoint-watch-removed", "", null),
+    FIXPOINT_OUTSIDE_FIRE("DROOLS-352", Kind.CONTRACT, "fixpoint-outside-fire", "change,advice", null),
+    FIXPOINT_GLOBAL_CHANGED("DROOLS-353", Kind.CONTRACT, "fixpoint-global-changed", "change", null),
+    FIXPOINT_RELATION_CHANGED("DROOLS-354", Kind.CONTRACT, "fixpoint-relation-changed", "change", null),
+    BUILD_WITHOUT_READINGS("DROOLS-355", Kind.CONTRACT, "build-without-readings", "", null),
+    READINGS_NO_NODE("DROOLS-356", Kind.CONTRACT, "readings-no-node", "node,form", null),
+    LIST_PLACE_MISSING_FILTER_FAULT("DROOLS-357", Kind.CONTRACT, "list-place-missing-filter-fault", "fold,member,field", null),
+    LIST_PLACE_MISSING_MEMBER_FAULT("DROOLS-358", Kind.CONTRACT, "list-place-missing-member-fault", "fold,member,field", null),
+    LIST_PLACE_MISSING_QUANTIFIER("DROOLS-359", Kind.CONTRACT, "list-place-missing-quantifier", "fold,member,field", null),
+    UNIT_CONFLICT("DROOLS-360", Kind.CONTRACT, "unit-conflict", "site,from,fromCanonical,destination,destinationCanonical", null),
+    ROLE_SECOND_TARGET("DROOLS-361", Kind.CONTRACT, "role-second-target", "role", null),
+    ROLE_RECIPROCAL_COLLISION("DROOLS-362", Kind.CONTRACT, "role-reciprocal-collision", "role", null),
+    NO_JDK_COMPILER("DROOLS-363", Kind.CONTRACT, "no-jdk-compiler", "", null),
+    LINK_NOT_MANY_TO_MANY("DROOLS-364", Kind.CONTRACT, "link-not-many-to-many", "description", null),
+    LINK_END_NOT_IN_INPUT("DROOLS-365", Kind.CONTRACT, "link-end-not-in-input", "description,end", null),
+    LINK_END_WRONG_TYPE("DROOLS-366", Kind.CONTRACT, "link-end-wrong-type", "description,end,objectType,role,roleType", null),
+    LINK_TWICE("DROOLS-367", Kind.CONTRACT, "link-twice", "description", null);
 
     /** Why the backend refuses; {@code RETIRED} for a code it no longer raises, which stays here so that its number is
      *  never reused ({@code spec/proposals/MESSAGE-CODES.md} §3.2). */

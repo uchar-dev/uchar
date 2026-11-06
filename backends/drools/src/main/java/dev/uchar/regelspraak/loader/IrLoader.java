@@ -2504,8 +2504,8 @@ public final class IrLoader {
         if (ruleKind == ResolvedRule.Kind.KENMERKTOEKENNING
                 && !(r.value() instanceof Expr.Literal l && "waar".equals(l.valueText())
                      && l.type() instanceof Datatype.BooleanType)) {
-            String value = r.value() instanceof Expr.Literal l ? "'" + l.valueText() + "'"
-                    : "een " + r.value().getClass().getSimpleName();
+            Object value = r.value() instanceof Expr.Literal l ? "'" + l.valueText() + "'"
+                    : DroolsCode.CHARACTERISTIC_FALSE_OUTSIDE_DEFAULTS.part("node", "kind", r.value().getClass().getSimpleName());
             throw new Refusal(DroolsCode.CHARACTERISTIC_FALSE_OUTSIDE_DEFAULTS.reason("rule", r.name(), "characteristic", written.attribute(), "value", value), "RuleVersion.value");
         }
         return r;

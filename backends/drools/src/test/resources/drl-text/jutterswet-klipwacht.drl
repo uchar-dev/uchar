@@ -134,7 +134,7 @@ when
 then
     Object f = fout_kliptekenVanEenKustwachtFoutInDeVoorwaarde($ploegomvang, $tijdlijn_1, $onderwerp);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"klipteken van een kustwacht\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"klipteken van een kustwacht\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "klipteken van een kustwacht", ComputeHelpers.designate(f, "klipteken van een kustwacht")));
 end
@@ -263,7 +263,7 @@ when
 then
     Object f = fout_randkliptekenVanEenKustwachtFoutInDeVoorwaarde($ploegomvang, $tijdlijn_1, $onderwerp, $drempelbedrag);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"randklipteken van een kustwacht\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"randklipteken van een kustwacht\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "randklipteken van een kustwacht", ComputeHelpers.designate(f, "randklipteken van een kustwacht")));
 end

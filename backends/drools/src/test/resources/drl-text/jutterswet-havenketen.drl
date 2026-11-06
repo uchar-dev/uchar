@@ -110,7 +110,7 @@ when
 then
     Object f = fout_wachtdatumFoutInDeVoorwaarde($vinddag, $jutterVergunningsdag);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"wachtdatum\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"wachtdatum\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "wachtdatum", ComputeHelpers.designate(f, "wachtdatum")));
 end

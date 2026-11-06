@@ -217,8 +217,8 @@ class RouteWitnessTest {
         assertTrue(assertThrows(IllegalStateException.class, () -> ComputeHelpers.newObject(subject,
                 "dev.uchar.regelspraak.facts.Bestaatniet")).getMessage().contains("dev.uchar.regelspraak.facts.Bestaatniet"));
         assertTrue(assertThrows(IllegalStateException.class, () -> ComputeHelpers.newObject(subject,
-                Member.class.getName())).getMessage().contains(Member.class.getName() + ", maar die klasse heeft geen publieke"
-                + " constructor zonder argumenten"));
+                Member.class.getName())).getMessage().contains(Member.class.getName() + ", but that class has no public"
+                + " constructor without arguments"));
         ComputeHelpers.set(fresh, "amount", BigDecimal.TEN);
         assertEquals(BigDecimal.TEN, ((New) fresh).getAmount());
         ComputeHelpers.set(fresh, "amount", null);

@@ -38,10 +38,6 @@ public final class Host {
         return host != null && subject != null && host != subject && host.chain().contains(subject);
     }
 
-    /** The reason both branches give when a creation guard carrying a whole-period qualifier declines on the anker. */
-    public static final String TARGET_ATTEMPT_WHOLE_PERIOD =
-            "voorwaarde niet naar anker of doel te lowereren — gehele-periodekwalificatie: alleen de anker is gebonden (WF-109)";
-
     /** Whether a §13.4.7 creation guard may be tried on the DOEL at all. Not when it carries a §8.2 whole-period
      *  qualifier anywhere: WF-109's third scope fence binds only the anker there, so a doel lowering answers a
      *  question the document did not ask. Measured 2026-09-23 on verifier-clean documents that reach the doel
@@ -51,11 +47,6 @@ public final class Host {
     public static boolean targetAttemptAllowed(Condition c) {
         return !carriesWholePeriod(c);
     }
-
-    /** The reason both branches give when a creation guard names the doel as host where WF-109 does not bind it. */
-    public static final String TARGET_ATTEMPT_NESTED =
-            "voorwaarde niet naar anker of doel te lowereren — doelgastheer binnen een samengestelde of genavigeerde"
-            + " voorwaarde: alleen de anker is gebonden (WF-109)";
 
     /** WF-109's first two doel fences: the doel is a bound object only where the check hosted on it IS the whole
      *  guard and does not navigate (the third fence, the whole-period qualifier, is {@link #targetAttemptAllowed}'s).

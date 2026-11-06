@@ -175,8 +175,8 @@ class ComparisonWitnessTest {
 
             IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
                     () -> compare(KUSTREGISTER, c, branch, id, c.get("expected")));
-            assertEquals("attributeValue-verwachting op onbekend label 'G1': geen bean van de sessie draagt het, dus er"
-                    + " is niets te lezen", e.getMessage(), branch::name);
+            assertEquals("attributeValue expectation on the unknown label 'G1': no bean of the session carries it, so there"
+                    + " is nothing to read", e.getMessage(), branch::name);
         }
     }
 
@@ -270,8 +270,8 @@ class ComparisonWitnessTest {
             JsonNode v = TmsDocuments.JSON.readTree("[" + expectation + "]");
             IllegalArgumentException e = refusal(IllegalArgumentException.class, KUSTWACHT, c, caselabels(), v,
                     FIRED_AND_WRITTEN_BACK);
-            assertEquals(v.get(0).get("kind").asText() + "-verwachting op onbekend label 'W9': geen bean van de sessie"
-                    + " draagt het, dus er is niets te lezen", e.getMessage());
+            assertEquals(v.get(0).get("kind").asText() + " expectation on the unknown label 'W9': no bean of the session"
+                    + " carries it, so there is nothing to read", e.getMessage());
         }
     }
 

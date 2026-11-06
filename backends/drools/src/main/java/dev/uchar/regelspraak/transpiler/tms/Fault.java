@@ -34,8 +34,8 @@ public record Fault(Object subject, String rule, RuntimeException fault) {
         Objects.requireNonNull(fault, "fault");
         Objects.requireNonNull(fault.getMessage(), "the sentence of the fault");
         if (!KINDS.contains(fault.getClass()))
-            throw new IllegalArgumentException("geen evaluatiefout van deze tak (Fault.KINDS): " + fault.getClass().getName()
-                    + " in de regel \"" + rule + "\"", fault);
+            throw new IllegalArgumentException("no evaluation fault of this branch (Fault.KINDS): " + fault.getClass().getName()
+                    + " in the rule \"" + rule + "\"", fault);
     }
 
     /** The sentence of the fault. */

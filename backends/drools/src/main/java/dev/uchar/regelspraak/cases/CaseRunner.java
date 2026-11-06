@@ -836,9 +836,9 @@ public final class CaseRunner {
      *  sits on the calendar's day grid. */
     List<Object> timelineSegments(JsonNode segs, String field, String site, Grid gran, boolean emptyAllowed) {
         if (segs == null || !segs.isArray())
-            throw new IllegalArgumentException("misvormde tijdlijnwaarde op '" + field + "'");
+            throw new IllegalArgumentException("malformed timeline value on '" + field + "'");
         if (segs.isEmpty() && !emptyAllowed)
-            throw new IllegalArgumentException("tijdlijnwaarde op '" + field + "' draagt geen enkel segment");
+            throw new IllegalArgumentException("the timeline value on '" + field + "' carries no segment");
         if (gran.count() != 1)
             throw new Excluded(DroolsCode.TIMELINE_MULTI_PERIOD_GRID.reason("site", site, "count", gran.count(), "granularity", spelling(gran.gran())));
         if (gran.variable())
@@ -850,13 +850,13 @@ public final class CaseRunner {
         for (JsonNode sj : segs) {
             LocalDate van = openBound(sj, "from", field), to = openBound(sj, "to", field);
             if (van != null && to != null && !van.isBefore(to))
-                throw new IllegalArgumentException("segment 'to' op '" + field + "' ligt niet na 'from'");
+                throw new IllegalArgumentException("segment 'to' on '" + field + "' does not lie after 'from'");
             if (gran.fixed() == null) calendarGridForInput(gran.gran(), site);
             if (van != null && !onGrid(gran, van) || to != null && !onGrid(gran, to))
-                throw new IllegalArgumentException("segmentgrens op '" + field + "' ligt niet op het "
-                        + gran.gran() + "-raster" + (gran.fixed() == null ? "" : " vanaf " + gran.fixed()));
+                throw new IllegalArgumentException("a segment bound on '" + field + "' does not lie on the "
+                        + gran.gran() + " grid" + (gran.fixed() == null ? "" : " from " + gran.fixed()));
             if (openEnd || !out.isEmpty() && (van == null || previousTo.isAfter(van)))
-                throw new IllegalArgumentException("tijdlijnsegmenten op '" + field + "' zijn ongeordend of overlappen");
+                throw new IllegalArgumentException("the timeline segments on '" + field + "' are unordered or overlap");
             previousTo = to;
             openEnd = to == null;
             out.add(segment(van, to, segmentValue(sj.get("value"), field)));
@@ -938,7 +938,7 @@ public final class CaseRunner {
     static LocalDate boundDate(JsonNode seg, String field, String where) {
         JsonNode d = seg == null ? null : seg.get(field);
         if (d == null || !d.isTextual())
-            throw new IllegalArgumentException("segment op '" + where + "' mist een '" + field + "'-datum");
+            throw new IllegalArgumentException("a segment on '" + where + "' misses a '" + field + "' date");
         // the field name carries BOTH coordinates: a case may hold many timelines and each holds two
         // boundaries, so "onderhoudstarief.from" is the only form a producer can act on
         return caseWireDate(d.asText(), where + "." + field);
@@ -950,7 +950,7 @@ public final class CaseRunner {
         try {
             return Period.bean(Class.forName(FactModelGenerator.PACKAGE + ".Segment", true, cl), van, to, value);
         } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("de gegenereerde Segment-factklasse ontbreekt", e);
+            throw new IllegalStateException("the generated Segment fact class is missing", e);
         }
     }
 
@@ -986,8 +986,8 @@ public final class CaseRunner {
     private ObjectType typeOfLabel(JsonNode v, String label) {
         ObjectType ot = labelType.get(label);
         if (ot == null)
-            throw new IllegalArgumentException(v.get("kind").asText() + "-verwachting op onbekend label '" + label
-                    + "': geen bean van de sessie draagt het, dus er is niets te lezen");
+            throw new IllegalArgumentException(v.get("kind").asText() + " expectation on the unknown label '" + label
+                    + "': no bean of the session carries it, so there is nothing to read");
         return ot;
     }
 
@@ -1023,11 +1023,12 @@ public final class CaseRunner {
             throw new Excluded(DroolsCode.SCALAR_READBACK_TEMPORAL_ATTRIBUTE.reason("attribute", attr));
         Object actual = invokeGetter(labelToBean.get(label), Namen.getter(attr));
         if (emptyExpected)
-            return actual == null ? null : "verwacht leeg, werkelijk " + actual;
+            return actual == null ? null : Msg.drools("PART.mismatch.empty-expected", "actual", actual).text();
         if (ot.attribute(attr) instanceof Datatype.SumType s) constructorFits(v.get("value"), s, "expected " + label + "." + attr);
         Object expected = valueToArg(v.get("value"), attr);
         return equalValue(v.get("value"), expected, actual) ? null
-                : "attribuut " + attr + ": verwacht " + render(expected) + ", werkelijk " + render(actual);
+                : Msg.drools("PART.mismatch.attribute", "attribute", attr, "expected", render(expected), "actual",
+                        render(actual)).text();
     }
 
     /** The read-back of one cell of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c): the value the map of its bean
@@ -1044,10 +1045,12 @@ public final class CaseRunner {
                     + ", which has no dimensions");
         Object actual = cellValue(v, labelToBean.get(label), ot);
         if (emptyExpected)
-            return actual == null ? null : "cel " + attr + cellLabels(v) + ": verwacht leeg, werkelijk " + actual;
+            return actual == null ? null : Msg.drools("PART.mismatch.cell-empty", "attribute", attr, "labels",
+                    cellLabels(v).toString(), "actual", actual).text();
         Object expected = valueToArg(v.get("value"), attr);
         return equalValue(v.get("value"), expected, actual) ? null
-                : "cel " + attr + cellLabels(v) + ": verwacht " + render(expected) + ", werkelijk " + render(actual);
+                : Msg.drools("PART.mismatch.cell", "attribute", attr, "labels", cellLabels(v).toString(), "expected",
+                        render(expected), "actual", render(actual)).text();
     }
 
     /** The labels of a cell expectation as the case writes them. */
@@ -1083,10 +1086,10 @@ public final class CaseRunner {
         // timeline on %S, which declares no granularity"), so they are hard failures here too, and the
         // unknown-label arm would otherwise reach bucket() with a null granularity (an unnamed NPE).
         if (ot == null)
-            throw new IllegalArgumentException("attributeTimeline-verwachting op onbekend label '" + label + "'");
+            throw new IllegalArgumentException("attributeTimeline expectation on the unknown label '" + label + "'");
         String attr = attributeName(ot, v.get("attribute").asText());
         if (!temporal(ot, attr))
-            throw new IllegalArgumentException("attributeTimeline-verwachting op niet-temporeel attribuut '" + attr + "'");
+            throw new IllegalArgumentException("attributeTimeline expectation on the non-temporal attribute '" + attr + "'");
         ownField(ot, attr, false, "reads");
         if (ot.attribute(attr) instanceof Datatype.SumType s)
             for (JsonNode segment : v.get("timeline")) constructorFits(segment.get("value"), s, "expected " + label + "." + attr);
@@ -1095,13 +1098,14 @@ public final class CaseRunner {
         Object read = labelToBean.containsKey(label) ? invokeGetter(labelToBean.get(label), Namen.getter(attr)) : null;
         if (read == null)
             return expected.isEmpty() ? null
-                    : "attribuut " + attr + ": draagt geen tijdreeks, verwacht " + renderTl(expected);
+                    : Msg.drools("PART.mismatch.timeline-absent", "attribute", attr, "expected", renderTl(expected)).text();
         List<TimelineSegment> actual = canonical(segments((List<?>) read));
         boolean equal = actual.size() == expected.size();
         for (int k = 0; equal && k < expected.size(); k++)
             equal = segEqual(expected.get(k), actual.get(k));
         return equal ? null
-                : "attribuut " + attr + ": verwacht " + renderTl(expected) + ", werkelijk " + renderTl(actual);
+                : Msg.drools("PART.mismatch.attribute", "attribute", attr, "expected", renderTl(expected), "actual",
+                        renderTl(actual)).text();
     }
 
     private static boolean segEqual(TimelineSegment expectation, TimelineSegment actual) {
@@ -1147,7 +1151,7 @@ public final class CaseRunner {
     private static Object segField(Object seg, String field) { return RegelSpraakRuntime.get(seg, field); }
 
     private static String renderTl(List<TimelineSegment> segs) {
-        if (segs.isEmpty()) return "(leeg)";
+        if (segs.isEmpty()) return Msg.drools("PART.value.empty-timeline").text();
         List<String> out = new ArrayList<>();
         for (TimelineSegment s : segs)
             out.add("[" + bound(s.from(), "-inf") + "," + bound(s.to(), "+inf") + ")=" + render(s.value()));
@@ -1166,8 +1170,8 @@ public final class CaseRunner {
         Object read = invokeGetter(labelToBean.get(v.get("label").asText()), Namen.getter(characteristic));
         boolean present = Boolean.TRUE.equals(read);
         return present == presentExpected ? null
-                : "kenmerk " + v.get("characteristic").asText() + ": verwacht "
-                + (presentExpected ? "aanwezig" : "afwezig") + ", werkelijk " + (present ? "aanwezig" : "afwezig");
+                : Msg.drools("PART.mismatch.characteristic", "characteristic", v.get("characteristic").asText(),
+                        "expected", presence(presentExpected), "actual", presence(present)).text();
     }
 
     /** The §9.5 consistency check. A {@code consistent} expectation demands NO Inconsistency fact at all
@@ -1184,20 +1188,21 @@ public final class CaseRunner {
     private String consistency(KieSession session, boolean inconsistentExpected, JsonNode v) {
         List<Object> facts = inconsistencies(session);
         if (!inconsistentExpected)
-            return facts.isEmpty() ? null : "verwacht consistent, werkelijk inconsistent (" + renderIncs(facts, false) + ")";
+            return facts.isEmpty() ? null : Msg.drools("PART.mismatch.inconsistent-found", "facts",
+                    renderIncs(facts, false)).text();
         String rule = v.has("rule") && !v.get("rule").isNull() ? v.get("rule").asText() : null;
         String label = v.has("label") && !v.get("label").isNull() ? v.get("label").asText() : null;
         String code = v.hasNonNull("code") ? v.get("code").asText() : null;
         if (facts.isEmpty())
-            return "verwacht inconsistent" + keyText(rule, label, code) + ", werkelijk consistent";
+            return Msg.drools("PART.mismatch.consistent-found", "key", keyText(rule, label, code)).text();
         if (rule == null && code == null) return null;   // presence-only expectation, satisfied by any fact
         for (Object f : facts) {
             if (rule != null && !sameRule(rule, (String) invokeGetter(f, "getRule"))) continue;
             if (label != null && !label.equals(beanLabel(invokeGetter(f, "getSubject")))) continue;
             if (code == null || ((List<?>) invokeGetter(f, "getCodes")).contains(code)) return null;
         }
-        return "verwacht inconsistent" + keyText(rule, label, code) + ", niet gevonden onder "
-                + renderIncs(facts, code != null);
+        return Msg.drools("PART.mismatch.inconsistent-not-found", "key", keyText(rule, label, code), "facts",
+                renderIncs(facts, code != null)).text();
     }
 
     /** Every §9.5 Inconsistency fact the session holds, in the order of its working memory: {@link #consistency} looks
@@ -1280,19 +1285,19 @@ public final class CaseRunner {
     private String expected(JsonNode v) {
         return switch (v.get("kind").asText()) {
             case "attributeValue" -> render(valueToArg(v.get("value"), v.get("attribute").asText()));
-            case "attributeEmpty" -> "leeg";
+            case "attributeEmpty" -> render(null);
             case "attributeTimeline" -> {
                 List<String> segs = new ArrayList<>();
                 for (JsonNode s : v.get("timeline"))
                     segs.add("[" + (s.has("from") ? s.get("from").asText() : "-inf") + ","
                             + (s.has("to") ? s.get("to").asText() : "+inf") + ")="
                             + render(valueToArg(s.get("value"), v.get("attribute").asText())));
-                yield segs.isEmpty() ? "(leeg)" : String.join(" ", segs);
+                yield segs.isEmpty() ? Msg.drools("PART.value.empty-timeline").text() : String.join(" ", segs);
             }
             case "cellValue" -> render(valueToArg(v.get("value"), v.get("attribute").asText()));
-            case "cellEmpty" -> "leeg";
-            case "characteristicPresent" -> "aanwezig";
-            case "characteristicAbsent" -> "afwezig";
+            case "cellEmpty" -> render(null);
+            case "characteristicPresent" -> presence(true);
+            case "characteristicAbsent" -> presence(false);
             case "consistent" -> "consistent";
             default -> "inconsistent" + keyText(v.hasNonNull("rule") ? v.get("rule").asText() : null,
                     v.hasNonNull("label") ? v.get("label").asText() : null,
@@ -1312,11 +1317,11 @@ public final class CaseRunner {
             case "attributeTimeline" -> {
                 Object read = bean == null ? null
                         : invokeGetter(bean, Namen.getter(attributeName(ot, v.get("attribute").asText())));
-                yield read == null ? "(leeg)" : renderTl(segments((List<?>) read));
+                yield read == null ? Msg.drools("PART.value.empty-timeline").text() : renderTl(segments((List<?>) read));
             }
             case "cellValue", "cellEmpty" -> render(cellValue(v, bean, ot));
-            case "characteristicPresent", "characteristicAbsent" -> bean != null && Boolean.TRUE.equals(
-                    invokeGetter(bean, Namen.getter(characteristicName(ot, v.get("characteristic").asText())))) ? "aanwezig" : "afwezig";
+            case "characteristicPresent", "characteristicAbsent" -> presence(bean != null && Boolean.TRUE.equals(
+                    invokeGetter(bean, Namen.getter(characteristicName(ot, v.get("characteristic").asText())))));
             default -> {
                 List<Object> facts = inconsistencies(session);
                 yield facts.isEmpty() ? "consistent" : "inconsistent (" + renderIncs(facts, v.hasNonNull("code")) + ")";
@@ -1558,7 +1563,7 @@ public final class CaseRunner {
     static void call(Object bean, String method, Class<?> type, Object value) {
         try { bean.getClass().getMethod(method, type).invoke(bean, value); }
         catch (ReflectiveOperationException e) {
-            throw new RuntimeException("kon setter " + method + "(" + type.getSimpleName() + ") niet aanroepen op "
+            throw new RuntimeException("could not call the setter " + method + "(" + type.getSimpleName() + ") on "
                     + bean.getClass().getSimpleName(), e);
         }
     }
@@ -1567,10 +1572,15 @@ public final class CaseRunner {
         for (String mth : new String[]{ getter, "is" + getter.substring(3) }) {
             try { return bean.getClass().getMethod(mth).invoke(bean); }
             catch (NoSuchMethodException ignore) { /* try next form */ }
-            catch (ReflectiveOperationException e) { throw new RuntimeException("kon " + mth + " niet lezen", e); }
+            catch (ReflectiveOperationException e) { throw new RuntimeException("could not read " + mth, e); }
         }
-        throw new IllegalStateException("geen getter " + getter + " op " + bean.getClass().getSimpleName());
+        throw new IllegalStateException("no getter " + getter + " on " + bean.getClass().getSimpleName());
     }
 
-    private static String render(Object o) { return o == null ? "leeg" : o.toString(); }
+    private static String render(Object o) { return o == null ? Msg.drools("PART.value.empty").text() : o.toString(); }
+
+    /** A characteristic's standing as the report and a mismatch line write it. */
+    private static String presence(boolean present) {
+        return Msg.drools(present ? "PART.value.present" : "PART.value.absent").text();
+    }
 }

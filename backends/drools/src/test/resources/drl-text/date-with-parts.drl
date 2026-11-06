@@ -127,7 +127,7 @@ when
 then
     Object f = fout_verVooruitFoutInDeVoorwaarde($verreJaar, $gewensteDag);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"ver vooruit\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"ver vooruit\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "ver vooruit", ComputeHelpers.designate(f, "ver vooruit")));
 end

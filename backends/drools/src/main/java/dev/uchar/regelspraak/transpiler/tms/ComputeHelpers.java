@@ -2,6 +2,7 @@ package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 import dev.uchar.regelspraak.message.Msg;
+import dev.uchar.regelspraak.refusal.DroolsCode;
 import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Validity;
 import dev.uchar.regelspraak.ir.ResolvedAllocation;
@@ -613,7 +614,7 @@ public final class ComputeHelpers {
         boolean year = switch (grid) {
             case "JAAR" -> true;
             case "MAAND" -> false;
-            default -> throw new IllegalArgumentException("de gehele-periodekwalificator kent geen raster " + grid);
+            default -> throw new IllegalArgumentException("the whole-period qualifier knows no grid " + grid);
         };
         java.util.function.UnaryOperator<LocalDate> start = d -> year ? d.withDayOfYear(1) : d.withDayOfMonth(1);
         java.util.function.UnaryOperator<LocalDate> end = d -> year ? start.apply(d).plusYears(1) : start.apply(d).plusMonths(1);
@@ -825,8 +826,8 @@ public final class ComputeHelpers {
                 if (m != null) throw new WriteBoundaryFault(List.of(m));
             }
             if (!part.isTerminerend())
-                throw new IllegalStateException("het tijdsevenredig deel van " + attribute + " eindigt niet, en het doel"
-                        + " houdt elke waarde: de bouw weigert die vorm");
+                throw new IllegalStateException("the pro rata part of " + attribute + " does not terminate, and the target"
+                        + " holds every value: the build refuses that form");
             out.add(new Period(start, end, part.naarDecimal()));
         }
         return List.copyOf(out);
@@ -926,7 +927,7 @@ public final class ComputeHelpers {
             return c.getConstructor(String.class, Object.class, List.class).newInstance(form, subject,
                     List.copyOf(codes));
         } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("kan geen " + TmsTranspiler.INCONSISTENCY + "(String, Object, List) construeren", e);
+            throw new IllegalStateException("cannot construct a " + TmsTranspiler.INCONSISTENCY + "(String, Object, List)", e);
         }
     }
 
@@ -1047,20 +1048,14 @@ public final class ComputeHelpers {
         for (int i = 0; i < fields.size(); i++) {
             if (((Number) counts.get(i)).longValue() == 0) {
                 String field = fields.get(i);
-                throw new IllegalStateException(switch (reason) {
-                    case FILTER_FAULT -> "het filter van " + fold + " faalt voor " + FactNames.object(member) + ", maar een"
-                            + " lid van zijn route heeft geen Lijstplaats onder het veld '" + field + "': de invoer stelt de"
-                            + " volgorde van die lijst niet, en zonder haar is de eerste fout van de vouw niet te bepalen"
-                            + " (RUNTIME-SEMANTICS ch. 5.11)";
-                    case MEMBER_FAULT -> "de vouw " + fold + " leest de tijdlijn van " + FactNames.object(member) + ", die de case"
-                            + " als emmerscalair geeft, maar een lid van zijn route heeft geen Lijstplaats onder het veld '"
-                            + field + "': de invoer stelt de volgorde van die lijst niet, en zonder haar is niet te bepalen"
-                            + " welk lid de vouw noemt (RUNTIME-SEMANTICS ch. 3.6, 5.11)";
-                    case QUANTIFIER -> "de kwantorvouw " + fold + " leest de matrix van " + FactNames.object(member) + ", maar"
-                            + " dat lid heeft geen Lijstplaats onder het veld '" + field + "': de invoer stelt de volgorde van"
-                            + " die lijst niet, en zonder haar is niet te bepalen welk lid de kortsluiting bereikt"
-                            + " (RUNTIME-SEMANTICS ch. 5.10, 5.11)";
-                });
+                throw new IllegalStateException((switch (reason) {
+                    case FILTER_FAULT -> DroolsCode.LIST_PLACE_MISSING_FILTER_FAULT.reason("fold", fold, "member",
+                            FactNames.object(member), "field", field);
+                    case MEMBER_FAULT -> DroolsCode.LIST_PLACE_MISSING_MEMBER_FAULT.reason("fold", fold, "member",
+                            FactNames.object(member), "field", field);
+                    case QUANTIFIER -> DroolsCode.LIST_PLACE_MISSING_QUANTIFIER.reason("fold", fold, "member",
+                            FactNames.object(member), "field", field);
+                }).text());
             }
             place.add(((Number) places.get(i)).intValue());
         }
@@ -1346,7 +1341,7 @@ public final class ComputeHelpers {
         return switch (endName) {
             case "first" -> x.first() != y.first();
             case "second" -> x.second() != y.second();
-            default -> throw new IllegalArgumentException("een koppeling heeft geen einde '" + endName + "'");
+            default -> throw new IllegalArgumentException("a link has no end '" + endName + "'");
         };
     }
 
@@ -1373,16 +1368,16 @@ public final class ComputeHelpers {
      *  an object with two marks, is a fault of this transpiler and throws as one. */
     public static int creationDepth(String name, int stratum, String type, List<?> origin, int budget) {
         if (origin.size() > 1)
-            throw new IllegalStateException("exec-model: objectcreatie \"" + name + "\" ontmoet een onderwerp met "
-                    + origin.size() + " merktekens van een creatie, waar een object één keer gemaakt wordt: " + origin);
+            throw new IllegalStateException("exec-model: object creation \"" + name + "\" meets a subject with "
+                    + origin.size() + " marks of a creation, where an object is made once: " + origin);
         int depth = 1;
         if (!origin.isEmpty()) {
             CreationStamp g = (CreationStamp) origin.get(0);
             if (g.stratum() > stratum)
-                throw new IllegalStateException("exec-model: objectcreatie \"" + name + "\" van stratum " + stratum
-                        + " ontmoet een onderwerp dat een creatie van stratum " + g.stratum() + " maakte, terwijl een"
-                        + " creatie de populatie van haar onderwerp strikt leest en dus in het stratum van elke maker van"
-                        + " haar onderwerpen staat of erboven (RUNTIME-SEMANTICS ch. 6.1, 6.3)");
+                throw new IllegalStateException("exec-model: object creation \"" + name + "\" of stratum " + stratum
+                        + " meets a subject that a creation of stratum " + g.stratum() + " made, while a"
+                        + " creation reads the population of its subject strictly and so stands in the stratum of every"
+                        + " maker of its subjects or above it (RUNTIME-SEMANTICS ch. 6.1, 6.3)");
             if (g.stratum() == stratum) depth = g.depth() + 1;
         }
         if (depth > budget)
@@ -1401,16 +1396,16 @@ public final class ComputeHelpers {
         try {
             k = Class.forName(javaClass, true, subject.getClass().getClassLoader());
         } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("een objectcreatie maakt een " + javaClass + ", maar de beanloader van haar"
-                    + " onderwerp laadt die klasse niet", e);
+            throw new IllegalStateException("an object creation makes a " + javaClass + ", but the bean loader of its"
+                    + " subject does not load that class", e);
         }
         try {
             return k.getConstructor().newInstance();
         } catch (NoSuchMethodException e) {
-            throw new IllegalStateException("een objectcreatie maakt een " + javaClass + ", maar die klasse heeft geen"
-                    + " publieke constructor zonder argumenten", e);
+            throw new IllegalStateException("an object creation makes a " + javaClass + ", but that class has no"
+                    + " public constructor without arguments", e);
         } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("een objectcreatie kon geen " + javaClass + " maken", e);
+            throw new IllegalStateException("an object creation could not make a " + javaClass, e);
         }
     }
 
@@ -1434,8 +1429,8 @@ public final class ComputeHelpers {
             segment = Class.forName(dev.uchar.regelspraak.schema.FactModelGenerator.PACKAGE + ".Segment", true,
                     object.getClass().getClassLoader());
         } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("geen beanklasse Segment naast " + object.getClass().getName()
-                    + " voor de tijdlijn van " + property, e);
+            throw new IllegalStateException("no bean class Segment beside " + object.getClass().getName()
+                    + " for the timeline of " + property, e);
         }
         Accessors.eigenschapSetter(object.getClass(), property).accept(object, Period.beans(timeline, segment));
     }

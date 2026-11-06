@@ -77,7 +77,7 @@ public sealed interface Consequence {
         public TestFault {
             slots = List.copyOf(slots);
             if (role != TestItem.Role.FAULT)
-                throw new IllegalArgumentException("een gevolg vraagt van een voorwaarde alleen haar fout, niet " + role);
+                throw new IllegalArgumentException("a consequence asks of a condition only its fault, not " + role);
         }
     }
 
@@ -140,7 +140,7 @@ public sealed interface Consequence {
             typeClasses = List.copyOf(typeClasses);
             types = List.copyOf(types);
             if (typeClasses.size() != types.size())
-                throw new IllegalArgumentException("de typen en hun klassen staan in paren: " + typeClasses + ", "
+                throw new IllegalArgumentException("the types and their classes stand in pairs: " + typeClasses + ", "
                         + types);
         }
     }
@@ -169,8 +169,8 @@ public sealed interface Consequence {
         public InsertCharacteristicState {
             if (source != StateSource.INPUT && source != StateSource.DERIVATION && source != StateSource.NONE
                     || holds == (source == StateSource.NONE))
-                throw new IllegalArgumentException("een kenmerkstand is waar uit de invoer of een afleiding en onwaar"
-                        + " uit geen van beide, niet " + holds + " uit " + source);
+                throw new IllegalArgumentException("a characteristic standing is true from the input or a derivation and false"
+                        + " from neither, not " + holds + " from " + source);
         }
     }
 
@@ -187,11 +187,11 @@ public sealed interface Consequence {
                  List<String> cell, Insertion insertion) implements Consequence {
         public State {
             if (source != StateSource.INPUT && source != StateSource.DERIVATION || bucketScalar && source != StateSource.INPUT)
-                throw new IllegalArgumentException("een stand komt uit de invoer of een afleiding, en alleen de invoer"
-                        + " staat als emmerscalair, niet " + source + (bucketScalar ? " als emmerscalair" : ""));
+                throw new IllegalArgumentException("a standing comes from the input or a derivation, and only the input"
+                        + " stands as a bucket scalar, not " + source + (bucketScalar ? " as a bucket scalar" : ""));
             if (cell != null && (source != StateSource.INPUT || bucketScalar))
-                throw new IllegalArgumentException("alleen de invoer van een cel neemt haar uit de kaart, niet " + source
-                        + (bucketScalar ? " als emmerscalair" : ""));
+                throw new IllegalArgumentException("only the input of a cell takes it from the map, not " + source
+                        + (bucketScalar ? " as a bucket scalar" : ""));
             cell = cell == null ? null : List.copyOf(cell);
         }
     }
@@ -209,9 +209,9 @@ public sealed interface Consequence {
             if (source != StateSource.REACHED && source != StateSource.MISSING_LINK
                     || (source == StateSource.REACHED) != (value >= 0)
                     || (source == StateSource.REACHED) != (reached != null))
-                throw new IllegalArgumentException("een padstand neemt de stand op het bereikte object uit een slot en"
-                        + " dat object uit een variabele, of is leeg bij een ontbrekende link, zonder slot en zonder"
-                        + " object; niet " + source + " met slot " + value + " en object " + reached);
+                throw new IllegalArgumentException("a path standing takes the standing on the reached object from a slot and"
+                        + " that object from a variable, or is empty at a missing link, without slot and without"
+                        + " object; not " + source + " with slot " + value + " and object " + reached);
         }
     }
 
@@ -326,14 +326,14 @@ public sealed interface Consequence {
             public MemberValue {
                 cell = cell == null ? null : List.copyOf(cell);
                 if (payload != null && (total != null || cell != null || whole))
-                    throw new IllegalArgumentException("een payload van een lid draagt geen totaal over de tijd, geen cel"
-                            + " en geen hele tijdlijn bij");
+                    throw new IllegalArgumentException("a payload of a member contributes no total over time, no cell"
+                            + " and no whole timeline");
                 if (whole && (total != null || filled || cell != null))
-                    throw new IllegalArgumentException("een lid dat zijn tijdlijn heel bijdraagt, telt niet, draagt geen"
-                            + " totaal over de tijd bij en geen cel");
+                    throw new IllegalArgumentException("a member that contributes its whole timeline does not count and contributes"
+                            + " no total over time and no cell");
                 if (fixed != null && total == null)
-                    throw new IllegalArgumentException("een vast startpunt legt het raster van een totaal over de tijd,"
-                            + " en dit lid draagt geen totaal bij");
+                    throw new IllegalArgumentException("a fixed start point lays the grid of a total over time,"
+                            + " and this member contributes no total");
             }
         }
 
@@ -349,7 +349,7 @@ public sealed interface Consequence {
         record MemberTest(Term matrix, int depositFlag, FoldPlace place) implements Input {
             public MemberTest {
                 if (place.reason() != PlaceReason.QUANTIFIER)
-                    throw new IllegalArgumentException("de plaats van een lidtoets is die van de kwantor, niet "
+                    throw new IllegalArgumentException("the place of a member test is that of the quantifier, not "
                             + place.reason());
             }
         }
@@ -379,7 +379,7 @@ public sealed interface Consequence {
         public FilterFault {
             slots = List.copyOf(slots);
             if (place.reason() != PlaceReason.FILTER_FAULT)
-                throw new IllegalArgumentException("de plaats van een filterfout is die van het filter, niet "
+                throw new IllegalArgumentException("the place of a filter fault is that of the filter, not "
                         + place.reason());
         }
     }
@@ -395,11 +395,11 @@ public sealed interface Consequence {
                    String attribute, int timeline, Insertion insertion) implements Consequence {
         public MemberFault {
             if (place.reason() != PlaceReason.MEMBER_FAULT)
-                throw new IllegalArgumentException("de plaats van een lidfout is die van het lid, niet " + place.reason());
+                throw new IllegalArgumentException("the place of a member fault is that of the member, not " + place.reason());
             java.util.Objects.requireNonNull(attribute, "attribute");
             if ((before == null) == (timeline < 0) || (before == null) != (after == null))
-                throw new IllegalArgumentException("een lidfout over een open segment leest de tijdlijn van het lid, en"
-                        + " alleen die; een emmerscalair heeft een zin");
+                throw new IllegalArgumentException("a member fault over an open segment reads the timeline of the member, and"
+                        + " only that; a bucket scalar has a sentence");
         }
     }
 
@@ -438,20 +438,20 @@ public sealed interface Consequence {
             // withdrawn right after it went in, and the creation would fire again
             for (Insert i : insertions)
                 if (i.insertion() != Insertion.STATED)
-                    throw new IllegalArgumentException("een creatie stelt wat ze maakt, want dat vervalt nooit: "
-                            + i + " is niet gesteld");
+                    throw new IllegalArgumentException("a creation states what it makes, as that never lapses: "
+                            + i + " is not stated");
             if (faultInsertion != Insertion.STATED)
-                throw new IllegalArgumentException("een creatie stelt haar fout bij het maken, want die houdt haar"
-                        + " regel tegen: de foutinvoeging " + faultInsertion + " is niet gesteld");
+                throw new IllegalArgumentException("a creation states its fault at the making, as that blocks its"
+                        + " rule: the fault insertion " + faultInsertion + " is not stated");
             int[] time = new int[assignments.size()];
             for (Construction.Setting z : construction.settings()) {
                 if (assignments.get(z.assignment()).member().characteristic())
-                    throw new IllegalArgumentException("een lidtoekenning van een kenmerk wordt ingevoegd, niet gezet: "
+                    throw new IllegalArgumentException("a member assignment of a characteristic is inserted, not set: "
                             + assignments.get(z.assignment()).member());
                 time[z.assignment()]++;
             }
             if (insertions.isEmpty() || !(insertions.get(0) instanceof Insert.New))
-                throw new IllegalArgumentException("een creatie voegt eerst het nieuwe object in: " + insertions);
+                throw new IllegalArgumentException("a creation inserts the new object first: " + insertions);
             int marks = 0, left = 0;
             for (Insert i : insertions)
                 switch (i) {
@@ -460,25 +460,25 @@ public sealed interface Consequence {
                     case Insert.Link l -> left++;
                     case Insert.Characteristic k -> {
                         if (!assignments.get(k.assignment()).member().characteristic())
-                            throw new IllegalArgumentException("een lidtoekenning van een attribuut wordt gezet, niet ingevoegd: "
+                            throw new IllegalArgumentException("a member assignment of an attribute is set, not inserted: "
                                     + assignments.get(k.assignment()).member());
                         time[k.assignment()]++;
                     }
                     case Insert.Exact e -> {
                         if (assignments.get(e.assignment()).member().characteristic())
-                            throw new IllegalArgumentException("een lidtoekenning van een kenmerk heeft geen exacte waarde: "
+                            throw new IllegalArgumentException("a member assignment of a characteristic has no exact value: "
                                     + assignments.get(e.assignment()).member());
                         time[e.assignment()]++;
                     }
                 }
             if (insertions.stream().filter(i -> i instanceof Insert.New).count() != 1 || marks != 1
                     || left != 1)
-                throw new IllegalArgumentException("een creatie voegt het nieuwe object, zijn merk en zijn koppeling elk"
-                        + " één keer in: " + insertions);
+                throw new IllegalArgumentException("a creation inserts the new object, its mark and its link each"
+                        + " once: " + insertions);
             for (int i = 0; i < time.length; i++)
                 if (time[i] != 1)
-                    throw new IllegalArgumentException("de lidtoekenning van " + assignments.get(i).member() + " komt "
-                            + time[i] + " keer in de constructie of de invoegingen, niet één keer");
+                    throw new IllegalArgumentException("the member assignment of " + assignments.get(i).member() + " comes "
+                            + time[i] + " times in the construction or the insertions, not once");
             // the order of the consequence before step 1c-C1, which a rendering carries out as the plan lists it: a
             // rendering into DRL text has no other source for the order of the facts the agenda then sees
             Set<Integer> exact = new HashSet<>();
@@ -486,19 +486,19 @@ public sealed interface Consequence {
             List<Integer> attributes = new ArrayList<>();
             List<String> order = new ArrayList<>(List.of("New", "Mark", "Link"));
             for (int i = 0; i < assignments.size(); i++)
-                if (assignments.get(i).member().characteristic()) order.add("Kenmerk " + i);
+                if (assignments.get(i).member().characteristic()) order.add("Characteristic " + i);
                 else if (exact.contains(i)) order.add("Exact " + i);
                 else attributes.add(i);
             List<Integer> setAssignments = construction.settings().stream().map(Construction.Setting::assignment).toList();
             if (!setAssignments.equals(attributes))
-                throw new IllegalArgumentException("een creatie zet haar lidtoekenningen van attributen in hun volgorde "
-                        + attributes + ", niet " + setAssignments);
+                throw new IllegalArgumentException("a creation sets its member assignments of attributes in their order "
+                        + attributes + ", not " + setAssignments);
             List<String> given = insertions.stream().map(i -> i instanceof Insert.Characteristic k
-                    ? "Kenmerk " + k.assignment() : i instanceof Insert.Exact e ? "Exact " + e.assignment()
+                    ? "Characteristic " + k.assignment() : i instanceof Insert.Exact e ? "Exact " + e.assignment()
                     : i.getClass().getSimpleName()).toList();
             if (!given.equals(order))
-                throw new IllegalArgumentException("een creatie voegt het nieuwe object, zijn merk, zijn koppeling en"
-                        + " dan haar lidtoekenningen van kenmerken in hun volgorde in, " + order + ", niet " + given);
+                throw new IllegalArgumentException("a creation inserts the new object, its mark, its link and"
+                        + " then its member assignments of characteristics in their order, " + order + ", not " + given);
         }
     }
 
@@ -529,7 +529,7 @@ public sealed interface Consequence {
             public Setting {
                 cell = cell == null ? null : List.copyOf(cell);
                 if (timeline && cell != null)
-                    throw new IllegalArgumentException("een cel ligt op geen tijdlijn (WF-125): " + cell);
+                    throw new IllegalArgumentException("a cell lies on no timeline (WF-125): " + cell);
             }
 
             /** The setting of an initialisation that holds one value. */
@@ -596,10 +596,10 @@ public sealed interface Consequence {
         public Decision {
             slots = List.copyOf(slots);
             facts = List.copyOf(facts);
-            if (facts.isEmpty()) throw new IllegalArgumentException("een besluit voegt ten minste één feit in");
+            if (facts.isEmpty()) throw new IllegalArgumentException("a decision inserts at least one fact");
             for (StackFact f : facts)
                 if (f instanceof StackFact.Inconsistency || f instanceof StackFact.Outcome u && u.kind() != Kind.DECIDED)
-                    throw new IllegalArgumentException("een besluit voegt geen conflict in: " + f);
+                    throw new IllegalArgumentException("a decision inserts no conflict: " + f);
         }
 
         /** A decision whose consequence cannot deposit. */
@@ -624,7 +624,7 @@ public sealed interface Consequence {
             slots = List.copyOf(slots);
             if (!(fact instanceof StackFact.Inconsistency
                     || fact instanceof StackFact.Outcome u && u.kind() == Kind.CONFLICT))
-                throw new IllegalArgumentException("een conflict voegt zijn uitkomst of de inconsistentie in, niet " + fact);
+                throw new IllegalArgumentException("a conflict inserts its outcome or the inconsistency, not " + fact);
         }
     }
 

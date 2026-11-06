@@ -43,7 +43,7 @@ public final class FilterFault implements Comparable<FilterFault> {
         this.element = Objects.requireNonNull(element, "element");
         this.fault = Objects.requireNonNull(fault, "fault");
         this.place = List.copyOf(place);
-        if (this.place.isEmpty()) throw new IllegalArgumentException("een plaats in de vouwvolgorde begint met de selectie");
+        if (this.place.isEmpty()) throw new IllegalArgumentException("a place in the fold order begins with the selection");
         // the fault named after the fold: a division's sentence carries the dividend, which the exception does not expose
         this.sentence = ComputeFault.designate(fault, fold).getMessage();
     }

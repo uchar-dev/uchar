@@ -33,7 +33,7 @@ public final class MemberFault implements Comparable<MemberFault> {
         this.element = Objects.requireNonNull(element, "element");
         this.fault = Objects.requireNonNull(fault, "fault");
         this.place = List.copyOf(place);
-        if (this.place.isEmpty()) throw new IllegalArgumentException("een plaats in de vouwvolgorde begint met de selectie");
+        if (this.place.isEmpty()) throw new IllegalArgumentException("a place in the fold order begins with the selection");
     }
 
     public String fold() { return fold; }

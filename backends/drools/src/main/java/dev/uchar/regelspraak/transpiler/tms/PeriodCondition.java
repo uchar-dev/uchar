@@ -117,7 +117,7 @@ public final class PeriodCondition {
         boolean year = switch (grid) {
             case "JAAR" -> true;
             case "MAAND" -> false;
-            default -> throw new IllegalArgumentException("de gehele-periodekwalificator kent geen raster " + grid);
+            default -> throw new IllegalArgumentException("the whole-period qualifier knows no grid " + grid);
         };
         List<Period> out = new ArrayList<>();
         for (Period p : merged(periodsOf(periods))) {

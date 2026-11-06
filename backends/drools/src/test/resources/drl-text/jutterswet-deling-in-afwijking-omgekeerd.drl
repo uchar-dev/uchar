@@ -67,7 +67,7 @@ when
 then
     Object f = fout_defaultsAVondstPremieDefault0FoutInDeVoorwaarde($premiegrond, $geschatteGewicht);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"defaults A:Vondst.premie\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"defaults A:Vondst.premie\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "defaults A:Vondst.premie", ComputeHelpers.designate(f, "defaults A:Vondst.premie")));
 end
@@ -90,7 +90,7 @@ function java.util.List deponering_defaultsAVondstPremieDefault0DeponeringInDeVo
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"Vondst.premie\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"Vondst.premie\" deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }
@@ -211,7 +211,7 @@ when
 then
     Object f = fout_defaultsAVondstVerlagingDefault1FoutInDeVoorwaarde($toeslaggrond, $geschatteGewicht);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"defaults A:Vondst.verlaging\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"defaults A:Vondst.verlaging\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "defaults A:Vondst.verlaging", ComputeHelpers.designate(f, "defaults A:Vondst.verlaging")));
 end
@@ -234,7 +234,7 @@ function java.util.List deponering_defaultsAVondstVerlagingDefault1DeponeringInD
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"Vondst.verlaging\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"Vondst.verlaging\" deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }
@@ -309,7 +309,7 @@ when
 then
     Object f = fout_defaultsAVondstKortingDefault0FoutInDeVoorwaarde($kortinggrond, $geschatteGewicht);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"defaults A:Vondst.korting\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"defaults A:Vondst.korting\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "defaults A:Vondst.korting", ComputeHelpers.designate(f, "defaults A:Vondst.korting")));
 end
@@ -332,7 +332,7 @@ function java.util.List deponering_defaultsAVondstKortingDefault0DeponeringInDeV
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"Vondst.korting\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"Vondst.korting\" deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }

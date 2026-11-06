@@ -101,7 +101,7 @@ when
 then
     Object f = fout_aantalVerstrekenPenningjarenFoutInDeVoorwaarde($vondstjaar, $rekendatumwaarde_1);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"aantal verstreken penningjaren\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"aantal verstreken penningjaren\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "aantal verstreken penningjaren", ComputeHelpers.designate(f, "aantal verstreken penningjaren")));
 end
@@ -156,7 +156,7 @@ when
 then
     Object f = fout_kenmerktoekenningLaatGemeldFoutInDeVoorwaarde($rekendatumwaarde_0, $vondstjaar);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"Kenmerktoekenning laat gemeld\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"Kenmerktoekenning laat gemeld\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "Kenmerktoekenning laat gemeld", ComputeHelpers.designate(f, "Kenmerktoekenning laat gemeld")));
 end

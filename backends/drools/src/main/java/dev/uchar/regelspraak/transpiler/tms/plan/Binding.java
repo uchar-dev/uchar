@@ -15,7 +15,7 @@ public record Binding(String target, List<Field> path, Field field, ReadForm for
     public Binding {
         path = List.copyOf(path);
         if (category != null && form != ReadForm.IS_SET)
-            throw new IllegalArgumentException("alleen een gezet veld toetst een klasse");
+            throw new IllegalArgumentException("only a set field tests a class");
     }
 
     /** The field {@code field} of an object of {@code javaClass}, as it is. */

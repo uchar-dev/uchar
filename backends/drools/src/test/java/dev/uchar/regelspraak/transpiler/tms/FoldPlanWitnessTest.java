@@ -833,15 +833,15 @@ class FoldPlanWitnessTest {
                 List.of(Binding.of("$v", Value.class, "value")));
         IllegalArgumentException without = assertThrows(IllegalArgumentException.class,
                 () -> new Exists(List.of(withBinding), List.of("$waarde"), List.of()));
-        assertEquals("een bestaat-item declareert de variabelen van zijn patronen en van hun bindingen,"
-                + " [$waarde, $v], niet [$waarde]", without.getMessage());
+        assertEquals("an exists item declares the variables of its patterns and of their bindings,"
+                + " [$waarde, $v], not [$waarde]", without.getMessage());
         Exists exists = new Exists(List.of(withBinding), List.of("$waarde", "$v"), List.of());
         RulePlan afterwards = new RulePlan("na het bestaan", null, null, new ReadTable(List.of()), List.of(exists,
                 new FactPattern(Value.class, "$erna", List.of(), List.of(new Join("erna", null, "$v")), List.of())),
                 new Consequence.InsertChannelState("bestaan", true, Consequence.Insertion.LOGICAL));
         IllegalStateException unbound = assertThrows(IllegalStateException.class,
                 () -> PatternDslRendering.rule(afterwards, name -> null));
-        assertEquals("de variabele $v is nog niet gebonden", unbound.getMessage());
+        assertEquals("the variable $v is not bound yet", unbound.getMessage());
     }
 
     /** Two quantifications that each bind the same name inside, an existence and a negation, are a plan the scope of
@@ -861,7 +861,7 @@ class FoldPlanWitnessTest {
                 channel);
         IllegalStateException unbound = assertThrows(IllegalStateException.class,
                 () -> PatternDslRendering.rule(afterwards, name -> null));
-        assertEquals("de variabele $v is nog niet gebonden", unbound.getMessage());
+        assertEquals("the variable $v is not bound yet", unbound.getMessage());
     }
 
     /** {@code jutterswet-gevuldepad} (a Jutter's boats, each unloading at one Bergplaats) with a third step, since no

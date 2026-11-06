@@ -192,7 +192,7 @@ when
 then
     RuntimeException f = fout_eersteKlachtvrijeMaandFilterfoutInVouw0($lijstplaatsen_plaats_12, $plaats_plaats_13, $maand, $aantal_vouw_19, $vouw_vouw_21, $onderwerp);
     if (f == null) {
-        ComputeHelpers.contractBreach("het filter van eerste klachtvrije maand: vouw 0 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of eerste klachtvrije maand: vouw 0 failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new FilterFault("eerste klachtvrije maand: vouw 0", $vouwonderwerp, $onderwerp, f, plaats_eersteKlachtvrijeMaandFilterfoutInVouw0($onderwerp, $lijstplaatsen_plaats_12, $plaats_plaats_13)));
 end
@@ -273,7 +273,7 @@ when
 then
     RuntimeException f = fout_eersteKlachtvrijeMaandViaDeLadingFilterfoutInVouw2($lijstplaatsen_plaats_46, $plaats_plaats_47, $maand, $aantal_vouw_53, $vouw_vouw_55, $onderwerp);
     if (f == null) {
-        ComputeHelpers.contractBreach("het filter van eerste klachtvrije maand via de lading: vouw 2 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of eerste klachtvrije maand via de lading: vouw 2 failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new FilterFault("eerste klachtvrije maand via de lading: vouw 2", $vouwonderwerp, $onderwerp, f, plaats_eersteKlachtvrijeMaandViaDeLadingFilterfoutInVouw2($onderwerp, $lijstplaatsen_plaats_46, $plaats_plaats_47)));
 end

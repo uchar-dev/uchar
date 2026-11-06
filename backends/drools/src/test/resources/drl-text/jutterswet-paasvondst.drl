@@ -133,7 +133,7 @@ when
 then
     Object f = fout_kenmerktoekenningVondstPaasvondstFoutInDeVoorwaarde($vondstdatum);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"Kenmerktoekenning vondst paasvondst\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"Kenmerktoekenning vondst paasvondst\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "Kenmerktoekenning vondst paasvondst", ComputeHelpers.designate(f, "Kenmerktoekenning vondst paasvondst")));
 end

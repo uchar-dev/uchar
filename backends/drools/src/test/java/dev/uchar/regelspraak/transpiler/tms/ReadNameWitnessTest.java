@@ -168,26 +168,26 @@ class ReadNameWitnessTest {
         Consequence channel = new Consequence.InsertChannelState("proef", true, Consequence.Insertion.LOGICAL);
         Subject subject = new Subject(Object.class, "$o", List.of(), List.of(),
                 List.of(Binding.of("$v", Value.class, "value")));
-        assertEquals("de regel twee patronen declareert de variabele $o twee keer", assertThrows(
+        assertEquals("the rule twee patronen declares the variable $o twice", assertThrows(
                 IllegalArgumentException.class, () -> new RulePlan("twee patronen", null, null, empty,
                         List.of(subject, new FactPattern(Value.class, "$o", List.of(), List.of(), List.of())), channel))
                 .getMessage());
-        assertEquals("de regel binding als patroon declareert de variabele $v twee keer", assertThrows(
+        assertEquals("the rule binding als patroon declares the variable $v twice", assertThrows(
                 IllegalArgumentException.class, () -> new RulePlan("binding als patroon", null, null, empty,
                         List.of(subject, new FactPattern(Value.class, "$v", List.of(), List.of(), List.of())), channel))
                 .getMessage());
-        assertEquals("de regel twee resultaten declareert de variabele $v twee keer", assertThrows(
+        assertEquals("the rule twee resultaten declares the variable $v twice", assertThrows(
                 IllegalArgumentException.class, () -> new RulePlan("twee resultaten", null, null, empty,
                         List.of(subject, new Accumulation(new FactPattern(Value.class, "$w", List.of(), List.of(),
                                 List.of()), List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, "$v")))),
                         channel)).getMessage());
-        assertEquals("de regel binnen en buiten declareert de variabele $v twee keer", assertThrows(
+        assertEquals("the rule binnen en buiten declares the variable $v twice", assertThrows(
                 IllegalArgumentException.class, () -> new RulePlan("binnen en buiten", null, null, empty,
                         List.of(subject, new Not(new FactPattern(Value.class, "$v", List.of(), List.of(), List.of()))),
                         channel)).getMessage());
         ReadTable twoSlots = new ReadTable(List.of(new Read(0, ReadKind.INPUT, "a", "$v"),
                 new Read(1, ReadKind.INPUT, "b", "$v")));
-        assertEquals("de regel twee slots geeft twee slots de variabele $v", assertThrows(
+        assertEquals("the rule twee slots gives two slots the variable $v", assertThrows(
                 IllegalArgumentException.class, () -> new RulePlan("twee slots", null, null, twoSlots,
                         List.of(subject), channel)).getMessage());
         // what a quantification declares lives only inside it: a second quantification and an item after both may

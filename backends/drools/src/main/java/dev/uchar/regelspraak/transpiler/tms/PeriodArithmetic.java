@@ -271,7 +271,7 @@ public final class PeriodArithmetic {
             if (p.value() == null || !p.from().isBefore(p.to())) continue;
             // an open bound holds unboundedly many units; the callers take such a segment out or fault on it first
             if (p.open())
-                throw new IllegalStateException("het totaal over de tijd meet geen segment met een open grens: " + p);
+                throw new IllegalStateException("the total over time meets no segment with an open bound: " + p);
             Breuk length = calendar == null ? gridMeasure(granularity, fixed, p.from(), p.to())
                     : measure(calendar, p.from(), p.to());
             sum = sum.optellen(Breuk.van(p.value()).vermenigvuldigen(length));
@@ -314,7 +314,7 @@ public final class PeriodArithmetic {
                 case "MAAND" -> d.withDayOfMonth(1);
                 case "KWARTAAL" -> LocalDate.of(d.getYear(), (d.getMonthValue() - 1) / 3 * 3 + 1, 1);
                 case "JAAR" -> d.withDayOfYear(1);
-                default -> throw new IllegalArgumentException("de kalender geeft " + unit + " geen lengte in dagen");
+                default -> throw new IllegalArgumentException("the calendar gives " + unit + " no length in days");
             };
             LocalDate next = start.plusMonths(unit.equals("MAAND") ? 1 : unit.equals("KWARTAAL") ? 3 : 12);
             LocalDate e = next.isBefore(upTo) ? next : upTo;
@@ -358,8 +358,8 @@ public final class PeriodArithmetic {
             if (p.open() && p.value() != null && p.number().signum() != 0)
                 return new OpenSegmentFault(attribute, member, p.number());
         }
-        throw new IllegalStateException("de tijdlijn van " + attribute + " op " + FactNames.object(member)
-                + " heeft geen open segment met een waarde ongelijk aan 0, en de lidfout noemt er een");
+        throw new IllegalStateException("the timeline of " + attribute + " on " + FactNames.object(member)
+                + " has no open segment with a value other than 0, and the member fault names one");
     }
 
     // ---------------- the cut and the merge ----------------

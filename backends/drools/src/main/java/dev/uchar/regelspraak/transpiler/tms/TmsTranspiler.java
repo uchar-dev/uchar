@@ -586,7 +586,7 @@ public final class TmsTranspiler {
     public String formOf(String ruleName) {
         String form = formOfRule.get(ruleName);
         if (form != null || rulesWithoutForm.contains(ruleName)) return form;
-        throw new IllegalArgumentException("geen regel van dit model: '" + ruleName + "'");
+        throw new IllegalArgumentException(DroolsCode.RULE_NOT_IN_MODEL.reason("rule", ruleName).text());
     }
 
     /**
@@ -621,8 +621,8 @@ public final class TmsTranspiler {
             if ((form == null) != (kind == Kind.NO_FORM) || (role == null) != (kind == Kind.NO_FORM)
                     || (pointer == null) == (kind == Kind.DEFAULT) || (fold != null) != (role != null && role.inFold())
                     || role != null && !role.kinds().contains(kind))
-                throw new IllegalArgumentException("de herkomst " + kind + " met vorm " + form + ", rol " + role
-                        + ", pointer " + pointer + " en vouw " + fold);
+                throw new IllegalArgumentException("the origin " + kind + " with form " + form + ", role " + role
+                        + ", pointer " + pointer + " and fold " + fold);
         }
 
         public enum Kind {
@@ -740,8 +740,8 @@ public final class TmsTranspiler {
         String form = formOf(ruleName);
         List<String> sharing = sharedNames.get(ruleName);
         if (sharing != null)
-            throw new IllegalStateException("de regel '" + ruleName + "' wordt gebouwd door de verlaging van de vormen "
-                    + String.join(" en ", sharing) + ", en heeft dus geen herkomst; DroolsBackend weigert dit model"
+            throw new IllegalStateException("the rule '" + ruleName + "' is built by the lowering of the forms "
+                    + String.join(" and ", sharing) + ", and so has no origin; DroolsBackend refuses this model"
                     + " (DROOLS-055)");
         if (form == null) {
             String own = readingRuleOf.get(ruleName);
@@ -755,8 +755,8 @@ public final class TmsTranspiler {
         if (d != null) return new RuleOrigin(form, RuleOrigin.Kind.DEFAULT, role, pointerOf(d), fold);
         if (stackOwnRules.contains(ruleName)) return new RuleOrigin(form, RuleOrigin.Kind.STACK, role, null, fold);
         if (layouts.containsKey(form))
-            throw new IllegalStateException("de regel '" + ruleName + "' hoort bij de stapel " + form + ", en de"
-                    + " verlaging noteerde niet van welke default of dat hij van de stapel zelf is");
+            throw new IllegalStateException("the rule '" + ruleName + "' belongs to the stack " + form + ", and the"
+                    + " lowering did not note of which default it is or that it is of the stack itself");
         return new RuleOrigin(form, RuleOrigin.Kind.FORM, role, null, fold);
     }
 
@@ -764,8 +764,8 @@ public final class TmsTranspiler {
     private RuleOrigin.Role roleOf(String ruleName) {
         RuleOrigin.Role role = roleOfRule.get(ruleName);
         if (role == null)
-            throw new IllegalStateException("de regel '" + ruleName + "' hoort bij een vorm, en de verlaging noteerde"
-                    + " niet welke rol hij in haar verlaging heeft");
+            throw new IllegalStateException("the rule '" + ruleName + "' belongs to a form, and the lowering did not"
+                    + " note which role it has in that form's lowering");
         return role;
     }
 
@@ -773,11 +773,11 @@ public final class TmsTranspiler {
     private String foldOf(String ruleName) {
         Object node = foldOfRule.get(ruleName);
         if (node == null)
-            throw new IllegalStateException("de regel '" + ruleName + "' is een regel van een vouw, en de verlaging"
-                    + " noteerde niet van welke");
+            throw new IllegalStateException("the rule '" + ruleName + "' is a rule of a fold, and the lowering"
+                    + " did not note of which");
         dev.uchar.regelspraak.loader.NodePositions.Position at = origins.of(node);
         if (at == null)
-            throw new IllegalStateException("de vouw van de regel '" + ruleName + "' is geen knoop die de lader las");
+            throw new IllegalStateException("the fold of the rule '" + ruleName + "' is no node the loader read");
         return at.pointer();
     }
 
@@ -793,7 +793,7 @@ public final class TmsTranspiler {
         }
         RuleOrigin.Role before = roleOfRule.put(rule.name(), role);
         if (before != null && before != role)
-            throw new IllegalStateException("de regel '" + rule.name() + "' is gebouwd als " + before + " en als "
+            throw new IllegalStateException("the rule '" + rule.name() + "' is built as " + before + " and as "
                     + role);
         return rule;
     }
@@ -947,13 +947,13 @@ public final class TmsTranspiler {
             int at = start;
             for (DrlFunction f : functions) {
                 if (f.start() != at)
-                    throw new IllegalStateException("de functie " + f.name() + " van de regel '" + rule
-                            + "' begint op " + f.start() + ", niet op " + at + " waar de vorige eindigt");
+                    throw new IllegalStateException("the function " + f.name() + " of the rule '" + rule
+                            + "' begins at " + f.start() + ", not at " + at + " where the previous one ends");
                 at = f.end();
             }
             if (at != ruleStart || ruleStart >= end)
-                throw new IllegalStateException("de regel '" + rule + "' met het stuk " + start + "–" + end
-                        + " begint op " + ruleStart + ", en zijn functies eindigen op " + at);
+                throw new IllegalStateException("the rule '" + rule + "' with the piece " + start + "–" + end
+                        + " begins at " + ruleStart + ", and its functions end at " + at);
         }
 
         /**
@@ -979,8 +979,8 @@ public final class TmsTranspiler {
             public DrlFunction {
                 Objects.requireNonNull(name, "name");
                 if (start < 0 || declaration < start || end <= declaration)
-                    throw new IllegalStateException("de functie " + name + " met de plaatsen " + start + ", "
-                            + declaration + " en " + end);
+                    throw new IllegalStateException("the function " + name + " with the places " + start + ", "
+                            + declaration + " and " + end);
             }
         }
     }
@@ -1049,7 +1049,7 @@ public final class TmsTranspiler {
         for (Object f : session.getObjects(o -> o instanceof ControlFact)) {
             ControlFact c = (ControlFact) f;
             if (!layouts.containsKey(c.stack()))
-                throw new IllegalStateException(c + " in de sessie, maar dit model verlaagde geen stapel " + c.stack());
+                throw new IllegalStateException(c + " in the session, but this model lowered no stack " + c.stack());
             if (layouts.get(c.stack()).perDay()) continue;
             perStack.computeIfAbsent(c.stack(), k -> new IdentityHashMap<>())
                     .computeIfAbsent(c.subject(), k -> new ArrayList<>()).add(c);
@@ -1089,9 +1089,9 @@ public final class TmsTranspiler {
             }
         perStack.forEach((name, rest) -> {
             if (!rest.isEmpty())
-                throw new IllegalStateException("controlefeiten van " + name + " op "
-                        + rest.keySet().stream().map(FactNames::object).toList() + ", en dat is in de sessie geen"
-                        + " object van het type waarop de stapel loopt: " + rest.values());
+                throw new IllegalStateException("control facts of " + name + " on "
+                        + rest.keySet().stream().map(FactNames::object).toList() + ", which in the session is no"
+                        + " object of the type the stack runs on: " + rest.values());
         });
         return out;
     }
@@ -1123,8 +1123,8 @@ public final class TmsTranspiler {
         for (Member m : derived.values()) {
             if (!timelineAttribute(m) || !timelineWriters(m.key())) continue;
             if (m.cell() != null)
-                throw new IllegalStateException("een cel op een tijdlijn, " + m.spelled() + ", die het model afleidt,"
-                        + " waar de lowering een gedimensioneerd attribuut op een tijdlijn weigert");
+                throw new IllegalStateException("a cell on a timeline, " + m.spelled() + ", which the model derives,"
+                        + " where the lowering refuses a dimensioned attribute on a timeline");
             targets.add(m);
         }
         // a stack runs on instances of exactly its owner (ch. 7.10): the stack per day of a bean class and a member
@@ -1143,7 +1143,7 @@ public final class TmsTranspiler {
             Outcome o = (Outcome) f;
             StackLayout s = layouts.get(o.stack());
             if (s == null)
-                throw new IllegalStateException(o + " in de sessie, maar dit model verlaagde geen stapel " + o.stack());
+                throw new IllegalStateException(o + " in the session, but this model lowered no stack " + o.stack());
             if (!s.perDay()) continue;
             outcomes.computeIfAbsent(o.stack(), k -> new IdentityHashMap<>())
                     .computeIfAbsent(o.subject(), k -> new ArrayList<>()).add(o);
@@ -1197,9 +1197,9 @@ public final class TmsTranspiler {
         for (Value w : values) {
             ResolvedRule r = rulesByName.get(w.writer());
             if (r == null)
-                throw new IllegalStateException(w + " in de sessie, en " + w.writer() + " noemt geen regel van het model"
-                        + " (of meer dan één), waar alleen rekenende regels en een stapel " + m.spelled() + " op een"
-                        + " tijdlijn schrijven");
+                throw new IllegalStateException(w + " in the session, and " + w.writer() + " names no rule of the model"
+                        + " (or more than one), where only computing rules and a stack " + m.spelled() + " write on a"
+                        + " timeline");
             timelines.add(Period.list((List<?>) w.value()));
             pointers.add(rulePointer(r));
         }
@@ -1235,8 +1235,8 @@ public final class TmsTranspiler {
         List<List<Period>> all = new ArrayList<>();
         for (Outcome o : outcomes) {
             if (o.conflict() || !(o.value() instanceof PeriodDefaults.Days days))
-                throw new IllegalStateException(o + " in de sessie, en een stapel per dag zet alleen een uitkomst met de"
-                        + " dagen die zij beslist (" + name + ")");
+                throw new IllegalStateException(o + " in the session, and a stack per day puts an outcome only with the"
+                        + " days it decides (" + name + ")");
             perChain.computeIfAbsent(o.chain(), k -> new ArrayList<>()).add(o);
             List<Period> bounds = new ArrayList<>();
             for (PeriodArithmetic.Exact e : days.decided()) bounds.add(new Period(e.from(), e.to(), null));
@@ -1246,8 +1246,8 @@ public final class TmsTranspiler {
         List<Period> wrote = null;
         for (Value w : values) {
             if (!w.writer().equals(name) || wrote != null)
-                throw new IllegalStateException(w + " in de sessie, en de stapel " + name + " is de ene schrijver van "
-                        + FactNames.member(s.member().key()) + " op " + FactNames.object(subject) + ": " + values);
+                throw new IllegalStateException(w + " in the session, and the stack " + name + " is the one writer of "
+                        + FactNames.member(s.member().key()) + " on " + FactNames.object(subject) + ": " + values);
             wrote = Period.list((List<?>) w.value());
             all.add(wrote);
         }
@@ -1262,8 +1262,8 @@ public final class TmsTranspiler {
                 Object value = wrote == null ? null : valueOn(wrote, previous);
                 boolean comparable = wrote != null || !faulted;
                 if (comparable && !PeriodArithmetic.sameValue(decider == null ? null : decider.decision(), value))
-                    throw new IllegalStateException("de stapel " + name + " schreef op " + FactNames.object(subject)
-                            + " op " + previous + " " + value + ", en haar uitkomsten geven daar " + settled);
+                    throw new IllegalStateException("the stack " + name + " wrote on " + FactNames.object(subject)
+                            + " on " + previous + " " + value + ", and its outcomes give there " + settled);
                 DefaultsDecision.Conflict conflict = settled == null || settled.conflict() == null ? null
                         : new DefaultsDecision.Conflict(settled.conflict().pointer(), settled.conflict().key(),
                                 settled.conflict().deciders().stream().map(TmsTranspiler::atRest).toList());
@@ -1305,30 +1305,30 @@ public final class TmsTranspiler {
             if (!settles((PeriodDefaults.Days) o.value(), d)) continue;
             // a lower default of a chain decides only the days the defaults above it leave (ch. 7.11)
             if (on != null)
-                throw new IllegalStateException(on + " en " + o + " beslissen allebei " + d + " van " + name
-                        + ", waar een keten een dag één keer beslist");
+                throw new IllegalStateException(on + " and " + o + " both decide " + d + " of " + name
+                        + ", where a chain decides a day once");
             on = o;
         }
         if (on == null) return null;
         PeriodDefaults.Days days = (PeriodDefaults.Days) on.value();
         Node k = knot(chain, on.position(), name);
         if (k.chain() != on.chain())
-            throw new IllegalStateException(on + " ligt niet op keten " + k.chain() + " van " + name);
+            throw new IllegalStateException(on + " does not lie on chain " + k.chain() + " of " + name);
         Settling members = k.hasMembers()
                 ? settledOn(name, d, k.members(), k.firstMember(), perChain, pointerOf(k.d()), k.key()) : null;
         String conflictKey = conflictOn(days, d);
         Object decided = valueOnExact(days.decided(), d);
         if (members == null) {
             if (conflictKey != null)
-                throw new IllegalStateException(on + " in de sessie, maar onder default " + k.label() + " van " + name
-                        + " staat op " + d + " geen conflict");
+                throw new IllegalStateException(on + " in the session, but under default " + k.label() + " of " + name
+                        + " there is no conflict on " + d);
             return new Settling(new DefaultsDecision.Decider(pointerOf(k.d()), decided), null);
         }
         boolean agrees = members.conflict() != null ? members.conflict().key().equals(conflictKey)
                 : conflictKey == null && PeriodArithmetic.sameValue(members.decider().decision(), decided);
         if (!agrees)
-            throw new IllegalStateException(on + " in de sessie, en de leden van default " + k.label() + " van " + name
-                    + " geven op " + d + " " + members);
+            throw new IllegalStateException(on + " in the session, and the members of default " + k.label() + " of " + name
+                    + " give " + members + " on " + d);
         return members;
     }
 
@@ -1419,8 +1419,8 @@ public final class TmsTranspiler {
     private Settling settledInSimpleForm(String name, StackLayout s, Object subject, List<ControlFact> facts,
                                          Map<Object, List<Value>> written, Map<Object, WriteBoundaryFault> misfits) {
         if (facts.size() != 1 || !(facts.get(0) instanceof Decides d))
-            throw new IllegalStateException("de eenvoudige vorm van " + name + " laat per object één Beslist staan, en"
-                    + " op " + FactNames.object(subject) + " staan " + facts);
+            throw new IllegalStateException("the simple form of " + name + " leaves one Beslist per object, and"
+                    + " on " + FactNames.object(subject) + " stand " + facts);
         Node k = knot(s.roots().get(0), d.index(), name);
         Object decision;
         if (s.member().characteristic()) decision = k.d().decision();
@@ -1430,8 +1430,8 @@ public final class TmsTranspiler {
             if (values.isEmpty() && misfit != null)
                 return new Settling(new DefaultsDecision.Decider(pointerOf(k.d()), misfit.misfits().get(0).value()), null);
             if (values.size() != 1)
-                throw new IllegalStateException(d + " in de sessie, en " + name + " schreef op "
-                        + FactNames.object(subject) + " " + values + " in plaats van één waarde");
+                throw new IllegalStateException(d + " in the session, and " + name + " wrote on "
+                        + FactNames.object(subject) + " " + values + " instead of one value");
             decision = values.get(0).value();
         }
         return new Settling(new DefaultsDecision.Decider(pointerOf(k.d()), decision), null);
@@ -1442,13 +1442,13 @@ public final class TmsTranspiler {
         Map<Integer, Outcome> perChain = new HashMap<>();
         for (ControlFact f : facts) {
             if (!(f instanceof Outcome o))
-                throw new IllegalStateException("de algemene vorm van " + name + " zet alleen Uitkomst in, en op "
-                        + FactNames.object(subject) + " staat " + f);
+                throw new IllegalStateException("the general form of " + name + " inserts only Uitkomst, and on "
+                        + FactNames.object(subject) + " stands " + f);
             Outcome other = perChain.put(o.chain(), o);
             if (other != null)
-                throw new IllegalStateException("keten " + o.chain() + " van " + name + " laat per object één uitkomst"
-                        + " staan, die van haar hoogste default, en op " + FactNames.object(subject) + " staan " + other
-                        + " en " + o);
+                throw new IllegalStateException("chain " + o.chain() + " of " + name + " leaves one outcome per object,"
+                        + " that of its highest default, and on " + FactNames.object(subject) + " stand " + other
+                        + " and " + o);
         }
         return reconciled(name, s.roots(), 0, perChain, null, s.targetForm());
     }
@@ -1480,30 +1480,30 @@ public final class TmsTranspiler {
     private Settling descended(String name, List<Node> chain, Outcome o, Map<Integer, Outcome> perChain) {
         Node k = knot(chain, o.position(), name);
         if (k.chain() != o.chain())
-            throw new IllegalStateException(o + " ligt niet op keten " + k.chain() + " van " + name);
+            throw new IllegalStateException(o + " does not lie on chain " + k.chain() + " of " + name);
         Settling settled = k.hasMembers()
                 ? reconciled(name, k.members(), k.firstMember(), perChain, pointerOf(k.d()), k.key()) : null;
         if (settled == null) {
             // no member settled, or none to settle: the default's own decision, its fall-back where it has members
             if (o.conflict())
-                throw new IllegalStateException(o + " in de sessie, maar onder default " + k.label() + " van " + name
-                        + " staat geen conflict");
+                throw new IllegalStateException(o + " in the session, but under default " + k.label() + " of " + name
+                        + " there is no conflict");
             return new Settling(new DefaultsDecision.Decider(pointerOf(k.d()), o.value()), null);
         }
         boolean agrees = o.conflict()
                 ? settled.conflict() != null && settled.conflict().key().equals(o.key())
                 : settled.decider() != null && Outcome.equal(settled.decider().decision(), o.value());
         if (!agrees)
-            throw new IllegalStateException(o + " in de sessie, en de leden van default " + k.label() + " van " + name
-                    + " geven " + settled);
+            throw new IllegalStateException(o + " in the session, and the members of default " + k.label() + " of " + name
+                    + " give " + settled);
         return settled;
     }
 
     /** The knot at {@code position} of {@code chain}. */
     private static Node knot(List<Node> chain, int position, String name) {
         if (position < 0 || position >= chain.size() || chain.get(position).position() != position)
-            throw new IllegalStateException("een controlefeit van " + name + " noemt plaats " + position + ", en de keten"
-                    + " heeft er " + chain.size());
+            throw new IllegalStateException("a control fact of " + name + " names place " + position + ", and the chain"
+                    + " has " + chain.size());
         return chain.get(position);
     }
 
@@ -1518,8 +1518,8 @@ public final class TmsTranspiler {
         String p = pointers.get(d);
         if (p != null) return p;
         ResolvedRule r = stacks.ruleOf(d);
-        if (r == null) throw new IllegalStateException("een default van een stapel die het document niet declareert en"
-                + " die geen regel van het document is: " + d);
+        if (r == null) throw new IllegalStateException("a default of a stack that the document does not declare and"
+                + " that is no rule of the document: " + d);
         return rulePointer(r);
     }
 
@@ -1544,8 +1544,8 @@ public final class TmsTranspiler {
         String previous = null;
         for (ResolvedRule x : model.resolvedRules) {
             if (x.name() == null)
-                throw new IllegalStateException("de regel " + r.name() + " is de basis van een stapel, en een regel"
-                        + " zonder naam ervoor laat open bij welke vorm van het document hij hoort");
+                throw new IllegalStateException("the rule " + r.name() + " is the base of a stack, and a rule"
+                        + " without a name leaves open to which form of the document it belongs");
             if (previous != null && nextVersion(previous, x.name())) version++;
             else {
                 form++;
@@ -1554,7 +1554,7 @@ public final class TmsTranspiler {
             previous = x.name();
             if (x == r) return "/rules/rules/" + form + "/versions/" + version;
         }
-        throw new IllegalStateException("de regel " + r.name() + " is de basis van een stapel en staat niet in het model");
+        throw new IllegalStateException("the rule " + r.name() + " is the base of a stack and is not in the model");
     }
 
     private static final java.util.regex.Pattern VERSION = java.util.regex.Pattern.compile("([\\s\\S]*) #([0-9]+)");
@@ -1620,22 +1620,14 @@ public final class TmsTranspiler {
 
     /** What a consumer does where something happened outside the driver after its last run ({@link Watch}): fire
      *  again, or open a fresh session where the driver refuses a further fire ({@code DroolsBackend.fire}). */
-    private String fireAway(KieSession session, Watch watch, String agenda) {
-        if (!creationRules.isEmpty())
-            return "dit model heeft creatieregels, dus DroolsBackend.fire weigert een tweede fire: open een verse sessie";
+    private Msg fireAway(KieSession session, Watch watch, Msg agenda) {
+        if (!creationRules.isEmpty()) return DroolsCode.FIXPOINT_OUTSIDE_FIRE.part("creations");
         if (!session.getObjects(new ClassObjectFilter(WrittenBack.class)).isEmpty())
-            return "deze sessie is teruggezet, dus DroolsBackend.fire weigert haar: open een verse sessie met beans die"
-                    + " alleen invoer dragen";
-        if (watch.onOrOff() != null)
-            return "invoer die buiten DroolsBackend.insert om bijkwam of wegging, vraagt een verse sessie, dus"
-                    + " DroolsBackend.fire weigert haar: open een verse sessie met alle beans in één Input";
-        if (watch.moreThanOneUpdate() != null || agenda != null)
-            return "DroolsBackend.fire weigert een sessie waarin buiten fire om meer gebeurde dan een update van een"
-                    + " attribuut of kenmerk van een bean: open een verse sessie met alle beans in één Input";
-        if (watch.changedGlobal(session) != null)
-            return "DroolsBackend.fire weigert een sessie waarvan een global na de eerste fire veranderde: open een verse"
-                    + " sessie";
-        return "vuur haar eerst opnieuw met DroolsBackend.fire";
+            return DroolsCode.FIXPOINT_OUTSIDE_FIRE.part("written-back");
+        if (watch.onOrOff() != null) return DroolsCode.FIXPOINT_OUTSIDE_FIRE.part("input");
+        if (watch.moreThanOneUpdate() != null || agenda != null) return DroolsCode.FIXPOINT_OUTSIDE_FIRE.part("more");
+        if (watch.changedGlobal(session) != null) return DroolsCode.FIXPOINT_OUTSIDE_FIRE.part("global");
+        return DroolsCode.FIXPOINT_OUTSIDE_FIRE.part("fire-again");
     }
 
     /** The session test of {@link #readOf}, {@link #setDerivedValues} and {@link #decisionsOf}: a session whose last run
@@ -1645,40 +1637,30 @@ public final class TmsTranspiler {
         // per class, as the driver asks for it: a filter of another kind walks every fact the session holds
         List<Object> marks = new ArrayList<>(session.getObjects(new ClassObjectFilter(Fired.class)));
         if (marks.isEmpty())
-            throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: deze sessie is niet via"
-                    + " DroolsBackend.fire gevuurd, dat tot het fixpunt vuurt"
-                    + (creationRules.isEmpty() ? "" : " en de creaties van dit model in generaties laat vuren"));
+            throw new IllegalStateException(DroolsCode.FIXPOINT_NOT_FIRED.reason("generations", creationRules.isEmpty()
+                    ? "" : DroolsCode.FIXPOINT_NOT_FIRED.part("generations")).text());
         if (marks.size() > 1)
-            throw new IllegalStateException("de sessie houdt " + marks.size() + " merken van DroolsBackend.fire, waar"
-                    + " de driver er na elke run één laat: " + marks);
+            throw new IllegalStateException("the session holds " + marks.size() + " marks of DroolsBackend.fire, where"
+                    + " the driver leaves one after every run: " + marks);
         String noFixpoint = ((Fired) marks.get(0)).noFixpoint();
         if (noFixpoint != null)
-            throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: de laatste DroolsBackend.fire"
-                    + " van deze sessie bereikte er geen — " + noFixpoint);
+            throw new IllegalStateException(DroolsCode.FIXPOINT_NOT_REACHED.reason("noFixpoint", noFixpoint).text());
         Watch watch = Watch.of(session);
         // the driver puts the watch back after every run, so only a consumer that took it off leaves a mark without it,
         // and the driver refuses such a session
         if (watch == null)
-            throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: de bewaking die"
-                    + " DroolsBackend.fire op deze sessie zet, staat er niet meer op, dus wat er na de laatste fire"
-                    + " gebeurde, is niet te zien; DroolsBackend.fire weigert haar ook: open een verse sessie met alle"
-                    + " beans in één Input");
-        String agenda = Watch.agenda(session);
-        String outsideClause = watch.outsideClause();
-        String description = outsideClause == null ? agenda : agenda == null ? outsideClause : outsideClause + " en " + agenda;
+            throw new IllegalStateException(DroolsCode.FIXPOINT_WATCH_REMOVED.reason().text());
+        Msg agenda = Watch.agenda(session);
+        Msg description = Watch.clauses(watch.outsideClause(), agenda);
         if (description != null)
-            throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: sinds de laatste"
-                    + " DroolsBackend.fire van deze sessie gebeurde er iets buiten fire om, wat het fixpunt van die fire"
-                    + " kan veranderen (" + description + "); " + fireAway(session, watch, agenda));
-        String global = watch.changedGlobal(session);
+            throw new IllegalStateException(DroolsCode.FIXPOINT_OUTSIDE_FIRE.reason("change", description, "advice",
+                    fireAway(session, watch, agenda)).text());
+        Msg global = watch.changedGlobal(session);
         if (global != null)
-            throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: " + global + ", en het fixpunt"
-                    + " hoort bij de oude waarde; DroolsBackend.fire weigert de sessie, dus open een verse sessie");
-        String relation = watch.changedRelation();
+            throw new IllegalStateException(DroolsCode.FIXPOINT_GLOBAL_CHANGED.reason("change", global).text());
+        Msg relation = watch.changedRelation();
         if (relation != null)
-            throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: " + relation + ", en het fixpunt"
-                    + " hoort bij de oude relatie; DroolsBackend.fire weigert de sessie, dus open een verse sessie met"
-                    + " alle beans in één Input");
+            throw new IllegalStateException(DroolsCode.FIXPOINT_RELATION_CHANGED.reason("change", relation).text());
     }
 
     private Read readFixpoint(KieSession session, Function<Object, String> label) {
@@ -1808,8 +1790,8 @@ public final class TmsTranspiler {
             // a creation takes no subject made in its own phase, so an earlier phase named a made subject already
             String subject = nameOf.apply(g.subject());
             if (subject == null)
-                throw new IllegalStateException(g + " in de sessie, maar haar onderwerp is in dezelfde of een latere fase"
-                        + " gemaakt");
+                throw new IllegalStateException(g + " in the session, but its subject was made in the same or a later"
+                        + " phase");
             String key = "«" + quoted(g.rule()) + "»(" + subject + ")";
             made.put(g.object(), key + "#" + count.merge(key, 1, Integer::sum));
         }
@@ -1831,7 +1813,7 @@ public final class TmsTranspiler {
     private Fixpoint.MadeLink madeLink(RelationLink k, List<Runnable> acts) {
         RegelSpraakModel.FactType ft = factType(k.relation());
         if (ft == null || ft.roles.size() != 2)
-            throw new IllegalStateException(k + " in de sessie, maar het model kent geen feittype van twee rollen '"
+            throw new IllegalStateException(k + " in the session, but the model knows no fact type of two roles '"
                     + k.relation() + "'");
         RegelSpraakModel.Role r0 = ft.roles.get(0), r1 = ft.roles.get(1);
         ObjectType t0 = model.objectTypeByName(r0.objectTypeName()), t1 = model.objectTypeByName(r1.objectTypeName());
@@ -1851,15 +1833,15 @@ public final class TmsTranspiler {
         try {
             return Class.forName(FactModelGenerator.PACKAGE + ".Segment", true, beanLoader);
         } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("geen beanklasse Segment voor een tijdlijn", e);
+            throw new IllegalStateException("no bean class Segment for a timeline", e);
         }
     }
 
     private Member memberOf(Object fact, ElementKey key) {
         Member member = derived.get(key);
         if (member == null)
-            throw new IllegalStateException(fact + " in de sessie, maar geen regel van dit model leidt "
-                    + FactNames.member(key) + " af");
+            throw new IllegalStateException(fact + " in the session, but no rule of this model derives "
+                    + FactNames.member(key));
         return member;
     }
 
@@ -2062,8 +2044,8 @@ public final class TmsTranspiler {
             if (sharedNames.containsKey(r.name())) continue;
             RuleOrigin.Role role = roleOf(r.name());
             if (role.inFold() != foldOfRule.containsKey(r.name()))
-                throw new IllegalStateException("de regel '" + r.name() + "' heeft de rol " + role + ", en de verlaging"
-                        + (role.inFold() ? " noteerde zijn vouw niet" : " noteerde een vouw bij hem"));
+                throw new IllegalStateException("the rule '" + r.name() + "' has the role " + role + ", and the lowering"
+                        + (role.inFold() ? " did not note its fold" : " noted a fold with it"));
         }
         List<RulePlan> plans = new ArrayList<>(rules);
         plans.addAll(states);
@@ -2515,7 +2497,7 @@ public final class TmsTranspiler {
                 + " period", member.name(), true, source(tested.source()));
         note(tested, whole);
         Term bound = sum ? value(boundExpr, reads) : restated(value(boundExpr, reads), eff.unitOf(boundExpr),
-                eff.unitOf(tested), "een voorwaarde per periode");
+                eff.unitOf(tested), DroolsCode.UNIT_CONFLICT.part("period-condition"));
         Term inner = sum
                 ? new Term.Call(StaticFunction.PERIOD_WHERE_EQUAL, List.of(left ? whole : bound, left ? bound : whole,
                         constant(op == Condition.Operator.GELIJK), constant(left)),
@@ -2751,7 +2733,7 @@ public final class TmsTranspiler {
                     yield new Term.Division(b.op() == Expr.BinOp.GEDEELD_DOOR ? StaticFunction.PERIOD_DIVIDED
                             : StaticFunction.PERIOD_DIVIDED_ABS, left, right, reads.depositFlag(), source);
                 }
-                case TOT_DE_MACHT -> throw new IllegalStateException("een macht is geen rekenen per periode");
+                case TOT_DE_MACHT -> throw new IllegalStateException("a power is no arithmetic per period");
             };
             note(b, t);
             return t;
@@ -2884,7 +2866,7 @@ public final class TmsTranspiler {
      *  the other's (ch. 2.6); two units that do not convert fault while the model is built, as every restatement does
      *  ({@link UnitConflict}). */
     private static void periodUnit(Unit unit, Expr read, Unit destination) {
-        UnitConflict.requireRescalable(unit, destination, "een operand van het rekenen per periode");
+        UnitConflict.requireRescalable(unit, destination, DroolsCode.UNIT_CONFLICT.part("period-arithmetic-operand"));
         if (unit != null && destination != null && unit.requiredConversion(destination))
             throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_RESTATEMENT.reason("snippet", snippet(read.source()),
                     "unit", unit.rendering(), "targetUnit", destination.rendering()));
@@ -3372,7 +3354,7 @@ public final class TmsTranspiler {
                 ? constructorTimeline(produced, reads, periods)
                 : member.time() != null ? timelineValue((Expr.FunctionCall) produced, member, subject, reads, periods)
                 : fitted(restated(value(r.value(), reads), eff.unitOf(r.value()), member.datatype().unitOf(),
-                        "een §4 schrijfgrens naar het doel"), member, null);
+                        DroolsCode.UNIT_CONFLICT.part("write-boundary-target")), member, null);
         if (member.time() != null) {
             // a Let whose body reads its binder and nothing else stands for its bound value, which it evaluates once,
             // at that read (RUNTIME-SEMANTICS ch. 10.6): the Let and the read have what the producer has (ch. 5.12)
@@ -3527,7 +3509,7 @@ public final class TmsTranspiler {
         Term testTerm = conditionTerm(c, reads);
         reads.stop();
         int depositFlag = reads.depositFlagSlot();
-        if (depositFlag < 0) throw new IllegalStateException("de voorwaarde van \"" + form + "\" deelt, maar kreeg geen sonde");
+        if (depositFlag < 0) throw new IllegalStateException("the condition of \"" + form + "\" deposits, but got no probe");
         List<LhsItem> items = reads.plan(TestItem.Role.DEPOSIT, testTerm, read);
         if (blockade != null) items.addAll(blockade.apply(reads));
         reads.recorder();
@@ -3885,7 +3867,7 @@ public final class TmsTranspiler {
         try {
             javaClass = Class.forName(INCONSISTENCY, true, beanLoader);
         } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("geen beanklasse " + INCONSISTENCY + " voor het kanaal van " + producer, e);
+            throw new IllegalStateException("no bean class " + INCONSISTENCY + " for the channel of " + producer, e);
         }
         String name = "kanaalstand " + producer + ": ";
         FactPattern fault = new FactPattern(javaClass, "$inconsistentie", List.of(equal(id("kanaal"), "rule", producer)),
@@ -4147,8 +4129,8 @@ public final class TmsTranspiler {
         if (k.refusal() != null) throw new Refusal(k.refusal());
         RegelSpraakModel.FactType ft = vr != null ? factType(vr.factType()) : typePairRelation(model, subject, fresh, k);
         if (vr == null && ft == null)
-            throw new IllegalStateException("exec-model: objectcreatie " + oc.name() + ": het gedeelde besluit koppelde de"
-                    + " rollen '" + k.backRole() + "' en '" + k.fwdRole() + "', maar geen feittype draagt ze");
+            throw new IllegalStateException("exec-model: object creation " + oc.name() + ": the shared decision linked the"
+                    + " roles '" + k.backRole() + "' and '" + k.fwdRole() + "', but no fact type carries them");
         if (ft == null || ft.roles.size() != 2 || ft.reciprocal)
             throw new Refusal(DroolsCode.CREATION_RELATION_NOT_BINARY.reason("factType", vr != null ? vr.factType() : ft.name));
         String relation = Namen.norm(ft.name);
@@ -4193,7 +4175,7 @@ public final class TmsTranspiler {
             Term w = value(t.value(), reads);
             if (!t.characteristic())
                 w = fitted(restated(w, eff.unitOf(t.value()), member.datatype().unitOf(),
-                        "een §4 schrijfgrens naar het lid"), member, name);
+                        DroolsCode.UNIT_CONFLICT.part("write-boundary-member")), member, name);
             assigned.add(new Assignment(member, w));
         }
         reads.stop();
@@ -4305,9 +4287,9 @@ public final class TmsTranspiler {
                     : r.size() == 1 && ft.reciprocal && subject == fresh && fills(model, r.get(0), k.fwdRole(), fresh);
             if (!fits) continue;
             if (found != null)
-                throw new IllegalStateException("exec-model: de terugkoppeling ('" + k.backRole() + "' en '" + k.fwdRole()
-                        + "') van een " + subject.name + " naar een " + fresh.name + " ligt in twee feittypen, '"
-                        + found.name + "' en '" + ft.name + "', waar het gedeelde besluit haar rollen uniek vond");
+                throw new IllegalStateException("exec-model: the back link ('" + k.backRole() + "' and '" + k.fwdRole()
+                        + "') of a " + subject.name + " to a " + fresh.name + " lies in two fact types, '"
+                        + found.name + "' and '" + ft.name + "', where the shared decision found its roles unique");
             found = ft;
         }
         return found;
@@ -4341,8 +4323,8 @@ public final class TmsTranspiler {
     private int stratum(Object form, String name) {
         Integer s = strata.get(form);
         if (s == null)
-            throw new IllegalStateException("exec-model: de creatie \"" + name + "\" heeft geen stratum in de"
-                    + " afhankelijkheidsgraaf");
+            throw new IllegalStateException("exec-model: the creation \"" + name + "\" has no stratum in the"
+                    + " dependency graph");
         return s;
     }
 
@@ -4373,7 +4355,7 @@ public final class TmsTranspiler {
         Condition.CharacteristicCheck targetCheck = c instanceof Condition.CharacteristicCheck k && k.owner() != null && !Host.hostOp(k, anchor)
                 && Host.hostOp(k, target) && !navigationBindings.containsKey(k) && k.period() == null ? k : null;
         if (targetCheck == null && c != null && Host.targetHostOutsideRange(c, target, navigationBindings::containsKey))
-            throw new Refusal(DroolsCode.TARGET_CONDITION_NESTED_HOST.reason("reason", Host.TARGET_ATTEMPT_NESTED));
+            throw new Refusal(DroolsCode.TARGET_CONDITION_NESTED_HOST.reason());
         String ruleName = model.emittedRuleName(fc.name());
         Condition anchorGuard = targetCheck == null ? c : null;
         Supplier<Reads> fresh = () -> new Reads(anchor).valid(fc.validity());
@@ -4578,8 +4560,8 @@ public final class TmsTranspiler {
                     if (Namen.norm(a).equals(Namen.norm(l0.target()))) return RegelSpraakModel.Designatable.attribute(t.name, a);
             }
         }
-        throw new IllegalStateException("de stapel " + stackName(st) + " beslist een lid dat de keten van "
-                + st.owner().name + " niet declareert");
+        throw new IllegalStateException("the stack " + stackName(st) + " decides a member that the chain of "
+                + st.owner().name + " does not declare");
     }
 
     /**
@@ -4679,8 +4661,8 @@ public final class TmsTranspiler {
         formOfRule.forEach((rule, of) -> { if (of.equals(b.name)) ofStack.add(rule); });
         for (String rule : ofStack)
             if (!defaultOfRule.containsKey(rule) && !stackOwnRules.contains(rule))
-                throw new IllegalStateException("de regel '" + rule + "' van de stapel " + b.name + " verlaagt"
-                        + " geen default en niet de stapel zelf");
+                throw new IllegalStateException("the rule '" + rule + "' of the stack " + b.name + " lowers"
+                        + " no default and not the stack itself");
         derived.put(member.key(), member);
         if (perDay) dayStackTargets.add(member.key());
         defaultsGroups.add(new DefaultsGroup(b.name, general || perDay, rules.size(), List.copyOf(b.controlFacts),
@@ -5098,7 +5080,7 @@ public final class TmsTranspiler {
         } else {
             Set<Integer> use = reads.follow();
             value = restated(value(d.consequence(), reads), eff.unitOf(d.consequence()),
-                    b.member.datatype().unitOf(), "een §4 schrijfgrens naar het doel");
+                    b.member.datatype().unitOf(), DroolsCode.UNIT_CONFLICT.part("write-boundary-target"));
             reads.stop();
             noted = endReading();
             control = guard.get();
@@ -5160,7 +5142,7 @@ public final class TmsTranspiler {
             if (pattern != null)
                 return new Exists(List.of(pattern), Exists.declared(List.of(pattern)), Exists.read(List.of(pattern)));
         }
-        throw new IllegalStateException("een besluit zonder het feit dat het besluit noemt: " + facts);
+        throw new IllegalStateException("a decision without the fact the decision names: " + facts);
     }
 
     // ---------------- a defaults stack on a timeline target, per day ----------------
@@ -5424,7 +5406,7 @@ public final class TmsTranspiler {
      *  readings; nothing in a build without. */
     private void beginReading() {
         if (positions == null) return;
-        if (noted != null) throw new IllegalStateException("de lezing van een vorm begint terwijl die van een andere loopt");
+        if (noted != null) throw new IllegalStateException("the reading of a form begins while that of another runs");
         noted = new IdentityHashMap<>();
         notedUnits = new IdentityHashMap<>();
         notedDerived = new IdentityHashMap<>();
@@ -5486,7 +5468,7 @@ public final class TmsTranspiler {
         /** The subject pattern of the reading rule. */
         Subject subject() {
             for (LhsItem i : plan.leftSide()) if (i instanceof Subject o) return o;
-            throw new IllegalStateException("de leesregel " + plan.name() + " heeft geen onderwerppatroon");
+            throw new IllegalStateException("the reading rule " + plan.name() + " has no subject pattern");
         }
 
         /** Whether the form runs on {@code o}: an instance of its subject's bean class that the class constraints of
@@ -5546,14 +5528,14 @@ public final class TmsTranspiler {
                              Condition irCondition, Expr irValue, Noted noted, Validity validity, boolean guarded,
                              Term turn, Term inputDays) {
         if (pointer == null)
-            throw new IllegalStateException("de vorm van de regel " + ruleName + " staat niet in het document dat de lader"
-                    + " las: een lezing noemt haar vorm naar haar plaats");
+            throw new IllegalStateException("the form of the rule " + ruleName + " is not in the document the loader"
+                    + " read: a reading names its form by its place");
         RulePlan plan = as(RuleOrigin.Role.READING, reads.readingRulePlan(ruleName + ": lezing", pointer, items, false));
         RulePlan speculative = speculativeItems == null ? null : as(RuleOrigin.Role.READING,
                 reads.readingRulePlan(ruleName + ": lezing buiten de beurt", pointer, speculativeItems, true));
         if ((condition == null && periods == null) != (irCondition == null) || condition != null && periods != null)
-            throw new IllegalStateException("de leesregel van " + pointer + " heeft een voorwaarde zonder haar knopen, of"
-                    + " knopen zonder haar voorwaarde");
+            throw new IllegalStateException("the reading rule of " + pointer + " has a condition without its nodes, or"
+                    + " nodes without its condition");
         List<Object> nodes = new ArrayList<>(irCondition == null ? List.of() : positions.subtree(irCondition));
         if (irValue != null) nodes.addAll(positions.subtree(irValue));
         List<String> foldsAt = new ArrayList<>();
@@ -5573,12 +5555,12 @@ public final class TmsTranspiler {
             Term t = noted.terms().get(n);
             Derived derived = noted.derived().get(n);
             if (t != null && derived != null)
-                throw new IllegalStateException("de lezing van " + pointer + ": knoop " + i + " (" + at.kind() + " op "
-                        + at.pointer() + ") heeft een term en een afgeleide lezing");
+                throw new IllegalStateException("the reading of " + pointer + ": node " + i + " (" + at.kind() + " on "
+                        + at.pointer() + ") has a term and a derived reading");
             if (t == null && derived == null) {
                 if (foldsAt.stream().noneMatch(at.pointer()::startsWith))
-                    throw new IllegalStateException("de lezing van " + pointer + ": de analyse noteerde geen term voor"
-                            + " knoop " + i + " (" + at.kind() + " op " + at.pointer() + ")");
+                    throw new IllegalStateException("the reading of " + pointer + ": the analysis noted no term for"
+                            + " node " + i + " (" + at.kind() + " on " + at.pointer() + ")");
                 continue;
             }
             Map<ObjectType, Fold> fold = folds.get(n);
@@ -5649,8 +5631,7 @@ public final class TmsTranspiler {
      */
     public List<ConditionReading> readingsOf(KieSession session) {
         if (positions == null)
-            throw new IllegalStateException("deze build heeft geen leesregels: bouw met lezingen"
-                    + " (DroolsBackend.build met readings) om de lezingen van de voorwaarden te lezen");
+            throw new IllegalStateException(DroolsCode.BUILD_WITHOUT_READINGS.reason().text());
         requireFixpoint(session);
         Map<Reading.Kind, Map<String, Map<Object, Reading>>> facts = new java.util.EnumMap<>(Reading.Kind.class);
         for (Reading.Kind kind : Reading.Kind.values()) facts.put(kind, new HashMap<>());
@@ -5658,8 +5639,8 @@ public final class TmsTranspiler {
             Reading r = (Reading) f;
             Reading other = facts.get(r.kind()).computeIfAbsent(r.form(), k -> new IdentityHashMap<>()).put(r.subject(), r);
             if (other != null)
-                throw new IllegalStateException("twee lezingen van " + r.form() + " op " + FactNames.object(r.subject())
-                        + " (" + r.kind() + "): " + other.values() + " en " + r.values());
+                throw new IllegalStateException("two readings of " + r.form() + " on " + FactNames.object(r.subject())
+                        + " (" + r.kind() + "): " + other.values() + " and " + r.values());
         }
         LocalDate date = null;
         for (Object f : session.getObjects(new ClassObjectFilter(EvaluationDate.class))) date = ((EvaluationDate) f).date();
@@ -5689,9 +5670,9 @@ public final class TmsTranspiler {
         }
         facts.forEach((kind, ofKind) -> ofKind.forEach((form, rest) -> {
             if (!rest.isEmpty())
-                throw new IllegalStateException("lezingen (" + kind + ") van " + form + " op "
-                        + rest.keySet().stream().map(FactNames::object).toList() + ", en daar loopt geen vorm van deze"
-                        + " build");
+                throw new IllegalStateException("readings (" + kind + ") of " + form + " on "
+                        + rest.keySet().stream().map(FactNames::object).toList() + ", and no form of this build"
+                        + " runs there");
         }));
         return out;
     }
@@ -5707,8 +5688,8 @@ public final class TmsTranspiler {
 
     private static ConditionReading.Status guardedOrRefused(ReadingRule r, Object o) {
         if (r.guarded()) return ConditionReading.Status.DISPLACED;
-        throw new IllegalStateException("de leesregel van " + r.pointer() + " stond aan het fixpunt niet op "
-                + FactNames.object(o) + ", waarop de vorm loopt zonder wacht op haar beurt en binnen haar geldigheid");
+        throw new IllegalStateException("the reading rule of " + r.pointer() + " did not stand at the fixpoint on "
+                + FactNames.object(o) + ", on which the form runs without a guard on its turn and within its validity");
     }
 
     /** The contributions of the session, by fold and subject. */
@@ -5729,8 +5710,8 @@ public final class TmsTranspiler {
         Object[] w = reading.values().toArray();
         List<dev.uchar.regelspraak.transpiler.tms.plan.Read> slots = r.plan().readings().slots();
         if (w.length != slots.size())
-            throw new IllegalStateException("de lezing van " + r.pointer() + " draagt " + w.length + " waarden, en de regel"
-                    + " heeft " + slots.size() + " slots");
+            throw new IllegalStateException("the reading of " + r.pointer() + " carries " + w.length + " values, and the rule"
+                    + " has " + slots.size() + " slots");
         // a fresh probe in every probe slot, which nobody reads: a reading deposits nothing
         for (dev.uchar.regelspraak.transpiler.tms.plan.Read l : slots)
             if (l.kind() == ReadKind.DEPOSIT_FLAG) w[l.slot()] = ComputeHelpers.depositFlag();
@@ -5830,13 +5811,12 @@ public final class TmsTranspiler {
      */
     public boolean navigates(String form, int node) {
         if (positions == null)
-            throw new IllegalStateException("deze build heeft geen leesregels: bouw met lezingen"
-                    + " (DroolsBackend.build met readings) om de lezingen van de voorwaarden te lezen");
+            throw new IllegalStateException(DroolsCode.BUILD_WITHOUT_READINGS.reason().text());
         for (ReadingRule r : readingRules) {
             if (!r.pointer().equals(form)) continue;
             for (Site s : r.sites()) if (s.node() == node) return s.navigates();
         }
-        throw new IllegalStateException("de lezingen van deze build hebben geen knoop " + node + " van " + form);
+        throw new IllegalStateException(DroolsCode.READINGS_NO_NODE.reason("node", node, "form", form).text());
     }
 
     /** The contributors of the fold of {@code s}, from its {@code contributions} on the object, as the evaluation
@@ -6024,7 +6004,7 @@ public final class TmsTranspiler {
     }
 
     private static String snippet(dev.uchar.regelspraak.ir.Source source) {
-        return source == null || source.snippet() == null ? "zonder bron" : source.snippet();
+        return source == null || source.snippet() == null ? Msg.drools("PART.no-source").text() : source.snippet();
     }
 
     private static String snippet(Condition c) {
@@ -6089,7 +6069,7 @@ public final class TmsTranspiler {
         Unit lu = eff.unitOf(b.left()), ru = eff.unitOf(b.right());
         Term l = left;
         Term r = op == Expr.BinOp.PLUS || op == Expr.BinOp.MIN || op == Expr.BinOp.VERMINDERD_MET
-                ? restated(right, ru, lu, "een additieve operandgrens")
+                ? restated(right, ru, lu, DroolsCode.UNIT_CONFLICT.part("additive-operand"))
                 : op == Expr.BinOp.MAAL ? timesFactor(right, ru, lu, Unit.timesFactors(lu, ru))
                 : division ? divisorFactor(right, ru, lu, Unit.divideFactors(lu, ru))
                 : right;
@@ -6103,7 +6083,7 @@ public final class TmsTranspiler {
             case PERCENTAGE_VAN -> new Term.Call(StaticFunction.RS_PERCENTAGE_OF, List.of(l, r), source);
             case GEDEELD_DOOR -> new Term.Division(StaticFunction.DIVIDED, l, r, depositFlag, source);
             case GEDEELD_DOOR_ABS -> new Term.Division(StaticFunction.DIVIDED_ABS, l, r, depositFlag, source);
-            case TOT_DE_MACHT -> throw new IllegalStateException("een macht gaat door macht()");
+            case TOT_DE_MACHT -> throw new IllegalStateException("a power goes through macht()");
         };
     }
 
@@ -6282,7 +6262,7 @@ public final class TmsTranspiler {
      *  collapse point (ch. 2.1), as the reference interpreter restates; unchanged where no restatement is due, a unitless
      *  side adopting the other's unit. A leeg value stays leeg and a value that is not a number passes through
      *  ({@link Term.Restate}). Two units that do not convert fault while the model is built ({@link UnitConflict}). */
-    private static Term restated(Term t, Unit van, Unit destination, String site) {
+    private static Term restated(Term t, Unit van, Unit destination, Msg site) {
         UnitConflict.requireRescalable(van, destination, site);
         if (van == null || destination == null || !van.requiredConversion(destination)) return t;
         return restate(t, van, destination, van.exactRestateFactors(destination));
@@ -6346,9 +6326,9 @@ public final class TmsTranspiler {
         Term base = value(g.base(), reads);
         Unit unit = eff.unitOf(g.base());
         Term minimum = g.minimum() == null ? constant(null)
-                : restated(value(g.minimum(), reads), eff.unitOf(g.minimum()), unit, "een begrenzing (minimum)");
+                : restated(value(g.minimum(), reads), eff.unitOf(g.minimum()), unit, DroolsCode.UNIT_CONFLICT.part("clamp-minimum"));
         Term maximum = g.maximum() == null ? constant(null)
-                : restated(value(g.maximum(), reads), eff.unitOf(g.maximum()), unit, "een begrenzing (maximum)");
+                : restated(value(g.maximum(), reads), eff.unitOf(g.maximum()), unit, DroolsCode.UNIT_CONFLICT.part("clamp-maximum"));
         return new Term.Call(StaticFunction.RS_CLAMP, List.of(base, minimum, maximum), source(g.source()));
     }
 
@@ -6465,7 +6445,7 @@ public final class TmsTranspiler {
                     new Term.SlotValue(dimensionedRead(path, cell, reads), null)), null);
         }
         Term fallback = f.emptyFallback() == null ? null : restated(value(f.emptyFallback(), reads),
-                eff.unitOf(f.emptyFallback()), eff.unitOf(a), "een §5.8.2 terugvalwaarde");
+                eff.unitOf(f.emptyFallback()), eff.unitOf(a), DroolsCode.UNIT_CONFLICT.part("empty-fallback"));
         StaticFunction fold = switch (kind) {
             case SOM -> StaticFunction.RS_DIM_SUM;
             case MINIMUM -> StaticFunction.RS_DIM_MIN;
@@ -6735,7 +6715,7 @@ public final class TmsTranspiler {
             case SECONDE_UIT -> datePart(f, reads, spelling, ChronoField.SECOND_OF_MINUTE, true);
             case MILLISECONDE_UIT -> datePart(f, reads, spelling, ChronoField.MILLI_OF_SECOND, true);
             case DATUM_MET, DATUMTIJD_MET -> dateConstruction(f, reads, spelling);
-            default -> throw new IllegalStateException("de soort " + kind + " is een vouw, geen builtin");
+            default -> throw new IllegalStateException("the kind " + kind + " is a fold, not a builtin");
         };
     }
 
@@ -6861,7 +6841,7 @@ public final class TmsTranspiler {
         for (int i = 0; i < f.arguments().size(); i++) {
             Expr a = f.arguments().get(i);
             Term op = value(a, reads);
-            operands.add(i == 0 ? op : restated(op, eff.unitOf(a), earliest, "een §5.8.3 operand van een gelijste vouw"));
+            operands.add(i == 0 ? op : restated(op, eff.unitOf(a), earliest, DroolsCode.UNIT_CONFLICT.part("listed-fold-operand")));
         }
         return new Term.ListedFold(smallest ? StaticFunction.SMALLEST : StaticFunction.LARGEST, operands, source(f.source()));
     }
@@ -6979,7 +6959,7 @@ public final class TmsTranspiler {
         // the fallback restated into the unit of the folded member (RUNTIME-SEMANTICS ch. 2.6)
         Term fallback = f.emptyFallback() == null ? null : restated(value(f.emptyFallback(), reads),
                 eff.unitOf(f.emptyFallback()), arg == null ? null : eff.unitOf(f.arguments().get(0)),
-                "een §5.8.2 terugvalwaarde");
+                DroolsCode.UNIT_CONFLICT.part("empty-fallback"));
         Term itemCount = new Term.SlotValue(i[0], null);
         // over no contribution a sum is its fallback or leeg, a total 0 and an ordering fold leeg
         Term outcome = switch (kind) {
@@ -7357,7 +7337,7 @@ public final class TmsTranspiler {
                     case "MONTHS" -> "MAAND";
                     case "KWARTAAL" -> "KWARTAAL";
                     case "YEARS" -> "JAAR";
-                    default -> throw new IllegalStateException("geen kalendereenheid: " + f.abbreviation());
+                    default -> throw new IllegalStateException("no calendar unit: " + f.abbreviation());
                 };
         }
         return null;
@@ -7561,7 +7541,7 @@ public final class TmsTranspiler {
         Term testTerm = conditionTerm(filter, reads);
         reads.stop();
         if (reads.depositFlagSlot() < 0)
-            throw new IllegalStateException("het filter van " + key + " deponeert, maar kreeg geen sonde");
+            throw new IllegalStateException("the filter of " + key + " deposits, but got no probe");
         int member = reads.member();
         List<LhsItem> items = reads.plan(TestItem.Role.DEPOSIT, testTerm, read);
         recorder.accept(reads);
@@ -8140,7 +8120,7 @@ public final class TmsTranspiler {
             throw new Refusal(DroolsCode.PERIOD_NON_NUMERIC_COMPARE.reason("description", description));
         int timeline = reads.timeline(member);
         Term bound = restated(value(boundExpr, reads), eff.unitOf(boundExpr), eff.unitOf(time),
-                "een §8.2 tijdlijngrens");
+                DroolsCode.UNIT_CONFLICT.part("timeline-bound"));
         // after the bound, where it always stood: it takes the slot of the subject, and the slots keep their numbers
         Term whole = fullTimeline(timeline, member, null, reads, source(time.source()));
         note(time, whole);
@@ -8445,7 +8425,7 @@ public final class TmsTranspiler {
         String source = source(v.source());
         if (lt.isNumberLike() && rt.isNumberLike() && !isDateOperator(op)) {
             Term right = restated(rightTerm, eff.unitOf(v.right()), eff.unitOf(v.left()),
-                    "een §5.1 vergelijking");
+                    DroolsCode.UNIT_CONFLICT.part("comparison"));
             return new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(leftTerm, right,
                     constant(Operators.symbol(op))), source);
         }
@@ -8783,7 +8763,7 @@ public final class TmsTranspiler {
         /** The name of the variable that binds slot {@code slot}, which an item of the plan names to read it. */
         String variable(int slot) {
             String name = slots.get(slot).name();
-            if (name == null) throw new IllegalStateException("slot " + slot + " wordt door geen patroon gebonden");
+            if (name == null) throw new IllegalStateException("slot " + slot + " is bound by no pattern");
             return name;
         }
 
@@ -9392,7 +9372,7 @@ public final class TmsTranspiler {
         int objectOf(int slot) {
             Integer o = objects.get(slot);
             if (o == null)
-                throw new IllegalStateException("slot " + slot + " leest geen lid over een pad met het bereikte object");
+                throw new IllegalStateException("slot " + slot + " reads no member over a path with the reached object");
             return o;
         }
 
@@ -10174,8 +10154,8 @@ public final class TmsTranspiler {
         if (w == null) throw new Refusal(DroolsCode.NAVIGATION_DOES_NOT_RESOLVE.reason("description", description, "subject", subject.name));
         if (w.toMany()) throw new Refusal(DroolsCode.NAVIGATION_TO_MANY_ROLE.reason("description", description));
         if (w.roles().size() != bindings.size())
-            throw new IllegalStateException(description + ": de wandeling telt " + w.roles().size() + " stappen en de draad "
-                    + bindings.size() + " bindingen");
+            throw new IllegalStateException(description + ": the walk counts " + w.roles().size() + " steps and the thread "
+                    + bindings.size() + " bindings");
         List<Binding.Field> fields = new ArrayList<>();
         List<Hop> hops = new ArrayList<>();
         ObjectType cur = subject;
@@ -10223,7 +10203,7 @@ public final class TmsTranspiler {
         try {
             return Class.forName(FactModelGenerator.PACKAGE + "." + Namen.ident(ot.name, true), true, beanLoader);
         } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("geen beanklasse voor objecttype " + ot.name, e);
+            throw new IllegalStateException("no bean class for object type " + ot.name, e);
         }
     }
 

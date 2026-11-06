@@ -180,7 +180,7 @@ when
 then
     RuntimeException f = fout_hoogsteTariefBovenEigenTellerFilterfoutInVouw0($lijstplaatsen_plaats_5, $plaats_plaats_6, $vouwonderwerp, $onderwerp, $tarief, $teller);
     if (f == null) {
-        ComputeHelpers.contractBreach("het filter van hoogste tarief boven eigen teller: vouw 0 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of hoogste tarief boven eigen teller: vouw 0 failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new FilterFault("hoogste tarief boven eigen teller: vouw 0", $vouwonderwerp, $onderwerp, f, plaats_hoogsteTariefBovenEigenTellerFilterfoutInVouw0($onderwerp, $lijstplaatsen_plaats_5, $plaats_plaats_6)));
 end
@@ -228,7 +228,7 @@ function java.util.List deponering_hoogsteTariefBovenEigenTellerFilterdeponering
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("het filter van hoogste tarief boven eigen teller: vouw 0 deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of hoogste tarief boven eigen teller: vouw 0 deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }

@@ -9,6 +9,6 @@ public record ReadTable(List<Read> slots) {
         slots = List.copyOf(slots);
         for (int i = 0; i < slots.size(); i++)
             if (slots.get(i).slot() != i)
-                throw new IllegalArgumentException("de lezing op plaats " + i + " noemt slot " + slots.get(i).slot());
+                throw new IllegalArgumentException("the reading at place " + i + " names slot " + slots.get(i).slot());
     }
 }

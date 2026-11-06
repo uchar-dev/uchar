@@ -44,8 +44,8 @@ public record DefaultsDecision(Object object, String member, boolean characteris
         Objects.requireNonNull(member, "member");
         rootChains = rootChains.stream().map(List::copyOf).toList();
         if (decider != null && conflict != null)
-            throw new IllegalArgumentException("een beslissing van een stapel noemt hoogstens één van beslisser en"
-                    + " conflict, niet beide");
+            throw new IllegalArgumentException("a decision of a stack names at most one of decider and"
+                    + " conflict, not both");
     }
 
     /**

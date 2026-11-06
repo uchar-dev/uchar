@@ -29,6 +29,7 @@ DROOLS-027.and-no-threshold	 en geen drempel
 DROOLS-027.and-one	 en één
 DROOLS-028	form not carried by the v0 Drools backend: Predicate.operand (a whole-period leeg/gevuld test over the parameter '{parameter}' is not executed: the fold reads the timeline of an attribute)
 DROOLS-029	form not carried by the v0 Drools backend: RuleVersion.value (de kenmerktoekenning '{rule}' kent het kenmerk '{characteristic}' {value} toe; WF-022 eist de booleaanse constante waar, en een negatief besluit over een kenmerk bestaat alleen in een defaultsgroep)
+DROOLS-029.node	een {kind}
 DROOLS-030	granular (timeline) parameter '{parameter}' is not carried by the v0 backend
 DROOLS-031	{site}: the declared grid is {count} {granularity} units, a multi-period grid, which carries no operation, a case input included (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as a defect of the case
 DROOLS-032	{site}: the declared grid is laid per object from the anchor of a variable start, which this loader does not read (RUNTIME-SEMANTICS ch. 3.2): refused as a v0 limit, not as a defect of the case
@@ -183,7 +184,7 @@ DROOLS-153	een wortel in een lidtoekenning ('{squareRoot}'), waarvan deze tak de
 DROOLS-154	een feitcreatie zonder naam (WF-107)
 DROOLS-155	een feitcreatie zonder opgelost anker, doel, feittype of pad
 DROOLS-156	een feitcreatie van de relatie '{factType}', die geen relatie van twee rollen is: deze tak draagt deze vorm nog niet
-DROOLS-157	{reason}
+DROOLS-157	voorwaarde niet naar anker of doel te lowereren — doelgastheer binnen een samengestelde of genavigeerde voorwaarde: alleen de anker is gebonden (WF-109)
 DROOLS-158	{description}: een stap die geen rolpaar van twee rollen noemt
 DROOLS-159	{description}: de rol '{role}' heeft geen gedeclareerde vuller
 DROOLS-160	{description}: {reason} (§13.3.9 opslagrichting)
@@ -355,6 +356,76 @@ DROOLS-316.initialisation	de waarde van een initialisatie
 DROOLS-316.member	de lidwaarde van een objectcreatie
 DROOLS-317	het beanmodel draagt de beaneigenschap {property} van {objectType} niet: haar getter {getter} is een methode van java.lang.Object, die geen bean opnieuw kan declareren
 DROOLS-318	een vouw over '{factType}', een relatie waarvan beide rollen meervoudig zijn ('{description}'), die haar leden in volgorde leest (een filter dat kan falen, een deposito, of een lidvoorwaarde die kan falen of deponeren): een koppeling van zo'n relatie heeft in deze tak geen plaats in de volgorde van de leden, die bepaalt welk lid de fout geeft (RUNTIME-SEMANTICS ch. 5.7a, 5.11); deze tak draagt deze vorm nog niet
+DROOLS-319	insert vult een verse sessie, maar deze houdt al {factCount} feiten: de plaatsen van een lijst worden over de beans van één invoer geteld, en een bean die zonder insert in de sessie kwam, heeft er geen; geef alle beans in één Input aan een verse sessie, en verander tussen twee fires hun waarden met update
+DROOLS-320	insert: de bean {bean} staat twee keer in de invoer
+DROOLS-321	insert: {bean} is geen bean van dit model: een bean is een instantie van een klasse die Build.beanLoader() laadt
+DROOLS-322	{call}: het veld '{field}' van {bean} wijst naar een {objectType} ({target}) die niet als bean in de invoer staat: de tak leidt alleen af voor de objecten in de sessie, dus geef elk object waarnaar een bean wijst ook zelf als bean op
+DROOLS-322.fire	vuur
+DROOLS-323	insert: emmerscalair '{attribute}' op {bean}, een bean die niet in de invoer staat
+DROOLS-324	insert: emmerscalair '{attribute}' op {bean}, maar {objectType} heeft geen attribuut van die naam
+DROOLS-325	insert: emmerscalair '{attribute}' op {bean}, maar dat attribuut van {objectType} ligt niet op een tijdlijn; alleen de invoer van een tijdlijn kent de emmerconventie (RUNTIME-SEMANTICS ch. 8.4)
+DROOLS-326	{description} noemt {member}, dat geen bean van de invoer is
+DROOLS-327	{description} noemt {member}, maar een {objectType} heeft geen referentieveld '{field}'; de rol is die van de houder, de naam van het veld waarmee een lid naar de houder wijst
+DROOLS-328	{description} noemt {member}, maar diens veld '{field}' wijst {target}
+DROOLS-328.nowhere	nergens heen
+DROOLS-328.to	naar {holder}
+DROOLS-329	{description} noemt {member} twee keer
+DROOLS-330	{description} is leeg gegeven, maar {member} wijst met zijn veld '{field}' naar de houder
+DROOLS-331	{description} is twee keer gegeven
+DROOLS-332	{description} mist {member}, dat met zijn veld '{field}' naar de houder wijst: een lid buiten de gegeven volgorde heeft geen plaats
+DROOLS-333	deze waarnemer nam al een andere sessie waar: een waarnemer hoort bij één sessie, dus geef elke sessie een eigen waarnemer
+DROOLS-334	de vorm '{form}' is geen post van het manifest van deze build, dus geen sessie van deze build vuurt haar; komen de gevuurde vormen van een andere build?
+DROOLS-335	vergelijk: de verwachtingen zijn de array 'expected' van een case, en dit is een {nodeType}
+DROOLS-336	vergelijk: aan het fixpunt van deze sessie staan {count} evaluatiefout(en), de eerste van '{rule}': {message}; de regels geven op deze invoer geen antwoord, en setDerivedValues werpt de fouten en zet niets terug, dus er is niets om met de verwachtingen te vergelijken
+DROOLS-337	vergelijk: deze sessie is niet teruggezet; de beans dragen het fixpunt pas na DroolsBackend.setDerivedValues, en tot dan alleen de invoer, dus zet eerst terug
+DROOLS-338	vergelijk: de labelfunctie geeft het label '{label}' aan {first} en aan {second}, dus een verwachting op '{label}' wijst geen bean aan
+DROOLS-339	dit model heeft creatieregels, en deze sessie is al via DroolsBackend.fire gevuurd: wat een creatie maakte, met de initialisaties, de koppelingen en de fout van een mislukte initialisatie, is gesteld en vervalt niet (RUNTIME-SEMANTICS ch. 5.5), dus een volgende fire zou na een invoerwijziging een toestand geven die geen verse evaluatie geeft; open per invoer een verse sessie
+DROOLS-340	deze sessie is teruggezet (setDerivedValues): haar beans dragen afgeleide waarden naast de invoer, en een volgende fire zou die als invoer lezen; lees tussen twee fires met DroolsBackend.fixpointOf en zet pas na de laatste fire terug, of open een verse sessie met beans die alleen invoer dragen
+DROOLS-341	de bewaking die DroolsBackend.fire op deze sessie zette, staat er niet meer op, dus wat er na de laatste fire gebeurde, is niet te zien; open een verse sessie met alle beans in één Input
+DROOLS-342	sinds {since} kwam er buiten insert om invoer bij of ging er invoer weg ({change}): een afnemer geeft alle beans in één Input aan insert en verandert daarna alleen hun attributen en kenmerken, met update, want insert legt de plaatsen van een lijst en de emmerscalairen vast over de beans van één invoer; een nieuw of verwijderd object vraagt een verse sessie
+DROOLS-343	sinds {since} gebeurde er buiten fire om meer dan een update van een attribuut of kenmerk van een bean ({change}), en meer laat de ingang niet toe: open een verse sessie met alle beans in één Input
+DROOLS-344	{change}: de tak leest een global één keer, in een regel die haar bij de eerste fire als feit stelt, dus een volgende fire zou met de oude waarde rekenen; zet de globals vóór de eerste fire, en open voor een andere waarde een verse sessie
+DROOLS-345	{change}: Drools ziet een veld pas na een update, dus een fire zou de oude relatie blijven lezen, en ook met een update vraagt een gewijzigde relatie een verse sessie, want insert legt de plaatsen van een lijst vast over de relaties van één invoer; open een verse sessie met alle beans in één Input
+DROOLS-346	geen fixpunt: het vuurplafond van {cap} vuringen is bereikt
+DROOLS-347	geen fixpunt: het vuurplafond van {cap} vuringen is bereikt, het grootste van {floor} en {factor} × {rules} regels × {facts} feiten vlak vóór het vuren; zonder kring vuurt de tak per regel en feit een begrensd aantal keren, dus dit is een fout van de verlaging
+DROOLS-348	geen regel van dit model: '{rule}'
+DROOLS-349	geen fixpunt om te lezen of terug te zetten: deze sessie is niet via DroolsBackend.fire gevuurd, dat tot het fixpunt vuurt{generations}
+DROOLS-349.generations	 en de creaties van dit model in generaties laat vuren
+DROOLS-350	geen fixpunt om te lezen of terug te zetten: de laatste DroolsBackend.fire van deze sessie bereikte er geen — {noFixpoint}
+DROOLS-351	geen fixpunt om te lezen of terug te zetten: de bewaking die DroolsBackend.fire op deze sessie zet, staat er niet meer op, dus wat er na de laatste fire gebeurde, is niet te zien; DroolsBackend.fire weigert haar ook: open een verse sessie met alle beans in één Input
+DROOLS-352	geen fixpunt om te lezen of terug te zetten: sinds de laatste DroolsBackend.fire van deze sessie gebeurde er iets buiten fire om, wat het fixpunt van die fire kan veranderen ({change}); {advice}
+DROOLS-352.creations	dit model heeft creatieregels, dus DroolsBackend.fire weigert een tweede fire: open een verse sessie
+DROOLS-352.written-back	deze sessie is teruggezet, dus DroolsBackend.fire weigert haar: open een verse sessie met beans die alleen invoer dragen
+DROOLS-352.input	invoer die buiten DroolsBackend.insert om bijkwam of wegging, vraagt een verse sessie, dus DroolsBackend.fire weigert haar: open een verse sessie met alle beans in één Input
+DROOLS-352.more	DroolsBackend.fire weigert een sessie waarin buiten fire om meer gebeurde dan een update van een attribuut of kenmerk van een bean: open een verse sessie met alle beans in één Input
+DROOLS-352.global	DroolsBackend.fire weigert een sessie waarvan een global na de eerste fire veranderde: open een verse sessie
+DROOLS-352.fire-again	vuur haar eerst opnieuw met DroolsBackend.fire
+DROOLS-353	geen fixpunt om te lezen of terug te zetten: {change}, en het fixpunt hoort bij de oude waarde; DroolsBackend.fire weigert de sessie, dus open een verse sessie
+DROOLS-354	geen fixpunt om te lezen of terug te zetten: {change}, en het fixpunt hoort bij de oude relatie; DroolsBackend.fire weigert de sessie, dus open een verse sessie met alle beans in één Input
+DROOLS-355	deze build heeft geen leesregels: bouw met lezingen (DroolsBackend.build met readings) om de lezingen van de voorwaarden te lezen
+DROOLS-356	de lezingen van deze build hebben geen knoop {node} van {form}
+DROOLS-357	het filter van {fold} faalt voor {member}, maar een lid van zijn route heeft geen Lijstplaats onder het veld '{field}': de invoer stelt de volgorde van die lijst niet, en zonder haar is de eerste fout van de vouw niet te bepalen (RUNTIME-SEMANTICS ch. 5.11)
+DROOLS-358	de vouw {fold} leest de tijdlijn van {member}, die de case als emmerscalair geeft, maar een lid van zijn route heeft geen Lijstplaats onder het veld '{field}': de invoer stelt de volgorde van die lijst niet, en zonder haar is niet te bepalen welk lid de vouw noemt (RUNTIME-SEMANTICS ch. 3.6, 5.11)
+DROOLS-359	de kwantorvouw {fold} leest de matrix van {member}, maar dat lid heeft geen Lijstplaats onder het veld '{field}': de invoer stelt de volgorde van die lijst niet, en zonder haar is niet te bepalen welk lid de kortsluiting bereikt (RUNTIME-SEMANTICS ch. 5.10, 5.11)
+DROOLS-360	onverenigbare eenheden bij {site}: '{from}' (canoniek {fromCanonical}) herschaalt niet naar '{destination}' (canoniek {destinationCanonical}) — er bestaat geen omrekenfactor
+DROOLS-360.period-arithmetic-operand	een operand van het rekenen per periode
+DROOLS-360.period-condition	een voorwaarde per periode
+DROOLS-360.write-boundary-target	een §4 schrijfgrens naar het doel
+DROOLS-360.write-boundary-member	een §4 schrijfgrens naar het lid
+DROOLS-360.additive-operand	een additieve operandgrens
+DROOLS-360.clamp-minimum	een begrenzing (minimum)
+DROOLS-360.clamp-maximum	een begrenzing (maximum)
+DROOLS-360.listed-fold-operand	een §5.8.3 operand van een gelijste vouw
+DROOLS-360.empty-fallback	een §5.8.2 terugvalwaarde
+DROOLS-360.timeline-bound	een §8.2 tijdlijngrens
+DROOLS-360.comparison	een §5.1 vergelijking
+DROOLS-361	to-one rol '{role}' krijgt een tweede, ander doel — ref weigert die case bij het laden (WF-013)
+DROOLS-362	wederkerige rol '{role}': het doel is al verbonden met een ander — de omgekeerde poot botst (WF-013 to-one)
+DROOLS-363	geen JDK-compiler beschikbaar (draai op een JDK, niet een JRE)
+DROOLS-364	{description} noemt geen feittype van twee rollen die allebei meervoudig zijn; een relatie met een enkelvoudige rol staat in het referentieveld van haar ene kant
+DROOLS-365	{description} noemt {end}, dat geen bean van de invoer is
+DROOLS-366	{description}: {end} is een {objectType} en vult de rol '{role}' van {roleType} niet
+DROOLS-367	{description} komt twee keer voor
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-004	invoer {place} = {value} past niet in {decimals} decimalen: een casewaarde waarvan de declaratie de exacte waarde niet kan houden, wordt bij de invoer geweigerd (RUNTIME-SEMANTICS ch. 2.4, 5.7)
@@ -400,6 +471,7 @@ FRAME.case-sets	{sentence}; de case zet het
 FRAME.contract	contract: {sentence}
 FRAME.described	{description}: {sentence}
 FRAME.drl	drl: {sentence}
+FRAME.evaluation-faults	aan het fixpunt staan {count} evaluatiefouten, {places}
 FRAME.fault-in-rule	fout in de regel "{rule}": {sentence}
 FRAME.loader	loader: {sentence}
 FRAME.still-not	{sentence}; deze tak draagt deze vorm nog niet
@@ -474,3 +546,47 @@ PART.cycle.channel	het kanaal van "{rule}"
 PART.cycle.population	de populatie van {type}
 PART.cycle.relation	de relatie {factType}
 PART.cycle.read-outside	{form} leest {node} over [{path}] (clausule {clause})
+PART.desc.insert-list	insert: de lijst van {holder} onder de rol '{role}'
+PART.desc.insert-link	insert: de koppeling {first} - {second} van '{factType}'
+PART.fault-places.rule	in de regel {rules}
+PART.fault-places.rules	in de regels {rules}
+PART.fault-places.fact-type	het feittype {factTypes}
+PART.fault-places.fact-types	de feittypen {factTypes}
+PART.fault-places.in-fact-type	in het feittype {factTypes}
+PART.fault-places.in-fact-types	in de feittypen {factTypes}
+PART.fire-broke-off	de fire brak af met {exception}: {message}
+PART.watch.clauses	{clauses}
+PART.watch.since-first-fire	de eerste DroolsBackend.fire van deze sessie
+PART.watch.since-last-fire	de laatste DroolsBackend.fire van deze sessie
+PART.watch.since-session-start	het begin van deze sessie
+PART.watch.inserted	{object} werd ingevoegd
+PART.watch.updated	{object} werd gewijzigd met update
+PART.watch.relation-updated	het veld '{field}' van {object}, een relatie, werd gewijzigd met update
+PART.watch.deleted	{object} werd verwijderd
+PART.watch.rule-fired	de regel "{rule}" vuurde
+PART.watch.activation-cancelled	een activatie van de regel "{rule}" werd geannuleerd
+PART.watch.group-focus	de agendagroep "{group}" kreeg de focus
+PART.watch.group-lost-focus	de agendagroep "{group}" verloor de focus
+PART.watch.agenda-cleared	een agendagroep werd geleegd met AgendaGroup.clear
+PART.watch.agenda-set-focus	een agendagroep kreeg de focus met AgendaGroup.setFocus
+PART.watch.group-emptied	de agendagroep "{group}" werd geleegd
+PART.watch.global-changed	de global '{name}' veranderde van {old} in {fresh} na de eerste DroolsBackend.fire van deze sessie
+PART.watch.no-value	geen waarde
+PART.watch.relation-changed	het veld '{field}' van {object}, een relatie, veranderde zonder update: het hield bij {since} {before} en houdt nu {now}
+PART.watch.no-object	geen object
+PART.mismatch.empty-expected	verwacht leeg, werkelijk {actual}
+PART.mismatch.attribute	attribuut {attribute}: verwacht {expected}, werkelijk {actual}
+PART.mismatch.cell-empty	cel {attribute}{labels}: verwacht leeg, werkelijk {actual}
+PART.mismatch.cell	cel {attribute}{labels}: verwacht {expected}, werkelijk {actual}
+PART.mismatch.timeline-absent	attribuut {attribute}: draagt geen tijdreeks, verwacht {expected}
+PART.mismatch.characteristic	kenmerk {characteristic}: verwacht {expected}, werkelijk {actual}
+PART.mismatch.inconsistent-found	verwacht consistent, werkelijk inconsistent ({facts})
+PART.mismatch.consistent-found	verwacht inconsistent{key}, werkelijk consistent
+PART.mismatch.inconsistent-not-found	verwacht inconsistent{key}, niet gevonden onder {facts}
+PART.value.empty	leeg
+PART.value.empty-timeline	(leeg)
+PART.value.present	aanwezig
+PART.value.absent	afwezig
+PART.target.characteristic	kenmerk '{name}'
+PART.target.attribute	attribuut '{name}'
+PART.no-source	zonder bron

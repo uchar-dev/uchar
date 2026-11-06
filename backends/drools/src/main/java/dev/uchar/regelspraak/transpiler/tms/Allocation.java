@@ -67,8 +67,8 @@ public final class Allocation {
             case NAAR_RATO -> proportional(pot, recipients, capped, decimals, shares, depositors);
             case OP_VOLGORDE -> ordered(pot, recipients, weighted, capped, decimals, descending, shares,
                     depositors);
-            case COMPLEX -> throw new IllegalStateException("een verdeling met de methode COMPLEX bereikt de berekening;"
-                    + " de lader weigert die waarde sinds L4");
+            case COMPLEX -> throw new IllegalStateException("an allocation with the method COMPLEX reaches the computation;"
+                    + " the loader refuses that value since L4");
         };
     }
 
@@ -165,7 +165,7 @@ public final class Allocation {
         for (Object f : facts) {
             Object share = out.get(f);
             if (share == null)
-                throw new IllegalStateException("rsVerdeelOpVolgorde gaf geen aandeel voor " + FactNames.object(f));
+                throw new IllegalStateException("rsVerdeelOpVolgorde gave no share for " + FactNames.object(f));
             shares.put(f, share);
             sum = sum.optellen(Breuk.van(share));
         }

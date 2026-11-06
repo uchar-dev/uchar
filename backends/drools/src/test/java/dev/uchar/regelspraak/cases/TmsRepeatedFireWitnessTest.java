@@ -748,10 +748,10 @@ class TmsRepeatedFireWitnessTest {
                 assertNull(DroolsBackend.fire(b, session).noFixpoint(), "first fire");
                 UnknownAction action = new UnknownAction();
                 ((org.drools.core.common.InternalAgenda) session.getAgenda()).addPropagation(action);
-                String sentence = "op de propagatielijst van deze sessie wacht een " + UnknownAction.class.getName()
-                        + ", een actie die de bewaking niet kent: zij kent naast een insert, update of delete van een"
-                        + " feit alleen die van AgendaGroup.clear en AgendaGroup.setFocus, dus ze kan niet zeggen of een"
-                        + " afnemer de agenda veranderde";
+                String sentence = "on the propagation list of this session waits a " + UnknownAction.class.getName()
+                        + ", an action the watch does not know: beside an insert, update or delete of a"
+                        + " fact it knows only those of AgendaGroup.clear and AgendaGroup.setFocus, so it cannot say whether a"
+                        + " consumer changed the agenda";
                 assertEquals(sentence, assertThrows(IllegalStateException.class, () -> DroolsBackend.fixpointOf(b, session))
                         .getMessage(), "the reading");
                 assertEquals(sentence, assertThrows(IllegalStateException.class,

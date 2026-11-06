@@ -76,7 +76,7 @@ when
 then
     Object f = fout_inzetbaarBijKeurgemiddeldeFoutInDeVoorwaarde($aantal_vouw_17, $vouw_vouw_19);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"inzetbaar bij keurgemiddelde\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"inzetbaar bij keurgemiddelde\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "inzetbaar bij keurgemiddelde", ComputeHelpers.designate(f, "inzetbaar bij keurgemiddelde")));
 end
@@ -104,7 +104,7 @@ function java.util.List deponering_inzetbaarBijKeurgemiddeldeDeponeringInDeVoorw
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"inzetbaar bij keurgemiddelde\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"inzetbaar bij keurgemiddelde\" deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }

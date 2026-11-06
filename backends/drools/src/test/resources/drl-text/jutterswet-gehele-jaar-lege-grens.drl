@@ -73,7 +73,7 @@ when
 then
     Object f = fout_gelijkpremieVanEenJutterFoutInDeVoorwaarde($tijdlijn_0, $wachtgrens, $onderwerp);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"gelijkpremie van een jutter\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"gelijkpremie van een jutter\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "gelijkpremie van een jutter", ComputeHelpers.designate(f, "gelijkpremie van een jutter")));
 end
@@ -144,7 +144,7 @@ when
 then
     Object f = fout_ongelijkpremieVanEenJutterFoutInDeVoorwaarde($tijdlijn_0, $wachtgrens, $onderwerp);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"ongelijkpremie van een jutter\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"ongelijkpremie van een jutter\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "ongelijkpremie van een jutter", ComputeHelpers.designate(f, "ongelijkpremie van een jutter")));
 end
@@ -215,7 +215,7 @@ when
 then
     Object f = fout_afwijkpremieVanEenJutterFoutInDeVoorwaarde($tijdlijn_0, $wachtgrens, $onderwerp);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"afwijkpremie van een jutter\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"afwijkpremie van een jutter\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "afwijkpremie van een jutter", ComputeHelpers.designate(f, "afwijkpremie van een jutter")));
 end

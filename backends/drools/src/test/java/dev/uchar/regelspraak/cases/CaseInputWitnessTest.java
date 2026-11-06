@@ -324,7 +324,7 @@ class CaseInputWitnessTest {
                 "{ \"input\": { \"instances\": {} } }")) {
             IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
                     () -> CaseInput.of(b, JSON.readTree(c)));
-            assertTrue(e.getMessage().startsWith("CaseInput.of: de case draagt geen array input.instances"),
+            assertTrue(e.getMessage().startsWith("CaseInput.of: the case carries no array input.instances"),
                     e.getMessage());
         }
     }

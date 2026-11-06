@@ -178,7 +178,7 @@ when
 then
     Object f = fout_stormpremieVanEenJutterFoutInDeVoorwaarde($tijdlijn_0, $onderwerp);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"stormpremie van een jutter\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"stormpremie van een jutter\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "stormpremie van een jutter", ComputeHelpers.designate(f, "stormpremie van een jutter")));
 end
@@ -249,7 +249,7 @@ when
 then
     Object f = fout_maandpremieVanEenJutterFoutInDeVoorwaarde($tijdlijn_0, $onderwerp);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"maandpremie van een jutter\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"maandpremie van een jutter\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "maandpremie van een jutter", ComputeHelpers.designate(f, "maandpremie van een jutter")));
 end

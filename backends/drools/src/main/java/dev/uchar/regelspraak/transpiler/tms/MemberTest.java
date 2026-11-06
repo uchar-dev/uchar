@@ -31,9 +31,9 @@ public final class MemberTest implements Comparable<MemberTest> {
     public MemberTest(List<Integer> place, Boolean holds, RuntimeException fault, boolean deposited,
                       List<String> codes) {
         this.place = List.copyOf(place);
-        if (this.place.isEmpty()) throw new IllegalArgumentException("een plaats in de volgorde begint met de selectie");
+        if (this.place.isEmpty()) throw new IllegalArgumentException("a place in the order begins with the selection");
         if ((holds == null) == (fault == null))
-            throw new IllegalArgumentException("een lidtoets houdt of faalt, nooit allebei of geen van beide");
+            throw new IllegalArgumentException("a member test holds or fails, never both or neither");
         this.holds = holds;
         this.fault = fault;
         this.deposited = deposited;

@@ -77,7 +77,7 @@ when
 then
     Object f = fout_inzetbaarBijVaartijdFoutInDeVoorwaarde($aantal_vouw_19, $vouw_vouw_21);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"inzetbaar bij vaartijd\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"inzetbaar bij vaartijd\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "inzetbaar bij vaartijd", ComputeHelpers.designate(f, "inzetbaar bij vaartijd")));
 end
@@ -147,7 +147,7 @@ when
 then
     Object f = fout_krapBijVaartijdFoutInDeVoorwaarde($aantal_vouw_42, $vouw_vouw_44);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"krap bij vaartijd\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"krap bij vaartijd\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "krap bij vaartijd", ComputeHelpers.designate(f, "krap bij vaartijd")));
 end
@@ -217,7 +217,7 @@ when
 then
     Object f = fout_paraatBijVaartijdFoutInDeVoorwaarde($aantal_vouw_65, $vouw_vouw_67);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"paraat bij vaartijd\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"paraat bij vaartijd\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "paraat bij vaartijd", ComputeHelpers.designate(f, "paraat bij vaartijd")));
 end
@@ -287,7 +287,7 @@ when
 then
     Object f = fout_geschiktBijVaartijdFoutInDeVoorwaarde($aantal_vouw_89, $vouw_vouw_91);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"geschikt bij vaartijd\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"geschikt bij vaartijd\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "geschikt bij vaartijd", ComputeHelpers.designate(f, "geschikt bij vaartijd")));
 end

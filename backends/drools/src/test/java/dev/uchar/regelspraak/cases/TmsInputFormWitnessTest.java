@@ -510,7 +510,7 @@ class TmsInputFormWitnessTest {
             outcomes.add(r.getKey() + " " + TmsFaultWitnessTest.play(TmsTimelineDocuments.document(MODEL_H,
                     List.of(r.getValue()), List.of()), caseH(), DroolsBackend.Branch.EXEC_MODEL));
             expected.add(r.getKey() + " IllegalArgumentException: scalar characteristic input 'wachtplichtig' on the"
-                    + " time-dependent kenmerk of Jutter: deliver it as a characteristicTimelines entry — the static"
+                    + " time-dependent characteristic of Jutter: deliver it as a characteristicTimelines entry — the static"
                     + " characteristics list asserts a scalar truth no temporal reader consults");
         }
         assertEquals(expected, outcomes);

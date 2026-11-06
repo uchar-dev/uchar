@@ -91,7 +91,7 @@ when
 then
     Object f = fout_standaardtoeslagFoutInDeVoorwaarde($opbrengst, $aantalDeelnemers);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"standaardtoeslag\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"standaardtoeslag\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "standaardtoeslag", ComputeHelpers.designate(f, "standaardtoeslag")));
 end
@@ -114,7 +114,7 @@ function java.util.List deponering_standaardtoeslagDeponeringInDeVoorwaarde(Obje
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"standaardtoeslag\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"standaardtoeslag\" deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }

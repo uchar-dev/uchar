@@ -54,7 +54,7 @@ when
 then
     Object f = fout_bekwameJutterFoutInDeVoorwaarde($keurpunten, $keuringen);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"bekwame jutter\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"bekwame jutter\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "bekwame jutter", ComputeHelpers.designate(f, "bekwame jutter")));
 end
@@ -77,7 +77,7 @@ function java.util.List deponering_bekwameJutterDeponeringInDeVoorwaarde(Object 
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"bekwame jutter\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"bekwame jutter\" deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }

@@ -29,6 +29,7 @@ DROOLS-027.and-no-threshold	 and no threshold
 DROOLS-027.and-one	 and one
 DROOLS-028	form not carried by the v0 Drools backend: Predicate.operand (a whole-period leeg/gevuld test over the parameter '{parameter}' is not executed: the fold reads the timeline of an attribute)
 DROOLS-029	form not carried by the v0 Drools backend: RuleVersion.value (the characteristic assignment '{rule}' assigns the characteristic '{characteristic}' {value}; WF-022 requires the boolean constant true, and a negative decision about a characteristic exists only in a defaults group)
+DROOLS-029.node	a {kind}
 DROOLS-030	granular (timeline) parameter '{parameter}' is not carried by the v0 backend
 DROOLS-031	{site}: the declared grid is {count} {granularity} units, a multi-period grid, which carries no operation, a case input included (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as a defect of the case
 DROOLS-032	{site}: the declared grid is laid per object from the anchor of a variable start, which this loader does not read (RUNTIME-SEMANTICS ch. 3.2): refused as a v0 limit, not as a defect of the case
@@ -183,7 +184,7 @@ DROOLS-153	a square root in a member assignment ('{squareRoot}'), of which this 
 DROOLS-154	a fact creation without a name (WF-107)
 DROOLS-155	a fact creation without a resolved anchor, target, fact type or path
 DROOLS-156	a fact creation of the relation '{factType}', which is not a relation of two roles: this branch does not carry this form yet
-DROOLS-157	{reason}
+DROOLS-157	condition not to be lowered to anchor or target — target host inside a compound or navigated condition: only the anchor is bound (WF-109)
 DROOLS-158	{description}: a step that does not name a role pair of two roles
 DROOLS-159	{description}: the role '{role}' has no declared filler
 DROOLS-160	{description}: {reason} (§13.3.9 storage direction)
@@ -355,6 +356,76 @@ DROOLS-316.initialisation	the value of an initialisation
 DROOLS-316.member	the member value of an object creation
 DROOLS-317	the bean model does not carry the bean property {property} of {objectType}: its getter {getter} is a method of java.lang.Object, which no bean can declare again
 DROOLS-318	a fold over '{factType}', a relation both of whose roles are to-many ('{description}'), that reads its members in order (a filter that can fail, a deposit, or a member condition that can fail or deposit): a link of such a relation has no place in the order of the members in this branch, and that order determines which member gives the fault (RUNTIME-SEMANTICS ch. 5.7a, 5.11); this branch does not carry this form yet
+DROOLS-319	insert fills a fresh session, but this one already holds {factCount} facts: the places of a list are counted over the beans of one input, and a bean that came into the session without insert has none; give all beans in one Input to a fresh session, and change their values between two fires with update
+DROOLS-320	insert: the bean {bean} stands twice in the input
+DROOLS-321	insert: {bean} is no bean of this model: a bean is an instance of a class that Build.beanLoader() loads
+DROOLS-322	{call}: the field '{field}' of {bean} points to a {objectType} ({target}) that does not stand in the input as a bean: the branch derives only for the objects in the session, so give every object a bean points to as a bean of its own as well
+DROOLS-322.fire	fire
+DROOLS-323	insert: bucket scalar '{attribute}' on {bean}, a bean that does not stand in the input
+DROOLS-324	insert: bucket scalar '{attribute}' on {bean}, but {objectType} has no attribute of that name
+DROOLS-325	insert: bucket scalar '{attribute}' on {bean}, but that attribute of {objectType} does not lie on a timeline; only the input of a timeline knows the bucket convention (RUNTIME-SEMANTICS ch. 8.4)
+DROOLS-326	{description} names {member}, which is no bean of the input
+DROOLS-327	{description} names {member}, but a {objectType} has no reference field '{field}'; the role is the holder's, the name of the field by which a member points to the holder
+DROOLS-328	{description} names {member}, but its field '{field}' points {target}
+DROOLS-328.nowhere	nowhere
+DROOLS-328.to	to {holder}
+DROOLS-329	{description} names {member} twice
+DROOLS-330	{description} is given empty, but {member} points to the holder with its field '{field}'
+DROOLS-331	{description} is given twice
+DROOLS-332	{description} misses {member}, which points to the holder with its field '{field}': a member outside the given order has no place
+DROOLS-333	this observer already observed another session: an observer belongs to one session, so give every session an observer of its own
+DROOLS-334	the form '{form}' is no entry of the manifest of this build, so no session of this build fires it; do the fired forms come from another build?
+DROOLS-335	compare: the expectations are the array 'expected' of a case, and this is a {nodeType}
+DROOLS-336	compare: the fixpoint of this session carries {count} evaluation fault(s), the first of '{rule}': {message}; the rules give no answer on this input, and setDerivedValues throws the faults and writes nothing back, so there is nothing to compare the expectations with
+DROOLS-337	compare: this session is not written back; the beans carry the fixpoint only after DroolsBackend.setDerivedValues, and until then only the input, so write back first
+DROOLS-338	compare: the label function gives the label '{label}' to {first} and to {second}, so an expectation on '{label}' points to no bean
+DROOLS-339	this model has creation rules, and this session was already fired through DroolsBackend.fire: what a creation made, with the initialisations, the links and the fault of a failed initialisation, is stated and does not lapse (RUNTIME-SEMANTICS ch. 5.5), so a further fire after a change of the input would give a state that no fresh evaluation gives; open a fresh session per input
+DROOLS-340	this session is written back (setDerivedValues): its beans carry derived values beside the input, and a further fire would read them as input; read between two fires with DroolsBackend.fixpointOf and write back only after the last fire, or open a fresh session with beans that carry only input
+DROOLS-341	the watch that DroolsBackend.fire put on this session is no longer on it, so what happened after the last fire cannot be seen; open a fresh session with all beans in one Input
+DROOLS-342	since {since} input came in or went away outside insert ({change}): a consumer gives all beans in one Input to insert and then changes only their attributes and characteristics, with update, since insert fixes the places of a list and the bucket scalars over the beans of one input; a new or removed object asks for a fresh session
+DROOLS-343	since {since} more than an update of an attribute or characteristic of a bean happened outside fire ({change}), and the entry allows no more: open a fresh session with all beans in one Input
+DROOLS-344	{change}: the branch reads a global once, in a rule that states it as a fact at the first fire, so a further fire would compute with the old value; set the globals before the first fire, and open a fresh session for another value
+DROOLS-345	{change}: Drools sees a field only after an update, so a fire would keep reading the old relation, and even with an update a changed relation asks for a fresh session, since insert fixes the places of a list over the relations of one input; open a fresh session with all beans in one Input
+DROOLS-346	no fixpoint: the fire cap of {cap} firings is reached
+DROOLS-347	no fixpoint: the fire cap of {cap} firings is reached, the greater of {floor} and {factor} × {rules} rules × {facts} facts just before the fire; without a cycle the branch fires a bounded number of times per rule and fact, so this is a fault of the lowering
+DROOLS-348	no rule of this model: '{rule}'
+DROOLS-349	no fixpoint to read or write back: this session was not fired through DroolsBackend.fire, which fires to the fixpoint{generations}
+DROOLS-349.generations	 and lets the creations of this model fire in generations
+DROOLS-350	no fixpoint to read or write back: the last DroolsBackend.fire of this session reached none — {noFixpoint}
+DROOLS-351	no fixpoint to read or write back: the watch that DroolsBackend.fire puts on this session is no longer on it, so what happened after the last fire cannot be seen; DroolsBackend.fire refuses it as well: open a fresh session with all beans in one Input
+DROOLS-352	no fixpoint to read or write back: since the last DroolsBackend.fire of this session something happened outside fire that can change the fixpoint of that fire ({change}); {advice}
+DROOLS-352.creations	this model has creation rules, so DroolsBackend.fire refuses a second fire: open a fresh session
+DROOLS-352.written-back	this session is written back, so DroolsBackend.fire refuses it: open a fresh session with beans that carry only input
+DROOLS-352.input	input that came in or went away outside DroolsBackend.insert asks for a fresh session, so DroolsBackend.fire refuses it: open a fresh session with all beans in one Input
+DROOLS-352.more	DroolsBackend.fire refuses a session in which more than an update of an attribute or characteristic of a bean happened outside fire: open a fresh session with all beans in one Input
+DROOLS-352.global	DroolsBackend.fire refuses a session of which a global changed after the first fire: open a fresh session
+DROOLS-352.fire-again	fire it again first with DroolsBackend.fire
+DROOLS-353	no fixpoint to read or write back: {change}, and the fixpoint belongs to the old value; DroolsBackend.fire refuses the session, so open a fresh session
+DROOLS-354	no fixpoint to read or write back: {change}, and the fixpoint belongs to the old relation; DroolsBackend.fire refuses the session, so open a fresh session with all beans in one Input
+DROOLS-355	this build has no reading rules: build with readings (DroolsBackend.build with readings) to read the readings of the conditions
+DROOLS-356	the readings of this build have no node {node} of {form}
+DROOLS-357	the filter of {fold} fails for {member}, but a member of its route has no ListPlace under the field '{field}': the input does not state the order of that list, and without it the first fault of the fold cannot be determined (RUNTIME-SEMANTICS ch. 5.11)
+DROOLS-358	the fold {fold} reads the timeline of {member}, which the case gives as a bucket scalar, but a member of its route has no ListPlace under the field '{field}': the input does not state the order of that list, and without it the member the fold names cannot be determined (RUNTIME-SEMANTICS ch. 3.6, 5.11)
+DROOLS-359	the quantifier fold {fold} reads the matrix of {member}, but that member has no ListPlace under the field '{field}': the input does not state the order of that list, and without it the member the short circuit reaches cannot be determined (RUNTIME-SEMANTICS ch. 5.10, 5.11)
+DROOLS-360	incompatible units at {site}: '{from}' (canonical {fromCanonical}) does not restate into '{destination}' (canonical {destinationCanonical}) — no conversion factor exists
+DROOLS-360.period-arithmetic-operand	an operand of the arithmetic per period
+DROOLS-360.period-condition	a condition per period
+DROOLS-360.write-boundary-target	a §4 write boundary into the target
+DROOLS-360.write-boundary-member	a §4 write boundary into the member
+DROOLS-360.additive-operand	an additive operand boundary
+DROOLS-360.clamp-minimum	a clamp (minimum)
+DROOLS-360.clamp-maximum	a clamp (maximum)
+DROOLS-360.listed-fold-operand	a §5.8.3 operand of a listed fold
+DROOLS-360.empty-fallback	a §5.8.2 empty fallback
+DROOLS-360.timeline-bound	a §8.2 timeline bound
+DROOLS-360.comparison	a §5.1 comparison
+DROOLS-361	the to-one role '{role}' gets a second, different target — ref refuses that case at load (WF-013)
+DROOLS-362	reciprocal role '{role}': the target is already linked to another — the reverse leg collides (WF-013 to-one)
+DROOLS-363	no JDK compiler available (run on a JDK, not a JRE)
+DROOLS-364	{description} names no fact type of two roles that are both to-many; a relation with a to-one role stands in the reference field of its one side
+DROOLS-365	{description} names {end}, which is no bean of the input
+DROOLS-366	{description}: {end} is a {objectType} and does not fill the role '{role}' of {roleType}
+DROOLS-367	{description} occurs twice
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-004	input {place} = {value} does not fit {decimals} decimals: a case value whose exact value its declaration cannot hold is refused at the input (RUNTIME-SEMANTICS ch. 2.4, 5.7)
@@ -400,6 +471,7 @@ FRAME.case-sets	{sentence}; the case sets it
 FRAME.contract	contract: {sentence}
 FRAME.described	{description}: {sentence}
 FRAME.drl	drl: {sentence}
+FRAME.evaluation-faults	the fixpoint carries {count} evaluation faults, {places}
 FRAME.fault-in-rule	error in the rule "{rule}": {sentence}
 FRAME.loader	loader: {sentence}
 FRAME.still-not	{sentence}; this branch does not yet carry this form
@@ -474,3 +546,47 @@ PART.cycle.channel	the channel of "{rule}"
 PART.cycle.population	the population of {type}
 PART.cycle.relation	the relation {factType}
 PART.cycle.read-outside	{form} reads {node} over [{path}] (clause {clause})
+PART.desc.insert-list	insert: the list of {holder} under the role '{role}'
+PART.desc.insert-link	insert: the link {first} - {second} of '{factType}'
+PART.fault-places.rule	in the rule {rules}
+PART.fault-places.rules	in the rules {rules}
+PART.fault-places.fact-type	the fact type {factTypes}
+PART.fault-places.fact-types	the fact types {factTypes}
+PART.fault-places.in-fact-type	in the fact type {factTypes}
+PART.fault-places.in-fact-types	in the fact types {factTypes}
+PART.fire-broke-off	the fire broke off with {exception}: {message}
+PART.watch.clauses	{clauses}
+PART.watch.since-first-fire	the first DroolsBackend.fire of this session
+PART.watch.since-last-fire	the last DroolsBackend.fire of this session
+PART.watch.since-session-start	the start of this session
+PART.watch.inserted	{object} was inserted
+PART.watch.updated	{object} was changed with update
+PART.watch.relation-updated	the field '{field}' of {object}, a relation, was changed with update
+PART.watch.deleted	{object} was deleted
+PART.watch.rule-fired	the rule "{rule}" fired
+PART.watch.activation-cancelled	an activation of the rule "{rule}" was cancelled
+PART.watch.group-focus	the agenda group "{group}" got the focus
+PART.watch.group-lost-focus	the agenda group "{group}" lost the focus
+PART.watch.agenda-cleared	an agenda group was cleared with AgendaGroup.clear
+PART.watch.agenda-set-focus	an agenda group got the focus with AgendaGroup.setFocus
+PART.watch.group-emptied	the agenda group "{group}" was emptied
+PART.watch.global-changed	the global '{name}' changed from {old} to {fresh} after the first DroolsBackend.fire of this session
+PART.watch.no-value	no value
+PART.watch.relation-changed	the field '{field}' of {object}, a relation, changed without an update: it held {before} at {since} and now holds {now}
+PART.watch.no-object	no object
+PART.mismatch.empty-expected	expected empty, actual {actual}
+PART.mismatch.attribute	attribute {attribute}: expected {expected}, actual {actual}
+PART.mismatch.cell-empty	cell {attribute}{labels}: expected empty, actual {actual}
+PART.mismatch.cell	cell {attribute}{labels}: expected {expected}, actual {actual}
+PART.mismatch.timeline-absent	attribute {attribute}: carries no timeline, expected {expected}
+PART.mismatch.characteristic	characteristic {characteristic}: expected {expected}, actual {actual}
+PART.mismatch.inconsistent-found	expected consistent, actual inconsistent ({facts})
+PART.mismatch.consistent-found	expected inconsistent{key}, actual consistent
+PART.mismatch.inconsistent-not-found	expected inconsistent{key}, not found among {facts}
+PART.value.empty	empty
+PART.value.empty-timeline	(empty)
+PART.value.present	present
+PART.value.absent	absent
+PART.target.characteristic	characteristic '{name}'
+PART.target.attribute	attribute '{name}'
+PART.no-source	no source

@@ -19,7 +19,7 @@ public record Exists(List<FactPattern> patterns, List<String> inside, List<Strin
         patterns = List.copyOf(patterns);
         inside = List.copyOf(inside);
         outside = List.copyOf(outside);
-        scope("een bestaat-item", patterns, inside, outside);
+        scope("an exists item", patterns, inside, outside);
     }
 
     /** The variables a quantification over {@code patterns} declares, in order: per pattern its own, then those its
@@ -53,20 +53,20 @@ public record Exists(List<FactPattern> patterns, List<String> inside, List<Strin
      *  ({@link #declared}), each once, and {@code outside} what they read from before the quantification
      *  ({@link #read}). */
     static void scope(String item, List<FactPattern> patterns, List<String> inside, List<String> outside) {
-        if (patterns.isEmpty()) throw new IllegalArgumentException(item + " heeft ten minste één patroon");
+        if (patterns.isEmpty()) throw new IllegalArgumentException(item + " has at least one pattern");
         List<String> declared = declared(patterns);
         if (!inside.equals(declared))
-            throw new IllegalArgumentException(item + " declareert de variabelen van zijn patronen en van hun"
-                    + " bindingen, " + declared + ", niet " + inside);
+            throw new IllegalArgumentException(item + " declares the variables of its patterns and of their"
+                    + " bindings, " + declared + ", not " + inside);
         if (new LinkedHashSet<>(inside).size() != inside.size())
-            throw new IllegalArgumentException(item + " declareert een variabele twee keer: " + inside);
+            throw new IllegalArgumentException(item + " declares a variable twice: " + inside);
         List<String> read = read(patterns);
         if (!outside.equals(read))
-            throw new IllegalArgumentException(item + " leest van buiten " + read + ", niet " + outside);
+            throw new IllegalArgumentException(item + " reads from outside " + read + ", not " + outside);
         // a pattern reads an object or a value of the quantification only after the pattern that declares it
         for (String b : outside)
             if (inside.contains(b))
-                throw new IllegalArgumentException("een patroon van " + item + " leest " + b + " voor het patroon"
-                        + " dat die variabele declareert");
+                throw new IllegalArgumentException("a pattern of " + item + " reads " + b + " before the pattern"
+                        + " that declares that variable");
     }
 }

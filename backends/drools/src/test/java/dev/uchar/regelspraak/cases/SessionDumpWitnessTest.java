@@ -98,7 +98,7 @@ class SessionDumpWitnessTest {
             session.insert(new Fault(v1, "proef", fault));
             return SessionDump.op(session, labels);
         }));
-        assertTrue(e.getMessage().startsWith("de dump schrijft geen identiteit: de zin \"een zin over Vondst@"),
+        assertTrue(e.getMessage().startsWith("the dump writes no identity: the sentence \"een zin over Vondst@"),
                 e.getMessage());
     }
 
@@ -276,13 +276,13 @@ class SessionDumpWitnessTest {
             IllegalStateException unnamed = assertThrows(IllegalStateException.class, () -> runner.withSession(caseDocument,
                     (build, session, labels) -> refused(session, labels, unnamedVondst(build.beanLoader()))),
                     () -> "de bean zonder naam op " + branch);
-            assertEquals("de dump heeft geen naam voor een bean van Vondst: geen caselabel en geen creatie die haar"
-                    + " maakte", unnamed.getMessage(), () -> "de bean zonder naam op " + branch);
+            assertEquals("the dump has no name for a bean of Vondst: no case label and no creation that"
+                    + " made it", unnamed.getMessage(), () -> "de bean zonder naam op " + branch);
             IllegalStateException withoutText = assertThrows(IllegalStateException.class, () -> runner.withSession(caseDocument,
                     (build, session, labels) -> refused(session, labels, new Textless())),
                     () -> "het object zonder tekst op " + branch);
-            assertEquals("de dump schrijft geen identiteit: een " + Textless.class.getName() + " heeft geen tekst van"
-                    + " zichzelf", withoutText.getMessage(), () -> "het object zonder tekst op " + branch);
+            assertEquals("the dump writes no identity: a " + Textless.class.getName() + " has no text of"
+                    + " its own", withoutText.getMessage(), () -> "het object zonder tekst op " + branch);
         }
     }
 

@@ -149,3 +149,68 @@ De frontendkant is geland na `make gates` op `c81f22f84` (17 van 17 groen, 441 s
 woorden, waarvan 30 in `DroolsBackend.java`); die gaat naar een volgende bouwer. `ReaderSentenceBoundaryTest` is door
 de hoofdsessie nagelezen: hij leest de verifierzinnen nu in de Engelse catalogus en eist per code van zijn lijst een
 fragment; niet ruimer, alleen verplaatst met de catalogus.
+
+## Result Drools-kant (2026-11-06, branch `card/drools-message-language`)
+
+Afgetakt van `8e8fd6ee5`, gerebased op `1fd926908` (de landing van `drools-veelopveel-beanmodel`). Logs en
+hulpscripts onder `werk/drools-messages/` (`logs/`, `k/`).
+
+**De regel die ik per tekst volgde (besluit 1).** Een exceptietekst krijgt een code als zij een aanroeper iets zegt
+over wat hij zelf meegaf of deed: een argument of de volgorde van aanroepen van de publieke API (`DroolsBackend`, en
+`TmsTranspiler` waar `DroolsBackend` erdoorheen leest), een fout die de backend met opzet meldt over invoer (het
+vuurplafond, de eenheden die niet omrekenen, een lijst zonder plaatsen omdat de beans buiten `insert` om de sessie in
+kwamen, geen JDK), en een tekst die de distributie aan haar gebruiker doorgeeft (`CaseInput.RoleCollision`). Een tekst
+die de eigen toestand van de backend bewaakt (plan, weergave, sessiefeiten van een stapel, gegenereerde klassen,
+records die de backend zelf bouwt) is een interne invariant en werd Engels zonder code. Een gebrek in de inhoud van een
+case (`CaseInput`, `CaseRunner`: misvormde tijdlijn, overlappende perioden, verwachting op een onbekend label) volgt de
+bestaande Engelse case-gebreken van de replay zonder code: de schrijver van de case staat ervoor in (gate 4 voor het
+corpus, `--cases` van de frontend, en de `RequestMapper` van de distributie, die een `IllegalArgumentException` van
+`CaseInput.of` als eigen gebrek behandelt). De vorm op de plek: `DroolsCode.X.reason(naam, waarde, ...).text()`, met
+een woord of bijzin als `DroolsCode.X.part(...)` of `Msg.drools("PART....")`, zodat ook de parameterwaarden in de taal
+van de melding staan.
+
+**Telling.**
+- Met code: 49 nieuwe codes, DROOLS-319..367 (kind `CONTRACT`, het vuurplafond `LIMIT`), op 50 plekken: 33 in
+  `DroolsBackend` (`insert` 14 en de vier van zijn koppelingen, DROOLS-364..367, die met de rebase binnenkwamen, waarnemer, dekking, `compare` 4, `fire` 7, vuurplafond 2), 9 in `TmsTranspiler`
+  (`formOf`, de zes weigeringen om een fixpunt te lezen of terug te zetten, de twee van de lezingen), 3 in
+  `ComputeHelpers` (geen `ListPlace`), `UnitConflict`, de twee `RoleCollision`-zinnen en `BeanCompiler` (geen JDK).
+  DROOLS-157 droeg een Nederlandse zin als parameter (`Host.TARGET_ATTEMPT_NESTED`); de zin staat nu in de catalogus,
+  de parameter en de twee constanten van `Host` (één was al ongebruikt) vervielen. Ook de parameterwaarden die
+  Nederlandse woorden waren, komen uit de catalogus: de zinnen van de bewaking (`Watch`: `PART.watch.*`), het doel van
+  een stapel (`PART.target.*`), `zonder bron` (`PART.no-source`), `een <knoop>` bij DROOLS-029, de plekken van
+  DROOLS-360 en de raad bij DROOLS-352. De kop van `EvaluationFaults` is `FRAME.evaluation-faults` met
+  `PART.fault-places.*`: een omlijsting van fouten die hun eigen EF-code dragen, geen weigering.
+- Gevonden onderweg en meegenomen: de regels die `DroolsBackend.compare` en het scenariorapport teruggeven
+  (`verwacht leeg, werkelijk …`, `leeg`, `aanwezig`, `afwezig`) gingen in de distributie ook onder `--language en`
+  Nederlands naar buiten. Zij komen nu uit de catalogus als `PART.mismatch.*` en `PART.value.*`, zonder code: een
+  afwijking is een uitkomst van de vergelijking, geen weigering, en het register is dat van de weigeringen.
+- Engels zonder code: 253 exceptieconstructies in 43 bestanden, en tien losse stukken: de vijf zinnen van een
+  contractbreuk die de DRL-tekst en de PatternDSL-weergave in de gegenereerde code zetten, de namen `een niet-item` en
+  `een bestaat-item`, de reden van een onbekend datatype, en `Kenmerk <n>` in een interne melding van `Consequence`.
+- Ongewijzigd: de productieruntime (de kaart sluit haar uit; haar meldingen aan een gebruiker zijn al EF-entries, de
+  rest bewaakt interne invarianten); regelnamen, slotnamen en DRL-variabelen (gegenereerde tekst, conventie 6); `waar`,
+  `onwaar` en `de dag` (domein en v0-namen); de parameterwaarde `leeg` van EF-016 in `WritersConflict` (een
+  parameter van ch. 5.7b die rode cases pinnen); de plaatsaanduiding `(zonder naam)` in het manifest (een naam).
+
+**Acceptatie 3, de grep.** `werk/drools-messages/k/grep-final.py` telt elke exceptieconstructie in
+`backends/drools/src/main/java` zonder de runtime waarvan een literal een Nederlands woord draagt en die geen
+`DroolsCode` of catalogusentry noemt: op `8e8fd6ee5` 293 van 843, op `1fd926908` 297 van 848, op de branch 0 van 848
+(`logs/grep-final-main.log`, `logs/grep-final-main-1fd926908.log`, `logs/grep-final-branch.log`). Het script van de
+frontendbouwer (`werk/frontend-residue/k2/grep-dutch-exceptions.py`, minstens twee woorden): 270 op `8e8fd6ee5`, 274
+op `1fd926908`, 0 op de branch.
+
+**Acceptatie 2 en 4.** `scripts/check-drools-codes.sh` houdt register, catalogi en plekken bij elkaar zoals het dat al
+deed (367 codes; de vloeren 289, 325 en 49 bleven staan, groei vraagt geen ophoging); het script is niet gewijzigd.
+De Nederlandse entries van de nieuwe codes zijn letterlijk de oude teksten, dus de suite onder `nl` pint ze zoals
+voorheen. 16 testbestanden volgen mechanisch op de Engels gemaakte interne teksten (alleen stringliterals veranderden;
+gecontroleerd: de code zonder literals is gelijk aan `HEAD`). De DRL-pins van 41 goldens zijn opnieuw geschreven
+(`DrlTextPinWitnessTest` met `-Duchar.drlpin`): alleen de regels `ComputeHelpers.contractBreach("…")` veranderden,
+de vertaalde zin van een contractbreuk in de gegenereerde code. Drools-suite: 1884 tests, 0 failures
+(`logs/suite-2.log` en `logs/creationplan.log`).
+
+**Rebase.** Op `1fd926908` kreeg `drools-veelopveel-beanmodel` DROOLS-318; het blok van deze branch schoof één plaats
+op (`werk/drools-messages/k/renumber.py`). De nieuwe Nederlandse teksten van `DroolsBackend.inputLinks`
+(`insert: de koppeling …`) kregen dezelfde vorm als die van de lijsten: `PART.desc.insert-link` en DROOLS-364..367,
+met als Nederlandse entry de tekst van die landing.
+
+Open punten: geen normvraag.

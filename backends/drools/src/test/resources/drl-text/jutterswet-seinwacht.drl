@@ -153,7 +153,7 @@ when
 then
     Object f = fout_hoogstetekenVanEenSeinwachtFoutInDeVoorwaarde($ploegomvang, $vangstwaarde);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"hoogsteteken van een seinwacht\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"hoogsteteken van een seinwacht\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "hoogsteteken van een seinwacht", ComputeHelpers.designate(f, "hoogsteteken van een seinwacht")));
 end
@@ -204,7 +204,7 @@ function java.util.List deponering_hoogstetekenVanEenSeinwachtDeponeringInDeVoor
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"hoogsteteken van een seinwacht\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"hoogsteteken van een seinwacht\" deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }
@@ -393,7 +393,7 @@ when
 then
     Object f = fout_preciestekenVanEenSeinwachtFoutInDeVoorwaarde($ploegomvang, $vangstwaarde);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"preciesteken van een seinwacht\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"preciesteken van een seinwacht\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "preciesteken van een seinwacht", ComputeHelpers.designate(f, "preciesteken van een seinwacht")));
 end
@@ -444,7 +444,7 @@ function java.util.List deponering_preciestekenVanEenSeinwachtDeponeringInDeVoor
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"preciesteken van een seinwacht\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"preciesteken van een seinwacht\" deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }
@@ -612,7 +612,7 @@ when
 then
     Object f = fout_minstetekenVanEenSeinwachtFoutInDeVoorwaarde($vangstwaarde, $ploegomvang);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"minsteteken van een seinwacht\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"minsteteken van een seinwacht\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "minsteteken van een seinwacht", ComputeHelpers.designate(f, "minsteteken van een seinwacht")));
 end
@@ -656,7 +656,7 @@ function java.util.List deponering_minstetekenVanEenSeinwachtDeponeringInDeVoorw
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"minsteteken van een seinwacht\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"minsteteken van een seinwacht\" deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }
@@ -817,7 +817,7 @@ when
 then
     Object f = fout_randtekenVanEenSeinwachtFoutInDeVoorwaarde($vangstwaarde, $ploegomvang);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"randteken van een seinwacht\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"randteken van een seinwacht\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "randteken van een seinwacht", ComputeHelpers.designate(f, "randteken van een seinwacht")));
 end
@@ -861,7 +861,7 @@ function java.util.List deponering_randtekenVanEenSeinwachtDeponeringInDeVoorwaa
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"randteken van een seinwacht\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"randteken van een seinwacht\" deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }

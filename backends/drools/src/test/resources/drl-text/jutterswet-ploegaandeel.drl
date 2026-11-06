@@ -132,7 +132,7 @@ when
 then
     Object f = fout_bergingsaandeelVanEenJutterFoutInDeVoorwaarde($ploegomvang, $vangstwaarde);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"bergingsaandeel van een jutter\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"bergingsaandeel van een jutter\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "bergingsaandeel van een jutter", ComputeHelpers.designate(f, "bergingsaandeel van een jutter")));
 end
@@ -176,7 +176,7 @@ function java.util.List deponering_bergingsaandeelVanEenJutterDeponeringInDeVoor
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"bergingsaandeel van een jutter\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"bergingsaandeel van een jutter\" deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }

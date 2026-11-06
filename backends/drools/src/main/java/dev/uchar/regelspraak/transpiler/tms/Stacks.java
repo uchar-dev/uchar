@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
+import dev.uchar.regelspraak.message.Msg;
 import dev.uchar.regelspraak.refusal.DroolsCode;
 import dev.uchar.regelspraak.refusal.Reason;
 import dev.uchar.regelspraak.ir.Condition;
@@ -235,7 +236,8 @@ final class Stacks {
         return (l.isCharacteristic() ? "K:" : "A:") + Namen.norm(l.target());
     }
 
-    private static String targetName(String stackKey) {
-        return (stackKey.startsWith("K:") ? "kenmerk '" : "attribuut '") + stackKey.substring(2) + "'";
+    private static Msg targetName(String stackKey) {
+        return Msg.drools(stackKey.startsWith("K:") ? "PART.target.characteristic" : "PART.target.attribute", "name",
+                stackKey.substring(2));
     }
 }

@@ -51,7 +51,7 @@ public record RulePlan(String name, String form, String agendaGroup, ReadTable r
         Set<String> slotNames = new HashSet<>();
         for (Read l : readings.slots())
             if (l.name() != null && !slotNames.add(l.name()))
-                throw new IllegalArgumentException("de regel " + name + " geeft twee slots de variabele " + l.name());
+                throw new IllegalArgumentException("the rule " + name + " gives two slots the variable " + l.name());
     }
 
     private static void declare(String rule, FactPattern p, Set<String> inScope) {
@@ -61,8 +61,8 @@ public record RulePlan(String name, String form, String agendaGroup, ReadTable r
 
     private static void declare(String rule, String variable, Set<String> inScope) {
         if (!inScope.add(variable))
-            throw new IllegalArgumentException("de regel " + rule + " declareert de variabele " + variable
-                    + " twee keer");
+            throw new IllegalArgumentException("the rule " + rule + " declares the variable " + variable
+                    + " twice");
     }
 
     /** The variables a quantification declares, which live only inside it: none may be in scope where it stands
@@ -70,7 +70,7 @@ public record RulePlan(String name, String form, String agendaGroup, ReadTable r
     private static void inside(String rule, List<String> inside, Set<String> inScope) {
         for (String v : inside)
             if (inScope.contains(v))
-                throw new IllegalArgumentException("de regel " + rule + " declareert de variabele " + v
-                        + " twee keer");
+                throw new IllegalArgumentException("the rule " + rule + " declares the variable " + v
+                        + " twice");
     }
 }

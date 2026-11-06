@@ -143,7 +143,7 @@ when
 then
     Object f = fout_gemeldBakenFoutInDeVoorwaarde($actief);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"gemeld baken\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"gemeld baken\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "gemeld baken", ComputeHelpers.designate(f, "gemeld baken")));
 end

@@ -630,8 +630,8 @@ public final class FactModelGenerator {
         // arm must HAVE the forward field its guard reads
         boolean oneToOne = connectingRole != null ? !fwdMany : !model.subjectToManyCreation(subject, fresh);
         if (oneToOne != (fwdRef != null))
-            throw new IllegalStateException("objectcreatie " + name + ": subjectNaarVeelCreatie(" + oneToOne
-                    + ") en het voorwaartse veld (" + fwdRef + ") spreken elkaar tegen");
+            throw new IllegalStateException("object creation " + name + ": subjectNaarVeelCreatie(" + oneToOne
+                    + ") and the forward field (" + fwdRef + ") contradict each other");
         return new CreationLink(fwdRole, fwdMany, backRole, backMany, fwdRef, backRef, oneToOne, null, null);
     }
 

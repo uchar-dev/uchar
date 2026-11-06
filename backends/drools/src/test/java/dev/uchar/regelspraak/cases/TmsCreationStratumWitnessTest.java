@@ -762,8 +762,8 @@ class TmsCreationStratumWitnessTest {
         StringBuilder chain = new StringBuilder();
         for (Throwable t = e; t != null; t = t.getCause() == t ? null : t.getCause())
             chain.append(t.getClass().getSimpleName()).append(": ").append(t.getMessage()).append(" | ");
-        assertTrue(chain.toString().contains("IllegalStateException: exec-model: objectcreatie \"werf de lange keten\" van"
-                + " stratum 0 ontmoet een onderwerp dat een creatie van stratum 1 maakte"), chain::toString);
+        assertTrue(chain.toString().contains("IllegalStateException: exec-model: object creation \"werf de lange keten\" of"
+                + " stratum 0 meets a subject that a creation of stratum 1 made"), chain::toString);
     }
 
     // ---------------- document V: the creations of one generation read one world ----------------

@@ -79,7 +79,7 @@ when
 then
     Object f = fout_inzetbaarBijKeurtermijnFoutInDeVoorwaarde($aantal_vouw_17, $vouw_vouw_19);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"inzetbaar bij keurtermijn\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"inzetbaar bij keurtermijn\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "inzetbaar bij keurtermijn", ComputeHelpers.designate(f, "inzetbaar bij keurtermijn")));
 end

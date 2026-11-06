@@ -45,16 +45,16 @@ public record PeriodDecisions(Object object, String member, List<List<String>> r
         spans = List.copyOf(spans);
         if (spans.isEmpty() || !spans.get(0).from().equals(Period.OPEN_FROM)
                 || !spans.get(spans.size() - 1).to().equals(Period.OPEN_TO))
-            throw new IllegalArgumentException("de perioden van " + member + " beslaan niet alle tijd: " + spans);
+            throw new IllegalArgumentException("the periods of " + member + " do not cover all time: " + spans);
         for (int i = 1; i < spans.size(); i++)
             if (!spans.get(i - 1).to().equals(spans.get(i).from()))
-                throw new IllegalArgumentException("de perioden van " + member + " sluiten niet aaneen: " + spans);
+                throw new IllegalArgumentException("the periods of " + member + " are not contiguous: " + spans);
         for (Span s : spans)
             if (!rootChains.isEmpty() && !s.rules().isEmpty() || rootChains.isEmpty() && (s.decider() != null
                     || s.conflict() != null))
-                throw new IllegalArgumentException("een periode van " + member + " noemt "
-                        + (rootChains.isEmpty() ? "een default, waar regels het doel beslissen" : "regels, waar een"
-                        + " stapel het doel beslist") + ": " + s);
+                throw new IllegalArgumentException("a period of " + member + " names "
+                        + (rootChains.isEmpty() ? "a default, where rules decide the target" : "rules, where a"
+                        + " stack decides the target") + ": " + s);
     }
 
     /**
@@ -96,11 +96,11 @@ public record PeriodDecisions(Object object, String member, List<List<String>> r
             Objects.requireNonNull(to, "to");
             rules = List.copyOf(rules);
             if (!from.isBefore(to))
-                throw new IllegalArgumentException("een periode [" + from + ", " + to + ") zonder dag");
+                throw new IllegalArgumentException("a period [" + from + ", " + to + ") without a day");
             if (decider != null && conflict != null)
-                throw new IllegalArgumentException("een periode noemt hoogstens één van beslisser en conflict");
+                throw new IllegalArgumentException("a period names at most one of decider and conflict");
             if (input != null && (decider != null || !rules.isEmpty()))
-                throw new IllegalArgumentException("de invoer staat alleen op dagen die geen schrijver besliste");
+                throw new IllegalArgumentException("the input stands only on days no writer decided");
         }
     }
 }

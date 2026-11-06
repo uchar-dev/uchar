@@ -13,7 +13,7 @@ public record Alpha(String id, List<FieldTest> tests) {
 
     public Alpha {
         tests = List.copyOf(tests);
-        if (tests.isEmpty()) throw new IllegalArgumentException("een alfaconstraint toetst ten minste één veld");
+        if (tests.isEmpty()) throw new IllegalArgumentException("an alpha constraint tests at least one field");
     }
 
     /**
@@ -32,13 +32,13 @@ public record Alpha(String id, List<FieldTest> tests) {
         public FieldTest {
             path = List.copyOf(path);
             if ((field == null) != (property == null))
-                throw new IllegalArgumentException("een veldtoets leest een eigenschap precies waar zij een veld leest: "
+                throw new IllegalArgumentException("a field test reads a property exactly where it reads a field: "
                         + field + ", " + property);
             if (!path.isEmpty() && field != null)
-                throw new IllegalArgumentException("een veldtoets langs een pad toetst het object dat het pad bereikt,"
-                        + " niet het veld " + field);
+                throw new IllegalArgumentException("a field test along a path tests the object the path reaches,"
+                        + " not the field " + field);
             if (declarant != null && field == null)
-                throw new IllegalArgumentException("een veldtoets op het object zelf leest geen veld van " + declarant);
+                throw new IllegalArgumentException("a field test on the object itself reads no field of " + declarant);
         }
 
         /** A test of what the test reads of the pattern's object, a field through the getter of {@code declarant}, with

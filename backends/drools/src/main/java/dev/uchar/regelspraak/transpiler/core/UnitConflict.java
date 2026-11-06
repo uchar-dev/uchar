@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.transpiler.core;
 
+import dev.uchar.regelspraak.refusal.DroolsCode;
 import dev.uchar.regelspraak.model.Unit;
 
 /**
@@ -56,13 +57,13 @@ public final class UnitConflict extends RuntimeException {
     private final transient Unit destination;
     private final String site;
 
-    private UnitConflict(Unit from, Unit destination, String site) {
-        super("onverenigbare eenheden bij " + site + ": '" + from.rendering() + "' (canoniek " + from.dimensionRendering()
-                + ") herschaalt niet naar '" + destination.rendering() + "' (canoniek " + destination.dimensionRendering()
-                + ") — er bestaat geen omrekenfactor");
+    private UnitConflict(Unit from, Unit destination, Object site) {
+        super(DroolsCode.UNIT_CONFLICT.reason("site", site, "from", from.rendering(), "fromCanonical",
+                from.dimensionRendering(), "destination", destination.rendering(), "destinationCanonical",
+                destination.dimensionRendering()).text());
         this.from = from;
         this.destination = destination;
-        this.site = site;
+        this.site = String.valueOf(site);
     }
 
     /**
@@ -70,9 +71,11 @@ public final class UnitConflict extends RuntimeException {
      * concrete and do not inter-convert. Called at the HEAD of each restatement helper, before its own
      * "no conversion due" test, so the two facts that test conflates stay apart.
      *
-     * @param site the site, for the message — the fault names where it stood, the way the verifier names a path.
+     * @param site the site, for the message — the fault names where it stood, the way the verifier names a path: a
+     *             part of the catalogue entry of {@code DROOLS-359}, which renders in the language of the message, or a
+     *             name.
      */
-    public static void requireRescalable(Unit from, Unit destination, String site) {
+    public static void requireRescalable(Unit from, Unit destination, Object site) {
         if (from == null || destination == null) return;              // a unitless side adopts the other (ch. 2.6)
         if (from.convertibleTo(destination)) return;                // a factor exists (or the two are the same unit)
         throw new UnitConflict(from, destination, site);
@@ -82,6 +85,6 @@ public final class UnitConflict extends RuntimeException {
 
     public Unit destination() { return destination; }
 
-    /** The restatement site the fault stood at. */
+    /** The restatement site the fault stood at, in the default language of the backend. */
     public String site() { return site; }
 }

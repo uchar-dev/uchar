@@ -10,7 +10,7 @@ public record Accumulation(FactPattern source, List<Aggregation> aggregations) i
 
     public Accumulation {
         aggregations = List.copyOf(aggregations);
-        if (aggregations.isEmpty()) throw new IllegalArgumentException("een accumulatie vouwt met ten minste één functie");
+        if (aggregations.isEmpty()) throw new IllegalArgumentException("an accumulation folds with at least one function");
     }
 
     /** {@code kind} over the matched object itself where {@code source} is null, else over the variable {@code source}

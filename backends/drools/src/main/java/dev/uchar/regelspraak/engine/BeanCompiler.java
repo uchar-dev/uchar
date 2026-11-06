@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.engine;
 
+import dev.uchar.regelspraak.refusal.DroolsCode;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 
 import javax.tools.FileObject;
@@ -68,14 +69,14 @@ public final class BeanCompiler {
             for (byte b : md.digest()) hex.append(Character.forDigit((b >> 4) & 0xF, 16)).append(Character.forDigit(b & 0xF, 16));
             return hex.toString();
         } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 niet beschikbaar", e);
+            throw new IllegalStateException("SHA-256 not available", e);
         }
     }
 
     private static ClassLoader compileUncached(Map<String, String> sources) {
         JavaCompiler javac = ToolProvider.getSystemJavaCompiler();
         if (javac == null)
-            throw new IllegalStateException("geen JDK-compiler beschikbaar (draai op een JDK, niet een JRE)");
+            throw new IllegalStateException(DroolsCode.NO_JDK_COMPILER.reason().text());
         Map<String, ByteArrayOutputStream> classes = new HashMap<>();
         List<JavaFileObject> units = new ArrayList<>();
         for (Map.Entry<String, String> e : sources.entrySet())
@@ -101,9 +102,9 @@ public final class BeanCompiler {
              }) {
             boolean ok = javac.getTask(null, fm, d -> diag.append(d).append('\n'), null, null, units).call();
             if (!ok)
-                throw new IllegalStateException("gegenereerde fact-beans compileren niet:\n" + diag);
+                throw new IllegalStateException("generated fact beans do not compile:\n" + diag);
         } catch (java.io.IOException e) {
-            throw new IllegalStateException("kon de in-memory fact-compiler niet sluiten", e);
+            throw new IllegalStateException("could not close the in-memory fact compiler", e);
         }
         return new ClassLoader(BeanCompiler.class.getClassLoader()) {
             @Override protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {

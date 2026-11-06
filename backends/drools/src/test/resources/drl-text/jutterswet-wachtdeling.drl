@@ -132,7 +132,7 @@ when
 then
     Object f = fout_geentekenVanEenWachtFoutInDeVoorwaarde($ploegomvang, $vangstwaarde);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"geenteken van een wacht\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"geenteken van een wacht\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "geenteken van een wacht", ComputeHelpers.designate(f, "geenteken van een wacht")));
 end
@@ -176,7 +176,7 @@ function java.util.List deponering_geentekenVanEenWachtDeponeringInDeVoorwaarde(
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"geenteken van een wacht\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"geenteken van een wacht\" deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }
@@ -337,7 +337,7 @@ when
 then
     Object f = fout_minstetekenVanEenWachtFoutInDeVoorwaarde($ploegomvang, $vangstwaarde);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"minsteteken van een wacht\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"minsteteken van een wacht\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "minsteteken van een wacht", ComputeHelpers.designate(f, "minsteteken van een wacht")));
 end
@@ -381,7 +381,7 @@ function java.util.List deponering_minstetekenVanEenWachtDeponeringInDeVoorwaard
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"minsteteken van een wacht\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"minsteteken van een wacht\" deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }

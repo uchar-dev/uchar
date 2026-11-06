@@ -151,7 +151,7 @@ public final class EffectiveUnit {
         return t != null || e instanceof Expr.InstanceSetUnion || e == null ? t : UNKNOWN;
     }
 
-    private static final Datatype UNKNOWN = new Datatype.Unknown("geen type op de wire");
+    private static final Datatype UNKNOWN = new Datatype.Unknown("no type on the wire");
 
     /** The payload datatype of the constructor {@code constructor} of the sum type {@code t}, or null where {@code t} is
      *  none or declares no such unary constructor. */
@@ -445,8 +445,8 @@ public final class EffectiveUnit {
     }
 
     private static IllegalStateException clusterNode() {
-        return new IllegalStateException("een ch. 4.10-knoop hoort nooit bij kinderen() te komen: noteer() vangt "
-                + "hem af, omdat hij een scope draagt die deze accessor niet kan meegeven");
+        return new IllegalStateException("a ch. 4.10 node never reaches kinderen(): noteer() intercepts "
+                + "it, since it carries a scope this accessor cannot pass on");
     }
 
     private static List<Expr> childrenOf(Expr... xs) {

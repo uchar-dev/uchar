@@ -1,5 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
+import dev.uchar.regelspraak.message.Msg;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,12 +24,12 @@ public final class EvaluationFaults extends RuntimeException {
 
     /** {@code faults} in the order of the report. */
     EvaluationFaults(List<Fault> faults) {
-        this(head(faults), sentences(faults), faults);
+        this(head(faults).text(), sentences(faults), faults);
     }
 
     private EvaluationFaults(String head, String sentences, List<Fault> faults) {
         super(head + ": " + sentences, faults.get(0).fault());
-        if (faults.size() < 2) throw new IllegalArgumentException("één fout wordt geworpen zoals ze is: " + faults);
+        if (faults.size() < 2) throw new IllegalArgumentException("one fault is thrown as it is: " + faults);
         this.head = head;
         this.sentences = sentences;
         this.faults = faults.stream().map(Fault::fault).toList();
@@ -37,7 +39,7 @@ public final class EvaluationFaults extends RuntimeException {
     /** Each rule once, with the number of its faults where it has more than one: the faults of one rule are adjacent in
      *  the order of the report, so the head grows with the rules of the document and not with the objects of the case.
      *  The name a {@link SecondFillingFault} carries is that of a fact type, and the head names it as one. */
-    private static String head(List<Fault> faults) {
+    private static Msg head(List<Fault> faults) {
         List<String> rules = new ArrayList<>(), factTypes = new ArrayList<>();
         for (int i = 0; i < faults.size(); ) {
             Fault first = faults.get(i);
@@ -47,12 +49,14 @@ public final class EvaluationFaults extends RuntimeException {
                     && faults.get(i).fault() instanceof SecondFillingFault == factType; i++) n++;
             (factType ? factTypes : rules).add("\"" + first.rule() + "\"" + (n > 1 ? " (" + n + "×)" : ""));
         }
-        List<String> parts = new ArrayList<>();
-        if (!rules.isEmpty()) parts.add("in de regel" + (rules.size() > 1 ? "s " : " ") + String.join(", ", rules));
-        if (!factTypes.isEmpty())
-            parts.add((rules.isEmpty() ? "in " : "") + (factTypes.size() > 1 ? "de feittypen " : "het feittype ")
-                    + String.join(", ", factTypes));
-        return "aan het fixpunt staan " + faults.size() + " evaluatiefouten, " + String.join(" en ", parts);
+        Msg ruleClause = rules.isEmpty() ? null
+                : Msg.drools(rules.size() > 1 ? "PART.fault-places.rules" : "PART.fault-places.rule", "rules",
+                        String.join(", ", rules));
+        Msg factTypeClause = factTypes.isEmpty() ? null
+                : Msg.drools("PART.fault-places." + (rules.isEmpty() ? "in-" : "") + (factTypes.size() > 1 ? "fact-types"
+                        : "fact-type"), "factTypes", String.join(", ", factTypes));
+        return Msg.drools("FRAME.evaluation-faults", "count", faults.size(), "places", Watch.clauses(ruleClause,
+                factTypeClause));
     }
 
     private static String sentences(List<Fault> faults) {

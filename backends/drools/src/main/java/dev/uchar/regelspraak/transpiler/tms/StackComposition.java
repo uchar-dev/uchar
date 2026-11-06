@@ -43,8 +43,8 @@ public record StackComposition(List<List<StackComposition.Entry>> chains) {
     public StackComposition {
         Objects.requireNonNull(chains, "chains");
         if (chains.isEmpty() || chains.stream().anyMatch(List::isEmpty))
-            throw new IllegalArgumentException("een samenstelling heeft ten minste één keten en elke keten ten minste"
-                    + " één default: " + chains);
+            throw new IllegalArgumentException("a composition has at least one chain and every chain at least"
+                    + " one default: " + chains);
         chains = chains.stream().map(List::copyOf).toList();
     }
 

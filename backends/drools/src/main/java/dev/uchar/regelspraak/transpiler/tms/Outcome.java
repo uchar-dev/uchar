@@ -41,8 +41,8 @@ public record Outcome(Object subject, String stack, int chain, int position, Kin
         Objects.requireNonNull(stack, "stack");
         Objects.requireNonNull(kind, "kind");
         if (kind == Kind.DECIDED ? value == null || key != null : value != null || key == null)
-            throw new IllegalArgumentException("een beslissing draagt een waarde, een conflict een sleutel: " + kind
-                    + " met waarde " + value + " en sleutel " + key);
+            throw new IllegalArgumentException("a decision carries a value, a conflict a key: " + kind
+                    + " with value " + value + " and key " + key);
     }
 
     public boolean conflict() { return kind == Kind.CONFLICT; }

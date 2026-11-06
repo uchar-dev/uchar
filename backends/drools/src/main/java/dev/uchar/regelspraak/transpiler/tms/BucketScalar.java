@@ -21,8 +21,8 @@ public record BucketScalar(Period bucket) {
     static BucketScalar of(List<?> segments) {
         List<Period> timeline = Period.list(segments);
         if (timeline == null || timeline.size() != 1)
-            throw new IllegalStateException("een emmerscalair staat op de bean als het ene segment van de periode van de"
-                    + " rekendatum, niet als " + timeline);
+            throw new IllegalStateException("a bucket scalar stands on the bean as the one segment of the period of the"
+                    + " asOfDate, not as " + timeline);
         return new BucketScalar(timeline.get(0));
     }
 

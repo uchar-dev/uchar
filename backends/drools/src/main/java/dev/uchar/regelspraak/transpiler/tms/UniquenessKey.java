@@ -35,7 +35,7 @@ public final class UniquenessKey {
         this.scope = scope;
         this.values = new ArrayList<>(values);
         for (Object w : this.values)
-            if (w == null) throw new IllegalArgumentException("een lege sleutelcomponent neemt niet deel (ch. 5.9)");
+            if (w == null) throw new IllegalArgumentException("an empty key component does not take part (ch. 5.9)");
     }
 
     public String uniqueness() { return uniqueness; }

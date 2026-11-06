@@ -344,7 +344,7 @@ public final class Cycles {
         for (int ronde = 1; changed; ronde++) {
             // only an edge between two strongly connected components climbs, so the strata settle within n rounds;
             // the reference interpreter faults past n + 2, and so does this
-            if (ronde > n + 2) throw new IllegalStateException("exec-model: geen evaluatiestrata na " + (n + 2) + " rondes");
+            if (ronde > n + 2) throw new IllegalStateException("exec-model: no evaluation strata after " + (n + 2) + " rounds");
             changed = false;
             for (int i = 0; i < edges.size(); i++) {
                 Edge r = edges.get(i);

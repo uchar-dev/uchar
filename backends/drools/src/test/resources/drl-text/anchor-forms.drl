@@ -657,7 +657,7 @@ when
 then
     RuntimeException f = fout_deelbaarTariefFilterfoutInVouw6($lijstplaatsen_plaats_53, $plaats_plaats_54, $vouwonderwerp, $onderwerp, $tarief, $teller);
     if (f == null) {
-        ComputeHelpers.contractBreach("het filter van deelbaar tarief: vouw 6 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of deelbaar tarief: vouw 6 failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new FilterFault("deelbaar tarief: vouw 6", $vouwonderwerp, $onderwerp, f, plaats_deelbaarTariefFilterfoutInVouw6($onderwerp, $lijstplaatsen_plaats_53, $plaats_plaats_54)));
 end
@@ -705,7 +705,7 @@ function java.util.List deponering_deelbaarTariefFilterdeponeringInVouw6(Object 
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("het filter van deelbaar tarief: vouw 6 deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of deelbaar tarief: vouw 6 deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }
@@ -1027,7 +1027,7 @@ when
 then
     RuntimeException f = fout_deelbaarLaterTariefFilterfoutInVouw13($lijstplaatsen_plaats_128, $plaats_plaats_129, $ingangsdag, $ingangsdag2, $tarief, $teller, $onderwerp);
     if (f == null) {
-        ComputeHelpers.contractBreach("het filter van deelbaar later tarief: vouw 13 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of deelbaar later tarief: vouw 13 failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new FilterFault("deelbaar later tarief: vouw 13", $vouwonderwerp, $onderwerp, f, plaats_deelbaarLaterTariefFilterfoutInVouw13($onderwerp, $lijstplaatsen_plaats_128, $plaats_plaats_129)));
 end
@@ -1075,7 +1075,7 @@ function java.util.List deponering_deelbaarLaterTariefFilterdeponeringInVouw13(O
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("het filter van deelbaar later tarief: vouw 13 deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of deelbaar later tarief: vouw 13 deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }
@@ -1181,7 +1181,7 @@ when
 then
     RuntimeException f = fout_deelbaarTariefVanOngeschorsteFilterfoutInVouw14($lijstplaatsen_plaats_156, $plaats_plaats_157, $tarief, $teller, $onderwerp);
     if (f == null) {
-        ComputeHelpers.contractBreach("het filter van deelbaar tarief van ongeschorste: vouw 14 faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of deelbaar tarief van ongeschorste: vouw 14 failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new FilterFault("deelbaar tarief van ongeschorste: vouw 14", $vouwonderwerp, $onderwerp, f, plaats_deelbaarTariefVanOngeschorsteFilterfoutInVouw14($onderwerp, $lijstplaatsen_plaats_156, $plaats_plaats_157)));
 end
@@ -1208,7 +1208,7 @@ function java.util.List deponering_deelbaarTariefVanOngeschorsteFilterdeponering
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("het filter van deelbaar tarief van ongeschorste: vouw 14 deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the filter of deelbaar tarief van ongeschorste: vouw 14 deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }

@@ -123,7 +123,7 @@ class DuplicateRuleNameWitnessTest {
                 TmsTranspiler.RuleOrigin.Role.OWN, null, null), t.originOf("laat"));
         IllegalStateException e = assertThrows(IllegalStateException.class,
                 () -> t.originOf("laat: fout in de voorwaarde"));
-        assertTrue(e.getMessage().contains("de vormen laat en laat: fout in de voorwaarde"), e::getMessage);
+        assertTrue(e.getMessage().contains("the forms laat and laat: fout in de voorwaarde"), e::getMessage);
     }
 
     @Test void a_form_named_like_the_channel_rule_of_a_uniqueness_is_refused_by_name() throws Exception {

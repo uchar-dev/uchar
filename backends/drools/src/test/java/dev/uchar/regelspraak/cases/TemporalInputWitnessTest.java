@@ -239,7 +239,7 @@ class TemporalInputWitnessTest {
         // with a null granularity and died as an unnamed NPE.
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> playBakenmeester("""
                 { "kind": "attributeTimeline", "label": "B9", "attribute": "onderhoudstarief", "timeline": [] }"""));
-        assertTrue(e.getMessage().contains("onbekend label"), e.getMessage());
+        assertTrue(e.getMessage().contains("unknown label"), e.getMessage());
     }
 
     /** One authored bakenmeester case — the case1 input (tarief timeline + dienstdoend period) with the given

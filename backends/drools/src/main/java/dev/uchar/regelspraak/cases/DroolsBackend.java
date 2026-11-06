@@ -361,8 +361,8 @@ public final class DroolsBackend {
             // Drools' message opens with a header that carries the path above, 127 characters up to "text=" on the
             // first message, and only then the error itself (line, column, what failed); the bound leaves that standing
             String m = String.valueOf(e.getMessage()).replace('\n', ' ');
-            throw new IllegalStateException("drl: de DRL-tekst van de weergave compileert niet, een fout van de"
-                    + " weergave: " + (m.length() > 400 ? m.substring(0, 400) + "…" : m), e);
+            throw new IllegalStateException("drl: the DRL text of the rendering does not compile, a fault of the"
+                    + " rendering: " + (m.length() > 400 ? m.substring(0, 400) + "…" : m), e);
         }
         return new Build(loaded.model(), cl, t, drl, List.copyOf(t.coverage()), kieBase);
     }
@@ -407,16 +407,14 @@ public final class DroolsBackend {
         List<Object> beans = input.beans();
         TmsTranspiler tms = build.execModelTranspiler();
         if (session.getFactCount() != 0)
-            throw new IllegalStateException("insert vult een verse sessie, maar deze houdt al " + session.getFactCount()
-                    + " feiten: de plaatsen van een lijst worden over de beans van één invoer geteld, en een bean die"
-                    + " zonder insert in de sessie kwam, heeft er geen; geef alle beans in één Input aan een verse"
-                    + " sessie, en verander tussen twee fires hun waarden met update");
+            throw new IllegalStateException(DroolsCode.INSERT_SESSION_NOT_FRESH.reason("factCount", session.getFactCount())
+                    .text());
         Map<Object, ObjectType> types = new IdentityHashMap<>();
         // a case of ten thousand objects has a handful of bean classes
         Map<Class<?>, ObjectType> perClass = new HashMap<>();
         for (Object beanObject : beans)
             if (types.put(beanObject, perClass.computeIfAbsent(beanObject.getClass(), k -> objectType(build, beanObject))) != null)
-                throw new IllegalArgumentException("insert: de bean " + name(beanObject) + " staat twee keer in de invoer");
+                throw new IllegalArgumentException(DroolsCode.INSERT_BEAN_TWICE.reason("bean", name(beanObject)).text());
         String outsideSentence = targetOutsideInput("insert", build, beans, types, perClass);
         if (outsideSentence != null) throw new IllegalArgumentException(outsideSentence);
         List<Object> facts = new ArrayList<>(beans);
@@ -432,28 +430,29 @@ public final class DroolsBackend {
     private static List<RelationLink> inputLinks(Build build, Map<Object, ObjectType> types, List<Input.Link> links) {
         List<RelationLink> out = new ArrayList<>();
         for (Input.Link k : links) {
-            String description = "insert: de koppeling " + name(k.first()) + " - " + name(k.second()) + " van '"
-                    + k.factType() + "'";
+            Msg description = Msg.drools("PART.desc.insert-link", "first", name(k.first()), "second",
+                    name(k.second()), "factType", k.factType());
             RegelSpraakModel.FactType ft = null;
             for (RegelSpraakModel.FactType f : build.model().factTypes.values())
                 if (Namen.norm(f.name).equals(Namen.norm(k.factType()))) ft = f;
             if (ft == null || ft.reciprocal || ft.roles.size() != 2 || !ft.roles.get(0).many() || !ft.roles.get(1).many())
-                throw new IllegalArgumentException(description + " noemt geen feittype van twee rollen die allebei"
-                        + " meervoudig zijn; een relatie met een enkelvoudige rol staat in het referentieveld van haar"
-                        + " ene kant");
+                throw new IllegalArgumentException(DroolsCode.LINK_NOT_MANY_TO_MANY.reason("description", description)
+                        .text());
             Object[] ends = {k.first(), k.second()};
             for (int i = 0; i < 2; i++) {
                 RegelSpraakModel.Role role = ft.roles.get(i);
                 ObjectType t = types.get(ends[i]);
                 if (t == null)
-                    throw new IllegalArgumentException(description + " noemt " + name(ends[i]) + ", dat geen bean van de"
-                            + " invoer is");
+                    throw new IllegalArgumentException(DroolsCode.LINK_END_NOT_IN_INPUT.reason("description", description,
+                            "end", name(ends[i])).text());
                 if (t.chain().stream().noneMatch(a -> Namen.norm(a.name).equals(Namen.norm(role.objectTypeName()))))
-                    throw new IllegalArgumentException(description + ": " + name(ends[i]) + " is een " + t.name
-                            + " en vult de rol '" + role.name() + "' van " + role.objectTypeName() + " niet");
+                    throw new IllegalArgumentException(DroolsCode.LINK_END_WRONG_TYPE.reason("description", description,
+                            "end", name(ends[i]), "objectType", t.name, "role", role.name(), "roleType",
+                            role.objectTypeName()).text());
             }
             RelationLink fact = new RelationLink(Namen.norm(ft.name), k.first(), k.second(), 0);
-            if (out.contains(fact)) throw new IllegalArgumentException(description + " komt twee keer voor");
+            if (out.contains(fact)) throw new IllegalArgumentException(DroolsCode.LINK_TWICE.reason("description",
+                    description).text());
             out.add(fact);
         }
         return out;
@@ -464,17 +463,16 @@ public final class DroolsBackend {
      *  The branch derives only for the objects in the session, so every value of such an object, and every value read
      *  through the field, would stay empty without a word; and the link the field gives still counts, so a creation it
      *  blocks makes no object in its place. */
-    private static String targetOutsideInput(String refusingCall, Build build, List<Object> beans, Map<Object, ObjectType> types,
+    private static String targetOutsideInput(Object refusingCall, Build build, List<Object> beans, Map<Object, ObjectType> types,
                                              Map<Class<?>, ObjectType> perClass) {
         Map<ObjectType, List<String>> fields = new HashMap<>();
         for (Object beanObject : beans)
             for (String field : fields.computeIfAbsent(types.get(beanObject), t -> referenceFields(build.model(), t))) {
                 Object target = Accessors.leesEigenschap(beanObject, field);
                 if (target != null && !types.containsKey(target))
-                    return refusingCall + ": het veld '" + field + "' van " + name(beanObject) + " wijst naar een "
-                            + perClass.computeIfAbsent(target.getClass(), k -> objectType(build, target)).name + " ("
-                            + name(target) + ") die niet als bean in de invoer staat: de tak leidt alleen af voor de"
-                            + " objecten in de sessie, dus geef elk object waarnaar een bean wijst ook zelf als bean op";
+                    return DroolsCode.REFERENCE_OUTSIDE_INPUT.reason("call", refusingCall, "field", field, "bean",
+                            name(beanObject), "objectType", perClass.computeIfAbsent(target.getClass(),
+                                    k -> objectType(build, target)).name, "target", name(target)).text();
             }
         return null;
     }
@@ -490,7 +488,7 @@ public final class DroolsBackend {
             for (Object o : session.getObjects(new ClassObjectFilter(k.getKey())))
                 // the filter of a supertype hands out the beans of its subtypes too, which their own class counts
                 if (o.getClass() == k.getKey() && types.put(o, k.getValue()) == null) beans.add(o);
-        return targetOutsideInput("vuur", build, beans, types, new HashMap<>(classes));
+        return targetOutsideInput(DroolsCode.REFERENCE_OUTSIDE_INPUT.part("fire"), build, beans, types, new HashMap<>(classes));
     }
 
     /** The bean class of every object type of the model of {@code build}, with that object type. */
@@ -501,7 +499,7 @@ public final class DroolsBackend {
                 out.put(Class.forName(FactModelGenerator.PACKAGE + "." + Namen.ident(ot.name, true), false,
                         build.beanLoader()), ot);
             } catch (ClassNotFoundException e) {
-                throw new IllegalStateException("geen beanklasse voor objecttype " + ot.name, e);
+                throw new IllegalStateException("no bean class for object type " + ot.name, e);
             }
         return out;
     }
@@ -537,11 +535,10 @@ public final class DroolsBackend {
                 if (Class.forName(FactModelGenerator.PACKAGE + "." + Namen.ident(ot.name, true), false,
                         build.beanLoader()) == beanObject.getClass()) return ot;
             } catch (ClassNotFoundException e) {
-                throw new IllegalStateException("geen beanklasse voor objecttype " + ot.name, e);
+                throw new IllegalStateException("no bean class for object type " + ot.name, e);
             }
         }
-        throw new IllegalArgumentException("insert: " + name(beanObject) + " is geen bean van dit model: een bean is een"
-                + " instantie van een klasse die Build.beanLoader() laadt");
+        throw new IllegalArgumentException(DroolsCode.INSERT_NOT_A_BEAN.reason("bean", name(beanObject)).text());
     }
 
     /** The {@code BucketInput} of bucket scalar {@code e}, keyed as {@link ProducerConsumer#elementOf} keys the
@@ -549,15 +546,14 @@ public final class DroolsBackend {
     private static BucketInput bucketInput(Map<Object, ObjectType> types, Input.Bucket e) {
         ObjectType ot = types.get(e.bean());
         if (ot == null)
-            throw new IllegalArgumentException("insert: emmerscalair '" + e.attribute() + "' op " + name(e.bean())
-                    + ", een bean die niet in de invoer staat");
+            throw new IllegalArgumentException(DroolsCode.INSERT_BUCKET_OUTSIDE_INPUT.reason("attribute", e.attribute(),
+                    "bean", name(e.bean())).text());
         if (ot.attribute(e.attribute()) == null)
-            throw new IllegalArgumentException("insert: emmerscalair '" + e.attribute() + "' op " + name(e.bean())
-                    + ", maar " + ot.name + " heeft geen attribuut van die naam");
+            throw new IllegalArgumentException(DroolsCode.INSERT_BUCKET_NO_ATTRIBUTE.reason("attribute", e.attribute(),
+                    "bean", name(e.bean()), "objectType", ot.name).text());
         if (!Namen.containsName(ot.granularityMembers(), e.attribute()))
-            throw new IllegalArgumentException("insert: emmerscalair '" + e.attribute() + "' op " + name(e.bean())
-                    + ", maar dat attribuut van " + ot.name + " ligt niet op een tijdlijn; alleen de invoer van een"
-                    + " tijdlijn kent de emmerconventie (RUNTIME-SEMANTICS ch. 8.4)");
+            throw new IllegalArgumentException(DroolsCode.INSERT_BUCKET_NOT_ON_TIMELINE.reason("attribute", e.attribute(),
+                    "bean", name(e.bean()), "objectType", ot.name).text());
         return new BucketInput(e.bean(), ProducerConsumer.elementOf(ot, e.attribute(), false));
     }
 
@@ -599,35 +595,39 @@ public final class DroolsBackend {
         Set<ListKey> given = new HashSet<>();
         for (Input.ToManyList l : suppliedLists) {
             String field = Namen.ident(l.role(), false);
-            String description = "insert: de lijst van " + name(l.holder()) + " onder de rol '" + l.role() + "'";
+            Msg description = Msg.drools("PART.desc.insert-list", "holder", name(l.holder()), "role", l.role());
             Map<ListKey, List<Object>> parts = new LinkedHashMap<>();
             Set<Object> named = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
             for (Object member : l.members()) {
                 ObjectType ot = types.get(member);
-                if (ot == null) throw new IllegalArgumentException(description + " noemt " + name(member) + ", dat geen bean van de invoer is");
+                if (ot == null) throw new IllegalArgumentException(DroolsCode.LIST_MEMBER_NOT_IN_INPUT.reason("description",
+                        description, "member", name(member)).text());
                 if (!referenceFields.computeIfAbsent(ot, t -> referenceFields(model, t)).contains(field))
-                    throw new IllegalArgumentException(description + " noemt " + name(member) + ", maar een " + ot.name
-                            + " heeft geen referentieveld '" + field + "'; de rol is die van de houder, de naam van het"
-                            + " veld waarmee een lid naar de houder wijst");
+                    throw new IllegalArgumentException(DroolsCode.LIST_MEMBER_NO_FIELD.reason("description", description,
+                            "member", name(member), "objectType", ot.name, "field", field).text());
                 Object holder = Accessors.leesEigenschap(member, field);
                 if (holder != l.holder())
-                    throw new IllegalArgumentException(description + " noemt " + name(member) + ", maar diens veld '" + field
-                            + "' wijst " + (holder == null ? "nergens heen" : "naar " + name(holder)));
-                if (!named.add(member)) throw new IllegalArgumentException(description + " noemt " + name(member) + " twee keer");
+                    throw new IllegalArgumentException(DroolsCode.LIST_MEMBER_OTHER_HOLDER.reason("description", description,
+                            "member", name(member), "field", field, "target", holder == null
+                                    ? DroolsCode.LIST_MEMBER_OTHER_HOLDER.part("nowhere")
+                                    : DroolsCode.LIST_MEMBER_OTHER_HOLDER.part("to", "holder", name(holder))).text());
+                if (!named.add(member)) throw new IllegalArgumentException(DroolsCode.LIST_MEMBER_TWICE.reason("description",
+                        description, "member", name(member)).text());
                 parts.computeIfAbsent(new ListKey(field, holder, relation.apply(member).apply(field)),
                         k -> new ArrayList<>()).add(member);
             }
             if (parts.isEmpty())
                 for (Map.Entry<ListKey, List<Object>> e : actual.entrySet())
                     if (e.getKey().field().equals(field) && e.getKey().holder() == l.holder())
-                        throw new IllegalArgumentException(description + " is leeg gegeven, maar " + name(e.getValue().get(0))
-                                + " wijst met zijn veld '" + field + "' naar de houder");
+                        throw new IllegalArgumentException(DroolsCode.LIST_EMPTY_WITH_MEMBER.reason("description",
+                                description, "member", name(e.getValue().get(0)), "field", field).text());
             for (Map.Entry<ListKey, List<Object>> part : parts.entrySet()) {
-                if (!given.add(part.getKey())) throw new IllegalArgumentException(description + " is twee keer gegeven");
+                if (!given.add(part.getKey())) throw new IllegalArgumentException(DroolsCode.LIST_GIVEN_TWICE.reason(
+                        "description", description).text());
                 for (Object member : actual.getOrDefault(part.getKey(), List.of()))
                     if (!named.contains(member))
-                        throw new IllegalArgumentException(description + " mist " + name(member) + ", dat met zijn veld '" + field
-                                + "' naar de houder wijst: een lid buiten de gegeven volgorde heeft geen plaats");
+                        throw new IllegalArgumentException(DroolsCode.LIST_MISSES_MEMBER.reason("description", description,
+                                "member", name(member), "field", field).text());
                 if (read.contains(field)) lists.put(part.getKey(), part.getValue());
             }
         }
@@ -1079,8 +1079,7 @@ public final class DroolsBackend {
         private synchronized void bind(KieSession s) {
             if (session == null) session = s;
             else if (session != s)
-                throw new IllegalArgumentException("deze waarnemer nam al een andere sessie waar: een waarnemer hoort"
-                        + " bij één sessie, dus geef elke sessie een eigen waarnemer");
+                throw new IllegalArgumentException(DroolsCode.OBSERVER_OTHER_SESSION.reason().text());
         }
 
         private AgendaEventListener listener(TmsTranspiler tms) {
@@ -1118,8 +1117,7 @@ public final class DroolsBackend {
         for (Coverage d : build.coverage()) coverageNames.add(d.name());
         for (String form : firedForms)
             if (!coverageNames.contains(form))
-                throw new IllegalArgumentException("de vorm '" + form + "' is geen post van het manifest van deze build,"
-                        + " dus geen sessie van deze build vuurt haar; komen de gevuurde vormen van een andere build?");
+                throw new IllegalArgumentException(DroolsCode.FORM_NOT_IN_MANIFEST.reason("form", form).text());
         List<ScenarioResult.CoverageRule> out = new ArrayList<>();
         for (Coverage d : build.coverage())
             out.add(new ScenarioResult.CoverageRule(d.name(), firedForms.contains(d.name())
@@ -1183,17 +1181,14 @@ public final class DroolsBackend {
         Objects.requireNonNull(label, "label");
         Objects.requireNonNull(expectations, "expectations");
         if (!expectations.isArray())
-            throw new IllegalArgumentException("vergelijk: de verwachtingen zijn de array 'expected' van een case, en dit"
-                    + " is een " + expectations.getNodeType());
+            throw new IllegalArgumentException(DroolsCode.COMPARE_EXPECTATIONS_NOT_ARRAY.reason("nodeType",
+                    expectations.getNodeType()).text());
         List<Fault> faults = fixpointOf(build, session, label).faults();
         if (!faults.isEmpty())
-            throw new IllegalStateException("vergelijk: aan het fixpunt van deze sessie staan " + faults.size()
-                    + " evaluatiefout(en), de eerste van '" + faults.get(0).rule() + "': " + faults.get(0).message()
-                    + "; de regels geven op deze invoer geen antwoord, en setDerivedValues werpt de fouten en zet niets"
-                    + " terug, dus er is niets om met de verwachtingen te vergelijken");
+            throw new IllegalStateException(DroolsCode.COMPARE_FIXPOINT_FAULTS.reason("count", faults.size(), "rule",
+                    faults.get(0).rule(), "message", faults.get(0).message()).text());
         if (session.getObjects(new ClassObjectFilter(WrittenBack.class)).isEmpty())
-            throw new IllegalStateException("vergelijk: deze sessie is niet teruggezet; de beans dragen het fixpunt pas na"
-                    + " DroolsBackend.setDerivedValues, en tot dan alleen de invoer, dus zet eerst terug");
+            throw new IllegalStateException(DroolsCode.COMPARE_NOT_WRITTEN_BACK.reason().text());
         Map<String, Object> perLabel = new HashMap<>();
         Map<String, ObjectType> types = new HashMap<>();
         for (Map.Entry<Class<?>, ObjectType> k : beansClasses(build).entrySet())
@@ -1204,9 +1199,8 @@ public final class DroolsBackend {
                 if (l == null) continue;
                 Object earlierBean = perLabel.putIfAbsent(l, beanObject);
                 if (earlierBean != null)
-                    throw new IllegalArgumentException("vergelijk: de labelfunctie geeft het label '" + l + "' aan "
-                            + name(earlierBean) + " en aan " + name(beanObject) + ", dus een verwachting op '" + l + "' wijst geen"
-                            + " bean aan");
+                    throw new IllegalArgumentException(DroolsCode.COMPARE_LABEL_TWO_BEANS.reason("label", l, "first",
+                            name(earlierBean), "second", name(beanObject)).text());
                 types.put(l, k.getValue());
             }
         return CaseRunner.comparison(build, session, perLabel, types, expectations);
@@ -1215,7 +1209,7 @@ public final class DroolsBackend {
     /** As {@link #fire(Build, KieSession)} on every branch under the cap {@code max(vloer, factor × R × N0)}, rounded
      *  up: the seam a witness gives a small factor and floor to reach the cap, a factor below 1 among them. */
     static Firing fire(Build build, KieSession session, double factor, int floor) {
-        if (!(factor > 0)) throw new IllegalArgumentException("vuurfactor " + factor + " is niet groter dan 0");
+        if (!(factor > 0)) throw new IllegalArgumentException("fire factor " + factor + " is not greater than 0");
         return drive(build, session, new Cap(factor, floor, rules(session)));
     }
 
@@ -1309,11 +1303,10 @@ public final class DroolsBackend {
         /** The sentence of a run that reached the cap. */
         String sentence() {
             return factor == 0
-                    ? "geen fixpunt: het vuurplafond van " + value + " vuringen is bereikt"
-                    : "geen fixpunt: het vuurplafond van " + value + " vuringen is bereikt, het grootste van " + floor
-                      + " en " + java.math.BigDecimal.valueOf(factor).stripTrailingZeros().toPlainString() + " × "
-                      + rules + " regels × " + facts + " feiten vlak vóór het vuren; zonder kring vuurt de tak per"
-                      + " regel en feit een begrensd aantal keren, dus dit is een fout van de verlaging";
+                    ? DroolsCode.FIRING_CAP_REACHED.reason("cap", value).text()
+                    : DroolsCode.FIRING_CAP_REACHED_SCALED.reason("cap", value, "floor", floor, "factor",
+                            java.math.BigDecimal.valueOf(factor).stripTrailingZeros().toPlainString(), "rules", rules,
+                            "facts", facts).text();
         }
     }
 
@@ -1338,54 +1331,36 @@ public final class DroolsBackend {
         // what a creation made is stated and does not lapse, so a later fire would keep it beside an input it no longer
         // follows from; checked first, since a written-back session of such a model cannot be read between fires either
         if (!marks.isEmpty() && !tms.creationRules().isEmpty())
-            throw new IllegalStateException("dit model heeft creatieregels, en deze sessie is al via DroolsBackend.fire"
-                    + " gevuurd: wat een creatie maakte, met de initialisaties, de koppelingen en de fout van een mislukte"
-                    + " initialisatie, is gesteld en vervalt niet (RUNTIME-SEMANTICS ch. 5.5), dus een volgende fire zou"
-                    + " na een invoerwijziging een toestand geven die geen verse evaluatie geeft; open per invoer een"
-                    + " verse sessie");
+            throw new IllegalStateException(DroolsCode.FIRE_AGAIN_WITH_CREATIONS.reason().text());
         if (!session.getObjects(new ClassObjectFilter(WrittenBack.class)).isEmpty())
-            throw new IllegalStateException("deze sessie is teruggezet (setDerivedValues): haar beans dragen afgeleide"
-                    + " waarden naast de invoer, en een volgende fire zou die als invoer lezen; lees tussen twee fires met"
-                    + " DroolsBackend.fixpointOf en zet pas na de laatste fire terug, of open een verse sessie met beans die"
-                    + " alleen invoer dragen");
+            throw new IllegalStateException(DroolsCode.FIRE_AFTER_WRITE_BACK.reason().text());
         Watch installedWatch = Watch.of(session);
         // insert puts the watch on, or the first run where there was no insert, and every run puts it back, so only a
         // consumer that took it off leaves a fired session without it, and what happened since is then not to be seen
         if (installedWatch == null && !marks.isEmpty())
-            throw new IllegalStateException("de bewaking die DroolsBackend.fire op deze sessie zette, staat er niet meer"
-                    + " op, dus wat er na de laatste fire gebeurde, is niet te zien; open een verse sessie met alle beans"
-                    + " in één Input");
+            throw new IllegalStateException(DroolsCode.FIRE_WATCH_REMOVED.reason().text());
         if (installedWatch != null && installedWatch.onOrOff() != null)
-            throw new IllegalStateException("sinds " + installedWatch.since() + " kwam er buiten insert om invoer bij of ging er"
-                    + " invoer weg (" + installedWatch.onOrOff() + "): een afnemer geeft alle beans in één Input aan"
-                    + " insert en verandert daarna alleen hun attributen en kenmerken, met update, want insert legt de"
-                    + " plaatsen van een lijst en de emmerscalairen vast over de beans van één invoer; een nieuw of"
-                    + " verwijderd object vraagt een verse sessie");
-        String agenda = Watch.agenda(session);
-        String more = installedWatch == null ? agenda : installedWatch.moreThanOneUpdate() != null ? installedWatch.moreThanOneUpdate() : agenda;
+            throw new IllegalStateException(DroolsCode.FIRE_INPUT_ON_OR_OFF.reason("since", installedWatch.since(),
+                    "change", installedWatch.onOrOff()).text());
+        Msg agenda = Watch.agenda(session);
+        Msg more = installedWatch == null ? agenda : installedWatch.moreThanOneUpdate() != null ? installedWatch.moreThanOneUpdate() : agenda;
         if (more != null)
-            throw new IllegalStateException("sinds " + (installedWatch == null ? "het begin van deze sessie" : installedWatch.since())
-                    + " gebeurde er buiten fire om meer dan een update van een attribuut of kenmerk van een bean (" + more
-                    + "), en meer laat de ingang niet toe: open een verse sessie met alle beans in één Input");
-        String global = installedWatch == null ? null : installedWatch.changedGlobal(session);
+            throw new IllegalStateException(DroolsCode.FIRE_MORE_THAN_UPDATE.reason("since", installedWatch == null
+                    ? Msg.drools("PART.watch.since-session-start") : installedWatch.since(), "change", more).text());
+        Msg global = installedWatch == null ? null : installedWatch.changedGlobal(session);
         if (global != null)
-            throw new IllegalStateException(global + ": de tak leest een global één keer, in een regel die haar bij de"
-                    + " eerste fire als feit stelt, dus een volgende fire zou met de oude waarde rekenen; zet de globals"
-                    + " vóór de eerste fire, en open voor een andere waarde een verse sessie");
+            throw new IllegalStateException(DroolsCode.FIRE_GLOBAL_CHANGED.reason("change", global).text());
         Map<Class<?>, ObjectType> classes = beansClasses(build);
         String outsideSentence = targetOutsideSession(build, session, classes);
         if (outsideSentence != null) throw new IllegalStateException(outsideSentence);
-        String relation = installedWatch == null ? null : installedWatch.changedRelation();
+        Msg relation = installedWatch == null ? null : installedWatch.changedRelation();
         if (relation != null)
-            throw new IllegalStateException(relation + ": Drools ziet een veld pas na een update, dus een fire zou de oude"
-                    + " relatie blijven lezen, en ook met een update vraagt een gewijzigde relatie een verse sessie, want"
-                    + " insert legt de plaatsen van een lijst vast over de relaties van één invoer; open een verse sessie"
-                    + " met alle beans in één Input");
+            throw new IllegalStateException(DroolsCode.FIRE_RELATION_CHANGED.reason("change", relation).text());
         Watch watch = installedWatch != null ? installedWatch
                 : Watch.op(session, relationFields(build, classes), beansInSession(session, classes),
-                        "de eerste DroolsBackend.fire van deze sessie");
+                        Msg.drools("PART.watch.since-first-fire"));
         watch.recordGlobals(session);
-        watch.forget("de laatste DroolsBackend.fire van deze sessie");
+        watch.forget(Msg.drools("PART.watch.since-last-fire"));
         return watch.without(session, () -> {
             for (FactHandle mark : marks) session.delete(mark);
             Firing firing;
@@ -1393,8 +1368,8 @@ public final class DroolsBackend {
                 firing = fireUnderCap(build, session, cap);
             } catch (RuntimeException e) {
                 try {
-                    session.insert(new Fired("de fire brak af met " + e.getClass().getSimpleName() + ": "
-                            + e.getMessage()));
+                    session.insert(new Fired(Msg.drools("PART.fire-broke-off", "exception", e.getClass().getSimpleName(),
+                            "message", e.getMessage()).text()));
                 } catch (RuntimeException markError) {
                     e.addSuppressed(markError);
                 }
@@ -1420,8 +1395,8 @@ public final class DroolsBackend {
         org.kie.api.runtime.rule.Agenda agenda = session.getAgenda();
         for (String group : List.of(TmsTranspiler.FACT_CREATION, TmsTranspiler.OBJECT_CREATION))
             if (agenda.getAgendaGroup(group) == null)
-                throw new IllegalStateException("de KieBase kent de agendagroep " + group + " niet, terwijl het model"
-                        + " creatieregels heeft: " + creations);
+                throw new IllegalStateException("the KieBase does not know the agenda group " + group + ", while the model"
+                        + " has creation rules: " + creations);
         int[] made = {0};
         AgendaEventListener counter = new DefaultAgendaEventListener() {
             @Override public void afterMatchFired(AfterMatchFiredEvent e) {

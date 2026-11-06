@@ -67,7 +67,7 @@ class RuleNameWitnessTest {
         try {
             text = DrlRendering.text(two);
         } catch (IllegalStateException e) {
-            assertEquals("twee regels van het plan heten \"a\", en een KieBase houdt één regel per naam", e.getMessage());
+            assertEquals("two rules of the plan are named \"a\", and a KieBase holds one rule per name", e.getMessage());
             return;
         }
         KieHelper helper = new KieHelper();

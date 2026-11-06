@@ -94,13 +94,13 @@ final class PatternDslRendering {
         for (Modelplan.Global g : plan.globals()) {
             Global<?> global = DSL.globalOf(g.javaClass(), TmsTranspiler.PKG, g.name());
             if (globals.putIfAbsent(g.name(), global) != null)
-                throw new IllegalStateException("de global " + g.name() + " wordt twee keer gedeclareerd");
+                throw new IllegalStateException("the global " + g.name() + " is declared twice");
             m.addGlobal(global);
         }
         for (RulePlan r : plan.rules())
             m.addRule(rule(r, name -> {
                 Global<?> g = globals.get(name);
-                if (g == null) throw new IllegalStateException("geen global " + name + " in het model");
+                if (g == null) throw new IllegalStateException("no global " + name + " in the model");
                 return g;
             }));
         return m;
@@ -131,7 +131,7 @@ final class PatternDslRendering {
                 // a consequence may name the object a pattern binds, as the fault of a session without a date does
                 Rendered w = pattern(p);
                 if (values.putIfAbsent(p.name(), w.variable()) != null)
-                    throw new IllegalStateException("de variabele " + p.name() + " wordt twee keer gebonden");
+                    throw new IllegalStateException("the variable " + p.name() + " is bound twice");
                 yield List.of(w.def());
             }
             case Not n -> List.of(not(n));
@@ -147,7 +147,7 @@ final class PatternDslRendering {
     private PatternDSL.PatternDef<Object> subject(Subject o) {
         Variable<Object> v = (Variable<Object>) DSL.declarationOf(o.beanClass(), o.name());
         if (values.putIfAbsent(o.name(), v) != null)
-            throw new IllegalStateException("de variabele " + o.name() + " wordt twee keer gebonden");
+            throw new IllegalStateException("the variable " + o.name() + " is bound twice");
         PatternDSL.PatternDef<Object> def = PatternDSL.pattern(v);
         for (Alpha a : o.alpha()) def = def.expr(a.id(), predicate(o.beanClass(), a));
         for (Join j : o.joins()) def = join(def, o.beanClass(), j);
@@ -179,7 +179,7 @@ final class PatternDslRendering {
                     insert(drools, x.insertion(), ComputeHelpers.inconsistency(x.form(), a[0], x.codes())));
             case Consequence.ConditionDeposit x -> {
                 Predicate<Object[]> condition = ClosureRendering.test(x.condition());
-                String what = "de voorwaarde van \"" + x.form() + "\"";
+                String what = "the condition of \"" + x.form() + "\"";
                 yield consequenceItem(x.subject(), x.slots(), x.size(), (drools, subject, w) ->
                         insert(drools, x.insertion(), ComputeHelpers.inconsistency(x.form(), subject,
                                 depositCodesAgain(condition, x.depositFlag(), w, what))));
@@ -225,7 +225,7 @@ final class PatternDslRendering {
             case Consequence.Contribution x -> contribution(x);
             case Consequence.FilterDeposit x -> {
                 Predicate<Object[]> filter = ClosureRendering.test(x.filter());
-                String what = "het filter van " + x.fold();
+                String what = "the filter of " + x.fold();
                 yield consequenceItem(x.subject(), x.slots(), x.size(), (drools, carrier, w) ->
                         insert(drools, x.insertion(), new FilterDeposit(x.fold(), carrier, w[x.member()],
                                 depositCodesAgain(filter, x.depositFlag(), w, what))));
@@ -337,8 +337,8 @@ final class PatternDslRendering {
             if (!ComputeHelpers.isEvaluationFault(e)) throw e;
         }
         if (!ComputeHelpers.reported(s))
-            throw new IllegalStateException(what + " deponeerde in de toets en niet in het gevolg, over dezelfde gebonden"
-                    + " waarden");
+            throw new IllegalStateException(what + " deposited in the test and not in the consequence, over the same bound"
+                    + " values");
         return ComputeHelpers.depositCodes(s);
     }
 
@@ -349,8 +349,8 @@ final class PatternDslRendering {
         return consequenceItem(g.subject(), g.slots(), g.size(), (drools, carrier, w) -> {
             RuntimeException fault = ClosureRendering.fault(filter, w);
             if (fault == null)
-                throw new IllegalStateException("het filter van " + g.fold() + " faalde in de toets en niet in het gevolg,"
-                        + " over dezelfde gebonden waarden");
+                throw new IllegalStateException("the filter of " + g.fold() + " failed in the test and not in the consequence,"
+                        + " over the same bound values");
             List<Integer> place = foldPlace(g.place(), g.fold(), w[g.member()], w);
             insert(drools, g.insertion(), new FilterFault(g.fold(), carrier, w[g.member()], fault, place));
         });
@@ -562,7 +562,7 @@ final class PatternDslRendering {
         try {
             return javaClass.getConstructor().newInstance();
         } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("kon geen " + javaClass.getSimpleName() + " maken", e);
+            throw new IllegalStateException("could not make a " + javaClass.getSimpleName(), e);
         }
     }
 
@@ -572,8 +572,8 @@ final class PatternDslRendering {
         return consequenceItem(g.subject(), g.slots(), g.size(), (drools, subject, w) -> {
             RuntimeException f = ClosureRendering.fault(test, w);
             if (f == null)
-                throw new IllegalStateException("de voorwaarde van \"" + g.fault().form() + "\" faalde in de toets en niet"
-                        + " in het gevolg, over dezelfde gebonden waarden");
+                throw new IllegalStateException("the condition of \"" + g.fault().form() + "\" failed in the test and not"
+                        + " in the consequence, over the same bound values");
             insert(drools, g.insertion(), new Fault(subject, g.fault().form(), ComputeHelpers.designate(f, g.fault().rule())));
         });
     }
@@ -671,7 +671,7 @@ final class PatternDslRendering {
             Rendered w = pattern(p);
             defs[i] = w.def();
             if (values.putIfAbsent(p.name(), w.variable()) != null)
-                throw new IllegalStateException("de variabele " + p.name() + " wordt twee keer gebonden");
+                throw new IllegalStateException("the variable " + p.name() + " is bound twice");
         }
         // a value bound inside lives only inside: a later quantification may bind its name again, as its plan allows
         for (String name : inside) {
@@ -710,7 +710,7 @@ final class PatternDslRendering {
         try {
             return Class.forName("org.drools.core.base.accumulators." + name);
         } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("de Drools-accumulatiefunctie " + name + " ontbreekt op het classpath", e);
+            throw new IllegalStateException("the Drools accumulate function " + name + " is missing from the classpath", e);
         }
     }
 
@@ -767,7 +767,7 @@ final class PatternDslRendering {
             String name = "$bundle_" + id + "_" + level + "_" + k;
             Variable<Object> b = (Variable) DSL.declarationOf(Bundle.class, name, from(part));
             if (!bound.add(name) || values.putIfAbsent(name, b) != null)
-                throw new IllegalStateException("de variabele " + name + " wordt twee keer gebonden");
+                throw new IllegalStateException("the variable " + name + " is bound twice");
             items.add(PatternDSL.pattern(b));
             out[k] = b;
         }
@@ -783,8 +783,8 @@ final class PatternDslRendering {
             case 3 -> DSL.from(in[0], in[1], in[2], (Function3) (a, b, c) -> new Bundle(new Object[]{a, b, c}));
             case 4 -> DSL.from(in[0], in[1], in[2], in[3],
                     (Function4) (a, b, c, d) -> new Bundle(new Object[]{a, b, c, d}));
-            default -> throw new IllegalStateException("een bundel van " + in.length + " waarden; de DSL neemt er"
-                    + " hoogstens " + BUNDLE_VALUES);
+            default -> throw new IllegalStateException("a bundle of " + in.length + " values; the DSL takes"
+                    + " at most " + BUNDLE_VALUES);
         };
     }
 
@@ -797,8 +797,8 @@ final class PatternDslRendering {
             level = below.toArray();
         }
         if (level.length != count)
-            throw new IllegalStateException("de bundels van een toets houden " + level.length + " waarden, de toets"
-                    + " leest er " + count);
+            throw new IllegalStateException("the bundles of a test hold " + level.length + " values, the test"
+                    + " reads " + count);
         return level;
     }
 
@@ -834,8 +834,8 @@ final class PatternDslRendering {
             case 13 -> DSL.expr(id, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9], v[10], v[11], v[12],
                     (Predicate13) (a, b, d, e, f, g, h, i, j, k, l, m, p) ->
                             t.test(new Object[]{a, b, d, e, f, g, h, i, j, k, l, m, p}));
-            default -> throw new IllegalStateException("een toets over " + v.length + " waarden; de DSL neemt er"
-                    + " hoogstens " + TEST_VALUES);
+            default -> throw new IllegalStateException("a test over " + v.length + " values; the DSL takes"
+                    + " at most " + TEST_VALUES);
         };
     }
 
@@ -843,14 +843,14 @@ final class PatternDslRendering {
      *  what the plan bound already. */
     private Variable<Object> known(String name) {
         Variable<Object> v = values.get(name);
-        if (v == null) throw new IllegalStateException("de variabele " + name + " is nog niet gebonden");
+        if (v == null) throw new IllegalStateException("the variable " + name + " is not bound yet");
         return v;
     }
 
     /** The value variable {@code name} for the binding that binds it, made here: each is bound once. */
     private Variable<Object> bind(String name) {
         if (!bound.add(name) || values.containsKey(name))
-            throw new IllegalStateException("de variabele " + name + " wordt twee keer gebonden");
+            throw new IllegalStateException("the variable " + name + " is bound twice");
         Variable<Object> v = DSL.declarationOf(Object.class, name);
         values.put(name, v);
         return v;
@@ -936,7 +936,7 @@ final class PatternDslRendering {
     private static Function1<Object, Object> field(Class<?> javaClass, String name) {
         if (javaClass.getPackageName().equals(PatternDslRendering.class.getPackageName())) {
             Function1<Object, Object> f = FIELDS.getOrDefault(javaClass, Map.of()).get(name);
-            if (f == null) throw new IllegalStateException("geen lezer voor het veld " + name + " van " + javaClass.getSimpleName());
+            if (f == null) throw new IllegalStateException("no reader for the field " + name + " of " + javaClass.getSimpleName());
             return f;
         }
         Function<Object, Object> getter = Accessors.eigenschapGetter(javaClass, name);
@@ -985,7 +985,7 @@ final class PatternDslRendering {
         Class<?> javaClass = b.field().javaClass();
         if (javaClass.getPackageName().equals(PatternDslRendering.class.getPackageName())) {
             if (!b.path().isEmpty() || b.form() != Binding.ReadForm.VALUE)
-                throw new IllegalStateException("een feit van de tak wordt gelezen zoals het is: " + b);
+                throw new IllegalStateException("a fact of the branch is read as it is: " + b);
             return field(javaClass, b.field().property());
         }
         return along(b.path(), inputReader(b.field(), b.form(), b.category()));

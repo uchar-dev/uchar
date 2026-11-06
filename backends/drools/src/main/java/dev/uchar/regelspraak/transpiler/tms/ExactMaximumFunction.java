@@ -39,7 +39,7 @@ public final class ExactMaximumFunction implements org.kie.api.runtime.rule.Accu
     }
 
     @Override public void reverse(Extreme e, Object value) {
-        throw new UnsupportedOperationException("de maximumvouw keert niet om; Drools vouwt opnieuw");
+        throw new UnsupportedOperationException("the maximum fold does not reverse; Drools folds again");
     }
 
     @Override public Object getResult(Extreme e) { return e.value; }

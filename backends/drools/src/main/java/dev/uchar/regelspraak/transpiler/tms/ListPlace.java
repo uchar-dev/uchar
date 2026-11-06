@@ -21,7 +21,7 @@ public record ListPlace(Object member, String field, int place) {
     public ListPlace {
         Objects.requireNonNull(member, "member");
         Objects.requireNonNull(field, "field");
-        if (place < 0) throw new IllegalArgumentException("een plaats in een lijst telt vanaf 0, niet " + place);
+        if (place < 0) throw new IllegalArgumentException("a place in a list counts from 0, not " + place);
     }
 
     @Override public boolean equals(Object o) {

@@ -149,7 +149,7 @@ when
 then
     Object f = fout_gemeldeVondstFoutInDeVoorwaarde($actief, $rekendatumwaarde_1, $vondstjaar);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"gemelde vondst\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"gemelde vondst\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "gemelde vondst", ComputeHelpers.designate(f, "gemelde vondst")));
 end

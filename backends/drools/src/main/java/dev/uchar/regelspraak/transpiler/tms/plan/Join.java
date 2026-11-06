@@ -14,7 +14,7 @@ public record Join(String id, String field, String property, String target, Bind
 
     public Join {
         if ((field == null) != (property == null))
-            throw new IllegalArgumentException("een join leest een eigenschap precies waar zij een veld leest: " + field
+            throw new IllegalArgumentException("a join reads a property exactly where it reads a field: " + field
                     + ", " + property);
     }
 

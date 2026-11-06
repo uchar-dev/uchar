@@ -24,7 +24,7 @@ public final class ExactMinimumFunction
     }
 
     @Override public void reverse(ExactMaximumFunction.Extreme e, Object value) {
-        throw new UnsupportedOperationException("de minimumvouw keert niet om; Drools vouwt opnieuw");
+        throw new UnsupportedOperationException("the minimum fold does not reverse; Drools folds again");
     }
 
     @Override public Object getResult(ExactMaximumFunction.Extreme e) { return e.value; }

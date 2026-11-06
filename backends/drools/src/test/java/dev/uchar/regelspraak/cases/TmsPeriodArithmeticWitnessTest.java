@@ -352,7 +352,7 @@ class TmsPeriodArithmeticWitnessTest {
         JsonNode misordered = TmsTimelineDocuments.caseDocument(null, List.of(instance("J1", "Jutter", Map.of("strandloon",
                 timeline(List.of(segment("2024-01-01", "2024-07-01", "100"), openTo("2024-09-01", "5")))), List.of(),
                 Map.of(), Map.of())), List.of(consistent()));
-        assertEquals("IllegalArgumentException: tijdlijnsegmenten op 'strandloon' zijn ongeordend of overlappen",
+        assertEquals("IllegalArgumentException: the timeline segments on 'strandloon' are unordered or overlap",
                 TmsFaultWitnessTest.playBoth(ir, misordered));
         JsonNode mismatch = TmsTimelineDocuments.caseDocument(null, List.of(instance("J1", "Jutter",
                 Map.of("strandloon", STRANDLOON), List.of(), Map.of(), Map.of())), List.of(expectedTimeline("J1",

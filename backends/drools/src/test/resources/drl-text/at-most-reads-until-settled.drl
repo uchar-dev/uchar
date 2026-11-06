@@ -174,7 +174,7 @@ when
 then
     Object f = fout_stoptekenVanEenVacuumwachtFoutInDeVoorwaarde($ploegomvang, $vangstwaarde);
     if (!ComputeHelpers.isEvaluationFault(f)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"stopteken van een vacuumwacht\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"stopteken van een vacuumwacht\" failed in the test and not in the consequence, over the same bound values");
     }
     insertLogical(new Fault($onderwerp, "stopteken van een vacuumwacht", ComputeHelpers.designate(f, "stopteken van een vacuumwacht")));
 end
@@ -232,7 +232,7 @@ function java.util.List deponering_stoptekenVanEenVacuumwachtDeponeringInDeVoorw
         ComputeHelpers.caught(e);
     }
     if (!ComputeHelpers.reported(sonde)) {
-        ComputeHelpers.contractBreach("de voorwaarde van \"stopteken van een vacuumwacht\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+        ComputeHelpers.contractBreach("the condition of \"stopteken van een vacuumwacht\" deposited in the test and not in the consequence, over the same bound values");
     }
     return ComputeHelpers.depositCodes(sonde);
 }

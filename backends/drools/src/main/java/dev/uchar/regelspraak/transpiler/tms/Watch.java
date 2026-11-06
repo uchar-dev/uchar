@@ -1,5 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
+import dev.uchar.regelspraak.message.Component;
+import dev.uchar.regelspraak.message.Msg;
 import org.drools.core.common.AgendaGroupQueueImpl;
 import org.drools.core.common.InternalAgenda;
 import org.drools.core.common.InternalAgendaGroup;
@@ -76,7 +78,7 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
             names = List.copyOf(names);
             readers = List.copyOf(readers);
             if (names.size() != readers.size())
-                throw new IllegalArgumentException(names.size() + " namen bij " + readers.size() + " lezers");
+                throw new IllegalArgumentException(names.size() + " names with " + readers.size() + " readers");
         }
 
         Object[] read(Object bean) {
@@ -96,24 +98,26 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
     /** The beans of {@link #relations} in the order they came in, so that a sentence names the first changed relation of
      *  the input and not one of an order of identities. */
     private final List<Object> inputBeans = new ArrayList<>();
-    /** The call of the entry at which the watch took the beans of the input, as a sentence names it. */
-    private String recorded;
+    /** The call of the entry at which the watch took the beans of the input, as a sentence names it: the name of the
+     *  call or a sentence part of the catalogue. */
+    private Object recorded;
     /** The globals at the first {@code fire}, by name; null before it. */
     private Map<String, Object> globals;
-    /** The call of the entry the watch keeps from, as a sentence names it. */
-    private String since;
-    /** The first insert, update or delete outside the entry, as a clause ("Vondst@1f werd gewijzigd met update"), or
+    /** The call of the entry the watch keeps from, as a sentence names it: the name of the call or a sentence part of
+     *  the catalogue. */
+    private Object since;
+    /** The first insert, update or delete outside the entry, as a clause ("Vondst@1f was changed with update"), or
      *  null. */
-    private String fact;
+    private Msg fact;
     /** The name of the first rule that fired outside the entry, or null. */
     private String rule;
     /** The first change of the agenda outside the entry that Drools reports as an event, as a clause, or null. */
-    private String agendaChange;
+    private Msg agendaChange;
     /** The first insert or delete outside the entry of a fact of a kind {@link #input} holds, as a clause, or null. */
-    private String onOrOff;
+    private Msg onOrOff;
     /** The first insert, update or delete outside the entry other than an update of an attribute or a characteristic of
      *  a bean of the input, as a clause, or null. */
-    private String otherChange;
+    private Msg otherChange;
 
     private Watch(Map<Class<?>, RelationFields> beans) {
         this.beans = Map.copyOf(beans);
@@ -142,7 +146,7 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
      *  what happened and keeps from now on, {@code since} naming the call of the entry it keeps from and, where it puts
      *  the watch there, the call at which it took the beans. */
     public static Watch op(KieSession session, Map<Class<?>, RelationFields> beans, Iterable<?> inputBeans,
-                              String since) {
+                              Object since) {
         Watch b = of(session);
         if (b == null) {
             b = new Watch(beans);
@@ -152,7 +156,7 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
         }
         for (Object bean : inputBeans) {
             RelationFields r = b.beans.get(bean.getClass());
-            if (r == null) throw new IllegalArgumentException(FactNames.object(bean) + " is geen bean van het model");
+            if (r == null) throw new IllegalArgumentException(FactNames.object(bean) + " is no bean of the model");
             if (b.relations.putIfAbsent(bean, r.read(bean)) == null) b.inputBeans.add(bean);
         }
         b.forget(since);
@@ -160,7 +164,7 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
     }
 
     /** Forgets what happened and keeps from now on, {@code since} naming the call of the entry it keeps from. */
-    public void forget(String since) {
+    public void forget(Object since) {
         this.since = Objects.requireNonNull(since, "since");
         fact = null;
         rule = null;
@@ -177,15 +181,14 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
 
     /** The first global of {@code session} whose value differs from the one it had at the first {@code fire}, as a
      *  clause, by name; null where none does, or before the first {@code fire}. */
-    public String changedGlobal(KieSession session) {
+    public Msg changedGlobal(KieSession session) {
         if (globals == null) return null;
         Map<String, Object> now = globals(session);
         for (String name : new TreeSet<>(union(globals.keySet(), now.keySet()))) {
             Object old = globals.get(name);
             Object fresh = now.get(name);
             if (!Objects.equals(old, fresh))
-                return "de global '" + name + "' veranderde van " + value(old) + " in " + value(fresh)
-                        + " na de eerste DroolsBackend.fire van deze sessie";
+                return Msg.drools("PART.watch.global-changed", "name", name, "old", value(old), "fresh", value(fresh));
         }
         return null;
     }
@@ -202,30 +205,29 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
         return out;
     }
 
-    private static String value(Object w) {
-        return w == null ? "geen waarde" : w.toString();
+    private static Object value(Object w) {
+        return w == null ? Msg.drools("PART.watch.no-value") : w.toString();
     }
 
     /** The first relation of a bean of the input, in the order the beans came in, whose reference field holds another
      *  object than the watch recorded, as a clause, or null. An update that changes a relation the watch keeps as more
      *  than an update ({@link #moreThanOneUpdate}); this reads the beans themselves, since a field set without an update
      *  makes no event, and the network keeps matching the object the field held when the bean came in. */
-    public String changedRelation() {
+    public Msg changedRelation() {
         for (Object bean : inputBeans) {
             RelationFields r = beans.get(bean.getClass());
             Object[] before = relations.get(bean);
             Object[] now = r.read(bean);
             for (int i = 0; i < now.length; i++)
                 if (now[i] != before[i])
-                    return "het veld '" + r.names().get(i) + "' van " + FactNames.object(bean) + ", een relatie,"
-                            + " veranderde zonder update: het hield bij " + recorded + " " + target(before[i])
-                            + " en houdt nu " + target(now[i]);
+                    return Msg.drools("PART.watch.relation-changed", "field", r.names().get(i), "object",
+                            FactNames.object(bean), "since", recorded, "before", target(before[i]), "now", target(now[i]));
         }
         return null;
     }
 
-    private static String target(Object o) {
-        return o == null ? "geen object" : FactNames.object(o);
+    private static Object target(Object o) {
+        return o == null ? Msg.drools("PART.watch.no-object") : FactNames.object(o);
     }
 
     /** Records the relations of the beans of the input as they stand now: the write-back puts the links the creations
@@ -248,30 +250,31 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
         }
     }
 
-    /** The call of the entry the watch keeps from, as a sentence names it. */
-    public String since() {
+    /** The call of the entry the watch keeps from, as a sentence names it: the name of the call or a sentence part of
+     *  the catalogue. */
+    public Object since() {
         return since;
     }
 
     /** What happened outside the entry since {@link #since}, as one to three clauses: the first fact inserted, updated
      *  or deleted, the first change of the agenda Drools reports as an event, and the first rule that fired, each where
      *  there was one; null where nothing happened. */
-    public String outsideClause() {
-        return combined(fact, agendaChange, rule == null ? null : "de regel \"" + rule + "\" vuurde");
+    public Msg outsideClause() {
+        return clauses(fact, agendaChange, rule == null ? null : Msg.drools("PART.watch.rule-fired", "rule", rule));
     }
 
     /** What happened outside the entry since {@link #since} beyond an update of an attribute or a characteristic of a
      *  bean of the input, as a clause: a rule that fired, else a change of the agenda Drools reports as an event, else
      *  the first other insert, update or delete; null where nothing did. A fire names its rule rather than the facts
      *  truth maintenance inserted and deleted on the way, which are its consequence. */
-    public String moreThanOneUpdate() {
-        if (rule != null) return "de regel \"" + rule + "\" vuurde";
+    public Msg moreThanOneUpdate() {
+        if (rule != null) return Msg.drools("PART.watch.rule-fired", "rule", rule);
         return agendaChange != null ? agendaChange : otherChange;
     }
 
     /** The first insert or delete outside the entry since {@link #since} of a fact of a kind {@code insert} puts in, as
      *  a clause, or null. */
-    public String onOrOff() {
+    public Msg onOrOff() {
         return onOrOff;
     }
 
@@ -288,38 +291,38 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
      * refuses with an {@code IllegalStateException} that names its class, since it cannot tell what that action does to
      * the agenda.
      */
-    public static String agenda(KieSession session) {
+    public static Msg agenda(KieSession session) {
         if (!(session.getAgenda() instanceof InternalAgenda agenda))
-            throw new IllegalStateException("de agenda van deze sessie is geen " + InternalAgenda.class.getName() + " maar "
-                    + session.getAgenda().getClass().getName() + ", dus de bewaking kan haar niet lezen");
-        Set<String> description = new LinkedHashSet<>();
+            throw new IllegalStateException("the agenda of this session is no " + InternalAgenda.class.getName() + " but "
+                    + session.getAgenda().getClass().getName() + ", so the watch cannot read it");
+        Set<Msg> description = new LinkedHashSet<>();
         for (Iterator<PropagationEntry> it = agenda.getActionsIterator(); it.hasNext(); ) {
             PropagationEntry e = it.next();
             if (e instanceof AgendaGroupQueueImpl.ClearAction)
-                description.add("een agendagroep werd geleegd met AgendaGroup.clear");
+                description.add(Msg.drools("PART.watch.agenda-cleared"));
             else if (e instanceof AgendaGroupQueueImpl.SetFocusAction)
-                description.add("een agendagroep kreeg de focus met AgendaGroup.setFocus");
+                description.add(Msg.drools("PART.watch.agenda-set-focus"));
             else if (!(e instanceof PropagationEntry.Insert || e instanceof PropagationEntry.Update
                     || e instanceof PropagationEntry.Delete))
-                throw new IllegalStateException("op de propagatielijst van deze sessie wacht een " + e.getClass().getName()
-                        + ", een actie die de bewaking niet kent: zij kent naast een insert, update of delete van een"
-                        + " feit alleen die van AgendaGroup.clear en AgendaGroup.setFocus, dus ze kan niet zeggen of een"
-                        + " afnemer de agenda veranderde");
+                throw new IllegalStateException("on the propagation list of this session waits a " + e.getClass().getName()
+                        + ", an action the watch does not know: beside an insert, update or delete of a"
+                        + " fact it knows only those of AgendaGroup.clear and AgendaGroup.setFocus, so it cannot say whether a"
+                        + " consumer changed the agenda");
         }
         Set<String> emptied = new TreeSet<>();
         for (InternalAgendaGroup g : agenda.getAgendaGroupsManager().getAgendaGroups())
-            if (g.getClearedForRecency() != -1) emptied.add("de agendagroep \"" + g.getName() + "\" werd geleegd");
-        description.addAll(emptied);
-        return description.isEmpty() ? null : String.join(" en ", description);
+            if (g.getClearedForRecency() != -1) emptied.add(g.getName());
+        for (String group : emptied) description.add(Msg.drools("PART.watch.group-emptied", "group", group));
+        return clauses(description.toArray(Msg[]::new));
     }
 
     @Override public void objectInserted(ObjectInsertedEvent e) {
-        happened(e.getObject(), FactNames.object(e.getObject()) + " werd ingevoegd", true);
+        happened(e.getObject(), Msg.drools("PART.watch.inserted", "object", FactNames.object(e.getObject())), true);
     }
 
     @Override public void objectUpdated(ObjectUpdatedEvent e) {
         Object o = e.getObject();
-        String sentence = FactNames.object(o) + " werd gewijzigd met update";
+        Msg sentence = Msg.drools("PART.watch.updated", "object", FactNames.object(o));
         if (fact == null) fact = sentence;
         if (otherChange != null) return;
         Object[] before = relations.get(o);
@@ -331,14 +334,14 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
         Object[] after = r.read(o);
         for (int i = 0; i < after.length; i++)
             if (after[i] != before[i]) {
-                otherChange = "het veld '" + r.names().get(i) + "' van " + FactNames.object(o) + ", een relatie, werd"
-                        + " gewijzigd met update";
+                otherChange = Msg.drools("PART.watch.relation-updated", "field", r.names().get(i), "object",
+                        FactNames.object(o));
                 return;
             }
     }
 
     @Override public void objectDeleted(ObjectDeletedEvent e) {
-        happened(e.getOldObject(), FactNames.object(e.getOldObject()) + " werd verwijderd", true);
+        happened(e.getOldObject(), Msg.drools("PART.watch.deleted", "object", FactNames.object(e.getOldObject())), true);
     }
 
     @Override public void beforeMatchFired(BeforeMatchFiredEvent e) {
@@ -349,32 +352,33 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
      *  consumer's: a cleared group run at a fire, or a filter of a fire. */
     @Override public void matchCancelled(MatchCancelledEvent e) {
         if (e.getCause() != MatchCancelledCause.WME_MODIFY)
-            agendaChange("een activatie van de regel \"" + e.getMatch().getRule().getName() + "\" werd geannuleerd");
+            agendaChange(Msg.drools("PART.watch.activation-cancelled", "rule", e.getMatch().getRule().getName()));
     }
 
     @Override public void agendaGroupPushed(AgendaGroupPushedEvent e) {
-        agendaChange("de agendagroep \"" + e.getAgendaGroup().getName() + "\" kreeg de focus");
+        agendaChange(Msg.drools("PART.watch.group-focus", "group", e.getAgendaGroup().getName()));
     }
 
     @Override public void agendaGroupPopped(AgendaGroupPoppedEvent e) {
-        agendaChange("de agendagroep \"" + e.getAgendaGroup().getName() + "\" verloor de focus");
+        agendaChange(Msg.drools("PART.watch.group-lost-focus", "group", e.getAgendaGroup().getName()));
     }
 
-    private void agendaChange(String sentence) {
+    private void agendaChange(Msg sentence) {
         if (agendaChange == null) agendaChange = sentence;
     }
 
-    private void happened(Object o, String sentence, boolean onOrOff) {
+    private void happened(Object o, Msg sentence, boolean onOrOff) {
         if (fact == null) fact = sentence;
         if (otherChange == null) otherChange = sentence;
         if (onOrOff && this.onOrOff == null && input.contains(o.getClass())) this.onOrOff = sentence;
     }
 
-    /** The clauses that are not null, joined: "a", "a en b", "a, b en c". */
-    private static String combined(String... parts) {
-        List<String> present = java.util.Arrays.stream(parts).filter(Objects::nonNull).toList();
+    /** The clauses that are not null, joined by the word of {@code PART.and} in the language of the message around
+     *  them: "a", "a and b", "a, b and c"; null where none is. */
+    public static Msg clauses(Msg... parts) {
+        List<Msg> present = java.util.Arrays.stream(parts).filter(Objects::nonNull).toList();
         if (present.isEmpty()) return null;
         if (present.size() == 1) return present.get(0);
-        return String.join(", ", present.subList(0, present.size() - 1)) + " en " + present.get(present.size() - 1);
+        return Msg.drools("PART.watch.clauses", "clauses", new Msg.Enumeration(Component.DROOLS, present));
     }
 }
