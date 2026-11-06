@@ -207,3 +207,14 @@ ook na het beslissende lid, in alle vier.
 
 Eindrun van de ronde: `make gates` op `2df79f6a3`, alle zeventien gates en `after-run` rc=0, red=0, 435 s
 (`out/gates/20261106-164133/summary.txt` in de worktree, log `uchar-dev/werk/clingo-round2/logs/gates-final.log`).
+
+### Vervolg: de afgeronde wortel in clingo krijgt een code
+
+Bij de rij "negatieve wortel" weigerde clingo de afgeronde wortel bij de vertaling zonder registercode ("rounded
+root is not translated (no corpus case)", `logs/k3-probes-3.log`), een fout die geen pin kan noemen. Op verzoek van
+de hoofdsessie in deze branch opgelost: de weigering is `CLINGO-043 rounded-square-root` van de soort `refusal`
+(`expr_term`; ref rondt de irrationele wortel exact af, ch. 2.2, en deze codering heeft daar geen gehele vorm voor).
+Suitecheck "ch2.2 a rounded square root": verifier-schoon, ref 3 (√10 afgerond op 0 decimalen), clingo weigert met
+`CLINGO-043` zonder parameters; `test_clingo: 2772 checks, 0 failures` (`logs/f1-suite.log`). Geen golden. De arm
+erna, een kale `squareRoot` of `absoluteValue` buiten een afronding, weigert nog zonder code; geen golden bereikt
+hem (`absoluteValue` staat in geen golden, en de frontend schrijft een wortel alleen onder een afronding).

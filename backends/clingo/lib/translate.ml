@@ -7096,8 +7096,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
   | Rounding { base_expr = Some (Function_call { kind = Square_root; call_arguments; _ }); _ } ->
       numeric_builtin_operand ctx Square_root call_arguments;
       (* ref rounds the true irrational exactly (§13.4.17.13); that
-         computation has no integer encoding here yet *)
-      fault "rounded root is not translated (no corpus case)"
+         computation has no integer encoding here *)
+      faultc "CLINGO-043" "a rounded square root is not translated: its exact rounding has no integer encoding here"
   | Function_call { kind = (Square_root | Absolute_value) as kind; call_arguments; _ } ->
       numeric_builtin_operand ctx kind call_arguments;
       fault "%s is not translated (no corpus case)" (Ir_v0.Spelling.encode Ir_v0.Spelling.builtin_kind kind)

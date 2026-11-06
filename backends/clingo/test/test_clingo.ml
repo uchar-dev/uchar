@@ -16910,6 +16910,30 @@ let () =
   verifier_clean ~name ~ir;
   clingo_matches ~name ~ir ~case_text
 
+(* CLINGO-043: A ROUNDED SQUARE ROOT. ref rounds the true irrational
+   exactly (ch. 2.2); this encoding has no integer form for that rounding and
+   refuses it by name, where it faulted without a code until the second
+   clingo round of 2026-11-06. *)
+let () =
+  let number_value = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}|} in
+  let ir =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten", "attributes": [{"node": "Attribute", "name": "gewicht", "datatype": %s}, {"node": "Attribute", "name": "wortelmaat", "datatype": %s}], "characteristics": []}], "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [{"node": "Rule", "name": "wortelmaat van een vondst", "versions": [{"validity": {"node": "Validity"}, "target": {"node": "AttributeReference", "attribute": "wortelmaat", "subjectType": "Vondst", "source": {"snippet": "De wortelmaat van een Vondst"}}, "value": {"node": "Rounding", "base": {"node": "BuiltinCall", "kind": "squareRoot", "arguments": [{"node": "AttributeReference", "attribute": "gewicht", "subjectType": "Vondst", "source": {"snippet": "zijn gewicht"}}], "type": {"node": "Number", "whole": false, "decimals": 0, "sign": "nonNegative"}, "source": {"snippet": "de wortel van zijn gewicht"}}, "mode": "halfAwayFromZero", "decimals": 0, "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative"}, "source": {"snippet": "de wortel van zijn gewicht rekenkundig afgerond op 0 decimalen"}}, "initialisation": false, "presentation": "calculation"}]}], "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": []}, "diagnostics": []}|}
+      number_value number_value
+  and case_text =
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "V1", "objectType": "Vondst", "attributes": {"gewicht": {"number": "10"}}, "roles": {}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "attributeValue", "label": "V1", "attribute": "wortelmaat", "value": {"number": "3"}}]}|}
+  in
+  let name = "ch2.2 a rounded square root" in
+  verifier_clean ~name ~ir;
+  ref_matches ~name ~ir ~case_text;
+  let doc, case = load_pair ~ir ~case_text in
+  match translate doc case with
+  | (_ : string) -> check (name ^ ": expected a refusal, got a program") false
+  | exception Uchar_ref.Value.Fault { code; params; text } ->
+      check
+        (name ^ ": CLINGO-043 (" ^ Uchar_ref.Value.report ~code text ^ ")")
+        (code = Some "CLINGO-043" && params = [])
+
 (* CLINGO-042: THE TEXT OF A VALUE (RUNTIME-SEMANTICS ch. 1.2, "Text
    coercion"; README, Recorded limitations). A text composition and a
    concatenation need string functions, which ASP-Core-2 does not have, so
