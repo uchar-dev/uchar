@@ -179,3 +179,12 @@ Rode gevallen `corpus/red/duplicate-instance-label` en `corpus/red/undeclared-in
 gevallen, 40 foutsoorten, Drools-poot 71 FAULT met de gepinde code (`logs/gate8-2.log`).
 `CaseNameRuleWitnessTest` pint de vier namen van EF-040 en EF-039 met code en parameters op beide takken;
 `CaseInputWitnessTest` de rolsleutel. Een naam in een verwachting houdt zijn zin zonder code, in alle drie.
+
+### Landing (hoofdsessie, 2026-11-06)
+
+Geland op main na `make gates` op `e3d0241ab`, de kop van de branch na de rebase op main `8e8fd6ee5` (17 van 17 groen,
+568 s). Nagelezen: de twee verlaagde vloeren (`EXPECTED_MIN_DROOLS_EXCLUDE_CODES` 15 → 14, `EXPECTED_MIN_EXCLUDED`
+46 → 43) volgen uit goldens en een rood geval die nu spelen of de gepinde fout geven, een bewuste verwijdering; de
+twaalf kantelende tests werden positieve getuigen met de waarden van ref en clingo. Het voorlopige besluit over de
+vouwvolgorde (DROOLS-318) staat; de eigenaar kan het omdraaien. Een vervolgkaart is er niet: de weigering staat in de
+lijst van niet-gedragen vormen van `backends/drools/README.md`.
