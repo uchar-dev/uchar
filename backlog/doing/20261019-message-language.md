@@ -120,8 +120,9 @@ werkt. Acceptatie 2 en 3 zijn voor de Drools-kant dus open; de kaart blijft daar
 **Gate 11.** De `diagnostics` van de wire dragen de tekst in de standaardtaal, dus één WARNING in `toka/casus/ir.json`
 (de begrenzing van toka-24) is nu Nederlands; opnieuw gepind en in `toka/README.md` onder "Deliberate divergences".
 
-**Gate set.** Gericht groen: 1, 10, 11, 16 en `check-drools-codes.sh` (`logs/k2-gates-2.log`); de hele set aan het eind van
-de branch. De distributie volgt met haar pin (onder `--language en` geeft zij dan Engelse frontendmeldingen; haar
+**Gate set.** Gericht groen: 1, 10, 11, 16 en `check-drools-codes.sh` (`logs/k2-gates-2.log`). De hele set op `c81f22f84`:
+`make gates` red=0, alle zeventien gates rc=0, 441 s (`out/gates/20261106-163408/summary.txt`, `logs/gates-final.log`);
+gate 12 draaide de Drools-suite op een jar met de nieuwe `Unit` en `ParameterSet`. De distributie volgt met haar pin (onder `--language en` geeft zij dan Engelse frontendmeldingen; haar
 `ParameterSet`-pins onder `nl` blijven gelijk).
 
 **Voorstel voor CLAUDE.md** (de hoofdsessie zet het erin):

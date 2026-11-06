@@ -210,7 +210,8 @@ Gemeten op `575de08e5` (main) en de branch; logs onder `werk/frontend-residue/lo
   de drie verwijzingen naar de oude sectietitel (DIVERGENCES twee keer, `RecursionTest`, de NOTE van
   `wf046-characteristics-read-each-other-negation`) volgen, en de NOTE van `wf046-negated-role-check-recursive-creation`
   zegt nu dat de frontend de bron weigert. Gates 1, 10, 11 en 16 groen op deze commit (`logs/k1-gates.log`,
-  `logs/k1-check-self-contained-2.log`); de hele set draait aan het eind van de branch.
+  `logs/k1-check-self-contained-2.log`). De hele set op `c81f22f84` (de kop van de branch): `make gates` red=0, alle
+  zeventien gates rc=0, 441 s (`out/gates/20261106-163408/summary.txt`, `logs/gates-final.log`).
 
 **Voorstel registertekst CONSTRUCTS rij 6**, achter "… (negative `wf046-negated-role-check-recursive-creation`)." in het
 blok "Landed (2026-10-02, ronde klein 2)":
