@@ -573,9 +573,9 @@ public sealed interface Consequence {
 
     /** The fault of a second distinct filler of a to-one role (RUNTIME-SEMANTICS ch. 5.5), a fault of the program and
      *  no overwrite: on the object {@code subject} binds, the near end of two links of one relation to different
-     *  objects, under the declared name of the relation {@code relation}, an {@code IllegalStateException} with the
-     *  sentence {@code sentence}. */
-    record SecondFilling(String subject, String relation, String sentence, Insertion insertion) implements Consequence {}
+     *  objects, under the declared name of the relation {@code relation}, a {@code SecondFillingFault} of the role
+     *  {@code role} that object holds. */
+    record SecondFilling(String subject, String relation, String role, Insertion insertion) implements Consequence {}
 
     /**
      * The decision of a default or of a reconciliation in a defaults stack (RUNTIME-SEMANTICS ch. 7.1-7.3, 7.9), on the

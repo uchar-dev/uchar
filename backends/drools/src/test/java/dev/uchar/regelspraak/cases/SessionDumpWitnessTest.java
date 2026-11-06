@@ -3,6 +3,8 @@ package dev.uchar.regelspraak.cases;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeFault;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
 import dev.uchar.regelspraak.transpiler.tms.Fault;
 import dev.uchar.regelspraak.transpiler.tms.Value;
 
@@ -82,7 +84,8 @@ class SessionDumpWitnessTest {
     }
 
     /** A sentence of the branch that names an object of the session by its type and identity, here a fault put in by
-     *  hand, is refused by the dump, which neither writes nor replaces an identity. */
+     *  hand, is refused by the dump, which neither writes nor replaces an identity. The fault is a {@link ComputeFault},
+     *  a kind a {@link Fault} carries ({@link Fault#KINDS}), with a sentence of the test's own. */
     @Test void a_sentence_with_an_identity_is_refused() throws Exception {
         String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(attribute("merk", TEKST)),
                 List.of())), List.of());
@@ -91,7 +94,8 @@ class SessionDumpWitnessTest {
                 DroolsBackend.Branch.EXEC_MODEL).withSession(vondst("V1", "x"), (build, session, labels) -> {
             Object v1 = labels.get("V1");
             String identity = v1.getClass().getSimpleName() + "@" + Integer.toHexString(System.identityHashCode(v1));
-            session.insert(new Fault(v1, "proef", new IllegalStateException("een zin over " + identity)));
+            ComputeFault fault = assertThrows(ComputeFault.class, () -> ComputeHelpers.fail("een zin over " + identity));
+            session.insert(new Fault(v1, "proef", fault));
             return SessionDump.op(session, labels);
         }));
         assertTrue(e.getMessage().startsWith("de dump schrijft geen identiteit: de zin \"een zin over Vondst@"),

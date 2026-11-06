@@ -7,10 +7,10 @@ import java.util.List;
  * Two or more evaluation faults that stand at the fixpoint of one session of the exec-model branch
  * ({@link Fault}). A single fault is thrown as the exception it is; several are thrown as this exception, ordered by the
  * name of the form and then by the sentence, so the report does not depend on the order of the rules in the model or of
- * the firings. Its message is a head ({@link #head}) that names the rule of every fault, then the sentences of the
- * faults ({@link #sentences}). A report that bounds its length bounds the sentences and keeps the head whole, as the CLI's
- * ERROR line does: the bound may shorten a sentence, but no fault drops off the report. The first fault in that order
- * is the cause, and the others are suppressed exceptions.
+ * the firings. Its message is a head ({@link #head}) that names the rule of every fault (the fact type of a
+ * {@link SecondFillingFault}), then the sentences of the faults ({@link #sentences}). A report that bounds its length
+ * bounds the sentences and keeps the head whole, as the CLI's ERROR line does: the bound may shorten a sentence, but no
+ * fault drops off the report. The first fault in that order is the cause, and the others are suppressed exceptions.
  */
 public final class EvaluationFaults extends RuntimeException {
 
@@ -35,17 +35,24 @@ public final class EvaluationFaults extends RuntimeException {
     }
 
     /** Each rule once, with the number of its faults where it has more than one: the faults of one rule are adjacent in
-     *  the order of the report, so the head grows with the rules of the document and not with the objects of the case. */
+     *  the order of the report, so the head grows with the rules of the document and not with the objects of the case.
+     *  The name a {@link SecondFillingFault} carries is that of a fact type, and the head names it as one. */
     private static String head(List<Fault> faults) {
-        List<String> rules = new ArrayList<>();
+        List<String> rules = new ArrayList<>(), factTypes = new ArrayList<>();
         for (int i = 0; i < faults.size(); ) {
-            String rule = faults.get(i).rule();
+            Fault first = faults.get(i);
+            boolean factType = first.fault() instanceof SecondFillingFault;
             int n = 0;
-            for (; i < faults.size() && faults.get(i).rule().equals(rule); i++) n++;
-            rules.add("\"" + rule + "\"" + (n > 1 ? " (" + n + "×)" : ""));
+            for (; i < faults.size() && faults.get(i).rule().equals(first.rule())
+                    && faults.get(i).fault() instanceof SecondFillingFault == factType; i++) n++;
+            (factType ? factTypes : rules).add("\"" + first.rule() + "\"" + (n > 1 ? " (" + n + "×)" : ""));
         }
-        return "aan het fixpunt staan " + faults.size() + " evaluatiefouten, in de regel" + (rules.size() > 1 ? "s " : " ")
-                + String.join(", ", rules);
+        List<String> parts = new ArrayList<>();
+        if (!rules.isEmpty()) parts.add("in de regel" + (rules.size() > 1 ? "s " : " ") + String.join(", ", rules));
+        if (!factTypes.isEmpty())
+            parts.add((rules.isEmpty() ? "in " : "") + (factTypes.size() > 1 ? "de feittypen " : "het feittype ")
+                    + String.join(", ", factTypes));
+        return "aan het fixpunt staan " + faults.size() + " evaluatiefouten, " + String.join(" en ", parts);
     }
 
     private static String sentences(List<Fault> faults) {

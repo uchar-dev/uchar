@@ -291,9 +291,7 @@ class CreationPlanWitnessTest {
                         + " vakbeseining]] join [tweede-vulling-nabij_27: second = $een.RelationLink.second] beta"
                         + " [tweede-vulling-ander_28: OTHER_FILLING $een first {String, type null, source null}]"
                         + " na [] bind []",
-                "  consequence SecondFilling[subject=$nabij, relation=vakbeseining, sentence=de naar-één-rol"
-                        + " \"seinvak\" van een Sein heeft twee verschillende vullingen; een tweede vulling is een"
-                        + " fout, geen overschrijving (RUNTIME-SEMANTICS ch. 5.5), insertion=LOGICAL]"),
+                "  consequence SecondFilling[subject=$nabij, relation=vakbeseining, role=seinvak, insertion=LOGICAL]"),
                 plans(golden("jutterswet-bakensein"), CreationPlanWitnessTest::ofThisStep));
     }
 

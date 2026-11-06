@@ -118,8 +118,10 @@ class DrlPiecesCorpusWitnessTest {
 
     /** The goldens the backend carries, measured 2026-10-24. */
     static final int EXPECTED_MIN_GOLDENS = 282;
-    /** The texts, without readings, that carry a character outside ASCII, measured 2026-10-24. */
-    static final int EXPECTED_MIN_NON_ASCII_TEXTS = 49;
+    /** The texts, without readings, that carry a character outside ASCII, measured 2026-10-24 (49) and lowered
+     *  2026-11-06 to 26, when the sentence of a second filling ("naar-één-rol") left the DRL text for the
+     *  {@code SecondFillingFault} it constructs (card tweede-vulling-als-eigen-fouttype). */
+    static final int EXPECTED_MIN_NON_ASCII_TEXTS = 26;
     /**
      * The functions that their rule does not reach, directly or through other functions of its piece, measured
      * 2026-10-24 per build, without readings and with them, the same one in both (named {@code r2_binder4} until

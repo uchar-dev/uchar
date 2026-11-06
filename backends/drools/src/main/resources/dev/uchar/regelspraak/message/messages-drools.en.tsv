@@ -378,6 +378,7 @@ EF-016.object-identity	a {type} ({identity})
 EF-016.object-labelled	{label}, a {type}
 EF-016.write	the rule "{rule}" writes {value}
 EF-016.write-allocation	the allocation "{allocation}" writes {value}
+EF-017	the to-one role "{role}" of "{label}" has two different fillers; a second filler is a fault, not an overwrite (RUNTIME-SEMANTICS ch. 5.5)
 EF-019.condition	Unresolved condition reached in evaluation
 EF-019.expression	Unresolved reached in evaluation: this rule fails observably
 EF-023	the periods in which the time-dependent characteristic "{characteristic}" of "{label}" holds have an open bound: a characteristic holds in bounded periods only (ch. 3.11). Declined at evaluation

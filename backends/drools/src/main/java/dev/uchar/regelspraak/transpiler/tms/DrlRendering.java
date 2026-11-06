@@ -1281,8 +1281,8 @@ final class DrlRendering {
                         + str(x.relation()) + ", " + x.first() + ", " + x.second() + ", "
                         + (x.phase() < 0 ? "0" : variable(x.phase())) + ")");
                 case Consequence.SecondFilling x -> insert(b, "    ", x.insertion(), "new " + typeName(Fault.class) + "("
-                        + x.subject() + ", " + str(x.relation()) + ", new " + typeName(IllegalStateException.class)
-                        + "(" + str(x.sentence()) + "))");
+                        + x.subject() + ", " + str(x.relation()) + ", new " + typeName(SecondFillingFault.class)
+                        + "(" + str(x.role()) + ", " + x.subject() + "))");
                 case Consequence.Recipient x -> insert(b, "    ", x.insertion(), "new " + typeName(Recipient.class) + "("
                         + str(x.allocation()) + ", " + x.subject() + ", " + variable(x.recipient()) + ", "
                         + slotOfNull(x.weight()) + ", " + slotOfNull(x.key()) + ", " + slotOfNull(x.maximum()) + ")");

@@ -126,7 +126,8 @@ EF_PLACES = {
     "EF-006": {"place", "value", "decimals"}, "EF-007": set(), "EF-007.date": set(), "EF-008": {"count"},
     "EF-009": {"reach", "from"}, "EF-010": set(), "EF-011.date": set(), "EF-011.year": set(), "EF-012": set(),
     "EF-015": {"creation", "stratum", "depth", "type", "parentDepth"},
-    "EF-016": {"count", "enumeration", "attribute", "object"}, "EF-019.expression": set(), "EF-019.condition": set(),
+    "EF-016": {"count", "enumeration", "attribute", "object"}, "EF-017": {"role", "label"},
+    "EF-019.expression": set(), "EF-019.condition": set(),
 }
 def dutch_words(t):
     u = t.replace("{{", "").replace("}}", "")

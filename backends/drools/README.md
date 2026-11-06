@@ -193,13 +193,27 @@ After
 the write-back the beans hold derived values beside their input, so a fresh session takes beans that hold the input
 alone.
 
-**Faults.** An evaluation fault is a fact of the fixpoint, on both branches, not an exception out of the fire: `fixpointOf` gives it as data (`Fixpoint.faults`, the subject, the rule and the exception), and `setDerivedValues`
-throws what stands before it writes anything, and then writes nothing: one fault as its own exception, a
-`ComputeFault` for a fault of a computation or of the evaluation date, a `WritersConflict` (an `IllegalStateException`) for two writers of one
-attribute that disagree (RUNTIME-SEMANTICS ch. 5.7), a `WriteBoundaryFault` for a value that does not fit the declared
-decimals of its target (EF-006, ch. 2.4 point 1) and an `InputFormFault` for a timeline input in the other
-convention (ch. 8.4); two or more as `EvaluationFaults`, with each fault in `faults()`. Any other exception is no
-evaluation fault: a broken contract or a bug.
+**Faults.** An evaluation fault is a fact of the fixpoint, on both branches, not an exception out of the fire:
+`fixpointOf` gives it as data (`Fixpoint.faults`, the subject, the rule and the exception), and `setDerivedValues`
+throws what stands before it writes anything, and then writes nothing: one fault as its own exception, two or more as
+`EvaluationFaults`, with each fault in `faults()`. The exception of a fault is one of these (`Fault.KINDS`, held to
+this list by `FaultKindsWitnessTest`):
+
+- `ComputeFault` for a fault of a computation or of the evaluation date;
+- `WritersConflict` (an `IllegalStateException`) for two writers of one attribute that disagree (EF-016,
+  RUNTIME-SEMANTICS ch. 5.7);
+- `WriteBoundaryFault` for a value that does not fit the declared decimals of its target (EF-006, ch. 2.4 point 1);
+- `InputFormFault` for a timeline input in the other convention (ch. 8.4);
+- `OpenSegmentFault` for a temporal total over an open segment that is not 0 (EF-036, ch. 3.6);
+- `CharacteristicPeriodsFault` for a time-dependent characteristic whose true periods have an open bound (EF-023,
+  ch. 3.11);
+- `SecondFillingFault` for a to-one role with two different fillers (EF-017, ch. 5.5); its fault names the fact type
+  of the relation as its rule, since the links of the relation raise it and no form, and the head of
+  `EvaluationFaults` names it as a fact type;
+- `Breuk.DelingDoorNul` (an `ArithmeticException`) for a division by a numeric zero in the production runtime, which
+  the branch reaches only where it does not make the §9.5 deposit EF-005 before the runtime is called.
+
+Any other exception is no evaluation fault: a broken contract or a bug.
 
 **Deposits, made objects and links.** The §9.5 deposits are the facts of the generated class `Inconsistentie`, with
 the rule and the subject: `fixpointOf` gives them, and on both branches a consumer reads them from the working memory. A made
@@ -959,8 +973,7 @@ the phase it fires in, so a recursive chain advances one generation per phase, a
 fixpoint over what the previous phase made. Every relation a form creates is read through `RelationLink` facts, the links
 of the case input included, which a rule per to-one end inserts logically from the bean fields: a navigation through a
 `PathState` over a chain of patterns, the range of a fold through an `exists` over the link. A second distinct filler of
-a to-one role of such a relation is a `Fault` at the fixpoint ("een tweede vulling is een fout, geen overschrijving", ch.
-5.5). A condition of a creation that can fault has an ordinary fault rule in the rule layer, without the mark and
+a to-one role of such a relation is a `Fault` at the fixpoint, a `SecondFillingFault` (EF-017, ch. 5.5). A condition of a creation that can fault has an ordinary fault rule in the rule layer, without the mark and
 without the 1:1 guard, as the reference interpreter evaluates the condition first, in every pass. The replay and a
 consumer fire through `DroolsBackend.fire`; `fixpointOf` and `setDerivedValues` refuse a session that `fire` did not fire
 to its fixpoint, or in which something happened outside `fire` since, and on a build with a creation `fire` fires a

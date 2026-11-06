@@ -735,11 +735,7 @@ public final class DroolsBackend {
      * hold it (§13.3.9). Until this call the beans hold the input alone, since the branch writes no bean while it fires.
      *
      * <p>Before anything is written, it throws the evaluation faults that stand at the fixpoint, and then writes nothing:
-     * one fault as its own exception, which is a {@link Breuk.DelingDoorNul} for a division by a numeric zero (an
-     * {@code ArithmeticException}, named after the rule with the operands), a {@code ComputeFault} for a fault of a
-     * computation or of the evaluation date, a
-     * {@code WritersConflict} for two writers of one attribute that disagree (an {@code IllegalStateException},
-     * RUNTIME-SEMANTICS ch. 5.7) and an {@code InputFormFault} for a timeline input in the other convention (ch. 8.4);
+     * one fault as its own exception, one of {@code Fault.KINDS}, which the section "Faults" of the README describes;
      * two or more as {@code EvaluationFaults}, ordered by the name of the form and then by the sentence, with the faults
      * as {@code faults()}. {@link #fixpointOf} gives the same faults as data. A fault that is a limit of this branch
      * ({@code ComputeFault.limit}: a segment of a timeline of the unbounded form whose value does not terminate) is no

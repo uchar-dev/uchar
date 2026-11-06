@@ -248,7 +248,7 @@ final class PatternDslRendering {
                             (drools, a) -> insert(drools, x.insertion(),
                                     new RelationLink(x.relation(), a[0], a[1], (Integer) a[2])));
             case Consequence.SecondFilling x -> new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
-                    insert(drools, x.insertion(), new Fault(a[0], x.relation(), new IllegalStateException(x.sentence()))));
+                    insert(drools, x.insertion(), new Fault(a[0], x.relation(), new SecondFillingFault(x.role(), a[0]))));
             case Consequence.Decision x -> decisionOf(x);
             case Consequence.Conflict x -> {
                 ValueFunction key = ClosureRendering.valueFunction(x.key());

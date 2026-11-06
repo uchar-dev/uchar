@@ -1690,6 +1690,8 @@ public final class TmsTranspiler {
                     ? new Fault(fault.subject(), fault.rule(), o.named(label))
                     : label != null && fault.fault() instanceof CharacteristicPeriodsFault k
                     ? new Fault(fault.subject(), fault.rule(), k.named(label))
+                    : label != null && fault.fault() instanceof SecondFillingFault s
+                    ? new Fault(fault.subject(), fault.rule(), s.named(label))
                     // the place of a value that does not fit is the object of the fact where the fault had none
                     : fault.fault() instanceof WriteBoundaryFault w
                     ? new Fault(fault.subject(), fault.rule(), w.named(fault.subject(), label, watch::inputPlace))
@@ -4494,8 +4496,8 @@ public final class TmsTranspiler {
             out.add(inputLink(relation, t0, r1.name(), true));
         if (!r0.many() && FactModelGenerator.hasReferenceField(model, t1, r0.name(), t0))
             out.add(inputLink(relation, t1, r0.name(), false));
-        if (!r1.many()) out.add(secondFilling(ft, relation, true, r1.name(), t0));
-        if (!r0.many()) out.add(secondFilling(ft, relation, false, r0.name(), t1));
+        if (!r1.many()) out.add(secondFilling(ft, relation, true, r1.name()));
+        if (!r0.many()) out.add(secondFilling(ft, relation, false, r0.name()));
         return out;
     }
 
@@ -4513,12 +4515,9 @@ public final class TmsTranspiler {
     }
 
     /** The fault of two links of {@code relation} from one object to two different fillers of the to-one role
-     *  {@code role}: the near object is the links' first end where {@code nearIsFirst}. */
-    private RulePlan secondFilling(RegelSpraakModel.FactType ft, String relation, boolean nearIsFirst, String role,
-                                    ObjectType nearType) {
+     *  {@code role}, a {@link SecondFillingFault}: the near object is the links' first end where {@code nearIsFirst}. */
+    private RulePlan secondFilling(RegelSpraakModel.FactType ft, String relation, boolean nearIsFirst, String role) {
         String nearEnd = nearIsFirst ? "first" : "second", farEnd = nearIsFirst ? "second" : "first";
-        String sentence = "de naar-één-rol \"" + role + "\" van een " + nearType.name + " heeft twee verschillende vullingen;"
-                + " een tweede vulling is een fout, geen overschrijving (RUNTIME-SEMANTICS ch. 5.5)";
         FactPattern one = new FactPattern(RelationLink.class, "$een", List.of(equal(id("vulling"), "relation", relation)), List.of(),
                 List.of(Binding.of("$nabij", RelationLink.class, nearEnd)));
         FactPattern two = new FactPattern(RelationLink.class, "$twee", List.of(equal(id("tweede-vulling"), "relation", relation)),
@@ -4529,7 +4528,7 @@ public final class TmsTranspiler {
                 List.of());
         return new RulePlan("koppeling " + relation + ": tweede vulling van " + role, null, null,
                 new ReadTable(List.of()), List.of(one, two),
-                new Consequence.SecondFilling("$nabij", ft.name, sentence, Consequence.Insertion.LOGICAL));
+                new Consequence.SecondFilling("$nabij", ft.name, role, Consequence.Insertion.LOGICAL));
     }
 
     // ---------------- prioritized defaults ----------------

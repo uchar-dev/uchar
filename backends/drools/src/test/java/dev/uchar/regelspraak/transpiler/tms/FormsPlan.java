@@ -232,7 +232,7 @@ final class FormsPlan {
             "    insertLogical(new RelationLink(\"wachterpost\", $onderwerp, $post, 0));",
             "    agenda-group \"uchar-feitcreatie\"",
             "    insert(new RelationLink(\"wachterpost\", $onderwerp, $post, $fase));",
-            "    insertLogical(new Fault($onderwerp, \"proefrelatie\", new IllegalStateException(\"een tweede vulling\")));");
+            "    insertLogical(new Fault($onderwerp, \"proefrelatie\", new SecondFillingFault(\"proefrol\", $onderwerp)));");
 
     /**
      * A plan with every consequence of a creation and of a link (step 5 of card drl-teksttak-op-truth-maintenance), over
@@ -289,7 +289,7 @@ final class FormsPlan {
                 new Consequence.RelationLink("wachterpost", O, "$post", 0, Consequence.Insertion.STATED)));
         rules.add(new RulePlan("tweede vulling", null, null, table(),
                 List.of(new Subject(wachter, O, List.of(), List.of(), List.of())),
-                new Consequence.SecondFilling(O, "proefrelatie", "een tweede vulling", Consequence.Insertion.LOGICAL)));
+                new Consequence.SecondFilling(O, "proefrelatie", "proefrol", Consequence.Insertion.LOGICAL)));
         return new Modelplan(List.of(), rules);
     }
 

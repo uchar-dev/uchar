@@ -378,6 +378,7 @@ EF-016.object-identity	een {type} ({identity})
 EF-016.object-labelled	{label}, een {type}
 EF-016.write	de regel "{rule}" schrijft {value}
 EF-016.write-allocation	de verdeling "{allocation}" schrijft {value}
+EF-017	de naar-één-rol "{role}" van "{label}" heeft twee verschillende vullingen; een tweede vulling is een fout, geen overschrijving (RUNTIME-SEMANTICS ch. 5.5)
 EF-019.condition	Unresolved condition reached in evaluation
 EF-019.expression	Unresolved reached in evaluation: this rule fails observably
 EF-023	de perioden waarin het tijdsafhankelijke kenmerk "{characteristic}" van "{label}" geldt hebben een open grens: een kenmerk geldt alleen in begrensde perioden (ch. 3.11). Geweigerd bij de evaluatie

@@ -591,10 +591,12 @@ class TmsCreationWitnessTest {
     }
 
     @Test void a_second_filling_of_a_to_one_role_is_a_fault() throws Exception {
+        // the fault of its own type, EF-017 (RUNTIME-SEMANTICS ch. 5.5, 5.7b), which names the object by its case label
+        // at the write-back and by type and identity in a session without labels
         Path ir = documentD();
-        String sentence = "IllegalStateException: de naar-één-rol \"haven\" van een Jutter heeft twee verschillende vullingen;"
-                + " een tweede vulling is een fout, geen overschrijving (RUNTIME-SEMANTICS ch. 5.5)";
-        assertEquals(sentence, TmsFaultWitnessTest.playBoth(ir, caseD2()));
+        String sentence = "de naar-één-rol \"haven\" van \"%s\" heeft twee verschillende vullingen; een tweede vulling"
+                + " is een fout, geen overschrijving (RUNTIME-SEMANTICS ch. 5.5)";
+        assertEquals("SecondFillingFault: " + sentence.formatted("J1"), TmsFaultWitnessTest.playBoth(ir, caseD2()));
         for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
             for (List<String> names : TmsDocuments.sample(TmsDocuments.generated(b), 20261008L,
@@ -609,10 +611,12 @@ class TmsCreationWitnessTest {
                 String fault = null;
                 try {
                     fireInOrder(b, names, List.of(k1, h1, h2, j1), session -> { }, session -> { });
-                } catch (IllegalStateException e) {
-                    fault = "IllegalStateException: " + e.getMessage();
+                } catch (RuntimeException e) {
+                    fault = e.getClass().getSimpleName() + ": " + e.getMessage();
                 }
-                assertEquals(sentence, fault, () -> "op " + branch + " in volgorde " + names);
+                String identity = j1.getClass().getSimpleName() + "@" + Integer.toHexString(System.identityHashCode(j1));
+                assertEquals("SecondFillingFault: " + sentence.formatted(identity), fault,
+                        () -> "op " + branch + " in volgorde " + names);
             }
         }
     }
