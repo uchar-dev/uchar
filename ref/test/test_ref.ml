@@ -105,8 +105,8 @@ let () =
   (let r, errs = with_errs (fun err -> Arith.div_ ~err (n "5") empty_value) in
    expect_empty "WV-1.2a-deel-3" r;
    check "WV-1.2a-deel-3 (§9.5 error)" (errs = 1));
-  expect_empty "WV-1.2a-macht-1" (Arith.pow_ empty_value (n "2"));
-  expect_empty "WV-1.2a-macht-2" (Arith.pow_ (n "4") empty_value);
+  expect_empty "WV-1.2a-macht-1" (Arith.pow_ ~err:no_err empty_value (n "2"));
+  expect_empty "WV-1.2a-macht-2" (Arith.pow_ ~err:no_err (n "4") empty_value);
   expect_empty "WV-1.2a-wortel-1" (Arith.sqrt_ ~err:no_err empty_value);
   (let r, errs = with_errs (fun err -> Arith.sqrt_ ~err (n "-4")) in
    expect_empty "WV-1.2a-wortel-2" r;
@@ -243,9 +243,9 @@ let () =
   expect_num "WV-2.2-e" (Arith.div_ ~err:no_err (n "2") (n "3")) "2/3";
   expect_num "WV-2.2-f" (Arith.div_abs ~err:no_err (n "10") (n "3")) "3.33333";
   expect_num "WV-2.2-g" (Arith.div_abs ~err:no_err (n "-10") (n "3")) "-3.33333";
-  expect_num "WV-2.2-h" (Arith.pow_ (n "7") (n "19")) "11398895185373143";
-  expect_num "WV-2.2-i" (Arith.pow_ (n "1/3") (n "-1")) "3";
-  expect_num "WV-2.2-j" (Arith.pow_ (n "4") (n "0.5")) "2";
+  expect_num "WV-2.2-h" (Arith.pow_ ~err:no_err (n "7") (n "19")) "11398895185373143";
+  expect_num "WV-2.2-i" (Arith.pow_ ~err:no_err (n "1/3") (n "-1")) "3";
+  expect_num "WV-2.2-j" (Arith.pow_ ~err:no_err (n "4") (n "0.5")) "2";
   expect_num "WV-2.2-k" (Arith.pct_of (n "1/3") (n "600")) "2";
   expect_num "WV-2.2-l" (Arith.pct_of (n "50") (n "4.00")) "2";
   expect_num "WV-2.2-m" (Arith.sqrt_ ~err:no_err (n "9")) "3";
@@ -261,11 +261,11 @@ let () =
   (* a fractional exponent: the exact root where the power is rational, and
      under its rounding (§6.7) the true power rounded once, as the root under
      its rounding is *)
-  expect_num "WV-2.2-p" (Arith.pow_ (n "8") (n "2/3")) "4";
-  expect_fault "WV-2.2-q" (fun () -> Arith.pow_ (n "10") (n "1/3"));
-  expect_num "WV-2.2-r" (Arith.pow_rounded Floor 10 (n "10") (n "1/3")) "2.1544346900";
-  expect_num "WV-2.2-s" (Arith.pow_rounded Ceiling 10 (n "10") (n "1/3")) "2.1544346901";
-  expect_num "WV-2.2-t" (Arith.pow_rounded Toward_zero 20 (n "2") (n "0.5")) "1.41421356237309504880";
+  expect_num "WV-2.2-p" (Arith.pow_ ~err:no_err (n "8") (n "2/3")) "4";
+  expect_fault "WV-2.2-q" (fun () -> Arith.pow_ ~err:no_err (n "10") (n "1/3"));
+  expect_num "WV-2.2-r" (Arith.pow_rounded ~err:no_err Floor 10 (n "10") (n "1/3")) "2.1544346900";
+  expect_num "WV-2.2-s" (Arith.pow_rounded ~err:no_err Ceiling 10 (n "10") (n "1/3")) "2.1544346901";
+  expect_num "WV-2.2-t" (Arith.pow_rounded ~err:no_err Toward_zero 20 (n "2") (n "0.5")) "1.41421356237309504880";
   expect_num "WV-2.2-u" (Arith.sqrt_rounded ~err:no_err Floor 20 (n "1/9")) "0.33333333333333333333";
   expect_num "WV-2.2-v"
     (Arith.sqrt_rounded ~err:no_err Floor 40 (n "2")) "1.4142135623730950488016887242096980785696";
@@ -283,7 +283,24 @@ let () =
    check "ch2.2-div-zero-by-zero (§9.5 EF-005)" (!codes = [ Some "EF-005" ]));
   (let r, deposits = with_errs (fun err -> Arith.div_ ~err empty_value (n "0")) in
    expect_num "ch2.2-div-empty-by-zero" r "0";
-   check "ch2.2-div-empty-by-zero (no §9.5 deposit)" (deposits = 0))
+   check "ch2.2-div-empty-by-zero (no §9.5 deposit)" (deposits = 0));
+  (* nul tot een negatieve macht: the negative exponent inverts a numeric zero,
+     a division by it (ch. 1.4 point 4): leeg with one §9.5 deposit of kind
+     EF-005, also for a fractional exponent and under its rounding; 0 to the
+     power 0 is 1 and a positive exponent gives 0, without a deposit *)
+  (let codes = ref [] in
+   let err (d : Value.deposit) = codes := d.code :: !codes in
+   expect_empty "ch2.2-pow-zero-negative" (Arith.pow_ ~err (n "0") (n "-1"));
+   expect_empty "ch2.2-pow-zero-negative-fraction" (Arith.pow_ ~err (n "0") (n "-1/2"));
+   expect_empty "ch2.2-pow-zero-negative-rounded" (Arith.pow_rounded ~err Floor 2 (n "0") (n "-1/2"));
+   check "ch2.2-pow-zero-negative (§9.5 EF-005, one per power)"
+     (!codes = [ Some "EF-005"; Some "EF-005"; Some "EF-005" ]));
+  (let r, deposits = with_errs (fun err -> Arith.pow_ ~err (n "0") (n "0")) in
+   expect_num "ch2.2-pow-zero-zero" r "1";
+   check "ch2.2-pow-zero-zero (no §9.5 deposit)" (deposits = 0));
+  (let r, deposits = with_errs (fun err -> Arith.pow_ ~err (n "0") (n "3")) in
+   expect_num "ch2.2-pow-zero-positive" r "0";
+   check "ch2.2-pow-zero-positive (no §9.5 deposit)" (deposits = 0))
 
 (* --- ch. 2.3: the wholeness of a product ---------------------------------- *)
 
@@ -1162,7 +1179,7 @@ let () =
     (Q.equal (Arith.total_factor (unit_ ~canonical_form:"g" ~factor:(1000, 1) "kg")) (q "1000"));
   (* an astronomic exponent faults instead of escaping as Z.Overflow *)
   expect_fault "verify-pow-overflow" (fun () ->
-      Arith.pow_ (n "2") (Value.Num (Q.of_string "100000000000000000000", Value.Unitless)))
+      Arith.pow_ ~err:no_err (n "2") (Value.Num (Q.of_string "100000000000000000000", Value.Unitless)))
 
 (* --- ch. 6.4: evaluation by strata (worked examples, hand-built docs) --- *)
 

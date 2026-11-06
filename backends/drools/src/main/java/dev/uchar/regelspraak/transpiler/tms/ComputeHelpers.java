@@ -81,6 +81,18 @@ public final class ComputeHelpers {
         return RegelSpraakRuntime.rsGedeeldAbs(left, right);
     }
 
+    /** The base of a power with a negative exponent, whose numerator is {@code numerator}: the exponent inverts the
+     *  power, and the inverse of a numeric zero is a division by it, leeg with the deposit of ch. 1.4 point 4 (EF-005) to
+     *  {@code depositFlag}, as 1 ÷ 0 is (RUNTIME-SEMANTICS ch. 2.2); any other base as it is, a leeg one leeg. The
+     *  function of a {@code Term.Division} in front of the power, which then meets no zero to invert. */
+    public static Object invertedBase(Object base, Object numerator, Object depositFlag) {
+        if ((Integer) numerator < 0 && isNumericZero(base)) {
+            DepositFlag.report(depositFlag, DIVISION_BY_ZERO);
+            return null;
+        }
+        return base;
+    }
+
     /** Whether {@code v} is a number equal to zero; leeg is not. */
     private static boolean isNumericZero(Object v) {
         Breuk q = Breuk.van(v);
@@ -149,11 +161,14 @@ public final class ComputeHelpers {
      *  digits of the base and the decimals, which past this bound the branch refuses by name instead of computing. */
     public static final int EXPONENT_BOUND = 1000;
 
-    /** A power of {@code base} to the fractional exponent {@code numerator/denominator} in lowest terms, the denominator
-     *  above 1, that is no base of a rounding (RUNTIME-SEMANTICS ch. 2.2): the exact root where the power is rational,
-     *  and otherwise the fault the reference interpreter gives, since the real power exists only under the rounding
-     *  §6.7 mandates; a leeg base leeg (ch. 1.2). */
-    public static Object exactPower(Object base, Integer numerator, Integer denominator) {
+    /** A power of {@code base} to the fractional {@code exponent}, its denominator above 1, as the literal writes it
+     *  (a decimal or a rational), that is no base of a rounding (RUNTIME-SEMANTICS ch. 2.2): the exact root where the
+     *  power is rational, and otherwise the fault the reference interpreter gives, since the real power exists only
+     *  under the rounding §6.7 mandates; a leeg base leeg (ch. 1.2). The exponent is the term of its literal's reading,
+     *  so the reading of the literal is the value this call receives. */
+    public static Object exactPower(Object base, Object exponent) {
+        Breuk e = Breuk.van(exponent);
+        int numerator = e.teller().intValueExact(), denominator = e.noemer().intValueExact();
         Breuk q = powerRadicand(base, numerator, denominator);
         if (q == null) return null;
         BigInteger t = wholeRoot(q.teller(), denominator), n = wholeRoot(q.noemer(), denominator);
@@ -165,8 +180,9 @@ public final class ComputeHelpers {
 
     /** As {@link #exactPower}, under its rounding to {@code decimals} decimals by {@code mode}: the true power rounded
      *  once ({@link #roundedRoot}). */
-    public static Object roundedPower(Object base, Integer numerator, Integer denominator, Integer decimals,
-                                      java.math.RoundingMode mode) {
+    public static Object roundedPower(Object base, Object exponent, Integer decimals, java.math.RoundingMode mode) {
+        Breuk e = Breuk.van(exponent);
+        int numerator = e.teller().intValueExact(), denominator = e.noemer().intValueExact();
         Breuk q = powerRadicand(base, numerator, denominator);
         return q == null ? null : roundedRoot(q, denominator, decimals, mode);
     }

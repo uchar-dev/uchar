@@ -31,8 +31,8 @@ public enum StaticFunction {
     /** A power with a whole exponent, exact (ch. 2.2), a negative exponent inverting; the exponent an {@code Integer}
      *  constant. */
     RS_POWER(RegelSpraakRuntime.class, "rsMacht", false),
-    /** A power with a fractional exponent that is no base of a rounding, its numerator and its denominator in lowest
-     *  terms {@code Integer} constants: the exact root where the power is rational, else the fault (ch. 2.2). */
+    /** A power with a fractional exponent that is no base of a rounding, the exponent a constant as its literal writes
+     *  it, a decimal or a rational: the exact root where the power is rational, else the fault (ch. 2.2). */
     EXACT_POWER(ComputeHelpers.class, "exactPower", true),
     /** A power with a fractional exponent under its rounding (§6.7), the exponent as for {@link #EXACT_POWER}, the
      *  decimals an {@code Integer} and the mode a {@code RoundingMode} constant: the true power rounded once (ch. 2.2,
@@ -207,6 +207,11 @@ public enum StaticFunction {
     DIVIDED(ComputeHelpers.class, "divided", true),
     /** As {@link #DIVIDED}, the quotient truncated toward zero at 5 decimals. */
     DIVIDED_ABS(ComputeHelpers.class, "dividedAbs", true),
+    /** The base of a power with a negative exponent, the exponent's numerator an {@code Integer} constant: a numeric
+     *  zero leeg with the deposit of ch. 1.4 point 4 to the probe, since the power inverts it (ch. 2.2), any other base
+     *  as it is. The function of a {@link Term.Division}, in front of {@link #RS_POWER}, {@link #EXACT_POWER} or
+     *  {@link #ROUNDED_POWER}. */
+    INVERTED_BASE(ComputeHelpers.class, "invertedBase", false),
     /** The radicand of a square root under the rounding §13.4.17.13 mandates, a negative one leeg with the §6.6 deposit
      *  to the probe. The function of a {@link Term.SquareRoot}, which {@link #ROUNDED_SQUARE_ROOT} takes. */
     RADICAND(ComputeHelpers.class, "radicand", false),

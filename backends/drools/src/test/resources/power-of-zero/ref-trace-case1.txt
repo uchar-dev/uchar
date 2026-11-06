@@ -1,0 +1,53 @@
+reading /rules/rules/0/versions/0 "V1" 0 Rounding empty
+reading /rules/rules/0/versions/0 "V1" 1 Binary empty
+reading /rules/rules/0/versions/0 "V1" 2 AttributeReference 0
+reading /rules/rules/0/versions/0 "V1" 3 Literal -1
+reading /rules/rules/0/versions/0 "V1" HOLDS
+reading /rules/rules/0/versions/0 "V2" 0 Rounding 0.25
+reading /rules/rules/0/versions/0 "V2" 1 Binary 0.25
+reading /rules/rules/0/versions/0 "V2" 2 AttributeReference 4
+reading /rules/rules/0/versions/0 "V2" 3 Literal -1
+reading /rules/rules/0/versions/0 "V2" HOLDS
+reading /rules/rules/0/versions/0 "V3" 0 Rounding 0.1
+reading /rules/rules/0/versions/0 "V3" 1 Binary 0.1
+reading /rules/rules/0/versions/0 "V3" 2 AttributeReference 10
+reading /rules/rules/0/versions/0 "V3" 3 Literal -1
+reading /rules/rules/0/versions/0 "V3" HOLDS
+reading /rules/rules/1/versions/0 "V1" 0 Rounding empty
+reading /rules/rules/1/versions/0 "V1" 1 Binary unreached
+reading /rules/rules/1/versions/0 "V1" 2 AttributeReference 0
+reading /rules/rules/1/versions/0 "V1" 3 Literal -0.5
+reading /rules/rules/1/versions/0 "V1" HOLDS
+reading /rules/rules/1/versions/0 "V2" 0 Rounding 0.5
+reading /rules/rules/1/versions/0 "V2" 1 Binary unreached
+reading /rules/rules/1/versions/0 "V2" 2 AttributeReference 4
+reading /rules/rules/1/versions/0 "V2" 3 Literal -0.5
+reading /rules/rules/1/versions/0 "V2" HOLDS
+reading /rules/rules/1/versions/0 "V3" 0 Rounding 0.31
+reading /rules/rules/1/versions/0 "V3" 1 Binary unreached
+reading /rules/rules/1/versions/0 "V3" 2 AttributeReference 10
+reading /rules/rules/1/versions/0 "V3" 3 Literal -0.5
+reading /rules/rules/1/versions/0 "V3" HOLDS
+reading /rules/rules/2/versions/0 "V1" 0 Comparison false
+reading /rules/rules/2/versions/0 "V1" 1 Rounding empty
+reading /rules/rules/2/versions/0 "V1" 2 Binary empty
+reading /rules/rules/2/versions/0 "V1" 3 AttributeReference 0
+reading /rules/rules/2/versions/0 "V1" 4 Literal -1
+reading /rules/rules/2/versions/0 "V1" 5 Literal 0.2
+reading /rules/rules/2/versions/0 "V1" FAILS
+reading /rules/rules/2/versions/0 "V2" 0 Comparison true
+reading /rules/rules/2/versions/0 "V2" 1 Rounding 0.25
+reading /rules/rules/2/versions/0 "V2" 2 Binary 0.25
+reading /rules/rules/2/versions/0 "V2" 3 AttributeReference 4
+reading /rules/rules/2/versions/0 "V2" 4 Literal -1
+reading /rules/rules/2/versions/0 "V2" 5 Literal 0.2
+reading /rules/rules/2/versions/0 "V2" HOLDS
+reading /rules/rules/2/versions/0 "V3" 0 Comparison false
+reading /rules/rules/2/versions/0 "V3" 1 Rounding 0.1
+reading /rules/rules/2/versions/0 "V3" 2 Binary 0.1
+reading /rules/rules/2/versions/0 "V3" 3 AttributeReference 10
+reading /rules/rules/2/versions/0 "V3" 4 Literal -1
+reading /rules/rules/2/versions/0 "V3" 5 Literal 0.2
+reading /rules/rules/2/versions/0 "V3" FAILS
+reading /rules/rules/3/versions/0 "J1" 0 Aggregation 1 contributors ["V2" empty reached]
+reading /rules/rules/3/versions/0 "J1" HOLDS

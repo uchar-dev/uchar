@@ -1385,7 +1385,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
       | Times -> Arith.mul ~units l r
       | Divided_by -> Arith.div_ ~units ~err l r
       | Divided_by_abs -> Arith.div_abs ~units ~err l r
-      | Power -> Arith.pow_ l r
+      | Power -> Arith.pow_ ~err l r
       | Percentage_of -> Arith.pct_of ~units l r)
   | Rounding { base_expr; mode_kind; decimal_places; _ } -> (
       match base_expr with
@@ -1400,7 +1400,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
              exponent rounds the true power, exactly (ch. 2.2) *)
           let l = eval_expr env world self ~err (req "Binary.left" left_side) in
           let r = eval_expr env world self ~err exponent in
-          Arith.pow_rounded mode_kind decimal_places l r
+          Arith.pow_rounded ~err mode_kind decimal_places l r
       | _ ->
           Arith.round_v mode_kind decimal_places (eval_expr env world self ~err (req "Rounding.base" base_expr)))
   | Clamp { base_expr; minimum; maximum; _ } ->

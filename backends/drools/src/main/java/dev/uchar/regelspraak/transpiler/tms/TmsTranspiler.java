@@ -3815,16 +3815,27 @@ public final class TmsTranspiler {
         };
     }
 
-    /** Whether {@code e} is itself a place that deposits: every division and every square root, whatever its operands,
-     *  as the reference interpreter deposits wherever it divides a filled dividend by a leeg divisor or takes the root of
-     *  a negative number (RUNTIME-SEMANTICS ch. 1.2, 5.6). */
+    /** Whether {@code e} is itself a place that deposits: every division, every power with a negative exponent and
+     *  every square root, whatever its operands, as the reference interpreter deposits wherever it divides a filled
+     *  dividend by a leeg divisor or by a numeric zero, inverts a numeric zero or takes the root of a negative number
+     *  (RUNTIME-SEMANTICS ch. 1.2, 1.4, 2.2, 5.6). */
     private static boolean depositSite(Expr e) {
         return divisionSite(e) || squareRootSite(e);
     }
 
-    /** A division, which deposits over a leeg divisor (§6.5, EF-031) and over a numeric zero (EF-005). */
+    /** A division, which deposits over a leeg divisor (§6.5, EF-031) and over a numeric zero (EF-005), and a power
+     *  with a negative exponent, which inverts its base and deposits over a numeric zero (EF-005, ch. 2.2). */
     private static boolean divisionSite(Expr e) {
-        return e instanceof Expr.Binary b && (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS);
+        return e instanceof Expr.Binary b && (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS
+                || b.op() == Expr.BinOp.TOT_DE_MACHT && negativeExponent(b));
+    }
+
+    /** Whether the power {@code b} has a negative exponent written as a literal; an exponent of another form the
+     *  lowering refuses ({@link #literalExponent}). */
+    private static boolean negativeExponent(Expr.Binary b) {
+        BigDecimal[] r = b.right() instanceof Expr.Literal lit && lit.type().isNumberLike() ? RationalParser.of(lit.valueText())
+                : null;
+        return r != null && r[0].signum() * r[1].signum() < 0;
     }
 
     /** A square root, whose deposit (§6.6) has no code (RUNTIME-SEMANTICS ch. 5.7b). */
@@ -6098,22 +6109,33 @@ public final class TmsTranspiler {
         return timesFactor(t, from, destination, factor.inverted());
     }
 
-    /** A power with a whole exponent written as a literal, exact (RUNTIME-SEMANTICS ch. 2.2), a negative one inverting,
-     *  a leeg base leeg (ch. 1.2), through the runtime's {@code rsMacht}; with a fractional exponent written as a literal
+    /** A power with a whole exponent written as a literal, exact (RUNTIME-SEMANTICS ch. 2.2), a negative one inverting
+     *  and a numeric zero under it leeg with the deposit EF-005 ({@link #invertedBase}), a leeg base leeg (ch. 1.2),
+     *  through the runtime's {@code rsMacht}; with a fractional exponent written as a literal
      *  the exact root where the power is rational, and otherwise the fault of an irrational power without its rounding
      *  ({@link ComputeHelpers#exactPower}). An exponent read while the session fires is refused, and so is a fractional
      *  one whose numerator or denominator passes {@link ComputeHelpers#EXPONENT_BOUND}, a limit of this branch. */
     private Term power(Expr.Binary b, Reads reads) {
         Breuk e = literalExponent(b);
-        Term base = value(b.left(), reads);
+        Term base = invertedBase(b, e, value(b.left(), reads), reads);
         if (e.noemer().equals(BigInteger.ONE)) {
             Term exponent = constant(e.teller().intValueExact());
             note(b.right(), exponent);
             return new Term.Call(StaticFunction.RS_POWER, List.of(base, exponent), source(b.source()));
         }
-        Term numerator = constant(e.teller().intValueExact()), denominator = constant(e.noemer().intValueExact());
-        note(b.right(), constant(e.isTerminerend() ? e.naarDecimal() : e));
-        return new Term.Call(StaticFunction.EXACT_POWER, List.of(base, numerator, denominator), source(b.source()));
+        Term exponent = constant(e.isTerminerend() ? e.naarDecimal() : e);
+        note(b.right(), exponent);
+        return new Term.Call(StaticFunction.EXACT_POWER, List.of(base, exponent), source(b.source()));
+    }
+
+    /** {@code base}, the base of the power {@code b} with the exponent {@code e}, through {@code ComputeHelpers.invertedBase}
+     *  where the exponent is negative: the power inverts its base, and a numeric zero is leeg with the deposit EF-005
+     *  where the evaluation reaches it (RUNTIME-SEMANTICS ch. 1.4 point 4, ch. 2.2), as the reference interpreter
+     *  deposits, so that the runtime meets no zero to invert. */
+    private Term invertedBase(Expr.Binary b, Breuk e, Term base, Reads reads) {
+        if (e.signum() >= 0) return base;
+        return new Term.Division(StaticFunction.INVERTED_BASE, base, constant(e.teller().intValueExact()),
+                depositSite(b) ? reads.depositFlag() : -1, source(b.source()));
     }
 
     /** The exponent of the power {@code b} as the literal writes it, a rational in lowest terms; refused where it is no
@@ -6260,18 +6282,21 @@ public final class TmsTranspiler {
         java.math.RoundingMode mode = roundingMode(a.mode());
         int decimals = a.decimals();
         // a root and a fractional power under their rounding are the true value rounded once, which has no exact value
-        // of its own before the rounding, so their node has no reading, as in the reference interpreter
-        if (a.base() instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.WORTEL)
+        // of its own before the rounding, so their node is not reached, as the reference interpreter reads it
+        if (a.base() instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.WORTEL) {
+            noteUnreached(f);
             return new Term.Call(StaticFunction.ROUNDED_SQUARE_ROOT, List.of(squareRootValue(f, reads),
                     constant(decimals), constant(mode)), source(a.source()));
+        }
         if (a.base() instanceof Expr.Binary b && b.op() == Expr.BinOp.TOT_DE_MACHT && !eff.typeOf(b.left()).isDate()) {
             Breuk e = literalExponent(b);
             if (!e.noemer().equals(BigInteger.ONE)) {
-                Term base = value(b.left(), reads);
+                Term base = invertedBase(b, e, value(b.left(), reads), reads);
                 Term exponent = constant(e.isTerminerend() ? e.naarDecimal() : e);
                 note(b.right(), exponent);
-                return new Term.Call(StaticFunction.ROUNDED_POWER, List.of(base, constant(e.teller().intValueExact()),
-                        constant(e.noemer().intValueExact()), constant(decimals), constant(mode)), source(a.source()));
+                noteUnreached(b);
+                return new Term.Call(StaticFunction.ROUNDED_POWER, List.of(base, exponent, constant(decimals),
+                        constant(mode)), source(a.source()));
             }
         }
         return new Term.Call(StaticFunction.RS_ROUNDING, List.of(value(a.base(), reads), constant(decimals),
