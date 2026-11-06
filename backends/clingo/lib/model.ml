@@ -1,4 +1,4 @@
-(* Parse clingo's --outf=2 JSON output into atoms, and check a case's
+(* Parse clingo's text output into atoms, and check a case's
    expectations against the stable model — the same absolute
    expectations gate 5 pins for ref/, which is what makes gate 6 the
    ref ≡ Clingo differential. *)
@@ -123,16 +123,32 @@ let one_model witnesses =
          such a document (WF-045/046); no model is chosen"
         (match ws with [] -> "no stable model" | _ -> "more than one stable model")
 
-let model_of_outf2 (j : Yojson.Safe.t) : atom list =
-  let open Yojson.Safe.Util in
-  (match j |> member "Result" |> to_string with
-  | "SATISFIABLE" -> ()
-  | r -> fault "clingo result %S (expected SATISFIABLE — the corpus subset is stratified)" r);
-  match j |> member "Call" |> to_list with
-  | [ call ] ->
-      call |> member "Witnesses" |> to_list |> one_model |> member "Value" |> to_list
-      |> List.map to_string |> List.map parse_atom
-  | _ -> fault "unexpected clingo Call structure"
+(* the models of clingo's text output (--outf=0 with one atom per line,
+   [Solve.run_clingo]), each the list of its atoms as clingo prints them: a
+   line "Answer: <n> …" opens a model, every line after it is one of its
+   atoms (an empty model prints one empty line), and a line that starts with
+   an upper-case letter (SATISFIABLE, Models, …) closes it; an atom never
+   starts with one, a variable does. The lines before the first model are
+   clingo's header *)
+let models_of_text (out : string) : string list list =
+  let opens l = String.length l >= 7 && String.sub l 0 7 = "Answer:" in
+  let closes l = l <> "" && l.[0] >= 'A' && l.[0] <= 'Z' in
+  let close cur acc = match cur with Some m -> List.rev m :: acc | None -> acc in
+  let rec go acc cur = function
+    | [] -> List.rev (close cur acc)
+    | l :: rest when opens l -> go (close cur acc) (Some []) rest
+    | l :: rest when closes l -> go (close cur acc) None rest
+    | "" :: rest -> go acc cur rest
+    | l :: rest -> (
+        (* outside a model: clingo's own header (version, file, Solving...) *)
+        match cur with Some m -> go acc (Some (l :: m)) rest | None -> go acc None rest)
+  in
+  go [] None (String.split_on_char '\n' out)
+
+let model_of_text (out : string) : atom list =
+  if not (List.mem "SATISFIABLE" (String.split_on_char '\n' out)) then
+    fault "clingo printed no SATISFIABLE (expected one — the corpus subset is stratified)";
+  List.map parse_atom (one_model (models_of_text out))
 
 (* --- expectation checking ------------------------------------------------ *)
 

@@ -18,7 +18,11 @@ let read_all ic =
    with End_of_file -> ());
   Buffer.contents b
 
-(* one clingo invocation on [text]; the raw outf2 payload and exit.
+(* one clingo invocation on [text]; its text output and exit. The text
+   output, one atom per line (--out-ifs), and not the JSON output: clingo
+   5.8.2 aborts (SIGABRT) while it writes a model as JSON when a shown atom,
+   JSON-escaped, is 1024 + 1023k characters long, and a created instance is
+   a term that grows with the chain of its creations (README, Run).
    clingo is asked for two models (-n 2): by default it stops at the first,
    and a program with a second one — a document that is not stratified — was
    answered with whichever came first. With two asked for, the second arrives
@@ -31,7 +35,7 @@ let run_clingo text =
   let oc = open_out tmp in
   output_string oc text;
   close_out oc;
-  let ic = Unix.open_process_in (Printf.sprintf "clingo --outf=2 -n 2 %s" (Filename.quote tmp)) in
+  let ic = Unix.open_process_in (Printf.sprintf "clingo --outf=0 --out-ifs='\\n' -n 2 %s" (Filename.quote tmp)) in
   let out = read_all ic in
   let status = Unix.close_process_in ic in
   Sys.remove tmp;
@@ -59,35 +63,13 @@ let diagnostic program =
      the runner would report an UNSAT whose guard it cannot name, and a
      caller that pins a reason would see none instead of the failure. *)
   match run_clingo relaxed with
-  | out, Unix.WEXITED (10 | 30) -> (
-      let unreadable () =
-        Uchar_ref.Value.fault "the diagnosis run of clingo gave unreadable JSON: %s" (head out)
-      in
+  | out, Unix.WEXITED (10 | 30) ->
       (* the witnesses of the relaxed program's ONE model: read off the first
          of two, the diagnosis would name the guards of one model and keep
          quiet about the other's *)
-      let witnesses =
-        match Yojson.Safe.from_string out with
-        | `Assoc kvs -> (
-            match List.assoc_opt "Call" kvs with
-            | Some (`List (`Assoc ckvs :: _)) -> (
-                match List.assoc_opt "Witnesses" ckvs with Some (`List ws) -> ws | _ -> unreadable ())
-            | _ -> unreadable ())
-        | _ -> unreadable ()
-        | exception Yojson.Json_error _ -> unreadable ()
-      in
-      match Model.one_model witnesses with
-      | `Assoc wkvs -> (
-          match List.assoc_opt "Value" wkvs with
-          | Some (`List atoms) ->
-              List.filter_map
-                (function
-                  | `String s when String.length s >= 5 && String.sub s 0 5 = "viol(" ->
-                      Some (Model.unescape_str s)
-                  | _ -> None)
-                atoms
-          | _ -> unreadable ())
-      | _ -> unreadable ())
+      List.filter_map
+        (fun s -> if String.length s >= 5 && String.sub s 0 5 = "viol(" then Some (Model.unescape_str s) else None)
+        (Model.one_model (Model.models_of_text out))
   | _, Unix.WEXITED 20 ->
       (* no model even without the guard constraint, so no guard fired: the
          program itself has none (an odd cycle through a negation), refused

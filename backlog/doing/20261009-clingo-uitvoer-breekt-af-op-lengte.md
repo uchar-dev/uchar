@@ -51,3 +51,34 @@ kaartverplaatsing.
 ## Raakvlakken
 
 Na `20261009-creatiebudget-ref-en-clingo` (de nestgrens en haar tekst).
+
+## Result
+
+*Gebouwd op 2026-11-06 op branch `card/text-output-foldfilter` (worktree `wt/clingo-round2`). Logs onder
+`uchar-dev/werk/clingo-round2/logs/`, proefbestanden onder `uchar-dev/werk/clingo-round2/k2/`.*
+
+Opnieuw gemeten met clingo 5.8.2 (de versie op deze machine): `a("x…x")` breekt onder `--outf=2` af (exit 134,
+SIGABRT) bij een string van 1017, 2040, 3063 en 5109 tekens, niet bij 1016 en 1018; `--outf=0` bij geen ervan.
+`heeft(oc0^n("W1"),"k")` breekt onder JSON af bij n = 201 en 202, de tekstuitvoer niet, ook niet bij n = 10 000.
+De oorzaak is de lengte van het geschreven atoom in JSON, met escapes: 1024 + 1023k tekens (1017 + 7 = 1024 en
+201 niveaus `oc0(` = 1020 + 4 escapes = 1024). De lengte van de keten die afbreekt hangt dus af van de namen: met de
+namen van de proef (`Schakel<i>`, label `S1`, kenmerk `bereikt`) breekt een keten van 451 niet-recursieve
+objectcreaties af (JSON-atoom 3070 tekens), 449, 450, 452 en 453 spelen (`k2/chain.py`, `k2/search-json.txt`).
+
+- **(a)** `Solve.run_clingo` leest de tekstuitvoer, één atoom per regel (`--outf=0 --out-ifs='\n'`);
+  `Model.models_of_text` en `Model.model_of_text` vervangen `model_of_outf2`, ook in `Solve.diagnostic` en in de
+  runner. De keten van 451 speelt nu (`clingo: PASS`).
+- **(b)** De nestgrens `oc_nest` is weg, met `nest/2`, haar `viol("term nesting bound reached …")` en de zin in
+  RUNTIME-SEMANTICS ch. 5.5 (beschermd pad; de kaart noemt die tekst). De creatiediepte per stratum (`oc_budget`,
+  ch. 5.5) blijft en begrenst de grounding. De README beschrijft de tekstuitvoer en de oorzaak onder "Run"; de twee
+  beperkingen over de afbraak en de nestgrens zijn weg.
+- **(c)** Rood eerst (`logs/k2-red-suite.log`, de suite op de oude code: 8 FAILURES): de zes lengtes 1017 … 8178
+  via `Solve.run_clingo` en de modellezer (`clingo ended by signal`), de keten van 451 (`clingo killed`), en de
+  recursieve keten 100 + 1 + 100 over drie strata, 201 niveaus diep (UNSAT op de nestgrens; dit frame vervangt het
+  frame dat de nestgrens met `oc_nest` = 60 vastzette). Groen na de bouw: `test_clingo: 2769 checks, 0 failures`
+  (`logs/k2-green-suite.log`).
+- **(d)** Gates 6, 8 en 13 los gedraaid (`logs/k2-gates.log`); `make gates` aan het eind van de ronde.
+
+Gevonden, niet gebouwd (geen normvraag): ref speelt de keten van niet-recursieve creaties traag, n = 50 in 0 s,
+100 in 2 s, 150 in 13 s, 451 na 25 minuten nog niet klaar (gestopt); clingo speelt 451 in seconden. Daarom draait
+het suiteframe van 451 alleen clingo.

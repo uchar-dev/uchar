@@ -4431,11 +4431,6 @@ destructive branches did not carry the document. Measured again
 2026-11-06, with the cap that grows with the facts: both Drools branches
 give **449** (`PLAYED`, in 719 s on the exec-model branch and 213 s on
 the DRL-text branch).
-The ASP backend refuses by name (`viol("term nesting bound reached …")`,
-the second posture of `IR-SPEC.md` ch. 5.5) a chain of 190 nested
-creations over all strata in a document with a recursive object
-creation, which the reference interpreter plays
-(`backends/clingo/README.md`, Recorded limitations).
 
 Worked example (absolute; `ref/` tests `WV-5.5-budget-wacht-op-link`
 and `WV-5.5-budget-erflijn`): "werf de opvolger" gives a Wachter whose

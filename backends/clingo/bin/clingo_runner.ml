@@ -33,7 +33,7 @@ let solve program =
   try
     match run_clingo program with
     | out, Unix.WEXITED (10 | 30) ->
-        `Sat (Clingo_backend.Model.model_of_outf2 (Yojson.Safe.from_string out))
+        `Sat (Clingo_backend.Model.model_of_text out)
     | _, Unix.WEXITED 127 ->
         prerr_endline "CLINGO NOT FOUND on PATH";
         exit 2

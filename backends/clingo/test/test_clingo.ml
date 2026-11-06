@@ -1662,7 +1662,7 @@ let clingo_matches ~name ~ir ~case_text =
     let program = translate doc case in
     match Solve.run_clingo program with
     | out, Unix.WEXITED (10 | 30) ->
-        Model.check doc case (Model.model_of_outf2 (Yojson.Safe.from_string out))
+        Model.check doc case (Model.model_of_text out)
     | _, Unix.WEXITED 127 -> [ "clingo NOT FOUND on PATH" ]
     | _, Unix.WEXITED 20 -> [ "UNSATISFIABLE — a fail-fast guard fired" ]
     | _, Unix.WEXITED c -> [ Printf.sprintf "clingo exited %d" c ]
@@ -7936,7 +7936,7 @@ let () =
                   ->
                     Some (v, t, w)
                 | _ -> None)
-              (Model.model_of_outf2 (Yojson.Safe.from_string out)))
+              (Model.model_of_text out))
      | _, _ -> Error "clingo gaf geen model"
    with
   | Ok segs ->
@@ -8579,7 +8579,7 @@ let unbound_fires ~name ~ir ~case_text ~param ~silent =
             (List.exists (fun w -> Uchar_ref.Case.contains ~needle w) ws)
       | out, Unix.WEXITED (10 | 30) ->
           let answered =
-            match Model.check doc case (Model.model_of_outf2 (Yojson.Safe.from_string out)) with
+            match Model.check doc case (Model.model_of_text out) with
             | [] -> "clingo answered " ^ silent
             | ms -> "clingo answered: " ^ String.concat "; " ms
           in
@@ -8603,7 +8603,7 @@ let pinned_silent ~entry ~name ~ir ~case_text ~param =
   | program -> (
       match Solve.run_clingo program with
       | out, Unix.WEXITED (10 | 30) -> (
-          match Model.check doc case (Model.model_of_outf2 (Yojson.Safe.from_string out)) with
+          match Model.check doc case (Model.model_of_text out) with
           | [] -> check label true
           | ms -> check (label ^ " (other rows: " ^ String.concat "; " ms ^ ")") false)
       | _, Unix.WEXITED 20 ->
@@ -8622,7 +8622,7 @@ let pinned_value ~entry ~name ~ir ~case_text ~answers =
   | program -> (
       match Solve.run_clingo program with
       | out, Unix.WEXITED (10 | 30) ->
-          let ms = Model.check doc case (Model.model_of_outf2 (Yojson.Safe.from_string out)) in
+          let ms = Model.check doc case (Model.model_of_text out) in
           check (label ^ " (" ^ String.concat "; " ms ^ ")") (ms = answers)
       | _, _ -> check (label ^ " (clingo did not answer)") false)
 
@@ -10868,7 +10868,7 @@ let named_refusal ~by ~ref_plays ~name ~ir ~case_text ~param =
             && not (List.exists (fun w -> Uchar_ref.Case.contains ~needle:(pf_reason param) w) ws))
       | out, Unix.WEXITED (10 | 30) ->
           let answered =
-            match Model.check doc case (Model.model_of_outf2 (Yojson.Safe.from_string out)) with
+            match Model.check doc case (Model.model_of_text out) with
             | [] -> "clingo answered the case's rows"
             | ms -> "clingo answered: " ^ String.concat "; " ms
           in
@@ -14670,7 +14670,7 @@ let clingo_fence_fires ?(without = []) ~name ~ir ~case_text ~needle () =
              the fence exists — so reading them may fault; that fault is part
              of the failure, never a crash of the suite *)
           let answered =
-            match Model.check doc case (Model.model_of_outf2 (Yojson.Safe.from_string out)) with
+            match Model.check doc case (Model.model_of_text out) with
             | [] -> "clingo answered the rows"
             | ms -> "clingo answered: " ^ String.concat "; " ms
             | exception Uchar_ref.Value.Fault { text = m; _ } -> "clingo answered a model; reading the rows: " ^ m
@@ -16233,7 +16233,7 @@ let () =
      match Solve.run_clingo program with
      | out, Unix.WEXITED (10 | 30) ->
          Printf.sprintf "clingo answered with a model of %d atoms"
-           (List.length (Model.model_of_outf2 (Yojson.Safe.from_string out)))
+           (List.length (Model.model_of_text out))
      | _, Unix.WEXITED 20 ->
          Printf.sprintf "UNSATISFIABLE, diagnosed as [%s]" (String.concat "; " (Solve.diagnostic program))
      | _, Unix.WEXITED c -> Printf.sprintf "clingo exited %d" c
@@ -16475,46 +16475,29 @@ let () =
       ~fact_type_name:"boeiketen" ~role_ref:"volgende boei"
   in
   let buckets = [ cluster "estafette" "werf de opvolger"; cluster "boeienlijn" "leg de volgende boei" ] in
-  let three_strata =
+  let three_strata_at boundary =
     doc ~types:[ wachter; boei ~l:false ] ~fact_types:[ opvolging; boeiketen; surveillance ]
       ~creations:
-        [ werf 51;
+        [ werf boundary;
           creation "leg een boei" ~subject:"Wachter" ~created:"Boei" ~inits:[ init "nummer" (literal 1) ]
-            ~precondition:(comparison "equal" (fetch "Wachter" "rang") (literal 51))
+            ~precondition:(comparison "equal" (fetch "Wachter" "rang") (literal boundary))
             ~fact_type_name:"bewaking" ~role_ref:"boei";
-          leg ~wachter_rank:false 51 ]
-      ~consistencies:[ detector "wachterdetector" "Wachter" "rang" 51; detector "boeidetector" "Boei" "nummer" 51 ]
+          leg ~wachter_rank:false boundary ]
+      ~consistencies:
+        [ detector "wachterdetector" "Wachter" "rang" boundary; detector "boeidetector" "Boei" "nummer" boundary ]
       ~buckets ()
+  in
+  let three_strata = three_strata_at 51
   and three_strata_case =
     case_data [ value_node "W1" "rang" "1"; inconsistent "wachterdetector"; inconsistent "boeidetector" ]
   in
   plays ~name:"ch5.5 creation budget, a chain over three strata (50 + 1 + 50)" ~ir:three_strata
     ~case_text:three_strata_case;
-  (* The nesting bound: the same document with oc_nest lowered to 60 in the
-     program text, so the frame grounds small. B1 nests 51 levels deep, so
-     B10 reaches the bound; this backend refuses by name, where ref, which
-     keeps no such bound, plays. *)
-  (let name = "ch5.5 creation budget, the nesting bound (oc_nest lowered to 60) on 50 + 1 + 50" in
-   ref_matches ~name ~ir:three_strata ~case_text:three_strata_case;
-   let doc, case = load_pair ~ir:three_strata ~case_text:three_strata_case in
-   let label = name ^ ": clingo refuses by name where ref plays" in
-   match
-     replace_first
-       ~needle:(Printf.sprintf "#const oc_nest = %d." Translate.oc_nest)
-       ~by:"#const oc_nest = 60." (translate doc case)
-   with
-   | exception Uchar_ref.Value.Fault { text = m; _ } -> check (label ^ " (translation fault: " ^ m ^ ")") false
-   | exception Failure m -> check (label ^ " (" ^ m ^ ")") false
-   | program -> (
-       match Solve.run_clingo program with
-       | _, Unix.WEXITED 20 ->
-           let ws = Solve.diagnostic program in
-           check
-             (label ^ " (" ^ String.concat "; " ws ^ ")")
-             (List.exists (fun w -> Uchar_ref.Case.contains ~needle:"term nesting bound reached" w) ws)
-       | _, Unix.WEXITED (10 | 30) -> check (label ^ " (clingo found a model)") false
-       | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d)" c) false
-       | _, _ -> check (label ^ " (clingo killed)") false));
+  (* 100 + 1 + 100 over three strata: the creation depth counts per stratum,
+     so B100 nests 201 levels deep; clingo prints every atom of it (the text
+     output, README, Run) *)
+  plays ~name:"ch5.5 creation budget, a chain over three strata (100 + 1 + 100), 201 levels deep"
+    ~ir:(three_strata_at 101) ~case_text:three_strata_case;
   (* document L, in both orders of its creations *)
   let copy =
     {|{"node": "Rule", "name": "kopie van een boei", "versions": [{"validity": {"node": "Validity"}, "target": {"node": "AttributeReference", "attribute": "kopie", "subjectType": "Boei", "source": {"snippet": "De kopie van een Boei"}}, "value": {"node": "AttributeReference", "attribute": "nummer", "subjectType": "Boei", "source": {"snippet": "zijn nummer"}}, "initialisation": false, "presentation": "equation"}]}|}
@@ -16872,6 +16855,61 @@ let () =
             (code = Some "CLINGO-040" && params = [ ("fold", fold); ("attribute", attribute) ]))
     forms
 
+(* THE MODEL AS CLINGO PRINTS IT. clingo 5.8.2 aborts (SIGABRT) while it
+   writes a model as JSON (--outf=2) when a shown atom, JSON-escaped, is
+   1024 + 1023k characters long, whatever the nesting of its terms: a("x…x")
+   with a string of 1017, 2040, 3063, 5109, 7155 or 8178 characters. Its text
+   output holds every such atom, so [Solve.run_clingo] reads that. The frames
+   read each of those atoms back through the solver call and the model reader
+   the gate-6 runner uses, and play a chain of 451 object creations over 452
+   object types, whose deepest atom, has(oc450(…oc0("S1")…),"bereikt"), is
+   3070 characters long JSON-escaped. *)
+let () =
+  List.iter
+    (fun n ->
+      let name = Printf.sprintf "the model as clingo prints it, a string of %d characters" n in
+      let text = String.make n 'x' in
+      match Solve.run_clingo (Printf.sprintf "a(\"%s\")." text) with
+      | out, Unix.WEXITED (10 | 30) -> (
+          match Model.model_of_text out with
+          | [ { Model.name = "a"; args = [ Model.A_str s ] } ] -> check name (s = text)
+          | atoms -> check (Printf.sprintf "%s (%d atoms read back)" name (List.length atoms)) false
+          | exception Uchar_ref.Value.Fault { text = m; _ } -> check (name ^ " (fault: " ^ m ^ ")") false)
+      | _, Unix.WEXITED c -> check (Printf.sprintf "%s (clingo exited %d)" name c) false
+      | _, (Unix.WSIGNALED s | Unix.WSTOPPED s) -> check (Printf.sprintf "%s (clingo ended by signal %d)" name s) false)
+    [ 1017; 2040; 3063; 5109; 7155; 8178 ];
+  let n = 451 in
+  let schakel i =
+    Printf.sprintf
+      {|{"node": "ObjectType", "name": "Schakel%d", "animate": false, "plural": "Schakels%d", "attributes": [], "characteristics": [%s]}|}
+      i i
+      (if i = n then {|{"node": "Characteristic", "name": "bereikt", "kind": "adjectival"}|} else "")
+  and koppeling i =
+    Printf.sprintf
+      {|{"node": "FactType", "name": "koppeling%d", "reciprocal": false, "roles": [{"node": "Role", "name": "voorganger%d", "objectType": "Schakel%d", "many": false}, {"node": "Role", "name": "opvolger%d", "objectType": "Schakel%d", "many": false}]}|}
+      i i i i (i + 1)
+  and creation i =
+    Printf.sprintf
+      {|{"node": "ObjectCreation", "name": "maak schakel %d", "versions": [{"createdType": "Schakel%d", "subject": "Schakel%d", "assignments": [%s], "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "koppeling%d", "role": "opvolger%d"}}]}|}
+      (i + 1) (i + 1) i
+      (if i = n - 1 then
+         {|{"node": "MemberAssignment", "member": "bereikt", "value": {"node": "Literal", "value": {"boolean": true}, "type": {"node": "Boolean"}, "source": {"snippet": "waar"}}, "characteristic": true}|}
+       else "")
+      i i
+  in
+  let ir =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [%s], "factTypes": [%s], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [], "dayKindDefinitions": [], "objectCreations": [%s], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": [], "prioritizedDefaults": []}, "diagnostics": []}|}
+      (String.concat ", " (List.init (n + 1) schakel))
+      (String.concat ", " (List.init n koppeling))
+      (String.concat ", " (List.init n creation))
+  and case_text =
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "S1", "objectType": "Schakel0", "attributes": {}, "roles": {}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "consistent"}]}|}
+  in
+  let name = "the model as clingo prints it, a chain of 451 object creations" in
+  verifier_clean ~name ~ir;
+  clingo_matches ~name ~ir ~case_text
+
 (* CLINGO-042: THE TEXT OF A VALUE (RUNTIME-SEMANTICS ch. 1.2, "Text
    coercion"; README, Recorded limitations). A text composition and a
    concatenation need string functions, which ASP-Core-2 does not have, so
@@ -16917,12 +16955,12 @@ let () =
    2026-10-22, on a document the verifier rejects with WF-045). clingo was
    called without -n, stopped at the first model and the runner checked that
    one: two stable models came back as a MISMATCH or a PASS, whichever the
-   search order put first, and the guard of [Model.model_of_outf2] never saw a
+   search order put first, and the guard of [Model.model_of_text] never saw a
    second witness. A program with no model at all came back as an UNSAT
    without a code. The verifier stands before every gate, so no golden or red
    case can carry such a document; the runner meets it when it is run on its
    own, and the refusal is pinned here. The frame takes the runner's two
-   roads: a SAT answer read through [Model.model_of_outf2], an UNSAT one
+   roads: a SAT answer read through [Model.model_of_text], an UNSAT one
    diagnosed through [Solve.diagnostic]. Two characteristics that each hold
    where the other does not give two stable models; one that holds where it
    does not gives none, with or without the guard constraint. *)
@@ -16968,7 +17006,7 @@ let refuses_without_one_model ~name ~rules ~models =
     let program = translate doc case in
     match Solve.run_clingo program with
     | out, Unix.WEXITED (10 | 30) ->
-        let model = Model.model_of_outf2 (Yojson.Safe.from_string out) in
+        let model = Model.model_of_text out in
         Printf.sprintf "clingo answered with a model of %d atoms" (List.length model)
     | _, Unix.WEXITED 20 ->
         Printf.sprintf "UNSATISFIABLE, diagnosed as [%s]" (String.concat "; " (Solve.diagnostic program))
@@ -18000,7 +18038,7 @@ let () =
                 | { name = "tl"; args = [ Model.A_term (T_func ("oc0", [ T_str "J1" ])); A_str "bergkosten"; f; t; v ] } ->
                     Some (String.concat " " [ arg f; arg t; arg v ])
                 | _ -> None)
-              (Model.model_of_outf2 (Yojson.Safe.from_string out)))
+              (Model.model_of_text out))
        in
        let day iso = match Uchar_ref.Value.date_of_iso iso with Uchar_ref.Value.Date d -> string_of_int d | _ -> assert false in
        let spring = day "2025-03-01" and summer = day "2025-06-01" in
@@ -18285,7 +18323,7 @@ let () =
       in
       match Solve.run_clingo (translate doc case) with
       | out, Unix.WEXITED (10 | 30) ->
-          let got = Model.check doc case (Model.model_of_outf2 (Yojson.Safe.from_string out)) in
+          let got = Model.check doc case (Model.model_of_text out) in
           check (name ^ " (" ^ String.concat "; " got ^ ")") (got = [ expected_mismatch ])
       | _, _ -> check (name ^ " (clingo found no model)") false)
     [ ( "gap-not-bridged",
