@@ -195,7 +195,7 @@ nagemeten is, per rij van de tabel en de aanvullingen (ref | clingo | exec-model
 - **(c)** Drools: geen reparatie nodig; beide takken spelen de nieuwe goldens. `a8` weigeren ze met naam
   (`DROOLS-152`), geen stil fout antwoord.
 - **(d)** Gates 2, 4, 5, 6, 7, 10 en 16 los gedraaid (`logs/k3-gates.log`); 12, 13, 15 en 17 in de afsluitende
-  `make gates`. Gate 12 `EXPECTED_PLAYED` 355 → 357 (de twee nieuwe goldens spelen op beide takken).
+  `make gates`. Gate 12 `EXPECTED_PLAYED` +2 (de twee nieuwe goldens spelen op beide takken; na de rebase op main `3df621a37` 356 → 358).
 
 Een zin in ch. 5.6 over het onderwerp van een deponering uit een vouwfilter is niet nodig: ch. 1.4 punt 4 en ch. 5.6
 zeggen al "on the rule × subject that evaluates it", en ref, clingo en beide takken nemen het onderwerp van de
@@ -218,3 +218,15 @@ Suitecheck "ch2.2 a rounded square root": verifier-schoon, ref 3 (√10 afgerond
 `CLINGO-043` zonder parameters; `test_clingo: 2772 checks, 0 failures` (`logs/f1-suite.log`). Geen golden. De arm
 erna, een kale `squareRoot` of `absoluteValue` buiten een afronding, weigert nog zonder code; geen golden bereikt
 hem (`absoluteValue` staat in geen golden, en de frontend schrijft een wortel alleen onder een afronding).
+
+### Rebase en DRL-pins
+
+Op verzoek van de hoofdsessie gerebased op main `3df621a37` (de Drools-opruimronde). Conflicten alleen in de
+boekhouding: `EXPECTED_PLAYED` wordt de som (main 355, plus de drie goldens van deze ronde = 358, alle
+commentaarregels behouden), de RETIRED-lijst van gate 12 in `CLAUDE.md` noemt DROOLS-045/046, DROOLS-058 en
+DROOLS-183, en in RUNTIME-SEMANTICS ch. 5.5 blijft main's nieuwe meting van `jutterswet-erflijn` staan zonder de
+zin over de nestgrens. De `make gates`-runs hierboven (red=0) liepen vóór de rebase, op de toen geldende hashes.
+`DrlTextPinWitnessTest` met `-Duchar.drlpin` schreef drie nieuwe pins, voor `jutterswet-tekst-van-een-waarde`,
+`jutterswet-vouwfilter-buiten-de-beurt` en `jutterswet-kwantorvouw-en-unie`; geen bestaande pin veranderde (ook niet
+door `rsTekst`: geen golden van main heeft een tekstdeel van een ander type dan tekst). Gate 12 met de suite na de
+rebase: PASS, beide takken `PLAYED` 358, JUnit 1884 tests (`DrlTextPinWitnessTest` inbegrepen), `logs/f3-check-drools.log`.

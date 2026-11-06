@@ -116,7 +116,8 @@ eigenaar kan het omdraaien. Logs onder `uchar-dev/werk/clingo-round2/logs/`.*
   355; JUnit 1874), 13, 15, 17 (`logs/k1-gates-a.log`, `logs/k1-gates-b.log`, per gate `logs/k1-check-*.log`).
   `make gates` volgt aan het eind van de ronde.
 
-Pins die bewogen: gate 12 `EXPECTED_PLAYED` 355 (de nieuwe golden speelt); gate 6 één regel in `EXPECTED_CHANNEL`.
+Pins die bewogen: gate 12 `EXPECTED_PLAYED` +1 (de nieuwe golden speelt; na de rebase op main `3df621a37`, dat
+`jutterswet-lidnamen` toevoegde, 355 → 356); gate 6 één regel in `EXPECTED_CHANNEL`.
 `CLAUDE.md` noemt DROOLS-183 bij de RETIRED-codes van gate 12. De catalogusregels van DROOLS-183 blijven, zoals bij
 elke RETIRED-code.
 
@@ -129,3 +130,15 @@ van de waarde; getal exact met decimale komma zonder eindnullen, `t/n` niet-eind
 
 Eindrun van de ronde: `make gates` op `2df79f6a3`, alle zeventien gates en `after-run` rc=0, red=0, 435 s
 (`out/gates/20261106-164133/summary.txt` in de worktree, log `uchar-dev/werk/clingo-round2/logs/gates-final.log`).
+
+### Rebase en DRL-pins
+
+Op verzoek van de hoofdsessie gerebased op main `3df621a37` (de Drools-opruimronde). Conflicten alleen in de
+boekhouding: `EXPECTED_PLAYED` wordt de som (main 355, plus de drie goldens van deze ronde = 358, alle
+commentaarregels behouden), de RETIRED-lijst van gate 12 in `CLAUDE.md` noemt DROOLS-045/046, DROOLS-058 en
+DROOLS-183, en in RUNTIME-SEMANTICS ch. 5.5 blijft main's nieuwe meting van `jutterswet-erflijn` staan zonder de
+zin over de nestgrens. De `make gates`-runs hierboven (red=0) liepen vóór de rebase, op de toen geldende hashes.
+`DrlTextPinWitnessTest` met `-Duchar.drlpin` schreef drie nieuwe pins, voor `jutterswet-tekst-van-een-waarde`,
+`jutterswet-vouwfilter-buiten-de-beurt` en `jutterswet-kwantorvouw-en-unie`; geen bestaande pin veranderde (ook niet
+door `rsTekst`: geen golden van main heeft een tekstdeel van een ander type dan tekst). Gate 12 met de suite na de
+rebase: PASS, beide takken `PLAYED` 358, JUnit 1884 tests (`DrlTextPinWitnessTest` inbegrepen), `logs/f3-check-drools.log`.
