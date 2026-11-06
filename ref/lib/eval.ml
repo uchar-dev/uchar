@@ -256,8 +256,28 @@ let ranked_timeline env (e : expr) =
   | _ -> None
 
 (* S ⊑ T. Reflexive, so it stands wherever two declared type names would
-   otherwise be compared for equality. *)
-let isa env sub super = Ir_v0.Checks.subtype_of env.doc ~sub ~super
+   otherwise be compared for equality. Memoised per document: the answer
+   depends on the declarations alone, and a run asks it per instance and form
+   in every generation, each time a walk over the declared types (a chain of
+   450 creations over 451 types asks it some 10^8 times). The table belongs
+   to one document, recognised physically; another document starts a new one. *)
+let isa_memo : (document * (string * string, bool) Hashtbl.t) option ref = ref None
+
+let isa env sub super =
+  let table =
+    match !isa_memo with
+    | Some (d, t) when d == env.doc -> t
+    | _ ->
+        let t = Hashtbl.create 64 in
+        isa_memo := Some (env.doc, t);
+        t
+  in
+  match Hashtbl.find_opt table (sub, super) with
+  | Some answer -> answer
+  | None ->
+      let answer = Ir_v0.Checks.subtype_of env.doc ~sub ~super in
+      Hashtbl.add table (sub, super) answer;
+      answer
 
 (* the subject's own read (WF-053, IR-SPEC ch. 4.1a): a reference without
    navigation bindings names the static subject type of its position — a

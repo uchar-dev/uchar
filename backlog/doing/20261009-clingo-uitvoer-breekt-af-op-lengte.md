@@ -79,9 +79,28 @@ objectcreaties af (JSON-atoom 3070 tekens), 449, 450, 452 en 453 spelen (`k2/cha
   (`logs/k2-green-suite.log`).
 - **(d)** Gates 6, 8 en 13 los gedraaid (`logs/k2-gates.log`); `make gates` aan het eind van de ronde.
 
-Gevonden, niet gebouwd (geen normvraag): ref speelt de keten van niet-recursieve creaties traag, n = 50 in 0 s,
-100 in 2 s, 150 in 13 s, 451 na 25 minuten nog niet klaar (gestopt); clingo speelt 451 in seconden. Daarom draait
-het suiteframe van 451 alleen clingo.
+### Vervolg: ref speelt de lange keten traag
+
+Gevonden bij het meten van (c): ref speelde de keten van niet-recursieve creaties traag, n = 50 in 0 s, 100 in
+2,4 s, 150 in 11,1 s, 451 na 25 minuten nog niet klaar (gestopt). Op verzoek van de hoofdsessie in deze branch
+gemeten en opgelost. Een profiel (`sample` op de run van n = 150, `k2/sample150.txt`) legde 1727 van de 2925
+monsters in `Ir_v0.Checks.is_sub`, en daaronder bijna alles in `find_ci` met `norm`: elke vraag S ⊑ T van ref
+(`Eval.isa`) zoekt de gedeclareerde typen lineair af en normaliseert elke naam, en ref stelt die vraag per instantie
+en vorm in elke generatie; met n typen, n instanties en n generaties groeit dat als n⁴. De reparatie onthoudt het
+antwoord per document (`Eval.isa`, een tabel per fysiek document); het antwoord hangt alleen van de declaraties af,
+dus het gedrag verandert niet. Tijden (zelfde machine, `k2/chain.py`, `logs/f2-ref-chain-after.log`):
+
+| n | vóór | na |
+|---|---|---|
+| 100 | 2,4 s | 0,3 s |
+| 150 | 11,1 s | 0,7 s |
+| 200 | – | 1,6 s |
+| 451 | > 25 min | 19,0 s |
+
+Gedrag byte-gelijk: de runner vóór en na over elke case van `corpus/golden` en `corpus/red`, gewoon en (golden) met
+`--trace`, 1216 en 1131 runs, 0 verschillen (`k2/compare_ref.sh`, `logs/f2-compare-ref.log`). Het suiteframe van
+451 draait alleen clingo: ook 19 s is te veel voor één suitecheck. Gates 5, 6, 8 en 17 los gedraaid na de
+reparatie, alle rc=0 (`logs/f-gates.log`).
 
 Eindrun van de ronde: `make gates` op `2df79f6a3`, alle zeventien gates en `after-run` rc=0, red=0, 435 s
 (`out/gates/20261106-164133/summary.txt` in de worktree, log `uchar-dev/werk/clingo-round2/logs/gates-final.log`).
