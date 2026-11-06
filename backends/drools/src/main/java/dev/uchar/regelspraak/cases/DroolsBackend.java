@@ -34,6 +34,7 @@ import dev.uchar.regelspraak.transpiler.tms.Fault;
 import dev.uchar.regelspraak.transpiler.tms.Fired;
 import dev.uchar.regelspraak.transpiler.tms.Cycles;
 import dev.uchar.regelspraak.transpiler.tms.ListPlace;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
 import dev.uchar.regelspraak.transpiler.tms.WrittenBack;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
@@ -385,7 +386,10 @@ public final class DroolsBackend {
      * list that names a bean outside the input, a member whose reference field {@code role} does not hold the holder, a
      * member twice, or not every bean of the input whose field of that relation holds the holder, or that comes twice. A
      * place the rules need is thus never missing at the fire, where it would stop the run with an
-     * {@code IllegalStateException}.
+     * {@code IllegalStateException}. A link of a relation both of whose roles are to-many ({@link Input#link}) goes in
+     * as a {@code RelationLink} of phase 0, the input's; refused are a link whose fact type is no such relation, an end
+     * that is no bean of the input or that does not fill its role, and a link that comes twice. A link inserted after
+     * this call is a fact outside it, which {@link #fire} refuses as every such fact.
      *
      * <p>Then it puts the watch of the entry on the session ({@code Watch}), with the relations the beans hold now,
      * and {@link #fire} refuses a session in which more happened outside it than an update of an attribute or a
@@ -418,8 +422,41 @@ public final class DroolsBackend {
         List<Object> facts = new ArrayList<>(beans);
         for (Input.Bucket e : input.emmers()) facts.add(bucketInput(types, e));
         facts.addAll(listPlaces(build, tms.listFields(), beans, types, input.lists()));
+        facts.addAll(inputLinks(build, types, input.links()));
         for (Object fact : facts) session.insert(fact);
         Watch.op(session, relationFields(build, beansClasses(build)), beans, "DroolsBackend.insert");
+    }
+
+    /** The {@link RelationLink} facts of the links {@code links} of the input over relations both of whose roles are
+     *  to-many, each of phase 0, the input's, after the check {@link #insert} names. */
+    private static List<RelationLink> inputLinks(Build build, Map<Object, ObjectType> types, List<Input.Link> links) {
+        List<RelationLink> out = new ArrayList<>();
+        for (Input.Link k : links) {
+            String description = "insert: de koppeling " + name(k.first()) + " - " + name(k.second()) + " van '"
+                    + k.factType() + "'";
+            RegelSpraakModel.FactType ft = null;
+            for (RegelSpraakModel.FactType f : build.model().factTypes.values())
+                if (Namen.norm(f.name).equals(Namen.norm(k.factType()))) ft = f;
+            if (ft == null || ft.reciprocal || ft.roles.size() != 2 || !ft.roles.get(0).many() || !ft.roles.get(1).many())
+                throw new IllegalArgumentException(description + " noemt geen feittype van twee rollen die allebei"
+                        + " meervoudig zijn; een relatie met een enkelvoudige rol staat in het referentieveld van haar"
+                        + " ene kant");
+            Object[] ends = {k.first(), k.second()};
+            for (int i = 0; i < 2; i++) {
+                RegelSpraakModel.Role role = ft.roles.get(i);
+                ObjectType t = types.get(ends[i]);
+                if (t == null)
+                    throw new IllegalArgumentException(description + " noemt " + name(ends[i]) + ", dat geen bean van de"
+                            + " invoer is");
+                if (t.chain().stream().noneMatch(a -> Namen.norm(a.name).equals(Namen.norm(role.objectTypeName()))))
+                    throw new IllegalArgumentException(description + ": " + name(ends[i]) + " is een " + t.name
+                            + " en vult de rol '" + role.name() + "' van " + role.objectTypeName() + " niet");
+            }
+            RelationLink fact = new RelationLink(Namen.norm(ft.name), k.first(), k.second(), 0);
+            if (out.contains(fact)) throw new IllegalArgumentException(description + " komt twee keer voor");
+            out.add(fact);
+        }
+        return out;
     }
 
     /** The sentence that refuses a reference field of a bean of {@code beans} that holds an object outside

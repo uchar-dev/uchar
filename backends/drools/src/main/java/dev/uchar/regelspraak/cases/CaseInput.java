@@ -51,6 +51,8 @@ import java.util.TreeMap;
  *       role, the role the instance itself fills;</li>
  *   <li>a to-many role is stored in the far end's field, under the sister role, since the bean model keeps a to-many
  *       role as a reference field on each member;</li>
+ *   <li>a role of a relation both of whose roles are to-many, which no bean holds, is a link of its own
+ *       ({@link Input#link}), one link however often and from whichever side the case writes it;</li>
  *   <li>a reciprocal role, one role that is its own opposite, gets its reverse leg in a separate pass over all beans
  *       once every role is written, so the outcome does not depend on the order of the instances.</li>
  * </ul>
@@ -150,6 +152,9 @@ public final class CaseInput {
     /** The to-many lists of the case input per holder bean and per reference field of their members, as
      *  {@link #setRoles} writes them: the order {@link #inputData()} gives each list ({@link Input#list}). */
     private final Map<Object, Map<String, ToManyList>> lists = new IdentityHashMap<>();
+    /** The links of the case over a relation both of whose roles are to-many, which no bean holds, each once however
+     *  often and from whichever side the case writes it: what {@link #inputData()} names as links ({@link Input#link}). */
+    private final List<Input.Link> links = new ArrayList<>();
     /** Every scalar input on a temporal attribute of the case, the asOfDate-bucket convention that
      *  {@link #temporalInput} lays on the bean as one segment: what {@link #inputData()} names as bucket scalars
      *  ({@link Input#bucketScalar}). */
@@ -209,7 +214,8 @@ public final class CaseInput {
 
     /**
      * The input for {@link DroolsBackend#insert}, a fresh {@link Input} on every call: the beans in the order of the
-     * case, every scalar input on a temporal attribute as a bucket scalar, and the order of every to-many list. The bean
+     * case, every scalar input on a temporal attribute as a bucket scalar, every link of a relation both of whose roles
+     * are to-many, and the order of every to-many list. The bean
      * shows such a scalar as the one segment of its bucket, which a full timeline of one segment would be as well, while
      * the analysis reads the two conventions of RUNTIME-SEMANTICS ch. 8.4 apart: the bucket scalar serves the subject's
      * own total, the full timeline every other read, and a form that needs the one and finds the other faults. The bean
@@ -222,6 +228,7 @@ public final class CaseInput {
     public Input inputData() {
         Input inputData = new Input().beans(labelToBean.values());
         for (Input.Bucket e : emmers) inputData.bucketScalar(e.bean(), e.attribute());
+        for (Input.Link k : links) inputData.link(k.factType(), k.first(), k.second());
         for (Map.Entry<Object, Map<String, ToManyList>> perHolder : lists.entrySet())
             for (ToManyList l : perHolder.getValue().values()) {
                 List<Object> members = new ArrayList<>(l.written);
@@ -408,6 +415,9 @@ public final class CaseInput {
                 if (target == null)
                     throw new RoleRefusal(DroolsCode.ROLE_UNKNOWN_LABEL.reason("role", written.getKey(), "label", labelNode.asText()), link);
                 ObjectType tL = beanObjectType(target);
+                // a relation both of whose roles are to-many has no reference field on either bean: its link is a fact
+                // of its own, the same one from whichever side the case writes it (ch. 5.7a)
+                if (manyToManyLink(tI, tL, e.getKey(), bean, target)) continue;
                 // §13.4.1 the WRITTEN role IS the navigation — and wherever the type pair carries more than
                 // one role it is the ONLY route: the by-pair search below counts every candidate and derives
                 // null by construction (RegelSpraakModel.connectingRole; ref BLOCKS the same derivation in
@@ -482,6 +492,26 @@ public final class CaseInput {
                 }
             }
         }
+    }
+
+    /** Whether the role key {@code key}, in its declared spelling, under which instance {@code bean} of type {@code tI}
+     *  names {@code target} of type {@code tL}, is a role of a relation of two roles that are both to-many; if so, its
+     *  link is recorded once, the end that fills the first declared role first. The key names the role the target fills,
+     *  so the target is the first end where that role is the first. */
+    private boolean manyToManyLink(ObjectType tI, ObjectType tL, String key, Object bean, Object target) {
+        RegelSpraakModel.RoleBindingRef rb = model.connectingRoleViaNameBinding(tI, tL, key);
+        if (rb == null) return false;
+        RegelSpraakModel.FactType ft = null;
+        for (RegelSpraakModel.FactType f : model.factTypes.values())
+            if (Namen.norm(f.name).equals(Namen.norm(rb.factType()))) ft = f;
+        if (ft == null || ft.reciprocal || ft.roles.size() != 2 || !ft.roles.get(0).many() || !ft.roles.get(1).many())
+            return false;
+        boolean targetFirst = Namen.norm(ft.roles.get(0).name()).equals(Namen.norm(rb.role()));
+        Object first = targetFirst ? target : bean, second = targetFirst ? bean : target;
+        String factType = ft.name;
+        if (links.stream().noneMatch(k -> k.factType().equals(factType) && k.first() == first && k.second() == second))
+            links.add(new Input.Link(factType, first, second));
+        return true;
     }
 
     /** One to-many list of the case input under the reference field of the holder's role {@code role}: the members the

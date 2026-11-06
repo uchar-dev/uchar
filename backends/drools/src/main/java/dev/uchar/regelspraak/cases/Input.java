@@ -22,6 +22,9 @@ import java.util.Objects;
  *       field on each member, toward the holder, and keeps no order; the order decides which member a fault names
  *       where a fold reads its members one by one and stops at the first fault (RUNTIME-SEMANTICS ch. 5.11), and
  *       never a value. Without it a list holds its members in the order of the beans.</li>
+ *   <li>{@link #link}: a link of a relation both of whose roles are to-many. The bean model stores a relation in the
+ *       reference field of its one side, and such a relation has none, so the branch reads its links as facts of their
+ *       own, as it reads the links of a relation a form creates.</li>
  * </ul>
  */
 public final class Input {
@@ -29,6 +32,7 @@ public final class Input {
     private final List<Object> beans = new ArrayList<>();
     private final List<Bucket> emmers = new ArrayList<>();
     private final List<ToManyList> lists = new ArrayList<>();
+    private final List<Link> links = new ArrayList<>();
 
     /** A bucket scalar: attribute {@code attribute} of {@code bean}, named as the model declares it. */
     record Bucket(Object bean, String attribute) {}
@@ -36,6 +40,10 @@ public final class Input {
     /** The members of a to-many list in their order: {@code members}, each holding {@code holder} in its reference field
      *  {@code role}. */
     record ToManyList(Object holder, String role, List<Object> members) {}
+
+    /** A link of the relation {@code factType}, both of whose roles are to-many: {@code first} fills the first declared
+     *  role of the fact type and {@code second} the second. */
+    record Link(String factType, Object first, Object second) {}
 
     /** Adds {@code bean}. */
     public Input bean(Object bean) {
@@ -67,6 +75,16 @@ public final class Input {
         return this;
     }
 
+    /** States a link of the relation {@code factType}, named as the model declares it, both of whose roles are to-many:
+     *  {@code first} fills the role the fact type declares first, {@code second} the other. Such a relation has no
+     *  reference field on either bean, so this is the only way its links go in; a relation with a to-one role goes in
+     *  through the reference field of its one side. */
+    public Input link(String factType, Object first, Object second) {
+        links.add(new Link(Objects.requireNonNull(factType, "factType"), Objects.requireNonNull(first, "first"),
+                Objects.requireNonNull(second, "second")));
+        return this;
+    }
+
     List<Object> beans() {
         return List.copyOf(beans);
     }
@@ -77,5 +95,9 @@ public final class Input {
 
     List<ToManyList> lists() {
         return List.copyOf(lists);
+    }
+
+    List<Link> links() {
+        return List.copyOf(links);
     }
 }
