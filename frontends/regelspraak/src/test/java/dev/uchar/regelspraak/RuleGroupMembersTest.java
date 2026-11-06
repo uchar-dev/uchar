@@ -66,8 +66,8 @@ class RuleGroupMembersTest {
                 geldig altijd
                     Een Wachter heeft een opvolger met rang gelijk aan de rang van de Wachter plus 1.
             """);
-        assertEquals(List.of("ERROR recursieve regelgroep 'estafette': unguarded object creation 'werf de opvolger' in a "
-                        + "recursive group"),
+        assertEquals(List.of("ERROR recursieve regelgroep 'estafette': onbewaakte objectcreatie 'werf de opvolger' in "
+                        + "een recursieve groep"),
                 m.diagnostics.stream().map(d -> d.severity() + " " + d.message()).toList());
     }
 
@@ -95,8 +95,8 @@ class RuleGroupMembersTest {
         java.util.function.BiFunction<String, String, List<String>> meldingen = (v1, v2) ->
                 Resolver.resolve(group.formatted(v1, v2)).diagnostics.stream()
                         .map(d -> d.severity() + " " + d.message()).toList();
-        String unguarded = "ERROR recursieve regelgroep 'estafette': unguarded object creation 'werf de opvolger #%d' in a "
-                + "recursive group";
+        String unguarded = "ERROR recursieve regelgroep 'estafette': onbewaakte objectcreatie 'werf de opvolger #%d' in "
+                + "een recursieve groep";
         assertEquals(List.of(), meldingen.apply(bewaakt, bewaakt));
         assertEquals(List.of(unguarded.formatted(2)), meldingen.apply(bewaakt, ""));
         assertEquals(List.of(unguarded.formatted(1), unguarded.formatted(2)), meldingen.apply("", ""));

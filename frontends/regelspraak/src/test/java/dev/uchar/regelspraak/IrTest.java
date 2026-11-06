@@ -85,9 +85,9 @@ class IrTest {
         RegelSpraakModel m = Resolver.resolve(src);
         // a sum over the subject's own attribute has no spelling on the wire, so the resolver refuses the model;
         // the structure is captured all the same
-        assertEquals(List.of("vouw 'de som van de prijs van een Reis' over een eigen attribuut van het onderwerp, dat "
-                        + "geen instanties telt: a single-argument fold with an elementType carries its range (sourceRole "
-                        + "or sourcePath) under every kind but total: the range is written, never derived"),
+        assertEquals(List.of("vouw 'de som van de prijs van een Reis' over een eigen attribuut van het onderwerp, dat geen "
+                        + "instanties telt: een vouw met één argument en een elementType draagt haar bereik (sourceRole "
+                        + "of sourcePath) onder elke soort behalve totaal: het bereik wordt geschreven, nooit afgeleid"),
                 m.errors().stream().map(RegelSpraakModel.Diagnostic::message).toList());
         Expr value = m.resolvedRules.get(0).value();
         Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, value);

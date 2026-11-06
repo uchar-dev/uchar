@@ -35,15 +35,15 @@ class StructureSentenceTest {
         """;
 
     @Test void a_negation_in_an_ordinary_rule() {
-        assertEquals(List.of("regel 'vlak': characteristic target's value must be the boolean constant true"),
+        assertEquals(List.of("regel 'vlak': de waarde van een kenmerkdoel moet de booleaanse constante waar zijn"),
                 faults(CHARACTERISTICS + """
                     Regel vlak
                         geldig altijd
                             Een Jutter is niet uitgesloten
                             indien hij geschorst is.
                     """));
-        assertEquals(List.of("regel 'Uitsluitingstabel 1' (een rij van beslistabel 'Uitsluitingstabel'): characteristic "
-                        + "target's value must be the boolean constant true"),
+        assertEquals(List.of("regel 'Uitsluitingstabel 1' (een rij van beslistabel 'Uitsluitingstabel'): de waarde van "
+                        + "een kenmerkdoel moet de booleaanse constante waar zijn"),
                 faults(CHARACTERISTICS + """
                     Beslistabel Uitsluitingstabel
                         geldig altijd
@@ -62,8 +62,8 @@ class StructureSentenceTest {
                 het nummer Numeriek (geheel getal);
 
             """;
-        String sentence = "target 'gekeurd' names both an attribute and a characteristic of 'Schuit': which member a rule "
-                + "writes decides its kind, and this name decides nothing";
+        String sentence = "doel 'gekeurd' noemt zowel een attribuut als een kenmerk van 'Schuit': welk lid een regel "
+                + "schrijft, bepaalt zijn soort, en deze naam bepaalt niets";
         assertEquals(List.of("regeldoel 'De gekeurd van een Schuit': " + sentence), faults(model + """
                 Regel p
                     geldig altijd
@@ -98,8 +98,8 @@ class StructureSentenceTest {
 
     @Test void an_ordinary_writer_beside_a_defaults_group() {
         assertEquals(List.of("Uitzondering op 'basispremie' (defaults-groep 'basispremie', doel ook geschreven door regel "
-                        + "'andere premie'): a rule also writes defaults target 'Jutter.premie' — an unordered plain "
-                        + "writer would silently defeat the group's decisions"),
+                        + "'andere premie'): een regel schrijft ook het defaults-doel 'Jutter.premie' — een "
+                        + "ongeordende gewone schrijver zou de beslissingen van de groep stil tenietdoen"),
                 faults(PREMIE + """
                     Regel andere premie
                         geldig altijd
@@ -109,9 +109,9 @@ class StructureSentenceTest {
     }
 
     @Test void two_ordered_defaults_groups_on_a_target() {
-        assertEquals(List.of("Uitzondering op 'tweede basis' (defaults-groepen 'basispremie' en 'tweede basis'): multiple "
-                        + "defaults groups on target 'Jutter.premie' without the declared-unordered marking — priority "
-                        + "is explicit (defaults) or explicitly absent ('unordered'), never implicit (ch. 7.2)"),
+        assertEquals(List.of("Uitzondering op 'tweede basis' (defaults-groepen 'basispremie' en 'tweede basis'): meer "
+                        + "defaults-groepen op doel 'Jutter.premie' zonder de markering als ongeordend — prioriteit is "
+                        + "expliciet (defaults) of expliciet afwezig ('unordered'), nooit impliciet (ch. 7.2)"),
                 faults(PREMIE + """
                     Regel tweede basis
                         geldig altijd
@@ -127,7 +127,7 @@ class StructureSentenceTest {
     // ---- WF-033: a recursive group without a creation member
 
     @Test void a_recursive_group_without_creation() {
-        assertEquals(List.of("recursieve regelgroep 'estafette': recursive group without a creation member"),
+        assertEquals(List.of("recursieve regelgroep 'estafette': recursieve groep zonder creatielid"),
                 faults("""
                     Objecttype de Wachter (mv: Wachters) (bezield)
                         de rang Numeriek (geheel getal);
@@ -179,7 +179,7 @@ class StructureSentenceTest {
     // ---- WF-021: overlapping versions, named as the verifier names them, in the array their kind lands in
 
     @Test void overlapping_versions_of_a_rule() {
-        assertEquals(List.of("regel 'premie': validity windows of versions 'premie #1' and 'premie #2' overlap (rules)"),
+        assertEquals(List.of("regel 'premie': de geldigheidsvensters van de versies 'premie #1' en 'premie #2' overlappen (rules)"),
                 faults("""
                     Objecttype de Jutter (mv: Jutters) (bezield)
                         de premie Numeriek (geheel getal);
@@ -193,8 +193,8 @@ class StructureSentenceTest {
     }
 
     @Test void overlapping_versions_of_an_object_creation() {
-        assertEquals(List.of("regel 'werf de opvolger': validity windows of versions 'werf de opvolger #1' and 'werf de "
-                        + "opvolger #2' overlap (objectCreations)"),
+        assertEquals(List.of("regel 'werf de opvolger': de geldigheidsvensters van de versies 'werf de opvolger #1' en "
+                        + "'werf de opvolger #2' overlappen (objectCreations)"),
                 faults("""
                     Objecttype de Wachter (mv: Wachters) (bezield)
                         de rang Numeriek (geheel getal);
@@ -218,8 +218,8 @@ class StructureSentenceTest {
         // WF-021 compares the versions of the seven rule forms; a day-kind definition is none of them. The second
         // definition of one day kind is WF-031's, below.
         assertEquals(List.of("geldigheidsperioden van regelversies overlappen (regel 'Dagsoortdefinitie springtijdag')",
-                        "dagsoortdefinitie 'springtijdag' (regel 'Dagsoortdefinitie springtijdag'): more than one "
-                                + "definition for day kind 'springtijdag'"),
+                        "dagsoortdefinitie 'springtijdag' (regel 'Dagsoortdefinitie springtijdag'): meer dan één "
+                                + "definitie voor dagsoort 'springtijdag'"),
                 faults("""
                     Dagsoort de springtijdag (mv: springtijdagen);
 
@@ -236,11 +236,11 @@ class StructureSentenceTest {
     // ---- WF-031: a day kind is defined once, and always
 
     private static final String BOUNDED = "dagsoortdefinitie 'springtijdag' (regel 'Dagsoortdefinitie springtijdag'): "
-            + "day-kind definition with a bounded validity window; must be always (from and to both absent)";
+            + "dagsoortdefinitie met een begrensd geldigheidsvenster; moet altijd gelden (vanaf en tot allebei afwezig)";
 
     @Test void a_day_kind_definition_with_two_bounded_versions() {
         assertEquals(List.of(BOUNDED, BOUNDED, "dagsoortdefinitie 'springtijdag' (regel 'Dagsoortdefinitie "
-                        + "springtijdag'): more than one definition for day kind 'springtijdag'"),
+                        + "springtijdag'): meer dan één definitie voor dagsoort 'springtijdag'"),
                 faults("""
                     Dagsoort de springtijdag (mv: springtijdagen);
 
@@ -266,8 +266,8 @@ class StructureSentenceTest {
     }
 
     @Test void two_rules_that_define_a_day_kind() {
-        assertEquals(List.of("dagsoortdefinitie 'springtijdag' (regel 'tweede springtijdag'): more than one definition "
-                        + "for day kind 'springtijdag'"),
+        assertEquals(List.of("dagsoortdefinitie 'springtijdag' (regel 'tweede springtijdag'): meer dan één definitie "
+                        + "voor dagsoort 'springtijdag'"),
                 faults("""
                     Dagsoort de springtijdag (mv: springtijdagen);
 
@@ -307,12 +307,12 @@ class StructureSentenceTest {
 
         """;
 
-    private static final String PURE = " — a day-kind condition references only dates, date-components, "
-            + "easterSunday, literals, parameters and other day kinds, never derived object state (an attribute or "
-            + "characteristic read)";
-    private static final String SESSION = " — a day kind classifies a bare date at stratum 0 (ch. 5.4), so its "
-            + "predicate is a function of THE DAY alone; the bound day (BoundDay) is admitted, a ContextValue naming a "
-            + "session value is refused";
+    private static final String PURE = " — een dagsoortvoorwaarde verwijst alleen naar datums, datumcomponenten, "
+            + "easterSunday, literals, parameters en andere dagsoorten, nooit naar afgeleide toestand van een object (een "
+            + "lezing van een attribuut of kenmerk)";
+    private static final String SESSION = " — een dagsoort deelt een kale datum in op stratum 0 (ch. 5.4), dus haar "
+            + "predicaat hangt alleen van DE DAG af; de gebonden dag (BoundDay) is toegelaten, een ContextValue die een "
+            + "sessiewaarde noemt wordt geweigerd";
     private static final String DAGKOP = "dagsoortdefinitie 'springtijdag' (regel 'Dagsoortdefinitie springtijdag'): ";
 
     private static String dayKind(String condition) {
@@ -322,19 +322,19 @@ class StructureSentenceTest {
 
     @Test void a_day_kind_definition_that_reads_an_attribute() {
         // before: the document went to disk with no diagnostic, and the verifier refused it in this sentence
-        assertEquals(List.of(DAGKOP + "day-kind condition reads attribute 'peil'" + PURE),
+        assertEquals(List.of(DAGKOP + "dagsoortvoorwaarde leest attribuut 'peil'" + PURE),
                 faults(dayKind("het peil van de Vuurtoren groter is dan 2")));
     }
 
     @Test void a_day_kind_definition_that_reads_a_session_value() {
-        assertEquals(List.of(DAGKOP + "day-kind condition reads the session value 'evaluationDate'" + SESSION),
+        assertEquals(List.of(DAGKOP + "dagsoortvoorwaarde leest de sessiewaarde 'evaluationDate'" + SESSION),
                 faults(dayKind("de dag later is dan de Rekendatum")));
-        assertEquals(List.of(DAGKOP + "day-kind condition reads the session value 'evaluationYear'" + SESSION),
+        assertEquals(List.of(DAGKOP + "dagsoortvoorwaarde leest de sessiewaarde 'evaluationYear'" + SESSION),
                 faults(dayKind("het jaar uit de dag gelijk is aan het Rekenjaar")));
     }
 
     @Test void a_day_kind_definition_that_reads_the_state_of_a_rule() {
-        assertEquals(List.of(DAGKOP + "day-kind condition reads rule-version state 'peilregel'" + PURE),
+        assertEquals(List.of(DAGKOP + "dagsoortvoorwaarde leest toestand van een regelversie 'peilregel'" + PURE),
                 faults(VUURTOREN + """
                     Regel peilregel
                         geldig altijd
@@ -357,8 +357,8 @@ class StructureSentenceTest {
                         - het peil van de Vuurtoren is groter dan 2
                         - de dag is later dan de Rekendatum.
                 """);
-        assertEquals(List.of("ERROR (line 13): " + DAGKOP + "day-kind condition reads attribute 'peil'" + PURE,
-                        "ERROR (line 14): " + DAGKOP + "day-kind condition reads the session value 'evaluationDate'"
+        assertEquals(List.of("ERROR (line 13): " + DAGKOP + "dagsoortvoorwaarde leest attribuut 'peil'" + PURE,
+                        "ERROR (line 14): " + DAGKOP + "dagsoortvoorwaarde leest de sessiewaarde 'evaluationDate'"
                                 + SESSION),
                 m.errors().stream().map(RegelSpraakModel.Diagnostic::toString).toList());
     }
@@ -387,9 +387,8 @@ class StructureSentenceTest {
 
         """;
 
-    private static final String SWALLOWED = "lezing 'het maximum van de romplengte van de Schuit', waarin 'maximum van' "
-            + "vóór het attribuut 'romplengte' één naam werd: 'maximum van de romplengte' is neither an attribute nor a "
-            + "characteristic of 'Schuit'";
+    private static final String SWALLOWED = "lezing 'het maximum van de romplengte van de Schuit', waarin 'maximum van' vóór het attribuut "
+            + "'romplengte' één naam werd: 'maximum van de romplengte' is geen attribuut en geen kenmerk van 'Schuit'";
 
     private static String rule(String sentence) {
         return HAVENS + "Regel p\n    geldig altijd\n        " + sentence + "\n";
@@ -405,20 +404,20 @@ class StructureSentenceTest {
         assertEquals(List.of(SWALLOWED), faults(rule("Een Schuit is gekeurd\n"
                 + "        indien het maximum van de romplengte van de Schuit groter is dan 2.")));
         assertEquals(List.of("lezing 'Het maximum van de romplengte van een Schuit', waarin 'maximum van' vóór het "
-                        + "attribuut 'romplengte' één naam werd: 'maximum van de romplengte' is neither an attribute nor "
-                        + "a characteristic of 'Schuit'"),
+                        + "attribuut 'romplengte' één naam werd: 'maximum van de romplengte' is geen attribuut en geen "
+                        + "kenmerk van 'Schuit'"),
                 faults(rule("Het maximum van de romplengte van een Schuit moet groter zijn dan 2.")));
     }
 
     @Test void a_swallowed_name_over_a_plural_or_a_navigation() {
         assertEquals(List.of("lezing 'het maximum van de romplengten van de Schuit', waarin 'maximum van' vóór het "
-                        + "attribuut 'romplengte' één naam werd: 'maximum van de romplengten' is neither an attribute "
-                        + "nor a characteristic of 'Schuit'"),
+                        + "attribuut 'romplengte' één naam werd: 'maximum van de romplengten' is geen attribuut en "
+                        + "geen kenmerk van 'Schuit'"),
                 faults(rule("De ligprijs van een Schuit moet berekend worden als het maximum van de romplengten van "
                         + "de Schuit.")));
         assertEquals(List.of("lezing 'het maximum van het kadegeld van zijn thuishaven', waarin 'maximum van' vóór het "
-                        + "attribuut 'kadegeld' één naam werd: 'maximum van het kadegeld' is neither an attribute nor a "
-                        + "characteristic of 'Haven'"),
+                        + "attribuut 'kadegeld' één naam werd: 'maximum van het kadegeld' is geen attribuut en geen "
+                        + "kenmerk van 'Haven'"),
                 faults(rule("De ligprijs van een Schuit moet berekend worden als het maximum van het kadegeld van "
                         + "zijn thuishaven.")));
     }
@@ -466,9 +465,8 @@ class StructureSentenceTest {
         """;
 
     private static String swallowed(String type) {
-        return type.equals("Schuit") ? SWALLOWED : "lezing 'het maximum van het kadegeld van de Haven', waarin 'maximum "
-                + "van' vóór het attribuut 'kadegeld' één naam werd: 'maximum van het kadegeld' is neither an attribute "
-                + "nor a characteristic of 'Haven'";
+        return type.equals("Schuit") ? SWALLOWED : "lezing 'het maximum van het kadegeld van de Haven', waarin 'maximum van' vóór het attribuut "
+                + "'kadegeld' één naam werd: 'maximum van het kadegeld' is geen attribuut en geen kenmerk van 'Haven'";
     }
 
     @Test void a_declared_name_with_of_and_the_maximal_value_stay_clean() {
@@ -482,8 +480,9 @@ class StructureSentenceTest {
 
     @Test void it_as_a_value() {
         // before: IrEmitter's exception ("de constante 'hij' ('hij') heeft geen spelling in uchar-ir-v1")
-        String sentence = "'hij' als waarde ('hij'): context value 'hij' is not one of the two admissible names "
-                + "evaluationDate, evaluationYear: the context-value name is a closed set, spelled byte for byte";
+        String sentence = "'hij' als waarde ('hij'): contextwaarde 'hij' is geen van de twee toegelaten namen "
+                + "evaluationDate en evaluationYear: de namen van contextwaarden zijn een gesloten verzameling, "
+                + "byte voor byte gespeld";
         assertEquals(List.of(sentence), faults(rule("De ligprijs van een Schuit moet berekend worden als hij.")));
         assertEquals(List.of(sentence, sentence), faults(rule("Een Schuit is gekeurd\n        indien hij gelijk is aan hij.")));
     }
@@ -498,8 +497,8 @@ class StructureSentenceTest {
     @Test void a_unit_factor_outside_the_bounds_of_the_wire() {
         // before: a factor 0 or below ended in IrEmitter's exception ("heeft de gedeclareerde factor 0/1"), and one
         // past 2^62 - 1 went to disk for every loader to refuse
-        String sentence = "eenheid 'vr' van eenheidstelsel 'Gewicht': a conversion factor is an exact rational {num, den} whose "
-                + "two integers are at least 1 and at most 4611686018427387903 (2^62 - 1), got ";
+        String sentence = "eenheid 'vr' van eenheidstelsel 'Gewicht': een omrekenfactor is een exacte breuk {num, den} waarvan "
+                + "beide gehele getallen ten minste 1 en ten hoogste 4611686018427387903 (2^62 - 1) zijn, kreeg ";
         assertEquals(List.of(sentence + "{\"num\":0,\"den\":1}"), faults(system("0")));
         assertEquals(List.of(sentence + "{\"num\":-2,\"den\":1}"), faults(system("-2")));
         assertEquals(List.of(sentence + "{\"num\":4611686018427387904,\"den\":1}"), faults(system("4611686018427387904")));
@@ -592,33 +591,33 @@ class StructureSentenceTest {
     private static final String VARIABLE = "Tijdlijn het penningjaar heeft tijdvakken van een jaar met variabel startpunt;\n\n";
 
     @Test void a_start_point_for_an_undeclared_timeline() {
-        assertEquals(List.of("startpuntbepaling (regel 'startpunt penningjaar'): start point for undeclared timeline "
+        assertEquals(List.of("startpuntbepaling (regel 'startpunt penningjaar'): startpunt voor de ongedeclareerde tijdlijn "
                         + "'penningjaar'"),
                 faults(startPointDetermination("", "", "Het startpunt van het penningjaar voor een Jutter wordt bepaald door zijn "
                         + "aanvangsdatum")));
     }
 
     @Test void a_start_point_for_an_undeclared_subject() {
-        assertEquals(List.of("startpuntbepaling (regel 'startpunt penningjaar'): object type 'Strandjutter' is not "
-                        + "declared"),
+        assertEquals(List.of("startpuntbepaling (regel 'startpunt penningjaar'): objecttype 'Strandjutter' is niet "
+                        + "gedeclareerd"),
                 faults(startPointDetermination(VARIABLE, "", "Het startpunt van het penningjaar voor een Strandjutter wordt bepaald "
                         + "door de aanvangsdatum van de Strandjutter")));
     }
 
     @Test void a_start_point_that_is_no_day_date() {
-        assertEquals(List.of("startpuntbepaling (regel 'startpunt penningjaar'): toekenning: a number value is assigned "
-                        + "to a date-day target"),
+        assertEquals(List.of("startpuntbepaling (regel 'startpunt penningjaar'): toekenning: een waarde van de soort "
+                        + "getal wordt toegekend aan een doel van de soort datum in dagen"),
                 faults(startPointDetermination(VARIABLE, "", "Het startpunt van het penningjaar voor een Jutter wordt bepaald door "
                         + "zijn volgnummer")));
-        assertEquals(List.of("startpuntbepaling (regel 'startpunt penningjaar'): toekenning: a date-ms value is assigned "
-                        + "to a date-day target"),
+        assertEquals(List.of("startpuntbepaling (regel 'startpunt penningjaar'): toekenning: een waarde van de soort "
+                        + "datum en tijd in millisecondes wordt toegekend aan een doel van de soort datum in dagen"),
                 faults(startPointDetermination(VARIABLE, "", "Het startpunt van het penningjaar voor een Jutter wordt bepaald door "
                         + "zijn meldtijdstip")));
     }
 
     @Test void a_start_point_anchor_that_is_already_declared_differently() {
-        assertEquals(List.of("startpuntbepaling (regel 'startpunt penningjaar'): anchor member 'startpunt penningjaar' is "
-                        + "number, must be a day-precision date"),
+        assertEquals(List.of("startpuntbepaling (regel 'startpunt penningjaar'): ankerlid 'startpunt penningjaar' heeft "
+                        + "de soort getal, moet een datum op dagprecisie zijn"),
                 faults(startPointDetermination(VARIABLE, "    het startpunt penningjaar Numeriek (geheel getal);\n",
                         "Het startpunt van het penningjaar voor een Jutter wordt bepaald door zijn aanvangsdatum")));
     }
@@ -626,9 +625,9 @@ class StructureSentenceTest {
     // ---- WF-112 and WF-111: the time window's position and bounds
 
     @Test void a_window_under_a_counting_quantifier() {
-        assertEquals(List.of("periodevergelijking onder 'ten minste 1' (als lid van een samengestelde voorwaarde): a time "
-                        + "window under none or a counting quantifier: the window gates the RULE, and no reading is "
-                        + "specified for a verdict that is counted or complemented"),
+        assertEquals(List.of("periodevergelijking onder 'ten minste 1' (als lid van een samengestelde voorwaarde): een "
+                        + "tijdvenster onder geen of onder een telkwantor: het venster begrenst de REGEL, en er is "
+                        + "geen lezing bepaald voor een oordeel dat geteld of gecomplementeerd wordt"),
                 faults("""
                     Objecttype de Jutter (mv: Jutters) (bezield)
                         de premie Numeriek (geheel getal);
@@ -674,26 +673,26 @@ class StructureSentenceTest {
             """.formatted(subject, window));
     }
 
-    private static final String BOUND_TAIL = " — a bound is a day-precise date expression over the subject, the "
-            + "parameters and literals";
+    private static final String BOUND_TAIL = " — een grens is een datumexpressie op dagprecisie over het onderwerp, "
+            + "de parameters en literals";
 
     @Test void a_window_bound_that_reads_more_than_the_subject_the_parameters_and_literals() {
-        assertEquals(List.of("periodevergelijking (de vanaf-grens 'de opendatum van het strandvak van de Jutter'): the "
-                + "from bound of a time window is a navigated read of 'opendatum'" + BOUND_TAIL),
+        assertEquals(List.of("periodevergelijking (de vanaf-grens 'de opendatum van het strandvak van de Jutter'): de "
+                + "vanaf-grens van een tijdvenster is een genavigeerde lezing van 'opendatum'" + BOUND_TAIL),
                 window("", "Jutter", "vanaf de opendatum van het strandvak van de Jutter"));
-        assertEquals(List.of("periodevergelijking (de vanaf-grens 'de opendatum van zijn strandvak'): the from bound of a "
-                + "time window is a navigated read of 'opendatum'" + BOUND_TAIL),
+        assertEquals(List.of("periodevergelijking (de vanaf-grens 'de opendatum van zijn strandvak'): de vanaf-grens van een "
+                + "tijdvenster is een genavigeerde lezing van 'opendatum'" + BOUND_TAIL),
                 window("", "Jutter", "vanaf de opendatum van zijn strandvak"));
-        assertEquals(List.of("periodevergelijking (de vanaf-grens 'de opendatum van zijn strandvak plus 1 dg'): the from "
-                + "bound of a time window is a navigated read of 'opendatum'" + BOUND_TAIL),
+        assertEquals(List.of("periodevergelijking (de vanaf-grens 'de opendatum van zijn strandvak plus 1 dg'): de vanaf-"
+                + "grens van een tijdvenster is een genavigeerde lezing van 'opendatum'" + BOUND_TAIL),
                 window("", "Jutter", "vanaf de opendatum van zijn strandvak plus 1 dg"));
-        assertEquals(List.of("periodevergelijking (de vanaf-grens 'zijn knipdatum'): the from bound of a time window is "
-                + "the time-dependent attribute 'knipdatum'" + BOUND_TAIL), window("", "Jutter", "vanaf zijn knipdatum"));
+        assertEquals(List.of("periodevergelijking (de vanaf-grens 'zijn knipdatum'): de vanaf-grens van een tijdvenster is "
+                + "het tijdsafhankelijke attribuut 'knipdatum'" + BOUND_TAIL), window("", "Jutter", "vanaf zijn knipdatum"));
     }
 
     @Test void a_window_bound_of_millisecond_precision() {
-        String sentence = ": the from bound of a time window is a millisecond-precision date: the window is a range of civil "
-                + "days and no clause reads an instant bound";
+        String sentence = ": de vanaf-grens van een tijdvenster is een datum met millisecondeprecisie: het venster is een "
+                + "reeks kalenderdagen en geen clausule leest een tijdstip als grens";
         assertEquals(List.of("periodevergelijking (de vanaf-grens 'zijn meldmoment')" + sentence),
                 window("", "Jutter", "vanaf zijn meldmoment"));
         assertEquals(List.of("periodevergelijking (de vanaf-grens 'dd. 1-7-2026 08:30:00.000')" + sentence),
@@ -708,11 +707,11 @@ class StructureSentenceTest {
             Eén maat heeft één klipmaat
 
             """;
-        assertEquals(List.of("periodevergelijking (de vanaf-grens 'de klipdatum van de Klipjutter'): the from bound of a "
-                + "time window is a navigated read of 'klipdatum'" + BOUND_TAIL),
+        assertEquals(List.of("periodevergelijking (de vanaf-grens 'de klipdatum van de Klipjutter'): de vanaf-grens van een "
+                + "tijdvenster is een genavigeerde lezing van 'klipdatum'" + BOUND_TAIL),
                 window(relation, "Jutter", "vanaf de klipdatum van de Klipjutter"));
-        assertEquals(List.of("periodevergelijking (de vanaf-grens 'de peildatum van de Jutter'): the from bound of a time "
-                + "window is a navigated read of 'peildatum'" + BOUND_TAIL),
+        assertEquals(List.of("periodevergelijking (de vanaf-grens 'de peildatum van de Jutter'): de vanaf-grens van een tijdvenster "
+                + "is een genavigeerde lezing van 'peildatum'" + BOUND_TAIL),
                 window(relation, "Klipjutter", "vanaf de peildatum van de Jutter"));
     }
 
@@ -731,7 +730,7 @@ class StructureSentenceTest {
     // ---- WF-027: an object creation member that the created type does not declare
 
     @Test void an_object_creation_with_an_unknown_member() {
-        assertEquals(List.of("objectcreatie: 'graad' is not a declared attribute of 'Berger'"),
+        assertEquals(List.of("objectcreatie: 'graad' is geen gedeclareerd attribuut van 'Berger'"),
                 faults("""
                     Objecttype de Berging (mv: Bergingen)
                         de opbrengst Numeriek (niet-negatief geheel getal);
@@ -753,8 +752,8 @@ class StructureSentenceTest {
     // ---- WF-009 and WF-017: declarations
 
     @Test void an_abbreviation_declared_two_time() {
-        assertEquals(List.of("eenheidstelsel 'Gewicht', al gedeclareerd voor de eenheid 't': the unit 't' is declared "
-                        + "twice in the unit system 'Gewicht': one Unit per abbreviation"),
+        assertEquals(List.of("eenheidstelsel 'Gewicht', al gedeclareerd voor de eenheid 't': de eenheid 't' is twee "
+                        + "keer gedeclareerd in het eenheidstelsel 'Gewicht', en een afkorting noemt één eenheid"),
                 faults("""
                     Eenheidsysteem Gewicht
                         het kilogram kg
@@ -763,8 +762,9 @@ class StructureSentenceTest {
                     Objecttype de Vondst
                         het gewicht Numeriek (geheel getal) met eenheid t;
                     """));
-        assertEquals(List.of("eenheidstelsel 'Gewicht', als 'kg' al gedeclareerd voor de eenheid 'kg': the unit 'KG' is "
-                        + "declared twice in the unit system 'Gewicht': one Unit per abbreviation"),
+        assertEquals(List.of("eenheidstelsel 'Gewicht', als 'kg' al gedeclareerd voor de eenheid 'kg': de eenheid 'KG' "
+                        + "is twee keer gedeclareerd in het eenheidstelsel 'Gewicht', en een afkorting noemt één "
+                        + "eenheid"),
                 faults("""
                     Eenheidsysteem Gewicht
                         het kilogram kg
@@ -775,14 +775,14 @@ class StructureSentenceTest {
     }
 
     @Test void a_day_kind_with_the_name_of_a_calendar_unit() {
-        assertEquals(List.of("dagsoort 'wk': day-kind 'wk' shadows a built-in calendar unit"),
+        assertEquals(List.of("dagsoort 'wk': dagsoort 'wk' overschaduwt een ingebouwde kalendereenheid"),
                 faults("Dagsoort de wk (mv: wks);\n"));
     }
 
     // ---- WF-020: two decision-table rows with one rule name
 
     @Test void two_table_rows_with_a_rule_name() {
-        assertEquals(List.of("beslistabel 'Premietabel': duplicate name 'Premietabel 1' in rules"),
+        assertEquals(List.of("beslistabel 'Premietabel': dubbele naam 'Premietabel 1' in rules"),
                 faults("""
                     Objecttype de Jutter (mv: Jutters) (bezield)
                         de premie Numeriek (geheel getal);
@@ -822,11 +822,11 @@ class StructureSentenceTest {
 
     @Test void an_exception_block_on_a_group_member() {
         assertEquals(List.of("Uitzondering op 'bergingsbevoegd bij quotum' (zijn basisregel is lid van regelgroep "
-                        + "'berging'): group member 'bergingsbevoegd bij quotum' does not resolve to a rule form"),
+                        + "'berging'): groepslid 'bergingsbevoegd bij quotum' verwijst naar geen regelvorm"),
                 faults(BERGING + "Parameter de noodweerdrempel : Numeriek (geheel getal)\n\n" + NOODWEER));
         assertEquals(List.of("Uitzondering op 'bergingsbevoegd bij quotum' (zijn basisregel is lid van regelgroep "
-                        + "'berging', en het blok staat direct na het laatste lid van regelgroep 'berging'): group "
-                        + "member 'bergingsbevoegd bij quotum' does not resolve to a rule form"),
+                        + "'berging', en het blok staat direct na het laatste lid van regelgroep 'berging'): "
+                        + "groepslid 'bergingsbevoegd bij quotum' verwijst naar geen regelvorm"),
                 faults(BERGING + NOODWEER));
     }
 
@@ -869,10 +869,11 @@ class StructureSentenceTest {
             """.formatted(expression));
     }
 
-    private static final String ENUMERATED = ": a count folds INSTANCES and has no LISTED form, and this node carries 2 "
-            + "operands: the source language spells a count over a subject expression alone (ch. 4.3), so there is no "
-            + "articulated operand list to admit — the only reading an operand list leaves a count is the number of "
-            + "FILLED operands, and that meaning belongs to the filled count over its set source, never to this kind";
+    private static final String ENUMERATED = ": een telling vouwt INSTANTIES en heeft geen OPGESOMDE vorm, en deze knoop draagt 2 operanden: de "
+            + "brontaal schrijft een telling alleen over een onderwerpexpressie (ch. 4.3), dus er is geen opgesomde "
+            + "lijst van operanden om toe te laten — de enige lezing die een lijst van operanden een telling laat, is "
+            + "het aantal GEVULDE operanden, en die betekenis hoort bij de gevulde telling over haar "
+            + "verzamelingsbron, nooit bij deze soort";
 
     @Test void an_enumerated_count() {
         assertEquals(List.of("opgesomde telling 'het aantal de gewogen vangst van de Jutter en de gewogen bijvangst van de "
@@ -886,9 +887,9 @@ class StructureSentenceTest {
                 + ENUMERATED), count("het aantal vondsten van de Jutter en kavels van de Jutter"));
     }
 
-    private static final String SOURCELESS = ": the count is an INSTANCE fold and MUST carry an element type: without one "
-            + "its argument is no fold source at all — and with no argument there is none — so the count has no "
-            + "contributors to count, only its operand, whatever that operand holds (ch. 4.3)";
+    private static final String SOURCELESS = ": de telling is een vouw over INSTANTIES en MOET een elementType dragen: zonder elementType is "
+            + "haar argument helemaal geen vouwbron — en zonder argument is er geen — dus heeft de telling geen "
+            + "bijdragers om te tellen, alleen haar operand, wat die operand ook bevat (ch. 4.3)";
 
     @Test void a_count_without_source() {
         assertEquals(List.of("telling zonder bron 'het aantal gewogen vangst van de Jutter'" + SOURCELESS),
@@ -901,10 +902,10 @@ class StructureSentenceTest {
     }
 
     @Test void a_filled_count_without_set_source() {
-        assertEquals(List.of("gevulde telling 'het aantal gevulde waarden van het gewicht van de Vondst': the filled count "
-                        + "is an INSTANCE fold and MUST carry an element type: without one its argument is no fold "
-                        + "source at all, and the count has no contributors whose values it could test for presence "
-                        + "(ch. 4.3)"),
+        assertEquals(List.of("gevulde telling 'het aantal gevulde waarden van het gewicht van de Vondst': de gevulde "
+                        + "telling is een vouw over INSTANTIES en MOET een elementType dragen: zonder elementType is "
+                        + "haar argument helemaal geen vouwbron, en heeft de telling geen bijdragers waarvan zij de "
+                        + "waarden op aanwezigheid kan toetsen (ch. 4.3)"),
                 faults(TELMODEL + """
                     Regel aantal gewogen vondsten
                         geldig altijd
@@ -915,9 +916,9 @@ class StructureSentenceTest {
     // ---- WF-053 and WF-093: a set reading outside a fold source
 
     @Test void a_set_read_as_value() {
-        assertEquals(List.of("setlezing buiten een vouwbron 'het gewicht van alle vondsten van de Jutter': hop 0 reaches "
-                        + "the to-many role 'vondst' in a scalar slot — a to-many step needs an aggregation, never a "
-                        + "silent first pick"),
+        assertEquals(List.of("setlezing buiten een vouwbron 'het gewicht van alle vondsten van de Jutter': stap 0 "
+                        + "bereikt de rol 'vondst' met meer vullers op een plaats voor één waarde — zo'n stap vraagt "
+                        + "een aggregatie, nooit een stille keuze van de eerste"),
                 faults(TELMODEL + """
                     Regel aantal gewogen posten
                         geldig altijd
@@ -926,10 +927,10 @@ class StructureSentenceTest {
     }
 
     @Test void a_set_read_as_source_of_a_count() {
-        assertEquals(List.of("setlezing buiten een vouwbron 'gewichten van alle gewichten van de Jutter': the source of "
-                        + "this count aggregation reads 'gewicht', a member of the element type 'Vondst': a count folds "
-                        + "INSTANCES, so its source is a count source naming the relation's role, never a value read per "
-                        + "contributor"),
+        assertEquals(List.of("setlezing buiten een vouwbron 'gewichten van alle gewichten van de Jutter': de bron van deze "
+                        + "telling leest 'gewicht', een lid van het elementType 'Vondst': een telling vouwt INSTANTIES, "
+                        + "dus haar bron is een tellingbron die de rol van de relatie noemt, nooit een waarde die per "
+                        + "bijdrager gelezen wordt"),
                 faults("""
                     Objecttype de Jutter (mv: Jutters) (bezield)
                         het aantal aangemelde vondsten Numeriek (niet-negatief geheel getal);

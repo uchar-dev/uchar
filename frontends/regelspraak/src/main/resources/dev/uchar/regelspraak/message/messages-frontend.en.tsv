@@ -23,8 +23,8 @@ PART.designation.enumeration-value	the enumeration value '{name}' of '{owner}'
 PART.designation.enumeration-value.head	The enumeration value '{name}' of '{owner}'
 PART.designation.fact-type	the fact type '{name}'
 PART.designation.fact-type.head	The fact type '{name}'
-PART.designation.objecttype	the objecttype '{name}'
-PART.designation.objecttype.head	The objecttype '{name}'
+PART.designation.objecttype	the object type '{name}'
+PART.designation.objecttype.head	The object type '{name}'
 PART.designation.parameter-declaration	the parameter '{name}'
 PART.designation.parameter-declaration.head	The parameter '{name}'
 PART.designation.role	the role '{name}' of '{owner}'
@@ -166,22 +166,45 @@ PART.subject-escape-value	write 'zijn …' for a value of the element and '… v
 PART.subject-escape-characteristic	write 'hij heeft …' or 'hij is …' for a characteristic of the element and '{named} zelf heeft …' or '{named} zelf is …' for a characteristic of the rule subject
 PART.subject-identity-outside	the identity check compares the element of a subselection or a quantifier test with the rule subject and stands only there (IR-SPEC ch. 4.5, WF-122)
 PART.subject-identity-not-element	the identity check compares the element ('hij') with the rule subject, and '{operand}' is not the element
+PART.validity-period	[{from} to {until}]
+PART.no-unit	(no unit)
+PART.kind.number	number
+PART.kind.percentage	percentage
+PART.kind.text	text
+PART.kind.boolean	boolean
+PART.kind.date-day	date-day
+PART.kind.date-ms	date-ms
+PART.kind.enumeration	enumeration
+PART.kind.sumtype	sumtype
+PART.clamp.base	base
+PART.clamp.minimum	minimum
+PART.clamp.maximum	maximum
+PART.sign.negative	negative
+PART.sign.non-negative	non-negative
+PART.sign.positive	positive
+PART.day-kind-read.attribute	attribute
+PART.day-kind-read.instance-population	instance population
+PART.day-kind-read.characteristic	characteristic
+PART.day-kind-read.role-membership	role membership
+PART.day-kind-read.rule-version-state	rule-version state
+PART.day-kind-read.identity-check	identity check
+PART.day-kind-read.instance-quantification	instance quantification
 RGS-001	allocation '{name}' is not written: the frontend determined none of the three allocation methods (in equal parts, in proportion, in order) for it, and an allocation without a method has no spelling in uchar-ir-v1
-RGS-002	objecttype '{objectType}' declares more than one supertype ({names}) — WF-106: an objecttype declares at most one direct supertype. The two known cases with two direct parents (RechtOpUitkeringWazo, RechtUitkeringZw) are refused here and not flattened: choose one parent, or lift the shared part to a common supertype
-RGS-003	objecttype '{objectType}' is its own supertype — WF-104: the supertype graph is acyclic, self-reference included (a chain without a root lets member resolution stop nowhere)
-RGS-004	objecttype '{objectType}': supertype '{supertype}' is not declared anywhere as an objecttype{rationale}
-RGS-004.wf103	 — WF-103: a supertype names a declared objecttype, because a chain that does not end on it resolves no member
-RGS-005	objecttype '{objectType}': supertype '{supertype}' is a {category}, not an objecttype{rationale}
-RGS-006	objecttype '{objectType}': supertype cycle {names} — WF-104: the supertype graph is acyclic (a type would be its own ancestor, so member resolution has no root to stop at)
-RGS-007	objecttype '{objectType}': {category} '{name}' (source line {sourceLine}) is already declared on '{ancestor}' (source line {ancestorLine}) higher up in the chain — WF-105: a subtype does not redeclare an inherited name (one instance would carry two declarations of that name, and which one a reader finds determines the datatype, dimensions and timeline facet of every read of it)
+RGS-002	object type '{objectType}' declares more than one supertype ({names}) — WF-106: an object type declares at most one direct supertype. The two known cases with two direct parents (RechtOpUitkeringWazo, RechtUitkeringZw) are refused here and not flattened: choose one parent, or lift the shared part to a common supertype
+RGS-003	object type '{objectType}' is its own supertype — WF-104: the supertype graph is acyclic, self-reference included (a chain without a root lets member resolution stop nowhere)
+RGS-004	object type '{objectType}': supertype '{supertype}' is not declared anywhere as an object type{rationale}
+RGS-004.wf103	 — WF-103: a supertype names a declared object type, because a chain that does not end on it resolves no member
+RGS-005	object type '{objectType}': supertype '{supertype}' is a {category}, not an object type{rationale}
+RGS-006	object type '{objectType}': supertype cycle {names} — WF-104: the supertype graph is acyclic (a type would be its own ancestor, so member resolution has no root to stop at)
+RGS-007	object type '{objectType}': {category} '{name}' (source line {sourceLine}) is already declared on '{ancestor}' (source line {ancestorLine}) higher up in the chain — WF-105: a subtype does not redeclare an inherited name (one instance would carry two declarations of that name, and which one a reader finds determines the datatype, dimensions and timeline facet of every read of it)
 RGS-008	{kind} '{name}' is already declared (source line {earlierLine}); a name appears once in its kind of declaration, case not counted (WF-001): namespace '{namespace}': names '{earlierName}' and '{name}' collide case-insensitively
-RGS-009	objecttype '{objectType}': the extension declares {kindPhrase} '{name}' (source line {sourceLine}), which {objectType} already carries (source line {earlierLine}), and {reason} — an extension adds members and replaces none: a member that the objecttype already carries, it merely repeats literally, and '(mag opgegeven worden)' is added at most once (WF-002, dialect §7)
+RGS-009	object type '{objectType}': the extension declares {kindPhrase} '{name}' (source line {sourceLine}), which {objectType} already carries (source line {earlierLine}), and {reason} — an extension adds members and replaces none: a member that the object type already carries, it merely repeats literally, and '(mag opgegeven worden)' is added at most once (WF-002, dialect §7)
 RGS-009.already-marked	that already carries '(mag opgegeven worden)' (source line {line})
 RGS-009.attribute-phrase	the attribute
 RGS-009.characteristic-phrase	the characteristic
 RGS-009.not-literal	'{declaration}' is not literally '{earlier}'
-RGS-010	objecttype '{objectType}': the extension declares '{name}' with the objecttype '{fillerType}' (source line {sourceLine}), and that is the role '{role}' of fact type '{factType}' (source line {roleLine}) — an extension adds attributes and characteristics and no roles: a role stands in its fact type
-RGS-011	member '{name}' of objecttype '{objectType}' differs only in case from an earlier member; names are not case-distinguishing (§13.2.30), so the reference is ambiguous
+RGS-010	object type '{objectType}': the extension declares '{name}' with the object type '{fillerType}' (source line {sourceLine}), and that is the role '{role}' of fact type '{factType}' (source line {roleLine}) — an extension adds attributes and characteristics and no roles: a role stands in its fact type
+RGS-011	member '{name}' of object type '{objectType}' differs only in case from an earlier member; names are not case-distinguishing (§13.2.30), so the reference is ambiguous
 RGS-012	member '{name}' with unit '{unit}': {reason}
 RGS-012.has-unit	the number already carries the unit '{existing}'
 RGS-012.no-unit	a {type} carries no unit
@@ -207,11 +230,11 @@ RGS-027	fact type '{factType}': the role name '{role}' contains an article (de/h
 RGS-028	{carrier}: {member} begins with '{word}' on the line where {previousSentence} ends, directly after '{preceding}'; {memberKind} begins on a line of its own{hint}
 RGS-028.member	a member
 RGS-028.role	a role
-RGS-029	fact type '{factType}': the role '{role}' has objecttype '{fillerType}', and that is a {category}, not an objecttype — WF-003: the filler of a role is a declared objecttype
-RGS-030	fact type '{factType}': the role '{role}' has objecttype '{fillerType}', and that is {status} — WF-003: the filler of a role is a declared objecttype; '{objectType}' is, though: a role name ends at the first word with a capital letter, so '{prefix}' has been read as part of the objecttype
-RGS-030.other-kind	a {category}, not an objecttype
-RGS-030.undeclared	not declared anywhere as an objecttype
-RGS-031	fact type '{factType}': the role '{role}' has objecttype '{fillerType}', and that is not declared anywhere as an objecttype — WF-003: the filler of a role is a declared objecttype; if it is in another file of the model, read the files together
+RGS-029	fact type '{factType}': the role '{role}' has object type '{fillerType}', and that is a {category}, not an object type — WF-003: the filler of a role is a declared object type
+RGS-030	fact type '{factType}': the role '{role}' has object type '{fillerType}', and that is {status} — WF-003: the filler of a role is a declared object type; '{objectType}' is, though: a role name ends at the first word with a capital letter, so '{prefix}' has been read as part of the object type
+RGS-030.other-kind	a {category}, not an object type
+RGS-030.undeclared	not declared anywhere as an object type
+RGS-031	fact type '{factType}': the role '{role}' has object type '{fillerType}', and that is not declared anywhere as an object type — WF-003: the filler of a role is a declared object type; if it is in another file of the model, read the files together
 RGS-032	{carrier}: line text does not read {category} '{name}' as one name, because '{word}' is not a word of a name there; join it with a hyphen to a neighbouring word ('{example}')
 RGS-033	day kind '{name}': day-kind '{name}' shadows a built-in calendar unit
 RGS-034	'dagsoort-eenheid' '{unit}' coincides with a built-in time unit and is not registered as a 'dagsoort-eenheid'
@@ -297,7 +320,7 @@ RGS-081.rationale-date	Date values are calendar positions
 RGS-081.rationale-other	{typeName} values are not amounts
 RGS-081.sentence	the {fold} of {operand} folds {typeName} values: a total, sum or pro-rata part is arithmetic over a Number, and {rationale}
 RGS-082	total of requires a unit per time unit (§4.20 Tabel 30), got '{unit}'
-RGS-083	een tijd-component (uur/minuut/seconde/milliseconde uit): sub-day extractor operand is {kind}, must be a millisecond-precision date
+RGS-083	time component ('uur/minuut/seconde/milliseconde uit'): sub-day extractor operand is {kind}, must be a millisecond-precision date
 RGS-084	the (absolute) duration from … to …: {sentences}
 RGS-084.operand-sentence	{category} operand is {kind}, must be a date
 RGS-085	the (absolute) duration of … to …: {category} operands mix date precisions (both must share one precision)
@@ -326,7 +349,7 @@ RGS-092.negation-form	the form 'is niet een <naam>' bound no characteristic and 
 RGS-092.day-count-name-unbound	the condition of a day count names '{name}', which is no characteristic of the subject '{subject}'; a day count counts the days on which the subject has a characteristic (§13.4.17.57)
 RGS-092.day-count-condition-form	a day count counts only the days on which the subject itself has one time-dependent characteristic, in the form 'dat hij <kenmerk> is' or 'dat hij <kenmerk> heeft'; this condition does not have that form (§13.4.17.57, RUNTIME-SEMANTICS ch. 3.8)
 RGS-093	head form: 'is {word}' lacks the article — a supertype is written as 'is een {word}'
-RGS-094	head form: the 'is een' clause stands after the (mv: …) group — it belongs directly after the objecttype name, before (mv: …) and (bezield)
+RGS-094	head form: the 'is een' clause stands after the (mv: …) group — it belongs directly after the object type name, before (mv: …) and (bezield)
 RGS-095	scenario: the document carries no scenario, so no case file can be written
 RGS-096	{kind} '{name}' depends on itself through a cycle; the dependencies are cycle-free outside a recursive creation ({wf}){negativeEdgeClause}: {sentence}
 RGS-096.negative-edge	, and a cycle carries no negative edge, such as a negation (WF-046)
@@ -358,8 +381,8 @@ RGS-109	{head}: an exception block is not allowed in the dialect within the reac
 RGS-109.and-base	 and its base rule
 RGS-109.and-carrier	 and its carrier
 RGS-110	rule target '{written}': target '{attribute}' names both an attribute and a characteristic of '{objectType}': which member a rule writes decides its kind, and this name decides nothing
-RGS-111	the target navigates via '{subjectSource}': a rule writes a member of its own universal subject; write the rule on the objecttype that carries the member ('De <attribuut> van een <Objecttype> …')
-RGS-112	the target is a navigated read: '{attribute}' is not a member of {objectType} — the name swallowed the navigation. A rule writes a member of its own universal subject; write the rule on the objecttype that carries the member ('De <attribuut> van een <Objecttype> …')
+RGS-111	the target navigates via '{subjectSource}': a rule writes a member of its own universal subject; write the rule on the object type that carries the member ('De <attribuut> van een <Objecttype> …')
+RGS-112	the target is a navigated read: '{attribute}' is not a member of {objectType} — the name swallowed the navigation. A rule writes a member of its own universal subject; write the rule on the object type that carries the member ('De <attribuut> van een <Objecttype> …')
 RGS-113	'{attribute}' is not a declared member of {objectType}
 RGS-114	'{name}' as a value ('{expression}'): context value '{name}' is not one of the two admissible names evaluationDate, evaluationYear: the context-value name is a closed set, spelled byte for byte
 RGS-115	read '{expression}', in which '{prefix} van' before the attribute '{attribute}' became one name: '{name}' is neither an attribute nor a characteristic of '{objectType}'
@@ -379,7 +402,7 @@ RGS-120.hop	hop {hop} reaches the to-many role '{role}' in a scalar slot — a t
 RGS-121	read '{expression}': the declared member '{attribute}' of '{objectType}' wins; the same words also read as the member '{member}' of '{otherObjectType}' across the role '{role}', and that reading does not apply here
 RGS-122	navigated read '{expression}' does not bind ({reason}), so it is read as the member '{attribute}' of '{objectType}': '{attribute}' is neither an attribute nor a characteristic of '{objectType}'
 RGS-122.no-relation	no relation joins '{from}' with '{type}'
-RGS-122.reads-as-type	'{step}' reads as the objecttype '{type}', and {connection}
+RGS-122.reads-as-type	'{step}' reads as the object type '{type}', and {connection}
 RGS-122.relations	{count} relations join '{from}' with '{type}'
 RGS-122.role-ambiguous	the role '{step}' does not point to exactly one relation from '{from}'
 RGS-123	navigated read '{expression}' names the subtype '{endpoint}', but the role '{roleName}' lands on '{fillerType}': the navigation reaches '{fillerType}', not the endpoint '{endpoint}'
@@ -388,7 +411,7 @@ RGS-124.own-subject	its subject
 RGS-124.written-source	'{source}'
 RGS-125	navigated read '{expression}': the member '{member}' does not exist on '{fillerType}', the filler of the role '{roleName}'{where}: {sentence}
 RGS-125.neither-member	'{member}' is neither an attribute nor a characteristic of '{fillerType}'
-RGS-125.nowhere	, and on no other objecttype
+RGS-125.nowhere	, and on no other object type
 RGS-125.other-type	, but on {types}, which is no subtype of '{fillerType}'
 RGS-125.other-types	, but on {types}, which are no subtypes of '{fillerType}'
 RGS-125.reaches	the navigation reaches '{fillerType}', not the endpoint '{endpoint}'
@@ -477,7 +500,7 @@ RGS-190	feitcreatie is not yet converted to IR/DRL (rule '{name}'): {sentence}
 RGS-190.ambiguous	role or fact type cannot be derived unambiguously
 RGS-190.indirect	the target chain does not refer directly to the anchor (no back-reference)
 RGS-190.many-side	the reference field belongs on the many side; the target is not the many side here
-RGS-190.no-anchor	anchor objecttype cannot be derived
+RGS-190.no-anchor	anchor object type cannot be derived
 RGS-190.same-relation	the new and the existing relation coincide (same reference field)
 RGS-190.step-field	reference-field side for intermediate step '{role}' cannot be derived
 RGS-190.step-role	intermediate-step role '{role}' cannot be derived unambiguously
@@ -621,7 +644,7 @@ RGS-321	rule '{name}'{rowTable}: '{verb} een {written}' negates nothing — afte
 RGS-321.write	; write {spelling}
 RGS-322	period comparison (§8.4.3): the {side} boundary '{bound}' is {reason} — a window boundary is a date literal or an own, not time-dependent date-in-days member of the subject; the general date expression that §13.4.15.68 admits is an open wire decision (WF-111, IR-SPEC ch. 4.6)
 RGS-322.navigated-read	a navigated or collecting read of '{attribute}'
-RGS-322.other-type	a read of '{attribute}' on '{type}', an objecttype other than the subject '{subject}': a navigation, and a window boundary never navigates
+RGS-322.other-type	a read of '{attribute}' on '{type}', an object type other than the subject '{subject}': a navigation, and a window boundary never navigates
 RGS-322.subtype	the attribute '{attribute}' of '{type}', a subtype of the subject '{subject}': not every subject is a {type}
 RGS-322.supertype	the attribute '{attribute}' of '{type}', a supertype of the subject '{subject}': this frontend reads that name as another instance, reached along a fact type, and a window boundary never navigates. Read the date of the subject itself ('zijn {attribute}' or with the name {subject})
 RGS-323	{sentences}
@@ -696,3 +719,11 @@ RGS-376	'{expression}' reads the value of '{attribute}' of {objectType}, which c
 RGS-377	{what}: '{marker}' does not fit here as an absence marker: {admitted} (RUNTIME-SEMANTICS ch. 9.5)
 RGS-378	allocation '{name}' names the time-dependent attribute '{attribute}' of {objectType}: an allocation distributes one amount at one moment, and no reading of it per day is defined (WF-128)
 RGS-379	{kind} '{name}' reads negatively, as in a negation or an empty test, what {producerKind} '{producer}' writes, on a cycle; a cycle carries no negative edge, not even a cycle through a recursive creation ({wf}): {sentence}
+RGS-380	parameter '{parameter}' has overlapping validity periods {first} and {second}
+RGS-381	parameter '{parameter}' has no valid value on the reference date {asOfDate}
+RGS-382	a fraction with denominator 0
+RGS-383	unknown conversion factor of '{abbreviation}' ({factor}): canonical '{canonical}' without a declared factorToCanonical
+RGS-384	the unit '{unit}' is no declared unit: its spelling comes from rendering(), its parts from factors()
+RGS-385	no conversion factor from unit '{unit}' to '{target}': not interchangeable
+RGS-386	semantic tokens: no source file given
+RGS-387	a source file has a name and a text

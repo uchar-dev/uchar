@@ -662,7 +662,7 @@ class ExceptionOnExceptionTest {
                 + rule("uitsluiting", UIT, "hij aan geen van de volgende voorwaarden voldoet:\n"
                         + "        - het is de periode vanaf dd. 01-01-2024\n        - hij is geschorst")
                 + op("uitsluiting", "herroeping", NOT_EXCLUDED, "hij herroepen is")));
-        assertTrue(d.message().contains("a time window under none or a counting quantifier"), d.message());
+        assertTrue(d.message().contains("een tijdvenster onder geen of onder een telkwantor"), d.message());
     }
 
     // -------------------------------------------------------------------- annotations and the scenario layer

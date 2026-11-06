@@ -102,10 +102,10 @@ public final class RegelSpraakModel {
                 Object van = f.get(this), to = f.get(k);
                 if (van instanceof List<?> l) ((List<Object>) to).addAll(l);
                 else if (van instanceof Map<?, ?> mp) ((Map<Object, Object>) to).putAll(mp);
-                else throw new IllegalStateException("RegelSpraakModel.kopie: het veld '" + f.getName()
-                        + "' is geen lijst of kaart en heeft geen kopieerregel");
+                else throw new IllegalStateException("RegelSpraakModel.copy: the field '" + f.getName()
+                        + "' is no list or map and has no copy rule");
             } catch (IllegalAccessException e) {
-                throw new IllegalStateException("RegelSpraakModel.kopie: het veld '" + f.getName() + "'", e);
+                throw new IllegalStateException("RegelSpraakModel.copy: the field '" + f.getName() + "'", e);
             }
         }
         return k;

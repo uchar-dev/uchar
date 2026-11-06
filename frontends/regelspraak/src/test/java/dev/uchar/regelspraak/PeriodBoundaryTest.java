@@ -61,13 +61,13 @@ class PeriodBoundaryTest {
 
     @ParameterizedTest
     @CsvSource(delimiter = '|', value = {
-            "Jutter     | vanaf de opendatum van het strandvak van de Jutter | a navigated read of 'opendatum'",
-            "Jutter     | vanaf de opendatum van zijn strandvak    | a navigated read of 'opendatum'",
-            "Jutter     | vanaf de opendatum van zijn strandvak plus 1 dg | a navigated read of 'opendatum'",
-            "Jutter     | vanaf zijn meldmoment                    | is a millisecond-precision date",
-            "Jutter     | vanaf zijn knipdatum                     | the time-dependent attribute 'knipdatum'",
-            "Jutter     | vanaf zijn knipdatum plus 1 dg           | the time-dependent attribute 'knipdatum'",
-            "Jutter     | vanaf dd. 1-7-2026 08:30:00.000          | is a millisecond-precision date",
+            "Jutter     | vanaf de opendatum van het strandvak van de Jutter | een genavigeerde lezing van 'opendatum'",
+            "Jutter     | vanaf de opendatum van zijn strandvak    | een genavigeerde lezing van 'opendatum'",
+            "Jutter     | vanaf de opendatum van zijn strandvak plus 1 dg | een genavigeerde lezing van 'opendatum'",
+            "Jutter     | vanaf zijn meldmoment                    | is een datum met millisecondeprecisie",
+            "Jutter     | vanaf zijn knipdatum                     | het tijdsafhankelijke attribuut 'knipdatum'",
+            "Jutter     | vanaf zijn knipdatum plus 1 dg           | het tijdsafhankelijke attribuut 'knipdatum'",
+            "Jutter     | vanaf dd. 1-7-2026 08:30:00.000          | is een datum met millisecondeprecisie",
             "Jutter     | vanaf de klipdatum van de Klipjutter     | een subtype van het onderwerp 'Jutter'",
             "Klipjutter | vanaf de peildatum van de Jutter         | een supertype van het onderwerp 'Klipjutter'"
     })
@@ -78,7 +78,7 @@ class PeriodBoundaryTest {
         String t = faults.get(0).message();
         // the verifier's WF-111 sentence; a sub- or supertype read that no relation reaches has no wire form, so that
         // refusal keeps its own words, which cite the rule
-        assertTrue(t.contains(" bound of a time window is ") || t.contains("WF-111") && t.contains("§8.4.3"), t);
+        assertTrue(t.contains("-grens van een tijdvenster is ") || t.contains("WF-111") && t.contains("§8.4.3"), t);
         assertTrue(t.contains(fragment), () -> "de melding noemt '" + fragment + "' niet: " + t);
         // an ERROR keeps the document off disk: Resolver.irMode writes nothing
         assertFalse(m.isOk());

@@ -50,8 +50,8 @@ class OnlyWriterTest {
         List<Diagnostic> faults = m.errors();
         assertEquals(1, faults.size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
         // one of WF-050's two clauses, in the verifier's sentence
-        assertTrue(faults.get(0).message().contains("a rule also writes defaults target '")
-                || faults.get(0).message().contains("multiple defaults groups on target '"), faults.get(0).message());
+        assertTrue(faults.get(0).message().contains("een regel schrijft ook het defaults-doel '")
+                || faults.get(0).message().contains("meer defaults-groepen op doel '"), faults.get(0).message());
         return faults.get(0);
     }
 
@@ -96,7 +96,7 @@ class OnlyWriterTest {
                     indien hij kustwacht is.
             """);
         assertTrue(d.message().contains("'basispremie'") && d.message().contains("'tweede basis'")
-                && d.message().contains("without the declared-unordered marking"), d.message());
+                && d.message().contains("zonder de markering als ongeordend"), d.message());
     }
 
     @Test void a_family_beside_an_unordered_block_is_refused() {

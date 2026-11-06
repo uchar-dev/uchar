@@ -200,11 +200,11 @@ class SourceOrderTest {
             RegelSpraakModel m = Resolver.resolve(order[0] + order[1]);
             assertEquals(List.of(
                     "ERROR 6 objecttype 'Jutter' is al gedeclareerd (bronregel 1); een naam komt in zijn soort "
-                            + "declaratie één keer voor, hoofdletters niet meegeteld (WF-001): namespace 'objectTypes': "
-                            + "names 'Jutter' and 'Jutter' collide case-insensitively",
+                            + "declaratie één keer voor, hoofdletters niet meegeteld (WF-001): in de naamruimte 'objectTypes' "
+                            + "vallen de namen 'Jutter' en 'Jutter' samen als hoofdletters niet meetellen",
                     "ERROR 9 parameter 'drempel' is al gedeclareerd (bronregel 4); een naam komt in zijn soort "
-                            + "declaratie één keer voor, hoofdletters niet meegeteld (WF-001): namespace 'parameters': "
-                            + "names 'drempel' and 'drempel' collide case-insensitively"),
+                            + "declaratie één keer voor, hoofdletters niet meegeteld (WF-001): in de naamruimte 'parameters' "
+                            + "vallen de namen 'drempel' en 'drempel' samen als hoofdletters niet meetellen"),
                     m.diagnostics.stream().map(d -> d.severity() + " " + d.line() + " " + d.message()).toList());
         }
     }

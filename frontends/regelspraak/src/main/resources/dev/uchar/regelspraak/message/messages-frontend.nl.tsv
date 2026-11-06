@@ -166,6 +166,29 @@ PART.subject-escape-value	schrijf 'zijn …' voor een waarde van het element en 
 PART.subject-escape-characteristic	schrijf 'hij heeft …' of 'hij is …' voor een kenmerk van het element en '{named} zelf heeft …' of '{named} zelf is …' voor een kenmerk van het regelonderwerp
 PART.subject-identity-outside	de identiteitstoets vergelijkt het element van een deelselectie of een kwantortoets met het regelonderwerp en staat alleen daar (IR-SPEC ch. 4.5, WF-122)
 PART.subject-identity-not-element	de identiteitstoets vergelijkt het element ('hij') met het regelonderwerp, en '{operand}' is het element niet
+PART.validity-period	[{from} t/m {until}]
+PART.no-unit	(geen eenheid)
+PART.kind.number	getal
+PART.kind.percentage	percentage
+PART.kind.text	tekst
+PART.kind.boolean	Boolean
+PART.kind.date-day	datum in dagen
+PART.kind.date-ms	datum en tijd in millisecondes
+PART.kind.enumeration	enumeratie
+PART.kind.sumtype	varianttype
+PART.clamp.base	basis
+PART.clamp.minimum	minimum
+PART.clamp.maximum	maximum
+PART.sign.negative	negatief
+PART.sign.non-negative	niet-negatief
+PART.sign.positive	positief
+PART.day-kind-read.attribute	attribuut
+PART.day-kind-read.instance-population	populatie van instanties
+PART.day-kind-read.characteristic	kenmerk
+PART.day-kind-read.role-membership	rolcheck
+PART.day-kind-read.rule-version-state	toestand van een regelversie
+PART.day-kind-read.identity-check	identiteitstoets
+PART.day-kind-read.instance-quantification	kwantificatie over instanties
 RGS-001	verdeling '{name}' wordt niet geschreven: de frontend bepaalde voor haar geen van de drie verdeelmethoden (in gelijke delen, naar rato, op volgorde), en een verdeling zonder methode heeft geen spelling in uchar-ir-v1
 RGS-002	objecttype '{objectType}' declareert meer dan één supertype ({names}) — WF-106: een objecttype declareert hoogstens één direct supertype. De twee bekende gevallen met twee directe ouders (RechtOpUitkeringWazo, RechtUitkeringZw) worden hier geweigerd en niet platgeslagen: kies één ouder, of til het gedeelde deel naar een gemeenschappelijk supertype
 RGS-003	objecttype '{objectType}' is zijn eigen supertype — WF-104: de supertypegraaf is acyclisch, zelfverwijzing inbegrepen (een keten zonder wortel laat ledenresolutie nergens stoppen)
@@ -174,7 +197,7 @@ RGS-004.wf103	 — WF-103: een supertype noemt een gedeclareerd objecttype, want
 RGS-005	objecttype '{objectType}': supertype '{supertype}' is een {category}, geen objecttype{rationale}
 RGS-006	objecttype '{objectType}': supertypecyclus {names} — WF-104: de supertypegraaf is acyclisch (een type zou zijn eigen voorouder zijn, dus ledenresolutie heeft geen wortel om bij te stoppen)
 RGS-007	objecttype '{objectType}': {category} '{name}' (bronregel {sourceLine}) is al gedeclareerd op '{ancestor}' (bronregel {ancestorLine}) hogerop in de keten — WF-105: een subtype herdeclareert geen geërfde naam (één exemplaar zou twee declaraties van die naam dragen, en welke een lezer vindt bepaalt datatype, dimensies en tijdlijnfacet van elke lezing ervan)
-RGS-008	{kind} '{name}' is al gedeclareerd (bronregel {earlierLine}); een naam komt in zijn soort declaratie één keer voor, hoofdletters niet meegeteld (WF-001): namespace '{namespace}': names '{earlierName}' and '{name}' collide case-insensitively
+RGS-008	{kind} '{name}' is al gedeclareerd (bronregel {earlierLine}); een naam komt in zijn soort declaratie één keer voor, hoofdletters niet meegeteld (WF-001): in de naamruimte '{namespace}' vallen de namen '{earlierName}' en '{name}' samen als hoofdletters niet meetellen
 RGS-009	objecttype '{objectType}': de extensie declareert {kindPhrase} '{name}' (bronregel {sourceLine}), dat {objectType} al draagt (bronregel {earlierLine}), en {reason} — een extensie voegt leden toe en vervangt er geen: een lid dat het objecttype al draagt, herhaalt zij alleen letterlijk, en '(mag opgegeven worden)' komt er hooguit één keer bij (WF-002, dialect §7)
 RGS-009.already-marked	dat draagt '(mag opgegeven worden)' al (bronregel {line})
 RGS-009.attribute-phrase	het attribuut
@@ -188,11 +211,11 @@ RGS-012.no-unit	een {type} draagt geen eenheid
 RGS-012.percentage	een percentage draagt de eenheid % ('Percentage (…) met eenheid %/<eenheid>' voor een verhouding)
 RGS-013	Numeriek datatype zonder verplichte getalspecificatie (§13.3.3); onbeperkte decimalen aangenomen
 RGS-014	'getal met 0 decimalen' is geen geldige getalspecificatie (§13.3.3.7 vereist >= 1 decimaal); gelezen als 'geheel getal'
-RGS-015	eenheid '{unit}' van eenheidstelsel '{unitSystem}': a conversion factor is an exact rational {{num, den}} whose two integers are at least 1 and at most 4611686018427387903 (2^62 - 1), got {factor}
-RGS-016	eenheidstelsel '{unitSystem}', {writtenAs}al gedeclareerd voor de eenheid '{earlierUnit}': the unit '{abbreviation}' is declared twice in the unit system '{unitSystem}': one Unit per abbreviation
+RGS-015	eenheid '{unit}' van eenheidstelsel '{unitSystem}': een omrekenfactor is een exacte breuk {{num, den}} waarvan beide gehele getallen ten minste 1 en ten hoogste 4611686018427387903 (2^62 - 1) zijn, kreeg {factor}
+RGS-016	eenheidstelsel '{unitSystem}', {writtenAs}al gedeclareerd voor de eenheid '{earlierUnit}': de eenheid '{abbreviation}' is twee keer gedeclareerd in het eenheidstelsel '{unitSystem}', en een afkorting noemt één eenheid
 RGS-016.written-as	als '{earlierAbbreviation}' 
 RGS-017	onleesbare omrekenfactor '{value}' bij eenheid '{unit}'
-RGS-018	parameter '{name}': the timeline facet of parameter '{name}' has count {count} > 1: a parameter's timeline is one period while multi-period grids are open (RUNTIME-SEMANTICS ch. 3.12)
+RGS-018	parameter '{name}': het tijdlijnfacet van parameter '{name}' heeft aantal {count} > 1: de tijdlijn van een parameter is één periode zolang rasters van meer perioden open zijn (RUNTIME-SEMANTICS ch. 3.12)
 RGS-019	tijdlijn '{name}' is meermaals met verschillende periodiciteit gedefinieerd; een 'voor elke <naam>' verwijzing neemt die van de eerste (§13.3.6.10)
 RGS-020	tijdlijn: het vaste startpunt '{value}' ({section}) noemt geen dag van de maand
 RGS-021	tijdlijn: het vaste startpunt '{value}' ({section}) noemt geen reeks kwartaalmaanden: die is 1, 4, 7 en 10, 2, 5, 8 en 11 of 3, 6, 9 en 12
@@ -213,11 +236,11 @@ RGS-030.other-kind	een {category}, geen objecttype
 RGS-030.undeclared	nergens als objecttype gedeclareerd
 RGS-031	feittype '{factType}': de rol '{role}' heeft als objecttype '{fillerType}', en dat is nergens als objecttype gedeclareerd — WF-003: de vuller van een rol is een gedeclareerd objecttype; staat het in een ander bestand van het model, lees de bestanden dan samen
 RGS-032	{carrier}: regeltekst leest {category} '{name}' niet als één naam, want '{word}' is daar geen woord van een naam; verbind het met een koppelteken aan een buurwoord ('{example}')
-RGS-033	dagsoort '{name}': day-kind '{name}' shadows a built-in calendar unit
+RGS-033	dagsoort '{name}': dagsoort '{name}' overschaduwt een ingebouwde kalendereenheid
 RGS-034	dagsoort-eenheid '{unit}' valt samen met een ingebouwde tijdseenheid en wordt niet als dagsoort-eenheid geregistreerd
-RGS-035	dagsoort '{dayKind}': the plural '{spelling}' of day kind '{dayKind}' is the name of day kind '{earlierDayKind}': one spelling names two day kinds
-RGS-036	dagsoort '{dayKind}': the plural '{spelling}' of day kind '{dayKind}' is the plural '{earlierPlural}' of day kind '{earlierDayKind}': one spelling names two day kinds
-RGS-037	dagsoort '{dayKind}': the plural '{earlierPlural}' of day kind '{earlierDayKind}' is the name of day kind '{dayKind}': one spelling names two day kinds
+RGS-035	dagsoort '{dayKind}': het meervoud '{spelling}' van dagsoort '{dayKind}' is de naam van dagsoort '{earlierDayKind}': één spelling noemt twee dagsoorten
+RGS-036	dagsoort '{dayKind}': het meervoud '{spelling}' van dagsoort '{dayKind}' is het meervoud '{earlierPlural}' van dagsoort '{earlierDayKind}': één spelling noemt twee dagsoorten
+RGS-037	dagsoort '{dayKind}': het meervoud '{earlierPlural}' van dagsoort '{earlierDayKind}' is de naam van dagsoort '{dayKind}': één spelling noemt twee dagsoorten
 RGS-038	de vocabulaires '{vocabulary}' en '{otherVocabulary}' zijn allebei het standaardvocabulaire; een document heeft er hooguit één (WF-116)
 RGS-039	beslistabel '{name}' draagt een benaming, en een beslistabel heeft er geen: zij staat voor de regels van haar rijen, die hun namen van de frontend krijgen; schrijf de benaming op een regel
 RGS-040	het blok '{name}' draagt een benaming, en een uitzonderings- of afwijkingsblok heeft er geen: het wordt een default in de groep van zijn basisregel, en een default heeft geen naam op de wire; schrijf de benaming op de basisregel
@@ -262,18 +285,18 @@ RGS-059.as-date-time	een datum-tijd
 RGS-059.as-enumeration	een waarde van {domain}
 RGS-059.as-text	een tekst
 RGS-059.round-the-duration	; rond de duur af: '{left} {operation} ({right} {rounding})'
-RGS-060	clamp {bound} and base have incompatible units
+RGS-060	begrenzing {bound} en basis hebben onverenigbare eenheden
 RGS-061	datum-tijd-literal '{literal}' is geen geldige datum-tijd (§13.2.21)
 RGS-062	datum-literal '{literal}' is geen geldige datum (§13.2.19)
 RGS-063	'{expression}' leest als de percentagefunctie zonder procentteken (§13.4.17.12), maar '{name}' is geen parameter of variabele van het type Percentage — schrijf het procentteken ('… % van …') of noem een percentage
 RGS-064	vouw '{expression}': de stappen na de verzameling worden het gegenereerde lid '{name}' van {objectType}, en {occupiedBy} declareert die naam al — een gegenereerd lid bestaat nog niet in de erflijn van het element
 RGS-065	leegwaarde-alternatief van een sommatie moet numeriek zijn, kreeg {type} (§5.8.2)
-RGS-066	leegwaarde-alternatief van een sommatie: sum fallback is {kind}, must be numeric
-RGS-067	gevulde telling '{expression}': the filled count is an INSTANCE fold and MUST carry an element type: without one its argument is no fold source at all, and the count has no contributors whose values it could test for presence (ch. 4.3)
+RGS-066	leegwaarde-alternatief van een sommatie: het leegwaarde-alternatief heeft de soort {kind}, moet numeriek zijn
+RGS-067	gevulde telling '{expression}': de gevulde telling is een vouw over INSTANTIES en MOET een elementType dragen: zonder elementType is haar argument helemaal geen vouwbron, en heeft de telling geen bijdragers waarvan zij de waarden op aanwezigheid kan toetsen (ch. 4.3)
 RGS-068	'{attribute}' is geen (meervoud van een) gedeclareerd attribuut van {objectType} — de aggregatie blijft onopgelost (§13.4.17) — '{expression}'
 RGS-069	een 'die/dat'-subselectie op een aggregatie-operand wordt nog niet omgezet; de aggregatie blijft buiten beschouwing in plaats van alle instanties mee te nemen (§5.6) — '{filter}'
 RGS-070	een dimensieselectie / 'gedurende de tijd dat' op een aggregatie wordt nog niet omgezet; de aggregatie blijft buiten beschouwing in plaats van de selectie te negeren (§13.4.17.51-.58) — '{expression}'
-RGS-071	{fold}: value fold with fewer than two operands
+RGS-071	{fold}: waardevouw met minder dan twee operanden
 RGS-072	telling '{expression}' is {reason}
 RGS-073	keten zonder sourcePath in een vouwbron: {reason} — een sourcePath loopt van het regelonderwerp naar de elementen en bindt elke stap aan precies één rol (IR-SPEC ch. 4.3/WF-102), dus de aggregatie blijft onopgelost (§13.4.17){exitClause} — '{expression}'
 RGS-073.exit	; {exit}
@@ -282,28 +305,28 @@ RGS-073.not-at-subject-named	'{range}' begint niet bij het regelonderwerp {subje
 RGS-074	rolanker in een vouwbron: '{expression}' verankert de verzameling op de rol '{role}', die vanaf {subject} een ANDER exemplaar aanwijst — een vouwbron zonder sourcePath noemt één relatie vanaf het regelonderwerp zelf (IR-SPEC ch. 4.3/WF-102), dus de stap naar dat exemplaar zou spoorloos wegvallen en de aggregatie blijft onopgelost (§13.4.1/§13.4.17) — '{source}'
 RGS-075	tussenstap in een vouwbron: '{expression}' bereikt de elementen via {anchor}, maar een vouwbron draagt precies één relatie vanaf het regelonderwerp {subject} (IR-SPEC ch. 4.3: één elementType plus één sourceRole) — de tussenstap zou spoorloos wegvallen, dus de aggregatie blijft onopgelost (§13.4.1/§13.4.17) — '{source}'
 RGS-076	vouwbron bindt niet op de geschreven naam: de zin noemt '{writtenName}', maar het enige feittype dat {subject} met {objectType} verbindt is '{factType}' met de rol '{role}' — de type-paar-afleiding zou een andere verzameling vouwen dan de zin noemt, dus de aggregatie blijft onopgelost (§13.4.1/§13.4.17) — '{source}'
-RGS-077	opgesomde telling '{expression}'{noUnion}: a count folds INSTANCES and has no LISTED form, and this node carries {operandCount} operands: the source language spells a count over a subject expression alone (ch. 4.3), so there is no articulated operand list to admit — the only reading an operand list leaves a count is the number of FILLED operands, and that meaning belongs to the filled count over its set source, never to this kind
+RGS-077	opgesomde telling '{expression}'{noUnion}: een telling vouwt INSTANTIES en heeft geen OPGESOMDE vorm, en deze knoop draagt {operandCount} operanden: de brontaal schrijft een telling alleen over een onderwerpexpressie (ch. 4.3), dus er is geen opgesomde lijst van operanden om toe te laten — de enige lezing die een lijst van operanden een telling laat, is het aantal GEVULDE operanden, en die betekenis hoort bij de gevulde telling over haar verzamelingsbron, nooit bij deze soort
 RGS-077.no-union	, geen unie van selecties: {unionRefusal}
-RGS-078	telling zonder bron{quoted}{detail}: the count is an INSTANCE fold and MUST carry an element type: without one its argument is no fold source at all — and with no argument there is none — so the count has no contributors to count, only its operand, whatever that operand holds (ch. 4.3)
+RGS-078	telling zonder bron{quoted}{detail}: de telling is een vouw over INSTANTIES en MOET een elementType dragen: zonder elementType is haar argument helemaal geen vouwbron — en zonder argument is er geen — dus heeft de telling geen bijdragers om te tellen, alleen haar operand, wat die operand ook bevat (ch. 4.3)
 RGS-078.detail	, {context}
 RGS-078.quoted	 '{expression}'
-RGS-079	eerste paasdag van: easterSunday operand is {kind}, must be a whole unitless number
-RGS-080	{builtin} operand is {kind}, must be a number
+RGS-079	eerste paasdag van: de operand van easterSunday heeft de soort {kind}, moet een geheel getal zonder eenheid zijn
+RGS-080	de operand van {builtin} heeft de soort {kind}, moet een getal zijn
 RGS-081	{sentences}
-RGS-081.operand-attribute	'{attribute}' on '{objectType}'
-RGS-081.operand-parameter	the parameter '{parameter}'
-RGS-081.operand-position	its operand {position}
-RGS-081.rationale-date	Date values are calendar positions
-RGS-081.rationale-other	{typeName} values are not amounts
-RGS-081.sentence	the {fold} of {operand} folds {typeName} values: a total, sum or pro-rata part is arithmetic over a Number, and {rationale}
+RGS-081.operand-attribute	'{attribute}' op '{objectType}'
+RGS-081.operand-parameter	de parameter '{parameter}'
+RGS-081.operand-position	haar operand {position}
+RGS-081.rationale-date	waarden van het type Date zijn posities op de kalender
+RGS-081.rationale-other	waarden van het type {typeName} zijn geen hoeveelheden
+RGS-081.sentence	de {fold} van {operand} vouwt waarden van het type {typeName}: een totaal, een som of een deel naar rato rekent met een Number, en {rationale}
 RGS-082	totaal van vereist een eenheid per tijdseenheid (§4.20 Tabel 30), kreeg '{unit}'
-RGS-083	een tijd-component (uur/minuut/seconde/milliseconde uit): sub-day extractor operand is {kind}, must be a millisecond-precision date
+RGS-083	een tijd-component (uur/minuut/seconde/milliseconde uit): de operand van de extractor binnen de dag heeft de soort {kind}, moet een datum met millisecondeprecisie zijn
 RGS-084	de (absolute) tijdsduur van … tot …: {sentences}
-RGS-084.operand-sentence	{category} operand is {kind}, must be a date
-RGS-085	de (absolute) tijdsduur van … tot …: {category} operands mix date precisions (both must share one precision)
-RGS-086	{category} without a recognised time unit on its node type
-RGS-087	{category}: the counted unit '{unit}' is neither a recognised time unit nor a declared day kind
-RGS-088	sub-day {category} unit on day-precision operands (millisecond precision required)
+RGS-084.operand-sentence	de operand van {category} heeft de soort {kind}, moet een datum zijn
+RGS-085	de (absolute) tijdsduur van … tot …: de operanden van {category} mengen datumprecisies (beide moeten één precisie delen)
+RGS-086	{category} zonder herkende tijdseenheid op het type van de knoop
+RGS-087	{category}: de getelde eenheid '{unit}' is geen herkende tijdseenheid en geen gedeclareerde dagsoort
+RGS-088	eenheid van {category} binnen de dag op operanden met dagprecisie (millisecondeprecisie vereist)
 RGS-089	rangtelwoord: de regel noemt geen {position} onderwerpen '{name}' (§5.5.3)
 RGS-090	rangtelwoord: de regel bindt {bindings} onderwerpen '{name}'; §5.5.3 definieert geen bindings-/ordeningssemantiek voor zo'n verwijzing per vermelding — de verwijzing blijft een marker (wordt nog niet ondersteund) — '{expression}'
 RGS-091	syntaxfout: {message}
@@ -332,40 +355,40 @@ RGS-096	{kind} '{name}' hangt via een kring van zichzelf af; de afhankelijkheden
 RGS-096.negative-edge	, en een kring draagt geen negatieve rand, zoals een ontkenning (WF-046)
 RGS-097	{kind} '{name}' ligt op een afhankelijkheidskring, en een kring door een defaults-groep heeft geen strata ({wf}): {sentence}
 RGS-098	regel '{name}'{inTable} is al gedeclareerd op regel {earlierLine}{earlierRow}; vormnamen zijn uniek (WF-020): {sentence}
-RGS-098.duplicate-name	duplicate name '{name}' in {array}
+RGS-098.duplicate-name	dubbele naam '{name}' in {array}
 RGS-098.earlier-row	, als rij van beslistabel '{earlierTable}'
 RGS-098.in-table	 van beslistabel '{table}'
-RGS-098.name-collision	name '{name}' collides with '{other}' in {array} (unique across all named forms)
+RGS-098.name-collision	naam '{name}' botst met '{other}' in {array} (uniek over alle benoemde vormen)
 RGS-099	de 'die/dat'-deelselectie '{expression}' wordt niet omgezet en zou stil wegvallen: een deelselectie kiest WELKE exemplaren de zin bedoelt, dus haar weglaten beantwoordt een andere vraag dan er staat. Een subselectie is in RegelSpraak v2.3.0 ALTIJD MEERVOUDIG (§5.8), en een meervoudige lezing kent daar precies twee verbruikers: een aggregatie (§5.8) of een voorwaarde met een kwantificatie vóór de onderwerpexpressie (hfst. 10). Op deze schrijfpositie staat geen van beide, dus de zin heeft in v2.3.0 geen lezing — deze weigering is de eindtoestand en geen uitbreidingspunt. Schrijf de selectie als vouwbereik (IR-SPEC ch. 4.3 of ch. 4.5, veld 'filter') of zet er een kwantificatie voor (§5.6)
 RGS-100	de vouw over de stappen na de verzameling genereert de regel '{rule}' voor het lid van die naam op {objectType}, en {occupiedBy} heet al zo (bronregel {sourceLine}) — een vormnaam is uniek in het hele model, hoofdletters niet meegeteld (WF-020)
 RGS-101	recursieve regelgroep '{name}' zonder objectcreatieregel — de 'is recursief'-markering kan de keten niet laten voortschrijden (§9.10, gedocumenteerde extensie)
-RGS-102	recursieve regelgroep '{name}': recursive group without a creation member
-RGS-103	recursieve regelgroep '{name}': unguarded object creation '{creation}' in a recursive group
-RGS-104	regel '{rule}'{table}: characteristic target's value must be the boolean constant true
+RGS-102	recursieve regelgroep '{name}': recursieve groep zonder creatielid
+RGS-103	recursieve regelgroep '{name}': onbewaakte objectcreatie '{creation}' in een recursieve groep
+RGS-104	regel '{rule}'{table}: de waarde van een kenmerkdoel moet de booleaanse constante waar zijn
 RGS-105	{head}: de defaults-groep {groupNames} op het kenmerk {subject}.{target} kent het nooit toe — elke default beslist 'onwaar', en een besluit 'onwaar' schrijft niets. Dat is welgevormd, maar zo doet de groep niets wat het weglaten van de groep niet ook doet; ga na of er een uitzondering ontbreekt die 'waar' beslist (dialect §4)
 RGS-105.plural	{head}: de defaults-groepen {groupNames} op het kenmerk {subject}.{target} kennen het nooit toe — elke default beslist 'onwaar', en een besluit 'onwaar' schrijft niets. Dat is welgevormd, maar zo doen de groepen niets wat het weglaten van de groepen niet ook doet; ga na of er een uitzondering ontbreekt die 'waar' beslist (dialect §4)
-RGS-106	{head} ({groupsLabel}{groupNames}, doel ook geschreven door {othersLabel}{others}): a rule also writes defaults target '{target}' — an unordered plain writer would silently defeat the group's decisions
+RGS-106	{head} ({groupsLabel}{groupNames}, doel ook geschreven door {othersLabel}{others}): een regel schrijft ook het defaults-doel '{target}' — een ongeordende gewone schrijver zou de beslissingen van de groep stil tenietdoen
 RGS-106.group-label	defaults-groep 
 RGS-106.groups-label	defaults-groepen 
 RGS-106.rule-label	regel 
 RGS-106.rules-label	de regels 
-RGS-107	{head} (defaults-groepen {groupNames}): multiple defaults groups on target '{target}' without the declared-unordered marking — priority is explicit (defaults) or explicitly absent ('unordered'), never implicit (ch. 7.2)
-RGS-108	{head} (zijn basisregel is {memberKind} van regelgroep '{group}'{placement}): group member '{member}' does not resolve to a rule form
+RGS-107	{head} (defaults-groepen {groupNames}): meer defaults-groepen op doel '{target}' zonder de markering als ongeordend — prioriteit is expliciet (defaults) of expliciet afwezig ('unordered'), nooit impliciet (ch. 7.2)
+RGS-108	{head} (zijn basisregel is {memberKind} van regelgroep '{group}'{placement}): groepslid '{member}' verwijst naar geen regelvorm
 RGS-108.member	lid
 RGS-108.placement	, en het blok staat direct na het laatste lid van regelgroep '{groupBefore}'
 RGS-108.table-row	een rij van beslistabel '{table}', lid
 RGS-109	{head}: een uitzonderingsblok is in het dialect niet toegestaan binnen de reikwijdte van een regelgroep, noch met een groepslid als basisregel — het staat direct na het laatste lid van regelgroep '{groupBefore}', waar de groep stil eindigt, zodat het blok en elke regel erna buiten de groep zouden vallen. Een regelgroep bestaat alleen om recursie te markeren (§9.10) en omvat alleen regels en beslistabellen; een defaults-blok (dialect §4) hoort er niet in. Plaats het blok{carrierPart} buiten elke regelgroep: vóór de eerste regelgroepkop van het document ('Regelgroep {firstGroup}'), of achter een definitie die de groep afsluit
 RGS-109.and-base	 en zijn basisregel
 RGS-109.and-carrier	 en zijn drager
-RGS-110	regeldoel '{written}': target '{attribute}' names both an attribute and a characteristic of '{objectType}': which member a rule writes decides its kind, and this name decides nothing
+RGS-110	regeldoel '{written}': doel '{attribute}' noemt zowel een attribuut als een kenmerk van '{objectType}': welk lid een regel schrijft, bepaalt zijn soort, en deze naam bepaalt niets
 RGS-111	het doel navigeert via '{subjectSource}': een regel schrijft een attribuut van zijn eigen universele onderwerp; schrijf de regel op het objecttype dat het attribuut draagt ('De <attribuut> van een <Objecttype> …')
 RGS-112	het doel is een genavigeerde lezing: '{attribute}' is geen attribuut van {objectType} — de naam slokte de navigatie op. Een regel schrijft een attribuut van zijn eigen universele onderwerp; schrijf de regel op het objecttype dat het attribuut draagt ('De <attribuut> van een <Objecttype> …')
 RGS-113	'{attribute}' is geen gedeclareerd attribuut van {objectType}
-RGS-114	'{name}' als waarde ('{expression}'): context value '{name}' is not one of the two admissible names evaluationDate, evaluationYear: the context-value name is a closed set, spelled byte for byte
-RGS-115	lezing '{expression}', waarin '{prefix} van' vóór het attribuut '{attribute}' één naam werd: '{name}' is neither an attribute nor a characteristic of '{objectType}'
+RGS-114	'{name}' als waarde ('{expression}'): contextwaarde '{name}' is geen van de twee toegelaten namen evaluationDate en evaluationYear: de namen van contextwaarden zijn een gesloten verzameling, byte voor byte gespeld
+RGS-115	lezing '{expression}', waarin '{prefix} van' vóór het attribuut '{attribute}' één naam werd: '{name}' is geen attribuut en geen kenmerk van '{objectType}'
 RGS-116	rolcheck '{expression}' zonder binding (geen feittype kent de rol '{roleName}'{against}): missing field 'factType'
 RGS-117	rolcheck '{expression}' zonder binding ({count} feittypen kennen de rol '{roleName}'{against}): missing field 'factType'
-RGS-118	genavigeerde lezing '{expression}' zonder binding ({reason}): an attribute reference without a path is the subject's own read, so its subjectType is the subject type '{subject}' — '{objectType}' names another type, which only a navigation reaches
+RGS-118	genavigeerde lezing '{expression}' zonder binding ({reason}): een attribuutverwijzing zonder pad is een lezing op het eigen onderwerp, dus haar subjectType is het onderwerptype '{subject}' — '{objectType}' noemt een ander type, dat alleen een navigatie bereikt
 RGS-118.chain-unbound	de geschreven keten is {from} niet stap voor stap te binden
 RGS-118.from-subject	vanaf {subject}
 RGS-118.pair-many	{count} relaties verbinden {subject} met {target}, en '{written}' noemt geen rol die er precies één aanwijst
@@ -375,38 +398,38 @@ RGS-118.role-ambiguous	de geschreven rol '{role}' wijst {from} niet precies éé
 RGS-118.without-subject	zonder onderwerp
 RGS-119	genavigeerde lezing '{expression}' zonder binding ({reason}): zonder pad zou de wire haar lezen als een eigen attribuut van het onderwerp, en dat is niet wat er staat
 RGS-120	genavigeerde lezing '{expression}' over een meervoudige rol: {sentences}
-RGS-120.hop	hop {hop} reaches the to-many role '{role}' in a scalar slot — a to-many step needs an aggregation, never a silent first pick
+RGS-120.hop	stap {hop} bereikt de rol '{role}' met meer vullers op een plaats voor één waarde — zo'n stap vraagt een aggregatie, nooit een stille keuze van de eerste
 RGS-121	lezing '{expression}': het gedeclareerde attribuut '{attribute}' van '{objectType}' wint; dezelfde woorden lezen ook als het attribuut '{member}' van '{otherObjectType}' over de rol '{role}', en die lezing geldt hier niet
-RGS-122	genavigeerde lezing '{expression}' bindt niet ({reason}), dus zij is gelezen als het attribuut '{attribute}' van '{objectType}': '{attribute}' is neither an attribute nor a characteristic of '{objectType}'
+RGS-122	genavigeerde lezing '{expression}' bindt niet ({reason}), dus zij is gelezen als het attribuut '{attribute}' van '{objectType}': '{attribute}' is geen attribuut en geen kenmerk van '{objectType}'
 RGS-122.no-relation	geen relatie verbindt '{from}' met '{type}'
 RGS-122.reads-as-type	'{step}' leest als het objecttype '{type}', en {connection}
 RGS-122.relations	{count} relaties verbinden '{from}' met '{type}'
 RGS-122.role-ambiguous	de rol '{step}' wijst vanaf '{from}' niet precies één relatie aan
-RGS-123	genavigeerde lezing '{expression}' noemt het subtype '{endpoint}', maar de rol '{roleName}' komt uit op '{fillerType}': the navigation reaches '{fillerType}', not the endpoint '{endpoint}'
-RGS-124	lezing '{expression}': {subjectPhrase} noemt vanaf '{subject}' geen rol en geen objecttype: attribute reference '{attribute}' without a subjectType: it resolves against no declaration
+RGS-123	genavigeerde lezing '{expression}' noemt het subtype '{endpoint}', maar de rol '{roleName}' komt uit op '{fillerType}': de navigatie bereikt '{fillerType}', niet het eindpunt '{endpoint}'
+RGS-124	lezing '{expression}': {subjectPhrase} noemt vanaf '{subject}' geen rol en geen objecttype: attribuutverwijzing '{attribute}' zonder subjectType: zij verwijst naar geen declaratie
 RGS-124.own-subject	haar onderwerp
 RGS-124.written-source	'{source}'
 RGS-125	genavigeerde lezing '{expression}': het lid '{member}' bestaat niet op '{fillerType}', de vuller van de rol '{roleName}'{where}: {sentence}
-RGS-125.neither-member	'{member}' is neither an attribute nor a characteristic of '{fillerType}'
+RGS-125.neither-member	'{member}' is geen attribuut en geen kenmerk van '{fillerType}'
 RGS-125.nowhere	, en op geen ander objecttype
 RGS-125.other-type	, wel op {types}, dat geen subtype van '{fillerType}' is
 RGS-125.other-types	, wel op {types}, die geen subtype van '{fillerType}' zijn
-RGS-125.reaches	the navigation reaches '{fillerType}', not the endpoint '{endpoint}'
+RGS-125.reaches	de navigatie bereikt '{fillerType}', niet het eindpunt '{endpoint}'
 RGS-125.subtype	, wel op het subtype {types}
 RGS-125.subtypes	, wel op de subtypen {types}
-RGS-126	genavigeerde lezing '{expression}': het lid '{member}' van '{fillerType}', de vuller van de rol '{roleName}', is een kenmerk en geen attribuut: '{member}' is a characteristic of '{fillerType}', not an attribute — a characteristic endpoint is ill-formed in a value position
-RGS-127	vouw '{expression}' met een geschreven stap op haar bron: a path on a fold source is ill-formed (the fold's relation is its range, sourceRole or sourcePath)
+RGS-126	genavigeerde lezing '{expression}': het lid '{member}' van '{fillerType}', de vuller van de rol '{roleName}', is een kenmerk en geen attribuut, en een kenmerk als eindpunt is niet welgevormd op een plaats voor een waarde
+RGS-127	vouw '{expression}' met een geschreven stap op haar bron: een pad op een vouwbron is niet welgevormd (de relatie van de vouw is haar bereik, sourceRole of sourcePath)
 RGS-128	vouw '{expression}' over '{attribute}' op {objectType}, een ander type dan het onderwerp{range}
-RGS-128.range-anchor	: fold-source subjectType '{sourceType}' is not the fold's anchor '{subject}' ({hint}): the executors resolve '{attribute}' against the anchor, never against this field, so the two spellings name different declarations
-RGS-128.range-element	: the elementType '{elementType}' of a total without a range is not the fold subject '{subject}': without a range the fold is the subject's own read, so its elementType must name the subject type
+RGS-128.range-anchor	: het subjectType '{sourceType}' van de vouwbron is niet het anker '{subject}' van de vouw ({hint}): de uitvoerders zoeken '{attribute}' op bij het anker, nooit bij dit veld, dus de twee spellingen noemen verschillende declaraties
+RGS-128.range-element	: het elementType '{elementType}' van een totaal zonder bereik is niet het onderwerp '{subject}' van de vouw: zonder bereik is de vouw een lezing op het eigen onderwerp, dus haar elementType moet het onderwerptype noemen
 RGS-128.range-own	: zonder bereik zou de wire haar lezen als het totaal van een eigen attribuut van het onderwerp
-RGS-128.range-written	: a single-argument fold with an elementType carries its range (sourceRole or sourcePath) under every kind but total: the range is written, never derived
-RGS-128.reads-own	a fold without a range reads the subject's own attribute
+RGS-128.range-written	: een vouw met één argument en een elementType draagt haar bereik (sourceRole of sourcePath) onder elke soort behalve totaal: het bereik wordt geschreven, nooit afgeleid
+RGS-128.reads-own	een vouw zonder bereik leest het eigen attribuut van het onderwerp
 RGS-129	vouw '{expression}' over een eigen attribuut van het onderwerp, dat geen instanties telt{range}
 RGS-130	vouw '{expression}' zonder onderwerp om haar bereik vanaf te bepalen{range}
 RGS-131	vouw '{expression}' zonder bereik ({cause}){range}
 RGS-131.written-anchor	de geschreven bron '{source}' loopt via '{anchor}', een ander anker dan het onderwerp, en een bereik vanaf zo'n anker schrijft deze frontend niet
-RGS-132	periodevergelijking onder '{words}' ({place}): a time window under none or a counting quantifier: the window gates the RULE, and no reading is specified for a verdict that is counted or complemented
+RGS-132	periodevergelijking onder '{words}' ({place}): een tijdvenster onder geen of onder een telkwantor: het venster begrenst de REGEL, en er is geen lezing bepaald voor een oordeel dat geteld of gecomplementeerd wordt
 RGS-132.place-compound	als lid van een samengestelde voorwaarde
 RGS-132.place-fold	in het filter of de toets van een kwantorvouw
 RGS-133	{head}: de basisregel is geen kenmerktoekenning of gelijkstelling (bv. een initialisatie) — daarover wordt geen defaults-groep gebouwd (§4)
@@ -446,33 +469,33 @@ RGS-160	{head}: '(mag opgegeven worden)', en de initialisatie '{name}' van '{att
 RGS-161	{head}: '(mag opgegeven worden)', en '{attribute}' heeft twee initialisaties in één erflijn ('{highName}' voor {highType} en '{lowName}' voor {lowType}) — de effectieve stapel van {lowType} zou twee initialisatiedefaults dragen, en RUNTIME-SEMANTICS ch. 7.10 kent er één; zonder de markering weigert WF-079 dit paar (dialect §7)
 RGS-162	{head}: '(mag opgegeven worden)', en de initialisatie '{name}' van '{attribute}' voor {subtype} heeft {problem} — naast de gegenereerde defaults-groep op {objectType} wordt zij een default in de effectieve stapel van {subtype} (RUNTIME-SEMANTICS ch. 7.10), en die neemt geen regel met een venster op (dialect §7)
 RGS-163	kringverwijzing tussen berekeningen: {cycle} -> {start} — herberekening bereikt mogelijk geen fixpunt (de engine begrenst het aantal activaties)
-RGS-164	setlezing buiten een vouwbron '{source}': the source of this count aggregation reads '{attribute}', a member of the element type '{elementType}': a count folds INSTANCES, so its source is a count source naming the relation's role, never a value read per contributor
+RGS-164	setlezing buiten een vouwbron '{source}': de bron van deze telling leest '{attribute}', een lid van het elementType '{elementType}': een telling vouwt INSTANTIES, dus haar bron is een tellingbron die de rol van de relatie noemt, nooit een waarde die per bijdrager gelezen wordt
 RGS-165	setlezing buiten een vouwbron '{source}': {sentences}
 RGS-166	setlezing buiten een vouwbron: '{source}' noemt de waarde van elk lid van de verzameling — alleen toegestaan als bron van één waardevouw (som, totaal, minimum, maximum, eerste, laatste, aantal gevulde waarden); een instantietelling vouwt de leden zelf en leest geen waarde per lid, dus als bron van 'aantal' ook niet (WF-093 (b), IR-SPEC ch. 4.3)
 RGS-167	setlezing buiten een vouwbron: '{source}' noemt de waarde van elk lid van de verzameling — alleen toegestaan als bron van één waardevouw (som, totaal, minimum, maximum, eerste, laatste, aantal gevulde waarden); hier wordt één waarde verwacht, en een meervoudige stap in een lezing vraagt een aggregatie (WF-053, IR-SPEC ch. 4.1a)
 RGS-168	beslistabel '{name}' heeft geen tabelinhoud (alleen een kop) — wordt niet naar IR/DRL omgezet
 RGS-169	beslistabel '{name}': {sentences}
-RGS-169.duplicate-name	duplicate name '{name}' in {array}
+RGS-169.duplicate-name	dubbele naam '{name}' in {array}
 RGS-170	beslistabel-desugar: syntaxfout in gegenereerde regel: {message}
-RGS-171	regel '{name}': validity windows of versions '{name} #{earlierVersion}' and '{name} #{laterVersion}' overlap ({row})
+RGS-171	regel '{name}': de geldigheidsvensters van de versies '{name} #{earlierVersion}' en '{name} #{laterVersion}' overlappen ({row})
 RGS-172	geldigheidsperioden van regelversies overlappen (regel '{name}')
 RGS-173	ongeldige versiegeldigheidsgrens '{bound}' (verwacht een datum dd-mm-jjjj of een jaartal van vier cijfers)
 RGS-174	versiegeldigheidsgrens '{bound}' draagt een tijdcomponent; de geldigheid is datumgranulair (verwacht een datum dd-mm-jjjj of een jaartal van vier cijfers)
 RGS-175	ongedefinieerd {reason} (gebruikt door '{user}')
 RGS-176	dagsoortdefinitie '{day}' mist een voorwaarde (regel '{name}')
-RGS-177	day-kind definition with a bounded validity window; must be always (from and to both absent)
-RGS-178	more than one definition for day kind '{dayKind}'
+RGS-177	dagsoortdefinitie met een begrensd geldigheidsvenster; moet altijd gelden (vanaf en tot allebei afwezig)
+RGS-178	meer dan één definitie voor dagsoort '{dayKind}'
 RGS-179	resultaatdeel 'resultaatdeel' wordt nog niet naar IR/DRL omgezet (regel '{name}')
 RGS-180	consistentieregel wordt nog niet (volledig) naar IR/DRL omgezet (regel '{name}')
 RGS-181	uniciteit '{name}' binnen '{scopeParent}' zonder binding ({relationCount} relaties kennen een rol '{parentRole}' tegenover {elementType}, en '{writtenRole}' noemt geen rol die er precies één aanwijst): zonder binding zou de wire haar lezen als een uniciteit over alle instanties van {elementType}, en dat is niet wat er staat
 RGS-182	uniciteit '{name}' binnen '{scopeParent}': de relatie die de begrenzing draagt is wederkerig, en een begrenzing over een wederkerig feittype schrijft deze frontend niet (de wire schrijft haar als rolbinding van een feittype met twee rollen)
-RGS-183	uniciteit '{name}' binnen '{scopeParent}': the scope role '{role}' is to-many — a scope parent is one instance
+RGS-183	uniciteit '{name}' binnen '{scopeParent}': de afbakeningsrol '{role}' heeft meer vullers — een afbakeningsouder is één instantie
 RGS-184	verdeling met afronding/maximum zonder herkenbare onverdeelde rest (§9.7.3/§9.7.4): het restant wordt niet vastgelegd (regel '{name}')
 RGS-185	verdeling '{name}' zonder verbindende rol ({reason}): missing field 'connectingRole'
 RGS-186	objectcreatie '{name}': een {objectType} maakt een {objectType}, en de zin noemt geen rol die het nieuwe object bindt; dan komt de koppeling uit het typenpaar, en die afleiding koppelt bij een zelfgetypeerd paar niets (RUNTIME-SEMANTICS ch. 5.5). Noem de rol: 'Een {objectType} heeft een <rol> met …', met als <rol> {roles}
 RGS-187	kenmerkwaardetoekenning '{characteristic}': de toegekende waarde moet een booleaanse expressie zijn
 RGS-188	kenmerkwaardetoekenning '{characteristic}' vereist waar of onwaar (§13.4.6.4), niet '{value}'
-RGS-189	objectcreatie: '{name}' is not a declared attribute of '{objectType}'
+RGS-189	objectcreatie: '{name}' is geen gedeclareerd attribuut van '{objectType}'
 RGS-190	feitcreatie wordt nog niet naar IR/DRL omgezet (regel '{name}'): {sentence}
 RGS-190.ambiguous	rol of feittype niet eenduidig te herleiden
 RGS-190.indirect	doelketen verwijst niet rechtstreeks naar de anker (geen back-reference)
@@ -482,29 +505,29 @@ RGS-190.same-relation	de nieuwe en de bestaande relatie vallen samen (zelfde ref
 RGS-190.step-field	referentieveld-zijde voor tussenstap '{role}' niet af te leiden
 RGS-190.step-role	tussenstap-rol '{role}' niet eenduidig te herleiden
 RGS-191	regel '{name}'{rowTable}: 'is niet een {characteristic}' — de vorm 'is niet een' ontkent een zelfstandig kenmerk (Tabel 16), en '{characteristic}' is {category}; schrijf {spelling} (dialect §4)
-RGS-192	startpuntbepaling (regel '{name}'): start point for undeclared timeline '{timeline}'
-RGS-193	startpuntbepaling (regel '{name}'): start point for fixed-start timeline '{timeline}'
-RGS-194	startpuntbepaling (regel '{name}'): object type '{objectType}' is not declared
+RGS-192	startpuntbepaling (regel '{name}'): startpunt voor de ongedeclareerde tijdlijn '{timeline}'
+RGS-193	startpuntbepaling (regel '{name}'): startpunt voor de tijdlijn met een vast begin '{timeline}'
+RGS-194	startpuntbepaling (regel '{name}'): objecttype '{objectType}' is niet gedeclareerd
 RGS-195	startpuntbepaling: attribuutnaam '{member}' is gereserveerd voor het startpunt-anker maar al gedeclareerd als {existing} (regel '{name}')
-RGS-196	startpuntbepaling (regel '{name}'): anchor member '{member}' is {kind}, must be a day-precision date
-RGS-197	teken-beperking: {description} is written into a target under a {sign} sign restriction
-RGS-197.negative-literal	negative literal '{lexeme}'
-RGS-197.other-literal	literal '{lexeme}'
-RGS-198	enumeration label '{label}' is not in the declared domain
+RGS-196	startpuntbepaling (regel '{name}'): ankerlid '{member}' heeft de soort {kind}, moet een datum op dagprecisie zijn
+RGS-197	teken-beperking: {description} wordt geschreven in een doel met de tekenbeperking {sign}
+RGS-197.negative-literal	de negatieve literal '{lexeme}'
+RGS-197.other-literal	de literal '{lexeme}'
+RGS-198	enumeratiewaarde '{label}' staat niet in het gedeclareerde domein
 RGS-199	periodevergelijking '{comparison}' volgt op een laatste bullet 'het is de periode' van een samengestelde deelselectie: de parser leest die bullet als een kenmerk 'het is de periode' en haar grens als een venster op de hele regel — een ander document dan er staat (§8.4.3). Schrijf het venster als voorwaardendeel van de regel ('… {comparison}' achter het resultaatdeel: vóór die grens vuurt de regel niet), of zet de periodebullet niet als laatste in de deelselectie (dan leest de parser haar als lid van het filter)
-RGS-200	periodevergelijking: window bound is {kind}, must be a date
-RGS-201	periodevergelijking (de {side}-grens '{bound}'): the {fromTo} bound of a time window is a millisecond-precision date: the window is a range of civil days and no clause reads an instant bound
-RGS-202	periodevergelijking (de {side}-grens '{bound}'): the {fromTo} bound of a time window is {what} — a bound is a day-precise date expression over the subject, the parameters and literals
-RGS-202.computed	a computed date expression of a form that reads more than the subject, the parameters and literals
-RGS-202.navigated-read	a navigated read of '{attribute}'
-RGS-202.no-subject	the attribute '{attribute}' at a position with no subject to own it
-RGS-202.parameter-bound	the time-dependent parameter '{parameter}'
-RGS-202.time-dependent	the time-dependent attribute '{attribute}'
-RGS-203	telwoord van een kwantificatie: counting quantifier with threshold {threshold} < 1
+RGS-200	periodevergelijking: de venstergrens heeft de soort {kind}, moet een datum zijn
+RGS-201	periodevergelijking (de {side}-grens '{bound}'): de {side}-grens van een tijdvenster is een datum met millisecondeprecisie: het venster is een reeks kalenderdagen en geen clausule leest een tijdstip als grens
+RGS-202	periodevergelijking (de {side}-grens '{bound}'): de {side}-grens van een tijdvenster is {what} — een grens is een datumexpressie op dagprecisie over het onderwerp, de parameters en literals
+RGS-202.computed	een berekende datumexpressie van een vorm die meer leest dan het onderwerp, de parameters en literals
+RGS-202.navigated-read	een genavigeerde lezing van '{attribute}'
+RGS-202.no-subject	het attribuut '{attribute}' op een plaats zonder onderwerp dat het bezit
+RGS-202.parameter-bound	de tijdsafhankelijke parameter '{parameter}'
+RGS-202.time-dependent	het tijdsafhankelijke attribuut '{attribute}'
+RGS-203	telwoord van een kwantificatie: telkwantor met drempel {threshold} < 1
 RGS-204	telwoord van een kwantificatie moet een positief geheel getal (>= 1) zijn
 RGS-205	ongeldig aantal cijfers '{lexeme}' bij 'numeriek met exact … cijfers' (verwacht een geheel getal, §8.1.4)
-RGS-206	de check op volledige periode (gedurende de/het gehele jaar/maand): wholePeriod qualifier on a non-time-dependent operand
-RGS-207	de check op volledige periode (gedurende de/het gehele jaar/maand): wholePeriod qualifier on a non-time-dependent characteristic
+RGS-206	de check op volledige periode (gedurende de/het gehele jaar/maand): wholePeriod-kwalificatie op een operand die niet tijdsafhankelijk is
+RGS-207	de check op volledige periode (gedurende de/het gehele jaar/maand): wholePeriod-kwalificatie op een kenmerk dat niet tijdsafhankelijk is
 RGS-208	de check op volledige periode (gedurende de/het gehele jaar/maand) kan alleen op een tijdsafhankelijk onderwerp worden toegepast (§8.2): {source}
 RGS-209	het telwoord van de kwantor in '{source}' is geen positief geheel getal (>= 1), dus de vouw wordt NIET gelowerd: een drempel onder 1 stelt geen telling die iets kan voldoen en wordt op de wire geweigerd (WF-041, IR-SPEC ch. 4.5); de setlezing blijft daarmee buiten een vouwbron staan (WF-053)
 RGS-210	de 'die/dat'-deelselectie in '{source}' wordt niet omgezet naar een kwantorvouw-filter: {reason}; de vouw wordt daarom NIET gelowerd — een vouw over het volle bereik zou een andere verzameling kwantificeren dan de zin noemt, dus de setlezing blijft buiten een vouwbron staan (WF-053)
@@ -576,23 +599,23 @@ RGS-276	{what}: '{label}' is geen waarde van de enumeratie {domain} ({values})
 RGS-277	{what}: er staat geen waarde
 RGS-278	{what}: de waarde '{value}' is niet gelezen
 RGS-279	{what}: de tekstwaarde draagt een «expressie», en een waarde in een scenario is letterlijk
-RGS-280	{operation}: sub-day time unit on a day-precision date (millisecond precision required)
+RGS-280	{operation}: tijdseenheid binnen de dag op een datum met dagprecisie (millisecondeprecisie vereist)
 RGS-281	{operator} vereist numerieke operanden, kreeg {left} en {right}
-RGS-283	tot de macht: power operands must be unitless
+RGS-283	tot de macht: de operanden van een macht moeten zonder eenheid zijn
 RGS-284	operator '{operator}' vereist numerieke operanden, kreeg {left} en {right}
-RGS-285	gelijk: equality across families: {left} vs {right}
-RGS-286	equality operands have incompatible units
+RGS-285	gelijk: gelijkheid tussen families: {left} tegenover {right}
+RGS-286	de operanden van een gelijkheid hebben onverenigbare eenheden
 RGS-287	gelijk/ongelijk vereist operanden van hetzelfde datatype, kreeg {left} en {right}
-RGS-288	gelijk: equality across date precisions
-RGS-289	gelijk: equality across different enumeration domains
-RGS-290	elfproef: elevenTest operand is {kind}, must be text or a whole unitless number
-RGS-291	numeriek met exact: exactDigits operand is {kind}, must be text
-RGS-292	dagsoort: day-kind predicate operand is {kind}, must be a date
-RGS-295	date ± date is ill-formed (date arithmetic takes a date and a duration)
-RGS-296	duration − date is ill-formed (subtraction admits the date on the left only)
-RGS-297	duration + date is ill-formed (the date stands on the left; date arithmetic does not commute)
-RGS-298	date ± duration: the duration operand is {kind}, must be a number carrying a time unit
-RGS-299	date ± duration: the duration operand carries no time unit
+RGS-288	gelijk: gelijkheid tussen datumprecisies
+RGS-289	gelijk: gelijkheid tussen verschillende enumeratiedomeinen
+RGS-290	elfproef: de operand van elevenTest heeft de soort {kind}, moet tekst of een geheel getal zonder eenheid zijn
+RGS-291	numeriek met exact: de operand van exactDigits heeft de soort {kind}, moet tekst zijn
+RGS-292	dagsoort: de operand van het dagsoortpredicaat heeft de soort {kind}, moet een datum zijn
+RGS-295	datum ± datum is niet welgevormd (datumrekening neemt een datum en een tijdsduur)
+RGS-296	tijdsduur − datum is niet welgevormd (aftrekken laat de datum alleen links toe)
+RGS-297	tijdsduur + datum is niet welgevormd (de datum staat links; datumrekening is niet commutatief)
+RGS-298	datum ± tijdsduur: de operand voor de tijdsduur heeft de soort {kind}, moet een getal met een tijdseenheid zijn
+RGS-299	datum ± tijdsduur: de operand voor de tijdsduur draagt geen tijdseenheid
 RGS-301	rij {row}: lege conclusie-cel — een resultaatdeel is verplicht (§12)
 RGS-302	rij {row}: 'indien' mag niet in een conclusie-cel staan (§12)
 RGS-303	rij {row}: een beslistabel-conclusie moet 'moet gesteld worden op' gebruiken, niet 'berekend als' (§12)
@@ -600,7 +623,7 @@ RGS-304	rij {row}: een kenmerk-conclusie 'onwaar' kan niet als negatieve toekenn
 RGS-305	rij {row}: alleen een gelijkstelling ('… moet gesteld worden op') of een kenmerktoekenning ('… is …' met cel 'waar') is toegestaan in een beslistabel-conclusie (§12)
 RGS-306	het onderwerp '{subjectSource}' lost niet op tot een objecttype: een regel schrijft een attribuut of kenmerk van zijn eigen universele onderwerp ('een <Objecttype>'), en een navigatie naar een ander exemplaar bouwt deze frontend niet als regeldoel
 RGS-308	het doel is een {cell} met de labels achter het onderwerp: een celdoel noemt zijn labels direct achter het attribuut, vóór het onderwerp, zoals ALEF een cel schrijft; zonder dit hek schreef de zin het hele attribuut
-RGS-309	genavigeerde lezing '{expression}' is niet als navigatie gelegd: '{attribute}' staat op '{fillerType}', de vuller van de rol '{role}', maar zij is gelezen als het attribuut '{name}' van '{objectType}': '{name}' is neither an attribute nor a characteristic of '{objectType}'
+RGS-309	genavigeerde lezing '{expression}' is niet als navigatie gelegd: '{attribute}' staat op '{fillerType}', de vuller van de rol '{role}', maar zij is gelezen als het attribuut '{name}' van '{objectType}': '{name}' is geen attribuut en geen kenmerk van '{objectType}'
 RGS-310	{head}: {designation} voor {subtype} staat vóór {laterDesignation} voor {supertype} onder '{root}', en het later geschreven blok gaat voor; RUNTIME-SEMANTICS ch. 7.10 zet de eigen uitzonderingen van {subtype} echter boven de geërfde van {supertype}, zodat bij een {subtype} '{name}' vóór '{laterName}' gaat. Schrijf '{name}' na '{laterName}' (dialect §4)
 RGS-311	{head}: de eigen uitzonderingen van {subtype} onder '{root}' worden de defaults-groep '{name}', en {form} heet al zo (bronregel {sourceLine}) — een vormnaam is uniek in het hele model, hoofdletters niet meegeteld (WF-020) (dialect §4)
 RGS-312	{head}: geen basisregel met die naam gevonden{reason} — de drager van een afwijking is een gewone platte regel (kenmerktoekenning of gelijkstelling) (dialect §4)
@@ -610,8 +633,8 @@ RGS-315	{head}: de dragers vormen een kring ({path}) — een uitzondering hangt 
 RGS-316	{head} (bronregel {line}): '(mag opgegeven worden)' genereert het {generatedKind} '{generated}', en {declaringType} declareert die naam al als {declaredKind} (bronregel {declaredLine}) — een naam die de markering genereert, bestaat nog niet in de erflijn van {objectType} (dialect §7)
 RGS-317	{head} (bronregel {line}): {writer} schrijft '{member}'{writerAt}, een lid dat '(mag opgegeven worden)' genereert — '{inputMember}' levert de casus, '{computedMember}' krijgt de schrijvers van '{attribute}', en '{deviatingMember}' kent de regel '{rule}' toe; een andere schrijver verdraagt zo'n lid niet (dialect §7)
 RGS-317.at	 (bronregel {line})
-RGS-318	day-kind condition reads {category} '{name}' — a day-kind condition references only dates, date-components, easterSunday, literals, parameters and other day kinds, never derived object state (an attribute or characteristic read)
-RGS-319	day-kind condition reads the session value '{value}' — a day kind classifies a bare date at stratum 0 (ch. 5.4), so its predicate is a function of THE DAY alone; the bound day (BoundDay) is admitted, a ContextValue naming a session value is refused
+RGS-318	dagsoortvoorwaarde leest {category} '{name}' — een dagsoortvoorwaarde verwijst alleen naar datums, datumcomponenten, easterSunday, literals, parameters en andere dagsoorten, nooit naar afgeleide toestand van een object (een lezing van een attribuut of kenmerk)
+RGS-319	dagsoortvoorwaarde leest de sessiewaarde '{value}' — een dagsoort deelt een kale datum in op stratum 0 (ch. 5.4), dus haar predicaat hangt alleen van DE DAG af; de gebonden dag (BoundDay) is toegelaten, een ContextValue die een sessiewaarde noemt wordt geweigerd
 RGS-320	regel '{name}'{rowTable}: '{written}' ontkent geen kenmerk van {subject} — {reason} (§3.5, dialect §4)
 RGS-320.attribute	'{rest}' is een attribuut van {subject} en geen kenmerk, en alleen een kenmerk wordt toegekend of ontkend
 RGS-320.boolean-attribute	'{rest}' is een attribuut van {subject} en geen kenmerk, en een attribuut heeft geen polariteit: dit Boolean-attribuut krijgt onwaar als waarde, te schrijven als 'moet gesteld worden op onwaar'
@@ -625,33 +648,33 @@ RGS-322.other-type	een lezing van '{attribute}' op '{type}', een ander objecttyp
 RGS-322.subtype	het attribuut '{attribute}' van '{type}', een subtype van het onderwerp '{subject}': niet elk onderwerp is een {type}
 RGS-322.supertype	het attribuut '{attribute}' van '{type}', een supertype van het onderwerp '{subject}': deze frontend leest die naam als een ander exemplaar, langs een feittype bereikt, en een venstergrens navigeert nooit. Lees de datum van het onderwerp zelf ('zijn {attribute}' of met de naam {subject})
 RGS-323	{sentences}
-RGS-323.side	operand of a numeric operator is {kind}
-RGS-324	additive operands have incompatible units
+RGS-323.side	operand van een numerieke operator heeft de soort {kind}
+RGS-324	de operanden van een optelling hebben onverenigbare eenheden
 RGS-325	{sentences}
-RGS-325.side	ordering operand is {kind}
-RGS-326	ordering operands have incompatible units
+RGS-325.side	operand van een ordening heeft de soort {kind}
+RGS-326	de operanden van een ordening hebben onverenigbare eenheden
 RGS-327	{sentences}
-RGS-327.side	date-ordering operand is {kind}
-RGS-328	clamp {position} is {kind}, must be numeric
+RGS-327.side	operand van een datumordening heeft de soort {kind}
+RGS-328	begrenzing: de positie {position} heeft de soort {kind}, moet numeriek zijn
 RGS-329	{function} vereist numerieke operanden, kreeg {type}
 RGS-330	{function}: als één operand een eenheid heeft, moeten alle operanden er een hebben
 RGS-331	{function}: eenheden '{left}' en '{right}' zijn niet in elkaar om te rekenen
 RGS-332	{function} vereist datumexpressies, kreeg {type}
-RGS-333	{function}: {fold} orders dates of two precisions (day and millisecond), which share no order
-RGS-334	toekenning: a {value} value is assigned to a {target} target
-RGS-335	assignment across incompatible units: value unit '{valueUnit}', target unit '{targetUnit}'
+RGS-333	{function}: {fold} ordent datums van twee precisies (dag en milliseconde), en die delen geen ordening
+RGS-334	toekenning: een waarde van de soort {value} wordt toegekend aan een doel van de soort {target}
+RGS-335	toekenning tussen onverenigbare eenheden: eenheid van de waarde '{valueUnit}', eenheid van het doel '{targetUnit}'
 RGS-336	kan een waarde van type {valueType} niet toekennen aan een {targetType}
-RGS-337	toekenning: a value of the {domainWord} '{valueDomain}' is assigned to a target of the {domainWord} '{targetDomain}'
+RGS-337	toekenning: een waarde van het enumeratiedomein '{valueDomain}' wordt toegekend aan een doel van het enumeratiedomein '{targetDomain}'
 RGS-338	het toe te kennen resultaat heeft meer decimalen ({valueDecimals}) dan het attribuut toelaat ({targetDecimals}); rond het resultaat eerst expliciet af (§6.1.2)
 RGS-339	kan een waarde van type {sourceType} niet verdelen over een {targetType}
 RGS-340	het toe te kennen aandeel kan {shareDecimals} decimalen hebben, meer dan de {targetDecimals} die het doel toelaat (RUNTIME-SEMANTICS ch. 2.3); rond de verdeling eerst expliciet af (§6.1.2/§9.7.4)
 RGS-341	als één operand een eenheid heeft, moeten beide er een hebben
 RGS-342	eenheden '{left}' en '{right}' zijn niet in elkaar om te rekenen
-RGS-343	date ± duration: the duration unit '{unit}' is neither a recognised time unit nor a declared day kind
+RGS-343	datum ± tijdsduur: de eenheid '{unit}' van de tijdsduur is geen herkende tijdseenheid en geen gedeclareerde dagsoort
 RGS-344	{sentences}
-RGS-344.dates-of-two-precisions	{fold} orders dates of two precisions (day and millisecond), which share no order
-RGS-344.numbers-and-dates	{fold} orders operands of two comparable families, numbers and dates, which share no ordering
-RGS-344.operand-sentence	operand of the {fold} ordering fold is {kind}, must be a number or a date
+RGS-344.dates-of-two-precisions	{fold} ordent datums van twee precisies (dag en milliseconde), en die delen geen ordening
+RGS-344.numbers-and-dates	{fold} ordent operanden van twee vergelijkbare families, getallen en datums, en die delen geen ordening
+RGS-344.operand-sentence	operand van de ordenende vouw {fold} heeft de soort {kind}, moet een getal of een datum zijn
 RGS-345	feitmodel-contract: {violation}
 RGS-346	dekking: {category} '{name}' {verdict}{reasonClause}
 RGS-346.reason	 — {reason}
@@ -696,3 +719,11 @@ RGS-376	'{expression}' leest de waarde van '{attribute}' van {objectType}, dat o
 RGS-377	{what}: '{marker}' past hier niet als afwezigheidsmarkering: {admitted} (RUNTIME-SEMANTICS ch. 9.5)
 RGS-378	verdeling '{name}' noemt het tijdsafhankelijke attribuut '{attribute}' van {objectType}: een verdeling verdeelt één bedrag op één moment, en een lezing ervan per dag is niet gedefinieerd (WF-128)
 RGS-379	{kind} '{name}' leest negatief, zoals in een ontkenning of een leeg-toets, wat {producerKind} '{producer}' schrijft, op een kring; een kring draagt geen negatieve rand, ook niet een kring door een recursieve creatie ({wf}): {sentence}
+RGS-380	parameter '{parameter}' heeft overlappende geldigheidsperiodes {first} en {second}
+RGS-381	parameter '{parameter}' heeft geen geldige waarde op peildatum {asOfDate}
+RGS-382	een breuk met noemer 0
+RGS-383	onbekende omrekenfactor van '{abbreviation}' ({factor}): canoniek '{canonical}' zonder gedeclareerde factorNaarCanoniek
+RGS-384	de eenheid '{unit}' is geen gedeclareerde eenheid: haar spelling komt uit rendering(), haar delen uit factors()
+RGS-385	geen omrekenfactor van eenheid '{unit}' naar '{target}': niet inwisselbaar
+RGS-386	semantic tokens: geen bronbestand opgegeven
+RGS-387	een bronbestand heeft een naam en een tekst

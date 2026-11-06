@@ -169,9 +169,9 @@ class FilledCountDialectTest {
     /** WF-037's filled-count shape, in the verifier's sentence after the Dutch context. Pinned whole: the
      *  sentence names the CONSTRUCT, not just the position, so it stays a witness of this kind and no other. */
     static final String NOT_SET =
-            "gevulde telling 'het aantal gevulde waarden van het gewicht van de Vondst': the filled count is an "
-            + "INSTANCE fold and MUST carry an element type: without one its argument is no fold source at all, and "
-            + "the count has no contributors whose values it could test for presence (ch. 4.3)";
+            "gevulde telling 'het aantal gevulde waarden van het gewicht van de Vondst': de gevulde telling is een "
+            + "vouw over INSTANTIES en MOET een elementType dragen: zonder elementType is haar argument helemaal geen "
+            + "vouwbron, en heeft de telling geen bijdragers waarvan zij de waarden op aanwezigheid kan toetsen (ch. 4.3)";
 
     @Test void a_non_set_source_is_loudly_refused() {
         RegelSpraakModel m = resolve("""
@@ -181,7 +181,7 @@ class FilledCountDialectTest {
                     Het aantal gewogen vondsten van een Jutter moet berekend worden als het aantal gevulde waarden van het gewicht van de Vondst.
             """);
         List<Diagnostic> ds = m.diagnostics.stream()
-                .filter(d -> d.message().contains("the filled count is an INSTANCE fold")).toList();
+                .filter(d -> d.message().contains("de gevulde telling is een vouw over INSTANTIES")).toList();
         assertEquals(1, ds.size(), () -> "verwacht één WF-037-melding, kreeg: " + m.diagnostics);
         assertEquals(NOT_SET, ds.get(0).message());
         assertEquals(Severity.ERROR, ds.get(0).severity());
@@ -266,7 +266,7 @@ class FilledCountDialectTest {
     @Test void a_colliding_role_name_shifts_loudly_and_not_silently() {
         RegelSpraakModel m = Resolver.resolve(COLLIDING_NAME);
         List<Diagnostic> ds = m.diagnostics.stream()
-                .filter(d -> d.message().contains("the filled count is an INSTANCE fold")).toList();
+                .filter(d -> d.message().contains("de gevulde telling is een vouw over INSTANTIES")).toList();
         assertEquals(1, ds.size(), () -> "de botsing verschuift zonder melding: " + m.diagnostics);
         assertEquals(Severity.ERROR, ds.get(0).severity());
         assertTrue(ds.get(0).message().contains("'het aantal gevulde waarden van de Jutter'"),

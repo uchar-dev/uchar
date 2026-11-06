@@ -277,8 +277,8 @@ class IrEmitterTest {
             Objecttype de Vondst
                 het gewicht Numeriek (geheel getal) met eenheid t;
             """);
-        assertEquals(List.of("eenheidstelsel 'Gewicht', al gedeclareerd voor de eenheid 't': the unit 't' is declared "
-                        + "twice in the unit system 'Gewicht': one Unit per abbreviation"),
+        assertEquals(List.of("eenheidstelsel 'Gewicht', al gedeclareerd voor de eenheid 't': de eenheid 't' is twee "
+                        + "keer gedeclareerd in het eenheidstelsel 'Gewicht', en een afkorting noemt één eenheid"),
                 duplicates.errors().stream().map(Diagnostic::message).toList());
         assertEquals(4, duplicates.errors().get(0).line(), "de melding staat op de tweede declaratie");
         assertEquals(dev.uchar.regelspraak.model.Unit.Fraction.of(1000, 1),
@@ -291,8 +291,9 @@ class IrEmitterTest {
             Objecttype de Vondst
                 het gewicht Numeriek (geheel getal) met eenheid kg;
             """);
-        assertEquals(List.of("eenheidstelsel 'Gewicht', als 'kg' al gedeclareerd voor de eenheid 'kg': the unit 'KG' is "
-                        + "declared twice in the unit system 'Gewicht': one Unit per abbreviation"),
+        assertEquals(List.of("eenheidstelsel 'Gewicht', als 'kg' al gedeclareerd voor de eenheid 'kg': de eenheid 'KG' "
+                        + "is twee keer gedeclareerd in het eenheidstelsel 'Gewicht', en een afkorting noemt één "
+                        + "eenheid"),
                 caseCollision.errors().stream().map(Diagnostic::message).toList());
         assertFalse(caseCollision.unitSystems.get("Gewicht").units.containsKey("KG"), "de tweede declaratie is geweigerd");
 
@@ -331,7 +332,7 @@ class IrEmitterTest {
         weight.units.put("KG", new dev.uchar.regelspraak.model.Unit("KG", "Gewicht"));
         m.unitSystems.put("Gewicht", weight);
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
-        assertTrue(e.getMessage().contains("'kg' en 'KG'") && e.getMessage().contains("(WF-009)"), e.getMessage());
+        assertTrue(e.getMessage().contains("'kg' and 'KG'") && e.getMessage().contains("(WF-009)"), e.getMessage());
     }
 
     @Test void percentage_literal_lexeme_is_bare() {
@@ -414,8 +415,8 @@ class IrEmitterTest {
                 geldig altijd
                     Het strandgeld van een Vondst moet gesteld worden op -0_1/2.
             """);
-        assertTrue(m.errors().stream().anyMatch(d -> d.message().equals("teken-beperking: negative literal '-1/2' is "
-                        + "written into a target under a non-negative sign restriction")),
+        assertTrue(m.errors().stream().anyMatch(d -> d.message().equals("teken-beperking: de negatieve literal '-1/2' wordt "
+                        + "geschreven in een doel met de tekenbeperking niet-negatief")),
                 () -> "de weigering noemt het rationaal van de wire: " + m.diagnostics);
     }
 
@@ -1112,7 +1113,7 @@ class IrEmitterTest {
                 "de ongemoeide lezing draagt haar binding");
         secondAfdelingRole(m);
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
-        assertTrue(e.getMessage().contains("het niveau van zijn afdeling") && e.getMessage().contains("navigeert"),
+        assertTrue(e.getMessage().contains("het niveau van zijn afdeling") && e.getMessage().contains("navigates"),
                 e::getMessage);
     }
 
@@ -1129,7 +1130,7 @@ class IrEmitterTest {
                 "de ongemoeide kenmerkcheck draagt haar binding");
         secondAfdelingRole(m);
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
-        assertTrue(e.getMessage().contains("kenmerkcheck"), e::getMessage);
+        assertTrue(e.getMessage().contains("characteristic check"), e::getMessage);
     }
 
     @Test void a_fact_creation_without_a_whole_symbolic_block_is_refused() {
@@ -1140,14 +1141,14 @@ class IrEmitterTest {
         m.factCreations.set(0, new ResolvedFactCreation(fc.name(), fc.anchor(), fc.target(), fc.setField(), fc.joinField(),
                 fc.pathSteps(), fc.condition(), fc.validity(), fc.factType(), fc.anchorRole(), fc.targetRole(), null));
         IllegalStateException withoutJoin = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
-        assertTrue(withoutJoin.getMessage().contains("niet heel symbolisch gebonden"), withoutJoin::getMessage);
+        assertTrue(withoutJoin.getMessage().contains("not bound symbolically throughout"), withoutJoin::getMessage);
 
         ResolvedFactCreation.PathStep t = fc.pathSteps().get(0);
         m.factCreations.set(0, new ResolvedFactCreation(fc.name(), fc.anchor(), fc.target(), fc.setField(), fc.joinField(),
                 List.of(new ResolvedFactCreation.PathStep(t.type(), t.field(), t.viaParentField())),
                 fc.condition(), fc.validity(), fc.factType(), fc.anchorRole(), fc.targetRole(), fc.path()));
         IllegalStateException withoutStep = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
-        assertTrue(withoutStep.getMessage().contains("niet heel symbolisch gebonden"), withoutStep::getMessage);
+        assertTrue(withoutStep.getMessage().contains("not bound symbolically throughout"), withoutStep::getMessage);
     }
 
     @Test void a_scoped_uniqueness_without_role_is_refused() {
@@ -1164,7 +1165,7 @@ class IrEmitterTest {
         m.uniquenesses.set(0, new ResolvedUniqueness(u.name(), u.subject(), u.keys(), u.scopeField(), u.source(),
                 u.validity()));
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
-        assertTrue(e.getMessage().contains("geen unieke rol"), e::getMessage);
+        assertTrue(e.getMessage().contains("no unique role"), e::getMessage);
     }
 
     @Test void an_unknown_type_is_null_on_a_derived_position_and_has_no_spelling_elsewhere() {
@@ -1195,7 +1196,7 @@ class IrEmitterTest {
                 new Expr.Binary(b.op(), b.left(), new Expr.Literal(six.valueText(), unknown, six.source()), b.type(), b.source()),
                 r.condition(), r.validity()));
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
-        assertTrue(e.getMessage().contains("onbekend datatype"), e::getMessage);
+        assertTrue(e.getMessage().contains("unknown datatype"), e::getMessage);
 
         m.resolvedRules.set(0, new ResolvedRule(r.name(), r.kind(), r.target(),
                 new Expr.Unresolved(unknown, b.source(), "test"), r.condition(), r.validity()));
@@ -1248,12 +1249,12 @@ class IrEmitterTest {
         record Case(String reason, List<String> names, List<List<String>> annotations) {}
         List<List<String>> none = List.of(List.of(), List.of(), List.of());
         for (Case g : List.of(
-                new Case("niet aaneengesloten", List.of("x #1", "y", "x #2"), none),
-                new Case("op één invoer", List.of("x #1", "y", "z"), none),
-                new Case("niet precies 1 tot en met", List.of("x #1", "x #3", "y"), none),
-                new Case("niet precies 1 tot en met", List.of("x #01", "x #2", "y"), none),
-                new Case("eindigt zelf op een versieachtervoegsel", List.of("x #1 #1", "x #1 #2", "y"), none),
-                new Case("verschillende statuutannotaties", List.of("x #1", "x #2", "y"),
+                new Case("not contiguous", List.of("x #1", "y", "x #2"), none),
+                new Case("on one entry", List.of("x #1", "y", "z"), none),
+                new Case("not exactly 1 through", List.of("x #1", "x #3", "y"), none),
+                new Case("not exactly 1 through", List.of("x #01", "x #2", "y"), none),
+                new Case("itself ends in a version suffix", List.of("x #1 #1", "x #1 #2", "y"), none),
+                new Case("different statute annotations", List.of("x #1", "x #2", "y"),
                         List.of(List.of("art. 1"), List.of("art. 2"), List.of())))) {
             RegelSpraakModel m = threeRules();
             for (int i = 0; i < 3; i++) {
@@ -1347,7 +1348,7 @@ class IrEmitterTest {
         assertTrue(IrEmitter.emit(m).contains("\"presentation\": \"equation\""), "de ongemoeide regel wordt geschreven");
         m.objectTypes.get("Jutter").characteristics.add("Toelage");
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
-        assertTrue(e.getMessage().contains("zowel een attribuut als een kenmerk") && e.getMessage().contains("(WF-022)"),
+        assertTrue(e.getMessage().contains("both an attribute and a characteristic") && e.getMessage().contains("(WF-022)"),
                 e::getMessage);
     }
 
@@ -1462,8 +1463,8 @@ class IrEmitterTest {
                     r.validity()));
             IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m),
                     () -> "geschreven: " + value);
-            assertTrue(e.getMessage().contains("geen type") || e.getMessage().contains("booleaanse waarde")
-                    || e.getMessage().contains("geen spelling"), e::getMessage);
+            assertTrue(e.getMessage().contains("no type") || e.getMessage().contains("a boolean value")
+                    || e.getMessage().contains("no spelling"), e::getMessage);
         }
     }
 
@@ -1500,7 +1501,7 @@ class IrEmitterTest {
                     r.validity()));
             IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m),
                     () -> "geschreven: " + value);
-            assertTrue(e.getMessage().contains("staat dat veld alleen op"), e::getMessage);
+            assertTrue(e.getMessage().contains("that field stands on"), e::getMessage);
         }
     }
 
@@ -1514,7 +1515,7 @@ class IrEmitterTest {
                 fc.joinField(), fc.pathSteps(), fc.condition(), fc.validity(), fc.factType(), fc.anchorRole(),
                 fc.targetRole(), fc.path()));
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
-        assertTrue(e.getMessage().contains("gedeclareerde vuller van de rol 'sponsorproject'"), e::getMessage);
+        assertTrue(e.getMessage().contains("declared filler of the role 'sponsorproject'"), e::getMessage);
     }
 
     // ---------------- L5: the source record ----------------

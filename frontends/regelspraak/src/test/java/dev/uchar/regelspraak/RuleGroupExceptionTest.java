@@ -118,7 +118,7 @@ class RuleGroupExceptionTest {
         assertTrue(t.contains("zijn basisregel is lid van regelgroep 'berging'"),
                 () -> "de melding noemt de basis als groepslid niet: " + t);
         // the consequence is the verifier's WF-033 sentence for the group the lift would leave
-        assertTrue(t.contains("group member 'bergingsbevoegd bij quotum' does not resolve to a rule form"),
+        assertTrue(t.contains("groepslid 'bergingsbevoegd bij quotum' verwijst naar geen regelvorm"),
                 () -> "de melding noemt het gevolg niet: " + t);
         // A refused block stays un-lifted, as every other refusal of the defaults pass leaves it.
         assertTrue(m.prioritizedDefaults.isEmpty(), () -> "een geweigerd blok hoort ongelift te blijven: " + m.prioritizedDefaults);
@@ -134,8 +134,8 @@ class RuleGroupExceptionTest {
         Diagnostic d = onlyError(m);
         assertEquals(lineOf(src, "Uitzondering op"), d.line(), () -> "de melding hoort op de kop van het blok: " + d);
         assertTrue(d.message().contains("zijn basisregel is lid van regelgroep 'berging'")
-                        && d.message().contains("group member 'bergingsbevoegd bij quotum' does not resolve to a "
-                                + "rule form"),
+                        && d.message().contains("groepslid 'bergingsbevoegd bij quotum' verwijst naar geen "
+                                + "regelvorm"),
                 () -> "de melding noemt de basis als groepslid niet: " + d);
         assertFalse(d.message().contains("direct na het laatste lid"),
                 () -> "de plaatsingsreden hoort hier niet te vuren: " + d);
@@ -187,8 +187,8 @@ class RuleGroupExceptionTest {
         // the membership arm speaks the verifier's WF-033 sentence, with the base's group and the block's place in
         // its Dutch context
         assertTrue(d.message().contains("(zijn basisregel is lid van regelgroep 'a', en het blok staat direct na het "
-                + "laatste lid van regelgroep 'b'): group member 'bergingsbevoegd bij quotum' does not resolve to a "
-                + "rule form"), d.message());
+                + "laatste lid van regelgroep 'b'): groepslid 'bergingsbevoegd bij quotum' verwijst naar geen "
+                + "regelvorm"), d.message());
         assertFalse(d.message().contains("'Regelgroep b'"), d.message());
         // and the advice, followed, gives a clean document
         String followed = MODEL + BASE + EXCEPTION
@@ -246,7 +246,7 @@ class RuleGroupExceptionTest {
         Diagnostic d = onlyError(m);
         assertEquals(lineOf(src, "Uitzondering op"), d.line(), () -> "de melding hoort op de kop van het blok: " + d);
         assertTrue(d.message().contains("zijn basisregel is een rij van beslistabel 'Bergingspremie', lid van regelgroep "
-                        + "'berging'): group member 'Bergingspremie 1' does not resolve to a rule form"),
+                        + "'berging'): groepslid 'Bergingspremie 1' verwijst naar geen regelvorm"),
                 d.message());
         assertTrue(m.prioritizedDefaults.isEmpty(), "een geweigerd blok hoort ongelift te blijven");
     }

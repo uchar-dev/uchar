@@ -366,6 +366,15 @@ stays honest about where it no longer proves toolchain agreement.
   member each; nothing else changed and nothing was refused. `casus/ir.json` was
   then re-emitted by uchar's frontend, which reproduced the migrated file byte for
   byte: no divergence.
+- **2026-11-06 — a diagnostic of the casus speaks Dutch throughout.** Executed by
+  the card `20261019-message-language.md` in `backlog/`: the frontend's Dutch
+  catalogue, its default, is Dutch in every entry, and the `diagnostics` list of
+  the wire carries the text in that language. One message in `casus/ir.json`
+  moved, the WARNING on the clamp of `toka-24` ("clamp minimum and base have
+  incompatible units" became "begrenzing minimum en basis hebben onverenigbare
+  eenheden"); nothing else in the file, and nothing in any `cases/` slice, moved.
+  The original toolchain still writes the English sentence, so for this one
+  message the comparison proves "frontend == the recorded state".
 
 ## Lifecycle
 

@@ -28,12 +28,20 @@ import static org.junit.jupiter.api.Assertions.*;
  * verifier's string literals.
  *
  * <p><b>What it reads.</b> The frontend's side is every string literal of the resolver and of the emitter, the two
- * places refusals are written; the English of {@code ir/Spelling} is its tables' own consistency checks, thrown when
- * the class loads and never a refusal of a document. A literal is split at its format specifiers, a producer prefix is
- * taken off (the emitter's name, a WF arm tag, a pointer, a Dutch context segment before {@code ": "}) and a trailing
- * {@code " — "} joiner, and what is left is English when it holds two words or more, a word of {@link #ENGLISH} and no
- * word of {@link #NEDERLANDS}. The verifier's side is every string literal of {@code spec/verifier/lib}, escapes
- * decoded and split at its Printf specifiers; a fragment passes when it stands in one of those pieces.
+ * places refusals are written, outside the text of an exception and outside a key of the catalogue, and the English
+ * catalogue's entries of the codes in
+ * {@link #VERIFIER_COPIES}. An exception's text guards an invariant of the frontend and is no refusal of a document; it
+ * is English and the verifier has no sentence for it (card message-language, owner's decision 1 of 2026-10-19). The
+ * Dutch catalogue is Dutch throughout (decision 2 of the same day, held by {@code scripts/check-rgs-codes.sh}), so the
+ * verifier's sentence stands in the English entry of its code, after a context in this frontend's words: the number
+ * after a key in {@link #VERIFIER_COPIES} counts the {@code ": "} segments of that context, which are left out. The
+ * English of {@code ir/Spelling} is its tables' own consistency checks, thrown when the class loads and never a refusal
+ * of a document. A literal or an entry is split at its format specifiers or places, a producer prefix is taken off (the
+ * emitter's name, a WF arm tag, a pointer, a context segment before {@code ": "} that is not English by the rule below)
+ * and a trailing {@code " — "} joiner, and what is left is English when it holds two words or more, a word of
+ * {@link #ENGLISH} and no word of {@link #NEDERLANDS}. The verifier's side is every string literal of
+ * {@code spec/verifier/lib}, escapes decoded and split at its Printf specifiers; a fragment passes when it stands in one
+ * of those pieces, and every code of {@link #VERIFIER_COPIES} gives at least one fragment.
  *
  * <p><b>Its edges.</b> A sentence the verifier builds around a variable is written in the frontend with the same
  * template, so that its fixed pieces are the verifier's (Typering's clamp and keuzetype-domain sentences). An English
@@ -64,13 +72,24 @@ class ReaderSentenceBoundaryTest {
             + "kan dat die als aan te om vereist kreeg heeft wel ook maar dus deze dit haar hij er nog zo op tot uit "
             + "worden omgezet regel regels onopgelost blijft komt koppelt").split(" "));
 
-    /** English producer sentences without a reader, each with the reason. */
-    private static final Map<String, String> WITHOUT_READER = Map.of(
-            "the resolver builds none, ",
-            "IrEmitter's refusal of an IfThenElse, an invariant of this emitter: no resolver route builds the node "
-                    + "(IR-SPEC ch. 4.10), so no document carries it",
-            "so this emitter has no verified wire shape for it",
-            "the second line of the same refusal");
+    /** The codes whose English entry carries the verifier's sentence for the same defect, measured on 2026-11-06 as
+     *  the codes whose Dutch entry carried it until the card message-language; after a colon, the number of
+     *  {@code ": "} segments of the context in front of it. */
+    private static final String VERIFIER_COPIES = ("RGS-015:1 RGS-016:1 RGS-018 RGS-035 RGS-036 RGS-037 RGS-060 "
+            + "RGS-066 RGS-067 RGS-071 RGS-077 RGS-078:1 RGS-079 RGS-080 "
+            + "RGS-081.operand-parameter RGS-081.operand-position RGS-081.rationale-date RGS-081.rationale-other "
+            + "RGS-081.sentence RGS-083:1 RGS-084.operand-sentence RGS-085:1 RGS-086 RGS-087 RGS-088 "
+            + "RGS-098.duplicate-name RGS-098.name-collision RGS-102:1 RGS-103:1 RGS-104 RGS-106:1 RGS-107 RGS-108:1 "
+            + "RGS-110:1 RGS-114:1 RGS-115:1 RGS-118:1 RGS-120.hop RGS-122:1 RGS-123:1 RGS-124:2 "
+            + "RGS-125.neither-member RGS-125.reaches RGS-126:2 RGS-127:1 RGS-128.range-anchor RGS-128.range-element "
+            + "RGS-128.range-written RGS-128.reads-own RGS-132:1 RGS-164:1 RGS-169.duplicate-name RGS-171 RGS-177 "
+            + "RGS-178 RGS-183 RGS-189:1 RGS-192 RGS-193 RGS-194:1 RGS-196:1 RGS-197 RGS-197.negative-literal "
+            + "RGS-198 RGS-200 RGS-201:1 RGS-202:1 RGS-202.computed RGS-202.navigated-read "
+            + "RGS-202.no-subject RGS-202.parameter-bound RGS-202.time-dependent RGS-203:1 RGS-206 RGS-207 RGS-280 "
+            + "RGS-283:1 RGS-285 RGS-286 RGS-288 RGS-289 RGS-290 RGS-291 RGS-292 RGS-295 RGS-296 RGS-297 RGS-298 "
+            + "RGS-299 RGS-309:2 RGS-318 RGS-319 RGS-323.side RGS-324 RGS-325.side RGS-326 RGS-327.side RGS-328 "
+            + "RGS-333 RGS-334 RGS-335 RGS-337 RGS-343 RGS-344.dates-of-two-precisions RGS-344.numbers-and-dates "
+            + "RGS-344.operand-sentence");
 
     /** A floor on the fragments read, so an extractor that reads nothing is no silent green (measured: 99; 153 once
      *  the structural refusals spoke the verifier's sentences). */
@@ -80,7 +99,7 @@ class ReaderSentenceBoundaryTest {
     private static final Pattern SPECIFIER = Pattern.compile("%[sdS]");
     private static final Pattern PLACE = Pattern.compile("\\{[A-Za-z][A-Za-z0-9]*\\}");
     private static final String CATALOGUE =
-            "frontends/regelspraak/src/main/resources/dev/uchar/regelspraak/message/messages-frontend.nl.tsv";
+            "frontends/regelspraak/src/main/resources/dev/uchar/regelspraak/message/messages-frontend.en.tsv";
 
     private static Path root() {
         for (Path p = Path.of("").toAbsolutePath(); p != null; p = p.getParent())
@@ -89,7 +108,10 @@ class ReaderSentenceBoundaryTest {
                 + " — deze getuige LEEST beide bronnen en mag niet overslaan als hij ze niet vindt");
     }
 
-    private record Fragment(String file, int rule, String text) {}
+    /** A fragment, with the line of its literal or the code of its entry. */
+    private record Fragment(String file, Object rule, String text) {}
+
+    private static final String CATALOGUE_FILE = "messages-frontend.en.tsv";
 
     @Test void every_english_sentence_of_the_frontend_is_in_the_verifier() throws IOException {
         List<String> pieces = verifierPieces(root());
@@ -97,7 +119,7 @@ class ReaderSentenceBoundaryTest {
         Set<String> seen = new LinkedHashSet<>();
         int read = 0;
         for (Fragment f : frontendFragments(root())) {
-            if (WITHOUT_READER.containsKey(f.text())) { seen.add(f.text()); continue; }
+            seen.add(f.file() + ":" + f.rule());
             read++;
             if (pieces.stream().noneMatch(s -> s.contains(f.text())))
                 faults.add(f.file() + ":" + f.rule() + " '" + f.text() + "'");
@@ -108,7 +130,12 @@ class ReaderSentenceBoundaryTest {
         int count = read;
         assertTrue(count >= MIN_FRAGMENTS, () -> "slechts " + count + " Engelse fragmenten gelezen, ondergrens "
                 + MIN_FRAGMENTS + " — het uitlezen sluit niet meer aan op de bron");
-        assertEquals(WITHOUT_READER.keySet(), seen, "de lijst van Engelse zinnen zonder lezer is verouderd");
+        List<String> silent = new ArrayList<>();
+        for (String entry : VERIFIER_COPIES.split(" ")) {
+            String key = entry.split(":")[0];
+            if (!seen.contains(CATALOGUE_FILE + ":" + key)) silent.add(key);
+        }
+        assertEquals(List.of(), silent, "codes van VERIFIER_COPIES waarvan de Engelse entry geen zin van de verifier draagt");
     }
 
     @Test void the_find_rule_refuses_an_outdated_sentence() throws IOException {
@@ -209,7 +236,10 @@ class ReaderSentenceBoundaryTest {
         List<Fragment> result = new ArrayList<>();
         for (Path p : frontendSources(w)) {
             String source = Files.readString(p, UTF_8);
+            List<int[]> exceptions = exceptionTexts(source);
             for (int[] position : javaLiteralPositions(source)) {
+                if (exceptions.stream().anyMatch(r -> r[0] <= position[0] && position[0] < r[1])) continue;
+                if (CATALOGUE_KEY.matcher(source.substring(position[0], position[1])).matches()) continue;
                 String literal = javaLiteral(source, position[0], position[1]);
                 int rule = 1 + (int) source.substring(0, position[0]).chars().filter(ch -> ch == '\n').count();
                 for (String part : SPECIFIER.split(literal, -1)) {
@@ -218,16 +248,59 @@ class ReaderSentenceBoundaryTest {
                 }
             }
         }
-        // since the card message-catalogues the sentences stand in the catalogue, not in the literals above
+        // the sentences stand in the catalogue, not in the literals above: per code its English entry, its context left out
         Path catalogue = w.resolve(CATALOGUE);
         assertTrue(Files.isRegularFile(catalogue), () -> catalogue + " ontbreekt");
-        int rule = 0;
-        for (String line : Files.readAllLines(catalogue, UTF_8)) {
-            rule++;
-            for (String part : PLACE.split(line.substring(line.indexOf('\t') + 1).replace("{{", "{").replace("}}", "}"), -1)) {
+        Map<String, String> entries = new java.util.HashMap<>();
+        for (String line : Files.readAllLines(catalogue, UTF_8))
+            entries.put(line.substring(0, line.indexOf('\t')), line.substring(line.indexOf('\t') + 1));
+        for (String entry : VERIFIER_COPIES.split(" ")) {
+            String[] keyAndContext = entry.split(":");
+            String key = keyAndContext[0];
+            int context = keyAndContext.length == 1 ? 0 : Integer.parseInt(keyAndContext[1]);
+            String template = entries.get(key);
+            assertNotNull(template, () -> key + " staat niet in " + CATALOGUE);
+            List<String> segments = List.of(template.replace("{{", "{").replace("}}", "}").split(": ", -1));
+            assertTrue(context < segments.size(), () -> key + ": de context telt meer segmenten dan de entry heeft");
+            for (String part : PLACE.split(String.join(": ", segments.subList(context, segments.size())), -1)) {
                 String core = core(part);
-                if (core != null) result.add(new Fragment(catalogue.getFileName().toString(), rule, core));
+                if (core != null) result.add(new Fragment(CATALOGUE_FILE, key, core));
             }
+        }
+        return result;
+    }
+
+    /** A key of the catalogue, or its beginning, which a site completes ({@code "PART.clamp." + which}): no sentence. */
+    private static final Pattern CATALOGUE_KEY = Pattern.compile("(?:PART|FRAME|RGS-\\d{3})(?:\\.[a-z0-9-]+)*\\.?");
+
+    private static final Pattern EXCEPTION_TEXT = Pattern.compile("\\bthrow\\b|\\bnew\\s+[A-Za-z_.]*(?:Exception|Error)\\s*\\(");
+
+    /** Where the text of an exception stands: a throw statement up to its semicolon, and the arguments of the
+     *  construction of an exception, which a method may return to be thrown elsewhere. A match inside a string or a
+     *  comment is no start. */
+    private static List<int[]> exceptionTexts(String s) {
+        List<int[]> result = new ArrayList<>();
+        List<int[]> skipped = new ArrayList<>(javaLiteralPositions(s));
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '"' || c == '\'') { i++; while (i < s.length() && s.charAt(i) != c) i += s.charAt(i) == '\\' ? 2 : 1; }
+            else if (s.startsWith("//", i)) { int e = s.indexOf('\n', i); skipped.add(new int[]{i, e < 0 ? s.length() : e}); i = e < 0 ? s.length() : e; }
+            else if (s.startsWith("/*", i)) { int e = s.indexOf("*/", i + 2); skipped.add(new int[]{i, e < 0 ? s.length() : e}); i = e < 0 ? s.length() : e + 1; }
+        }
+        Matcher m = EXCEPTION_TEXT.matcher(s);
+        while (m.find()) {
+            int start = m.start();
+            if (skipped.stream().anyMatch(r -> r[0] <= start && start <= r[1])) continue;
+            boolean statement = m.group().startsWith("throw");
+            int j = statement ? m.end() : m.end() - 1, depth = 0;
+            for (; j < s.length(); j++) {
+                char c = s.charAt(j);
+                if (c == '"' || c == '\'') { j++; while (s.charAt(j) != c) j += s.charAt(j) == '\\' ? 2 : 1; }
+                else if (c == '(' || c == '[' || c == '{') depth++;
+                else if (c == ')' || c == ']' || c == '}') { depth--; if (!statement && depth == 0) break; }
+                else if (c == ';' && statement && depth <= 0) break;
+            }
+            result.add(new int[]{start, j});
         }
         return result;
     }

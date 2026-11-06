@@ -26,6 +26,11 @@
 #     prints, an entry may not print more than the code names), and every brace is a place or written twice;
 #   - the English entries carry no Dutch function word, except where the script lists the entry and the word with the
 #     reason (a RegelSpraak keyword or a quotation): a heuristic, no proof of a good translation;
+#   - the Dutch entries are Dutch (card message-language, owner's decisions 2026-10-19): an entry equal to its English
+#     sister fails, unless it has no word outside its places and quotations (it reads the same in both languages) or
+#     SAME_IN_BOTH lists it with the reason, and an entry that carries an English function word fails, unless
+#     ENGLISH_EXCEPTIONS lists the entry and the word with the reason; a stale line of either list fails, and
+#     SAME_IN_BOTH holds at least EXPECTED_MIN_RGS_SAME_IN_BOTH lines;
 #   - each language holds at least EXPECTED_MIN_RGS_MESSAGES entries named after a code or a frame.
 # An empty scan of the sources is a failure, never silently green. The register's header is part of the check.
 set -u
@@ -40,11 +45,14 @@ EXPECTED_MIN_RGS_CODES=347
 # Measured 2026-10-19 at the card message-catalogues: 363 entries per language named after a code (347) or a frame (16),
 # not counting the parts and the shared parts.
 EXPECTED_MIN_RGS_MESSAGES=363
+# Measured 2026-11-06 at the card message-language: the Dutch entries equal to their English sister that carry a word,
+# each listed with its reason in SAME_IN_BOTH below.
+EXPECTED_MIN_RGS_SAME_IN_BOTH=4
 
 command -v python3 >/dev/null 2>&1 || fail "python3 not found (the check reads the sources with it)"
 ROOT=${1:-.}
 
-python3 -I - "$ROOT" "$EXPECTED_MIN_RGS_CODES" "$EXPECTED_MIN_RGS_MESSAGES" <<'PYEOF'
+python3 -I - "$ROOT" "$EXPECTED_MIN_RGS_CODES" "$EXPECTED_MIN_RGS_MESSAGES" "$EXPECTED_MIN_RGS_SAME_IN_BOTH" <<'PYEOF'
 import os, re, sys
 import os, re, sys
 
@@ -139,8 +147,6 @@ DUTCH_EXCEPTIONS = {
     ("RGS-027", "de"): "quotes the Dutch articles de/het the rule text must not carry inside a name",
     ("RGS-027", "het"): "quotes the Dutch articles de/het the rule text must not carry inside a name",
     ("RGS-079", "van"): "the RegelSpraak keyword 'eerste paasdag van' names the builtin",
-    ("RGS-083", "een"): "the RegelSpraak phrase 'een tijd-component (uur/minuut/seconde/milliseconde uit)' names the builtin",
-    ("RGS-083", "uit"): "the RegelSpraak phrase 'een tijd-component (uur/minuut/seconde/milliseconde uit)' names the builtin",
     ("RGS-147", "op"): "the RegelSpraak keyword 'Uitzondering op' opens the sentence",
     ("RGS-206", "de"): "quotes the RegelSpraak phrase 'gedurende de/het gehele jaar/maand'",
     ("RGS-206", "het"): "quotes the RegelSpraak phrase 'gedurende de/het gehele jaar/maand'",
@@ -151,11 +157,32 @@ DUTCH_EXCEPTIONS = {
     ("RGS-291", "met"): "the RegelSpraak keyword 'numeriek met exact' names the predicate",
 }
 
+# English function words a Dutch entry must not carry; none of them is a Dutch word
+ENGLISH = set(("the a an and or not no to for from with without into under on at by it its as but can does never also "
+               "when where this be than both while whose which that has are must only one every each").split())
+# (key, word): the reason an English word stands in a Dutch entry
+ENGLISH_EXCEPTIONS = {}
+# key: the reason a Dutch entry with a word is equal to its English sister
+SAME_IN_BOTH = {
+    "FRAME.scenario": "'scenario' is the Dutch word as well, and the frame adds nothing else to the sentence",
+    "PART.kind.percentage": "'percentage' is the Dutch word as well",
+    "PART.clamp.minimum": "'minimum' is the Dutch word as well",
+    "PART.clamp.maximum": "'maximum' is the Dutch word as well",
+}
+
+def words_outside(template):
+    """The words of a template outside its places and quotations; a letter after a digit is part of a number ("4.1a")."""
+    u = template.replace("{{", "").replace("}}", "")
+    return re.findall(r"(?<![0-9a-zà-ÿ])[a-zà-ÿ]+", re.sub(r"'[^']*'", "", PLACE.sub("", u)).lower())
+
+def english_words(template):
+    return set(w for w in words_outside(template) if w in ENGLISH)
+
 def dutch_words(template):
     u = template.replace("{{", "").replace("}}", "")
     return set(w for w in re.findall(r"[a-zà-ÿ]+", re.sub(r"'[^']*'", "", PLACE.sub("", u)).lower()) if w in DUTCH)
 
-def check_catalogues(root, reg, faults, floor_messages):
+def check_catalogues(root, reg, faults, floor_messages, floor_same):
     d = os.path.join(root, "frontends/regelspraak/src/main/resources/dev/uchar/regelspraak/message")
     cats = {}
     for lang in ("nl", "en"):
@@ -196,6 +223,21 @@ def check_catalogues(root, reg, faults, floor_messages):
         for key, w in DUTCH_EXCEPTIONS:
             if key not in en or w not in dutch_words(en[key][0]):
                 faults.append("the exception (%s, %s) of DUTCH_EXCEPTIONS is stale: the English entry does not carry the word" % (key, w))
+        nl_rel, nl = cats["nl"]
+        for k, (t, n) in nl.items():
+            where = "%s:%d (%s, nl)" % (nl_rel, n, k)
+            same = k in en and en[k][0] == t and bool(words_outside(t))
+            if same and k not in SAME_IN_BOTH: faults.append("%s: the Dutch entry is equal to its English sister" % where)
+            for w in sorted(english_words(t)):
+                if (k, w) not in ENGLISH_EXCEPTIONS: faults.append("%s: the Dutch entry carries the English word '%s'" % (where, w))
+        for k in SAME_IN_BOTH:
+            if k not in nl or k not in en or nl[k][0] != en[k][0] or not words_outside(nl[k][0]):
+                faults.append("the line %s of SAME_IN_BOTH is stale: the Dutch entry is not equal to its English sister, or has no word" % k)
+        for key, w in ENGLISH_EXCEPTIONS:
+            if key not in nl or w not in english_words(nl[key][0]):
+                faults.append("the exception (%s, %s) of ENGLISH_EXCEPTIONS is stale: the Dutch entry does not carry the word" % (key, w))
+        if len(SAME_IN_BOTH) < floor_same:
+            faults.append("SAME_IN_BOTH holds %d lines, EXPECTED_MIN_RGS_SAME_IN_BOTH pins at least %d — the list shrank (a deliberate removal lowers the floor in the same commit)" % (len(SAME_IN_BOTH), floor_same))
     for lang, (rel, entries) in cats.items():
         for c in reg:
             if c not in entries: faults.append("%s: the register code %s has no entry in the %s catalogue" % (rel, c, lang))
@@ -205,7 +247,7 @@ def check_catalogues(root, reg, faults, floor_messages):
 
 
 def main():
-    root = sys.argv[1]; floor = int(sys.argv[2]); floor_messages = int(sys.argv[3])
+    root = sys.argv[1]; floor = int(sys.argv[2]); floor_messages = int(sys.argv[3]); floor_same = int(sys.argv[4])
     fe = os.path.join(root, "frontends/regelspraak/src/main/java")
     be = os.path.join(root, "backends/drools/src/main/java")
     reg_path = os.path.join(root, "frontends/regelspraak/src/main/resources/dev/uchar/regelspraak/diagnostic-codes.tsv")
@@ -251,7 +293,8 @@ def main():
                 three += 1
                 faults.append("%s:%d: new Diagnostic( with three arguments, so without a code" % (os.path.relpath(path, root), s.count("\n", 0, m.start()) + 1))
     # a coded site passes the code and its parameters and no text: the argument count of each call form
-    forms = {"error": (3,), "Diagnostic": (4,), "Coded": (2,), "refuse": (4,), "perSide": (5,), "VerifierSentence": (2,)}
+    forms = {"error": (3,), "Diagnostic": (4,), "Coded": (2,), "refuse": (4,), "perSide": (5,), "VerifierSentence": (2,),
+             "Msg": (3,)}
     for s_ in sites:
         txt = blank_comments(open(s_["file"], encoding="utf-8").read())
         i = s_["pos"]; d = 0
@@ -269,13 +312,13 @@ def main():
         if name not in forms: faults.append("%s: %s is passed to %s(, a form this check does not know" % (where, s_["code"], name))
         elif n_args not in forms[name]:
             faults.append("%s: %s: %s( takes %s arguments (the code and its parameters, and no text), this call has %d" % (where, s_["code"], name, forms[name][0], n_args))
-    check_catalogues(root, reg, faults, floor_messages)
+    check_catalogues(root, reg, faults, floor_messages, floor_same)
     if len(reg) < floor: faults.append("the register holds %d codes, EXPECTED_MIN_RGS_CODES pins at least %d, so the register shrank (a deliberate removal lowers the floor in the same commit)" % (len(reg), floor))
     if not sites: faults.append("no code literal found in the sources (an empty scan is a failure)")
     if faults:
         for f in faults: print("check-rgs-codes: FAIL — " + f, file=sys.stderr)
         sys.exit(1)
-    print("check-rgs-codes: PASS — %d codes, %d sites, every code used and every parameter set equal, no site without a code or with a text, both catalogues held to the register (floors %d and %d)" % (len(reg), len(sites), floor, floor_messages))
+    print("check-rgs-codes: PASS — %d codes, %d sites, every code used and every parameter set equal, no site without a code or with a text, both catalogues held to the register, the Dutch one Dutch (floors %d, %d and %d)" % (len(reg), len(sites), floor, floor_messages, floor_same))
 
 main()
 PYEOF

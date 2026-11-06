@@ -56,3 +56,87 @@ Acceptance:
 May touch: `frontends/regelspraak`, `backends/drools` (niet de productieruntime), `scripts/check-rgs-codes.sh`,
 `scripts/check-drools-codes.sh` en `spec/proposals/MESSAGE-CODES.md` §6. De tekst in `CLAUDE.md` over gate 10 en 12
 stelt de kaart voor in haar Result; de hoofdsessie zet hem erin.
+
+## Result (2026-11-06, branch `card/frontend-residue`)
+
+Gemeten op `575de08e5` (main) en de branch; logs en hulpscripts onder `werk/frontend-residue/` (`logs/`, `k2/`).
+
+**Acceptatie 1, de gates.**
+- `scripts/check-rgs-codes.sh` (gate 10): een Nederlandse entry die gelijk is aan haar Engelse zus faalt, tenzij ze
+  buiten haar plaatsen en citaten geen woord heeft (dan leest ze in beide talen hetzelfde) of `SAME_IN_BOTH` haar met
+  reden noemt: `FRAME.scenario`, `PART.kind.percentage`, `PART.clamp.minimum`, `PART.clamp.maximum` (het Nederlandse woord
+  is hetzelfde); vloer `EXPECTED_MIN_RGS_SAME_IN_BOTH=4`. Technische keuze bovenop de kaart: de spiegel van de bestaande
+  controle op Nederlandse functiewoorden in Engelse entries, dus een Nederlandse entry met een Engels functiewoord faalt,
+  tenzij `ENGLISH_EXCEPTIONS` (leeg) entry en woord noemt; zonder die spiegel bleven 47 gemengde entries ("Nederlandse
+  aanloop: Engelse zin van de verifier") onzichtbaar. Beide lijsten falen als ze verouderd zijn. Rood op de catalogus van
+  `575de08e5`: 63 gelijke entries en 205 Engelse woorden (`logs/k2-red-rgs-codes.log`); groen na.
+- `scripts/check-drools-codes.sh` (gate 12): dezelfde gelijkheidstoets met `SAME_IN_BOTH` van 49 regels, vloer
+  `EXPECTED_MIN_DROOLS_SAME_IN_BOTH=49`: de zinnen van EF-003, EF-007..012 en EF-019 (besluit 3) en die van EF-032, die er
+  na het besluit bij kwam en dezelfde grond heeft (`ComputeFault.namesNoMoment` leest de zin terug, `FilterFaultWitnessTest`
+  pint hem); de 29 zinnen van `message-catalogues` voor zover nog gelijk (28 codes met de zes delen van DROOLS-049;
+  DROOLS-038 is inmiddels vertaald, en DROOLS-076, -157 en -289 hebben geen woord buiten hun plaatsen); en
+  `FRAME.contract`, `.drl`, `.loader`, `.transpiler-verdict` (namen van onderdelen van de backend). De Drools-catalogi zijn
+  niet bewerkt: alles wat gelijk was, valt onder het besluit. Rood getoond op een tijdelijk gemuteerde catalogus
+  (`logs/k2-red-drools-codes.log`: een Engelse zin in DROOLS-001 en een verouderde lijstregel EF-032.day), groen op de echte.
+
+**Besluit 2, de frontendcatalogus.** 110 Nederlandse entries vertaald (`k2/apply_nl.py`): de 63 die gelijk waren aan
+de Engelse en 47 gemengde. RGS-200 en RGS-083 zijn in beide catalogi één taal (het Engelse RGS-083 citeert het
+RegelSpraak-sleutelwoord tussen aanhalingstekens; de twee regels van `DUTCH_EXCEPTIONS` voor RGS-083 vervielen). In de
+Engelse catalogus werd "objecttype" als gewoon woord 37 keer "object type" (het getal 24 van de kaart was oud); het
+geciteerde `<Objecttype>` bleef. RGS-300 bestaat niet meer. Parameterwaarden die een woord van de zin zijn, zijn delen van
+de catalogus geworden waarvan de Engelse entry het woord van de verifier is, dus de Engelse weergave is ongewijzigd:
+`PART.kind.*` (de soortwoorden, `Typing.kindWord`), `PART.clamp.*` (basis, minimum, maximum), `PART.sign.*`
+(tekenbeperking) en `PART.day-kind-read.*` (RGS-318). Namen van de wire (een lijst als `rules`) en het "geen" van de
+verifier blijven staan.
+
+**Besluit 1, exceptieteksten, frontend (acceptatie 2 en 3).** Met code en entry in beide catalogi: RGS-380 en RGS-381
+(`ParameterSet.overlapErrors`, `valuesOn`), RGS-382..385 (`Unit`: breuk met noemer 0, onbekende omrekenfactor, geen
+gedeclareerde eenheid, niet inwisselbaar) en RGS-386, RGS-387 (de invoercontroles van de API van de semantic tokens:
+`Resolver.tokens`, `SemanticTokens.SourceFile`). Hun Nederlandse tekst is gelijk aan de oude, omdat de Drools-suite onder
+`nl` de tekst van `Unit` pint (`UnitConflictWitnessTest`) en de distributie die van `ParameterSet`; `ParameterSet` houdt
+zijn `List<String>`-API, de tekst komt in de taal van de catalogus. De plek geeft code en parameters als
+`new Msg(Component.FRONTEND, code, params(...))`; `check-rgs-codes.sh` kent die vorm nu. De andere 83 exceptieteksten
+(IrEmitter en zijn weigeringsredenen, de JSON-lezer van `Dependencies`, RuleChecker, Designations, ScenarioResolver,
+SemanticTokens, Typing, DefinitionResolver, `RegelSpraakModel.copy`, CaseEmitter) bewaken een interne toestand en zijn
+Engels zonder code (`k2/apply_java.py`). Grep (`k2/grep-dutch-exceptions.py`): 0 Nederlandse exceptieteksten in
+`frontends/regelspraak/src/main/java` (`logs/k2-grep-frontend.log`).
+
+**Besluit 1, Drools-kant: niet gedaan.** `backends/drools/src/main/java` zonder de runtime draagt 269 exceptieteksten met
+Nederlandse woorden (`logs/k2-grep-drools.log`), waarvan 30 in `cases/DroolsBackend.java`, de publieke API die het besluit
+noemt. Het mandaat van deze branch sloot de Java-code van `backends/drools` uit, omdat een andere bouwer daar tegelijk
+werkt. Acceptatie 2 en 3 zijn voor de Drools-kant dus open; de kaart blijft daarvoor open.
+
+**Acceptatie 4, tests.**
+- `resolver/ReaderSentenceBoundaryTest` is inhoudelijk aangepast, en die wijziging vraagt de blik van de eigenaar: de
+  zinnen van de verifier staan niet meer in de Nederlandse catalogus maar in de Engelse, dus de test leest nu de Engelse
+  entries van 104 codes (`VERIFIER_COPIES`, per code het aantal contextsegmenten vóór de zin van de verifier) en slaat
+  exceptieteksten en catalogussleutels in de Java-literals over; `WITHOUT_READER` verviel, want zijn twee regels waren de
+  tekst van een exceptie. De garantie (een zin van de verifier in een melding van de frontend drijft niet af) en de vloer
+  van 149 fragmenten blijven.
+- 39 andere testbestanden van de frontend en `toka/src/test/java/.../CasusTest.java` volgen mechanisch: alleen
+  stringliterals veranderden (gecontroleerd: de code zonder literals is gelijk aan `HEAD`); geen verwachting over gedrag.
+- Frontendsuite: 1527 tests, 0 failures (`logs/k2-test-5.log`).
+
+**Gate 11.** De `diagnostics` van de wire dragen de tekst in de standaardtaal, dus één WARNING in `toka/casus/ir.json`
+(de begrenzing van toka-24) is nu Nederlands; opnieuw gepind en in `toka/README.md` onder "Deliberate divergences".
+
+**Gate set.** Gericht groen: 1, 10, 11, 16 en `check-drools-codes.sh` (`logs/k2-gates-2.log`); de hele set aan het eind van
+de branch. De distributie volgt met haar pin (onder `--language en` geeft zij dan Engelse frontendmeldingen; haar
+`ParameterSet`-pins onder `nl` blijven gelijk).
+
+**Voorstel voor CLAUDE.md** (de hoofdsessie zet het erin):
+- gate 10, na de zin over de catalogi: "Since the card `message-language` (2026-11-06) the same script holds the Dutch
+  catalogue Dutch: a Dutch entry equal to its English sister fails unless it has no word outside its places and
+  quotations or `SAME_IN_BOTH` lists it with the reason (floor `EXPECTED_MIN_RGS_SAME_IN_BOTH=4`), and a Dutch entry that
+  carries an English function word fails unless `ENGLISH_EXCEPTIONS` lists entry and word; both lists fail when stale. A
+  site may pass its code as `new Msg(Component.FRONTEND, code, params(...))`, the form of an exception text a user sees
+  (RGS-380..387)."
+- gate 12, na de zin over de Drools-catalogi: "Since the card `message-language` (2026-11-06) a Dutch entry equal to its
+  English sister fails unless it has no word outside its places and quotations or `SAME_IN_BOTH` lists it with the
+  reason: the sentences of the fault kinds that the runtime writes and `ComputeFault` reads back (EF-003, EF-007..012,
+  EF-019, EF-032), the 29 sentences left English at the card `message-catalogues` and the names of the backend's parts
+  (floor `EXPECTED_MIN_DROOLS_SAME_IN_BOTH=49`)."
+
+`spec/proposals/MESSAGE-CODES.md` §6 kreeg de twee besluiten in hun huidige stand.
+
+Open punten: geen normvraag. Open werk: de Drools-kant van besluit 1 (zie boven).

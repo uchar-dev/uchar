@@ -94,6 +94,6 @@ class MessagesTest {
 
     @Test void a_brace_written_twice_is_a_literal_brace() {
         Map<String, Object> args = Map.of("unit", "u", "unitSystem", "s", "num", "0", "den", "0", "factor", "{\"num\":0,\"den\":0}");
-        assertTrue(Messages.render(Component.FRONTEND, "RGS-015", args).contains("exact rational {num, den} whose"));
+        assertTrue(Messages.render(Component.FRONTEND, "RGS-015", args).contains("exacte breuk {num, den} waarvan"));
     }
 }

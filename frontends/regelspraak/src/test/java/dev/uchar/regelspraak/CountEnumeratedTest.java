@@ -116,7 +116,7 @@ class CountEnumeratedTest {
 
     private static List<Diagnostic> wf037(String rules) {
         RegelSpraakModel m = Resolver.resolve(MODEL + rules);
-        return m.diagnostics.stream().filter(d -> d.message().contains("has no LISTED form")).toList();
+        return m.diagnostics.stream().filter(d -> d.message().contains("heeft geen OPGESOMDE vorm")).toList();
     }
 
     @Test void the_enumerated_count_with_and_is_refused() {
@@ -125,9 +125,9 @@ class CountEnumeratedTest {
         assertEquals(Severity.ERROR, ds.get(0).severity());
         // the operand count is INTERPOLATED, so a bound that silently became an equality would be
         // visible here rather than only at three operands
-        assertTrue(ds.get(0).message().contains("this node carries 2 operands"),
+        assertTrue(ds.get(0).message().contains("deze knoop draagt 2 operanden"),
                 "de melding noemt het operandental niet: " + ds.get(0).message());
-        assertTrue(ds.get(0).message().contains("a count folds INSTANCES and has no LISTED form"),
+        assertTrue(ds.get(0).message().contains("een telling vouwt INSTANTIES en heeft geen OPGESOMDE vorm"),
                 "de melding noemt de geweigerde vorm niet: " + ds.get(0).message());
     }
 
@@ -135,7 +135,7 @@ class CountEnumeratedTest {
         List<Diagnostic> ds = wf037(COMMA_SPELLING);
         assertEquals(1, ds.size(), () -> "verwacht één WF-037-melding, kreeg: " + ds);
         assertEquals(Severity.ERROR, ds.get(0).severity());
-        assertTrue(ds.get(0).message().contains("this node carries 3 operands"),
+        assertTrue(ds.get(0).message().contains("deze knoop draagt 3 operanden"),
                 "de melding telt de komma-operanden niet mee: " + ds.get(0).message());
     }
 
@@ -163,10 +163,10 @@ class CountEnumeratedTest {
         // source emitted with `diagnostics: []`. Since WF-113 (a) the emitter refuses the model by
         // itself as well, so no emission route reaches the wire with it.
         RegelSpraakModel m = Resolver.resolve(MODEL + AND_SPELLING);
-        assertTrue(m.errors().stream().anyMatch(d -> d.message().contains("has no LISTED form")),
+        assertTrue(m.errors().stream().anyMatch(d -> d.message().contains("heeft geen OPGESOMDE vorm")),
                 () -> "de opgesomde telling levert geen WF-037-fout op: " + m.diagnostics);
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
-        assertTrue(e.getMessage().contains("has no LISTED form"), e::getMessage);
+        assertTrue(e.getMessage().contains("heeft geen OPGESOMDE vorm"), e::getMessage);
     }
 
     @Test void the_ordinary_count_stays_clean() {

@@ -32,6 +32,10 @@
 #   - a place that names a code in the sources (`DroolsCode.NAME`) is followed by `.reason(` or `.part(`, whose
 #     arguments are names and values in turn, each name a parameter of the code, so that no place hands a sentence;
 #   - the English entries carry no Dutch function word except where the script lists entry and word with the reason;
+#   - a Dutch entry equal to its English sister fails, unless it has no word outside its places and quotations (it reads
+#     the same in both languages) or SAME_IN_BOTH lists it with the reason (card message-language, owner's decision 3
+#     of 2026-10-19: the English sentences of the Dutch catalogue stand on one list); a stale line fails, and the list
+#     holds at least EXPECTED_MIN_DROOLS_SAME_IN_BOTH lines;
 #   - each language holds at least EXPECTED_MIN_DROOLS_MESSAGES entries named after a code, a fault kind or a frame.
 set -u
 cd "$(dirname "$0")/.."
@@ -48,6 +52,9 @@ EXPECTED_MIN_DROOLS_CODES=289
 # Measured 2026-10-19 at the card message-catalogues: per language 325 entries named after a code (290), a fault kind or a
 # part of one (EF-###, EF-###.slug: 23) or a frame (12); the parts of the DROOLS codes and the shared parts are not counted.
 EXPECTED_MIN_DROOLS_MESSAGES=325
+# Measured 2026-11-06 at the card message-language: the Dutch entries equal to their English sister that carry a word,
+# each listed with its reason in SAME_IN_BOTH below.
+EXPECTED_MIN_DROOLS_SAME_IN_BOTH=49
 
 [ -f "$REGISTER" ] || fail "no register at $REGISTER"
 [ -f "$TABLE" ] || fail "no table of fault kinds at $TABLE"
@@ -100,9 +107,9 @@ unraised=$(awk -F"$TAB" '$3 != "RETIRED" {print $1}' "$tmp" | sort | comm -23 - 
 raisedretired=$(printf '%s\n' "$retired" | comm -12 - <(printf '%s\n' "$named") | tr '\n' ' ')
 [ -z "${raisedretired// /}" ] || fail "a place names a retired code: $raisedretired(a retired code is raised nowhere; give the refusal a code of its own)"
 
-python3 -I - "$REGISTER" "$SOURCES" "$TABLE" "$EXPECTED_MIN_DROOLS_MESSAGES" <<'PYEOF' || exit 1
+python3 -I - "$REGISTER" "$SOURCES" "$TABLE" "$EXPECTED_MIN_DROOLS_MESSAGES" "$EXPECTED_MIN_DROOLS_SAME_IN_BOTH" <<'PYEOF' || exit 1
 import os, re, sys
-register, sources, table, floor = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
+register, sources, table, floor, floor_same = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), int(sys.argv[5])
 faults = []
 def fail(m): faults.append(m)
 
@@ -129,6 +136,27 @@ EF_PLACES = {
     "EF-016": {"count", "enumeration", "attribute", "object"}, "EF-017": {"role", "label"},
     "EF-019.expression": set(), "EF-019.condition": set(),
 }
+# key: the reason a Dutch entry with a word is equal to its English sister (owner's decision 3, 2026-10-19)
+_READ = "the sentence of a fault kind that the runtime writes and ComputeFault reads back by its words (code(), params()), and tests pin it"
+_LEFT = "one of the 29 sentences the owner left English in the Dutch catalogue (card message-catalogues, 2026-10-19)"
+_PART = "names a part of this backend, the same in both languages"
+SAME_IN_BOTH = dict(
+    [(k, _READ) for k in ("EF-003.calendar", "EF-003.malformed", "EF-007", "EF-007.date", "EF-008", "EF-009", "EF-010",
+                          "EF-011.date", "EF-011.year", "EF-012", "EF-019.condition", "EF-019.expression",
+                          "EF-032.day", "EF-032.time")]
+    + [(k, _LEFT) for k in ("DROOLS-003", "DROOLS-006", "DROOLS-007", "DROOLS-011", "DROOLS-024", "DROOLS-028",
+                            "DROOLS-030", "DROOLS-031", "DROOLS-032", "DROOLS-033", "DROOLS-034", "DROOLS-035",
+                            "DROOLS-036", "DROOLS-037", "DROOLS-039", "DROOLS-041", "DROOLS-042", "DROOLS-043",
+                            "DROOLS-048", "DROOLS-049", "DROOLS-049.direction-far", "DROOLS-049.direction-near",
+                            "DROOLS-049.direction-none", "DROOLS-049.via-none", "DROOLS-049.via-to-many",
+                            "DROOLS-049.via-to-one", "DROOLS-050", "DROOLS-052", "DROOLS-053", "DROOLS-080",
+                            "DROOLS-227")]
+    + [(k, _PART) for k in ("FRAME.contract", "FRAME.drl", "FRAME.loader", "FRAME.transpiler-verdict")])
+
+def words_outside(t):
+    u = t.replace("{{", "").replace("}}", "")
+    return re.findall(r"[a-zà-ÿ]+", re.sub(r"'[^']*'", "", PLACE.sub("", u)).lower())
+
 def dutch_words(t):
     u = t.replace("{{", "").replace("}}", "")
     return set(w for w in re.findall(r"[a-zà-ÿ]+", re.sub(r"'[^']*'", "", PLACE.sub("", u)).lower()) if w in DUTCH)
@@ -176,6 +204,15 @@ if len(cats) == 2:
     for key, w in DUTCH_EXCEPTIONS:
         if key not in cats["en"][1] or w not in dutch_words(cats["en"][1][key][0]):
             fail("the exception (%s, %s) of DUTCH_EXCEPTIONS is stale" % (key, w))
+    nl_rel, nl = cats["nl"]; en = cats["en"][1]
+    for k, (t, n) in nl.items():
+        if k in en and en[k][0] == t and words_outside(t) and k not in SAME_IN_BOTH:
+            fail("%s:%d (%s, nl): the Dutch entry is equal to its English sister" % (nl_rel, n, k))
+    for k in SAME_IN_BOTH:
+        if k not in nl or k not in en or nl[k][0] != en[k][0] or not words_outside(nl[k][0]):
+            fail("the line %s of SAME_IN_BOTH is stale: the Dutch entry is not equal to its English sister, or has no word" % k)
+    if len(SAME_IN_BOTH) < floor_same:
+        fail("SAME_IN_BOTH holds %d lines, EXPECTED_MIN_DROOLS_SAME_IN_BOTH pins at least %d — the list shrank (a deliberate removal lowers the floor in the same commit)" % (len(SAME_IN_BOTH), floor_same))
 for lang, (rel, entries) in cats.items():
     for c in reg:
         if c not in entries: fail("%s: the register code %s has no entry in the %s catalogue" % (rel, c, lang))
@@ -242,4 +279,4 @@ if faults:
     sys.exit(1)
 PYEOF
 
-echo "check-drools-codes: PASS — $entries codes, numbered 001..$(printf '%03d' "$entries"), every one raised in the sources but the $(printf '%s\n' "$retired" | grep -c .) retired, which none names, every raised code registered, keys unique, every ef a row of ch. 5.7b, both catalogues held to the register and the places to the catalogues (floor $EXPECTED_MIN_DROOLS_MESSAGES)"
+echo "check-drools-codes: PASS — $entries codes, numbered 001..$(printf '%03d' "$entries"), every one raised in the sources but the $(printf '%s\n' "$retired" | grep -c .) retired, which none names, every raised code registered, keys unique, every ef a row of ch. 5.7b, both catalogues held to the register and the places to the catalogues, the English sentences of the Dutch one listed (floors $EXPECTED_MIN_DROOLS_MESSAGES and $EXPECTED_MIN_DROOLS_SAME_IN_BOTH)"

@@ -733,7 +733,7 @@ class NestedFoldSourceTest {
         RegelSpraakModel m = Resolver.resolve(MODEL_B + SET_READ_WITHOUT_FOLD);
         assertEquals(1, m.diagnostics.size(), () -> "verwacht enkel de setlezing-diagnose, kreeg " + m.diagnostics);
         assertTrue(m.diagnostics.get(0).message().startsWith("setlezing buiten een vouwbron")
-                        && m.diagnostics.get(0).message().contains(" reaches the to-many role "),
+                        && m.diagnostics.get(0).message().contains(" met meer vullers op een plaats voor één waarde"),
                 () -> "verwacht de setlezing-melding, kreeg " + m.diagnostics.get(0));
     }
 

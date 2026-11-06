@@ -922,11 +922,11 @@ class SubtypeDialectTest {
                     Het uitkeringstotaal van een Kustgemeente moet berekend worden als de som van de uitkering van alle geborgen wrakrechten van de Kustgemeente of 0,00 als die er niet zijn.
             """;
         RegelSpraakModel m = Resolver.resolve(src);
-        assertEquals(List.of("vouw 'de som van de uitkering van alle geborgen wrakrechten van de Kustgemeente of 0,00 "
-                        + "als die er niet zijn' zonder bereik (2 relaties verbinden Kustgemeente met Wrakrecht, en 'alle "
-                        + "geborgen wrakrechten van de Kustgemeente' noemt geen rol die er precies één aanwijst): a "
-                        + "single-argument fold with an elementType carries its range (sourceRole or sourcePath) under "
-                        + "every kind but total: the range is written, never derived"),
+        assertEquals(List.of("vouw 'de som van de uitkering van alle geborgen wrakrechten van de Kustgemeente of 0,00 als "
+                        + "die er niet zijn' zonder bereik (2 relaties verbinden Kustgemeente met Wrakrecht, en 'alle "
+                        + "geborgen wrakrechten van de Kustgemeente' noemt geen rol die er precies één aanwijst): een "
+                        + "vouw met één argument en een elementType draagt haar bereik (sourceRole of sourcePath) onder "
+                        + "elke soort behalve totaal: het bereik wordt geschreven, nooit afgeleid"),
                 m.errors().stream().map(RegelSpraakModel.Diagnostic::message).toList(),
                 "de vouwbron mag niet binden op een relatie die de zin niet noemt — stil de verkeerde verzameling");
     }

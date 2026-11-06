@@ -236,8 +236,8 @@ class CountRangeTest {
     }
 
     /** The loader's sentence for the document the emitter would write without the range. */
-    private static final String WITHOUT_RANGE = "a single-argument fold with an elementType carries its range "
-            + "(sourceRole or sourcePath) under every kind but total: the range is written, never derived";
+    private static final String WITHOUT_RANGE = "een vouw met één argument en een elementType draagt haar bereik (sourceRole of "
+            + "sourcePath) onder elke soort behalve totaal: het bereik wordt geschreven, nooit afgeleid";
 
     private static List<String> faults(RegelSpraakModel m) {
         return m.errors().stream().map(RegelSpraakModel.Diagnostic::message).toList();

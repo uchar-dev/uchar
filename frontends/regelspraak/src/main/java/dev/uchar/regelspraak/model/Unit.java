@@ -1,5 +1,8 @@
 package dev.uchar.regelspraak.model;
 
+import dev.uchar.regelspraak.message.Component;
+import dev.uchar.regelspraak.message.Msg;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,6 +11,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
 
 /**
  * A unit (§13.3.5, IR-SPEC ch. 2.5): a non-empty list of {@link Factor factors}, each a declared unit with a whole
@@ -39,7 +44,7 @@ public record Unit(List<Factor> factors) {
         public static final Fraction ONE = new Fraction(BigInteger.ONE, BigInteger.ONE);
 
         public Fraction {
-            if (den.signum() == 0) throw new IllegalArgumentException("een breuk met noemer 0");
+            if (den.signum() == 0) throw new IllegalArgumentException(new Msg(Component.FRONTEND, "RGS-382", params()).text());
             if (den.signum() < 0) { num = num.negate(); den = den.negate(); }
             BigInteger g = num.gcd(den);
             num = num.divide(g);
@@ -207,8 +212,8 @@ public record Unit(List<Factor> factors) {
         Fraction product = Fraction.ONE;
         for (Factor f : powers) {
             if (!f.hasFactor())
-                throw new IllegalStateException("onbekende omrekenfactor van '" + f.abbreviation() + "' ("
-                        + f.factorToCanonical() + "): canoniek '" + f.canonical() + "' zonder gedeclareerde factorNaarCanoniek");
+                throw new IllegalStateException(new Msg(Component.FRONTEND, "RGS-383", params("abbreviation",
+                        f.abbreviation(), "factor", f.factorToCanonical(), "canonical", f.canonical())).text());
             if (f.factorToCanonical() != null) product = product.times(f.factorToCanonical().toThePower(f.exponent()));
         }
         return product;
@@ -254,8 +259,7 @@ public record Unit(List<Factor> factors) {
      *  would read a part of it as the whole. */
     private Factor atom() {
         if (!isAtom())
-            throw new IllegalStateException("de eenheid '" + rendering() + "' is geen gedeclareerde eenheid: haar spelling"
-                    + " komt uit rendering(), haar delen uit factors()");
+            throw new IllegalStateException(new Msg(Component.FRONTEND, "RGS-384", params("unit", rendering())).text());
         return factors.get(0);
     }
 
@@ -341,8 +345,8 @@ public record Unit(List<Factor> factors) {
      *  factorToCanonical, the wire form), which has no factor to give either way. */
     public Fraction exactRestateFactors(Unit target) {
         if (!convertibleTo(target))
-            throw new IllegalStateException("geen omrekenfactor van eenheid '" + rendering() + "' naar '"
-                    + (target == null ? "(geen eenheid)" : target.rendering()) + "': niet inwisselbaar");
+            throw new IllegalStateException(new Msg(Component.FRONTEND, "RGS-385", params("unit", rendering(),
+                    "target", target == null ? Msg.frontend("PART.no-unit") : target.rendering())).text());
         return fraction(powersTo(target));
     }
 

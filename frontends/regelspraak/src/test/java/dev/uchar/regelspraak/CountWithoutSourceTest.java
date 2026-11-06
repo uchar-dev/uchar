@@ -78,7 +78,7 @@ class CountWithoutSourceTest {
         assertEquals(1, ds.size(), () -> "verwacht één bronloze-tellingmelding voor '" + expression + "', kreeg: "
                 + m.diagnostics);
         assertEquals(Severity.ERROR, ds.get(0).severity());
-        assertTrue(ds.get(0).message().contains("the count is an INSTANCE fold and MUST carry an element type"),
+        assertTrue(ds.get(0).message().contains("de telling is een vouw over INSTANTIES en MOET een elementType dragen"),
                 ds.get(0).message());
         // ERROR is what keeps the document off disk: irMode writes nothing when the model has one
         assertFalse(m.errors().isEmpty());

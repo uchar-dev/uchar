@@ -135,7 +135,7 @@ class FixedStartPointTest {
      *  start point only; through a named timeline the count was dropped without a word. */
     @Test void parameter_over_multiple_periods_is_refused() {
         refuses(HEAD + "Parameter het bloktarief : Numeriek (geheel getal) voor elke 5 maanden startend op 1-4-2026\n",
-                "parameter 'bloktarief'", "has count 5 > 1: a parameter's timeline is one period");
+                "parameter 'bloktarief'", "heeft aantal 5 > 1: de tijdlijn van een parameter is één periode");
     }
 
     /** A named timeline on the calendar grid has no start point, and the facet that names it none either. Measured on
@@ -236,8 +236,8 @@ class FixedStartPointTest {
             """;
         RegelSpraakModel fixed = Resolver.resolve(
                 "Tijdlijn het penningjaar heeft tijdvakken van een jaar startend op dag 1 van maand 1;\n" + determination);
-        assertEquals(List.of("ERROR startpuntbepaling (regel 'startpunt penningjaar'): start point for fixed-start "
-                        + "timeline 'penningjaar'"),
+        assertEquals(List.of("ERROR startpuntbepaling (regel 'startpunt penningjaar'): startpunt voor de tijdlijn "
+                        + "met een vast begin 'penningjaar'"),
                 fixed.diagnostics.stream().map(d -> d.severity() + " " + d.message()).toList());
         RegelSpraakModel variable = Resolver.resolve(
                 "Tijdlijn het penningjaar heeft tijdvakken van een jaar met variabel startpunt;\n" + determination);

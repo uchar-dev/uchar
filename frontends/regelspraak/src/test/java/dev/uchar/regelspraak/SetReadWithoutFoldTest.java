@@ -73,8 +73,9 @@ class SetReadWithoutFoldTest {
      *  verifier's sentence for the rule the emitted wire would fail at this position, WF-053's to-many clause,
      *  naming the hop the emitter writes. Until L2 the Dutch message cited WF-096, then WF-053. */
     static final String MESSAGE =
-            "setlezing buiten een vouwbron 'het gewicht van alle vondsten van de Jutter': hop 0 reaches the to-many "
-            + "role 'vondst' in a scalar slot — a to-many step needs an aggregation, never a silent first pick";
+            "setlezing buiten een vouwbron 'het gewicht van alle vondsten van de Jutter': stap 0 bereikt de rol "
+            + "'vondst' met meer vullers op een plaats voor één waarde — zo'n stap vraagt een aggregatie, nooit een "
+            + "stille keuze van de eerste";
 
     private static List<Diagnostic> setReadDiagnostics(String rules) {
         RegelSpraakModel m = Resolver.resolve(MODEL + rules);

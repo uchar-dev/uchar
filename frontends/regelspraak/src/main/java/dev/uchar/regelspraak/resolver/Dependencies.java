@@ -1383,7 +1383,7 @@ final class Dependencies {
             Json j = new Json(text);
             Object v = j.value();
             j.whitespace();
-            if (j.i != j.s.length()) throw new IllegalArgumentException("JSON: tekst na het document op " + j.i);
+            if (j.i != j.s.length()) throw new IllegalArgumentException("JSON: text after the document at " + j.i);
             return v;
         }
 
@@ -1393,7 +1393,7 @@ final class Dependencies {
 
         private Object value() {
             whitespace();
-            if (i >= s.length()) throw new IllegalArgumentException("JSON: einde zonder waarde");
+            if (i >= s.length()) throw new IllegalArgumentException("JSON: end without a value");
             char c = s.charAt(i);
             switch (c) {
                 case '{' -> {
@@ -1433,19 +1433,19 @@ final class Dependencies {
                 default -> {
                     int b = i;
                     while (i < s.length() && "+-0123456789.eE".indexOf(s.charAt(i)) >= 0) i++;
-                    if (b == i) throw new IllegalArgumentException("JSON: onverwacht teken '" + c + "' op " + i);
+                    if (b == i) throw new IllegalArgumentException("JSON: unexpected character '" + c + "' at " + i);
                     return new BigDecimal(s.substring(b, i));
                 }
             }
         }
 
         private void word(String w) {
-            if (!s.startsWith(w, i)) throw new IllegalArgumentException("JSON: '" + w + "' verwacht op " + i);
+            if (!s.startsWith(w, i)) throw new IllegalArgumentException("JSON: '" + w + "' expected at " + i);
             i += w.length();
         }
 
         private void expected(char c) {
-            if (i >= s.length() || s.charAt(i) != c) throw new IllegalArgumentException("JSON: '" + c + "' verwacht op " + i);
+            if (i >= s.length() || s.charAt(i) != c) throw new IllegalArgumentException("JSON: '" + c + "' expected at " + i);
             i++;
         }
 
@@ -1467,7 +1467,7 @@ final class Dependencies {
                     case 'r' -> b.append('\r');
                     case 't' -> b.append('\t');
                     case 'u' -> { b.append((char) Integer.parseInt(s.substring(i, i + 4), 16)); i += 4; }
-                    default -> throw new IllegalArgumentException("JSON: onbekende escape '\\" + e + "' op " + i);
+                    default -> throw new IllegalArgumentException("JSON: unknown escape '\\" + e + "' at " + i);
                 }
             }
         }

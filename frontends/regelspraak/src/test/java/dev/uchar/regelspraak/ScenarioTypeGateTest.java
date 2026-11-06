@@ -55,12 +55,12 @@ class ScenarioTypeGateTest {
 
     @Test void incompatible_unit() {
         error("Situatie s:\neen Jutter J\n- het vondstgewicht is 3 vadem\n", "3 vadem",
-                "het attribuut 'vondstgewicht': toekenning: assignment across incompatible units");
+                "het attribuut 'vondstgewicht': toekenning: toekenning tussen onverenigbare eenheden");
     }
 
     @Test void text_on_a_number() {
         error("Situatie s:\neen Jutter J\n- het vondstgewicht is \"zwaar\"\n", "zwaar",
-                "het attribuut 'vondstgewicht': toekenning: a text value is assigned to a number target");
+                "het attribuut 'vondstgewicht': toekenning: een waarde van de soort tekst wordt toegekend aan een doel van de soort getal");
     }
 
     @Test void more_decimals_than_the_declaration() {

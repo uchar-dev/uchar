@@ -56,12 +56,12 @@ class ScenarioMutationTest {
 
     @Test void wrong_type_in_the_situation() {
         refuses(muteer("- het vondstgewicht is 12,00 kg", "- het vondstgewicht is waar"), "vondstgewicht is waar",
-                "het attribuut 'vondstgewicht': toekenning: a boolean value is assigned to a number target");
+                "het attribuut 'vondstgewicht': toekenning: een waarde van de soort Boolean wordt toegekend aan een doel van de soort getal");
     }
 
     @Test void wrong_type_in_the_expectation() {
         refuses(muteer("- de kustwachtbonus van J is 3", "- de kustwachtbonus van J is 01-01-2025"), "van J is 01-01-2025",
-                "de verwachting voor 'kustwachtbonus': toekenning: a date-day value is assigned to a number target");
+                "de verwachting voor 'kustwachtbonus': toekenning: een waarde van de soort datum in dagen wordt toegekend aan een doel van de soort getal");
     }
 
     @Test void unknown_attribute_in_the_situation() {

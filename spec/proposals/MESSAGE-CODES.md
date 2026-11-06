@@ -674,6 +674,36 @@ since 2026-08-27; the divergence list extends it to clingo.
   its own, one call at start-up or per request (`backends/drools/README.md`,
   "The language of the messages"), so the switch does not land silently at
   the pin bump.
+- **Decided 2026-10-19 (card message-language): one language per message.**
+  The frontend's Dutch catalogue is Dutch throughout. An entry that copied
+  the verifier's English sentence after a Dutch context is Dutch as a
+  whole, and the verifier's sentence stands in the English entry of the
+  code, which `ReaderSentenceBoundaryTest` holds to the verifier's
+  literals. Gate 10 (`scripts/check-rgs-codes.sh`) refuses a Dutch entry
+  equal to its English sister or carrying an English function word, as it
+  refuses a Dutch function word in an English entry; each list of
+  exceptions names its reason and fails when stale. In the English
+  catalogue "object type" is the plain word; the RegelSpraak keyword
+  `Objecttype` stays where it is quoted. The Drools backend's Dutch
+  catalogue keeps English the sentences of the fault kinds that the
+  runtime writes and `ComputeFault` reads back by their words (EF-003,
+  EF-007..012, EF-019, EF-032), the 29 sentences left English at the
+  catalogue card, and the names of the backend's parts; gate 12
+  (`scripts/check-drools-codes.sh`) lists them with the reason and refuses
+  every other Dutch entry equal to its English sister. A parameter value
+  that is a word of the sentence (the verifier's kind word of a datatype, a
+  position of a clamp, a sign restriction, the category of a read in a
+  day-kind condition) is a part of the catalogue whose English entry is the
+  verifier's word; a name of the wire (a list such as `rules`) and the
+  verifier's `geen` for a position without a unit stay as they are.
+- **Exception texts (same decision).** An exception text that a user
+  sees has a code and an entry in both catalogues: in the frontend the
+  faults of `model/ParameterSet` and `model/Unit` and the two input checks
+  of the semantic-token API (RGS-380..387, rendered in the language of the
+  catalogue, so `ParameterSet.valuesOn` and `overlapErrors` keep their
+  list of strings). An exception text that guards an invariant of the
+  component, a state that correct code does not reach, is English and has
+  no code.
 
 ## 7. Follow-up cards: order, size, model
 

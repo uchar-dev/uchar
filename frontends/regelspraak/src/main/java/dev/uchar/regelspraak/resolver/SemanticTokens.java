@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
+
 /**
  * The semantic tokens of a RegelSpraak source (grammar/DIVERGENCES.md, "Semantic tokens"): per file a list of spans
  * that covers every token of the lexer, each with a kind and a position, and for a name the declaration it names. An
@@ -75,7 +77,8 @@ public final class SemanticTokens {
     /** One source file: the name the output gives it, and its text. */
     public record SourceFile(String name, String text) {
         public SourceFile {
-            if (name == null || text == null) throw new IllegalArgumentException("een bronbestand heeft een naam en een tekst");
+            if (name == null || text == null) throw new IllegalArgumentException(new dev.uchar.regelspraak.message.Msg(
+                    dev.uchar.regelspraak.message.Component.FRONTEND, "RGS-387", params()).text());
         }
     }
 
@@ -402,8 +405,8 @@ public final class SemanticTokens {
             if (pieces.get(i).hidden()) continue;
             if (claim[i] != null) {
                 if (recovered) return;
-                throw new IllegalStateException("semantic tokens: twee namen op '" + pieceText(i) + "' in "
-                        + location(pieces.get(i).start()) + " (" + claim[i].kind().wire() + " en " + kind.wire() + ")");
+                throw new IllegalStateException("semantic tokens: two names on '" + pieceText(i) + "' in "
+                        + location(pieces.get(i).start()) + " (" + claim[i].kind().wire() + " and " + kind.wire() + ")");
             }
         }
         for (int i = range[0]; i <= range[1]; i++) if (!pieces.get(i).hidden()) claim[i] = name;
@@ -1457,7 +1460,7 @@ public final class SemanticTokens {
 
     private Location declarationLocation(Decl d) {
         Integer at = declarations.get(d);
-        if (at == null) throw new IllegalStateException("semantic tokens: geen declaratie van " + d);
+        if (at == null) throw new IllegalStateException("semantic tokens: no declaration of " + d);
         return location(pieces.get(at).start());
     }
 

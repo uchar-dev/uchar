@@ -246,7 +246,7 @@ public final class Typing {
             return clampNonNumeric(which, limit);
         Unit eb = base.unitOf(), eg = limit.unitOf();
         if (eb != null && eg != null && !eb.convertibleTo(eg))
-            return new Coded("RGS-060", params("bound", which));
+            return new Coded("RGS-060", params("bound", Msg.frontend("PART.clamp." + which)));
         return null;
     }
 
@@ -260,7 +260,7 @@ public final class Typing {
     /** WF-035's sentence for a clamp position (base, minimum or maximum) that holds no number, one template for the
      *  three positions as in the verifier. */
     private static Coded clampNonNumeric(String position, Datatype d) {
-        return new Coded("RGS-328", params("position", position, "kind", kindWord(d)));
+        return new Coded("RGS-328", params("position", Msg.frontend("PART.clamp." + position), "kind", kindWord(d)));
     }
 
     /** §4.12/4.13 Tabel 22/23 — minimale/maximale waarde van (getalaggregatiefunctie): every
@@ -896,7 +896,7 @@ public final class Typing {
      *  operands; an unknown type makes no claim. */
     static Coded orderingFoldSentence(String fold, java.util.List<Datatype> types) {
         java.util.List<Msg> sentences = new java.util.ArrayList<>();
-        java.util.List<String> kinds = new java.util.ArrayList<>();
+        java.util.List<Msg> kinds = new java.util.ArrayList<>();
         java.util.Set<String> families = new java.util.LinkedHashSet<>();
         for (Datatype d : types) {
             if (d.isUnknown()) continue;
@@ -918,7 +918,7 @@ public final class Typing {
         // one sentence per operand that is no number and no date, in operand order, and one for the mixture of
         // families when there is one; the template renders the list, joined, and either part may be empty
         return sentences.isEmpty() ? null : new Coded("RGS-344",
-                params("fold", fold, "kinds", String.join(", ", kinds), "mixture", mixed, "sentences", sentences));
+                params("fold", fold, "kinds", new Msg.Joined(kinds, ", "), "mixture", mixed, "sentences", sentences));
     }
 
     /** The type name the verifier writes in WF-091's numeric-operand sentence ({@code wire_type_name}). */
@@ -932,7 +932,7 @@ public final class Typing {
             case Datatype.DateTime d -> "Date";
             case Datatype.Enumeration e -> "Enumeration";
             case Datatype.SumType s -> "SumType";
-            case Datatype.Unknown o -> throw new IllegalStateException("Typering: een onbekend type heeft geen typenaam");
+            case Datatype.Unknown o -> throw new IllegalStateException("Typing: an unknown type has no type name");
         };
     }
 
@@ -952,10 +952,11 @@ public final class Typing {
         return t.unitOf() == null ? "geen" : t.unitOf().rendering();
     }
 
-    /** The kind word the verifier writes for a datatype in a message ({@code datatype_kind} in
-     *  spec/verifier/lib/checks.ml). An unknown type makes no claim and never reaches a message. */
-    static String kindWord(Datatype t) {
-        return switch (t) {
+    /** The kind word of a datatype in a message, a part of the catalogue: its English entry is the word the verifier
+     *  writes ({@code datatype_kind} in spec/verifier/lib/checks.ml). An unknown type makes no claim and never reaches
+     *  a message. */
+    static Msg kindWord(Datatype t) {
+        return Msg.frontend("PART.kind." + switch (t) {
             case Datatype.Numeric n -> "number";
             case Datatype.Percentage p -> "percentage";
             case Datatype.Text x -> "text";
@@ -964,8 +965,8 @@ public final class Typing {
             case Datatype.DateTime d -> "date-ms";
             case Datatype.Enumeration e -> "enumeration";
             case Datatype.SumType s -> "sumtype";
-            case Datatype.Unknown o -> throw new IllegalStateException("Typering: een onbekend type heeft geen soortwoord");
-        };
+            case Datatype.Unknown o -> throw new IllegalStateException("Typing: an unknown type has no kind word");
+        });
     }
 
     /** The declared decimal count of a getalachtig datatype (0 for anything else). */

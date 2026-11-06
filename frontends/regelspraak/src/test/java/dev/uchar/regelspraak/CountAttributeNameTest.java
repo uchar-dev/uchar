@@ -60,7 +60,7 @@ class CountAttributeNameTest {
         String written = expression.replace("(", "").replace(")", "");
         assertTrue(sentence.startsWith("telling zonder bron '" + written + "', waar 'aantal gewogen posten' een "
                 + "gedeclareerd attribuut van Jutter is: "), sentence);
-        assertTrue(sentence.contains("the count is an INSTANCE fold and MUST carry an element type"), sentence);
+        assertTrue(sentence.contains("de telling is een vouw over INSTANTIES en MOET een elementType dragen"), sentence);
     }
 
     @Test void the_recommended_articleless_spelling_reads_the_attribute() {

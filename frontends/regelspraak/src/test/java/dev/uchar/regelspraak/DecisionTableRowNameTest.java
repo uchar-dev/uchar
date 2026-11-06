@@ -44,12 +44,12 @@ class DecisionTableRowNameTest {
 
     @Test void rows_without_number_are_refused_by_name() {
         Diagnostic d = onlyError(Resolver.resolve(MODEL + table(" ", " ")));
-        assertTrue(d.message().contains("duplicate name 'Bonustabel' in rules"), d.message());
+        assertTrue(d.message().contains("dubbele naam 'Bonustabel' in rules"), d.message());
     }
 
     @Test void rows_with_the_same_number_are_refused_by_name() {
         Diagnostic d = onlyError(Resolver.resolve(MODEL + table("1", "1")));
-        assertTrue(d.message().contains("duplicate name 'Bonustabel 1' in rules"), d.message());
+        assertTrue(d.message().contains("dubbele naam 'Bonustabel 1' in rules"), d.message());
     }
 
     @Test void the_group_names_a_duplicate_row_name_one_time() {

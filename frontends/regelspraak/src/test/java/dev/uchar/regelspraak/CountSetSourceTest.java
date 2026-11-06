@@ -88,9 +88,9 @@ class CountSetSourceTest {
      *  the boundary, so a kind silently rejoining it would otherwise pass unnoticed. It is the verifier's
      *  sentence for the count's own rule, WF-093 (b); until L2 the Dutch message cited WF-096, then WF-093 (b). */
     static final String MESSAGE =
-            "setlezing buiten een vouwbron 'gewichten van alle gewichten van de Jutter': the source of this count "
-            + "aggregation reads 'gewicht', a member of the element type 'Vondst': a count folds INSTANCES, so its "
-            + "source is a count source naming the relation's role, never a value read per contributor";
+            "setlezing buiten een vouwbron 'gewichten van alle gewichten van de Jutter': de bron van deze telling "
+            + "leest 'gewicht', een lid van het elementType 'Vondst': een telling vouwt INSTANTIES, dus haar bron "
+            + "is een tellingbron die de rol van de relatie noemt, nooit een waarde die per bijdrager gelezen wordt";
 
     private static List<Diagnostic> setReads(String rules) {
         RegelSpraakModel m = Resolver.resolve(MODEL + rules);

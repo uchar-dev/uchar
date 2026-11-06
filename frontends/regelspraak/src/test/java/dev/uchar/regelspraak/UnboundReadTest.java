@@ -96,14 +96,14 @@ class UnboundReadTest {
 
     private static String opSubtype(String attributeRead, String member, String fillerType, String role, String subtype) {
         return "genavigeerde lezing '" + attributeRead + "': het lid '" + member + "' bestaat niet op '" + fillerType
-                + "', de vuller van de rol '" + role + "', wel op het subtype '" + subtype + "': the navigation reaches '"
-                + fillerType + "', not the endpoint '" + subtype + "'";
+                + "', de vuller van de rol '" + role + "', wel op het subtype '" + subtype + "': de navigatie bereikt '"
+                + fillerType + "', niet het eindpunt '" + subtype + "'";
     }
 
     private static String nowhere(String attributeRead, String member, String fillerType, String role) {
         return "genavigeerde lezing '" + attributeRead + "': het lid '" + member + "' bestaat niet op '" + fillerType
                 + "', de vuller van de rol '" + role + "', en op geen ander objecttype: '" + member
-                + "' is neither an attribute nor a characteristic of '" + fillerType + "'";
+                + "' is geen attribuut en geen kenmerk van '" + fillerType + "'";
     }
 
     // ---- the card's two reproductions
@@ -158,7 +158,7 @@ class UnboundReadTest {
     @Test void the_member_stands_on_another_object_type() {
         assertEquals(List.of("genavigeerde lezing 'het havengeld van de jutter van de Vondst': het lid 'havengeld' "
                         + "bestaat niet op 'Jutter', de vuller van de rol 'jutter', wel op 'Haven', dat geen subtype van "
-                        + "'Jutter' is: 'havengeld' is neither an attribute nor a characteristic of 'Jutter'"),
+                        + "'Jutter' is: 'havengeld' is geen attribuut en geen kenmerk van 'Jutter'"),
                 faults(value("het havengeld van de jutter van de Vondst")));
     }
 
@@ -170,7 +170,7 @@ class UnboundReadTest {
             Objecttype de Haven""");
         assertEquals(List.of("genavigeerde lezing 'de toeslag van de jutter van de Vondst': het lid 'toeslag' bestaat "
                         + "niet op 'Jutter', de vuller van de rol 'jutter', wel op de subtypen 'Strandjutter' en "
-                        + "'Wadjutter': 'toeslag' is neither an attribute nor a characteristic of 'Jutter'"),
+                        + "'Wadjutter': 'toeslag' is geen attribuut en geen kenmerk van 'Jutter'"),
                 faults(wad + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet berekend worden als "
                         + "de toeslag van de jutter van de Vondst plus 1.\n"));
         String kust = JUTTERS.replace("Objecttype de Haven", """
@@ -190,7 +190,7 @@ class UnboundReadTest {
             Objecttype de Haven""");
         assertEquals(List.of("genavigeerde lezing 'het wadgeld van de melder van de Vondst': het lid 'wadgeld' bestaat "
                         + "niet op 'Strandjutter', de vuller van de rol 'melder', wel op 'Wadjutter', dat geen subtype "
-                        + "van 'Strandjutter' is: 'wadgeld' is neither an attribute nor a characteristic of "
+                        + "van 'Strandjutter' is: 'wadgeld' is geen attribuut en geen kenmerk van "
                         + "'Strandjutter'"),
                 faults(sister + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet berekend worden als "
                         + "het wadgeld van de melder van de Vondst plus 1.\n"));
@@ -219,7 +219,7 @@ class UnboundReadTest {
         for (String attributeRead : List.of("de toeslag van de Strandjutter van de Vondst", "de toeslag van de Strandjutter",
                 "de premie van de Strandjutter van de Vondst", "de rang van de Strandjutter van de Vondst"))
             assertEquals(List.of("genavigeerde lezing '" + attributeRead + "' noemt het subtype 'Strandjutter', maar de rol "
-                            + "'jutter' komt uit op 'Jutter': the navigation reaches 'Jutter', not the endpoint "
+                            + "'jutter' komt uit op 'Jutter': de navigatie bereikt 'Jutter', niet het eindpunt "
                             + "'Strandjutter'"),
                     faults(model + "        De bonus van een Vondst moet berekend worden als " + attributeRead + " plus 1.\n"),
                     attributeRead);
@@ -234,8 +234,8 @@ class UnboundReadTest {
         // a possessive or definite noun that names no role and no type: the read has no type at all
         for (String attributeRead : List.of("de premie van zijn visser", "de premie van de visser"))
             assertEquals(List.of("lezing '" + attributeRead + "': '" + attributeRead.substring("de premie van ".length())
-                            + "' noemt vanaf 'Vondst' geen rol en geen objecttype: attribute reference 'premie' without "
-                            + "a subjectType: it resolves against no declaration"),
+                            + "' noemt vanaf 'Vondst' geen rol en geen objecttype: attribuutverwijzing 'premie' zonder "
+                            + "subjectType: zij verwijst naar geen declaratie"),
                     faults(value(attributeRead)), attributeRead);
     }
 
@@ -244,18 +244,18 @@ class UnboundReadTest {
     @Test void a_many_role_in_the_name() {
         // before: an attribute 'bonus van de vondst' of the Jutter
         assertEquals(List.of("genavigeerde lezing 'de bonus van de vondst van de Jutter' over een meervoudige rol: "
-                        + "hop 0 reaches the to-many role 'vondst' in a scalar slot — a to-many step needs an "
-                        + "aggregation, never a silent first pick"),
+                        + "stap 0 bereikt de rol 'vondst' met meer vullers op een plaats voor één waarde — zo'n "
+                        + "stap vraagt een aggregatie, nooit een stille keuze van de eerste"),
                 faults(JUTTERS + "Regel premie\n    geldig altijd\n        De premie van een Jutter moet berekend "
                         + "worden als de bonus van de vondst van de Jutter plus 1.\n"));
     }
 
     @Test void a_chain_from_an_indefinite_subject_is_not_laid() {
         // a consistency over "een Vondst" lays no chain; before: an attribute 'premie van de jutter' of the Vondst
-        assertEquals(List.of("genavigeerde lezing 'De premie van de jutter van een Vondst' is niet als navigatie "
-                        + "gelegd: 'premie' staat op 'Jutter', de vuller van de rol 'jutter', maar zij is gelezen als "
-                        + "het attribuut 'premie van de jutter' van 'Vondst': 'premie van de jutter' is neither an "
-                        + "attribute nor a characteristic of 'Vondst'"),
+        assertEquals(List.of("genavigeerde lezing 'De premie van de jutter van een Vondst' is niet als navigatie gelegd: "
+                        + "'premie' staat op 'Jutter', de vuller van de rol 'jutter', maar zij is gelezen als het "
+                        + "attribuut 'premie van de jutter' van 'Vondst': 'premie van de jutter' is geen attribuut en "
+                        + "geen kenmerk van 'Vondst'"),
                 faults(JUTTERS + "Regel premiegrens\n    geldig altijd\n        De premie van de jutter van een Vondst "
                         + "moet groter zijn dan 2.\n"));
         assertEquals(List.of(opSubtype("De toeslag van de jutter van een Vondst", "toeslag", "Jutter", "jutter",
@@ -268,8 +268,8 @@ class UnboundReadTest {
         // a role or type name in the read's name that binds no single relation; before: an attribute of the Vondst
         assertEquals(List.of("genavigeerde lezing 'de premie van de beheerder van de Vondst' bindt niet (de rol "
                         + "'beheerder' wijst vanaf 'Vondst' niet precies één relatie aan), dus zij is gelezen als het "
-                        + "attribuut 'premie van de beheerder' van 'Vondst': 'premie van de beheerder' is neither an "
-                        + "attribute nor a characteristic of 'Vondst'"),
+                        + "attribuut 'premie van de beheerder' van 'Vondst': 'premie van de beheerder' is geen "
+                        + "attribuut en geen kenmerk van 'Vondst'"),
                 faults(value("de premie van de beheerder van de Vondst")));
         // two relations between Vondst and Jutter: the chain reads 'jutter' as the type, and the pair decides nothing;
         // the possessive binds by the written role (grammar/DIVERGENCES.md, §13.4.1, case 2)
@@ -280,10 +280,10 @@ class UnboundReadTest {
             Eén vinder vindt meerdere gevonden vondsten
 
             """;
-        assertEquals(List.of("genavigeerde lezing 'de premie van de jutter van de Vondst' bindt niet ('jutter' leest "
-                        + "als het objecttype 'Jutter', en 2 relaties verbinden 'Vondst' met 'Jutter'), dus zij is gelezen "
-                        + "als het attribuut 'premie van de jutter' van 'Vondst': 'premie van de jutter' is neither an "
-                        + "attribute nor a characteristic of 'Vondst'"),
+        assertEquals(List.of("genavigeerde lezing 'de premie van de jutter van de Vondst' bindt niet ('jutter' leest als het "
+                        + "objecttype 'Jutter', en 2 relaties verbinden 'Vondst' met 'Jutter'), dus zij is gelezen als het "
+                        + "attribuut 'premie van de jutter' van 'Vondst': 'premie van de jutter' is geen attribuut en geen "
+                        + "kenmerk van 'Vondst'"),
                 faults(vinder + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet berekend worden "
                         + "als de premie van de jutter van de Vondst plus 1.\n"));
         assertEquals(List.of(), faults(vinder + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet "
@@ -294,9 +294,9 @@ class UnboundReadTest {
         String geschorst = JUTTERS.replace("    de premie Numeriek (geheel getal);\n",
                 "    de premie Numeriek (geheel getal);\n    is geschorst kenmerk (bijvoeglijk);\n");
         for (String attributeRead : List.of("de geschorst van de jutter van de Vondst", "de geschorst van zijn jutter"))
-            assertEquals(List.of("genavigeerde lezing '" + attributeRead + "': het lid 'geschorst' van 'Jutter', de vuller van "
-                            + "de rol 'jutter', is een kenmerk en geen attribuut: 'geschorst' is a characteristic of "
-                            + "'Jutter', not an attribute — a characteristic endpoint is ill-formed in a value position"),
+            assertEquals(List.of("genavigeerde lezing '" + attributeRead + "': het lid 'geschorst' van 'Jutter', de vuller van de rol 'jutter', is een kenmerk en "
+                            + "geen attribuut, en een kenmerk als eindpunt is niet welgevormd op een plaats voor een "
+                            + "waarde"),
                     faults(geschorst + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet gesteld "
                             + "worden op " + attributeRead + ".\n"), attributeRead);
     }

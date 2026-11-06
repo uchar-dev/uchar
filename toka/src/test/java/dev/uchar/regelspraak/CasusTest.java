@@ -51,11 +51,11 @@ class CasusTest {
         //            the min then fails the §4 unit rule — the casus is dimensionally inconsistent as written,
         //            and uchar-v1 diverges from the toolchain here (it emitted an Onbekend degradation). The
         //            .rgs stays in original form; only its parity coverage moved to the holdout list.
-        // the date arithmetic refusal speaks the verifier's WF-035 sentence since the card frontend-emitterrestanten
-        var dateQuirk = (java.util.function.Predicate<String>) msg -> msg.contains("date \u00b1 date is ill-formed");
-        // the unit refusal speaks the verifier's WF-035 sentence since the card frontend-emitterrestanten
+        // the date arithmetic refusal is WF-035's (RGS-295), in the Dutch of the frontend's default catalogue
+        var dateQuirk = (java.util.function.Predicate<String>) msg -> msg.contains("datum \u00b1 datum is niet welgevormd");
+        // the unit refusal is WF-035's (RGS-324), in the Dutch of the frontend's default catalogue
         var afstandQuirk = (java.util.function.Predicate<String>) msg ->
-                msg.contains("min:") && msg.contains("additive operands have incompatible units");
+                msg.contains("min:") && msg.contains("de operanden van een optelling hebben onverenigbare eenheden");
         var unexpected = m.errors().stream()
                 .filter(d -> !dateQuirk.test(d.message()) && !afstandQuirk.test(d.message()))
                 .toList();

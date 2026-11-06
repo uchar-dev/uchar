@@ -62,8 +62,8 @@ class NavigationChoiceTest {
         Eén haven telt meerdere liggers
         """;
 
-    private static final String WITHOUT_PATH = "an attribute reference without a path is the subject's own read, so its "
-            + "subjectType is the subject type 'Schuit' — 'Haven' names another type, which only a navigation reaches";
+    private static final String WITHOUT_PATH = "een attribuutverwijzing zonder pad is een lezing op het eigen onderwerp, dus haar subjectType is het "
+            + "onderwerptype 'Schuit' — 'Haven' noemt een ander type, dat alleen een navigatie bereikt";
 
     private static String rule(String value) {
         return """
@@ -149,9 +149,9 @@ class NavigationChoiceTest {
     // ---------------- a binding that reaches a to-many role ----------------
 
     @Test void a_read_over_a_to_many_role_is_refused_in_the_sentence_of_the_verifier() {
-        assertEquals(List.of("genavigeerde lezing 'de romplengte van de ligger' over een meervoudige rol: hop 0 reaches "
-                        + "the to-many role 'ligger' in a scalar slot — a to-many step needs an aggregation, never a "
-                        + "silent first pick"),
+        assertEquals(List.of("genavigeerde lezing 'de romplengte van de ligger' over een meervoudige rol: stap 0 "
+                        + "bereikt de rol 'ligger' met meer vullers op een plaats voor één waarde — zo'n stap vraagt "
+                        + "een aggregatie, nooit een stille keuze van de eerste"),
                 faults(TYPES + THUISLIGGING + """
 
                     Regel kadegeld van een haven
@@ -163,9 +163,9 @@ class NavigationChoiceTest {
     @Test void the_condition_of_a_fact_creation_on_the_target_is_refused() {
         // the condition is read from the anchor, so "de schuit" — the role named as its type, which the pair of two
         // relations no longer hides — reaches the to-many role; before the choice this ended in the emitter's exception
-        assertEquals(List.of("genavigeerde lezing 'de romplengte van de schuit' over een meervoudige rol: hop 0 reaches "
-                        + "the to-many role 'schuit' in a scalar slot — a to-many step needs an aggregation, never a "
-                        + "silent first pick"),
+        assertEquals(List.of("genavigeerde lezing 'de romplengte van de schuit' over een meervoudige rol: stap 0 "
+                        + "bereikt de rol 'schuit' met meer vullers op een plaats voor één waarde — zo'n stap vraagt "
+                        + "een aggregatie, nooit een stille keuze van de eerste"),
                 faults(TYPES + WINTERBERGING + """
 
                     Feittype schuitligging
@@ -194,8 +194,8 @@ class NavigationChoiceTest {
                 + "\"role\":\"winterschuit\"}"), () -> "de rolnaam draagt het bereik:\n" + c);
         assertEquals(List.of("vouw 'de som van de romplengten van alle Schuiten van de Haven' zonder bereik (2 relaties "
                         + "verbinden Haven met Schuit, en 'alle Schuiten van de Haven' noemt geen rol die er precies één "
-                        + "aanwijst): a single-argument fold with an elementType carries its range (sourceRole or "
-                        + "sourcePath) under every kind but total: the range is written, never derived"),
+                        + "aanwijst): een vouw met één argument en een elementType draagt haar bereik (sourceRole of "
+                        + "sourcePath) onder elke soort behalve totaal: het bereik wordt geschreven, nooit afgeleid"),
                 faults(TYPES + THUISLIGGING + WINTERBERGING + fold.formatted("Schuiten")));
     }
 
@@ -220,9 +220,9 @@ class NavigationChoiceTest {
     @Test void a_range_from_a_possessive_anchor_names_the_written_step() {
         assertEquals(List.of("vouw 'de som van de romplengten van alle liggers van zijn thuishaven' zonder bereik (de "
                         + "geschreven bron 'alle liggers van zijn thuishaven' loopt via 'zijn thuishaven', een ander anker "
-                        + "dan het onderwerp, en een bereik vanaf zo'n anker schrijft deze frontend niet): a "
-                        + "single-argument fold with an elementType carries its range (sourceRole or sourcePath) under "
-                        + "every kind but total: the range is written, never derived"),
+                        + "dan het onderwerp, en een bereik vanaf zo'n anker schrijft deze frontend niet): een vouw met "
+                        + "één argument en een elementType draagt haar bereik (sourceRole of sourcePath) onder elke soort "
+                        + "behalve totaal: het bereik wordt geschreven, nooit afgeleid"),
                 faults(TYPES + THUISLIGGING + """
 
                     Regel ligprijs van een schuit
@@ -236,21 +236,20 @@ class NavigationChoiceTest {
      *  for a fold without its range), and a total over another type's attribute, whose step a total without a range
      *  drops (WF-083). Each of the first three ended in the emitter's exception; the fourth went to disk. */
     @Test void a_fold_the_wire_does_not_spell_is_refused_in_the_sentence_of_the_reader() {
-        String step = "met een geschreven stap op haar bron: a path on a fold source is ill-formed (the fold's relation "
-                + "is its range, sourceRole or sourcePath)";
+        String step = "met een geschreven stap op haar bron: een pad op een vouwbron is niet welgevormd (de relatie van "
+                + "de vouw is haar bereik, sourceRole of sourcePath)";
         List<String[]> folds = List.of(
                 new String[]{"het totaal van het kadegeld van zijn thuishaven",
                         "vouw 'het totaal van het kadegeld van zijn thuishaven' " + step},
                 new String[]{"het aantal liggers van zijn thuishaven",
                         "vouw 'het aantal liggers van zijn thuishaven' " + step},
-                new String[]{"de som van zijn romplengte", "vouw 'de som van zijn romplengte' over een eigen attribuut van "
-                        + "het onderwerp, dat geen instanties telt: a single-argument fold with an elementType carries its "
-                        + "range (sourceRole or sourcePath) under every kind but total: the range is written, never "
-                        + "derived"},
-                new String[]{"het totaal van het kadegeld van de Haven", "vouw 'het totaal van het kadegeld van de Haven' "
-                        + "over 'kadegeld' op Haven, een ander type dan het onderwerp: the elementType 'Haven' of a total "
-                        + "without a range is not the fold subject 'Schuit': without a range the fold is the subject's own "
-                        + "read, so its elementType must name the subject type"});
+                new String[]{"de som van zijn romplengte", "vouw 'de som van zijn romplengte' over een eigen attribuut van het onderwerp, dat geen "
+                        + "instanties telt: een vouw met één argument en een elementType draagt haar bereik (sourceRole of "
+                        + "sourcePath) onder elke soort behalve totaal: het bereik wordt geschreven, nooit afgeleid"},
+                new String[]{"het totaal van het kadegeld van de Haven", "vouw 'het totaal van het kadegeld van de Haven' over 'kadegeld' op Haven, een ander type dan "
+                        + "het onderwerp: het elementType 'Haven' van een totaal zonder bereik is niet het onderwerp "
+                        + "'Schuit' van de vouw: zonder bereik is de vouw een lezing op het eigen onderwerp, dus haar "
+                        + "elementType moet het onderwerptype noemen"});
         for (String[] fold : folds)
             assertEquals(List.of(fold[1]), faults(TYPES + THUISLIGGING + rule(fold[0])), fold[0]);
     }
@@ -412,8 +411,8 @@ class NavigationChoiceTest {
                 de ligger (mv: liggers) Schuit
             meerdere thuishavens tellen meerdere liggers
             """ + unique("liggers"));
-        assertEquals(List.of("ERROR: uniciteit 'romplengte uniek' binnen 'de thuishaven': the scope role 'thuishaven' is "
-                        + "to-many — a scope parent is one instance"),
+        assertEquals(List.of("ERROR: uniciteit 'romplengte uniek' binnen 'de thuishaven': de afbakeningsrol 'thuishaven' "
+                        + "heeft meer vullers — een afbakeningsouder is één instantie"),
                 m.diagnostics.stream().map(x -> x.severity() + ": " + x.message()).toList());
     }
 
@@ -465,8 +464,8 @@ class NavigationChoiceTest {
 
     private static String levelError(String subject) {
         return "genavigeerde lezing 'het peil van de Vuurtoren' zonder binding (geen relatie verbindt " + subject
-                + " met Vuurtoren): an attribute reference without a path is the subject's own read, so its subjectType "
-                + "is the subject type '" + subject + "' — 'Vuurtoren' names another type, which only a navigation "
-                + "reaches";
+                + " met Vuurtoren): een attribuutverwijzing zonder pad is een lezing op het eigen onderwerp, dus haar "
+                + "subjectType is het onderwerptype '" + subject + "' — 'Vuurtoren' noemt een ander type, dat alleen een "
+                + "navigatie bereikt";
     }
 }

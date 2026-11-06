@@ -3306,7 +3306,7 @@
     {
       "node": "Diagnostic",
       "severity": "warning",
-      "message": "clamp minimum and base have incompatible units",
+      "message": "begrenzing minimum en basis hebben onverenigbare eenheden",
       "line": 162
     },
     {

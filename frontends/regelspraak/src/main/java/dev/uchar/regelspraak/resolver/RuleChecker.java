@@ -220,8 +220,8 @@ final class RuleChecker {
             }
             Designatable source = onName(all, generatedFrom.source());
             if (source == null && model.isOk())
-                throw new IllegalStateException("het gegenereerde element " + b + " komt uit " + generatedFrom.source()
-                        + ", en dat is geen element van het model");
+                throw new IllegalStateException("the generated element " + b + " comes from " + generatedFrom.source()
+                        + ", which is no element of the model");
             model.generated.put(b, source == null ? generatedFrom : new GeneratedFrom(source, generatedFrom.form()));
             List<Designations.NamePart> d = parts.get(elementKey(b));
             if (d != null) d = inModel(all, b, d);
@@ -244,8 +244,8 @@ final class RuleChecker {
             Designatable part = d.element() == null ? null : onName(all, d.element());
             if (d.element() != null && part == null) {
                 if (model.isOk())
-                    throw new IllegalStateException("het gegenereerde element " + element + " heet naar "
-                            + d.element() + ", en dat is geen element van het model");
+                    throw new IllegalStateException("the generated element " + element + " is named after "
+                            + d.element() + ", which is no element of the model");
                 return null;
             }
             result.add(part == null ? d : new Designations.NamePart(d.text(), part));
@@ -264,8 +264,8 @@ final class RuleChecker {
         int n = h.roles().size();
         if (steps.size() != n) {
             if (model.isOk())
-                throw new IllegalStateException("de stappen " + h.roles() + " van het gegenereerde lid '" + h.name()
-                        + "' van " + h.element().name + " binden niet elk één rol");
+                throw new IllegalStateException("the steps " + h.roles() + " of the generated member '" + h.name()
+                        + "' of " + h.element().name + " do not each bind one role");
             return null;
         }
         List<Designations.NamePart> result = new ArrayList<>();
@@ -284,7 +284,7 @@ final class RuleChecker {
     private void candidate(Map<String, GeneratedFrom> candidates, Designatable element, GeneratedFrom generatedFrom) {
         GeneratedFrom earlier = candidates.putIfAbsent(elementKey(element), generatedFrom);
         if (earlier != null && !earlier.equals(generatedFrom) && model.isOk())
-            throw new IllegalStateException("het element " + element + " is gegenereerd uit " + earlier + " en uit "
+            throw new IllegalStateException("the element " + element + " is generated from " + earlier + " and from "
                     + generatedFrom);
     }
 
@@ -299,7 +299,7 @@ final class RuleChecker {
         for (ObjectType k : t.chain())
             for (String a : k.attributes.keySet())
                 if (a.equalsIgnoreCase(name)) return k;
-        throw new IllegalStateException("het attribuut '" + name + "' staat niet in de keten van " + t.name);
+        throw new IllegalStateException("the attribute '" + name + "' is not in the chain of " + t.name);
     }
 
     /** What a form of the dependency graph is called in a refusal, by the list it comes from. */
@@ -3827,7 +3827,8 @@ final class RuleChecker {
 
     private static Typing.Coded dayKindImpure(String day, String rule, String category, String name) {
         return new Typing.Coded("RGS-318",
-                params("day", day, "rule", rule, "category", category, "name", name == null ? "?" : name));
+                params("day", day, "rule", rule, "category", Msg.frontend("PART.day-kind-read." + category.replace(' ', '-')),
+                        "name", name == null ? "?" : name));
     }
 
     private static void dayKindExpr(Expr e, java.util.function.BiConsumer<Typing.Coded, Source> report,
@@ -5065,7 +5066,7 @@ final class RuleChecker {
             case ONBEPAALD     -> null;   // unreachable (guarded above)
         };
         if (sentence != null) model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                "RGS-197", params("description", sentence, "sign", signWord(n.sign())), line));
+                "RGS-197", params("description", sentence, "sign", Msg.frontend("PART.sign." + signWord(n.sign()))), line));
     }
 
     /** The verifier's word for a sign restriction in WF-039's sentences. */
@@ -5074,7 +5075,7 @@ final class RuleChecker {
             case NEGATIEF -> "negative";
             case NIET_NEGATIEF -> "non-negative";
             case POSITIEF -> "positive";
-            case ONBEPAALD -> throw new IllegalStateException("RuleChecker: een onbepaald teken heeft geen woord");
+            case ONBEPAALD -> throw new IllegalStateException("RuleChecker: an undetermined sign has no word");
         };
     }
 

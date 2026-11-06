@@ -264,8 +264,8 @@ final class Designations {
             int clip = name.length() - source.name().length();
             if (source.kind() != Designatable.Kind.ATTRIBUUT || clip < 1 || name.charAt(clip - 1) != ' '
                     || !name.regionMatches(true, clip, source.name(), 0, source.name().length()))
-                throw new IllegalStateException("het gegenereerde element " + element + " heet niet naar zijn bron "
-                        + source + ", en de frontend kan er geen benaming voor samenstellen");
+                throw new IllegalStateException("the generated element " + element + " is not named after its source "
+                        + source + ", and the frontend cannot compose a designation for it");
             compose(element, List.of(new NamePart(name.substring(0, clip), null),
                     new NamePart(name.substring(clip), source)));
         }
@@ -275,8 +275,8 @@ final class Designations {
             if (!name.equals(element.name())) {
                 // a generated name another declaration also carries is refused with an ERROR of its own (WF-020)
                 if (model.isOk())
-                    throw new IllegalStateException("het gegenereerde element " + element + " heet niet naar zijn "
-                            + "delen " + e.getValue() + ", en de frontend kan er geen benaming voor samenstellen");
+                    throw new IllegalStateException("the generated element " + element + " is not named after its "
+                            + "parts " + e.getValue() + ", and the frontend cannot compose a designation for it");
                 continue;
             }
             compose(element, e.getValue());
@@ -299,8 +299,8 @@ final class Designations {
                 // only a declaration the author wrote under the generated name can carry one, and the form that
                 // generates the name refuses such a name with an ERROR of its own
                 if (model.isOk())
-                    throw new IllegalStateException("het gegenereerde element " + element + " draagt al een "
-                            + "benaming in het vocabulaire '" + v.name() + "'");
+                    throw new IllegalStateException("the generated element " + element + " already carries a "
+                            + "designation in the vocabulary '" + v.name() + "'");
                 continue;
             }
             model.designations.computeIfAbsent(element, k -> new ArrayList<>())

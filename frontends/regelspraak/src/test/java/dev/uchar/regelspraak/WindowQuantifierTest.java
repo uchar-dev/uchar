@@ -57,7 +57,7 @@ class WindowQuantifierTest {
     void a_window_under_no_or_a_counting_quantifier_is_refused(String quantifier, String words) {
         RegelSpraakModel m = Resolver.resolve(under(quantifier));
         Diagnostic d = onlyError(m);
-        assertTrue(d.message().contains("a time window under none or a counting quantifier")
+        assertTrue(d.message().contains("een tijdvenster onder geen of onder een telkwantor")
                 && d.message().contains("'" + words + "'"), d.message());
         assertFalse(m.isOk(), "een ERROR houdt het document van de schijf");
     }
@@ -74,7 +74,7 @@ class WindowQuantifierTest {
                         .. zijn peildatum is gevuld.
             """;
         Diagnostic d = onlyError(Resolver.resolve(src));
-        assertTrue(d.message().contains("a time window under none or a counting quantifier")
+        assertTrue(d.message().contains("een tijdvenster onder geen of onder een telkwantor")
                 && d.message().contains("'geen van de'"), d.message());
     }
 

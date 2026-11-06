@@ -69,22 +69,22 @@ class TypingSentenceTest {
     static List<String> error(String sentence) { return List.of("ERROR 30 " + sentence); }
 
     @Test void window_bound_numeral_full_period_and_characteristic_value() {
-        assertEquals(error("periodevergelijking: window bound is text, must be a date"),
+        assertEquals(error("periodevergelijking: de venstergrens heeft de soort tekst, moet een datum zijn"),
                 meldingen("De uitkomst van een Jutter moet gesteld worden op 5 vanaf zijn naam."));
         String quantifier = "Een Jutter is waardevol indien hij aan ten minste %s van de volgende voorwaarden voldoet:\n"
                 + "                    - zijn telling is groter dan 1\n"
                 + "                    - zijn uitkomst is groter dan 2.";
-        assertEquals(error("telwoord van een kwantificatie: counting quantifier with threshold 0 < 1"),
+        assertEquals(error("telwoord van een kwantificatie: telkwantor met drempel 0 < 1"),
                 meldingen(quantifier.formatted("0")));
         // a decimal telwoord reaches the wire as 0, a number the author did not write
         assertEquals(error("telwoord van een kwantificatie moet een positief geheel getal (>= 1) zijn"),
                 meldingen(quantifier.formatted("1,5")));
-        assertEquals(List.of("ERROR 30 de check op volledige periode (gedurende de/het gehele jaar/maand): wholePeriod "
-                        + "qualifier on a non-time-dependent operand"),
+        assertEquals(List.of("ERROR 30 de check op volledige periode (gedurende de/het gehele jaar/maand): "
+                        + "wholePeriod-kwalificatie op een operand die niet tijdsafhankelijk is"),
                 meldingen("Een Jutter is waardevol indien zijn telling gedurende het gehele jaar groter is dan 5."));
         assertTrue(meldingen("Een Jutter is waardevol indien hij gedurende het gehele jaar waardevol is.").contains(
-                "ERROR 30 de check op volledige periode (gedurende de/het gehele jaar/maand): wholePeriod qualifier on a "
-                        + "non-time-dependent characteristic"));
+                "ERROR 30 de check op volledige periode (gedurende de/het gehele jaar/maand): wholePeriod-kwalificatie op een "
+                        + "kenmerk dat niet tijdsafhankelijk is"));
         assertEquals(error("kenmerkwaardetoekenning 'gewogen': de toegekende waarde moet een booleaanse "
                         + "expressie zijn"),
                 meldingen("Een Jutter heeft een vondst met gewogen gelijk aan 5."));
@@ -95,8 +95,8 @@ class TypingSentenceTest {
      *  document written, and {@code WF-043 FAIL /rules/rules/0/versions/0/condition: wholePeriod qualifier on a
      *  non-time-dependent operand}. */
     @Test void full_period_over_a_compound_operand() {
-        String sentence = "ERROR 30 de check op volledige periode (gedurende de/het gehele jaar/maand): wholePeriod qualifier "
-                + "on a non-time-dependent operand";
+        String sentence = "ERROR 30 de check op volledige periode (gedurende de/het gehele jaar/maand): "
+                + "wholePeriod-kwalificatie op een operand die niet tijdsafhankelijk is";
         assertEquals(List.of(sentence), meldingen("Een Vondst is gewogen indien zijn vondstsaldo plus 1 gedurende het gehele "
                 + "jaar groter is dan 5."));
         assertEquals(List.of(sentence), meldingen("Een Vondst is gewogen indien zijn vondstsaldo naar beneden afgerond op 0 "
@@ -110,17 +110,17 @@ class TypingSentenceTest {
      *  on the frontend before this: a Dutch refusal ({@code waarde -5 voldoet niet aan de teken-beperking …}). */
     @Test void sign_restriction_of_the_target() {
         String v = "De %s van een Vondst moet gesteld worden op %s.";
-        assertEquals(error("teken-beperking: negative literal '-5' is written into a target under a non-negative sign "
-                + "restriction"), meldingen(v.formatted("voorraad", "-5")));
+        assertEquals(error("teken-beperking: de negatieve literal '-5' wordt geschreven in een doel met de "
+                + "tekenbeperking niet-negatief"), meldingen(v.formatted("voorraad", "-5")));
         assertEquals(List.of(), meldingen(v.formatted("voorraad", "-0")));
-        assertEquals(error("teken-beperking: literal '-0' is written into a target under a negative sign restriction"),
+        assertEquals(error("teken-beperking: de literal '-0' wordt geschreven in een doel met de tekenbeperking negatief"),
                 meldingen(v.formatted("korting", "-0")));
         // the lexeme the wire writes for the written "0/5", a fraction that reduces to the whole number 0
-        assertEquals(error("teken-beperking: literal '0' is written into a target under a positive sign restriction"),
+        assertEquals(error("teken-beperking: de literal '0' wordt geschreven in een doel met de tekenbeperking positief"),
                 meldingen(v.formatted("stukprijs", "0/5")));
-        assertEquals(error("teken-beperking: literal '0' is written into a target under a positive sign restriction"),
+        assertEquals(error("teken-beperking: de literal '0' wordt geschreven in een doel met de tekenbeperking positief"),
                 meldingen(v.formatted("stukprijs", "0")));
-        assertEquals(error("teken-beperking: literal '5' is written into a target under a negative sign restriction"),
+        assertEquals(error("teken-beperking: de literal '5' wordt geschreven in een doel met de tekenbeperking negatief"),
                 meldingen(v.formatted("korting", "5")));
         assertEquals(List.of(), meldingen(v.formatted("korting", "-5")));
     }
@@ -130,9 +130,9 @@ class TypingSentenceTest {
      *  on a day-precision date (millisecond precision required)}. */
     @Test void sub_day_unit_on_a_day_date() {
         String d = "De dag van een Jutter moet berekend worden als ";
-        assertEquals(error("plus: sub-day time unit on a day-precision date (millisecond precision required)"),
+        assertEquals(error("plus: tijdseenheid binnen de dag op een datum met dagprecisie (millisecondeprecisie vereist)"),
                 meldingen(d + "zijn vondstdag plus 3 uur."));
-        assertEquals(error("min: sub-day time unit on a day-precision date (millisecond precision required)"),
+        assertEquals(error("min: tijdseenheid binnen de dag op een datum met dagprecisie (millisecondeprecisie vereist)"),
                 meldingen(d + "zijn vondstdag min 90 minuten."));
         assertEquals(List.of(), meldingen(d + "zijn vondstdag plus 3 dagen."));
         assertEquals(List.of(), meldingen("Een Jutter is waardevol indien zijn vondstmoment plus 3 uur later is dan "
@@ -140,33 +140,33 @@ class TypingSentenceTest {
     }
 
     @Test void datePrecision() {
-        assertEquals(error("voorwaarde: gelijk: equality across date precisions"),
+        assertEquals(error("voorwaarde: gelijk: gelijkheid tussen datumprecisies"),
                 meldingen("Een Jutter is waardevol indien zijn vondstdag gelijk is aan zijn vondstmoment."));
-        assertEquals(error("gelijkstelling: toekenning: a date-ms value is assigned to a date-day target"),
+        assertEquals(error("gelijkstelling: toekenning: een waarde van de soort datum en tijd in millisecondes wordt toegekend aan een doel van de soort datum in dagen"),
                 meldingen("De dag van een Jutter moet gesteld worden op zijn vondstmoment."));
-        assertEquals(error("eerste van: first orders dates of two precisions (day and millisecond), which share no order"),
+        assertEquals(error("eerste van: first ordent datums van twee precisies (dag en milliseconde), en die delen geen ordening"),
                 meldingen("De dag van een Jutter moet gesteld worden op de eerste van zijn vondstdag en zijn vondstmoment."));
-        assertEquals(error("een tijd-component (uur/minuut/seconde/milliseconde uit): sub-day extractor operand is "
-                        + "date-day, must be a millisecond-precision date"),
+        assertEquals(error("een tijd-component (uur/minuut/seconde/milliseconde uit): de operand van de extractor binnen de "
+                        + "dag heeft de soort datum in dagen, moet een datum met millisecondeprecisie zijn"),
                 meldingen("De uitkomst van een Jutter moet gesteld worden op het uur uit zijn vondstdag."));
         // the duration's own result also meets the unitless target, so only the precision line is pinned here
         assertTrue(meldingen("De uitkomst van een Jutter moet gesteld worden op de tijdsduur van zijn vondstdag tot "
                         + "zijn vondstmoment in hele dagen.")
-                .contains("ERROR 30 de (absolute) tijdsduur van … tot …: duration operands mix date precisions (both "
-                        + "must share one precision)"));
+                .contains("ERROR 30 de (absolute) tijdsduur van … tot …: de operanden van duration mengen datumprecisies "
+                        + "(beide moeten één precisie delen)"));
     }
 
     @Test void family_on_assigning_and_equality() {
-        assertEquals(error("gelijkstelling: toekenning: a text value is assigned to a number target"),
+        assertEquals(error("gelijkstelling: toekenning: een waarde van de soort tekst wordt toegekend aan een doel van de soort getal"),
                 meldingen("De uitkomst van een Jutter moet gesteld worden op zijn naam."));
-        assertEquals(error("gelijkstelling: toekenning: a date-day value is assigned to a number target"),
+        assertEquals(error("gelijkstelling: toekenning: een waarde van de soort datum in dagen wordt toegekend aan een doel van de soort getal"),
                 meldingen("De uitkomst van een Jutter moet gesteld worden op zijn vondstdag."));
-        assertEquals(error("voorwaarde: gelijk: equality across families: text vs number"),
+        assertEquals(error("voorwaarde: gelijk: gelijkheid tussen families: tekst tegenover getal"),
                 meldingen("Een Jutter is waardevol indien zijn naam gelijk is aan zijn telling."));
         // a percentage is a number with the unit '%' to the verifier: across a unitless number it refuses the units
-        assertEquals(error("gelijkstelling: toekenning: assignment across incompatible units: value unit 'geen', target unit '%'"),
+        assertEquals(error("gelijkstelling: toekenning: toekenning tussen onverenigbare eenheden: eenheid van de waarde 'geen', eenheid van het doel '%'"),
                 meldingen("Het aandeel van een Jutter moet gesteld worden op zijn telling."));
-        assertEquals(error("voorwaarde: gelijk: equality operands have incompatible units"),
+        assertEquals(error("voorwaarde: gelijk: de operanden van een gelijkheid hebben onverenigbare eenheden"),
                 meldingen("Een Jutter is waardevol indien zijn aandeel gelijk is aan zijn telling."));
     }
 
@@ -180,49 +180,49 @@ class TypingSentenceTest {
     }
 
     @Test void choiceTypeDomain() {
-        assertEquals(error("voorwaarde: gelijk: equality across different enumeration domains"),
+        assertEquals(error("voorwaarde: gelijk: gelijkheid tussen verschillende enumeratiedomeinen"),
                 meldingen("Een Jutter is waardevol indien zijn staat gelijk is aan zijn weer."));
-        assertEquals(error("gelijkstelling: toekenning: a value of the enumeration domain 'Weerklasse' is assigned to "
-                        + "a target of the enumeration domain 'Keurklasse'"),
+        assertEquals(error("gelijkstelling: toekenning: een waarde van het enumeratiedomein 'Weerklasse' wordt "
+                        + "toegekend aan een doel van het enumeratiedomein 'Keurklasse'"),
                 meldingen("De klasse van een Jutter moet gesteld worden op zijn weer."));
     }
 
     @Test void non_numeric_operands_at_computing() {
         String r = "De uitkomst van een Jutter moet berekend worden als ";
-        assertEquals(error("verminderd met: operand of a numeric operator is text"),
+        assertEquals(error("verminderd met: operand van een numerieke operator heeft de soort tekst"),
                 meldingen(r + "zijn telling verminderd met zijn naam."));
-        assertEquals(error("maal: operand of a numeric operator is text"),
+        assertEquals(error("maal: operand van een numerieke operator heeft de soort tekst"),
                 meldingen(r + "zijn telling maal zijn naam naar beneden afgerond op 2 decimalen."));
-        assertEquals(error("tot de macht: operand of a numeric operator is text"),
+        assertEquals(error("tot de macht: operand van een numerieke operator heeft de soort tekst"),
                 meldingen(r + "zijn telling tot de macht zijn naam naar beneden afgerond op 2 decimalen."));
         // a percentage carries '%': the verifier refuses it under a power as a unit
-        assertEquals(error("tot de macht: power operands must be unitless"),
+        assertEquals(error("tot de macht: de operanden van een macht moeten zonder eenheid zijn"),
                 meldingen(r + "zijn telling tot de macht zijn aandeel naar beneden afgerond op 2 decimalen."));
     }
 
     @Test void dateArithmetic() {
         String d = "De dag van een Jutter moet berekend worden als ";
-        assertEquals(error("plus: date ± date is ill-formed (date arithmetic takes a date and a duration)"),
+        assertEquals(error("plus: datum ± datum is niet welgevormd (datumrekening neemt een datum en een tijdsduur)"),
                 meldingen(d + "zijn vondstdag plus zijn vondstdag."));
-        assertEquals(error("plus: date ± duration: the duration operand is text, must be a number carrying a time unit"),
+        assertEquals(error("plus: datum ± tijdsduur: de operand voor de tijdsduur heeft de soort tekst, moet een getal met een tijdseenheid zijn"),
                 meldingen(d + "zijn vondstdag plus zijn naam."));
-        assertEquals(error("plus: date ± duration: the duration operand carries no time unit"),
+        assertEquals(error("plus: datum ± tijdsduur: de operand voor de tijdsduur draagt geen tijdseenheid"),
                 meldingen(d + "zijn vondstdag plus zijn telling."));
-        assertEquals(error("plus: date ± duration: the duration unit 'EUR' is neither a recognised time unit nor a "
-                        + "declared day kind"),
+        assertEquals(error("plus: datum ± tijdsduur: de eenheid 'EUR' van de tijdsduur is geen herkende tijdseenheid en geen "
+                        + "gedeclareerde dagsoort"),
                 meldingen(d + "zijn vondstdag plus zijn waarde."));
         String u = "De uitkomst van een Jutter moet berekend worden als ";
         assertTrue(meldingen(u + "zijn telling min zijn vondstdag.").contains(
-                "ERROR 30 min: duration − date is ill-formed (subtraction admits the date on the left only)"));
+                "ERROR 30 min: tijdsduur − datum is niet welgevormd (aftrekken laat de datum alleen links toe)"));
         assertTrue(meldingen(u + "zijn telling plus zijn vondstdag.").contains(
-                "ERROR 30 plus: duration + date is ill-formed (the date stands on the left; date arithmetic does not "
-                        + "commute)"));
+                "ERROR 30 plus: tijdsduur + datum is niet welgevormd (de datum staat links; datumrekening is niet "
+                        + "commutatief)"));
     }
 
     @Test void non_numeric_operands_at_ordering() {
-        assertEquals(error("voorwaarde: vergelijking: ordering operand is text"),
+        assertEquals(error("voorwaarde: vergelijking: operand van een ordening heeft de soort tekst"),
                 meldingen("Een Jutter is waardevol indien zijn telling groter is dan zijn naam."));
-        assertEquals(error("voorwaarde: vergelijking: date-ordering operand is number"),
+        assertEquals(error("voorwaarde: vergelijking: operand van een datumordening heeft de soort getal"),
                 meldingen("Een Jutter is waardevol indien zijn vondstdag eerder is dan zijn telling."));
     }
 
@@ -236,23 +236,23 @@ class TypingSentenceTest {
     }
 
     @Test void predicates() {
-        assertEquals(error("voorwaarde: elfproef: elevenTest operand is date-day, must be text or a whole unitless number"),
+        assertEquals(error("voorwaarde: elfproef: de operand van elevenTest heeft de soort datum in dagen, moet tekst of een geheel getal zonder eenheid zijn"),
                 meldingen("Een Jutter is waardevol indien zijn vondstdag aan de elfproef voldoet."));
-        assertEquals(error("voorwaarde: numeriek met exact: exactDigits operand is number, must be text"),
+        assertEquals(error("voorwaarde: numeriek met exact: de operand van exactDigits heeft de soort getal, moet tekst zijn"),
                 meldingen("Een Jutter is waardevol indien zijn telling numeriek is met exact 4 cijfers."));
-        assertEquals(error("voorwaarde: dagsoort: day-kind predicate operand is number, must be a date"),
+        assertEquals(error("voorwaarde: dagsoort: de operand van het dagsoortpredicaat heeft de soort getal, moet een datum zijn"),
                 meldingen("Een Jutter is waardevol indien zijn telling een rustdag is."));
     }
 
     @Test void a_label_outside_the_domain() {
-        assertEquals(error("enumeration label 'zwart' is not in the declared domain"),
+        assertEquals(error("enumeratiewaarde 'zwart' staat niet in het gedeclareerde domein"),
                 meldingen("De klasse van een Jutter moet gesteld worden op 'zwart'."));
-        assertEquals(error("enumeration label 'zwart' is not in the declared domain"),
+        assertEquals(error("enumeratiewaarde 'zwart' staat niet in het gedeclareerde domein"),
                 meldingen("Een Jutter is waardevol indien zijn staat gelijk is aan 'zwart'."));
     }
 
     @Test void power_with_a_unit() {
-        assertEquals(error("tot de macht: power operands must be unitless"),
+        assertEquals(error("tot de macht: de operanden van een macht moeten zonder eenheid zijn"),
                 meldingen("De uitkomst van een Jutter moet berekend worden als zijn waarde tot de macht 2 naar beneden afgerond op 2 decimalen."));
     }
 }

@@ -130,16 +130,17 @@ class DayKindCalendarSpellingTest {
      *  sentence. Before: the second day kind silently lost its declared plural, or its name came to stand for the
      *  first day kind and the document went to disk for the verifier to refuse. */
     @Test void a_spelling_of_two_day_kinds_is_an_error() {
-        assertEquals(List.of("dagsoort 'rustdag': the plural 'vrijedagen' of day kind 'rustdag' is the plural "
-                        + "'vrijedagen' of day kind 'havendag': one spelling names two day kinds"),
+        assertEquals(List.of("dagsoort 'rustdag': het meervoud 'vrijedagen' van dagsoort 'rustdag' is het "
+                        + "meervoud 'vrijedagen' van dagsoort 'havendag': één spelling noemt twee "
+                        + "dagsoorten"),
                 Resolver.resolve("Dagsoort de havendag (mv: vrijedagen);\nDagsoort de rustdag (mv: vrijedagen);\n")
                         .errors().stream().map(Diagnostic::message).toList());
-        assertEquals(List.of("dagsoort 'rustdag': the plural 'rustdag' of day kind 'havendag' is the name of day kind "
-                        + "'rustdag': one spelling names two day kinds"),
+        assertEquals(List.of("dagsoort 'rustdag': het meervoud 'rustdag' van dagsoort 'havendag' is de naam van "
+                        + "dagsoort 'rustdag': één spelling noemt twee dagsoorten"),
                 Resolver.resolve("Dagsoort de havendag (mv: rustdag);\nDagsoort de rustdag (mv: rustdagen);\n")
                         .errors().stream().map(Diagnostic::message).toList());
-        assertEquals(List.of("dagsoort 'rustdag': the plural 'havendag' of day kind 'rustdag' is the name of day kind "
-                        + "'havendag': one spelling names two day kinds"),
+        assertEquals(List.of("dagsoort 'rustdag': het meervoud 'havendag' van dagsoort 'rustdag' is de naam van "
+                        + "dagsoort 'havendag': één spelling noemt twee dagsoorten"),
                 Resolver.resolve("Dagsoort de havendag (mv: havendagen);\nDagsoort de rustdag (mv: havendag);\n")
                         .errors().stream().map(Diagnostic::message).toList());
         // a derived plural gives way without a refusal: "vrijdag" derives "vrijdagen", which the second day kind is

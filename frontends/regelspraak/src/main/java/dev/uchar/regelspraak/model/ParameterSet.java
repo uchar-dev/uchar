@@ -1,12 +1,16 @@
 package dev.uchar.regelspraak.model;
 
 import dev.uchar.regelspraak.ir.Validity;
+import dev.uchar.regelspraak.message.Component;
+import dev.uchar.regelspraak.message.Msg;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
 
 /**
  * Een <b>parameterset</b>: gedeployde, geldigheids-geversioneerde parameterwaarden als DATA (geen RegelSpraak-syntax).
@@ -71,8 +75,8 @@ public record ParameterSet(String name, Map<String, List<ValueInterval>> values)
                 for (int j = i + 1; j < list.size(); j++) {
                     Validity a = list.get(i).validity(), b = list.get(j).validity();
                     if (overlaps(a, b))
-                        faults.add("parameter '" + e.getKey() + "' heeft overlappende geldigheidsperiodes "
-                                + show(a) + " en " + show(b));
+                        faults.add(new Msg(Component.FRONTEND, "RGS-380", params("parameter", e.getKey(),
+                                "first", show(a), "second", show(b))).text());
                 }
         }
         return faults;
@@ -99,7 +103,7 @@ public record ParameterSet(String name, Map<String, List<ValueInterval>> values)
             for (ValueInterval wi : e.getValue())
                 if (wi.validity().contains(asOfDate)) { chosen = wi; break; }
             if (chosen == null)
-                faults.add("parameter '" + e.getKey() + "' heeft geen geldige waarde op peildatum " + asOfDate);
+                faults.add(new Msg(Component.FRONTEND, "RGS-381", params("parameter", e.getKey(), "asOfDate", asOfDate)).text());
             else
                 result.put(e.getKey(), chosen.value());
         }
@@ -121,9 +125,9 @@ public record ParameterSet(String name, Map<String, List<ValueInterval>> values)
         return false;
     }
 
-    private static String show(Validity g) {
+    private static Msg show(Validity g) {
         String v = g.from() == null ? "(open)" : g.from().toString();
         String t = g.until() == null ? "(open)" : g.until().toString();
-        return "[" + v + " t/m " + t + "]";
+        return Msg.frontend("PART.validity-period", "from", v, "until", t);
     }
 }

@@ -75,10 +75,10 @@ class TypePluralCountTest {
         assertEquals(Severity.ERROR, d.severity(), "ERROR: irModus schrijft het document dan niet");
         // the type the operand named, in the Dutch context; the count without an element type, in the verifier's
         // WF-037 sentence
-        assertEquals("telling zonder bron '" + expression.replace("(", "").replace(")", "") + "', over het objecttype "
-                + "Vondst: the count is an INSTANCE fold and MUST carry an element type: without one its argument is no "
-                + "fold source at all — and with no argument there is none — so the count has no contributors to "
-                + "count, only its operand, whatever that operand holds (ch. 4.3)", d.message());
+        assertEquals("telling zonder bron '" + expression.replace("(", "").replace(")", "") + "', over het objecttype Vondst: de telling is een vouw over INSTANTIES en MOET een elementType "
+                + "dragen: zonder elementType is haar argument helemaal geen vouwbron — en zonder argument is er geen — "
+                + "dus heeft de telling geen bijdragers om te tellen, alleen haar operand, wat die operand ook bevat "
+                + "(ch. 4.3)", d.message());
         assertEquals(1, m.errors().size(), () -> "precies één fout: " + m.errors());
     }
 

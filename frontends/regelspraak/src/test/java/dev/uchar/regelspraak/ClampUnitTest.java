@@ -43,18 +43,18 @@ class ClampUnitTest {
     }
 
     @Test void a_bound_with_a_unit_over_a_unitless_base() {
-        assertEquals(List.of("WARNING 11 clamp minimum and base have incompatible units"),
+        assertEquals(List.of("WARNING 11 begrenzing minimum en basis hebben onverenigbare eenheden"),
                 meldingen(source("", "met een minimum van 0 €", "")));
-        assertEquals(List.of("WARNING 11 clamp maximum and base have incompatible units"),
+        assertEquals(List.of("WARNING 11 begrenzing maximum en basis hebben onverenigbare eenheden"),
                 meldingen(source("", "met een maximum van 100 €", "")));
-        assertEquals(List.of("WARNING 11 clamp minimum and base have incompatible units",
-                        "WARNING 11 clamp maximum and base have incompatible units"),
+        assertEquals(List.of("WARNING 11 begrenzing minimum en basis hebben onverenigbare eenheden",
+                        "WARNING 11 begrenzing maximum en basis hebben onverenigbare eenheden"),
                 meldingen(source("", "met een minimum van 0 € en een maximum van 100 €", "")));
     }
 
     @Test void a_unitless_attribute_bound_over_a_base_with_a_unit() {
         // only a LITERAL adopts the other side's unit; an attribute declared without one does not
-        assertEquals(List.of("WARNING 12 clamp minimum and base have incompatible units"),
+        assertEquals(List.of("WARNING 12 begrenzing minimum en basis hebben onverenigbare eenheden"),
                 meldingen(source(" met eenheid €", "met een minimum van zijn ondergrens",
                         "\n    de ondergrens Numeriek (getal met 2 decimalen);")));
     }
@@ -84,8 +84,8 @@ class ClampUnitTest {
                 geldig altijd
                     Het bergloon van een Jutter moet berekend worden als zijn vondstwaarde, met een minimum van 0 kg en een maximum van 5 kg.
             """);
-        assertEquals(List.of("ERROR 13 clamp minimum and base have incompatible units",
-                        "ERROR 13 clamp maximum and base have incompatible units"),
+        assertEquals(List.of("ERROR 13 begrenzing minimum en basis hebben onverenigbare eenheden",
+                        "ERROR 13 begrenzing maximum en basis hebben onverenigbare eenheden"),
                 m.diagnostics.stream().map(d -> d.severity() + " " + d.line() + " " + d.message()).toList());
     }
 

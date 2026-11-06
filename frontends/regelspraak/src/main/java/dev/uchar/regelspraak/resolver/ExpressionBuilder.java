@@ -994,7 +994,7 @@ final class ExpressionBuilder {
         // tolerates carries it and an ERROR writes no document at all for it
         if (oneSidedUnit(base, limit))
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
-                    "RGS-060", params("bound", which), ctx.getStart().getLine()));
+                    "RGS-060", params("bound", Msg.frontend("PART.clamp." + which)), ctx.getStart().getLine()));
     }
 
     /** WF-099: a clamp restates each bound into its base's unit, so a unit on one side alone leaves nothing to
@@ -3037,8 +3037,8 @@ final class ExpressionBuilder {
             if (!d.isDate())                                   // §4.16/§4.17: both operands must be a datumexpressie
                 // the sentences are joined, so one template carries the kinds of the operands that are no date
                 return new Typing.Coded("RGS-084", params("category", category, "kinds",
-                        String.join(", ", types.stream().filter(x -> !x.isUnknown() && !x.isDate())
-                                .map(Typing::kindWord).toList()),
+                        new Msg.Joined(types.stream().filter(x -> !x.isUnknown() && !x.isDate())
+                                .map(Typing::kindWord).toList(), ", "),
                         "sentences", types.stream().filter(x -> !x.isUnknown() && !x.isDate())
                                 .map(x -> Msg.frontend("RGS-084.operand-sentence", "category", category, "kind", Typing.kindWord(x))).toList()));
             if (ref == null) ref = d;

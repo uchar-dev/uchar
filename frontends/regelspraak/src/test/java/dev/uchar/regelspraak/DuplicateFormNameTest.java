@@ -73,7 +73,7 @@ class DuplicateFormNameTest {
             Regel actief
                 geldig altijd
                     Het gewicht van een Jutter moet gesteld worden op 3.
-            """, 1, 2, "regel 'actief' is al gedeclareerd op regel <n>; vormnamen zijn uniek (WF-020): duplicate name "
+            """, 1, 2, "regel 'actief' is al gedeclareerd op regel <n>; vormnamen zijn uniek (WF-020): dubbele naam "
                 + "'actief' in rules");
     }
 
@@ -87,7 +87,7 @@ class DuplicateFormNameTest {
             Regel Actief
                 geldig altijd
                     Het gewicht van een Jutter moet gesteld worden op 3.
-            """, 1, 2, "regel 'Actief' is al gedeclareerd op regel <n>; vormnamen zijn uniek (WF-020): duplicate name "
+            """, 1, 2, "regel 'Actief' is al gedeclareerd op regel <n>; vormnamen zijn uniek (WF-020): dubbele naam "
                 + "'actief' in rules");
     }
 
@@ -100,8 +100,8 @@ class DuplicateFormNameTest {
             Regel gewicht
                 geldig altijd
                     De premie van een Jutter moet groter zijn dan 0.
-            """, 1, 2, "regel 'gewicht' is al gedeclareerd op regel <n>; vormnamen zijn uniek (WF-020): name "
-                + "'gewicht' collides with 'gewicht' in rules (unique across all named forms)");
+            """, 1, 2, "regel 'gewicht' is al gedeclareerd op regel <n>; vormnamen zijn uniek (WF-020): naam "
+                + "'gewicht' botst met 'gewicht' in rules (uniek over alle benoemde vormen)");
     }
 
     @Test void a_member_of_a_rule_group_and_a_rule() {
@@ -115,7 +115,7 @@ class DuplicateFormNameTest {
             Regel actief
                 geldig altijd
                     Het gewicht van een Jutter moet gesteld worden op 3.
-            """, 1, 2, "regel 'actief' is al gedeclareerd op regel <n>; vormnamen zijn uniek (WF-020): duplicate name "
+            """, 1, 2, "regel 'actief' is al gedeclareerd op regel <n>; vormnamen zijn uniek (WF-020): dubbele naam "
                 + "'actief' in rules");
     }
 
@@ -131,7 +131,7 @@ class DuplicateFormNameTest {
                 geldig altijd
                     Het gewicht van een Jutter moet gesteld worden op 3.
             """, 1, 2, "regel 'premie 1' is al gedeclareerd op regel <n>, als rij van beslistabel 'premie'; vormnamen "
-                + "zijn uniek (WF-020): duplicate name 'premie 1' in rules");
+                + "zijn uniek (WF-020): dubbele naam 'premie 1' in rules");
     }
 
     @Test void two_blocks_with_a_version() {
@@ -143,7 +143,7 @@ class DuplicateFormNameTest {
             Regel gewicht
                 geldig t/m 31-12-2025
                     Het gewicht van een Jutter moet gesteld worden op 2.
-            """, 1, 2, "regel 'gewicht' is al gedeclareerd op regel <n>; vormnamen zijn uniek (WF-020): duplicate name "
+            """, 1, 2, "regel 'gewicht' is al gedeclareerd op regel <n>; vormnamen zijn uniek (WF-020): dubbele naam "
                 + "'gewicht' in rules");
     }
 
@@ -161,7 +161,7 @@ class DuplicateFormNameTest {
                     De premie van een Jutter moet gesteld worden op 3.
                 geldig t/m 31-12-2026
                     De premie van een Jutter moet gesteld worden op 2.
-            """, 1, 2, "regel 'gewicht' is al gedeclareerd op regel <n>; vormnamen zijn uniek (WF-020): duplicate name "
+            """, 1, 2, "regel 'gewicht' is al gedeclareerd op regel <n>; vormnamen zijn uniek (WF-020): dubbele naam "
                 + "'gewicht' in rules");
     }
 

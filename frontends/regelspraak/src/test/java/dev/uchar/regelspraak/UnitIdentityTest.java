@@ -130,7 +130,7 @@ class UnitIdentityTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(refused(m, "RGS-335"), () -> "verwachtte de zin van WF-023, kreeg: " + m.errors());
         String message = m.errors().stream().filter(d -> "RGS-335".equals(d.code())).findFirst().orElseThrow().message();
-        assertTrue(message.contains("value unit '1/dg', target unit 'geen'"), message);
+        assertTrue(message.contains("eenheid van de waarde '1/dg', eenheid van het doel 'geen'"), message);
         assertFalse(m.errors().stream().anyMatch(d -> d.message().contains("niet uitdrukken")),
                 () -> "de eenheid is uitdrukbaar, en de melding mag niet anders zeggen: " + m.errors());
     }
@@ -521,6 +521,6 @@ class UnitIdentityTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(refused(m, "RGS-335"), () -> "verwachtte de zin van WF-023, kreeg: " + m.errors());
         String message = m.errors().stream().filter(d -> "RGS-335".equals(d.code())).findFirst().orElseThrow().message();
-        assertTrue(message.contains("value unit 'EUR·m/jr', target unit 'EUR'"), message);
+        assertTrue(message.contains("eenheid van de waarde 'EUR·m/jr', eenheid van het doel 'EUR'"), message);
     }
 }

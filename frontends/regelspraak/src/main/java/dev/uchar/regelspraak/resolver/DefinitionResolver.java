@@ -1569,8 +1569,8 @@ public final class DefinitionResolver {
         }
         if (dader == null || dader.getType() == Token.EOF) return -1;
         for (int i = 0; i < list.size(); i++) if (list.get(i).getTokenIndex() == dader.getTokenIndex()) return i;
-        throw new IllegalStateException("DefinitionResolver.onleesbaarWoord: het token '" + dader.getText()
-                + "' staat niet in de naam '" + name + "'");
+        throw new IllegalStateException("DefinitionResolver.unreadableWord: the token '" + dader.getText()
+                + "' is not in the name '" + name + "'");
     }
 
     // ---------------- helpers ----------------

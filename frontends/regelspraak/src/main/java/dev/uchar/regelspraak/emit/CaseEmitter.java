@@ -251,7 +251,7 @@ public final class CaseEmitter {
         else if (v.bool() != null) w.key("boolean").value(v.bool().booleanValue());
         else if (v.text() != null) w.key("text").value(v.text());
         else if (v.enumValue() != null) w.key("enumeration").value(v.enumValue());
-        else throw new IllegalStateException("CaseEmitter: een waarde zonder variant");
+        else throw new IllegalStateException("CaseEmitter: a value without a variant");
         w.endObject();
     }
 

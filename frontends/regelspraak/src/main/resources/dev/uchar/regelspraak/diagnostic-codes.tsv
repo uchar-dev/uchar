@@ -367,3 +367,11 @@ RGS-376	absence-marker-read-untested	ERROR	attribute,expression,objectType
 RGS-377	scenario-absence-marker-not-admitted	ERROR	admitted,marker,what
 RGS-378	allocation-time-dependent-attribute	ERROR	attribute,name,objectType
 RGS-379	negative-edge-on-cycle	ERROR	kind,name,producer,producerKind,sentence,wf
+RGS-380	parameter-validity-overlap	ERROR	first,parameter,second
+RGS-381	parameter-without-value-on-date	ERROR	asOfDate,parameter
+RGS-382	fraction-zero-denominator	ERROR	-
+RGS-383	unit-factor-unknown	ERROR	abbreviation,canonical,factor
+RGS-384	unit-not-declared	ERROR	unit
+RGS-385	unit-not-convertible	ERROR	target,unit
+RGS-386	tokens-without-source-file	ERROR	-
+RGS-387	source-file-incomplete	ERROR	-

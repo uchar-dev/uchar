@@ -126,7 +126,8 @@ public final class Resolver {
      *  a block of the scenario layer is a test document and is read as {@code --cases} reads it, with its
      *  diagnostics. */
     public static SemanticTokens.Document tokens(java.util.List<SemanticTokens.SourceFile> files) {
-        if (files.isEmpty()) throw new IllegalArgumentException("semantic tokens: geen bronbestand opgegeven");
+        if (files.isEmpty()) throw new IllegalArgumentException(new dev.uchar.regelspraak.message.Msg(
+                dev.uchar.regelspraak.message.Component.FRONTEND, "RGS-386", params()).text());
         StringBuilder chain = new StringBuilder();
         int[] firstLines = new int[files.size()];
         int lineNumber = 1;

@@ -319,10 +319,10 @@ class CountUnionTest {
         List<Diagnostic> ds = faults(VALUE_OPERANDS);
         assertEquals(1, ds.size(), () -> "verwacht één fout, kreeg: " + ds);
         String msg = ds.get(0).message();
-        assertTrue(msg.contains("this node carries 2 operands"), () -> "de melding telt de operanden niet: " + msg);
-        assertTrue(msg.contains("a count folds INSTANCES and has no LISTED form"),
+        assertTrue(msg.contains("deze knoop draagt 2 operanden"), () -> "de melding telt de operanden niet: " + msg);
+        assertTrue(msg.contains("een telling vouwt INSTANTIES en heeft geen OPGESOMDE vorm"),
                 () -> "de melding noemt de vorm niet: " + msg);
-        assertTrue(msg.contains("the only reading an operand list leaves a count is the number of FILLED operands"),
+        assertTrue(msg.contains("de enige lezing die een lijst van operanden een telling laat, is het aantal GEVULDE operanden"),
                 () -> "de melding is de ariteitszin van de verifier niet: " + msg);
         // value operands open no union route, so the Dutch context carries no union reason
         assertFalse(msg.contains("geen unie van selecties"),

@@ -38,7 +38,7 @@ class TypingTest {
         var r = Typing.compute(BinOp.PLUS, date(), num("km", "afstand"));
         assertFalse(r.ok());
         // the refusal speaks the verifier's WF-035 sentence since the card frontend-emitterrestanten
-        assertTrue(r.error().contains("is neither a recognised time unit nor a declared day kind"), r::error);
+        assertTrue(r.error().contains("is geen herkende tijdseenheid en geen gedeclareerde dagsoort"), r::error);
         assertFalse(Typing.compute(BinOp.MIN, date(), num("km", "afstand")).ok());
     }
     @Test void plus_date_and_day_kind_unit_ok() {         // §6.11: a declared dagsoort is a valid duration unit
@@ -53,7 +53,7 @@ class TypingTest {
     @Test void equal_mixed_time_precision_error() {
         var r = Typing.compare(CmpOp.GELIJK, date(), dateTime());
         // the refusal speaks the verifier's WF-036 sentence since the card frontend-emitterrestanten
-        assertFalse(r.ok()); assertTrue(r.error().contains("equality across date precisions"), r::error);
+        assertFalse(r.ok()); assertTrue(r.error().contains("gelijkheid tussen datumprecisies"), r::error);
         assertFalse(Typing.compare(CmpOp.ONGELIJK, dateTime(), date()).ok());
         assertTrue(Typing.compare(CmpOp.GELIJK, date(), date()).ok());
         assertTrue(Typing.compare(CmpOp.GELIJK, dateTime(), dateTime()).ok());

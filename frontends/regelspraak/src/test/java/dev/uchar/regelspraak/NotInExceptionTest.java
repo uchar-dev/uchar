@@ -163,7 +163,7 @@ class NotInExceptionTest {
             """.formatted(result));
         Diagnostic d = onlyError(m);
         // the lowered rule writes false into the characteristic, which the verifier refuses in these words
-        assertEquals("regel 'vlak': characteristic target's value must be the boolean constant true", d.message());
+        assertEquals("regel 'vlak': de waarde van een kenmerkdoel moet de booleaanse constante waar zijn", d.message());
         assertFalse(d.message().contains("ander doel"), "niet de misleidende doelmelding van meting 1");
         assertFalse(m.isOk(), "een ERROR houdt het document van de schijf");
     }
@@ -179,7 +179,7 @@ class NotInExceptionTest {
                     indien hij vergunning geweigerd is.
             """);
         Diagnostic d = onlyError(m);
-        assertEquals("regel 'vlak': characteristic target's value must be the boolean constant true", d.message());
+        assertEquals("regel 'vlak': de waarde van een kenmerkdoel moet de booleaanse constante waar zijn", d.message());
     }
 
     @Test void a_flat_negation_with_two_versions_is_refused_once() {
@@ -209,7 +209,7 @@ class NotInExceptionTest {
             """);
         Diagnostic d = onlyError(m);
         assertTrue(d.message().contains("een rij van beslistabel 'Uitsluitingstabel'")
-                && d.message().contains("characteristic target's value must be the boolean constant true"), d.message());
+                && d.message().contains("de waarde van een kenmerkdoel moet de booleaanse constante waar zijn"), d.message());
         assertEquals(9, d.line(), "de regel van de tabelkop in het document, niet die in de apart geparste rij");
     }
 
@@ -233,7 +233,7 @@ class NotInExceptionTest {
                     indien hij vergunning geweigerd is.
             """);
         assertEquals(1, m.diagnostics.size(), () -> "verwachtte alleen de WF-050-fout: " + m.diagnostics);
-        assertTrue(m.diagnostics.get(0).message().contains("a rule also writes defaults target '"),
+        assertTrue(m.diagnostics.get(0).message().contains("een regel schrijft ook het defaults-doel '"),
                 m.diagnostics.get(0).message());
     }
 

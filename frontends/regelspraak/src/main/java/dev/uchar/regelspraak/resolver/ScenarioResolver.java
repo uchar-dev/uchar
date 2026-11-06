@@ -154,8 +154,8 @@ public final class ScenarioResolver {
                     prod.addAnyChild((ParserRuleContext) kind);
                 else if (kind instanceof ParserRuleContext block && !(block instanceof SituatieDefinitieContext)
                         && !(block instanceof ParametersetDefinitieContext) && !(block instanceof ScenarioContext))
-                    throw new IllegalStateException("testDocument draagt een blok dat deze route niet kent: "
-                            + block.getClass().getSimpleName() + " op regel " + block.getStart().getLine());
+                    throw new IllegalStateException("testDocument carries a block this route does not know: "
+                            + block.getClass().getSimpleName() + " on line " + block.getStart().getLine());
             }
         return prod;
     }
@@ -1471,7 +1471,7 @@ public final class ScenarioResolver {
             if (markers != null && markers.contains(marker)) return ScenarioValue.fromConstructor(marker, null);
             // the dialect has two markers, so a target that declares both takes every marker written
             if (markers != null && markers.size() != 1)
-                throw new IllegalStateException("ScenarioResolver: '" + marker + "' is geen van de markeringen " + markers);
+                throw new IllegalStateException("ScenarioResolver: '" + marker + "' is none of the markers " + markers);
             error(line, "RGS-377", params("what", what, "marker", marker, "admitted", markers == null
                     ? Msg.frontend("PART.absence-markers.none")
                     : Msg.frontend("PART.absence-markers.only", "marker", markers.get(0))));
@@ -1544,7 +1544,7 @@ public final class ScenarioResolver {
         String text = g.NUMBER().getText();
         BigDecimal[] r = RationalParser.of(text);
         // the parse enters a number value on a NUMBER token only, and every NUMBER token is a number RationalParser reads
-        if (r == null) throw new IllegalStateException("ScenarioResolver: het getal '" + text + "' is geen getal");
+        if (r == null) throw new IllegalStateException("ScenarioResolver: the number '" + text + "' is no number");
         BigInteger[] rational = rational(r[0], r[1]);
         int dec = r[1].compareTo(BigDecimal.ONE) == 0 ? Math.max(0, r[0].stripTrailingZeros().scale())
                 : terminates(rational[1]) ? Math.max(0, new BigDecimal(rational[0]).divide(new BigDecimal(rational[1])).stripTrailingZeros().scale())

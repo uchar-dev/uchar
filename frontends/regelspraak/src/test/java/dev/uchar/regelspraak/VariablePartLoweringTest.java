@@ -330,8 +330,8 @@ class VariablePartLoweringTest {
             """;
         assertEquals(meldingen(plain), meldingen(viaVariable),
                 () -> "het variabelendeel mag de teken-beperking niet wegnemen: " + meldingen(viaVariable));
-        assertTrue(reports(meldingen(viaVariable), "ERROR: teken-beperking: negative literal '-49' is written into a target "
-                        + "under a non-negative sign restriction"),
+        assertTrue(reports(meldingen(viaVariable), "ERROR: teken-beperking: de negatieve literal '-49' wordt geschreven in een "
+                        + "doel met de tekenbeperking niet-negatief"),
                 () -> "§3.3.1 ongemeld: " + meldingen(viaVariable));
     }
 
@@ -362,7 +362,7 @@ class VariablePartLoweringTest {
         assertEquals(meldingen(plain), meldingen(viaVariable),
                 () -> "het variabelendeel mag de domeincontrole niet wegnemen: " + meldingen(viaVariable));
         // the label refusal speaks the verifier's WF-039 sentence since the card frontend-emitterrestanten
-        assertTrue(reports(meldingen(viaVariable), "ERROR: enumeration label 'paars' is not in the declared domain"),
+        assertTrue(reports(meldingen(viaVariable), "ERROR: enumeratiewaarde 'paars' staat niet in het gedeclareerde domein"),
                 () -> "§13.3.4.2 ongemeld: " + meldingen(viaVariable));
     }
 
