@@ -1584,7 +1584,9 @@ EXPECTED_CHANNEL=(
 # 352 since the card ref-strata-na-een-creatie (2026-11-06): the goldens jutterswet-strata-na-een-creatie and
 # jutterswet-strata-na-een-creatie-consistentie (PLAYED 1 each), the lower strata at rest over a made object before a
 # reader of a higher stratum, and a consistency of a lower stratum checked again over it (ch. 6.3).
-EXPECTED_PLAYED=352
+# 353 since the card clingo-nonexact-division-in-condition (2026-11-06): the golden jutterswet-keurquotient, a bare
+# division whose quotient is not whole, compared in a condition (PLAYED 2 on both branches).
+EXPECTED_PLAYED=353
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

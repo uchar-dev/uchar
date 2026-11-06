@@ -16793,6 +16793,29 @@ let () =
       | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d)" c) false
       | _, _ -> check (label ^ " (clingo killed)") false)
 
+(* A BARE NON-EXACT DIVISION IN A CONDITION (card
+   clingo-nonexact-division-in-condition, 2026-11-06). The quotient is
+   compared, never written, so the fault of a write, EF-006, does not fit it;
+   ref compares the exact rational quotient, and this encoding holds a term as
+   an integer at the scale of its operands, which 13/2 of two whole numbers
+   does not reach. The fail-fast is the limit CLINGO-039 instead, the same
+   for a member the fold reaches and for one after its stop: the matrix of the
+   golden jutterswet-keurgemiddelde without its rounding, P1 with W1 not
+   gekeurd (the stop) before W2 (13 / 2), P2 with W3 (70 / 10) before W4
+   (13 / 2), each with ref's verdict beside it (P1 not inzetbaar, P2
+   inzetbaar). The golden jutterswet-keurquotient stands in gate 6's refusal
+   channel with this code. Until this card the witness read as EF-006. *)
+let () =
+  let ir = {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Ploeg","animate":false,"plural":"Ploegen","attributes":[{"node":"Attribute","name":"wachttal","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"characteristics":[{"node":"Characteristic","name":"inzetbaar","kind":"adjectival"}]},{"node":"ObjectType","name":"Strandwacht","animate":true,"plural":"Strandwachten","attributes":[{"node":"Attribute","name":"keurpunten","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"keuringen","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"characteristics":[{"node":"Characteristic","name":"gekeurd","kind":"adjectival"}]}],"factTypes":[{"node":"FactType","name":"ploegindeling","reciprocal":false,"roles":[{"node":"Role","name":"ploeg","objectType":"Ploeg","many":false},{"node":"Role","name":"wacht","objectType":"Strandwacht","plural":"wachten","many":true}]}],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"inzetbaar bij keurgemiddelde","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"inzetbaar","subjectType":"Ploeg","source":{"snippet":"Een Ploeg is inzetbaar"}},"value":{"node":"Literal","value":{"boolean":true},"type":{"node":"Boolean"},"source":{"snippet":"waar"}},"condition":{"node":"QuantifierFold","quantifier":"all","elementType":"Strandwacht","test":{"node":"Compound","quantifier":"all","threshold":0,"parts":[{"node":"CharacteristicCheck","characteristic":"gekeurd","negated":false,"source":{"snippet":"hij is gekeurd"}},{"node":"Comparison","op":"greater","left":{"node":"Binary","op":"dividedBy","left":{"node":"AttributeReference","attribute":"keurpunten","subjectType":"Strandwacht","source":{"snippet":"zijn keurpunten"}},"right":{"node":"AttributeReference","attribute":"keuringen","subjectType":"Strandwacht","source":{"snippet":"zijn keuringen"}},"type":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"},"source":{"snippet":"zijn keurpunten gedeeld door zijn keuringen"}},"right":{"node":"Literal","value":{"number":"6"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"6"}},"source":{"snippet":"zijn keurpunten gedeeld door zijn keuringen is groter dan 6"}}],"source":{"snippet":"hij aan alle volgende voorwaarden voldoet"}},"source":{"snippet":"alle wachten van de Ploeg aan alle volgende voorwaarden voldoen"},"sourceRole":{"node":"RoleBinding","factType":"ploegindeling","role":"wacht"}},"initialisation":false}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|} in
+  List.iter
+    (fun (variant, case_text) ->
+      let name = "a non-exact division in a condition, " ^ variant in
+      verifier_clean ~name ~ir;
+      ref_matches ~name ~ir ~case_text;
+      faults_at_solving ~code:("CLINGO-039", []) ~name ~ir ~case_text ~needle:"non-exact division in a condition" ())
+    [ ("a member after the stop of the fold", {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"P1","objectType":"Ploeg","attributes":{},"roles":{"wachten":["W1","W2"]},"characteristics":[]},{"label":"W1","objectType":"Strandwacht","attributes":{"keurpunten":{"number":"70"},"keuringen":{"number":"10"}},"roles":{},"characteristics":[]},{"label":"W2","objectType":"Strandwacht","attributes":{"keurpunten":{"number":"13"},"keuringen":{"number":"2"}},"roles":{},"characteristics":["gekeurd"]}],"parameters":{}},"expected":[{"kind":"characteristicAbsent","label":"P1","characteristic":"inzetbaar"}]}|});
+      ("a member the fold reaches", {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"P2","objectType":"Ploeg","attributes":{},"roles":{"wachten":["W3","W4"]},"characteristics":[]},{"label":"W3","objectType":"Strandwacht","attributes":{"keurpunten":{"number":"70"},"keuringen":{"number":"10"}},"roles":{},"characteristics":["gekeurd"]},{"label":"W4","objectType":"Strandwacht","attributes":{"keurpunten":{"number":"13"},"keuringen":{"number":"2"}},"roles":{},"characteristics":["gekeurd"]}],"parameters":{}},"expected":[{"kind":"characteristicPresent","label":"P2","characteristic":"inzetbaar"}]}|}) ]
+
 (* CLINGO-030: A PROGRAM WITHOUT EXACTLY ONE STABLE MODEL (found by Fable,
    2026-10-22, on a document the verifier rejects with WF-045). clingo was
    called without -n, stopped at the first model and the runner checked that

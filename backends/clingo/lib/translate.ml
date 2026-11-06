@@ -250,6 +250,16 @@ let nested_non_exact_division =
   "non-exact division inside a value (this encoding computes a quotient at the scale of the write, \
    and the value it is part of may fit where the quotient does not)"
 
+(* the viol/2 reason of a bare division inside a condition that is not exact
+   at the scale of its operands: the quotient is compared and never written,
+   so the fault of a write (EF-006) does not fit; ref compares the exact
+   rational quotient, and this encoding holds every term as an integer at one
+   scale, which a quotient such as 13/2 of two whole numbers does not reach
+   (and 20/3 reaches at no scale). A limit of the encoding (CLINGO-039) *)
+let non_exact_division_in_condition =
+  "non-exact division in a condition (this encoding compares the quotient at the scale of its operands, \
+   where the exact quotient may compare otherwise)"
+
 (* the viol/2 reason of a bare division written into the unbounded form whose
    quotient is not whole: this encoding holds that form as a whole number, where
    ref writes the exact value (RUNTIME-SEMANTICS ch. 2.4 point 3), so it is a
@@ -446,6 +456,10 @@ type ctx = {
      encoding cannot carry at that scale, while the value may fit (CLINGO-031).
      None elsewhere, where a non-exact division keeps the sentence of EF-006 *)
   mutable write_value : expr option;
+  (* a condition is being translated ([cond_atoms], [value_condition]): a
+     division there is compared, never written, and a non-exact one is the
+     limit CLINGO-039, whatever write the condition sits in *)
+  mutable in_condition : bool;
   (* the defaults group being translated is the ch. 7.7 desugaring of v0 forms *)
   mutable desugared_group : bool;
   (* the enclosing rule's (or creation's) name: the §9.5 channel fact
@@ -905,6 +919,7 @@ let viol_code witness =
   else if opens (pro_rata_misfit ^ "\"") then Some ("EF-006", [])
   else if opens (period_arithmetic_misfit ^ "\"") then Some ("EF-006", [])
   else if opens (nested_non_exact_division ^ "\"") then Some ("CLINGO-031", [])
+  else if opens (non_exact_division_in_condition ^ "\"") then Some ("CLINGO-039", [])
   else if
     opens (unbounded_non_whole_division ^ "\"")
     || opens
@@ -7936,7 +7951,10 @@ and translate_division ?(root = true) ctx ~subject ~subject_ot ~left_side ~right
       emit ctx "%s(%s,V) :- %s, (%s) != 0, %s \\ %s == 0, V = %s/%s." p hkey full tr numt
         dent numt dent;
       emit ctx "viol(\"%s\",%s) :- %s, (%s) != 0, %s \\ %s != 0."
-        (if root then non_exact_division ctx else nested_non_exact_division) subject full tr numt dent
+        (if ctx.in_condition then non_exact_division_in_condition
+         else if root then non_exact_division ctx
+         else nested_non_exact_division)
+        subject full tr numt dent
   | Some (mode_kind, _) ->
       let value =
         match mode_kind with
@@ -8824,6 +8842,9 @@ and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus ~datetime ~(node : expr) 
   (match ms with None -> [ atom ] | Some _ -> bd @ [ atom ]), v, ms
 
 and cond_atoms ctx ~subject ~subject_ot (c : condition_expr) : string list =
+  let outer = ctx.in_condition in
+  ctx.in_condition <- true;
+  Fun.protect ~finally:(fun () -> ctx.in_condition <- outer) @@ fun () ->
   if doc_dynamic ctx.doc && leaf_reads_role ctx c then begin
     let start = Buffer.length ctx.buf in
     let atoms = cond_atoms_raw ctx ~subject ~subject_ot c in
@@ -10949,8 +10970,13 @@ and value_condition ctx ~subject ~subject_ot (c : condition_expr) : string list 
       operand_ok left_side;
       operand_ok right_side;
       let l = req "Comparison.left" left_side and r = req "Comparison.right" right_side in
-      let la, lt, ls = expr_term ctx ~subject ~subject_ot l in
-      let ra, rt, rs = expr_term ctx ~subject ~subject_ot r in
+      let outer = ctx.in_condition in
+      ctx.in_condition <- true;
+      let (la, lt, ls), (ra, rt, rs) =
+        Fun.protect ~finally:(fun () -> ctx.in_condition <- outer) (fun () ->
+            let left_term = expr_term ctx ~subject ~subject_ot l in
+            (left_term, expr_term ctx ~subject ~subject_ot r))
+      in
       (* [operand_ok] admits a bare BinderRef, whose scale is the binder's own —
          0 for a sum/struct binder; the body_condition sibling *)
       let ls = numeric_scale ~what:"a value-position IfThenElse comparison" ls in
@@ -15111,7 +15137,7 @@ let translate (doc : document) (case : Case.t) : string =
   let doc = Ir_v0.Desugar.document doc in
   let ctx =
     { doc; wire_doc; case; buf = Buffer.create 4096; fresh = 0; rule_guard = []; deposit_guard = []; write_scale = 1;
-      write_unbounded = false; write_value = None; desugared_group = false; rule_name = "?"; binders = []; param_reach = (fun _ -> []); deposit_subject = None; let_needs = [];
+      write_unbounded = false; write_value = None; in_condition = false; desugared_group = false; rule_name = "?"; binders = []; param_reach = (fun _ -> []); deposit_subject = None; let_needs = [];
       value_of = None;
       lets = []; let_serial = 0; demands = []; parts = []; part_serial = 0; named = []; hoisted = [];
       before_arm = []; pre_scope = []; pre_reach = []; pre_let = [];

@@ -1,0 +1,71 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "keurpunten": {
+            "number": "13"
+          },
+          "keuringen": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "keurpunten": {
+            "number": "59"
+          },
+          "keuringen": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {
+          "keurpunten": {
+            "number": "70"
+          },
+          "keuringen": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "bekwaam"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J2",
+      "characteristic": "bekwaam"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J3",
+      "characteristic": "bekwaam"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

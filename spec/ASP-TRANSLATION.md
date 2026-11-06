@@ -2945,7 +2945,11 @@ encoding holds a number declared without decimals (the unbounded form)
 as a whole number` and `a division into a number declared without
 decimals is not whole, and this encoding holds the unbounded form as a
 whole number`, since the spec mandates no rounding there and ref writes
-the exact value (RUNTIME-SEMANTICS ch. 2.4 point 3); a non-whole case
+the exact value (RUNTIME-SEMANTICS ch. 2.4 point 3); a bare division in
+a condition that is not exact at the scale of its operands, which is
+compared and never written, names that instead (`non-exact division in a
+condition …`, the limit CLINGO-039; golden `jutterswet-keurquotient`,
+where ref compares 13/2 = 6,5 with 6 exactly); a non-whole case
 input on that form without a finite bound (S2); a rational literal that no power-of-ten scale up to 10^9 holds
 exactly (S4, `rational literal 1/3 has no finite decimal expansion
 within 9 decimals`) — ref computes it exactly and both Drools branches
