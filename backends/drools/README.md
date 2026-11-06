@@ -882,7 +882,7 @@ Witness `TmsDayKindWitnessTest`.
 **Creation is stated, and fires in generations.** An object creation and a fact creation (RUNTIME-SEMANTICS ch. 5.5)
 fire only at a fixpoint of the rule layer, and what they make is stated and never lapses, as in the reference
 interpreter, which keeps a minted instance under a fixed label. A logical object could keep itself standing through
-its own output once the state that made it had passed, and its initialisations would follow later changes, where
+its own output once the state that made it had passed, and its assignments would follow later changes, where
 ch. 5.5 evaluates them when the object is made. The attribute values an object creation sets are the input of the
 object it makes, as the reference interpreter reads them: they go on the new bean before it enters working memory, so
 no rule sees the object without them and no bean in the session changes; a writer of the member displaces them as it
@@ -1026,7 +1026,7 @@ never as a silent fall:
   `connectingRole` whose type pair reaches the connecting relation only through a supertype of the subject or of the
   created type, since the strata derive that relation from the exact types (`Cycles`) and would not see the creation
   write it, a created
-  relation that is not one of two roles, a division or a square root in a member initialisation, whose §6.5 or §6.6
+  relation that is not one of two roles, a division or a square root in a member assignment, whose §6.5 or §6.6
   deposit the branch does not make, a fold whose range of more than one step goes over a created relation, a fold
   whose filter can fault over a created relation and a quantifier fold whose matrix can fault or deposit over one,
   whose made links have no place in the fold order, a fold over a time-dependent member over a created relation

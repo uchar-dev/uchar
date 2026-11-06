@@ -38,7 +38,7 @@ other verdict and no other report.
 A hand-broken variant of `corpus/golden/anchor/jutterswet-penninguitgifte/ir.json`
 — one field emptied, a one-line diff; schema-valid, since the version's
 `subject` is `["string","null"]` on the wire. It is deliberately the SAME
-creation the filled-name witness breaks: the one with no `initialisations`,
+creation the filled-name witness breaks: the one with no `assignments`,
 the only one the fifth wave's measurement found unfenced, so the two
 witnesses are the two spellings of one position.
 
@@ -49,5 +49,5 @@ moved, no report elsewhere.
 
 Since L4 an object creation is an `ObjectCreation` with its versions (delta
 B19); the defect sits on the `ObjectCreationVersion`, whose fields are
-`createdType`, `subject`, `initialisations` (each a `MemberInit`) and
+`createdType`, `subject`, `assignments` (each a `MemberAssignment`) and
 `connectingRole`. `expect.txt` pins the arm.

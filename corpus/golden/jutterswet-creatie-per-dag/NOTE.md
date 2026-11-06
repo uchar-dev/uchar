@@ -1,4 +1,4 @@
-# jutterswet-creatie-per-dag — the value of a making on a timeline, per day
+# jutterswet-creatie-per-dag — the value a creation assigned on a timeline, per day
 
 The value a creation gives a time-dependent attribute of the object it makes is that object's input per day
 (`spec/RUNTIME-SEMANTICS.md` ch. 5.5, 7.8, rank 2 of the stack): a scalar holds on every day, a timeline per period; a
@@ -18,7 +18,7 @@ Jutterswet-flavoured casus, own dates, rights-free.
 
 - **meld de jutter**: a Jutter has a Melding with meldwaarde 7, meldloon his strandloon, seizoenswaarde 7,
   seizoensloon his strandloon and aanvulloon his strandloon; every member is a whole number for every month.
-- **seizoenswaarde** and **seizoensloon**: 20 from 2025-03-01 up to 2025-09-01, writers beside the value of the making.
+- **seizoenswaarde** and **seizoensloon**: 20 from 2025-03-01 up to 2025-09-01, writers beside the value the creation assigned.
 - **standaardaanvulloon**: the initialisation of the aanvulloon on 5.
 - Five rules write the totals of a Jutter, each the sum of one member over his meldingen, per month (ch. 3.5).
 

@@ -434,8 +434,8 @@ final class PatternDslRendering {
 
     /**
      * The object creation of {@link Consequence.Creation}, in the order of its steps: the depth through its route, before
-     * anything is made; the values of the initialisations, the first evaluation fault being all the creation does; the
-     * construction of the new bean, with the attribute initialisations whose value is gevuld set on it before it enters
+     * anything is made; the values of the assignments, the first evaluation fault being all the creation does; the
+     * construction of the new bean, with the attribute assignments whose value is gevuld set on it before it enters
      * working memory; then the insertions, in order.
      */
     private RuleItemBuilder<?> creation(Consequence.Creation g) {
@@ -446,7 +446,7 @@ final class PatternDslRendering {
         for (Consequence.Construction.Setting z : construction.settings())
             setters.add(Accessors.eigenschapSetter(z.field().javaClass(), z.field().property()));
         Consequence.CreationDepth d = g.depth();
-        // an initialisation that stands as an exact Value keeps its exact value; one set on the bean gets its decimal
+        // a assignment that stands as an exact Value keeps its exact value; one set on the bean gets its decimal
         Set<Integer> exact = new HashSet<>();
         for (Consequence.Insert i : g.insertions()) if (i instanceof Consequence.Insert.Exact e) exact.add(e.assignment());
         return consequenceItem(g.subject(), g.slots(), g.size(), (drools, subject, w) -> {

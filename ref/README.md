@@ -86,8 +86,8 @@ faults with file/position context — never a silent fallback.
   allocations, defaults groups) to rest; generation G+1 is every
   object and fact creation of stratum ≤ k against generation G's
   settled world, so no creation reads what another creation of its
-  own generation makes or links, and a member initialisation takes
-  the value at the moment of making whatever the document order;
+  own generation makes or links, and a member assignment takes
+  the value at the moment of creation whatever the document order;
   after it the forms that make nothing come to rest again. Coming to
   rest goes stratum by stratum, in generation 0 and after every
   generation: for j = 0, 1, …, k the forms of stratum ≤ j reach their
@@ -112,7 +112,7 @@ faults with file/position context — never a silent fallback.
   keys strictly and sits a stratum above every writer of a key
   (`WV-5.5-uniciteit-op-een-groeiende-sleutel`).
 - **The creation budget** (ch. 5.5): every minted instance gets, at
-  the making, a creation depth in the stratum of the creation that
+  the creation, a creation depth in the stratum of the creation that
   minted it (`World.mints`): one more than its subject's depth there,
   where an input instance and an instance a lower stratum minted
   stand at 0. A mint at depth 101 is the fault, never a truncation:
@@ -121,7 +121,7 @@ faults with file/position context — never a silent fallback.
   (`corpus/red/runaway-recursion`,
   `corpus/red/finite-chain-over-budget`,
   `corpus/red/jutterswet-budgetgrens-over`). The depth follows the
-  chain of makings, so neither the passes between two generations nor
+  chain of creations, so neither the passes between two generations nor
   the generations a mint waits for a link or a value count, and a fact
   creation, which mints nothing, has no budget. The generations of a
   stratum need no bound of their own: every generation but the last

@@ -29,10 +29,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>The creation document: "Een Jutter heeft een melding (een Jutmelding, a subtype of Melding) met de waarde zijn
  * vangst", and "De terug van een Jutter moet berekend worden als de som van de waarde van al zijn meldingen, of 0",
- * through which the case reads the made object. J1 has vangst 7. Without a writer of the member the value of the
- * making stands: terug 7. A standing rule on the supertype, "De waarde van een Melding moet gesteld worden op 99",
+ * through which the case reads the made object. J1 has vangst 7. Without a writer of the member the value the creation
+ * assigned stands: terug 7. A standing rule on the supertype, "De waarde van een Melding moet gesteld worden op 99",
  * displaces it as it displaces case input: 99. A rule on the created type itself that computes leeg decides nothing
- * (ch. 3.11), so the value of the making stands: 7. An initialisation on the
+ * (ch. 3.11), so the value the creation assigned stands: 7. An initialisation on the
  * member finds it filled: 7; where the creation's own value is leeg (it reads the bonus, which no case sets), the
  * initialisation fills it: 5. Two rules on the member that write 98 and 97 are the fault of ch. 5.7, the writers in the
  * order of the document, the object named as made by a creation. Every order of the rules in the document.

@@ -591,7 +591,7 @@ compute with the value the form wrote, and writes it onto the bean of the
 attribute as a decimal: exact where it terminates, and at 16 significant
 digits rounded half to even where it does not (the 1/3 above is
 0,3333333333333333 on the bean). Its folds add and compare the exact
-values, and a value of that form that an object creation initialises
+values, and a value of that form that an object creation assigns
 stands exactly in its working memory too. It refuses by name a case value
 written as a rational (`1/6`), and a time-proportional part into a timeline
 of that form (ch. 3.7), since a segment of its timelines holds a decimal; a segment of the period arithmetic of ch. 3.4 into such a timeline whose value
@@ -4178,11 +4178,11 @@ subject, else a per-(rule, subject) creation marker): **one creation per
 rule per subject** unless the fact base itself changed the question.
 Executed: for each subject whose condition holds, a
 deterministic instance of the created type is minted, the member
-initialisations apply (values evaluated on the subject, the input of the
+assignments apply (values evaluated on the subject, the input of the
 object made, on a time-dependent attribute per day (ch. 7.8): a writer of the member displaces such a value where it
 decides, and an initialisation of the member finds it filled, the stack of
 ch. 7.8, `corpus/golden/jutterswet-invoer-naast-objectcreatie`; a characteristic
-initialisation's boolean-typed value sets the mark when it evaluates
+assignment's boolean-typed value sets the mark when it evaluates
 true and, evaluating false **or empty**, leaves it unset — equivalent to
 an absent initialisation, the closed-world reading characteristic checks
 already apply; the empty flank follows the attribute-initialisation
@@ -4294,9 +4294,9 @@ of a higher stratum, since a creation reads its subject's population
 strictly, ch. 6.1, and an executor may hold that as an invariant and
 fail loudly where it breaks). A mint at depth 101 is a **fault**, never
 a silent truncation: the reference interpreter and the Drools backend's
-truth-maintenance branch fault at the making, and the ASP backend
+truth-maintenance branch fault at the creation, and the ASP backend
 derives a named `viol/2` witness → UNSAT, each with the words "creation
-budget exhausted". The depth is a function of the chain of makings, not
+budget exhausted". The depth is a function of the chain of creations, not
 of document order nor of the generation in which a creation fires: a
 creation whose condition waits for a link or a value keeps its
 subject's depth. Fact creations carry no budget — they mint nothing,
@@ -4400,12 +4400,12 @@ in `WV-5.5-uniciteit-op-een-groeiende-sleutel` (absolute, in both orders
 of its two rules) the key volgnummer, the number of maatgevers plus the
 basis, is 5 for both W1 and W2 on generation 0's world and 5, 6 and 1
 at the end, and the uniqueness "uniek volgnummer" deposits **nothing**.
-A creation's condition and member initialisations are
+A creation's condition and member assignments are
 evaluated on the settled world it reads, which is the moment of
-making; this is the
+creation; this is the
 reading of "values evaluated on the subject" above and of "exactly one
 generation per instance" in the paragraph before. A later generation
-may change the value read; the minted instance's initialisations are
+may change the value read; the minted instance's member assignments are
 written once and do not follow it.
 
 Worked example (absolute; `ref/` tests `WV-5.5-generaties-keten` and
@@ -4426,7 +4426,7 @@ every minted Wachter. The copy variant adds "De standkopie van een
 Wachter moet gesteld worden op zijn stand" and initialises the
 beginstand from the standkopie: the same values in every order of its
 three rules. Until 2026-10-09 the reference interpreter ran the
-creations inside a pass over the running world, so the moment of making
+creations inside a pass over the running world, so the moment of creation
 was a position in the pass; with the copy rule written before the
 count, the initialisation read a copy the pass had not computed yet and
 opvolgerbegin(W1) was **leeg**. A fact creation belongs to the
@@ -4437,17 +4437,17 @@ every minted Wachter starts at **beginstand 0** in either rule order,
 where a pass that ran the fact creations before the object creations
 gave 1 from W3 on.
 
-The ASP backend has no moment of making: an initialisation is a head on
+The ASP backend has no moment of creation: a member assignment is a head on
 the minted term, read in the stable model, so it reads the end value; on
 the worked example it answered opvolgerbegin(W1) = 1. Carrying the
 generation reading would take a copy of the rule layer per generation,
 so the backend takes the second posture of `IR-SPEC.md` ch. 5.5. It
-refuses by name every member initialisation of an object creation that
+refuses by name every member assignment of an object creation that
 reads a node a later generation of the creation's own stratum can still
 change: a node with a writer that a creation on a dependency cycle in
 that stratum reaches in the dependency graph, the creation itself
 included where it lies on such a cycle (WF-045 admits the cycle through
-a recursive group). Only such a creation changes, after the making, a
+a recursive group). Only such a creation changes, after the creation, a
 value the initialisation reads; a later stratum changes none (ch. 6.3).
 Refused are what a rule, an allocation or a defaults group writes there,
 also where a creation writes the same member, and a population or
@@ -4467,8 +4467,8 @@ stratum higher than the cycle reads the end
 value, as the reference interpreter does, and stays carried: with the
 aantal read from an attribute of the Haven that counts its ervaren
 wachters, both answer **3**. An attribute or characteristic that only
-creations write is set once per object, at its making, so its end value
-is the value at the making, and a read of it stays carried: the anchor
+creations write is set once per object, at its creation, so its end value
+is the value at the creation, and a read of it stays carried: the anchor
 below reads its rang so. A read of a member that a creation writes is
 refused as well when a rule on the cycle writes that member too: with
 the rang initialised to the rang plus 1 and the beginstand to the rang,
@@ -4476,7 +4476,7 @@ and a rule that sets the rang of a Wachter with an opvolger to 2, W1's
 opvolger starts at **beginstand 1** while W1 ends at **rang 2**, and
 the backend refuses the document. The refusal reads the static
 dependency graph and its strata, not the values. So a rule on the cycle
-whose value on an object is fixed at the object's making (a basis
+whose value on an object is fixed at the object's creation (a basis
 computed as the rang plus 10) is refused as well, although the end
 value would be right, and so is a writer on the cycle whose validity the
 case's date excludes; only a creation version the date excludes is not
@@ -6315,7 +6315,7 @@ subject, on the fixpoint world, in the order of ch. 5.10 and 5.11. Where it
 holds and the form computes a value — a rule on an attribute, an attribute
 default's consequence — the value is evaluated after it. A characteristic
 attribution, a consistency, an allocation and a creation compute no value
-here: the member initialisations of a creation are evaluated at its making,
+here: the member assignments of a creation are evaluated at its creation,
 not at the fixpoint. The status is the condition's; a value that faults
 leaves the reading `HOLDS` and carries its fault at its nodes.
 
@@ -7778,7 +7778,7 @@ Drools branches from the session's evaluation date. The golden
 `jutterswet-rekenjaar` pins the same outcomes in all three. Both Drools
 branches play it, with the reference interpreter's answer, in every
 position the backend's `EvaluationYearWitnessTest` twists: the assertion of a
-consistency, an initialisation of an object creation, the guards of an
+consistency, a member assignment of an object creation, the guards of an
 allocation and of a fact creation, the filter of a fold, and the
 consequence and the justification of a prioritized default (measured
 2026-10-14; since the card `drl-teksttak-op-truth-maintenance` the two
@@ -8329,7 +8329,7 @@ highest first:
    its value; where two decide with different values, no fact base satisfies
    both and the session faults with EF-016 (ch. 5.7);
 2. the **input of the object**, the virtual input default: the value the case
-   supplies, or, on an object a creation made, the value of its making
+   supplies, or, on an object a creation made, the value its creation assigned
    (ch. 5.5) — a creation gives the object it makes its member values as the
    case gives an input object its attributes;
 3. the **initialisation** (§9.6, ch. 5.4, 7.3), justified where the input
@@ -8341,7 +8341,7 @@ no writer of its level stands (`IR-SPEC.md` WF-050). On a timeline target the
 stack is read per day (ch. 3.3): a writer decides the days on which its timeline
 reads a value, the input stands on every other day, and two writers that decide
 one day with different values are EF-016 (ch. 3.11, 5.7). The input of an object
-a creation made is the value of its making per day: a scalar on every day, a
+a creation made is the value its creation assigned per day: a scalar on every day, a
 timeline on its periods, the member value read on the subject as period
 arithmetic (ch. 3.4, 3.5). The initialisation decides every day on which no
 writer decides and the input reads no value, over all time, open segments
@@ -8454,11 +8454,11 @@ hij vast is" in place of the initialisation and a vaste aandeel 30 on B1, the
 session faults with EF-016, B1, the values 30 and 50
 (`WV-7.8-stapel-verdeling-botsing`). Beside the creation "Een Jutter heeft een
 melding met waarde gelijk aan zijn vangst", the initialisation "De waarde van een
-Melding moet geïnitialiseerd worden op 5" finds the waarde 7 of the making
-filled and fills it where the making gives none: a Jutter with vangst 7 has a
+Melding moet geïnitialiseerd worden op 5" finds filled the waarde 7 that the
+creation assigned, and fills it where the creation assigns none: a Jutter with vangst 7 has a
 terug, the sum of the waarde of its meldingen, of **7**, one without a vangst
 **5**; the same with the initialisation "… op 5 indien zijn toeslag groter is
-dan 0" and a making that gives the toeslag 1 (`WV-7.8-stapel-creatie-voorwaardelijk`).
+dan 0" and a creation that assigns the toeslag 1 (`WV-7.8-stapel-creatie-voorwaardelijk`).
 The goldens `jutterswet-invoer-naast-verdeling`,
 `jutterswet-invoer-naast-objectcreatie` and `jutterswet-invoer-op-keurklasse`
 pin the stack with case input beside an allocation, beside a creation and on an

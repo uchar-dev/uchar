@@ -425,7 +425,7 @@ type ctx = {
      mandated rounding, which the spec does not mandate there (false
      outside a write) *)
   mutable write_unbounded : bool;
-  (* the value the write of a rule or of a creation's initialisation writes,
+  (* the value the write of a rule or of a creation's member assignment writes,
      physically: a bare division that is that value and is not exact at the
      target's scale does not fit it (EF-006); one inside it is a quotient this
      encoding cannot carry at that scale, while the value may fit (CLINGO-031).
@@ -12061,7 +12061,7 @@ let timeline_input ctx =
   end
 
 (* Whether the input of the time-dependent attribute [a] on an instance of the
-   concrete type [ot], the case's or a making's, enters beside its writers
+   concrete type [ot], the case's or a creation's, enters beside its writers
    ([timeline_input]): a computing rule or an initialisation that applies on
    the case's date writes it there, or a defaults group of [ot]'s chain does
    (ch. 7.8, 7.11) *)
@@ -12081,8 +12081,8 @@ let written_timeline ctx ~ot ~a =
    the computing rules and the allocations that write it, of one rank, each
    deciding where its value is filled (wval/4, wdecides/2), two of them with
    different values the fault of ch. 5.7 ([writer_conflicts]); then the input of
-   the object, the case's or, on an object a creation made, the values of its
-   making (inputval/3), which stands where no writer decides; then the
+   the object, the case's or, on an object a creation made, the values its
+   creation assigned (inputval/3), which stands where no writer decides; then the
    initialisation, which writes where the input leaves the target empty
    (inputfilled/2) and no writer decides. A defaults group is a stack of its own
    with the input as its virtual input default. *)
@@ -12610,7 +12610,7 @@ let translate_rule ctx (r : resolved_rule) =
       | None -> faultc "CLINGO-026" "unsupported rule target")
   end
 
-(* a boolean-typed characteristic-initialisation EXPRESSION → the body atoms
+(* a boolean-typed characteristic-assignment EXPRESSION → the body atoms
    that hold exactly when it is TRUE (WF-027 relaxation, besluit 1). A boolean
    is a characteristic in v0 (booleans are characteristics), so an own-subject
    boolean-attribute read is [has(S,a)] — present iff true, absent iff false
@@ -12632,7 +12632,7 @@ let bool_atoms ctx ~subject ~subject_ot (e : expr) : string list =
 (* object creation (IR-SPEC ch. 3.3; RUNTIME-SEMANTICS ch. 5.5): the
    created instance is a deterministic function term ocN(Subject) — set
    semantics carries the per-(rule × subject) idempotence, exactly
-   ref/'s deterministic label. Member initialisations become val/heeft
+   ref/'s deterministic label. Member assignments become val/heeft
    heads on the term; the back-link relation (the explicit
    connectingRole binding, else the uniquely-derivable pair) lands both
    role/3 ends. The 1:1 shape's linked-instance guard reads the INPUT
@@ -12786,7 +12786,7 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
         | Some e ->
             (* WF-027 relaxation (besluit 1): a boolean-typed EXPRESSION guards
                the deposit — evaluated on the creation SUBJECT (the same
-               caller-context as an attribute MemberInit, ref's closed-world
+               caller-context as an attribute MemberAssignment, ref's closed-world
                reading): true → the mark is set on the minted instance, false →
                the guard fails and the mark stays unset (an absent init). The two
                boolean-constant arms above are the v0 form, byte-for-byte. *)
@@ -14422,11 +14422,11 @@ let form_strata (forms : Ir_v0.Checks.dep_form array) : int array =
 
 (* RUNTIME-SEMANTICS ch. 5.5, Generations (card
    creatie-initialisatie-leest-groeiende-waarde, 2026-10-09). A member
-   initialisation of an object creation takes the value at the moment of
-   making: it is read on the settled world of the generation before the one
+   assignment of an object creation takes the value at the moment of
+   creation: it is read on the settled world of the generation before the one
    that makes the object, and a later generation may still change the value
-   read; the initialised member does not follow it. This encoding has no
-   moment of making. An initialisation is a val/heeft head on the minted
+   read; the assigned member does not follow it. This encoding has no
+   moment of creation. A member assignment is a val/heeft head on the minted
    term ([translate_object_creation]), so it reads the stable model, which
    holds the end value. The two differ where a later generation of the
    creation's own stratum changes the value read. A later stratum does not:
@@ -14439,10 +14439,10 @@ let form_strata (forms : Ir_v0.Checks.dep_form array) : int array =
    what reads them. A creation's own write of an attribute or
    characteristic is no such change: it sets the member once per object,
    when the object is made. So a member that only creations write keeps the
-   value of its making, and the anchor jutterswet-wachtersketen reads its
+   value its creation assigned, and the anchor jutterswet-wachtersketen reads its
    rang that way and stays carried. A member that a creation writes and a
    rule on the cycle writes as well is refused, because the rule can change
-   it after the making: with rang plus 1 and beginstand = zijn rang
+   it after the creation: with rang plus 1 and beginstand = zijn rang
    initialised, and a rule that sets the rang of a Wachter with an opvolger
    to 2, the opvolger W1 makes starts at beginstand 1 while W1 ends at rang
    2.
@@ -14454,11 +14454,11 @@ let form_strata (forms : Ir_v0.Checks.dep_form array) : int array =
    admits such a cycle only through a member of a recursive group. The
    creation itself is one of them where it lies on such a cycle, and then
    the writer lies on a cycle through it. Nothing else can change the
-   value after the making. Off a cycle an edge between
+   value after the creation. Off a cycle an edge between
    two forms of one stratum is a positive read: a creation reads positively
    only a characteristic, and a characteristic is written by a rule that
    reads positively only characteristics, by a defaults group, whose reads
-   are all negative, or by a creation's initialisation on the object it
+   are all negative, or by a creation's member assignment on the object it
    makes. A creation on no cycle therefore reaches another creation of its
    stratum only through characteristics of the objects it makes, and the
    other creation meets those objects only through a population or a
@@ -14485,7 +14485,7 @@ let form_strata (forms : Ir_v0.Checks.dep_form array) : int array =
    generation, so such an initialisation is refused by name, the second
    posture of IR-SPEC ch. 5.5. The test follows the static graph and not
    the values. It also refuses a rule on the cycle whose value on an object
-   is fixed at the object's making (basis = zijn rang plus 10), where the
+   is fixed at the object's creation (basis = zijn rang plus 10), where the
    end value would be right, and a writer on the cycle whose validity the
    case's date excludes, which writes nothing in that case; a filter on the
    writer alone would still read the cycle off the static graph, as ref's
@@ -14615,7 +14615,7 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
         let c = index_of o.oc_pointer in
         let on_cycle = reached c in
         (* the nodes an initialisation reads, each with every writer that can
-           change it after the making *)
+           change it after the creation *)
         let writers (t : assignment) =
           let nodes =
             List.fold_left
@@ -14651,9 +14651,9 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
         match List.find_map on_the_cycle o.assignments with
         | Some (t, node, p) when Eval.window_admits ~as_of o.oc_validity ->
             fault
-              "object creation \"%s\": the initialisation of %s reads %s, which %s writes on a \
+              "object creation \"%s\": the assignment of %s reads %s, which %s writes on a \
                dependency cycle through the creation (admitted by WF-045 through a recursive group) \
-               — an initialisation takes the value at the moment of making (RUNTIME-SEMANTICS \
+               — a member assignment takes the value at the moment of creation (RUNTIME-SEMANTICS \
                ch. 5.5, Generations), and this backend reads the value of the stable model, which a \
                later generation can still change, so it refuses the creation (IR-SPEC ch. 5.5)"
               (name_of c) (member t) node
@@ -14663,11 +14663,11 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
             match List.find_map in_the_stratum o.assignments with
             | Some (t, node, p, d) when Eval.window_admits ~as_of o.oc_validity ->
                 fault
-                  "object creation \"%s\": the initialisation of %s reads %s, which %s writes, and %s, \
+                  "object creation \"%s\": the assignment of %s reads %s, which %s writes, and %s, \
                    on a dependency cycle in the creation's own stratum (admitted by WF-045 through a \
                    recursive group), reaches that writer in the dependency graph, so a later \
-                   generation of the stratum can still change the value read — an initialisation \
-                   takes the value at the moment of making (RUNTIME-SEMANTICS ch. 5.5, Generations), \
+                   generation of the stratum can still change the value read — a member assignment \
+                   takes the value at the moment of creation (RUNTIME-SEMANTICS ch. 5.5, Generations), \
                    and this backend reads the value of the stable model, so it refuses the creation \
                    (IR-SPEC ch. 5.5)"
                   (name_of c) (member t) node (describe p) (describe d)

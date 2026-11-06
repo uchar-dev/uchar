@@ -1528,7 +1528,7 @@ fences the weight |W|, the day count fences the target's decimal
 scale (a compile-time fault).
 
 Both producers write their segments also as the writer's `wtl/6`,
-beside which the input timeline (`inputtl/5`), the case's or a making's,
+beside which the input timeline (`inputtl/5`), the case's or a creation's,
 stands on the days no writer decides: each input segment is cut at the
 writers' bounds inside it (`incut/5`), and a piece (`inpiece/6`) no writer
 covers (`indecided/4`) is a `tl/5` segment (RS ch. 3.11). The member value
@@ -1785,7 +1785,7 @@ input must survive an ineffective producer.
 **Object creation** (ch. 3.3/5.5): the created instance is a
 deterministic function term `ocI(S)` — set semantics gives
 idempotence for free (re-deriving the same head is the same atom).
-`is_a(ocI(S),new) :- ⟨body⟩.`, member initialisations as
+`is_a(ocI(S),new) :- ⟨body⟩.`, member assignments as
 `val(ocI(S),m,⟨term⟩)`/`has(ocI(S),m)` — the input of the object made, so
 `inputval(ocI(S),m,⟨term⟩)` with `inputfilled(ocI(S),m)` on a member a
 writer, a defaults group or an initialisation writes (S10,
@@ -1795,7 +1795,7 @@ writes are not implemented` — a member with `labels` as
 `val(ocI(S),"vangstgewicht[najaar]",⟨term⟩)`, the cell of the made object
 (ch. 5.8c) —, and the back-link doubled
 in both directions (`role(S,new_role,ocI(S))` and
-`role(ocI(S),subj_role,S)`). A **characteristic initialisation** deposits
+`role(ocI(S),subj_role,S)`). A **characteristic assignment** deposits
 `has(ocI(S),m)`: the two boolean constants are the v0 form — `waar`
 an unconditional head, `onwaar` no head at all — and the WF-027
 relaxation (besluit 1) admits a boolean-typed **expression**, which
@@ -3414,7 +3414,7 @@ shape both executors reject, the parallel verifier card's WF-064 gap). One
 `Let`-body shape an executor carries only in the bare rule-value position still
 faults elsewhere: a **`Let` whose
 body is an `IfThenElse` outside the bare rule value** (a default, a
-creation member initialisation, a sum- or struct-target value —
+creation member assignment, a sum- or struct-target value —
 `expr_term` peels the `Let` but has no `If_then_else` arm) faults
 `expression kind not translated (no corpus case exercises it)`. ref
 carries it everywhere (ch. 4.10); on the ASP side only `value_branches`

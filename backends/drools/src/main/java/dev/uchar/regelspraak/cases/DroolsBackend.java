@@ -953,8 +953,8 @@ public final class DroolsBackend {
      * event shows and after which Drools keeps reading the old relation.
      *
      * <p>It fires a session of a model with a creation once, and refuses it at every
-     * later call. An object or a fact creation is stated and never lapses, and so are the initialisations, the links
-     * and the fault of a failed initialisation it brought (RUNTIME-SEMANTICS ch. 5.5, {@code Fired}): after an input
+     * later call. An object or a fact creation is stated and never lapses, and so are its member assignments, the links
+     * and the fault of a failed member assignment it brought (RUNTIME-SEMANTICS ch. 5.5, {@code Fired}): after an input
      * change a second fire would keep them beside an input they no longer follow from, a state no fresh evaluation
      * gives. The sentence says so, and that the way is a fresh session per input.
      *

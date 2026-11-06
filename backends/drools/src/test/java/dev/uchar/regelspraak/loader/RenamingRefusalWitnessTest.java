@@ -497,7 +497,7 @@ class RenamingRefusalWitnessTest {
             }
         }
         // measured 2026-09-25 on L5: 7 day-kind definitions, 1 start-point determination, 4 rule groups, 16 member
-        // initialisations, 83 defaults
+        // assignments, 83 defaults
         assertTrue(dayKinds >= 7 && startPoints >= 1 && groups >= 4 && assignments >= 16 && defaults >= 83,
                 "the corpus carries each rule-layer node: " + dayKinds + " " + startPoints + " " + groups + " "
                         + assignments + " " + defaults);

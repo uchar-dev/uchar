@@ -443,7 +443,7 @@ class CreationPlanWitnessTest {
     // ---------------- the construction before the insertion ----------------
 
     /**
-     * The plan of a creation holds the order of its consequence: every initialisation is set on the new bean in its
+     * The plan of a creation holds the order of its consequence: every assignment is set on the new bean in its
      * construction where it is an attribute, or inserted as a characteristic after the bean where it is one, exactly
      * once, and the bean is the first insertion. The constructor refuses a plan that would write on a bean in working
      * memory, as a later setter after the insertion would, or that would insert a fact naming the bean before it.
@@ -526,7 +526,7 @@ class CreationPlanWitnessTest {
      * A creation states what it makes (RUNTIME-SEMANTICS ch. 5.5; the owner's decision at card 1: a creation is stated,
      * not logical), and the analysis makes every insertion of a creation {@code STATED}. The constructor refuses a plan
      * that would insert the new object, its mark, its link or a characteristic logically, and one that would insert the
-     * fault at the making logically, each with a sentence that names it (round 5b, on the lens of round 5: a rendering
+     * fault at the creation logically, each with a sentence that names it (round 5b, on the lens of round 5: a rendering
      * that inserted a logical characteristic as a stated one passed every measurement, since no plan of the analysis
      * had one). <b>Red</b> on {@code ea8b5c6f}, where the constructor took all six plans: "expected: &lt;[ok, een
      * creatie stelt wat ze maakt, …]&gt; but was: &lt;[ok, ok, ok, ok, ok, ok]&gt;".
@@ -566,7 +566,7 @@ class CreationPlanWitnessTest {
         return creation(assignments, build, insertions, Consequence.Insertion.STATED);
     }
 
-    /** {@link #creation(List, Consequence.Construction, List)} with the fault at the making inserted as {@code faultInsertion}. */
+    /** {@link #creation(List, Consequence.Construction, List)} with the fault at the creation inserted as {@code faultInsertion}. */
     private static String creation(List<Consequence.Assignment> assignments, Consequence.Construction build,
                                   List<Consequence.Insert> insertions, Consequence.Insertion faultInsertion) {
         try {

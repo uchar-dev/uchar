@@ -168,7 +168,7 @@ import java.util.function.Supplier;
  * <p>A creation is the one form whose output is stated, not logical (RUNTIME-SEMANTICS ch. 5.5): a creation fires only
  * at a fixpoint of the rule layer, and what it makes stands, as in the reference interpreter, which keeps a minted
  * instance under a fixed label. A logical object could keep itself standing through its own output after the state that
- * made it had passed, and its initialisations would follow later changes, where ch. 5.5 evaluates them when the object
+ * made it had passed, and its assignments would follow later changes, where ch. 5.5 evaluates them when the object
  * is made. Its rules sit in agenda groups of their own ({@link #FACT_CREATION}, {@link #OBJECT_CREATION}) and the driver
  * fires them in generations ({@code DroolsBackend.fire}): the rule layer to rest, then the fact creations once and the
  * object creations once, both on that one fixpoint, then the rule layer to rest again, and so on, until a generation
@@ -216,8 +216,8 @@ public final class TmsTranspiler {
     public static final String OBJECT_CREATION = "uchar-objectcreatie";
 
     /** The creation budget (RUNTIME-SEMANTICS ch. 5.5): the deepest an object creation makes an object in its stratum.
-     *  A mint at one depth more is the fault, at the making, as in the reference interpreter and the ASP backend
-     *  ({@code oc_budget}); a fact creation makes no object and has no budget. The depth follows the chain of makings,
+     *  A mint at one depth more is the fault, at the creation, as in the reference interpreter and the ASP backend
+     *  ({@code oc_budget}); a fact creation makes no object and has no budget. The depth follows the chain of creations,
      *  so a creation whose condition waits generations for a link or a value keeps its subject's depth, and the driver
      *  needs no bound on the generations: under this budget a stratum makes finitely many objects and links. */
     public static final int CREATION_BUDGET = 100;
@@ -958,7 +958,7 @@ public final class TmsTranspiler {
          *                    {@code start} is before it, the text between the two is the one line of the comment:
          *                    {@code //} and a space, the RegelSpraak sentence of the function's node (the IR's
          *                    {@code source.snippet}) and a line break; a function of several nodes, the components of a
-         *                    uniqueness key and the initialisations of an object creation, has the sentences of those of
+         *                    uniqueness key and the member assignments of an object creation, has the sentences of those of
          *                    its nodes that have one, joined with {@code "; "}, so its comment is not the sentence of
          *                    one node; in the sentence or the joined sentences a line break stands as a space and the
          *                    end mark of a block comment as {@code * /}; equal to {@code start} where no node has a
@@ -4079,7 +4079,7 @@ public final class TmsTranspiler {
 
     // ---------------- object and fact creation ----------------
 
-    /** One member initialisation of an object creation: the member on the created type, and its value on the subject. */
+    /** One member assignment of an object creation: the member on the created type, and its value on the subject. */
     private record Assignment(Member member, Term value) {}
 
     /**
@@ -4088,8 +4088,8 @@ public final class TmsTranspiler {
      * {@link CreationPhase} the driver opened, no {@link CreationStamp} of this creation for the subject, no {@link CreationStamp} that
      * makes the subject itself in this phase, and the condition as the test; and a consequence that makes a new bean of
      * the created type and inserts, stated, the bean, its {@link CreationStamp}, the {@link RelationLink} of the connecting
-     * relation and a {@link HasCharacteristic} for a characteristic initialisation whose value is true
-     * ({@link Consequence.Creation}). An attribute initialisation whose value is gevuld is set on the new bean before it is
+     * relation and a {@link HasCharacteristic} for a characteristic assignment whose value is true
+     * ({@link Consequence.Creation}). An attribute assignment whose value is gevuld is set on the new bean before it is
      * inserted, as part of its construction ({@link Consequence.Construction}): it is the input of the made object, as the
      * reference interpreter reads it, so a writer of the member displaces it as it displaces case input, and an
      * initialisation rule on the member finds the target filled. Each value is computed from the values the rule binds
@@ -4107,7 +4107,7 @@ public final class TmsTranspiler {
      * same {@link RelationLink}, put on both ends at the write-back. Refused by name besides: an ambiguous back-link, which
      * ch. 5.5 makes a fault of the program; a derived pair whose roles the decision reaches only through a supertype of
      * either end, whose relation the strata of this branch do not see written; a connecting relation that is not one of
-     * two roles; a characteristic initialisation whose value is no truth value (WF-027); and
+     * two roles; a characteristic assignment whose value is no truth value (WF-027); and
      * a division in a member value, whose §6.5 deposit this branch does not make. Where the condition can fault, its
      * fault rule is an ordinary rule of the rule layer, without the marks and without the 1:1 guard: the reference
      * interpreter evaluates the condition first, in every pass.
@@ -4179,15 +4179,15 @@ public final class TmsTranspiler {
         use.add(origin);
         List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read,
                 creationGuard(name, reads, phase));
-        // the fault this creation stated at a making for the subject blocks it there: the driver counts every firing of a
-        // creation rule as a making, so a creation that fired again on its own fault would never let a stratum end
+        // the fault this creation stated when it fired for the subject blocks it there: the driver counts every firing of
+        // a creation rule as a creation, so a creation that fired again on its own fault would never let a stratum end
         items.add(new Not(new FactPattern(Fault.class, "$eigen_fout", List.of(equal(id("eigen-fout"), "rule", name)),
                 List.of(new Join(id("eigen-fout-onderwerp"), "subject", SUBJECT)), List.of())));
         if (k.oneToOne())
             // an instance linked toward the subject in the input world blocks the creation (ch. 5.5)
             reads.addSubjectAlpha(new Alpha(id("geen-gekoppelde-instantie"),
                     List.of(new Alpha.FieldTest(k.fwdRef(), Alpha.Comparator.LEEG, null))));
-        // every initialisation is set on the new bean in its construction where it is an attribute, or inserted as a
+        // every assignment is set on the new bean in its construction where it is an attribute, or inserted as a
         // characteristic after the bean where it is one, in the order of the document
         List<Consequence.Assignment> assignments = new ArrayList<>();
         List<Consequence.Construction.Setting> settings = new ArrayList<>();
@@ -4204,8 +4204,8 @@ public final class TmsTranspiler {
             else settings.add(new Consequence.Construction.Setting(i, new Binding.Field(member.javaClass(), member.name()),
                     member.cell(), member.time() != null));
         }
-        // a creation fires on a fixpoint of the rule layer, so a fault in an initialisation is the session's at the
-        // making, as in the reference interpreter, which then makes nothing; the fault is stated like everything a
+        // a creation fires on a fixpoint of the rule layer, so a fault in an assignment is the session's at the
+        // creation, as in the reference interpreter, which then makes nothing; the fault is stated like everything a
         // creation makes, and the rule's guard on it keeps the creation from firing again in a later generation
         Consequence creation = new Consequence.Creation(SUBJECT, name,
                 new Consequence.CreationDepth(origin, stratum, subject.name, CREATION_BUDGET), assignments,
@@ -4740,7 +4740,7 @@ public final class TmsTranspiler {
     }
 
     /** The snippet of the first square root in {@code value}, or null: a place of the §6.6 deposit, which a member
-     *  initialisation and a default do not make. */
+     *  assignment and a default do not make. */
     private static String squareRoot(Expr e) {
         return earliest(null, e, TmsTranspiler::isSquareRoot);
     }

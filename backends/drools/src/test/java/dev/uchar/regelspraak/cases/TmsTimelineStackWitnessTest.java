@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *   <li>the faults: the initialisation over the asOfDate-bucket scalar of its target (EF-037), and a total that meets
  *       the open segments it writes (EF-036); and none of an initialisation whose value would fault where the input
  *       leaves it no day, since its value is not evaluated there;</li>
- *   <li>the object a creation made holds the value of its making per day, and the rule on its member decides its own
+ *   <li>the object a creation made holds the value its creation assigned per day, and the rule on its member decides its own
  *       days;</li>
  *   <li>the readings at the fixpoint (ch. 5.12): DISPLACED without nodes where the writers and the input leave the
  *       initialisation no day, and else its nodes, the root the filled segments of its value within the periods of its

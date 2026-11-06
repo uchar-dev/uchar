@@ -409,7 +409,7 @@ public sealed interface Consequence {
      * {@code slots}. Its consequence takes four steps, in this order:
      * <ol>
      *   <li>the creation depth of the new object, made by the route {@link Route#CREATION_DEPTH} from {@code depth}:
-     *       past the budget it throws, the fault at the making, before anything is made;</li>
+     *       past the budget it throws, the fault at the creation, before anything is made;</li>
      *   <li>the value of each of {@code assignments}, in order, each collapsed from an exact rational to a decimal;
      *       where one raises an evaluation fault (RUNTIME-SEMANTICS ch. 5.2), that fault, named under {@code fault} and
      *       inserted on the subject as {@code faultInsertion}, is all the creation does, as in the reference
@@ -423,7 +423,7 @@ public sealed interface Consequence {
      * initialisation is set in the construction where it is an attribute, or inserted as a characteristic after the new
      * object where it is one, exactly once; the attributes are set in the order of the assignments; the new object is
      * inserted first, then its mark, then its link, then the characteristics in the order of the assignments. Any
-     * other order fails loudly. A creation states everything it makes, the fault at the making among it
+     * other order fails loudly. A creation states everything it makes, the fault at the creation among it
      * (RUNTIME-SEMANTICS ch. 5.5): the constructor refuses an insertion that is not {@link Insertion#STATED}.
      */
     record Creation(String subject, String creation, CreationDepth depth, List<Assignment> assignments,
@@ -505,10 +505,10 @@ public sealed interface Consequence {
     /** The creation depth of an object creation's new object (RUNTIME-SEMANTICS ch. 5.5, 6.3), which the route
      *  {@link Route#CREATION_DEPTH} computes: one more than the depth of the subject, of declared type {@code type}, in
      *  the creation's stratum {@code stratum}, from the subject's marks in slot {@code origin} of the value array; past
-     *  {@code budget} the route throws the fault at the making. */
+     *  {@code budget} the route throws the fault at the creation. */
     record CreationDepth(int origin, int stratum, String type, int budget) {}
 
-    /** One member initialisation of an object creation: the member {@code member} of the new object, and its value
+    /** One member assignment of an object creation: the member {@code member} of the new object, and its value
      *  {@code value}, evaluated over the bound values of the rule. */
     record Assignment(ElementKey member, Term value) {}
 

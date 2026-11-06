@@ -66,11 +66,11 @@ The right column is existing kernel unless marked otherwise.
 |---|---|---|
 | scope declaration | object type (one instance per scope invocation) | rows 9/21 — sugar over existing kernel |
 | scope variable (internal/output) | attribute of that object type | existing |
-| `input` variable (no own default; caller must supply) | attribute filled by the instantiation (member initialisation) | existing |
+| `input` variable (no own default; caller must supply) | attribute filled by the instantiation (member assignment) | existing |
 | one default tree per variable (D-Label) | prioritized defaults / a declared-unordered default group on that attribute | landed (Phase 4); **sub-root branching: see §5.1** |
 | exception nesting (structural priority) | default order; root branching = unordered group | landed (Phase 4) |
 | caller override of a `context` variable (C-Def: the caller's value as the **highest** exception — Reading B) | a **highest-priority default** above the scope's own defaults (the §4.1 hardship pattern is the landed precedent of Reading B *as program structure*) — **not** the Phase-4 input default, which is Reading A (computation displaces input) and runs the opposite direction; PHASE4-DEFAULTS §2.2 reserved this reconciliation for Phase 5 | **decision 6** (§8) |
-| subscope call (instantiate, bind inputs, read outputs) | object creation + member initialisation (the bound inputs) + role navigation (reading outputs) | row 9 — real design work, but over existing kernel nodes |
+| subscope call (instantiate, bind inputs, read outputs) | object creation + member assignment (the bound inputs) + role navigation (reading outputs) | row 9 — real design work, but over existing kernel nodes |
 | `ConflictError` (⊛) | the §9.5 channel fact, observable-not-fatal | landed; **tracked deviation** (row 8: Catala aborts, we continue) |
 | `EmptyError` (∅), catchable | ordinary leeg; fall-through | landed; **tracked deviation** (row 8) |
 | money, dates, durations, rationals | exact arithmetic + units (rows 26/27/34: no dedicated money type; a unit with declared decimals and explicit rounding) | existing |

@@ -6,5 +6,5 @@ clause at the creation site, pinned.
 
 Since L4 an object creation is an `ObjectCreation` with its versions (delta
 B19); the defect sits on the `ObjectCreationVersion`, whose fields are
-`createdType`, `subject`, `initialisations` (each a `MemberInit`) and
+`createdType`, `subject`, `assignments` (each a `MemberAssignment`) and
 `connectingRole`. `expect.txt` pins the arm.

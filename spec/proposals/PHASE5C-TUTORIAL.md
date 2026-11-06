@@ -128,7 +128,7 @@ executed:
    prioritized defaults translate as they do for any scope and run in the
    caller's fixpoint on the minted instance;
 2. the call becomes one `ResolvedObjectCreatie` of the callee type,
-   with the call's `args` bound as member initialisations
+   with the call's `args` bound as member assignments
    (`Toekenningen`) on the callee's input attributes, and the
    `verbindendeRol` back-link connecting caller and callee instance;
 3. reading an output (`EStructAccess` on the subscope instance — the
@@ -146,7 +146,7 @@ reentrant inputs stay refused (the 5a refusal — decision 6's generated
 highest-priority default becomes *realisable* with this machinery but is
 not needed by the tutorial; its WF-050 interaction — a caller value
 feeding a callee target that carries defaults must enter as a default,
-never as a `MemberInit` —
+never as a `MemberAssignment` —
 is recorded here as the design constraint for that later card);
 subscope outputs consumed as whole structs (rather than per-field
 reads) follow design 1 once both land.
@@ -162,7 +162,7 @@ caller's fixpoint. Witnesses: the corpus subscope golden
 `subscope.catala_en` and `tutorial_end_2_3` through gate 9 (plugin →
 verifier → ref → clingo). **Two follow-on maintainer decisions, taken
 at execution (2026-08-24, numbered questions, both A):** (1) **WF-027
-relaxed — the B1-A widening.** A characteristic initialisation in an
+relaxed — the B1-A widening.** A characteristic assignment in an
 `ObjectCreatie` may carry a boolean-*typed* EXPRESSION, not only the
 boolean constant, so a caller boolean read (the tutorial's
 `overseas_territories`) binds a callee kenmerk over the

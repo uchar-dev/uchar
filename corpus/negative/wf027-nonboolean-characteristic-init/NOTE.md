@@ -1,4 +1,4 @@
-Violates WF-027 (`spec/IR-SPEC.md` ch. 3.3): a characteristic initialisation
+Violates WF-027 (`spec/IR-SPEC.md` ch. 3.3): a characteristic assignment
 in an object creation carries a value that is not a boolean-typed expression.
 
 Pins the new boundary of the Phase 5c WF-027 relaxation. The old rule demanded
@@ -10,5 +10,5 @@ not `Boolean`, and refuses it citing WF-027.
 
 Since L4 an object creation is an `ObjectCreation` with its versions (delta
 B19); the defect sits on the `ObjectCreationVersion`, whose fields are
-`createdType`, `subject`, `initialisations` (each a `MemberInit`) and
+`createdType`, `subject`, `assignments` (each a `MemberAssignment`) and
 `connectingRole`. `expect.txt` pins the arm.

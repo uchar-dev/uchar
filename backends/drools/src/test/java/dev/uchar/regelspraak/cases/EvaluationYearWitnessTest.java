@@ -149,7 +149,7 @@ class EvaluationYearWitnessTest {
                     null, "the assertion of a consistency"),
             new Site("synth2-budgetgrens-onder", "/rules/objectCreations/0/versions/0/assignments/0/value/right",
                     "case1.json", "2026-03-15", Map.of("W1.opvolgerrang", "{\"number\":\"2027\"}"), true,
-                    null, "an initialisation of an object creation"),
+                    null, "a member assignment of an object creation"),
             new Site("jutterswet-voorwaardedeling", "/rules/allocations/0/versions/0/condition/right", "case.json",
                     "2026-03-15", mapWithEmpty("J1.bergdeel", "J2.bergdeel"), false,
                     null, "the guard of an allocation"),

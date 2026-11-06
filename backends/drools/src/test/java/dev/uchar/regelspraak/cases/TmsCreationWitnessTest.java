@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <ul>
  *   <li>A creation makes one object per subject, also when a later generation finds its condition true again, and its
- *       member initialisations are the values of the fixpoint at which it fires: the vangst a lower default gives first
+ *       member assignments are the values of the fixpoint at which it fires: the vangst a lower default gives first
  *       is a state the creation does not see ({@link #an_object_creation_makes_an_object_per_subject_with_the_values_of_the_fixpoint}).</li>
  *   <li>A creation whose condition holds only on an intermediate state does not happen: with a lower default that
  *       decides first ({@link #a_creation_that_applies_only_on_a_lower_default_does_not_happen}); in the smallest
@@ -622,7 +622,7 @@ class TmsCreationWitnessTest {
     /** A chain that does not stop: every Wachter without an opvolger makes one. The condition reads only the count,
      *  which an accumulate over no contribution answers at once, so a new Wachter would match it in the phase that made
      *  it if the phase did not hold it back. Each generation makes one Wachter on the last, at one depth more, so the
-     *  101st generation would make one at depth 101, and there the creation budget ends the run, at the making
+     *  101st generation would make one at depth 101, and there the creation budget ends the run, at the creation
      *  (RUNTIME-SEMANTICS ch. 5.5). */
     static Path documentF() throws Exception {
         String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Wachter", List.of(
@@ -644,7 +644,7 @@ class TmsCreationWitnessTest {
 
     /** Until 2026-10-09 the driver counted generations, and the 101st still made its Wachter before the run ended
      *  without a fixpoint, "geen fixpunt binnen 100 generaties: generatie 101 maakt nog 1 object of link", 101 objects
-     *  made; the mint at depth 101 is now the fault at the making, and 100 objects are made. */
+     *  made; the mint at depth 101 is now the fault at the creation, and 100 objects are made. */
     @Test void an_object_is_only_a_subject_in_the_next_generation() throws Exception {
         Path ir = documentF();
         assertEquals("case: " + BUDGET, TmsFaultWitnessTest.playBoth(ir, caseF()));

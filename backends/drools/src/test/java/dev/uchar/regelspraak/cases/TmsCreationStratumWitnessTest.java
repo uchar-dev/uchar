@@ -78,7 +78,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       of its creation: two chains of 51 mints in two strata play ({@link #the_creation_budget_applies_per_stratum}), and
  *       so does a chain over three strata, 50 + 1 + 50 ({@link #a_chain_over_three_strata_counts_per_stratum}).</li>
  *   <li>The budget counts the depth of a chain of mints (RUNTIME-SEMANTICS ch. 5.5): one chain plays 99 and 100 mints,
- *       and its mint at depth 101 is the fault, at the making
+ *       and its mint at depth 101 is the fault, at the creation
  *       ({@link #a_creation_at_depth_100_plays_and_one_at_depth_101_is_a_fault}); a chain of 100 mints plays with a
  *       rule of its stratum that gives the last object a value after the hundredth generation
  *       ({@link #a_generation_where_only_the_rule_layer_changes_does_not_count_for_the_budget}), and so does the
@@ -573,7 +573,7 @@ class TmsCreationStratumWitnessTest {
 
     /** The bound of the creation budget (RUNTIME-SEMANTICS ch. 5.5), where the reference interpreter and the ASP backend
      *  put it: chains of 99 and 100 mints play, one generation per phase, and the mint at depth 101 is the fault, at the
-     *  making, so the 101st object is not made. On this chain every generation mints one object on the last, so its
+     *  creation, so the 101st object is not made. On this chain every generation mints one object on the last, so its
      *  depth is the generation that made it. Until 2026-10-09 the driver counted generations: the 101st generation still
      *  made its object, and the run ended after it without a fixpoint, "geen fixpunt binnen 100 generaties: generatie
      *  101 maakt nog 1 object of link", with 101 objects made. */

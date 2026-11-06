@@ -143,7 +143,7 @@ spec bug.
   created instance as a deterministic function term `ocN(Subject)` —
   set semantics carries the per-(rule × subject) idempotence, exactly
   the reference interpreter's deterministic label. Member
-  initialisations are `val`/`has_atom` heads on the term; the back-link
+  assignments are `val`/`has_atom` heads on the term; the back-link
   relation (the explicit `verbindendeRol` binding, else the
   uniquely-derivable pair) lands both `role/3` ends; the
   1:1 linked-instance guard is `not inputrole/3` over the case links
@@ -196,11 +196,11 @@ spec bug.
   50 + 1 + 50 frame grounds about 1.7 GB of rules and takes about 23 s
   (measured 2026-10-09), where a single chain of 100 takes well under a
   second.
-- A member initialisation takes the value at the moment of making
+- A member assignment takes the value at the moment of creation
   (ch. 5.5, Generations): ref reads it on the settled world of the
   generation before, and a later generation may change the value read
-  without the initialised member following it. This encoding has no
-  moment of making; the initialisation's head reads the stable model,
+  without the assigned member following it. This encoding has no
+  moment of creation; the assignment's head reads the stable model,
   which holds the end value. The two differ where a later generation of
   the creation's own stratum changes the value read, and there only a
   creation on a dependency cycle (WF-045 admits one through a recursive
@@ -224,7 +224,7 @@ spec bug.
   creation in a higher stratum than the cycle reads the end value, as
   ref does, and stays carried. An
   attribute or characteristic that only creations write is set once per
-  object, at its making, so a read of it stays carried: the anchor
+  object, at its creation, so a read of it stays carried: the anchor
   `jutterswet-wachtersketen` reads its rang so.
   A member that a creation and a rule on the cycle both write is
   refused: with rang plus 1 and beginstand = zijn rang initialised, and a
@@ -232,7 +232,7 @@ spec bug.
   W1's opvolger at beginstand 1 while W1 ends at rang 2. The test reads
   the static dependency graph of `Ir_v0.Checks` (the graph ref
   stratifies) and ref's strata over it, not the values: a rule on the
-  cycle whose value on an object is fixed at the object's making is
+  cycle whose value on an object is fixed at the object's creation is
   refused as well, and so is a writer on the cycle whose validity the
   case's date excludes. Only a creation version the date excludes is not
   asked, because it is not translated, and it does not count as a
@@ -326,7 +326,7 @@ spec bug.
   the segments it writes (RUNTIME-SEMANTICS ch. 3.11, 5.7 per day). Each
   writer writes its segments as `tl/5` and also as `wtl/6`, under its
   index in the document. The input timeline of a target that a computing
-  rule or an initialisation writes, the case's or a making's, enters as
+  rule or an initialisation writes, the case's or a creation's, enters as
   `inputtl/5`; each input segment is cut
   at the bounds of the writers' segments inside it (`incut/5`,
   `inpiece/6`), and a piece that no writer's segment covers

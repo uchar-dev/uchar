@@ -15610,11 +15610,11 @@ let () =
 
 (* RUNTIME-SEMANTICS ch. 5.5, Generations (card
    creatie-initialisatie-leest-groeiende-waarde, 2026-10-09). A member
-   initialisation takes the value at the moment of making; this encoding
+   assignment takes the value at the moment of creation; this encoding
    reads the value of the stable model. The two differ where a form on a
-   dependency cycle through the creation writes what the initialisation
+   dependency cycle through the creation writes what the assignment
    reads, and there the creation is refused by name (IR-SPEC ch. 5.5). A
-   member that only creations write is set once per object, at its making,
+   member that only creations write is set once per object, at its creation,
    and stays carried; a member that a creation writes and a rule on the
    cycle writes as well is refused. The test reads the static graph, so a
    writer on the cycle that the case's date excludes still counts.
@@ -15643,7 +15643,7 @@ let () =
    rule off the cycle (opvolgerbegin(W1) = 7). And two refusals in the
    conservative direction, where ref and this backend gave the same answer
    before: basis = zijn rang plus 10 is a rule on the cycle, although its
-   value on an object is fixed at the object's making (opvolgerbegin(W1) =
+   value on an object is fixed at the object's creation (opvolgerbegin(W1) =
    11); and the card's document with "stand van een wachter" valid until
    2025-12-31 and a case on 2026-06-01, where no rule writes the stand
    (stand(W1) and opvolgerbegin(W1) leeg). *)
@@ -15703,7 +15703,7 @@ let () =
   in
   (* [maten] adds the fact type maatschap and the fact creation "maak maten"
      (a Wachter becomes maatgever of its opvolger) to the recursive group;
-     [more] adds member initialisations after rang and beginstand *)
+     [more] adds member assignments after rang and beginstand *)
   let doc ?(maten = false) ?(more = "") ~attributes ~begin_value rule_defs =
     Printf.sprintf
       {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Wachter", "animate": true, "plural": "Wachters", "attributes": [%s], "characteristics": []}], "factTypes": [{"node": "FactType", "name": "opvolging", "reciprocal": false, "roles": [{"node": "Role", "name": "voorganger", "objectType": "Wachter", "many": false}, {"node": "Role", "name": "opvolger", "objectType": "Wachter", "plural": "opvolgers", "many": false}]}%s], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [{"node": "ObjectCreation", "name": "werf de opvolger", "versions": [{"createdType": "Wachter", "subject": "Wachter", "assignments": [{"node": "MemberAssignment", "member": "rang", "value": {"node": "Binary", "op": "plus", "left": %s, "right": %s, "type": %s, "source": {"snippet": "plus"}}, "characteristic": false}, {"node": "MemberAssignment", "member": "beginstand", "value": %s, "characteristic": false}%s], "condition": {"node": "Comparison", "op": "less", "left": %s, "right": %s, "source": {"snippet": "less"}}, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}}]}], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [%s], "startPointDeterminations": [], "ruleGroups": [{"node": "RuleGroup", "name": "estafette", "recursive": true, "members": [%s], "source": {"snippet": "estafette"}}], "prioritizedDefaults": []}, "diagnostics": []}|}
@@ -15754,9 +15754,9 @@ let () =
   in
   let refusal_info ~one_member ~graph_node ~writer_rule =
     Printf.sprintf
-      "object creation \"werf de opvolger\": the initialisation of %s reads %s, which %s writes on \
-       a dependency cycle through the creation (admitted by WF-045 through a recursive group) — an \
-       initialisation takes the value at the moment of making (RUNTIME-SEMANTICS ch. 5.5, \
+      "object creation \"werf de opvolger\": the assignment of %s reads %s, which %s writes on \
+       a dependency cycle through the creation (admitted by WF-045 through a recursive group) — a \
+       member assignment takes the value at the moment of creation (RUNTIME-SEMANTICS ch. 5.5, \
        Generations), and this backend reads the value of the stable model, which a later \
        generation can still change, so it refuses the creation (IR-SPEC ch. 5.5)"
       one_member graph_node writer_rule
@@ -15973,12 +15973,12 @@ let () =
         ref_matches ~name ~ir ~case_text;
         faults_with ~name ~ir ~case_text
           ~needle:
-            "object creation \"rapport van een haven\": the initialisation of aantal reads \
+            "object creation \"rapport van een haven\": the assignment of aantal reads \
              char:wachter:ervaren, which rule \"ervaren wachter\" writes, and fact creation \"geef \
              door\", on a dependency cycle in the creation's own stratum (admitted by WF-045 through a \
              recursive group), reaches that writer in the dependency graph, so a later generation of \
-             the stratum can still change the value read — an initialisation takes the value at the \
-             moment of making (RUNTIME-SEMANTICS ch. 5.5, Generations), and this backend reads the \
+             the stratum can still change the value read — a member assignment takes the value at the \
+             moment of creation (RUNTIME-SEMANTICS ch. 5.5, Generations), and this backend reads the \
              value of the stable model, so it refuses the creation (IR-SPEC ch. 5.5)")
   in
   rejected ~variant:"the aantal counts the ervaren wachters (the final lens's document)" [ ervaren; report_count ];
@@ -17528,7 +17528,7 @@ let () =
 
 (* RUNTIME-SEMANTICS ch. 7.8, the stack of a scalar target: its writers — the
    computing rules and an allocation — of one rank, then the input of the
-   object, the case's or the values of a making, then the initialisation; ref's
+   object, the case's or the values a creation assigned, then the initialisation; ref's
    documents (ref/test/fixtures/writers-stack), its worked example WV-7.8-stapel,
    played in both executors. Two writers with different values are EF-016, and
    an initialisation, an allocation and a creation's member value on a timeline

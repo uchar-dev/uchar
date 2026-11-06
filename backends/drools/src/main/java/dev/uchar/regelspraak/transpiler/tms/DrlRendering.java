@@ -1600,7 +1600,7 @@ final class DrlRendering {
         /**
          * The object creation of {@link Consequence.Creation}: a function of the rule takes the steps of the plan in their order
          * and makes the facts, and the rule inserts them. The function computes the depth through its route, which throws
-         * past the budget before anything is made; then the value of each initialisation, collapsed, the first evaluation
+         * past the budget before anything is made; then the value of each assignment, collapsed, the first evaluation
          * fault being its outcome, as in the executable model, which then makes nothing; then the new bean through the
          * route {@code newObject}, with each attribute initialisation set on it through the route {@code set} before it
          * is inserted; and it gives the facts of the insertions in the order of the plan, null for a characteristic whose
@@ -1627,7 +1627,7 @@ final class DrlRendering {
                     .append(", ").append(d.stratum()).append(", ").append(str(d.type())).append(", (java.util.List) ")
                     .append(slot(d.origin(), c)).append(", ").append(d.budget()).append(");\n");
             if (!values.isEmpty()) {
-                // an initialisation that stands as an exact Value keeps its exact value; one set on the bean its decimal
+                // a assignment that stands as an exact Value keeps its exact value; one set on the bean its decimal
                 Set<Integer> exact = new HashSet<>();
                 for (Consequence.Insert i : x.insertions())
                     if (i instanceof Consequence.Insert.Exact e) exact.add(e.assignment());

@@ -1321,7 +1321,7 @@ let () =
   check "WV-6.4-a-50" (run "50" = (true, false));
   check "WV-6.4-a-200" (run "200" = (false, true))
 
-(* WV-5.5-charinit: a characteristic initialisation in an ObjectCreatie may
+(* WV-5.5-charinit: a characteristic assignment in an ObjectCreatie may
    carry a boolean-TYPED expression, evaluated on the creation subject exactly
    as an attribute initialisation is (the WF-027 relaxation, maintainer
    decision 2026-08-24, besluit 1). The caller Jutter carries the boolean; the
@@ -2053,7 +2053,7 @@ let number_json = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "un
 
 (* WV-5.5-generaties (ch. 5.5, since 2026-10-09): a creation reads the
    settled world of the generation before its own, so the value its
-   initialisation takes at the moment of making does not depend on where the
+   initialisation takes at the moment of creation does not depend on where the
    document writes the rules. "werf de opvolger" (recursive group
    "estafette") gives a Wachter of rang below 4 an opvolger with rang plus 1
    and beginstand equal to its stand; "stand van een wachter" counts its
@@ -2064,7 +2064,7 @@ let number_json = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "un
    has none, so its stand is 0; afterwards it is 1. In every order of the
    rules: stand(W1) = 1, opvolgerbegin(W1) = 0, each minted Wachter starts at
    beginstand 0, and the chain has four Wachters. Until that date a creation
-   read the running world of a pass, so the moment of making was a position
+   read the running world of a pass, so the moment of creation was a position
    in the pass: with the copy rule written before the count, the
    initialisation read a copy the pass had not yet computed and
    opvolgerbegin(W1) was leeg. *)
@@ -12728,7 +12728,7 @@ let () =
 (* WV-7.8-stapel: every writer of a scalar target stands in one stack
    (RUNTIME-SEMANTICS ch. 7.8), its writers — computing rules and an
    allocation — of one rank, then the input of the object, the case's or the
-   values of a making, then the initialisation. On the golden
+   values a creation assigned, then the initialisation. On the golden
    jutterswet-invoer-naast-initialisatie: a Vondst with taxatie 40 in the input,
    "op zijn opgave indien hij gemeld is", "op zijn schatting indien hij erkend
    is" and the initialisation "op 25 indien hij gemeld is": opgave 50 gives 50,
@@ -12738,10 +12738,10 @@ let () =
    5 indien hij vast is" gives the share 50 on B1 and on B2 over its input 7, 5
    on an unlinked B3, the input 7 on an unlinked B4 and leeg on B5, which is not
    vast; the initialisation "op 5" of the waarde of a Melding finds the waarde 7
-   a creation gives it filled (terug 7), fills it where the making gives none
+   a creation gives it filled (terug 7), fills it where the creation assigns none
    (terug 5) and finds the input 40 of an input Melding filled, and so does
    the initialisation "op 5 indien zijn toeslag groter is dan 0" beside a
-   making that gives the toeslag; the rule "op
+   creation that assigns the toeslag; the rule "op
    zijn vaste aandeel indien hij vast is" writing 30 where the allocation writes
    50 is EF-016. On a timeline target the stack is read per day: below its own
    tests (WV-7.8-stapel-per-dag) *)

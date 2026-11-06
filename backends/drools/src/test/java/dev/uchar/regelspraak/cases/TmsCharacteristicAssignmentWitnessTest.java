@@ -13,15 +13,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
- * A characteristic initialisation of an object creation whose value is no truth value: the golden
+ * A characteristic assignment of an object creation whose value is no truth value: the golden
  * {@code anchor/jutterswet-rekenkamer-overzee} with "overzees gelijk aan 5" in place of its boolean value. A
  * characteristic is true or false (WF-027); the branch refuses the form by name. Before, its consequence read the 5 as
  * not true and left the characteristic unset, so the creation played.
  *
  * <p><b>Measured</b> 2026-10-10 on that document with the case of J1 (grondslag 800, heffing 800 expected): the
  * verifier refuses it, "WF-027 FAIL /rules/objectCreations/0/versions/0/assignments/1: characteristic
- * initialisation's value must be a boolean-typed expression"; the reference interpreter faults, "characteristic
- * initialisation of "overzees" is not boolean: 5"; the ASP runner declines the expression at translation; the
+ * assignment's value must be a boolean-typed expression"; the reference interpreter faults, "characteristic
+ * assignment of "overzees" is not boolean: 5"; the ASP runner declines the expression at translation; the
  * exec-model and the DRL-text branch fault at fire, "kenmerkinitialisatie van 'overzees' is niet booleaans: 5 (WF-027)".
  *
  * <p><b>Red</b> on the claim of the card, 331b1179: the manifest carried no refusal, and the case played.
@@ -41,7 +41,7 @@ class TmsCharacteristicAssignmentWitnessTest {
                             { "kind": "consistent" } ] }
             """;
 
-    /** The golden with the value of its characteristic initialisation replaced by the number 5. */
+    /** The golden with the value of its characteristic assignment replaced by the number 5. */
     static ObjectNode withNumber() throws Exception {
         ObjectNode ir = (ObjectNode) TmsDocuments.JSON.readTree(Files.readString(GOLDEN.resolve("ir.json")));
         for (JsonNode t : IrPath.version(ir, "objectCreations", 0, 0).get("assignments"))

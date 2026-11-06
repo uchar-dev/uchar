@@ -2578,7 +2578,7 @@ let wf034_allocation_name_resolution ctx =
    undeclared name one at a time: 10 of 11 were already refused — all ten by
    WF-053 (the navigation in a member value loses its scope), nine of them by
    WF-047 as well — and exactly ONE stayed verifier-CLEAN: the single creation
-   with no `initialisations` at all (`anchor/jutterswet-penninguitgifte`,
+   with no `assignments` at all (`anchor/jutterswet-penninguitgifte`,
    creation 1). There the executors do not fault either; they AGREE on a wrong
    answer, `ref` "MISMATCH: J1.aantal dossiers = 0, expected 1" and clingo
    "MISMATCH: J1.aantal dossiers = [0], expected 1" — the creation simply runs
@@ -2691,7 +2691,7 @@ let wf027 ctx =
                                ("'" ^ m ^ "' is not a declared characteristic of '" ^ tn ^ "'") ]
                          else [])
                         @
-                        (* Phase 5c relaxation: a characteristic initialisation
+                        (* Phase 5c relaxation: a characteristic assignment
                            value is a boolean-TYPED expression, not only the
                            boolean constant (which stays the v0 form). What the
                            verifier can statically type as boolean passes; a
@@ -4085,7 +4085,7 @@ let wf033 ctx =
 (* ======================================================================= *)
 
 (* [annotation] and [expr_type] are defined above WF-027 (they type a
-   characteristic initialisation's value); the expression walk below shares
+   characteristic assignment's value); the expression walk below shares
    them. *)
 
 (* Is this expression a time-dependent operand (for WF-043)? *)
@@ -5168,7 +5168,7 @@ let wf125_bare_read ctx at (e : expr) =
    defaults positions crossed no soort at all). The precision gate is
    [wf023_precision] below, over the bound of ch. 2.3 rather than the static
    type. [target]/[value] are the expressions, for literal unit adoption
-   (a defaults consequence and a member initialisation have no target
+   (a defaults consequence and a member assignment have no target
    expression). WF-062 reads the argument of a Construct with this function
    as a write into the declared payload. *)
 let wf023_assignment at ~target ~value ~value_at (dt : datatype) (wt : datatype) =
@@ -9599,9 +9599,9 @@ let wf050 ctx =
                       ctx.doc.prioritized_defaults)
                in
                (* The flat creation clause and its chain arm read this one
-                  predicate, so they cannot disagree on which initialisations
+                  predicate, so they cannot disagree on which member assignments
                   write the group's target. *)
-               let initialises (oc : resolved_object_creation) =
+               let assigns (oc : resolved_object_creation) =
                  List.exists
                    (fun (t : assignment) ->
                      (match t.to_attribute with
@@ -9646,11 +9646,11 @@ let wf050 ctx =
                         (match oc.created_type with
                         | Some nt -> norm nt = norm l.pd_subject
                         | None -> false)
-                        && initialises oc)
+                        && assigns oc)
                       ctx.doc.object_creations
                   then
                     [ v ~params:[("objectType", l.pd_subject); ("target", tn)] "WF-050.creation-also-writes" at
-                        ("an object creation also initialises defaults target '"
+                        ("an object creation also assigns defaults target '"
                        ^ l.pd_subject ^ "." ^ tn
                        ^ "' — a creation-time write would silently defeat the group's \
                           decisions (and void the initialisation default's input-emptiness \
@@ -9669,13 +9669,13 @@ let wf050 ctx =
                    (List.filter_map
                       (fun (oc : resolved_object_creation) ->
                         match oc.created_type with
-                        | Some nt when initialises oc -> (
+                        | Some nt when assigns oc -> (
                             match chain_lower ctx ~ty:Fun.id nt l.pd_subject with
                             | Some (low, _) when norm low = norm nt ->
                                 Some
                                   (v ~params:[("objectType", l.pd_subject); ("target", tn); ("createdType", nt)] "WF-050.creation-through-chain" at
                                      (Printf.sprintf
-                                        "an object creation also initialises defaults target \
+                                        "an object creation also assigns defaults target \
                                          '%s.%s' through its type chain — the group declared \
                                          on %s, the created type %s — and an object creation \
                                          is never folded into a stack, so an instance of %s \

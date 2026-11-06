@@ -109,7 +109,7 @@ final class AbsenceMarkers {
                 : new ResolvedRule(r.name(), r.kind(), target, value, condition, r.validity(), r.statuteAnnotations());
     }
 
-    /** An object creation: a member it initialises with markers is written as a rule writes it. */
+    /** An object creation: a member it assigns a marker to is written as a rule writes it. */
     private ResolvedObjectCreation objectCreation(ResolvedObjectCreation oc) {
         List<ResolvedObjectCreation.MemberAssignment> assignments = new ArrayList<>();
         boolean same = true;

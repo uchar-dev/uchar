@@ -28,7 +28,7 @@ A cell target names its label between the attribute and the subject ("Het
 vondstgewicht in najaar van een Jutter"), the form ALEF writes a cell in on
 either side of an assignment; the frontend writes it as a
 `DimensionCellRead` over the attribute. The creation's member "vangstgewicht
-in najaar" is a `MemberInit` with `labels`. A case cannot name an object the
+in najaar" is a `MemberAssignment` with `labels`. A case cannot name an object the
 session makes, so the last two rules carry the made object's cells back to
 the jutter that is in the case.
 

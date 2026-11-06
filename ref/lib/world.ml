@@ -96,7 +96,7 @@ type t = {
   mints : (int * int) SMap.t;
       (* by label, for every minted instance: the stratum of the creation
          that minted it and its creation depth in that stratum, recorded at
-         the making (RUNTIME-SEMANTICS ch. 5.5, the creation budget). An
+         the creation (RUNTIME-SEMANTICS ch. 5.5, the creation budget). An
          input instance has no entry; its depth is 0 in every stratum *)
   char_writes : string Key.t;
       (* by (label, norm characteristic), for a time-dependent characteristic:
@@ -191,7 +191,7 @@ let store_attr w ~label ~attr:name ~decl v =
 let held_by_initialisation w key =
   match Key.find_opt key w.owners with Some o -> o.initialisation | None -> false
 
-(* A write that no form holds, a creation's at the making: the target is
+(* A write that no form holds, the one a creation makes on its object: the target is
    nobody's to give back. A write by any writer but an initialisation takes the
    target from the initialisation, also where it writes the value that stands:
    the value is that writer's then, whichever fired first, and the

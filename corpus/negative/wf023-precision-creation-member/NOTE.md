@@ -1,4 +1,4 @@
-Violates WF-023 (`spec/IR-SPEC.md` ch. 3.1), the precision gate of RUNTIME-SEMANTICS ch. 2.4: a quotient in the member initialisation of an object creation.
+Violates WF-023 (`spec/IR-SPEC.md` ch. 3.1), the precision gate of RUNTIME-SEMANTICS ch. 2.4: a quotient in the member assignment of an object creation.
 A Melding creates a Strandrecht with `uitkering gelijk aan zijn omvang gedeeld door zijn aantal vinders`, a quotient by an attribute, written into an uitkering of 2 decimals.
 
     WF-023.precision-unbounded FAIL /rules/objectCreations/0/versions/0/assignments/0/value

@@ -1818,7 +1818,7 @@ several dimensions and that every use of it names a label of each
 (specification §3.6), defines the fold over a selection of labels
 (§5.8, §5.8.5), and forbids a dimension beside a timeline (§3.2.1). It says
 nothing about a cell as the target of a rule or of an object creation's
-initialisation, about a fold that ranges over more than one dimension at
+member assignment, about a fold that ranges over more than one dimension at
 once, or about a cell of another type than a number. Where the
 specification is silent, the uchar dialect follows ALEF, which writes a
 cell in an equation, an initialisation and an object creation, folds over
@@ -3008,7 +3008,8 @@ method value.
 
 ### 3.3 Object creation
 
-A subject creates an object of a declared type and initialises members.
+A subject creates an object of a declared type and assigns its members
+a value.
 v0 name: `ResolvedObjectCreatie` (+ `Toekenning`). Versioned per the
 chapter rule; the table below (minus `name`) is one version's body.
 
@@ -3028,7 +3029,7 @@ chapter rule; the table below (minus `name`) is one version's body.
 member names a declared characteristic and the value is a boolean-typed
 expression — a boolean constant is the v0 form; false = §13.4.6.3
 attribute-value form). `labels` names the one cell of a dimensioned
-attribute member the initialisation writes, one label of each dimension in
+attribute member the assignment writes, one label of each dimension in
 declared order (ch. 2.7, WF-040); it is absent on every other member, and a
 dimensioned member without it is WF-125 (b)'s. The wire has written it as
 the node `MemberAssignment` since L7 and as the node `MemberInit` from L5;
@@ -3046,16 +3047,16 @@ role-ambiguous there — the pinned runtime derives null and drops the
 link — so the binding is the only linked route for a recursive chain.
 
 - **WF-027** Every `member` MUST be a declared attribute or characteristic
-  of `createdType`; a characteristic initialisation's value MUST be a
+  of `createdType`; a characteristic assignment's value MUST be a
   boolean-typed expression (a boolean constant is the v0 form). An
   **attribute** member's value typing — family, units, sign and keuzetype
   domain against the declared attribute — is WF-023's second write
   position, not this rule. The value
-  evaluates on the creation subject, exactly as an attribute initialisation
+  evaluates on the creation subject, exactly as an attribute assignment
   does (`RUNTIME-SEMANTICS.md` ch. 5.5): true attributes the characteristic,
   false **or empty** leaves it unattributed — equivalent to an absent
-  initialisation, the closed-world reading characteristic checks already
-  apply (the empty flank follows the attribute-initialisation parallel — a
+  assignment, the closed-world reading characteristic checks already
+  apply (the empty flank follows the attribute-assignment parallel — a
   leeg value writes silently — and is indistinguishable from false to a
   characteristic check). The verifier
   admits a statically boolean-typed value and refuses a statically
@@ -9733,12 +9734,12 @@ producer of every default justification), each guarded by per-form
 auto-refusals — a loader Refusal
 or transpiler marker naming the uncovered form, loudly excluded at gate 12,
 never played mis-stratified. Since 2026-10-09 the ASP backend takes it for
-one form: a member initialisation of an object creation that reads a node
+one form: a member assignment of an object creation that reads a node
 a later generation of the creation's own stratum can still change, because
 a creation on a dependency cycle that WF-045 admits in that stratum, the
 creation itself included where it lies on one, reaches a writer of the
 node in the dependency graph in a version the case's date admits; the
-backend has no moment of making and refuses such an initialisation by
+backend has no moment of creation and refuses such an assignment by
 name (`RUNTIME-SEMANTICS.md` ch. 5.5, Generations). A backend realising a
 **coarser**
 stratification than the graph mandates without refusing the uncovered forms
@@ -10229,7 +10230,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-024 | *Retired at L4 (2026-09-24), history:* allocation method is one of the three real methods (no COMPLEX) — since L4 the closed method enum of the schema and of every loader states it, so `COMPLEX` is a load error and no document is left for a rule to refuse | — (a load error since L4) | `jutterswet-berging` | `wf024-complex`, removed with reason at L4 (`corpus/negative/README.md`, L4) |
 | WF-025 | allocation fields valid per method; ordering key orderable; share typing | gate 3 (field validity and orderability; share typing is WF-023) | `jutterswet-berging` | `wf025-max-without-ratio` |
 | WF-026 | at most one allocation per written target; through a type chain read per concrete type — an allocation over a type and one over its ancestor both write the lower type's instances and pair as two on one type do, with no gate (an allocation is never folded, `RUNTIME-SEMANTICS.md` ch. 7.10), reported at the lower type's version | gate 3 | `jutterswet-berging` + `jutterswet-hoofdberging`, `jutterswet-bergingsdeling` and `jutterswet-bergersdeling` (one allocation over the subtype `Hoofdberger` writes the inherited `bergingsaandeel`: one writer on the chain, so the chain clause forms no pair there) | `wf026-two-allocations-one-target` + `wf026-chain-two-allocations` |
-| WF-027 | object-creation members declared on the created type; characteristic init boolean (an attribute member's value typing is WF-023's second write position) | gate 3 | `jutterswet-penninguitgifte` (anchor: the mint, its member initialisations and both guards execute, gates 5–6) | `wf027-ghost-member` |
+| WF-027 | object-creation members declared on the created type; characteristic assignment boolean (an attribute member's value typing is WF-023's second write position) | gate 3 | `jutterswet-penninguitgifte` (anchor: the mint, its member assignments and both guards execute, gates 5–6) | `wf027-ghost-member` |
 | WF-028 | fact creation resolvable: the created fact type is declared, `anchorRole`/`targetRole` are distinct roles of it filled by anchor and target, every hop binding of `path` resolves and joins, the path reaches the target — since L4 the declared filler of `targetRole`, the target type being no longer written — new ≠ final hop. Since L2 (2026-09-24, B7) the symbolic block is required by the schema and every loader, so the all-or-nothing and bean-field-only arms are enforced at load (history) | gate 3 | `jutterswet-gemeenteberging` (anchor: the chain walk executes and folds over the created relation pin absolute values, gates 5–6) | `wf028-create-along-final-hop` (the full chain walk); `wf028-half-symbolic-creation` and `wf028-bean-only-creation` were removed with reason at L2 (`corpus/negative/README.md`, L2) |
 | WF-029 | consistency assertion has a single subject | gate 3 | `jutterswet-vondstnummer` | `wf029-no-subject` |
 | WF-030 | uniqueness sources: each names a declared object type and its keys resolve; arity, datatype kind and units agree per position. Until L4 also: a union carries ≥ 2 sources — since L4 (delta B27) one construct carries both shapes, and a version with one source IS the single-type form (history) | gate 3 | `jutterswet-vondstnummer` + `anchor/jutterswet-kustregister` (the union — including the per-source sum over two same-type sources — and both scoped forms, executed by gates 5–6) | `wf030-arity-mismatch`; since the L4 fix round `wf030-source-type-not-declared` (a source naming no declared object type) and `wf030-key-none-attribute` (a key that is no declared attribute of it), each the declared plural where the declared name belongs; `wf030-single-source-union` was removed with reason at L4 (`corpus/negative/README.md`, L4) |

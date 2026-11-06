@@ -1358,7 +1358,7 @@ vondstgewicht in najaar van een Jutter moet berekend worden als …", writes
 that cell: the target is a `DimensionCellRead` over the attribute (IR-SPEC
 ch. 3.1). An object creation's member written the same way, "met
 vangstgewicht in najaar gelijk aan …", writes that cell of the made object, a
-`MemberInit` with `labels` (ch. 3.3). Both read the name as a cell read
+`MemberAssignment` with `labels` (ch. 3.3). Both read the name as a cell read
 reads it (§3.6 / §13.4.17.51 More dimensions): a label of every dimension,
 before or behind the attribute, those behind it side by side or joined by
 "en" and "," ("De strandpremie op zuid en in najaar van een Jutter", "met
@@ -2461,7 +2461,7 @@ reason that holds, and the marker then generates nothing (witness:
   the marker does not generate there ("… '(mag opgegeven worden)' maakt op een
   tijdsafhankelijk attribuut geen kenmerk 'afwijkende opgave X', maar het model
   leest het — …");
-- an allocation, or an object creation's initialisation, that writes X: the
+- an allocation, or an object creation's member assignment, that writes X: the
   marker moves neither, and beside the group each is a second writer (WF-050);
 - two initialisations of X in one inheritance line where at least one stands
   on a subtype — T's and a subtype's, two on one subtype, or one on a subtype
@@ -3881,7 +3881,7 @@ is not a whole number, which the wire would carry as 0, and an exact-digit count
 that is not one; a date or date-time token that is no calendar date, since the
 frontend forms a wire lexeme from a valid date only and the verifier's lexeme
 sentences (WF-084, WF-095) describe a written lexeme; a characteristic
-initialisation in an object creation whose value is boolean-typed but not the
+assignment in an object creation whose value is boolean-typed but not the
 literal waar or onwaar (§13.4.6.4); an object creation of the subject's own type
 whose sentence names no role for the new object, where the derivation from the
 type pair links nothing (RUNTIME-SEMANTICS ch. 5.5) and the verifier admits the

@@ -148,7 +148,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Those refusals were the destructive exec-model branch's. Since card tms-omschakeling (2026-10-10) the rows that
  * pinned them run on the exec-model branch with truth maintenance, which plays every such form as the reference
- * interpreter answers; the rows whose form that branch refuses by name (a division in a member initialisation of a
+ * interpreter answers; the rows whose form that branch refuses by name (a division in a member assignment of a
  * creation, in a default, and a power whose exponent is no literal) pin its refusal. Since card
  * drl-teksttak-op-truth-maintenance the DRL-text branch renders the same analysis, and every row demands of it the
  * verdict of the exec-model branch: where it faulted at the constraint that holds the filter, with the quotient of that
@@ -349,17 +349,17 @@ class FilterFaultWitnessTest {
     }
 
     /** "Een Jutter heeft een melding met telling gelijk aan het aantal vondsten … indien hij actief is": the fold is
-     *  the creation's initialisation. The analysis refuses the creation by name ({@link #initialisationRefused}), on
+     *  the creation's member assignment. The analysis refuses the creation by name ({@link #assignmentRefused}), on
      *  both branches; until card drl-teksttak-op-truth-maintenance the DRL-text branch played it, J2 counting 1 and J3
      *  0, and faulted on J1 at the constraint that held the filter. */
     @Test void a_fold_in_the_assignment_of_a_creation() throws Exception {
         Path ir = document(List.of(MELDTELLING), List.of(creation(fold(), check("actief", false))));
-        initialisationRefused(ir);
+        assignmentRefused(ir);
     }
 
-    /** The analysis refuses a creation whose member initialisation divides, by name, on both branches: it makes no
+    /** The analysis refuses a creation whose member assignment divides, by name, on both branches: it makes no
      *  §6.5 deposit there. Coverage lost against the destructive exec-model branch, accepted (card tms-omschakeling). */
-    private static void initialisationRefused(Path ir) throws Exception {
+    private static void assignmentRefused(Path ir) throws Exception {
         for (DroolsBackend.Branch branch : List.of(EXEC, DRL)) {
             String tms = TmsFaultWitnessTest.play(ir, TmsDocuments.caseDocument(j1(false), List.of(consistent())), branch);
             assertTrue(tms.startsWith("Excluded: ") && tms.contains("objectcreatie: meld — een deling in een"
@@ -799,7 +799,7 @@ class FilterFaultWitnessTest {
         deposits(rule, j4, List.of(value("J4", "zwaarte", "1")), "zwaarte", "J4");
         // the creation, whose initialisation divides, the analysis refuses by name on both branches; until card
         // drl-teksttak-op-truth-maintenance the DRL-text branch played it on J1 and J2 and faulted on J4
-        initialisationRefused(creation);
+        assignmentRefused(creation);
     }
 
     /** A subselection that divides by an attribute another rule writes on the element: "De deelnemers van een Vondst

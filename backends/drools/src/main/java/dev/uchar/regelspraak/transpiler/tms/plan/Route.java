@@ -70,18 +70,18 @@ public enum Route {
      *  the broken contract, named after what the rule needs the place for. */
     FOLD_PLACE(ComputeHelpers.class, "foldPlace"),
     /** The creation depth of an object creation's new object, which {@link Consequence.CreationDepth} carries the arguments
-     *  of; past the budget the fault at the making, {@code CreationBudget}, whose constructor is not public. */
+     *  of; past the budget the fault at the creation, {@code CreationBudget}, whose constructor is not public. */
     CREATION_DEPTH(ComputeHelpers.class, "creationDepth"),
     /** The new bean of an object creation, of the class the text names, loaded by the class loader of the subject's bean
      *  ({@link Consequence.Construction}): a DRL text names a bean class and cannot load one. */
     NEW_OBJECT(ComputeHelpers.class, "newObject"),
-    /** An attribute initialisation set on the new bean of an object creation where its value is not null, through the
+    /** An attribute assignment set on the new bean of an object creation where its value is not null, through the
      *  setter {@code Namen.lidnamen} names ({@link Consequence.Construction.Setting}). */
     SET(ComputeHelpers.class, "set"),
-    /** An initialisation of a cell of a dimensioned attribute put into the map of the new bean of an object creation
+    /** An assignment of a cell of a dimensioned attribute put into the map of the new bean of an object creation
      *  where its value is not null ({@link Consequence.Construction.Setting} with a cell). */
     SET_CELL(ComputeHelpers.class, "setCell"),
-    /** The timeline of an initialisation of a time-dependent attribute set on the new bean of an object creation as the
+    /** The timeline of an assignment of a time-dependent attribute set on the new bean of an object creation as the
      *  bean model's segments where it holds one ({@link Consequence.Construction.Setting} of a timeline). */
     SET_TIMELINE(ComputeHelpers.class, "setTimeline"),
     /** Whether the outcome of an evaluation is an evaluation fault, which a consequence inserts as a fault. */

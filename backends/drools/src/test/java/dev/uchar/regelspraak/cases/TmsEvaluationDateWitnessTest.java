@@ -273,7 +273,7 @@ class TmsEvaluationDateWitnessTest {
 
     /** "Een Jutter heeft een melding met jaar het Rekenjaar indien hij aangemeld is", beside "Het tweede jaar van een
      *  Melding moet berekend worden als het Rekenjaar", in a session without a date (fixround 1 of the card, finding 3):
-     *  the initialisation faults at the making, and the reference interpreter then makes nothing, so it reports that
+     *  the member assignment faults at the creation, and the reference interpreter then makes nothing, so it reports that
      *  one fault, "EVALUATION FAULT: the evaluationYear context value needs an evaluation date; the case carries asOfDate
      *  null", measured 2026-10-09 (the ASP runner faults at translation in the same sentence). With the date 2026-06-01
      *  both play. <b>Red</b> on a3842004, which made the Melding all the same, so the rule faulted on it too: "but was:

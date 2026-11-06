@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       relation … <em>both ends</em>". Production writes only the created object's back-reference, so a
  *       fold over the created type finds the mint and a to-one navigation FROM the subject reads leeg —
  *       and the subject's own attribute, computed from that navigation, stays empty.</li>
- *   <li><b>The characteristic initialisation's empty flank.</b> ch. 5.5: the mark is set when its value
+ *   <li><b>The characteristic assignment's empty flank.</b> ch. 5.5: the mark is set when its value
  *       evaluates true and, "evaluating false <em>or empty</em>, leaves it unset". Production writes the
  *       value through unconditionally, and a LEEG one unboxes null into the mint's primitive boolean
  *       field — a fault at fire that takes the whole {@code fireAllRules} pass down.</li>
@@ -86,25 +86,25 @@ class DrlCreationBranchWitnessTest {
                 "an already linked instance blocks the creation");
     }
 
-    // ---------------- ch. 5.5: the characteristic initialisation's three values ----------------
+    // ---------------- ch. 5.5: the characteristic assignment's three values ----------------
 
     @Test void an_empty_characteristic_value_leaves_the_mark_unset_in_both_branches() throws Exception {
         // the subject's `overzees` is absent, so the initialisation value is LEEG: the mark stays unset and
         // the mint takes the gewone-rekenkamer rule (heffing = grondslag). Production wrote the leeg through
         // and the primitive boolean field unboxed null — a ConsequenceException at fire.
         BothBranches.green(ir(OVERZEE), overzeeseJutter(null, "5000"),
-                "an empty characteristic initialisation leaves the mark unset");
+                "an empty characteristic assignment leaves the mark unset");
     }
 
     @Test void a_false_characteristic_value_leaves_the_mark_unset_in_both_branches() throws Exception {
         BothBranches.green(ir(OVERZEE), overzeeseJutter(false, "5000"),
-                "a false characteristic initialisation leaves the mark unset");
+                "a false characteristic assignment leaves the mark unset");
     }
 
     @Test void a_true_characteristic_value_sets_the_mark_in_both_branches() throws Exception {
         // and the mark is really SET, not merely never wrong: the overzeese rule adds 1000.
         BothBranches.green(ir(OVERZEE), overzeeseJutter(true, "6000"),
-                "a true characteristic initialisation sets the mark on the mint");
+                "a true characteristic assignment sets the mark on the mint");
     }
 
     @Test void the_mark_read_is_a_real_value_in_both_branches() throws Exception {

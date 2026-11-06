@@ -4389,7 +4389,7 @@ final class RuleChecker {
         Expr value = builder.build(valueCtx);
         if (createdType == null || createdType.attribute(name) != null)
             return new ResolvedObjectCreation.MemberAssignment(name, value);
-        // "met vangstgewicht in najaar gelijk aan …": the cell of the made object (IR-SPEC ch. 3.3, MemberInit.labels),
+        // "met vangstgewicht in najaar gelijk aan …": the cell of the made object (IR-SPEC ch. 3.3, MemberAssignment.labels),
         // read as a cell read is; a name with labels of some dimensions only, or that fits two cells, has its ERROR
         Expr cell = builder.dimensionCell(name, createdType, null, null, Source.of(oc, name));
         if (cell instanceof Expr.DimensionCellRead c) {
@@ -4907,7 +4907,7 @@ final class RuleChecker {
         return a == null ? null : absenceMarkerValue(a.objectType(), a.attribute(), value);
     }
 
-    /** As above, for the attribute {@code attribute} of {@code holder}: the member an object creation initialises. */
+    /** As above, for the attribute {@code attribute} of {@code holder}: the member an object creation assigns. */
     private Expr.Construct absenceMarkerValue(ObjectType holder, String attribute, ExpressieContext value) {
         if (holder == null || attribute == null || value == null) return null;
         java.util.List<String> markers = holder.markersOf(attribute);

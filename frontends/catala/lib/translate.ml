@@ -1342,7 +1342,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
      Berekening/Kenmerktoekenning, so a caller highest default can prepend,
      ch. 7.9), and a caller override lands as a generated highest default on
      that defaults group. A reentrant variable without an own default keeps the
-     groupless MemberInit route (there is no own defaults group to sit
+     groupless MemberAssignment route (there is no own defaults group to sit
      above). *)
   let is_reentrant_top v = ScopeVar.Set.mem v (top_default_vars name) in
   (* boolean caller variables read as a subscope-input VALUE (an arg of a
@@ -1797,8 +1797,8 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
         | Some chain -> add_defaults_group (build_defaults_group "" chain))
   in
   (* one declared subscope -> its synthesised fact type and object creation
-     (PHASE5C-TUTORIAL §3.1): the call's args bind as member initialisations
-     (MemberInit) on the callee's INPUT attributes, plus the connectingRole
+     (PHASE5C-TUTORIAL §3.1): the call's args bind as member assignments
+     (MemberAssignment) on the callee's INPUT attributes, plus the connectingRole
      back-link. A subscope input is an unconditional caller value; a conditional
      target or one carrying a defaults group is out of scope (the WF-050 default
      route is deferred). *)
@@ -1823,14 +1823,14 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
     in
     (* besluit 6: which of this callee's inputs are reentrant context targets
        carrying an own default — those args become highest defaults, not member
-       initialisations. *)
+       assignments. *)
     let ovr_set = top_default_vars scope in
     let ve_ov, ce_ov = override_exprs ~fact_type_name ~role_ref:caller_role in
     (* a subscope input definition carries the ordinary scope-variable default
        shape [error_empty ⟨ ⟨true ⊢ ⟨X⟩⟩ | false ⊢ ∅ ⟩] — one unconditional
        plain default. Anything richer (a conditional base or a defaults group) is
        a defaults target, which the WF-050 route (deferred) would carry, not a
-       member initialisation. *)
+       member assignment. *)
     let arg_value e =
       match parse_tree (strip e) with
       | Some [ Plain (just, cons) ] when is_true just -> value_expr cons
@@ -1842,7 +1842,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
             instance_var
     in
     (* besluit 6: a caller override of a reentrant callee variable that carries
-       an own default (in [ovr_set]) does NOT bind as a member initialisation —
+       an own default (in [ovr_set]) does NOT bind as a member assignment —
        it becomes a generated highest default above the callee's own defaults
        group (Reading B as default order, the §4.1 hardship-pattern shape; the
        WF-050 constraint). Its guard and value read the caller, navigated over
@@ -1885,7 +1885,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
              else begin
                let attr = M.remove (ScopeVar.get_info k) in
                let value_node = arg_value argexpr in
-               (* a boolean input binds as a characteristic initialisation
+               (* a boolean input binds as a characteristic assignment
                   (to_characteristic = true): the callee's input boolean is a kenmerk,
                   and the WF-027 relaxation (besluit 1) carries the caller's
                   boolean-typed value expression as its init. Numeric/date/struct/
@@ -2390,7 +2390,7 @@ let file_to_document (input : string) : I.document =
   (* besluit 6: per callee scope, the reentrant context variables that carry an
      own default — those, and only those, take a caller override as a generated
      highest default on the forced defaults-group base; a reentrant target
-     without an own default keeps the groupless MemberInit route. *)
+     without an own default keeps the groupless MemberAssignment route. *)
   let top_default_map =
     List.fold_left
       (fun acc (name, decl) ->

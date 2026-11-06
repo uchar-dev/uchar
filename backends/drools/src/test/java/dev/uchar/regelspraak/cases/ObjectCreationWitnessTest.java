@@ -173,7 +173,7 @@ class ObjectCreationWitnessTest {
     }
 
     @Test void an_empty_characteristic_assignment_leaves_the_marking_unset() throws Exception {
-        // ch. 5.5: a characteristic initialisation evaluating false OR EMPTY leaves the mark unset —
+        // ch. 5.5: a characteristic assignment evaluating false OR EMPTY leaves the mark unset —
         // equivalent to an absent initialisation. The subject's `overzees` is a NULLABLE Booleaan attribute,
         // so an unsupplied one reads leeg; writing that leeg through to the mint's primitive boolean field
         // was the intValue() NPE that kept this whole form out of the backend.
@@ -213,7 +213,7 @@ class ObjectCreationWitnessTest {
     @Test void a_non_boolean_characteristic_assignment_is_refused_with_wf027() throws Exception {
         // The fourth value, and the one the empty arm must stay SEPARABLE from: a non-boolean initialisation is
         // never a silently unset mark. ref on this mutated model faults, with the same rule: "EVALUATION FAULT:
-        // characteristic initialisation of "overzees" is not boolean: 5"; the verifier rejects the document (WF-027).
+        // characteristic assignment of "overzees" is not boolean: 5"; the verifier rejects the document (WF-027).
         // The branch refuses the form by name when it lowers the creation, on the effective type of the value, so no
         // case reaches a fire.
         Path ir = characteristicValue("""

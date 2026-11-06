@@ -1,10 +1,10 @@
-Violates WF-027 (`spec/IR-SPEC.md` ch. 3.3): a characteristic initialisation
+Violates WF-027 (`spec/IR-SPEC.md` ch. 3.3): a characteristic assignment
 in an object creation carries an `AttributeReference` value whose declaration is
 numeric, where the value of a characteristic must be a boolean-typed
 expression.
 
     WF-027 FAIL /rules/objectCreations/0/versions/0/assignments/0:
-    characteristic initialisation's value must be a boolean-typed expression
+    characteristic assignment's value must be a boolean-typed expression
 
 Pins the cross-validation flank of the Phase 5c WF-027 relaxation. The relaxed
 rule admits a boolean-*typed* expression, and the type of a reference is its
@@ -26,5 +26,5 @@ in a boolean slot, refused by the same arm with the same message.
 
 Since L4 an object creation is an `ObjectCreation` with its versions (delta
 B19); the defect sits on the `ObjectCreationVersion`, whose fields are
-`createdType`, `subject`, `initialisations` (each a `MemberInit`) and
+`createdType`, `subject`, `assignments` (each a `MemberAssignment`) and
 `connectingRole`. `expect.txt` pins the arm.

@@ -149,7 +149,7 @@ let () =
          precision bound (RUNTIME-SEMANTICS ch. 2.9) *)
       ("decimal_literal.catala_en", [ "cases/decimal_literal.json" ]);
       (* PHASE5C-TUTORIAL §3: a declared subscope lowered onto existing kernel —
-         one ObjectCreation of the callee (the call's args as MemberInits on
+         one ObjectCreation of the callee (the call's args as MemberAssignments on
          its inputs, plus the connectingRole back-link) and the output read as
          a navigated AttributeReference over that back-link; the callee's rule runs in
          the caller's fixpoint on the minted instance. Through the full

@@ -391,7 +391,7 @@ public final class ComputeHelpers {
     /** Writes {@code value} into the cell {@code labels} of the dimensioned attribute whose bean property is
      *  {@code property} on {@code object}, the map of its cells, made where the bean holds none; a leeg value takes the
      *  cell out of the map, so that the cell is leeg (RUNTIME-SEMANTICS ch. 5.8c). The write-back of a cell, and an
-     *  object creation's initialisation of a cell of its new bean, before the bean is inserted. */
+     *  object creation's member assignment of a cell of its new bean, before the bean is inserted. */
     public static void setCell(Object object, String property, List<?> labels, Object value) {
         @SuppressWarnings("unchecked")
         Map<Object, Object> cells = (Map<Object, Object>) Accessors.eigenschapGetter(object.getClass(), property).apply(object);
@@ -1400,7 +1400,7 @@ public final class ComputeHelpers {
 
     /** Sets the member whose bean property is {@code property} on the new bean {@code object} to {@code value}, where
      *  that is not null, through the setter that {@code Namen.lidnamen} names ({@link Accessors#eigenschapSetter}): an
-     *  attribute initialisation of an object creation ({@code plan.Consequence.Construction.Setting}), set before the bean is
+     *  attribute assignment of an object creation ({@code plan.Consequence.Construction.Setting}), set before the bean is
      *  inserted, so no rule ever sees the bean without it; a leeg value leaves the member unset. */
     public static void set(Object object, String property, Object value) {
         if (value != null) Accessors.eigenschapSetter(object.getClass(), property).accept(object, value);

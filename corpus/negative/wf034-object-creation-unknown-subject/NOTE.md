@@ -8,7 +8,7 @@ declaration carries*.
 
 **What the field is.** `subject` names the population the creation iterates:
 one new instance per subject instance the condition admits, and every member
-value in `initialisations` evaluates **on the subject**, never on the created
+value in `assignments` evaluates **on the subject**, never on the created
 type (ch. 5.5). It is a reference like any other, spelled in one field.
 
 **What crossed it before: nothing that is about it.** WF-027 crosses the
@@ -66,7 +66,7 @@ turns clean — 503 documents compared, one verdict moved, no report elsewhere.
 
 Since L4 an object creation is an `ObjectCreation` with its versions (delta
 B19); the defect sits on the `ObjectCreationVersion`, whose fields are
-`createdType`, `subject`, `initialisations` (each a `MemberInit`) and
+`createdType`, `subject`, `assignments` (each a `MemberAssignment`) and
 `connectingRole`; the measurement above names the member list as it was
-spelled then (`toekenningen` → `initialisations`). `expect.txt` pins the
+spelled then (`toekenningen` → `assignments`). `expect.txt` pins the
 arm.

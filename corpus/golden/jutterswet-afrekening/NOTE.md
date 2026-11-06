@@ -16,7 +16,7 @@ is above 5, by a rule declared after both creations.
 | | telling gelijk aan het aantal vondsten van de Jutter | a count |
 | geef een zeebrief | slotdag gelijk aan (de laatste van de vinddag van alle vondsten van de Jutter die zwaar zijn) plus 30 dagen, indien het aantal vondsten van de Jutter groter is dan 0 | the latest date over a subselection on a characteristic derived later, plus a duration, under a count |
 
-RUNTIME-SEMANTICS ch. 5.5: a creation evaluates its member initialisations
+RUNTIME-SEMANTICS ch. 5.5: a creation evaluates its member assignments
 on its subject, mints one object per subject whose condition holds, and on
 the one-to-one shape mints nothing where the case already links an instance
 to the subject. Ch. 1.2 and 1.2e give the empty source of each fold and the

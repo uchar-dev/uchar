@@ -19,15 +19,15 @@ import java.util.function.ToIntFunction;
  * that writes such a value raises this fault where it would write it ({@link ComputeHelpers#fitTarget}), and its
  * consequence inserts the {@link Fault} in place of the write, as for every evaluation fault of the branch.
  *
- * <p>One fault holds every value of one evaluation that does not fit ({@link Misfit}): one for a rule, a default or an
- * initialisation of an object creation, and for an allocation each share and the rest of one source that does not
+ * <p>One fault holds every value of one evaluation that does not fit ({@link Misfit}): one for a rule, a default or a
+ * member assignment of an object creation, and for an allocation each share and the rest of one source that does not
  * fit, since the allocation writes all of them or none. The fault names one place, the first misfit in the order of
  * the input, after which created objects come by name ({@link #named}); its parameters are that place, the exact
  * value there and the declared decimals of its target (ch. 5.7b).
  *
  * <p>The place is the object and the attribute, the object by its case label. Where the fault is raised, the object is
  * not always known: a value term computes the value of the subject of its form, and the subject is the object of the
- * {@link Fault} the consequence inserts; an initialisation of an object creation computes the value of an object not
+ * {@link Fault} the consequence inserts; a member assignment of an object creation computes the value of an object not
  * yet made, which is named after the creation and the subject, as a sentence names a made object. The write-back
  * names the fault ({@link TmsTranspiler#setDerivedValues}), with the subject of its fact.
  */

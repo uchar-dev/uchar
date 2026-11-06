@@ -978,7 +978,7 @@ let period_arithmetic_target (doc : document) ~otype ~attr =
       && match r.value_node with Some v -> is_period_arithmetic v | None -> false)
     doc.resolved_rules
 
-(* The member an object creation's initialisation writes on the object it
+(* The member an object creation's member assignment writes on the object it
    makes (ch. 5.5, 5.8c): the member, or its cell where it carries labels *)
 let assigned_member env ~created (t : assignment) =
   let m = req "MemberAssignment.member" t.to_attribute in
@@ -4310,7 +4310,7 @@ let run_fact_creation env ~read world (fc : resolved_fact_creation) =
 (* ch. 5.5, object creation, a member of a recursive group included
    ([evaluate] runs every creation once per generation): for each subject
    whose condition holds, mint a deterministic instance of the created type,
-   apply the member initialisations (values evaluated on the subject;
+   apply the member assignments (values evaluated on the subject;
    characteristic constants), and link new object and subject over the
    uniquely-derivable connecting relation — both ends. The idempotence
    contract, mirrored from the pinned runtime: a 1:1 shape (the
@@ -4321,11 +4321,11 @@ let run_fact_creation env ~read world (fc : resolved_fact_creation) =
    linkless shapes guard per (rule × subject) through the
    deterministic label.
 
-   The subjects, the condition and the member initialisations are read on
+   The subjects, the condition and the member assignments are read on
    [read], the settled world of the generation before (ch. 5.5,
-   generations): the value at the moment of making, which neither the
+   generations): the value at the moment of creation, which neither the
    other creations of the same generation nor the minted instance itself
-   can move. Read on the running world of a pass, the moment of making
+   can move. Read on the running world of a pass, the moment of creation
    would be a position in the pass: measured on a recursive creation whose
    initialisation reads a copy of a count the rules derive from its own
    links, the copy rule written before the count left the initialisation
@@ -4337,8 +4337,8 @@ let run_fact_creation env ~read world (fc : resolved_fact_creation) =
    World.mints: one more than the subject's depth there, where an input
    instance and an instance a lower stratum minted stand at 0, since a
    lower stratum is complete before this one starts (ch. 6.3). A mint at
-   depth [creation_budget] + 1 is the fault, at the making. The depth
-   follows the chain of makings and not the generation in which a mint
+   depth [creation_budget] + 1 is the fault, at the creation. The depth
+   follows the chain of creations and not the generation in which a mint
    happens, so a creation whose condition waits for a link or a value
    keeps its subject's depth. A budget of generations would instead fault
    a chain whose every mint waits one generation for a link a fact
@@ -4443,7 +4443,7 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
                     | Some (Literal { variant = Lv_boolean false; _ }) -> w
                     | Some e -> (
                         (* Phase 5c (WF-027 relaxation): a characteristic
-                           initialisation may also carry a boolean-typed
+                           assignment may also carry a boolean-typed
                            expression, evaluated on the creation subject exactly
                            as an attribute initialisation is (the RuleVersion
                            Kenmerktoekenning mirror) — true sets the mark on the

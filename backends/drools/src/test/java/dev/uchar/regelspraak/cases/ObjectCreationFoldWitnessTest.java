@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * A fold over a role in the toekenning of an object creation ("Een Jutter heeft een afrekening met heffing gelijk aan
  * 10% van de som van het gewicht van alle vondsten van de Jutter"): the six folds of a set source, bare and as an
  * operand, two toekenningen with a fold each, a creation over a to-many role (the creation marker as its guard), and a
- * clamp, a time span and a navigated read around a fold. RUNTIME-SEMANTICS ch. 5.5: the member initialisations are
+ * clamp, a time span and a navigated read around a fold. RUNTIME-SEMANTICS ch. 5.5: the member assignments are
  * evaluated on the subject, as a rule's value is; ch. 1.2 gives the empty source of each fold and the empty operand of
  * each operator; ch. 2.4 restates the value into the declared unit of the member it is written to. The same folds in a
  * rule's value play since a fold became an accumulate beside the subject pattern. Every document here is authored in
@@ -237,7 +237,7 @@ class ObjectCreationFoldWitnessTest {
         // J2: ref and clingo write 1,00, leeg, 1,00 and 1,00 and turn the case inconsistent (ch. 1.2, ch. 5.6). The
         // destructive exec-model branch evaluated the toekenningen once, when it minted, and reported the Fout of that
         // evaluation itself; until 2026-10-01 it answered consistent here, and then refused the form by the site's kind.
-        // The exec-model branch refuses a division or a root in a member initialisation by name: it makes no §6.5 or
+        // The exec-model branch refuses a division or a root in a member assignment by name: it makes no §6.5 or
         // §6.6 deposit there. Coverage lost against the destructive branch, accepted (card tms-omschakeling); each case
         // below keeps the values ref answers, for the card that carries the form. The rows pin the whole sentence, the
         // deposit the branch does not make among it; until the lens on step 5a1 of that card they pinned the form
@@ -277,11 +277,11 @@ class ObjectCreationFoldWitnessTest {
                 SQUARE_ROOT.formatted("de wortel van …"));
     }
 
-    /** The refusal of a division in a member initialisation, whose §6.5 deposit the branch does not make, with the
+    /** The refusal of a division in a member assignment, whose §6.5 deposit the branch does not make, with the
      *  snippet of the division to fill in. */
     private static final String DIVISION = "een deling in een lidtoekenning ('%s'), waarvan deze tak de"
             + " §6.5-deponering niet maakt: deze tak draagt deze vorm nog niet";
-    /** The refusal of a root in a member initialisation, whose §6.6 deposit the branch does not make. */
+    /** The refusal of a root in a member assignment, whose §6.6 deposit the branch does not make. */
     private static final String SQUARE_ROOT = "een wortel in een lidtoekenning ('%s'), waarvan deze tak de"
             + " §6.6-deponering niet maakt: deze tak draagt deze vorm nog niet";
 

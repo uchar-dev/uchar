@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 2"), a product ({@code corpus/negative/wf023-halvering-past-niet}), a copy ({@code wf023-kopie-past-niet}), a
  * literal ({@code wf023-vast-bergloon-past-niet}), an allocation ({@code corpus/red/jutterswet-verdeling-past-niet}), an
  * initialisation ({@code wf023-initialisatie-past-niet}), a default ({@code wf023-afwijking-past-niet}), each of
- * the last two with its rules in both orders ({@code -omgekeerd}), and the initialisation of an object creation, the
+ * the last two with its rules in both orders ({@code -omgekeerd}), and the member assignment of an object creation, the
  * golden {@code jutterswet-strandmelding} with an omvang of three decimals. The precision gate of WF-023 refuses every
  * one of these documents but the allocation before evaluation; the fault of the write boundary stands behind it, and the
  * negative corpus keeps the case beside the document. Beside them: an intermediate state that does

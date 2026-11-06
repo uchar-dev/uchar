@@ -16,11 +16,11 @@ A dimension `seizoen` with the labels `voorjaar`, `zomer`, `najaar`; on the
 |---|---|---|
 | `najaarsgewicht van een jutter` | the cell `najaar` of `vondstgewicht` | the cell `voorjaar` of `vondstgewicht` |
 | `zomergewicht van een jutter` | the cell `zomer` of `vondstgewicht` | the cell `voorjaar` of `vondstgewicht` |
-| `boek een vangst bij elke jutter` (object creation) | the cell `najaar` of the created `vangstgewicht` (`MemberInit.labels`) | the cell `najaar` of the subject's `vondstgewicht` |
+| `boek een vangst bij elke jutter` (object creation) | the cell `najaar` of the created `vangstgewicht` (`MemberAssignment.labels`) | the cell `najaar` of the subject's `vondstgewicht` |
 
 What the verifier admits here, and refuses one change away:
 
-- a `DimensionCellRead` as a rule target, and `labels` on a `MemberInit`
+- a `DimensionCellRead` as a rule target, and `labels` on a `MemberAssignment`
   (WF-022, WF-040, WF-125 (b)): `corpus/negative/wf125-whole-target`,
   `wf125-member-without-labels`, `wf040-target-label-count`;
 - a cell computed from another cell of the same attribute is no cycle: the

@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * an {@code insert($new)} with no link at all, behind a comment line only the marker scan in {@code meet()}
  * caught. Where one end was displaced by a same-named member it wrote the other end and played on. Where the
  * subject-side role was to-many it wrote a setter no bean carries, and the whole package failed to compile
- * without naming the form. And a non-boolean characteristic initialisation read as "unset" where ref and the
+ * without naming the form. And a non-boolean characteristic assignment read as "unset" where ref and the
  * exec branch fault (WF-027). Every row below demands one verdict of BOTH branches.
  *
  * <p>The models are corpus goldens' {@code ir.json} or a programmatic variant of one; each variant was run
@@ -127,10 +127,10 @@ class DrlCreationLinkWitnessTest {
         assertTrue(e.getMessage().contains("the created object's back-link is ambiguous"), e.getMessage());
     }
 
-    // ---------------- WF-027: a non-boolean characteristic initialisation faults ----------------
+    // ---------------- WF-027: a non-boolean characteristic assignment faults ----------------
 
     @Test void a_non_boolean_characteristic_value_is_refused_in_both_branches() throws Exception {
-        // ref: EVALUATION FAULT "characteristic initialisation of "overzees" is not boolean: 5"; the verifier rejects
+        // ref: EVALUATION FAULT "characteristic assignment of "overzees" is not boolean: 5"; the verifier rejects
         // the document (WF-027). The analysis refuses the creation by name when it lowers it, on the effective type of
         // the value, so no case reaches a fire on either branch. Until card drl-teksttak-op-truth-maintenance the
         // DRL-text branch faulted at fire instead ("… niet booleaans: 5 … (WF-027)").
