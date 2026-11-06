@@ -143,7 +143,8 @@ in `werk/member-assignments/logs/`.*
 - (e) `git grep -i -E 'member initiali[sz]ation|of (its|the) making|at (its|the) making|the making\b'` buiten
   `backlog/` en `spec/proposals/v1-migratie/` is leeg (ook in CONSTRUCTS, PLAN en CLAUDE.md, na de boekhouding).
 - (f) `make gates` op de bouwerstand (`1a9ae5a0a`): 17 van 17 groen, `after-run` groen, 369 s; geen floor geraakt.
-  Op de eindstand: hieronder.
+  Op de eindstand (`85a2b4807`, 2026-11-06 12:06–12:16): de drie builds fresh, gates 01 tot 17 elk `rc=0`,
+  `after-run` groen, `red=0`, 612 s (`out/gates/20261106-120619/`).
 - (g) Toolchain: pin-bump na de landing.
 
 ### Open punten
