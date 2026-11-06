@@ -1,0 +1,1026 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "drempel",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "grenslengte",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "km",
+                  "system": "Afstand",
+                  "canonical": "m",
+                  "factorToCanonical": {
+                    "num": 1000,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal zware vondsten",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal lichte vondsten",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal late vondsten",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal vondsten boven de ondergrens",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal lange vondsten",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal passende vondsten",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "nummer",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Brokstuk",
+        "animate": false,
+        "plural": "Brokstukken",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "lengte",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "m",
+                  "system": "Afstand",
+                  "canonical": "m",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vondstmelding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "melder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "vondstsamenstelling",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "bron",
+            "objectType": "Vondst",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "brokstuk",
+            "objectType": "Brokstuk",
+            "plural": "brokstukken",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Afstand",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "m",
+            "system": "Afstand",
+            "canonical": "m",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "meter",
+              "meters"
+            ]
+          },
+          {
+            "node": "Unit",
+            "abbreviation": "km",
+            "system": "Afstand",
+            "canonical": "m",
+            "factorToCanonical": {
+              "num": 1000,
+              "den": 1
+            },
+            "spellings": [
+              "kilometer",
+              "kilometers"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "zware vondsten van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal zware vondsten",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aantal zware vondsten van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "binder": "grens",
+              "value": {
+                "node": "AttributeReference",
+                "attribute": "drempel",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "de drempel van de Jutter"
+                }
+              },
+              "body": {
+                "node": "Aggregation",
+                "kind": "count",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "vondsten",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "vondsten van de Jutter die aan de volgende voorwaarde voldoen: het gewicht van alle brokstukken van de vondst is groter dan de grens"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "filter": {
+                  "node": "Compound",
+                  "quantifier": "the",
+                  "threshold": 0,
+                  "parts": [
+                    {
+                      "node": "QuantifierFold",
+                      "quantifier": "all",
+                      "elementType": "Brokstuk",
+                      "test": {
+                        "node": "Comparison",
+                        "op": "greater",
+                        "left": {
+                          "node": "AttributeReference",
+                          "attribute": "gewicht",
+                          "subjectType": "Brokstuk",
+                          "source": {
+                            "snippet": "het gewicht van alle brokstukken van de vondst"
+                          }
+                        },
+                        "right": {
+                          "node": "BinderRef",
+                          "name": "grens",
+                          "source": {
+                            "snippet": "de grens"
+                          }
+                        },
+                        "source": {
+                          "snippet": "het gewicht van alle brokstukken van de vondst is groter dan de grens"
+                        }
+                      },
+                      "source": {
+                        "snippet": "het gewicht van alle brokstukken van de vondst is groter dan de grens"
+                      },
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "vondstsamenstelling",
+                        "role": "brokstuk"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "aan de volgende voorwaarde voldoen: het gewicht van alle brokstukken van de vondst is groter dan de grens"
+                  }
+                },
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "vondstmelding",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: het gewicht van alle brokstukken van de vondst is groter dan de grens"
+                }
+              },
+              "source": {
+                "snippet": "de grens is de drempel van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "lichte vondsten van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal lichte vondsten",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "het aantal lichte vondsten van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "binder": "grens",
+              "value": {
+                "node": "AttributeReference",
+                "attribute": "drempel",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "de drempel van de Jutter"
+                }
+              },
+              "body": {
+                "node": "Aggregation",
+                "kind": "count",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "vondsten",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "vondsten van de Jutter die aan de volgende voorwaarde voldoen: het gewicht van alle brokstukken van de vondst is groter dan de grens"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "filter": {
+                  "node": "Compound",
+                  "quantifier": "the",
+                  "threshold": 0,
+                  "parts": [
+                    {
+                      "node": "QuantifierFold",
+                      "quantifier": "none",
+                      "elementType": "Brokstuk",
+                      "filter": {
+                        "node": "Comparison",
+                        "op": "greater",
+                        "left": {
+                          "node": "AttributeReference",
+                          "attribute": "gewicht",
+                          "subjectType": "Brokstuk",
+                          "source": {
+                            "snippet": "het gewicht van het brokstuk"
+                          }
+                        },
+                        "right": {
+                          "node": "BinderRef",
+                          "name": "grens",
+                          "source": {
+                            "snippet": "de grens"
+                          }
+                        },
+                        "source": {
+                          "snippet": "zijn gewicht is groter dan de grens"
+                        }
+                      },
+                      "test": {
+                        "node": "Comparison",
+                        "op": "greater",
+                        "left": {
+                          "node": "AttributeReference",
+                          "attribute": "gewicht",
+                          "subjectType": "Brokstuk",
+                          "source": {
+                            "snippet": "het gewicht van het brokstuk"
+                          }
+                        },
+                        "right": {
+                          "node": "Literal",
+                          "value": {
+                            "number": "0"
+                          },
+                          "type": {
+                            "node": "Number",
+                            "whole": true,
+                            "decimals": 0,
+                            "sign": "nonNegative"
+                          },
+                          "source": {
+                            "snippet": "0"
+                          }
+                        },
+                        "source": {
+                          "snippet": "het gewicht is groter dan 0"
+                        }
+                      },
+                      "source": {
+                        "snippet": "geen van de brokstukken van de vondst die zwaarder zijn dan de grens"
+                      },
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "vondstsamenstelling",
+                        "role": "brokstuk"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "aan de volgende voorwaarde voldoen: het gewicht van alle brokstukken van de vondst is groter dan de grens"
+                  }
+                },
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "vondstmelding",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: het gewicht van alle brokstukken van de vondst is groter dan de grens"
+                }
+              },
+              "source": {
+                "snippet": "de grens is de drempel van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vondsten boven de ondergrens van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal vondsten boven de ondergrens",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "het aantal vondsten boven de ondergrens van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "binder": "grens",
+              "value": {
+                "node": "AttributeReference",
+                "attribute": "drempel",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "de drempel van de Jutter"
+                }
+              },
+              "body": {
+                "node": "Let",
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "binder": "ondergrens",
+                "value": {
+                  "node": "Binary",
+                  "op": "minus",
+                  "left": {
+                    "node": "BinderRef",
+                    "name": "grens",
+                    "source": {
+                      "snippet": "de grens"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "1"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "nonNegative"
+                    },
+                    "source": {
+                      "snippet": "1"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "de grens min 1"
+                  }
+                },
+                "body": {
+                  "node": "Aggregation",
+                  "kind": "count",
+                  "arguments": [
+                    {
+                      "node": "AttributeReference",
+                      "attribute": "vondsten",
+                      "subjectType": "Jutter",
+                      "source": {
+                        "snippet": "vondsten van de Jutter die aan de volgende voorwaarde voldoen: het gewicht van alle brokstukken van de vondst is groter dan de grens"
+                      }
+                    }
+                  ],
+                  "elementType": "Vondst",
+                  "filter": {
+                    "node": "Compound",
+                    "quantifier": "the",
+                    "threshold": 0,
+                    "parts": [
+                      {
+                        "node": "QuantifierFold",
+                        "quantifier": "all",
+                        "elementType": "Brokstuk",
+                        "test": {
+                          "node": "Comparison",
+                          "op": "greater",
+                          "left": {
+                            "node": "AttributeReference",
+                            "attribute": "gewicht",
+                            "subjectType": "Brokstuk",
+                            "source": {
+                              "snippet": "het gewicht van alle brokstukken van de vondst"
+                            }
+                          },
+                          "right": {
+                            "node": "BinderRef",
+                            "name": "ondergrens",
+                            "source": {
+                              "snippet": "de ondergrens"
+                            }
+                          },
+                          "source": {
+                            "snippet": "het gewicht van alle brokstukken van de vondst is groter dan de grens"
+                          }
+                        },
+                        "source": {
+                          "snippet": "het gewicht van alle brokstukken van de vondst is groter dan de grens"
+                        },
+                        "sourceRole": {
+                          "node": "RoleBinding",
+                          "factType": "vondstsamenstelling",
+                          "role": "brokstuk"
+                        }
+                      }
+                    ],
+                    "source": {
+                      "snippet": "aan de volgende voorwaarde voldoen: het gewicht van alle brokstukken van de vondst is groter dan de grens"
+                    }
+                  },
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "vondstmelding",
+                    "role": "vondst"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "nonNegative"
+                  },
+                  "source": {
+                    "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: het gewicht van alle brokstukken van de vondst is groter dan de grens"
+                  }
+                },
+                "source": {
+                  "snippet": "de ondergrens is de grens min 1"
+                }
+              },
+              "source": {
+                "snippet": "de grens is de drempel van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "late vondsten van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal late vondsten",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aantal late vondsten van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "binder": "grens",
+              "value": {
+                "node": "AttributeReference",
+                "attribute": "drempel",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "de drempel van de Jutter"
+                }
+              },
+              "body": {
+                "node": "Aggregation",
+                "kind": "count",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "vondsten",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn nummer is groter dan de grens"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "filter": {
+                  "node": "Compound",
+                  "quantifier": "the",
+                  "threshold": 0,
+                  "parts": [
+                    {
+                      "node": "Comparison",
+                      "op": "greater",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "nummer",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "zijn nummer"
+                        }
+                      },
+                      "right": {
+                        "node": "BinderRef",
+                        "name": "grens",
+                        "source": {
+                          "snippet": "de grens"
+                        }
+                      },
+                      "source": {
+                        "snippet": "zijn nummer is groter dan de grens"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "aan de volgende voorwaarde voldoen: zijn nummer is groter dan de grens"
+                  }
+                },
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "vondstmelding",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn nummer is groter dan de grens"
+                }
+              },
+              "source": {
+                "snippet": "de grens is de drempel van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "lange vondsten van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal lange vondsten",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aantal lange vondsten van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "binder": "grens",
+              "value": {
+                "node": "AttributeReference",
+                "attribute": "grenslengte",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "de grenslengte van de Jutter"
+                }
+              },
+              "body": {
+                "node": "Aggregation",
+                "kind": "count",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "vondsten",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "vondsten van de Jutter die aan de volgende voorwaarde voldoen: de lengte van alle brokstukken van de vondst is groter dan de grens"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "filter": {
+                  "node": "Compound",
+                  "quantifier": "the",
+                  "threshold": 0,
+                  "parts": [
+                    {
+                      "node": "QuantifierFold",
+                      "quantifier": "all",
+                      "elementType": "Brokstuk",
+                      "test": {
+                        "node": "Comparison",
+                        "op": "greater",
+                        "left": {
+                          "node": "AttributeReference",
+                          "attribute": "lengte",
+                          "subjectType": "Brokstuk",
+                          "source": {
+                            "snippet": "de lengte van alle brokstukken van de vondst"
+                          }
+                        },
+                        "right": {
+                          "node": "BinderRef",
+                          "name": "grens",
+                          "source": {
+                            "snippet": "de grens"
+                          }
+                        },
+                        "source": {
+                          "snippet": "de lengte van alle brokstukken van de vondst is groter dan de grens"
+                        }
+                      },
+                      "source": {
+                        "snippet": "de lengte van alle brokstukken van de vondst is groter dan de grens"
+                      },
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "vondstsamenstelling",
+                        "role": "brokstuk"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "aan de volgende voorwaarde voldoen: de lengte van alle brokstukken van de vondst is groter dan de grens"
+                  }
+                },
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "vondstmelding",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: de lengte van alle brokstukken van de vondst is groter dan de grens"
+                }
+              },
+              "source": {
+                "snippet": "de grens is de grenslengte van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "passende vondsten van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal passende vondsten",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aantal passende vondsten van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "binder": "grens",
+              "value": {
+                "node": "AttributeReference",
+                "attribute": "grenslengte",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "de grenslengte van de Jutter"
+                }
+              },
+              "body": {
+                "node": "Aggregation",
+                "kind": "count",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "vondsten",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "vondsten van de Jutter die aan de volgende voorwaarde voldoen: de lengte van ten minste \u00e9\u00e9n van de brokstukken van de vondst is gelijk aan de grens"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "filter": {
+                  "node": "Compound",
+                  "quantifier": "the",
+                  "threshold": 0,
+                  "parts": [
+                    {
+                      "node": "QuantifierFold",
+                      "quantifier": "atLeast",
+                      "threshold": 1,
+                      "elementType": "Brokstuk",
+                      "test": {
+                        "node": "Comparison",
+                        "op": "equal",
+                        "left": {
+                          "node": "AttributeReference",
+                          "attribute": "lengte",
+                          "subjectType": "Brokstuk",
+                          "source": {
+                            "snippet": "de lengte van ten minste \u00e9\u00e9n van de brokstukken van de vondst"
+                          }
+                        },
+                        "right": {
+                          "node": "BinderRef",
+                          "name": "grens",
+                          "source": {
+                            "snippet": "de grens"
+                          }
+                        },
+                        "source": {
+                          "snippet": "de lengte van ten minste \u00e9\u00e9n van de brokstukken van de vondst is gelijk aan de grens"
+                        }
+                      },
+                      "source": {
+                        "snippet": "de lengte van ten minste \u00e9\u00e9n van de brokstukken van de vondst is gelijk aan de grens"
+                      },
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "vondstsamenstelling",
+                        "role": "brokstuk"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "aan de volgende voorwaarde voldoen: de lengte van ten minste \u00e9\u00e9n van de brokstukken van de vondst is gelijk aan de grens"
+                  }
+                },
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "vondstmelding",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: de lengte van ten minste \u00e9\u00e9n van de brokstukken van de vondst is gelijk aan de grens"
+                }
+              },
+              "source": {
+                "snippet": "de grens is de grenslengte van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

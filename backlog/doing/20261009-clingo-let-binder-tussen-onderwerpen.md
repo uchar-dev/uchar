@@ -44,3 +44,30 @@ May touch: `backends/clingo/`, `corpus/golden/<nieuwe golden>/`, kaartverplaatsi
 
 Na `20261008-tms-omschakeling` is 'de tak met truth maintenance' de exec-model-tak. Een ander gebrek van clingo bij
 een Let-binder staat in `20261010-clingo-let-binder-vergelijking-over-eenheden`.
+
+## Result
+
+Gemeten en vastgelegd 2026-11-06 op branch `card/allocation-letbinder-dates`; het lek was al gerepareerd, deze kaart
+legt het vast met een golden. Logs onder `werk/allocation-letbinder-dates/logs/`.
+
+- (a) Golden `corpus/golden/jutterswet-grens-per-jutter` (eigen Jutterswet-casus, twee Jutters met drempel 5 en 2):
+  `b-matrix` (de binder in de test van een kwantorvouw onder een telling), `c-kwantorfilter` (de binder in het
+  filter van de kwantorvouw), een geneste `Let` (ondergrens = grens min 1), de binder in het filter van een gewone
+  vouw, en twee regels met eenheden (zie de eenhedenkaart). De frontend vervangt een variabele binnen een aggregatie
+  (IR-SPEC ch. 4.10, grens (c)), dus het document is dat van de frontend met de `Let` en de `BinderRef` met de hand
+  gezet (generator in `werk/allocation-letbinder-dates/probe/`).
+- (b) Rood: clingo van `235758907` en eerder rekent J1 met de grens van J2 (`k3-golden-final.log`: zwaar 3, licht 0,
+  ondergrens 3, verwacht 1, 1, 2); de gewone vouw lekte niet. Sinds `a274d7554` (`subselection-reads-subject`:
+  `helper_key` sleutelt een hulpregel over een lid ook op het vormonderwerp, en het atoom van de binder noemt dat
+  onderwerp) is het groen, gemeten met builds van beide commits (`k3-old-clingo.log`). Op main `17f956d92` zijn alleen
+  de twee eenheidsregels rood (eenhedenkaart). Nu ref ≡ clingo op 12 verwachtingen. Beide Drools-takken weigeren de
+  golden met naam (DROOLS-193); gate 12 heeft hem in `EXPECTED_CHANNEL`.
+- Gevonden: de lezing van ref (gate 17) weigert met naam een binder te forceren in een lid van een kwantorvouw dat
+  de evaluatie niet bereikte ("not carried"). De golden heeft daarom in elke vouw die de binder in zijn test leest
+  het beslissende lid als laatste; zie het open punt hieronder.
+- (c) Gerichte gates groen (`logs/k23b/summary.txt`).
+
+Open punt (normvraag, ch. 5.12 en 3.9a): mag de lezing van een niet-bereikt lid van een kwantorvouw een binder van
+een omsluitende `Let` lezen die de evaluatie al forceerde (de waarde bestaat, call-by-need), of blijft dat
+geweigerd zoals nu ook als de binder nog niet geforceerd is? De spec zegt alleen dat de waarde van een `Let` waarvan
+geen lezing de binder forceert, niet bereikt is.

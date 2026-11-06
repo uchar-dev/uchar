@@ -70,7 +70,7 @@ kaartverplaatsing.
 
 ## Result
 
-Gebouwd 2026-11-06 op branch `card/allocation-letbinder-dates`, in één commit met de golden van
+Gebouwd 2026-11-06 op branch `card/allocation-letbinder-dates`, commit `3ff4fceda`; de golden van
 `20261009-clingo-let-binder-tussen-onderwerpen` erna. Logs onder `werk/allocation-letbinder-dates/logs/`.
 
 - (a) Twee goldens, eigen Jutterswet-casus (een Strook met een aanlooplengte in m, "1 km" ertegenover):
