@@ -157,3 +157,8 @@ eigenaar kan het omdraaien.* Route a1. Logs onder `uchar-dev/werk/clingo-cleanup
 
 Voorgestelde CONSTRUCTS-rijtekst (naast rij 21): "the ASP backend refuses by name a creation condition that reads what
 a later generation of its stratum changes, outside the monotone positions of RUNTIME-SEMANTICS ch. 6.1 (CLINGO-038)".
+
+### Landing (hoofdsessie, 2026-11-06)
+
+Geland op main na `make gates` op `dd9111a94` (17 van 17 groen, 477 s); de CONSTRUCTS-tekst en de gate-6-tekst van
+`CLAUDE.md` staan in de landingscommit.

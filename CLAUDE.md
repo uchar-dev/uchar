@@ -288,7 +288,11 @@ missing line makes `make gates` exit non-zero. Current gates:
    `backends/clingo/README.md` [V6]) and `anchor/jutterswet-verzuimrente-30-360`
    (CLINGO-033, the unbounded form held as a whole number, and CLINGO-034,
    the range of the encoding's machine integers); their rounded sisters
-   play in every executor. It also runs the
+   play in every executor. It also names `jutterswet-keurquotient`
+   (CLINGO-039, a non-exact division in a condition, which the scaled
+   integers do not compare exactly) and `jutterswet-macht-van-nul`
+   (CLINGO-041, a negative exponent, which inverts its base); ref and the
+   Drools branches play both. It also runs the
    backend's own unit suite — the normalisation fault modes no corpus
    witness can exercise — demanding its check-count line and holding
    that count to a floor; an un-run or shrunken suite is a silent green,

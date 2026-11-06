@@ -58,3 +58,8 @@ schrijft, houdt EF-006 (of CLINGO-031 binnen een waarde).
 
 Voor `CLAUDE.md` (hoofdsessie): de beschrijving van gate 6 noemt twee goldens in `EXPECTED_CHANNEL`; nu zijn het er
 drie, met `jutterswet-keurquotient` (CLINGO-039).
+
+### Landing (hoofdsessie, 2026-11-06)
+
+Geland op main na `make gates` op `dd9111a94` (17 van 17 groen, 477 s); de CONSTRUCTS-tekst en de gate-6-tekst van
+`CLAUDE.md` staan in de landingscommit.

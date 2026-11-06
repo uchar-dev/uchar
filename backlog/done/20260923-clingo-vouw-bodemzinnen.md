@@ -80,3 +80,11 @@ name by every executor" en geeft alleen de gevulde telling een foutsoort (EF-021
 een tijdlijn een eigen foutsoort krijgen (of EF-021 verbreed worden), zodat een rood geval van gate 8 hem kan
 vastleggen? Gemeten: ref en clingo weigeren alle twaalf vormen nu met een eigen registercode, beide Drools-takken met
 DROOLS-210 of DROOLS-105.
+
+### Landing (hoofdsessie, 2026-11-06)
+
+Geland op main na `make gates` op `dd9111a94` (17 van 17 groen, 477 s). Het open punt is door de hoofdsessie beslist:
+geen eigen foutsoort en geen verbreding van EF-021. RUNTIME-SEMANTICS ch. 3.12 rij 4 regelt deze vormen al als "refused
+by name by every executor", en dat is nu zo: ref REF-013, clingo CLINGO-040, beide Drools-takken DROOLS-210 of
+DROOLS-105, elk met een registercode en suitechecks. Een EF-code is voor een evaluatiefout van een vorm die de spec
+definieert; een weigering daarvan maken zou de twee soorten mengen. De getuigen zijn de suitechecks, geen rood geval.

@@ -111,3 +111,8 @@ De vijf stappen van (b), gebouwd op branch `card/creation-condition-and-clingo-c
 
 Gates: zie de eindrun van `make gates` in de overdracht van deze branch.
 
+
+### Landing (hoofdsessie, 2026-11-06)
+
+Geland op main na `make gates` op `dd9111a94` (17 van 17 groen, 477 s); de CONSTRUCTS-tekst en de gate-6-tekst van
+`CLAUDE.md` staan in de landingscommit.
