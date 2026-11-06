@@ -13,12 +13,13 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * The dependency graph of IR-SPEC ch. 5 over a written {@code uchar-ir-v1} document, and its two cycle rules WF-045 and
- * WF-051, in the verifier's own reading: the forms of {@code dep_forms} in its order (the rule versions, allocations,
+ * The dependency graph of IR-SPEC ch. 5 over a written {@code uchar-ir-v1} document, and its three cycle rules WF-045,
+ * WF-046 and WF-051, in the verifier's own reading: the forms of {@code dep_forms} in its order (the rule versions, allocations,
  * consistencies, uniquenesses, unions of uniquenesses, object creations, fact creations and defaults groups), what each
  * reads and writes ({@code dep_expr}, {@code dep_cond}, {@code member_writes}, {@code pop_writes}), the edges in reading
- * order ({@code dep_edges}), the depth-first walk of WF-045 that names the first cycle it meets, and the reach test of
- * WF-051, each with the verifier's sentence. It reads the document the emitter writes and not the model, so it
+ * order ({@code dep_edges}), the depth-first walk of WF-045 that names the first cycle it meets, the reach test of
+ * WF-046 over the whole graph, the forms of a recursive creation included, and the reach test of WF-051, each with the
+ * verifier's sentence. It reads the document the emitter writes and not the model, so it
  * judges what the verifier judges; {@code check} has no verifier to call, so the frontend repeats it, as it repeats
  * other WF rules in their sentences. {@link #edges} prints the graph in the form of {@code verifier --dependency-edges},
  * so the two can be compared line for line. A read carries its path, and the instance-ordered parts
@@ -30,8 +31,9 @@ final class Dependencies {
 
     private Dependencies() {}
 
-    /** A violation of WF-045 or WF-051 as the verifier reports it: the rule, the pointer, its sentence, and the forms of
-     *  the cycle ({@code forms}: for WF-045 the cycle in the walk's order, for WF-051 the group alone). */
+    /** A violation of WF-045, WF-046 or WF-051 as the verifier reports it: the rule, the pointer, its sentence, and the
+     *  forms of the cycle ({@code forms}: for WF-045 the cycle in the walk's order, for WF-046 the form that reads and
+     *  the form that writes, for WF-051 the group alone). */
     record Cycle(String wf, String at, String sentence, List<Form> forms) {}
 
     /** A form of the graph: its pointer, its name (a version of a form with several is "&lt;naam&gt; #i"), whether it
@@ -58,8 +60,8 @@ final class Dependencies {
      *  falls on; beside them the switch relation the part walks, as the document spells it. */
     record ReadOutside(Form form, String node, String path, String clause, String factType) {}
 
-    /** What the cycle rules find in a document: the WF-045 and WF-051 violations, and the reads that keep a part over a
-     *  switch relation from being instance-ordered. */
+    /** What the cycle rules find in a document: the WF-045, WF-051 and WF-046 violations, and the reads that keep a part
+     *  over a switch relation from being instance-ordered. */
     record Findings(List<Cycle> cycles, List<ReadOutside> readsOutside) {}
 
     private record Edge(int producer, int consumer, String graphNode, String category) {}
@@ -69,13 +71,13 @@ final class Dependencies {
 
     // ---------------------------------------------------------------- the two rules
 
-    /** The WF-045 and WF-051 violations of {@code ir}, in the order and the sentences of the verifier. */
+    /** The WF-045, WF-051 and WF-046 violations of {@code ir}, in the order and the sentences of the verifier. */
     static List<Cycle> cycles(String ir) {
         return find(ir).cycles();
     }
 
-    /** The WF-045 and WF-051 violations of {@code ir} and its reads outside an instance-ordered part. The shifted edges
-     *  of the instance-ordered parts leave the graph both walks read, as they leave the verifier's: such a cycle is
+    /** The WF-045, WF-051 and WF-046 violations of {@code ir} and its reads outside an instance-ordered part. The shifted
+     *  edges of the instance-ordered parts leave the graph the walks read, as they leave the verifier's: such a cycle is
      *  admitted (IR-SPEC ch. 5.3). */
     static Findings find(String ir) {
         Graph g = new Graph(Json.parse(ir));
@@ -84,6 +86,7 @@ final class Dependencies {
         InstanceOrdering ordering = new InstanceOrdering(g, forms, edges);
         List<Cycle> result = new ArrayList<>(wf045(forms, edges, ordering.shifted));
         result.addAll(wf051(forms, g, ordering.shifted));
+        result.addAll(wf046(forms, followersOf(forms.size(), edges, ordering.shifted)));
         return new Findings(result, ordering.outside);
     }
 
@@ -109,6 +112,18 @@ final class Dependencies {
                 if (NEG.equals(l.category()) && k.forms().stream().anyMatch(p -> p.writes().contains(l.graphNode())))
                     return true;
         return false;
+    }
+
+    /** Whether the refusal of the cycle {@code k} already names the WF-046 violation {@code negative}: a WF-045 cycle
+     *  names WF-046 for a negative edge between two of its forms ({@link #carriesNegativeEdge}), and a WF-051 cycle
+     *  says that the displacement reads of its group are negative edges, so it names every one its group reads over. */
+    static boolean names(Cycle k, Cycle negative) {
+        Form reader = negative.forms().get(0), producer = negative.forms().get(1);
+        return switch (k.wf()) {
+            case "WF-045" -> k.forms().contains(reader) && k.forms().contains(producer);
+            case "WF-051" -> k.forms().get(0).equals(reader);
+            default -> false;
+        };
     }
 
     /** {@code name} without the " #i" of a version of a form with several ({@code strip_version}). */
@@ -166,6 +181,38 @@ final class Dependencies {
             if (!already) l.add(0, new int[] {r.consumer(), category});
         }
         return followers;
+    }
+
+    /** The verifier's WF-046: a negative edge p → c on a cycle of the whole graph, that is p reachable from c, the forms
+     *  of a recursive creation not skipped, so the rule holds on a cycle WF-045 admits as well. One violation per pair
+     *  of forms, sorted as the verifier sorts its records (pointer, then sentence). */
+    private static List<Cycle> wf046(List<Form> forms, List<List<int[]>> followers) {
+        TreeSet<Cycle> result = new TreeSet<>(Comparator.comparing(Cycle::at, Dependencies::compareBytes)
+                .thenComparing(Cycle::sentence, Dependencies::compareBytes));
+        for (int pi = 0; pi < forms.size(); pi++)
+            for (int[] j : followers.get(pi)) {
+                int ci = j[0];
+                if (j[1] != kindIndex(NEG) || !reaches(followers, ci, pi)) continue;
+                Form c = forms.get(ci), p = forms.get(pi);
+                result.add(new Cycle("WF-046", m1Root(c.at()), "negative dependency edge on a cycle: " + c.name()
+                        + " reads what " + p.name() + " produces while " + p.name() + " is reachable from it (no strata exist)",
+                        List.of(c, p)));
+            }
+        return new ArrayList<>(result);
+    }
+
+    /** Whether {@code target} is {@code from} or reachable from it over {@code followers}. */
+    private static boolean reaches(List<List<int[]>> followers, int from, int target) {
+        boolean[] seen = new boolean[followers.size()];
+        java.util.ArrayDeque<Integer> todo = new java.util.ArrayDeque<>(List.of(from));
+        seen[from] = true;
+        while (!todo.isEmpty()) {
+            int i = todo.pop();
+            if (i == target) return true;
+            for (int[] j : followers.get(i))
+                if (!seen[j[0]]) { seen[j[0]] = true; todo.push(j[0]); }
+        }
+        return false;
     }
 
     private static List<Cycle> wf051(List<Form> forms, Graph g, Set<EdgeKey> shifted) {

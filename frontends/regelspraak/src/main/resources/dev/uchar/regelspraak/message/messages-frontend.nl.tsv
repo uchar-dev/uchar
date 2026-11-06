@@ -695,3 +695,4 @@ RGS-375	{head}: '(mag opgegeven worden)' maakt op een tijdsafhankelijk attribuut
 RGS-376	'{expression}' leest de waarde van '{attribute}' van {objectType}, dat onbekend of niet van toepassing kan zijn, zonder eerst te toetsen dat het een waarde heeft; zet 'zijn {attribute} een waarde heeft' ervoor in de voorwaarde, of in een aggregatie 'die een waarde hebben' (RUNTIME-SEMANTICS ch. 9.5, IR-SPEC WF-127)
 RGS-377	{what}: '{marker}' past hier niet als afwezigheidsmarkering: {admitted} (RUNTIME-SEMANTICS ch. 9.5)
 RGS-378	verdeling '{name}' noemt het tijdsafhankelijke attribuut '{attribute}' van {objectType}: een verdeling verdeelt één bedrag op één moment, en een lezing ervan per dag is niet gedefinieerd (WF-128)
+RGS-379	{kind} '{name}' leest negatief, zoals in een ontkenning of een leeg-toets, wat {producerKind} '{producer}' schrijft, op een kring; een kring draagt geen negatieve rand, ook niet een kring door een recursieve creatie ({wf}): {sentence}

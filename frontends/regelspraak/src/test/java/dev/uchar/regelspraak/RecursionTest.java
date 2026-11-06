@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * begrenzing/clamp idiom) is such a cycle too, of one node. Until 2026-10-06 the posture was a
  * WARNING alone, because v2.3.0 calls cyclic-vs-recursive not reliably automatable; uchar's
  * Regelgroep extension ("is recursief") marks the recursion WF-045 admits, so a cycle outside it is
- * an error of the document (grammar/DIVERGENCES.md, "Kringen: WF-045 en WF-051 in check").
+ * an error of the document (grammar/DIVERGENCES.md, "Kringen: WF-045, WF-046 en WF-051 in check").
  */
 class RecursionTest {
 

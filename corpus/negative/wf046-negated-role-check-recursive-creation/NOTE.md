@@ -36,8 +36,11 @@ voorganger, and the successor makes it one. Both Drools branches play the
 case. With the reading, the reference interpreter refuses to evaluate under
 WF-046.
 
-The RegelSpraak frontend writes this document: its cycle check repeats
-WF-046 only on a cycle that WF-045 refuses.
+The RegelSpraak frontend refuses the source before it writes a document,
+at the head of the creation, in the verifier's sentence after a Dutch part
+that names WF-046 (RGS-379; `NegativeEdgeOnCycleTest`,
+`frontends/regelspraak/grammar/DIVERGENCES.md`, "Kringen: WF-045, WF-046 en
+WF-051 in check").
 
 Falsifiable in one edit: drop "hij is geen voorganger" and the document is
 the clean shape of `corpus/golden/anchor/jutterswet-wachtersketen`.

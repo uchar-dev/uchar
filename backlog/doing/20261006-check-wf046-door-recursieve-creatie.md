@@ -167,3 +167,59 @@ Na `20261008-tms-omschakeling` (2026-10-10) bestaan `ExecModelTranspiler`, `krin
 meer; de exec-model-tak weigert bij de bouw wat WF-045/046 weigeren (`Cycles`, 'exec-model: kring in de
 afhankelijkheden …'). De kolom 'exec-modeltak' van de tabel beschrijft de verwijderde verlaging; wat de huidige
 exec-model-tak op de vijf negatieven doet, is niet nagemeten.
+
+## Result (2026-11-06, branch `card/frontend-residue`)
+
+Gemeten op `575de08e5` (main) en de branch; logs onder `werk/frontend-residue/logs/`.
+
+- **(a) Geland.** `Dependencies.wf046` is de bereikbaarheidstoets van `wf045_046` over de volledige graaf (dezelfde
+  opvolgers als de WF-045-wandeling, zonder de verschoven randen van ch. 5.3, zonder vormen over te slaan): per
+  negatieve rand p → c een WF-046-regel als p vanuit c bereikbaar is, gesorteerd zoals de verifier zijn records sorteert
+  (pointer, dan zin). `RuleChecker.checkDependencyCycles` heeft een arm per WF-046-regel: RGS-379
+  (`negative-edge-on-cycle`, ERROR, parameters `kind`, `name`, `producer`, `producerKind`, `sentence`, `wf`) op de kop van
+  de vorm die leest, in beide catalogi. Een WF-046-regel tussen twee vormen van een WF-045-kring staat in de melding van
+  die kring (RGS-096 met de bijzin, ongewijzigd). Technische keuze, niet in de kaart: een WF-046-regel waarvan de lezer
+  een defaults-groep met een WF-051-kring is, staat ook niet apart, want RGS-097 zegt al dat de verdringingslezingen van
+  de groep negatieve randen zijn (`Dependencies.names`). Elke andere WF-046-regel krijgt RGS-379, ook op een kring
+  zonder recursieve creatie die de WF-045-wandeling niet als eerste kring noemde (bijvoorbeeld de derde regel van het
+  negatief `wf045-instance-cycle-hub-beside-anchored-read`).
+- **(b) Rood, dan groen.** `frontends/regelspraak/src/test/java/dev/uchar/regelspraak/resolver/NegativeEdgeOnCycleTest.java`:
+  de bron van het negatief `wf046-negated-role-check-recursive-creation` (één RGS-379 op r. 12), een leeg-toets in een
+  gewone regel op een kring door een recursieve creatie (twee RGS-379, de vorm van `wf046-empty-test-recursive-creation`),
+  de flank `jutterswet-wachtersketen-rgs` zonder melding, en een corpusgetuige: elk `wf046-*`-negatief draagt in
+  `Dependencies` een WF-046-regel (waar `expect.txt` lezer en producent pint, precies die), geen golden en geen rood
+  geval (464 documenten) een. Op de frontend van `575de08e5`: 3 van 4 rood, de flank groen (`logs/k1-before.log`); op de
+  branch 4 van 4 groen (`logs/k1-after.log`). Vooraf gemeten: beide proefbronnen gaven exit 0 zonder diagnose, de verifier
+  weigerde ze onder WF-046 (één en twee regels).
+- **(c) Pariteit en inertie.** Op de 1128 `ir.json` van `corpus/golden`, `corpus/negative`, `corpus/red` en `toka/`
+  zijn de WF-046-regels van `Dependencies` gelijk aan die van de verifier, regel voor regel per document
+  (`logs/parity-frontend.log`, `logs/parity-verifier.log`, `logs/parity-diff.txt` leeg): 28 regels in 22 documenten,
+  tien daarvan genoemd door een WF-045- of WF-051-melding, achttien met een eigen RGS-379. Inertie op 544 eenheden
+  (206 goldens `source.rgs`, 43 met `scenario.rgs` via `--cases`, de casus van `toka/` geheel en per bestand, de
+  voorbeelden van de distributie geheel en per bestand, de werkbank v1 `basis`, `dagloon-ww`, `herleving-ww`,
+  `verrekening-ww` en v2 `fundament`, `herleving-ww` in de bronvolgorde van hun Makefile, met de 140 scenario's van de
+  v1-manifesten en de 8 van v2): de uitvoer van main en branch is gelijk (`logs/units-diff.txt` leeg), dus geen nieuwe
+  weigering buiten de proefbronnen. Lijst en harnas: `werk/frontend-residue/harness/`.
+- **(d) Achterhaald, geen besluit nodig.** Beide Drools-takken weigeren bij de bouw alle vijf negatieven door een
+  recursieve creatie met DROOLS-093 (`Cycles`, "a negating dependency on a cycle … also not a cycle through a creation
+  member of a recursive rule group"), gemeten met de jar van deze branch en één Wachter W1 met rang 1
+  (`logs/k1-drools-d.log`; exec-model en `--drl` gelijk). De tabel "Gemeten (2026-10-06)" beschrijft de verlaging van vóór
+  `tms-omschakeling`.
+- **(e)** `grammar/DIVERGENCES.md`, sectie nu "Kringen: WF-045, WF-046 en WF-051 in check": de zin "A negative edge on a
+  cycle WF-045 admits, through a recursive creation, passes `check`" is vervangen door de huidige stand met de meting;
+  de drie verwijzingen naar de oude sectietitel (DIVERGENCES twee keer, `RecursionTest`, de NOTE van
+  `wf046-characteristics-read-each-other-negation`) volgen, en de NOTE van `wf046-negated-role-check-recursive-creation`
+  zegt nu dat de frontend de bron weigert. Gates 1, 10, 11 en 16 groen op deze commit (`logs/k1-gates.log`,
+  `logs/k1-check-self-contained-2.log`); de hele set draait aan het eind van de branch.
+
+**Voorstel registertekst CONSTRUCTS rij 6**, achter "… (negative `wf046-negated-role-check-recursive-creation`)." in het
+blok "Landed (2026-10-02, ronde klein 2)":
+
+> **Landed (2026-11-06, card `check-wf046-door-recursieve-creatie`):** `check` repeats WF-046 over the whole graph, so a
+> negative edge on a cycle that WF-045 admits through a recursive creation is refused as well, at the head of the form
+> that reads (RGS-379; witness `NegativeEdgeOnCycleTest`, with the source of
+> `wf046-negated-role-check-recursive-creation`); a WF-046 line between two forms of a WF-045 cycle is named in the
+> refusal of that cycle, and one whose reader is a defaults group on a WF-051 cycle in the refusal of the group. On the
+> 1128 documents of the corpus zones and the parity zone its WF-046 lines equal the verifier's.
+
+Open punten: geen.

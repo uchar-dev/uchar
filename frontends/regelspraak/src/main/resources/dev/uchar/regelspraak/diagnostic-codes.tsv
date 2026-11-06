@@ -366,3 +366,4 @@ RGS-375	marking-deviation-on-timeline-read	ERROR	characteristic,head
 RGS-376	absence-marker-read-untested	ERROR	attribute,expression,objectType
 RGS-377	scenario-absence-marker-not-admitted	ERROR	admitted,marker,what
 RGS-378	allocation-time-dependent-attribute	ERROR	attribute,name,objectType
+RGS-379	negative-edge-on-cycle	ERROR	kind,name,producer,producerKind,sentence,wf

@@ -2565,7 +2565,7 @@ above stated as a property.
   WARNING, `kringverwijzing tussen berekeningen: Vondst.waarde -> Vondst.waarde
   — …` for the direct self-read, in the author's names, and refuses the
   document beside the WARNING with an ERROR in the verifier's sentence (section
-  "Kringen: WF-045 en WF-051 in check"; witness: `SelfReadCycleTest`). The
+  "Kringen: WF-045, WF-046 en WF-051 in check"; witness: `SelfReadCycleTest`). The
   clamp idiom "x = x, met een maximum van y" is such a self-read too, and so is
   a computation whose condition reads its own target: the verifier refuses both
   under WF-045 as well (measured the same day). The frontend's graph mirrors the
@@ -2595,8 +2595,8 @@ above stated as a property.
   2026-09-25 on `x` of a Klok computed from its `y` and `y` of a Ding, its
   supertype, computed from its `x`, the verifier gives `WF-045 … zet x -> zet y
   -> zet x` and the frontend gives no WARNING. A cycle only these close is
-  refused in the verifier's sentence (section "Kringen: WF-045 en WF-051 in
-  check"), unless it runs through an object creation. A writer on a
+  refused in the verifier's sentence (section "Kringen: WF-045, WF-046 en
+  WF-051 in check"), unless it runs through an object creation. A writer on a
   subtype makes
   one of them: a computation on the subtype that reads `afwijkende opgave X`
   closes a cycle through the generated rule, which stands on T. Measured
@@ -3769,14 +3769,15 @@ they carry every expectation kind of the case format.
 
 ---
 
-## Kringen: WF-045 en WF-051 in check
+## Kringen: WF-045, WF-046 en WF-051 in check
 
 `check` runs no verifier. The frontend repeats rules of the verifier as an ERROR in the verifier's sentence where
 the document it would write breaks them — among them WF-020, WF-022, WF-033, WF-050, WF-053, WF-111 and WF-112 — and
-the two cycle rules WF-045 and WF-051 (2026-10-02). `resolver/Dependencies` reads the dependency graph of
+the three cycle rules WF-045, WF-046 and WF-051. `resolver/Dependencies` reads the dependency graph of
 IR-SPEC ch. 5 over the written document as the verifier reads it (the forms in `dep_forms` order, their reads and
-writes, the edges in reading order, the depth-first walk of WF-045 that names the first cycle it meets, and the
-reach test of WF-051); `RuleChecker.checkDependencyCycles`, the last check, refuses each cycle at the head of
+writes, the edges in reading order, the depth-first walk of WF-045 that names the first cycle it meets, the reach
+test of WF-046 over the whole graph and the reach test of WF-051); `RuleChecker.checkDependencyCycles`, the last
+check, refuses each cycle at the head of
 the form the verifier reports: "regel 'restgewicht' hangt via een kring van zichzelf af; de afhankelijkheden zijn
 kringvrij buiten een recursieve creatie (WF-045): dependency cycle through no recursive creation: restgewicht ->
 bergingsgewicht -> restgewicht", and "defaults-groep 'meldtermijn' ligt op een afhankelijkheidskring, en een kring
@@ -3793,14 +3794,26 @@ A cycle the warning "kringverwijzing tussen berekeningen" names on a rule's own 
 and the WARNING stands beside the ERROR, naming the cycle in the members the author wrote (`RecursionTest`,
 `SelfReadCycleTest`): "Een Jutter is uitgesloten indien hij niet penninggerechtigd is" beside "Een Jutter is
 penninggerechtigd indien hij niet uitgesloten is" is refused by the verifier under WF-045 and twice under WF-046, and
-the ASP backend finds two stable models for a Jutter without input (measured on `b3861896`). WF-046 is not repeated as a
-rule of its own: where a negative edge runs between two forms of a WF-045 cycle, the refusal names it — "regel
+the ASP backend finds two stable models for a Jutter without input (measured on `b3861896`). Where a negative edge
+runs between two forms of a WF-045 cycle, the refusal of the cycle names WF-046 — "regel
 'uitsluiting' hangt via een kring van zichzelf af; de afhankelijkheden zijn kringvrij buiten een recursieve creatie
 (WF-045), en een kring draagt geen negatieve rand, zoals een ontkenning (WF-046): dependency cycle through no recursive
-creation: uitsluiting -> penningrecht -> uitsluiting" — measured equal to the verifier's WF-046 lines on the eleven
-WF-045 cycles in the 868 documents of the corpus zones and the parity zone, five of them with a negative edge
-(2026-10-06). A negative edge on a cycle WF-045 admits, through a recursive creation, passes `check`. Witnesses:
-`DependencyCycleTest`, `SelfReadCycleTest`, and the negative `wf046-characteristics-read-each-other-negation`.
+creation: uitsluiting -> penningrecht -> uitsluiting" — and a negative edge into a defaults group is named by the
+group's WF-051 refusal ("its displacement reads are negative edges"). Every other WF-046 line of the verifier is
+refused on its own, RGS-379 at the head of the form that reads: a cycle that WF-045 admits because it runs through a
+creation of a recursive rule group carries no negative edge either (IR-SPEC ch. 5.2). A recursive creation guarded by
+"hij is geen voorganger", a negated role check on the relation it lays itself: "objectcreatie 'werf de opvolger'
+leest negatief, zoals in een ontkenning of een leeg-toets, wat objectcreatie 'werf de opvolger' schrijft, op een
+kring; een kring draagt geen negatieve rand, ook niet een kring door een recursieve creatie (WF-046): negative
+dependency edge on a cycle: werf de opvolger reads what werf de opvolger produces while werf de opvolger is reachable
+from it (no strata exist)". Measured 2026-11-06 on the 1128 documents of the corpus zones and the parity zone: the
+WF-046 lines of `Dependencies` equal the verifier's, 28 lines in 22 documents, ten of them named by a WF-045 or
+WF-051 refusal; on 544 source units (the goldens with and without their scenarios, the parity zone, the examples of the
+distribution, the rule sets of the workbench with their scenarios) no unit's output changed. Witnesses:
+`DependencyCycleTest`, `SelfReadCycleTest`, `resolver/NegativeEdgeOnCycleTest` (the source of the negative
+`wf046-negated-role-check-recursive-creation`, an empty test on a cycle through a recursive creation, the chain of
+`jutterswet-wachtersketen-rgs` without a message, and every `wf046-*` negative), and the negative
+`wf046-characteristics-read-each-other-negation`.
 
 `Dependencies` keeps the path of every read of a rule and a defaults group (card `check-admits-instance-cycle`,
 2026-10-22), as the verifier's `dep_expr_at` does, and finds the instance-ordered parts of IR-SPEC ch. 5.3 as its

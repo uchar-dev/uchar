@@ -156,7 +156,7 @@ final class RuleChecker {
         checkSwallowedNames();      // a read whose name took in a word before 'van' and a declared attribute
         checkConstants();           // a constant the wire has no node for ("hij" as a value)
         checkFormNames(doc);         // WF-020, over the named forms as the emitter writes them
-        checkDependencyCycles(doc);   // WF-045 and WF-051, over the document the emitter writes
+        checkDependencyCycles(doc);   // WF-045, WF-046 and WF-051, over the document the emitter writes
         generatedElements();    // last: only the elements that are still in the model get an origin
     }
 
@@ -312,7 +312,7 @@ final class RuleChecker {
             "prioritizedDefaults", Msg.frontend("PART.form-kind.prioritized-defaults"));
 
     /**
-     * WF-045 and WF-051, the verifier's two cycle rules, over the document the emitter writes, in the verifier's own
+     * WF-045, WF-046 and WF-051, the verifier's three cycle rules, over the document the emitter writes, in the verifier's own
      * reading of IR-SPEC ch. 5 ({@link Dependencies}): a dependency cycle that passes through no creation of a
      * recursive rule group, and a cycle through a defaults group, are refused in the verifier's sentence, at the head of
      * the form the verifier reports. {@code check} runs no verifier, and without this check such a document would pass
@@ -320,7 +320,10 @@ final class RuleChecker {
      * graph (one node per object type and member, ch. 5.1), and the warning below sees only the reads on a rule's own
      * subject. A cycle that warning names is refused here as well, and the WARNING stays beside the ERROR: it names the
      * cycle in the members the author wrote, where the verifier's sentence names forms. Where a negative edge (ch. 5.2)
-     * runs between two forms of a WF-045 cycle the refusal names WF-046 too, the rule the verifier adds for it. A cycle
+     * runs between two forms of a WF-045 cycle the refusal names WF-046 too, the rule the verifier adds for it. Every other
+     * negative edge on a cycle of the whole graph is refused on its own under WF-046, at the head of the form that reads:
+     * a cycle WF-045 admits because it runs through a creation of a recursive group carries no negative edge either
+     * (IR-SPEC ch. 5.2), and a negative edge into a defaults group is named by the group's WF-051 refusal. A cycle
      * through an object creation outside a recursive group is refused like any other; a fact creation writes the
      * relation it lays, not the population of its target type, so it closes no cycle with an object creation that
      * counts members of that type (the casus of the parity zone). One
@@ -350,7 +353,14 @@ final class RuleChecker {
             Object[] site = sites.get(dev.uchar.regelspraak.emit.IrEmitter.norm(name));
             boolean wf045 = "WF-045".equals(k.wf());
             int cycleLine = site == null ? 0 : Integer.parseInt((String) site[1]);
-            if (wf045)
+            if ("WF-046".equals(k.wf())) {
+                if (found.cycles().stream().anyMatch(o -> Dependencies.names(o, k))) continue;
+                Dependencies.Form producer = k.forms().get(1);
+                error(cycleLine, "RGS-379",
+                        params("kind", FORM_KIND.get(form.category()), "name", name,
+                                "producerKind", FORM_KIND.get(producer.category()),
+                                "producer", Dependencies.withoutVersion(producer.name()), "wf", k.wf(), "sentence", k.sentence()));
+            } else if (wf045)
                 error(cycleLine, "RGS-096",
                         params("kind", FORM_KIND.get(form.category()), "name", name, "wf", k.wf(), "sentence", k.sentence(),
                                 "negativeEdge", Dependencies.carriesNegativeEdge(k),

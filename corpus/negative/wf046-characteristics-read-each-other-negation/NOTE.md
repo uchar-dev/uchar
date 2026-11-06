@@ -53,8 +53,8 @@ first; both Drools branches answer `uitgesloten`, and with the two rules in
 the other order `penninggerechtigd`. Since that day the frontend refuses the
 source before it writes a document, in the verifier's sentence after a Dutch
 part that names WF-045 and WF-046 (`SelfReadCycleTest`;
-`frontends/regelspraak/grammar/DIVERGENCES.md`, "Kringen: WF-045 en WF-051
-in check"):
+`frontends/regelspraak/grammar/DIVERGENCES.md`, "Kringen: WF-045, WF-046 en
+WF-051 in check"):
 
     regel 'uitgesloten tenzij penninggerechtigd' hangt via een kring van
     zichzelf af; de afhankelijkheden zijn kringvrij buiten een recursieve
