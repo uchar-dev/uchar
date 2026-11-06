@@ -5691,9 +5691,11 @@ final class RuleChecker {
      *  subselectie lives there, and {@link #quantifierFold} needs the tree, not the Expr. */
     private Condition conditionFromToplevel(Expr lhs, ExpressieContext lhsCtx, ToplevelOperatorContext op, Source source) {
         Condition plain = conditionFromToplevelBare(lhs, op, source);
-        if (plain instanceof Condition.Unresolved && op.gehelePeriodevergelijking() == null) {
+        // as in conditionFromNonToplevel: the "niet een <k>" alt passes its NIET to the fold explicitly
+        if (plain instanceof Condition.Unresolved && op.gehelePeriodevergelijking() == null
+                && (op.NIET() == null || op.EEN() != null)) {
             Condition fold = quantifierCharacteristicCheck(lhs, lhsCtx, op.kaleNaam(), op.EEN() != null,
-                    op.HEEFT() != null || op.HEBBEN() != null, false, source);
+                    op.HEEFT() != null || op.HEBBEN() != null, op.NIET() != null, source);
             if (fold != null) return fold;
         }
         return quantifierFold(checkWholePeriod(plain, wholePeriod(op.gehelePeriodevergelijking()), source),
@@ -5721,6 +5723,14 @@ final class RuleChecker {
             ElfOperand e = elfOperand(op.NIET() != null, lhs);
             return new Condition.Predicate(Condition.PredicateKind.NUMERIEK_MET_EXACT, e.operand(), e.negation(),
                     countDigits(op.NUMBER()), period, source);
+        }
+        // §8.1.8.3 "niet een <k> is": the NIET EEN alt of the question order, read as the stellende one is
+        // (conditionFromNonToplevelBare): the positive EEN-form, flipped
+        if (op.NIET() != null && op.EEN() != null) {
+            Condition pos = characteristicCheckPredicate(lhs, op.kaleNaam(), true, false, period, source);
+            if (pos instanceof Condition.RoleMembership || pos instanceof Condition.FarRoleMembership)
+                model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-214", params("source", source), 0));
+            return negate(pos, source);
         }
         Condition characteristic = characteristicCheckPredicate(lhs, op.kaleNaam(), op.EEN() != null,
                 op.HEEFT() != null || op.HEBBEN() != null, period, source); // EEN? bareName (is|heeft): §8.1.8
@@ -6500,6 +6510,12 @@ final class RuleChecker {
         Condition k = hasVerb ? possessiveCharacteristicCheck(subject, name, source)
                                     : nominalCharacteristicCheck(subject, name, source);
         if (k != null) return k;
+        // §8.1.8.3 "de Vondst niet een <k> is": the subject took the NIET as its trailing word, so the name reads
+        // "niet <k>"; verbatim first (above), then the negated nominal characteristic, as "geen <k>" is
+        if (!hasVerb && name.regionMatches(true, 0, "niet ", 0, 5)) {
+            Condition positive = nominalCharacteristicCheck(subject, name.substring(5).trim(), source);
+            if (positive != null) return negate(positive, source);
+        }
         Condition role = roleMembership(subject, name, source);
         if (role != null || !narrowing) return role;
         return builder.narrowingHost(subject, name, source, t -> hasVerb ? possessiveCharacteristicCheck(t, name, source)
@@ -6650,10 +6666,17 @@ final class RuleChecker {
             // the mirror of the subject's own EEN-form; neither soort binds under the other verb, and a navigated
             // role membership via "een" stays out of scope -> all an honest marker, never a wrong gate.
             String g = CharacteristicMatcher.find(targetName, characteristic);
+            // §8.1.8.3 "zijn <rol> niet een <k> is": the operand took the NIET, so the name reads "niet <k>";
+            // verbatim first, then the negated nominal characteristic, as "geen <k>" is
+            boolean negated = false;
+            if (g == null && !hasVerb && characteristic.regionMatches(true, 0, "niet ", 0, 5)) {
+                g = CharacteristicMatcher.find(targetName, characteristic.substring(5).trim());
+                negated = g != null;
+            }
             ObjectType.CharacteristicKind required = hasVerb
                     ? ObjectType.CharacteristicKind.BEZITTELIJK : ObjectType.CharacteristicKind.ZELFSTANDIG;
             return g != null && targetName.characteristicKind(g) == required
-                    ? new Condition.CharacteristicCheck(g, roleName, false, source) : null;
+                    ? new Condition.CharacteristicCheck(g, roleName, negated, source) : null;
         }
         Condition kc = characteristicCheckCondition(targetName, characteristic, roleName, hasVerb, source);
         checkNegationKind(targetName, kc, hasVerb);

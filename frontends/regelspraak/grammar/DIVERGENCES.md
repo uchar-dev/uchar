@@ -1728,9 +1728,22 @@ resolves the positive form and flips it) read `niet` as the negation of a
 zelfstandig characteristic, the same test as "geen wrakstuk": the written name
 first, then the name after `niet`; the stellende branch passes its `NIET` to
 the fold. A name after `niet een` that is no zelfstandig characteristic of the
-element is refused with its WARNING. Witness: `QuantifierOverPathTest`. The
-vragende "niet een" outside a quantifier ("indien de Vondst niet een wrakstuk
-is") is a marker with its WARNING, and with "hij" a syntax error.
+element is refused with its WARNING. Witness: `QuantifierOverPathTest`.
+
+**"niet een" in the question order (2026-11-06).** Outside a quantifier the
+vragende order reads the same negation: "indien de Vondst niet een wrakstuk
+is", "indien hij niet een wrakstuk is" and, over a navigation to one, "indien
+zijn gemelde vondst niet een wrakstuk is" lower to the negated characteristic
+check, the same test as "geen wrakstuk". The `toplevelOperator` has a `NIET EEN
+kaleNaam ( IS | ZIJN )` alternative of its own, the sister of the stellende
+branch, which the parse takes where the subject leaves `niet` to the operator
+("hij"); where the subject takes it as its trailing word ("de Vondst niet",
+"zijn gemelde vondst niet"), the EEN-form reads the name `niet <k>` written
+first and then the name after `niet`, negated. A characteristic of another
+kind and a name that binds nothing after `niet een` stay refused, with the
+WARNING of an unresolved condition; a role after the operator's `niet een` is
+the inverse role check with the WARNING RGS-214, as in the stellende order.
+Witness: `NominalNegationInQuestionOrderTest`.
 
 ---
 

@@ -23,3 +23,25 @@ Acceptatie:
 - (c) DIVERGENCES (§13.4.15.45 of de tabel van vorm 1 in §4); alle zestien gates groen.
 
 May touch: `frontends/regelspraak/**`.
+
+## Result
+
+Gebouwd op branch `card/drools-frontend-cleanup` (opruimronde 2026-11-06). Logs onder
+`uchar-dev/werk/java-cleanup/logs/`, proeven onder `uchar-dev/werk/java-cleanup/probe/k6/`.
+
+- **(a)** Getuige `NominalNegationInQuestionOrderTest`. Rood op `890519e8d` (`k6-red.log`): "indien de Vondst niet
+  een wrakstuk is" liet een marker met de WARNING "onopgelost …", en "indien hij niet een wrakstuk is" was de
+  syntaxfout "no viable alternative at input 'nieteen'".
+- **(b)** De grammatica kreeg in `toplevelOperator` het alternatief `gehelePeriodevergelijking? NIET EEN kaleNaam
+  ( IS | ZIJN )`, de zuster van de stellende tak, vóór het `EEN? kaleNaam`-alternatief. `RuleChecker` leest het
+  zoals de stellende tak (de positieve EEN-vorm, omgedraaid; een rol krijgt de WARNING RGS-214) en geeft de `NIET`
+  door aan de kwantorvouw. Neemt het onderwerp `niet` als laatste woord ("de Vondst niet", "zijn gemelde vondst
+  niet"), dan leest de EEN-vorm eerst de geschreven naam "niet <k>" en daarna de naam na `niet`, ontkend, voor het
+  onderwerp zelf (`characteristicCheckOn`) en over een navigatie naar één (`navigationCharacteristicCheck`). Groen
+  (`k6-green3.log`): de drie vormen (onderwerp, "hij", "zijn gemelde vondst") geven dezelfde ontkende kenmerktoets
+  als "geen wrakstuk", op de brontekst na; "niet een zwaar" (bijvoeglijk) en "niet een drijfhout" (bindt niets)
+  blijven een marker met hun WARNING. `QuantifierOverPathTest` en `NotInExceptionTest` blijven groen. Geen bron in
+  het corpus of de pariteitszone schrijft "niet een" (gezocht), dus geen document verandert.
+- **(c)** DIVERGENCES: de alinea "niet een" onder een kwantor eindigt niet meer op de marker en de syntaxfout; een
+  nieuwe alinea "'niet een' in the question order" beschrijft de lezing. Gates 10, 11 en 16 groen (`k6-gate10.log`,
+  `k6-gate11.log`, `k6-gate16.log`); de hele set in de eindrun.

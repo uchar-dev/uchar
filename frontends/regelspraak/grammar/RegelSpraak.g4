@@ -1051,6 +1051,11 @@ toplevelOperator // §13.4.15.19-.48 (verb-split / trailing), unified across typ
     | gehelePeriodevergelijking? NIET? AAN_DE_ELFPROEF ( VOLDOET | VOLDOEN )
     | gehelePeriodevergelijking? NIET? ( NUMERIEK_IS_MET_EXACT | NUMERIEK_ZIJN_MET_EXACT ) NUMBER CIJFERS
     | gehelePeriodevergelijking? vergelijkingsTekenGesplitst expressie
+    // §8.1.8.3 Tabel 16 "niet een <k>" in the question order ("indien hij niet een wrakstuk is"), the sister of the
+    // stellende NIET EEN alt above. Listed before the EEN? kaleNaam alt so the NIET EEN sequence is the preferred parse
+    // where the subject leaves the NIET to the operator; a subject that takes it as its trailing word ("de Vondst niet")
+    // reaches the EEN? alt, and the resolver reads the name "niet <k>" the same way.
+    | gehelePeriodevergelijking? NIET EEN kaleNaam ( IS | ZIJN )
     | gehelePeriodevergelijking? EEN? kaleNaam ( IS | HEEFT | ZIJN | HEBBEN )
     | identiteitsToets ( IS | ZIJN )
     ;
