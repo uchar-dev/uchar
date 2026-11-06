@@ -40,3 +40,4 @@ CLINGO-038	refusal	creation-condition-reads-on-a-cycle	creation,node,writer	refu
 CLINGO-039	limit	non-exact-division-in-condition		viol_code
 CLINGO-040	refusal	ranking-fold-over-a-timeline	fold,attribute	refuse_ranking_fold
 CLINGO-041	refusal	exponent-not-a-whole-non-negative-literal		const_pow_exponent
+CLINGO-042	limit	text-composition-no-string-functions		symbolic_term

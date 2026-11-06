@@ -196,7 +196,11 @@ not symbolic: a date is its civil day number in the integer encoding
 day number, but date *equality* follows RS ch. 1.2d's date row — any
 empty operand false, in particular both-empty (v0's Tabel-38 guard on
 the date shape; S7 carries the routing). A `dateTime` value stays
-refused — milliseconds since epoch exceed clingo's integer range.
+refused — milliseconds since epoch exceed clingo's integer range. A
+`TextComposition` and a `concatenation` are refused as the limit
+CLINGO-042: the text of a value (RS ch. 1.2, "Text coercion") needs
+string functions, which ASP-Core-2 does not have and which this
+encoding, running no script, does not add.
 
 The routing into the stack of a target is the one semantic decision made
 at input time (RS ch. 7.8; S10 carries the detail): if a defaults group or,

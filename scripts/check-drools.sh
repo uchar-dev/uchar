@@ -1590,7 +1590,10 @@ EXPECTED_CHANNEL=(
 # negative power, leeg with an EF-005 deposit (RUNTIME-SEMANTICS ch. 2.2; PLAYED 2 on both branches).
 # 355 since the card beanlidnamen-zonder-java-identifier (2026-11-06): the golden jutterswet-lidnamen, members named
 # m², final, in, 3e lid and is, which give no Java identifier or DRL property as written (PLAYED 3).
-EXPECTED_PLAYED=355
+# 356 since the card tekst-van-een-waarde-in-een-tekstsamenstelling (2026-11-06): the golden
+# jutterswet-tekst-van-een-waarde, the text of a number, a percentage, a truth value, a date, a date-time and an
+# enumeration value in a text composition (RUNTIME-SEMANTICS ch. 1.2; PLAYED 2 on both branches).
+EXPECTED_PLAYED=356
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

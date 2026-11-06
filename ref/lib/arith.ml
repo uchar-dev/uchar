@@ -1003,22 +1003,38 @@ let duration ?(absolute = false) ?unit_ ?(result_unit = Unitless) a b =
       fault "duration operands mix date precisions"
   | _ -> fault "duration: expected two dates, got %s and %s" (to_string a) (to_string b)
 
-(* --- text (ch. 1.2c): empty coerces to "" ------------------------------ *)
+(* --- text (ch. 1.2, "Text coercion"): the text of a value is a function of
+   the value alone, empty coerces to "" ------------------------------------- *)
 
-let text_of = function
+(* the year of a date in a text: four digits inside 0000–9999, else its sign
+   and at least four digits, the expanded form ch. 5.12 writes a year in *)
+let text_year y =
+  if y >= 0 && y <= 9999 then Printf.sprintf "%04d" y
+  else Printf.sprintf "%c%04d" (if y < 0 then '-' else '+') (abs y)
+
+let text_of_date z =
+  let y, m, d = civil_from_days z in
+  Printf.sprintf "%02d-%02d-%s" d m (text_year y)
+
+let rec text_of = function
   | Empty -> ""
   | Text s -> s
-  | Num (q, _) -> lexeme_of_q q
+  (* the exact decimal without trailing zeros and with a decimal comma, or
+     t/n where it does not terminate; the case wire's dot (WF-081) is a
+     lexeme, not the text a rule yields *)
+  | Num (q, _) -> String.map (fun c -> if c = '.' then ',' else c) (lexeme_of_q q)
   | Bool b -> if b then "waar" else "onwaar"
-  | Date z -> iso_of_date z
-  | Date_time _ as v -> to_string v
+  | Date z -> text_of_date z
+  | Date_time t ->
+      let z, msod = split_ms t in
+      Printf.sprintf "%s %02d:%02d:%02d.%03d" (text_of_date z) (msod / 3_600_000)
+        (msod / 60_000 mod 60) (msod / 1000 mod 60) (msod mod 1000)
   | Enum s -> s
-  (* a constructor value has no text coercion — fail fast, never a
-     silent stringification into a text join *)
-  | Ctor _ as v -> fault "a constructor value has no text coercion: %s" (to_string v)
-  (* a list value has no text coercion either — same fail-fast boundary *)
+  | Ctor (tag, None) -> tag
+  | Ctor (tag, Some v) -> Printf.sprintf "%s(%s)" tag (text_of v)
+  (* a list or a record value has no text — fail fast, never a silent
+     stringification into a text join *)
   | List_value _ as v -> fault "a list value has no text coercion: %s" (to_string v)
-  (* a record value has no text coercion either — same fail-fast boundary *)
   | Record _ as v -> fault "a record value has no text coercion: %s" (to_string v)
 
 let concat vs = Text (String.concat "" (List.map text_of vs))

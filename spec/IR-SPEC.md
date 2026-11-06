@@ -5049,8 +5049,9 @@ mirrored as a node; at least one bound present; an absent bound is no bound
 on that side (a `null` until L5).
 
 **TextComposition** (`parts`: literal chunks and embedded expressions) —
-sugar verdict (row 31), mirrored; empty coerces to `""` per
-`RUNTIME-SEMANTICS.md` ch. 1.2. Each part is a node: a **LiteralChunk**
+sugar verdict (row 31), mirrored; an embedded value of any datatype reads
+as its text, and empty as `""`, per `RUNTIME-SEMANTICS.md` ch. 1.2 ("Text
+coercion"). Each part is a node: a **LiteralChunk**
 (`text`, the chunk's literal text) or an **EmbeddedExpression** (`expr`,
 the expression whose value is inserted). In v0 the three nodes were
 `TekstReeks` (with `delen`), `Letterlijk` (with `tekst`) and `Ingevoegd`
@@ -6396,7 +6397,8 @@ object as a set step to have it.
 
 **BuiltinCall** — scalar, text, and date builtins with plain arguments:
 `squareRoot`, `absoluteValue` (core kernel; each takes one number, WF-038);
-`concatenation` (text fold);
+`concatenation` (text fold, each argument as its text, `RUNTIME-SEMANTICS.md`
+ch. 1.2);
 `duration`/`absoluteDuration` (two date operands, result unit declared);
 `timeProportionalPart` and `dayCount` (each carrying a `granularity`
 bucket ∈ `month`/`year` — `timeProportionalPart` MUST carry a gedurende

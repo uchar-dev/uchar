@@ -1,0 +1,65 @@
+Eenheidsysteem Munt
+    de euro (mv: euros) EUR €
+
+Domein Vondstsoort is van het type Enumeratie
+    'wrakhout'
+    'zeewier'
+
+Objecttype de Vondst (mv: Vondsten)
+    de basis Numeriek (getal met 2 decimalen) met eenheid €;
+    het aantal Numeriek (geheel getal);
+    het aandeel Percentage (getal met 2 decimalen);
+    de vinddatum Datum in dagen;
+    het meldtijdstip Datum en tijd in millisecondes;
+    de soort Vondstsoort;
+    de bevestiging Boolean;
+    de omschrijving Tekst;
+    de deeltekst Tekst;
+    de aantaltekst Tekst;
+    de aandeeltekst Tekst;
+    de bevestigingstekst Tekst;
+    de datumtekst Tekst;
+    de tijdtekst Tekst;
+    de soorttekst Tekst;
+    de vaste tekst Tekst;
+    het verslag Tekst;
+
+Regel omschrijving
+    geldig altijd
+        De omschrijving van een Vondst moet berekend worden als "Bedrag: «zijn basis»".
+
+Regel deeltekst
+    geldig altijd
+        De deeltekst van een Vondst moet berekend worden als "Deel: «zijn basis gedeeld door 3»".
+
+Regel aantaltekst
+    geldig altijd
+        De aantaltekst van een Vondst moet berekend worden als "Aantal: «zijn aantal»".
+
+Regel aandeeltekst
+    geldig altijd
+        De aandeeltekst van een Vondst moet berekend worden als "Aandeel: «zijn aandeel»".
+
+Regel bevestigingstekst
+    geldig altijd
+        De bevestigingstekst van een Vondst moet berekend worden als "Gemeld: «zijn bevestiging»".
+
+Regel datumtekst
+    geldig altijd
+        De datumtekst van een Vondst moet berekend worden als "Gevonden op «zijn vinddatum»".
+
+Regel tijdtekst
+    geldig altijd
+        De tijdtekst van een Vondst moet berekend worden als "Gemeld om «zijn meldtijdstip»".
+
+Regel soorttekst
+    geldig altijd
+        De soorttekst van een Vondst moet berekend worden als "Soort: «zijn soort»".
+
+Regel vaste tekst
+    geldig altijd
+        De vaste tekst van een Vondst moet berekend worden als "Vast: «5,50»".
+
+Regel verslag
+    geldig altijd
+        Het verslag van een Vondst moet berekend worden als "Bedrag: «zijn basis» voor «zijn soort», gemeld «zijn bevestiging» op «zijn vinddatum»".

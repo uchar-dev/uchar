@@ -204,7 +204,7 @@ public enum DroolsCode {
     DAY_KIND_TESTS_OTHER("DROOLS-180", Kind.REFUSAL, "day-kind-tests-other", "dayKind,testedDayKind,snippet", "EF-022"),
     DAY_KIND_CONDITION_UNSUPPORTED("DROOLS-181", Kind.REFUSAL, "day-kind-condition-unsupported", "dayKind,snippet", null),
     SQUARE_ROOT_ARGUMENT_COUNT("DROOLS-182", Kind.CONTRACT, "square-root-argument-count", "argumentCount,snippet", null),
-    TEXT_PART_NON_TEXT("DROOLS-183", Kind.REFUSAL, "text-part-non-text", "datatype,where,snippet", null),
+    TEXT_PART_NON_TEXT("DROOLS-183", Kind.RETIRED, "text-part-non-text", "datatype,where,snippet", null),
     DIMENSION_CELL_MULTI_DIMENSION("DROOLS-184", Kind.RETIRED, "dimension-cell-multi-dimension", "dimensionCount,snippet", null),
     DIMENSION_FOLD_UNSUPPORTED_KIND("DROOLS-185", Kind.CONTRACT, "dimension-fold-unsupported-kind", "kind,snippet", null),
     EMPTY_FALLBACK_NON_SUM("DROOLS-186", Kind.CONTRACT, "empty-fallback-non-sum", "kind,snippet", null),

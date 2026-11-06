@@ -254,18 +254,18 @@ class TmsBuiltinWitnessTest {
         assertEveryOrder(TEXT_MODEL, List.of(TITLE, code), textCase("code", "ankeranker", ""));
     }
 
-    /** The text of a number is not decided by RUNTIME-SEMANTICS ch. 1.2, which says only that a leeg part reads "",
-     *  and the reference interpreter (5,50 as "5.5", waar as "waar") and the runtime's {@code rsTekst} (5.50, true)
-     *  answer it differently: the branch refuses such a part by name. */
-    @Test void a_text_composition_with_a_number_is_refused() throws Exception {
+    /** The text of a number in a text composition (RUNTIME-SEMANTICS ch. 1.2, "Text coercion"): its exact decimal
+     *  without trailing zeros and with a decimal comma, whatever scale the bean holds (5.50 reads "5,5"), and a leeg
+     *  part reads "". */
+    @Test void a_text_composition_with_a_number_reads_its_decimal_with_a_comma() throws Exception {
         String description = computingRule("omschrijving van een vondst", "BEREKENING", "Vondst", "omschrijving",
                 textComposition(List.of(textPart("Bedrag: "), textExpression(ownRead("basis", "Vondst")))), "null");
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(
-                TmsDocuments.document(TEXT_MODEL, List.of(description)), DroolsBackend.Branch.EXEC_MODEL));
-        assertEquals("transpiler SKIP: regel: omschrijving van een vondst — een tekstdeel van type Numeric in een"
-                + " TextComposition ('zijn basis'): RUNTIME-SEMANTICS ch. 1.2 legt alleen vast dat een leeg deel \"\" leest;"
-                + " de tekst van een getal, een waarheidswaarde of een datum beslist de spec niet, en de"
-                + " referentie-interpreter en de runtimehulp rsTekst geven er een verschillende", e.getMessage());
+        JsonNode caseDocument = TmsDocuments.caseOn(null, List.of(
+                instanceWith("V1", "Vondst", Map.of("basis", numberValue("5.50")), List.of()),
+                instanceWith("V2", "Vondst", Map.of(), List.of())),
+                List.of(valueJson("V1", "omschrijving", textValue("Bedrag: 5,5")),
+                        valueJson("V2", "omschrijving", textValue("Bedrag: ")), consistent()));
+        assertEveryOrder(TEXT_MODEL, List.of(description), caseDocument);
     }
 
     // ---------------- the eleven test and the exact digits ----------------

@@ -6345,20 +6345,15 @@ public final class TmsTranspiler {
             switch (d) {
                 case Expr.TextComposition.LiteralChunk l ->
                         parts.add(new Term.Const(l.text() == null ? "" : l.text(), new Datatype.Text(), null));
-                case Expr.TextComposition.EmbeddedExpression i -> parts.add(textPart(i.expr(), reads, "TextComposition"));
+                case Expr.TextComposition.EmbeddedExpression i -> parts.add(textPart(i.expr(), reads));
             }
         }
         return new Term.TextComposition(parts, source(t.source()));
     }
 
-    /** An inserted part of a text composition or an argument of a concatenation, as its text: a text or an enumeration
-     *  label is its own text, and a leeg part reads "" (RUNTIME-SEMANTICS ch. 1.2). A part of another type is refused by
-     *  name: the spec states the leeg rule and nothing more, and for the text of a number, a truth value or a date the
-     *  reference interpreter (5,50 as "5.5", waar as "waar") and the runtime's {@code rsTekst} (5.50, true) differ. */
-    private Term textPart(Expr e, Reads reads, String where) {
-        Datatype t = eff.typeOf(e);
-        if (!(t instanceof Datatype.Text) && !(t instanceof Datatype.Enumeration))
-            throw new Refusal(DroolsCode.TEXT_PART_NON_TEXT.reason("datatype", typeName(t), "where", where, "snippet", snippet(e.source())));
+    /** An inserted part of a text composition or an argument of a concatenation, as its text: the text of its value
+     *  (RUNTIME-SEMANTICS ch. 1.2, "Text coercion"), which {@code rsTekst} writes for every type, a leeg part as "". */
+    private Term textPart(Expr e, Reads reads) {
         Term f = value(e, reads);
         return new Term.Call(StaticFunction.RS_TEXT, List.of(f), f.source());
     }
@@ -6712,7 +6707,7 @@ public final class TmsTranspiler {
                     source(f.source()));
             case CONCATENATIE -> {
                 List<Term> parts = new ArrayList<>();
-                for (Expr arg : a) parts.add(textPart(arg, reads, "concatenation"));
+                for (Expr arg : a) parts.add(textPart(arg, reads));
                 yield new Term.TextComposition(parts, source(f.source()));
             }
             case TIJDSDUUR, ABSOLUTE_TIJDSDUUR -> duration(f, reads, spelling);

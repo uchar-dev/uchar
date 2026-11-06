@@ -16872,6 +16872,47 @@ let () =
             (code = Some "CLINGO-040" && params = [ ("fold", fold); ("attribute", attribute) ]))
     forms
 
+(* CLINGO-042: THE TEXT OF A VALUE (RUNTIME-SEMANTICS ch. 1.2, "Text
+   coercion"; README, Recorded limitations). A text composition and a
+   concatenation need string functions, which ASP-Core-2 does not have, so
+   both are a limit of the encoding, also where every part is a text: until
+   this card they reached the bottom arm CLINGO-002, which no pin may name. *)
+let () =
+  let text_type = {|{"node": "Text"}|} in
+  let read one_member =
+    Printf.sprintf {|{"node": "AttributeReference", "attribute": "%s", "subjectType": "Jutter", "source": {"snippet": "zijn %s"}}|}
+      one_member one_member
+  in
+  let doc value_node =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters", "attributes": [{"node": "Attribute", "name": "naam", "datatype": %s}, {"node": "Attribute", "name": "strand", "datatype": %s}, {"node": "Attribute", "name": "groet", "datatype": %s}], "characteristics": []}], "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [{"node": "Rule", "name": "groet van een jutter", "versions": [{"validity": {"node": "Validity"}, "target": %s, "value": %s, "initialisation": false, "presentation": "calculation"}]}], "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": []}, "diagnostics": []}|}
+      text_type text_type text_type (read "groet") value_node
+  in
+  let composition =
+    Printf.sprintf
+      {|{"node": "TextComposition", "parts": [{"node": "LiteralChunk", "text": "Dag "}, {"node": "EmbeddedExpression", "expr": %s}], "type": %s, "source": {"snippet": "\"Dag «zijn naam»\""}}|}
+      (read "naam") text_type
+  and concatenation =
+    Printf.sprintf
+      {|{"node": "BuiltinCall", "kind": "concatenation", "arguments": [%s, %s], "type": %s, "source": {"snippet": "de concatenatie van zijn naam en zijn strand"}}|}
+      (read "naam") (read "strand") text_type
+  in
+  let case_text =
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "J1", "objectType": "Jutter", "attributes": {"naam": {"text": "Aaltje"}, "strand": {"text": "Noordzee"}}, "roles": {}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "attributeValue", "label": "J1", "attribute": "groet", "value": {"text": "Dag Aaltje"}}]}|}
+  in
+  List.iter
+    (fun (variant, ir) ->
+      let name = "ch1.2 the text of a value, " ^ variant in
+      verifier_clean ~name ~ir;
+      let doc, case = load_pair ~ir ~case_text in
+      match translate doc case with
+      | (_ : string) -> check (name ^ ": expected a refusal, got a program") false
+      | exception Uchar_ref.Value.Fault { code; params; text } ->
+          check
+            (name ^ ": CLINGO-042 (" ^ Uchar_ref.Value.report ~code text ^ ")")
+            (code = Some "CLINGO-042" && params = []))
+    [ ("a composition of texts alone", doc composition); ("a concatenation of two texts", doc concatenation) ]
+
 (* CLINGO-030: A PROGRAM WITHOUT EXACTLY ONE STABLE MODEL (found by Fable,
    2026-10-22, on a document the verifier rejects with WF-045). clingo was
    called without -n, stopped at the first model and the runner checked that

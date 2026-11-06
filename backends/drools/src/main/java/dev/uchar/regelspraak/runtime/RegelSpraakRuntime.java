@@ -354,9 +354,34 @@ public final class RegelSpraakRuntime {
         return toBd(x).abs();
     }
 
-    /** §5.4 text coercion for a §13.4.17.9 tekstreeks: a value's text form, null-safe (leeg -> "", not "null"); a
-     *  BigDecimal via toString (528 -> "528"), a date/boolean via its toString. The single implementation (single-runtime principle). */
-    public static String rsTekst(Object o) { return o == null ? "" : o.toString(); }
+    private static final java.time.format.DateTimeFormatter TEXT_DATE =
+            java.time.format.DateTimeFormatter.ofPattern("dd-MM-uuuu");
+    private static final java.time.format.DateTimeFormatter TEXT_DATE_TIME =
+            java.time.format.DateTimeFormatter.ofPattern("dd-MM-uuuu HH:mm:ss.SSS");
+
+    /** §5.4 text coercion for a §13.4.17.9 tekstreeks and a concatenation, a function of the value alone
+     *  (RUNTIME-SEMANTICS ch. 1.2, "Text coercion"): leeg is "", a text and an enumeration label are themselves, a
+     *  truth value is waar or onwaar, a number its exact decimal without trailing zeros and with a decimal comma
+     *  (5.50 -> "5,5"), or t/n where it does not terminate, a date dd-MM-yyyy, a date-time dd-MM-yyyy HH:mm:ss.mmm (a
+     *  year outside 0000-9999 with its sign, as the pattern uuuu writes it), a constructor value its tag with the text
+     *  of its payload in parentheses. A value of any other type has no text and fails. The single implementation
+     *  (single-runtime principle). */
+    public static String rsTekst(Object o) {
+        if (o == null) return "";
+        if (o instanceof String s) return s;
+        if (o instanceof Boolean b) return b ? "waar" : "onwaar";
+        if (o instanceof Number n) {
+            Breuk q = Breuk.van(n);
+            if (!q.isTerminerend()) return q.toString();
+            BigDecimal d = q.naarDecimal();
+            return (d.signum() == 0 ? BigDecimal.ZERO : d.stripTrailingZeros()).toPlainString().replace('.', ',');
+        }
+        if (o instanceof LocalDate d) return d.format(TEXT_DATE);
+        if (o instanceof java.time.LocalDateTime t) return t.format(TEXT_DATE_TIME);
+        if (o instanceof dev.uchar.regelspraak.transpiler.tms.ConstructorValue c)
+            return c.payload() == null ? c.constructor() : c.constructor() + "(" + rsTekst(c.payload()) + ")";
+        throw new IllegalStateException("a value of " + o.getClass().getName() + " has no text (RUNTIME-SEMANTICS ch. 1.2)");
+    }
 
     /** §13.4.17.18-.24/§6.12 a DATE/TIME component (jaar/maand/dag/uur/… uit) read via one ChronoField; a leeg
      *  date -> leeg. The single implementation (single-runtime principle). */

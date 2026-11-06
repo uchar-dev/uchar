@@ -1,0 +1,791 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "basis",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aandeel",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "%",
+                  "canonical": "%",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ],
+              "presentation": "percentage"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vinddatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "meldtijdstip",
+            "datatype": {
+              "node": "Date",
+              "precision": "millisecond"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "soort",
+            "datatype": {
+              "node": "Enumeration",
+              "domain": "Vondstsoort",
+              "values": [
+                "wrakhout",
+                "zeewier"
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bevestiging",
+            "datatype": {
+              "node": "Boolean"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "omschrijving",
+            "datatype": {
+              "node": "Text"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "deeltekst",
+            "datatype": {
+              "node": "Text"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantaltekst",
+            "datatype": {
+              "node": "Text"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aandeeltekst",
+            "datatype": {
+              "node": "Text"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bevestigingstekst",
+            "datatype": {
+              "node": "Text"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "datumtekst",
+            "datatype": {
+              "node": "Text"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "tijdtekst",
+            "datatype": {
+              "node": "Text"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "soorttekst",
+            "datatype": {
+              "node": "Text"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vaste tekst",
+            "datatype": {
+              "node": "Text"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "verslag",
+            "datatype": {
+              "node": "Text"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "Vondstsoort",
+        "datatype": {
+          "node": "Enumeration",
+          "values": [
+            "wrakhout",
+            "zeewier"
+          ]
+        }
+      }
+    ],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Munt",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Munt",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "\u20ac",
+              "euro",
+              "euros"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "omschrijving",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "omschrijving",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De omschrijving van een Vondst"
+              }
+            },
+            "value": {
+              "node": "TextComposition",
+              "parts": [
+                {
+                  "node": "LiteralChunk",
+                  "text": "Bedrag: "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "AttributeReference",
+                    "attribute": "basis",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn basis"
+                    }
+                  }
+                }
+              ],
+              "type": {
+                "node": "Text"
+              },
+              "source": {
+                "snippet": "\"Bedrag: \u00abzijn basis\u00bb\""
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "deeltekst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "deeltekst",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De deeltekst van een Vondst"
+              }
+            },
+            "value": {
+              "node": "TextComposition",
+              "parts": [
+                {
+                  "node": "LiteralChunk",
+                  "text": "Deel: "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "Binary",
+                    "op": "dividedBy",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "basis",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn basis"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "3"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "3"
+                      }
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified",
+                      "unit": [
+                        {
+                          "node": "Unit",
+                          "abbreviation": "EUR",
+                          "system": "Munt",
+                          "canonical": "EUR",
+                          "factorToCanonical": {
+                            "num": 1,
+                            "den": 1
+                          }
+                        }
+                      ]
+                    },
+                    "source": {
+                      "snippet": "zijn basis gedeeld door 3"
+                    }
+                  }
+                }
+              ],
+              "type": {
+                "node": "Text"
+              },
+              "source": {
+                "snippet": "\"Deel: \u00abzijn basis gedeeld door 3\u00bb\""
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aantaltekst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantaltekst",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De aantaltekst van een Vondst"
+              }
+            },
+            "value": {
+              "node": "TextComposition",
+              "parts": [
+                {
+                  "node": "LiteralChunk",
+                  "text": "Aantal: "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "AttributeReference",
+                    "attribute": "aantal",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn aantal"
+                    }
+                  }
+                }
+              ],
+              "type": {
+                "node": "Text"
+              },
+              "source": {
+                "snippet": "\"Aantal: \u00abzijn aantal\u00bb\""
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aandeeltekst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aandeeltekst",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De aandeeltekst van een Vondst"
+              }
+            },
+            "value": {
+              "node": "TextComposition",
+              "parts": [
+                {
+                  "node": "LiteralChunk",
+                  "text": "Aandeel: "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "AttributeReference",
+                    "attribute": "aandeel",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn aandeel"
+                    }
+                  }
+                }
+              ],
+              "type": {
+                "node": "Text"
+              },
+              "source": {
+                "snippet": "\"Aandeel: \u00abzijn aandeel\u00bb\""
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "bevestigingstekst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "bevestigingstekst",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De bevestigingstekst van een Vondst"
+              }
+            },
+            "value": {
+              "node": "TextComposition",
+              "parts": [
+                {
+                  "node": "LiteralChunk",
+                  "text": "Gemeld: "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "AttributeReference",
+                    "attribute": "bevestiging",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn bevestiging"
+                    }
+                  }
+                }
+              ],
+              "type": {
+                "node": "Text"
+              },
+              "source": {
+                "snippet": "\"Gemeld: \u00abzijn bevestiging\u00bb\""
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "datumtekst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "datumtekst",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De datumtekst van een Vondst"
+              }
+            },
+            "value": {
+              "node": "TextComposition",
+              "parts": [
+                {
+                  "node": "LiteralChunk",
+                  "text": "Gevonden op "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "AttributeReference",
+                    "attribute": "vinddatum",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn vinddatum"
+                    }
+                  }
+                }
+              ],
+              "type": {
+                "node": "Text"
+              },
+              "source": {
+                "snippet": "\"Gevonden op \u00abzijn vinddatum\u00bb\""
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "tijdtekst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "tijdtekst",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De tijdtekst van een Vondst"
+              }
+            },
+            "value": {
+              "node": "TextComposition",
+              "parts": [
+                {
+                  "node": "LiteralChunk",
+                  "text": "Gemeld om "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "AttributeReference",
+                    "attribute": "meldtijdstip",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn meldtijdstip"
+                    }
+                  }
+                }
+              ],
+              "type": {
+                "node": "Text"
+              },
+              "source": {
+                "snippet": "\"Gemeld om \u00abzijn meldtijdstip\u00bb\""
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "soorttekst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "soorttekst",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De soorttekst van een Vondst"
+              }
+            },
+            "value": {
+              "node": "TextComposition",
+              "parts": [
+                {
+                  "node": "LiteralChunk",
+                  "text": "Soort: "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "AttributeReference",
+                    "attribute": "soort",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn soort"
+                    }
+                  }
+                }
+              ],
+              "type": {
+                "node": "Text"
+              },
+              "source": {
+                "snippet": "\"Soort: \u00abzijn soort\u00bb\""
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vaste tekst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vaste tekst",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De vaste tekst van een Vondst"
+              }
+            },
+            "value": {
+              "node": "TextComposition",
+              "parts": [
+                {
+                  "node": "LiteralChunk",
+                  "text": "Vast: "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "5.50"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 1,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "5,50"
+                    }
+                  }
+                }
+              ],
+              "type": {
+                "node": "Text"
+              },
+              "source": {
+                "snippet": "\"Vast: \u00ab5,50\u00bb\""
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "verslag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "verslag",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het verslag van een Vondst"
+              }
+            },
+            "value": {
+              "node": "TextComposition",
+              "parts": [
+                {
+                  "node": "LiteralChunk",
+                  "text": "Bedrag: "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "AttributeReference",
+                    "attribute": "basis",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn basis"
+                    }
+                  }
+                },
+                {
+                  "node": "LiteralChunk",
+                  "text": " voor "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "AttributeReference",
+                    "attribute": "soort",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn soort"
+                    }
+                  }
+                },
+                {
+                  "node": "LiteralChunk",
+                  "text": ", gemeld "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "AttributeReference",
+                    "attribute": "bevestiging",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn bevestiging"
+                    }
+                  }
+                },
+                {
+                  "node": "LiteralChunk",
+                  "text": " op "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "AttributeReference",
+                    "attribute": "vinddatum",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn vinddatum"
+                    }
+                  }
+                }
+              ],
+              "type": {
+                "node": "Text"
+              },
+              "source": {
+                "snippet": "\"Bedrag: \u00abzijn basis\u00bb voor \u00abzijn soort\u00bb, gemeld \u00abzijn bevestiging\u00bb op \u00abzijn vinddatum\u00bb\""
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

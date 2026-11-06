@@ -134,6 +134,47 @@ let () =
   check "WV-1.2c-text-1"
     (Arith.concat [ Value.Text "a"; empty_value; Value.Text "b" ] = Value.Text "ab")
 
+(* the table of ch. 1.2, "Text coercion", one row per check *)
+let () =
+  let text name v want =
+    let got = Arith.text_of v in
+    check (Printf.sprintf "%s (got %S)" name got) (got = want)
+  in
+  let date y m d = Value.Date (Value.days_from_civil ~y ~m ~d) in
+  text "WV-1.2c-text-leeg" empty_value "";
+  text "WV-1.2c-text-tekst" (Value.Text "wrakhout") "wrakhout";
+  text "WV-1.2c-text-opsomming" (Value.Enum "wrakhout") "wrakhout";
+  text "WV-1.2c-text-waar" (Value.Bool true) "waar";
+  text "WV-1.2c-text-onwaar" (Value.Bool false) "onwaar";
+  text "WV-1.2c-text-getal-1" (n "5.50") "5,5";
+  text "WV-1.2c-text-getal-2" (n "5") "5";
+  text "WV-1.2c-text-getal-3" (n "1250.50") "1250,5";
+  text "WV-1.2c-text-getal-4" (n "-0.5") "-0,5";
+  text "WV-1.2c-text-getal-5" (n "0.125") "0,125";
+  text "WV-1.2c-text-percentage" (n "12.50") "12,5";
+  text "WV-1.2c-text-breuk-1" (Value.Num (q "4/3", Value.Unitless)) "4/3";
+  text "WV-1.2c-text-breuk-2" (Value.Num (q "-1/3", Value.Unitless)) "-1/3";
+  text "WV-1.2c-text-datum-1" (date 2026 6 21) "21-06-2026";
+  text "WV-1.2c-text-datum-2" (date 999 12 31) "31-12-0999";
+  text "WV-1.2c-text-datum-3" (date 12026 3 1) "01-03-+12026";
+  text "WV-1.2c-text-datumtijd-1" (Value.datetime_of_lexeme "2026-06-21T09:01:59.999")
+    "21-06-2026 09:01:59.999";
+  text "WV-1.2c-text-datumtijd-2" (Value.datetime_of_lexeme "2026-06-21T09:01:59")
+    "21-06-2026 09:01:59.000";
+  text "WV-1.2c-text-constructor-1" (Value.Ctor ("Afgewezen", None)) "Afgewezen";
+  text "WV-1.2c-text-constructor-2" (Value.Ctor ("Toegekend", Some (n "1250.50"))) "Toegekend(1250,5)";
+  expect_fault "WV-1.2c-text-lijst" (fun () -> Arith.text_of (Value.List_value [ n "12.5"; n "30" ]));
+  expect_fault "WV-1.2c-text-record" (fun () -> Arith.text_of (Value.Record [ ("waarde", n "125.5") ]));
+  let example basis =
+    Arith.concat
+      [ Value.Text "Bedrag: "; basis; Value.Text " voor "; Value.Enum "wrakhout"; Value.Text ", gemeld ";
+        Value.Bool true; Value.Text " op "; date 2026 6 21 ]
+  in
+  check "WV-1.2c-text-voorbeeld-1"
+    (example (n "5.50") = Value.Text "Bedrag: 5,5 voor wrakhout, gemeld waar op 21-06-2026");
+  check "WV-1.2c-text-voorbeeld-2"
+    (example empty_value = Value.Text "Bedrag:  voor wrakhout, gemeld waar op 21-06-2026")
+
 (* --- ch. 1.2d: comparisons (three-valued at the edges) ------------------ *)
 
 let () =

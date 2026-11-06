@@ -4064,6 +4064,14 @@ let rec symbolic_term ctx ~subject ~subject_ot (e : expr) : string list * string
           Printf.sprintf "%s = #%s { %s : %s(%s,%s,_) }" i (if kind = First then "min" else "max") c pred key c;
           Printf.sprintf "%s(%s,%s,%s)" pred key i v ],
         v )
+  (* the text of a value (RUNTIME-SEMANTICS ch. 1.2, "Text coercion") needs
+     string functions, and ASP-Core-2 has none: a text is one ground term
+     (ASP-TRANSLATION), and the encoding runs no script. A limit of the
+     encoding, also for a composition of texts alone *)
+  | Text_composition _ | Function_call { kind = Concatenation; _ } ->
+      faultc "CLINGO-042"
+        "a text composition or a concatenation needs the text of a value, and ASP-Core-2 has no \
+         string functions"
   | _ ->
       faultc "CLINGO-002"
         "a text/enum/boolean operand here is an own-subject attribute read or a literal (no \

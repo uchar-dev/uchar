@@ -79,8 +79,55 @@ recorded as such.
 
 **Text, booleans, enumerations**
 
-- Text coercion of empty yields the empty string `""` — never `"0"`, never
-  a spelled-out null: `"a" ++ leeg ++ "b"` = `"ab"`.
+- **Text coercion** — the inserted part of a `TextComposition` and the
+  argument of a `concatenation` (IR-SPEC ch. 4.2, 4.3). The text of a value
+  is a function of the value alone, not of the node that yields it: a
+  literal part reads as the value it denotes, so `«5,50»` and `«zijn
+  basis»` with basis 5,50 read alike. Empty yields the empty string `""` —
+  never `"0"`, never a spelled-out null: `"a" ++ leeg ++ "b"` = `"ab"`. A
+  text is itself; an enumeration value is its label as declared; a boolean
+  is `waar` or `onwaar`. A number — a percentage, an amount and a number
+  with a unit included — is its exact decimal without trailing zeros, with
+  a decimal comma, no grouping, no unit, no percent sign and no padding to
+  the declared decimals; a number that does not terminate is its numerator
+  and denominator in lowest terms, `t/n`, the sign on the numerator. A date
+  is `dd-MM-yyyy`; a date-time is `dd-MM-yyyy HH:mm:ss.mmm`, the fraction
+  always three digits; a year outside 0000–9999 is written with its sign
+  and at least four digits (ISO 8601's expanded form, as ch. 5.12 writes
+  it). A constructor value (ch. 9.1) is its tag, for a unary constructor
+  followed by the text of its payload in parentheses. A list or a record
+  value (ch. 10, 11) has no text: the composition faults. The text is not a
+  lexeme: the wire and the case format keep the dot and ISO (WF-081,
+  WF-084, WF-095), and the trace of ch. 5.12 keeps its own rendering.
+  *Provisional decision (Fable advice 2026-11-06): the RegelSpraak
+  specification §5.4 admits every datatype in a "reeks van teksten en
+  waarden" and fixes no spelling; the spelling is ALEF's runtime coercion
+  (`TekstUtil.toAlefText`, measured on ALEF 872b859), with three
+  deviations: a literal part reads as its value where ALEF writes the
+  lexeme of the source; a non-terminating number is `t/n` where ALEF writes
+  a mixed number above 1; a date-time carries three fraction digits where
+  ALEF's value form carries nine.*
+
+  | Value | Text |
+  |---|---|
+  | leeg | `""` |
+  | text `"wrakhout"`, enumeration value `wrakhout` | `wrakhout` |
+  | waar / onwaar | `waar` / `onwaar` |
+  | 5,50 (2 decimals, €) / 5 / 1250,50 / −0,5 / 0,125 | `5,5` / `5` / `1250,5` / `-0,5` / `0,125` |
+  | 12,50 % (percentage, 2 decimals) | `12,5` |
+  | 4 gedeeld door 3 / −1 gedeeld door 3 | `4/3` / `-1/3` |
+  | 2026-06-21 / 0999-12-31 / +12026-03-01 | `21-06-2026` / `31-12-0999` / `01-03-+12026` |
+  | 2026-06-21T09:01:59.999 / 2026-06-21T09:01:59 | `21-06-2026 09:01:59.999` / `21-06-2026 09:01:59.000` |
+  | Afgewezen / Toegekend(1250,50) | `Afgewezen` / `Toegekend(1250,5)` |
+  | the list [12,5, 30] / the record {waarde: 125,5} | a fault |
+
+  Worked example (WV-1.2c-text): `"Bedrag: «zijn basis» voor «zijn soort»,
+  gemeld «zijn bevestiging» op «zijn vinddatum»"` on a Vondst with basis
+  5,50 €, soort wrakhout, bevestiging waar and vinddatum 2026-06-21 reads
+  `Bedrag: 5,5 voor wrakhout, gemeld waar op 21-06-2026`; with basis leeg
+  it reads `Bedrag:  voor wrakhout, gemeld waar op 21-06-2026`. The golden
+  `jutterswet-tekst-van-een-waarde` carries every row but the last two
+  through the RegelSpraak frontend.
 - There is no boolean or enumeration coalescing; absence is handled by the
   comparison rules and the leeg/gevuld predicates below.
 

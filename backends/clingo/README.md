@@ -546,6 +546,12 @@ Recorded limitations:
   step never wraps; ref and Drools fault there only beyond the range of
   a date of RUNTIME-SEMANTICS ch. 3.8 (EF-007), some 146 million years
   out.
+- A `TextComposition` and a `concatenation` are refused at translation
+  as the limit CLINGO-042, also over texts alone: the text of a value
+  (RUNTIME-SEMANTICS ch. 1.2, "Text coercion": `5,5`, `waar`,
+  `21-06-2026`) needs string functions, ASP-Core-2 has none, and the
+  encoding runs no script. The golden `jutterswet-tekst-van-een-waarde`
+  stands with that code in gate 6's channel.
 - The Let lowering keeps an enclosing Let's need on a path that does
   not read its binder, also with every parameter bound, so a value ref
   computes stays leeg. [V1] A Match with an arm that reads the binder,

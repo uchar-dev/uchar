@@ -80,3 +80,49 @@ Klein tot middel: een normvraag, één zin in de spec, een golden en vier uitvoe
 
 May touch: `spec/RUNTIME-SEMANTICS.md` (voorstel), `corpus/golden/<nieuwe golden>/`, `ref/`, `backends/clingo/`,
 `backends/drools/` (de runtimehulp en de takken), kaartverplaatsing.
+
+## Result
+
+*Gebouwd op 2026-11-06 op branch `card/text-output-foldfilter` (worktree `wt/clingo-round2`), afgetakt van main
+`fd03c6217`. Het besluit is VOORLOPIG: het aanbevolen antwoord van het Fable-advies van 2026-11-06, gebouwd; de
+eigenaar kan het omdraaien. Logs onder `uchar-dev/werk/clingo-round2/logs/`.*
+
+- **(a) Spec.** RUNTIME-SEMANTICS ch. 1.2, "Text coercion": de alinea van het besluit naar de huidige stand
+  geredigeerd (geen plakwerk van het advies), met de tabel per type en het uitgewerkte voorbeeld WV-1.2c-text; de
+  voorlopigheid en de drie afwijkingen van ALEF staan er cursief bij. IR-SPEC ch. 4.2 (`TextComposition`) en
+  ch. 4.3 (`concatenation`) verwijzen ernaar. ASP-TRANSLATION noemt de grens CLINGO-042. Geen WF-regel (het besluit
+  is "welgevormd").
+- **(b) Golden.** `corpus/golden/jutterswet-tekst-van-een-waarde/` (`source.rgs`, gate 10), twee handgeschreven
+  cases met 62 verwachtingen: bedrag in €, geheel getal, percentage, waarheidswaarde, datum (ook jaar 0999),
+  datum-tijd (met en zonder fractie), opsomming, literal-deel `«5,50»`, een breuk (`11/6`, `5/3`, `-1/3`) en een
+  eindigende deling (`1,75`), negatieve getallen, leeg, en het uitgewerkte voorbeeld. `leeg gedeeld door 3` is 0
+  (ch. 1.2, de linkeroperand van een deling coalesceert), dus `Deel: 0`. De sum-typerij en de lijst/record-fout
+  staan niet in de golden (de frontend spelt geen constructor, en `de concatenatie van` is in de frontend geen
+  waarde, DIVERGENCES "concatenatie as a standalone value"); ze worden gedragen door ref's suite
+  (`WV-1.2c-text-*`, 23 rijen plus twee voorbeeldrijen) en door de nieuwe Drools-test `TextOfAValueTest`.
+- **(c) Uitvoerders, rood eerst.** Vóór de bouw (`logs/k1-red-ref.log`): ref schreef `5.5`, `2026-06-21`,
+  `@1782032519999ms` (29 mismatches); clingo `TRANSLATION FAULT: CLINGO-002` (de bodem); Drools (jar van main)
+  `EXCLUDE DROOLS-183` (`logs/k1-red-drools-main.log`). Na de bouw: ref `oracle: PASS (41)` en `(21)`; clingo
+  weigert met de nieuwe limiet `CLINGO-042 text-composition-no-string-functions` (`symbolic_term`, ook voor een
+  samenstelling van alleen teksten en voor `concatenation`; twee suitechecks), de golden staat in
+  `EXPECTED_CHANNEL` van gate 6; beide Drools-takken `PLAYED 2`. `DROOLS-183` is `RETIRED` (`textPart` laat elk
+  type door); `rsTekst` is de typegerichte omzetting voor beide takken (getal via `Breuk`, `waar`/`onwaar`,
+  `dd-MM-uuuu`, `dd-MM-uuuu HH:mm:ss.SSS`, `ConstructorValue`, anders een fout). De test
+  `TmsBuiltinWitnessTest.a_text_composition_with_a_number_is_refused` controleerde de weigering die deze kaart
+  opheft; hij is vervangen door `a_text_composition_with_a_number_reads_its_decimal_with_a_comma` (5,50 → `Bedrag:
+  5,5`, leeg → `Bedrag: `).
+- **(d) Gates.** Los gedraaid op de werkboom vóór de commit, alle rc=0: 1, 2, 3, 4, 5 (suite 2579 voorbeelden), 6
+  (2760 suitechecks; vijf goldens in het weigerkanaal), 7, 8, 10, 12 (`EXPECTED_PLAYED` 354 → 355, beide takken
+  355; JUnit 1874), 13, 15, 17 (`logs/k1-gates-a.log`, `logs/k1-gates-b.log`, per gate `logs/k1-check-*.log`).
+  `make gates` volgt aan het eind van de ronde.
+
+Pins die bewogen: gate 12 `EXPECTED_PLAYED` 355 (de nieuwe golden speelt); gate 6 één regel in `EXPECTED_CHANNEL`.
+`CLAUDE.md` noemt DROOLS-183 bij de RETIRED-codes van gate 12. De catalogusregels van DROOLS-183 blijven, zoals bij
+elke RETIRED-code.
+
+Voor de hoofdsessie: `CLAUDE.md`, gate 6, beschrijft twee goldens in `EXPECTED_CHANNEL`; de lijst noemt er nu zes
+(de twee verzuimrente-ankers, `jutterswet-keurquotient`, `jutterswet-macht-van-nul`, `jutterswet-tekst-van-een-waarde`).
+Voorgestelde CONSTRUCTS-rijtekst: "Tekst van een waarde (TextComposition, concatenation): de tekst is een functie
+van de waarde; getal exact met decimale komma zonder eindnullen, `t/n` niet-eindigend, `waar`/`onwaar`,
+`dd-MM-jjjj`, `dd-MM-jjjj uu:mm:ss.mmm`, constructor `tag(payload)`; lijst/record een fout. Voorlopig besluit
+2026-11-06 (Fable, ALEF gemeten). ref en beide Drools-takken; clingo weigert als limiet CLINGO-042."
