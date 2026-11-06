@@ -800,9 +800,9 @@
           {
             "createdType": "Bundel",
             "subject": "Jutter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "kern",
                 "value": {
                   "node": "StructLiteral",

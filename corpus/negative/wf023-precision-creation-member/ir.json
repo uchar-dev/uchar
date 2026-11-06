@@ -90,9 +90,9 @@
           {
             "createdType": "Strandrecht",
             "subject": "Melding",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "uitkering",
                 "value": {
                   "node": "Binary",

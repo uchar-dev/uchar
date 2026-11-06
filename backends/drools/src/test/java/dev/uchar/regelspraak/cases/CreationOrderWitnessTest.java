@@ -82,7 +82,7 @@ class CreationOrderWitnessTest {
                 + "\"sourceRole\":" + roleBinding("JutterHeeftNet", "net") + ",\"type\":" + COUNT_NUMBER
                 + ",\"source\":{\"snippet\":\"het aantal netten van de Jutter\"}}";
         String objectCreationJson = "{\"node\":\"ObjectCreation\",\"name\":\"maak een net\",\"versions\":[{\"createdType\":\"Net\",\"subject\":"
-                + "\"Jutter\",\"initialisations\":[{\"node\":\"MemberInit\",\"member\":\"maas\",\"value\":" + number(5)
+                + "\"Jutter\",\"assignments\":[{\"node\":\"MemberAssignment\",\"member\":\"maas\",\"value\":" + number(5)
                 + ",\"characteristic\":false}],\"validity\":{\"node\":\"Validity\"},\"connectingRole\":" + roleBinding("JutterHeeftNet", "net")
                 + "}]}";
         String ir = document(List.of(creation(nets), objectCreationJson), List.of(READ_BACK), List.of(), List.of());
@@ -191,7 +191,7 @@ class CreationOrderWitnessTest {
     /** "Regel maak een afrekening: Een Jutter heeft een afrekening met telling gelijk aan &lt;waarde&gt;." */
     private static String creation(String value) {
         return "{\"node\":\"ObjectCreation\",\"name\":\"maak een afrekening\",\"versions\":[{\"createdType\":\"Afrekening\","
-                + "\"subject\":\"Jutter\",\"initialisations\":[{\"node\":\"MemberInit\",\"member\":\"telling\",\"value\":" + value
+                + "\"subject\":\"Jutter\",\"assignments\":[{\"node\":\"MemberAssignment\",\"member\":\"telling\",\"value\":" + value
                 + ",\"characteristic\":false}],\"validity\":{\"node\":\"Validity\"},\"connectingRole\":"
                 + roleBinding("JutterHeeftAfrekening", "afrekening") + "}]}";
     }

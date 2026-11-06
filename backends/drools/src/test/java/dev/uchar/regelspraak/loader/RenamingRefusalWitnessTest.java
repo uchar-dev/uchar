@@ -76,7 +76,7 @@ class RenamingRefusalWitnessTest {
     static {
         String[][] rows = { { "Tekst", "Text" }, { "Booleaan", "Boolean" }, { "Enumeratie", "Enumeration" },
                 { "Feittype", "FactType" }, { "Rol", "Role" }, { "Dimensie", "Dimension" }, { "Tijdlijn", "Timeline" },
-                { "RolBinding", "RoleBinding" }, { "Geldigheid", "Validity" }, { "Toekenning", "MemberInit" },
+                { "RolBinding", "RoleBinding" }, { "Geldigheid", "Validity" }, { "Toekenning", "MemberAssignment" },
                 { "ResolvedDagsoort", "DayKindDefinition" }, { "ResolvedStartpunt", "StartPointDetermination" },
                 { "ResolvedRegelGroep", "RuleGroup" }, { "Binair", "Binary" }, { "Afgerond", "Rounding" },
                 { "Begrensd", "Clamp" }, { "TekstReeks", "TextComposition" }, { "Letterlijk", "LiteralChunk" },
@@ -103,7 +103,7 @@ class RenamingRefusalWitnessTest {
         V0_KEYS.put("Timeline", List.of("naam", "variabelStartpunt", "granulariteit", "aantal"));
         V0_KEYS.put("RoleBinding", List.of("feittype", "rol"));
         V0_KEYS.put("Validity", List.of("vanaf", "tot"));
-        V0_KEYS.put("MemberInit", List.of("attribuut", "waarde", "kenmerk"));
+        V0_KEYS.put("MemberAssignment", List.of("attribuut", "waarde", "kenmerk"));
         V0_KEYS.put("DayKindDefinition", List.of("naam", "voorwaarde", "geldigheid"));
         V0_KEYS.put("StartPointDetermination", List.of("tijdlijn", "objecttype", "lid"));
         V0_KEYS.put("RuleGroup", List.of("naam", "recursief", "leden"));
@@ -475,8 +475,8 @@ class RenamingRefusalWitnessTest {
             for (JsonNode form : rules.get("objectCreations"))
                 for (JsonNode version : form.get("versions")) {
                     ResolvedObjectCreation c = m.objectCreations.get(oc++);
-                    for (int j = 0; j < version.get("initialisations").size(); j++, initialisations++) {
-                        JsonNode w = version.get("initialisations").get(j);
+                    for (int j = 0; j < version.get("assignments").size(); j++, initialisations++) {
+                        JsonNode w = version.get("assignments").get(j);
                         ResolvedObjectCreation.MemberInit t = c.initialisations().get(j);
                         assertEquals(w.get("member").asText(null), t.attribute(), path.toString());
                         assertEquals(w.get("characteristic").asBoolean(), t.characteristic(), path.toString());

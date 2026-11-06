@@ -109,9 +109,9 @@
           {
             "createdType": "Persoon",
             "subject": "Persoon",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "leeftijd",
                 "value": {
                   "node": "Binary",

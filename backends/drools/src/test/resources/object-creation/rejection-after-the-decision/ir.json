@@ -318,9 +318,9 @@
           {
             "createdType": "Afwijzing",
             "subject": "Jutter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "afwijzingsjaar",
                 "value": {
                   "node": "AttributeReference",
@@ -355,9 +355,9 @@
           {
             "createdType": "Penningbesluit",
             "subject": "Jutter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "besluitbedrag",
                 "value": {
                   "node": "ParameterReference",

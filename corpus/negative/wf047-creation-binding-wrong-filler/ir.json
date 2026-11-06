@@ -59,7 +59,7 @@
           {
             "createdType": "Dossier",
             "subject": "Jutter",
-            "initialisations": [],
+            "assignments": [],
             "validity": {
               "node": "Validity"
             },

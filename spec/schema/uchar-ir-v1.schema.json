@@ -3389,7 +3389,7 @@
         }
       }
     },
-    "MemberInit": {
+    "MemberAssignment": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -3400,7 +3400,7 @@
       ],
       "properties": {
         "node": {
-          "const": "MemberInit"
+          "const": "MemberAssignment"
         },
         "member": {
           "type": [
@@ -3414,7 +3414,7 @@
           "items": {
             "type": "string"
           },
-          "description": "The cell of a dimensioned attribute member the initialisation writes (IR-SPEC ch. 3.3): one label of each dimension, in the declared order of the attribute's dimensions, as a DimensionCellRead's labels. Absent on a scalar member; which members are dimensioned, and the labels, are WF-040's and WF-125's."
+          "description": "The cell of a dimensioned attribute member the assignment writes (IR-SPEC ch. 3.3): one label of each dimension, in the declared order of the attribute's dimensions, as a DimensionCellRead's labels. Absent on a scalar member; which members are dimensioned, and the labels, are WF-040's and WF-125's."
         },
         "value": {
           "anyOf": [
@@ -3468,7 +3468,7 @@
       "required": [
         "createdType",
         "subject",
-        "initialisations",
+        "assignments",
         "validity"
       ],
       "properties": {
@@ -3484,10 +3484,10 @@
             "null"
           ]
         },
-        "initialisations": {
+        "assignments": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/MemberInit"
+            "$ref": "#/$defs/MemberAssignment"
           }
         },
         "condition": {
@@ -3501,7 +3501,7 @@
           "description": "Extension field (wire-entry discipline, IR-SPEC Method): the created-side role of the back-link, named explicitly; required where the type-pair derivation is role-ambiguous (a self-typed pair). Absent, the back-link is derived (RUNTIME-SEMANTICS ch. 5.5). Written whole or not at all, never null."
         }
       },
-      "description": "One version of an ObjectCreation (IR-SPEC ch. 3.3), without a node discriminator. 'subject' is nullable because WF-034 holds its presence; each initialisation is a MemberInit."
+      "description": "One version of an ObjectCreation (IR-SPEC ch. 3.3), without a node discriminator. 'subject' is nullable because WF-034 holds its presence; each member assignment is a MemberAssignment."
     },
     "Allocation": {
       "type": "object",

@@ -138,9 +138,9 @@
           {
             "createdType": "Wachter",
             "subject": "Wachter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "rang",
                 "value": {
                   "node": "Binary",
@@ -224,9 +224,9 @@
           {
             "createdType": "Wachter",
             "subject": "Wachter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "rang",
                 "value": {
                   "node": "Binary",

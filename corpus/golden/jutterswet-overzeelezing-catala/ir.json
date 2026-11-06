@@ -164,9 +164,9 @@
           {
             "createdType": "Eigenaar",
             "subject": "Vondstaanslag",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "registratiezone",
                 "value": {
                   "node": "AttributeReference",

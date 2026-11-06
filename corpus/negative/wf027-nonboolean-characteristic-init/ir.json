@@ -55,9 +55,9 @@
           {
             "createdType": "Jutter",
             "subject": "Rederij",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "penninggerechtigd",
                 "value": {
                   "node": "Literal",

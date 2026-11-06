@@ -119,9 +119,9 @@
           {
             "createdType": "Wachter",
             "subject": "Wachter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "rang",
                 "value": {
                   "node": "Binary",
@@ -162,7 +162,7 @@
                 "characteristic": false
               },
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "ketennummer",
                 "value": {
                   "node": "AttributeReference",

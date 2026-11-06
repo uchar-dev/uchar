@@ -81,9 +81,9 @@
           {
             "createdType": "Post",
             "subject": "Wachter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "nummer",
                 "value": {
                   "node": "Literal",

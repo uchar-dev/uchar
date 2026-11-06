@@ -110,7 +110,7 @@ class DimensionTargetTest {
         assertEquals("vangstpremie", t.attribute());
         assertEquals(List.of("najaar"), t.labels());
         assertFalse(t.characteristic());
-        assertTrue(compactIr(m).contains("{\"node\":\"MemberInit\",\"member\":\"vangstpremie\",\"labels\":[\"najaar\"],"
+        assertTrue(compactIr(m).contains("{\"node\":\"MemberAssignment\",\"member\":\"vangstpremie\",\"labels\":[\"najaar\"],"
                 + "\"value\":{\"node\":\"DimensionCellRead\""), compactIr(m));
     }
 
@@ -146,7 +146,7 @@ class DimensionTargetTest {
         ResolvedObjectCreation.MemberInit t = m.objectCreations.get(0).initialisations().get(0);
         assertEquals("strandvangst", t.attribute());
         assertEquals(List.of("najaar", "zuid"), t.labels());
-        assertTrue(compactIr(m).contains("{\"node\":\"MemberInit\",\"member\":\"strandvangst\",\"labels\":[\"najaar\",\"zuid\"],"),
+        assertTrue(compactIr(m).contains("{\"node\":\"MemberAssignment\",\"member\":\"strandvangst\",\"labels\":[\"najaar\",\"zuid\"],"),
                 compactIr(m));
     }
 

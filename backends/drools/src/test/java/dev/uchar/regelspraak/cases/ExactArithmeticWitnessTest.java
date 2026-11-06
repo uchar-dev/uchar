@@ -137,7 +137,7 @@ class ExactArithmeticWitnessTest {
                 computingRule("controle van een jutter", "BEREKENING", "Jutter", "controle",
                         TmsDocuments.pathRead("geheel", "Aandeel", "aandeelname", "aandeel"), "null")));
         String creation = "{\"node\":\"ObjectCreation\",\"name\":\"maak een aandeel\",\"versions\":[{\"createdType\":"
-                + "\"Aandeel\",\"subject\":\"Jutter\",\"initialisations\":[{\"node\":\"MemberInit\",\"member\":\"deel\","
+                + "\"Aandeel\",\"subject\":\"Jutter\",\"assignments\":[{\"node\":\"MemberAssignment\",\"member\":\"deel\","
                 + "\"value\":" + IrPath.literal("1/3", UNBOUNDED, "een derde")
                 + ",\"characteristic\":false}],\"validity\":{\"node\":\"Validity\"},\"connectingRole\":"
                 + TmsDocuments.roleBinding("aandeelname", "aandeel") + "}]}";

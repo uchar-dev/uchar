@@ -493,7 +493,7 @@ let fact_type_name (ft : fact_type_name) : json =
       ("roles", `List (List.map role_ref ft.role_names)) ]
 
 let assignment (t : assignment) : json =
-  node "MemberInit"
+  node "MemberAssignment"
     [ ("member", so t.to_attribute); ("value", opt expr t.to_value);
       ("characteristic", b t.to_characteristic) ]
 
@@ -507,7 +507,7 @@ let object_creation (oc : resolved_object_creation) : json =
   form ~what:"object creation" "ObjectCreation" oc.oc_name
     (`Assoc
       ([ ("createdType", so oc.created_type); ("subject", so oc.oc_subject);
-         ("initialisations", `List (List.map assignment oc.assignments)) ]
+         ("assignments", `List (List.map assignment oc.assignments)) ]
       @ condition
       @ [ ("validity", validity oc.oc_validity) ]
       @ connecting))

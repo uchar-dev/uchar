@@ -1068,10 +1068,10 @@ def _l4_base():
             "right": lit({"number": "1"}, dict(num))},
         "validity": None}]
     r["objectCreations"] = [{"node": "ObjectCreation", "name": "muntregistratie", "versions": [{
-        "createdType": "Muntvondst", "subject": "Jutter", "initialisations": [
-            {"node": "MemberInit", "member": "gewicht", "value": lit({"number": "1"}, dict(num)),
+        "createdType": "Muntvondst", "subject": "Jutter", "assignments": [
+            {"node": "MemberAssignment", "member": "gewicht", "value": lit({"number": "1"}, dict(num)),
              "characteristic": False},
-            {"node": "MemberInit", "member": "aangespoeld",
+            {"node": "MemberAssignment", "member": "aangespoeld",
              "value": lit({"boolean": True}, {"node": "Boolean"}), "characteristic": True}],
         "condition": kenmerk("aangemeld"), "validity": dict(_ALWAYS),
         "connectingRole": rb("vondst")}]}]
@@ -1618,7 +1618,7 @@ _TEXT = lambda d: _l3_attr(d, "bijnaam")["datatype"]
 _BOOL = lambda d: _val(d, "aanmelding")["type"]
 _RB = lambda d: _alloc(d)["connectingRole"]
 _VAL = lambda d: _rv(d, "jaartarief")["validity"]
-_MI = lambda d: _OC(d)["initialisations"][0]
+_MI = lambda d: _OC(d)["assignments"][0]
 _DKD = lambda d: d["rules"]["dayKindDefinitions"][0]
 _SPD = lambda d: d["rules"]["startPointDeterminations"][0]
 _PDC = lambda d: d["rules"]["prioritizedDefaults"][0]
@@ -1638,7 +1638,7 @@ _V0_NODES = [("Tekst", "Text", _TEXT), ("Booleaan", "Boolean", _BOOL),
              ("Enumeratie", "Enumeration", _ENUM), ("Feittype", "FactType", _FT),
              ("Rol", "Role", _ROLE), ("Dimensie", "Dimension", _DIM), ("Tijdlijn", "Timeline", _TL),
              ("RolBinding", "RoleBinding", _RB), ("Geldigheid", "Validity", _VAL),
-             ("Toekenning", "MemberInit", _MI), ("ResolvedDagsoort", "DayKindDefinition", _DKD),
+             ("ResolvedDagsoort", "DayKindDefinition", _DKD),
              ("ResolvedStartpunt", "StartPointDetermination", _SPD),
              ("ResolvedRegelGroep", "RuleGroup", _GROUP), ("Binair", "Binary", _BIN),
              ("Afgerond", "Rounding", _ROUND), ("Begrensd", "Clamp", _CLAMP),
@@ -1664,7 +1664,7 @@ _V0_KEYS = [("Enumeration", _ENUM, ["domein", "waarden"]),
             ("Timeline", _TL, ["naam", "variabelStartpunt", "granulariteit", "aantal"]),
             ("RoleBinding", _RB, ["feittype", "rol"]),
             ("Validity", _VAL, ["vanaf", "tot"]),
-            ("MemberInit", _MI, ["attribuut", "waarde", "kenmerk"]),
+            ("MemberAssignment", _MI, ["attribuut", "waarde", "kenmerk"]),
             ("DayKindDefinition", _DKD, ["naam", "voorwaarde", "geldigheid"]),
             ("StartPointDetermination", _SPD, ["tijdlijn", "objecttype", "lid"]),
             ("RuleGroup", _GROUP, ["naam", "recursief", "leden"]),
@@ -1864,12 +1864,12 @@ CELL_SHAPE_ROWS = [
     ("RuleVersion.target is a ParameterReference",
      _set(lambda d: _rv(d, "jaartarief"), "target", {"node": "ParameterReference", "parameter": "tarief"}), False,
      "a version writes an attribute, a characteristic or a cell, never another node"),
-    ("MemberInit carries labels", _labelled_member(["noord"]), True,
+    ("MemberAssignment carries labels", _labelled_member(["noord"]), True,
      "B1: an object creation's member writes one cell of a dimensioned attribute"),
-    ("MemberInit.labels = []", _labelled_member([]), False,
+    ("MemberAssignment.labels = []", _labelled_member([]), False,
      "absent is the one spelling of a scalar member; a cell names at least one label"),
-    ("MemberInit.labels = null", _labelled_member(None), False, "absent is the one spelling of a scalar member"),
-    ("MemberInit.labels as an object keyed by dimension", _labelled_member({"kustvak": "noord"}), False,
+    ("MemberAssignment.labels = null", _labelled_member(None), False, "absent is the one spelling of a scalar member"),
+    ("MemberAssignment.labels as an object keyed by dimension", _labelled_member({"kustvak": "noord"}), False,
      "B2: the labels are positional, in the declared order of the attribute's dimensions"),
     ("Aggregation carries the single dimensionSelection",
      lambda d: _val(d, "vakkensom").update(dimensionSelection=_val(d, "vakkensom").pop("dimensionSelections")[0]),
@@ -1885,10 +1885,34 @@ CELL_SHAPE_ROWS = [
 ]
 
 
+# The members of an object creation are its assignments (L7, IR-SPEC ch. 3.3), on the L5 base: the key and
+# the node that L5 wrote, and the v0 node before them, left the wire.
+def _renamed_key(getter, old, new):
+    def mutate(d):
+        n = getter(d)
+        items = [(old if k == new else k, v) for k, v in n.items()]
+        n.clear()
+        n.update(items)
+    return mutate
+
+
+L7_SHAPE_ROWS = [
+    ("ObjectCreationVersion carries initialisations", _renamed_key(_OC, "initialisations", "assignments"), False,
+     "L7: the members of a creation are its assignments; the L5 key initialisations left the wire"),
+    ("ObjectCreationVersion carries initialisations beside assignments", _set(_OC, "initialisations", []), False,
+     "L7: assignments is the one spelling of the members"),
+    ("the L5 node MemberInit where a MemberAssignment stands", _set(_MI, "node", "MemberInit"), False,
+     "L7: a member of a creation is a MemberAssignment; the L5 node name left the wire"),
+    ("the v0 node Toekenning where a MemberAssignment stands", _set(_MI, "node", "Toekenning"), False,
+     "B6: the v0 name left the wire at L5, and the L5 name MemberInit at L7"),
+]
+
+
 shape_bad = 0
 for base, rows in ((_m1_base, M1_SHAPE_ROWS), (_l2_base, L2_SHAPE_ROWS),
                    (_l3_base, L3_SHAPE_ROWS), (_l4_base, L4_SHAPE_ROWS),
-                   (_l5_base, L5_SHAPE_ROWS), (_l5_base, CELL_SHAPE_ROWS)):
+                   (_l5_base, L5_SHAPE_ROWS), (_l5_base, CELL_SHAPE_ROWS),
+                   (_l5_base, L7_SHAPE_ROWS)):
     for row, mutate, want_ok, why in rows:
         probe = base()
         mutate(probe)
@@ -1902,7 +1926,7 @@ if shape_bad:
     sys.stderr.write("check-ir-schema: FAIL (%d shape self-test row(s) bad)\n" % shape_bad)
     sys.exit(1)
 n_shape = (len(M1_SHAPE_ROWS) + len(L2_SHAPE_ROWS) + len(L3_SHAPE_ROWS) + len(L4_SHAPE_ROWS)
-           + len(L5_SHAPE_ROWS) + len(CELL_SHAPE_ROWS))
+           + len(L5_SHAPE_ROWS) + len(CELL_SHAPE_ROWS) + len(L7_SHAPE_ROWS))
 
 
 # NOTE: gate 9 (scripts/check-catala.sh) executes the slice of this

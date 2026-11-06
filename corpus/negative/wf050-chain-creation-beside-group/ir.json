@@ -146,9 +146,9 @@
           {
             "createdType": "Wrakrecht",
             "subject": "Melding",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "uitkering",
                 "value": {
                   "node": "AttributeReference",

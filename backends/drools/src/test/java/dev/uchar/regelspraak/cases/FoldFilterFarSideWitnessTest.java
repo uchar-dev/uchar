@@ -537,7 +537,7 @@ class FoldFilterFarSideWitnessTest {
 
     /** "Een Vondst heeft een melding met meldingsdag gelijk aan zijn vinddag indien zijn vinddag gevuld is." */
     private static final String MESSAGE = "{\"node\":\"ObjectCreation\",\"name\":\"maak een melding\",\"versions\":[{\"createdType\":"
-            + "\"Melding\",\"subject\":\"Vondst\",\"initialisations\":[{\"node\":\"MemberInit\",\"member\":\"meldingsdag\",\"value\":"
+            + "\"Melding\",\"subject\":\"Vondst\",\"assignments\":[{\"node\":\"MemberAssignment\",\"member\":\"meldingsdag\",\"value\":"
             + own("vinddag", "Vondst") + ",\"characteristic\":false}],\"condition\":" + predicate("filled", own("vinddag", "Vondst"))
             + ",\"validity\":{\"node\":\"Validity\"},\"connectingRole\":" + roleBinding("VondstHeeftMelding", "melding") + "}]}";
 

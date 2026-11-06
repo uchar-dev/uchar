@@ -2681,7 +2681,7 @@ let wf027 ctx =
           | Some ot ->
               List.concat_map
                 (fun (j, t) ->
-                  let tat = Printf.sprintf "%s/initialisations/%d" at j in
+                  let tat = Printf.sprintf "%s/assignments/%d" at j in
                   match t.to_attribute with
                   | None -> [ v "WF-027.member-name-missing" tat "member initialisation without a member name" ]
                   | Some m ->
@@ -7944,7 +7944,7 @@ let expression_layer ctx =
                       fold derivation is oc_subject, never the created
                       type *)
                    walk_expr ctx ~binders:[] ~subject:r.oc_subject
-                     (Printf.sprintf "%s/initialisations/%d/value" at j) e
+                     (Printf.sprintf "%s/assignments/%d/value" at j) e
                | None -> [])
              r.assignments)
         @ (match r.oc_condition with
@@ -10534,7 +10534,7 @@ let wf023_precision ctx =
                    match (t.to_characteristic, t.to_attribute, t.to_value) with
                    | false, Some m, Some w when scalar ot m -> (
                        match attr_of ot m with
-                       | Some (Some dt) -> value_gate (Printf.sprintf "%s/initialisations/%d/value" r.oc_pointer j) dt w
+                       | Some (Some dt) -> value_gate (Printf.sprintf "%s/assignments/%d/value" r.oc_pointer j) dt w
                        | _ -> [])
                    | _ -> [])
                  r.assignments))
@@ -10616,7 +10616,7 @@ let wf023 ctx =
         | Some ot ->
             List.concat_map
               (fun (j, (t : assignment)) ->
-                let tat = Printf.sprintf "%s/initialisations/%d" r.oc_pointer j in
+                let tat = Printf.sprintf "%s/assignments/%d" r.oc_pointer j in
                 match (t.to_characteristic, t.to_attribute, t.to_value) with
                 | false, Some m, Some w -> (
                     match (attr_of ot m, expr_type ctx ~binders:[] w) with
@@ -11686,7 +11686,7 @@ let marker_positions ctx : (string * string option list) list =
   @ List.concat_map
       (fun (r : resolved_object_creation) ->
         let at = r.oc_pointer in
-        idx "initialisations" (fun t (x : assignment) -> oe (at ^ t ^ "/value") x.to_value)
+        idx "assignments" (fun t (x : assignment) -> oe (at ^ t ^ "/value") x.to_value)
           r.assignments
         @ oc (at ^ "/condition") r.oc_condition)
       ctx.doc.object_creations
@@ -12423,7 +12423,7 @@ let wf040_writes ctx =
                  (fun j (t : assignment) ->
                    match (t.to_attribute, t.to_labels) with
                    | Some a, Some labels when not t.to_characteristic ->
-                       wf040_cell ctx (Printf.sprintf "%s/initialisations/%d/labels" o.oc_pointer j) ~ot
+                       wf040_cell ctx (Printf.sprintf "%s/assignments/%d/labels" o.oc_pointer j) ~ot
                          ~attribute:a labels
                    | _ -> [])
                  o.assignments))
@@ -12474,7 +12474,7 @@ let wf125 ctx =
              (fun j (t : assignment) ->
                match (o.created_type, t.to_attribute, t.to_labels) with
                | Some otn, Some a, None when (not t.to_characteristic) && dimensioned (Some otn) a ->
-                   whole_write (Printf.sprintf "%s/initialisations/%d" o.oc_pointer j) otn a
+                   whole_write (Printf.sprintf "%s/assignments/%d" o.oc_pointer j) otn a
                | _ -> [])
              o.assignments))
       ctx.doc.object_creations
@@ -12867,7 +12867,7 @@ let wf127_payload_guards ctx =
                (List.mapi
                   (fun j t ->
                     match t.to_value with
-                    | Some e -> [ (Printf.sprintf "%s/initialisations/%d/value" r.oc_pointer j, e) ]
+                    | Some e -> [ (Printf.sprintf "%s/assignments/%d/value" r.oc_pointer j, e) ]
                     | None -> [])
                   r.assignments))
           ())

@@ -20,7 +20,9 @@ reference layer is reduced to its symbolic form (L2), the type system is in its
 v1 nodes (L3), the rule layer and the expression layer are in their v1 forms
 (L4), and every source text is in the source record and every node, key and
 enum value carries its IR-SPEC name (L5). The sections per landing below name
-the wire of their own landing; since L5 the names are those of the L5 section.
+the wire of their own landing; since L5 the names are those of the L5 section,
+except the members of an object creation: since L7 they are its `assignments`,
+each a `MemberAssignment` (IR-SPEC ch. 3.3).
 
 Shape, in brief:
 
@@ -297,10 +299,11 @@ card, `../../backlog/done/20260924-l4-regel-en-expressielaag.md`):
   unhandled form cannot be written. The four type and attribute fields are
   nullable because WF-034 holds their presence, and an empty attribute name
   stays WF-034's; an absent optional field is none.
-- **`ObjectCreationVersion`** (`createdType`, `subject`, `initialisations`,
+- **`ObjectCreationVersion`** (`createdType`, `subject`, `assignments`,
   `condition`?, `validity`, `connectingRole`?): absent, the back-link is
-  derived (RUNTIME-SEMANTICS ch. 5.5). Each initialisation stayed a v0
-  `Toekenning` until L5, since then a `MemberInit`, which carries `labels`?
+  derived (RUNTIME-SEMANTICS ch. 5.5). Each member assignment stayed a v0
+  `Toekenning` until L5 and was a `MemberInit` in `initialisations` until L7,
+  since then a `MemberAssignment` in `assignments`, which carries `labels`?
   where it writes one cell of a dimensioned attribute (IR-SPEC ch. 3.3).
 - **`FactCreationVersion`** (`factType`, `anchorRole`, `targetRole`,
   `anchor`, `path`, `condition`?, `validity`): the target type is not written,

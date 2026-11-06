@@ -1392,7 +1392,7 @@ let resolved_day_kind path j : resolved_day_kind =
 
 let assignment path j : assignment =
   let kvs = obj path j in
-  expect_node path kvs "MemberInit";
+  expect_node path kvs "MemberAssignment";
   check_keys path kvs ~ext:[ "labels" ] [ "node"; "member"; "value"; "characteristic" ];
   {
     to_attribute = str_opt (path / "member") (field path kvs "member");
@@ -1407,7 +1407,7 @@ let object_creation path j : resolved_object_creation list =
     (fun (name, path, j) ->
       let kvs = obj path j in
       check_keys path kvs ~ext:[ "condition"; "connectingRole" ]
-        [ "createdType"; "subject"; "initialisations"; "validity" ];
+        [ "createdType"; "subject"; "assignments"; "validity" ];
       let f name = field path kvs name in
       {
         oc_name = name;
@@ -1415,8 +1415,8 @@ let object_creation path j : resolved_object_creation list =
         oc_subject = str_opt (path / "subject") (f "subject");
         assignments =
           List.mapi
-            (fun i x -> assignment (path / "initialisations" / string_of_int i) x)
-            (list_ (path / "initialisations") (f "initialisations"));
+            (fun i x -> assignment (path / "assignments" / string_of_int i) x)
+            (list_ (path / "assignments") (f "assignments"));
         oc_condition = ext_field path kvs "condition" condition_expr;
         oc_validity = Some (validity_window (path / "validity") (f "validity"));
         oc_connecting_role = ext_field path kvs "connectingRole" role_binding;

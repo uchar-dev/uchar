@@ -131,7 +131,7 @@ class NavigatedConditionWitnessTest {
                                 + "\"type\":" + WHOLE_NON_NEGATIVE + ",\"source\":{\"snippet\":\"het aantal meldingen\"}}", null),
                         DERIVED),
                 "\"objectCreations\":[{\"node\":\"ObjectCreation\",\"name\":\"maak een melding\",\"versions\":[{"
-                        + "\"createdType\":\"Melding\",\"subject\":\"Vondst\",\"initialisations\":[{\"node\":\"MemberInit\","
+                        + "\"createdType\":\"Melding\",\"subject\":\"Vondst\",\"assignments\":[{\"node\":\"MemberAssignment\","
                         + "\"member\":\"meldingsuitkomst\",\"value\":" + date("2026-01-01") + ",\"characteristic\":false}],"
                         + "\"condition\":" + filled(viaJutter("afgeleide datum")) + ",\"validity\":{\"node\":\"Validity\"},"
                         + "\"connectingRole\":{\"node\":\"RoleBinding\",\"factType\":\"VondstHeeftMelding\",\"role\":\"melding\"}}]}],",

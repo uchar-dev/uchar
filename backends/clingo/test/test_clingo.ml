@@ -8753,7 +8753,7 @@ let () =
 "condition":{"node":"Predicate","kind":"@RSOORT@","operand":{"node":"AttributeReference","attribute":"rang",
 "subjectType":"Wachter","source":{"snippet":"rang"},
 "path":[{"node":"RoleBinding","factType":"opvolging","role":"opvolger"}]},"negated":false,"digits":0,"source":{"snippet":"p"}},"validity":{"node":"Validity"} } ]}],"dayKindDefinitions":[],"objectCreations":[{"node":"ObjectCreation","name":"werf de opvolger",
-"versions": [ { "createdType":"Wachter","subject":"Wachter","initialisations":[{"node":"MemberInit","member":"rang",
+"versions": [ { "createdType":"Wachter","subject":"Wachter","assignments":[{"node":"MemberAssignment","member":"rang",
 "value":{"node":"Binary","op":"plus","left":{"node":"AttributeReference","attribute":"rang","subjectType":"Wachter",
 "source":{"snippet":"de rang van de Wachter"}},
 "right":{"node":"Literal","value": { "number": "1" },"type":{"node":"Number","whole":true,"decimals":0,
@@ -9889,7 +9889,7 @@ let () =
   let creation ~precondition value_node =
     Printf.sprintf
       {|{ "node": "ObjectCreation", "name": "keur een rapport", "versions": [ { "createdType": "Rapport",
-          "subject": "Werf", "initialisations": [ { "node": "MemberInit", "member": "bedrag",
+          "subject": "Werf", "assignments": [ { "node": "MemberAssignment", "member": "bedrag",
           "value": %s, "characteristic": false } ], %s
           "validity": { "node": "Validity" },
           "connectingRole": { "node": "RoleBinding", "factType": "keuring", "role": "rapport" } } ] }|}
@@ -10899,7 +10899,7 @@ let () =
   let creation i v =
     Printf.sprintf
       {|{ "node": "ObjectCreation", "name": "maak schuit %d", "versions": [ { "createdType": "Schuit", "subject": "Werf",
-          "initialisations": [ { "node": "MemberInit", "member": "lengte", "value": %s, "characteristic": false } ],
+          "assignments": [ { "node": "MemberAssignment", "member": "lengte", "value": %s, "characteristic": false } ],
           "validity": { "node": "Validity" },
           "connectingRole": %s } ] }|}
       i (pf_l ~typ:pf_n0 v) schuiten
@@ -11013,13 +11013,13 @@ let () =
   let creation ?(assignments = []) ?(precondition = "null") ident created subject role_ref =
     Printf.sprintf
       {|{ "node": "ObjectCreation", "name": "%s", "versions": [ { "createdType": "%s", "subject": "%s",
-          "initialisations": [ %s ], %s
+          "assignments": [ %s ], %s
           "validity": { "node": "Validity" }, "connectingRole": %s } ] }|}
       ident created subject
       (String.concat ", "
          (List.map
             (fun (a, w) ->
-              Printf.sprintf {|{ "node": "MemberInit", "member": "%s", "value": %s, "characteristic": false }|} a w)
+              Printf.sprintf {|{ "node": "MemberAssignment", "member": "%s", "value": %s, "characteristic": false }|} a w)
             assignments))
       (one_member "condition" precondition) role_ref
   in
@@ -11197,7 +11197,7 @@ let () =
   let eight ?(precondition = "null") () =
     Printf.sprintf
       {|{ "node": "ObjectCreation", "name": "maak schuit", "versions": [ { "createdType": "Schuit", "subject": "Werf",
-          "initialisations": [ { "node": "MemberInit", "member": "lengte", "value": %s, "characteristic": false } ],
+          "assignments": [ { "node": "MemberAssignment", "member": "lengte", "value": %s, "characteristic": false } ],
           %s"validity": { "node": "Validity" },
           "connectingRole": %s } ] }|}
       (lit "8") (one_member "condition" precondition) schuiten
@@ -11425,7 +11425,7 @@ let () =
   let make_werf =
     Printf.sprintf
       {|{ "node": "ObjectCreation", "name": "maak werf", "versions": [ { "createdType": "Werf", "subject": "Haven",
-          "initialisations": [ { "node": "MemberInit", "member": "bonus", "value": %s, "characteristic": false } ],
+          "assignments": [ { "node": "MemberAssignment", "member": "bonus", "value": %s, "characteristic": false } ],
           "validity": { "node": "Validity" },
           "connectingRole": %s } ] }|}
       (lit "3") werven
@@ -11512,7 +11512,7 @@ let () =
   let make v =
     Printf.sprintf
       {|{ "node": "ObjectCreation", "name": "maak schuit", "versions": [ { "createdType": "Schuit", "subject": "Werf",
-          "initialisations": [ { "node": "MemberInit", "member": "lengte", "value": %s, "characteristic": false } ],
+          "assignments": [ { "node": "MemberAssignment", "member": "lengte", "value": %s, "characteristic": false } ],
           "validity": { "node": "Validity" },
           "connectingRole": %s } ] }|}
       (lit v) schuiten
@@ -11606,7 +11606,7 @@ let () =
   let make ~ident ~created ~attr ~value_node role_ref =
     Printf.sprintf
       {|{ "node": "ObjectCreation", "name": "%s", "versions": [ { "createdType": "%s", "subject": "Werf",
-          "initialisations": [ { "node": "MemberInit", "member": "%s", "value": %s, "characteristic": false } ],
+          "assignments": [ { "node": "MemberAssignment", "member": "%s", "value": %s, "characteristic": false } ],
           "validity": { "node": "Validity" },
           "connectingRole": { "node": "RoleBinding", "factType": "%s", "role": "%s" } } ] }|}
       ident created attr (lit value_node) (fst role_ref) (snd role_ref)
@@ -11699,14 +11699,14 @@ let () =
   let make ~ident ~created ~precondition ~assignments role_ref =
     Printf.sprintf
       {|{ "node": "ObjectCreation", "name": "%s", "versions": [ { "createdType": "%s", "subject": "Werf",
-          "initialisations": [ %s ], %s
+          "assignments": [ %s ], %s
           "validity": { "node": "Validity" }, "connectingRole": %s } ] }|}
       ident created assignments (one_member "condition" precondition) role_ref
   in
   let eight =
     make ~ident:"maak schuit" ~created:"Schuit" ~precondition:"null"
       ~assignments:
-        (Printf.sprintf {|{ "node": "MemberInit", "member": "lengte", "value": %s, "characteristic": false }|} (lit "8"))
+        (Printf.sprintf {|{ "node": "MemberAssignment", "member": "lengte", "value": %s, "characteristic": false }|} (lit "8"))
       schuiten
   and make_report =
     make ~ident:"maak rapport" ~created:"Rapport" ~precondition:(kv (Printf.sprintf {|"sourceRole": %s|} schuiten))
@@ -11770,7 +11770,7 @@ let () =
   let make ~ident ~created ~attr ~value_node ~precondition role_ref =
     Printf.sprintf
       {|{ "node": "ObjectCreation", "name": "%s", "versions": [ { "createdType": "%s", "subject": "Werf",
-          "initialisations": [ { "node": "MemberInit", "member": "%s", "value": %s, "characteristic": false } ],
+          "assignments": [ { "node": "MemberAssignment", "member": "%s", "value": %s, "characteristic": false } ],
           %s"validity": { "node": "Validity" },
           "connectingRole": { "node": "RoleBinding", "factType": "%s", "role": "%s" } } ] }|}
       ident created attr (lit value_node) (one_member "condition" precondition) (fst role_ref) (snd role_ref)
@@ -11853,7 +11853,7 @@ let () =
   let creation i v =
     Printf.sprintf
       {|{ "node": "ObjectCreation", "name": "maak schuit %d", "versions": [ { "createdType": "Schuit", "subject": "Werf",
-          "initialisations": [ { "node": "MemberInit", "member": "lengte", "value": %s, "characteristic": false } ],
+          "assignments": [ { "node": "MemberAssignment", "member": "lengte", "value": %s, "characteristic": false } ],
           "validity": { "node": "Validity" },
           "connectingRole": %s } ] }|}
       i (lit v) schuiten
@@ -11927,7 +11927,7 @@ let keurtermijn_doc ~creation =
     ~by:
       (if creation then
          {|{ "node": "ObjectCreation", "name": "maak een keurrapport bij elke ploeg", "versions": [
-             { "createdType": "Keurrapport", "subject": "Ploeg", "initialisations": [],
+             { "createdType": "Keurrapport", "subject": "Ploeg", "assignments": [],
                "validity": { "node": "Validity" },
                "connectingRole": { "node": "RoleBinding", "factType": "keurrapportage", "role": "rapport" } } ] }|}
        else "")
@@ -12134,7 +12134,7 @@ let () =
   let creation =
     Printf.sprintf
       {|{ "node": "ObjectCreation", "name": "maak", "versions": [ { "createdType": "Jutter", "subject": "Jutter",
-          "initialisations": [], "validity": { "node": "Validity" }, "connectingRole": %s } ] }|}
+          "assignments": [], "validity": { "node": "Validity" }, "connectingRole": %s } ] }|}
       (rb "vangst" "vanger")
   in
   let allocation_spec =
@@ -12258,9 +12258,9 @@ let () =
         appended {|{ "node": "Uniqueness", "name": "uniek", "versions": [ {|} {|"scopeVeld": null,|},
         "unknown field 'scopeVeld'" );
       ( "ObjectCreationVersion.connectingRole null", fetch,
-        ({|"initialisations": [], "validity": { "node": "Validity" }, "connectingRole": |}
+        ({|"assignments": [], "validity": { "node": "Validity" }, "connectingRole": |}
          ^ rb "vangst" "vanger",
-         {|"initialisations": [], "validity": { "node": "Validity" }, "connectingRole": null|}),
+         {|"assignments": [], "validity": { "node": "Validity" }, "connectingRole": null|}),
         "expected object, got null" );
       ( "AllocationVersion.connectingRole null", fetch,
         ({|"descending": false, "validity": { "node": "Validity" }, "connectingRole": |}
@@ -12636,7 +12636,7 @@ let () =
     "objectCreations": [
       { "node": "ObjectCreation", "name": "maak een vondst", "versions": [ {
           "createdType": "Vondst", "subject": "Jutter",
-          "initialisations": [ { "node": "MemberInit", "member": "gewicht",
+          "assignments": [ { "node": "MemberAssignment", "member": "gewicht",
             "value": { "node": "Literal", "value": { "number": "1.00" }, "type": %s, "source": { "snippet": "1,00" } }, "characteristic": false } ],
           "validity": %s, "connectingRole": %s } ] } ],
     "allocations": [
@@ -12820,7 +12820,8 @@ let () =
         "unknown field 'verbindendeRol'");
       ("COMPLEX als method", ({|"method": "proportional"|}, {|"method": "COMPLEX"|}), {|unknown method value "COMPLEX"|});
       ("ObjectCreation.nieuwType", ({|"createdType": "Vondst"|}, {|"nieuwType": "Vondst"|}), "unknown field 'nieuwType'");
-      ("ObjectCreation.toekenningen", ({|"initialisations": [|}, {|"toekenningen": [|}), "unknown field 'toekenningen'");
+      ("ObjectCreation.toekenningen", ({|"assignments": [|}, {|"toekenningen": [|}), "unknown field 'toekenningen'");
+      ("ObjectCreation.initialisations", ({|"assignments": [|}, {|"initialisations": [|}), "unknown field 'initialisations'");
       ("ObjectCreation.verbindendeRol", ({|"connectingRole": { "node": "RoleBinding", "factType": "vangst", "role": "vanger" }|}, {|"verbindendeRol": { "node": "RoleBinding", "factType": "vangst", "role": "vanger" }|}),
         "unknown field 'verbindendeRol'");
       ("FactCreation.feittype", ({|"factType": "vangst", "anchorRole"|}, {|"feittype": "vangst", "anchorRole"|}), "unknown field 'feittype'");
@@ -13816,9 +13817,9 @@ let () =
           {
             "createdType": "Vondst",
             "subject": "Jutter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "gewicht",
                 "value": {
                   "node": "Literal",
@@ -14003,7 +14004,8 @@ let () =
       ("/model/timelines/0", Node "Tijdlijn");
       ("/rules/rules/0/versions/0/condition/parts/3/navigation", Node "RolBinding");
       ("/rules/rules/0/versions/0/validity", Node "Geldigheid");
-      ("/rules/objectCreations/0/versions/0/initialisations/0", Node "Toekenning");
+      ("/rules/objectCreations/0/versions/0/assignments/0", Node "Toekenning");
+      ("/rules/objectCreations/0/versions/0/assignments/0", Node "MemberInit");
       ("/rules/dayKindDefinitions/0", Node "ResolvedDagsoort");
       ("/rules/startPointDeterminations/0", Node "ResolvedStartpunt");
       ("/rules/ruleGroups/0", Node "ResolvedRegelGroep");
@@ -14048,9 +14050,9 @@ let () =
       ("/rules/rules/0/versions/0/condition/parts/3/navigation", Key ("role", "rol"));
       ("/rules/rules/0/versions/0/validity", Key ("from", "vanaf"));
       ("/rules/rules/0/versions/0/validity", Key ("to", "tot"));
-      ("/rules/objectCreations/0/versions/0/initialisations/0", Key ("member", "attribuut"));
-      ("/rules/objectCreations/0/versions/0/initialisations/0", Key ("value", "waarde"));
-      ("/rules/objectCreations/0/versions/0/initialisations/0", Key ("characteristic", "kenmerk"));
+      ("/rules/objectCreations/0/versions/0/assignments/0", Key ("member", "attribuut"));
+      ("/rules/objectCreations/0/versions/0/assignments/0", Key ("value", "waarde"));
+      ("/rules/objectCreations/0/versions/0/assignments/0", Key ("characteristic", "kenmerk"));
       ("/rules/dayKindDefinitions/0", Key ("dayKind", "naam"));
       ("/rules/dayKindDefinitions/0", Key ("condition", "voorwaarde"));
       ("/rules/dayKindDefinitions/0", Key ("validity", "geldigheid"));
@@ -15557,7 +15559,7 @@ let () =
   let creation =
     Printf.sprintf
       {|{ "node": "ObjectCreation", "name": "keur een rapport", "versions": [ { "createdType": "Rapport",
-          "subject": "Werf", "initialisations": [ { "node": "MemberInit", "member": "bedrag",
+          "subject": "Werf", "assignments": [ { "node": "MemberAssignment", "member": "bedrag",
           "value": %s, "characteristic": false } ],
           "validity": { "node": "Validity" },
           "connectingRole": { "node": "RoleBinding", "factType": "keuring", "role": "rapport" } } ] }|}
@@ -15704,7 +15706,7 @@ let () =
      [more] adds member initialisations after rang and beginstand *)
   let doc ?(maten = false) ?(more = "") ~attributes ~begin_value rule_defs =
     Printf.sprintf
-      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Wachter", "animate": true, "plural": "Wachters", "attributes": [%s], "characteristics": []}], "factTypes": [{"node": "FactType", "name": "opvolging", "reciprocal": false, "roles": [{"node": "Role", "name": "voorganger", "objectType": "Wachter", "many": false}, {"node": "Role", "name": "opvolger", "objectType": "Wachter", "plural": "opvolgers", "many": false}]}%s], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [{"node": "ObjectCreation", "name": "werf de opvolger", "versions": [{"createdType": "Wachter", "subject": "Wachter", "initialisations": [{"node": "MemberInit", "member": "rang", "value": {"node": "Binary", "op": "plus", "left": %s, "right": %s, "type": %s, "source": {"snippet": "plus"}}, "characteristic": false}, {"node": "MemberInit", "member": "beginstand", "value": %s, "characteristic": false}%s], "condition": {"node": "Comparison", "op": "less", "left": %s, "right": %s, "source": {"snippet": "less"}}, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}}]}], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [%s], "startPointDeterminations": [], "ruleGroups": [{"node": "RuleGroup", "name": "estafette", "recursive": true, "members": [%s], "source": {"snippet": "estafette"}}], "prioritizedDefaults": []}, "diagnostics": []}|}
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Wachter", "animate": true, "plural": "Wachters", "attributes": [%s], "characteristics": []}], "factTypes": [{"node": "FactType", "name": "opvolging", "reciprocal": false, "roles": [{"node": "Role", "name": "voorganger", "objectType": "Wachter", "many": false}, {"node": "Role", "name": "opvolger", "objectType": "Wachter", "plural": "opvolgers", "many": false}]}%s], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [{"node": "ObjectCreation", "name": "werf de opvolger", "versions": [{"createdType": "Wachter", "subject": "Wachter", "assignments": [{"node": "MemberAssignment", "member": "rang", "value": {"node": "Binary", "op": "plus", "left": %s, "right": %s, "type": %s, "source": {"snippet": "plus"}}, "characteristic": false}, {"node": "MemberAssignment", "member": "beginstand", "value": %s, "characteristic": false}%s], "condition": {"node": "Comparison", "op": "less", "left": %s, "right": %s, "source": {"snippet": "less"}}, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}}]}], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [%s], "startPointDeterminations": [], "ruleGroups": [{"node": "RuleGroup", "name": "estafette", "recursive": true, "members": [%s], "source": {"snippet": "estafette"}}], "prioritizedDefaults": []}, "diagnostics": []}|}
       (String.concat ", "
          (List.map
             (fun one_member -> Printf.sprintf {|{"node": "Attribute", "name": "%s", "datatype": %s}|} one_member number_value)
@@ -15800,7 +15802,7 @@ let () =
   rejected ~variant:"a rule writes the graad the creation writes (a shared writer)"
     ~more:
       (Printf.sprintf
-         {|, {"node": "MemberInit", "member": "graad", "value": %s, "characteristic": false}|}
+         {|, {"node": "MemberAssignment", "member": "graad", "value": %s, "characteristic": false}|}
          (literal 0))
     ~attributes:(link_chain @ [ "graad" ]) ~begin_value:(owned "graad") ~graph_node:"attr:wachter:graad"
     ~writer_rule:{|rule "graad van een wachter met opvolger"|} [ graad_with_successor; opvolgerbegin ]
@@ -15899,7 +15901,7 @@ let () =
   and ervarenaantal = haven_rule "ervarenaantal van een haven" "ervarenaantal" (counting "ervaren") "calculation" in
   let werf_successor =
     Printf.sprintf
-      {|{"node": "ObjectCreation", "name": "werf de opvolger", "versions": [{"createdType": "Wachter", "subject": "Wachter", "initialisations": [{"node": "MemberInit", "member": "rang", "value": {"node": "Binary", "op": "plus", "left": %s, "right": %s, "type": %s, "source": {"snippet": "zijn rang plus 1"}}, "characteristic": false}, {"node": "MemberInit", "member": "aangesteld", "value": %s, "characteristic": true}], "condition": {"node": "Comparison", "op": "less", "left": %s, "right": %s, "source": {"snippet": "zijn rang is kleiner dan 4"}}, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}}]}|}
+      {|{"node": "ObjectCreation", "name": "werf de opvolger", "versions": [{"createdType": "Wachter", "subject": "Wachter", "assignments": [{"node": "MemberAssignment", "member": "rang", "value": {"node": "Binary", "op": "plus", "left": %s, "right": %s, "type": %s, "source": {"snippet": "zijn rang plus 1"}}, "characteristic": false}, {"node": "MemberAssignment", "member": "aangesteld", "value": %s, "characteristic": true}], "condition": {"node": "Comparison", "op": "less", "left": %s, "right": %s, "source": {"snippet": "zijn rang is kleiner dan 4"}}, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}}]}|}
       ranking (literal 1) number_value truth ranking (literal 4)
   in
   (* [ranking] declares the rang of a Wachter, [characteristics] the characteristics
@@ -15909,7 +15911,7 @@ let () =
   let doc ?(ranking = false) ?(characteristics = []) ?(haven = []) ?(werf = false)
       ?(pass_on = {|{"node": "Validity"}|}) ~quantity rule_defs =
     Printf.sprintf
-      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Wachter", "animate": true, "plural": "Wachters", "attributes": [%s], "characteristics": [%s]}, {"node": "ObjectType", "name": "Haven", "animate": false, "plural": "Havens", "attributes": [%s], "characteristics": []}, {"node": "ObjectType", "name": "Rapport", "animate": false, "plural": "Rapporten", "attributes": [%s], "characteristics": []}], "factTypes": [{"node": "FactType", "name": "opvolging", "reciprocal": false, "roles": [{"node": "Role", "name": "voorganger", "objectType": "Wachter", "plural": "voorgangers", "many": false}, {"node": "Role", "name": "opvolger", "objectType": "Wachter", "plural": "opvolgers", "many": false}]}, {"node": "FactType", "name": "maatschap", "reciprocal": false, "roles": [{"node": "Role", "name": "maatgever", "objectType": "Wachter", "plural": "maatgevers", "many": true}, {"node": "Role", "name": "leerling", "objectType": "Wachter", "plural": "leerlingen", "many": true}]}, {"node": "FactType", "name": "bezetting", "reciprocal": false, "roles": [{"node": "Role", "name": "haven", "objectType": "Haven", "plural": "havens", "many": false}, {"node": "Role", "name": "wachter", "objectType": "Wachter", "plural": "wachters", "many": true}]}, {"node": "FactType", "name": "havenrapport", "reciprocal": false, "roles": [{"node": "Role", "name": "haven", "objectType": "Haven", "plural": "havens", "many": false}, {"node": "Role", "name": "rapport", "objectType": "Rapport", "plural": "rapporten", "many": false}]}], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [{"node": "ObjectCreation", "name": "rapport van een haven", "versions": [{"createdType": "Rapport", "subject": "Haven", "initialisations": [{"node": "MemberInit", "member": "aantal", "value": %s, "characteristic": false}], "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "havenrapport", "role": "rapport"}}]}%s], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [{"node": "FactCreation", "name": "geef door", "versions": [{"factType": "maatschap", "anchorRole": "maatgever", "targetRole": "leerling", "anchor": "Wachter", "path": [{"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}], "condition": {"node": "CharacteristicCheck", "characteristic": "ervaren", "negated": false, "source": {"snippet": "hij is ervaren"}}, "validity": %s}]}], "startPointDeterminations": [], "ruleGroups": [{"node": "RuleGroup", "name": "doorgeven", "recursive": true, "members": ["geef door"], "source": {"snippet": "doorgeven"}}%s], "prioritizedDefaults": []}, "diagnostics": []}|}
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Wachter", "animate": true, "plural": "Wachters", "attributes": [%s], "characteristics": [%s]}, {"node": "ObjectType", "name": "Haven", "animate": false, "plural": "Havens", "attributes": [%s], "characteristics": []}, {"node": "ObjectType", "name": "Rapport", "animate": false, "plural": "Rapporten", "attributes": [%s], "characteristics": []}], "factTypes": [{"node": "FactType", "name": "opvolging", "reciprocal": false, "roles": [{"node": "Role", "name": "voorganger", "objectType": "Wachter", "plural": "voorgangers", "many": false}, {"node": "Role", "name": "opvolger", "objectType": "Wachter", "plural": "opvolgers", "many": false}]}, {"node": "FactType", "name": "maatschap", "reciprocal": false, "roles": [{"node": "Role", "name": "maatgever", "objectType": "Wachter", "plural": "maatgevers", "many": true}, {"node": "Role", "name": "leerling", "objectType": "Wachter", "plural": "leerlingen", "many": true}]}, {"node": "FactType", "name": "bezetting", "reciprocal": false, "roles": [{"node": "Role", "name": "haven", "objectType": "Haven", "plural": "havens", "many": false}, {"node": "Role", "name": "wachter", "objectType": "Wachter", "plural": "wachters", "many": true}]}, {"node": "FactType", "name": "havenrapport", "reciprocal": false, "roles": [{"node": "Role", "name": "haven", "objectType": "Haven", "plural": "havens", "many": false}, {"node": "Role", "name": "rapport", "objectType": "Rapport", "plural": "rapporten", "many": false}]}], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [{"node": "ObjectCreation", "name": "rapport van een haven", "versions": [{"createdType": "Rapport", "subject": "Haven", "assignments": [{"node": "MemberAssignment", "member": "aantal", "value": %s, "characteristic": false}], "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "havenrapport", "role": "rapport"}}]}%s], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [{"node": "FactCreation", "name": "geef door", "versions": [{"factType": "maatschap", "anchorRole": "maatgever", "targetRole": "leerling", "anchor": "Wachter", "path": [{"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}], "condition": {"node": "CharacteristicCheck", "characteristic": "ervaren", "negated": false, "source": {"snippet": "hij is ervaren"}}, "validity": %s}]}], "startPointDeterminations": [], "ruleGroups": [{"node": "RuleGroup", "name": "doorgeven", "recursive": true, "members": ["geef door"], "source": {"snippet": "doorgeven"}}%s], "prioritizedDefaults": []}, "diagnostics": []}|}
       (if ranking then one_member "rang" else "")
       (String.concat ", " (List.map characteristic ("ervaren" :: characteristics)))
       (String.concat ", " (List.map one_member ("rapportaantal" :: haven)))
@@ -16082,11 +16084,11 @@ let () =
       right_side op
   in
   let init one_member value_node =
-    Printf.sprintf {|{"node": "MemberInit", "member": "%s", "value": %s, "characteristic": false}|} one_member value_node
+    Printf.sprintf {|{"node": "MemberAssignment", "member": "%s", "value": %s, "characteristic": false}|} one_member value_node
   in
   let creation ident ~subject ~created ~inits ~precondition ~fact_type_name ~role_ref =
     Printf.sprintf
-      {|{"node": "ObjectCreation", "name": "%s", "versions": [{"createdType": "%s", "subject": "%s", "initialisations": [%s], "condition": %s, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "%s", "role": "%s"}}]}|}
+      {|{"node": "ObjectCreation", "name": "%s", "versions": [{"createdType": "%s", "subject": "%s", "assignments": [%s], "condition": %s, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "%s", "role": "%s"}}]}|}
       ident created subject (String.concat ", " inits) precondition fact_type_name role_ref
   in
   let cluster ident one_member =
@@ -18030,9 +18032,9 @@ let () =
   (* EF-018: raised wherever the creation is run, in both executors *)
   let backlink = corpus "corpus/red/ambiguous-backlink/ir.json" in
   let gated =
-    replace_first ~needle:{|"initialisations": [],|}
+    replace_first ~needle:{|"assignments": [],|}
       ~by:
-        (Printf.sprintf {|"initialisations": [], "condition": %s,|}
+        (Printf.sprintf {|"assignments": [], "condition": %s,|}
            (pf_cmp "greater" (pf_l ~typ:pf_n0 "1") (pf_l ~typ:pf_n0 "2")))
       backlink
   in
@@ -18158,7 +18160,7 @@ let () =
   let creation v =
     Printf.sprintf
       {|{ "node": "ObjectCreation", "name": "maak schuit", "versions": [ { "createdType": "Schuit", "subject": "Werf",
-          "initialisations": [ { "node": "MemberInit", "member": "lengte", "value": %s, "characteristic": false } ],
+          "assignments": [ { "node": "MemberAssignment", "member": "lengte", "value": %s, "characteristic": false } ],
           "validity": { "node": "Validity" }, "connectingRole": %s } ] }|}
       (lit v) schuiten
   in

@@ -1590,10 +1590,10 @@ public final class IrEmitter {
         w.beginObject();
         w.key("createdType").value(nameOf(oc.createdType()));
         w.key("subject").value(nameOf(oc.subject()));
-        w.key("initialisations").beginArray();
+        w.key("assignments").beginArray();
         for (ResolvedObjectCreation.MemberInit t : oc.initialisations()) {
             w.beginObject();
-            w.key("node").value("MemberInit");
+            w.key("node").value("MemberAssignment");
             w.key("member").value(t.attribute());
             if (t.labels() != null) { w.key("labels"); stringList(t.labels()); }
             w.key("value"); expr(t.value());

@@ -153,9 +153,9 @@
           {
             "createdType": "Melding",
             "subject": "Jutter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "meldnummer",
                 "value": {
                   "node": "Literal",

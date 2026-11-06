@@ -650,9 +650,9 @@
           {
             "createdType": "Melding",
             "subject": "Jutter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "meldwaarde",
                 "value": {
                   "node": "Literal",
@@ -672,7 +672,7 @@
                 "characteristic": false
               },
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "meldloon",
                 "value": {
                   "node": "AttributeReference",
@@ -685,7 +685,7 @@
                 "characteristic": false
               },
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "seizoenswaarde",
                 "value": {
                   "node": "Literal",
@@ -705,7 +705,7 @@
                 "characteristic": false
               },
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "seizoensloon",
                 "value": {
                   "node": "AttributeReference",
@@ -718,7 +718,7 @@
                 "characteristic": false
               },
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "aanvulloon",
                 "value": {
                   "node": "AttributeReference",

@@ -207,7 +207,7 @@ class DrlCreationLinkWitnessTest {
     /** The overzee model with the kenmerk toekenning's value replaced by the Numeriek literal 5. */
     private static Path characteristicNumber() throws Exception {
         ObjectNode ir = read(OVERZEE);
-        for (JsonNode t : IrPath.version(ir, "objectCreations", 0, 0).get("initialisations"))
+        for (JsonNode t : IrPath.version(ir, "objectCreations", 0, 0).get("assignments"))
             if (t.get("characteristic").asBoolean())
                 ((ObjectNode) t).set("value", JSON.readTree("""
                         { "node": "Literal", "value": { "number": "5" }, "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }, "source": { "snippet": "5" } }"""));

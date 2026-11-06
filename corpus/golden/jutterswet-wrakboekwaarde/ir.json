@@ -157,9 +157,9 @@
           {
             "createdType": "Strandrecht",
             "subject": "Wrakrecht",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "grondslag",
                 "value": {
                   "node": "Binary",

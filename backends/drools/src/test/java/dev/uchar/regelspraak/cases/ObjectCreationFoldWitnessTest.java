@@ -472,13 +472,13 @@ class ObjectCreationFoldWitnessTest {
     }
 
     private static String memberInit(String member, String value) {
-        return "{\"node\":\"MemberInit\",\"member\":\"" + member + "\",\"value\":" + value + ",\"characteristic\":false}";
+        return "{\"node\":\"MemberAssignment\",\"member\":\"" + member + "\",\"value\":" + value + ",\"characteristic\":false}";
     }
 
     /** "Regel maak een afrekening: Een Jutter heeft een afrekening met &lt;toekenningen&gt; [indien &lt;voorwaarde&gt;]." */
     private static String creation(String condition, String... initialisations) {
         return "{\"node\":\"ObjectCreation\",\"name\":\"maak een afrekening\",\"versions\":[{\"createdType\":\"Afrekening\","
-                + "\"subject\":\"Jutter\",\"initialisations\":[" + String.join(",", initialisations) + "],"
+                + "\"subject\":\"Jutter\",\"assignments\":[" + String.join(",", initialisations) + "],"
                 + (condition == null ? "" : "\"condition\":" + condition + ",")
                 + "\"validity\":{\"node\":\"Validity\"},\"connectingRole\":" + roleBinding("JutterHeeftAfrekening", "afrekening") + "}]}";
     }

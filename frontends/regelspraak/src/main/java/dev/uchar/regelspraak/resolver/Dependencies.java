@@ -1186,7 +1186,7 @@ final class Dependencies {
                             writes.add(relNode(candidates.get(0)));
                     }
                 }
-                for (Map<String, Object> t : list(k, "initialisations"))
+                for (Map<String, Object> t : list(k, "assignments"))
                     if (text(t, "member") != null)
                         writes.addAll(memberWrites(nt, text(t, "member"), t.get("labels") == null ? null : strings(t, "labels"),
                                 Boolean.TRUE.equals(t.get("characteristic")), true));
@@ -1194,7 +1194,7 @@ final class Dependencies {
                 if (subject != null) uses.add(new NodeRead(popNode(subject), POS));
                 formSubject = subject;
                 List<NodeRead> values = condition(subject, null, k.get("condition"));
-                for (Map<String, Object> t : list(k, "initialisations")) values = readExpr(subject, null, values, t.get("value"));
+                for (Map<String, Object> t : list(k, "assignments")) values = readExpr(subject, null, values, t.get("value"));
                 uses.addAll(values);
                 result.add(new Form(v.at(), name, "objectCreations", recursive.contains(norm(withoutVersion(name))), writes,
                         strict(uses)));

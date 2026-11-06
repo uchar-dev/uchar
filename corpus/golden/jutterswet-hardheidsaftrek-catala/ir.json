@@ -208,9 +208,9 @@
           {
             "createdType": "Rekenkamer",
             "subject": "Bergingsaanslag",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "bergingswaarde",
                 "value": {
                   "node": "AttributeReference",

@@ -218,9 +218,9 @@
           {
             "createdType": "Berging",
             "subject": "Jutter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "vaarwater",
                 "value": {
                   "node": "Literal",

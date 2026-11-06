@@ -2555,11 +2555,11 @@ public final class IrLoader {
         for (Version v : formName(n, path, "ObjectCreation", List.of())) {
             JsonNode k = v.jsonNode();
             String p = v.path();
-            versionFields(k, p, "ObjectCreationVersion", List.of("createdType", "subject", "initialisations", "validity"),
+            versionFields(k, p, "ObjectCreationVersion", List.of("createdType", "subject", "assignments", "validity"),
                     List.of("condition", "connectingRole"));
             List<ResolvedObjectCreation.MemberInit> tk = new ArrayList<>();
-            list(k, p, "initialisations", (tp, t) -> {
-                fields(t, tp, "MemberInit", List.of("node", "member", "value", "characteristic"), List.of("labels"));
+            list(k, p, "assignments", (tp, t) -> {
+                fields(t, tp, "MemberAssignment", List.of("node", "member", "value", "characteristic"), List.of("labels"));
                 // IR-SPEC ch. 3.3: a member with labels writes one cell of a dimensioned attribute of the made object;
                 // the model carries the cell, and the build refuses it
                 tk.add(new ResolvedObjectCreation.MemberInit(text(t, "member"), expr(nodeField(t, "value")),

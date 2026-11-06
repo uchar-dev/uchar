@@ -113,9 +113,9 @@
           {
             "createdType": "Jutter",
             "subject": "Jutter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "spook",
                 "value": {
                   "node": "Literal",

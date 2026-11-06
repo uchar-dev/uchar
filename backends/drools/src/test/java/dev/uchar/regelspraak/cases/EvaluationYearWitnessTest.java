@@ -147,7 +147,7 @@ class EvaluationYearWitnessTest {
             new Site("synth2-budgetgrens-onder", "/rules/consistencies/0/versions/0/assertion/right", "case1.json",
                     "2026-03-15", Map.of(), false,
                     null, "the assertion of a consistency"),
-            new Site("synth2-budgetgrens-onder", "/rules/objectCreations/0/versions/0/initialisations/0/value/right",
+            new Site("synth2-budgetgrens-onder", "/rules/objectCreations/0/versions/0/assignments/0/value/right",
                     "case1.json", "2026-03-15", Map.of("W1.opvolgerrang", "{\"number\":\"2027\"}"), true,
                     null, "an initialisation of an object creation"),
             new Site("jutterswet-voorwaardedeling", "/rules/allocations/0/versions/0/condition/right", "case.json",

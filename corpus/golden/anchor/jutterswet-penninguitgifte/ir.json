@@ -317,9 +317,9 @@
           {
             "createdType": "Penning",
             "subject": "Jutter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "bedrag",
                 "value": {
                   "node": "AttributeReference",
@@ -332,7 +332,7 @@
                 "characteristic": false
               },
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "uitgereikt",
                 "value": {
                   "node": "Literal",
@@ -370,7 +370,7 @@
           {
             "createdType": "Dossier",
             "subject": "Jutter",
-            "initialisations": [],
+            "assignments": [],
             "condition": {
               "node": "CharacteristicCheck",
               "characteristic": "penninggerechtigd",

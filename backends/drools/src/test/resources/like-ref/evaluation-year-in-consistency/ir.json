@@ -120,8 +120,8 @@
       "versions" : [ {
         "createdType" : "Wachter",
         "subject" : "Wachter",
-        "initialisations" : [ {
-          "node" : "MemberInit",
+        "assignments" : [ {
+          "node" : "MemberAssignment",
           "member" : "rang",
           "value" : {
             "node" : "Binary",

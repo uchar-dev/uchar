@@ -445,9 +445,9 @@
           {
             "createdType": "Vondst",
             "subject": "Jutter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "taxatie",
                 "value": {
                   "node": "Construct",
@@ -505,9 +505,9 @@
           {
             "createdType": "Vondst",
             "subject": "Jutter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "taxatie",
                 "value": {
                   "node": "Construct",

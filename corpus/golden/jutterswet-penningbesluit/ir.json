@@ -432,9 +432,9 @@
           {
             "createdType": "Penningbesluit",
             "subject": "Jutter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "besluitbedrag",
                 "value": {
                   "node": "ParameterReference",

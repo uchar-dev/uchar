@@ -569,9 +569,9 @@
           {
             "createdType": "Afrekening",
             "subject": "Jutter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "heffing",
                 "value": {
                   "node": "Binary",
@@ -633,7 +633,7 @@
                 "characteristic": false
               },
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "weeggrens",
                 "value": {
                   "node": "Binary",
@@ -695,7 +695,7 @@
                 "characteristic": false
               },
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "afrekendag",
                 "value": {
                   "node": "Aggregation",
@@ -727,7 +727,7 @@
                 "characteristic": false
               },
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "telling",
                 "value": {
                   "node": "Aggregation",
@@ -779,9 +779,9 @@
           {
             "createdType": "Zeebrief",
             "subject": "Jutter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "slotdag",
                 "value": {
                   "node": "Binary",

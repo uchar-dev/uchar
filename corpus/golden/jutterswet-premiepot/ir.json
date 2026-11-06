@@ -329,9 +329,9 @@
           {
             "createdType": "Premiepot",
             "subject": "Haven",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "pot",
                 "value": {
                   "node": "Binary",

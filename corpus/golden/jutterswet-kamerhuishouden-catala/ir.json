@@ -1775,9 +1775,9 @@
           {
             "createdType": "Vangstheffing",
             "subject": "JutterAandeel",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "vangst",
                 "value": {
                   "node": "FieldAccess",
@@ -1800,7 +1800,7 @@
                 "characteristic": false
               },
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "kinderen",
                 "value": {
                   "node": "FieldAccess",

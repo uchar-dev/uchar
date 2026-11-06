@@ -290,7 +290,7 @@ class FilterFaultWitnessTest {
     /** "Een Jutter heeft een melding met telling gelijk aan {@code telling}, indien {@code condition}". */
     static String creation(String count, String condition) {
         return "{\"node\":\"ObjectCreation\",\"name\":\"meld\",\"versions\":[{\"createdType\":\"Melding\",\"subject\":"
-                + "\"Jutter\",\"initialisations\":[{\"node\":\"MemberInit\",\"member\":\"telling\",\"value\":" + count
+                + "\"Jutter\",\"assignments\":[{\"node\":\"MemberAssignment\",\"member\":\"telling\",\"value\":" + count
                 + ",\"characteristic\":false}],\"condition\":" + condition + ",\"validity\":{\"node\":\"Validity\"},"
                 + "\"connectingRole\":" + roleBinding("JutterHeeftMelding", "melding") + "}]}";
     }

@@ -79,7 +79,7 @@
           {
             "createdType": "Insigne",
             "subject": "Jutter",
-            "initialisations": [],
+            "assignments": [],
             "validity": {
               "node": "Validity"
             }

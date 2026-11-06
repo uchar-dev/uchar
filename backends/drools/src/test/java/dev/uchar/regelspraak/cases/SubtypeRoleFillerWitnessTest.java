@@ -193,7 +193,7 @@ class SubtypeRoleFillerWitnessTest {
         ObjectNode ir = golden();
         IrPath.rulesList(ir, "objectCreations").add(JSON.readTree("""
                 {"node":"ObjectCreation","name":"meld elke wrakvondst","versions":[{"createdType":"Melding",
-                 "subject":"Wrakvondst","initialisations":[{"node":"MemberInit","member":"ernst",
+                 "subject":"Wrakvondst","assignments":[{"node":"MemberAssignment","member":"ernst",
                    "value":{"node":"AttributeReference","attribute":"waarde","subjectType":"Wrakvondst",
                             "source":{"snippet":"zijn waarde"}},"characteristic":false}],
                  "validity":{"node":"Validity"},

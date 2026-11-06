@@ -3,7 +3,7 @@ in an object creation carries an `AttributeReference` value whose declaration is
 numeric, where the value of a characteristic must be a boolean-typed
 expression.
 
-    WF-027 FAIL /rules/objectCreations/0/versions/0/initialisations/0:
+    WF-027 FAIL /rules/objectCreations/0/versions/0/assignments/0:
     characteristic initialisation's value must be a boolean-typed expression
 
 Pins the cross-validation flank of the Phase 5c WF-027 relaxation. The relaxed

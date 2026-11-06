@@ -252,9 +252,9 @@
           {
             "createdType": "Rekenkamer",
             "subject": "Jutter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "grondslag",
                 "value": {
                   "node": "AttributeReference",
@@ -267,7 +267,7 @@
                 "characteristic": false
               },
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "overzees",
                 "value": {
                   "node": "AttributeReference",

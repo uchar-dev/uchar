@@ -638,7 +638,7 @@ class ObjectCreationWitnessTest {
      *  links) on a model this backend can otherwise replay whole. */
     private static Path withoutInitialisations() throws Exception {
         var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(REKENKAMER)));
-        IrPath.version(ir, "objectCreations", 0, 0).set("initialisations", JSON.createArrayNode());
+        IrPath.version(ir, "objectCreations", 0, 0).set("assignments", JSON.createArrayNode());
         return write(ir, "zonder-toekenningen");
     }
 
@@ -647,7 +647,7 @@ class ObjectCreationWitnessTest {
      *  moved, or touched. */
     private static Path characteristicValue(String valueJson, String name) throws Exception {
         var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(OVERZEE)));
-        for (JsonNode t : IrPath.version(ir, "objectCreations", 0, 0).get("initialisations"))
+        for (JsonNode t : IrPath.version(ir, "objectCreations", 0, 0).get("assignments"))
             if (t.get("characteristic").asBoolean())
                 ((com.fasterxml.jackson.databind.node.ObjectNode) t).set("value", JSON.readTree(valueJson));
         return write(ir, name);

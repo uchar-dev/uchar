@@ -534,7 +534,7 @@ class SubtypeDialectTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         String c = emitCompact(m);
-        assertTrue(c.contains("\"node\":\"MemberInit\",\"member\":\"betwist\","),
+        assertTrue(c.contains("\"node\":\"MemberAssignment\",\"member\":\"betwist\","),
                 () -> "een geërfd kenmerk hoort als toekenning te binden, niet als fout:\n" + c);
         assertTrue(c.contains("\"characteristic\":true"),
                 () -> "de toekenning hoort als KENMERK te binden (een boolean setter, geen attribuut):\n" + c);

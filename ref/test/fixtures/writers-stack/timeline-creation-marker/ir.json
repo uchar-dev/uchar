@@ -213,9 +213,9 @@
           {
             "createdType": "Vondst",
             "subject": "Jutter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "bergkosten",
                 "value": {
                   "node": "Construct",

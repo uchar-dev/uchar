@@ -80,9 +80,9 @@
           {
             "createdType": "Jutter",
             "subject": "Strandvondst",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "waardering",
                 "value": {
                   "node": "Literal",

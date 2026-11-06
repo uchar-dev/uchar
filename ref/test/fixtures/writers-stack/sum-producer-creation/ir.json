@@ -127,9 +127,9 @@
           {
             "createdType": "Vondst",
             "subject": "Jutter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "opslagkosten",
                 "value": {
                   "node": "Construct",

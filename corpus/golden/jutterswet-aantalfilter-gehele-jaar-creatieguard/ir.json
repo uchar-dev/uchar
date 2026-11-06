@@ -171,9 +171,9 @@
           {
             "createdType": "Wachtbrief",
             "subject": "Kustvak",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "briefbedrag",
                 "value": {
                   "node": "Literal",

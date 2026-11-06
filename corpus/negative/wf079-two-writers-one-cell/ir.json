@@ -238,9 +238,9 @@
           {
             "createdType": "Vangst",
             "subject": "Jutter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "vangstgewicht",
                 "labels": [
                   "najaar"

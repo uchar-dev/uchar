@@ -177,9 +177,9 @@
           {
             "createdType": "Melding",
             "subject": "Jutter",
-            "initialisations": [
+            "assignments": [
               {
-                "node": "MemberInit",
+                "node": "MemberAssignment",
                 "member": "waarde",
                 "value": {
                   "node": "AttributeReference",

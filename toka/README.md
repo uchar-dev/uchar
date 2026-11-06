@@ -357,6 +357,15 @@ stays honest about where it no longer proves toolchain agreement.
   the 420 declarations did not move. The zone carries no rate and no product, so no
   other change was due; nothing was refused. `casus/ir.json` was then re-emitted by
   uchar's frontend, which reproduced the migrated file byte for byte: no divergence.
+- **2026-11-06 — the zone is in the L7 shape of `uchar-ir-v1`.** Executed by the
+  card `20261106-member-assignments.md` in `backlog/`. The members of an object
+  creation are its assignments (IR-SPEC ch. 3.3): `spec/proposals/v1-migratie/m7.py`
+  renamed the key `initialisations` to `assignments` and the node `MemberInit` to
+  `MemberAssignment`, in `casus/ir.json` and in the one slice that carries the
+  creation, `cases/scenario-toka-28-vastgestelde-contingent`, one version and one
+  member each; nothing else changed and nothing was refused. `casus/ir.json` was
+  then re-emitted by uchar's frontend, which reproduced the migrated file byte for
+  byte: no divergence.
 
 ## Lifecycle
 

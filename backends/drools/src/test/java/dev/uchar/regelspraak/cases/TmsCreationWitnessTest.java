@@ -776,14 +776,14 @@ class TmsCreationWitnessTest {
     static String objectCreation(String name, String subject, String fresh, List<String> inits, String condition,
                                 String factType, String role) {
         return "{\"node\":\"ObjectCreation\",\"name\":\"" + name + "\",\"versions\":[{\"createdType\":\"" + fresh
-                + "\",\"subject\":\"" + subject + "\",\"initialisations\":[" + String.join(",", inits) + "]"
+                + "\",\"subject\":\"" + subject + "\",\"assignments\":[" + String.join(",", inits) + "]"
                 + (condition.equals("null") ? "" : ",\"condition\":" + condition)
                 + ",\"validity\":{\"node\":\"Validity\"},\"connectingRole\":" + roleBinding(factType, role) + "}]}";
     }
 
     /** An initialisation of attribute {@code member} of the created object. */
     static String init(String member, String value) {
-        return "{\"node\":\"MemberInit\",\"member\":\"" + member + "\",\"value\":" + value + ",\"characteristic\":false}";
+        return "{\"node\":\"MemberAssignment\",\"member\":\"" + member + "\",\"value\":" + value + ",\"characteristic\":false}";
     }
 
     /** "Een {@code targetRole} van een {@code anchor} is een … van …": a fact creation of one always-valid version over

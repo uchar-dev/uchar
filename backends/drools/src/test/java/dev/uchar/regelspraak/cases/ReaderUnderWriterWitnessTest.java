@@ -498,7 +498,7 @@ class ReaderUnderWriterWitnessTest {
     /** "Een Jutter heeft een &lt;type&gt; met &lt;lid&gt; gelijk aan &lt;waarde&gt; [indien &lt;voorwaarde&gt;]." */
     private static String objectCreation(String name, String type, String member, String value, String condition, String relationLink) {
         return "{\"node\":\"ObjectCreation\",\"name\":\"" + name + "\",\"versions\":[{\"createdType\":\"" + type + "\",\"subject\":"
-                + "\"Jutter\",\"initialisations\":[{\"node\":\"MemberInit\",\"member\":\"" + member + "\",\"value\":" + value
+                + "\"Jutter\",\"assignments\":[{\"node\":\"MemberAssignment\",\"member\":\"" + member + "\",\"value\":" + value
                 + ",\"characteristic\":false}]" + (condition == null ? "" : ",\"condition\":" + condition)
                 + ",\"validity\":{\"node\":\"Validity\"},\"connectingRole\":" + relationLink + "}]}";
     }
