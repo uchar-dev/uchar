@@ -305,3 +305,19 @@ ch. 1.2, `corpus/negative/` en de golden.*
   tekstdeel')." Gate 12 — "Since the same card the analysis passes `rsTekst` the form of a part (its decimals, ch. 1.2)
   and its unit, and DROOLS-368 refuses a part that asks for a unit it does not have." Geen vloer bewoog: alle
   tellingen groeiden.
+
+### Open punten (normvragen)
+
+1. Een literal-deel `«5,50»` schrijft `5,5`: het type van een literal is volgens ch. 2.3 de decimalen van zijn exacte
+   waarde (de frontend annoteert de literal ook met 1 decimaal). ALEF schrijft het lexeem van de bron, `5,50`.
+2. De eenheid wordt met haar afkorting geschreven (`5,50 (EUR)` bij de declaratie `EUR €`), waar het voorbeeld van de
+   eigenaar `(€)` schrijft. De draad kent geen rol "symbool" voor een spelling van een eenheid; een symbool schrijven
+   vraagt een veld op de eenheidsdeclaratie (IR-SPEC ch. 2.5).
+3. Een binder van een gesloten body (een functieparameter, alleen wire-first) draagt de grens van zijn argument
+   (ch. 2.3), niet het gedeclareerde type van de parameter: een parameter van 2 decimalen met een geheel argument
+   schrijft `5`, niet `5,00`.
+
+### Eindrun
+
+`make gates` op `f33ffbf3c`: alle zeventien gates en `after-run` rc=0, red=0, 435 s
+(`out/gates/20261106-202429/summary.txt` in de worktree, log `uchar-dev/werk/text-decimals/logs/gates-final.log`).
