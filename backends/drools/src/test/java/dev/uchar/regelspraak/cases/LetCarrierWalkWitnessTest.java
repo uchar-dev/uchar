@@ -65,9 +65,8 @@ class LetCarrierWalkWitnessTest {
         // which is FALSE). The destructive exec-model branch applied NO restatement there, so it refused the
         // rule rather than compare the raw numbers 500 > 1 and take the DAN branch (1.00, silently wrong). The
         // exec-model branch restates the comparison (RUNTIME-SEMANTICS ch. 2.6) and answers 2.00, consistent,
-        // as ref; clingo answers 1.00, an existing fault of the ASP backend (card
-        // 20261010-clingo-let-binder-vergelijking-over-eenheden). The document and case are those of
-        // TmsLikeRefWitnessTest's let-cross-unit.
+        // as ref and clingo (since card 20261010-clingo-let-binder-vergelijking-over-eenheden). The document and
+        // case are those of TmsLikeRefWitnessTest's let-cross-unit.
         assertNull(playTms(crossUnitModel(), caseOf(inst("B1", "Baan", "\"aanloop\": { \"number\": \"500\" }", ""),
                 valueJson("B1", "uit", "2.00") + ", " + consistent())), "de herrekende vergelijking kiest de ANDERS-tak");
     }

@@ -1,0 +1,30 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Strook",
+        "attributes": {
+          "aanlooplengte": {
+            "number": "500"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "schouwklasse",
+      "value": {
+        "number": "2"
+      }
+    }
+  ]
+}

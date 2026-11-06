@@ -1193,10 +1193,28 @@ let attr_temporal_decl ctx ~otype ~attr =
    composites slip the fence (a hunted silent split). [per_period]: the
    expression is the value of the period arithmetic of ch. 3.4/3.5, where a sum
    over a set is a sum per period and keeps its attribute's unit (§4.6), not the
-   integration of the §7.1 per-element fold. *)
-let rec eff_unit ?(per_period = false) ctx (e : expr) : measure_unit option =
-  let eff_unit ctx e = eff_unit ~per_period ctx e in
+   integration of the §7.1 per-element fold.
+
+   A binder carries the unit of what it binds (ch. 2.6, 10.6): a Let met
+   during the analysis binds its value's unit in [scope] for its body, and a
+   binder bound by the translation reads the unit of the datatype its entry in
+   [ctx.binders] carries, which for a Let is its value's effective unit
+   ([binder_type]). Without these two arms a binder read as unit-free, so a
+   comparison, an additive join, a clamp or a write took its bare number
+   against a value in another unit. *)
+let rec eff_unit ?(per_period = false) ?(scope = []) ctx (e : expr) : measure_unit option =
+  let in_scope scope e = eff_unit ~per_period ~scope ctx e in
+  let eff_unit ctx e = eff_unit ~per_period ~scope ctx e in
   match e with
+  | Binder_ref { ident; _ } -> (
+      match List.assoc_opt (norm ident) scope with
+      | Some u -> u
+      | None -> (
+          match List.assoc_opt (norm ident) ctx.binders with
+          | Some (_, _, _, Some (Number { measure_unit; _ } | Percentage { measure_unit; _ })) -> measure_unit
+          | _ -> None))
+  | Let { binder; value; body; _ } ->
+      in_scope ((norm binder, eff_unit ctx value) :: scope) body
   | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } ->
       attr_unit ctx ~otype:ot ~attr:a
   | Parameter_ref { parameter = Some p; _ } -> (
@@ -1297,6 +1315,16 @@ let rec eff_unit ?(per_period = false) ctx (e : expr) : measure_unit option =
          corpus golden divides by a count over a UNIT-CARRYING source. *)
       None
   | _ -> None
+
+(* the datatype a Let binder carries in [ctx.binders]: its value's static type
+   (ch. 2.10), with the effective unit of the value where [eff_unit] reads one,
+   so that a binder read in [eff_unit] has the unit of the declarations and
+   never that of a composite's annotation *)
+let binder_type ctx (value : expr) : datatype option =
+  match (static_type ctx value, eff_unit ctx value) with
+  | Some (Number n), (Some _ as u) -> Some (Number { n with measure_unit = u })
+  | Some (Percentage p), (Some _ as u) -> Some (Percentage { p with measure_unit = u })
+  | t, _ -> t
 
 let attr_temporal ctx ~otype ~attr = Ir_v0.Checks.attr_temporal (object_type ctx otype) attr
 
@@ -3387,6 +3415,19 @@ let compared_with_factors ctx ~subject ~subject_ot (kl, kr) ((bl, _, _) as l) ((
   in
   (times kl l, times kr r)
 
+(* [compared_with_factors] in a closed body: the fences ride [guard_body] and
+   [witness], as every closed-body fence does; [atoms] bind both terms *)
+let closed_compared_with_factors ctx ~guard_body ~witness (l : expr) (r : expr) atoms lt rt =
+  let kl, kr = comparison_factors ctx l r in
+  let times k t =
+    if k = 1 then t
+    else begin
+      range_guard ctx ~subject:witness ~body:(guard_body @ atoms) [ (t, max_int31 / k) ];
+      Printf.sprintf "(%s*%d)" t k
+    end
+  in
+  (times kl lt, times kr rt)
+
 (* the split money × rate cent encoding (§5/S18(c)), shared verbatim by the
    rule-level Rounding{money×rate} and the closed-body money multiplication (one
    encoding). Rounding a 2-decimal money M by a rate R at scale 10^4 to the cent: the
@@ -4395,7 +4436,7 @@ let bind_let ctx ~subject ~subject_ot ~binder ~value ~body translate_value =
   li.li_va <- va;
   (* the binder's static type is its value's, read in the ENCLOSING scope
      (B13: a binder read carries none of its own) *)
-  let entry = typed_binder (let_binder ctx ~subject ~subject_ot (va, vt, vs)) (static_type ctx value) in
+  let entry = typed_binder (let_binder ctx ~subject ~subject_ot (va, vt, vs)) (binder_type ctx value) in
   li.li_entry <- Some entry;
   ctx.binders <- (norm binder, entry) :: ctx.binders;
   ctx.rule_guard <- ctx.rule_guard @ va;
@@ -10177,7 +10218,7 @@ and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * 
          value can fault. *)
       let va, vt, vs = closed_term ctx ~guard_body ~witness value in
       let saved = ctx.binders in
-      ctx.binders <- (norm binder, ([], vt, vs, static_type ctx value)) :: ctx.binders;
+      ctx.binders <- (norm binder, ([], vt, vs, binder_type ctx value)) :: ctx.binders;
       let branches = body_branches ctx ~guard_body:(guard_body @ va) ~witness body in
       ctx.binders <- saved;
       List.map (fun (g, t, s) -> (va @ g, t, s)) branches
@@ -10296,13 +10337,16 @@ and match_branches ctx ~guard_body ~witness ?pending scrutinee arms =
 and body_condition ctx ~guard_body ~witness (c : condition_expr) : string list * string * string =
   match c with
   | Comparison { op; left_side; right_side; time_period = None; _ } ->
-      let la, lt, ls = closed_term ctx ~guard_body ~witness (req "left" left_side) in
-      let ra, rt, rs = closed_term ctx ~guard_body ~witness (req "right" right_side) in
+      let l = req "left" left_side and r = req "right" right_side in
+      let la, lt, ls = closed_term ctx ~guard_body ~witness l in
+      let ra, rt, rs = closed_term ctx ~guard_body ~witness r in
       (* no numeric_ok ctx stands in front of this arm at all, and a Construct is a
          first-class closed-body term (scale 0): mixed, it divided by zero;
          both-symbolic, it silently ordered constructor terms *)
       let ls = numeric_scale ~what:"a closed-body comparison" ls in
       let rs = numeric_scale ~what:"a closed-body comparison" rs in
+      (* two convertible units restate by the factors of [comparison_factors] *)
+      let lt, rt = closed_compared_with_factors ctx ~guard_body ~witness l r (la @ ra) lt rt in
       let m = max ls rs in
       let sc t s = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
       let lt = sc lt ls and rt = sc rt rs in
@@ -10505,7 +10549,7 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
          here and call-by-need coincides with call-by-value. *)
       let va, vt, vs = closed_term ctx ~guard_body ~witness value in
       let saved = ctx.binders in
-      ctx.binders <- (norm binder, ([], vt, vs, static_type ctx value)) :: ctx.binders;
+      ctx.binders <- (norm binder, ([], vt, vs, binder_type ctx value)) :: ctx.binders;
       let ba, bt, bs = closed_term ctx ~guard_body:(guard_body @ va) ~witness body in
       ctx.binders <- saved;
       (va @ ba, bt, bs)
@@ -10833,12 +10877,18 @@ and value_condition ctx ~subject ~subject_ot (c : condition_expr) : string list 
   | Comparison { op; left_side; right_side; time_period = None; _ } ->
       operand_ok left_side;
       operand_ok right_side;
-      let la, lt, ls = expr_term ctx ~subject ~subject_ot (req "Comparison.left" left_side) in
-      let ra, rt, rs = expr_term ctx ~subject ~subject_ot (req "Comparison.right" right_side) in
+      let l = req "Comparison.left" left_side and r = req "Comparison.right" right_side in
+      let la, lt, ls = expr_term ctx ~subject ~subject_ot l in
+      let ra, rt, rs = expr_term ctx ~subject ~subject_ot r in
       (* [operand_ok] admits a bare BinderRef, whose scale is the binder's own —
          0 for a sum/struct binder; the body_condition sibling *)
       let ls = numeric_scale ~what:"a value-position IfThenElse comparison" ls in
       let rs = numeric_scale ~what:"a value-position IfThenElse comparison" rs in
+      (* two convertible units restate by the factors of [comparison_factors], as
+         in a condition: a binder carries its value's unit ([eff_unit]) *)
+      let (_, lt, _), (_, rt, _) =
+        compared_with_factors ctx ~subject ~subject_ot (comparison_factors ctx l r) (la, lt, ls) (ra, rt, rs)
+      in
       let m = max ls rs in
       let sc t s = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
       let lt = sc lt ls and rt = sc rt rs in

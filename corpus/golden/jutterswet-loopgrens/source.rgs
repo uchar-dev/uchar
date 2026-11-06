@@ -1,0 +1,20 @@
+Eenheidsysteem Afstand
+    de meter (mv: meters) m
+    de kilometer (mv: kilometers) km = 1000 m
+
+Objecttype de Strook (mv: Stroken)
+    de aanlooplengte Numeriek (geheel getal) met eenheid m;
+    de schouwlengte Numeriek (geheel getal) met eenheid m;
+    de looplengte Numeriek (geheel getal) met eenheid m;
+
+Regel schouwlengte van een strook
+    geldig altijd
+        De schouwlengte van een Strook moet berekend worden als de loop, met een minimum van 1 km.
+        Daarbij geldt:
+            de loop is de aanlooplengte van de Strook.
+
+Regel looplengte van een strook
+    geldig altijd
+        De looplengte van een Strook moet berekend worden als de loop plus 1 km.
+        Daarbij geldt:
+            de loop is de aanlooplengte van de Strook.

@@ -67,3 +67,35 @@ kaartverplaatsing.
   alleen te zeggen dat clingo nu 2.00 geeft.
 - `20261009-clingo-let-binder-tussen-onderwerpen`: dezelfde backend en dezelfde knoop (`Let`), een ander gebrek; de
   twee kunnen in één sessie.
+
+## Result
+
+Gebouwd 2026-11-06 op branch `card/allocation-letbinder-dates`, in één commit met de golden van
+`20261009-clingo-let-binder-tussen-onderwerpen` erna. Logs onder `werk/allocation-letbinder-dates/logs/`.
+
+- (a) Twee goldens, eigen Jutterswet-casus (een Strook met een aanlooplengte in m, "1 km" ertegenover):
+  `corpus/golden/jutterswet-loopgrens` met `source.rgs` (de binder onder een begrenzing "met een minimum van 1 km" en
+  in een optelling "plus 1 km"; case 1, 500 m: de kale lezing kiest de andere grens, 500 in plaats van 1000; case 2,
+  1500 m: beide lezingen kiezen dezelfde, 1500) en `corpus/golden/jutterswet-loopgrens-keuze` zonder bron (de vorm
+  van de kaart, "als de loop groter is dan 1 km dan 1 anders 2"; de frontend schrijft geen `IfThenElse`, dus de
+  waarde is met de hand in het document van de frontend gezet; case 1 500 m → 2, case 2 2000 m → 1, beide lezingen 1).
+- (b) Rood eerst, met clingo van main `17f956d92` (`k2-red-main.log`, `k2-golden-loopgrens.log`,
+  `k2-golden-keuze.log`): schouwlengte 500 (verwacht 1000), looplengte 501 en 1501 (verwacht 1500 en 2500),
+  schouwklasse 1 (verwacht 2), `let-cross-unit` uit 1.00 (verwacht 2.00). Groen: ref ≡ clingo ≡ beide Drools-takken
+  op beide goldens. Drie oorzaken, één reparatie in `backends/clingo/lib/translate.ml` en `normalise.ml`:
+  `eff_unit` kreeg een arm voor `BinderRef` (de eenheid van de binder, uit de scope van een `Let` of uit het
+  datatype in `ctx.binders`, dat voor een `Let` de effectieve eenheid van de waarde draagt: `binder_type`) en voor
+  `Let`; de voorwaarde van een `IfThenElse` (op regelniveau en in een gesloten lichaam) vermenigvuldigde nooit met de
+  factoren van `comparison_factors` en doet dat nu; de normalisatiestap daalt in de waarde en het lichaam van een
+  `Let`, zodat "1 km" onder een binder naar 1000 m herschreven wordt. Nagegaan: de optelling (was stil 501, nu goed),
+  de begrenzing (was stil 500, nu goed), de schrijfgrens (een binder in m naar een doel in km schreef stil 500 km,
+  nu luid geweigerd zoals de vorm zonder binder: check in `backends/clingo/test`), een product van een binder met
+  eenheid (werd geweigerd als verborgen eenheid, speelt nu: check), de vergelijking in een vouwfilter en in de test
+  van een kwantorvouw met `greater` en `equal` (was stil fout: `jutterswet-grens-per-jutter`, regels "lange" en
+  "passende vondsten"). Het minimum/maximum van opgesomde waarden weigert clingo al luid (CLINGO-008). Een binder in
+  een kwantorvouw in een regelvoorwaarde bestaat niet: een `Let` omspant geen voorwaarde, en een
+  `IfThenElse`-voorwaarde mag geen vouw lezen (WF-077). De javadoc van `TmsLikeRefWitnessTest` en
+  `LetCarrierWalkWitnessTest` zegt nu dat clingo 2.00 geeft; `ASP-TRANSLATION.md` (S6) zegt dat een binder de eenheid
+  van zijn waarde draagt.
+- (c) Gate 12: beide goldens `PLAYED 2` op beide takken; `EXPECTED_PLAYED` 348 → 350 met regel. Gerichte gates
+  groen (`logs/k23b/summary.txt`).

@@ -50,8 +50,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * interpreter's answer, where the witness's own case expected it present; clingo declines that bound.
  * <li>{@code let-cross-unit} ({@code LetCarrierWalkWitnessTest}): "Let a = aanloop in (als a groter dan 1 km dan
  * 1,00 anders 2,00)" with an aanloop of 500 m: 2.00, the comparison restated (ch. 2.6). The destructive branch refused
- * the rule. Clingo answers 1.00, an existing fault of the ASP backend: card
- * {@code 20261010-clingo-let-binder-vergelijking-over-eenheden}.
+ * the rule. Clingo answers 2.00 too, since card {@code 20261010-clingo-let-binder-vergelijking-over-eenheden}
+ * (golden {@code jutterswet-loopgrens-keuze}, the same form).
  * <li>{@code literal-dividend-1} and {@code -2} ({@code LetReportSiteWitnessTest}): "100,00 gedeeld door restpost" with
  * the restpost absent, with and without a Let: uit leeg and the §9.5 deposit, inconsistent. The destructive branch made
  * no deposit for a literal dividend and answered consistent.

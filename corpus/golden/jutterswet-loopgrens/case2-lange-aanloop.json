@@ -1,0 +1,38 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Strook",
+        "attributes": {
+          "aanlooplengte": {
+            "number": "1500"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "schouwlengte",
+      "value": {
+        "number": "1500"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "looplengte",
+      "value": {
+        "number": "2500"
+      }
+    }
+  ]
+}

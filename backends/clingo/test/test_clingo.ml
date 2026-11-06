@@ -16809,6 +16809,21 @@ let () =
     ~ir:(doc [ ("a", "m"); ("b", "cm"); ("target", "m2") ] (binary "times" (read "a") (read "b")))
     ~case_text:(factors_case [ ("a", "2"); ("b", "3") ] None)
     ~needle:"the factor 1/100 from the right operand into the left unit is no whole number";
+  (* a Let binder carries the unit of its value (ch. 2.6, 10.6): at a write and
+     under a product it reads as that unit, never as a bare number *)
+  let let_of value body =
+    Printf.sprintf
+      {|{ "node": "Let", "type": { "node": "Number", "whole": false, "decimals": 2, "sign": "unspecified" }, "binder": "x", "value": %s, "body": %s, "source": { "snippet": "x" } }|}
+      value body
+  in
+  let x = {|{ "node": "BinderRef", "name": "x", "source": { "snippet": "x" } }|} in
+  faults_with ~name:"a Let binder in cm written to an m target is refused at the write"
+    ~ir:(doc [ ("a", "cm"); ("target", "m") ] (let_of (read "a") x))
+    ~case_text:(factors_case [ ("a", "250") ] None)
+    ~needle:{|non-identical units under the write to "target"|};
+  both_answer ~name:"a Let binder in m times m in m^2 translates with factor 1"
+    ~ir:(doc [ ("a", "m"); ("b", "m"); ("target", "m2") ] (let_of (read "a") (binary "times" x (read "b"))))
+    ~case_text:(factors_case [ ("a", "2"); ("b", "3") ] (Some "6.00"));
   both_answer ~name:"€/dg × wk multiplies the right operand by 7"
     ~ir:(doc [ ("a", "eur_per_dg"); ("b", "wk"); ("target", "eur") ] (binary "times" (read "a") (read "b")))
     ~case_text:(factors_case [ ("a", "30"); ("b", "1") ] (Some "210.00"));

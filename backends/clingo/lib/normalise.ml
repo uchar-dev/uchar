@@ -243,12 +243,14 @@ let rec has_restatable ~tu (e : expr) : bool =
   | Temporal_read { base_expr; _ } -> has_restatable ~tu base_expr
   | Function_call { kind = Sum_function | Total | Minimum | Maximum | First | Last; call_arguments; _ } ->
       List.exists (has_restatable ~tu) call_arguments
+  | Let { value; body; _ } -> has_restatable ~tu value || has_restatable ~tu body
   | _ -> false
 
 (* walk a value expression, restating every table literal that sits in a
    UNIT-RESTATING position — the additive family, the clamp bounds and the
    ordering folds, exactly the [Translate.units_identical_ok] sites this pass
-   lifts (mirroring [eff_unit]'s unit-carrying forms). Multiplicative/division
+   lifts (mirroring [eff_unit]'s unit-carrying forms), and the value and the
+   body of a Let, through which [eff_unit] reads the unit of a binder. Multiplicative/division
    positions are deliberately NOT descended: they demand a unit-FREE operand
    (or, for percentageOf, pure-%), which restating cannot satisfy, so they
    keep the existing refusal. *)
@@ -267,6 +269,11 @@ let rec norm_expr ~tu ~to_finest (e : expr) : expr =
   | Temporal_read ({ base_expr; _ } as t) -> Temporal_read { t with base_expr = recurse base_expr }
   | Function_call ({ kind = Sum_function | Total | Minimum | Maximum | First | Last; call_arguments; _ } as f) ->
       Function_call { f with call_arguments = List.map recurse call_arguments }
+  | Let ({ value; body; _ } as l) ->
+      (* a binder reads as its value's unit ([Translate.eff_unit]), so a
+         literal restated in the value reaches every read in the body restated
+         too, and the body's own restating positions are the rule's *)
+      Let { l with value = recurse value; body = recurse body }
   | _ -> e
 
 (* normalise one write rule when its numeric target is the finest unit of its

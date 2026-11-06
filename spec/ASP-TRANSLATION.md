@@ -628,7 +628,16 @@ division: `eff_unit` derives the unit of rules 2 and 3, and `Units.times` and
   fence: `cm × m` in `m^2` is refused at the write.
 
 The unit is derived recursively from declarations (`eff_unit`), never
-read from a node's static annotation. Golden `jutterswet-sleeprest`
+read from a node's static annotation. A Let binder carries the unit of
+its value (RS ch. 2.6, 10.6): `eff_unit` of a `Let` is that of its body
+with the binder bound to its value's unit, and a binder the translation
+has bound reads the unit its entry carries (`binder_type`: the value's
+effective unit). The comparison in the condition of an `IfThenElse`, at
+rule level and in a closed body, restates by the same factors as any
+other comparison. Goldens `jutterswet-loopgrens` (a binder under a
+clamp and an addition with a `km` literal) and
+`jutterswet-loopgrens-keuze` (a binder against `1 km` in the condition
+of an `IfThenElse`) pin it. Golden `jutterswet-sleeprest`
 pins the admitted factor-free shape (a unitless factor × a unit-carrying
 attribute, consumed by a unitless-adopting restating position,
 hand-computed absolute values).
@@ -651,8 +660,8 @@ clingo leg:
   factor, its unit annotation set to the finest. The additive join then reads
   one identical unit and translates as raw integer arithmetic (witnessed:
   `jutterswet-sleepbaan`, `jutterswet-vergunningsduur`); the descent also
-  covers clamp bounds and ordering folds — code-covered and fault-safe but
-  corpus-unwitnessed as yet, a registered hunt-wave witness. Conditions and
+  covers clamp bounds and ordering folds, and the value and the body of a
+  `Let` (witness `jutterswet-loopgrens`). Conditions and
   comparison positions are NEVER descended: a mixed-unit comparison multiplies
   both sides instead. The write boundary writes the finest unit into a finest
   target.

@@ -1577,7 +1577,10 @@ EXPECTED_CHANNEL=(
 # 348 since the card verdeling-lege-pot-en-negatief-gewicht (2026-11-06): the golden
 # jutterswet-lege-pot-en-negatief-gewicht, an empty pot in equal shares and proportional and a negative proportional
 # weight (RUNTIME-SEMANTICS ch. 4.4, the two v1 decisions), with PLAYED 2 on both branches.
-EXPECTED_PLAYED=348
+# 350 since the card clingo-let-binder-vergelijking-over-eenheden (2026-11-06): the goldens jutterswet-loopgrens
+# (PLAYED 2), a Let binder under a clamp and an addition with a value in another unit, and jutterswet-loopgrens-keuze
+# (PLAYED 2), a Let binder compared with a value in another unit in the condition of an IfThenElse.
+EXPECTED_PLAYED=350
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
