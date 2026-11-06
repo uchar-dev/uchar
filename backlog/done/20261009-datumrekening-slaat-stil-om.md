@@ -136,3 +136,8 @@ Voorgestelde rijtekst voor CONSTRUCTS (datumrekening), door de hoofdsessie te la
 het bereik van zijn middernacht, epochdagen −53 375 995 583 tot en met 53 375 995 583 (ch. 3.8, besluit
 2026-10-09); daarbuiten EF-007 in ref en Drools; clingo houdt de dagnummers tot 5000000-12-31 en weigert daarbuiten
 als limiet (CLINGO-001, -029, -034, -037)."
+
+### Landing (hoofdsessie, 2026-11-06)
+
+Geland op main na `make gates` op de bouwerstand (`319628d89`, 17 van 17 groen, 433 s; na de rebase op main alleen
+backlog en CONSTRUCTS anders). De voorgestelde CONSTRUCTS-tekst staat in de landingscommit.

@@ -99,3 +99,8 @@ Gebouwd 2026-11-06 op branch `card/allocation-letbinder-dates`, commit `3ff4fced
   van zijn waarde draagt.
 - (c) Gate 12: beide goldens `PLAYED 2` op beide takken; `EXPECTED_PLAYED` 348 → 350 met regel. Gerichte gates
   groen (`logs/k23b/summary.txt`).
+
+### Landing (hoofdsessie, 2026-11-06)
+
+Geland op main na `make gates` op de bouwerstand (`319628d89`, 17 van 17 groen, 433 s; na de rebase op main alleen
+backlog en CONSTRUCTS anders). De voorgestelde CONSTRUCTS-tekst staat in de landingscommit.

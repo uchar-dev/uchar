@@ -71,3 +71,10 @@ Open punt (normvraag, ch. 5.12 en 3.9a): mag de lezing van een niet-bereikt lid 
 een omsluitende `Let` lezen die de evaluatie al forceerde (de waarde bestaat, call-by-need), of blijft dat
 geweigerd zoals nu ook als de binder nog niet geforceerd is? De spec zegt alleen dat de waarde van een `Let` waarvan
 geen lezing de binder forceert, niet bereikt is.
+
+### Landing (hoofdsessie, 2026-11-06)
+
+Geland op main na `make gates` op de bouwerstand (`319628d89`, 17 van 17 groen, 433 s; na de rebase op main
+`4b5c280bf`, alleen backlog en CONSTRUCTS anders). Het open punt (mag de lezing in een niet-bereikt lid een al
+geforceerde binder lezen?) ging naar een Fable-advies (`uchar-dev/werk/norm-advice-2026-11-06/binder-reading/`); het
+voorlopige besluit bouwt de volgende OCaml-bouwer, samen met `clingo-creatievoorwaarde-op-de-kring`.

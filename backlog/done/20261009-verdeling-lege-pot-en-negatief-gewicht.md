@@ -79,3 +79,8 @@ Gebouwd 2026-11-06 op branch `card/allocation-letbinder-dates` (van main `17f956
 Voorgestelde rijtekst voor CONSTRUCTS (rij 17, verdeling), door de hoofdsessie te landen: "Lege pot: geen verdeling
 in elke methode (v1, ch. 4.4; ref, clingo en Drools sinds 2026-11-06). Negatief gewicht naar rato: telt als 0 + §9.5
 (EF-038), golden `jutterswet-lege-pot-en-negatief-gewicht`."
+
+### Landing (hoofdsessie, 2026-11-06)
+
+Geland op main na `make gates` op de bouwerstand (`319628d89`, 17 van 17 groen, 433 s; na de rebase op main alleen
+backlog en CONSTRUCTS anders). De voorgestelde CONSTRUCTS-tekst staat in de landingscommit.

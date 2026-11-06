@@ -40,8 +40,8 @@ vraag A.*
 
 Route a1. De generatielezing van RUNTIME-SEMANTICS ch. 5.5 is de norm voor de voorwaarde van een creatie, en de
 verifier verandert niet: zo'n vergelijking houdt haar positieve of stratum-strikte soort (WF-046 krijgt geen nieuwe
-negatieve kant). Clingo weigert luid en bij naam (de volgende vrije code van `backends/clingo/codes.tsv`, op
-2026-11-06 `CLINGO-037`, soort `refusal`, sleutel `creation-condition-reads-on-a-cycle`, parameters `creation`, `node`,
+negatieve kant). Clingo weigert luid en bij naam (de volgende vrije code van `backends/clingo/codes.tsv`, na de
+datumkaart van 2026-11-06 `CLINGO-038`, soort `refusal`, sleutel `creation-condition-reads-on-a-cycle`, parameters `creation`, `node`,
 `writer`) de voorwaarde van een objectcreatie of feitcreatie die een knoop leest die een latere generatie van het eigen
 stratum nog kan veranderen: dezelfde knopen en schrijvers als bij een toekenning (`refuse_initialisation_reads_on_a_cycle`
 in `backends/clingo/lib/translate.ml`, met `writers`, `reached`, `on_the_cycle` en `in_the_stratum`, nu over
