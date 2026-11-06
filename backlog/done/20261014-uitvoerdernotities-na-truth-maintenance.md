@@ -119,3 +119,8 @@ op beide takken, JUnit 1880).
 **Rebase op main `bc3249090` (2026-11-06).** Twee conflicten in de spec. IR-SPEC ch. 5.5: main had de zin over de
 ASP-backend verbreed tot twee vormen (lidtoekenning en creatievoorwaarde); die zin van main staat, de zin "Its instance
 is `backends/drools`: …" gaat zoals in deze kaart naar de cursieve geschiedenis. RUNTIME-SEMANTICS ch. 6.1: zie hierboven.
+
+### Landing (hoofdsessie, 2026-11-06)
+
+Geland op main na `make gates` op `94d97e099` (17 van 17 groen, 465 s) en, na de rebase op `bc3249090`, gate 12 en
+gate 1 groen op `7ba466f5a`; de volledige set draait de hoofdsessie op main na de laatste landing van de dag.

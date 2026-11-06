@@ -91,3 +91,8 @@ van een tweede relatie (Post–Wachter) in de IR, met dezelfde verwachte zin.
 2. Besluit van de hoofdsessie: IR-SPEC ch. 2.1 zegt nu in één zin dat "case-insensitive" alleen A–Z vouwt, zoals ref,
    de verifier, clingo en de caselezer vergelijken; de frontend mag in de bron ruimer vouwen, omdat hij de gedeclareerde
    spelling op de draad schrijft (eigen commit, voorstel; gate 1 groen, `logs/punt2-gate1.log`).
+
+### Landing (hoofdsessie, 2026-11-06)
+
+Geland op main na `make gates` op `94d97e099` (17 van 17 groen, 465 s) en, na de rebase op `bc3249090`, gate 12 en
+gate 1 groen op `7ba466f5a`; de volledige set draait de hoofdsessie op main na de laatste landing van de dag.

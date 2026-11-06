@@ -95,3 +95,8 @@ gespeeld op beide takken, JUnit 1880. Gate 1 groen.
 
 **Voor de distributie (pin-bump).** Bean-eigenschappen van leden met een cijfer vooraan of een cijferteken heten
 anders (`x3eLid`, `m2`); een document met zo'n lid compileerde voorheen niet, dus er verschuift geen werkende naam.
+
+### Landing (hoofdsessie, 2026-11-06)
+
+Geland op main na `make gates` op `94d97e099` (17 van 17 groen, 465 s) en, na de rebase op `bc3249090`, gate 12 en
+gate 1 groen op `7ba466f5a`; de volledige set draait de hoofdsessie op main na de laatste landing van de dag.

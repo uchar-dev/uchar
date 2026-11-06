@@ -66,3 +66,8 @@ Een golden die een parallelle branch toevoegt (de clingo-bouwer) faalt na de reb
 **Rebase op main `bc3249090` (2026-11-06).** De pins opnieuw geschreven met de aanroep hierboven: twee nieuwe,
 `jutterswet-keurquotient.drl` en `jutterswet-macht-van-nul.drl`, en geen bestaande tekst veranderd (357 pins;
 `logs/rebase-pins.log`). Gate 12 daarna groen (`logs/rebase-gate12.log`: 355 gespeeld op beide takken, JUnit 1882), gate 1 groen.
+
+### Landing (hoofdsessie, 2026-11-06)
+
+Geland op main na `make gates` op `94d97e099` (17 van 17 groen, 465 s) en, na de rebase op `bc3249090`, gate 12 en
+gate 1 groen op `7ba466f5a`; de volledige set draait de hoofdsessie op main na de laatste landing van de dag.
