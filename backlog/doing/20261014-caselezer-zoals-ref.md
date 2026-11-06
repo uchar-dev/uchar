@@ -85,10 +85,9 @@ niet-gedeclareerde sleutel `buur` als getuige van DROOLS-049. Zo'n sleutel is nu
 `a_key_that_names_no_declared_role_is_a_defect_of_the_case`); de rij van DROOLS-049 krijgt een gedeclareerde rol `buur`
 van een tweede relatie (Post–Wachter) in de IR, met dezelfde verwachte zin.
 
-**Open punten (normvragen).**
-1. De weigeringen van de caselezer (dubbel label, een naam die geen declaratie is) hebben geen EF-code; ref geeft ze als
-   laadfout zonder code. Een rode case kan pas als ch. 5.7b ze een soort op het kanaal `case input` geeft en ref
-   (en daarmee clingo) de code meegeeft; dat raakt `ref/` en RUNTIME-SEMANTICS, buiten het mandaat van deze kaart.
-2. IR-SPEC ch. 2.1 zegt "Name matching is case-insensitive" zonder het vouwen vast te leggen. Ref, de verifier, clingo
-   en nu de Drools-caselezer vouwen alleen A–Z (`İŞ` is niet `İş`); het resolvermodel van de frontend
-   (`RegelSpraakModel`, `equalsIgnoreCase`) vouwt breder.
+**Normvragen, afgehandeld na de landingsronde van de hoofdsessie.**
+1. Een EF-code voor de twee weigeringen van de caselezer (dubbel label, een naam die geen declaratie is), zodat gate 8
+   ze kan pinnen: de hoofdsessie gaf deze vraag door aan een volgende bouwer.
+2. Besluit van de hoofdsessie: IR-SPEC ch. 2.1 zegt nu in één zin dat "case-insensitive" alleen A–Z vouwt, zoals ref,
+   de verifier, clingo en de caselezer vergelijken; de frontend mag in de bron ruimer vouwen, omdat hij de gedeclareerde
+   spelling op de draad schrijft (eigen commit, voorstel; gate 1 groen, `logs/punt2-gate1.log`).

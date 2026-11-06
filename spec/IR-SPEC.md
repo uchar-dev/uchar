@@ -295,7 +295,11 @@ explicit (WF-001…WF-003).
 
 Declared names are carried verbatim (whitespace-collapsed, case
 preserved). Name *matching* is case-insensitive: the source language
-declares names not to be case-distinguishing (§13.2.30). The same match
+declares names not to be case-distinguishing (§13.2.30). Case-insensitive
+folds A–Z to a–z and no other letter, as the reference interpreter, the
+verifier, the ASP backend and the Drools case reader compare (`İŞ` is not
+`İş`); a frontend may fold more widely in the source, since it writes the
+declared spelling on the wire. The same match
 holds where a rule compares two datatypes whole (WF-049, WF-061,
 WF-064, WF-066 to WF-070, WF-072 to WF-074, WF-076): every name the
 datatype carries — its domain, an enumeration value, a constructor, a
