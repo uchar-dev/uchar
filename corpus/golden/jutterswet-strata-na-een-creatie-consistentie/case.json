@@ -1,0 +1,40 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "H1",
+        "objectType": "Haven",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "H1",
+      "characteristic": "open"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "H1",
+      "characteristic": "gesloten"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "H1",
+      "attribute": "postwaarde",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "controle post"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+Objecttype de Haven (mv: Havens)
+    de y Numeriek (geheel getal);
+    de postwaarde Numeriek (geheel getal);
+    is gesloten kenmerk (bijvoeglijk);
+    is open kenmerk (bijvoeglijk);
+
+Objecttype de Post (mv: Posten)
+    het nummer Numeriek (geheel getal);
+    de a Numeriek (geheel getal);
+
+Feittype havenpost
+    de haven Haven
+    de post Post
+Eén haven heeft één post
+
+Regel controle post
+    geldig altijd
+        De a van een Post moet kleiner zijn dan 5.
+
+Regel y van een haven
+    geldig altijd
+        De y van een Haven moet gesteld worden op 1.
+
+Regel a van een post
+    geldig altijd
+        De a van een Post moet gesteld worden op 5.
+
+Regel gesloten haven
+    geldig altijd
+        Een Haven is gesloten
+        indien zijn y groter is dan 1.
+
+Regel open haven
+    geldig altijd
+        Een Haven is open
+        indien hij niet gesloten is.
+
+Regel postwaarde van een haven
+    geldig altijd
+        De postwaarde van een Haven moet berekend worden als de a van zijn post.
+
+Regel post voor een open haven
+    geldig altijd
+        Een Haven heeft een Post met nummer gelijk aan 1
+        indien hij open is.

@@ -120,3 +120,29 @@ De eindlens van die kaart wijst op twee plekken in deze kaart (gelezen, niet gem
 - Een `source.rgs`-versie krijgt wel een binding, omdat de rol `post` heet zoals het type `Post`.
 
 Bij het oppakken opnieuw meten en (c) aanscherpen.
+
+## Result
+
+Gebouwd op branch `card/drools-frontend-cleanup` (opruimronde 2026-11-06). Logs onder
+`uchar-dev/werk/java-cleanup/logs/`, proefbestanden onder `uchar-dev/werk/java-cleanup/probe/k4/`.
+
+- **(a)** Twee goldens, eigen Jutterswet-materiaal met `source.rgs`, `ir.json` (uit de frontend), `case.json` en
+  `NOTE.md`:
+  - `corpus/golden/jutterswet-strata-na-een-creatie`: de lezer "gemarkeerde post" staat vóór de schrijver "a van een
+    post"; de case pint H1 open, zijn `postwaarde` 5 (de `a` van de ene Post) en H1 niet bewaakt.
+  - `corpus/golden/jutterswet-strata-na-een-creatie-consistentie`: de consistentie "controle post" in een lager
+    stratum dan de creatie; de case pint H1 open en niet gesloten, `postwaarde` 5 en het feit van "controle post"
+    (zonder label: een gemaakt object heeft geen case-label, het schema laat het label daar weg).
+  De bron kent geen objectcreatie zonder toekenningen (de grammatica eist een `gelijk aan`), dus de creatie zet een
+  eigen lid `nummer` op 1; `a` blijft van de rekenregel, zodat de lezer de tussenstand kan zien. De binding loopt via
+  de rol `post` (`connectingRole`), zoals de kaart voorzag. De voorbeelden in `ref/test/` voor beide volgordes
+  bestonden al (`WV-6.3-na-een-creatie`, `WV-6.3-consistentie-na-een-creatie`, elk in twee volgordes).
+- **(b) rood en groen.** Ref van vóór de generatielus (`b5a93a659`, de documenten op zijn draad: `initialisations`
+  i.p.v. `assignments`) geeft precies de fouten van de kaart: `MISMATCH: H1 carries characteristic "bewaakt",
+  expected absent` en `MISMATCH: expected inconsistent (a channel fact from rule "controle post"), but the channel
+  carries: (empty)` (`k4-red-oldref.log`). Ref van deze branch: PASS op beide. Verifier, clingo en beide
+  Drools-takken: PASS/PLAYED 1; de lezingen van beide takken zijn gelijk aan de trace van ref. Geen bestaande
+  verwachting veranderde.
+- **(c)** Gates 2, 4, 5, 6, 7, 8 en 12 groen (`k4-gate*.log`); gate 12 speelt 352, `EXPECTED_PLAYED` 350 → 352 met
+  een commentaarregel. De zin over de weigering van de tak met truth maintenance uit de meettabel bestaat niet meer:
+  beide takken spelen de vorm.

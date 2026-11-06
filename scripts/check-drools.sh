@@ -1581,7 +1581,10 @@ EXPECTED_CHANNEL=(
 # 350 since the card clingo-let-binder-vergelijking-over-eenheden (2026-11-06): the goldens jutterswet-loopgrens
 # (PLAYED 2), a Let binder under a clamp and an addition with a value in another unit, and jutterswet-loopgrens-keuze
 # (PLAYED 2), a Let binder compared with a value in another unit in the condition of an IfThenElse.
-EXPECTED_PLAYED=350
+# 352 since the card ref-strata-na-een-creatie (2026-11-06): the goldens jutterswet-strata-na-een-creatie and
+# jutterswet-strata-na-een-creatie-consistentie (PLAYED 1 each), the lower strata at rest over a made object before a
+# reader of a higher stratum, and a consistency of a lower stratum checked again over it (ch. 6.3).
+EXPECTED_PLAYED=352
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
