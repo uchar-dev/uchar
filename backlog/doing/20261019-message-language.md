@@ -200,8 +200,7 @@ frontendbouwer (`werk/frontend-residue/k2/grep-dutch-exceptions.py`, minstens tw
 op `1fd926908`, 0 op de branch.
 
 **Acceptatie 2 en 4.** `scripts/check-drools-codes.sh` houdt register, catalogi en plekken bij elkaar zoals het dat al
-deed (367 codes; de vloeren 289, 325 en 49 bleven staan, groei vraagt geen ophoging); het script is niet gewijzigd.
-De Nederlandse entries van de nieuwe codes zijn letterlijk de oude teksten, dus de suite onder `nl` pint ze zoals
+deed (367 codes; de vloeren 289, 325 en 49 bleven staan, groei vraagt geen ophoging). De Nederlandse entries van de nieuwe codes zijn letterlijk de oude teksten, dus de suite onder `nl` pint ze zoals
 voorheen. 16 testbestanden volgen mechanisch op de Engels gemaakte interne teksten (alleen stringliterals veranderden;
 gecontroleerd: de code zonder literals is gelijk aan `HEAD`). De DRL-pins van 41 goldens zijn opnieuw geschreven
 (`DrlTextPinWitnessTest` met `-Duchar.drlpin`): alleen de regels `ComputeHelpers.contractBreach("…")` veranderden,
@@ -215,7 +214,21 @@ met als Nederlandse entry de tekst van die landing.
 
 **Gate set.** Na de rebase `scripts/check-drools.sh` groen (JUnit 1891, played 362 op beide takken,
 `logs/gate12-1.log`). `make gates` op `0c86327de`: red=0, alle zeventien gates en `after-run` rc=0, 454 s
-(`out/gates/20261106-175746/summary.txt`, `logs/gates-final.log`). Geen vloer of pin van een gate bewoog; `CLAUDE.md`
-en `scripts/check-drools-codes.sh` zijn niet gewijzigd (geen feit van gate 12 veranderde).
+(`out/gates/20261106-175746/summary.txt`, `logs/gates-final.log`). Geen vloer of pin van een gate bewoog.
+
+**Een melding in één taal, ook in `messages-drools.nl.tsv` (vraag van de hoofdsessie vóór de landing).** Besluit 3 laat
+Engelse entries in de Nederlandse catalogus toe, geen gemengde. `scripts/check-drools-codes.sh` houdt dat nu vast zoals
+`check-rgs-codes.sh` het voor de frontend doet: een Nederlandse entry die `SAME_IN_BOTH` niet noemt, draagt buiten haar
+plaatsen en citaten geen Engels functiewoord (dezelfde woordenlijst), tenzij `ENGLISH_EXCEPTIONS` entry en woord met
+reden noemt; een verouderde regel van die lijst faalt. Rood op de catalogus van `6e275b15d`: zeven treffers in drie
+entries (`logs/k3-red-drools-codes.log`): DROOLS-029 begon met de Engelse aanloop "form not carried by the v0 Drools
+backend:" voor een Nederlandse zin, en DROOLS-361 en -362 (de zinnen van `RoleCollision`) zeiden "to-one". Die drie zijn
+nu Nederlands ("vorm niet gedragen door de v0-Drools-backend:", zoals DROOLS-001; "enkelvoudige rol", de term waarnaast
+de catalogus "meervoudig" gebruikt). `ENGLISH_EXCEPTIONS` noemt twee regels, DROOLS-167 en -257: hun "(a)" is de
+clausule van WF-110 en WF-108, geen lidwoord. Een verouderde regel faalt (`logs/k3-stale-probe.log`, een tijdelijke kopie
+van het script met een bedachte regel). Geen test pinde de drie oude teksten; ook `RoleCollisionHttpTest` van de distributie
+eist van die zin alleen de rolnaam en "WF-013". `CLAUDE.md` gate 12 kreeg één zin over de toets. Daarna
+`scripts/check-drools.sh` groen (JUnit 1891, played 362 op beide takken, `logs/gate12-2.log`); de suite liet niets anders
+zien dan tekst en de frontend is niet geraakt, dus geen nieuwe `make gates`.
 
 Open punten: geen normvraag.

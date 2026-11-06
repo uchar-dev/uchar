@@ -575,7 +575,10 @@ missing line makes `make gates` exit non-zero. Current gates:
     with the reason: the sentences of the fault kinds that the runtime writes
     and `ComputeFault` reads back (EF-003, EF-007..012, EF-019, EF-032), the
     29 sentences left English at the card `message-catalogues` and the names
-    of the backend's parts (floor `EXPECTED_MIN_DROOLS_SAME_IN_BOTH=49`). The
+    of the backend's parts (floor `EXPECTED_MIN_DROOLS_SAME_IN_BOTH=49`); a
+    Dutch entry that `SAME_IN_BOTH` does not list carries no English function
+    word unless `ENGLISH_EXCEPTIONS` lists entry and word with the reason, and
+    both lists fail when stale. The
     Drools backend renders English by default; its own suite runs under
     `uchar.messages.locale=nl` (`backends/drools/pom.xml`). Since 2026-09-06 an expected-channel floor IN THE SCRIPT pins
     the played channel itself: every NON-played golden is listed by name

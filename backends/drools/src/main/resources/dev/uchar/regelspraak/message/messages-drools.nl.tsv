@@ -28,7 +28,7 @@ DROOLS-027	vorm niet gedragen door de v0-Drools-backend: Kwantorvouw.drempel (ee
 DROOLS-027.and-no-threshold	 en geen drempel
 DROOLS-027.and-one	 en één
 DROOLS-028	form not carried by the v0 Drools backend: Predicate.operand (a whole-period leeg/gevuld test over the parameter '{parameter}' is not executed: the fold reads the timeline of an attribute)
-DROOLS-029	form not carried by the v0 Drools backend: RuleVersion.value (de kenmerktoekenning '{rule}' kent het kenmerk '{characteristic}' {value} toe; WF-022 eist de booleaanse constante waar, en een negatief besluit over een kenmerk bestaat alleen in een defaultsgroep)
+DROOLS-029	vorm niet gedragen door de v0-Drools-backend: RuleVersion.value (de kenmerktoekenning '{rule}' kent het kenmerk '{characteristic}' {value} toe; WF-022 eist de booleaanse constante waar, en een negatief besluit over een kenmerk bestaat alleen in een defaultsgroep)
 DROOLS-029.node	een {kind}
 DROOLS-030	granular (timeline) parameter '{parameter}' is not carried by the v0 backend
 DROOLS-031	{site}: the declared grid is {count} {granularity} units, a multi-period grid, which carries no operation, a case input included (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as a defect of the case
@@ -419,8 +419,8 @@ DROOLS-360.listed-fold-operand	een §5.8.3 operand van een gelijste vouw
 DROOLS-360.empty-fallback	een §5.8.2 terugvalwaarde
 DROOLS-360.timeline-bound	een §8.2 tijdlijngrens
 DROOLS-360.comparison	een §5.1 vergelijking
-DROOLS-361	to-one rol '{role}' krijgt een tweede, ander doel — ref weigert die case bij het laden (WF-013)
-DROOLS-362	wederkerige rol '{role}': het doel is al verbonden met een ander — de omgekeerde poot botst (WF-013 to-one)
+DROOLS-361	enkelvoudige rol '{role}' krijgt een tweede, ander doel — ref weigert die case bij het laden (WF-013)
+DROOLS-362	wederkerige rol '{role}': het doel is al verbonden met een ander — de omgekeerde poot botst (WF-013, enkelvoudige rol)
 DROOLS-363	geen JDK-compiler beschikbaar (draai op een JDK, niet een JRE)
 DROOLS-364	{description} noemt geen feittype van twee rollen die allebei meervoudig zijn; een relatie met een enkelvoudige rol staat in het referentieveld van haar ene kant
 DROOLS-365	{description} noemt {end}, dat geen bean van de invoer is

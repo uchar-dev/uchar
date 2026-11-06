@@ -36,6 +36,9 @@
 #     the same in both languages) or SAME_IN_BOTH lists it with the reason (card message-language, owner's decision 3
 #     of 2026-10-19: the English sentences of the Dutch catalogue stand on one list); a stale line fails, and the list
 #     holds at least EXPECTED_MIN_DROOLS_SAME_IN_BOTH lines;
+#   - a Dutch entry that SAME_IN_BOTH does not list carries no English function word outside its places and quotations,
+#     unless ENGLISH_EXCEPTIONS lists the entry and the word with the reason (a message is in one language, its
+#     parameter values included); a stale line of that list fails;
 #   - each language holds at least EXPECTED_MIN_DROOLS_MESSAGES entries named after a code, a fault kind or a frame.
 set -u
 cd "$(dirname "$0")/.."
@@ -153,6 +156,22 @@ SAME_IN_BOTH = dict(
                             "DROOLS-227")]
     + [(k, _PART) for k in ("FRAME.contract", "FRAME.drl", "FRAME.loader", "FRAME.transpiler-verdict")])
 
+# English function words a Dutch entry must not carry; none of them is a Dutch word (the list of check-rgs-codes.sh)
+ENGLISH = set(("the a an and or not no to for from with without into under on at by it its as but can does never also "
+               "when where this be than both while whose which that has are must only one every each").split())
+# (key, word): the reason an English word stands in a Dutch entry
+ENGLISH_EXCEPTIONS = {
+    ("DROOLS-167", "a"): "(a) is the clause label of WF-110, not the article",
+    ("DROOLS-257", "a"): "(a) is the clause label of WF-108, not the article",
+}
+
+def english_words(t):
+    """The English function words of a template outside its places and quotations; a letter after a digit is part of
+    a number ("4.1a")."""
+    u = t.replace("{{", "").replace("}}", "")
+    return set(w for w in re.findall(r"(?<![0-9a-zà-ÿ])[a-zà-ÿ]+", re.sub(r"'[^']*'", "", PLACE.sub("", u)).lower())
+               if w in ENGLISH)
+
 def words_outside(t):
     u = t.replace("{{", "").replace("}}", "")
     return re.findall(r"[a-zà-ÿ]+", re.sub(r"'[^']*'", "", PLACE.sub("", u)).lower())
@@ -208,6 +227,14 @@ if len(cats) == 2:
     for k, (t, n) in nl.items():
         if k in en and en[k][0] == t and words_outside(t) and k not in SAME_IN_BOTH:
             fail("%s:%d (%s, nl): the Dutch entry is equal to its English sister" % (nl_rel, n, k))
+    for k, (t, n) in nl.items():
+        if k in SAME_IN_BOTH: continue
+        for w in sorted(english_words(t)):
+            if (k, w) not in ENGLISH_EXCEPTIONS:
+                fail("%s:%d (%s, nl): the Dutch entry carries the English word '%s'" % (nl_rel, n, k, w))
+    for key, w in ENGLISH_EXCEPTIONS:
+        if key not in nl or key in SAME_IN_BOTH or w not in english_words(nl[key][0]):
+            fail("the exception (%s, %s) of ENGLISH_EXCEPTIONS is stale: the Dutch entry does not carry the word, or is listed in SAME_IN_BOTH" % (key, w))
     for k in SAME_IN_BOTH:
         if k not in nl or k not in en or nl[k][0] != en[k][0] or not words_outside(nl[k][0]):
             fail("the line %s of SAME_IN_BOTH is stale: the Dutch entry is not equal to its English sister, or has no word" % k)
@@ -279,4 +306,4 @@ if faults:
     sys.exit(1)
 PYEOF
 
-echo "check-drools-codes: PASS — $entries codes, numbered 001..$(printf '%03d' "$entries"), every one raised in the sources but the $(printf '%s\n' "$retired" | grep -c .) retired, which none names, every raised code registered, keys unique, every ef a row of ch. 5.7b, both catalogues held to the register and the places to the catalogues, the English sentences of the Dutch one listed (floors $EXPECTED_MIN_DROOLS_MESSAGES and $EXPECTED_MIN_DROOLS_SAME_IN_BOTH)"
+echo "check-drools-codes: PASS — $entries codes, numbered 001..$(printf '%03d' "$entries"), every one raised in the sources but the $(printf '%s\n' "$retired" | grep -c .) retired, which none names, every raised code registered, keys unique, every ef a row of ch. 5.7b, both catalogues held to the register and the places to the catalogues, the English sentences of the Dutch one listed and the rest of it free of English function words (floors $EXPECTED_MIN_DROOLS_MESSAGES and $EXPECTED_MIN_DROOLS_SAME_IN_BOTH)"
