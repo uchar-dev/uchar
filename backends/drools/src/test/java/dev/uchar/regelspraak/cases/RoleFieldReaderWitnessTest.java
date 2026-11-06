@@ -58,29 +58,17 @@ class RoleFieldReaderWitnessTest {
 
     // ---------------- 1. the §8.1.7 FAR-SIDE rolcheck ----------------
 
-    @Test void the_far_side_role_check_refuses_a_back_reference_without_field() throws Exception {
-        // The twin of the near-side rolcheck gated 2026-09-10: "de Werf heeft een schuit" is an exists-join that
-        // reads the FILLER's reference back at the subject. With BOTH roles of `ligplaats` to-many the bean model
-        // derives no field at either end, so the join probes a getter nobody has. Measured on the pre-gate jar, on a
-        // verifier-clean model:
-        //     verifier: PASS
-        //     ref     : EVALUATION FAULT: condition kind not implemented in this card
-        //     clingo  : TRANSLATION FAULT: condition kind not translated (no corpus case exercises it)
-        //     Drools exec-model : ERROR ConstraintEvaluationException: Error evaluating constraint ''
-        //     Drools DRL-tekst  : EXCLUDE drl compile: Unable to Analyse Expression werf == $subject
-        // ref and clingo carried NO far-side rolcheck at all then, so no golden of this shape could enter the
-        // corpus and the differential square could not arbitrate this reader. What the gate buys is therefore the
-        // DIAGNOSIS, not a value: an unclassified fault and a bare compiler message both become the one §13.3.9
-        // sentence. Since L2 of the v1 wire migration the check is one node, RoleMembership, and where its link is
-        // stored is one derivation (FactModelGenerator.membershipStorage) with one sentence for both branches.
-        Path ir = farSideRoleCheck(), c = caseOf(werfAndSchuit(false, "{}", "{ \"kind\": \"attributeEmpty\","
-                + " \"label\": \"W1\", \"attribute\": \"wachtgeld\" }"));
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.playCase(ir, JSON.readTree(Files.readString(c))));
-        String sentence = "rollidmaatschap (ligplaats, werf): beide rollen zijn meervoudig, dus geen bean draagt de link"
-                + " (§13.3.9 opslagrichting)";
-        assertTrue(e.getMessage().contains(sentence), e.getMessage());
-        assertEquals(e.getMessage(), drlReason(ir, c));
+    @Test void the_far_side_role_check_reads_the_links_of_two_to_many_roles() throws Exception {
+        // "de Werf heeft een schuit" reads the far side of `ligplaats`, both of whose roles are to-many here, so no bean
+        // holds the relation. The branch reads such a relation over its links, which the case input states, as it reads
+        // a relation a form creates; the check is an existence question over them. ref and clingo answer the same on
+        // both cases: without a link W1's wachtgeld stays leeg, with S1 lying at W1 it is 8.
+        Path ir = farSideRoleCheck();
+        BothBranches.green(ir, JSON.readTree(werfAndSchuit(false, "{}", "{ \"kind\": \"attributeEmpty\","
+                + " \"label\": \"W1\", \"attribute\": \"wachtgeld\" }")), "no link: no schuit");
+        BothBranches.green(ir, JSON.readTree(werfAndSchuit(false, "{ \"werf\": [\"W1\"] }", "{ \"kind\":"
+                + " \"attributeValue\", \"label\": \"W1\", \"attribute\": \"wachtgeld\", \"value\": { \"number\": \"8\" } }")),
+                "S1 lies at W1");
     }
 
     // ---------------- 2. the two fold joins outside the gated aggregation ----------------
@@ -185,24 +173,14 @@ class RoleFieldReaderWitnessTest {
         assertEquals("PLAYED", CaseRunner.viaDrlText(ir, List.of(c)).status(), "drl-tekst — ref agrees");
     }
 
-    @Test void the_fact_creation_refuses_a_join_without_field() throws Exception {
-        // The gemeenteberging creation, reduced to that rule. Until P2 (2026-09-22) this row pinned the refusal on
-        // the HOP: the wire's viaParentField put the hop's field `gemeente van inschrijving` on the anker Gemeente,
-        // whose bean carries no such getter. Measured then, on a verifier-clean AND ref-clean model:
-        //     verifier: PASS   ref: oracle: PASS (1 expectations)   clingo: clingo: PASS (1 expectations)
-        //     Drools exec-model : ERROR ConstraintEvaluationException
-        //     Drools DRL-tekst  : EXCLUDE drl compile: Unable to Analyse Expression this == $subject.gemeenteVanInschrijving
-        // Since P2 the hop is derived from its binding: `ingeschreven jutter` is to-many, so the field is Jutter's
-        // own `gemeente van inschrijving`, which exists — the side ref walks. The creation now stops one position
-        // on, at the join over `aanmelding`, whose roles are both to-many, so no bean carries the join field. The
-        // hop's own gate keeps a row of its own below (the_fact_creation_refuses_a_displaced_path_step_field).
-        Path ir = factCreationPathStep(), c = caseOf(gemeenteCaseWithoutRoles());
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.playCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.EXEC_MODEL));
-        assertTrue(e.getMessage().contains("feitcreatie: berging door de kustgemeente — het pad van de feitcreatie"
-                + " 'berging door de kustgemeente': de stap over 'aanmelding' heeft twee rollen naar veel, waarvoor het"
-                + " beanmodel geen veld heeft (§13.3.9 opslagrichting)"), e.getMessage());
-        assertEquals(e.getMessage(), drlReason(ir, c));
+    @Test void the_fact_creation_walks_a_join_over_two_to_many_roles() throws Exception {
+        // The gemeenteberging creation, reduced to that rule. The hop is derived from its binding: `ingeschreven jutter`
+        // is to-many, so the field is Jutter's own `gemeente van inschrijving`, the side ref walks. The join after it
+        // runs over `aanmelding`, both of whose roles are to-many, so no bean holds it, and the creation walks its links,
+        // which the case input states, as it walks a relation a form creates. On a case without links the creation
+        // makes nothing, as in ref and clingo; the golden plays the creation with its links. The hop's own gate keeps a
+        // row of its own below (the_fact_creation_refuses_a_displaced_path_step_field).
+        BothBranches.green(factCreationPathStep(), JSON.readTree(gemeenteCaseWithoutRoles()), "ref and clingo agree");
     }
 
     @Test void the_fact_creation_refuses_a_displaced_path_step_field() throws Exception {
@@ -311,7 +289,7 @@ class RoleFieldReaderWitnessTest {
     }
 
     /** synth-navigatiepremie with BOTH ligplaats roles to-many (no field at either end) and a §8.1.7 far-side check
-     *  "de Werf heeft een schuit" gating a Werf rule. Verifier-clean; ref and clingo carry no such condition. */
+     *  "de Werf heeft een schuit" gating a Werf rule. Verifier-clean, ref-clean and clingo-clean. */
     private static Path farSideRoleCheck() throws Exception {
         ObjectNode ir = goldenIr(NAVIGATION_PREMIE);
         IrPath.addAttribute(IrPath.objectType(ir, "Werf"), "wachtgeld", number());

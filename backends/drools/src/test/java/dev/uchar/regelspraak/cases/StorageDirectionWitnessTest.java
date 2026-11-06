@@ -125,15 +125,30 @@ class StorageDirectionWitnessTest {
         assertNull(playTms(ir(INHERITANCE_LINE), JSON.readTree(chainWithExpectation("1", "0"))), "ref agrees: W1 1, W2 0");
     }
 
-    @Test void a_multiple_self_pair_role_is_refused_loudly_with_the_true_reason() throws Exception {
-        // What is LEFT of the refusal after the by-name route: `erfvolger` resolves by name, but it is TO-MANY,
-        // so its storage is the far end's field — and on a self-typed pair that end is the same bean, which the
-        // by-pair search cannot name either. ref carries this case (it keys the link under 'erfvolger' and
-        // counts 1 on W1), so the backend must refuse it BY NAME rather than pretend the field is underivable.
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> beans(countOverOpvolgers(), chain("\"erfvolger\": [\"W2\"]", "")));
-        assertTrue(e.getMessage().contains("no to-one reference field"), e.getMessage());
-        assertTrue(e.getMessage().contains("Wachter -> Wachter"), e.getMessage());
+    @Test void a_link_of_the_input_beside_the_creations_of_the_same_relation_counts_once() throws Exception {
+        // `erfvolger` resolves by name and is TO-MANY on both ends, so the case input states each link of `erflijn` as a
+        // fact of the input (phase 0), beside the links the two creations make. W1 writes W2 and W3 as erfvolgers, and the
+        // creations make the same two links from the opvolger chain W1 -> W2 -> W3: the creation finds the link and
+        // makes none (a fact creation is idempotent per link), so W1 counts 2, not 4. W4 writes W1 alone, and the
+        // transitive creation adds W2 and W3 through W1's links: 3. ref and clingo answer the same on this case.
+        BothBranches.green(ir(INHERITANCE_LINE), JSON.readTree("""
+                { "format": "uchar-case-v0", "asOfDate": null,
+                  "input": { "instances": [
+                      { "label": "W1", "objectType": "Wachter", "attributes": {},
+                        "roles": { "opvolger": ["W2"], "erfvolger": ["W2", "W3"] }, "characteristics": [] },
+                      { "label": "W2", "objectType": "Wachter", "attributes": {},
+                        "roles": { "opvolger": ["W3"] }, "characteristics": [] },
+                      { "label": "W3", "objectType": "Wachter", "attributes": {}, "roles": {}, "characteristics": [] },
+                      { "label": "W4", "objectType": "Wachter", "attributes": {},
+                        "roles": { "erfvolger": ["W1"] }, "characteristics": [] } ],
+                    "parameters": {} },
+                  "expected": [
+                      { "kind": "attributeValue", "label": "W1", "attribute": "erfvolgeraantal", "value": { "number": "2" } },
+                      { "kind": "attributeValue", "label": "W2", "attribute": "erfvolgeraantal", "value": { "number": "1" } },
+                      { "kind": "attributeValue", "label": "W3", "attribute": "erfvolgeraantal", "value": { "number": "0" } },
+                      { "kind": "attributeValue", "label": "W4", "attribute": "erfvolgeraantal", "value": { "number": "3" } },
+                      { "kind": "consistent" } ] }
+                """), "input links and created links of one relation");
     }
 
     // ---------------- 2. which end an aggregation reads ----------------
@@ -380,7 +395,8 @@ class StorageDirectionWitnessTest {
     /** The erflijn model with its count rewired from the to-many `erfvolgers` onto the TO-ONE `opvolgers` — the
      *  two feitcreaties and the recursive regelgroep that fed the `erflijn` relation dropped with it. The
      *  `erflijn` feittype itself STAYS, so the model keeps both self-pair shapes: the to-one one the bean model
-     *  can hold, and the double-to-many one it cannot. An in-memory variant; the corpus ir.json is untouched. */
+     *  holds in a field, and the double-to-many one it holds in none, read over its links. An in-memory variant; the
+     *  corpus ir.json is untouched. */
     private static Path countOverOpvolgers() throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(INHERITANCE_LINE)));
         IrPath.rules(ir).putArray("factCreations");

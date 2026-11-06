@@ -354,6 +354,7 @@ DROOLS-316	{form} op het tijdsafhankelijke attribuut '{attribute}' van {declaran
 DROOLS-316.initialisation	de waarde van een initialisatie
 DROOLS-316.member	de lidwaarde van een objectcreatie
 DROOLS-317	het beanmodel draagt de beaneigenschap {property} van {objectType} niet: haar getter {getter} is een methode van java.lang.Object, die geen bean opnieuw kan declareren
+DROOLS-318	een vouw over '{factType}', een relatie waarvan beide rollen meervoudig zijn ('{description}'), die haar leden in volgorde leest (een filter dat kan falen, een deposito, of een lidvoorwaarde die kan falen of deponeren): een koppeling van zo'n relatie heeft in deze tak geen plaats in de volgorde van de leden, die bepaalt welk lid de fout geeft (RUNTIME-SEMANTICS ch. 5.7a, 5.11); deze tak draagt deze vorm nog niet
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-004	invoer {place} = {value} past niet in {decimals} decimalen: een casewaarde waarvan de declaratie de exacte waarde niet kan houden, wordt bij de invoer geweigerd (RUNTIME-SEMANTICS ch. 2.4, 5.7)

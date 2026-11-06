@@ -20,10 +20,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * on top of a comparison — per expectation the expected and the actual value, the fired rules with the labels they
  * bound, the coverage of the lowered constructs, and MARKER where the backend does not carry the document — filled
  * by the same exec-model replay the gate plays. The fixtures are corpus goldens: {@code jutterswet-uitsluiting-rgs},
- * whose four cases its scenario document regenerates, and {@code anchor/jutterswet-bootberging}, which no exec-model
- * branch carries (a source path over a relation whose roles are both to-many, for which the bean model has no field).
- * Until card tms-omschakeling the second fixture was {@code anchor/jutterswet-erflijn}, which the exec-model branch
- * with truth maintenance plays.
+ * whose four cases its scenario document regenerates, and {@code jutterswet-grens-per-jutter}, which no branch carries
+ * (the binder of a Let read in the filter of a fold, DROOLS-193).
  *
  * <p>The trace of the first case is pinned whole. The report counts a firing under the form of the document its rule
  * belongs to ({@code TmsTranspiler.formOf}), so "defaults K:Jutter.uitgesloten" is the document's one defaults group,
@@ -227,12 +225,12 @@ class ScenarioReportWitnessTest {
     }
 
     @Test void a_document_that_the_backend_does_not_carry_is_a_marker() throws Exception {
-        Path bootberging = GOLDEN.resolve("anchor").resolve("jutterswet-bootberging");
-        List<ScenarioResult> report = CaseRunner.report(bootberging.resolve("ir.json"), cases(bootberging));
+        Path refused = GOLDEN.resolve("jutterswet-grens-per-jutter");
+        List<ScenarioResult> report = CaseRunner.report(refused.resolve("ir.json"), cases(refused));
         assertFalse(report.isEmpty());
         for (ScenarioResult r : report) {
             assertEquals(Status.MARKER, r.status(), r::toString);
-            assertTrue(r.diagnostic().contains("transpiler SKIP: regel: laagste vondstgewicht van een jutter"), r::diagnostic);
+            assertTrue(r.diagnostic().contains("transpiler SKIP: regel: zware vondsten van een jutter"), r::diagnostic);
             assertTrue(r.expectations().isEmpty() && r.trace().firings().isEmpty() && r.coverage().isEmpty());
         }
     }

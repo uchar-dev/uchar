@@ -254,11 +254,19 @@ class DefaultsConsequenceFoldWitnessTest {
 
     // ---------------- what does not go ----------------
 
-    @Test void a_fold_without_a_bean_field_is_refused_with_the_form() throws Exception {
+    @Test void a_fold_over_two_to_many_roles_reads_their_links() throws Exception {
         // "de laatste van de meldingsdatum van alle meldingen van de Berging" over "meerdere kennende bergingen kennen
-        // meerdere meldingen": both roles plural, so the bean model stores the relation on neither end (§13.3.9), in a
-        // rule's value as in a consequence. ref and clingo answer 08-03-2026; the exec-model branch refuses the
-        // group and names it and the fold.
+        // meerdere meldingen": both roles plural, so no bean holds the relation, and the branch reads it over its links,
+        // in a rule's value as in a consequence. M1 is known to both B1 and B2. B1 (no gemelde sluitdag) takes the last
+        // meldingsdatum of M1 and M2, 08-03-2026; B2 its gemelde sluitdag 12-03-2026; B3 knows no melding, so the last
+        // of nothing is leeg. ref and clingo answer the same on this case.
+        String ir = knownReportsDocument();
+        assertNull(play(ir, knownReportsCase()), "ref and clingo agree: 08-03-2026, 12-03-2026, leeg");
+    }
+
+    /** "de laatste van de meldingsdatum van alle meldingen van de Berging" over BergingKentMelding, both of whose roles
+     *  are to-many, as the default below the gemelde sluitdag. */
+    static String knownReportsDocument() {
         String message = objectType("Melding", "Meldingen", List.of(attribute("meldingsdatum", DATE)), List.of());
         String knows = "{\"node\":\"FactType\",\"name\":\"BergingKentMelding\",\"reciprocal\":false,\"roles\":["
                 + "{\"node\":\"Role\",\"name\":\"kennende berging\",\"objectType\":\"Berging\",\"plural\":\"kennende bergingen\","
@@ -267,13 +275,20 @@ class DefaultsConsequenceFoldWitnessTest {
         String v = "{\"node\":\"Aggregation\",\"kind\":\"last\",\"arguments\":[" + own("meldingsdatum", "Melding")
                 + "],\"elementType\":\"Melding\",\"sourceRole\":" + roleBinding("BergingKentMelding", "melding") + ",\"type\":"
                 + DATE + ",\"source\":{\"snippet\":\"de laatste van de meldingsdatum van alle meldingen van de Berging\"}}";
-        String ir = "{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[" + berging(false) + "," + message
+        return "{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[" + berging(false) + "," + message
                 + "],\"factTypes\":[" + knows + "],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
                 + "\"timelines\":[],\"dayKinds\":[]}," + rules(List.of(), List.of(closingDayGroup("sluitdag", v))) + "}";
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> playTms(ir, caseDocument(List.of(), "")));
-        assertTrue(e.getMessage().contains("defaults: defaults A:Berging.sluitdag — de aggregatie-join van 'de laatste van"
-                + " de meldingsdatum van alle meldingen van de Berging' heeft geen beanveld"), e.getMessage());
-        assertTrue(e.getMessage().contains("beide zijden meervoudig"), e.getMessage());
+    }
+
+    /** B1 knows M1 and M2, B2 (gemeld 12-03-2026) knows M1, written from the Melding, and B3 knows none. */
+    static String knownReportsCase() {
+        return caseDocument(List.of(
+                instance("B1", "Berging", "", "\"melding\":[\"M1\",\"M2\"]"),
+                instance("B2", "Berging", attrs("gemelde sluitdag", day("2026-03-12")), ""),
+                instance("B3", "Berging", "", ""),
+                instance("M1", "Melding", attrs("meldingsdatum", day("2026-03-05")), "\"kennende berging\":[\"B2\"]"),
+                instance("M2", "Melding", attrs("meldingsdatum", day("2026-03-08")), "")),
+                closingDays("2026-03-08", "2026-03-12", null));
     }
 
     @Test void five_folds_in_a_consequence() throws Exception {

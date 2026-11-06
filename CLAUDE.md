@@ -559,7 +559,8 @@ missing line makes `make gates` exit non-zero. Current gates:
     `creatie-zonder-binding-via-supertype` (2026-11-06) DROOLS-148, since the card
     `caselezer-zoals-ref` (2026-11-06) DROOLS-045 and DROOLS-046, since the card
     `beanlidnamen-zonder-java-identifier` (2026-11-06) DROOLS-058, since the card
-    `tekst-van-een-waarde-in-een-tekstsamenstelling` (2026-11-06) DROOLS-183; every raised code
+    `tekst-van-een-waarde-in-een-tekstsamenstelling` (2026-11-06) DROOLS-183, since the card
+    `drools-veelopveel-beanmodel` (2026-11-06) DROOLS-078 and DROOLS-161; every raised code
     registered, numbers without gap, keys unique, every `ef` a row of
     RUNTIME-SEMANTICS ch. 5.7b) and carries
     `EXPECTED_MIN_DROOLS_CODES=289`. Since the card `message-catalogues`

@@ -52,36 +52,13 @@ class BranchEqualityWitnessTest {
 
     // ---------------- 1. the DRL branch's own aggregation join ----------------
 
-    @Test void the_drl_aggregation_join_refuses_a_join_without_field() throws Exception {
-        // The UNDERIVED half: with BOTH roles of `vondstaanmelding` to-many the bean model derives no reference at
-        // either end, so the emitted join reads a getter nobody has. Measured on the pre-port jar:
-        //     verifier: PASS
-        //     ref     : oracle: PASS (7 expectations)
-        //     clingo  : clingo: PASS (7 expectations)
-        //     Drools exec-model : EXCLUDE transpiler SKIP — "de aggregatie-join heeft geen beanveld … beide zijden
-        //                         meervoudig (§13.3.9 opslagrichting)"
-        //     Drools DRL-tekst  : EXCLUDE drl compile: Unable to Analyse Expression aanmelder == $subject
-        // Unlike most of the ch. 13.3.9 family this shape HAS an arbiter — ref and clingo both answer — so a golden
-        // of it could exist. What the port buys is the DIAGNOSIS: a bare compiler message that named neither the
-        // role, the member, nor the limit, and sank the WHOLE package, becomes the same per-construct sentence the
-        // exec branch already printed.
+    @Test void both_branches_fold_over_two_to_many_roles() throws Exception {
+        // With BOTH roles of `vondstaanmelding` to-many the bean model derives no reference at either end, and both
+        // branches read the relation over its links, which the case input states, as they read a relation a form
+        // creates. On the golden's own case, whose links now are links of such a relation, verifier, ref and clingo
+        // answer the same seven expectations, and so do both branches.
         Path ir = aggregationJoinUnderived(), c = ir(VONDSTTELLING).resolveSibling("case.json");
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.playCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.EXEC_MODEL));
-        assertTrue(e.getMessage().contains("regel: aantal aangemelde vondsten — de aggregatie-join van 'het aantal"
-                + " vondsten van de Jutter' heeft geen beanveld — de rol 'aanmelder' op Vondst is meervoudig"), e.getMessage());
-        String drl = drlReason(ir, c);
-        assertTrue(drl.contains("aggregatie-join"), drl);
-        // SHARPENED 2026-09-18 (card drools-rolvelden-herhaalde-typenparen). This row used to demand the GENERIC
-        // sentence here — "het beanmodel leidt voor de rol 'aanmelder' op Vondst geen referentieveld naar Jutter
-        // af" — while the exec assertion three lines up demands the CARDINALITY one. That gap was the last of the
-        // asymmetry this file exists to close: one fold-join failure, two diagnoses, and the DRL-text one silent
-        // about WHY. The cardinality half now lives beside the shared reason function
-        // (FactModelGenerator.noJoinFieldReason) and both branches restate it at this seam, so the row can ask
-        // for the same words it asks of the exec branch.
-        assertTrue(drl.contains("de rol 'aanmelder' op Vondst is meervoudig, dus haar opslag is het veld aan de"
-                + " overzijde, en ook daar leidt het beanmodel er geen af (beide zijden meervoudig)"), drl);
-        assertTrue(drl.contains("§13.3.9 opslagrichting"), drl);
+        BothBranches.green(ir, JSON.readTree(Files.readString(c)), "one fold over the links, one answer");
     }
 
     @Test void the_drl_aggregation_join_refuses_the_displaced_field() throws Exception {
@@ -236,8 +213,8 @@ class BranchEqualityWitnessTest {
     }
 
     /** jutterswet-vondsttelling with the to-ONE `aanmelder` role made to-many as well: one feittype, two to-many
-     *  roles, so {@code FactModelGenerator.members} derives a reference at neither end. Verifier-clean, ref-clean
-     *  and clingo-clean. */
+     *  roles, so {@code FactModelGenerator.members} derives a reference at neither end and the branches read the
+     *  relation over its links. Verifier-clean, ref-clean and clingo-clean. */
     private static Path aggregationJoinUnderived() throws Exception {
         ObjectNode ir = goldenIr(VONDSTTELLING);
         for (JsonNode r : IrPath.declaration(ir, "factTypes", "vondstaanmelding").get("roles"))

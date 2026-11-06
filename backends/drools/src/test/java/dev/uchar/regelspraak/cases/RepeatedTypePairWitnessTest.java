@@ -267,24 +267,17 @@ class RepeatedTypePairWitnessTest {
                 "a declared member of the same name displaces the reference");
     }
 
-    @Test void a_many_role_without_storage_carrying_other_side_stays_refused() throws Exception {
-        // BOTH roles of one feittype to-many: a to-many role's storage is the far end's field, and here that
-        // end is to-many too, so the model derives nothing at EITHER end. Its own sentence, naming the
-        // CARDINALITY rather than a derivation that in fact succeeded.
-        //
-        // Dual since 2026-09-18. Measured before that: the exec branch named the cardinality while the DRL-text
-        // branch answered "het beanmodel leidt voor de rol 'thuishaven' op Schuit geen referentieveld naar Haven
-        // af" — one failure, two diagnoses, the second of them wrong about WHY. The cardinality half now lives
-        // beside the shared reason function (FactModelGenerator.noJoinFieldReason) and both branches restate it
-        // at the fold-join seam; this row is what keeps them together.
-        BothBranches.refused(bothSidesMany(), JSON.readTree(twoRolesCase("2", "0", "0", "1")),
-                "de rol 'thuishaven' op Schuit is meervoudig, dus haar opslag is het veld aan de overzijde,"
-                + " en ook daar leidt het beanmodel er geen af (beide zijden meervoudig)",
-                "both sides to-many: no bean can hold the relation");
+    @Test void a_relation_of_two_to_many_roles_is_read_over_its_links() throws Exception {
+        // BOTH roles of thuisligging to-many: the relation has no one side, so no bean holds it. The branch reads it over
+        // its links, which the case input states from whichever side the case writes them, as it reads a relation a form
+        // creates; the repeated type pair stays apart, since each fact type has links of its own. ref and clingo answer
+        // the four pinned cells on this case: liggertal 2 and 0, wintertal 0 and 1.
+        BothBranches.green(bothSidesMany(), JSON.readTree(twoRolesCase("2", "0", "0", "1")),
+                "both sides to-many: read over the links");
     }
 
     @Test void the_other_side_that_indeed_carries_a_field_does_not_get_the_both_sides_sentence() throws Exception {
-        // The half of that sentence the shared derivation must NOT over-claim. With the element role to-ONE and
+        // The cardinality the shared derivation must NOT over-claim. With the element role to-ONE and
         // the subject's role to-many, the join field is missing HERE but present at the far end — one bean does
         // hold the relation. Saying "beide zijden meervoudig" there would diagnose a cardinality defect the
         // document does not have; measured on the corpus, `anchor/jutterswet-gemeenteberging` is exactly this
@@ -407,7 +400,7 @@ class RepeatedTypePairWitnessTest {
         return temporary("dv-elementrol-toone", ir);
     }
 
-    /** The counts-only model with BOTH roles of thuisligging to-many — no field at either end. */
+    /** The counts-only model with BOTH roles of thuisligging to-many — no field at either end, read over its links. */
     private static Path bothSidesMany() throws Exception {
         ObjectNode ir = read(DUBBELVERBINDING);
         IrPath.rules(ir).putArray("factCreations");

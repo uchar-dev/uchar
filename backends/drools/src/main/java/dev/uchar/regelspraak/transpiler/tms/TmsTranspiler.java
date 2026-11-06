@@ -183,7 +183,9 @@ import java.util.function.Supplier;
  * its member assignments as {@link Value} and {@link HasCharacteristic}, computed from what its rule binds
  * ({@link #objectCreation}); a fact creation inserts the {@link RelationLink} it makes ({@link #factCreation}). Every relation
  * a form creates is read through {@link RelationLink} facts, its input links included ({@link #linkRules}), since a
- * created link is in no bean field, and a second distinct filler of a to-one role is a {@link Fault} at the fixpoint.
+ * created link is in no bean field, and a second distinct filler of a to-one role is a {@link Fault} at the fixpoint. So
+ * is every relation of two to-many roles, which the bean model stores in no field and whose input links the input
+ * states as facts ({@link #linkRelations}).
  * The rule layer stays under truth maintenance throughout: it reads what a creation made as it reads input.
  *
  * <p>This class is the analysis: it decides per rule what is read, how, in which order, and what a firing inserts, as
@@ -344,6 +346,12 @@ public final class TmsTranspiler {
      *  object creation and the relation of a fact creation. Their links are {@link RelationLink} facts, and every form
      *  that reads such a relation joins over those ({@link #linkHop}, {@link #linkRange}). */
     private final Set<String> createdRelations = new LinkedHashSet<>();
+    /** The relations every reader reads over {@link RelationLink} facts, by normalised fact type name: those a form
+     *  creates ({@link #createdRelations}), and those of two roles that are both to-many, which the bean model stores in
+     *  no field, since it stores a relation in the reference field of its one side and such a relation has none; their
+     *  input links are facts of the input ({@code DroolsBackend.insert}). A relation of the input with a to-one role is
+     *  read off the reference field of its one side. */
+    private final Set<String> linkRelations = new LinkedHashSet<>();
     /** The names of the lowered creation rules, those of {@link #FACT_CREATION} and of {@link #OBJECT_CREATION}: the driver
      *  counts their firings to tell a generation that created something from one that did not. */
     private final Set<String> creationRules = new LinkedHashSet<>();
@@ -1759,7 +1767,8 @@ public final class TmsTranspiler {
         for (CreationStamp g : marks) objects.add(new Fixpoint.MadeObject(g.object(), g.rule(), g.subject()));
         objects.sort(Comparator.comparing(m -> name.apply(m.object())));
         List<Fixpoint.MadeLink> links = new ArrayList<>();
-        // a link of the input carries phase 0 and is in the bean fields already
+        // a link of the input carries phase 0: it is in the bean fields, or, over a relation of two to-many roles, a fact
+        // the input stated
         for (Object f : session.getObjects(o -> o instanceof RelationLink k && k.phase() > 0))
             links.add(madeLink((RelationLink) f, acts));
         links.sort(Comparator.comparing(Fixpoint.MadeLink::factType).thenComparing(Fixpoint.MadeLink::firstRole)
@@ -1818,7 +1827,7 @@ public final class TmsTranspiler {
      *  ends that the bean model gives a reference field: the field on the filler of the other role, named after the
      *  to-one role, holds the filler of that role (§13.3.9), as {@link #linkRules} reads the input of the relation
      *  back from it. A to-many end has no field of its own; where both ends are to-many no bean holds the link, and it
-     *  is in {@link Fixpoint#links} only. */
+     *  is in {@link Fixpoint#links} only, as the links of the input over such a relation are facts only. */
     private Fixpoint.MadeLink madeLink(RelationLink k, List<Runnable> acts) {
         RegelSpraakModel.FactType ft = factType(k.relation());
         if (ft == null || ft.roles.size() != 2)
@@ -1946,6 +1955,10 @@ public final class TmsTranspiler {
         }
         for (ResolvedFactCreation f : model.factCreations)
             if (f.factType() != null) createdRelations.add(Namen.norm(f.factType()));
+        linkRelations.addAll(createdRelations);
+        for (RegelSpraakModel.FactType ft : model.factTypes.values())
+            if (!ft.reciprocal && ft.roles.size() == 2 && ft.roles.get(0).many() && ft.roles.get(1).many())
+                linkRelations.add(Namen.norm(ft.name));
         // computing rules and initialisations are counted apart: one of each on a target is a pair the branch carries
         // (the initialisation falls through below the rule), two of either kind is not
         for (ResolvedRule r : model.resolvedRules) {
@@ -2006,7 +2019,7 @@ public final class TmsTranspiler {
         // they lower (dagsoortpredikaat), so a definition no form uses is never compiled and refuses nothing
         // the contributions of the folds the lowered forms read; a fold of a refused form left none here
         for (List<RulePlan> rs : contributionRules.values()) rules.addAll(rs);
-        for (String relation : createdRelations) rules.addAll(linkRules(relation));
+        for (String relation : linkRelations) rules.addAll(linkRules(relation));
         // the reading rules of a build with readings belong to no form, so the observer and the coverage pass them by
         for (ReadingRule r : readingRules) {
             rules.add(r.plan());
@@ -4061,9 +4074,9 @@ public final class TmsTranspiler {
     /**
      * How the rule of an allocation joins a recipient, its subject, to the source, its source, over the
      * connecting relation {@code rb}, whose bound role is the recipient's and its sibling the source's (IR-SPEC ch. 3.2),
-     * as a fold's one-step range joins a member ({@link #oneStepRange}): over a relation a form creates, through a
-     * {@link RelationLink} in an {@code exists}; over an input relation, through the one scalar bean field §13.3.9 stores
-     * it in, on the source where the recipient role is to-one and else on the recipient. Refused as there: a binding
+     * as a fold's one-step range joins a member ({@link #oneStepRange}): over a relation of {@link #linkRelations}, through
+     * a {@link RelationLink} in an {@code exists}; over any other relation, through the one scalar bean field §13.3.9
+     * stores it in, on the source where the recipient role is to-one and else on the recipient. Refused as there: a binding
      * that names no role pair, a to-one recipient role whose sibling is to-many, and a join the bean model gives no
      * field.
      */
@@ -4071,7 +4084,7 @@ public final class TmsTranspiler {
         RegelSpraakModel.Role[] pair = FactModelGenerator.boundRolePair(model, rb);
         if (pair == null)
             throw new Refusal(DroolsCode.CONNECTING_ROLE_UNDECLARED.reason("factType", rb.factType(), "role", rb.role()));
-        if (rb.factType() != null && createdRelations.contains(Namen.norm(rb.factType()))) {
+        if (rb.factType() != null && linkRelations.contains(Namen.norm(rb.factType()))) {
             LinkRelation relation = linkRelation(rb, pair[0], Msg.drools("PART.desc.allocation", "name", name));
             return member -> member.addToRangePlan(linkExists(relation));
         }
@@ -4420,9 +4433,9 @@ public final class TmsTranspiler {
         return out;
     }
 
-    /** A step of a fact creation's path over {@code step} from {@code van}: over a relation a form creates by its
-     *  {@link RelationLink} facts, else by the reference field of the to-one end, on the near bean where the far role is
-     *  to-one and on the far bean where it is to-many. Two to-many roles have no field in the bean model (§13.3.9). */
+    /** A step of a fact creation's path over {@code step} from {@code van}: over a relation of {@link #linkRelations}, one
+     *  a form creates or one of two to-many roles, by its {@link RelationLink} facts, else by the reference field of the
+     *  to-one end, on the near bean where the far role is to-one and on the far bean where it is to-many. */
     private Hop step(RoleBindingRef step, ObjectType van, Object description) {
         RegelSpraakModel.Role[] pair = step == null ? null : FactModelGenerator.boundRolePair(model, step);
         if (pair == null || pair[0] == pair[1])
@@ -4441,7 +4454,9 @@ public final class TmsTranspiler {
                 throw new Refusal(DroolsCode.ONE_HOP_NO_FIELD.reason("description", description, "reason", FactModelGenerator.noReferenceFieldReason(model, destination, pair[1].name(), van).msg()));
             return new Hop(van, destination, pair[1].name(), false, null, false);
         }
-        throw new Refusal(DroolsCode.MANY_PAIR_NO_FIELD.reason("description", description, "factType", step.factType()));
+        // two to-many roles of a relation of two roles are read over its links above, so these two belong to a fact type
+        // of more roles, which names no pair
+        throw new Refusal(DroolsCode.STEP_NOT_ROLE_PAIR.reason("description", description));
     }
 
     /** The guard of a fact creation on each target ({@code check}, hosted on a type the target satisfies), for the
@@ -7711,8 +7726,9 @@ public final class TmsTranspiler {
 
     /**
      * The one-step range of a fold (IR-SPEC ch. 4.3, {@code sourceRole}), derived from its binding as the exec-model
-     * branch derives it: the bound role is the member's and its sibling the subject's, and §13.3.9 stores the relation in
-     * one scalar bean field on whichever end is the one side. A to-many member role keeps it on the member, named after
+     * branch derives it: the bound role is the member's and its sibling the subject's. A relation of
+     * {@link #linkRelations} is read over its links ({@link #linkRange}); any other, §13.3.9 stores in one scalar bean
+     * field on whichever end is the one side ({@link #fieldRange}). A to-many member role keeps it on the member, named after
      * the subject's role; a to-one member role keeps it on the subject, named after the member's role. Refused as that
      * branch refuses them: a binding that names no role pair, a to-one member role whose sibling is to-many (one field
      * carries both directions there, and that branch keeps refusing the shape until a card of its own measures it), and
@@ -7724,13 +7740,13 @@ public final class TmsTranspiler {
     private Range oneStepRange(RoleBindingRef rb, ObjectType subject, ObjectType elem, Object description) {
         RegelSpraakModel.Role[] pair = FactModelGenerator.boundRolePair(model, rb);
         if (pair == null) throw new Refusal(DroolsCode.RANGE_WITHOUT_ROLE_PAIR.reason("description", description));
-        if (rb.factType() != null && createdRelations.contains(Namen.norm(rb.factType())))
+        if (rb.factType() != null && linkRelations.contains(Namen.norm(rb.factType())))
             return linkRange(rb, pair[0], description);
         return fieldRange(pair, subject, elem, description);
     }
 
     /** The one-step range over the bean fields of the role pair {@code pair}, the member's role first, as
-     *  {@link #oneStepRange} lays it over a relation no form creates: the links of the input. */
+     *  {@link #oneStepRange} lays it over a relation outside {@link #linkRelations}: the links of the input. */
     private Range fieldRange(RegelSpraakModel.Role[] pair, ObjectType subject, ObjectType elem, Object description) {
         String elemRole = pair[0].name(), backRoleName = pair[1].name();
         boolean forward = !model.toManyRole(subject, elem, elemRole);
@@ -7751,15 +7767,19 @@ public final class TmsTranspiler {
         });
     }
 
-    /** The one-step range of a fold over a relation a form creates: the member and the fold's subject joined by an
-     *  {@link RelationLink} of the relation in an {@code exists} ({@link #linkExists}), the member filling
-     *  {@code memberRole}. The links of such a relation change while the session fires and are in no bean field, so a field
-     *  join would miss them. A created link has no place in the fold order, which the reference interpreter gives by the
-     *  order of creation, so a filter that can fault over such a range is refused. */
+    /** The one-step range of a fold over a relation of {@link #linkRelations}: the member and the fold's subject joined by
+     *  an {@link RelationLink} of the relation in an {@code exists} ({@link #linkExists}), the member filling
+     *  {@code memberRole}. The links of a relation a form creates change while the session fires, and those of a relation
+     *  of two to-many roles have no field, so a field join would miss them. A link has no place in the fold order: the
+     *  reference interpreter orders a created link by the order of creation, and the members of a relation of two to-many
+     *  roles per holder by the list of ch. 5.7a, written members first and then the others by label, which this branch
+     *  does not state; so a fold that reads its members in order over such a range is refused, by the code of either. */
     private Range linkRange(RoleBindingRef rb, RegelSpraakModel.Role memberRole, Object description) {
         LinkRelation r = linkRelation(rb, memberRole, description);
         return new Range(member -> member.addToRangePlan(linkExists(r)), member -> {
-            throw new Refusal(DroolsCode.CREATED_RELATION_FAILING_FILTER.reason("factType", rb.factType(), "description", description));
+            throw new Refusal(createdRelations.contains(r.relation())
+                    ? DroolsCode.CREATED_RELATION_FAILING_FILTER.reason("factType", rb.factType(), "description", description)
+                    : DroolsCode.MANY_TO_MANY_FOLD_ORDER.reason("factType", rb.factType(), "description", description));
         });
     }
 
@@ -7782,12 +7802,12 @@ public final class TmsTranspiler {
         return true;
     }
 
-    /** A relation a form creates, as a one-step range over it walks it: by its normalised name, and whether the member
-     *  fills its first role. */
+    /** A relation of {@link #linkRelations}, as a one-step range over it walks it: by its normalised name, and whether
+     *  the member fills its first role. */
     private record LinkRelation(String relation, boolean memberIsFirst) {}
 
-    /** The relation a form creates that a one-step range over {@code rb} walks, its member filling {@code memberRole}, for
-     *  {@code description}; a fact type that is no relation of two roles is refused. */
+    /** The relation of {@link #linkRelations} that a one-step range over {@code rb} walks, its member filling
+     *  {@code memberRole}, for {@code description}; a fact type that is no relation of two roles is refused. */
     private LinkRelation linkRelation(RoleBindingRef rb, RegelSpraakModel.Role memberRole, Object description) {
         RegelSpraakModel.FactType ft = factType(rb.factType());
         if (ft == null || ft.roles.size() != 2 || ft.reciprocal)
@@ -7796,7 +7816,7 @@ public final class TmsTranspiler {
                 Namen.norm(ft.roles.get(0).name()).equals(Namen.norm(memberRole.name())));
     }
 
-    /** The range over the relation {@code r} a form creates, planned, of a fold's contribution rule and of an
+    /** The range over the relation {@code r} of {@link #linkRelations}, planned, of a fold's contribution rule and of an
      *  allocation's recipient rule: an {@code exists} of a {@link RelationLink} of the relation that holds the subject at
      *  the member's end and the object the rule binds before the subject ({@link #FOLD_SUBJECT}) at the other. */
     private Exists linkExists(LinkRelation r) {
@@ -7817,13 +7837,16 @@ public final class TmsTranspiler {
      * fold's subject and the member from outside). Two matches would give two equal contributions, which merge into one
      * fact as well. The filter fault rule binds the intermediates instead, as patterns of the rule, one match per route,
      * and the place of the member of every backward step, the to-many ones ({@link SourcePath}): an intermediate where the
-     * step ends on one, else the node the member's own walk reaches.
+     * step ends on one, else the node the member's own walk reaches. A step over a relation of two to-many roles is a
+     * link hop, read over the {@link RelationLink} facts of the input ({@link #linkStep}); such a link has no place in the
+     * fold order, so the filter fault rule over such a path is refused.
      */
     private Range pathRange(List<RoleBindingRef> path, ObjectType subject, ObjectType elem, Object description) {
         for (RoleBindingRef step : path)
             if (step.factType() != null && createdRelations.contains(Namen.norm(step.factType())))
                 throw new Refusal(DroolsCode.CREATED_RELATION_MULTI_STEP.reason("factType", step.factType(), "description", description));
-        SourcePath.Plan plan = SourcePath.parse(model, subject, path, elem);
+        String manyToMany = manyToManyStep(path);
+        SourcePath.Plan plan = SourcePath.parse(model, subject, path, elem, linkRelations::contains);
         if (plan.refusal() != null) throw new Refusal(plan.refusal().framed("with-description", "description", description));
         if (plan.meets()) {
             int m = plan.meeting();
@@ -7842,28 +7865,56 @@ public final class TmsTranspiler {
             member.addToRangePlan(new Exists(patterns, patterns.stream().map(FactPattern::name).toList(),
                     List.of(FOLD_SUBJECT, SUBJECT)));
         }, member -> {
+            if (manyToMany != null)
+                throw new Refusal(DroolsCode.MANY_TO_MANY_FOLD_ORDER.reason("factType", manyToMany, "description", description));
             Map<Integer, String> between = new LinkedHashMap<>();
             for (FactPattern p : intermediatePatterns(plan, between)) member.addToRangePlan(p);
             return placesAlong(plan, between, member);
         });
     }
 
+    /** The fact type, as the wire names it, of the first step of {@code path} over a relation of two to-many roles that
+     *  no form creates, which a path walks over its links; null where the path has none. */
+    private String manyToManyStep(List<RoleBindingRef> path) {
+        for (RoleBindingRef step : path)
+            if (step.factType() != null && linkRelations.contains(Namen.norm(step.factType()))
+                    && !createdRelations.contains(Namen.norm(step.factType())))
+                return step.factType();
+        return null;
+    }
+
     /** The patterns of the intermediates of {@code plan} that neither walk determines, each over its node's bean class,
-     *  its variable named into {@code between}, and constrained to its neighbours by the hops on either side of it
-     *  ({@link #pathStep}). */
+     *  its variable named into {@code between}, and constrained to its neighbours by the hops on either side of it: a
+     *  field hop by a test on the pattern ({@link #pathStep}), a link hop by a {@link RelationLink} pattern after it that
+     *  joins the two nodes ({@link #linkStep}). The near node of a link hop is the fold's subject, an intermediate before
+     *  it, or, for the hop into the member, the last intermediate; each is bound before the link's pattern. */
     private List<FactPattern> intermediatePatterns(SourcePath.Plan plan, Map<Integer, String> between) {
         for (int i : plan.intermediateNodes()) between.put(i, "$tussen_" + id("pad"));
         List<FactPattern> patterns = new ArrayList<>();
         int last = plan.backwardFrom() - 1;
+        SourcePath.Step out = plan.steps().get(plan.backwardFrom() - 1);
         for (Map.Entry<Integer, String> e : between.entrySet()) {
             int i = e.getKey();
+            SourcePath.Step in = plan.steps().get(i - 1);
             List<BetaTest> steps = new ArrayList<>();
-            steps.add(pathStep(plan, i, i, between));
-            if (i == last) steps.add(pathStep(plan, plan.backwardFrom(), i, between));
+            if (!in.link()) steps.add(pathStep(plan, i, i, between));
+            if (i == last && !out.link()) steps.add(pathStep(plan, plan.backwardFrom(), i, between));
             patterns.add(new FactPattern(beanClass(plan.nodeTypes().get(i)), e.getValue(), List.of(), List.of(), steps,
                     List.of()));
+            if (in.link()) patterns.add(linkStep(in, i == 1 ? FOLD_SUBJECT : between.get(i - 1), e.getValue()));
+            if (i == last && out.link()) patterns.add(linkStep(out, e.getValue(), SUBJECT));
         }
         return patterns;
+    }
+
+    /** The pattern over a {@link RelationLink} of the link hop {@code hop} whose near end is the object the variable
+     *  {@code near} binds and whose far end is the one {@code far} binds. */
+    private FactPattern linkStep(SourcePath.Step hop, String near, String far) {
+        return new FactPattern(RelationLink.class, "$padkoppeling_" + id("pad"),
+                List.of(equal(id("padkoppeling"), "relation", hop.relation())),
+                List.of(new Join(id("padkoppeling-nabij"), hop.nearIsFirst() ? "first" : "second", near),
+                        new Join(id("padkoppeling-ver"), hop.nearIsFirst() ? "second" : "first", far)),
+                List.of());
     }
 
     /** The places along a route of {@code plan}, one per backward step in step order: the step's own member, node
@@ -8199,12 +8250,12 @@ public final class TmsTranspiler {
      * the role the check names and, where it names a counterpart type, an instance of that type at the other end, a
      * class test that a subtype passes; negated, whether no such link exists. An existence question, never a count and
      * never a pick, bound as a value the test reads, so the check stands in a composite as any condition does. A
-     * relation a form creates is read over its {@link RelationLink} facts, which its creations state while the session
-     * fires and which the input's links insert logically; any other relation is input and is read where the bean model
-     * stores it ({@link FactModelGenerator#membershipStorage}): a to-one other role is the subject's own reference
-     * field, read off the subject's bean, and a to-many other role is the field of the other end, which names the
-     * subject, counted over the beans of the counterpart's class. Both roles to-many leaves no field, and the check is
-     * refused in the sentence of {@link FactModelGenerator#noReferenceFieldReason}, on both branches.
+     * relation of {@link #linkRelations} is read over its {@link RelationLink} facts: those a creation states while the
+     * session fires, and those of the input, inserted logically from a reference field or stated by the input where
+     * both roles are to-many. Any other relation is read where the bean model stores it
+     * ({@link FactModelGenerator#membershipStorage}): a to-one other role is the subject's own reference field, read off
+     * the subject's bean, and a to-many other role is the field of the other end, which names the subject, counted over
+     * the beans of the counterpart's class.
      */
     private Term roleCheck(Condition.RoleMembership r, Reads reads) {
         RoleBindingRef rb = roleBindings.get(r);
@@ -8214,7 +8265,7 @@ public final class TmsTranspiler {
         ObjectType counterpart = dev.uchar.regelspraak.loader.IrLoader.counterpart(r);
         Class<?> javaClass = counterpart == null ? null : beanClass(counterpart);
         boolean negated = r.negation();
-        if (rb.factType() != null && createdRelations.contains(Namen.norm(rb.factType()))) {
+        if (rb.factType() != null && linkRelations.contains(Namen.norm(rb.factType()))) {
             RegelSpraakModel.FactType ft = factType(rb.factType());
             if (ft == null || ft.roles.size() != 2 || ft.reciprocal)
                 throw new Refusal(DroolsCode.ROLE_MEMBERSHIP_NOT_BINARY.reason("snippet", snippet(r), "factType", rb.factType()));
@@ -8337,7 +8388,10 @@ public final class TmsTranspiler {
         boolean ordered = memberCanFail || memberDeposits;
         List<Consequence.FoldPlace.Step> places = new ArrayList<>();
         if (ordered) {
-            if (path && !SourcePath.parse(model, subject, kv.sourcePath(), elem).meets())
+            String manyToMany = path ? manyToManyStep(kv.sourcePath()) : null;
+            if (manyToMany != null)
+                throw new Refusal(DroolsCode.MANY_TO_MANY_FOLD_ORDER.reason("factType", manyToMany, "description", description));
+            if (path && !SourcePath.parse(model, subject, kv.sourcePath(), elem, linkRelations::contains).meets())
                 throw new Refusal(DroolsCode.QUANTIFIER_MEMBER_TWO_ROUTES.reason("description", description));
             if (!path && kv.sourceRole().factType() != null
                     && createdRelations.contains(Namen.norm(kv.sourceRole().factType())))
@@ -9907,7 +9961,7 @@ public final class TmsTranspiler {
     /**
      * The patterns that walk {@code hops} from the object the variable {@code van} binds, in order: per hop a pattern
      * over the bean the hop reaches, tested against the near object along the reference field of the end that holds it
-     * ({@link StaticFunction#MEETING}, the field the chain of one side), or, over a relation a form creates, a
+     * ({@link StaticFunction#MEETING}, the field the chain of one side), or, over a relation of {@link #linkRelations}, a
      * {@link RelationLink} pattern joined to the near object, which binds the link's other end, and a pattern over the bean
      * joined to that end. Where {@code phase} names the variable of the creation phase, a link of that phase is not
      * walked. The last pattern is the one over the last bean reached.
@@ -10104,7 +10158,7 @@ public final class TmsTranspiler {
 
     /** One hop of a path or a range, from an object of type {@code van} to one of type {@code destination}: over an input
      *  relation by the reference field {@code field} on the bean of one end ({@code onNear}: on the near object, else on
-     *  the far one), over a relation a form creates by its {@link RelationLink} facts ({@code relation} set,
+     *  the far one), over a relation of {@link #linkRelations} by its {@link RelationLink} facts ({@code relation} set,
      *  {@code nearIsFirst} saying which end of the link the near object is, {@code field} null). */
     private record Hop(ObjectType van, ObjectType destination, String field, boolean onNear, String relation,
                        boolean nearIsFirst) {}
@@ -10145,11 +10199,11 @@ public final class TmsTranspiler {
                 List.copyOf(hops));
     }
 
-    /** The hop over {@code binding} from {@code van} to {@code destination} where its relation is one a form creates, read over
-     *  {@link RelationLink} facts; null for an input relation. The binding names the role the far end fills, so the near
+    /** The hop over {@code binding} from {@code van} to {@code destination} where its relation is one of
+     *  {@link #linkRelations}, read over {@link RelationLink} facts; null for any other relation. The binding names the role the far end fills, so the near
      *  end is the first of the link where that role is the fact type's second. */
     private Hop linkHop(RoleBindingRef binding, ObjectType van, ObjectType destination) {
-        if (binding == null || binding.factType() == null || !createdRelations.contains(Namen.norm(binding.factType())))
+        if (binding == null || binding.factType() == null || !linkRelations.contains(Namen.norm(binding.factType())))
             return null;
         RegelSpraakModel.FactType ft = factType(binding.factType());
         if (ft == null || ft.roles.size() != 2 || ft.reciprocal)

@@ -1,0 +1,169 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.SecondFillingFault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de som van het gewicht van alle geborgen vondsten van de Gemeente of 0 als die er niet zijn
+function Object waarde_bergingsgewichtVanEenGemeente(Object $aantal_vouw_7, Object $vouw_vouw_9) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_7, $vouw_vouw_9, new java.math.BigDecimal("0")), Integer.valueOf(0), "bergingsgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bergingsgewicht van een gemeente"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Gemeente()
+    accumulate( $bijdrage_vouw_4 : Contribution( fold == "bergingsgewicht van een gemeente: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_8 : value ); $aantal_vouw_7 : count(), $vouw_vouw_9 : exactSum($bijdragewaarde_vouw_8) )
+then
+    Object v = waarde_bergingsgewichtVanEenGemeente($aantal_vouw_7, $vouw_vouw_9);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bergingsgewicht van een gemeente", ComputeHelpers.designate(v, "bergingsgewicht van een gemeente")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("gemeente", "bergingsgewicht", false), v, "bergingsgewicht van een gemeente"));
+        }
+    }
+end
+
+// het aantal geborgen vondsten van de Gemeente
+function Object waarde_bergingsaantalVanEenGemeente(Object $aantal_vouw_17) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_17), Integer.valueOf(0), "bergingsaantal", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bergingsaantal van een gemeente"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Gemeente()
+    accumulate( $bijdrage_vouw_14 : Contribution( fold == "bergingsaantal van een gemeente: vouw 1", subject == $onderwerp ); $aantal_vouw_17 : count() )
+then
+    Object v = waarde_bergingsaantalVanEenGemeente($aantal_vouw_17);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bergingsaantal van een gemeente", ComputeHelpers.designate(v, "bergingsaantal van een gemeente")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("gemeente", "bergingsaantal", false), v, "bergingsaantal van een gemeente"));
+        }
+    }
+end
+
+// het aantal bergende gemeenten van de Vondst
+function Object waarde_aantalBergendeGemeentenVanEenVondst(Object $aantal_vouw_25) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_25), Integer.valueOf(0), "aantal bergende gemeenten", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantal bergende gemeenten van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    accumulate( $bijdrage_vouw_22 : Contribution( fold == "aantal bergende gemeenten van een vondst: vouw 2", subject == $onderwerp ); $aantal_vouw_25 : count() )
+then
+    Object v = waarde_aantalBergendeGemeentenVanEenVondst($aantal_vouw_25);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantal bergende gemeenten van een vondst", ComputeHelpers.designate(v, "aantal bergende gemeenten van een vondst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "aantal bergende gemeenten", false), v, "aantal bergende gemeenten van een vondst"));
+        }
+    }
+end
+
+// de Gemeente is een kustgemeente
+function boolean toets_bergingDoorDeKustgemeente(Object $kustgemeente) {
+    return ComputeHelpers.characteristic($kustgemeente, Boolean.TRUE);
+}
+
+function boolean beta1_bergingDoorDeKustgemeente(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("gemeenteVanInschrijving"), java.util.Arrays.asList());
+}
+
+function boolean beta2_bergingDoorDeKustgemeente(Object eigen, Object ander) {
+    return ComputeHelpers.notInPhase(eigen, ander);
+}
+
+rule "berging door de kustgemeente"
+    dialect "mvel"
+    agenda-group "uchar-feitcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Gemeente( $kustgemeente : (ComputeHelpers.holds(kustgemeente)) )
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    eval( toets_bergingDoorDeKustgemeente($kustgemeente) )
+    $stap_keten_28 : dev.uchar.regelspraak.facts.Jutter( beta1_bergingDoorDeKustgemeente(this, $onderwerp) )
+    $koppeling_keten_31 : RelationLink( relation == "aanmelding", first == $stap_keten_28, beta2_bergingDoorDeKustgemeente(this, $fase), $overzijde_keten_32 : second )
+    $stap_keten_30 : dev.uchar.regelspraak.facts.Vondst( this == $overzijde_keten_32 )
+    not( $bestaand_feitcreatie_37 : RelationLink( relation == "gemeentelijke berging", first == $onderwerp, second == $stap_keten_30 ) )
+then
+    insert(new RelationLink("gemeentelijke berging", $onderwerp, $stap_keten_30, $fase));
+end
+
+rule "bergingsgewicht van een gemeente: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Gemeente()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht )
+    exists( $koppeling_bereik_0 : RelationLink( relation == "gemeentelijke berging", second == $onderwerp, first == $vouwonderwerp ) )
+then
+    Object v = ComputeHelpers.contribution("bergingsgewicht van een gemeente: vouw 0", $vouwonderwerp, $onderwerp, $gewicht, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+rule "bergingsaantal van een gemeente: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Gemeente()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    exists( $koppeling_bereik_10 : RelationLink( relation == "gemeentelijke berging", second == $onderwerp, first == $vouwonderwerp ) )
+then
+    insertLogical(new Contribution("bergingsaantal van een gemeente: vouw 1", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "aantal bergende gemeenten van een vondst: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $onderwerp : dev.uchar.regelspraak.facts.Gemeente()
+    exists( $koppeling_bereik_18 : RelationLink( relation == "gemeentelijke berging", first == $onderwerp, second == $vouwonderwerp ) )
+then
+    insertLogical(new Contribution("aantal bergende gemeenten van een vondst: vouw 2", $vouwonderwerp, $onderwerp, null));
+end
+
+rule "koppeling gemeentelijke berging uit de invoer: Vondst.bergende gemeente"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Vondst( bergendeGemeente != null, $ander : bergendeGemeente )
+then
+    insertLogical(new RelationLink("gemeentelijke berging", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingGemeentelijkeBergingTweedeVullingVanBergendeGemeente(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling gemeentelijke berging: tweede vulling van bergende gemeente"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "gemeentelijke berging", $nabij : second )
+    $twee : RelationLink( relation == "gemeentelijke berging", second != null, second == $een.second, beta_koppelingGemeentelijkeBergingTweedeVullingVanBergendeGemeente(this, $een) )
+then
+    insertLogical(new Fault($nabij, "gemeentelijke berging", new SecondFillingFault("bergende gemeente", $nabij)));
+end
+

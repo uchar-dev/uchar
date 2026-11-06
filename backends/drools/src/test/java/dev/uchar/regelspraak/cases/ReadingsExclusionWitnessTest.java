@@ -35,13 +35,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Floor, measured 2026-10-21: {@value #EXPECTED_MIN_EXCLUDED} goldens the replay excludes (the {@code EXCLUDE}
  * entries of gate 12's {@code EXPECTED_CHANNEL}). A smaller count is a corpus that lost such goldens or a pre-filter that
- * stopped seeing them, and the comparison would pass on fewer.
+ * stopped seeing them, and the comparison would pass on fewer. Lowered from 46 to 43 by the card
+ * drools-veelopveel-beanmodel (2026-11-06): four goldens over a relation of two to-many roles left the excluded set and
+ * play on both branches; measured 43 after it.
  */
 class ReadingsExclusionWitnessTest {
 
     private static final Path CORPUS = Path.of("..", "..", "corpus");
 
-    static final int EXPECTED_MIN_EXCLUDED = 46;
+    static final int EXPECTED_MIN_EXCLUDED = 43;
 
     @Test void the_build_with_readings_excludes_every_golden_the_replay_excludes_with_the_same_line() throws Exception {
         List<Path> goldens;

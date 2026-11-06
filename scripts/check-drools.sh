@@ -296,8 +296,6 @@ EXPECTED_CHANNEL=(
   "anchor/jutterswet-aanmeldquotum|EXCLUDE DROOLS-023|loader Refusal: Expr:TemporalRead — the v0 backend has no temporal-read lowering"
   "anchor/jutterswet-aanspraaktelling|EXCLUDE DROOLS-002|loader Refusal: functionDefs — no function section in the v0 backend"
   "anchor/jutterswet-beschikkingsom|EXCLUDE DROOLS-021|loader Refusal: Expr:Match — the loader carries the sum type and the Construct (card absence-markers, step B), and the match over it is refused"
-  "anchor/jutterswet-bootberging|EXCLUDE DROOLS-067|transpiler SKIP: sourcePath step 1 (Boot -> Vondst) has no bean field: the role 'geborgen vondst' on Boot is to-many, so its storage is the field at the far end, and the bean model derives none there either, both ends being to-many (§13.3.9). The WF-102 path itself is CARRIED since 2026-09-18 (card drools-bronpad); the middle relation 'berging' declares BOTH roles to-many, and lifting that is a bean-model change (a collection-valued representation for many-to-many) with channel consequences of its own. Since card tms-omschakeling (2026-10-10) the exec-model branch is the lowering with truth maintenance and refuses the golden in this sentence, as the destructive lowering did"
-  "anchor/jutterswet-gemeenteberging|EXCLUDE DROOLS-161|transpiler SKIP: the path of the fact creation 'berging door de kustgemeente' steps over 'aanmelding', both of whose roles are to-many, and the bean model has no field for that (§13.3.9). Until card tms-omschakeling (2026-10-10) the destructive lowering refused the golden on another form first, the count 'aantal bergende gemeenten van een vondst' over a to-one element role whose sister role is to-many: one bean field carries both directions, a CONSERVATIVE refusal since 2026-09-10 whose old ground (the directed reading) RUNTIME-SEMANTICS ch. 5.7a withdrew"
   "anchor/jutterswet-penningvintage|EXCLUDE DROOLS-023|loader Refusal: Expr:TemporalRead"
   "anchor/jutterswet-staffelvergoeding|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "anchor/jutterswet-toelagegronden|EXCLUDE DROOLS-054|bean name collision, refused before either branch lowers the document: the characteristic 'toelage' and the attribute 'toelage' of Jutter fall on one bean property, Jutter.toelage, which carries the attribute, and a defaults group writes the characteristic (v0 bean-model limit, not a defaults divergence). Until 2026-09-28 the transpiler's defaults fence refused it one phase later, on the same limit"
@@ -313,7 +311,6 @@ EXPECTED_CHANNEL=(
   "jutterswet-havenrooster|EXCLUDE DROOLS-179|transpiler SKIP: a duration in day kinds whose day kind 'havendag' reads the parameter 'openingsdatum' in its definition, which the branch does not read in a day-kind definition (WF-031 admits it). The destructive lowering refused the same rule until card tms-omschakeling (2026-10-10): its day-kind predicate compiler (kern.DayKinds) carries no PARAMETER operand. Measured 2026-09-19 with the day-kind card: ref and the ASP backend both answer this golden, which is why it is named here rather than left to the played default"
   "jutterswet-kamerheffing-catala|EXCLUDE DROOLS-002|loader Refusal: functionDefs"
   "jutterswet-kamerhuishouden-catala|EXCLUDE DROOLS-002|loader Refusal: functionDefs"
-  "jutterswet-ketenkwantor|EXCLUDE DROOLS-067|transpiler SKIP: sourcePath step 1 (Boot -> Vondst) has no bean field: the many-to-many 'berging' of anchor/jutterswet-bootberging and jutterswet-muntketen above. Measured 2026-10-20 (card frontend-kwantor-over-een-pad) in both branches, same sentence: since that card the loader carries a QuantifierFold's sourcePath and both branches plan it as a value fold's, so the refusal moved one layer deeper, as the pin of 2026-09-22 inferred; until then the loader refused the range itself (DROOLS-026, now retired). The quantifier over a path plays where the bean model carries the steps: jutterswet-dringende-melding. Its flat-count pins are a ref = clingo pair"
   "jutterswet-kinderdeler|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-kinderfoldheffing|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-kinderkap|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
@@ -321,7 +318,6 @@ EXPECTED_CHANNEL=(
   "jutterswet-kinderlet|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-kindermacht|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-kinderprocent|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
-  "jutterswet-muntketen|EXCLUDE DROOLS-067|transpiler SKIP: sourcePath step 1 (Boot -> Munt) has no bean field: the same many-to-many 'berging' as bootberging above — NOT the subtype landing it was written for, which the walk does carry (SourcePathChainWitnessTest pins a strict-subtype landing, both branches). The one-step narrowing IS played here, by jutterswet-munttelling and jutterswet-muntpiek"
   "jutterswet-meldplichtspoor|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType — the loader carries the sum type (card absence-markers, step B), and reaches the list type next"
   "jutterswet-meldtermijnen|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-penningbeschikking-catala|EXCLUDE DROOLS-021|loader Refusal: Expr:Match — the loader carries the sum type (card absence-markers, step B), and the match over it is refused"
@@ -1597,7 +1593,13 @@ EXPECTED_CHANNEL=(
 # dividing fold filter under a default below the deciding one, under "geen" after the member that settles it and over
 # a path of two roles, and jutterswet-kwantorvouw-en-unie, a division in the matrix of a quantifier fold and in a
 # branch of a union (PLAYED 2 each on both branches).
-EXPECTED_PLAYED=358
+# 362 since the card drools-veelopveel-beanmodel (2026-11-06): a relation of two to-many roles is read over its links
+# (RelationLink), its input links stated by the case input, as a relation a form creates. Four goldens leave
+# EXPECTED_CHANNEL and play on both branches with their pinned values: anchor/jutterswet-bootberging (PLAYED 2),
+# jutterswet-muntketen (PLAYED 1) and jutterswet-ketenkwantor (PLAYED 4), whose sourcePath steps over 'berging'
+# (DROOLS-067), and anchor/jutterswet-gemeenteberging (PLAYED 2), whose fact creation steps over 'aanmelding'
+# (DROOLS-161, retired).
+EXPECTED_PLAYED=362
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

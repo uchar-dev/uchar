@@ -364,6 +364,9 @@ public final class FactModelGenerator {
      *       would misreport cardinality to every {@code toManyRole} consumer and to the §9 creation idempotence
      *       guard, which keys a 1:1 target on that very field being empty.</li>
      * </ul>
+     * The same weighing holds for a relation whose two roles are both to-many, which has no one side: it gets no
+     * collection field either. The transpiler reads it over its links ({@code RelationLink}), as it reads a relation
+     * a form creates, and the case input states those links as facts of their own.
      */
     public static List<String> selfPairRoles(RegelSpraakModel model, ObjectType ot) {
         List<String> out = new ArrayList<>();
@@ -482,12 +485,11 @@ public final class FactModelGenerator {
     }
 
     /**
-     * WHY a FOLD's JOIN has no bean field — {@link #noReferenceFieldReason} plus the one diagnosis that reading
-     * cannot reach: the role is TO-MANY, so its storage is the far end's field, and the far end derives none
-     * either. That is a statement about CARDINALITY, not about a displaced or underivable name, and a fold that
-     * reported it as "the bean model derives no reference field" would blame the document for an ambiguity it
-     * does not have (the erflijn shape: `erfvolger` resolves perfectly; what stops it is that BOTH sides are
-     * to-many, so neither bean can hold the relation).
+     * WHY a FOLD's JOIN has no bean field — {@link #noReferenceFieldReason} plus the diagnosis that reading
+     * cannot reach: the role is TO-MANY, so its storage is the far end's field, which either exists on the other
+     * bean or is missing for a reason of its own. That is a statement about CARDINALITY, not about a displaced or
+     * underivable name. A relation whose two roles are both to-many never comes here: no bean holds it, and every
+     * reader reads it over its links ({@code RelationLink}), as it reads a relation a form creates.
      *
      * <p>It lives HERE, beside {@link #noReferenceFieldReason}, for that function's own reason: both transpiler
      * branches refuse the same shapes and must say so in the same words. Callers prefix their own reader name.
@@ -495,12 +497,9 @@ public final class FactModelGenerator {
     public static Reason noJoinFieldReason(RegelSpraakModel model, ObjectType carrier, String role, ObjectType targetName) {
         if (!model.toManyRole(carrier, targetName, role)) return noReferenceFieldReason(model, carrier, role, targetName);
         // The far end is where a to-many role's storage lives. Whether it HAS a field there is a second
-        // question, and the answer decides how much this sentence may claim: "both sides to-many" is the
-        // erflijn shape, where neither bean can hold the relation, and asserting it where the far side does
-        // derive a field (the gemeenteberging shape: a to-one sibling, whose field exists and is simply on the
-        // other bean) would diagnose a cardinality defect the document does not have. The destructive exec branch
-        // never reached that case — its own conservative arm refused a to-one element role with a to-many sister
-        // first — but the destructive DRL-text lowering did not mirror that arm and arrived here.
+        // question, and the answer decides how much this sentence may claim: where the far side derives a field (a
+        // to-one sibling, whose field exists and is simply on the other bean) the sentence says so and diagnoses
+        // no cardinality defect the document does not have.
         ObjectType far = model.objectTypeByName(targetName.name);
         String sister = model.connectingRoleViaElementName(carrier, role);
         boolean otherSideCarries = sister != null && far != null && hasReferenceField(model, far, sister, carrier);
@@ -510,7 +509,10 @@ public final class FactModelGenerator {
         // another role, and saying "both sides to-many" there names a cause the document does not have.
         if (sister != null && far != null && !model.toManyRole(far, carrier, sister))
             return DroolsCode.SISTER_FIELD_MISSING.reason("sentence", sentence, "reason", noReferenceFieldReason(model, far, sister, carrier).msg());
-        return DroolsCode.BOTH_SIDES_MULTI_VALUED.reason("sentence", sentence);
+        // Both roles to-many: a relation of two roles is then read over its links (RelationLink), never over a field,
+        // and no reader asks here. What remains is a sister no name resolves or a fact type of more roles, of which the
+        // sentence claims no cardinality.
+        return noReferenceFieldReason(model, carrier, role, targetName);
     }
 
     /**
@@ -749,8 +751,9 @@ public final class FactModelGenerator {
      * (§13.3.9): the bound role to-one puts the field on the parent, else a to-one sibling puts it on the child.
      * At 1:1 both beans carry a field and case input writes both (RUNTIME-SEMANTICS ch. 5.7a); the parent side is
      * taken, the side the frontend picks for an objectcreatie-placed link. Where both roles are to-many there is
-     * no field at all and the child side is handed back, so the caller's {@link #hasReferenceField} gate refuses
-     * it with its usual reason. The join is read on the doel only, as before.
+     * no field at all and the child side is handed back, which {@link #hasReferenceField} does not find: the
+     * transpiler reads such a relation over its links ({@code RelationLink}), not over this derivation. The join is
+     * read on the doel only.
      *
      * <p>Null when a binding names no declared role; the caller refuses the creation as unresolved.
      */

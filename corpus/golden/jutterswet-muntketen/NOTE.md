@@ -22,16 +22,14 @@ fail differently: a wrongly included instance shifts a sum and REPLACES an
 extreme. Measured on this document with the element filter removed from both
 OCaml executors, J1 answers 1.00 and 22.00 instead of 5.00 and 12.00.
 
-Until 2026-09-18 the Drools backend refused the multi-step range per form at
-load (`Functie.bronPad`, since L4 `Aggregation.sourcePath`), because its
-accumulate source joined the element to the subject through one role. Since
-then it carries the path, and this golden's refusal moved one layer deeper:
-the middle relation `berging` declares both roles to-many, so the hop
-Boot → Munt has no bean field. The golden is therefore a two-executor witness
-(ref ≡ clingo) and appears by name, with that reason, in gate 12's channel
-list beside `anchor/jutterswet-bootberging`, which is refused on the same
-relation. The one-step narrowing IS pinned in all three, by
-`jutterswet-munttelling` and `jutterswet-muntpiek`.
+The middle relation `berging` declares both roles to-many, so it has no one
+side whose bean could hold it. The Drools backend reads such a relation over
+its links, which the case input states as facts of their own, and the hop
+Boot → Munt joins the two nodes by such a link. The golden plays in all three
+executors (ref ≡ clingo ≡ Drools, both Drools branches), as does
+`anchor/jutterswet-bootberging` over the same relation. The one-step
+narrowing is pinned in all three as well, by `jutterswet-munttelling` and
+`jutterswet-muntpiek`.
 
 ## Case derivation (hand-computed, absolute)
 

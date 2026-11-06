@@ -28,10 +28,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * case may write it from the Boot, from the Vondst or from both, and it is one link each time.
  *
  * <p>The expectations of the golden's cases are its own, replayed by gates 5, 6 and 12; this class pins what those
- * totals do not show: which links go in, that the three spellings give the same ones on both branches, and the
- * sentences with which {@code insert} refuses a link that does not fit the beans or the model.
+ * totals do not show: which links go in, that the three spellings give the same ones and the same values on both
+ * branches, and the sentences with which {@code insert} refuses a link that does not fit the beans or the model.
+ *
+ * <p>The readers walk such a relation over its links, as they walk a relation a form creates: a step of a multi-step
+ * range joins the two nodes it connects by a link, every node between subject and element bound in the {@code exists},
+ * so a Vondst that two Boten reach counts once (case 1: V2). A link has no place in the fold order, so a fold over such
+ * a relation that reads its members in order is refused by name on both branches (DROOLS-318): a filter that can fault,
+ * over one step or a step of a path, and a quantifier fold whose matrix can fault. The reference interpreter orders the
+ * members per holder by the list of RUNTIME-SEMANTICS ch. 5.7a, written members first and the others by label; that
+ * reading is a provisional decision of the card drools-veelopveel-beanmodel, which this branch does not carry.
  */
-class ManyToManyInputWitnessTest {
+class ManyToManyWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -97,7 +105,81 @@ class ManyToManyInputWitnessTest {
         });
     }
 
+    @Test void the_three_spellings_play_the_golden_values_on_both_branches() throws Exception {
+        // case 1 pins vondstrijk absent and vondstarm present: the count over the flat union is 3, V2 once
+        for (Map.Entry<String, JsonNode> spelling : spellings().entrySet())
+            BothBranches.green(GOLDEN.resolve("ir.json"), spelling.getValue(), spelling.getKey());
+    }
+
+    @Test void a_filter_that_can_fault_over_one_step_of_two_to_many_roles_is_refused_by_name() throws Exception {
+        // the fold of TmsFilterFaultWitnessTest, "het aantal vondsten van de Jutter die aan de volgende voorwaarde
+        // voldoen: de wortel van zijn gewicht is groter dan 2", over aanmelding with both roles to-many
+        String model = TmsDocuments.model(List.of(
+                TmsDocuments.objectType("Jutter", List.of(TmsDocuments.attribute("zware vondsten", TmsDocuments.WHOLE)),
+                        List.of("actief", "druk")),
+                TmsDocuments.objectType("Vondst", List.of(TmsDocuments.attribute("gewicht", TmsDocuments.WHOLE),
+                        TmsDocuments.attribute("deelnemers", TmsDocuments.WHOLE)), List.of("gemeld", "erkend"))),
+                List.of(manyToMany("aanmelding", "aanmelder", "Jutter", "aanmelders", "vondst", "Vondst", "vondsten")));
+        BothBranches.refused(TmsDocuments.document(model, TmsFilterFaultWitnessTest.ZWARE),
+                TmsFilterFaultWitnessTest.caseDocument(true, List.of()),
+                "een vouw over 'aanmelding', een relatie waarvan beide rollen meervoudig zijn",
+                "a filter that can fault over one step");
+    }
+
+    @Test void a_filter_that_can_fault_over_a_path_step_of_two_to_many_roles_is_refused_by_name() throws Exception {
+        // "de som van het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter die aan de volgende
+        // voorwaarde voldoen: de wortel van zijn gewicht is groter dan 2", Jutter -> Boot over bemanning, Boot -> Vondst
+        // over berging
+        String model = TmsDocuments.model(List.of(
+                TmsDocuments.objectType("Jutter", List.of(TmsDocuments.attribute("zware vondsten", TmsDocuments.WHOLE)),
+                        List.of()),
+                TmsDocuments.objectType("Boot", List.of(), List.of()),
+                TmsDocuments.objectType("Vondst", List.of(TmsDocuments.attribute("gewicht", TmsDocuments.WHOLE)), List.of())),
+                List.of(TmsDocuments.factTypeOneToMany("bemanning", "schipper", "Jutter", "gevoerde boot", "Boot",
+                                "gevoerde boten"),
+                        manyToMany("berging", "bergende boot", "Boot", "bergende boten", "geborgen vondst", "Vondst",
+                                "geborgen vondsten")));
+        String fold = TmsDocuments.aggregation("sum", TmsDocuments.ownRead("gewicht", "Vondst"), "Vondst",
+                TmsDocuments.sourcePath(List.of(TmsDocuments.roleBinding("bemanning", "gevoerde boot"),
+                        TmsDocuments.roleBinding("berging", "geborgen vondst"))),
+                TmsDocuments.comparison("greater", TmsDocuments.root(TmsDocuments.ownRead("gewicht", "Vondst"),
+                        "de wortel van zijn gewicht"), TmsDocuments.number("2")),
+                "null", TmsDocuments.WHOLE, "de som van het gewicht van alle geborgen vondsten van alle gevoerde boten van"
+                        + " de Jutter die aan de volgende voorwaarde voldoen: de wortel van zijn gewicht is groter dan 2");
+        BothBranches.refused(TmsDocuments.document(model, List.of(TmsDocuments.computingRule("zware vondsten", "BEREKENING",
+                        "Jutter", "zware vondsten", fold, "null"))),
+                TmsDocuments.caseDocument(List.of(), List.of()),
+                "een vouw over 'berging', een relatie waarvan beide rollen meervoudig zijn",
+                "a filter that can fault over a path step");
+    }
+
+    @Test void a_quantifier_whose_matrix_can_fault_over_a_path_of_two_to_many_roles_is_refused_by_name() throws Exception {
+        // the golden's vondstrijk with the matrix "de wortel van zijn gewicht is groter dan 1": a root can fault, so the
+        // quantifier reads its members in order
+        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(GOLDEN.resolve("ir.json")));
+        JsonNode rule = ir.get("rules").get("rules").get(0);
+        ObjectNode quantifier = (ObjectNode) rule.get("versions").get(0).get("condition");
+        ObjectNode test = (ObjectNode) quantifier.get("test");
+        ObjectNode gewicht = (ObjectNode) test.get("left");
+        test.set("left", JSON.readTree(TmsDocuments.root(gewicht.toString(), "de wortel van zijn gewicht")));
+        Path p = Files.createTempFile("veelopveel-kwantor", ".json");
+        p.toFile().deleteOnExit();
+        Files.writeString(p, ir.toString());
+        BothBranches.refused(p, read("case1-gedeelde-vondst-onder-de-drempel"),
+                "een vouw over 'berging', een relatie waarvan beide rollen meervoudig zijn",
+                "a quantifier whose matrix can fault over a path step");
+    }
+
     // ---------------- fixtures ----------------
+
+    /** A fact type of two to-many roles. */
+    private static String manyToMany(String name, String roleA, String typeA, String pluralA, String roleB, String typeB,
+                                     String pluralB) {
+        return "{\"node\":\"FactType\",\"name\":\"" + name + "\",\"reciprocal\":false,\"roles\":[{\"node\":\"Role\","
+                + "\"name\":\"" + roleA + "\",\"objectType\":\"" + typeA + "\",\"plural\":\"" + pluralA + "\",\"many\":true},"
+                + "{\"node\":\"Role\",\"name\":\"" + roleB + "\",\"objectType\":\"" + typeB + "\",\"plural\":\"" + pluralB
+                + "\",\"many\":true}]}";
+    }
 
     /** The golden's document without its two rules: the case input and {@code insert} read the model only, and a build
      *  of the document refuses as long as a form of it does. */

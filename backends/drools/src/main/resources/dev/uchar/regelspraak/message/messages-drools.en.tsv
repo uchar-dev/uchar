@@ -354,6 +354,7 @@ DROOLS-316	{form} on the time-dependent attribute '{attribute}' of {declarant} i
 DROOLS-316.initialisation	the value of an initialisation
 DROOLS-316.member	the member value of an object creation
 DROOLS-317	the bean model does not carry the bean property {property} of {objectType}: its getter {getter} is a method of java.lang.Object, which no bean can declare again
+DROOLS-318	a fold over '{factType}', a relation both of whose roles are to-many ('{description}'), that reads its members in order (a filter that can fail, a deposit, or a member condition that can fail or deposit): a link of such a relation has no place in the order of the members in this branch, and that order determines which member gives the fault (RUNTIME-SEMANTICS ch. 5.7a, 5.11); this branch does not carry this form yet
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-004	input {place} = {value} does not fit {decimals} decimals: a case value whose exact value its declaration cannot hold is refused at the input (RUNTIME-SEMANTICS ch. 2.4, 5.7)

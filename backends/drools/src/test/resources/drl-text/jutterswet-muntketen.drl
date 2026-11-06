@@ -1,0 +1,95 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de minimale waarde van het gewicht van alle geborgen munten van alle gevoerde boten van de Jutter
+function Object waarde_laagsteMuntgewicht(Object $aantal_vouw_9, Object $vouw_vouw_11) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_9, $vouw_vouw_11, null), Integer.valueOf(2), "laagste muntgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "laagste muntgewicht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_6 : Contribution( fold == "laagste muntgewicht: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_10 : value ); $aantal_vouw_9 : count(), $vouw_vouw_11 : exactMin($bijdragewaarde_vouw_10) )
+then
+    Object v = waarde_laagsteMuntgewicht($aantal_vouw_9, $vouw_vouw_11);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "laagste muntgewicht", ComputeHelpers.designate(v, "laagste muntgewicht")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "laagste muntgewicht", false), v, "laagste muntgewicht"));
+        }
+    }
+end
+
+// de som van het gewicht van alle geborgen munten van alle gevoerde boten van de Jutter of 0 als die er niet zijn
+function Object waarde_totaalMuntgewicht(Object $aantal_vouw_21, Object $vouw_vouw_23) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_21, $vouw_vouw_23, new java.math.BigDecimal("0")), Integer.valueOf(2), "totaal muntgewicht", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "totaal muntgewicht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_18 : Contribution( fold == "totaal muntgewicht: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_22 : value ); $aantal_vouw_21 : count(), $vouw_vouw_23 : exactSum($bijdragewaarde_vouw_22) )
+then
+    Object v = waarde_totaalMuntgewicht($aantal_vouw_21, $vouw_vouw_23);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "totaal muntgewicht", ComputeHelpers.designate(v, "totaal muntgewicht")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "totaal muntgewicht", false), v, "totaal muntgewicht"));
+        }
+    }
+end
+
+function boolean beta_laagsteMuntgewichtBijdrageAanVouw0(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("schipper"), java.util.Arrays.asList());
+}
+
+rule "laagste muntgewicht: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Munt( $gewicht : gewicht )
+    exists( $tussen_pad_0 : dev.uchar.regelspraak.facts.Boot( beta_laagsteMuntgewichtBijdrageAanVouw0(this, $vouwonderwerp) ) and $padkoppeling_pad_2 : RelationLink( relation == "berging", first == $tussen_pad_0, second == $onderwerp ) )
+then
+    Object v = ComputeHelpers.contribution("laagste muntgewicht: vouw 0", $vouwonderwerp, $onderwerp, $gewicht, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta_totaalMuntgewichtBijdrageAanVouw1(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("schipper"), java.util.Arrays.asList());
+}
+
+rule "totaal muntgewicht: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Munt( $gewicht : gewicht )
+    exists( $tussen_pad_12 : dev.uchar.regelspraak.facts.Boot( beta_totaalMuntgewichtBijdrageAanVouw1(this, $vouwonderwerp) ) and $padkoppeling_pad_14 : RelationLink( relation == "berging", first == $tussen_pad_12, second == $onderwerp ) )
+then
+    Object v = ComputeHelpers.contribution("totaal muntgewicht: vouw 1", $vouwonderwerp, $onderwerp, $gewicht, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+

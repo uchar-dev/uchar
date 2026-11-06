@@ -15,11 +15,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * The WF-102 fold-source PATH, walked by BOTH Drools transpiler branches (IR-SPEC ch. 4.3,
  * RUNTIME-SEMANTICS ch. 3.4b).
  *
- * <p><b>Why the model is authored here instead of read from the corpus.</b> The three corpus goldens that
- * carry a {@code sourcePath} pin ONE shape between them — two to-many hops, i.e. a walk that is functional
- * from the element in every step — and two of the three are not replayable by this backend at all (their
- * middle relation is many-to-many, so §13.3.9 derives no bean field at either end and the walk refuses by
- * name). Everything this card had to BUILD beyond that one shape therefore has no corpus witness: the
+ * <p><b>Why the model is authored here instead of read from the corpus.</b> The corpus goldens that carry a
+ * {@code sourcePath} pin few shapes between them — two to-many hops, i.e. a walk that is functional from the
+ * element in every step, and a middle relation that is many-to-many, which the backend reads over its links.
+ * Everything beyond those shapes therefore has no corpus witness: the
  * to-one/to-many mix, the DEDUP that mix makes necessary, the subtype landing, and the refusal to fall
  * back on a coincidental direct relation. Each row below is that missing witness, with values computed
  * from the SENTENCE by hand before anything was run.
@@ -153,15 +152,17 @@ class SourcePathChainWitnessTest {
                 "een pad dat op Ankersteen eindigt is niet het bereik van een Praam-vouw");
     }
 
-    /** A hop whose relation is many-to-many: §13.3.9 stores a relation in ONE scalar field, on the ONE
-     *  side, and a relation with no ONE side has no field at either end. That is a per-form refusal with
-     *  the SHARED sentence, never a KieBase that dies at first fire. */
-    @Test void a_cardinality_conflicting_step_is_refused() throws Exception {
+    /** A hop whose relation is many-to-many: §13.3.9 stores a relation in ONE scalar field, on the ONE side, and a
+     *  relation with no one side has no field at either end. The branch reads it over its links, which the case input
+     *  states, and the step joins the two nodes it connects by such a link; every node between subject and element is
+     *  then bound in the exists, so a member that two routes reach still counts once. ref and clingo answer the same 21
+     *  expectations as on the document with a to-one step. */
+    @Test void a_step_over_two_to_many_roles_is_read_over_its_links() throws Exception {
         String piece = doc().replace(
                 "{ \"node\": \"Role\", \"name\": \"schuttende sluis\", \"objectType\": \"Sluis\", \"plural\": \"schuttende sluizen\", \"many\": false }",
                 "{ \"node\": \"Role\", \"name\": \"schuttende sluis\", \"objectType\": \"Sluis\", \"plural\": \"schuttende sluizen\", \"many\": true }");
-        BothBranches.refused(ir(piece), chain(), "opslagrichting",
-                "beide zijden meervoudig: geen van beide beans draagt de relatie");
+        assertTrue(!piece.equals(doc()), "de vervanging hoort de rol meervoudig te maken");
+        BothBranches.green(ir(piece), chain(), "a step over two to-many roles is a link hop");
     }
 
     // ---------------- helpers ----------------

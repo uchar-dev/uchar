@@ -11,6 +11,7 @@ import dev.uchar.regelspraak.schema.FactModelGenerator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * IR-SPEC ch. 4.3 / WF-102 — the fold source's RANGE as a PATH, resolved against the bean model ONCE for both
@@ -39,6 +40,12 @@ import java.util.List;
  * is followed by a FORWARD one can two intermediates meet in the same element; there the intermediate is a genuine
  * existential, and {@link Plan#intermediateNodes} names it so both branches can quantify it EXISTENTIALLY (one tuple per
  * element) instead of joining it into the accumulate source (one tuple per route).
+ *
+ * <p><b>The third kind of hop, the link.</b> A relation the caller reads over its links instead of a bean field (a
+ * relation of two to-many roles, which has no one side, so the bean model gives it no field) is a hop with no field at
+ * all ({@link Step#link}): it is functional in neither direction, so a path with such a hop is no getter chain from
+ * either end. Every node between the subject and the element is then an intermediate, and each hop joins the two
+ * nodes it connects, a field hop by its field and a link hop by a link whose two ends are those nodes.
  */
 public final class SourcePath {
     private SourcePath() {}
@@ -48,8 +55,13 @@ public final class SourcePath {
      *  SOURCE; false -> the field is on the source and holds the target. The two object types the hop connects are
      *  NOT repeated here: they are nodes {@code i-1} and {@code i} of {@link Plan#nodeTypes}, and a second copy
      *  would be a second thing to keep true. The feittype and role NAMES stop at {@link #parse}, which is where
-     *  they are resolved and where the refusal sentences quote them. */
-    public record Step(boolean backward, String beanField) {}
+     *  they are resolved and where the refusal sentences quote them. A link hop has no field: {@code relation} is the
+     *  normalised name of the fact type whose links it walks, and {@code nearIsFirst} says whether node {@code i-1},
+     *  which fills the step's opposite role, is the first end of such a link; both are null and false on a field hop. */
+    public record Step(boolean backward, String beanField, String relation, boolean nearIsFirst) {
+        /** Whether the hop walks the links of {@link #relation} instead of a bean field. */
+        public boolean link() { return relation != null; }
+    }
 
     /** The lowering plan for one path, or a refusal.
      *
@@ -101,11 +113,13 @@ public final class SourcePath {
 
     /**
      * Resolve {@code path} against the model. {@code subject} is the fold subject (node 0) and {@code element} the
-     * fold's declared elementType (node n). Every failure is a SENTENCE, never a null: a step that names no
-     * feittype/role, a step that does not join what its predecessor reaches, a landing beside the element type, or
-     * a hop the bean model derives no field for.
+     * fold's declared elementType (node n); {@code linkRelation} says, by normalised fact type name, which relations of
+     * two roles the caller reads over their links, and a step over one of those is a link hop. Every failure is a
+     * SENTENCE, never a null: a step that names no feittype/role, a step that does not join what its predecessor
+     * reaches, a landing beside the element type, or a field hop the bean model derives no field for.
      */
-    public static Plan parse(RegelSpraakModel model, ObjectType subject, List<RoleBindingRef> path, ObjectType element) {
+    public static Plan parse(RegelSpraakModel model, ObjectType subject, List<RoleBindingRef> path, ObjectType element,
+                             Predicate<String> linkRelation) {
         if (model == null || subject == null || element == null)
             return refuse(DroolsCode.SOURCE_PATH_WITHOUT_SUBJECT.reason());
         if (path == null || path.size() < 2)
@@ -139,6 +153,11 @@ public final class SourcePath {
             if (last && !compatible(element, filler))
                 return refuse(DroolsCode.SOURCE_PATH_OFF_ELEMENT.reason("step", i, "role", bound.name(), "objectType", filler.name, "elementType", element.name));
             ObjectType destination = last ? element : filler;
+            if (ft.roles.size() == 2 && !ft.reciprocal && linkRelation.test(Namen.norm(ft.name))) {
+                steps.add(new Step(false, null, Namen.norm(ft.name), opposite == ft.roles.get(0)));
+                nodes.add(destination);
+                continue;
+            }
             // §13.3.9 the storage direction. A to-many bound role keeps its link at the FAR end, named after the
             // opposite role; a to-one bound role keeps it here, named after itself. The question is asked of the
             // ONE shared member derivation (FactModelGenerator), so a path hop can never assume a field the beans
@@ -148,9 +167,12 @@ public final class SourcePath {
             String roleField = toMany ? opposite.name() : bound.name();
             if (!FactModelGenerator.hasReferenceField(model, carrier, roleField, target))
                 return refuse(DroolsCode.SOURCE_PATH_NO_JOIN.reason("step", i, "fromType", van.name, "toType", destination.name, "reason", FactModelGenerator.noJoinFieldReason(model, van, bound.name(), destination).msg()));
-            steps.add(new Step(toMany, Namen.ident(roleField, false)));
+            steps.add(new Step(toMany, Namen.ident(roleField, false), null, false));
             nodes.add(destination);
         }
+        // a link hop is a getter in neither direction, so neither walk passes it: every node between is an intermediate
+        if (steps.stream().anyMatch(Step::link))
+            return new Plan(List.copyOf(steps), List.copyOf(nodes), 0, steps.size(), null);
         int forward = 0;
         while (forward < steps.size() && !steps.get(forward).backward()) forward++;
         int backwardStart = steps.size();

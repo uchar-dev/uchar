@@ -75,13 +75,15 @@ consumer does.
    a timeline whose input the bean holds as the asOfDate-bucket scalar, the one segment of the period of the
    attribute's grid that holds the evaluation date (RUNTIME-SEMANTICS ch. 8.4), and `lijst(holder, role, members)`
    where the order of a to-many list is not the order of the beans, `role` being the role the holder plays, the name
-   of the reference field each member holds toward it. `insert` states the facts the branch reads from these
-   (`BucketInput`, `ListPlace`), so a consumer states no fact class of the branch itself.
+   of the reference field each member holds toward it, and `link(factType, first, second)` for every link of a relation
+   both of whose roles are to-many, which no bean holds, `first` filling the role the fact type declares first.
+   `insert` states the facts the branch reads from these (`BucketInput`, `ListPlace`, `RelationLink` of phase 0), so a
+   consumer states no fact class of the branch itself.
    `CaseInput.of(build, case)` makes that `Input` from a `uchar-case-v0` case, as the replay makes it for every
    case: it reads `asOfDate` and `input.instances` onto fresh beans, sets the attributes, characteristics and role
    links (RUNTIME-SEMANTICS ch. 5.7a: the written role by name, else by the type pair; on a one-to-one relation the
-   far field as well; a to-many role in the far end's field; the reverse leg of a reciprocal role in a separate
-   pass), and gives `beans()` by label, `types()` and `input()`, every to-many list in the order the reference
+   far field as well; a to-many role in the far end's field; a role of a relation of two to-many roles as one link,
+   from whichever side the case writes it; the reverse leg of a reciprocal role in a separate pass), and gives `beans()` by label, `types()` and `input()`, every to-many list in the order the reference
    interpreter folds over. The `cells` of a dimensioned attribute go into its bean member, a map of its cells by their
    labels in their declared spelling (`FactModelGenerator.cellKey`, RUNTIME-SEMANTICS ch. 5.8c); labels that name no
    cell are refused with EF-034, a cell named twice with EF-035, a cell value its decimals do not hold with EF-004 at the
@@ -583,8 +585,8 @@ a filter fault), and the reading rule collects them and replays the stop trigger
 prefix included; over a created relation, whose made links have no place, such a matrix is refused. The filter is
 settled for every member before the matrix, with its faults and deposits as for any fold. A role check (ch. 5.8a) is
 an existence question bound as a value, so it stands in a composite like any condition: over a relation a form
-creates, an accumulate over the relation's `RelationLink` facts that hold the subject at its end; over an input
-relation, the subject's own reference field where the other role is to-one, and else an accumulate over the beans
+creates or one of two to-many roles, an accumulate over the relation's `RelationLink` facts that hold the subject at
+its end; over any other relation, the subject's own reference field where the other role is to-one, and else an accumulate over the beans
 whose field names the subject, as the bean model stores the link (`FactModelGenerator.membershipStorage`); a
 counterpart type is a class test, which a subtype passes. A uniqueness (ch. 5.9), over one source or more: per source a
 rule inserts each instance's key (`UniquenessKey`), its components bound in the left-hand side, a derived one
@@ -642,7 +644,8 @@ member's map, or the standing of a cell a form writes (`Consequence.Input.Member
 **Allocations.** An allocation (RUNTIME-SEMANTICS ch. 4) is a computation over the recipients that the left-hand
 side binds. A rule of the allocation inserts, per source and per recipient, an `Recipient` logically: an instance of
 `targetType` that the connecting relation links to the source, through the bean field of an input relation or the
-`RelationLink` facts of a relation a form creates, so a recipient a creation adds counts as well, with its weight,
+`RelationLink` facts of a relation a form creates or of one of two to-many roles, so a recipient a creation adds counts
+as well, with its weight,
 ordering key and cap bound in that rule's left-hand side, a derived one through its standing. The allocation's own
 rule binds the source, its pot, the reads of its condition and, through an accumulate, the list of the source's
 `Recipient` facts; its consequence computes the distribution from those values alone (`Allocation.compute`, a public
@@ -966,13 +969,17 @@ compared exactly, as `Cycles` derives the back-link for the strata (`TmsTranspil
 `jutterswet-penningbesluit`. Its consequence makes a new bean of the
 created type and inserts, stated, the bean, its `CreationStamp` with the phase, the `RelationLink` of the connecting relation and
 the member assignments as `Value` and `HasCharacteristic`, computed from the values the rule binds. A fact creation's rule
-walks its path, over the reference fields of an input relation and over the `RelationLink` facts of a created one, none of
-the current phase, and inserts the `RelationLink` it makes, stated, where no link between anchor and target exists yet: the
+walks its path, over the reference fields of an input relation and over the `RelationLink` facts of a created one or of
+one of two to-many roles, none of the current phase, and inserts the `RelationLink` it makes, stated, where no link between anchor and target exists yet: the
 creation is idempotent per link. What a phase made carries its number, and a creation rule takes no object or link of
 the phase it fires in, so a recursive chain advances one generation per phase, after the rule layer has reached a
 fixpoint over what the previous phase made. Every relation a form creates is read through `RelationLink` facts, the links
 of the case input included, which a rule per to-one end inserts logically from the bean fields: a navigation through a
-`PathState` over a chain of patterns, the range of a fold through an `exists` over the link. A second distinct filler of
+`PathState` over a chain of patterns, the range of a fold through an `exists` over the link. So is every relation whose
+two roles are both to-many, which the bean model stores in no field: the case input states its links as facts
+(`Input.link`), the same link from whichever side the case writes it, and a step of a multi-step range over it joins
+the two nodes it connects by such a link, every node between the subject and the element then bound in the `exists`
+(`SourcePath`, `TmsTranspiler.linkStep`). A second distinct filler of
 a to-one role of such a relation is a `Fault` at the fixpoint, a `SecondFillingFault` (EF-017, ch. 5.5). A condition of a creation that can fault has an ordinary fault rule in the rule layer, without the mark and
 without the 1:1 guard, as the reference interpreter evaluates the condition first, in every pass. The replay and a
 consumer fire through `DroolsBackend.fire`; `fixpointOf` and `setDerivedValues` refuse a session that `fire` did not fire
@@ -1044,10 +1051,13 @@ never as a silent fall:
   subject, in every contribution rule, with a leeg value ending the `Let` across the rule boundary (ch. 10.6). A
   binder that no `Let` encloses keeps its WF-064 refusal, and a `Let` inside the filter plays. Witness
   `TmsFoldBinderWitnessTest`;
-- the shapes of a fold's range the bean model gives no field (§13.3.9):
-  a hop over a relation whose two roles are both to-many, and, until a card of its own measures it, a to-one member
-  role whose sibling is to-many, over a relation no form creates (a created relation is read over its `RelationLink`
-  facts);
+- the shape of a fold's range the bean model gives no field (§13.3.9): until a card of its own measures it, a to-one
+  member role whose sibling is to-many, over a relation no form creates (a created relation and one of two to-many
+  roles are read over their `RelationLink` facts);
+- a fold over a relation of two to-many roles, of one step or a step of a path, that reads its members in order: a
+  filter that can fault, a deposit, a quantifier fold whose matrix can fault or deposit (DROOLS-318). The reference
+  interpreter orders the members of such a relation per holder by the list of ch. 5.7a, the written members first and
+  then the others by label; a link has no place in the fold order in this branch;
 - the value forms whose meaning the spec does not decide: a text part of a number, a truth value or a date in a text
   composition or a concatenation, where the reference interpreter ("5.5", "waar") and the runtime's `rsTekst`
   ("5.50", "true") differ; a power whose exponent is not a whole literal of at least 0, which reaches the real power

@@ -99,7 +99,7 @@ public enum DroolsCode {
     ROLE_NO_REFERENCE_FIELD("DROOLS-075", Kind.LIMIT, "role-no-reference-field", "role,objectType,targetType", null),
     ROLE_MULTI_FAR_SIDE("DROOLS-076", Kind.LIMIT, "role-multi-far-side", "sentence", null),
     SISTER_FIELD_MISSING("DROOLS-077", Kind.LIMIT, "sister-field-missing", "sentence,reason", null),
-    BOTH_SIDES_MULTI_VALUED("DROOLS-078", Kind.LIMIT, "both-sides-multi-valued", "sentence", null),
+    BOTH_SIDES_MULTI_VALUED("DROOLS-078", Kind.RETIRED, "both-sides-multi-valued", "sentence", null),
     CONNECTING_ROLE_NO_PAIR("DROOLS-079", Kind.CONTRACT, "connecting-role-no-pair", "factType,role", null),
     CREATION_BACKLINK_AMBIGUOUS("DROOLS-080", Kind.CONTRACT, "creation-backlink-ambiguous", "subjectType,createdType", "EF-018"),
     CREATION_BACKLINK_UNREACHABLE("DROOLS-081", Kind.CONTRACT, "creation-backlink-unreachable", "sentence", "EF-018"),
@@ -182,7 +182,7 @@ public enum DroolsCode {
     STEP_NOT_ROLE_PAIR("DROOLS-158", Kind.REFUSAL, "step-not-role-pair", "description", null),
     STEP_ROLE_WITHOUT_FILLER("DROOLS-159", Kind.CONTRACT, "step-role-without-filler", "description,role", null),
     ONE_HOP_NO_FIELD("DROOLS-160", Kind.LIMIT, "one-hop-no-field", "description,reason", "EF-017"),
-    MANY_PAIR_NO_FIELD("DROOLS-161", Kind.LIMIT, "many-pair-no-field", "description,factType", null),
+    MANY_PAIR_NO_FIELD("DROOLS-161", Kind.RETIRED, "many-pair-no-field", "description,factType", null),
     CHARACTERISTIC_TARGET_NAME_CLASH("DROOLS-162", Kind.LIMIT, "characteristic-target-name-clash", "attribute,objectType", null),
     DEFAULT_INITIALISATION_ON_CHARACTERISTIC("DROOLS-163", Kind.CONTRACT, "default-initialisation-on-characteristic", "attribute,declarant", null),
     DEFAULT_WITHOUT_JUSTIFICATION("DROOLS-164", Kind.REFUSAL, "default-without-justification", "source,attribute", null),
@@ -338,7 +338,8 @@ public enum DroolsCode {
     PAYLOAD_ACCESS_OF_TIMELINE("DROOLS-314", Kind.REFUSAL, "payload-access-of-timeline", "attribute", null),
     ALLOCATION_TIME_DEPENDENT_ATTRIBUTE("DROOLS-315", Kind.CONTRACT, "allocation-time-dependent-attribute", "allocation,field,attribute,objectType", null),
     TIME_TARGET_PRODUCER_VALUE("DROOLS-316", Kind.REFUSAL, "time-target-producer-value", "form,attribute,declarant,snippet", null),
-    BEAN_GETTER_OF_OBJECT("DROOLS-317", Kind.LIMIT, "bean-getter-of-object", "property,objectType,getter", null);
+    BEAN_GETTER_OF_OBJECT("DROOLS-317", Kind.LIMIT, "bean-getter-of-object", "property,objectType,getter", null),
+    MANY_TO_MANY_FOLD_ORDER("DROOLS-318", Kind.LIMIT, "many-to-many-fold-order", "factType,description", null);
 
     /** Why the backend refuses; {@code RETIRED} for a code it no longer raises, which stays here so that its number is
      *  never reused ({@code spec/proposals/MESSAGE-CODES.md} §3.2). */

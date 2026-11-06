@@ -1,0 +1,78 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+
+// het gewicht van ten minste 4 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00
+function boolean toets_vondstrijk(Object $aantal_vouw_9, Object $vouw_vouw_11) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_9, $vouw_vouw_11, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(4));
+}
+
+rule "vondstrijk"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_6 : Contribution( fold == "vondstrijk: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_10 : value ); $aantal_vouw_9 : count(), $vouw_vouw_11 : exactSum($bijdragewaarde_vouw_10) )
+    eval( toets_vondstrijk($aantal_vouw_9, $vouw_vouw_11) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "vondstrijk", true)));
+end
+
+// het gewicht van ten hoogste 3 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00
+function boolean toets_vondstarm(Object $aantal_vouw_22, Object $vouw_vouw_24) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_22, $vouw_vouw_24, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, Integer.valueOf(3));
+}
+
+rule "vondstarm"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_19 : Contribution( fold == "vondstarm: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_23 : value ); $aantal_vouw_22 : count(), $vouw_vouw_24 : exactSum($bijdragewaarde_vouw_23) )
+    eval( toets_vondstarm($aantal_vouw_22, $vouw_vouw_24) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "vondstarm", true)));
+end
+
+function boolean beta_vondstrijkBijdrageAanVouw0(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("schipper"), java.util.Arrays.asList());
+}
+
+// het gewicht van ten minste 4 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00
+function boolean matrix_vondstrijkBijdrageAanVouw0(Object $onderwerp, Object $gewicht) {
+    return RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("1"), ">");
+}
+
+rule "vondstrijk: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht )
+    exists( $tussen_pad_0 : dev.uchar.regelspraak.facts.Boot( beta_vondstrijkBijdrageAanVouw0(this, $vouwonderwerp) ) and $padkoppeling_pad_2 : RelationLink( relation == "berging", first == $tussen_pad_0, second == $onderwerp ) )
+then
+    insertLogical(new Contribution("vondstrijk: vouw 0", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_vondstrijkBijdrageAanVouw0($onderwerp, $gewicht))));
+end
+
+function boolean beta_vondstarmBijdrageAanVouw1(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("schipper"), java.util.Arrays.asList());
+}
+
+// het gewicht van ten hoogste 3 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00
+function boolean matrix_vondstarmBijdrageAanVouw1(Object $onderwerp, Object $gewicht) {
+    return RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("1"), ">");
+}
+
+rule "vondstarm: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht )
+    exists( $tussen_pad_13 : dev.uchar.regelspraak.facts.Boot( beta_vondstarmBijdrageAanVouw1(this, $vouwonderwerp) ) and $padkoppeling_pad_15 : RelationLink( relation == "berging", first == $tussen_pad_13, second == $onderwerp ) )
+then
+    insertLogical(new Contribution("vondstarm: vouw 1", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_vondstarmBijdrageAanVouw1($onderwerp, $gewicht))));
+end
+

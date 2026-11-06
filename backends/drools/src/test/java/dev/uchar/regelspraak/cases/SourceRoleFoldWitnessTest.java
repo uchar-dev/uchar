@@ -163,40 +163,28 @@ class SourceRoleFoldWitnessTest {
         }
     }
 
-    @Test void a_many_sister_role_yields_no_scalar_join_field() throws Exception {
-        // A resolved binding is not yet a bean field. With BOTH roles of thuisligging to-many the relation
-        // has no scalar reference at either end, so the sibling the binding names cannot be joined on and
-        // both branches refuse — the §13.3.9 storage-direction half, unchanged by this card. (The document
-        // itself is well-formed: verifier PASS, ref PASS, clingo PASS on the very same expectations.)
+    @Test void a_many_sister_role_is_read_over_the_links() throws Exception {
+        // A resolved binding is not yet a bean field. With BOTH roles of thuisligging to-many the relation has no scalar
+        // reference at either end, so the branch reads it over its links, which the case input states, as it reads a
+        // relation a form creates. The document is well-formed, and verifier, ref and clingo answer the same
+        // expectations: H1 19, H2 20, H3 leeg.
         ObjectNode ir = sumModel();
         for (JsonNode r : IrPath.declaration(ir, "factTypes", "thuisligging").get("roles"))
             ((ObjectNode) r).put("many", true);
-        Path p = temporary("bronrol-beide-meervoudig", ir);
-        JsonNode c = JSON.readTree(caseDocument("liggertal", "19", "20", null));
-        for (boolean viaDrl : new boolean[] { false, true }) {
-            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                    () -> CaseRunner.playCase(p, c, viaDrl), (viaDrl ? "drl-tekst" : "exec-model") + " refuses");
-            assertTrue(e.getMessage().contains("liggertal van een haven"), e.getMessage());
-        }
+        BothBranches.green(temporary("bronrol-beide-meervoudig", ir),
+                JSON.readTree(caseDocument("liggertal", "19", "20", null)), "read over the links");
     }
 
-    @Test void the_many_sister_role_is_refused_in_both_branches_with_the_same_sentence() throws Exception {
-        // The row above says both branches refuse; THIS one says they refuse in the SAME WORDS. Until
-        // 2026-09-19 they did not: one fold-join cardinality failure had two generic names — the exec branch's
-        // "aggregatie buiten Phase-C scope" and the DRL-text branch's bare "TODO aggregatie SOM" — and neither
-        // named the cause. A producer reading the gate report should not have to know which branch answered.
-        // Since L2 of the v1 wire migration the binding is the fold's only range, so both branches read the role
-        // pair from it and ask the one join-field question; the sentence is the shared cardinality diagnosis,
-        // FactModelGenerator.noJoinFieldReason. No corpus golden reaches this arm (measured, whole corpus, both
-        // branches), which is exactly why the branches were free to drift here.
+    @Test void a_twisted_cell_over_the_links_is_the_same_mismatch_in_both_branches() throws Exception {
+        // The flank of the row above: PLAYED is no empty greenness. With H1's liggertal pinned at 18 instead of 19 both
+        // branches name the same mismatch, 19 where 18 is pinned, so the sum over the links reads the romplengte of S1 and
+        // S2.
         ObjectNode ir = sumModel();
         for (JsonNode r : IrPath.declaration(ir, "factTypes", "thuisligging").get("roles"))
             ((ObjectNode) r).put("many", true);
-        BothBranches.refused(temporary("bronrol-gedeelde-zin", ir),
-                JSON.readTree(caseDocument("liggertal", "19", "20", null)),
-                "de rol 'thuishaven' op Schuit is meervoudig, dus haar opslag is het veld aan de overzijde, en ook"
-                        + " daar leidt het beanmodel er geen af (beide zijden meervoudig)",
-                "one cardinality refusal, one sentence");
+        BothBranches.red(temporary("bronrol-gedeelde-zin", ir),
+                JSON.readTree(caseDocument("liggertal", "18", "20", null)), "verwacht 18, werkelijk 19",
+                "a twisted cell is a named mismatch");
     }
 
     // ---------------- 4. the self-typed pair: the same gap, in the corpus ----------------
