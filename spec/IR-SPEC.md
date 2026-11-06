@@ -9738,13 +9738,7 @@ either of two postures:
   mis-order one.
 
 The second posture is a **bounded, named** exception, ratified here
-(`PRIORITIZED-DEFAULTS-EVOLUTIE` §7). Its instance is `backends/drools`: a
-kenmerk-only salience for the negated-characteristic boundary plus a
-**defaults-local** salience for the ch. 6 defaults (strictly below every
-producer of every default justification), each guarded by per-form
-auto-refusals — a loader Refusal
-or transpiler marker naming the uncovered form, loudly excluded at gate 12,
-never played mis-stratified. The ASP backend takes it for two forms that
+(`PRIORITIZED-DEFAULTS-EVOLUTIE` §7). The ASP backend takes it for two forms that
 read a node a later generation of the creation's own stratum can still
 change, because a creation on a dependency cycle that WF-045 admits in
 that stratum, the creation itself included where it lies on one, reaches
@@ -9759,134 +9753,70 @@ backend realising a
 stratification than the graph mandates without refusing the uncovered forms
 is non-conforming.
 
-*Recorded flank (measured 2026-09-23 with the gate-12 jar, both branches,
-open).* That guard does not reach the leeg/gevuld test, and the divergence
-has two forms.
+`backends/drools` takes the first posture, in both its branches, which
+render one analysis (the exec-model branch since 2026-10-10, card
+`tms-omschakeling`; the DRL-text branch since 2026-10-14, card
+`drl-teksttak-op-truth-maintenance`). The rule layer derives under truth
+maintenance: every read a derivation rests on is a pattern of its rule, and
+the derivation goes when such a read changes, so the rule layer reaches its
+fixpoint in whatever order its rules fire and needs no order of its own. The
+forms that write irrevocably, the object and the fact creations, fire only at
+a fixpoint of the rule layer, per evaluation stratum in ascending order, in
+the strata the reference interpreter gives them (`RUNTIME-SEMANTICS.md`
+ch. 6.1 and 6.3); and a cycle of the dependency graph that the verifier
+refuses (WF-045, WF-046) is refused by name before the KieBase is built
+(`backends/drools/README.md`). *Until 2026-10-10 the backend took the second
+posture: a kenmerk-only salience for the negated-characteristic boundary plus
+a **defaults-local** salience for the ch. 6 defaults (strictly below every
+producer of every default justification), each guarded by per-form
+auto-refusals — a loader Refusal or transpiler marker naming the uncovered
+form, loudly excluded at gate 12. The note below records where that guard
+did not reach.*
 
-- On the subject's OWN operand, in a fold filter or a quantifier filter
-  inside a condition, and in the matrix of a quantifier fold (measured
-  2026-09-30, card `drools-exec-kwantorvoorwaarde-eigen-operand`: with "de
-  bergdag van geen van de vondsten van de Berging gevuld is" declared before
-  the rule that derives the bergdag, both Drools branches write 1 where
-  `ref/` and `backends/clingo` answer leeg), it depends on the document order. With the reader
-  before the rule that derives the tested attribute, both Drools branches
-  act on the transient leeg: an attribute reader writes 1 and a
-  characteristic reader attributes its characteristic, where `ref/` and
-  `backends/clingo` answer leeg and absent. With the writer first, both
-  branches agree with them. (A fold in a rule's VALUE is re-evaluated, but that did not suffice:
-  measured 2026-09-30, card `drools-exec-vouwfilter-latere-afleiding`, the
-  exec-model branch's NO_LOOP dropped the revision when the rule's own write
-  was the subject's last change, and in both Drools branches an ordering fold
-  whose subselection emptied kept the value it had computed over the
-  transient source, since leeg decides nothing on a standing target,
-  RUNTIME-SEMANTICS ch. 7.8.)
-  *Closed in the exec-model branch on 2026-09-30 for a test inside a fold
-  (card `drools-exec-vouwfilter-latere-afleiding`, golden
-  `jutterswet-zwaarste-vondst`): a rule is placed below the writers of what a
-  fold in its condition or value reads negatively, in the polarity of
-  WF-046, and a rule whose value folds with a subselection carries no
-  NO_LOOP. A leeg or gevuld test outside a fold, and the DRL-text branch,
-  keep the form described here.*
-  The exec-model branch's navigated leeg test, over one role and since
-  2026-10-01 over a chain, has this form as well (measured 2026-10-01, card
-  `drools-exec-voorwaarde-twee-rollen-ver`: with the reader first it writes
-  the vinddag where `ref/` and `backends/clingo` answer leeg).
-  *Closed in the exec-model branch on 2026-10-01 for a test anywhere in a
-  condition or a value (witness `ReaderUnderWriterWitnessTest`): a rule is
-  placed after every writer of what it reads under a leeg or gevuld test,
-  and a characteristic assignment after every writer of what it reads
-  stratum-strict (RUNTIME-SEMANTICS ch. 6.1), with every node such a writer
-  waits on — an ordinary rule declared after it, a defaults group, an object
-  or fact creation, an allocation — strictly below it in salience or level
-  with it and added before the rule; a consistency rule takes the same
-  placement, and a rule's companions take the rule's salience. A leeg or
-  gevuld test on a cycle with its writer, its own target included, is
-  refused by name (WF-046). The exec-model branch orders here more strictly
-  than the graph asks: a comparison in the condition of an attribute-writing
-  rule reads positively (RUNTIME-SEMANTICS ch. 6.1), and the branch places
-  that rule after the writers of its operands as well, a finer order that
-  reaches the same fixpoint (before, with two operands derived later, it
-  wrote where `ref/` and `backends/clingo` answer leeg); on a cycle such a
-  rule keeps its place. The DRL-text branch keeps the form described here.*
-- On a NAVIGATED operand in a condition it does not depend on the order.
-  *Closed in the exec-model branch on 2026-09-28 (card
-  `drools-exec-voorwaarde-genavigeerde-afleiding`, golden
-  `jutterswet-meldingsketen`): a condition that reads through a to-one
-  navigation is tested after a far-side join on the reached object; the
-  DRL-text branch keeps the form described here.*
-  *Widened in the exec-model branch on 2026-10-01 (card
-  `drools-exec-voorwaarde-twee-rollen-ver`, golden `jutterswet-havenketen`,
-  witness `ChainConditionWitnessTest`): a condition that reads through a
-  chain of two or more to-one roles is tested after a far-side join on every
-  object the chain passes, so a relation in the middle of the chain that a
-  fact creation sets while the rules run is seen too; a rule's value over a
-  chain takes the same joins (before, it joined the reached object only and
-  read leeg when the middle relation came later). The DRL-text branch
-  refuses such a condition by its marker and keeps the one join in a value.*
-  *Widened again in the exec-model branch on 2026-10-01 (golden
-  `jutterswet-late-vondst`, witness `FoldFilterFarSideWitnessTest`): the
-  subselection of a fold, and the filter and the matrix of a quantifier
-  fold, read with the element as subject (RUNTIME-SEMANTICS ch. 3.4a,
-  3.9a); where such a test reads through a role of the element, the source
-  of the accumulate joins every object the read reaches (every object a
-  chain passes), and the subselection is tested on the element bound again
-  after those joins, so a later write on the reached object revises the
-  fold. Before, the test sat on the element's pattern and the fold kept the
-  members it had at insertion: an earliest date read leeg, a count 0 and a
-  count or quantifier in a condition never fired, where `ref/` and
-  `backends/clingo` read the derived far value. A union selection that
-  reads so is refused by name. The DRL-text branch refuses such a test by
-  name.*
-  With a rule deriving the far side's attribute, both branches answer as if
-  that attribute were never written, in either order: "de a van het ding is
-  leeg" yields 1 where `ref/` and `backends/clingo` give leeg, and the
-  presence tests "… is gevuld" and "… is groter dan 3" yield leeg where
-  they give 1. The cause is not the order: a navigated read in a rule's
-  CONDITION does not react to a later write on the far side in either
-  branch, because the backend gives that far-side reactivity to a rule's
-  value and not to its condition. A salience alone therefore does not cover
-  it, and this form predates the leeg/gevuld decision and reaches any
-  navigated condition, a comparison included.
+*Recorded flank of the salience posture (measured 2026-09-23 to 2026-10-01;
+closed by truth maintenance, in the exec-model branch on 2026-10-10 and in
+the DRL-text branch on 2026-10-14).* The guard did not reach three forms
+whose reader the document lists before the writer of what it reads, and both
+Drools branches then acted on the transient state where `ref/` and
+`backends/clingo` do not:
 
-For the own characteristic reader the edge was already stratum-strict before
-this date; for the own attribute reader it became negative with the
-leeg/gevuld decision (ch. 5.2). No corpus document has either shape, so
-gate 12 cannot see them. The fix belongs to the backend: far-side
-reactivity for a condition or a named refusal, and a salience below the
-operand's writers for the order-dependent form (in the exec-model branch:
-the far-side join since 2026-09-28, the salience since 2026-10-01).
+- a leeg or gevuld test on the subject's own operand, outside a fold or in a
+  fold filter, a quantifier filter or the matrix of a quantifier fold, and a
+  comparison over operands derived later: an attribute reader wrote 1 and a
+  characteristic reader attributed its characteristic where `ref/` and
+  `backends/clingo` answer leeg and absent (cards
+  `drools-exec-kwantorvoorwaarde-eigen-operand`,
+  `drools-exec-vouwfilter-latere-afleiding`; golden
+  `jutterswet-zwaarste-vondst`);
+- a navigated read in a condition, over one role or a chain, and the
+  subselection of a fold or the filter of a quantifier that reads through a
+  role of the element: a later write on the far side went unseen, "de a van
+  het ding is leeg" yielded 1 where `ref/` and `backends/clingo` give leeg
+  (cards `drools-exec-voorwaarde-genavigeerde-afleiding`,
+  `drools-exec-voorwaarde-twee-rollen-ver`; goldens
+  `jutterswet-meldingsketen`, `jutterswet-havenketen`,
+  `jutterswet-late-vondst`);
+- an object or fact creation, which fired once per subject after the
+  ordinary rules: in the exec-model branch a member assignment over a value
+  a defaults group writes wrote leeg where `ref/` and `backends/clingo` write
+  7 and 15, and in both a count over the objects a later creation makes or
+  over the links a fact creation lays read 0 where they read 1 (card
+  `drools-exec-objectcreatie-vouw`).
 
-*Recorded (measured 2026-10-01, card `drools-exec-objectcreatie-vouw`;
-closed in the exec-model branch the same day, open in the DRL-text branch).*
-A creation reads stratum-strict (RUNTIME-SEMANTICS ch. 6.1): it evaluates
-strictly above the producers of what its condition and its toekenningen
-read. Both Drools branches fired an object creation once per subject, at
-the default salience, after the ordinary rules and before the fact
-creations and (in the exec-model branch) the defaults groups, so a producer
-later on the agenda was not seen: with a toekenning that reads a value a
-defaults group writes, the exec-model branch wrote leeg where `ref/` and
-`backends/clingo` write 7 and 15; with a count over the objects a creation
-declared after it mints, or over a relation a fact creation lays, both
-branches wrote 0 where they write 1. *Closed in the exec-model branch on
-2026-10-01 (witness `CreationOrderWitnessTest`):* the object and the
-fact creations are nodes of the order that already placed the defaults
-groups; a creation reads its condition, its toekenningen, the population
-of its subject and the links its folds, quantifiers, navigations and hops
-follow, writes its toekenningen, the created type's population and its
-link, and goes below every node it waits on that would otherwise fire
-after it, a rule the stratification places lower and a creation declared
-after it included; a recursive creation stays on its generations
-(RUNTIME-SEMANTICS ch. 5.5). *Closed in the exec-model branch the same day
-(witness `ReaderUnderWriterWitnessTest`):* a reader of a creation's output
-that writes irrevocably, such as a characteristic assignment over a count of
-the created objects or over the links a fact creation lays, and a leeg test
-on what a creation writes, wait on the creation; before, a characteristic
-was attributed where `ref/` and `backends/clingo` leave it absent. What
-stays open: the DRL-text branch orders no creation, so a later creation and
-a fact creation still read 0 there and a reader of their output acts on
-that 0, a coarser order than the graph without a loud refusal.
+Between 2026-09-28 and 2026-10-01 the exec-model branch closed each form with
+a finer salience order, a far-side join or a refusal by name; the DRL-text
+branch, then a lowering of its own, kept them. Under truth maintenance a
+derivation that rested on a transient read goes when the read changes, and a
+creation reads the settled world of its stratum: both branches play each of
+those documents in either order of reader and writer, as `ref/` does
+(`ReaderUnderWriterWitnessTest`, `NavigatedConditionWitnessTest`,
+`ChainConditionWitnessTest`, `FoldFilterFarSideWitnessTest` and
+`CreationOrderWitnessTest`, every row on both branches; `RUNTIME-SEMANTICS.md`
+ch. 6.1 records the same of a navigated condition and of a count over a
+filter, measured 2026-11-02 with the reader first).
 
-*Recorded flank, the ASP backend (measured 2026-09-23, open).* Its `all`
+*Recorded flank, the ASP backend (measured 2026-09-23; refused by name since
+2026-10-22).* Its `all`
 fold is a double negation (a helper for "some member fails the matrix",
 read under `not`). On a POSITIVE cycle through the matrix, which the
 quantifier-fold decision admits, that encoding has a second, self-supporting
@@ -9895,20 +9825,23 @@ the golden `jutterswet-opvolgerquorum`, with W1 and W3 each leading the other
 and each carrying an input opvolger of rang 4, the document is
 verifier-clean, the reference interpreter answers merk 1 for both, and the
 ASP program has two models: merk 1 and 1, and merk 2 and 2 with both
-creations justifying each other. The runner happens to pick the first. The
+creations justifying each other. The runner picked the first; since
+2026-10-22 it refuses a program without exactly one stable model by name
+(CLINGO-030). The
 same holds for a positive characteristic read in the matrix ("alle
 ploegleden zijn actief", actief derived from the number of successors), a
 document the walk refused before the decision and admits after it. A
 `atLeast` fold, encoded as a count, has one model on the same input. No
-corpus document has the shape. The fix belongs to the backend: a monotone
-encoding of the `all` fold (a count) or a named refusal.
+corpus document has the shape. A monotone encoding of the `all` fold (a
+count) would play the document instead of refusing it.
 
-*Recorded (measured 2026-10-02, ronde klein 2, open).* The exec-model branch plays a document whose dependency
-graph has a cycle that WF-045 refuses to a fixpoint, without a word: a value of one object read from the same value
-of another object of its type over a role, the same through a defaults group (WF-046 and WF-051 as well), and a
-count over a characteristic that reads the count over a role. `ref/` refuses each under WF-045; the ASP backend
-answers the first two and finds no stable model for the third. The branch refuses by name only a leeg or gevuld
-test on a cycle (WF-046). The RegelSpraak frontend refuses such a document before it is written since the same day,
+*Recorded (measured 2026-10-02, ronde klein 2; closed in both Drools branches by truth maintenance).* The
+exec-model branch then played a document whose dependency graph has a cycle that WF-045 refuses to a fixpoint,
+without a word: a value of one object read from the same value of another object of its type over a role, the same
+through a defaults group (WF-046 and WF-051 as well), and a count over a characteristic that reads the count over a
+role. `ref/` refuses each under WF-045; the ASP backend answers the first two and finds no stable model for the
+third. That branch refused by name only a leeg or gevuld test on a cycle (WF-046); both Drools branches refuse every
+cycle the verifier refuses by name since truth maintenance (`Cycles`, `TmsCycleVerifierWitnessTest`). The RegelSpraak frontend refuses such a document before it is written since the same day,
 in the verifier's sentences (WF-045, WF-051; `grammar/DIVERGENCES.md`). Two kinds of cycle were excepted until
 2026-10-06 and are refused like any other since then: a cycle its own warning names on a rule's own subject, the
 refusal naming WF-046 too where a negative edge lies between two forms of the cycle (negative
