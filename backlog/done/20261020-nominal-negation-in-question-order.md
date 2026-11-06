@@ -45,3 +45,8 @@ Gebouwd op branch `card/drools-frontend-cleanup` (opruimronde 2026-11-06). Logs 
 - **(c)** DIVERGENCES: de alinea "niet een" onder een kwantor eindigt niet meer op de marker en de syntaxfout; een
   nieuwe alinea "'niet een' in the question order" beschrijft de lezing. Gates 10, 11 en 16 groen (`k6-gate10.log`,
   `k6-gate11.log`, `k6-gate16.log`); de hele set in de eindrun.
+
+### Landing (hoofdsessie, 2026-11-06)
+
+Geland op main na `make gates` op de bouwerstand (`b45b3f766`, 17 van 17 groen; na de rebase op main alleen backlog
+anders).

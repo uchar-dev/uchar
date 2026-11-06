@@ -84,3 +84,8 @@ Gebouwd op branch `card/drools-frontend-cleanup` (opruimronde 2026-11-06). Logs 
   uitdrukkelijk.
 - **(c)** Gate 12 groen (`k1-gate12.log`): 350 gespeeld, gelijk aan de pin; geen golden heeft de vorm, dus geen pin
   bewoog. JUnit 1866 tests. `check-drools-codes.sh`: 316 codes, 27 retired.
+
+### Landing (hoofdsessie, 2026-11-06)
+
+Geland op main na `make gates` op de bouwerstand (`b45b3f766`, 17 van 17 groen; na de rebase op main alleen backlog
+anders).

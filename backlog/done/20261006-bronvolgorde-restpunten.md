@@ -156,3 +156,8 @@ alleen (d) nog open: (a)–(c) zijn aanvaard in DIVERGENCES ("Bronvolgorde", `9f
   legt deze meting vast (groen, `k5-witness.log`); een frontend die de oude context zou laten doorlekken, faalt erop.
 - Gate 10 (`check-regelspraak.sh`) groen, zie het Result van `20261020-nominal-negation-in-question-order`
   (zelfde run, `k6-gate10.log`).
+
+### Landing (hoofdsessie, 2026-11-06)
+
+Geland op main na `make gates` op de bouwerstand (`b45b3f766`, 17 van 17 groen; na de rebase op main alleen backlog
+anders).

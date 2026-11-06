@@ -146,3 +146,8 @@ Gebouwd op branch `card/drools-frontend-cleanup` (opruimronde 2026-11-06). Logs 
 - **(c)** Gates 2, 4, 5, 6, 7, 8 en 12 groen (`k4-gate*.log`); gate 12 speelt 352, `EXPECTED_PLAYED` 350 → 352 met
   een commentaarregel. De zin over de weigering van de tak met truth maintenance uit de meettabel bestaat niet meer:
   beide takken spelen de vorm.
+
+### Landing (hoofdsessie, 2026-11-06)
+
+Geland op main na `make gates` op de bouwerstand (`b45b3f766`, 17 van 17 groen; na de rebase op main alleen backlog
+anders).

@@ -82,3 +82,8 @@ Gebouwd op branch `card/drools-frontend-cleanup` (opruimronde 2026-11-06). Logs 
 - **Voor de distributie** (pinbump, hoofdsessie): de soort `OTHER` voor een tweede vulling wordt een eigen soort,
   bijvoorbeeld `SECOND_FILLING_FAULT`, voor `e instanceof dev.uchar.regelspraak.transpiler.tms.SecondFillingFault`
   (EF-017, `code()`/`params()` zoals `OpenSegmentFault`). Haar regel (`Fault.rule()`) is de naam van een feittype.
+
+### Landing (hoofdsessie, 2026-11-06)
+
+Geland op main na `make gates` op de bouwerstand (`b45b3f766`, 17 van 17 groen; na de rebase op main alleen backlog
+anders).
