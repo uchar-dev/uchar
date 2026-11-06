@@ -50,6 +50,12 @@ bereik (een filter die kan falen, een deposito, een geordende kwantor) bij naam 
 geen golden heeft die vorm. De hoofdsessie maakt daarvoor geen vervolgkaart (doel van de eigenaar: een kleinere
 backlog): de weigering staat in de lijst van niet-gedragen vormen van `backends/drools/README.md`.
 
+*Naamgeving (hoofdsessie, 2026-11-06):* `RelationLink` blijft heten zoals het heet: het is één koppeling van een
+relatie, welke kardinaliteit ook. Het criterium welke relaties over koppelingen gelezen worden, staat in de
+verzameling `linkRelations` (nu `createdRelations`): gemaakt door een vorm, of beide rollen meervoudig. De javadoc van
+`RelationLink` en van `linkRelations` noemt precies dat criterium; een 1:N-invoerrelatie die geen vorm maakt, blijft
+een beanveld.
+
 ## Acceptatie (bij oppakken aanscherpen)
 
 - (a) Rood-eerst: de drie goldens met hun huidige, één laag diepere
