@@ -95,3 +95,59 @@ Nederlandse functiewoorden). Gate 10 (`check-rgs-codes.sh`) toetst Engelse entri
 omgekeerd. RGS-187 hoort bij deze kaart; de andere zijn een eigen stap als de eigenaar ze in deze landing wil.
 
 ## Result
+
+*Bouwer (opus55-ttl5min, subagent), stappen 1–4 en een fixronde; boekhouding en Result door de hoofdsessie,
+2026-11-06. Volledig verslag, tellingen en valkuilen: `werk/member-assignments/OVERDRACHT.md` (buiten de repo), logs
+in `werk/member-assignments/logs/`.*
+
+### Commits
+
+| hash | inhoud |
+|---|---|
+| `6ea4f0f44` | kaart naar `doing/` |
+| `39efeccc9` | stap 1: `spec/proposals/v1-migratie/m7.py` |
+| `ce1b42453` | stap 2, L7 (één commit): schema, lezers en schrijvers van de draad, corpus, `toka/`, fixtures, zelftestrijen, IR-SPEC ch. 3.3, naamtabel (M10) |
+| `5e7bdb2dd` | stap 3: identifiers, registersleutels, meldingen |
+| `1a9ae5a0a` | stap 4: proza |
+| `842a5c976` | fixronde: RGS-155 zonder dubbeling; 85 resterende "initialis…" in de zin van een lid, in 41 bestanden |
+| (deze) | Result; CONSTRUCTS rij 8, 9, 21, 28 en 142, PLAN; de kaart naar `done/` |
+
+### Wat er veranderde
+
+- **Draad (L7).** `ObjectCreation.assignments`, een lijst van `MemberAssignment` (`member`, `labels`, `value`,
+  `characteristic` ongewijzigd). `m7.py`: 1246 documenten gelezen, 78 herschreven (88 versies, 98 leden; golden
+  27, negative 36, red 4, toka 2, ref-fixtures 5, Drools-testresources 4), 0 geweigerd, idempotent (`--check`). Het
+  script faalt luid op een oude naam op een andere plaats. `toka/casus/ir.json` her-emitteert byte-gelijk (gate 11);
+  `toka/README.md` noemt L7. `check-ir-schema.sh` weigert de oude namen in vier rijen, de clingo-suite in twee.
+- **Namen en meldingen.** Java en OCaml volgen de draad (`ResolvedObjectCreation.MemberAssignment`/`assignments`,
+  `Consequence.Assignment`, ref `assigned_member`, verifier `assigns`, …). Registersleutels met behoud van nummer:
+  DROOLS-150 `member-assignment-incomplete`, -151 `characteristic-assignment-non-boolean`, -152
+  `member-assignment-division`, -153 `member-assignment-square-root`, CLINGO-027
+  `characteristic-assignment-expression-shape`; de toolchain noemt geen van die sleutels. Meldingen: WF-027
+  (sleutels gelijk), DROOLS-150..153 (Nederlands overal "lidtoekenning"), RGS-187 (de Nederlandse entry is nu
+  Nederlands), RGS-155 ("kent '{attribute}' een waarde toe"), en de interne meldingen van ref, clingo, Catala en
+  `Consequence`.
+- **Proza.** "member assignment", "the value its creation assigned", "at its creation", "moment of creation" in
+  IR-SPEC, RUNTIME-SEMANTICS, ASP-TRANSLATION, READMEs, `NOTE.md`, commentaar en tests. De Initialisatie-regel
+  (§9.6) en de v0-namen bleven. Bewust als geschiedenis gelaten: de L4-tabel in `corpus/negative/README.md`, de
+  L5-lijst in `spec/schema/README.md`, de Landed-noten in CONSTRUCTS (rij 142 L5, r. 107).
+- **Boekhouding (hoofdsessie).** CONSTRUCTS: de L7-noot bij rij 142 (`ResolvedObjectCreatie`); rij 8 (de stapel),
+  9, 21 en 28 in de nieuwe woorden. PLAN: de vier regels over de creatie in generaties.
+
+### Acceptatie
+
+- (a) Droogloop met telling, daarna geen `"initialisations"`/`"MemberInit"` buiten de geschiedenis; idempotent.
+- (b) Gate 2 groen (530 shape-rijen), met de vier weigerrijen.
+- (c) Gate 10 en gate 9 groen: elke `source.rgs` en elke Catala-golden her-emitteert byte-gelijk; gate 14 groen.
+- (d) Gates 5, 6, 12 en 17 groen: geen uitkomst en geen lezing veranderde.
+- (e) `git grep -i -E 'member initiali[sz]ation|of (its|the) making|at (its|the) making|the making\b'` buiten
+  `backlog/` en `spec/proposals/v1-migratie/` is leeg (ook in CONSTRUCTS, PLAN en CLAUDE.md, na de boekhouding).
+- (f) `make gates` op de bouwerstand (`1a9ae5a0a`): 17 van 17 groen, `after-run` groen, 369 s; geen floor geraakt.
+  Op de eindstand: hieronder.
+- (g) Toolchain: pin-bump na de landing.
+
+### Open punten
+
+1. `spec/proposals/v1-naamtabel-toets.py` (geen gate) was op `079d0104e` al rood met 45 bevindingen, niet van deze
+   kaart; na de kaart 42 (drie opgelost, geen nieuwe). Niet uitgezocht.
+2. `ReaderSentenceBoundaryTest` houdt "initialisation" in zijn Engelse woordenlijst: daar is het een woord, geen lid.

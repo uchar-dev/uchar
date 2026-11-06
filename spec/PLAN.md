@@ -1071,12 +1071,12 @@ card carries faults as logical facts that count only at the fixpoint,
 aggregations as an `accumulate` over logical contributions, and object and
 fact creation; the branch plays 120 goldens (from 66) without a FAIL. A
 logically inserted object can keep itself alive through its own output after
-the intermediate state that made it is retracted, and its initialisations
+the intermediate state that made it is retracted, and its member assignments
 would follow later changes where ch. 5.5 evaluates them at the mint. Maintainer
 decision during the card: a creation fires only at a fixpoint of the rule
 layer, per stratum and in generations as in the reference interpreter (the
 strata of RUNTIME-SEMANTICS ch. 6.1 and 6.3, the budget of 100 passes per
-stratum), and the created object, its initialisations and its links are stated
+stratum), and the created object, its member assignments and its links are stated
 facts keyed per (rule, subject) that do not lapse; the rule layer stays under
 truth maintenance. Second decision: the switch-over card carries a synthetic
 scale test with a floor (growth exponent at most 1.2, and firings under half
@@ -1123,12 +1123,12 @@ cards `creatie-initialisatie-leest-groeiende-waarde` and
 `creatiebudget-ref-en-clingo`):** within a stratum evaluation proceeds in
 generations. Every creation of a generation, object creation and fact creation
 alike, reads the same settled world of the generation before, its condition as
-well as its member initialisations; afterwards the forms that make nothing
+well as its member assignments; afterwards the forms that make nothing
 settle stratum by stratum, the consistency and uniqueness forms of the lower
 strata fire again, and those of the stratum itself fire once its generations
 are done (RUNTIME-SEMANTICS ch. 5.5, Generations). The reference interpreter
 evaluates so, the truth-maintenance branch already did, and the ASP backend,
-which has no moment of making, refuses by name a member initialisation that
+which has no moment of creation, refuses by name a member assignment that
 reads what a later generation of its stratum can still change. The creation
 budget counts the creation depth per stratum: a mint at depth 101 is a fault,
 "creation budget exhausted", in the reference interpreter, the ASP backend and
