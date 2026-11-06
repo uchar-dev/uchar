@@ -1,0 +1,146 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V1",
+            "V2",
+            "V3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "0"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "4"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "lichte vondsten",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "lichtheid"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "lichtheid",
+      "value": {
+        "number": "0.25"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "lichtheid",
+      "value": {
+        "number": "0.1"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "wortelmaat"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "wortelmaat",
+      "value": {
+        "number": "0.5"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "wortelmaat",
+      "value": {
+        "number": "0.31"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "licht"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V2",
+      "characteristic": "licht"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V3",
+      "characteristic": "licht"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "lichtheid",
+      "label": "V1",
+      "code": "EF-005"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "wortelmaat",
+      "label": "V1",
+      "code": "EF-005"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "lichte vondst",
+      "label": "V1",
+      "code": "EF-005"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "lichte vondsten",
+      "label": "J1",
+      "code": "EF-005"
+    }
+  ]
+}

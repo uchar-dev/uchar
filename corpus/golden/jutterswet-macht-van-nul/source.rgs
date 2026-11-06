@@ -1,0 +1,30 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de lichte vondsten Numeriek (niet-negatief geheel getal);
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (geheel getal);
+    de lichtheid Numeriek (getal met 2 decimalen);
+    de wortelmaat Numeriek (getal met 2 decimalen);
+    is licht kenmerk (bijvoeglijk);
+
+Feittype aanmelding
+    de aanmelder Jutter
+    de vondst (mv: vondsten) Vondst
+Eén aanmelder heeft meerdere vondsten
+
+Regel lichtheid
+    geldig altijd
+        De lichtheid van een Vondst moet berekend worden als zijn gewicht tot de macht -1 naar beneden afgerond op 2 decimalen.
+
+Regel wortelmaat
+    geldig altijd
+        De wortelmaat van een Vondst moet berekend worden als zijn gewicht tot de macht -0,5 naar beneden afgerond op 2 decimalen.
+
+Regel lichte vondst
+    geldig altijd
+        Een Vondst is licht
+        indien zijn gewicht tot de macht -1 naar beneden afgerond op 2 decimalen groter is dan 0,2.
+
+Regel lichte vondsten
+    geldig altijd
+        De lichte vondsten van een Jutter moet berekend worden als het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht tot de macht -1 naar beneden afgerond op 2 decimalen is groter dan 0,2.

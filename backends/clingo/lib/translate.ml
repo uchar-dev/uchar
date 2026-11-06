@@ -3229,13 +3229,15 @@ let numeric_ok ctx e =
    encoding here:
    a fractional exponent takes an exact root (ch. 2.1 OPEN), a negative exponent
    inverts (a division), a runtime exponent makes the result scale
-   exponent-dependent — each faults with its reason *)
+   exponent-dependent. Each is refused with its reason, under one code
+   (CLINGO-041): the encoding carries a whole non-negative literal exponent
+   only *)
 let const_pow_exponent = function
   | Literal { variant; _ } -> (
       let w = Ir_v0.Loader.literal_lexeme variant in
       let q = Value.q_of_lexeme w in
       if not (Z.equal (Q.den q) Z.one) then
-        fault
+        faultc "CLINGO-041"
           "fractional exponent %s is not translated (ref takes an exact root — the ch. 2.1 OPEN; \
            no corpus case)"
           w
@@ -3243,13 +3245,13 @@ let const_pow_exponent = function
         match Z.to_int (Q.num q) with
         | e when e >= 0 -> e
         | _ ->
-            fault
-              "negative exponent %s is not translated (ref inverts the exact power — a division; no \
-               corpus case)"
+            faultc "CLINGO-041"
+              "negative exponent %s is not translated (ref inverts the exact power — a division, \
+               which the scaled integers of this encoding do not hold)"
               w
         | exception Z.Overflow -> fault "exponent %s is out of range" w)
   | _ ->
-      fault
+      faultc "CLINGO-041"
         "a runtime exponent is not translated (the result scale is exponent-dependent, and an empty \
          or negative runtime exponent has no integer encoding; no corpus case)"
 

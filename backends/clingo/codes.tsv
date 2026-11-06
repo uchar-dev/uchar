@@ -39,3 +39,4 @@ CLINGO-037	limit	date-arithmetic-range		viol_code
 CLINGO-038	refusal	creation-condition-reads-on-a-cycle	creation,node,writer	refuse_creation_reads_on_a_cycle
 CLINGO-039	limit	non-exact-division-in-condition		viol_code
 CLINGO-040	refusal	ranking-fold-over-a-timeline	fold,attribute	refuse_ranking_fold
+CLINGO-041	refusal	exponent-not-a-whole-non-negative-literal		const_pow_exponent

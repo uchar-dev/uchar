@@ -1586,7 +1586,9 @@ EXPECTED_CHANNEL=(
 # reader of a higher stratum, and a consistency of a lower stratum checked again over it (ch. 6.3).
 # 353 since the card clingo-nonexact-division-in-condition (2026-11-06): the golden jutterswet-keurquotient, a bare
 # division whose quotient is not whole, compared in a condition (PLAYED 2 on both branches).
-EXPECTED_PLAYED=353
+# 354 since the card ref-macht-van-nul (2026-11-06): the golden jutterswet-macht-van-nul, a numeric zero raised to a
+# negative power, leeg with an EF-005 deposit (RUNTIME-SEMANTICS ch. 2.2; PLAYED 2 on both branches).
+EXPECTED_PLAYED=354
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

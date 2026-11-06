@@ -91,3 +91,23 @@ Gebouwd op branch `card/drools-frontend-cleanup` (opruimronde 2026-11-06). Logs 
   begrensd.
 - **(d)** Gate 5 groen (2538 voorbeelden, 1117 cases), gate 8 groen, gate 12 groen (350 gespeeld, 1872 tests),
   gate 1 groen (`k3-gate05.log`, `k3-gate08.log`, `k3-gate12.log`).
+
+### Vervolg (clingo-bouwer, 2026-11-06)
+
+De vijf stappen van (b), gebouwd op branch `card/creation-condition-and-clingo-cleanup` na de rebase op main
+`575de08e5`; logs onder `uchar-dev/werk/clingo-cleanup/logs/`.
+
+1. `backends/clingo/codes.tsv`: `CLINGO-041`, soort `refusal`, sleutel `exponent-not-a-whole-non-negative-literal`,
+   zonder parameters, geraakt door `const_pow_exponent` op zijn drie weigerarmen (een negatieve, een gebroken en een
+   runtime-exponent: de codering draagt alleen een gehele niet-negatieve literaire exponent). De zin van de negatieve
+   arm zegt nu waarom ("a division, which the scaled integers of this encoding do not hold") in plaats van "no
+   corpus case". Vóór de code: `TRANSLATION FAULT: negative exponent -1 is not translated …` zonder code, wat gate 6
+   in geen enkele lijst aanvaardt; na de code `TRANSLATION FAULT: CLINGO-041: …` op beide cases.
+2. De golden `corpus/golden/jutterswet-macht-van-nul` uit `werk/java-cleanup/golden-ready/` ongewijzigd
+   overgenomen; verifier PASS, ref PASS (14 en 8 verwachtingen).
+3. Gate 6: `EXPECTED_CHANNEL` krijgt `jutterswet-macht-van-nul|CLINGO-041|…`.
+4. Gate 12: `EXPECTED_PLAYED` 353 → 354 met een commentaarregel.
+5. RUNTIME-SEMANTICS ch. 5.7b: de rij EF-005 noemt de golden.
+
+Gates: zie de eindrun van `make gates` in de overdracht van deze branch.
+
