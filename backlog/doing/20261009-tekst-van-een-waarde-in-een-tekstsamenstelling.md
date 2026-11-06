@@ -168,3 +168,10 @@ en niet 5,5". Dus:
 
 Een optie om de eenheid erachter te schrijven, tussen haakjes (`5,50 (€)`), besprak de eigenaar als mogelijke
 uitbreiding van de taal; die hoort niet bij deze stap.
+
+## Besluit van de eigenaar (2026-11-06 avond, vervolg): de eenheid op verzoek
+
+De eigenaar vroeg de eenheid mee te nemen. Een auteur kan in een tekstsamenstelling de eenheid laten meeschrijven,
+achter het getal tussen haakjes (`5,50 (€)`, `12,50 (%)`); zonder die aanwijzing blijft het getal zonder eenheid. Op de
+draad een optioneel veld op `EmbeddedExpression` (additief); de verifier weigert de aanwijzing bij een type zonder
+eenheid (nieuwe WF-regel); in de bron een uitbreiding binnen `«…»` (DIVERGENCES). Dezelfde bouwer, tweede stap.
