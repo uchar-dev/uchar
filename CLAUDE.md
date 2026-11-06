@@ -291,8 +291,10 @@ missing line makes `make gates` exit non-zero. Current gates:
    play in every executor. It also names `jutterswet-keurquotient`
    (CLINGO-039, a non-exact division in a condition, which the scaled
    integers do not compare exactly) and `jutterswet-macht-van-nul`
-   (CLINGO-041, a negative exponent, which inverts its base); ref and the
-   Drools branches play both. It also runs the
+   (CLINGO-041, a negative exponent, which inverts its base), and
+   `jutterswet-tekst-van-een-waarde` (CLINGO-042, the text of a value in a
+   text composition, which ASP-Core-2 cannot build); ref and the Drools
+   branches play all three. It also runs the
    backend's own unit suite — the normalisation fault modes no corpus
    witness can exercise — demanding its check-count line and holding
    that count to a floor; an un-run or shrunken suite is a silent green,

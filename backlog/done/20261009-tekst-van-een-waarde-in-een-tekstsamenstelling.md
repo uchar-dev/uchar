@@ -142,3 +142,9 @@ zin over de nestgrens. De `make gates`-runs hierboven (red=0) liepen vóór de r
 `jutterswet-vouwfilter-buiten-de-beurt` en `jutterswet-kwantorvouw-en-unie`; geen bestaande pin veranderde (ook niet
 door `rsTekst`: geen golden van main heeft een tekstdeel van een ander type dan tekst). Gate 12 met de suite na de
 rebase: PASS, beide takken `PLAYED` 358, JUnit 1884 tests (`DrlTextPinWitnessTest` inbegrepen), `logs/f3-check-drools.log`.
+
+### Landing (hoofdsessie, 2026-11-06)
+
+Geland op main na `make gates` op de stand vóór de rebase (red=0, 436 s) en, na de rebase op `3df621a37`, gate 12 en de
+Drools-suite groen; CONSTRUCTS en de gate-6-tekst van `CLAUDE.md` in de landingscommit. De volledige set draait de
+hoofdsessie op main na de laatste landing van de dag.
