@@ -153,12 +153,31 @@ class CaseInputWitnessTest {
     }
 
     @Test void a_role_without_to_a_reference_field_is_refused_with_the_link() throws Exception {
-        // a key that names no role of the self-typed pair: neither by name nor by the pair, which carries two roles
-        CaseInput.RoleError f = roleError(() -> CaseInput.of(build(KETENBAND), chain("Wachter", "rangnummer",
+        // ketenband with a second relation, between a Post as 'buur' and a Wachter: the key 'buur' names a declared
+        // role, but none of the self-typed pair, neither by name nor by the pair, which carries two roles
+        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(KETENBAND)));
+        IrPath.modelList(ir, "objectTypes").addObject().put("node", "ObjectType").put("name", "Post")
+                .put("animate", false).put("plural", "Posten").putArray("attributes");
+        IrPath.objectType(ir, "Post").putArray("characteristics");
+        ObjectNode postband = IrPath.modelList(ir, "factTypes").addObject().put("node", "FactType").put("name", "postband")
+                .put("reciprocal", false);
+        postband.putArray("roles").add(JSON.createObjectNode().put("node", "Role").put("name", "buur")
+                .put("objectType", "Post").put("many", false)).add(JSON.createObjectNode().put("node", "Role")
+                .put("name", "bewaker").put("objectType", "Wachter").put("many", false));
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
+        CaseInput.RoleError f = roleError(() -> CaseInput.of(b, chain("Wachter", "rangnummer",
                 List.of("W1", "W2"), Map.of("W1", Map.of("buur", List.of("W2"))))));
         refusal(f, "W1", "buur", "W2", "role 'buur' (Wachter -> Wachter) reaches no to-one reference field: the"
                 + " written role name resolves to no unique role, and neither direction of the type pair derives a"
                 + " to-one role");
+    }
+
+    @Test void a_key_that_names_no_declared_role_is_a_defect_of_the_case() throws Exception {
+        // the reference interpreter's case reader refuses it at load ("role key … does not resolve to a declared role")
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> CaseInput.of(build(KETENBAND),
+                chain("Wachter", "rangnummer", List.of("W1", "W2"), Map.of("W1", Map.of("buur", List.of("W2"))))));
+        assertEquals("role key \"buur\" names no declared role", e.getMessage());
+        assertTrue(!(e instanceof CaseInput.RoleCollision), "no link of the bean model, a name of the case");
     }
 
     @Test void a_displaced_reference_field_is_refused_with_the_link() throws Exception {

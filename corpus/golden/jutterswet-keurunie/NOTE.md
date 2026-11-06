@@ -41,3 +41,17 @@ geweigerd met de WF-037-ariteitsfout en het document bereikte de schijf niet.
 Sinds de kaart emitteert `source.rgs` byte-identiek aan de gecommitte `ir.json`
 (poort 10), is het document verifier-schoon (poort 3) en antwoorden `ref` en
 clingo dezelfde zes absolute getallen (poorten 5 en 6).
+
+## case2-spelling — de namen van de case in een andere spelling
+
+Dezelfde invoer en verwachtingen als `case.json`, met elke naam anders
+gespeld dan gedeclareerd: objecttypen `JUTTER` en ` vondst` (een spatie
+vooraan), de rolsleutel `Aangemelde  Vondsten` (hoofdletters, twee spaties),
+de kenmerken `GEMERKT` en `Gekeurd`, en de verwachte attributen
+`Aantal<tab>keurstukken` en `AANTAL GEMELDE  STUKKEN`. De caselezer van `ref`
+vergelijkt een naam met `Checks.norm`: een reeks spaties en tabs telt als één
+spatie, A–Z als a–z, elk ander teken zoals geschreven. Elke spelling hier noemt
+dus de gedeclareerde naam, en `ref`, clingo en beide Drools-takken geven
+dezelfde acht uitkomsten als op `case.json`. Rood eerst (2026-11-06): de
+Drools-caselezer zocht het objecttype met `equalsIgnoreCase` en weigerde
+` vondst` met `EXCLUDE DROOLS-045` op beide takken.

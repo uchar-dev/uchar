@@ -732,21 +732,41 @@ public final class CaseRunner {
         return !ot.dimensionsOf(attr).isEmpty();
     }
 
-    /** The declared name of the attribute a case writes as {@code name} on {@code ot} or one of its ancestors, under the
-     *  name equality of the reference interpreter ({@link Namen#declaredName}); {@code name} where {@code ot} is null
-     *  or declares none. The generator derives a member's getter and setter from its declared name, and a case may
-     *  write the name in another capitalisation, "vondstNummer" for a declared "vondstnummer", which the reference
-     *  interpreter reads as the same member: a method derived from the written name would be one the bean lacks. */
+    /** The declared name of the attribute a case writes as {@code name} on {@code ot} or one of its ancestors, in its
+     *  input or in an expectation, under the name equality of the reference interpreter's case reader
+     *  ({@link Namen#norm}: runs of spaces and tabs as one space, A–Z as a–z, every other character as written). The
+     *  generator derives a member's getter and setter from its declared name, so every read and write of a member the
+     *  case names goes through here: "vondstNummer" for a declared "vondstnummer" is that member. A name that is no
+     *  declared attribute is a defect of the case, which the reference interpreter refuses at load, and never the
+     *  member whose Java name its spelling happens to derive, as "premie-som" derives that of "premie som". */
     static String attributeName(ObjectType ot, String name) {
-        return ot == null ? name : Namen.declaredName(ot.attributeMembers().keySet(), name);
+        String declared = declared(ot.attributeMembers().keySet(), name);
+        if (declared == null)
+            throw new IllegalArgumentException("attribute \"" + name + "\" is not declared on \"" + ot.name + "\"");
+        return declared;
     }
 
     /** {@link #attributeName} for a characteristic. */
     static String characteristicName(ObjectType ot, String name) {
-        if (ot == null) return name;
-        List<String> declared = new ArrayList<>();
-        for (ObjectType t : ot.chain()) declared.addAll(t.characteristics);
-        return Namen.declaredName(declared, name);
+        List<String> chain = new ArrayList<>();
+        for (ObjectType t : ot.chain()) chain.addAll(t.characteristics);
+        String declared = declared(chain, name);
+        if (declared == null)
+            throw new IllegalArgumentException("characteristic \"" + name + "\" is not declared on \"" + ot.name + "\"");
+        return declared;
+    }
+
+    /** {@link #attributeName} for the object type of an instance. */
+    static ObjectType objectType(RegelSpraakModel model, String name) {
+        String declared = declared(model.objectTypes.keySet(), name);
+        if (declared == null) throw new IllegalArgumentException("instance objectType \"" + name + "\" is not declared");
+        return model.objectTypes.get(declared);
+    }
+
+    /** The member of {@code declared} that is {@code name} under {@link Namen#norm}, or null. */
+    private static String declared(java.util.Collection<String> declared, String name) {
+        for (String d : declared) if (Namen.norm(d).equals(Namen.norm(name))) return d;
+        return null;
     }
 
     /** Sets the global of every parameter the case gives, as the reference interpreter's case loader reads it: a
@@ -976,9 +996,9 @@ public final class CaseRunner {
     }
 
     private String attribute(JsonNode v, boolean emptyExpected) {
-        String attr = v.get("attribute").asText();
         String label = v.get("label").asText();
         ObjectType ot = typeOfLabel(v, label);
+        String attr = attributeName(ot, v.get("attribute").asText());
         ownField(ot, attr, false, "reads");
         // a CASE defect: a dimensioned attribute has a value per cell and none of its own (RUNTIME-SEMANTICS ch. 5.8c),
         // and its read-back form is the cellValue or cellEmpty expectation
@@ -989,7 +1009,7 @@ public final class CaseRunner {
         // would compare a list against a scalar. Its read-back form is the attributeTimeline expectation.
         if (temporal(ot, attr))
             throw new Excluded(DroolsCode.SCALAR_READBACK_TEMPORAL_ATTRIBUTE.reason("attribute", attr));
-        Object actual = invokeGetter(labelToBean.get(label), Namen.getter(attributeName(ot, attr)));
+        Object actual = invokeGetter(labelToBean.get(label), Namen.getter(attr));
         if (emptyExpected)
             return actual == null ? null : "verwacht leeg, werkelijk " + actual;
         if (ot.attribute(attr) instanceof Datatype.SumType s) constructorFits(v.get("value"), s, "expected " + label + "." + attr);
@@ -1003,8 +1023,9 @@ public final class CaseRunner {
      *  where the map holds none. A cell expectation on an attribute without dimensions, and labels that name no cell, are
      *  defects of the case, as an expectation on an attribute the type does not declare is. */
     private String cell(JsonNode v, boolean emptyExpected) {
-        String attr = v.get("attribute").asText(), label = v.get("label").asText(), kind = v.get("kind").asText();
+        String label = v.get("label").asText(), kind = v.get("kind").asText();
         ObjectType ot = typeOfLabel(v, label);
+        String attr = attributeName(ot, v.get("attribute").asText());
         ownField(ot, attr, false, "reads");
         if (!dimensioned(ot, attr))
             throw new IllegalArgumentException(kind + " on the attribute '" + attr + "' of " + label
@@ -1027,13 +1048,13 @@ public final class CaseRunner {
     /** The value on {@code bean}, of type {@code ot}, of the cell that the cell expectation {@code v} names; null for an
      *  empty cell. Labels that name no cell are a defect of the case. */
     private Object cellValue(JsonNode v, Object bean, ObjectType ot) {
-        String attr = v.get("attribute").asText();
+        String attr = attributeName(ot, v.get("attribute").asText());
         List<String> labels = cellLabels(v);
         List<String> key = FactModelGenerator.cellKey(model, ot.dimensionsOf(attr), labels);
         if (key == null)
             throw new IllegalArgumentException(v.get("kind").asText() + " on " + v.get("label").asText() + "." + attr
                     + ": the labels " + labels + " name no cell of the dimensions " + ot.dimensionsOf(attr));
-        Object map = bean == null ? null : invokeGetter(bean, Namen.getter(attributeName(ot, attr)));
+        Object map = bean == null ? null : invokeGetter(bean, Namen.getter(attr));
         return map == null ? null : ((Map<?, ?>) map).get(key);
     }
 
@@ -1044,13 +1065,14 @@ public final class CaseRunner {
      *  A never-written target (a null field) matches an explicitly empty expectation: both read leeg on every day
      *  (ch. 3.1), exactly as ref and clingo pin it. */
     private String timeline(JsonNode v) {
-        String attr = v.get("attribute").asText(), label = v.get("label").asText();
+        String label = v.get("label").asText();
         ObjectType ot = labelType.get(label);
         // both are CASE defects, not uncarried forms — ref rejects the same shapes at load ("expected
         // timeline on %S, which declares no granularity"), so they are hard failures here too, and the
         // unknown-label arm would otherwise reach bucket() with a null granularity (an unnamed NPE).
         if (ot == null)
             throw new IllegalArgumentException("attributeTimeline-verwachting op onbekend label '" + label + "'");
+        String attr = attributeName(ot, v.get("attribute").asText());
         if (!temporal(ot, attr))
             throw new IllegalArgumentException("attributeTimeline-verwachting op niet-temporeel attribuut '" + attr + "'");
         ownField(ot, attr, false, "reads");
@@ -1058,8 +1080,7 @@ public final class CaseRunner {
             for (JsonNode segment : v.get("timeline")) constructorFits(segment.get("value"), s, "expected " + label + "." + attr);
         List<TimelineSegment> expected = canonical(segments(timelineSegments(v.get("timeline"), attr,
                 "expected " + label + "." + attr, grid(ot, attr), true)));
-        Object read = labelToBean.containsKey(label)
-                ? invokeGetter(labelToBean.get(label), Namen.getter(attributeName(ot, attr))) : null;
+        Object read = labelToBean.containsKey(label) ? invokeGetter(labelToBean.get(label), Namen.getter(attr)) : null;
         if (read == null)
             return expected.isEmpty() ? null
                     : "attribuut " + attr + ": draagt geen tijdreeks, verwacht " + renderTl(expected);
@@ -1128,9 +1149,9 @@ public final class CaseRunner {
 
     private String characteristic(JsonNode v, boolean presentExpected) {
         ObjectType ot = typeOfLabel(v, v.get("label").asText());
-        ownField(ot, v.get("characteristic").asText(), true, "reads");
-        Object read = invokeGetter(labelToBean.get(v.get("label").asText()),
-                Namen.getter(characteristicName(ot, v.get("characteristic").asText())));
+        String characteristic = characteristicName(ot, v.get("characteristic").asText());
+        ownField(ot, characteristic, true, "reads");
+        Object read = invokeGetter(labelToBean.get(v.get("label").asText()), Namen.getter(characteristic));
         boolean present = Boolean.TRUE.equals(read);
         return present == presentExpected ? null
                 : "kenmerk " + v.get("characteristic").asText() + ": verwacht "

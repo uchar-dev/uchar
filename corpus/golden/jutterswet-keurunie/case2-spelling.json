@@ -1,0 +1,135 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "JUTTER",
+        "attributes": {},
+        "roles": {
+          "Aangemelde  Vondsten": [
+            "V1",
+            "V2",
+            "V3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "JUTTER",
+        "attributes": {},
+        "roles": {
+          "Aangemelde  Vondsten": [
+            "V7"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "JUTTER",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": " vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "GEMERKT"
+        ]
+      },
+      {
+        "label": "V2",
+        "objectType": " vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "Gekeurd"
+        ]
+      },
+      {
+        "label": "V3",
+        "objectType": " vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "GEMERKT",
+          "Gekeurd"
+        ]
+      },
+      {
+        "label": "V7",
+        "objectType": " vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "Aantal\tkeurstukken",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "Aantal\tkeurstukken",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "Aantal\tkeurstukken",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "AANTAL GEMELDE  STUKKEN",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "AANTAL GEMELDE  STUKKEN",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "AANTAL GEMELDE  STUKKEN",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V3",
+      "characteristic": "Gemerkt"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V2",
+      "characteristic": " gemerkt"
+    }
+  ]
+}

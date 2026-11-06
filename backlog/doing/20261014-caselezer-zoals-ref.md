@@ -38,3 +38,57 @@ May touch: `backends/drools/**` (`cases/`, `schema/`), `corpus/red/**`, `corpus/
 (**voorstel**, als de Drools-poot een regel nodig heeft).
 
 Out of scope: `ref/`, `backends/clingo` (tenzij (a) daar een afwijking van de regel vindt; dan een eigen kaart).
+
+## Result
+
+Bouwer drools-residue, 2026-11-06, branch `card/drools-residue` (afgetakt van main `575de08e5`). Logs en
+proefbestanden in `werk/drools-residue/` (`logs/`, `probe/caselezer/`).
+
+**(a) De regel en de meting.** Het caseschema zegt "Attribute name (as declared)", "Role name (as declared)" en
+"Case-local instance name; unique within the case"; `spec/schema/README.md` legt het label en het oplossen van namen
+tegen de `ir.json` bij de caselezer van `ref/`. Die vergelijkt elke naam met `Checks.norm` (`collapse_ws` op spatie en
+tab, `lowercase_ascii`: alleen A–Z gevouwen) en weigert bij het laden, zonder EF-code (`Case.fail`, "CASE ERROR"):
+"duplicate instance label", "attribute … is not declared on …", "characteristic … is not declared", "instance objectType
+… is not declared", "role key … does not resolve to a declared role". Clingo leest de case met dezelfde lezer en gaf op
+elk geval dezelfde regel als ref. Gemeten op 19 proefcases (`probe/caselezer/meting-oud.log`, `meting-oud-2.log`), de
+Drools-takken vóór de reparatie:
+- twee instanties met label `v1`: ref en clingo CASE ERROR, beide Drools-takken voegden ze stil samen (FAIL op de
+  waarde, met gelijke waarden zou het PLAYED zijn);
+- invoersleutel met twee spaties en een objecttype met een spatie vooraan, een rolsleutel met een spatie achteraan: ref
+  PASS, Drools `EXCLUDE DROOLS-046`, `DROOLS-045`, `DROOLS-049`;
+- invoersleutel `geschatte-waarde`, objecttype `Vondsten`, rolsleutel `op-volgers`: ref CASE ERROR, Drools `EXCLUDE`
+  (een weigering als "niet gedragen vorm");
+- verwachtingssleutel `geschatte-waarde` en `İŞ` voor een gedeclareerd `İş` (invoer en verwachting): ref CASE ERROR,
+  Drools `PLAYED 1` (de Java-naam van de spelling of `equalsIgnoreCase`);
+- een onbekend kenmerk, in invoer of verwachting: ref CASE ERROR, Drools `ERROR` op een ontbrekende setter of getter.
+
+**(b) De Drools-caselezer volgt ref, op beide takken.** `CaseRunner.attributeName`, `characteristicName` en het nieuwe
+`objectType` zoeken de gedeclareerde naam met `Namen.norm` (dat al ref's `norm` is) en weigeren een naam die geen
+declaratie is met een `IllegalArgumentException` in ref's woorden; `CaseInput` leest elke invoersleutel, elk
+objecttype en elke rolsleutel (`declaredRoleKey`) daardoor, en elke verwachting (`attribute`, `cell`, `timeline`,
+`characteristic`) ook. Een tweede instantie met een label is een `IllegalArgumentException` ("duplicate instance label").
+De `RoleLink` houdt de geschreven rolsleutel, zodat een consument nog het veld van zijn verzoek kan noemen. Gemeten na
+de reparatie (`probe/caselezer/meting-nieuw.log`): op alle 19 proefcases weigeren of spelen beide takken waar ref
+weigert of speelt. DROOLS-045 en DROOLS-046 zijn `RETIRED` (register, `CLAUDE.md` gate 12). Gate 8 kan deze weigeringen
+niet pinnen: ref geeft ze geen EF-code, en een `expectedFault` pint alleen een EF-code (open punt 1).
+
+**(c) Getuigen, rood eerst.** Geen rode case (zie (b)). In de suite `CaseNameRuleWitnessTest` (vier rijen, beide takken):
+rood op de oude code (`logs/card1-rood-bewaard.log`: 3 failures, 1 error), groen erna (`logs/card1-groen.log`). Golden
+`jutterswet-keurunie/case2-spelling.json`: dezelfde invoer als `case.json` met elke naam anders gespeld (objecttypen
+`JUTTER` en ` vondst`, rolsleutel `Aangemelde  Vondsten`, kenmerken `GEMERKT`/`Gekeurd`, verwachte attributen met tab,
+hoofdletters en twee spaties), uitleg in `NOTE.md`. Rood op de oude jar: beide takken `EXCLUDE DROOLS-045`
+(`logs/card1-golden-rood.log`); nu ref en clingo PASS (8 verwachtingen), beide Drools-takken `PLAYED 2`; `--noop`
+faalt (gate 7). Gate 12 groen (`logs/card1-gate12.log`: 352 gespeeld op beide takken, JUnit 1877), gate 4 groen.
+
+**Gewijzigde test.** `CaseInputWitnessTest.a_role_without_to_a_reference_field_is_refused_with_the_link` gebruikte de
+niet-gedeclareerde sleutel `buur` als getuige van DROOLS-049. Zo'n sleutel is nu een casusfout (nieuwe rij
+`a_key_that_names_no_declared_role_is_a_defect_of_the_case`); de rij van DROOLS-049 krijgt een gedeclareerde rol `buur`
+van een tweede relatie (Post–Wachter) in de IR, met dezelfde verwachte zin.
+
+**Open punten (normvragen).**
+1. De weigeringen van de caselezer (dubbel label, een naam die geen declaratie is) hebben geen EF-code; ref geeft ze als
+   laadfout zonder code. Een rode case kan pas als ch. 5.7b ze een soort op het kanaal `case input` geeft en ref
+   (en daarmee clingo) de code meegeeft; dat raakt `ref/` en RUNTIME-SEMANTICS, buiten het mandaat van deze kaart.
+2. IR-SPEC ch. 2.1 zegt "Name matching is case-insensitive" zonder het vouwen vast te leggen. Ref, de verifier, clingo
+   en nu de Drools-caselezer vouwen alleen A–Z (`İŞ` is niet `İş`); het resolvermodel van de frontend
+   (`RegelSpraakModel`, `equalsIgnoreCase`) vouwt breder.

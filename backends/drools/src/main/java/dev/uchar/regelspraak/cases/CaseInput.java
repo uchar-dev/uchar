@@ -39,7 +39,10 @@ import java.util.TreeMap;
  *
  * <p>The steps, each over all instances in the order of the case: a bean of the class {@link DroolsBackend.Build#beanLoader()}
  * loads for the instance's object type; its attributes and characteristics, through the setters of their declared
- * names; its roles; and last the reverse leg of every reciprocal relation. A role link follows RUNTIME-SEMANTICS
+ * names; its roles; and last the reverse leg of every reciprocal relation. A name the case writes, an object type, an
+ * attribute, a characteristic or a role key, is the declaration that it is under the name equality of the reference
+ * interpreter's case reader ({@link CaseRunner#attributeName}: runs of spaces and tabs as one space, A–Z as a–z, every
+ * other character as written). A role link follows RUNTIME-SEMANTICS
  * ch. 5.7a, by which a supplied link establishes the relation in both directions:
  * <ul>
  *   <li>the role the case writes is taken by its name where that name gives a reference field the bean model derives,
@@ -58,8 +61,8 @@ import java.util.TreeMap;
  *
  * <p>{@link #of} refuses, before anything goes into a session:
  * <ul>
- *   <li>a form this backend does not carry (an unknown object type, an undeclared attribute, a rational value, …): a
- *       {@link CaseRunner.Excluded}, in the sentence of the replay's report;</li>
+ *   <li>a form this backend does not carry (a rational value, …): a {@link CaseRunner.Excluded}, in the sentence of the
+ *       replay's report;</li>
  *   <li>a role link the bean model cannot hold (a label no instance carries, a role that reaches no to-one reference
  *       field, a field a declared member of the same name displaces): a {@link RoleRefusal}, a
  *       {@link CaseRunner.Excluded} as well;</li>
@@ -68,9 +71,10 @@ import java.util.TreeMap;
  *       case is wrong;</li>
  *   <li>a cell of a dimensioned attribute whose labels name no cell of it (EF-034) or that the input names twice
  *       (EF-035), RUNTIME-SEMANTICS ch. 5.8c: a {@link CellFault}, an {@link IllegalArgumentException};</li>
- *   <li>any other defect of the case (a malformed date or timeline, a scalar on a characteristic on a timeline, a scalar
- *       on a dimensioned attribute, a {@code cells} input on an attribute without dimensions, …): an
- *       {@link IllegalArgumentException}.</li>
+ *   <li>any other defect of the case (a label two instances carry, a name that is no declaration, a malformed date or
+ *       timeline, a scalar on a characteristic on a timeline, a scalar on a dimensioned attribute, a {@code cells} input
+ *       on an attribute without dimensions, …): an {@link IllegalArgumentException}, as the reference interpreter
+ *       refuses it at load.</li>
  * </ul>
  * The two refusals of a role link name the link the case wrote ({@link RoleError}), so a consumer can point at the field
  * of its own request that wrote it. While it reads, {@link #of} holds {@link DroolsBackend.Build#beanLoader()} as the
@@ -228,13 +232,13 @@ public final class CaseInput {
         return inputData;
     }
 
-    private Object beanFor(JsonNode i) {
+    private void beanFor(JsonNode i) {
         String label = i.get("label").asText();
-        Object bean = labelToBean.get(label);
-        if (bean != null) return bean;
-        String otName = i.get("objectType").asText();
-        ObjectType ot = model.objectTypeByName(otName);
-        if (ot == null) throw new CaseRunner.Excluded(DroolsCode.CASE_UNKNOWN_OBJECT_TYPE.reason("objectType", otName));
+        // one instance per label (the case schema): a second instance under a label would land on the bean of the first
+        if (labelToBean.containsKey(label))
+            throw new IllegalArgumentException("duplicate instance label \"" + label + "\"");
+        ObjectType ot = CaseRunner.objectType(model, i.get("objectType").asText());
+        Object bean;
         try {
             bean = Class.forName(FactModelGenerator.PACKAGE + "." + Namen.ident(ot.name, true), true, cl)
                     .getConstructor().newInstance();
@@ -243,46 +247,42 @@ public final class CaseInput {
         }
         labelToBean.put(label, bean);
         labelType.put(label, ot);
-        return bean;
     }
 
     private void setAttributesAndCharacteristics(JsonNode i) {
         Object bean = labelToBean.get(i.get("label").asText());
-        ObjectType ot = model.objectTypeByName(i.get("objectType").asText());
+        ObjectType ot = labelType.get(i.get("label").asText());
         JsonNode attrs = i.get("attributes");
         if (attrs != null) for (Map.Entry<String, JsonNode> e : attrs.properties()) {
-            Datatype dt = ot.attribute(e.getKey());
-            if (dt == null) throw new CaseRunner.Excluded(DroolsCode.CASE_UNDECLARED_ATTRIBUTE.reason("attribute", e.getKey(), "objectType", ot.name));
-            reader.ownField(ot, e.getKey(), false, "sets");
+            String name = CaseRunner.attributeName(ot, e.getKey());
+            Datatype dt = ot.attribute(name);
+            reader.ownField(ot, name, false, "sets");
             String site = i.get("label").asText() + "." + e.getKey();
             // a dimensioned attribute has a value per cell and none of its own (RUNTIME-SEMANTICS ch. 5.8c), so its
             // input is the cells variant and nothing else, as the reference interpreter reads it
             boolean cells = e.getValue().isObject() && e.getValue().size() == 1 && e.getValue().has("cells");
-            if (reader.dimensioned(ot, e.getKey())) {
+            if (reader.dimensioned(ot, name)) {
                 if (!cells)
                     throw new IllegalArgumentException(site + ": a dimensioned attribute takes its input per cell"
                             + " (\"cells\"), never a scalar or a timeline (RUNTIME-SEMANTICS ch. 5.8c)");
-                CaseRunner.call(bean, Namen.setter(CaseRunner.attributeName(ot, e.getKey())), Map.class,
-                        cells(e.getValue().get("cells"), ot, e.getKey(), dt, i.get("label").asText()));
+                CaseRunner.call(bean, Namen.setter(name), Map.class,
+                        cells(e.getValue().get("cells"), ot, name, dt, i.get("label").asText()));
                 continue;
             }
             if (cells) throw new IllegalArgumentException(site + ": a cells input on an attribute without dimensions");
             CaseRunner.inputFits(e.getValue(), dt, site);
-            if (reader.temporal(ot, e.getKey())) {
-                // the bean member was generated from the DECLARATION, so a case key spelled otherwise must be
-                // brought back to it or it names a setter the bean does not have (ref reads it as the same name)
-                CaseRunner.call(bean, Namen.setter(Namen.declaredName(ot.granularityMembers().keySet(), e.getKey())),
-                        List.class, temporalInput(e.getValue(), e.getKey(), i.get("label").asText() + "." + e.getKey(),
-                                reader.grid(ot, e.getKey())));
+            if (reader.temporal(ot, name)) {
+                CaseRunner.call(bean, Namen.setter(name), List.class,
+                        temporalInput(e.getValue(), name, site, reader.grid(ot, name)));
                 if (!e.getValue().isNull() && !e.getValue().has("timeline"))
-                    emmers.add(new Input.Bucket(bean, e.getKey()));
+                    emmers.add(new Input.Bucket(bean, name));
                 continue;
             }
-            CaseRunner.call(bean, Namen.setter(CaseRunner.attributeName(ot, e.getKey())), CaseRunner.argType(dt),
-                    reader.valueToArg(e.getValue(), e.getKey()));
+            CaseRunner.call(bean, Namen.setter(name), CaseRunner.argType(dt), reader.valueToArg(e.getValue(), name));
         }
         JsonNode characteristics = i.get("characteristics");
-        if (characteristics != null) for (JsonNode k : characteristics) {
+        if (characteristics != null) for (JsonNode written : characteristics) {
+            String k = CaseRunner.characteristicName(ot, written.asText());
             // A CASE defect, not an uncarried form (maintainer decision 2026-09-09), as the sister arm below says
             // of the mirror-image mistake; this arm is the same seam from the other side. A TEMPORAL kenmerk's bean
             // member is a List<Segment>, so a scalar-true assertion reaches no reader here; in the interpreter and
@@ -291,24 +291,24 @@ public final class CaseInput {
             // All three readers refuse it at load. An Excluded would file a broken case under "a form the v0
             // backend does not carry" — a counted, reasoned refusal in the gate report for a case that is simply
             // wrong, and the one classification that could keep it out of sight.
-            if (Namen.containsName(ot.characteristicGranularityMembers(), k.asText()))
-                throw new IllegalArgumentException("scalar characteristic input '" + k.asText() + "' on the "
+            if (Namen.containsName(ot.characteristicGranularityMembers(), k))
+                throw new IllegalArgumentException("scalar characteristic input '" + k + "' on the "
                         + "time-dependent kenmerk of " + ot.name + ": deliver it as a characteristicTimelines "
                         + "entry — the static characteristics list asserts a scalar truth no temporal reader "
                         + "consults");
-            reader.ownField(ot, k.asText(), true, "sets");
-            CaseRunner.call(bean, Namen.setter(CaseRunner.characteristicName(ot, k.asText())), boolean.class, Boolean.TRUE);
+            reader.ownField(ot, k, true, "sets");
+            CaseRunner.call(bean, Namen.setter(k), boolean.class, Boolean.TRUE);
         }
         JsonNode ctls = i.get("characteristicTimelines");
         if (ctls != null) for (Map.Entry<String, JsonNode> e : ctls.properties()) {
+            String k = CaseRunner.characteristicName(ot, e.getKey());
             // a CASE defect, not an uncarried form — ref refuses this shape at load (case.ml: "a
             // characteristic timeline on a non-temporal characteristic"), so it is hard here too; an
             // Excluded would file a broken corpus case under "not carried", silently green.
-            if (!Namen.containsName(ot.characteristicGranularityMembers(), e.getKey()))
+            if (!Namen.containsName(ot.characteristicGranularityMembers(), k))
                 throw new IllegalArgumentException("kenmerktijdlijn op niet-temporeel kenmerk '" + e.getKey() + "'");
-            reader.ownField(ot, e.getKey(), true, "sets");
-            CaseRunner.call(bean, Namen.setter(Namen.declaredName(ot.characteristicGranularityMembers().keySet(), e.getKey())),
-                    List.class, characteristicTimeline(e.getValue(), e.getKey()));
+            reader.ownField(ot, k, true, "sets");
+            CaseRunner.call(bean, Namen.setter(k), List.class, characteristicTimeline(e.getValue(), e.getKey()));
         }
     }
 
@@ -396,15 +396,17 @@ public final class CaseInput {
 
     private void setRoles(JsonNode i) {
         Object bean = labelToBean.get(i.get("label").asText());
-        ObjectType tI = model.objectTypeByName(i.get("objectType").asText());
+        ObjectType tI = labelType.get(i.get("label").asText());
         JsonNode roles = i.get("roles");
         if (roles == null) return;
-        for (Map.Entry<String, JsonNode> e : roles.properties()) {
+        for (Map.Entry<String, JsonNode> written : roles.properties()) {
+            // the key in its declared spelling, which the model's role searches compare; the link keeps the written one
+            Map.Entry<String, JsonNode> e = Map.entry(declaredRoleKey(written.getKey()), written.getValue());
             for (JsonNode labelNode : e.getValue()) {
-                RoleLink link = new RoleLink(i.get("label").asText(), e.getKey(), labelNode.asText());
+                RoleLink link = new RoleLink(i.get("label").asText(), written.getKey(), labelNode.asText());
                 Object target = labelToBean.get(labelNode.asText());
                 if (target == null)
-                    throw new RoleRefusal(DroolsCode.ROLE_UNKNOWN_LABEL.reason("role", e.getKey(), "label", labelNode.asText()), link);
+                    throw new RoleRefusal(DroolsCode.ROLE_UNKNOWN_LABEL.reason("role", written.getKey(), "label", labelNode.asText()), link);
                 ObjectType tL = beanObjectType(target);
                 // §13.4.1 the WRITTEN role IS the navigation — and wherever the type pair carries more than
                 // one role it is the ONLY route: the by-pair search below counts every candidate and derives
@@ -469,7 +471,7 @@ public final class CaseInput {
                         // 2026-08-30): the erflijn shape resolves `erfvolger` by name PERFECTLY, and what stops it
                         // is its CARDINALITY — a to-many role's storage is the far end's field — where one sentence
                         // for both would blame a non-unique derivation that in fact succeeded.
-                        throw new RoleRefusal(DroolsCode.CASE_ROLE_NO_FIELD.reason("role", e.getKey(), "fromType", tI.name, "toType", tL.name, "viaReason", viaName == null ? DroolsCode.CASE_ROLE_NO_FIELD.part("via-none")
+                        throw new RoleRefusal(DroolsCode.CASE_ROLE_NO_FIELD.reason("role", written.getKey(), "fromType", tI.name, "toType", tL.name, "viaReason", viaName == null ? DroolsCode.CASE_ROLE_NO_FIELD.part("via-none")
                                 : DroolsCode.CASE_ROLE_NO_FIELD.part(model.toManyRole(tI, tL, viaName) ? "via-to-many" : "via-to-one", "role", viaName),
                                 "directionReason", DroolsCode.CASE_ROLE_NO_FIELD.part(roleIL != null ? "direction-near" : roleLI != null ? "direction-far" : "direction-none",
                                         "role", roleIL != null ? roleIL : roleLI)), link);
@@ -690,6 +692,17 @@ public final class CaseInput {
             Collections.rotate(cycle, -cycle.indexOf(Collections.min(cycle)));
             throw new LinkCycleFault(ft.name, String.join(", ", cycle));
         }
+    }
+
+    /** The declared name or plural of a role that the role key {@code key} is under {@link Namen#norm}, the name equality
+     *  of the reference interpreter's case reader. A key that names no declared role is a defect of the case, which that
+     *  reader refuses at load. */
+    private String declaredRoleKey(String key) {
+        for (RegelSpraakModel.FactType ft : model.factTypes.values())
+            for (RegelSpraakModel.Role r : ft.roles)
+                for (String declared : Arrays.asList(r.name(), r.plural()))
+                    if (declared != null && Namen.norm(declared).equals(Namen.norm(key))) return declared;
+        throw new IllegalArgumentException("role key \"" + key + "\" names no declared role");
     }
 
     /** The keys a case may write a role under: its name and its plural, normalised. */
