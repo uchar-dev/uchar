@@ -32,9 +32,38 @@ Geen golden heeft een van deze vormen; daarom zien de gates het niet. De golden
 vergelijking die een groeiende waarde alleen waar kan maken, en die clingo goed
 draagt.
 
+## Voorlopig besluit (Fable-advies 2026-11-06)
+
+*Voorlopig: het aanbevolen antwoord van een Fable-advies, gebouwd en geland; de eigenaar kan het omdraaien. Het volledige
+advies, met de afweging, de proeven en de voorgestelde spectekst: `uchar-dev/werk/norm-advice-2026-11-06/ADVIES.md`,
+vraag A.*
+
+Route a1. De generatielezing van RUNTIME-SEMANTICS ch. 5.5 is de norm voor de voorwaarde van een creatie, en de
+verifier verandert niet: zo'n vergelijking houdt haar positieve of stratum-strikte soort (WF-046 krijgt geen nieuwe
+negatieve kant). Clingo weigert luid en bij naam (de volgende vrije code van `backends/clingo/codes.tsv`, op
+2026-11-06 `CLINGO-037`, soort `refusal`, sleutel `creation-condition-reads-on-a-cycle`, parameters `creation`, `node`,
+`writer`) de voorwaarde van een objectcreatie of feitcreatie die een knoop leest die een latere generatie van het eigen
+stratum nog kan veranderen: dezelfde knopen en schrijvers als bij een toekenning (`refuse_initialisation_reads_on_a_cycle`
+in `backends/clingo/lib/translate.ml`, met `writers`, `reached`, `on_the_cycle` en `in_the_stratum`, nu over
+`Ir_v0.Checks.dep_cond` van de voorwaarde). Gedragen blijft alleen een lezing op een monotone plaats:
+
+- (M1) het bereik van een kwantorvouw onder `atLeast` (en haar filter als dat zelf monotoon is), of een positieve
+  rolcheck;
+- (M2) de linkerkant van `greater`/`greaterOrEqual` of de rechterkant van `less`/`lessOrEqual`, als die alleen
+  niet-dalende knopen leest en de andere kant niets veranderlijks; niet-dalend is een telling over een relatie of
+  populatie die de kring laat groeien (zonder filter of met een monotoon filter), een attribuut waarvan elke schrijver
+  in het stratum een onvoorwaardelijke regel met zo'n telling is, en een som van niet-dalende en vaste termen;
+- (M3) een positieve kenmerkcheck van een kenmerk waarvan elke schrijver in het stratum een creatie is of een
+  kenmerktoekenning met een zelf monotone voorwaarde.
+
+De lijst is gesloten: wat geen clausule noemt, weigert clingo. Rij 1–5 van de tabel vallen erbuiten; de recursieve
+goldens van (d) blijven gedragen (`jutterswet-opvolgerquorum` via M1 en M2, de andere lezen alleen `rang`, dat alleen
+de creatie schrijft). Gemeten 2026-11-06: ref en beide Drools-takken geven op rij 1, 3 en 5 hetzelfde absolute
+antwoord, alleen clingo wijkt af.
+
 ## Acceptatie (bij oppakken aanscherpen)
 
-- (a) Een van twee routes, te kiezen bij het oppakken (de tweede is de normvraag
+- (a) Route a1 (voorlopig besluit hierboven). Oorspronkelijk een van twee routes, te kiezen bij het oppakken (de tweede is de normvraag
   die het besluit over de kwantorvouw van 2026-09-23 en het besluit over de
   generaties openlaten):
   - (a1) clingo weigert luid en bij naam (de tweede houding van
@@ -47,7 +76,12 @@ draagt.
     vorm.
 - (b) Checks in `backends/clingo/test` (bij a1) of negatieve gevallen (bij a2)
   voor elke rij hierboven, rood eerst, met het absolute antwoord van ref ernaast.
-- (c) De twee restposten van ch. 6.1 zeggen wat er nu gebeurt (voorstel).
+- (c) De twee restposten van ch. 6.1 (RUNTIME-SEMANTICS r. ~7288–7357) worden één gesloten alinea die zegt wat er nu
+  gebeurt, met de absolute antwoorden van ref en de weigering van clingo; de zin dat de runner een van twee modellen
+  kiest (r. ~7351) klopt sinds CLINGO-030 (`233fd6438`) niet meer en vervalt daarbij. Mee: ch. 5.5 (de weigering
+  geldt ook voor een voorwaarde, buiten haar monotone plaatsen), IR-SPEC ch. 5.5 (de tweede houding voor twee vormen)
+  en de twee "recorded open"-alinea's van IR-SPEC ch. 5.2 (een slotzin met dit besluit); `backends/clingo/README.md`
+  naast de alinea over de toekenning. Voorstel voor de tekst: ADVIES.md, A3 (c) (beschermd pad: voorstel).
 - (d) De recursieve goldens (`jutterswet-wachtersketen` en zijn rgs-tweeling,
   `jutterswet-opvolgerquorum`, `jutterswet-opvolgerversies`,
   `jutterswet-erflijn`, `synth2-budgetgrens-onder`,
