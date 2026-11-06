@@ -148,3 +148,23 @@ rebase: PASS, beide takken `PLAYED` 358, JUnit 1884 tests (`DrlTextPinWitnessTes
 Geland op main na `make gates` op de stand vóór de rebase (red=0, 436 s) en, na de rebase op `3df621a37`, gate 12 en de
 Drools-suite groen; CONSTRUCTS en de gate-6-tekst van `CLAUDE.md` in de landingscommit. De volledige set draait de
 hoofdsessie op main na de laatste landing van de dag.
+
+## Besluit van de eigenaar (2026-11-06 avond): een getal in de decimalen van zijn type
+
+De eigenaar draait het voorlopige besluit voor getallen om: "de tekst is een string-literale representatie van de
+waarde in een bepaald type, en als het type een precisie heeft van 2 decimalen, dan is de string literal daarbij 5,50
+en niet 5,5". Dus:
+
+- Een getal (ook een percentage, een bedrag, een getal met een eenheid) schrijft precies de decimalen van zijn type,
+  met een decimale komma: 5,50 bij 2 decimalen is `5,50`, 5 bij 2 decimalen `5,00`, 5 als geheel getal `5`,
+  12,5 % bij 2 decimalen `12,50`. Geen eenheid, geen procentteken, geen duizendtalscheider.
+- Het type van een deel is het gedeclareerde type van wat het leest (attribuut, parameter, kenmerk), en van een
+  samengesteld deel zijn precisiegrens (RUNTIME-SEMANTICS ch. 2.3, de grens die de precisiepoort al afleidt uit de
+  declaraties en de vorm van de expressie): `zijn basis maal 1,1` met basis in 2 decimalen schrijft 3 decimalen. Een
+  deel zonder eindige grens (de onbegrensde vorm, een deling) schrijft de exacte kortste vorm, en een getal dat niet
+  eindigt `t/n`, zoals het voorlopige besluit.
+- De rest van het voorlopige besluit (waarheidswaarde, datum, datum-tijd, opsomming, sum type, leeg, lijst/record,
+  clingo's limiet CLINGO-042) blijft.
+
+Een optie om de eenheid erachter te schrijven, tussen haakjes (`5,50 (€)`), besprak de eigenaar als mogelijke
+uitbreiding van de taal; die hoort niet bij deze stap.
