@@ -82,3 +82,6 @@ objectcreaties af (JSON-atoom 3070 tekens), 449, 450, 452 en 453 spelen (`k2/cha
 Gevonden, niet gebouwd (geen normvraag): ref speelt de keten van niet-recursieve creaties traag, n = 50 in 0 s,
 100 in 2 s, 150 in 13 s, 451 na 25 minuten nog niet klaar (gestopt); clingo speelt 451 in seconden. Daarom draait
 het suiteframe van 451 alleen clingo.
+
+Eindrun van de ronde: `make gates` op `2df79f6a3`, alle zeventien gates en `after-run` rc=0, red=0, 435 s
+(`out/gates/20261106-164133/summary.txt` in de worktree, log `uchar-dev/werk/clingo-round2/logs/gates-final.log`).

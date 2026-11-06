@@ -204,3 +204,6 @@ lezende vorm.
 Opgemerkt bij het meten, geen afwijking: het filter van een kwantorvouw wordt volledig uitgerekend vóór de matrix
 kortsluit (ch. 3.9a, "the contributors are settled in full first"); een deling door nul in dat filter deponeert dus
 ook na het beslissende lid, in alle vier.
+
+Eindrun van de ronde: `make gates` op `2df79f6a3`, alle zeventien gates en `after-run` rc=0, red=0, 435 s
+(`out/gates/20261106-164133/summary.txt` in de worktree, log `uchar-dev/werk/clingo-round2/logs/gates-final.log`).
