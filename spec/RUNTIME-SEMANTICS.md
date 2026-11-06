@@ -4448,7 +4448,7 @@ change: a node with a writer that a creation on a dependency cycle in
 that stratum reaches in the dependency graph, the creation itself
 included where it lies on such a cycle (WF-045 admits the cycle through
 a recursive group). Only such a creation changes, after the creation, a
-value the initialisation reads; a later stratum changes none (ch. 6.3).
+value the member assignment reads; a later stratum changes none (ch. 6.3).
 Refused are what a rule, an allocation or a defaults group writes there,
 also where a creation writes the same member, and a population or
 relation that a creation on the cycle grows (the number of the
@@ -4471,7 +4471,7 @@ creations write is set once per object, at its creation, so its end value
 is the value at the creation, and a read of it stays carried: the anchor
 below reads its rang so. A read of a member that a creation writes is
 refused as well when a rule on the cycle writes that member too: with
-the rang initialised to the rang plus 1 and the beginstand to the rang,
+the rang assigned the rang plus 1 and the beginstand the rang,
 and a rule that sets the rang of a Wachter with an opvolger to 2, W1's
 opvolger starts at **beginstand 1** while W1 ends at **rang 2**, and
 the backend refuses the document. The refusal reads the static

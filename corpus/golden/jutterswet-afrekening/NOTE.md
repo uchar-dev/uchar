@@ -87,7 +87,7 @@ result the toekenning reads as an operand.
 
 Not in this golden, with its reason: a toekenning in another unit than its
 member (the ASP backend does not translate a restatement at an
-initialisation), a subselection that compares a member (the ASP backend does
+member assignment), a subselection that compares a member (the ASP backend does
 not ground it in a creation's toekenning), a division in a toekenning (the
 exec-model branch refuses it by name, as a creation has no companion that
 raises the Fout), a date fold in the creation's condition (refused by name),

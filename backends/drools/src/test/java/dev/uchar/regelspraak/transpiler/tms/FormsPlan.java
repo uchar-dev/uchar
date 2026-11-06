@@ -239,7 +239,7 @@ final class FormsPlan {
      * the beans of the same document as {@link #plan}: an object creation of a Post for a Wachter, in its agenda group,
      * with an attribute assignment set on the new bean and a characteristic assignment inserted after it,
      * stated as everything a creation makes (round 5b), each from a function that can fault; one of a Wachter without
-     * initialisations, whose new object is the first end of its link; the link a reference field of the input carries,
+     * assignments, whose new object is the first end of its link; the link a reference field of the input carries,
      * at phase 0, and the link of a fact creation, in its agenda group, at the phase it binds; and the fault of a second
      * filling. No rule of it is meant to fire.
      */

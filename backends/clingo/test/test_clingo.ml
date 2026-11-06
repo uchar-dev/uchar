@@ -9875,7 +9875,7 @@ let () =
     ~silent_rows:(portion None @ [ pf_empty ~label:"V1" ~attr:"veilingrestant" (); pf_cons ])
     ~silent:"no shares at all: the source's voorwaarde failed" ()
 
-(* an object creation: the initialisation value is read only where the
+(* an object creation: the assigned value is read only where the
    creation fires. A Werf mints one Rapport; its keur reads the rapport's
    bedrag back over the created role. *)
 let () =
@@ -9908,7 +9908,7 @@ let () =
     {|{ "label": "W1", "objectType": "Werf", "attributes": { "lengte": { "number": "20" } }, "roles": {}, "characteristics": [] }|}
   in
   let validate v = [ (match v with Some v -> pf_is ~label:"W1" ~attr:"keur" v | None -> pf_empty ~label:"W1" ~attr:"keur" ()); pf_cons ] in
-  pf_position ~name:"object creation: the initialisation value"
+  pf_position ~name:"object creation: the assigned value"
     ~ir:(doc ~param:"keurtarief" ~precondition:"null" (pf_p "keurtarief"))
     ~param:"keurtarief" ~value:"7.50" ~instances:[ w1 ] ~bound:(validate (Some "7.5"))
     ~silent_rows:(validate None) ~silent:"keur leeg: the rapport was minted without a bedrag" ();
@@ -11054,7 +11054,7 @@ let () =
     ~ir:(check_doc (creations ~werf:false "8" "3") minst) ~param:"p" ~case_text:(pf_case ~instances:d1 (validate (Some "99")));
   both_answer ~name:"stratum: at-least 1 with p bound (stratum-8-w-3dd-gebonden, control)"
     ~ir:(check_doc (creations "8" "3") minst) ~case_text:(pf_case ~params:bound ~instances:d1 (validate (Some "99")));
-  order_named ~name:"stratum: the werf creation initialises from 1 plus 0 (stratum-ctl-nietliteral, control)"
+  order_named ~name:"stratum: the werf creation assigns 1 plus 0 (stratum-ctl-nietliteral, control)"
     ~ir:(check_doc (creations ~werf_check:[ ("keur", pf_bin ~typ:pf_n0 "plus" (lit "1") (lit "0")) ] "8" "3") minst)
     ~param:"p" ~case_text:(pf_case ~instances:d1 (validate (Some "99")));
   (* the barrier per member: bonus = Let k = restpost in som(lengte van
@@ -15633,10 +15633,10 @@ let () =
    relation the fact creation "maak maten" in the same group lays; ref
    answers verder(W1) = 0, this backend answered 1). Two shared writers: a
    rule sets the rang of a Wachter that has an opvolger to 2, and the
-   creation initialises rang and beginstand = zijn rang (ref: rang(W1) = 2,
+   creation assigns rang and beginstand = zijn rang (ref: rang(W1) = 2,
    opvolgerbegin(W1) = 1; before, this backend refused the case input on a
    computed target); and a rule sets the graad of such a Wachter to 5, and
-   the creation initialises graad = 0 and beginstand = zijn graad (ref:
+   the creation assigns graad = 0 and beginstand = zijn graad (ref:
    opvolgerbegin(W1) leeg; this backend answered 5). Carried, by ref and
    here: beginstand = zijn rang, which only the creation writes
    (opvolgerbegin(W1) = 1), and beginstand = zijn basis with basis = 7, a
@@ -15825,10 +15825,10 @@ let () =
 (* RUNTIME-SEMANTICS ch. 5.5, Generations: a creation off the cycle, in the
    cycle's own stratum (fix round after the final lens, 2026-10-09). A
    positive characteristic read is not stratum-strict, so a creation that
-   lies on no cycle can share a stratum with one, and an initialisation of
+   lies on no cycle can share a stratum with one, and a member assignment of
    it then reads a value that a later generation of that stratum still
    changes. The refusal reaches that form too: a writer of what the
-   initialisation reads that a creation on a dependency cycle in the
+   member assignment reads that a creation on a dependency cycle in the
    creation's own stratum reaches in the graph.
 
    The documents: "ervaren wachter" marks a Wachter that has a maatgever;

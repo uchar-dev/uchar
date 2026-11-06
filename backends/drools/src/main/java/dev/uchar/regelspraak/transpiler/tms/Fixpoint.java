@@ -72,7 +72,7 @@ public record Fixpoint(List<DerivedValue> values, List<DerivedCharacteristic> ch
     }
 
     /** {@code object}, which the object creation named {@code creation} made for {@code subject}. Its attribute
-     *  initialisations are on its bean already; what it derives besides is in {@link #values} and {@link #characteristics}. */
+     *  assignments are on its bean already; what it derives besides is in {@link #values} and {@link #characteristics}. */
     public record MadeObject(Object object, String creation, Object subject) {
         public MadeObject {
             Objects.requireNonNull(object, "object");

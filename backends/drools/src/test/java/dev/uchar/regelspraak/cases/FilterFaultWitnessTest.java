@@ -67,7 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       not join the member to the fold's subject; measured 2026-10-09, reported with the card), so no golden can
  *       hold them;</li>
  *   <li>a fold inside the value of a rule with a condition, "(het aantal …) plus 1, indien hij actief is";</li>
- *   <li>a fold in the condition of an object creation and one in its initialisation;</li>
+ *   <li>a fold in the condition of an object creation and one in its member assignment;</li>
  *   <li>the filter of a quantifier fold under three quantifiers, a matrix that divides, which the DRL-text branch
  *       wrote on the element pattern as well, and a member of a path's range that the path does not reach.</li>
  * </ul>
@@ -797,7 +797,7 @@ class FilterFaultWitnessTest {
         played(rule, TmsDocuments.caseDocument(j2, List.of(value("J2", "zwaarte", "1"), consistent())));
         List<String> j4 = List.of(jutter("J4", false, List.of("V6", "V2")), v6, vondst("V2", "9", "0"));
         deposits(rule, j4, List.of(value("J4", "zwaarte", "1")), "zwaarte", "J4");
-        // the creation, whose initialisation divides, the analysis refuses by name on both branches; until card
+        // the creation, whose member assignment divides, the analysis refuses by name on both branches; until card
         // drl-teksttak-op-truth-maintenance the DRL-text branch played it on J1 and J2 and faulted on J4
         assignmentRefused(creation);
     }

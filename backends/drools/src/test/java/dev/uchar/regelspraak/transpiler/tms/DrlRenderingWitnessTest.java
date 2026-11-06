@@ -263,9 +263,9 @@ class DrlRenderingWitnessTest {
     /**
      * Every form of a creation and of a link compiles (step 5), also where no golden has it: a plan made here over the
      * same beans ({@link FormsPlan#creations}), with an object creation in its agenda group that sets an attribute
-     * initialisation on the new bean and inserts a characteristic assignment after it, stated as everything a
+     * assignment on the new bean and inserts a characteristic assignment after it, stated as everything a
      * creation makes (round 5b; until then logically, which the plan of a creation no longer admits), one without
-     * initialisations whose new object is the first end of its link, the link of the input and that of a fact creation,
+     * assignments whose new object is the first end of its link, the link of the input and that of a fact creation,
      * and the fault of a second filling. One plan gives one text, written to {@code <map>/_creatieplan.drl} under
      * {@code -Duchar.drlvorm}.
      *

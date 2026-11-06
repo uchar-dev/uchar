@@ -1191,7 +1191,7 @@ public final class DroolsBackend {
      * <p>With a creation a creation fires only at a fixpoint of the rule layer, and
      * what it makes is stated and never lapses, as in the reference interpreter (RUNTIME-SEMANTICS ch. 5.5): a logical
      * object could keep itself standing through its own output after the state that made it passed, and its
-     * initialisations would follow later changes, where ch. 5.5 evaluates them when the object is made. So this fires
+     * member assignments would follow later changes, where ch. 5.5 evaluates them when the object is made. So this fires
      * in generations, here and not in the rules, so that the two renderings of the analysis share it. The creation
      * rules sit in agenda groups of their own ({@code TmsTranspiler.FACT_CREATION}, {@code TmsTranspiler.OBJECT_CREATION}),
      * so a fire without their focus takes the rule layer to rest and leaves them pending. A generation is one phase: it
@@ -1204,7 +1204,7 @@ public final class DroolsBackend {
      * made carries its number, and a creation rule does not take an object or a link of the phase it fires in, so a
      * recursive chain advances one generation per phase. With a phase of fact creations and a phase of object
      * creations and the rule layer at rest between them, an object creation would read the links the fact creations
-     * of its own generation laid: an initialisation that counts the maatgevers of a Wachter, over the relation a fact
+     * of its own generation laid: a member assignment that counts the maatgevers of a Wachter, over the relation a fact
      * creation in the same recursive group lays, would give 1 where the reference interpreter gives 0.
      *
      * <p>The generations run per evaluation stratum of the reference interpreter, in ascending order
@@ -1212,7 +1212,7 @@ public final class DroolsBackend {
      * of its own stratum or one above. A creation writes irrevocably, so it reads strictly and sits above the producers
      * of what it reads (RUNTIME-SEMANTICS ch. 6.1); the reference interpreter evaluates stratum k to its fixpoint before
      * a form of stratum k+1 fires (ch. 6.3). In one phase for all strata, a creation that reads what another creation
-     * of the same generation makes would read the state before it, and its initialisation would stay fixed on that
+     * of the same generation makes would read the state before it, and its member assignment would stay fixed on that
      * value. The strata order only the creations, which are stated: the rule layer stays under truth maintenance and
      * reaches its fixpoint after every phase.
      *

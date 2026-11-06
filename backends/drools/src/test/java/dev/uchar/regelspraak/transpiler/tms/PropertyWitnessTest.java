@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   <li>the names of {@code Namen.lidnamen}, and those of {@link Namen#getter} and {@link Namen#setter}, through which
  *       {@code CaseRunner} sets the input and reads and writes the roles and the expected values;</li>
  *   <li>the property entry of {@code Accessors}, through which the PatternDSL rendering reads a field, a binding, a
- *       step of a path and an input, sets the initialisations of a creation, and the analysis writes the derived values
+ *       step of a path and an input, sets the member assignments of a creation, and the analysis writes the derived values
  *       and links onto the beans, and the entry of the replay reads the reference fields;</li>
  *   <li>{@code PatternDslRendering.inputReader}, and the routes {@code read}, {@code along} and {@code meeting}.</li>
  * </ul>

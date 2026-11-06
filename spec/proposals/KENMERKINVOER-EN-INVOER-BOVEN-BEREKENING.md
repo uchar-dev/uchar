@@ -741,7 +741,7 @@ Each refusal is an ERROR at the declaration's line, naming its reason:
 - the marker on a time-dependent attribute (WF-086: no temporal defaults
   target) or a dimensioned one (fenced by the Drools exec branch's
   defaults lowering, `ExecModelTranspiler.java:7614-7615`);
-- an allocation or an object-creation initialisation that writes X (their
+- an allocation or an object-creation member assignment that writes X (their
   retargeting is not in the first card);
 - a writer of X on a supertype or subtype of the declaring type (the
   ch. 7.10 composition of the generated group with inherited stacks is not

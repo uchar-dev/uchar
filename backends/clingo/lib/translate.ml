@@ -14443,12 +14443,12 @@ let form_strata (forms : Ir_v0.Checks.dep_form array) : int array =
    rang that way and stays carried. A member that a creation writes and a
    rule on the cycle writes as well is refused, because the rule can change
    it after the creation: with rang plus 1 and beginstand = zijn rang
-   initialised, and a rule that sets the rang of a Wachter with an opvolger
+   assigned, and a rule that sets the rang of a Wachter with an opvolger
    to 2, the opvolger W1 makes starts at beginstand 1 while W1 ends at rang
    2.
 
    The test is static over the verifier's graph. Every other writer of a
-   node the initialisation reads is an offence when a creation that lies
+   node the member assignment reads is an offence when a creation that lies
    on a dependency cycle in the creation's own stratum reaches it over one
    edge or more, in a version the case's date admits (below); WF-045
    admits such a cycle only through a member of a recursive group. The

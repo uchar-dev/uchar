@@ -364,7 +364,7 @@ allocation — it is called only from the Berekening/Gelijkstelling arms,
 so case input on an allocation `doelAttribuut` is today emitted as a
 plain `val/3` fact beside the allocation's own head: an **unfenced
 latent superset gap**, to be closed by the §9 executor card with a fence
-of its own (an addition, not a narrowing); (ii) creation-initialised
+of its own (an addition, not a narrowing); (ii) creation-assigned
 members need no fence — minted instances live in the reserved `::`
 namespace (RS ch. 5.5), so no case-supplied fact can ever collide with
 them. Stratification is untouched: the new NAF is against `r_eff`, whose

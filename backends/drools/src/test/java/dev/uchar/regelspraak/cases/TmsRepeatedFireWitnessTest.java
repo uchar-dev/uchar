@@ -66,7 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>A session of a model with a creation fires once (the fix round of step 3, point 1). On golden
  * {@code anchor/jutterswet-rekenkamer}, case 1, the object creation makes a Rekenkamer whose grondslag and aftrek it
- * initialises from J1's, 100 and 30, and J1's heffing is 70. Then J1's grondslag becomes 150 ({@code update}), and
+ * assigns from J1's, 100 and 30, and J1's heffing is 70. Then J1's grondslag becomes 150 ({@code update}), and
  * {@code fire} refuses the session, with the sentence that what a creation made is stated and that the way is a fresh
  * session per input. A fresh session of grondslag 150 gives heffing 120, as the reference interpreter and the ASP runner
  * give it on that case (measured 2026-10-10). <b>Red before the change</b> (measured 2026-10-10 on {@code f4b83d7b}):
@@ -74,7 +74,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * thrown.", and the old form of the row, fire, change, fire and read, gave the state of the first input: "expected:
  * &lt;[…, J1.heffing = 120, gemaakt: richt de rekenkamer op voor J1, gemaakte Rekenkamer.heffing = 120]&gt; but was:
  * &lt;[…, J1.heffing = 70, gemaakt: richt de rekenkamer op voor J1, gemaakte Rekenkamer.heffing = 70]&gt;", since the
- * made Rekenkamer kept the grondslag it was initialised with.
+ * made Rekenkamer kept the grondslag it was assigned.
  *
  * <p>Between two fires the input changes through {@code update} on the beans {@code insert} put in, and in no other
  * way (the second fix round of step 3, point 2). On the values document, after the first fire, V1's vinder becomes a

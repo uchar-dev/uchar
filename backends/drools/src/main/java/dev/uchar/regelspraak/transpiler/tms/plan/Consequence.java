@@ -521,7 +521,7 @@ public sealed interface Consequence {
 
         /** The value of the attribute initialisation at index {@code initialisatie}, set on the new bean through the
          *  setter of the bean property {@code field} where the value is gevuld; a leeg value leaves the member unset.
-         *  Where {@code cell} is not null, the initialisation writes a cell of a dimensioned attribute
+         *  Where {@code cell} is not null, the assignment writes a cell of a dimensioned attribute
          *  (RUNTIME-SEMANTICS ch. 5.8c), whose value goes into the map of the property under the key {@code cell}.
          *  Where {@code timeline}, it writes a time-dependent attribute, and its value, a timeline of this branch, goes
          *  onto the bean as the bean model's segments where it holds one (ch. 7.8). */

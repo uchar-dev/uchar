@@ -67,7 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       reacts to an object a creation made ({@link #a_creation_does_not_fire_while_the_rule_layer_reacts_to_a_creation}),
  *       where with a condition read positively the creation does not even get a match on that state
  *       ({@link #an_object_creation_gets_after_a_creation_phase_no_match_on_an_intermediate_state}).</li>
- *   <li>A recursive chain that WF-045 admits stops where its condition no longer holds, an initialisation keeps the
+ *   <li>A recursive chain that WF-045 admits stops where its condition no longer holds, a member assignment keeps the
  *       value it had when the object was made, and a navigation through the created relation reads the created link
  *       ({@link #recursive_chain_stops_where_the_condition_not_more_applies}).</li>
  *   <li>A fact creation makes each link once, beside a link of the input
@@ -94,7 +94,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * creation depth and says on F "creation budget exhausted: object creation "werf" of stratum 0 would mint at creation
  * depth 101, on oc0::…::W1 — …" (before the third step of the second card "no fixpoint within 100 generations —
  * generation 101 still mints or links (object creation "werf")"), the ASP backend as before; on C the ASP backend now refuses by
- * name ("the initialisation of beginstand reads attr:wachter:stand, which rule "stand van een wachter" writes on a
+ * name ("the assignment of beginstand reads attr:wachter:stand, which rule "stand van een wachter" writes on a
  * dependency cycle through the creation …").
  *
  * <p><b>Red before the change</b> (measured 2026-10-08 on the branch after its cycle refusal, {@code fdeb6dfb}): all
@@ -781,7 +781,7 @@ class TmsCreationWitnessTest {
                 + ",\"validity\":{\"node\":\"Validity\"},\"connectingRole\":" + roleBinding(factType, role) + "}]}";
     }
 
-    /** An initialisation of attribute {@code member} of the created object. */
+    /** An assignment of attribute {@code member} of the created object. */
     static String init(String member, String value) {
         return "{\"node\":\"MemberAssignment\",\"member\":\"" + member + "\",\"value\":" + value + ",\"characteristic\":false}";
     }

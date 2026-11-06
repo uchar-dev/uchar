@@ -178,7 +178,7 @@ class ValueTermWitnessTest {
                 .execModelTranspiler().modelplan().rules().stream().filter(p -> p.form() != null).toList();
     }
 
-    /** The values the consequence {@code g} writes: of a value, of each initialisation of a creation, of a decision. */
+    /** The values the consequence {@code g} writes: of a value, of each member assignment of a creation, of a decision. */
     private static List<Term> values(Consequence g) {
         return switch (g) {
             case Consequence.Value w -> List.of(w.value());

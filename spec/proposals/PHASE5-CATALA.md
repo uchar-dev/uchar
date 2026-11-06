@@ -251,7 +251,7 @@ definition an IR design flaw for 5d's triage.
    standing machinery, so the ch. 7.8 input default stays reserved for the
    case dossier (Reading A). A caller value feeding a callee target
    **without prioritized defaults**
-   (a plain input, no own default) keeps the existing member-initialisation
+   (a plain input, no own default) keeps the existing member-assignment
    route — the WF-050 constraint PHASE5C-TUTORIAL §3 recorded. No verifier
    change was needed: navigated reads inside a default are verifier-clean
    and both executors evaluate them, the differential agreeing with `catala

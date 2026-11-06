@@ -4414,7 +4414,7 @@ final class RuleChecker {
                             params("characteristic", characteristic, "value", value.source()), oc.getStart().getLine()));
             return new ResolvedObjectCreation.MemberAssignment(characteristic, value, true);
         }
-        // the member goes out as an attribute initialisation, which the verifier refuses in these words (WF-027)
+        // the member goes out as an attribute assignment, which the verifier refuses in these words (WF-027)
         model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-189", params("name", name, "objectType", createdType.name),
                 oc.getStart().getLine()));
         return new ResolvedObjectCreation.MemberAssignment(name, value);

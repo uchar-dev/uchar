@@ -352,7 +352,7 @@ governs it.
 forms decision 3 speaks about — ordinary computing rules and defaults
 groups. Three further writer forms can also appear on two levels of
 one chain and get no treatment here: an **allocation** (ch. 3.2,
-fenced by WF-026), an **object-creation initialisation** (ch. 3.3,
+fenced by WF-026), an **object-creation member assignment** (ch. 3.3,
 named in WF-050's no-other-writer clause), and a **characteristic
 attribution** as the plain non-defaults form. For the first two the
 conservative reading is that they are *not* bases and do not

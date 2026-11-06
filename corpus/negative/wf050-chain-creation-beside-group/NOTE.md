@@ -1,5 +1,5 @@
 Violates WF-050 (`spec/IR-SPEC.md` ch. 6.1; `RUNTIME-SEMANTICS.md` ch. 7.10):
-an object creation initialises the target of a defaults group through a type
+an object creation assigns the target of a defaults group through a type
 chain. The defaults group `uitkering van een strandrecht` decides the
 `uitkering` of a `Strandrecht` (5.00, and 9.00 for a strandrecht whose
 `grondslag` is above 100); `maak een wrakrecht bij elke melding` creates a
@@ -9,7 +9,7 @@ melding's `omvang` (`createdType` `Wrakrecht`). `Wrakrecht` is a
 `uitkering` back into the melding, so a case can observe it.
 
     WF-050 FAIL /rules/prioritizedDefaults/0: an object creation also
-    initialises defaults target 'Strandrecht.uitkering' through its type chain
+    assigns defaults target 'Strandrecht.uitkering' through its type chain
     — the group declared on Strandrecht, the created type Wrakrecht — and an
     object creation is never folded into a stack, so an instance of Wrakrecht
     it creates has both writers
@@ -42,7 +42,7 @@ document, as it excludes every defaults group (`the DRL-text branch has no
 defaults lowering`). The flat form — the same creation minting a `Strandrecht`
 — is refused by WF-050 already and gives the same three answers.
 
-**The expressible form.** The creation initialises what the group reads, and
+**The expressible form.** The creation assigns what the group reads, and
 the group writes the target. With the creation setting the `grondslag` of the
 new `Wrakrecht` to the melding's `omvang`, the document is verifier-clean and
 the reference interpreter, the ASP backend and the exec-model branch agree
@@ -86,7 +86,7 @@ measured 2026-09-25).
 **The arm.** WF-050's flat creation clause keys on the group's declared
 subject, where `Strandrecht.uitkering` and `Wrakrecht.uitkering` are two keys;
 before the chain arm the verifier passed this document (`verifier: PASS`).
-The chain arm reports a creation that initialises the group's target — by the
+The chain arm reports a creation that assigns the group's target — by the
 predicate the flat clause reads — and whose created type lies strictly below
 the group's subject (`chain_lower` in `spec/verifier/lib/checks.ml`, the
 predicate the other chain arms of the single-writer rules read). It has no

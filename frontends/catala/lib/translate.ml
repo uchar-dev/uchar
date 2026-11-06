@@ -59,7 +59,7 @@
    default on that group, source "context-override <name>", which reads the
    caller over the back-link ([build_subscope]; the merge is in
    [file_to_document]). A context variable without an own default keeps the
-   member-initialisation route. Refused: a boolean context variable with an
+   member-assignment route. Refused: a boolean context variable with an
    own default, an own default that is a root-level unordered group, and an
    override that is a branching tree. Where no scope calls the variable's
    scope, the only overrider is the case dossier, and RUNTIME-SEMANTICS

@@ -68,7 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *
  * <ul>
  *   <li>{@code anchor/jutterswet-penninguitgifte}: two object creations without a {@code connectingRole} binding, one
- *       with an attribute initialisation and a characteristic initialised to waar, the other without one and with
+ *       with an attribute assignment and a characteristic assigned waar, the other without one and with
  *       the guard of a 1:1 relation.</li>
  *   <li>{@code jutterswet-penningbesluit}: an object creation without a binding, whose value reads a parameter.</li>
  *   <li>{@code jutterswet-bakensein}: a fact creation whose guard on the target reads the characteristic off the bean,
@@ -155,14 +155,14 @@ class CreationPlanWitnessTest {
                         + " fault=FaultName[form=penning voor een gerechtigde jutter, rule=penning voor een"
                         + " gerechtigde jutter], faultInsertion=STATED, phase=2, slots=[1, 2, 3], size=4]",
                 "    construction Penning settings [0 Penning.bedrag]",
-                "    initialisation 0 ElementKey[objectType=penning, name=bedrag, characteristic=false]:"
+                "    assignment 0 ElementKey[objectType=penning, name=bedrag, characteristic=false]:"
                         + " FIT_TARGET(Read 1, Const 0, Const bedrag, Const penning voor een gerechtigde jutter)",
                 "      value 0 Call source 'de vondstwaarde van de Jutter'",
                 "      value 0.0 SlotValue source 'de vondstwaarde van de Jutter'",
                 "      value 0.1 Const Integer",
                 "      value 0.2 Const String",
                 "      value 0.3 Const String",
-                "    initialisation 1 ElementKey[objectType=penning, name=uitgereikt, characteristic=true]:"
+                "    assignment 1 ElementKey[objectType=penning, name=uitgereikt, characteristic=true]:"
                         + " Const true",
                 "      value 0 Const Boolean type BooleanType[] source 'waar'",
                 "    insertions [New[insertion=STATED], Mark[insertion=STATED],"
@@ -243,7 +243,7 @@ class CreationPlanWitnessTest {
                         + " fault=FaultName[form=stel het penningbesluit vast, rule=stel het penningbesluit vast],"
                         + " faultInsertion=STATED, phase=2, slots=[1, 2, 3], size=4]",
                 "    construction Penningbesluit settings [0 Penningbesluit.besluitbedrag]",
-                "    initialisation 0 ElementKey[objectType=penningbesluit, name=besluitbedrag,"
+                "    assignment 0 ElementKey[objectType=penningbesluit, name=besluitbedrag,"
                         + " characteristic=false]: FIT_TARGET(Read 1, Const 0, Const besluitbedrag, Const stel het"
                         + " penningbesluit vast)",
                 "      value 0 Call source 'het penningbedrag'",
@@ -484,7 +484,7 @@ class CreationPlanWitnessTest {
 
     /**
      * The constructor holds a creation to the order of its consequence before step 1c-C1 exactly (fix round 1c-C1): the
-     * new object, its mark, its link, and then the characteristics in the order of their initialisations, with the
+     * new object, its mark, its link, and then the characteristics in the order of their assignments, with the
      * attributes set in that order too. A plan whose kinds and counts are right but whose order is another, which a
      * rendering would carry out as listed, is refused: the mark and the link swapped, two characteristics reversed, a
      * characteristic before the link, two attributes set in reverse.
@@ -584,7 +584,7 @@ class CreationPlanWitnessTest {
      * enters working memory with its bedrag set, the value of its attribute initialisation, and its characteristic
      * uitgereikt comes after it as a {@code HasCharacteristic}; no bean is updated in working memory. The insertions follow
      * the plan's order: the bean, its {@code CreationStamp}, its {@code RelationLink}, then the characteristic. The dossier,
-     * created without an initialisation, enters as it is made.
+     * created without a member assignment, enters as it is made.
      */
     @Test void the_nieuwe_bean_comes_filled_in_the_working_memory() throws Exception {
         Path map = GOLDEN.resolve("anchor/jutterswet-penninguitgifte");
@@ -830,7 +830,7 @@ class CreationPlanWitnessTest {
         return v.javaClass().getSimpleName() + "." + v.name();
     }
 
-    /** The consequence {@code g} with every field; of a creation its depth, its construction, each initialisation with
+    /** The consequence {@code g} with every field; of a creation its depth, its construction, each assignment with
      *  its term as a tree and node by node, and each insertion. */
     private static void consequence(Consequence g, List<String> out) {
         switch (g) {
@@ -842,9 +842,9 @@ class CreationPlanWitnessTest {
                         + c.construction().settings().stream().map(z -> z.assignment() + " " + field(z.field()))
                         .toList());
                 for (int i = 0; i < c.assignments().size(); i++) {
-                    Consequence.Assignment init = c.assignments().get(i);
-                    out.add("    initialisation " + i + " " + init.member() + ": " + TermTree.tree(init.value()));
-                    TermTree.fields("      value", init.value(), "0", out);
+                    Consequence.Assignment assignment = c.assignments().get(i);
+                    out.add("    assignment " + i + " " + assignment.member() + ": " + TermTree.tree(assignment.value()));
+                    TermTree.fields("      value", assignment.value(), "0", out);
                 }
                 out.add("    insertions " + c.insertions());
             }

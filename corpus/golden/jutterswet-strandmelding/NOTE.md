@@ -3,7 +3,7 @@
 `Wrakrecht` is a `Strandrecht`. A defaults group on `Wrakrecht` decides its
 `uitkering`: 9,00 when its `grondslag` is above 100, else 5,00. For every
 `Melding` an object creation creates a `Strandrecht` (the relation
-`strandmelding`) and initialises its `uitkering` to the melding's `omvang`.
+`strandmelding`) and assigns its `uitkering` the melding's `omvang`.
 `lees de gemelde uitkering` reads that `uitkering` back into the melding, so a
 case can observe the created instance.
 
@@ -27,7 +27,7 @@ No other document in the corpus exercises this direction. Measured
 this golden is refused,
 
     WF-050 FAIL /rules/prioritizedDefaults/0: an object creation also
-    initialises defaults target 'Wrakrecht.uitkering' through its type chain —
+    assigns defaults target 'Wrakrecht.uitkering' through its type chain —
     the group declared on Wrakrecht, the created type Strandrecht — and an
     object creation is never folded into a stack, so an instance of
     Strandrecht it creates has both writers

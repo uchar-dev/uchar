@@ -2573,7 +2573,7 @@ One node covers computing an attribute and attributing a characteristic
 |---|---|---|
 | `validity` | Validity | which evaluation dates this version governs (ch. 3.10) |
 | `target` | attribute reference, or a `DimensionCellRead` over one | the written member: an attribute, a characteristic, or one cell of a dimensioned attribute (ch. 2.7) — the cell spelled as a cell read is, its labels WF-040's |
-| `value` | expression | the computed value; for a characteristic target: the boolean constant true — v0 mirror, the emitter's only form (Phase 4 generalises this into the default model; the ch. 3.3 initialisation form now generalises the characteristic value to a boolean-typed expression, WF-027 — the v1 relaxation the Catala frontend uses) |
+| `value` | expression | the computed value; for a characteristic target: the boolean constant true — v0 mirror, the emitter's only form (Phase 4 generalises this into the default model; the ch. 3.3 member assignment now generalises the characteristic value to a boolean-typed expression, WF-027 — the v1 relaxation the Catala frontend uses) |
 | `condition` | Condition? | absent = unconditional |
 | `initialisation` | boolean | write-only-if-empty (§9.6) — the defeasible default of `CONSTRUCTS.md` row 7; semantics in `RUNTIME-SEMANTICS.md` ch. 7 |
 | `presentation` | (`equation` \| `calculation`)? | dialect tag: which surface form (§13.4.4/.9) produced it; no semantic difference. Written only on a computing version and never beside `initialisation` true; absent is no tag. v0 values: `GELIJKSTELLING` → `equation`, `BEREKENING` → `calculation` |
@@ -3064,7 +3064,7 @@ link — so the binding is the only linked route for a recursive chain.
   reference, an `Unresolved` of unknown type) cannot be refuted and defers
   to the runtime bounded-write fail-fast (the WF-023 skip). *v0 mirror note:*
   both the ghost-member and the non-boolean-value violations are resolver
-  errors, but v0 still appends the offending initialisation after diagnosing
+  errors, but v0 still appends the offending member assignment after diagnosing
   — v1 makes the form itself ill-formed. **Delta (promotion of the append).**
   *v0 mirror note:* the v0 emitter produces only the constant form; the
   boolean-expression form is the v1 relaxation the Catala frontend uses for
@@ -10096,7 +10096,7 @@ Drools replay at its fire cap.
   `decision`); the initialisation default MUST be the lowest, MUST carry
   no written justification, and MUST NOT sit on characteristic
   defaults. The target MUST have no other writer — no second defaults
-  group, no rule, no allocation, and no object-creation initialisation on
+  group, no rule, no allocation, and no object-creation member assignment on
   the same target: an unordered plain writer would silently defeat the
   group's decisions, and a creation-time write would void the
   initialisation default's input-emptiness justification (the ch. 7.1

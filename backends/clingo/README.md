@@ -204,7 +204,7 @@ spec bug.
   which holds the end value. The two differ where a later generation of
   the creation's own stratum changes the value read, and there only a
   creation on a dependency cycle (WF-045 admits one through a recursive
-  group) can change it. So an initialisation is refused by name
+  group) can change it. So a member assignment is refused by name
   (IR-SPEC ch. 5.5) when a writer of a node it reads lies on a
   dependency cycle through its creation, or is reached in the
   dependency graph from a creation on a dependency cycle in its
@@ -227,7 +227,7 @@ spec bug.
   object, at its creation, so a read of it stays carried: the anchor
   `jutterswet-wachtersketen` reads its rang so.
   A member that a creation and a rule on the cycle both write is
-  refused: with rang plus 1 and beginstand = zijn rang initialised, and a
+  refused: with rang plus 1 and beginstand = zijn rang assigned, and a
   rule that sets the rang of a Wachter with an opvolger to 2, ref starts
   W1's opvolger at beginstand 1 while W1 ends at rang 2. The test reads
   the static dependency graph of `Ir_v0.Checks` (the graph ref

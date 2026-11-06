@@ -9,7 +9,7 @@ expression.
 Pins the cross-validation flank of the Phase 5c WF-027 relaxation. The relaxed
 rule admits a boolean-*typed* expression, and the type of a reference is its
 declaration's: here the created `Jutter`'s characteristic `penninggerechtigd`
-is initialised from `de vloototal van de Rederij`, and the subject `Rederij`'s
+is assigned `de vloototal van de Rederij`, and the subject `Rederij`'s
 attribute `vloototal` is declared `Number`, so the verifier refuses it
 citing WF-027.
 

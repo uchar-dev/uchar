@@ -60,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       session in which something happened outside {@code fire}, naming what happened and the way on, and write
  *       nothing. On {@code anchor/jutterswet-rekenkamer}, case 1, J1's heffing is 70 at the fixpoint; J1's grondslag
  *       becomes 150 ({@code update}) and a plain {@code fireAllRules} follows, which leaves the made Rekenkamer on the
- *       grondslag it was initialised with; the sentence names the update and the first rule the plain fire fired, and
+ *       grondslag it was assigned; the sentence names the update and the first rule the plain fire fired, and
  *       sends the consumer to a fresh session, since {@code fire} refuses a second fire on a model with a creation; a
  *       fresh session of grondslag 150 gives 120 ({@link TmsRepeatedFireWitnessTest}, measured in the reference
  *       interpreter and the ASP runner). On the values document, without a creation, both refuse after an update

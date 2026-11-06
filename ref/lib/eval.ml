@@ -4327,7 +4327,7 @@ let run_fact_creation env ~read world (fc : resolved_fact_creation) =
    other creations of the same generation nor the minted instance itself
    can move. Read on the running world of a pass, the moment of creation
    would be a position in the pass: measured on a recursive creation whose
-   initialisation reads a copy of a count the rules derive from its own
+   member assignment reads a copy of a count the rules derive from its own
    links, the copy rule written before the count left the initialisation
    leeg and written after it gave 0. The
    instance, its initialisations and the back-link land on [world].
@@ -4445,7 +4445,7 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
                         (* Phase 5c (WF-027 relaxation): a characteristic
                            assignment may also carry a boolean-typed
                            expression, evaluated on the creation subject exactly
-                           as an attribute initialisation is (the RuleVersion
+                           as an attribute assignment is (the RuleVersion
                            Kenmerktoekenning mirror) — true sets the mark on the
                            minted instance, false leaves it unset (closed-world,
                            an absent init). Empty joins the false flank: an

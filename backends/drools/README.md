@@ -183,8 +183,8 @@ refuse in a sentence that names its class, since it cannot tell what that action
   lays on those fields at the write-back count as none (witness `TmsRepeatedFireWitnessTest`).
 
 A session of a model with a creation fires once, and `fire` refuses it at every later call: an object or a fact
-creation is stated and never lapses, and so are its initialisations, its links and the fault of a failed
-initialisation (RUNTIME-SEMANTICS ch. 5.5), so after an input change a second fire would keep them beside an input they
+creation is stated and never lapses, and so are its member assignments, its links and the fault of a failed
+member assignment (RUNTIME-SEMANTICS ch. 5.5), so after an input change a second fire would keep them beside an input they
 no longer follow from, a state no fresh evaluation gives. A consumer of such a model opens a fresh session per input.
 Written back between the fires, a derived value would be read as input by the next fire and keep an initialisation
 from firing; that is why the write-back closes the session. A changed relation asks a fresh session, since the places
@@ -612,7 +612,7 @@ which reads the cell's entry of the map, two writers that disagree, and the writ
 (`j1.vondstgewicht[najaar]`, EF-006). A fold over the cells reads the map and every written cell through its standing,
 which takes the place of its entry in a copy of the map. The write-back puts a derived cell into the map on the bean,
 and takes a written leeg out of it; `Fixpoint.DerivedValue` gives such a value with the labels of its cell. An object
-creation puts the cells it initialises into the map of the new bean before the bean is inserted. `Cycles` draws a cell as
+creation puts the cells it assigns into the map of the new bean before the bean is inserted. `Cycles` draws a cell as
 a node of its own, as the verifier does (IR-SPEC ch. 5.1), so a rule that computes one cell from another cell of the
 same attribute closes no cycle, and one that computes a cell from itself, or from a fold over the cells that holds it,
 is refused. Goldens `jutterswet-seizoenboeking` and `jutterswet-seizoenkopie`, red case `jutterswet-cel-schrijfgrens`,
@@ -943,7 +943,7 @@ budget either; truth maintenance takes it to rest within the fire, and the fire 
 kopie, the erflijn over 103 Wachters, a chain that waits for links to depth 100 and 101, and a forged subject of a
 higher stratum.
 
-An object creation's rule binds the subject, the reads of its condition and of its initialisations, the `CreationPhase`,
+An object creation's rule binds the subject, the reads of its condition and of its member assignments, the `CreationPhase`,
 the absence of its own `CreationStamp` mark for the subject (one object per creation per subject) and the absence of a
 `CreationStamp` that made the subject in the current phase, and on the 1:1 shape the empty reference field of the subject,
 which is the input world, since the branch writes no bean. Which roles link the subject and the new object, with the
@@ -954,7 +954,7 @@ created type. The connecting relation of a derived pair is the fact type of the 
 compared exactly, as `Cycles` derives the back-link for the strata (`TmsTranspiler.typePairRelation`); golden
 `jutterswet-penningbesluit`. Its consequence makes a new bean of the
 created type and inserts, stated, the bean, its `CreationStamp` with the phase, the `RelationLink` of the connecting relation and
-the initialisations as `Value` and `HasCharacteristic`, computed from the values the rule binds. A fact creation's rule
+the member assignments as `Value` and `HasCharacteristic`, computed from the values the rule binds. A fact creation's rule
 walks its path, over the reference fields of an input relation and over the `RelationLink` facts of a created one, none of
 the current phase, and inserts the `RelationLink` it makes, stated, where no link between anchor and target exists yet: the
 creation is idempotent per link. What a phase made carries its number, and a creation rule takes no object or link of

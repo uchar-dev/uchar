@@ -1,6 +1,6 @@
 Violates WF-023 (`spec/IR-SPEC.md` ch. 3.1) at its second write position —
 an object creation's attribute member: the `ObjectCreation` creates a
-`Berging` for each `Jutter` and initialises `vaarwater` (declared
+`Berging` for each `Jutter` and assigns `vaarwater` (declared
 `Vaarwater`) with a `Literal` `Noord` of domain `Kust`. A rule reads the
 created object's `vaarwater` faithfully.
 

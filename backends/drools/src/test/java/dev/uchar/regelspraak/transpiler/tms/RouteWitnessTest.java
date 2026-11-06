@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * reading form, a validity window and a class by its name, the cell of a {@code Let} with its public
  * {@link EmptyBarrier}, the verdict of a matrix, a broken contract, the fault of writers that disagree over lists, and
  * a list of a fixed number of values; and none before step 5 the construction of an object creation's new bean, of a
- * class the text names, and the setting of its attribute initialisations. The witness pins each route with its
+ * class the text names, and the setting of its attribute assignments. The witness pins each route with its
  * signature, which a rendering into DRL text writes, what the three routes of the probe do, what the routes of step 1e
  * do, and what those of step 5 do. The rendering into closures calls
  * the same methods where it has a use for them ({@link PatternDslRendering}, {@link ClosureRendering}); that its

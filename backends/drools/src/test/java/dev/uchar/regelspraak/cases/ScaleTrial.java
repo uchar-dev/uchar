@@ -54,7 +54,7 @@ import java.util.Map;
  * <p><b>The model without (g)</b>, {@code scale/without-creation/}, is the same source without the rule group of the
  * creation chain, emitted the same way: the same declarations, so the same case serves both, and the same answers on
  * every input object. The second fire runs on it. A creation is stated and does not lapse (RUNTIME-SEMANTICS ch. 5.5),
- * so after a change of the input a second fire would keep what the first made and initialised, where a fresh session
+ * so after a change of the input a second fire would keep what the first made and assigned, where a fresh session
  * evaluates the creations anew; {@link DroolsBackend#fire} therefore refuses a second fire on a model with a creation.
  *
  * <p><b>The case</b> ({@link #caseDocument}): one Kustwacht {@code K}; N Wachters {@code W1}…{@code WN} of rang 0, each a

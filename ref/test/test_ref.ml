@@ -1323,7 +1323,7 @@ let () =
 
 (* WV-5.5-charinit: a characteristic assignment in an ObjectCreatie may
    carry a boolean-TYPED expression, evaluated on the creation subject exactly
-   as an attribute initialisation is (the WF-027 relaxation, maintainer
+   as an attribute assignment is (the WF-027 relaxation, maintainer
    decision 2026-08-24, besluit 1). The caller Jutter carries the boolean; the
    minted Rekenkamer's kenmerk is set iff the value evaluates true, left unset
    when it evaluates false (closed-world). The boolean constant stays the v0
@@ -2053,7 +2053,7 @@ let number_json = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "un
 
 (* WV-5.5-generaties (ch. 5.5, since 2026-10-09): a creation reads the
    settled world of the generation before its own, so the value its
-   initialisation takes at the moment of creation does not depend on where the
+   member assignment takes at the moment of creation does not depend on where the
    document writes the rules. "werf de opvolger" (recursive group
    "estafette") gives a Wachter of rang below 4 an opvolger with rang plus 1
    and beginstand equal to its stand; "stand van een wachter" counts its
@@ -2135,7 +2135,7 @@ let () =
    maatgever: W3 starts at beginstand 0, and so does W4 in generation 3. In
    both orders of the rules: opvolgerbegin(W1) = 0, verderbegin(W1) = 0 and
    each minted Wachter at beginstand 0. Until that date a pass ran the fact
-   creations before the object creations, so the initialisation counted the
+   creations before the object creations, so the member assignment counted the
    link of its own pass: beginstand 1 for W3 and W4, verderbegin(W1) = 1. *)
 let () =
   let rule_def ident objective value_node =

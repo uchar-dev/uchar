@@ -180,7 +180,7 @@ import java.util.function.Supplier;
  * of stratum k+1 fires (RUNTIME-SEMANTICS ch. 6.1, 6.3); an initialisation evaluated earlier would be fixed on a value
  * that grows. An object creation inserts
  * the new bean, a {@link CreationStamp} mark per creation and subject, the {@link RelationLink} of its connecting relation and
- * its initialisations as {@link Value} and {@link HasCharacteristic}, computed from what its rule binds
+ * its member assignments as {@link Value} and {@link HasCharacteristic}, computed from what its rule binds
  * ({@link #objectCreation}); a fact creation inserts the {@link RelationLink} it makes ({@link #factCreation}). Every relation
  * a form creates is read through {@link RelationLink} facts, its input links included ({@link #linkRules}), since a
  * created link is in no bean field, and a second distinct filler of a to-one role is a {@link Fault} at the fixpoint.

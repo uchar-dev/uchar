@@ -57,13 +57,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * shuffles, on the exec-model branch and on {@code DRL_TEXT} (the last paragraph).
  *
  * <ul>
- *   <li>An initialisation reads what a creation of a lower stratum made: "maak een afrekening" counts the Penning that
+ *   <li>A member assignment reads what a creation of a lower stratum made: "maak een afrekening" counts the Penning that
  *       "geef een penning" makes, where both fired against one state before and the count stayed 0, fixed at creation
- *       ({@link #an_initialisation_reads_what_a_creation_from_a_lower_stratum_made}).</li>
+ *       ({@link #a_member_assignment_reads_what_a_creation_from_a_lower_stratum_made}).</li>
  *   <li>A condition with an operand that grows is decided on the value after the lower stratum: the sum of the
  *       penningen is 10 there, not the 5 of the input, so no Afrekening is made
  *       ({@link #a_condition_with_a_growing_operand_decides_after_the_lower_stratum}).</li>
- *   <li>A chain object creation, fact creation, object creation runs in three strata, and the last initialisation
+ *   <li>A chain object creation, fact creation, object creation runs in three strata, and the last member assignment
  *       counts the link the fact creation made over the object the first made
  *       ({@link #a_chain_of_object_creation_fact_creation_and_object_creation_runs_in_three_strata}).</li>
  *   <li>Two creations of one stratum that do not read each other fire in one generation, in one phase, and both read
@@ -101,8 +101,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * of stratum 0 would mint at creation depth 101, on oc0::…::W1 — …" and the ASP backend with "UNSATISFIABLE — a
  * fail-fast guard fired: viol("creation budget exhausted", …)" (measured on G and, for E, on the same shape written by
  * hand, to rang 101 and 102). Document V the reference interpreter plays and the ASP backend refuses by name: "the
- * initialisation of beginstand reads rel:maatschap, which fact creation "maak maten" writes on a dependency cycle
- * through the creation …"; document R likewise, "the initialisation of beginbeloning reads attr:wachter:erfbeloning,
+ * assignment of beginstand reads rel:maatschap, which fact creation "maak maten" writes on a dependency cycle
+ * through the creation …"; document R likewise, "the assignment of beginbeloning reads attr:wachter:erfbeloning,
  * which rule "erfbeloning" writes on a dependency cycle through the creation …". The anchor
  * {@code jutterswet-erflijn} over 103 Wachters plays in both ({@code ref/test} {@code WV-5.5-budget-erflijn}, the clingo
  * suite). Until 2026-10-09 the two counted their budgets apart (measured 2026-10-08): on the chain of document L whose
@@ -187,7 +187,7 @@ class TmsCreationStratumWitnessTest {
     static final String PENNING_COUNT = computingRule("penningaantal", "BEREKENING", "Jutter", "penningaantal",
             pathRead("penningtelling", "Afrekening", "jutterheeftafrekening", "afrekening"), "null");
 
-    // ---------------- document P: an initialisation reads a creation of a lower stratum ----------------
+    // ---------------- document P: a member assignment reads a creation of a lower stratum ----------------
 
     private static final String MODEL_P = TmsDocuments.model(List.of(
             objectType("Jutter", List.of(attribute("penningaantal", WHOLE)), List.of()),
@@ -206,7 +206,7 @@ class TmsCreationStratumWitnessTest {
                 List.of(value("J1", "penningaantal", "1")));
     }
 
-    @Test void an_initialisation_reads_what_a_creation_from_a_lower_stratum_made() throws Exception {
+    @Test void a_member_assignment_reads_what_a_creation_from_a_lower_stratum_made() throws Exception {
         playsInEveryOrder(List.of(GEEF, MAKE), List.of(PENNING_COUNT), TmsCreationStratumWitnessTest::documentP, caseP());
         Path ir = documentP(List.of(GEEF, MAKE), List.of(PENNING_COUNT));
         for (DroolsBackend.Branch branch : BRANCHES) {
@@ -896,7 +896,7 @@ class TmsCreationStratumWitnessTest {
     /** The recursive group "estafette" of "werf de opvolger" and "beloon de wachter", the {@code creations} and the
      *  rules on the cycle ({@code rules}) in the order given, then {@link #OBSERVATION_R}. One cycle runs through both
      *  creations, so they share a stratum: "werf" makes the opvolger that "stand" counts, "beloon" reads the stand and
-     *  makes the Beloning that "beloningaantal" counts, and "werf" initialises the beginbeloning from the
+     *  makes the Beloning that "beloningaantal" counts, and "werf" assigns the beginbeloning from the
      *  erfbeloning, which reads that count on the voorganger. */
     static Path documentR(List<String> creations, List<String> rules) throws Exception {
         List<String> all = new ArrayList<>(rules);
