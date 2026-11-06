@@ -81,53 +81,78 @@ recorded as such.
 
 - **Text coercion** — the inserted part of a `TextComposition` and the
   argument of a `concatenation` (IR-SPEC ch. 4.2, 4.3). The text of a value
-  is a function of the value alone, not of the node that yields it: a
-  literal part reads as the value it denotes, so `«5,50»` and `«zijn
-  basis»` with basis 5,50 read alike. Empty yields the empty string `""` —
-  never `"0"`, never a spelled-out null: `"a" ++ leeg ++ "b"` = `"ab"`. A
-  text is itself; an enumeration value is its label as declared; a boolean
-  is `waar` or `onwaar`. A number — a percentage, an amount and a number
-  with a unit included — is its exact decimal without trailing zeros, with
-  a decimal comma, no grouping, no unit, no percent sign and no padding to
-  the declared decimals; a number that does not terminate is its numerator
-  and denominator in lowest terms, `t/n`, the sign on the numerator. A date
-  is `dd-MM-yyyy`; a date-time is `dd-MM-yyyy HH:mm:ss.mmm`, the fraction
-  always three digits; a year outside 0000–9999 is written with its sign
-  and at least four digits (ISO 8601's expanded form, as ch. 5.12 writes
-  it). A constructor value (ch. 9.1) is its tag, for a unary constructor
-  followed by the text of its payload in parentheses. A list or a record
-  value (ch. 10, 11) has no text: the composition faults. The text is not a
-  lexeme: the wire and the case format keep the dot and ISO (WF-081,
-  WF-084, WF-095), and the trace of ch. 5.12 keeps its own rendering.
-  *Provisional decision (Fable advice 2026-11-06): the RegelSpraak
-  specification §5.4 admits every datatype in a "reeks van teksten en
-  waarden" and fixes no spelling; the spelling is ALEF's runtime coercion
-  (`TekstUtil.toAlefText`, measured on ALEF 872b859), with three
-  deviations: a literal part reads as its value where ALEF writes the
-  lexeme of the source; a non-terminating number is `t/n` where ALEF writes
-  a mixed number above 1; a date-time carries three fraction digits where
-  ALEF's value form carries nine.*
+  is its representation in the type of its part. Empty yields the empty
+  string `""` — never `"0"`, never a spelled-out null: `"a" ++ leeg ++ "b"`
+  = `"ab"`. A text is itself; an enumeration value is its label as
+  declared; a boolean is `waar` or `onwaar`. A number — a percentage, an
+  amount and a number with a unit included — is written in exactly the
+  decimals of the type of its part, with a decimal comma, no grouping, no
+  unit and no percent sign: 5,50 in a type of 2 decimals is `5,50`, 5 is
+  `5,00`, and 5 in a whole type is `5`. The type of a part is its precision
+  bound (ch. 2.3) in the unit its value is in: for a read of an attribute,
+  a parameter or a cell its declaration, for a binder the bound of the value
+  it holds, for a numeric literal the decimals of its exact value, and for
+  a composite part the bound its shape gives — `zijn basis maal 1,1` over a
+  basis of 2 decimals writes 3. A part without a finite bound (the unbounded
+  form, a quotient by an attribute or by 3), or whose bound nothing declares
+  (ch. 2.4, point 4), writes the exact decimal without trailing zeros, and a
+  number that does not terminate as its numerator and denominator in lowest
+  terms, `t/n`, the sign on the numerator. The bound guarantees that the
+  value fits the decimals of its part (ch. 2.4); a value that does not is a
+  broken guarantee, which an executor reports, never a number it rounds. A
+  date is `dd-MM-yyyy`; a date-time is `dd-MM-yyyy HH:mm:ss.mmm`, the
+  fraction always three digits; a year outside 0000–9999 is written with
+  its sign and at least four digits (ISO 8601's expanded form, as ch. 5.12
+  writes it). A constructor value (ch. 9.1) is its tag, for a unary
+  constructor followed by the text of its payload, in the type its
+  constructor declares, in parentheses. A list or a record value (ch. 10,
+  11) has no text: the composition faults. The text is not a lexeme: the
+  wire and the case format keep the dot and ISO (WF-081, WF-084, WF-095),
+  and the trace of ch. 5.12 keeps its own rendering.
+  *Decision of the maintainer (2026-11-06): "de tekst is een
+  string-literale representatie van de waarde in een bepaald type", so a
+  number writes the decimals of its type. The RegelSpraak specification §5.4
+  admits every datatype in a "reeks van teksten en waarden" and fixes no
+  spelling; the spelling of the other types is ALEF's runtime coercion
+  (`TekstUtil.toAlefText`, measured on ALEF 872b859). Four deviations from
+  ALEF: a number of a finite bound writes the decimals of its type where
+  ALEF, whose rationals carry no scale, writes the exact decimal without
+  trailing zeros; a literal part writes the decimals of its value where ALEF
+  writes the lexeme of the source; a non-terminating number is `t/n` where
+  ALEF writes a mixed number above 1; a date-time carries three fraction
+  digits where ALEF's value form carries nine.*
 
-  | Value | Text |
+  | Value, in the type of its part | Text |
   |---|---|
   | leeg | `""` |
   | text `"wrakhout"`, enumeration value `wrakhout` | `wrakhout` |
   | waar / onwaar | `waar` / `onwaar` |
-  | 5,50 (2 decimals, €) / 5 / 1250,50 / −0,5 / 0,125 | `5,5` / `5` / `1250,5` / `-0,5` / `0,125` |
-  | 12,50 % (percentage, 2 decimals) | `12,5` |
-  | 4 gedeeld door 3 / −1 gedeeld door 3 | `4/3` / `-1/3` |
+  | 5,50 / 5 / 1250,50 / −0,5 / 0 in 2 decimals (€ or none) | `5,50` / `5,00` / `1250,50` / `-0,50` / `0,00` |
+  | 5 / 1250 in a whole number | `5` / `1250` |
+  | 12,50 % (percentage, 2 decimals) | `12,50` |
+  | zijn basis maal 1,1, basis 5,50 in 2 decimals (bound 3) | `6,050` |
+  | zijn basis gedeeld door 4, basis 5,50 in 2 decimals (bound 4) | `1,3750` |
+  | the literal `5,50` (bound 1) | `5,5` |
+  | 0,125 / 2 in the unbounded form | `0,125` / `2` |
+  | 4 gedeeld door 3 / −1 gedeeld door 3 (no finite bound) | `4/3` / `-1/3` |
   | 2026-06-21 / 0999-12-31 / +12026-03-01 | `21-06-2026` / `31-12-0999` / `01-03-+12026` |
   | 2026-06-21T09:01:59.999 / 2026-06-21T09:01:59 | `21-06-2026 09:01:59.999` / `21-06-2026 09:01:59.000` |
-  | Afgewezen / Toegekend(1250,50) | `Afgewezen` / `Toegekend(1250,5)` |
+  | Afgewezen / Toegekend(1250,50), payload in 2 decimals | `Afgewezen` / `Toegekend(1250,50)` |
   | the list [12,5, 30] / the record {waarde: 125,5} | a fault |
 
   Worked example (WV-1.2c-text): `"Bedrag: «zijn basis» voor «zijn soort»,
   gemeld «zijn bevestiging» op «zijn vinddatum»"` on a Vondst with basis
-  5,50 €, soort wrakhout, bevestiging waar and vinddatum 2026-06-21 reads
-  `Bedrag: 5,5 voor wrakhout, gemeld waar op 21-06-2026`; with basis leeg
-  it reads `Bedrag:  voor wrakhout, gemeld waar op 21-06-2026`. The golden
-  `jutterswet-tekst-van-een-waarde` carries every row but the last two
-  through the RegelSpraak frontend.
+  5,50 € in 2 decimals, soort wrakhout, bevestiging waar and vinddatum
+  2026-06-21 reads `Bedrag: 5,50 voor wrakhout, gemeld waar op 21-06-2026`;
+  with basis leeg it reads `Bedrag:  voor wrakhout, gemeld waar op
+  21-06-2026`. The reference interpreter's suite holds every row
+  (`WV-1.2c-text-*`), the composite, binder and constructor rows through its
+  evaluation. The golden `jutterswet-tekst-van-een-waarde` carries, through
+  the RegelSpraak frontend, the rows of leeg, a text, an enumeration value,
+  a boolean, a number in 2 decimals and in a whole number, a percentage, the
+  product by 1,1, the literal, the unbounded form, a quotient by 3, a date
+  and a date-time, and a binder of a "Daarbij geldt" (`de heffing is zijn
+  basis maal 1,1`, written `6,050`).
 - There is no boolean or enumeration coalescing; absence is handled by the
   comparison rules and the leeg/gevuld predicates below.
 

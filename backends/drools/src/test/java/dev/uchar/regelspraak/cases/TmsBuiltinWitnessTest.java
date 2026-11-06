@@ -254,17 +254,19 @@ class TmsBuiltinWitnessTest {
         assertEveryOrder(TEXT_MODEL, List.of(TITLE, code), textCase("code", "ankeranker", ""));
     }
 
-    /** The text of a number in a text composition (RUNTIME-SEMANTICS ch. 1.2, "Text coercion"): its exact decimal
-     *  without trailing zeros and with a decimal comma, whatever scale the bean holds (5.50 reads "5,5"), and a leeg
-     *  part reads "". */
-    @Test void a_text_composition_with_a_number_reads_its_decimal_with_a_comma() throws Exception {
+    /** The text of a number in a text composition (RUNTIME-SEMANTICS ch. 1.2, "Text coercion"): the decimals of the
+     *  type of its part with a decimal comma, whatever scale the bean holds (5.5 and 5 in 2 decimals read "5,50" and
+     *  "5,00"), and a leeg part reads "". */
+    @Test void a_text_composition_with_a_number_reads_the_decimals_of_its_type() throws Exception {
         String description = computingRule("omschrijving van een vondst", "BEREKENING", "Vondst", "omschrijving",
                 textComposition(List.of(textPart("Bedrag: "), textExpression(ownRead("basis", "Vondst")))), "null");
         JsonNode caseDocument = TmsDocuments.caseOn(null, List.of(
-                instanceWith("V1", "Vondst", Map.of("basis", numberValue("5.50")), List.of()),
-                instanceWith("V2", "Vondst", Map.of(), List.of())),
-                List.of(valueJson("V1", "omschrijving", textValue("Bedrag: 5,5")),
-                        valueJson("V2", "omschrijving", textValue("Bedrag: ")), consistent()));
+                instanceWith("V1", "Vondst", Map.of("basis", numberValue("5.5")), List.of()),
+                instanceWith("V2", "Vondst", Map.of(), List.of()),
+                instanceWith("V3", "Vondst", Map.of("basis", numberValue("5")), List.of())),
+                List.of(valueJson("V1", "omschrijving", textValue("Bedrag: 5,50")),
+                        valueJson("V2", "omschrijving", textValue("Bedrag: ")),
+                        valueJson("V3", "omschrijving", textValue("Bedrag: 5,00")), consistent()));
         assertEveryOrder(TEXT_MODEL, List.of(description), caseDocument);
     }
 

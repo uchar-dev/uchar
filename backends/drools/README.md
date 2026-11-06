@@ -501,7 +501,8 @@ interpreter (ch. 1.2, 5.6). The consequence of a computing rule puts a probe (`D
 such place reports to it where it runs; a condition deposits through a rule of the form's own, `<rule>: deponering in
 de voorwaarde`, with the same left-hand side and a probe in its test, so a member of a composite that its verdict no
 longer reads deposits nothing (ch. 5.10). Witness `TmsDepositWitnessTest`. Rounding,
-clamp, the builtins outside the folds, a text composition of texts, percentages and `percentageOf`, a power with a
+clamp, the builtins outside the folds, a text composition (each part in the type of the part, `rsTekst` with the
+form the analysis reads from its precision bound, ch. 1.2), percentages and `percentageOf`, a power with a
 whole exponent, the exact restatement of units at every operand boundary (ch. 2.6), the eleven and exact-digit tests,
 a cell of a dimensioned attribute over any number of dimensions and a sum, minimum or maximum over the cells of the
 product of its selections (ch. 5.8c) compute through the runtime's helpers from bound values, and a first, a last and a
@@ -1058,10 +1059,8 @@ never as a silent fall:
   filter that can fault, a deposit, a quantifier fold whose matrix can fault or deposit (DROOLS-318). The reference
   interpreter orders the members of such a relation per holder by the list of ch. 5.7a, the written members first and
   then the others by label; a link has no place in the fold order in this branch;
-- the value forms whose meaning the spec does not decide: a text part of a number, a truth value or a date in a text
-  composition or a concatenation, where the reference interpreter ("5.5", "waar") and the runtime's `rsTekst`
-  ("5.50", "true") differ; a power whose exponent is not a whole literal of at least 0, which reaches the real power
-  that ch. 2.1 leaves OPEN; and a time window under `GEEN` or a counting quantifier, which has no reading (WF-112);
+- the value forms whose meaning the spec does not decide: a power whose exponent is not a whole literal of at least 0,
+  which reaches the real power that ch. 2.1 leaves OPEN; and a time window under `GEEN` or a counting quantifier, which has no reading (WF-112);
 - a parameter whose Java name is `evaluationDate` beside a form that reads the evaluation date, since the case runner sets
   the date under that name;
 - what the design cannot carry: two initialisations on one target that apply to one instance, on one type or on a

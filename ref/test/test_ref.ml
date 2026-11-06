@@ -132,26 +132,35 @@ let () =
 
 let () =
   check "WV-1.2c-text-1"
-    (Arith.concat [ Value.Text "a"; empty_value; Value.Text "b" ] = Value.Text "ab")
+    (Arith.concat [ (Value.Text "a", Arith.exact_form); (empty_value, Arith.exact_form); (Value.Text "b", Arith.exact_form) ]
+    = Value.Text "ab")
 
-(* the table of ch. 1.2, "Text coercion", one row per check *)
+(* the table of ch. 1.2, "Text coercion", one row per check: a number in the
+   decimals of the type of its part ([decimals]), or in its exact form where
+   the part has no finite bound *)
 let () =
-  let text name v want =
-    let got = Arith.text_of v in
+  let text ?(form = Arith.exact_form) name v want =
+    let got = Arith.text_of ~form v in
     check (Printf.sprintf "%s (got %S)" name got) (got = want)
   in
+  let dec d = { Arith.exact_form with decimals = Some d } in
   let date y m d = Value.Date (Value.days_from_civil ~y ~m ~d) in
   text "WV-1.2c-text-leeg" empty_value "";
+  text ~form:(dec 2) "WV-1.2c-text-leeg-getal" empty_value "";
   text "WV-1.2c-text-tekst" (Value.Text "wrakhout") "wrakhout";
   text "WV-1.2c-text-opsomming" (Value.Enum "wrakhout") "wrakhout";
   text "WV-1.2c-text-waar" (Value.Bool true) "waar";
   text "WV-1.2c-text-onwaar" (Value.Bool false) "onwaar";
-  text "WV-1.2c-text-getal-1" (n "5.50") "5,5";
-  text "WV-1.2c-text-getal-2" (n "5") "5";
-  text "WV-1.2c-text-getal-3" (n "1250.50") "1250,5";
-  text "WV-1.2c-text-getal-4" (n "-0.5") "-0,5";
-  text "WV-1.2c-text-getal-5" (n "0.125") "0,125";
-  text "WV-1.2c-text-percentage" (n "12.50") "12,5";
+  text ~form:(dec 2) "WV-1.2c-text-getal-1" (n "5.50") "5,50";
+  text ~form:(dec 2) "WV-1.2c-text-getal-2" (n "5") "5,00";
+  text ~form:(dec 0) "WV-1.2c-text-getal-3" (n "5") "5";
+  text ~form:(dec 2) "WV-1.2c-text-getal-4" (n "1250.5") "1250,50";
+  text ~form:(dec 2) "WV-1.2c-text-getal-5" (n "-0.5") "-0,50";
+  text ~form:(dec 3) "WV-1.2c-text-getal-6" (n "0.125") "0,125";
+  text ~form:(dec 2) "WV-1.2c-text-getal-7" (n "0") "0,00";
+  text ~form:(dec 2) "WV-1.2c-text-percentage" (n "12.5") "12,50";
+  text "WV-1.2c-text-onbegrensd-1" (n "5.50") "5,5";
+  text "WV-1.2c-text-onbegrensd-2" (n "0.125") "0,125";
   text "WV-1.2c-text-breuk-1" (Value.Num (q "4/3", Value.Unitless)) "4/3";
   text "WV-1.2c-text-breuk-2" (Value.Num (q "-1/3", Value.Unitless)) "-1/3";
   text "WV-1.2c-text-datum-1" (date 2026 6 21) "21-06-2026";
@@ -162,18 +171,16 @@ let () =
   text "WV-1.2c-text-datumtijd-2" (Value.datetime_of_lexeme "2026-06-21T09:01:59")
     "21-06-2026 09:01:59.000";
   text "WV-1.2c-text-constructor-1" (Value.Ctor ("Afgewezen", None)) "Afgewezen";
-  text "WV-1.2c-text-constructor-2" (Value.Ctor ("Toegekend", Some (n "1250.50"))) "Toegekend(1250,5)";
+  text
+    ~form:{ Arith.exact_form with payload = (fun tag -> if tag = "Toegekend" then dec 2 else Arith.exact_form) }
+    "WV-1.2c-text-constructor-2"
+    (Value.Ctor ("Toegekend", Some (n "1250.5")))
+    "Toegekend(1250,50)";
+  (* the bound guarantees that the value fits the decimals of its part; a
+     value that does not is a broken guarantee, never rounded *)
+  expect_fault "WV-1.2c-text-past-niet" (fun () -> Arith.text_of ~form:(dec 1) (n "5.55"));
   expect_fault "WV-1.2c-text-lijst" (fun () -> Arith.text_of (Value.List_value [ n "12.5"; n "30" ]));
-  expect_fault "WV-1.2c-text-record" (fun () -> Arith.text_of (Value.Record [ ("waarde", n "125.5") ]));
-  let example basis =
-    Arith.concat
-      [ Value.Text "Bedrag: "; basis; Value.Text " voor "; Value.Enum "wrakhout"; Value.Text ", gemeld ";
-        Value.Bool true; Value.Text " op "; date 2026 6 21 ]
-  in
-  check "WV-1.2c-text-voorbeeld-1"
-    (example (n "5.50") = Value.Text "Bedrag: 5,5 voor wrakhout, gemeld waar op 21-06-2026");
-  check "WV-1.2c-text-voorbeeld-2"
-    (example empty_value = Value.Text "Bedrag:  voor wrakhout, gemeld waar op 21-06-2026")
+  expect_fault "WV-1.2c-text-record" (fun () -> Arith.text_of (Value.Record [ ("waarde", n "125.5") ]))
 
 (* --- ch. 1.2d: comparisons (three-valued at the edges) ------------------ *)
 
@@ -1360,6 +1367,88 @@ let with_pointers (doc : Ir_v0.Ast.document) : Ir_v0.Ast.document =
 let env_of doc : Eval.env =
   { doc = with_pointers doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None;
     locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
+
+(* ch. 1.2, "Text coercion", through the evaluation: the type of a part is
+   the declaration of what it reads and of a composite part its precision
+   bound (ch. 2.3); the worked example WV-1.2c-text *)
+let () =
+  let num_dec whole decimals : Ir_v0.Ast.datatype =
+    Number { whole_part = whole; decimal_places = decimals; sign_char = None; measure_unit = None }
+  in
+  let num2 = num_dec false 2 in
+  let besluit : Ir_v0.Ast.datatype =
+    Sum_type { domain_spec = "Besluit"; constructor_list = [ ("Toegekend", Some num2); ("Afgewezen", None) ] }
+  in
+  let doc =
+    { empty_doc with
+      object_types =
+        [ ot "Vondst"
+            [ ("basis", Some num2); ("aantal", Some num0);
+              ("aandeel", Some (Percentage { whole_part = false; decimal_places = 2; measure_unit = None }));
+              ("factor", Some (num_dec false 0)); ("soort", Some (Enumeration { domain_spec = Some "Vondstsoort"; label_list = [ Some "wrakhout" ] }));
+              ("bevestiging", Some Boolean); ("vinddatum", Some Date_in_days); ("besluit", Some besluit) ]
+            [] ] }
+  in
+  let env = env_of doc in
+  let w =
+    List.fold_left World.add_instance World.empty
+      [ inst "V1" "Vondst"
+          [ ("basis", n "5.5"); ("aantal", n "1250"); ("aandeel", n "12.5"); ("factor", Value.Num (q "1/3", Value.Unitless));
+            ("soort", Value.Enum "wrakhout"); ("bevestiging", Value.Bool true);
+            ("vinddatum", Value.date_of_iso "2026-06-21"); ("besluit", Value.Ctor ("Toegekend", Some (n "1250.5"))) ];
+        inst "V2" "Vondst" [ ("basis", n "5"); ("aandeel", n "100"); ("factor", n "0.25") ];
+        inst "V3" "Vondst" [ ("soort", Value.Enum "wrakhout"); ("bevestiging", Value.Bool true); ("vinddatum", Value.date_of_iso "2026-06-21") ] ]
+  in
+  let part e : Ir_v0.Ast.text_part = Embedded_expression { expr = Some e } in
+  let chunk t : Ir_v0.Ast.text_part = Literal_chunk { body_text = Some t } in
+  let composition pieces : Ir_v0.Ast.expr = Text_composition { pieces; typ = Some Text_type; source_name = None } in
+  let binary op l r : Ir_v0.Ast.expr =
+    Binary { op; left_side = Some l; right_side = Some r; typ = Some num2; source_name = None }
+  in
+  let text name label e want =
+    match Eval.eval_expr env w (World.get w label) ~err:no_err e with
+    | Value.Text got -> check (Printf.sprintf "%s (got %S)" name got) (got = want)
+    | v -> check (Printf.sprintf "%s (got %s)" name (Value.to_string v)) false
+  in
+  let one label e want name = text name label (composition [ part e ]) want in
+  one "V1" (aref "basis" "Vondst") "5,50" "WV-1.2c-text-gedeclareerd-1";
+  one "V2" (aref "basis" "Vondst") "5,00" "WV-1.2c-text-gedeclareerd-2";
+  one "V1" (aref "aantal" "Vondst") "1250" "WV-1.2c-text-gedeclareerd-3";
+  one "V1" (aref "aandeel" "Vondst") "12,50" "WV-1.2c-text-gedeclareerd-4";
+  one "V2" (aref "aandeel" "Vondst") "100,00" "WV-1.2c-text-gedeclareerd-5";
+  (* the unbounded form has no finite bound: its exact form *)
+  one "V1" (aref "factor" "Vondst") "1/3" "WV-1.2c-text-onbegrensde-vorm-1";
+  one "V2" (aref "factor" "Vondst") "0,25" "WV-1.2c-text-onbegrensde-vorm-2";
+  (* a composite part: maal 1,1 adds a decimal, ÷ 4 two, ÷ 3 leaves no
+     finite bound *)
+  one "V1" (binary Times (aref "basis" "Vondst") (litv "1.1" (num_dec false 1))) "6,050" "WV-1.2c-text-samengesteld-1";
+  one "V1" (binary Divided_by (aref "basis" "Vondst") (litv "4" num0)) "1,3750" "WV-1.2c-text-samengesteld-2";
+  one "V1" (binary Divided_by (aref "basis" "Vondst") (litv "3" num0)) "11/6" "WV-1.2c-text-samengesteld-3";
+  one "V2" (binary Divided_by (aref "basis" "Vondst") (litv "4" num0)) "1,2500" "WV-1.2c-text-samengesteld-4";
+  (* a literal part: the decimals of its exact value (ch. 2.3) *)
+  one "V1" (litv "5.50" (num_dec false 1)) "5,5" "WV-1.2c-text-literal";
+  (* a binder holds the bound of its value *)
+  one "V1"
+    (Let
+       { typ = Some num2; binder = "x"; value = binary Times (aref "basis" "Vondst") (litv "1.1" (num_dec false 1));
+         body = Binder_ref { ident = "x"; source_name = None }; source_name = None })
+    "6,050" "WV-1.2c-text-binder";
+  (* a constructor value: its payload in the type its constructor declares *)
+  one "V1" (aref "besluit" "Vondst") "Toegekend(1250,50)" "WV-1.2c-text-constructor-gedeclareerd";
+  (* a concatenation writes its arguments as a composition its parts *)
+  text "WV-1.2c-text-concatenatie" "V2"
+    (Function_call
+       { kind = Concatenation; call_arguments = [ litv "Bedrag: " Text_type; aref "basis" "Vondst" ];
+         element_object_type = None; empty_fallback = None; filter = None; dimension_selections = None;
+         typ = Some Text_type; source_name = None; grain = None; source_role = None; source_path = None; anchor = None })
+    "Bedrag: 5,00";
+  let example =
+    composition
+      [ chunk "Bedrag: "; part (aref "basis" "Vondst"); chunk " voor "; part (aref "soort" "Vondst"); chunk ", gemeld ";
+        part (aref "bevestiging" "Vondst"); chunk " op "; part (aref "vinddatum" "Vondst") ]
+  in
+  text "WV-1.2c-text-voorbeeld-1" "V1" example "Bedrag: 5,50 voor wrakhout, gemeld waar op 21-06-2026";
+  text "WV-1.2c-text-voorbeeld-2" "V3" example "Bedrag:  voor wrakhout, gemeld waar op 21-06-2026"
 
 (* WV-6.4-a (= the ch. 5.3 pair): producer/consumer across one negative
    edge — {waar, onwaar} at inkomen 50, {onwaar, waar} at 200, never the

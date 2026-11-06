@@ -1003,8 +1003,33 @@ let duration ?(absolute = false) ?unit_ ?(result_unit = Unitless) a b =
       fault "duration operands mix date precisions"
   | _ -> fault "duration: expected two dates, got %s and %s" (to_string a) (to_string b)
 
-(* --- text (ch. 1.2, "Text coercion"): the text of a value is a function of
-   the value alone, empty coerces to "" ------------------------------------- *)
+(* --- text (ch. 1.2, "Text coercion"): the text of a value in the type of
+   its part, empty coerces to "" -------------------------------------------- *)
+
+(* The form a value is written in: a number in exactly [decimals] decimals,
+   or in its exact shortest form where [None] (a part without a finite
+   precision bound, ch. 2.3); the payload of a constructor value in the form
+   [payload] gives for its tag. *)
+type text_form = { decimals : int option; payload : string -> text_form }
+
+let rec exact_form = { decimals = None; payload = (fun _ -> exact_form) }
+
+let decimal_comma s = String.map (fun c -> if c = '.' then ',' else c) s
+
+(* [q] in exactly [d] decimals. The bound of the part guarantees the fit
+   (ch. 2.3), so a value that does not fit is a broken guarantee, never a
+   number to round. *)
+let decimals_text d q =
+  let scaled = Q.mul q (Q.of_bigint (Z.pow (Z.of_int 10) d)) in
+  if not (Z.equal (Q.den scaled) Z.one) then
+    fault "the number %s has more decimals than the %d of the type of its text part" (lexeme_of_q q) d;
+  let z = Q.num scaled in
+  if d = 0 then Z.to_string z
+  else
+    let s = Z.to_string (Z.abs z) in
+    let s = if String.length s <= d then String.make (d + 1 - String.length s) '0' ^ s else s in
+    let cut = String.length s - d in
+    (if Z.sign z < 0 then "-" else "") ^ String.sub s 0 cut ^ "," ^ String.sub s cut d
 
 (* the year of a date in a text: four digits inside 0000–9999, else its sign
    and at least four digits, the expanded form ch. 5.12 writes a year in *)
@@ -1016,13 +1041,15 @@ let text_of_date z =
   let y, m, d = civil_from_days z in
   Printf.sprintf "%02d-%02d-%s" d m (text_year y)
 
-let rec text_of = function
+let rec text_of ?(form = exact_form) = function
   | Empty -> ""
   | Text s -> s
-  (* the exact decimal without trailing zeros and with a decimal comma, or
-     t/n where it does not terminate; the case wire's dot (WF-081) is a
-     lexeme, not the text a rule yields *)
-  | Num (q, _) -> String.map (fun c -> if c = '.' then ',' else c) (lexeme_of_q q)
+  (* the decimals of the type with a decimal comma, or without a finite
+     bound the exact decimal without trailing zeros, or t/n where it does
+     not terminate; the case wire's dot (WF-081) is a lexeme, not the text a
+     rule yields *)
+  | Num (q, _) -> (
+      match form.decimals with Some d -> decimals_text d q | None -> decimal_comma (lexeme_of_q q))
   | Bool b -> if b then "waar" else "onwaar"
   | Date z -> text_of_date z
   | Date_time t ->
@@ -1031,10 +1058,11 @@ let rec text_of = function
         (msod / 60_000 mod 60) (msod / 1000 mod 60) (msod mod 1000)
   | Enum s -> s
   | Ctor (tag, None) -> tag
-  | Ctor (tag, Some v) -> Printf.sprintf "%s(%s)" tag (text_of v)
+  | Ctor (tag, Some v) -> Printf.sprintf "%s(%s)" tag (text_of ~form:(form.payload tag) v)
   (* a list or a record value has no text — fail fast, never a silent
      stringification into a text join *)
   | List_value _ as v -> fault "a list value has no text coercion: %s" (to_string v)
   | Record _ as v -> fault "a record value has no text coercion: %s" (to_string v)
 
-let concat vs = Text (String.concat "" (List.map text_of vs))
+(* the parts of a text composition or a concatenation, each with its form *)
+let concat parts = Text (String.concat "" (List.map (fun (v, form) -> text_of ~form v) parts))

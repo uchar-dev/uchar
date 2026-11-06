@@ -42,11 +42,14 @@ type env = {
       (* lexical binders bound per match-arm evaluation (ch. 9.2), by norm
          name; the row-10 card extends this to lambda/function parameters,
          the ch. 10.6 Let adds the deferred [Later] form *)
-  btypes : datatype option SMap.t;
-      (* the static type of each lexical binder in [locals], by norm name:
-         a binder read carries no type on the wire (B13), so its type is
-         the one its binding declares — a match arm's payload, a closed
-         body's parameter, a Let value's, a list filter's element *)
+  btypes : (Ir_v0.Checks.bounded option * datatype option) SMap.t;
+      (* the precision bound (ch. 2.3) and the static type of each lexical
+         binder in [locals], by norm name, in the shape of the verifier's
+         binder environment: a binder read carries no type on the wire
+         (B13), so its type is the one its binding declares — a match arm's
+         payload, a closed body's parameter, a Let value's, a list filter's
+         element — and its bound is that of the value it holds, which the
+         text of a number reads (ch. 1.2) *)
   subj : string option;
       (* the static subject type of the position being evaluated: a rule's
          target type, the subject of an allocation, creation, consistency or
@@ -1181,7 +1184,7 @@ let rec static_type env (e : expr) : datatype option =
       | Some par -> par.par_datatype
       | None -> None)
   | Dimension_cell_read { attribute_ref = Some inner; _ } -> static_type env inner
-  | Binder_ref { ident; _ } -> Option.join (SMap.find_opt (norm ident) env.btypes)
+  | Binder_ref { ident; _ } -> Option.join (Option.map snd (SMap.find_opt (norm ident) env.btypes))
   | Attribute_reference _ | Parameter_ref _ | Dimension_cell_read _ | Variable_reference _ -> None
   | Literal { typ; _ }
   | Text_composition { typ; _ }
@@ -1212,6 +1215,56 @@ let rec static_type env (e : expr) : datatype option =
      Neither is an instance-set union (WF-110): it denotes INSTANCES, and
      the node that consumes it derives the count's own whole type *)
   | Lambda _ | Instance_set_union _ -> None
+
+(* the binders in scope, in the shape the verifier's precision bound reads
+   them (ch. 2.3) *)
+let binder_bounds env = SMap.bindings env.btypes
+
+let bound_of env (e : expr) = Ir_v0.Checks.precision (Ir_v0.Checks.ctx_of env.doc) ~env:(binder_bounds env) e
+
+let element_bound env (l : expr) =
+  Ir_v0.Checks.element_precision (Ir_v0.Checks.ctx_of env.doc) ~calls:[] ~env:(binder_bounds env) l
+
+(* the bound of a binder that holds a value of the declared type [dt] *)
+let declared_bound (dt : datatype option) : Ir_v0.Checks.bounded option =
+  Option.bind dt (fun d ->
+      Option.map
+        (fun b -> { Ir_v0.Checks.bound = b; bound_unit = Ir_v0.Checks.unit_of d })
+        (Ir_v0.Checks.declared_precision d))
+
+(* The form of a value of the declared type [dt] in a text (ch. 1.2): a
+   number in its declared decimals, a constructor value's payload in the
+   type its constructor declares. *)
+let rec declared_form (dt : datatype option) : Arith.text_form =
+  match dt with
+  | Some ((Number _ | Percentage _) as d) -> (
+      match Ir_v0.Checks.declared_precision d with
+      | Some (Ir_v0.Checks.Finite n) -> { Arith.exact_form with decimals = Some n }
+      | _ -> Arith.exact_form)
+  | Some (Sum_type { constructor_list; _ }) ->
+      {
+        Arith.exact_form with
+        payload =
+          (fun tag ->
+            match List.find_opt (fun (c, _) -> norm c = norm tag) constructor_list with
+            | Some (_, p) -> declared_form p
+            | None -> Arith.exact_form);
+      }
+  | _ -> Arith.exact_form
+
+(* The form the value [v] of the inserted part [e] is written in (ch. 1.2): a
+   number in the decimals of the type of its part, its precision bound
+   (ch. 2.3) restated into the unit the value is in, and in its exact form
+   where the part has no finite bound or makes no claim; a constructor value
+   with its payload in the declared type. *)
+let text_form env (e : expr) (v : Value.t) : Arith.text_form =
+  match v with
+  | Value.Num (_, u) -> (
+      match Option.bind (bound_of env e) (fun b -> Ir_v0.Checks.in_unit b (Arith.unit_option u)) with
+      | Some (Ir_v0.Checks.Finite d) -> { Arith.exact_form with decimals = Some d }
+      | _ -> Arith.exact_form)
+  | Value.Ctor _ -> declared_form (static_type env e)
+  | _ -> Arith.exact_form
 
 (* the unit of [op] over operands of units [ul] and [ur], as Arith gives it to
    filled operands (ch. 2.6, rules 2, 3, 4 and 7; a power is unitless, WF-035) *)
@@ -1537,8 +1590,11 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
       Arith.concat
         (map_in_order
            (function
-             | Literal_chunk { body_text } -> Value.Text (Option.value body_text ~default:"")
-             | Embedded_expression { expr = e } -> eval_expr env world self ~err (req "EmbeddedExpression.expr" e))
+             | Literal_chunk { body_text } -> (Value.Text (Option.value body_text ~default:""), Arith.exact_form)
+             | Embedded_expression { expr = e } ->
+                 let e = req "EmbeddedExpression.expr" e in
+                 let v = eval_expr env world self ~err e in
+                 (v, text_form env e v))
            pieces)
   | Expr_unresolved _ ->
       Value.faultc "EF-019" "Unresolved reached in evaluation: this rule fails observably"
@@ -1725,7 +1781,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
                           | None -> None)
                       | _ -> None
                     in
-                    SMap.add (norm b) payload_t env.btypes
+                    SMap.add (norm b) (declared_bound payload_t, payload_t) env.btypes
               in
               eval_expr { env with locals; btypes } world self ~err body)
       | v -> Value.fault "match scrutinee is %s, not a constructor value" (Value.to_string v))
@@ -1756,7 +1812,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
       let memo = lazy (eval_expr env world self ~err value) in
       let read () = match Lazy.force memo with Value.Empty -> raise Barrier | v -> v in
       let locals = SMap.add (norm binder) (Later read) env.locals in
-      let btypes = SMap.add (norm binder) (static_type env value) env.btypes in
+      let btypes = SMap.add (norm binder) (bound_of env value, static_type env value) env.btypes in
       (try eval_expr { env with locals; btypes } world self ~err body with Barrier -> Value.Empty)
   | Struct_literal { field_list; _ } ->
       (* ch. 11.1: a record value; a field evaluating leeg propagates — the
@@ -1860,7 +1916,10 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
           (List.length arguments) (List.length fd.fd_parameters);
       let args = map_in_order (eval_expr env world self ~err) arguments in
       if List.exists (fun v -> v = Value.Empty) args then Value.Empty
-      else eval_closed_body env world self ~err fd.fd_parameters fd.fd_body args)
+      else
+        (* a parameter holds its argument, of the argument's bound (ch. 2.3) *)
+        eval_closed_body env world self ~err fd.fd_parameters fd.fd_body
+          (List.combine args (List.map (bound_of env) arguments)))
   | Fold { list; function_name; init; _ } -> (
       (* ch. 10.2: a left fold, order normative. A leeg list operand and a
          leeg init both propagate; fold(f, init, []) = init *)
@@ -1869,7 +1928,13 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
       | Value.List_value xs -> (
           match eval_expr env world self ~err init with
           | Value.Empty -> Value.Empty
-          | acc0 -> List.fold_left (fun acc x -> apply_fold_fn env world self ~err function_name [ acc; x ]) acc0 xs)
+          | acc0 ->
+              (* the accumulator holds a value of the fold's own bound, the
+                 element one of the list's elements (ch. 2.3) *)
+              let acc_bound = bound_of env e and element = element_bound env list in
+              List.fold_left
+                (fun acc x -> apply_fold_fn env world self ~err function_name [ (acc, acc_bound); (x, element) ])
+                acc0 xs)
       | v -> Value.fault "fold list operand is %s, not a list value" (Value.to_string v))
   | Map_list { list; function_name; _ } -> (
       (* ch. 10.2: elementwise, order-preserving; a leeg source propagates,
@@ -1877,7 +1942,8 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
       match eval_expr env world self ~err list with
       | Value.Empty -> Value.Empty
       | Value.List_value xs ->
-          let ys = map_in_order (fun x -> apply_fold_fn env world self ~err function_name [ x ]) xs in
+          let element = element_bound env list in
+          let ys = map_in_order (fun x -> apply_fold_fn env world self ~err function_name [ (x, element) ]) xs in
           if List.exists (fun v -> v = Value.Empty) ys then Value.Empty else Value.List_value ys
       | v -> Value.fault "map-list operand is %s, not a list value" (Value.to_string v))
   | Filter_list { list; binder; condition; _ } -> (
@@ -1890,7 +1956,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
           let element_t =
             match static_type env list with Some (List_type { element }) -> Some element | _ -> None
           in
-          let btypes = SMap.add (norm binder) element_t env.btypes in
+          let btypes = SMap.add (norm binder) (element_bound env list, element_t) env.btypes in
           Value.List_value
             (filter_in_order
                (fun x ->
@@ -1918,7 +1984,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
    closed (WF-069/067), so a fresh locals holds exactly the parameters; a
    fold body never sees leeg (ch. 10.1), so no leeg-argument short-circuit is
    needed here (the Invoke arm carries the strict one). *)
-and apply_fold_fn env world self ~err (fn : fold_fn) (args : Value.t list) : Value.t =
+and apply_fold_fn env world self ~err (fn : fold_fn) (args : (Value.t * Ir_v0.Checks.bounded option) list) : Value.t =
   match fn with
   | Fn_lambda { parameters; body; _ } -> eval_closed_body env world self ~err parameters body args
   | Fn_name name ->
@@ -1929,17 +1995,19 @@ and apply_fold_fn env world self ~err (fn : fold_fn) (args : Value.t list) : Val
    own parameters, WF-067) and evaluate [body]; arity is a WF-068/069/070
    invariant, refused fail-fast here rather than raising Invalid_argument *)
 and eval_closed_body env world self ~err (parameters : (string * datatype) list) body
-    (args : Value.t list) : Value.t =
+    (args : (Value.t * Ir_v0.Checks.bounded option) list) : Value.t =
   if List.length parameters <> List.length args then
     Value.fault "closed body applied to %d arguments, expected %d"
       (List.length args) (List.length parameters);
   let locals =
     List.fold_left2
-      (fun acc (pname, _) v -> SMap.add (norm pname) (Now v) acc)
+      (fun acc (pname, _) (v, _) -> SMap.add (norm pname) (Now v) acc)
       SMap.empty parameters args
   in
   let btypes =
-    List.fold_left (fun acc (pname, dt) -> SMap.add (norm pname) (Some dt) acc) SMap.empty parameters
+    List.fold_left2
+      (fun acc (pname, dt) (_, bound) -> SMap.add (norm pname) (bound, Some dt) acc)
+      SMap.empty parameters args
   in
   eval_expr { env with locals; btypes; form = None } world self ~err body
 
@@ -2595,7 +2663,13 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
           numeric_builtin_operand env Absolute_value a;
           Arith.abs_ (eval_expr env world self ~err a)
       | _ -> Value.fault "absoluteValue expects one argument")
-  | Concatenation -> Arith.concat (map_in_order (eval_expr env world self ~err) call_arguments)
+  | Concatenation ->
+      Arith.concat
+        (map_in_order
+           (fun a ->
+             let v = eval_expr env world self ~err a in
+             (v, text_form env a v))
+           call_arguments)
   | Year_of -> (
       match call_arguments with
       | [ a ] -> Arith.year_of (eval_expr env world self ~err a)

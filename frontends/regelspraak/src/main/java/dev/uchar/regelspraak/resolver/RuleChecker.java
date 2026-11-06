@@ -4960,21 +4960,11 @@ final class RuleChecker {
         valueTimelines(value, read);
         if (condition != null) conditionTimelines(condition, target.objectType(), read);
         for (Map.Entry<String, Granularity> e : read)
-            if (!fits(e.getValue(), grid))
+            if (!dev.uchar.regelspraak.core.PrecisionBound.fits(e.getValue(), grid))
                 return new Typing.Coded("RGS-374", Diagnostic.params("operand", e.getKey(),
                         "operandGrid", e.getValue().name().toLowerCase(), "target", target.attribute(),
                         "targetGrid", grid.name().toLowerCase()));
         return null;
-    }
-
-    static boolean fits(Granularity operand, Granularity target) {
-        if (target == Granularity.DAG || operand == target) return true;
-        int o = months(operand), t = months(target);
-        return o > 0 && t > 0 && o % t == 0;
-    }
-
-    private static int months(Granularity g) {
-        return switch (g) { case MAAND -> 1; case KWARTAAL -> 3; case JAAR -> 12; default -> 0; };
     }
 
     private static void valueTimelines(Expr e, java.util.List<Map.Entry<String, Granularity>> read) {

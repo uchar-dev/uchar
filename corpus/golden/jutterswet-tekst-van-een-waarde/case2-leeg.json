@@ -23,6 +23,9 @@
     {"kind": "attributeValue", "label": "V5", "attribute": "soorttekst", "value": {"text": "Soort: wrakhout"}},
     {"kind": "attributeValue", "label": "V5", "attribute": "vaste tekst", "value": {"text": "Vast: 5,5"}},
     {"kind": "attributeValue", "label": "V5", "attribute": "verslag", "value": {"text": "Bedrag:  voor wrakhout, gemeld waar op 21-06-2026"}},
+    {"kind": "attributeValue", "label": "V5", "attribute": "toeslagtekst", "value": {"text": "Toeslag: 0,000"}},
+    {"kind": "attributeValue", "label": "V5", "attribute": "factortekst", "value": {"text": "Factor: "}},
+    {"kind": "attributeValue", "label": "V5", "attribute": "heffingtekst", "value": {"text": "Heffing: 0,000"}},
     {"kind": "attributeValue", "label": "V6", "attribute": "omschrijving", "value": {"text": "Bedrag: "}},
     {"kind": "attributeValue", "label": "V6", "attribute": "deeltekst", "value": {"text": "Deel: 0"}},
     {"kind": "attributeValue", "label": "V6", "attribute": "aantaltekst", "value": {"text": "Aantal: "}},
@@ -33,6 +36,9 @@
     {"kind": "attributeValue", "label": "V6", "attribute": "soorttekst", "value": {"text": "Soort: "}},
     {"kind": "attributeValue", "label": "V6", "attribute": "vaste tekst", "value": {"text": "Vast: 5,5"}},
     {"kind": "attributeValue", "label": "V6", "attribute": "verslag", "value": {"text": "Bedrag:  voor , gemeld  op "}},
+    {"kind": "attributeValue", "label": "V6", "attribute": "toeslagtekst", "value": {"text": "Toeslag: 0,000"}},
+    {"kind": "attributeValue", "label": "V6", "attribute": "factortekst", "value": {"text": "Factor: "}},
+    {"kind": "attributeValue", "label": "V6", "attribute": "heffingtekst", "value": {"text": "Heffing: 0,000"}},
     {"kind": "consistent"}
   ]
 }

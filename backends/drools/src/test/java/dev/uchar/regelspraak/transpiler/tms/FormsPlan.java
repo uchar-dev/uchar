@@ -648,7 +648,7 @@ final class FormsPlan {
                                 new Term.Binder(13, "b", "b"),
                                 new Term.Required(readOf(7), "geen rekendatum", null),
                                 new Term.TextComposition(List.of(text("x"), new Term.Call(StaticFunction.RS_TEXT,
-                                        List.of(readOf(0)), null)), "x en de uitkijkbonus"),
+                                        List.of(readOf(0), new Term.Const(2, null, null)), null)), "x en de uitkijkbonus"),
                                 new Term.Call(StaticFunction.RS_ROUNDING, List.of(readOf(0), new Term.Const(2, null, null),
                                         new Term.Const(RoundingMode.HALF_UP, null, null)), null),
                                 new Term.Call(StaticFunction.RS_DURATION_DAY_KIND, List.of(new Term.Const(

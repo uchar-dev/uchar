@@ -166,6 +166,37 @@
             "datatype": {
               "node": "Text"
             }
+          },
+          {
+            "node": "Attribute",
+            "name": "factor",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "toeslagtekst",
+            "datatype": {
+              "node": "Text"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "factortekst",
+            "datatype": {
+              "node": "Text"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "heffingtekst",
+            "datatype": {
+              "node": "Text"
+            }
           }
         ],
         "characteristics": []
@@ -770,6 +801,244 @@
               },
               "source": {
                 "snippet": "\"Bedrag: \u00abzijn basis\u00bb voor \u00abzijn soort\u00bb, gemeld \u00abzijn bevestiging\u00bb op \u00abzijn vinddatum\u00bb\""
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "toeslagtekst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "toeslagtekst",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De toeslagtekst van een Vondst"
+              }
+            },
+            "value": {
+              "node": "TextComposition",
+              "parts": [
+                {
+                  "node": "LiteralChunk",
+                  "text": "Toeslag: "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "Binary",
+                    "op": "times",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "basis",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn basis"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "1.1"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 1,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "1,1"
+                      }
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 3,
+                      "sign": "unspecified",
+                      "unit": [
+                        {
+                          "node": "Unit",
+                          "abbreviation": "EUR",
+                          "system": "Munt",
+                          "canonical": "EUR",
+                          "factorToCanonical": {
+                            "num": 1,
+                            "den": 1
+                          }
+                        }
+                      ]
+                    },
+                    "source": {
+                      "snippet": "zijn basis maal 1,1"
+                    }
+                  }
+                }
+              ],
+              "type": {
+                "node": "Text"
+              },
+              "source": {
+                "snippet": "\"Toeslag: \u00abzijn basis maal 1,1\u00bb\""
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "factortekst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "factortekst",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De factortekst van een Vondst"
+              }
+            },
+            "value": {
+              "node": "TextComposition",
+              "parts": [
+                {
+                  "node": "LiteralChunk",
+                  "text": "Factor: "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "AttributeReference",
+                    "attribute": "factor",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn factor"
+                    }
+                  }
+                }
+              ],
+              "type": {
+                "node": "Text"
+              },
+              "source": {
+                "snippet": "\"Factor: \u00abzijn factor\u00bb\""
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "heffingtekst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "heffingtekst",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De heffingtekst van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Text"
+              },
+              "binder": "heffing",
+              "value": {
+                "node": "Binary",
+                "op": "times",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "basis",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn basis"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "1.1"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 1,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "1,1"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 3,
+                  "sign": "unspecified",
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "EUR",
+                      "system": "Munt",
+                      "canonical": "EUR",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    }
+                  ]
+                },
+                "source": {
+                  "snippet": "zijn basis maal 1,1"
+                }
+              },
+              "body": {
+                "node": "TextComposition",
+                "parts": [
+                  {
+                    "node": "LiteralChunk",
+                    "text": "Heffing: "
+                  },
+                  {
+                    "node": "EmbeddedExpression",
+                    "expr": {
+                      "node": "BinderRef",
+                      "name": "heffing",
+                      "source": {
+                        "snippet": "de heffing"
+                      }
+                    }
+                  }
+                ],
+                "type": {
+                  "node": "Text"
+                },
+                "source": {
+                  "snippet": "\"Heffing: \u00abde heffing\u00bb\""
+                }
+              },
+              "source": {
+                "snippet": "de heffing is zijn basis maal 1,1"
               }
             },
             "initialisation": false,

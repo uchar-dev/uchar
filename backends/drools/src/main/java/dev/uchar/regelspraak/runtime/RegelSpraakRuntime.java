@@ -359,19 +359,30 @@ public final class RegelSpraakRuntime {
     private static final java.time.format.DateTimeFormatter TEXT_DATE_TIME =
             java.time.format.DateTimeFormatter.ofPattern("dd-MM-uuuu HH:mm:ss.SSS");
 
-    /** §5.4 text coercion for a §13.4.17.9 tekstreeks and a concatenation, a function of the value alone
-     *  (RUNTIME-SEMANTICS ch. 1.2, "Text coercion"): leeg is "", a text and an enumeration label are themselves, a
-     *  truth value is waar or onwaar, a number its exact decimal without trailing zeros and with a decimal comma
-     *  (5.50 -> "5,5"), or t/n where it does not terminate, a date dd-MM-yyyy, a date-time dd-MM-yyyy HH:mm:ss.mmm (a
-     *  year outside 0000-9999 with its sign, as the pattern uuuu writes it), a constructor value its tag with the text
-     *  of its payload in parentheses. A value of any other type has no text and fails. The single implementation
-     *  (single-runtime principle). */
-    public static String rsTekst(Object o) {
+    /** §5.4 text coercion for a §13.4.17.9 tekstreeks and a concatenation (RUNTIME-SEMANTICS ch. 1.2, "Text
+     *  coercion"), the text of a value in the type of its part: leeg is "", a text and an enumeration label are
+     *  themselves, a truth value is waar or onwaar, a number exactly the decimals of the type of its part with a decimal
+     *  comma (5.5 in 2 decimals -> "5,50"), and where the part has no finite precision bound its exact decimal without
+     *  trailing zeros, or t/n where it does not terminate, a date dd-MM-yyyy, a date-time dd-MM-yyyy HH:mm:ss.mmm (a year
+     *  outside 0000-9999 with its sign, as the pattern uuuu writes it), a constructor value its tag with the text of its
+     *  payload in parentheses. A value of any other type has no text and fails. {@code form} is the type of the part as
+     *  the transpiler read it: an {@code Integer}, the decimals of a number; null, a number without a finite bound; or
+     *  for a value of a sum type a list of each constructor's name followed by the form of its payload. The single
+     *  implementation (single-runtime principle). */
+    public static String rsTekst(Object o, Object form) {
         if (o == null) return "";
         if (o instanceof String s) return s;
         if (o instanceof Boolean b) return b ? "waar" : "onwaar";
         if (o instanceof Number n) {
             Breuk q = Breuk.van(n);
+            if (form instanceof Integer d) {
+                // the bound of the part guarantees the fit (ch. 2.3), so a value that does not fit is a broken
+                // guarantee, never a number to round
+                if (!q.vermenigvuldigen(Breuk.van(BigInteger.TEN.pow(d), BigInteger.ONE)).noemer().equals(BigInteger.ONE))
+                    throw new IllegalStateException("the number " + q + " has more decimals than the " + d
+                            + " of the type of its text part (RUNTIME-SEMANTICS ch. 1.2)");
+                return q.naarDecimal().setScale(d).toPlainString().replace('.', ',');
+            }
             if (!q.isTerminerend()) return q.toString();
             BigDecimal d = q.naarDecimal();
             return (d.signum() == 0 ? BigDecimal.ZERO : d.stripTrailingZeros()).toPlainString().replace('.', ',');
@@ -379,8 +390,19 @@ public final class RegelSpraakRuntime {
         if (o instanceof LocalDate d) return d.format(TEXT_DATE);
         if (o instanceof java.time.LocalDateTime t) return t.format(TEXT_DATE_TIME);
         if (o instanceof dev.uchar.regelspraak.transpiler.tms.ConstructorValue c)
-            return c.payload() == null ? c.constructor() : c.constructor() + "(" + rsTekst(c.payload()) + ")";
+            return c.payload() == null ? c.constructor()
+                    : c.constructor() + "(" + rsTekst(c.payload(), payloadForm(form, c.constructor())) + ")";
         throw new IllegalStateException("a value of " + o.getClass().getName() + " has no text (RUNTIME-SEMANTICS ch. 1.2)");
+    }
+
+    /** The form of the payload of the constructor {@code tag} in the form of a sum type: the entry after its name. */
+    private static Object payloadForm(Object form, String tag) {
+        if (!(form instanceof List<?> forms)) return null;
+        String key = dev.uchar.regelspraak.transpiler.core.Namen.norm(tag);
+        for (int i = 0; i + 1 < forms.size(); i += 2)
+            if (forms.get(i) instanceof String name && dev.uchar.regelspraak.transpiler.core.Namen.norm(name).equals(key))
+                return forms.get(i + 1);
+        return null;
     }
 
     /** §13.4.17.18-.24/§6.12 a DATE/TIME component (jaar/maand/dag/uur/… uit) read via one ChronoField; a leeg

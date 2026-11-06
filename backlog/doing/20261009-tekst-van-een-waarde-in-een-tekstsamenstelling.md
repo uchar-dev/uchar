@@ -175,3 +175,61 @@ De eigenaar vroeg de eenheid mee te nemen. Een auteur kan in een tekstsamenstell
 achter het getal tussen haakjes (`5,50 (€)`, `12,50 (%)`); zonder die aanwijzing blijft het getal zonder eenheid. Op de
 draad een optioneel veld op `EmbeddedExpression` (additief); de verifier weigert de aanwijzing bij een type zonder
 eenheid (nieuwe WF-regel); in de bron een uitbreiding binnen `«…»` (DIVERGENCES). Dezelfde bouwer, tweede stap.
+
+## Result: Besluit van de eigenaar, gebouwd
+
+*Gebouwd op 2026-11-06 op branch `card/text-in-type-decimals` (worktree `wt/text-decimals`), afgetakt van main
+`55ecb7603`. Logs onder `uchar-dev/werk/text-decimals/logs/`.*
+
+### Stap 1: een getal in de decimalen van zijn type
+
+- **Spec.** RUNTIME-SEMANTICS ch. 1.2, "Text coercion", naar het besluit: een getal schrijft precies de decimalen
+  van het type van zijn deel, met decimale komma, zonder eenheid, procentteken of duizendtalscheider. Het type van
+  een deel is zijn precisiegrens van ch. 2.3 in de eenheid waarin zijn waarde staat: van een read de declaratie, van
+  een binder de grens van de waarde die hij draagt, van een getal-literal de decimalen van zijn exacte waarde, van
+  een samengesteld deel de grens van zijn vorm. Zonder eindige grens (of zonder claim) de exacte kortste vorm, en
+  niet-eindigend `t/n`. De tabel en WV-1.2c-text naar de nieuwe stand, met rijen voor `zijn basis maal 1,1`
+  (`6,050`), `gedeeld door 4` (`1,3750`), de literal (`5,5`), de onbegrensde vorm en `Toegekend(1250,50)`. De
+  cursieve noot noemt het besluit en vier afwijkingen van ALEF (de vierde is nieuw: ALEF schrijft een getal zonder
+  eindnullen, omdat zijn rationale getallen geen schaal dragen).
+- **Eén grens, geen tweede.** Ref leest de grens van de verifier (`Ir_v0.Checks.precision`, dezelfde die WF-023 en
+  clingo's `Scale` lezen); de binder-omgeving van ref (`btypes`) draagt nu per binder ook zijn grens, in de vorm
+  van de omgeving van de verifier (Let, match-arm, lijstfilter, argument, element en accumulator van een gesloten
+  body). Voor Java bestond de grens alleen in de frontend (`resolver/Typing`, een pakket dat de Drools-build
+  uitsluit); die is verhuisd naar `core/PrecisionBound`, dat de frontend en de Drools-backend allebei compileren,
+  met een `Reading` voor wat elk anders ziet: de typen (frontend: zijn eigen; Drools: `EffectiveUnit`, ch. 2.10),
+  of een vouw over leden gaat (frontend: `AttributeReference.set`; Drools: een bronrol of bronpad) en de
+  defaults-groepen. `Typing.precisionGate`/`allocationAssignment` lezen de verhuisde klasse; `RuleChecker.fits` is
+  `PrecisionBound.fits` geworden. Gate 10 (JUnit en her-emissie) bleef groen.
+- **Drools.** De analyse geeft `rsTekst` de vorm van het deel als constante mee (`rsTekst(waarde, vorm)`: een
+  `Integer` met de decimalen, `null` voor de exacte vorm, voor een sum type een lijst van constructornaam en vorm
+  van de payload); beide takken renderen dezelfde aanroep. Een `Let` draagt de grens van zijn binder in
+  `Reads.binderBounds`.
+- **Technische keuzes.** Een waarde die niet in de decimalen van haar deel past, kan op een welgevormd document niet
+  voorkomen (de grens garandeert het); ref meldt dan een fout (`Value.fault`), `rsTekst` een
+  `IllegalStateException`, nooit een afronding. Een constructorwaarde schrijft haar payload in het gedeclareerde
+  type van haar constructor (`Toegekend(1250,50)`), volgens dezelfde regel.
+- **Golden `jutterswet-tekst-van-een-waarde`.** Verwachtingen die veranderden (bewuste gedragsverandering door de
+  eigenaar): V1 `omschrijving` `Bedrag: 5,5` → `Bedrag: 5,50`, `aandeeltekst` `Aandeel: 12,5` → `12,50`,
+  `verslag` `Bedrag: 5,5 …` → `5,50 …`; V2 `Bedrag: 5` → `5,00`, `Aandeel: 100` → `100,00`, `verslag` `5` →
+  `5,00`; V4 `Bedrag: -1` → `-1,00`, `Aandeel: -0,5` → `-0,50`, `verslag` `-1` → `-1,00`. Gelijk gebleven:
+  `aantaltekst` (geheel), `deeltekst` (gedeeld door 3: geen eindige grens, `11/6`, `1,75`, `0`), `vaste tekst`
+  (`«5,50»`: `5,5`), V3 (`5,25`, `0,25`), de datum-, tijd-, opsommings- en waarheidsdelen. Nieuw: `toeslagtekst`
+  (`zijn basis maal 1,1`, grens 3: `6,050`, `5,500`, `5,775`, `-1,100`, leeg `0,000`), `factortekst` (de
+  onbegrensde vorm: `0,125`, `2`, `0,5`, leeg) en `heffingtekst` (een "Daarbij geldt"-binder, `de heffing is zijn
+  basis maal 1,1`, die de frontend als `Let` om de samenstelling schrijft: dezelfde teksten). 5 bij 2 decimalen is
+  V2 (`Bedrag: 5,00`).
+- **Rood eerst.** De nieuwe verwachtingen op de oude code: ref van `55ecb7603` 19 mismatches
+  (`logs/red-ref-base.log`), de jar van `55ecb7603` `FAIL` op beide takken (`logs/red-drools-base.log`). Na de bouw:
+  ref `oracle: PASS (53)` en `(27)`, beide Drools-takken `PLAYED 2`.
+- **Tests.** Ref-suite: de tabelrijen naar de nieuwe stand en een blok door de evaluatie (gedeclareerd, onbegrensde
+  vorm, samengesteld, literal, binder, constructor, concatenatie, het voorbeeld). Drools:
+  `TextOfAValueTest` naar `rsTekst(waarde, vorm)`; `TmsBuiltinWitnessTest.a_text_composition_with_a_number_reads_its_decimal_with_a_comma`
+  heet nu `…_reads_the_decimals_of_its_type` en verwacht `Bedrag: 5,50` waar hij `Bedrag: 5,5` verwachtte, plus een
+  object met 5 (`Bedrag: 5,00`); in `FormsPlan` krijgt de `RS_TEXT`-term zijn vorm-constante. De DRL-pin van de golden
+  is herschreven (`rsTekst($basis, Integer.valueOf(2))` enz.); geen andere pin bewoog.
+- Ook bijgewerkt: `backends/drools/README.md` noemde het tekstdeel nog als vorm die de backend weigert.
+- **Gates na stap 1** (los, op de werkboom vóór de commit, alle rc=0): 1, 2, 3, 4, 5 (ref-suite 2600 voorbeelden), 6,
+  7, 8, 10, 12 (JUnit 1892), 13, 15, 16, 17 (`logs/s1-summary.log`, `logs/s1b-summary.log`, per gate
+  `logs/s1*-check-*.log`). De eerste run van gate 12 was rood: `DrlRenderingWitnessTest` bouwde een `RS_TEXT`-term
+  met één argument (`FormsPlan`), bijgewerkt. `make gates` volgt na stap 2.

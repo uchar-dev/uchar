@@ -44,7 +44,9 @@ public enum StaticFunction {
     RS_CLAMP(RegelSpraakRuntime.class, "rsBegrens", false),
     /** The absolute value. */
     RS_ABS(RegelSpraakRuntime.class, "rsAbs", false),
-    /** The text of a text or an enumeration label, a leeg value the empty text (ch. 1.2). */
+    /** The text of a value in the type of its part (ch. 1.2), a leeg value the empty text; the form of the part a
+     *  constant: the decimals of a number as an {@code Integer}, null where it has no finite bound, and for a sum type
+     *  a list of each constructor's name and the form of its payload. */
     RS_TEXT(RegelSpraakRuntime.class, "rsTekst", false),
     /** A duration in whole units (ch. 3.8) between two dates, the unit a {@code String} constant as
      *  {@code TimeCalculation.chronoUnit} names it, absolute where a {@code Boolean} constant says so. */

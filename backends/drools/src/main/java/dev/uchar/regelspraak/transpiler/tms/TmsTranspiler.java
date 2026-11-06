@@ -20,6 +20,7 @@ import dev.uchar.regelspraak.ir.ResolvedUniquenessUnion;
 import dev.uchar.regelspraak.ir.ResolvedAllocation;
 import dev.uchar.regelspraak.ir.Spelling;
 import dev.uchar.regelspraak.core.Literals;
+import dev.uchar.regelspraak.core.PrecisionBound;
 import dev.uchar.regelspraak.core.TimeCalculation;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.Unit;
@@ -253,6 +254,9 @@ public final class TmsTranspiler {
     private String form;
     /** The datatype and unit of an expression as the other branches derive them (RUNTIME-SEMANTICS ch. 2.10). */
     private final EffectiveUnit eff;
+    /** The precision bound of RUNTIME-SEMANTICS ch. 2.3 over this document, which the text of a number reads; built at
+     *  its first use ({@link #precisionBound}). */
+    private PrecisionBound precisionBound;
     /** Every member a form of the document writes, lowered or not. A member that no form writes is input. */
     private Map<ElementKey, Set<String>> writers = Map.of();
     /** The members of the unbounded form whose one writer is an object creation ({@link #createdExactValues}). */
@@ -6347,10 +6351,57 @@ public final class TmsTranspiler {
     }
 
     /** An inserted part of a text composition or an argument of a concatenation, as its text: the text of its value
-     *  (RUNTIME-SEMANTICS ch. 1.2, "Text coercion"), which {@code rsTekst} writes for every type, a leeg part as "". */
+     *  in the type of the part (RUNTIME-SEMANTICS ch. 1.2, "Text coercion"), which {@code rsTekst} writes for every
+     *  type, a leeg part as "", with the form of the part a constant ({@link #textForm}). */
     private Term textPart(Expr e, Reads reads) {
         Term f = value(e, reads);
-        return new Term.Call(StaticFunction.RS_TEXT, List.of(f), f.source());
+        return new Term.Call(StaticFunction.RS_TEXT, List.of(f, constant(textForm(e, reads))), f.source());
+    }
+
+    /** The type of the part {@code e} as {@code rsTekst} reads it (RUNTIME-SEMANTICS ch. 1.2): for a number the
+     *  decimals of its precision bound (ch. 2.3) in the unit its value is in ({@link EffectiveUnit}), null where the
+     *  part has no finite bound or makes no claim; for a value of a sum type the declared form of each payload
+     *  ({@link #payloadForms}); null for every other type. */
+    private Object textForm(Expr e, Reads reads) {
+        Datatype t = eff.of(e);
+        if (t instanceof Datatype.SumType s) return payloadForms(s);
+        if (t == null || !t.isNumberLike()) return null;
+        PrecisionBound.Bounded b = precisionBound().of(e, reads.binderBounds);
+        if (b == null) return null;
+        PrecisionBound.Precision p = b.in(eff.unitOf(e));
+        return p.bounded() ? p.decimals() : null;
+    }
+
+    /** The form of a value of the declared type {@code t} in a text: a number in its declared decimals. */
+    private static Object declaredForm(Datatype t) {
+        if (t instanceof Datatype.SumType s) return payloadForms(s);
+        PrecisionBound.Precision p = t == null ? null : PrecisionBound.declared(t);
+        return p != null && p.bounded() ? p.decimals() : null;
+    }
+
+    /** The forms of the payloads of a sum type, as {@code rsTekst} reads them: each constructor's name followed by the
+     *  form of its declared payload, null for a nullary one. */
+    private static List<Object> payloadForms(Datatype.SumType s) {
+        List<Object> forms = new ArrayList<>();
+        for (Datatype.Constructor c : s.constructors()) {
+            forms.add(c.name());
+            forms.add(c.payload() == null ? null : declaredForm(c.payload()));
+        }
+        return forms;
+    }
+
+    /** The precision bound of ch. 2.3 over this document as the other branches derive its types (ch. 2.10): a fold
+     *  ranges over members where it carries a source role or a source path. */
+    private PrecisionBound precisionBound() {
+        if (precisionBound == null)
+            precisionBound = new PrecisionBound(model, new PrecisionBound.Reading() {
+                @Override public Datatype typeOf(Expr e) { return eff.of(e); }
+                @Override public boolean ranged(Expr.FunctionCall f) {
+                    return sourcePaths.containsKey(f) || roleBindings.containsKey(f);
+                }
+                @Override public List<PrioritizedDefaults> defaults() { return defaults; }
+            });
+        return precisionBound;
     }
 
     /** A cell of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c): the value of the cell its labels name, one per
@@ -6498,12 +6549,15 @@ public final class TmsTranspiler {
         int slot = reads.binder();
         String key = Namen.norm(l.binder());
         Integer outside = reads.binders.put(key, slot);
+        PrecisionBound.Bounded outsideBound = reads.binderBounds.put(key, precisionBound().of(l.value(), reads.binderBounds));
         Term body;
         try {
             body = value(l.body(), reads);
         } finally {
             if (outside == null) reads.binders.remove(key);
             else reads.binders.put(key, outside);
+            if (outsideBound == null) reads.binderBounds.remove(key);
+            else reads.binderBounds.put(key, outsideBound);
         }
         return new Term.Let(slot, l.binder(), value, body, Boolean.TRUE.equals(readsFirst(body, slot)),
                 source(l.source()));
@@ -8589,6 +8643,9 @@ public final class TmsTranspiler {
          *  in the value array ({@link #binder}); a nested {@code Let} of the same name shadows the outer one while its
          *  body compiles (WF-064). */
         final Map<String, Integer> binders = new HashMap<>();
+        /** The precision bound (RUNTIME-SEMANTICS ch. 2.3) of the value of each binder in {@link #binders}, by the same
+         *  name, which the text of a number reads ({@link #textForm}); absent where the value makes no claim. */
+        final Map<String, PrecisionBound.Bounded> binderBounds = new HashMap<>();
         /** In a contribution rule, the binders in scope at its fold, by normalised name: those of the {@code Let}s
          *  around the fold in the rule that reads it, which bind them there, and for a fold in a fold's filter those in
          *  scope at the outer fold as well. This rule binds none of their values; empty in every other rule. */

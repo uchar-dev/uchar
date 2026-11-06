@@ -1026,7 +1026,7 @@ let lines env ~world (rs : reading list) =
           let btypes =
             List.fold_left
               (fun bt (binder, value) ->
-                SMap.add (norm binder) (Eval.static_type { env with Eval.btypes = bt } value) bt)
+                SMap.add (norm binder) (None, Eval.static_type { env with Eval.btypes = bt } value) bt)
               SMap.empty n.scope
           in
           Eval.unit_of_datatype (Eval.static_type { env with Eval.btypes } e)

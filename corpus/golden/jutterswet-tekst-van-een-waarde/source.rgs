@@ -23,6 +23,10 @@ Objecttype de Vondst (mv: Vondsten)
     de soorttekst Tekst;
     de vaste tekst Tekst;
     het verslag Tekst;
+    de factor Numeriek (getal);
+    de toeslagtekst Tekst;
+    de factortekst Tekst;
+    de heffingtekst Tekst;
 
 Regel omschrijving
     geldig altijd
@@ -63,3 +67,17 @@ Regel vaste tekst
 Regel verslag
     geldig altijd
         Het verslag van een Vondst moet berekend worden als "Bedrag: «zijn basis» voor «zijn soort», gemeld «zijn bevestiging» op «zijn vinddatum»".
+
+Regel toeslagtekst
+    geldig altijd
+        De toeslagtekst van een Vondst moet berekend worden als "Toeslag: «zijn basis maal 1,1»".
+
+Regel factortekst
+    geldig altijd
+        De factortekst van een Vondst moet berekend worden als "Factor: «zijn factor»".
+
+Regel heffingtekst
+    geldig altijd
+        De heffingtekst van een Vondst moet berekend worden als "Heffing: «de heffing»".
+        Daarbij geldt:
+            de heffing is zijn basis maal 1,1.
