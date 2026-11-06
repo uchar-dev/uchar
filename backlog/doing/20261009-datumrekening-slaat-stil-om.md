@@ -86,3 +86,53 @@ getuigen in de drie, `corpus/red/<nieuwe gevallen>/`, `spec/RUNTIME-SEMANTICS.md
 
 Bouwt op `20261009-drools-datumstap-buiten-bereik` (geland 2026-10-09: de
 grens van ref in de runtime en het getal in ch. 3.8).
+
+## Result
+
+Gebouwd 2026-11-06 op branch `card/allocation-letbinder-dates`, in één commit. Logs onder
+`werk/allocation-letbinder-dates/logs/`. Elk punt eerst opnieuw gemeten op main `17f956d92`
+(`k4-red-probe-ref-clingo.log`, `k4-red-probe-drools.log`).
+
+- Nagemeten. Punt 1 (ref): kwartalen, het omkeren van −2⁶² en de dagen en weken op een datum sloegen nog om; de
+  datum op dagprecisie had geen bereik (2024-01-01 + 6·10¹⁰ dagen gaf 164276444-06-02); `floor_div` liep over bij
+  een datum-tijd binnen een dag van −2⁶². Punt 2 (clingo): + 2 000 000 000 maanden op een datum vond een model met
+  dag 744227579 (omslag), + 999 997 975 jaren noemde "a year before 0000-03", + 1 753 661 499 maanden op een
+  datum-tijd vond een model met dag 1836388008 (omslag). Punt 3 (Drools): `rsEerstePaasdag` had nog `intValue()`,
+  maar de aanroeper `ComputeHelpers.easterSunday` weigerde jaren buiten ±999 999 999 al met een eigen zin; de
+  constructies namen hun delen al met `intValueExact()`; een stap op een datum faalde alleen buiten de jaren van
+  java.time met een eigen zin zonder code.
+- (a) Rode gevallen, alle met `expectedFault {code: EF-007, params: {}}`: `corpus/red/date-time-step-wrap` (kwartalen
+  3 074 457 345 618 258 603, min −2⁶² milliseconden, en één dag terug vanaf 36 minuten boven −2⁶²: de
+  `floor_div`-hoek), `corpus/red/date-step-outside-range` (dagen één voorbij beide grenzen, 7·10¹⁷ weken,
+  2·10⁹ maanden, 999 997 975 jaren) en `corpus/red/date-with-outside-date-range` (datum met jaar 200 000 000 en met
+  146140482-04-25, eerste paasdag van 4 294 969 320). Ref van main gaf op alle elf een waarde
+  (`k4-red-old-ref-values.log`); nu ref en Drools EF-007 (`k4-red-cases.log`, `k4-red-drools.log`). Clingo weigert
+  elk als eigen limiet; gate 8 heeft elf regels in de divergentielijst (CLINGO-001, -029, -034).
+- (b) Ref (`ref/lib/arith.ml`): de stap rekent in Zarith (aantal maal eenheid, maandtelling), het omkeren van
+  `min_int` is een bereikfout, `floor_div` vormt geen som die overloopt. Clingo (`translate.ml`): het aantal van een
+  datumstap is begrensd vóór de vermenigvuldiging (CLINGO-034), en de dag erna (nieuwe limietcode CLINGO-037, "date
+  arithmetic reaches a year after 5000000"; ook de bestaande "year before 0000-03" heeft nu die code); die hekken
+  dragen de grens van het aantal, zodat een te groot aantal alleen door zijn eigen hek wordt geweigerd. Drools
+  (`RegelSpraakRuntime.java`): `rsEerstePaasdag` toetst het jaar vóór `intValueExact()`, `rsDatumMet` en
+  `rsDatumtijdMet` toetsen het jaar vóór de kalender, en elke datum op dagprecisie (stap, constructie, paasdag,
+  dagsoortstap) landt in het bereik of geeft EF-007 (`DATUM_BUITEN_BEREIK`, catalogusregel `EF-007.date`); de
+  eigen zin over de jaren van java.time is weg.
+- (c) Het bereik op dagprecisie (besluit 2026-10-09) staat in ch. 3.8 als normatieve alinea met een uitgewerkt
+  voorbeeld (de twee grenzen op de dag, de maandstap tot de grens, de constructie en de paasdag), en de zinnen over
+  het paasjaar en de datumconstructie noemen EF-007 in plaats van "the executor's machine-integer range". De rij van
+  EF-007 in ch. 5.7b noemt nu ook de datum, met de drie nieuwe getuigen. Ref worked examples `WV-3.8-d-bereik-*`
+  en `WV-3.8-dt-bereik-{kwartalen,min-min-int,bodem*}`, `WV-3.8-floor-div-bodem`; clingo-checks voor de hekken.
+  `ASP-TRANSLATION.md` en de README van clingo beschrijven de hekken.
+- Gewijzigde tests omdat het gedrag bewust verandert (besluit van de eigenaar): ref `WV-3.8-paasdag-groot-jaar`
+  (paasdag van 10¹⁵ was een datum, is nu EF-007); Drools `DateStepRangeWitnessTest`: de test
+  `a_date_without_time_follows_ref_to_the_years_of_java_time` (pinde 164276444-06-02 en 166668690-09-01 als waarde)
+  is vervangen door `a_date_without_time_has_the_range_of_its_midnight`, plus
+  `a_constructed_date_has_the_range_of_its_midnight`; `FilterFaultWitnessTest` pint nu ook de fout op de stap van
+  2·10⁹ jaren en de paasdag van 2·10⁹.
+- (d) Gerichte gates groen (`logs/k4/summary.txt`): 1, 2, 3, 4, 5 (2530 worked examples), 6 (2675 checks), 8 (85
+  rode gevallen, 20 in de divergentielijst), 12.
+
+Voorgestelde rijtekst voor CONSTRUCTS (datumrekening), door de hoofdsessie te landen: "Een datum op dagprecisie heeft
+het bereik van zijn middernacht, epochdagen −53 375 995 583 tot en met 53 375 995 583 (ch. 3.8, besluit
+2026-10-09); daarbuiten EF-007 in ref en Drools; clingo houdt de dagnummers tot 5000000-12-31 en weigert daarbuiten
+als limiet (CLINGO-001, -029, -034, -037)."

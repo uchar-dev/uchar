@@ -119,15 +119,15 @@ public final class ComputeFault extends RuntimeException {
     /** The fault kind of this fault (RUNTIME-SEMANTICS ch. 5.7b), read off its sentence: the sentences are this
      *  class's constants and the runtime's, the reference interpreter's words, and a plan term carries a sentence
      *  rather than a code, so the kind is named here, beside the text and never inside it. Null for a sentence of a
-     *  kind no red case witnesses yet (an irrational square root, an easterSunday out of range, a part of a dateWith
-     *  that is no whole number). */
+     *  kind no red case witnesses yet (an irrational square root, a part of a dateWith that is no whole number). */
     public String code() {
         if (sentence.equals(EVALUATION_DATE_WITHOUT_DATE) || sentence.equals(RegelSpraakRuntime.REKENJAAR_ZONDER_REKENDATUM))
             return "EF-011";
         if (sentence.equals(VALIDITY_WITHOUT_DATE)) return "EF-012";
         if (sentence.equals(DAY_OUTSIDE_DAY_KIND)) return "EF-010";
         if (sentence.equals(UNRESOLVED) || sentence.equals(UNRESOLVED_CONDITION)) return "EF-019";
-        if (sentence.equals(RegelSpraakRuntime.DATUMTIJD_BUITEN_BEREIK)) return "EF-007";
+        if (sentence.equals(RegelSpraakRuntime.DATUMTIJD_BUITEN_BEREIK)
+                || sentence.equals(RegelSpraakRuntime.DATUM_BUITEN_BEREIK)) return "EF-007";
         if (sentence.startsWith("duration count ") && sentence.endsWith(" is out of range")) return "EF-008";
         if (sentence.startsWith(ComputeHelpers.DAY_KIND_WALK)) return "EF-009";
         if (namesNoMoment(sentence)) return "EF-032";

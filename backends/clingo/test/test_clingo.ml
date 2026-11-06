@@ -18251,6 +18251,38 @@ let () =
   let ir, case_text = fixture "copy-of-a-timeline" in
   both_answer ~name:"absence markers: a copy of a timeline with markers" ~ir ~case_text
 
+(* THE DAY NUMBERS THIS ENCODING HOLDS (RUNTIME-SEMANTICS ch. 3.8; card
+   datumrekening-slaat-stil-om). A date step that would leave clingo's integers
+   is refused by name, never wrapped: a count past what one step from a held
+   day number can add is the machine-integer fence (CLINGO-034), a month step
+   that lands after year 5000000 names that year (CLINGO-037), and one that
+   lands before 0000-03 names that (CLINGO-037). Measured on main 17f956d92:
+   2024-01-01 plus 2 000 000 000 months found a model with the day number
+   744227579, a wrap, and 999 997 975 years named "a year before 0000-03". On
+   the document of corpus/red/date-step-outside-range. *)
+let () =
+  let ir = In_channel.with_open_bin "corpus/red/date-step-outside-range/ir.json" In_channel.input_all in
+  let case attribute count =
+    Printf.sprintf
+      {|{ "format": "uchar-case-v0", "asOfDate": null, "input": { "instances": [
+        { "label": "G1", "objectType": "Getijpost", "attributes": { "meldtijd": { "date": "2024-01-01" },
+          "%s": { "number": "%s" } }, "roles": {}, "characteristics": [] } ], "parameters": {} },
+        "expected": [ { "kind": "consistent" } ] }|}
+      attribute count
+  in
+  faults_at_solving ~code:("CLINGO-034", []) ~name:"2 000 000 000 months: the count fence, not a wrapped day"
+    ~ir ~case_text:(case "wachtmaanden" "2000000000") ~needle:"arithmetic range exceeded" ();
+  faults_at_solving ~code:("CLINGO-034", []) ~name:"999 997 975 years: the count fence, not a year before 0000-03"
+    ~ir ~case_text:(case "wachtjaren" "999997975") ~needle:"arithmetic range exceeded" ();
+  faults_at_solving ~code:("CLINGO-037", []) ~name:"59 999 999 months forward name the year after 5000000"
+    ~ir ~case_text:(case "wachtmaanden" "59999999") ~needle:"date arithmetic reaches a year after 5000000" ();
+  faults_at_solving ~code:("CLINGO-037", []) ~name:"4 997 977 years forward name the year after 5000000"
+    ~ir ~case_text:(case "wachtjaren" "4997977") ~needle:"date arithmetic reaches a year after 5000000" ();
+  faults_at_solving ~code:("CLINGO-037", []) ~name:"3000 years back name the year before 0000-03"
+    ~ir ~case_text:(case "wachtjaren" "-3000") ~needle:"date arithmetic reaches a year before 0000-03" ();
+  faults_at_solving ~code:("CLINGO-034", []) ~name:"300 000 001 days: the count fence"
+    ~ir ~case_text:(case "wachtdagen" "300000001") ~needle:"arithmetic range exceeded" ()
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

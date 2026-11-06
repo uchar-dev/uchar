@@ -1,0 +1,30 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "G1",
+        "objectType": "Getijpost",
+        "attributes": {
+          "bouwjaar": {
+            "number": "146140482"
+          },
+          "bouwmaand": {
+            "number": "4"
+          },
+          "bouwdag": {
+            "number": "25"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-007",
+    "params": {}
+  }
+}

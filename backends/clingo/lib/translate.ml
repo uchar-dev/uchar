@@ -269,6 +269,21 @@ let pro_rata_misfit =
 let period_arithmetic_misfit =
   "non-exact period arithmetic value (an explicit rounding is mandated before precision is lost)"
 
+(* THE DAY NUMBERS THIS ENCODING HOLDS. RUNTIME-SEMANTICS ch. 3.8 gives a date
+   the epoch days -53 375 995 583 to 53 375 995 583; clingo grounds in 32-bit
+   integers and holds the day numbers up to 5000000-12-31 (1 825 493 337) either
+   way. A date step that would leave them is refused by name (CLINGO-037), never
+   wrapped: the count is fenced before it is multiplied by its unit
+   ([date_step_count_fence], CLINGO-034), so the sum with a day number inside
+   cannot wrap, and the day the step reaches is fenced after it. Every day number
+   outside lies far inside ch. 3.8's range, so this is a limit of the encoding,
+   never the fault EF-007. *)
+let day_number_limit = 1_825_493_337
+let date_year_after_reason =
+  "date arithmetic reaches a year after 5000000 (the civil day number would leave clingo's integers)"
+let date_day_below_reason =
+  "date arithmetic reaches a day number below -1825493337 (the civil day number would leave clingo's integers)"
+
 (* the viol/2 reason of an unrounded allocation share that does not fit its
    target scale (EF-006); the subject is the recipient *)
 let allocation_share_misfit =
@@ -901,6 +916,11 @@ let viol_code witness =
              unbounded form) as a whole number\""
   then Some ("CLINGO-033", [])
   else if opens "arithmetic range exceeded (clingo grounds in machine integers)\"" then Some ("CLINGO-034", [])
+  else if
+    opens (date_year_after_reason ^ "\"")
+    || opens (date_day_below_reason ^ "\"")
+    || opens "date arithmetic reaches a year before 0000-03\""
+  then Some ("CLINGO-037", [])
   else if opens "result of " && holds " does not fit its declared decimals\"" then
     Some ("EF-006", found "place" (between "result of " " does not fit its declared decimals"))
   else if opens "day-kind walk: no day of the kind within " then
@@ -3050,7 +3070,7 @@ let pre_epoch_fence ctx ~subject ~body t =
    operands read the form subject of a member (an anchored read, IR-SPEC
    ch. 4.1a), the helper carries that subject in its head ([helper_key]). *)
 let translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms ~date_term ~dur_atoms
-    ~count =
+    ~count ~count_ok =
   let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
   let key, opening =
     helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot)
@@ -3071,8 +3091,15 @@ let translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms ~date_term ~
      where the re-encode divisions would truncate away from floor *)
   emit ctx "viol(\"date arithmetic reaches a year before 0000-03\",%s) :- %s, %s < 2."
     subject
-    (String.concat ", " ((base :: ctx.rule_guard) @ chain))
+    (String.concat ", " ((base :: ctx.rule_guard) @ chain @ [ count_ok ]))
     pmt;
+  (* and above 5000000, where the re-encoded day number would leave clingo's
+     integers; the count is fenced by the caller ([count_ok]), so PMT itself
+     does not wrap where these fences read it *)
+  emit ctx "viol(%s,%s) :- %s, %s > 5000000."
+    (quote date_year_after_reason) subject
+    (String.concat ", " ((base :: ctx.rule_guard) @ chain @ [ count_ok ]))
+    yt;
   let finish ml_atoms mlv =
     let dt = fresh ctx "DT" and y2 = fresh ctx "Y2" and e2 = fresh ctx "E2" in
     let yoe2 = fresh ctx "YOE" and mp2 = fresh ctx "MP" and doy2 = fresh ctx "DOY" in
@@ -3400,6 +3427,31 @@ let range_guard ctx ~subject ~body terms_with_bounds =
         (String.concat ", " body)
         t bound)
     terms_with_bounds
+
+(* the count of a date step in [tu], at most what keeps the step from a day
+   number inside [day_number_limit] within clingo's integers; returns the
+   condition that the count is inside, which the fences on the day the step
+   reaches carry, so that a count that is too large is refused by its own
+   witness and not also by a wrapped day *)
+let date_step_count_fence ctx ~subject ~body (tu : Ir_v0.Checks.time_unit) n =
+  let bound =
+    match tu with
+    | Tu_day -> 300_000_000
+    | Tu_week -> 42_000_000
+    | Tu_month -> 60_000_000
+    | Tu_quarter -> 20_000_000
+    | Tu_year -> 5_000_000
+    | Tu_hour | Tu_minute | Tu_second | Tu_millisecond -> fault "a sub-day unit reached the calendar step fence"
+  in
+  range_guard ctx ~subject ~body [ (Printf.sprintf "(%s)" n, bound) ];
+  Printf.sprintf "|(%s)| <= %d" n bound
+
+(* the day number [t] a linear step (days, weeks) reaches, within the day
+   numbers this encoding holds *)
+let day_number_fence ctx ~subject ~body ~count_ok t =
+  let b = String.concat ", " (body @ [ count_ok ]) in
+  emit ctx "viol(%s,%s) :- %s, (%s) > %d." (quote date_year_after_reason) subject b t day_number_limit;
+  emit ctx "viol(%s,%s) :- %s, (%s) < -%d." (quote date_day_below_reason) subject b t day_number_limit
 
 (* both compared operands times their factors from [comparison_factors]. Each
    fence stands on the bare term: past max_int31 / k the product itself would
@@ -6883,18 +6935,24 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let sn = numeric_scale ~what:"a date-arithmetic duration" sn in
       let n_term = if sn = 1 then tn else Printf.sprintf "((%s)/%d)" tn sn in
       let n_term = if minus then Printf.sprintf "(-(%s))" n_term else n_term in
+      let fence_body = (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard) @ bd @ bn in
+      let count_ok = date_step_count_fence ctx ~subject ~body:fence_body tu n_term in
+      let linear t =
+        day_number_fence ctx ~subject ~body:fence_body ~count_ok t;
+        (bd @ bn, t, 1)
+      in
       (match tu with
-      | Tu_day -> (bd @ bn, Printf.sprintf "((%s)+(%s))" td_ n_term, 1)
-      | Tu_week -> (bd @ bn, Printf.sprintf "((%s)+(7*(%s)))" td_ n_term, 1)
+      | Tu_day -> linear (Printf.sprintf "((%s)+(%s))" td_ n_term)
+      | Tu_week -> linear (Printf.sprintf "((%s)+(7*(%s)))" td_ n_term)
       | Tu_month ->
           translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms:bd
-            ~date_term:td_ ~dur_atoms:bn ~count:n_term
+            ~date_term:td_ ~dur_atoms:bn ~count:n_term ~count_ok
       | Tu_quarter ->
           translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms:bd
-            ~date_term:td_ ~dur_atoms:bn ~count:(Printf.sprintf "(3*(%s))" n_term)
+            ~date_term:td_ ~dur_atoms:bn ~count:(Printf.sprintf "(3*(%s))" n_term) ~count_ok
       | Tu_year ->
           translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms:bd
-            ~date_term:td_ ~dur_atoms:bn ~count:(Printf.sprintf "(12*(%s))" n_term)
+            ~date_term:td_ ~dur_atoms:bn ~count:(Printf.sprintf "(12*(%s))" n_term) ~count_ok
       | Tu_hour | Tu_minute | Tu_second | Tu_millisecond ->
           (* unreachable: day_time_unit_of faulted the sub-day units *)
           assert false))
@@ -7653,30 +7711,33 @@ and datetime_plus_subday ctx ~subject ~subject_ot ~date_atoms ~dd ~dm ~dur_atoms
    dpm helper) and the ms-of-day rides through unchanged (the S6a day
    kernel). *)
 and datetime_plus_calendar ctx ~subject ~subject_ot ~tu ~date_atoms ~dd ~dm ~dur_atoms ~n =
+  let fence_body = (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard) @ date_atoms @ dur_atoms in
+  let count_ok = date_step_count_fence ctx ~subject ~body:fence_body tu n in
+  let linear step =
+    let v = fresh ctx "ND" in
+    day_number_fence ctx ~subject ~body:fence_body ~count_ok step;
+    (dur_atoms @ [ Printf.sprintf "%s = %s" v step ], v)
+  in
   let step_atoms, nd =
     match tu with
-    | Tu_day ->
-        let v = fresh ctx "ND" in
-        (dur_atoms @ [ Printf.sprintf "%s = (%s)+(%s)" v dd n ], v)
-    | Tu_week ->
-        let v = fresh ctx "ND" in
-        (dur_atoms @ [ Printf.sprintf "%s = (%s)+(7*(%s))" v dd n ], v)
+    | Tu_day -> linear (Printf.sprintf "(%s)+(%s)" dd n)
+    | Tu_week -> linear (Printf.sprintf "(%s)+(7*(%s))" dd n)
     | Tu_month ->
         let a, v, _ =
           translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms ~date_term:dd
-            ~dur_atoms ~count:n
+            ~dur_atoms ~count:n ~count_ok
         in
         (a, v)
     | Tu_quarter ->
         let a, v, _ =
           translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms ~date_term:dd
-            ~dur_atoms ~count:(Printf.sprintf "(3*(%s))" n)
+            ~dur_atoms ~count:(Printf.sprintf "(3*(%s))" n) ~count_ok
         in
         (a, v)
     | Tu_year ->
         let a, v, _ =
           translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms ~date_term:dd
-            ~dur_atoms ~count:(Printf.sprintf "(12*(%s))" n)
+            ~dur_atoms ~count:(Printf.sprintf "(12*(%s))" n) ~count_ok
         in
         (a, v)
     | Tu_hour | Tu_minute | Tu_second | Tu_millisecond ->

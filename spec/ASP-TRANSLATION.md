@@ -755,7 +755,18 @@ and this backend); declared factors and stelsel never enter.
   the shift must stay non-negative for truncation to equal floor — and
   the month step adds the year-zero fence (`date arithmetic reaches a
   year before 0000-03`, PMT < 2) guarding the re-encode's divisions.
-  Both fire only where the rule fires (rule-guard discipline, S13).
+  This encoding holds the day numbers up to 5000000-12-31
+  (1 825 493 337) either way, far inside the range of a date of RS
+  ch. 3.8, so a step beyond them is a limit, never EF-007: the count is
+  fenced before it is multiplied by its unit (300 000 000 days,
+  42 000 000 weeks, 60 000 000 months, 20 000 000 quarters, 5 000 000
+  years; the machine-integer witness, CLINGO-034), so the sum with a held
+  day number cannot wrap, and the day a step reaches is fenced after it
+  (`date arithmetic reaches a year after 5000000`, and for a day or week
+  step back `… a day number below -1825493337`; CLINGO-037, as is the
+  year-zero fence). Those fences carry the count's own bound, so a count
+  that is too large is refused by its fence alone. All fire only where
+  the rule fires (rule-guard discipline, S13).
 - **The datum-tijd millisecond layer — the pair term** (RUNTIME-SEMANTICS
   ch. 3.8; the A4 pair-term encoding, 2026-08-28, lifting the embargo).
   A millisecond-precision date rides as `dt(D, MS)` — the civil day `D`
@@ -916,9 +927,10 @@ and this backend); declared factors and stelsel never enter.
   backend's own code, CLINGO-029 (a limit): below 1 the shifted year turns
   negative and gringo's truncation stops being the floor, beyond 5 000 000
   the day number leaves clingo's integers. Every instant outside the
-  representable millisecond range lies beyond those years, so where ref
-  and Drools fault with EF-007 this backend refuses with CLINGO-029, and
-  gate 8 lists the red case `date-time-with-outside-range` in its
+  representable millisecond range, and every day outside the range of a
+  date, lies beyond those years, so where ref and Drools fault with EF-007
+  this backend refuses with CLINGO-029, and gate 8 lists the red cases
+  `date-time-with-outside-range` and `date-with-outside-date-range` in its
   divergence list.
 - **Loud flanks**: the sub-day part extractors
   (`uur/minuut/seconde/milliseconde-uit`), and datum-tijd

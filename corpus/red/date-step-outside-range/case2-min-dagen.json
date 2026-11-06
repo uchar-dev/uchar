@@ -1,0 +1,27 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "G1",
+        "objectType": "Getijpost",
+        "attributes": {
+          "meldtijd": {
+            "date": "2024-01-01"
+          },
+          "voorloopdagen": {
+            "number": "53376015307"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-007",
+    "params": {}
+  }
+}

@@ -1,0 +1,192 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Getijpost",
+        "animate": true,
+        "plural": "Getijposten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "bouwjaar",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bouwmaand",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bouwdag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "paasjaar",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bouwdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "paasdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "bouwdatum van een getijpost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "bouwdatum",
+              "subjectType": "Getijpost",
+              "source": {
+                "snippet": "De bouwdatum van een Getijpost"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "dateWith",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "bouwjaar",
+                  "subjectType": "Getijpost",
+                  "source": {
+                    "snippet": "zijn bouwjaar"
+                  }
+                },
+                {
+                  "node": "AttributeReference",
+                  "attribute": "bouwmaand",
+                  "subjectType": "Getijpost",
+                  "source": {
+                    "snippet": "zijn bouwmaand"
+                  }
+                },
+                {
+                  "node": "AttributeReference",
+                  "attribute": "bouwdag",
+                  "subjectType": "Getijpost",
+                  "source": {
+                    "snippet": "zijn bouwdag"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de datum met jaar: zijn bouwjaar, maand: zijn bouwmaand en dag: zijn bouwdag"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "paasdatum van een getijpost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "paasdatum",
+              "subjectType": "Getijpost",
+              "source": {
+                "snippet": "De paasdatum van een Getijpost"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "easterSunday",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "paasjaar",
+                  "subjectType": "Getijpost",
+                  "source": {
+                    "snippet": "zijn paasjaar"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de eerste paasdag van zijn paasjaar"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

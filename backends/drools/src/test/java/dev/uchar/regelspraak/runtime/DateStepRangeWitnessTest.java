@@ -31,19 +31,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the midnight of the day it lands on leaves the range, even where the instant does not: "min 53 376 015 307 dagen"
  * from 09:00. Both are corners some 146 million years out; they are here so that a change on either side shows.
  *
- * <p>Four rows expect a fault where {@code ref} gives a value, because its 63-bit arithmetic wraps there: "plus
- * 3 074 457 345 618 258 603 kwartalen" from 2024-01-01T00:00:00 answered 2024-02-01T00:00:00, and from the date
- * 2024-01-01 2024-02-01 (three times the count is 2^63 + 1, and the multiplication kept the 1); "min
- * -4 611 686 018 427 387 904 milliseconden" answered an instant 2^62 ms before the start (the negation of the smallest
- * count is that count again); and on a date without a time "plus 700 000 000 000 000 000 weken" answered
- * -11836990593520844-11-04. ch. 3.8 calls a wrap-around a fault, and a fault is what this function gives.
+ * <p>Four rows are corners where 63-bit arithmetic wraps: "plus 3 074 457 345 618 258 603 kwartalen" (three times
+ * the count is 2^63 + 1), "min -4 611 686 018 427 387 904 milliseconden" (the negation of the smallest count is that
+ * count again) and on a date without a time "plus 700 000 000 000 000 000 weken". ch. 3.8 calls a wrap-around a
+ * fault, and {@code ref} and this function both fault there.
  *
- * <p>A date without a time has no millisecond range in ch. 3.8 and none in {@code ref}: there the step gives a date up
- * to where its arithmetic wraps. This function gives {@code ref}'s date as far as a java.time date reaches, years
- * -999 999 999 to 999 999 999, and faults with its own sentence beyond, where {@code ref} still answers
- * (1000000000-01-01) and the ASP backend faults too: it refuses a count of days beyond its 32-bit integers at
- * translation, and a step of 999 997 976 years trips its guard on the year. That split is recorded, not closed:
- * closing it is a number for ch. 3.8 to name.
+ * <p>A date without a time has the range of its midnight (ch. 3.8, the owner's decision of 2026-10-09 on card
+ * {@code datumrekening-slaat-stil-om}): the epoch days -53 375 995 583 to 53 375 995 583, -146136543-09-09 to
+ * 146140482-04-24. A step on a date that lands outside faults in {@code ref}'s sentence for a date.
  *
  * <p>RED FIRST, measured on the claim's base (main 9b9a42ad), row by row: every row that expects a fault failed.
  * The count of 2^64 + 1 days answered 2024-01-02, because {@code BigDecimal.longValue} keeps the low 64 bits; the day
@@ -58,7 +53,7 @@ class DateStepRangeWitnessTest {
     /** The sentences, written out rather than read from the runtime: a drift away from the reference interpreter's
      *  words fails here. */
     private static final String RANGE = "datum-tijd arithmetic leaves the representable millisecond range";
-    private static final String JAREN = "date arithmetic leaves the years -999999999 to 999999999";
+    private static final String DATUM = "date arithmetic leaves the representable range of a date";
 
     private static final LocalDateTime T0 = LocalDateTime.of(2024, 1, 1, 0, 0);
     private static final LocalDate D0 = LocalDate.of(2024, 1, 1);
@@ -183,24 +178,41 @@ class DateStepRangeWitnessTest {
                 fault("jaar plus 5 * 10^17", T0, "500000000000000000", "YEARS", true, RANGE)));
     }
 
-    @Test void a_date_without_time_follows_ref_to_the_years_of_java_time() {
+    @Test void a_date_without_time_has_the_range_of_its_midnight() {
         play(List.of(
-                value("dag plus 60 000 000 000: ref geeft deze datum, geen fout", D0, "60000000000", "DAYS", true,
-                        LocalDate.of(164276444, 6, 2)),
-                value("dag min 60 000 000 000", D0, "60000000000", "DAYS", false, LocalDate.of(-164272397, 8, 1)),
-                value("dag plus tot de laatste dag van java.time", D0, "365241760748", "DAYS", true,
-                        LocalDate.of(999999999, 12, 31)),
-                fault("dag plus een verder: ref geeft 1000000000-01-01", D0, "365241760749", "DAYS", true, JAREN),
-                value("dag min tot de eerste dag van java.time", D0, "365243238885", "DAYS", false,
-                        LocalDate.of(-999999999, 1, 1)),
-                fault("dag min een verder: ref geeft -1000000000-12-31", D0, "365243238886", "DAYS", false, JAREN),
-                value("jaar plus tot het laatste jaar", D0, "999997975", "YEARS", true, LocalDate.of(999999999, 1, 1)),
-                fault("jaar plus een verder: ref geeft 1000000000-01-01", D0, "999997976", "YEARS", true, JAREN),
-                value("maand plus 2 000 000 000", D0, "2000000000", "MONTHS", true, LocalDate.of(166668690, 9, 1)),
-                fault("week plus 7 * 10^17: ref slaat om naar -11836990593520844-11-04", D0, "700000000000000000",
-                        "WEEKS", true, JAREN),
-                fault("kwartaal plus 3 074 457 345 618 258 603: ref geeft 2024-02-01", D0, "3074457345618258603",
-                        "KWARTAAL", true, JAREN)));
+                value("dag plus, het laatste", D0, "53375975860", "DAYS", true, LocalDate.of(146140482, 4, 24)),
+                fault("dag plus, een te ver", D0, "53375975861", "DAYS", true, DATUM),
+                value("dag min, het laatste", D0, "53376015306", "DAYS", false, LocalDate.of(-146136543, 9, 9)),
+                fault("dag min, een te ver", D0, "53376015307", "DAYS", false, DATUM),
+                fault("dag plus 60 000 000 000", D0, "60000000000", "DAYS", true, DATUM),
+                fault("dag min 60 000 000 000", D0, "60000000000", "DAYS", false, DATUM),
+                value("maand plus tot de laatste dag", LocalDate.of(2024, 1, 24), "1753661499", "MONTHS", true,
+                        LocalDate.of(146140482, 4, 24)),
+                fault("maand plus, een dag te ver", LocalDate.of(2024, 1, 25), "1753661499", "MONTHS", true, DATUM),
+                fault("maand plus 2 000 000 000", D0, "2000000000", "MONTHS", true, DATUM),
+                value("jaar plus, het laatste", D0, "146138458", "YEARS", true, LocalDate.of(146140482, 1, 1)),
+                fault("jaar plus, een te ver", D0, "146138459", "YEARS", true, DATUM),
+                fault("jaar plus 999 997 975", D0, "999997975", "YEARS", true, DATUM),
+                fault("week plus 7 * 10^17", D0, "700000000000000000", "WEEKS", true, DATUM),
+                fault("kwartaal plus 3 074 457 345 618 258 603", D0, "3074457345618258603", "KWARTAAL", true, DATUM)));
+    }
+
+    /** The construction and the Easter Sunday of a date hold to the same range (ch. 3.8): the last day and the
+     *  Easter Sunday of the last year lie inside, a day further and a year beyond do not. */
+    @Test void a_constructed_date_has_the_range_of_its_midnight() {
+        BigDecimal j = new BigDecimal("146140482");
+        assertEquals(LocalDate.of(146140482, 4, 24), RegelSpraakRuntime.rsDatumMet(j, BigDecimal.valueOf(4),
+                BigDecimal.valueOf(24)));
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> RegelSpraakRuntime.rsDatumMet(j,
+                BigDecimal.valueOf(4), BigDecimal.valueOf(25)), "146140482-04-25");
+        assertTrue(e.getMessage().contains(DATUM), e.getMessage());
+        e = assertThrows(IllegalStateException.class, () -> RegelSpraakRuntime.rsDatumMet(new BigDecimal("200000000"),
+                BigDecimal.ONE, BigDecimal.ONE), "jaar 200 000 000");
+        assertTrue(e.getMessage().contains(DATUM), e.getMessage());
+        assertEquals(LocalDate.of(146140482, 3, 29), RegelSpraakRuntime.rsEerstePaasdag(j));
+        e = assertThrows(IllegalStateException.class, () -> RegelSpraakRuntime.rsEerstePaasdag(
+                new BigDecimal("4294969320")), "paasjaar 4 294 969 320: intValue hield daarvan 2024");
+        assertTrue(e.getMessage().contains(DATUM), e.getMessage());
     }
 
     /**
@@ -214,11 +226,9 @@ class DateStepRangeWitnessTest {
      * further, 146140482-05-01, faults. A count of 0 keeps the test, as in {@code ref}; a leeg count returns the
      * datum-tijd untested, as there.
      *
-     * <p>One row expects a fault where {@code ref} gives a value: one springtijdag back from -146136543-09-09T00:00,
-     * the first day of the range, answered {@code @4611686017705975808ms}, an instant near the top. Its operand lies
-     * within a day of -2^62, where {@code ref}'s floor division of the millisecond count overflows (it adds a day's
-     * length less one to the negated count, and the sum passes 2^62 - 1), so it walked from the top day of the range
-     * instead; the step the row describes leaves the range and faults.
+     * <p>One row is a corner within a day of -2^62, one springtijdag back from -146136543-09-09T00:00, where a floor
+     * division of the millisecond count that adds a day's length less one to the negated count passes 2^62 - 1; the
+     * step the row describes leaves the range and faults, in {@code ref} as here.
      *
      * <p>RED FIRST, measured on this branch at 16905a6d: the step answered +146140482-05-01T00:00 and
      * -146136543-09-01T00:00 where these rows expect a fault; the rows that expect a value passed.
@@ -242,7 +252,7 @@ class DateStepRangeWitnessTest {
                 "vanaf -146136543-09-20 min 1 springtijdag: de 15e ligt er nog in");
         e = assertThrows(IllegalStateException.class, () -> RegelSpraakRuntime.rsDatumTijdPlusDagsoort(
                 LocalDateTime.of(-146136543, 9, 9, 0, 0), BigDecimal.ONE, springtij, false),
-                "vanaf de eerste dag van het bereik min 1 springtijdag: ref slaat hier om");
+                "vanaf de eerste dag van het bereik min 1 springtijdag");
         assertTrue(e.getMessage().contains(RANGE), e.getMessage());
     }
 }

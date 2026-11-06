@@ -515,7 +515,13 @@ Recorded limitations:
   part or a result written there that is not whole fires the limit
   CLINGO-033. Both are limits of this encoding, where ref writes the
   exact value; the anchor `jutterswet-verzuimrente-30-360` stands with
-  both codes in gate 6's channel.
+  both codes in gate 6's channel. A date step holds the day numbers up
+  to 5000000-12-31 either way: its count is fenced before it is
+  multiplied by its unit (CLINGO-034), and the day it reaches after it
+  (CLINGO-037, "date arithmetic reaches a year after 5000000"), so a
+  step never wraps; ref and Drools fault there only beyond the range of
+  a date of RUNTIME-SEMANTICS ch. 3.8 (EF-007), some 146 million years
+  out.
 - The Let lowering keeps an enclosing Let's need on a path that does
   not read its binder, also with every parameter bound, so a value ref
   computes stays leeg. [V1] A Match with an arm that reads the binder,

@@ -1,0 +1,27 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "G1",
+        "objectType": "Getijpost",
+        "attributes": {
+          "meldtijdstip": {
+            "dateTime": "2024-01-01T00:00:00"
+          },
+          "voorloopmillis": {
+            "number": "-4611686018427387904"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-007",
+    "params": {}
+  }
+}

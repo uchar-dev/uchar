@@ -1,0 +1,352 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Getijpost",
+        "animate": true,
+        "plural": "Getijposten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "meldtijdstip",
+            "datatype": {
+              "node": "Date",
+              "precision": "millisecond"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wachtkwartalen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kwartaal",
+                  "canonical": "kwartaal",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "voorloopmillis",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "millisecondes",
+                  "canonical": "millisecondes",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "voorlooptijd",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "uur",
+                  "canonical": "uur",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "springdagen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "dag",
+                  "canonical": "dag",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "kwartaaltijdstip",
+            "datatype": {
+              "node": "Date",
+              "precision": "millisecond"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "millitijdstip",
+            "datatype": {
+              "node": "Date",
+              "precision": "millisecond"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aanlooptijdstip",
+            "datatype": {
+              "node": "Date",
+              "precision": "millisecond"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "springtijdstip",
+            "datatype": {
+              "node": "Date",
+              "precision": "millisecond"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "kwartaaltijdstip van een getijpost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "kwartaaltijdstip",
+              "subjectType": "Getijpost",
+              "source": {
+                "snippet": "Het kwartaaltijdstip van een Getijpost"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "meldtijdstip",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn meldtijdstip"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "wachtkwartalen",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn wachtkwartalen"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "millisecond"
+              },
+              "source": {
+                "snippet": "zijn meldtijdstip plus zijn wachtkwartalen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "millitijdstip van een getijpost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "millitijdstip",
+              "subjectType": "Getijpost",
+              "source": {
+                "snippet": "Het millitijdstip van een Getijpost"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "minus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "meldtijdstip",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn meldtijdstip"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "voorloopmillis",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn voorloopmillis"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "millisecond"
+              },
+              "source": {
+                "snippet": "zijn meldtijdstip min zijn voorloopmillis"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aanlooptijdstip van een getijpost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aanlooptijdstip",
+              "subjectType": "Getijpost",
+              "source": {
+                "snippet": "Het aanlooptijdstip van een Getijpost"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "minus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "meldtijdstip",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn meldtijdstip"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "voorlooptijd",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn voorlooptijd"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "millisecond"
+              },
+              "source": {
+                "snippet": "zijn meldtijdstip min zijn voorlooptijd"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "springtijdstip van een getijpost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "springtijdstip",
+              "subjectType": "Getijpost",
+              "source": {
+                "snippet": "Het springtijdstip van een Getijpost"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "minus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aanlooptijdstip",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn aanlooptijdstip"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "springdagen",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn springdagen"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "millisecond"
+              },
+              "source": {
+                "snippet": "zijn aanlooptijdstip min zijn springdagen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

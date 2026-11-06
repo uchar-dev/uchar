@@ -255,15 +255,15 @@ public final class ComputeHelpers {
     }
 
     /** The fault of a date step the runtime raised as {@code e}, as an evaluation fault in its own sentence, which is
-     *  the reference interpreter's: a step that leaves the representable range of a datum-tijd, a duration count outside
-     *  that range (RUNTIME-SEMANTICS ch. 3.8), a step on a date beyond the years the runtime's dates hold, a walk over
+     *  the reference interpreter's: a step that leaves the representable range of a datum-tijd or of a date, a duration
+     *  count outside the range of a datum-tijd (RUNTIME-SEMANTICS ch. 3.8), a walk over
      *  the days of a day kind that passes the reach of ch. 3.8 without one, and a date construction whose parts name no
      *  calendar day or no clock time or whose instant leaves the range. Any other {@code IllegalStateException} out
      *  of the date step is no evaluation fault and is thrown as it is. */
     private static RuntimeException dateFault(IllegalStateException e) {
         String sentence = String.valueOf(e.getMessage());
         boolean range = sentence.equals(RegelSpraakRuntime.DATUMTIJD_BUITEN_BEREIK)
-                || sentence.equals(RegelSpraakRuntime.DATUM_BUITEN_JAREN)
+                || sentence.equals(RegelSpraakRuntime.DATUM_BUITEN_BEREIK)
                 || (sentence.startsWith("duration count ") && sentence.endsWith(" is out of range"))
                 || sentence.startsWith(DAY_KIND_WALK)
                 || ComputeFault.namesNoMoment(sentence);
@@ -281,16 +281,18 @@ public final class ComputeHelpers {
 
     /** easterSunday of a whole year without a unit (RUNTIME-SEMANTICS ch. 3.8, WF-038), by the algorithm of that chapter
      *  ({@code rsEerstePaasdag}); a leeg year leeg. A year that is not whole is a fault in the reference interpreter's
-     *  sentence, never a silent truncation, and so is a year outside the years this backend's dates hold. */
+     *  sentence, never a silent truncation, and a year whose Easter Sunday lies outside the representable range of a
+     *  date is the runtime's fault of EF-007 ({@link #dateFault}). */
     public static Object easterSunday(Object year) {
         if (year == null) return null;
         Breuk q = Breuk.van(year);
         if (!q.noemer().equals(BigInteger.ONE))
             throw new ComputeFault("easterSunday: expected a whole unitless year, got " + numberText(q));
-        if (q.teller().abs().compareTo(BigInteger.valueOf(999_999_999)) > 0)
-            throw new ComputeFault("easterSunday: the year " + q.teller() + " lies outside the years -999999999 to"
-                    + " 999999999 that this backend's dates hold");
-        return RegelSpraakRuntime.rsEerstePaasdag(new BigDecimal(q.teller()));
+        try {
+            return RegelSpraakRuntime.rsEerstePaasdag(new BigDecimal(q.teller()));
+        } catch (IllegalStateException e) {
+            throw dateFault(e);
+        }
     }
 
     /** A date of three parts ({@code rsDatumMet}), {@code spelling} the builtin's name for the sentence of a fault: any
@@ -310,9 +312,10 @@ public final class ComputeHelpers {
 
     private static Object dateConstruction(String spelling, boolean time, Object... v) {
         for (Object part : v) if (part == null) return null;
-        for (Object part : v) {
-            Breuk q = Breuk.van(part);
-            if (!q.noemer().equals(BigInteger.ONE) || q.teller().bitLength() > 31)
+        for (int i = 0; i < v.length; i++) {
+            Breuk q = Breuk.van(v[i]);
+            // a whole year beyond an int lies beyond every representable day: the runtime's range test names it (EF-007)
+            if (!q.noemer().equals(BigInteger.ONE) || (i > 0 && q.teller().bitLength() > 31))
                 throw new ComputeFault(spelling + ": the part " + numberText(q) + " is no whole number within the range"
                         + " of a date part");
         }
@@ -321,9 +324,6 @@ public final class ComputeHelpers {
                     : RegelSpraakRuntime.rsDatumMet(v[0], v[1], v[2]);
         } catch (IllegalStateException e) {
             throw dateFault(e);
-        } catch (java.time.DateTimeException e) {
-            // a year beyond the years this backend's dates hold, which the reference interpreter answers
-            throw new ComputeFault(spelling + ": " + e.getMessage(), e);
         }
     }
 

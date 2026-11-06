@@ -1,0 +1,429 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Getijpost",
+        "animate": true,
+        "plural": "Getijposten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "meldtijd",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wachtdagen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "dag",
+                  "canonical": "dag",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "voorloopdagen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "dag",
+                  "canonical": "dag",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wachtweken",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "week",
+                  "canonical": "week",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wachtmaanden",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "maand",
+                  "canonical": "maand",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wachtjaren",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "jaar",
+                  "canonical": "jaar",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "sluitdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aanloopdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "weekdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "maanddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "jaardag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "sluitdag van een getijpost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "sluitdag",
+              "subjectType": "Getijpost",
+              "source": {
+                "snippet": "De sluitdag van een Getijpost"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "meldtijd",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn meldtijd"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "wachtdagen",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn wachtdagen"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "zijn meldtijd plus zijn wachtdagen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aanloopdag van een getijpost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aanloopdag",
+              "subjectType": "Getijpost",
+              "source": {
+                "snippet": "De aanloopdag van een Getijpost"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "minus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "meldtijd",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn meldtijd"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "voorloopdagen",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn voorloopdagen"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "zijn meldtijd min zijn voorloopdagen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "weekdag van een getijpost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "weekdag",
+              "subjectType": "Getijpost",
+              "source": {
+                "snippet": "De weekdag van een Getijpost"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "meldtijd",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn meldtijd"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "wachtweken",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn wachtweken"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "zijn meldtijd plus zijn wachtweken"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "maanddag van een getijpost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "maanddag",
+              "subjectType": "Getijpost",
+              "source": {
+                "snippet": "De maanddag van een Getijpost"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "meldtijd",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn meldtijd"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "wachtmaanden",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn wachtmaanden"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "zijn meldtijd plus zijn wachtmaanden"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "jaardag van een getijpost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "jaardag",
+              "subjectType": "Getijpost",
+              "source": {
+                "snippet": "De jaardag van een Getijpost"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "meldtijd",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn meldtijd"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "wachtjaren",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn wachtjaren"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "zijn meldtijd plus zijn wachtjaren"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

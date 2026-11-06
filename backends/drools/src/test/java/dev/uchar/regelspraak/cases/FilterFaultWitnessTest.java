@@ -1007,10 +1007,10 @@ class FilterFaultWitnessTest {
      *  whole number of at least 0 is a real power, which is OPEN (RUNTIME-SEMANTICS ch. 2.1). Since card
      *  drl-teksttak-op-truth-maintenance the DRL-text branch renders that analysis, so both branches answer the five and
      *  refuse the power in one sentence.
-     *  Where J1 is actief, the reference interpreter faults on the day-kind walk, on the Rekenjaar and, since the card
-     *  date-with-in-ref-and-clingo (2026-10-22), on the date of maand 13 (EF-032) too, and so do both branches, with the
-     *  runtime's sentence in the cause chain; for the other three it answers or crashes where this backend faults
-     *  (reported with the fix round, not pinned here). */
+     *  Where J1 is actief, the reference interpreter faults on the day-kind walk, on the Rekenjaar, on the date of maand
+     *  13 (EF-032) and, since the card datumrekening-slaat-stil-om (2026-11-06), on the step of 2 000 000 000 jaren and
+     *  the eerste paasdag of 2 000 000 000, whose days lie outside the representable range of a date (EF-007), and so do
+     *  both branches, with the runtime's sentence in the cause chain. */
     @Test void a_filter_that_fails_otherwise_than_by_a_division() throws Exception {
         String vinddatum = ownRead("vinddatum", "Vondst");
         Map<String, String> filters = new java.util.LinkedHashMap<>();
@@ -1040,7 +1040,9 @@ class FilterFaultWitnessTest {
         java.util.Set<String> refused = java.util.Set.of("macht");
         Map<String, String> fault = Map.of("dagsoortstap", "day-kind walk: no day of the kind within 40000 calendar days",
                 "rekenjaar", "the evaluationYear context value needs an evaluation date",
-                "datum met", "dateWith: year 2026, month 13 and day 1 name no calendar day");
+                "datum met", "dateWith: year 2026, month 13 and day 1 name no calendar day",
+                "datumbereik", "date arithmetic leaves the representable range of a date",
+                "paasdag", "date arithmetic leaves the representable range of a date");
         List<String> deviating = new ArrayList<>();
         for (Map.Entry<String, String> f : filters.entrySet()) {
             Path ir = vondsttal(f.getValue());

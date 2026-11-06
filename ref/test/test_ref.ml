@@ -4965,12 +4965,14 @@ let () =
      a non-date extractor operand faults *)
   expect_fault "WV-3.8-paasdag-frac" (fun () -> Arith.easter_sunday (n "2024.5"));
   expect_fault "WV-3.8-paasdag-eenheid" (fun () -> Arith.easter_sunday (num_with_unit jr "2024"));
-  (* a whole year outside the machine-integer range faults, never wraps:
-     10^17 fits an OCaml int, its civil day number does not *)
+  (* a year whose Easter Sunday lies outside the representable range of a
+     date faults (EF-007), never wraps: 10^17 fits an OCaml int, its civil day
+     number does not, and 10^15 lies beyond the range, which ends in year
+     146140482 *)
   expect_fault "WV-3.8-paasdag-jaar-buiten-bereik" (fun () ->
       Arith.easter_sunday (n "100000000000000000"));
-  expect_num "WV-3.8-paasdag-groot-jaar" (Arith.year_of (Arith.easter_sunday (n "1000000000000000")))
-    "1000000000000000";
+  expect_fault_msg "WV-3.8-paasdag-groot-jaar" (fun () -> Arith.easter_sunday (n "1000000000000000"))
+    "the representable range of a date";
   expect_fault "WV-3.8-maand-uit-tekst" (fun () -> Arith.month_of (Value.Text "x"))
 
 (* --- ch. 3.8: the date construction (worked examples verbatim) ---------- *)
@@ -5106,7 +5108,64 @@ let () =
   expect_fault "WV-3.8-dt-bereik-grens-plus-een" (fun () ->
       plus Tu_hour "2024-01-01T00:00:00" "1281023420656");
   expect_fault "WV-3.8-dt-bereik-telling" (fun () ->
-      plus Tu_day "2024-01-01T00:00:00" "18446744073709551617")
+      plus Tu_day "2024-01-01T00:00:00" "18446744073709551617");
+  (* the count times the unit and the negated count cannot wrap: 3 times
+     3 074 457 345 618 258 603 quarters is past 2^63 and wrapped to one
+     month, the negation of -2^62 wrapped to itself *)
+  expect_fault_msg "WV-3.8-dt-bereik-kwartalen" (fun () ->
+      plus Tu_quarter "2024-01-01T00:00:00" "3074457345618258603")
+    "representable millisecond range";
+  expect_fault_msg "WV-3.8-dt-bereik-min-min-int" (fun () ->
+      Arith.date_plus_duration ~minus:true ~unit_:Tu_millisecond (dt "2024-01-01T00:00:00")
+        (n "-4611686018427387904"))
+    "representable millisecond range";
+  (* the floor division of the civil day near -2^62 does not wrap: 36 minutes
+     above the bottom of the range, one day back faults *)
+  let near_bottom =
+    Arith.date_plus_duration ~minus:true ~unit_:Tu_hour (dt "1970-01-01T00:00:00") (n "1281023894007")
+  in
+  check "WV-3.8-dt-bereik-bodem" (near_bottom = Value.Date_time (-4611686018425200000));
+  expect_fault_msg "WV-3.8-dt-bereik-bodem-min-dag" (fun () ->
+      Arith.date_plus_duration ~minus:true ~unit_:Tu_day near_bottom (n "1"))
+    "representable millisecond range";
+  check "WV-3.8-floor-div-bodem" (Arith.split_ms min_int = (-53375995584, 30212096))
+
+(* --- ch. 3.8: the representable range of a date (worked examples verbatim) --
+   a date is a civil day whose midnight lies in the millisecond range: epoch
+   days -53 375 995 583 to 53 375 995 583, -146136543-09-09 to
+   146140482-04-24; a step, a construction or an Easter Sunday outside faults
+   (EF-007), never wraps *)
+let () =
+  let d = Value.date_of_iso in
+  let plus u date lex = Arith.date_plus_duration ~unit_:u (d date) (n lex) in
+  let min_ u date lex = Arith.date_plus_duration ~minus:true ~unit_:u (d date) (n lex) in
+  let date_with parts = Arith.date_construction ~time:false (List.map n parts) in
+  let range = "the representable range of a date" in
+  let open Ir_v0.Checks in
+  check "WV-3.8-d-bereik-boven" (plus Tu_day "2024-01-01" "53375975860" = Value.Date 53375995583);
+  check "WV-3.8-d-bereik-boven-iso" (Value.iso_of_date 53375995583 = "+146140482-04-24");
+  expect_fault_msg "WV-3.8-d-bereik-boven-plus-een" (fun () -> plus Tu_day "2024-01-01" "53375975861") range;
+  check "WV-3.8-d-bereik-onder" (min_ Tu_day "2024-01-01" "53376015306" = Value.Date (-53375995583));
+  check "WV-3.8-d-bereik-onder-iso" (Value.iso_of_date (-53375995583) = "-146136543-09-09");
+  expect_fault_msg "WV-3.8-d-bereik-onder-min-een" (fun () -> min_ Tu_day "2024-01-01" "53376015307") range;
+  expect_fault_msg "WV-3.8-d-bereik-60-miljard-dagen" (fun () -> plus Tu_day "2024-01-01" "60000000000") range;
+  expect_fault_msg "WV-3.8-d-bereik-dagen-max" (fun () -> plus Tu_day "2024-01-01" "4611686018427387903") range;
+  expect_fault_msg "WV-3.8-d-bereik-weken" (fun () -> plus Tu_week "2024-01-01" "700000000000000000") range;
+  expect_fault_msg "WV-3.8-d-bereik-maanden" (fun () -> plus Tu_month "2024-01-01" "2000000000") range;
+  expect_fault_msg "WV-3.8-d-bereik-jaren" (fun () -> plus Tu_year "2024-01-01" "999997975") range;
+  expect_fault_msg "WV-3.8-d-bereik-min-min-int" (fun () ->
+      Arith.date_plus_duration ~minus:true ~unit_:Tu_day (d "2024-01-01") (n "-4611686018427387904"))
+    range;
+  check "WV-3.8-d-bereik-maand-grens" (plus Tu_month "2024-01-24" "1753661499" = Value.Date 53375995583);
+  expect_fault_msg "WV-3.8-d-bereik-maand-grens-plus-een" (fun () -> plus Tu_month "2024-01-25" "1753661499")
+    range;
+  check "WV-3.8-d-bereik-datummet" (date_with [ "146140482"; "4"; "24" ] = Value.Date 53375995583);
+  expect_fault_msg "WV-3.8-d-bereik-datummet-plus-een" (fun () -> date_with [ "146140482"; "4"; "25" ]) range;
+  expect_fault_msg "WV-3.8-d-bereik-datummet-jaar" (fun () -> date_with [ "200000000"; "1"; "1" ]) range;
+  expect_fault_msg "WV-3.8-d-bereik-datummet-onder" (fun () -> date_with [ "-146136543"; "9"; "8" ]) range;
+  check "WV-3.8-d-bereik-paasdag" (Arith.easter_sunday (n "146140482") = Value.Date 53375995557);
+  expect_fault_msg "WV-3.8-d-bereik-paasdag-jaar" (fun () -> Arith.easter_sunday (n "4294969320")) range;
+  expect_fault_msg "WV-3.8-d-bereik-paasdag-onder" (fun () -> Arith.easter_sunday (n "-146136543")) range
 
 (* --- ch. 3.8 through Eval: the datum-tijd routing ------------------------
    The widened WF-035/WF-038 fences in eval.ml admit a Date_time_type operand

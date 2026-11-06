@@ -365,15 +365,17 @@ public final class RegelSpraakRuntime {
     }
 
     /** §13.4.17.35 "de datum met jaar/maand/dag": a LocalDate from three numeric parts; any empty part -> leeg.
-     *  Parts that name no calendar day fault in the reference interpreter's sentence (uchar RUNTIME-SEMANTICS ch. 3.8,
-     *  fault kind EF-032), never a roll-over or a clamp; a part that is no whole number of an int is refused by its
-     *  exact conversion rather than truncated. A year beyond the years a LocalDate holds stays java.time's
-     *  exception. The single implementation (single-runtime principle). */
+     *  A year outside the years of the representable range of a date faults (EF-007), before the calendar is asked;
+     *  parts that name no calendar day fault in the reference interpreter's sentence (uchar RUNTIME-SEMANTICS ch. 3.8,
+     *  fault kind EF-032), never a roll-over or a clamp; and a day outside {@link #DAG_MIN}..{@link #DAG_MAX} faults
+     *  (EF-007). A part that is no whole number of an int is refused by its exact conversion rather than truncated.
+     *  The single implementation (single-runtime principle). */
     public static java.time.LocalDate rsDatumMet(Object jaar, Object maand, Object dag) {
         if (jaar == null || maand == null || dag == null) return null;
+        toetsJaar(toBd(jaar), DATUM_BUITEN_BEREIK);
         int j = toBd(jaar).intValueExact(), m = toBd(maand).intValueExact(), d = toBd(dag).intValueExact();
         toetsKalenderdag("dateWith", j, m, d);
-        return java.time.LocalDate.of(j, m, d);
+        return binnenDatumbereik(java.time.LocalDate.of(j, m, d));
     }
 
     /** §13.4.17.36 "de datumtijd met jaar/…/milliseconde": a LocalDateTime from seven parts (the 7th, a
@@ -387,12 +389,11 @@ public final class RegelSpraakRuntime {
         int j = toBd(jaar).intValueExact(), m = toBd(maand).intValueExact(), d = toBd(dag).intValueExact();
         int u = toBd(uur).intValueExact(), mi = toBd(minuut).intValueExact(), s = toBd(seconde).intValueExact(),
                 ms = toBd(milli).intValueExact();
+        toetsJaar(toBd(jaar), DATUMTIJD_BUITEN_BEREIK);
         toetsKalenderdag("dateTimeWith", j, m, d);
         if (u < 0 || u > 23 || mi < 0 || mi > 59 || s < 0 || s > 59 || ms < 0 || ms > 999)
             throw new IllegalStateException(Msg.drools("EF-032.time", "function", "dateTimeWith", "hour", u,
                     "minute", mi, "second", s, "millisecond", ms).text());
-        // beyond the years a LocalDateTime holds the instant lies far outside the range, which ends near year 146 million
-        if (Math.abs((long) j) > 999_999_999L) throw new IllegalStateException(DATUMTIJD_BUITEN_BEREIK);
         java.time.LocalDateTime t = java.time.LocalDateTime.of(j, m, d, u, mi, s, ms * 1_000_000);
         milliseconden(t);
         return t;
@@ -421,11 +422,32 @@ public final class RegelSpraakRuntime {
      *  words. */
     public static final String DATUMTIJD_BUITEN_BEREIK = Msg.drools("EF-007").text();
 
-    /** The fault of a step on a date without a time that leaves the years a {@link LocalDate} holds. ch. 3.8 bounds no
-     *  such step, and the reference interpreter answers a date there; this backend has none to give and says so in its
-     *  own sentence, not in java.time's. */
-    public static final String DATUM_BUITEN_JAREN =
-            "date arithmetic leaves the years -999999999 to 999999999 that this backend's dates hold";
+    /** The representable range of a date without a time (uchar RUNTIME-SEMANTICS ch. 3.8): the civil days whose
+     *  midnight lies in {@link #MS_MIN}..{@link #MS_MAX}, epoch days -53 375 995 583 (-146136543-09-09) to
+     *  53 375 995 583 (146140482-04-24), and the years of those two days. A date step, a date construction and an
+     *  Easter Sunday that reach a day outside fault (EF-007), never wrap; the years are tested before a calendar is
+     *  asked, so that neither java.time's exception nor a narrowed int stands in for the fault. */
+    private static final long DAG_MIN = -53_375_995_583L;
+    private static final long DAG_MAX = 53_375_995_583L;
+    private static final long JAAR_MIN = -146_136_543L;
+    private static final long JAAR_MAX = 146_140_482L;
+
+    /** The fault of a date without a time outside {@link #DAG_MIN}..{@link #DAG_MAX}, in the reference interpreter's
+     *  words. */
+    public static final String DATUM_BUITEN_BEREIK = Msg.drools("EF-007.date").text();
+
+    /** {@code dag} when it lies in the representable range of a date, else the fault of EF-007. */
+    private static LocalDate binnenDatumbereik(LocalDate dag) {
+        if (dag.toEpochDay() < DAG_MIN || dag.toEpochDay() > DAG_MAX) throw new IllegalStateException(DATUM_BUITEN_BEREIK);
+        return dag;
+    }
+
+    /** The fault {@code fout} where the whole year {@code jaar} lies outside {@link #JAAR_MIN}..{@link #JAAR_MAX}: every
+     *  day of such a year lies outside the representable range. */
+    private static void toetsJaar(BigDecimal jaar, String fout) {
+        if (jaar.compareTo(BigDecimal.valueOf(JAAR_MIN)) < 0 || jaar.compareTo(BigDecimal.valueOf(JAAR_MAX)) > 0)
+            throw new IllegalStateException(fout);
+    }
 
     /** A calendar step of more units than this lands beyond the years a {@link LocalDate} holds, whatever the unit
      *  (10^12 days are some 2.7 billion years), so {@link #kalenderdoel} rejects it before its arithmetic could leave a
@@ -440,8 +462,9 @@ public final class RegelSpraakRuntime {
      *  does not terminate arrives as a {@link Breuk} and truncates exactly, as the reference interpreter's rational
      *  does; with a {@code BigDecimal} parameter the branches cast it, and a Breuk failed that cast before the step. A
      *  step whose datum-tijd result leaves the representable millisecond range faults ({@link #datumTijdStap}), as does
-     *  a count outside that range ({@link #duurTelling}); a step on a date without a time faults only beyond the years
-     *  java.time holds. The single implementation (single-runtime principle). */
+     *  a count outside that range ({@link #duurTelling}); a step on a date without a time faults where the day it lands
+     *  on leaves the representable range of a date ({@link #DAG_MIN}..{@link #DAG_MAX}). The single implementation
+     *  (single-runtime principle). */
     public static java.time.temporal.Temporal rsDatumReken(java.time.temporal.Temporal datum, Object aantal, String eenheid, boolean optellen) {
         if (datum == null) return null;        // leeg datum -> leeg
         if (aantal == null) return datum;      // leeg tijdseenheid -> behandeld als 0 -> datum onveranderd (Tabel 15)
@@ -450,8 +473,8 @@ public final class RegelSpraakRuntime {
         if (datum instanceof java.time.LocalDateTime t) return datumTijdStap(t, n, eenheid);
         if (datum instanceof LocalDate d) {
             LocalDate doel = kalenderdoel(d, n, eenheid);
-            if (doel == null) throw new IllegalStateException(DATUM_BUITEN_JAREN);
-            return doel;
+            if (doel == null) throw new IllegalStateException(DATUM_BUITEN_BEREIK);
+            return binnenDatumbereik(doel);
         }
         throw new IllegalArgumentException("rsDatumReken: geen datum maar " + datum.getClass().getName());
     }
@@ -554,6 +577,14 @@ public final class RegelSpraakRuntime {
      *  compiled once by kern.Dagsoorten (the DRL passes it as a session global). */
     public static java.time.LocalDate rsDatumPlusDagsoort(java.time.LocalDate datum, Object aantal,
             java.util.function.Predicate<java.time.LocalDate> isDagsoort, boolean optellen) {
+        java.time.LocalDate d = dagsoortStap(datum, aantal, isDagsoort, optellen);
+        // a date without a time lands in the representable range of a date (ch. 3.8); a datum-tijd tests its own
+        return d == null || d == datum ? d : binnenDatumbereik(d);
+    }
+
+    /** The walk of {@link #rsDatumPlusDagsoort} without the test of the day it lands on. */
+    private static java.time.LocalDate dagsoortStap(java.time.LocalDate datum, Object aantal,
+            java.util.function.Predicate<java.time.LocalDate> isDagsoort, boolean optellen) {
         if (datum == null) return null;        // leeg datum -> leeg
         if (aantal == null) return datum;      // leeg eenheid -> behandeld als 0 -> datum onveranderd (§6.11 Tabel 15)
         long n = duurTelling(aantal);          // |n| <= 2^62, so the negation below cannot overflow
@@ -592,7 +623,7 @@ public final class RegelSpraakRuntime {
             java.util.function.Predicate<java.time.LocalDate> isDagsoort, boolean optellen) {
         if (datum == null) return null;        // leeg datum -> leeg
         if (aantal == null) return datum;      // leeg aantal -> onveranderd en ongetoetst, als in de referentie-interpreter
-        java.time.LocalDate d = rsDatumPlusDagsoort(datum.toLocalDate(), aantal, isDagsoort, optellen);
+        java.time.LocalDate d = dagsoortStap(datum.toLocalDate(), aantal, isDagsoort, optellen);
         toetsLandingsdag(d, datum.toLocalTime());
         return d.atTime(datum.toLocalTime());   // re-attach the time-of-day (§4 rule 2)
     }
@@ -637,11 +668,14 @@ public final class RegelSpraakRuntime {
     /** The fault of {@link #rsRekenjaar} without an evaluation date, verbatim as the two OCaml executors word it. */
     public static final String REKENJAAR_ZONDER_REKENDATUM = Msg.drools("EF-011.year").text();
 
-    /** §13.4.17.37 "de eerste paasdag van" a year — Gauss/Anonymous Easter algorithm; a leeg year -> leeg.
-     *  The single implementation (single-runtime principle). */
+    /** §13.4.17.37 "de eerste paasdag van" a year — Gauss/Anonymous Easter algorithm; a leeg year -> leeg. The year
+     *  is whole (the callers test it); a year whose Easter Sunday lies outside the representable range of a date
+     *  faults (EF-007), the year tested before it is narrowed to an int, so that no year wraps. The single
+     *  implementation (single-runtime principle). */
     public static java.time.LocalDate rsEerstePaasdag(Object jaar) {
         if (jaar == null) return null;
-        int y = toBd(jaar).intValue();
+        toetsJaar(toBd(jaar), DATUM_BUITEN_BEREIK);
+        int y = toBd(jaar).intValueExact();
         int a = y % 19, b = y / 100, c = y % 100, d = b / 4, e = b % 4;
         int f = (b + 8) / 25, g = (b - f + 1) / 3;
         int h = (19 * a + b - d - g + 15) % 30;
@@ -650,7 +684,7 @@ public final class RegelSpraakRuntime {
         int m = (a + 11 * h + 22 * l) / 451;
         int maand = (h + l - 7 * m + 114) / 31;
         int dag = ((h + l - 7 * m + 114) % 31) + 1;
-        return java.time.LocalDate.of(y, maand, dag);
+        return binnenDatumbereik(java.time.LocalDate.of(y, maand, dag));
     }
 
     // ---- §9.7 verdeling (allocation) helpers (ported from the DRL helper bodies for Phase E) ----

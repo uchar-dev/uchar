@@ -1,0 +1,30 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "G1",
+        "objectType": "Getijpost",
+        "attributes": {
+          "meldtijdstip": {
+            "dateTime": "1970-01-01T00:00:00"
+          },
+          "voorlooptijd": {
+            "number": "1281023894007"
+          },
+          "springdagen": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-007",
+    "params": {}
+  }
+}

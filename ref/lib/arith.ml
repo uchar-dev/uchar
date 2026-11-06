@@ -575,6 +575,23 @@ let day_from = function
   | Date z -> let _, _, d = civil_from_days z in Num (Q.of_int d, Unitless)
   | v -> fault "dayOf: expected a date, got %s" (to_string v)
 
+(* THE REPRESENTABLE RANGE OF A DATE (ch. 3.8, normative): the civil days whose
+   midnight lies in the representable millisecond range [-2^62, 2^62 - 1],
+   epoch days -53 375 995 583 (-146136543-09-09) to 53 375 995 583
+   (146140482-04-24). A date step, a date construction and the Easter builtin
+   that reach a day outside fault (EF-007), never wrap. [year_min] and
+   [year_max] are the years of the two ends, which a step or a construction
+   tests before [days_from_civil] runs. *)
+let day_min = -53_375_995_583
+let day_max = 53_375_995_583
+let year_min = -146_136_543
+let year_max = 146_140_482
+
+let date_range_fault () =
+  faultc "EF-007" "date arithmetic leaves the representable range of a date"
+
+let in_date_range z = if z < day_min || z > day_max then date_range_fault () else z
+
 (* eerste paasdag van a whole unitless year (ch. 3.8): the Gauss/Anonymous
    algorithm, verbatim from the spec; leeg propagates; a non-whole or
    unit-carrying year faults — the ratified delta: never a silent
@@ -583,14 +600,13 @@ let day_from = function
 let easter_sunday = function
   | Empty -> Empty
   | Num (q, Unitless) when Z.equal (Q.den q) Z.one ->
-      (* the year is bounded where [days_from_civil] could leave the machine
-         integer (its era term is about 365.25 · year), not only where the
-         year itself does: between the two the date wrapped silently *)
+      (* a year whose Easter Sunday lies outside the representable range of a
+         date is EF-007 (ch. 3.8); bounding the year first keeps
+         [days_from_civil] inside the machine integer *)
       let j =
         match Z.to_int (Q.num q) with
-        | j when j <= max_int / 400 && j >= -(max_int / 400) -> j
-        | _ | (exception Z.Overflow) ->
-            fault "easterSunday: year %s is out of range" (Q.to_string q)
+        | j when j >= year_min && j <= year_max -> j
+        | _ | (exception Z.Overflow) -> date_range_fault ()
       in
       let a = j mod 19 and b = j / 100 and c = j mod 100 in
       let d = b / 4 and e = b mod 4 in
@@ -602,7 +618,7 @@ let easter_sunday = function
       let m = (a + (11 * h) + (22 * l)) / 451 in
       let month_kind = (h + l - (7 * m) + 114) / 31 in
       let day_number = ((h + l - (7 * m) + 114) mod 31) + 1 in
-      Date (days_from_civil ~y:j ~m:month_kind ~d:day_number)
+      Date (in_date_range (days_from_civil ~y:j ~m:month_kind ~d:day_number))
   | v -> fault "easterSunday: expected a whole unitless year, got %s" (to_string v)
 
 (* the date construction (ch. 3.8): datum met jaar/maand/dag and datumtijd
@@ -613,10 +629,10 @@ let easter_sunday = function
    that name no calendar day or no clock time fault (EF-032) — never a
    roll-over into the next month, never the month-end clamp of date +
    duration, which is a rule of the step and not of the construction. The
-   year is bounded where [days_from_civil] could leave the machine integer
-   (its era term is about 365.25 · year), and the instant of a datum-tijd by
-   the representable millisecond range (EF-007), checked in Zarith so that
-   the check cannot wrap. *)
+   day of a date and the instant of a datum-tijd lie in their representable
+   range or fault (EF-007): the year first, so that [days_from_civil] stays
+   inside the machine integer, then the day, and the instant checked in
+   Zarith so that the check cannot wrap. *)
 let date_construction ~time parts =
   let name = if time then "dateTimeWith" else "dateWith" in
   let arity = if time then 7 else 3 in
@@ -624,24 +640,29 @@ let date_construction ~time parts =
     fault "%s expects %d parts, got %d" name arity (List.length parts);
   if List.mem Empty parts then Empty
   else
-    let part = function
+    let range () =
+      if time then faultc "EF-007" "%s: the instant lies outside the representable millisecond range" name
+      else date_range_fault ()
+    in
+    let part i = function
       | Num (q, Unitless) when Z.equal (Q.den q) Z.one -> (
           match Z.to_int (Q.num q) with
           | n -> n
-          | exception Z.Overflow -> fault "%s: the part %s is out of range" name (Q.to_string q))
+          | exception Z.Overflow ->
+              (* a year beyond the machine integer lies beyond every representable day *)
+              if i = 0 then range () else fault "%s: the part %s is out of range" name (Q.to_string q))
       | v -> fault "%s: a part must be a whole unitless number, got %s" name (to_string v)
     in
-    match List.map part parts with
+    match List.mapi part parts with
     | y :: m :: d :: clock ->
-        if y > max_int / 400 || y < -(max_int / 400) then
-          fault "%s: the year %d is out of range" name y;
+        if y < year_min || y > year_max then range ();
         if m < 1 || m > 12 || d < 1 || d > days_in_month ~y ~m then
           faultc
             ~params:[ ("year", string_of_int y); ("month", string_of_int m); ("day", string_of_int d) ]
             "EF-032" "%s: year %d, month %d and day %d name no calendar day" name y m d;
         let z = days_from_civil ~y ~m ~d in
         (match clock with
-        | [] -> Date z
+        | [] -> Date (in_date_range z)
         | [ hh; mi; ss; ms ] ->
             if hh < 0 || hh > 23 || mi < 0 || mi > 59 || ss < 0 || ss > 59 || ms < 0 || ms > 999
             then
@@ -678,16 +699,26 @@ let packed z =
   let y, m, d = civil_from_days z in
   ((((12 * y) + m) - 1) * 32) + d
 
-(* proleptic-month split needs floor division (negative years) *)
-let floor_div a b = if a >= 0 then a / b else -(((-a) + b - 1) / b)
+(* proleptic-month split needs floor division (negative years); OCaml (/)
+   truncates toward zero, and the correction never forms a sum that could
+   leave the machine integer, also for a near min_int *)
+let floor_div a b =
+  let q = a / b in
+  if a mod b <> 0 && (a < 0) <> (b < 0) then q - 1 else q
 
-(* date + n whole months, clamped to the target month's end (ch. 3.8) *)
-let add_months n z =
+(* date + [n] whole months, [n] exact, clamped to the target month's end
+   (ch. 3.8); [range_fault] where the target year lies outside the years of the
+   representable range of a date, so that [days_from_civil] stays inside the
+   machine integer (the day itself is checked by the caller) *)
+let add_months ~range_fault (n : Z.t) z =
   let y, m, d = civil_from_days z in
-  let pm = (12 * y) + (m - 1) + n in
-  let ty = floor_div pm 12 in
-  let tm = (pm - (12 * ty)) + 1 in
-  days_from_civil ~y:ty ~m:tm ~d:(min d (month_length ty tm))
+  let pm = Z.add (Z.of_int ((12 * y) + (m - 1))) n in
+  let ty = Z.fdiv pm (Z.of_int 12) in
+  if Z.lt ty (Z.of_int year_min) || Z.gt ty (Z.of_int year_max) then range_fault ()
+  else
+    let ty = Z.to_int ty in
+    let tm = Z.to_int (Z.sub pm (Z.mul (Z.of_int 12) (Z.of_int ty))) + 1 in
+    days_from_civil ~y:ty ~m:tm ~d:(min d (month_length ty tm))
 
 (* whole units from A to B, signed, truncating toward zero (OCaml (/)
    truncates toward zero, exactly the ch. 3.8 quot) *)
@@ -701,15 +732,22 @@ let whole_units_between (tu : Ir_v0.Checks.time_unit) za zb =
   | Tu_hour | Tu_minute | Tu_second | Tu_millisecond ->
       fault "sub-day duration needs datum-tijd operands (day-precision values)"
 
-let add_units (tu : Ir_v0.Checks.time_unit) n z =
-  match tu with
-  | Tu_day -> z + n
-  | Tu_week -> z + (7 * n)
-  | Tu_month -> add_months n z
-  | Tu_quarter -> add_months (3 * n) z
-  | Tu_year -> add_months (12 * n) z
-  | Tu_hour | Tu_minute | Tu_second | Tu_millisecond ->
-      fault "%s" Ir_v0.Checks.sub_day_unit_on_day_date
+(* date + [n] calendar units (ch. 3.8), the day it lands on in the
+   representable range of a date or [range_fault]: the step is taken in
+   Zarith, so that a count times its unit and the sum cannot wrap *)
+let add_units ~range_fault (tu : Ir_v0.Checks.time_unit) n z =
+  let n = Z.of_int n in
+  let day =
+    match tu with
+    | Tu_day -> Z.add (Z.of_int z) n
+    | Tu_week -> Z.add (Z.of_int z) (Z.mul (Z.of_int 7) n)
+    | Tu_month -> Z.of_int (add_months ~range_fault n z)
+    | Tu_quarter -> Z.of_int (add_months ~range_fault (Z.mul (Z.of_int 3) n) z)
+    | Tu_year -> Z.of_int (add_months ~range_fault (Z.mul (Z.of_int 12) n) z)
+    | Tu_hour | Tu_minute | Tu_second | Tu_millisecond ->
+        fault "%s" Ir_v0.Checks.sub_day_unit_on_day_date
+  in
+  if Z.lt day (Z.of_int day_min) || Z.gt day (Z.of_int day_max) then range_fault () else Z.to_int day
 
 (* --- the datum-tijd millisecond layer (ch. 3.8): a datetime is its ms
    count since 1970-01-01T00:00:00 in the same zoneless civil time —
@@ -750,7 +788,7 @@ let add_units_ms (tu : Ir_v0.Checks.time_unit) n t =
       s
   | None ->
       let d, msod = split_ms t in
-      let d' = add_units tu n d in
+      let d' = add_units ~range_fault:ms_range_fault tu n d in
       if d' > (max_int - msod) / ms_per_day || d' < min_int / ms_per_day then
         ms_range_fault ();
       (d' * ms_per_day) + msod
@@ -866,7 +904,7 @@ let date_plus_day_kind ?(minus = false) ~matches d dur =
   | Empty, _ -> Empty
   | Date z, Empty -> Date z
   | Date_time t, Empty -> Date_time t
-  | Date z, _ -> Date (walk z)
+  | Date z, _ -> Date (in_date_range (walk z))
   | Date_time t, _ ->
       let z, msod = split_ms t in
       let z' = walk z in
@@ -914,14 +952,16 @@ let date_plus_duration ?(minus = false) ?unit_ d dur =
   | Date z, _ -> (
       let q, _u = num_exn (if minus then "min" else "plus") dur in
       let n = whole_count_of q in
-      let n = if minus then -n else n in
+      (* min of the count -2^62 steps 2^62 forward, outside every range; its
+         negation would wrap to itself *)
+      let n = if minus then (if n = min_int then date_range_fault () else -n) else n in
       match unit_ with
-      | Some tu -> Date (add_units tu n z)
+      | Some tu -> Date (add_units ~range_fault:date_range_fault tu n z)
       | None -> fault "%s" Ir_v0.Checks.date_duration_without_time_unit)
   | Date_time t, _ -> (
       let q, _u = num_exn (if minus then "min" else "plus") dur in
       let n = whole_count_of q in
-      let n = if minus then -n else n in
+      let n = if minus then (if n = min_int then ms_range_fault () else -n) else n in
       match unit_ with
       | Some tu -> Date_time (add_units_ms tu n t)
       | None -> fault "%s" Ir_v0.Checks.date_duration_without_time_unit)

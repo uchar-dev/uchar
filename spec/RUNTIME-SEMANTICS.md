@@ -2754,7 +2754,11 @@ the target month's length — 2024-01-31 + 1 maand = **2024-02-29** (leap),
 2025-01-31 + 1 maand = **2025-02-28**; a quarter is three months, a year
 twelve (so a leap birthday clamps the same way); a day or week count is linear
 (+n / +7·n epoch days). A fractional count truncates toward zero. (Empty rules:
-ch. 1.2 — a leeg date propagates, a leeg duration counts as 0.)
+ch. 1.2 — a leeg date propagates, a leeg duration counts as 0.) A step whose
+day lies outside the representable range of a date (below) is a fault
+(EF-007), never a silent wrap-around: 2024-01-01 + 60 000 000 000 dagen =
+**fault**, + 2 000 000 000 maanden = **fault** (corpus/red
+`date-step-outside-range`).
 
 **The datum-tijd millisecond layer.** A millisecond-precision date is its
 millisecond count since 1970-01-01T00:00:00 in the same zoneless civil time —
@@ -2841,7 +2845,30 @@ Worked example (absolute; `ref/` tests `WV-3.8-dt-bereik-grens`,
 2024-01-01T00:00:00 + 1 281 023 420 655 uur = **146140482-04-24T15:00:00**,
 and one hour more = **fault**; the same instant + 18 446 744 073 709 551 617
 dagen (2⁶⁴ + 1) = **fault**: the count itself is out of range and never wraps
-to 1.
+to 1. No intermediate of a step wraps either (`ref/` tests
+`WV-3.8-dt-bereik-kwartalen`, `WV-3.8-dt-bereik-min-min-int`,
+`WV-3.8-dt-bereik-bodem-min-dag`; corpus/red `date-time-step-wrap`):
+2024-01-01T00:00:00 + 3 074 457 345 618 258 603 kwartalen = **fault** (three
+times the count lies outside the interval), − −4 611 686 018 427 387 904
+milliseconden = **fault** (a step of 2⁶² ms forward), and from
+1970-01-01T00:00:00 − 1 281 023 894 007 uur = −146136543-09-08T09:00:00, one
+dag back from there = **fault** (its civil day lies below the interval).
+
+**The representable range of a date (normative).** A date without a time
+(day precision) is a civil day whose midnight lies in the millisecond range
+above: the epoch days −53 375 995 583 to 53 375 995 583, that is
+−146136543-09-09 to 146140482-04-24 (decided 2026-10-09). A date step, a date
+construction and an Easter Sunday whose day lies outside are a fault (EF-007),
+never a wrap-around and never a date; an executor whose integers cannot reach
+that far refuses by name where it cannot follow, as for a datum-tijd. Worked
+example (absolute; `ref/` tests `WV-3.8-d-bereik-*`): 2024-01-01 +
+53 375 975 860 dagen = **146140482-04-24**, one day more = **fault**;
+2024-01-01 − 53 376 015 306 dagen = **−146136543-09-09**, one day more =
+**fault**; 2024-01-24 + 1 753 661 499 maanden = **146140482-04-24** and from
+2024-01-25 = **fault**; datum met jaar 146140482, maand 4, dag 24 =
+**146140482-04-24**, dag 25 = **fault**, jaar 200000000 = **fault**; eerste
+paasdag van 146140482 = **146140482-03-29**, van 4 294 969 320 = **fault**
+(corpus/red `date-step-outside-range`, `date-with-outside-date-range`).
 
 **Date-part extraction and the Easter builtin.** Year, month and day
 extraction ("het jaar / de maand / de dag uit") read the **civil components
@@ -2868,12 +2895,13 @@ dag   = ((h + l − 7·m + 114) mod 31) + 1
 ```
 
 The result is the day-precision civil date (j, maand, dag). A leeg year
-propagates; a non-whole or unit-carrying year value is a fault, and so is a
-whole year outside the executor's machine-integer range — never a silent
-truncation to whole, never a silent wrap-around. *v0 mirror note:* v0 narrows
-the year to a machine int silently; the verifier makes the non-whole or
-unit-carrying static shape ill-formed, and the fault out of range is a runtime
-fault only, since no static check can bound a computed year (a tracked delta).
+propagates; a non-whole or unit-carrying year value is a fault, never a
+silent truncation to whole, and a year whose Easter Sunday lies outside the
+representable range of a date is EF-007 (above), never a silent wrap-around.
+*v0 mirror note:* v0 narrows the year to a machine int silently; the verifier
+makes the non-whole or unit-carrying static shape ill-formed, and the fault out
+of range is a runtime fault only, since no static check can bound a computed
+year (a tracked delta).
 Worked examples (absolute, pinned; each a `ref/` test verbatim): jaar uit
 2026-11-03 = **2026**; maand uit 2026-11-03 = **11**; dag uit 2026-11-03 =
 **3**; eerste paasdag van 2024 = **2024-03-31**, van 2026 = **2026-04-05**, van
@@ -2900,11 +2928,12 @@ lies in the representable millisecond range above. **Parts that name no
 calendar day or no clock time are a fault**: never a roll-over into the next
 month (31 April is not 1 May), never a clamp to the month's end (31 April is
 not 30 April either — the month-end clamp belongs to date ± duration, a step,
-not to the construction), and never leeg. A whole year outside the executor's
-machine-integer range is a fault, never a wrap-around, as for the Easter year.
-Parts that name no day or no clock time are the fault kind EF-032, with the
-parts as its parameters; an instant outside the representable millisecond
-range is the range's own kind, EF-007 (ch. 5.7b). The rule for parts that name
+not to the construction), and never leeg. A year outside the years of the
+representable range is tested first, a date's day after the calendar, and a
+datum-tijd's instant last: parts that name no day or no clock time are the
+fault kind EF-032, with the parts as its parameters; a day outside the
+representable range of a date, and an instant outside the representable
+millisecond range, are the range's own kind, EF-007 (ch. 5.7b). The rule for parts that name
 no day is a provisional decision. Worked examples (absolute, pinned; each a
 `ref/` test verbatim): datum met jaar 2026, maand 3, dag 1 = **2026-03-01**;
 2024, 2, 29 = **2024-02-29**; 2000, 2, 29 = **2000-02-29**; 2026, 2, 29 =
@@ -4963,7 +4992,7 @@ parameters, the clause that defines it and its witnesses.
 | EF-004 | an input value does not fit the declared decimals of its place | case input | `place`, `value`, `decimals` | ch. 2.4; ch. 5.8c; ch. 11.3 | `corpus/red/input-overprecision`, `corpus/red/input-overprecision-param`, `corpus/red/list-element-overprecision`, `corpus/red/struct-field-overprecision`, `corpus/red/jutterswet-cel-overprecisie` |
 | EF-005 | a filled dividend is divided by a numeric zero | §9.5 | `rule`, `label` | ch. 1.4 point 4; ch. 2.2 | `corpus/golden/division-by-numeric-zero`, `corpus/golden/division-abs-by-numeric-zero`, `corpus/golden/filled-count-unguarded-division`, `corpus/golden/at-most-reads-until-settled`, `corpus/golden/closed-runtime-division-by-zero`, `corpus/golden/fold-filter-divides-by-zero`, `corpus/golden/jutterswet-initialisatie-naast-regel`, `corpus/golden/jutterswet-lezer-van-initialisatie` |
 | EF-006 | a written value does not fit the declared decimals of its target | fault | `place`, `value`, `decimals` | ch. 2.4; ch. 5.8c | `corpus/red/jutterswet-verdeling-past-niet`, `corpus/red/jutterswet-tijdsevenredig-past-niet` |
-| EF-007 | a datum-tijd step or construction leaves the representable millisecond range | fault | — | ch. 3.8 | `corpus/red/day-kind-step-outside-range`, `corpus/red/date-time-step-outside-range`, `corpus/red/date-time-with-outside-range` |
+| EF-007 | a date or datum-tijd step, a date construction or an Easter Sunday leaves the representable range of a date or the representable millisecond range | fault | — | ch. 3.8 | `corpus/red/day-kind-step-outside-range`, `corpus/red/date-time-step-outside-range`, `corpus/red/date-time-with-outside-range`, `corpus/red/date-time-step-wrap`, `corpus/red/date-step-outside-range`, `corpus/red/date-with-outside-date-range` |
 | EF-008 | a duration count is out of range | fault | `count` | ch. 3.8 | `corpus/red/date-time-step-outside-range` |
 | EF-009 | a day-kind walk passes the reach fence without a day of the kind | fault | `from`, `reach` | ch. 3.8 | `corpus/red/day-kind-unsatisfiable-walk`, `corpus/red/day-kind-scope-outside-table` |
 | EF-010 | the bound day is read outside a day-kind evaluation | fault | — | ch. 3.8 | `corpus/red/context-value-de-dag-outside-day-kind`, `corpus/red/bound-day-behind-a-holding-condition` |
