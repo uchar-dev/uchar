@@ -26,3 +26,12 @@ tegenhoudt.
 
 May touch: `backends/clingo/**`, kaartverplaatsing. NB: serieel met
 andere translate.ml-kaarten.
+
+## Result
+
+Gesloten door de hoofdsessie bij de backlog-triage van 2026-11-06, zonder eigen bouw. De vorm van proef R5 (een
+ALLE-vouw over een vergelijking op een recursieve creatiecyclus) weigert de verifier sinds WF-046 (negatief
+`wf046-quantifier-fold-all-range`), dus geen welgevormd document bereikt hem nog. Bij twee stabiele modellen of geen
+weigert de clingo-runner sinds `233fd6438` (2026-10-22) met CLINGO-030 in plaats van er stil een te kiezen. Het
+commentaar in `backends/clingo/lib/translate.ml` dat de stratificatie "by construction" laat gelden, gaat mee in de
+opruimronde van de triage (2026-11-06).

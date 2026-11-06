@@ -34,7 +34,7 @@ Model: objecttype Haven met `y` (geheel getal) en de kenmerken `open` en
     Regel a van een post: De a van een Post moet gesteld worden op 5.
     Regel bewaakte haven: Een Haven is bewaakt indien zijn post gemarkeerd is.
     Objectcreatie post voor een open haven: een Haven die open is, krijgt een
-        Post (over havenpost, zonder initialisaties).
+        Post (over havenpost, zonder toekenningen).
 
 Strata: `y` en `a` 0, `open` en `gemarkeerd` 1 (een kenmerktoekenning leest
 strikt), de creatie 2, `bewaakt` 2. Case: H1 zonder invoer. Verwacht: H1 open,
@@ -92,7 +92,7 @@ van clingo. Deze kaart houdt de goldens.
   hierboven); bij het oppakken alleen nameten dat ref beide goldens speelt. Geen
   bestaande verwachting in `corpus/golden` of `corpus/red` verandert.
 - (c) Gates 5, 6, 8 en 12 groen (in `scripts/check-drools.sh` gaan de pins
-  `EXPECTED_PLAYED` en `EXPECTED_DRL_PLAYED` elk één omhoog; voorstel); de
+  `EXPECTED_PLAYED` één omhoog; voorstel); de
   corpusgetuige van de tak met truth maintenance noemt haar weigering; alle gates
   van `CLAUDE.md` groen.
 

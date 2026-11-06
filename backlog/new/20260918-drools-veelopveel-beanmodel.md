@@ -18,9 +18,9 @@ de geneste aggregatie had in beide hops een ene-kant. Dit is dus geen
 legacy-gat maar een uchar-eigen verbreding van het beanmodel.
 
 Gemeten straal (lens, 2026-09-18): een collectierepresentatie raakt
-`FactModelGenerator.leden()` (de enige beanrenderer), 18 echte
+`FactModelGenerator.members()` (de enige beanrenderer), 18 echte
 aanroepplekken van `hasReferenceField`, 22 van `toManyRole`,
-`ContractValidator`, de case-invoerkant van `CaseRunner` (die zo'n
+`ContractValidator`, de case-invoerkant van `CaseInput` (die zo'n
 relatie nu bij het schrijven weigert), beide transpilers en de
 §9-creatie-idempotentiegarde (`subjectToManyCreation`). De javadoc van
 `selfPairRoles` verwerpt collectievelden expliciet omdat ze
@@ -47,7 +47,7 @@ gate-12-kanaalbeweging.
 Na `20261008-tms-omschakeling` (2026-10-10) speelt `anchor/jutterswet-erflijn` in de exec-model-tak (gate 12, 248) en
 weigert alleen de DRL-teksttak hem nog; `anchor/jutterswet-bootberging` en `jutterswet-muntketen` weigeren in beide
 takken, in de exec-model-tak met 'sourcePath-stap 1 (Boot -> Vondst/Munt) heeft geen beanveld'. De kaart raakt twee
-takken, `transpiler/tms/` en `DrlTranspiler`.
+takken, `transpiler/tms/` (`TmsTranspiler`) en `DrlRendering`.
 
 ## Na `20261010-objectcreatie-zonder-connectingrole-binding` (2026-10-11)
 

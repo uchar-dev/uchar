@@ -32,3 +32,9 @@ De Drools-takken zijn op dit document niet gemeten.
 May touch: `backends/clingo/**`, `corpus/golden/**`, `scripts/check-drools.sh` (**voorstel**, pin).
 
 Out of scope: `ref/`, `backends/drools` (tenzij de golden daar iets laat zien; dan meten en melden).
+
+## Result
+
+Gesloten door de hoofdsessie bij de backlog-triage van 2026-11-06, zonder eigen bouw: opgelost door `efce47400`
+(kaart `dimensions-remaining`, 2026-11-02). Clingo past de consequentie van een default aan het doel (`fitted`), zoals
+een regel; de weigering is weg en de waarde is die van ref.

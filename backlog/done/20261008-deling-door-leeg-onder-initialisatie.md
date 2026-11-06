@@ -111,3 +111,12 @@ Na `20261008-tms-omschakeling` (2026-10-10) leidt de exec-model-tak af met truth
 (getuige `TmsInitialisationWitnessTest.a_division_by_empty_deposits_only_where_the_initialisation_applies`, beide op
 `EXEC_MODEL`): (b) geldt nog voor clingo, (c) voor de DRL-teksttak, en `ExecModelTranspiler.java` in May touch bestaat
 niet meer.
+
+## Result
+
+Gesloten door de hoofdsessie bij de backlog-triage van 2026-11-06, zonder eigen bouw. Gemeten in het Result van
+`20261008-fout-op-tussenstand` (sectie `deling-door-leeg-onder-initialisatie`): op de eindstand van die kaart geven beide
+cases op ref, clingo en beide Drools-takken `PASS` of `PLAYED 1`; de deponering van clingo en de naam `?` zijn weg. De
+vorm staat in de goldens van die kaart (A case 3 en 5). Niet gedaan: een eigen golden en (c), de andere
+kanaalproducenten onder een initialisatie; de hoofdsessie sluit de kaart zonder die twee punten, omdat geen uitvoerder er
+nog een afwijking op laat zien.

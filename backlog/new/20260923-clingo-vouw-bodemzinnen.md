@@ -27,7 +27,7 @@ meenemen in de meting.
 - (b) Elke vorm krijgt een benoemde, fase-dragende weigerzin die het
   construct en de namen noemt (huispatroon van
   `refuse_date_timeline_total`); rood-eerst met mutatieproef.
-- (c) Eén rode getuige per arm (`expectedFault {ref, clingo}`;
+- (c) Eén rode getuige per arm (`expectedFault {code, params}`;
   Drools-been met reden in de gate-8-lijst — voorstel).
 - (d) Alle veertien gates groen; pins bewegen niet.
 

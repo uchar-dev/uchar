@@ -63,7 +63,7 @@ datum komt met deze kaart.
 ## Acceptatie (bij oppakken aanscherpen)
 
 - (a) Rode gevallen in `corpus/red` voor de hoeken van punt 1 en 2 die een
-  datum-tijd raken, met `expectedFault {ref, clingo, drools}`; voor wat clingo
+  datum-tijd raken, met `expectedFault {code, params}`; voor wat clingo
   bij de vertaling al weigert, telt die weigering.
 - (b) Ref controleert het aantal maal de eenheid en het omkeren van het teken
   vóór de stap; clingo controleert zijn epochdag en noemt bij een vooruitstap

@@ -19,7 +19,7 @@ Er is een vijfde. Geeft een feitcreatie een naar-één-rol twee verschillende vu
 Getuige: `TmsCreationWitnessTest.a_second_filling_of_a_to_one_role_is_a_fault` (r. 552).
 - Een afnemer die op het type afbeeldt, kan deze fout niet onderscheiden van een `IllegalStateException` uit de ingang
   zelf, zoals een verkeerd gebruikte sessie.
-- De distributie leest de fouten daarom sinds die kaart uit `lees(…).fouten()` en geeft deze als soort `ANDERE`.
+- De distributie leest de fouten daarom sinds die kaart uit `fixpoint.faults()` en geeft deze als soort `EvaluationFault.Kind.OTHER`.
 
 Daarnaast (gezien door de bouwer van fixronde 2 van die kaart): de `Fault` van een tweede vulling draagt als regel de
 naam van het feittype (bijvoorbeeld `havenlid`). De kop van `EvaluationFaults` zegt daardoor "in de regels "havenlid", …",
@@ -38,7 +38,7 @@ en die naam bepaalt ook de volgorde van de fouten.
 - (b) Een getuige laat zien dat elke `Fault` die de tak kan zetten een type uit de lijst van de README heeft. Dat kan als
   inventaris van de constructoraanroepen van `Fault`, of met een meting per vorm.
 - (c) Alle gates groen.
-- De distributie volgt bij haar volgende pinbump: haar soort `ANDERE` wordt dan een eigen soort.
+- De distributie volgt bij haar volgende pinbump: haar soort `OTHER` wordt dan een eigen soort.
 
 ## Omvang
 

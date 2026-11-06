@@ -32,10 +32,10 @@ deelnemers −1).
 
 ## Acceptatie (bij oppakken aanscherpen)
 
-- (a) Ref geeft `EVALUATION FAULT: division by numeric zero` (of de zin die
-  ch. 1.4 voor deze vorm vraagt), rood eerst, met een voorbeeld in `ref/test/`.
-- (b) Een rood geval in `corpus/red` met `expectedFault` voor ref en, waar ze
-  de vorm dragen, Drools; clingo weigert de vorm al bij de vertaling.
+- (a) Ref deponeert EF-005, een deling door een numerieke nul (sinds `zero-division-channel` een soort van het
+  §9.5-kanaal, RUNTIME-SEMANTICS ch. 5.6), rood eerst, met een voorbeeld in `ref/test/`.
+- (b) Een golden met een `inconsistent`-verwachting die code EF-005 vastzet, gespeeld door ref en, waar ze de vorm
+  dragen, Drools; clingo weigert de vorm al bij de vertaling (een regel in `EXPECTED_CHANNEL` van gate 6).
 - (c) Nagaan of andere plaatsen in `ref/lib/arith.ml` een Zarith-exceptie
   ongevangen laten (`Q.inv`, `Q.div`, `Z.div` op een nul).
 - (d) Gates 5 en 8 groen; alle gates van `CLAUDE.md` groen.

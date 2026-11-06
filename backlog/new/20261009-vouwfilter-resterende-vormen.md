@@ -53,7 +53,7 @@ oplost of luid weigert; wat daar niet lukt, valt onder deze kaart.
   waar ref en clingo consistent geven; vóór en na de fix.
 - `a8-creatie-onder-vouwvoorwaarde`: clingo geeft geen model maar een fout van
   gringo, "unsafe variables" in de guard `viol("arithmetic range exceeded …")`
-  van een objectcreatie met een vouw in de initialisatie onder een
+  van een objectcreatie met een vouw in een toekenning onder een
   vouwvoorwaarde (`C3` en `S` onveilig); ref speelt case 1 en 2.
 - Een samenstelling onder "geen" of een tellende kwantor met een datumvouw als
   lid: de exec-modeltak faalt waar ref na "hij is actief" stopt; de DRL-teksttak
@@ -61,8 +61,8 @@ oplost of luid weigert; wat daar niet lukt, valt onder deze kaart.
 
 **Gelezen, niet gemeten (lens).** Een negatieve wortel in het filter van een
 vouw die wel bereikt wordt: ref geeft leeg en een §9.5-deponering
-(`ref/lib/arith.ml` rond regel 223–253); `rsWortel` geeft leeg
-(`RegelSpraakRuntime.java` rond regel 304–310) en de Drools-foutbegeleiders
+(`ref/lib/arith.ml` rond regel 223–253); `rsWortel` gaf leeg
+(`RegelSpraakRuntime.java` rond regel 304–310; de functie staat niet meer in de runtime) en de Drools-foutbegeleiders
 onderzoeken alleen de waarde van een regel, zodat de takken consistent kunnen
 blijven waar ref een inconsistentie meldt. Eerst meten.
 
@@ -112,8 +112,7 @@ Gemeten tijdens die kaart met ref, clingo en de verifier uit `_build` van haar w
 Middel: één guard in clingo met drie voorwaarden, en twee kleine plaatsen in de
 Drools-takken.
 
-May touch: `backends/clingo/**`, `backends/drools/src/main/java/.../transpiler/model/ExecModelTranspiler.java`,
-`backends/drools/src/main/java/.../transpiler/DrlTranspiler.java`, getuigen,
+May touch: `backends/clingo/**`, `backends/drools/src/main/java/.../transpiler/tms/` (`TmsTranspiler`, `DrlRendering`), getuigen,
 `corpus/golden/jutterswet-filterwacht/` en nieuwe goldens of rode gevallen,
 `scripts/check-drools.sh` (pins; voorstel), kaartverplaatsing.
 

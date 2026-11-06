@@ -10,12 +10,12 @@ generaties gelijk, alle 17 rijen).*
 
 ## Aanleiding
 
-Sinds 2026-10-09 leest een creatie haar voorwaarde en haar initialisaties op
+Sinds 2026-10-09 leest een creatie haar voorwaarde en haar toekenningen op
 de uitgerekende wereld van de vorige generatie (`spec/RUNTIME-SEMANTICS.md`
 ch. 5.5, Generations). Daarmee is de lezing van ref de norm voor twee restposten
 van ch. 6.1: "conditions that hold on absence" en "a value that grows". Clingo
 heeft geen moment van maken: zijn creatievoorwaarde is een regel over het
-stabiele model. Voor een initialisatie weigert het sinds die kaart luid en bij
+stabiele model. Voor een toekenning weigert het sinds die kaart luid en bij
 naam; voor een voorwaarde geeft het stil een andere uitkomst, of geen model
 zonder benoemde weigering.
 
@@ -65,5 +65,5 @@ May touch: `backends/clingo/**` (a1) of `spec/verifier/**` en
 ## Raakvlakken
 
 Na `20261009-creatie-initialisatie-leest-groeiende-waarde` (de weigering van
-de initialisaties, op dezelfde graaf) en `20261009-clingo-uitvoer-breekt-af-op-lengte`
+de toekenningen, op dezelfde graaf) en `20261009-clingo-uitvoer-breekt-af-op-lengte`
 (beide raken de vertaling van een recursieve creatie in clingo).

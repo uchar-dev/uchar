@@ -60,8 +60,8 @@ als afwijking telt.
 Bij elke regelversie zet `RuleChecker` eerst het onderwerp en daarna de
 variabelen (`resolver/RuleChecker.java` regel 3290–3291):
 
-    bouwer.setSubject(subjectVan(rsr.resultaatDeel()));
-    bouwer.zetVariabelen(rsr.variabeleDeel());
+    builder.setSubject(ruleSubjectOf(rsr.resultaatDeel()));
+    builder.setVariables(rsr.variabeleDeel());
 
 Voor een enkelvoudige consistentieregel bepaalt `ruleSubjectOf` (regel 4643) het
 onderwerp door de uitdrukking te bouwen (`bouwer.bouw(e.expressie())`, regel
@@ -125,8 +125,7 @@ raakt een wijziging ook de verifier. (c) is geen werk. (d) is eerst een meting
 van enkele uren; als een fix nodig is, is dat een paar regels in `RuleChecker`
 met een getuige.
 
-May touch: `frontends/regelspraak/**`, het commentaar op regel 548 van
-`ExecModelTranspiler.java`, in regelspraak-toolchain de twee meldingen en de
+May touch: `frontends/regelspraak/**`, in regelspraak-toolchain de twee meldingen en de
 javadoc; bij (a) met wijziging ook `spec/verifier/` (**voorstel**, beschermd
 pad) en de betrokken `expect.txt`; kaartverplaatsing.
 Niet in deze kaart: de volgorde binnen een lijst; (c).

@@ -59,3 +59,10 @@ Klein tot middel.
 
 May touch: `backends/clingo/`, `corpus/golden/<nieuwe golden>/`, `ref/test/`, `spec/RUNTIME-SEMANTICS.md` (voorstel),
 `scripts/check-drools.sh` (pins, voorstel), kaartverplaatsing.
+
+## Result
+
+Gesloten door de hoofdsessie bij de backlog-triage van 2026-11-06, zonder eigen bouw: opgelost door de kaart
+`writers-as-one-defaults-stack` (`09f5c0f02`, 2026-11-04). Clingo leest de waarde die een objectcreatie een lid
+toekent als `inputval/3` van het gemaakte object, en die staat in de ene stapel van het doel naast de staande regel; de
+golden `jutterswet-invoer-naast-objectcreatie` speelt de vorm in ref, clingo en beide Drools-takken.
