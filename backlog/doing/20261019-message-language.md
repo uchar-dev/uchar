@@ -213,4 +213,9 @@ op (`werk/drools-messages/k/renumber.py`). De nieuwe Nederlandse teksten van `Dr
 (`insert: de koppeling …`) kregen dezelfde vorm als die van de lijsten: `PART.desc.insert-link` en DROOLS-364..367,
 met als Nederlandse entry de tekst van die landing.
 
+**Gate set.** Na de rebase `scripts/check-drools.sh` groen (JUnit 1891, played 362 op beide takken,
+`logs/gate12-1.log`). `make gates` op `0c86327de`: red=0, alle zeventien gates en `after-run` rc=0, 454 s
+(`out/gates/20261106-175746/summary.txt`, `logs/gates-final.log`). Geen vloer of pin van een gate bewoog; `CLAUDE.md`
+en `scripts/check-drools-codes.sh` zijn niet gewijzigd (geen feit van gate 12 veranderde).
+
 Open punten: geen normvraag.
