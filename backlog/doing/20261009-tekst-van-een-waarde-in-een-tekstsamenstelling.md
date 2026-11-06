@@ -336,5 +336,6 @@ ch. 1.2, `corpus/negative/` en de golden.*
 
 ### Eindrun
 
-`make gates` op `f33ffbf3c`: alle zeventien gates en `after-run` rc=0, red=0, 435 s
-(`out/gates/20261106-202429/summary.txt` in de worktree, log `uchar-dev/werk/text-decimals/logs/gates-final.log`).
+`make gates` op `7e9159c7c` (na stap 3): alle zeventien gates en `after-run` rc=0, red=0, 440 s
+(`out/gates/20261106-204636/summary.txt` in de worktree, log `uchar-dev/werk/text-decimals/logs/gates-final-2.log`).
+De eerdere run op `f33ffbf3c` (na stap 2) was ook red=0, 435 s (`out/gates/20261106-202429/`).
