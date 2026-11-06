@@ -543,6 +543,11 @@ let over (num : Ir_v0.Ast.measure_unit) (den : Ir_v0.Ast.measure_unit) : Ir_v0.A
   Ir_v0.Units.canonical_order (num @ Ir_v0.Units.inverted den)
 
 let eur_per_jr = over eur jr
+
+(* the built-in percent unit a percentage carries on the wire (IR-SPEC ch. 2.5) *)
+let percent : Ir_v0.Ast.measure_unit =
+  [ { abbr_text = Some "%"; system = None; canonical_form = Some "%"; factor_to_canonical = Some { num = 1; den = 1 };
+      exponent = None } ]
 let num_with_unit u s = Value.Num (Value.q_of_lexeme s, Value.Unit u)
 
 let () =
@@ -1386,7 +1391,10 @@ let () =
             [ ("basis", Some num2); ("aantal", Some num0);
               ("aandeel", Some (Percentage { whole_part = false; decimal_places = 2; measure_unit = None }));
               ("factor", Some (num_dec false 0)); ("soort", Some (Enumeration { domain_spec = Some "Vondstsoort"; label_list = [ Some "wrakhout" ] }));
-              ("bevestiging", Some Boolean); ("vinddatum", Some Date_in_days); ("besluit", Some besluit) ]
+              ("bevestiging", Some Boolean); ("vinddatum", Some Date_in_days); ("besluit", Some besluit);
+              ("bedrag", Some (Number { whole_part = false; decimal_places = 2; sign_char = None; measure_unit = Some eur }));
+              ("tarief", Some (Number { whole_part = false; decimal_places = 2; sign_char = None; measure_unit = Some eur_per_jr }));
+              ("percentage", Some (Percentage { whole_part = false; decimal_places = 2; measure_unit = Some percent })) ]
             [] ] }
   in
   let env = env_of doc in
@@ -1395,11 +1403,13 @@ let () =
       [ inst "V1" "Vondst"
           [ ("basis", n "5.5"); ("aantal", n "1250"); ("aandeel", n "12.5"); ("factor", Value.Num (q "1/3", Value.Unitless));
             ("soort", Value.Enum "wrakhout"); ("bevestiging", Value.Bool true);
-            ("vinddatum", Value.date_of_iso "2026-06-21"); ("besluit", Value.Ctor ("Toegekend", Some (n "1250.5"))) ];
+            ("vinddatum", Value.date_of_iso "2026-06-21"); ("besluit", Value.Ctor ("Toegekend", Some (n "1250.5")));
+            ("bedrag", Value.Num (q "11/2", Value.Unit eur)); ("tarief", Value.Num (q "1200", Value.Unit eur_per_jr));
+            ("percentage", Value.Num (q "25/2", Value.Unit percent)) ];
         inst "V2" "Vondst" [ ("basis", n "5"); ("aandeel", n "100"); ("factor", n "0.25") ];
         inst "V3" "Vondst" [ ("soort", Value.Enum "wrakhout"); ("bevestiging", Value.Bool true); ("vinddatum", Value.date_of_iso "2026-06-21") ] ]
   in
-  let part e : Ir_v0.Ast.text_part = Embedded_expression { expr = Some e } in
+  let part e : Ir_v0.Ast.text_part = Embedded_expression { expr = Some e; with_unit = false } in
   let chunk t : Ir_v0.Ast.text_part = Literal_chunk { body_text = Some t } in
   let composition pieces : Ir_v0.Ast.expr = Text_composition { pieces; typ = Some Text_type; source_name = None } in
   let binary op l r : Ir_v0.Ast.expr =
@@ -1411,6 +1421,9 @@ let () =
     | v -> check (Printf.sprintf "%s (got %s)" name (Value.to_string v)) false
   in
   let one label e want name = text name label (composition [ part e ]) want in
+  let with_unit label e want name =
+    text name label (composition [ Embedded_expression { expr = Some e; with_unit = true } ]) want
+  in
   one "V1" (aref "basis" "Vondst") "5,50" "WV-1.2c-text-gedeclareerd-1";
   one "V2" (aref "basis" "Vondst") "5,00" "WV-1.2c-text-gedeclareerd-2";
   one "V1" (aref "aantal" "Vondst") "1250" "WV-1.2c-text-gedeclareerd-3";
@@ -1442,6 +1455,24 @@ let () =
          element_object_type = None; empty_fallback = None; filter = None; dimension_selections = None;
          typ = Some Text_type; source_name = None; grain = None; source_role = None; source_path = None; anchor = None })
     "Bedrag: 5,00";
+  (* a part with its unit: the number, a space and the unit as IR-SPEC ch. 2.5
+     spells it, in parentheses; a composite part in the unit it derives *)
+  with_unit "V1" (aref "bedrag" "Vondst") "5,50 (€)" "WV-1.2c-text-eenheid-1";
+  with_unit "V1" (aref "percentage" "Vondst") "12,50 (%)" "WV-1.2c-text-eenheid-percentage";
+  with_unit "V1" (aref "tarief" "Vondst") "1200,00 (€/jr)" "WV-1.2c-text-eenheid-tarief";
+  with_unit "V1"
+    (Binary { op = Times; left_side = Some (aref "bedrag" "Vondst"); right_side = Some (litv "1.1" (num_dec false 1));
+              typ = Some (Number { whole_part = false; decimal_places = 3; sign_char = None; measure_unit = Some eur });
+              source_name = None })
+    "6,050 (€)" "WV-1.2c-text-eenheid-samengesteld";
+  with_unit "V3" (aref "bedrag" "Vondst") "" "WV-1.2c-text-eenheid-leeg";
+  (* WF-129 holds that the part has a unit; a document that breaks it faults *)
+  expect_fault "WV-1.2c-text-eenheid-zonder-eenheid" (fun () ->
+      Eval.eval_expr env w (World.get w "V1") ~err:no_err
+        (composition [ Embedded_expression { expr = Some (aref "basis" "Vondst"); with_unit = true } ]));
+  expect_fault "WV-1.2c-text-eenheid-geen-getal" (fun () ->
+      Eval.eval_expr env w (World.get w "V1") ~err:no_err
+        (composition [ Embedded_expression { expr = Some (aref "bevestiging" "Vondst"); with_unit = true } ]));
   let example =
     composition
       [ chunk "Bedrag: "; part (aref "basis" "Vondst"); chunk " voor "; part (aref "soort" "Vondst"); chunk ", gemeld ";
@@ -8005,7 +8036,7 @@ let () =
   expect_msg "WV-5.11-concat-deel1-later" (run_v (concat [ pit; tree ])) pm;
   let sequence a b : Ir_v0.Ast.expr =
     Text_composition
-      { pieces = [ Embedded_expression { expr = Some a }; Embedded_expression { expr = Some b } ];
+      { pieces = [ Embedded_expression { expr = Some a; with_unit = false }; Embedded_expression { expr = Some b; with_unit = false } ];
         typ = Some Text_type; source_name = None }
   in
   expect_msg "WV-5.11-tekstreeks-deel0-eerst" (run_v (sequence tree pit)) bm;

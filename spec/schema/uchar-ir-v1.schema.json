@@ -2051,6 +2051,7 @@
       }
     },
     "EmbeddedExpression": {
+      "description": "An inserted part of a TextComposition (IR-SPEC ch. 4.2): 'expr' is the expression whose value the part writes, as its text (RUNTIME-SEMANTICS ch. 1.2). 'unit' asks for the unit of the number after it, in parentheses; absent is the one spelling of a part that writes no unit, so the field is true where it stands. That the part's type carries a unit is a verifier check (WF-129). Key order is this 'properties' order.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -2070,6 +2071,9 @@
               "type": "null"
             }
           ]
+        },
+        "unit": {
+          "const": true
         }
       }
     },

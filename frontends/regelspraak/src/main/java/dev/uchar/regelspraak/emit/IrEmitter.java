@@ -1218,6 +1218,8 @@ public final class IrEmitter {
             case Expr.TextComposition.EmbeddedExpression i -> {
                 w.key("node").value("EmbeddedExpression");
                 w.key("expr"); expr(i.expr());
+                // absent is the one spelling of a part without its unit (IR-SPEC ch. 4.2)
+                if (i.unit()) w.key("unit").value(true);
             }
         }
         w.endObject();

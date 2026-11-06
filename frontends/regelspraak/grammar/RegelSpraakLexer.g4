@@ -55,6 +55,10 @@ NA_HET_ATTRIBUUT_MET_VOORZETSEL      : '(na' WSP 'het' WSP 'attribuut' WSP 'met'
 BEZIELD     : '(bezield)'     ; // §13.3.1.1
 BEZITTELIJK : '(bezittelijk)' ; // §13.3.2.2
 BIJVOEGLIJK : '(bijvoeglijk)' ; // §13.3.2.3
+// uchar DIALECT EXTENSION (grammar/DIVERGENCES.md, "De eenheid van een tekstdeel"): the suffix of an «expressie»
+// escape that writes the unit of its number. A whole token with its parentheses, as BEZIELD: it reserves no name word,
+// so 'eenheid' keeps lexing as before everywhere else, and an attribute or a parameter named eenheid stays readable.
+EENHEID_AANWIJZING : '(eenheid)' ;
 // uchar DIALECT EXTENSION (grammar/DIVERGENCES.md §7): the opgave marker, the last element of an attribute
 // declaration. A whole token with its parentheses, as the three markers above: it reserves no name word, so 'mag',
 // 'opgegeven' and 'worden' keep lexing as before everywhere else and only the parenthesised sequence changes

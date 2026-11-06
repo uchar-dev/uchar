@@ -1514,7 +1514,7 @@ public final class IrLoader {
     /** The two parts of a text composition. */
     private static final Map<String, Keys> PART = Map.ofEntries(
             keyNames("LiteralChunk", List.of("node", "text")),
-            keyNames("EmbeddedExpression", List.of("node", "expr")));
+            keyNames("EmbeddedExpression", List.of("node", "expr"), "unit"));
 
     /** The discriminator of an expression or condition node, and — for the kinds this loader reads — its key set,
      *  checked as {@link #fields} checks every node: no key outside the node's own, every required key present, an
@@ -2157,11 +2157,23 @@ public final class IrLoader {
         return l;
     }
 
+    /** Whether the inserted part {@code d} writes the unit of its number (IR-SPEC ch. 4.2): its {@code unit}, written
+     *  {@code true} or not at all, refused in the shared loader's sentence otherwise. */
+    private boolean unitRequest(JsonNode d) {
+        JsonNode u = d.get("unit");
+        if (u == null) return false;
+        if (!u.isBoolean() || !u.booleanValue())
+            throw new DocumentError(pathOf(d) + "/unit",
+                    "expected true, the one spelling of a part with its unit, got " + u);
+        return true;
+    }
+
     private Expr.TextComposition.Part textCompositionPart(JsonNode d) {
         String node = nodeKind(d, PART, "text part");
         return switch (node) {
             case "LiteralChunk" -> new Expr.TextComposition.LiteralChunk(text(d, "text"));
-            case "EmbeddedExpression" -> new Expr.TextComposition.EmbeddedExpression(expr(nodeField(d, "expr")));
+            case "EmbeddedExpression" -> new Expr.TextComposition.EmbeddedExpression(expr(nodeField(d, "expr")),
+                    unitRequest(d));
             // any other name is no node of this format — the two parts of the v0 shape that L5 renamed among them —
             // refused at the discriminator in the shared loader's words
             default -> throw new DocumentError(pathOf(d) + "/node", "unknown TextCompositionPart node \"" + node + "\"");

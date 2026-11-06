@@ -2309,7 +2309,7 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
         Option.iter fence_expr maximum
     | Text_composition { pieces; _ } ->
         List.iter
-          (function I.Embedded_expression { expr = Some x } -> fence_expr x | _ -> ())
+          (function I.Embedded_expression { expr = Some x; _ } -> fence_expr x | _ -> ())
           pieces
     | Dimension_cell_read { attribute_ref; _ } -> Option.iter fence_expr attribute_ref
     | Temporal_read { base_expr; date_value; _ } -> fence_expr base_expr; fence_expr date_value

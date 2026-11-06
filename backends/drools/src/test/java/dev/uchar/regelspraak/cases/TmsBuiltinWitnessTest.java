@@ -270,6 +270,19 @@ class TmsBuiltinWitnessTest {
         assertEveryOrder(TEXT_MODEL, List.of(description), caseDocument);
     }
 
+    /** A part that writes the unit of its number on a number without a unit breaks WF-129 (IR-SPEC ch. 4.2), which
+     *  the verifier refuses; this branch, which does not run the verifier, refuses it by name (DROOLS-368). */
+    @Test void a_part_with_the_unit_of_a_number_without_one_is_refused_by_name() throws Exception {
+        String description = computingRule("omschrijving van een vondst", "BEREKENING", "Vondst", "omschrijving",
+                textComposition(List.of(textPart("Bedrag: "),
+                        "{\"node\":\"EmbeddedExpression\",\"expr\":" + ownRead("basis", "Vondst") + ",\"unit\":true}")),
+                "null");
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(
+                TmsDocuments.document(TEXT_MODEL, List.of(description)), DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("transpiler SKIP: regel: omschrijving van een vondst — het tekstdeel 'zijn basis' schrijft de"
+                + " eenheid van zijn getal, en Numeriek heeft geen eenheid (WF-129)", e.getMessage());
+    }
+
     // ---------------- the eleven test and the exact digits ----------------
 
     private static final String TRIAL_MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(

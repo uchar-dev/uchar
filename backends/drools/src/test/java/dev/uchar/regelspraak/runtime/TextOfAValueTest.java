@@ -23,9 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class TextOfAValueTest {
 
-    private static String text(Object value) { return RegelSpraakRuntime.rsTekst(value, null); }
+    private static String text(Object value) { return RegelSpraakRuntime.rsTekst(value, null, null); }
 
-    private static String text(Object value, Object form) { return RegelSpraakRuntime.rsTekst(value, form); }
+    private static String text(Object value, Object form) { return RegelSpraakRuntime.rsTekst(value, form, null); }
 
     @Test void every_row_of_the_table() {
         assertEquals("", text(null));
@@ -58,6 +58,18 @@ class TextOfAValueTest {
         assertEquals("Afgewezen", text(new ConstructorValue("Afgewezen", null), List.of("Toegekend", 2, "Afgewezen")));
         assertEquals("Toegekend(1250,50)",
                 text(new ConstructorValue("Toegekend", new BigDecimal("1250.5")), Arrays.asList("Toegekend", 2, "Afgewezen", null)));
+    }
+
+    /** A part that writes the unit of its number: the number, a space and the unit in parentheses, as the analysis
+     *  spells it (IR-SPEC ch. 2.5); a leeg part writes "" without it, and a value that is no number has none
+     *  (WF-129). */
+    @Test void a_part_with_its_unit() {
+        assertEquals("5,50 (EUR)", RegelSpraakRuntime.rsTekst(new BigDecimal("5.5"), 2, "EUR"));
+        assertEquals("12,50 (%)", RegelSpraakRuntime.rsTekst(new BigDecimal("12.5"), 2, "%"));
+        assertEquals("4/3 (EUR/jr)", RegelSpraakRuntime.rsTekst(Breuk.van(BigInteger.valueOf(4), BigInteger.valueOf(3)),
+                null, "EUR/jr"));
+        assertEquals("", RegelSpraakRuntime.rsTekst(null, 2, "EUR"));
+        assertThrows(IllegalStateException.class, () -> RegelSpraakRuntime.rsTekst("wrakhout", null, "EUR"));
     }
 
     /** The bound of the part guarantees that the value fits its decimals; a value that does not is a broken

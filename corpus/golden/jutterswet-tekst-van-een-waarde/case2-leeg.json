@@ -26,6 +26,7 @@
     {"kind": "attributeValue", "label": "V5", "attribute": "toeslagtekst", "value": {"text": "Toeslag: 0,000"}},
     {"kind": "attributeValue", "label": "V5", "attribute": "factortekst", "value": {"text": "Factor: "}},
     {"kind": "attributeValue", "label": "V5", "attribute": "heffingtekst", "value": {"text": "Heffing: 0,000"}},
+    {"kind": "attributeValue", "label": "V5", "attribute": "eenheidtekst", "value": {"text": "Bedrag: , aandeel , toeslag 0,000 (EUR), zonder eenheid "}},
     {"kind": "attributeValue", "label": "V6", "attribute": "omschrijving", "value": {"text": "Bedrag: "}},
     {"kind": "attributeValue", "label": "V6", "attribute": "deeltekst", "value": {"text": "Deel: 0"}},
     {"kind": "attributeValue", "label": "V6", "attribute": "aantaltekst", "value": {"text": "Aantal: "}},
@@ -39,6 +40,7 @@
     {"kind": "attributeValue", "label": "V6", "attribute": "toeslagtekst", "value": {"text": "Toeslag: 0,000"}},
     {"kind": "attributeValue", "label": "V6", "attribute": "factortekst", "value": {"text": "Factor: "}},
     {"kind": "attributeValue", "label": "V6", "attribute": "heffingtekst", "value": {"text": "Heffing: 0,000"}},
+    {"kind": "attributeValue", "label": "V6", "attribute": "eenheidtekst", "value": {"text": "Bedrag: , aandeel , toeslag 0,000 (EUR), zonder eenheid "}},
     {"kind": "consistent"}
   ]
 }

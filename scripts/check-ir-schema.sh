@@ -1908,11 +1908,25 @@ L7_SHAPE_ROWS = [
 ]
 
 
+# An inserted part may ask for the unit of its number (card tekst-van-een-waarde, 2026-11-06): one spelling, true,
+# and absent where it writes none.
+UNIT_SHAPE_ROWS = [
+    ("EmbeddedExpression.unit = true", _set(lambda d: _TC(d)["parts"][1], "unit", True), True,
+     "a part that writes the unit of its number after it (RUNTIME-SEMANTICS ch. 1.2)"),
+    ("EmbeddedExpression.unit = false", _set(lambda d: _TC(d)["parts"][1], "unit", False), False,
+     "absent is the one spelling of a part that writes no unit"),
+    ("EmbeddedExpression.unit = null", _set(lambda d: _TC(d)["parts"][1], "unit", None), False,
+     "absent is the one spelling of a part that writes no unit"),
+    ("EmbeddedExpression.unit as the unit's spelling", _set(lambda d: _TC(d)["parts"][1], "unit", "EUR"), False,
+     "the unit is the part's own (its type), never written on the part"),
+]
+
+
 shape_bad = 0
 for base, rows in ((_m1_base, M1_SHAPE_ROWS), (_l2_base, L2_SHAPE_ROWS),
                    (_l3_base, L3_SHAPE_ROWS), (_l4_base, L4_SHAPE_ROWS),
                    (_l5_base, L5_SHAPE_ROWS), (_l5_base, CELL_SHAPE_ROWS),
-                   (_l5_base, L7_SHAPE_ROWS)):
+                   (_l5_base, L7_SHAPE_ROWS), (_l5_base, UNIT_SHAPE_ROWS)):
     for row, mutate, want_ok, why in rows:
         probe = base()
         mutate(probe)
@@ -1926,7 +1940,7 @@ if shape_bad:
     sys.stderr.write("check-ir-schema: FAIL (%d shape self-test row(s) bad)\n" % shape_bad)
     sys.exit(1)
 n_shape = (len(M1_SHAPE_ROWS) + len(L2_SHAPE_ROWS) + len(L3_SHAPE_ROWS) + len(L4_SHAPE_ROWS)
-           + len(L5_SHAPE_ROWS) + len(CELL_SHAPE_ROWS) + len(L7_SHAPE_ROWS))
+           + len(L5_SHAPE_ROWS) + len(CELL_SHAPE_ROWS) + len(L7_SHAPE_ROWS) + len(UNIT_SHAPE_ROWS))
 
 
 # NOTE: gate 9 (scripts/check-catala.sh) executes the slice of this

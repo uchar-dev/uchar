@@ -367,10 +367,16 @@ public final class RegelSpraakRuntime {
      *  outside 0000-9999 with its sign, as the pattern uuuu writes it), a constructor value its tag with the text of its
      *  payload in parentheses. A value of any other type has no text and fails. {@code form} is the type of the part as
      *  the transpiler read it: an {@code Integer}, the decimals of a number; null, a number without a finite bound; or
-     *  for a value of a sum type a list of each constructor's name followed by the form of its payload. The single
-     *  implementation (single-runtime principle). */
-    public static String rsTekst(Object o, Object form) {
+     *  for a value of a sum type a list of each constructor's name followed by the form of its payload. {@code unit} is
+     *  the unit a number writes after it, a space and the unit in parentheses ("5,50 (EUR)"), null where the part
+     *  writes none; a leeg part writes "" without it. The single implementation (single-runtime principle). */
+    public static String rsTekst(Object o, Object form, String unit) {
         if (o == null) return "";
+        if (unit != null) {
+            if (!(o instanceof Number)) throw new IllegalStateException("the text part writes the unit of its number, and its value "
+                    + o + " is no number (WF-129)");
+            return rsTekst(o, form, null) + " (" + unit + ")";
+        }
         if (o instanceof String s) return s;
         if (o instanceof Boolean b) return b ? "waar" : "onwaar";
         if (o instanceof Number n) {
@@ -391,7 +397,7 @@ public final class RegelSpraakRuntime {
         if (o instanceof java.time.LocalDateTime t) return t.format(TEXT_DATE_TIME);
         if (o instanceof dev.uchar.regelspraak.transpiler.tms.ConstructorValue c)
             return c.payload() == null ? c.constructor()
-                    : c.constructor() + "(" + rsTekst(c.payload(), payloadForm(form, c.constructor())) + ")";
+                    : c.constructor() + "(" + rsTekst(c.payload(), payloadForm(form, c.constructor()), null) + ")";
         throw new IllegalStateException("a value of " + o.getClass().getName() + " has no text (RUNTIME-SEMANTICS ch. 1.2)");
     }
 

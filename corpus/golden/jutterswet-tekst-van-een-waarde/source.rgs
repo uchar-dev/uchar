@@ -27,6 +27,7 @@ Objecttype de Vondst (mv: Vondsten)
     de toeslagtekst Tekst;
     de factortekst Tekst;
     de heffingtekst Tekst;
+    de eenheidtekst Tekst;
 
 Regel omschrijving
     geldig altijd
@@ -81,3 +82,7 @@ Regel heffingtekst
         De heffingtekst van een Vondst moet berekend worden als "Heffing: «de heffing»".
         Daarbij geldt:
             de heffing is zijn basis maal 1,1.
+
+Regel eenheidtekst
+    geldig altijd
+        De eenheidtekst van een Vondst moet berekend worden als "Bedrag: «zijn basis (eenheid)», aandeel «zijn aandeel (eenheid)», toeslag «zijn basis maal 1,1 (eenheid)», zonder eenheid «zijn basis»".

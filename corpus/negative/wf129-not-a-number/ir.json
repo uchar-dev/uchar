@@ -1,0 +1,98 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "bevestiging",
+            "datatype": {
+              "node": "Boolean"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "status",
+            "datatype": {
+              "node": "Text"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "status",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "status",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De status van een Vondst"
+              }
+            },
+            "value": {
+              "node": "TextComposition",
+              "parts": [
+                {
+                  "node": "LiteralChunk",
+                  "text": "Gemeld: "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "AttributeReference",
+                    "attribute": "bevestiging",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn bevestiging"
+                    }
+                  },
+                  "unit": true
+                }
+              ],
+              "type": {
+                "node": "Text"
+              },
+              "source": {
+                "snippet": "\"Gemeld: \u00abzijn bevestiging\u00bb\""
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

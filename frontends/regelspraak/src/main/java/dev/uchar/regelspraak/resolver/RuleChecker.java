@@ -1981,7 +1981,7 @@ final class RuleChecker {
                     Expr.TextComposition.Part n = d;
                     if (d instanceof Expr.TextComposition.EmbeddedExpression i) {
                         Expr x = opSubtype(i.expr(), sup, sub);
-                        if (x != i.expr()) n = new Expr.TextComposition.EmbeddedExpression(x);
+                        if (x != i.expr()) n = new Expr.TextComposition.EmbeddedExpression(x, i.unit());
                     }
                     same &= n == d;
                     parts.add(n);

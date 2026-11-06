@@ -197,6 +197,13 @@
             "datatype": {
               "node": "Text"
             }
+          },
+          {
+            "node": "Attribute",
+            "name": "eenheidtekst",
+            "datatype": {
+              "node": "Text"
+            }
           }
         ],
         "characteristics": []
@@ -1039,6 +1046,141 @@
               },
               "source": {
                 "snippet": "de heffing is zijn basis maal 1,1"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "eenheidtekst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "eenheidtekst",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De eenheidtekst van een Vondst"
+              }
+            },
+            "value": {
+              "node": "TextComposition",
+              "parts": [
+                {
+                  "node": "LiteralChunk",
+                  "text": "Bedrag: "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "AttributeReference",
+                    "attribute": "basis",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn basis"
+                    }
+                  },
+                  "unit": true
+                },
+                {
+                  "node": "LiteralChunk",
+                  "text": ", aandeel "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "AttributeReference",
+                    "attribute": "aandeel",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn aandeel"
+                    }
+                  },
+                  "unit": true
+                },
+                {
+                  "node": "LiteralChunk",
+                  "text": ", toeslag "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "Binary",
+                    "op": "times",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "basis",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn basis"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "1.1"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 1,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "1,1"
+                      }
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 3,
+                      "sign": "unspecified",
+                      "unit": [
+                        {
+                          "node": "Unit",
+                          "abbreviation": "EUR",
+                          "system": "Munt",
+                          "canonical": "EUR",
+                          "factorToCanonical": {
+                            "num": 1,
+                            "den": 1
+                          }
+                        }
+                      ]
+                    },
+                    "source": {
+                      "snippet": "zijn basis maal 1,1"
+                    }
+                  },
+                  "unit": true
+                },
+                {
+                  "node": "LiteralChunk",
+                  "text": ", zonder eenheid "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "AttributeReference",
+                    "attribute": "basis",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn basis"
+                    }
+                  }
+                }
+              ],
+              "type": {
+                "node": "Text"
+              },
+              "source": {
+                "snippet": "\"Bedrag: \u00abzijn basis (eenheid)\u00bb, aandeel \u00abzijn aandeel (eenheid)\u00bb, toeslag \u00abzijn basis maal 1,1 (eenheid)\u00bb, zonder eenheid \u00abzijn basis\u00bb\""
               }
             },
             "initialisation": false,

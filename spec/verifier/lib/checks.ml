@@ -2743,6 +2743,19 @@ let datatype_kind = function
   | Enumeration _ -> "enumeration" | Sum_type _ -> "sumtype" | List_type _ -> "list"
   | Struct_type _ -> "struct"
 
+(* WF-129 (IR-SPEC ch. 4.2): a part of a text composition that writes the
+   unit of its number has a unit to write — its type is a number with a unit
+   or a percentage (RUNTIME-SEMANTICS ch. 1.2). A part whose type nothing
+   declares defers, as every type check does. *)
+let wf129_part at (t : datatype option) =
+  match t with
+  | None | Some (Number { measure_unit = Some _; _ } | Percentage { measure_unit = Some _; _ }) -> []
+  | Some (Number { measure_unit = None; _ } | Percentage { measure_unit = None; _ }) ->
+      [ v "WF-129.number-without-unit" at "the part writes the unit of its number, and its number has no unit" ]
+  | Some d ->
+      [ v ~params:[ ("kind", datatype_kind d) ] "WF-129.not-a-number" at
+          ("the part writes the unit of its number, and its value is of kind " ^ datatype_kind d ^ ", no number") ]
+
 (* WF-038 on the two numeric builtins (IR-SPEC ch. 4.3): a square root and an
    absolute value take one number. Shared with ref and the ASP backend, which
    refuse the form in this sentence when a document reaches them without the
@@ -3818,7 +3831,7 @@ let day_kind_scan at (c0 : condition_expr) : violation list * string list =
     | Temporal_read { base_expr; date_value; _ } -> ex base_expr; ex date_value
     | Invoke { arguments; _ } -> List.iter ex arguments
     | Text_composition { pieces; _ } ->
-        List.iter (function Embedded_expression { expr = Some e } -> ex e | _ -> ()) pieces
+        List.iter (function Embedded_expression { expr = Some e; _ } -> ex e | _ -> ()) pieces
     | Function_call { call_arguments; empty_fallback; filter; _ } ->
         List.iter ex call_arguments;
         opt empty_fallback;
@@ -4765,7 +4778,7 @@ let rec mentions_binder b (e : expr) : bool =
   | Temporal_read { base_expr; date_value; _ } -> mentions_binder b base_expr || mentions_binder b date_value
   | Invoke { arguments; _ } -> List.exists (mentions_binder b) arguments
   | Text_composition { pieces; _ } ->
-      List.exists (function Embedded_expression { expr = Some e } -> mentions_binder b e | _ -> false) pieces
+      List.exists (function Embedded_expression { expr = Some e; _ } -> mentions_binder b e | _ -> false) pieces
   | Function_call { call_arguments; empty_fallback; filter; _ } ->
       List.exists (mentions_binder b) call_arguments || opt empty_fallback
       || (match filter with Some c -> mentions_binder_cond b c | None -> false)
@@ -4834,7 +4847,7 @@ let rec bound_only_expr (e : expr) : bool =
   | Rounding { base_expr; _ } -> opt base_expr
   | Clamp { base_expr; minimum; maximum; _ } -> opt base_expr && opt minimum && opt maximum
   | Text_composition { pieces; _ } ->
-      List.for_all (function Embedded_expression { expr = Some e } -> bound_only_expr e | _ -> true) pieces
+      List.for_all (function Embedded_expression { expr = Some e; _ } -> bound_only_expr e | _ -> true) pieces
   | _ -> false
 
 let wf077_condition at (c : condition_expr) : violation list =
@@ -5415,9 +5428,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
            (fun i d ->
              match d with
              | Literal_chunk _ -> []
-             | Embedded_expression { expr = Some e } ->
-                 walk_expr ctx ~binders ~subject ~body (Printf.sprintf "%s/parts/%d/expr" at i) e
-             | Embedded_expression { expr = None } -> [])
+             | Embedded_expression { expr = Some e; with_unit } ->
+                 (if with_unit then wf129_part (Printf.sprintf "%s/parts/%d" at i) (ty e) else [])
+                 @ walk_expr ctx ~binders ~subject ~body (Printf.sprintf "%s/parts/%d/expr" at i) e
+             | Embedded_expression { expr = None; _ } -> [])
            pieces)
   | Binary { op; left_side; right_side; _ } ->
       let lt = Option.bind left_side ty and rt = Option.bind right_side ty in
@@ -8228,8 +8242,8 @@ let rec dep_expr_at ctx ~subject ~at acc (e : expr) =
       List.fold_left
         (fun acc -> function
           | Literal_chunk _ -> acc
-          | Embedded_expression { expr = Some e } -> dep_expr_at ctx ~subject ~at acc e
-          | Embedded_expression { expr = None } -> acc)
+          | Embedded_expression { expr = Some e; _ } -> dep_expr_at ctx ~subject ~at acc e
+          | Embedded_expression { expr = None; _ } -> acc)
         acc pieces
   | Binary { left_side; right_side; _ } ->
       dep_opt_at ctx ~subject ~at (dep_opt_at ctx ~subject ~at acc left_side) right_side
@@ -11306,7 +11320,7 @@ let rec invoked_expr acc (e : expr) : string list =
   | Let { value; body = lbody; _ } -> invoked_expr (invoked_expr acc value) lbody
   | Text_composition { pieces; _ } ->
       List.fold_left
-        (fun acc -> function Embedded_expression { expr = Some e } -> invoked_expr acc e | _ -> acc)
+        (fun acc -> function Embedded_expression { expr = Some e; _ } -> invoked_expr acc e | _ -> acc)
         acc pieces
   | Dimension_cell_read { attribute_ref; _ } -> invoked_opt acc attribute_ref
   | Temporal_read { base_expr; date_value; _ } -> invoked_expr (invoked_expr acc base_expr) date_value
@@ -11608,7 +11622,7 @@ let rec markers_expr acc (e : expr) : string option list =
       acc
   | Text_composition { pieces; _ } ->
       List.fold_left
-        (fun acc -> function Embedded_expression { expr } -> o acc expr | Literal_chunk _ -> acc)
+        (fun acc -> function Embedded_expression { expr; _ } -> o acc expr | Literal_chunk _ -> acc)
         acc pieces
   | Binary { left_side; right_side; _ } -> o (o acc left_side) right_side
   | Function_call { call_arguments; empty_fallback; filter; _ } ->
@@ -12773,7 +12787,7 @@ let wf127_payload_guards ctx =
         List.concat
           (List.mapi
              (fun i -> function
-               | Embedded_expression { expr = Some e } -> ex tests (Printf.sprintf "%s/parts/%d/expr" at i) e
+               | Embedded_expression { expr = Some e; _ } -> ex tests (Printf.sprintf "%s/parts/%d/expr" at i) e
                | _ -> [])
              pieces)
     | Binary { left_side; right_side; _ } -> opt "left" left_side @ opt "right" right_side

@@ -727,3 +727,4 @@ RGS-384	the unit '{unit}' is no declared unit: its spelling comes from rendering
 RGS-385	no conversion factor from unit '{unit}' to '{target}': not interchangeable
 RGS-386	semantic tokens: no source file given
 RGS-387	a source file has a name and a text
+RGS-388	the text part «{part}» writes the unit of its number, and {type} has no unit (WF-129)

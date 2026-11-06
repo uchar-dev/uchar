@@ -1796,7 +1796,7 @@ let walk_order ~(value : string -> expr -> bool) (visit : expr -> unit) =
     | Struct_literal { field_list; _ } -> List.iter (fun (_, y) -> x y) field_list
     | List_literal { elements; _ } -> List.iter x elements
     | Text_composition { pieces; _ } ->
-        List.iter (function Embedded_expression { expr = Some y } -> x y | _ -> ()) pieces
+        List.iter (function Embedded_expression { expr = Some y; _ } -> x y | _ -> ()) pieces
     | If_then_else { condition; then_; else_; _ } ->
         cond condition;
         x then_;
@@ -2163,7 +2163,7 @@ let expr_reaches ctx (hit : expr -> bool) (e : expr) : bool =
     | Struct_literal { field_list; _ } -> List.exists (fun (_, y) -> x y) field_list
     | List_literal { elements; _ } -> List.exists x elements
     | Text_composition { pieces; _ } ->
-        List.exists (function Embedded_expression { expr = Some y } -> x y | _ -> false) pieces
+        List.exists (function Embedded_expression { expr = Some y; _ } -> x y | _ -> false) pieces
     | If_then_else { condition; then_; else_; _ } -> co condition || x then_ || x else_
     | Match { scrutinee; arms; _ } -> x scrutinee || List.exists (fun (_, _, b) -> x b) arms
     | Let { value; body; _ } -> x value || x body
@@ -4413,12 +4413,18 @@ let rec hoist_branch ctx binder (e : expr) : expr option =
   | Text_composition { pieces; typ; source_name } ->
       let at i x =
         Text_composition
-          { pieces = List.mapi (fun j d -> if j = i then Embedded_expression { expr = Some x } else d) pieces;
+          { pieces =
+              List.mapi
+                (fun j d ->
+                  match d with
+                  | Embedded_expression r when j = i -> Embedded_expression { r with expr = Some x }
+                  | d -> d)
+                pieces;
             typ; source_name }
       in
       one_of typ source_name
         (List.mapi
-           (fun i d -> ((match d with Embedded_expression { expr } -> expr | Literal_chunk _ -> None), at i))
+           (fun i d -> ((match d with Embedded_expression { expr; _ } -> expr | Literal_chunk _ -> None), at i))
            pieces)
   | _ -> None
 
@@ -8543,7 +8549,7 @@ and dk_seen_days ctx : int list =
     | Temporal_read { base_expr; date_value; _ } -> ex base_expr; ex date_value
     | Invoke { arguments; _ } -> List.iter ex arguments
     | Text_composition { pieces; _ } ->
-        List.iter (function Embedded_expression { expr = Some x } -> ex x | _ -> ()) pieces
+        List.iter (function Embedded_expression { expr = Some x; _ } -> ex x | _ -> ()) pieces
     | _ -> ()
   and co (c : condition_expr) =
     let opt = function Some x -> ex x | None -> () in
@@ -10982,7 +10988,7 @@ and value_condition ctx ~subject ~subject_ot (c : condition_expr) : string list 
     | Rounding { base_expr; _ } -> opt base_expr
     | Clamp { base_expr; minimum; maximum; _ } -> opt base_expr && opt minimum && opt maximum
     | Text_composition { pieces; _ } ->
-        List.for_all (function Embedded_expression { expr = Some e } -> bound_only e | _ -> true) pieces
+        List.for_all (function Embedded_expression { expr = Some e; _ } -> bound_only e | _ -> true) pieces
     | _ -> false
   and opt = function Some e -> bound_only e | None -> true in
   let operand_ok o =

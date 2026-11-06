@@ -91,7 +91,7 @@ let rec walk_expr ~own ?(scope = []) acc (e : expr) =
       acc
   | Text_composition { pieces; _ } ->
       List.fold_left
-        (fun acc -> function Embedded_expression { expr = Some x } -> sub acc x | _ -> acc)
+        (fun acc -> function Embedded_expression { expr = Some x; _ } -> sub acc x | _ -> acc)
         acc pieces
   | Binary { left_side; right_side; _ } -> opt sub (opt sub acc left_side) right_side
   | Function_call { call_arguments; filter; empty_fallback; dimension_selections; _ } ->

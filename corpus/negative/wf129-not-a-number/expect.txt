@@ -1,0 +1,2 @@
+WF-129.not-a-number
+kind=boolean

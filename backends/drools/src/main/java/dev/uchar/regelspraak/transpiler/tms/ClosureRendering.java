@@ -319,7 +319,7 @@ final class ClosureRendering {
             case RS_ROUNDING -> x -> RegelSpraakRuntime.rsAfronding(x[0], (Integer) x[1], (RoundingMode) x[2]);
             case RS_CLAMP -> x -> RegelSpraakRuntime.rsBegrens(x[0], x[1], x[2]);
             case RS_ABS -> x -> RegelSpraakRuntime.rsAbs(x[0]);
-            case RS_TEXT -> x -> RegelSpraakRuntime.rsTekst(x[0], x[1]);
+            case RS_TEXT -> x -> RegelSpraakRuntime.rsTekst(x[0], x[1], (String) x[2]);
             case RS_DURATION -> x -> RegelSpraakRuntime.rsTijdsduur((Temporal) x[0], (Temporal) x[1], (String) x[2],
                     (Boolean) x[3]);
             case RS_DURATION_DAY_KIND -> x -> RegelSpraakRuntime.rsTijdsduurDagsoort((LocalDate) x[0],

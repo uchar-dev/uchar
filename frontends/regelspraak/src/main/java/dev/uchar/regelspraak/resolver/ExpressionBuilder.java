@@ -377,7 +377,7 @@ final class ExpressionBuilder {
                     if (part instanceof Expr.TextComposition.EmbeddedExpression x) {
                         Expr moved = again.apply(x.expr());
                         changed |= moved != x.expr();
-                        parts.add(moved == x.expr() ? part : new Expr.TextComposition.EmbeddedExpression(moved));
+                        parts.add(moved == x.expr() ? part : new Expr.TextComposition.EmbeddedExpression(moved, x.unit()));
                     } else parts.add(part);
                 }
                 return changed ? new Expr.TextComposition(List.copyOf(parts), t.source()) : t;
@@ -1056,7 +1056,15 @@ final class ExpressionBuilder {
             for (var part : p.tekstWaarde().tekstReeksDeel()) {
                 if (part.expressie() != null) {
                     hasExpression = true;
-                    parts.add(new Expr.TextComposition.EmbeddedExpression(build(part.expressie())));
+                    Expr inserted = build(part.expressie());
+                    boolean unit = part.EENHEID_AANWIJZING() != null;
+                    // WF-129: a part that writes the unit of its number has a unit to write, a number with a unit or a
+                    // percentage; a part whose type did not resolve is refused on its own
+                    Datatype t = inserted.type();
+                    if (unit && t != null && !t.isUnknown() && !(t.isNumberLike() && t.unitOf() != null))
+                        model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-388",
+                                params("part", src(part.expressie()), "type", t.name()), source.line()));
+                    parts.add(new Expr.TextComposition.EmbeddedExpression(inserted, unit));
                 } else if (part.STRING_TEXT() != null) {
                     parts.add(new Expr.TextComposition.LiteralChunk(part.STRING_TEXT().getText()));
                 }

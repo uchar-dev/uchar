@@ -396,7 +396,9 @@ and instance_set_branch = {
 
 and text_part =
   | Literal_chunk of { body_text : string option }
-  | Embedded_expression of { expr : expr option }
+  (* [with_unit]: the part writes the unit of its number after it, in
+     parentheses (the wire's [unit: true]; RUNTIME-SEMANTICS ch. 1.2) *)
+  | Embedded_expression of { expr : expr option; with_unit : bool }
 
 and dimension_selection = {
   ds_dimension : string option;

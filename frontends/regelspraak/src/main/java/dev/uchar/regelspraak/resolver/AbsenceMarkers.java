@@ -262,7 +262,7 @@ final class AbsenceMarkers {
                     Expr.TextComposition.Part n2 = d;
                     if (d instanceof Expr.TextComposition.EmbeddedExpression i) {
                         Expr x = read(i.expr());
-                        if (x != i.expr()) n2 = new Expr.TextComposition.EmbeddedExpression(x);
+                        if (x != i.expr()) n2 = new Expr.TextComposition.EmbeddedExpression(x, i.unit());
                     }
                     same &= n2 == d;
                     parts.add(n2);

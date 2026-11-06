@@ -97,7 +97,9 @@ public sealed interface Expr {
         /** A literal karakterreeks chunk (already unquoted, no guillemets). */
         public record LiteralChunk(String text) implements Part {}
         /** A «expressie» part — its value is coerced to Tekst at evaluation. */
-        public record EmbeddedExpression(Expr expr) implements Part {}
+        /** {@code unit}: the part writes the unit of its number after it, in parentheses (the wire's
+         *  {@code unit: true}, RUNTIME-SEMANTICS ch. 1.2); the source writes {@code «X (eenheid)»}. */
+        public record EmbeddedExpression(Expr expr, boolean unit) implements Part {}
     }
 
     /** §13.4.16 arithmetic operators and §13.4.17.12 percentage-of. */

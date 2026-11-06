@@ -1,0 +1,101 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "basis",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "omschrijving",
+            "datatype": {
+              "node": "Text"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "omschrijving",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "omschrijving",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De omschrijving van een Vondst"
+              }
+            },
+            "value": {
+              "node": "TextComposition",
+              "parts": [
+                {
+                  "node": "LiteralChunk",
+                  "text": "Bedrag: "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "AttributeReference",
+                    "attribute": "basis",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn basis"
+                    }
+                  },
+                  "unit": true
+                }
+              ],
+              "type": {
+                "node": "Text"
+              },
+              "source": {
+                "snippet": "\"Bedrag: \u00abzijn basis\u00bb\""
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

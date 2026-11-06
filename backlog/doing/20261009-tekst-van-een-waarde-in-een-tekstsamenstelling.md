@@ -233,3 +233,75 @@ eenheid (nieuwe WF-regel); in de bron een uitbreiding binnen `«…»` (DIVERGEN
   7, 8, 10, 12 (JUnit 1892), 13, 15, 16, 17 (`logs/s1-summary.log`, `logs/s1b-summary.log`, per gate
   `logs/s1*-check-*.log`). De eerste run van gate 12 was rood: `DrlRenderingWitnessTest` bouwde een `RS_TEXT`-term
   met één argument (`FormsPlan`), bijgewerkt. `make gates` volgt na stap 2.
+
+### Stap 2: de eenheid op verzoek, tussen haakjes
+
+*Besluit van de eigenaar (2026-11-06 avond), ontwerpkeuzes van de hoofdsessie; bronvorm `«X (eenheid)»` door de
+eigenaar gekozen. Mandaat voor deze stap: IR-SPEC, het schema, de verifier, `scripts/check-*.sh`, RUNTIME-SEMANTICS
+ch. 1.2, `corpus/negative/` en de golden.*
+
+- **Draad.** `EmbeddedExpression` krijgt het optionele veld `unit`, alleen `true`, achteraan in de sleutelvolgorde
+  (schema `$defs/EmbeddedExpression`, met een beschrijving); afwezig is het deel zonder eenheid. Additief: een
+  document zonder het veld leest als voorheen. Gate 2 kreeg vier vorm-zelftestrijen (`UNIT_SHAPE_ROWS`: `true`
+  aanvaard; `false`, `null` en een eenheidsspelling geweigerd).
+- **IR-SPEC ch. 4.2.** Het veld bij `TextComposition`, en **WF-129**: een deel met `unit` heeft een type met een
+  eenheid (een getal met `unit`, een percentage draagt `%`); het type is het statische type van `expr` (ch. 2.10), een
+  deel zonder gedeclareerd type wacht. Twee armen op de pointer van het deel: `WF-129.number-without-unit` en
+  `WF-129.not-a-number` (parameter `kind`). Rij in de WF-tabel.
+- **Verifier.** `Embedded_expression` draagt `with_unit`; de loader leest `unit` (alleen `true`, anders een
+  laadfout in de zin die de Drools-loader ook schrijft); de controle staat in `walk_expr`, dus overal waar een
+  tekstsamenstelling staat. Negatieven `corpus/negative/wf129-number-without-unit` en `wf129-not-a-number`, elk met
+  `expect.txt` en `NOTE.md` (frontend-uitvoer zonder suffix, met het veld toegevoegd).
+- **RUNTIME-SEMANTICS ch. 1.2.** De regel: na het getal een spatie en tussen haakjes de eenheid waarin de waarde
+  staat (van een read de declaratie, van een samengesteld deel de afgeleide eenheid, ch. 2.6 en 2.10), gespeld zoals
+  IR-SPEC ch. 2.5 een eenheid spelt; leeg blijft `""` zonder eenheid. Rijen in de tabel en het voorbeeld van de golden.
+- **Keuze: de afkorting.** De eenheid wordt geschreven met haar afkorting, de ene spelling die elk voorkomen van een
+  eenheid op de draad draagt (IR-SPEC ch. 2.5; `Units.render` in OCaml en `Unit.rendering()` in Java spellen haar
+  gelijk). De verdere spellingen van een declaratie (`spellings`) hebben geen rol die er één als symbool aanwijst. De
+  golden declareert `de euro (mv: euros) EUR €`, dus `5,50 (EUR)`; een document dat € als afkorting declareert,
+  schrijft `5,50 (€)`. Een percentage schrijft `(%)`, een tarief `(EUR/jr)`.
+- **Frontend.** `(eenheid)` is één token met zijn haakjes (`EENHEID_AANWIJZING`), zoals `(bezield)` en `(mag
+  opgegeven worden)`; `tekstReeksDeel` neemt het na de expressie van een «…»-escape. Geen expressieproductie neemt
+  het token, dus `«zijn basis maal 1,1 (eenheid)»` vraagt de eenheid van het product; `eenheid` blijft een gewoon
+  woord, dus een attribuut of parameter die eenheid heet blijft leesbaar (`«zijn eenheid (eenheid)»`). Gemeten: geen
+  van de 369 andere RegelSpraak-bronnen van de repository schrijft `(eenheid)`. Het record `EmbeddedExpression` draagt
+  `unit`, de emitter schrijft `"unit": true`, en een deel met de suffix waarvan het type geen eenheid heeft is
+  RGS-388 (register en beide catalogi). DIVERGENCES: "De eenheid van een tekstdeel". Test `TextPartUnitTest` (drie
+  gevallen).
+- **Ref.** `Arith.text_form` draagt `with_unit`; de eenheid is die van de waarde zelf (`Value.Num (q, Unit u)`),
+  gespeld door `Units.render`. Een deel met eenheid op een waarde zonder eenheid of op een niet-getal is een fout
+  (WF-129 gebroken), nooit een stil weggelaten eenheid. Suite: zeven rijen erbij (2607 voorbeelden).
+- **Drools.** De loader leest `unit` (`unitRequest`, sleutel in de tabel van het deel); de analyse geeft
+  `rsTekst(waarde, vorm, eenheid)` de spelling van de afgeleide eenheid (`EffectiveUnit`, `Unit.rendering()`) als
+  constante, null zonder eenheid; een deel dat een eenheid vraagt die het niet heeft, weigert de backend bij naam:
+  **DROOLS-368** (`TEXT_PART_UNIT_WITHOUT_UNIT`, CONTRACT; register en catalogi). Tests: `TextOfAValueTest.a_part_with_its_unit`,
+  `TmsBuiltinWitnessTest.a_part_with_the_unit_of_a_number_without_one_is_refused_by_name`; DRL-pin herschreven.
+- **Clingo** weigert tekstsamenstelling al (CLINGO-042); alleen de patronen van de AST volgen het nieuwe veld.
+- **Golden.** Regel `eenheidtekst`: `"Bedrag: «zijn basis (eenheid)», aandeel «zijn aandeel (eenheid)», toeslag «zijn
+  basis maal 1,1 (eenheid)», zonder eenheid «zijn basis»"`, zes nieuwe verwachtingen (V1 `Bedrag: 5,50 (EUR), aandeel
+  12,50 (%), toeslag 6,050 (EUR), zonder eenheid 5,50`; V2–V4 zo; V5/V6 leeg: `Bedrag: , aandeel , toeslag 0,000 (EUR),
+  zonder eenheid `, de vermenigvuldiging coalesceert leeg naar 0 in de eenheid van de declaratie). Geen bestaande
+  verwachting veranderde in stap 2.
+- **Rood eerst.** De golden op de code van `55ecb7603`: ref `IR LOAD ERROR … unknown field 'unit'`, de jar
+  `ERROR DocumentError … unknown field on EmbeddedExpression` (`logs/red2-*.log`); na de bouw ref `PASS (57)` en
+  `(29)`, beide Drools-takken `PLAYED 2`.
+- **Gates na stap 2** (los, vóór de commit): 1, 2 (534 vorm-zelftestrijen), 3 (636 negatieven, 265 armsleutels), 4,
+  5, 10 (JUnit 1530; 377 RGS-codes), 11, 12 (`logs/s2-summary.log`). Gate 12 was eerst rood op dezelfde
+  `FormsPlan`-term als in stap 1 (nu met drie argumenten); daarna `DrlRenderingWitnessTest` groen.
+
+### Voor de hoofdsessie
+
+- **CONSTRUCTS, rij 31** (voorstel, vervangt de zin van het voorlopige besluit): "Tekst van een waarde
+  (TextComposition, concatenation): een getal in de decimalen van het type van zijn deel (de precisiegrens van
+  RUNTIME-SEMANTICS ch. 2.3), zonder eindige grens exact en `t/n`; `waar`/`onwaar`, `dd-MM-jjjj`, `dd-MM-jjjj
+  uu:mm:ss.mmm`, een opsomming haar label, een constructor `tag(payload)` met de payload in zijn gedeclareerde type;
+  lijst/record een fout. Op verzoek de eenheid erachter, `EmbeddedExpression.unit` (v1-extensie, WF-129; bron
+  `«X (eenheid)»`), gespeld met de afkorting. Besluit van de eigenaar 2026-11-06. ref en beide Drools-takken (DROOLS-368
+  bij een deel zonder eenheid); clingo weigert als limiet CLINGO-042."
+- **CLAUDE.md, gate-teksten** (voorstel): gate 2 — "Since the card `tekst-van-een-waarde-in-een-tekstsamenstelling`
+  (2026-11-06) the shape self-test holds `EmbeddedExpression.unit` to its one spelling, `true` (four rows)." Gate 3 —
+  "Since the same card WF-129 refuses a text part that writes the unit of its number where its type has none, with one
+  negative per arm." Gate 10 — "RGS-388 refuses the same at check (`«X (eenheid)»`, DIVERGENCES 'De eenheid van een
+  tekstdeel')." Gate 12 — "Since the same card the analysis passes `rsTekst` the form of a part (its decimals, ch. 1.2)
+  and its unit, and DROOLS-368 refuses a part that asks for a unit it does not have." Geen vloer bewoog: alle
+  tellingen groeiden.

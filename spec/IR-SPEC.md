@@ -5053,9 +5053,29 @@ sugar verdict (row 31), mirrored; an embedded value of any datatype reads
 as its text, and empty as `""`, per `RUNTIME-SEMANTICS.md` ch. 1.2 ("Text
 coercion"). Each part is a node: a **LiteralChunk**
 (`text`, the chunk's literal text) or an **EmbeddedExpression** (`expr`,
-the expression whose value is inserted). In v0 the three nodes were
+the expression whose value is inserted, and `unit?`, written `true` where
+the part writes the unit of its number after it, in parentheses; absent is
+the one spelling of a part without its unit, and it stands last in the
+key order). In v0 the three nodes were
 `TekstReeks` (with `delen`), `Letterlijk` (with `tekst`) and `Ingevoegd`
-(with `expr`), the wire names until L5.
+(with `expr`), the wire names until L5; `unit` is a v1 extension (card
+`tekst-van-een-waarde-in-een-tekstsamenstelling`, decision of the
+maintainer 2026-11-06), additive, so a document without it reads as
+before.
+
+- **WF-129** An `EmbeddedExpression` with `unit` MUST have a type with a
+  unit: a `Number` that carries a `unit` (a percentage carries `%`). Its
+  type is the static type of its `expr` (ch. 2.10): a reference's
+  declaration, a composite's annotation, which WF-091 holds to the type its
+  operands derive. A part whose type nothing declares defers, as every type
+  rule does. Two arms, cited at the part: `WF-129.number-without-unit`, a
+  number without a unit, and `WF-129.not-a-number` with the parameter
+  `kind`, the kind of a type that is no number. There is no unit to write
+  (`RUNTIME-SEMANTICS.md` ch. 1.2). Witnesses
+  `corpus/negative/wf129-number-without-unit` and `-not-a-number`; the
+  golden `jutterswet-tekst-van-een-waarde` passes it. The RegelSpraak
+  frontend refuses the source with RGS-388, the Drools backend the document
+  with DROOLS-368, and ref faults where a part reaches it.
 
 ### 4.3 Aggregation and builtin calls
 
@@ -10298,6 +10318,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-126 | the grid of a timeline read per period fits the grid of the rule's timeline target (ch. 3.1; card `conditions-per-period`, 2026-11-03): (a) a timeline the value reads — an own time-dependent attribute, the member attribute of a sum over a set, a time-dependent parameter; (b) one the condition reads — a check of an own time-dependent characteristic, a compared own time-dependent attribute, a whole-period qualifier on the grid it names; (c) and (d) the same in the consequence and the justification of a default of a defaults group on a timeline attribute target (RUNTIME-SEMANTICS ch. 7.11); the time-proportional part, the day count and the operand of a qualifier exempt | gate 3 | `jutterswet-loon-per-periode`, `jutterswet-wachtmaanden` (a month and a year qualifier on monthly targets), `jutterswet-rekenen-per-dag` and `anchor/jutterswet-verzuimrente-dagen` (operands on a day target), `jutterswet-opgave-per-periode` (defaults on monthly targets) | `wf126-value-grid` (a), `wf126-condition-grid` (b, a characteristic), `wf126-whole-period-grid` (b, a qualifier), `wf126-defaults-value-grid` (c), `wf126-defaults-condition-grid` (d) |
 | WF-127 | a `PayloadAccess` reads a sum type — a sum-typed base naming a declared domain, a declared unary constructor, the declared payload as its type — and stands under a gevuld test of the same access before it, the same attribute read or the same cell of it, or is the operand of a leeg or gevuld test (ch. 4.7; card `absence-markers`, 2026-11-04; the cell since card `absence-markers-residue`, 2026-11-05) | gate 3 | `jutterswet-afwezigheidsmarkers` + `jutterswet-afwezigheidsmarkers-cel` (executed by gates 5–6) | `wf127-unguarded` + `wf127-guard-after-read` + `wf127-fold-unguarded` + `wf127-cell-guarded-by-another-cell` + `wf127-base-not-sum` + `wf127-base-untyped` + `wf127-domain-undeclared` + `wf127-constructor-undeclared` + `wf127-constructor-nullary` + `wf127-type-differs` + `wf127-access-untyped` |
 | WF-128 | an allocation names no time-dependent attribute: not as its amount, share or rest, and not as its weight, cap or ordering key (ch. 3.2; card `timeline-initialisation-allocation-creation`, 2026-11-05) | gate 3 | every golden allocation, among them `jutterswet-berging` + `jutterswet-rangaflopend` (executed by gates 5–6) | `wf128-source-attribute` + `wf128-target-attribute` + `wf128-remainder-attribute` + `wf128-ratio-attribute` + `wf128-maximum-attribute` + `wf128-ordering-attribute` |
+| WF-129 | a text part that writes the unit of its number (`EmbeddedExpression.unit`) has a type with a unit — a number with a `unit`, a percentage among them (ch. 4.2; card `tekst-van-een-waarde-in-een-tekstsamenstelling`, 2026-11-06) | gate 3 | `jutterswet-tekst-van-een-waarde` (executed by gates 5 and 12) | `wf129-number-without-unit` + `wf129-not-a-number` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

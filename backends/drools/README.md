@@ -502,7 +502,8 @@ such place reports to it where it runs; a condition deposits through a rule of t
 de voorwaarde`, with the same left-hand side and a probe in its test, so a member of a composite that its verdict no
 longer reads deposits nothing (ch. 5.10). Witness `TmsDepositWitnessTest`. Rounding,
 clamp, the builtins outside the folds, a text composition (each part in the type of the part, `rsTekst` with the
-form the analysis reads from its precision bound, ch. 1.2), percentages and `percentageOf`, a power with a
+form the analysis reads from its precision bound and, where the part asks for it, its unit, ch. 1.2), percentages
+and `percentageOf`, a power with a
 whole exponent, the exact restatement of units at every operand boundary (ch. 2.6), the eleven and exact-digit tests,
 a cell of a dimensioned attribute over any number of dimensions and a sum, minimum or maximum over the cells of the
 product of its selections (ch. 5.8c) compute through the runtime's helpers from bound values, and a first, a last and a

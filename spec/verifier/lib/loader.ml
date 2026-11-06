@@ -914,8 +914,17 @@ and text_part path j : text_part =
       check_keys path kvs [ "node"; "text" ];
       Literal_chunk { body_text = str_opt (path / "text") (f "text") }
   | "EmbeddedExpression" ->
-      check_keys path kvs [ "node"; "expr" ];
-      Embedded_expression { expr = opt (path / "expr") expr (f "expr") }
+      check_keys path kvs ~ext:[ "unit" ] [ "node"; "expr" ];
+      Embedded_expression
+        {
+          expr = opt (path / "expr") expr (f "expr");
+          (* written true or not at all: absent is the part without a unit *)
+          with_unit =
+            Option.value ~default:false
+              (ext_field path kvs "unit" (fun p -> function
+                 | `Bool true -> true
+                 | j -> fail p ("expected true, the one spelling of a part with its unit, got " ^ Yojson.Safe.to_string j)));
+        }
   | k -> fail (path / "node") ("unknown TextCompositionPart node \"" ^ k ^ "\"")
 
 and dimension_selection path j : dimension_selection =

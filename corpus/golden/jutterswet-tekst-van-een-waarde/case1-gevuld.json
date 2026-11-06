@@ -32,6 +32,7 @@
     {"kind": "attributeValue", "label": "V1", "attribute": "toeslagtekst", "value": {"text": "Toeslag: 6,050"}},
     {"kind": "attributeValue", "label": "V1", "attribute": "factortekst", "value": {"text": "Factor: 0,125"}},
     {"kind": "attributeValue", "label": "V1", "attribute": "heffingtekst", "value": {"text": "Heffing: 6,050"}},
+    {"kind": "attributeValue", "label": "V1", "attribute": "eenheidtekst", "value": {"text": "Bedrag: 5,50 (EUR), aandeel 12,50 (%), toeslag 6,050 (EUR), zonder eenheid 5,50"}},
     {"kind": "attributeValue", "label": "V2", "attribute": "omschrijving", "value": {"text": "Bedrag: 5,00"}},
     {"kind": "attributeValue", "label": "V2", "attribute": "deeltekst", "value": {"text": "Deel: 5/3"}},
     {"kind": "attributeValue", "label": "V2", "attribute": "aantaltekst", "value": {"text": "Aantal: 0"}},
@@ -45,6 +46,7 @@
     {"kind": "attributeValue", "label": "V2", "attribute": "toeslagtekst", "value": {"text": "Toeslag: 5,500"}},
     {"kind": "attributeValue", "label": "V2", "attribute": "factortekst", "value": {"text": "Factor: 2"}},
     {"kind": "attributeValue", "label": "V2", "attribute": "heffingtekst", "value": {"text": "Heffing: 5,500"}},
+    {"kind": "attributeValue", "label": "V2", "attribute": "eenheidtekst", "value": {"text": "Bedrag: 5,00 (EUR), aandeel 100,00 (%), toeslag 5,500 (EUR), zonder eenheid 5,00"}},
     {"kind": "attributeValue", "label": "V3", "attribute": "omschrijving", "value": {"text": "Bedrag: 5,25"}},
     {"kind": "attributeValue", "label": "V3", "attribute": "deeltekst", "value": {"text": "Deel: 1,75"}},
     {"kind": "attributeValue", "label": "V3", "attribute": "aantaltekst", "value": {"text": "Aantal: 7"}},
@@ -58,6 +60,7 @@
     {"kind": "attributeValue", "label": "V3", "attribute": "toeslagtekst", "value": {"text": "Toeslag: 5,775"}},
     {"kind": "attributeValue", "label": "V3", "attribute": "factortekst", "value": {"text": "Factor: 0,5"}},
     {"kind": "attributeValue", "label": "V3", "attribute": "heffingtekst", "value": {"text": "Heffing: 5,775"}},
+    {"kind": "attributeValue", "label": "V3", "attribute": "eenheidtekst", "value": {"text": "Bedrag: 5,25 (EUR), aandeel 0,25 (%), toeslag 5,775 (EUR), zonder eenheid 5,25"}},
     {"kind": "attributeValue", "label": "V4", "attribute": "omschrijving", "value": {"text": "Bedrag: -1,00"}},
     {"kind": "attributeValue", "label": "V4", "attribute": "deeltekst", "value": {"text": "Deel: -1/3"}},
     {"kind": "attributeValue", "label": "V4", "attribute": "aantaltekst", "value": {"text": "Aantal: -40"}},
@@ -71,6 +74,7 @@
     {"kind": "attributeValue", "label": "V4", "attribute": "toeslagtekst", "value": {"text": "Toeslag: -1,100"}},
     {"kind": "attributeValue", "label": "V4", "attribute": "factortekst", "value": {"text": "Factor: "}},
     {"kind": "attributeValue", "label": "V4", "attribute": "heffingtekst", "value": {"text": "Heffing: -1,100"}},
+    {"kind": "attributeValue", "label": "V4", "attribute": "eenheidtekst", "value": {"text": "Bedrag: -1,00 (EUR), aandeel -0,50 (%), toeslag -1,100 (EUR), zonder eenheid -1,00"}},
     {"kind": "consistent"}
   ]
 }

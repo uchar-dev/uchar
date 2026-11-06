@@ -727,3 +727,4 @@ RGS-384	de eenheid '{unit}' is geen gedeclareerde eenheid: haar spelling komt ui
 RGS-385	geen omrekenfactor van eenheid '{unit}' naar '{target}': niet inwisselbaar
 RGS-386	semantic tokens: geen bronbestand opgegeven
 RGS-387	een bronbestand heeft een naam en een tekst
+RGS-388	het tekstdeel «{part}» schrijft de eenheid van zijn getal, en {type} heeft geen eenheid (WF-129)

@@ -4582,3 +4582,40 @@ its `source.rgs` as one test document: the coverage and the positions, every ref
 `unresolved` and no `word`; floors on the documents and on the name spans of the four kinds. Measured on the casus of the
 parity zone (its 47 fragments as one document, outside the suite because the zone's material stays out of this one):
 complete coverage, every reference linked, and 24 spans `unresolved`, each a name the fragments do not declare.
+
+## De eenheid van een tekstdeel — `«X (eenheid)»`
+
+uchar DIALECT EXTENSION (decision of the maintainer, 2026-11-06; card `tekst-van-een-waarde-in-een-tekstsamenstelling`).
+The RegelSpraak specification §5.4 writes a value into a text without its unit. The dialect lets an author ask for it:
+`"Bedrag: «zijn basis (eenheid)»"` writes the number as RUNTIME-SEMANTICS ch. 1.2 writes it, a space and the unit of
+its value in parentheses, `Bedrag: 5,50 (EUR)`; without the suffix the number stays without its unit.
+
+### Surface syntax (one token and one optional element)
+
+`(eenheid)` is one token, `EENHEID_AANWIJZING`, with its parentheses, as `(bezield)` and `(mag opgegeven worden)` are,
+and `tekstReeksDeel` takes it after the expression of an «…» escape:
+`L_ANGLE_QUOTE expressie EENHEID_AANWIJZING? R_ANGLE_QUOTE`. No production of an expression takes the token, so it
+cannot be read as a part of the expression before it: `«zijn basis maal 1,1 (eenheid)»` asks for the unit of the
+product. The token reserves no word: `eenheid` lexes as before everywhere else, so an attribute or a parameter named
+eenheid stays readable (`«zijn eenheid (eenheid)»`), and so does `( eenheid )` with spaces. What it takes away is
+the parenthesised reading of the bare name `eenheid` written without spaces, `(eenheid)`, in an expression.
+
+### Inertness — measured, not assumed
+
+None of the 369 other RegelSpraak sources of this repository, the corpus and the parity zone among them, writes
+`(eenheid)` (counted 2026-11-06), and gates 10 and 11 re-emit every one of them byte for byte with the extension in
+the frontend.
+
+### Lowering and emission
+
+The part is an `EmbeddedExpression` whose record carries `unit`; the emitter writes `"unit": true` after `expr` where
+it is set, and nothing where it is not (IR-SPEC ch. 4.2).
+
+### Refusal (resolver, loud diagnostic)
+
+A part that asks for its unit and whose type has none — a number without a unit, or a value that is no number — has
+no unit to write: RGS-388, the rule WF-129 of the verifier. A part whose type did not resolve is refused on its own.
+A scenario document's text value is literal and takes no «…» escape, the suffix included (RGS-279).
+
+**Witnesses.** `TextPartUnitTest`; the golden `jutterswet-tekst-van-een-waarde` (a part with € and with %, a product
+with its unit and a part without), which gates 5 and 12 replay.

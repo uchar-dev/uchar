@@ -1591,10 +1591,16 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
         (map_in_order
            (function
              | Literal_chunk { body_text } -> (Value.Text (Option.value body_text ~default:""), Arith.exact_form)
-             | Embedded_expression { expr = e } ->
+             | Embedded_expression { expr = e; with_unit } ->
                  let e = req "EmbeddedExpression.expr" e in
                  let v = eval_expr env world self ~err e in
-                 (v, text_form env e v))
+                 (match v with
+                 | Value.Num _ | Value.Empty -> ()
+                 | _ ->
+                     if with_unit then
+                       Value.fault "the text part writes the unit of its number, and its value %s is no number (WF-129)"
+                         (Value.to_string v));
+                 (v, { (text_form env e v) with with_unit }))
            pieces)
   | Expr_unresolved _ ->
       Value.faultc "EF-019" "Unresolved reached in evaluation: this rule fails observably"
@@ -5237,7 +5243,7 @@ let vintage_read_params (doc : document) : string list =
     | Expr_unresolved _ | Binder_ref _ ->
         ()
     | Text_composition { pieces; _ } ->
-        List.iter (function Embedded_expression { expr = Some e } -> expr e | _ -> ()) pieces
+        List.iter (function Embedded_expression { expr = Some e; _ } -> expr e | _ -> ()) pieces
     | Binary { left_side; right_side; _ } -> opt left_side; opt right_side
     | Function_call { call_arguments; empty_fallback; filter; _ } ->
         List.iter expr call_arguments;

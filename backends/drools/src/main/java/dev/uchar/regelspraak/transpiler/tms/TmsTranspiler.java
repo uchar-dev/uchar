@@ -6344,7 +6344,7 @@ public final class TmsTranspiler {
             switch (d) {
                 case Expr.TextComposition.LiteralChunk l ->
                         parts.add(new Term.Const(l.text() == null ? "" : l.text(), new Datatype.Text(), null));
-                case Expr.TextComposition.EmbeddedExpression i -> parts.add(textPart(i.expr(), reads));
+                case Expr.TextComposition.EmbeddedExpression i -> parts.add(textPart(i.expr(), i.unit(), reads));
             }
         }
         return new Term.TextComposition(parts, source(t.source()));
@@ -6352,10 +6352,22 @@ public final class TmsTranspiler {
 
     /** An inserted part of a text composition or an argument of a concatenation, as its text: the text of its value
      *  in the type of the part (RUNTIME-SEMANTICS ch. 1.2, "Text coercion"), which {@code rsTekst} writes for every
-     *  type, a leeg part as "", with the form of the part a constant ({@link #textForm}). */
-    private Term textPart(Expr e, Reads reads) {
+     *  type, a leeg part as "", with the form of the part a constant ({@link #textForm}) and, where the part writes
+     *  the unit of its number ({@code unit}), that unit as IR-SPEC ch. 2.5 spells it: the unit the part derives
+     *  ({@link EffectiveUnit}). A part that asks for a unit it does not have breaks WF-129 and is refused by name. */
+    private Term textPart(Expr e, boolean unit, Reads reads) {
         Term f = value(e, reads);
-        return new Term.Call(StaticFunction.RS_TEXT, List.of(f, constant(textForm(e, reads))), f.source());
+        String unitText = null;
+        if (unit) {
+            Datatype t = eff.of(e);
+            Unit u = t == null || !t.isNumberLike() ? null : t.unitOf();
+            if (u == null)
+                throw new Refusal(DroolsCode.TEXT_PART_UNIT_WITHOUT_UNIT.reason("snippet", snippet(e.source()), "type",
+                        t == null ? "?" : t.name()));
+            unitText = u.rendering();
+        }
+        return new Term.Call(StaticFunction.RS_TEXT, List.of(f, constant(textForm(e, reads)), constant(unitText)),
+                f.source());
     }
 
     /** The type of the part {@code e} as {@code rsTekst} reads it (RUNTIME-SEMANTICS ch. 1.2): for a number the
@@ -6756,7 +6768,7 @@ public final class TmsTranspiler {
                     source(f.source()));
             case CONCATENATIE -> {
                 List<Term> parts = new ArrayList<>();
-                for (Expr arg : a) parts.add(textPart(arg, reads));
+                for (Expr arg : a) parts.add(textPart(arg, false, reads));
                 yield new Term.TextComposition(parts, source(f.source()));
             }
             case TIJDSDUUR, ABSOLUTE_TIJDSDUUR -> duration(f, reads, spelling);

@@ -1232,6 +1232,6 @@ perEenheid    : eenheidOperator eenheidMacht ( eenheidOperator eenheidMacht )* ;
 // a "…«expressie»…" interleaves literal chunks with «expressie» escapes (each a full expressie, recursive).
 tekstWaarde     : STRING_START tekstReeksDeel* STRING_END ;
 tekstReeksDeel  : STRING_TEXT
-                | L_ANGLE_QUOTE expressie R_ANGLE_QUOTE ;
+                | L_ANGLE_QUOTE expressie EENHEID_AANWIJZING? R_ANGLE_QUOTE ;   // uchar: «X (eenheid)», DIVERGENCES.md
 booleanWaarde : WAAR | ONWAAR ;                               // §13.2.16
 deDato        : DATE ;                                        // §13.2.19

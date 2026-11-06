@@ -10,7 +10,7 @@ import dev.uchar.regelspraak.transpiler.tms.Value;
 // "Bedrag: «zijn basis»"
 function Object waarde_omschrijving(Object $basis) {
     try {
-        return ComputeHelpers.textComposition(java.util.Arrays.asList("Bedrag: ", RegelSpraakRuntime.rsTekst($basis, Integer.valueOf(2))));
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Bedrag: ", RegelSpraakRuntime.rsTekst($basis, Integer.valueOf(2), null)));
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
@@ -34,7 +34,7 @@ end
 // "Deel: «zijn basis gedeeld door 3»"
 function Object waarde_deeltekst(Object $basis, Object sonde) {
     try {
-        return ComputeHelpers.textComposition(java.util.Arrays.asList("Deel: ", RegelSpraakRuntime.rsTekst(ComputeHelpers.divided($basis, new java.math.BigDecimal("3"), sonde), null)));
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Deel: ", RegelSpraakRuntime.rsTekst(ComputeHelpers.divided($basis, new java.math.BigDecimal("3"), sonde), null, null)));
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
@@ -62,7 +62,7 @@ end
 // "Aantal: «zijn aantal»"
 function Object waarde_aantaltekst(Object $aantal) {
     try {
-        return ComputeHelpers.textComposition(java.util.Arrays.asList("Aantal: ", RegelSpraakRuntime.rsTekst($aantal, Integer.valueOf(0))));
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Aantal: ", RegelSpraakRuntime.rsTekst($aantal, Integer.valueOf(0), null)));
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
@@ -86,7 +86,7 @@ end
 // "Aandeel: «zijn aandeel»"
 function Object waarde_aandeeltekst(Object $aandeel) {
     try {
-        return ComputeHelpers.textComposition(java.util.Arrays.asList("Aandeel: ", RegelSpraakRuntime.rsTekst($aandeel, Integer.valueOf(2))));
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Aandeel: ", RegelSpraakRuntime.rsTekst($aandeel, Integer.valueOf(2), null)));
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
@@ -110,7 +110,7 @@ end
 // "Gemeld: «zijn bevestiging»"
 function Object waarde_bevestigingstekst(Object $bevestiging) {
     try {
-        return ComputeHelpers.textComposition(java.util.Arrays.asList("Gemeld: ", RegelSpraakRuntime.rsTekst($bevestiging, null)));
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Gemeld: ", RegelSpraakRuntime.rsTekst($bevestiging, null, null)));
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
@@ -134,7 +134,7 @@ end
 // "Gevonden op «zijn vinddatum»"
 function Object waarde_datumtekst(Object $vinddatum) {
     try {
-        return ComputeHelpers.textComposition(java.util.Arrays.asList("Gevonden op ", RegelSpraakRuntime.rsTekst($vinddatum, null)));
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Gevonden op ", RegelSpraakRuntime.rsTekst($vinddatum, null, null)));
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
@@ -158,7 +158,7 @@ end
 // "Gemeld om «zijn meldtijdstip»"
 function Object waarde_tijdtekst(Object $meldtijdstip) {
     try {
-        return ComputeHelpers.textComposition(java.util.Arrays.asList("Gemeld om ", RegelSpraakRuntime.rsTekst($meldtijdstip, null)));
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Gemeld om ", RegelSpraakRuntime.rsTekst($meldtijdstip, null, null)));
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
@@ -182,7 +182,7 @@ end
 // "Soort: «zijn soort»"
 function Object waarde_soorttekst(Object $soort) {
     try {
-        return ComputeHelpers.textComposition(java.util.Arrays.asList("Soort: ", RegelSpraakRuntime.rsTekst($soort, null)));
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Soort: ", RegelSpraakRuntime.rsTekst($soort, null, null)));
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
@@ -206,7 +206,7 @@ end
 // "Vast: «5,50»"
 function Object waarde_vasteTekst() {
     try {
-        return ComputeHelpers.textComposition(java.util.Arrays.asList("Vast: ", RegelSpraakRuntime.rsTekst(new java.math.BigDecimal("5.5"), Integer.valueOf(1))));
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Vast: ", RegelSpraakRuntime.rsTekst(new java.math.BigDecimal("5.5"), Integer.valueOf(1), null)));
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
@@ -230,7 +230,7 @@ end
 // "Bedrag: «zijn basis» voor «zijn soort», gemeld «zijn bevestiging» op «zijn vinddatum»"
 function Object waarde_verslag(Object $basis, Object $soort, Object $bevestiging, Object $vinddatum) {
     try {
-        return ComputeHelpers.textComposition(java.util.Arrays.asList("Bedrag: ", RegelSpraakRuntime.rsTekst($basis, Integer.valueOf(2)), " voor ", RegelSpraakRuntime.rsTekst($soort, null), ", gemeld ", RegelSpraakRuntime.rsTekst($bevestiging, null), " op ", RegelSpraakRuntime.rsTekst($vinddatum, null)));
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Bedrag: ", RegelSpraakRuntime.rsTekst($basis, Integer.valueOf(2), null), " voor ", RegelSpraakRuntime.rsTekst($soort, null, null), ", gemeld ", RegelSpraakRuntime.rsTekst($bevestiging, null, null), " op ", RegelSpraakRuntime.rsTekst($vinddatum, null, null)));
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
@@ -254,7 +254,7 @@ end
 // "Toeslag: «zijn basis maal 1,1»"
 function Object waarde_toeslagtekst(Object $basis) {
     try {
-        return ComputeHelpers.textComposition(java.util.Arrays.asList("Toeslag: ", RegelSpraakRuntime.rsTekst(RegelSpraakRuntime.rsMaal($basis, new java.math.BigDecimal("1.1")), Integer.valueOf(3))));
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Toeslag: ", RegelSpraakRuntime.rsTekst(RegelSpraakRuntime.rsMaal($basis, new java.math.BigDecimal("1.1")), Integer.valueOf(3), null)));
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
@@ -278,7 +278,7 @@ end
 // "Factor: «zijn factor»"
 function Object waarde_factortekst(Object $factor) {
     try {
-        return ComputeHelpers.textComposition(java.util.Arrays.asList("Factor: ", RegelSpraakRuntime.rsTekst($factor, null)));
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Factor: ", RegelSpraakRuntime.rsTekst($factor, null, null)));
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
@@ -312,7 +312,7 @@ function Object waarde_heffingtekst(Object $basis) {
 function Object let_heffingtekst(Object $basis) {
     Object cel_1 = ComputeHelpers.binderCell();
     try {
-        return ComputeHelpers.textComposition(java.util.Arrays.asList("Heffing: ", RegelSpraakRuntime.rsTekst(binder_heffingtekst($basis, cel_1), Integer.valueOf(3))));
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Heffing: ", RegelSpraakRuntime.rsTekst(binder_heffingtekst($basis, cel_1), Integer.valueOf(3), null)));
     } catch (EmptyBarrier barriere) {
         return ComputeHelpers.intercepted(barriere, cel_1);
     }
@@ -337,6 +337,30 @@ then
     } else {
         if (!ComputeHelpers.isEmpty(v)) {
             insertLogical(new Value($onderwerp, ElementKey.of("vondst", "heffingtekst", false), v, "heffingtekst"));
+        }
+    }
+end
+
+// "Bedrag: «zijn basis (eenheid)», aandeel «zijn aandeel (eenheid)», toeslag «zijn basis maal 1,1 (eenheid)», zonder eenheid «zijn basis»"
+function Object waarde_eenheidtekst(Object $basis, Object $aandeel) {
+    try {
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Bedrag: ", RegelSpraakRuntime.rsTekst($basis, Integer.valueOf(2), "EUR"), ", aandeel ", RegelSpraakRuntime.rsTekst($aandeel, Integer.valueOf(2), "%"), ", toeslag ", RegelSpraakRuntime.rsTekst(RegelSpraakRuntime.rsMaal($basis, new java.math.BigDecimal("1.1")), Integer.valueOf(3), "EUR"), ", zonder eenheid ", RegelSpraakRuntime.rsTekst($basis, Integer.valueOf(2), null)));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "eenheidtekst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $basis : basis, $aandeel : aandeel )
+then
+    Object v = waarde_eenheidtekst($basis, $aandeel);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "eenheidtekst", ComputeHelpers.designate(v, "eenheidtekst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "eenheidtekst", false), v, "eenheidtekst"));
         }
     }
 end

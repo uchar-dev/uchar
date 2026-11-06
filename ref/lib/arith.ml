@@ -1008,11 +1008,12 @@ let duration ?(absolute = false) ?unit_ ?(result_unit = Unitless) a b =
 
 (* The form a value is written in: a number in exactly [decimals] decimals,
    or in its exact shortest form where [None] (a part without a finite
-   precision bound, ch. 2.3); the payload of a constructor value in the form
-   [payload] gives for its tag. *)
-type text_form = { decimals : int option; payload : string -> text_form }
+   precision bound, ch. 2.3), followed by its unit in parentheses where
+   [with_unit]; the payload of a constructor value in the form [payload]
+   gives for its tag. *)
+type text_form = { decimals : int option; with_unit : bool; payload : string -> text_form }
 
-let rec exact_form = { decimals = None; payload = (fun _ -> exact_form) }
+let rec exact_form = { decimals = None; with_unit = false; payload = (fun _ -> exact_form) }
 
 let decimal_comma s = String.map (fun c -> if c = '.' then ',' else c) s
 
@@ -1048,8 +1049,16 @@ let rec text_of ?(form = exact_form) = function
      bound the exact decimal without trailing zeros, or t/n where it does
      not terminate; the case wire's dot (WF-081) is a lexeme, not the text a
      rule yields *)
-  | Num (q, _) -> (
-      match form.decimals with Some d -> decimals_text d q | None -> decimal_comma (lexeme_of_q q))
+  | Num (q, u) ->
+      (match form.decimals with Some d -> decimals_text d q | None -> decimal_comma (lexeme_of_q q))
+      ^
+      if not form.with_unit then ""
+      else (
+        (* the unit as IR-SPEC ch. 2.5 spells it; WF-129 holds that the part
+           has one *)
+        match u with
+        | Unit e -> " (" ^ display_unit e ^ ")"
+        | Unitless -> fault "the text part writes the unit of its number, and %s has no unit (WF-129)" (lexeme_of_q q))
   | Bool b -> if b then "waar" else "onwaar"
   | Date z -> text_of_date z
   | Date_time t ->

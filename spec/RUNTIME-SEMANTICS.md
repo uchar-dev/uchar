@@ -100,6 +100,16 @@ recorded as such.
   terms, `t/n`, the sign on the numerator. The bound guarantees that the
   value fits the decimals of its part (ch. 2.4); a value that does not is a
   broken guarantee, which an executor reports, never a number it rounds. A
+  part may write the unit of its number (`EmbeddedExpression.unit`, IR-SPEC
+  ch. 4.2): the number is then followed by a space and, in parentheses, the
+  unit its value is in — of a read its declaration, of a composite part the
+  unit it derives (ch. 2.6, ch. 2.10) — spelled as IR-SPEC ch. 2.5 spells a
+  unit: the abbreviations of its factors, the positive ones joined by `·`,
+  then `/` and each negative one, a power where its size is not 1. So 5,50
+  in 2 decimals of a unit declared with the abbreviation `EUR` is `5,50
+  (EUR)`, 12,50 % is `12,50 (%)` and a rate in €/jr `1200,00 (EUR/jr)`; an
+  empty part is `""` without its unit. A part whose type has no unit asks
+  for none (WF-129). A
   date is `dd-MM-yyyy`; a date-time is `dd-MM-yyyy HH:mm:ss.mmm`, the
   fraction always three digits; a year outside 0000–9999 is written with
   its sign and at least four digits (ISO 8601's expanded form, as ch. 5.12
@@ -120,7 +130,11 @@ recorded as such.
   trailing zeros; a literal part writes the decimals of its value where ALEF
   writes the lexeme of the source; a non-terminating number is `t/n` where
   ALEF writes a mixed number above 1; a date-time carries three fraction
-  digits where ALEF's value form carries nine.*
+  digits where ALEF's value form carries nine. The unit after the number,
+  where a part asks for it, is a decision of the maintainer of the same day;
+  it is the unit's abbreviation, the one spelling every occurrence of a unit
+  carries on the wire (IR-SPEC ch. 2.5), since the further spellings of its
+  declaration carry no role that marks one of them as its symbol.*
 
   | Value, in the type of its part | Text |
   |---|---|
@@ -138,6 +152,9 @@ recorded as such.
   | 2026-06-21 / 0999-12-31 / +12026-03-01 | `21-06-2026` / `31-12-0999` / `01-03-+12026` |
   | 2026-06-21T09:01:59.999 / 2026-06-21T09:01:59 | `21-06-2026 09:01:59.999` / `21-06-2026 09:01:59.000` |
   | Afgewezen / Toegekend(1250,50), payload in 2 decimals | `Afgewezen` / `Toegekend(1250,50)` |
+  | 5,50 in 2 decimals of EUR, with its unit / leeg, with its unit | `5,50 (EUR)` / `""` |
+  | 12,50 % (2 decimals), with its unit | `12,50 (%)` |
+  | zijn basis maal 1,1, basis 5,50 in 2 decimals of EUR, with its unit | `6,050 (EUR)` |
   | the list [12,5, 30] / the record {waarde: 125,5} | a fault |
 
   Worked example (WV-1.2c-text): `"Bedrag: «zijn basis» voor «zijn soort»,
@@ -151,8 +168,12 @@ recorded as such.
   the RegelSpraak frontend, the rows of leeg, a text, an enumeration value,
   a boolean, a number in 2 decimals and in a whole number, a percentage, the
   product by 1,1, the literal, the unbounded form, a quotient by 3, a date
-  and a date-time, and a binder of a "Daarbij geldt" (`de heffing is zijn
-  basis maal 1,1`, written `6,050`).
+  and a date-time, a binder of a "Daarbij geldt" (`de heffing is zijn
+  basis maal 1,1`, written `6,050`), and the three rows with a unit:
+  `"Bedrag: «zijn basis (eenheid)», aandeel «zijn aandeel (eenheid)»,
+  toeslag «zijn basis maal 1,1 (eenheid)», zonder eenheid «zijn basis»"`
+  reads `Bedrag: 5,50 (EUR), aandeel 12,50 (%), toeslag 6,050 (EUR),
+  zonder eenheid 5,50`.
 - There is no boolean or enumeration coalescing; absence is handled by the
   comparison rules and the leeg/gevuld predicates below.
 
