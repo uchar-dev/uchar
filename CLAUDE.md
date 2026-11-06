@@ -193,7 +193,10 @@ missing line makes `make gates` exit non-zero. Current gates:
    (the `properties` order the schema's description makes canonical; an
    object no subschema admits is counted apart, never skipped), failing
    with the path and both orders on a deviation; an unpopulated corpus is
-   reported explicitly, never silently green.
+   reported explicitly, never silently green. Since the card
+   `tekst-van-een-waarde-in-een-tekstsamenstelling` (2026-11-06) the shape
+   self-test holds `EmbeddedExpression.unit` to its one spelling, `true`
+   (four rows).
 3. `scripts/check-verifier.sh` — the OCaml verifier (`spec/verifier/`)
    builds, in the workspace `_build` (`scripts/lib/ocaml-build.sh`), the
    verifier gates 11 and 15 run as well, and builds on its own: no dune
@@ -238,7 +241,10 @@ missing line makes `make gates` exit non-zero. Current gates:
    its precision gate), and WF-127 guards the read of a cell by a test of
    the same cell. Since the card `timeline-initialisation-allocation-creation`
    (2026-11-05) WF-128 refuses an allocation that names a time-dependent
-   attribute (IR-SPEC ch. 3.2), with one negative per field.
+   attribute (IR-SPEC ch. 3.2), with one negative per field. Since the card
+   `tekst-van-een-waarde-in-een-tekstsamenstelling` (2026-11-06) WF-129
+   refuses a text part that writes the unit of its number where its type
+   has none, with one negative per arm.
 4. `scripts/check-case-schema.sh` — the case schema
    (`spec/schema/uchar-case-v0.schema.json`) is metaschema-valid; every
    `corpus/golden/**/case*.json` and `corpus/red/**/case*.json`
@@ -400,7 +406,9 @@ missing line makes `make gates` exit non-zero. Current gates:
     `ENGLISH_EXCEPTIONS` lists entry and word; both lists fail when stale. A
     site may pass its code as `new Msg(Component.FRONTEND, code,
     params(...))`, the form of an exception text a user sees
-    (RGS-380..387). The frontend
+    (RGS-380..387). RGS-388 refuses at `check` a text part
+    that asks for a unit its type does not have (`«X (eenheid)»`,
+    DIVERGENCES "De eenheid van een tekstdeel"). The frontend
     renders Dutch by default; the frontend Makefile copies
     `src/main/resources` to `out/`.
 
@@ -578,7 +586,11 @@ missing line makes `make gates` exit non-zero. Current gates:
     of the backend's parts (floor `EXPECTED_MIN_DROOLS_SAME_IN_BOTH=49`); a
     Dutch entry that `SAME_IN_BOTH` does not list carries no English function
     word unless `ENGLISH_EXCEPTIONS` lists entry and word with the reason, and
-    both lists fail when stale. The
+    both lists fail when stale. Since the card
+    `tekst-van-een-waarde-in-een-tekstsamenstelling` (2026-11-06) the
+    analysis passes `rsTekst` the form of a text part (its decimals,
+    RUNTIME-SEMANTICS ch. 1.2) and its unit, and DROOLS-368 refuses a part
+    that asks for a unit it does not have. The
     Drools backend renders English by default; its own suite runs under
     `uchar.messages.locale=nl` (`backends/drools/pom.xml`). Since 2026-09-06 an expected-channel floor IN THE SCRIPT pins
     the played channel itself: every NON-played golden is listed by name

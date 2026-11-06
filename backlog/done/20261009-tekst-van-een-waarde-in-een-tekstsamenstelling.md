@@ -339,3 +339,9 @@ ch. 1.2, `corpus/negative/` en de golden.*
 `make gates` op `7e9159c7c` (na stap 3): alle zeventien gates en `after-run` rc=0, red=0, 440 s
 (`out/gates/20261106-204636/summary.txt` in de worktree, log `uchar-dev/werk/text-decimals/logs/gates-final-2.log`).
 De eerdere run op `f33ffbf3c` (na stap 2) was ook red=0, 435 s (`out/gates/20261106-202429/`).
+
+### Landing van het besluit van de eigenaar (hoofdsessie, 2026-11-06)
+
+Geland op main na `make gates` op `7e9159c7c` (17 van 17 groen, 440 s; na de rebase op `b081e5378` alleen de kaart
+anders); CONSTRUCTS rij 31 beschrijft de eindstand, `CLAUDE.md` gate 2, 3, 10 en 12 de nieuwe toetsen. Open, als vraag
+voor de eigenaar: het symbool van een eenheid (`(€)` in plaats van `(EUR)`) vraagt een draadveld op `DeclaredUnit`.
