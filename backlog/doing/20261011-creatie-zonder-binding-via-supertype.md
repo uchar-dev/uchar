@@ -58,3 +58,29 @@ kaartverplaatsing. Serieel met andere Drools-kaarten.
 
 - `20261008-drl-teksttak-op-truth-maintenance` splitst `TmsTranspiler` in een analyse en twee weergaven. Daarna
   geldt deze reparatie voor beide takken.
+
+## Result
+
+Gebouwd op branch `card/drools-frontend-cleanup` (opruimronde 2026-11-06). Logs onder
+`uchar-dev/werk/java-cleanup/logs/`.
+
+- **De reparatie.** `TmsTranspiler.typePairRelation(model, subject, fresh, k)` is statisch en package-private
+  geworden en leest het typenpaar met ⊑: een type vult een rol die een van zijn supertypen vult (`fills` vraagt
+  `type.isA(filler)`), zoals de verifier (`connecting_candidates`) en ref (`connecting_pair`). `Cycles.backLink`
+  leidt de relatie van een creatie zonder binding nu af met hetzelfde gedeelde besluit
+  (`FactModelGenerator.creationLink`) en dezelfde methode, zodat de strata precies de relatie zien die de lowering
+  schrijft. De weigering DROOLS-148 vervalt; de code is `RETIRED` (register, `CLAUDE.md` gate 12). Waar het besluit
+  rollen koppelt die geen feittype draagt, werpt de lowering nu een `IllegalStateException` met de naam van de
+  creatie (een gebroken invariant, voorheen gemaskeerd door de weigering). De javadoc van `Cycles.backLink` klopt
+  weer; de README (lijst "the creations it does not build yet") noemt de vorm niet meer.
+- **(a)** Nieuwe getuige `ObjectCreationWitnessTest.a_second_creation_reads_a_relation_derived_through_a_supertype_after_the_first`
+  (de strata-getuige met `Jaarbesluit is een Penningbesluit` als gemaakt type). Rood op de oude code:
+  `Excluded … DROOLS-148` (`k1-red.log`). Met alleen `typePairRelation` gerepareerd en `Cycles` oud:
+  `case: attribuut aantal afwijzingen: verwacht 0, werkelijk 1` (`k1-half.log`), de fout uit de kaart. Groen met
+  beide (`k1-green.log`), op beide takken (`play` vergelijkt exec-model en DRL-tekst). Verifier, ref en clingo PASS
+  op hetzelfde document (`probe/k1/`).
+- **(b)** `a_type_pair_via_a_supertype_is_refused_on_build` heet nu `a_type_pair_via_a_supertype_plays` en verwacht
+  het antwoord van ref (uitkering 250, uitkeringsjaar 2025) in plaats van de weigering: de kaart verandert dit gedrag
+  uitdrukkelijk.
+- **(c)** Gate 12 groen (`k1-gate12.log`): 350 gespeeld, gelijk aan de pin; geen golden heeft de vorm, dus geen pin
+  bewoog. JUnit 1866 tests. `check-drools-codes.sh`: 316 codes, 27 retired.

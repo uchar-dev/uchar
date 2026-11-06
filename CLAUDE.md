@@ -540,7 +540,8 @@ missing line makes `make gates` exit non-zero. Current gates:
     (2026-11-03) DROOLS-302, DROOLS-104 and DROOLS-311, since the card
     `writers-as-one-defaults-stack` (2026-11-04) DROOLS-142, since the card
     `timeline-initialisation-allocation-creation` (2026-11-05) DROOLS-118, since the card
-    `absence-markers` (2026-11-04) DROOLS-010, DROOLS-012 and DROOLS-313; every raised code
+    `absence-markers` (2026-11-04) DROOLS-010, DROOLS-012 and DROOLS-313, since the card
+    `creatie-zonder-binding-via-supertype` (2026-11-06) DROOLS-148; every raised code
     registered, numbers without gap, keys unique, every `ef` a row of
     RUNTIME-SEMANTICS ch. 5.7b) and carries
     `EXPECTED_MIN_DROOLS_CODES=289`. Since the card `message-catalogues`

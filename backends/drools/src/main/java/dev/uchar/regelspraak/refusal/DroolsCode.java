@@ -169,7 +169,7 @@ public enum DroolsCode {
     ROLE_WITHOUT_BEAN_FIELD("DROOLS-145", Kind.LIMIT, "role-without-bean-field", "reason", null),
     OBJECT_CREATION_WITHOUT_NAME("DROOLS-146", Kind.CONTRACT, "object-creation-without-name", "", null),
     OBJECT_CREATION_UNRESOLVED_TYPE("DROOLS-147", Kind.CONTRACT, "object-creation-unresolved-type", "", null),
-    CREATION_BACK_LINK_SUPERTYPE("DROOLS-148", Kind.REFUSAL, "creation-back-link-supertype", "backRole,fwdRole", null),
+    CREATION_BACK_LINK_SUPERTYPE("DROOLS-148", Kind.RETIRED, "creation-back-link-supertype", "backRole,fwdRole", null),
     CREATION_RELATION_NOT_BINARY("DROOLS-149", Kind.REFUSAL, "creation-relation-not-binary", "factType", null),
     MEMBER_ASSIGNMENT_INCOMPLETE("DROOLS-150", Kind.CONTRACT, "member-assignment-incomplete", "", null),
     CHARACTERISTIC_ASSIGNMENT_NON_BOOLEAN("DROOLS-151", Kind.CONTRACT, "characteristic-assignment-non-boolean", "attribute,datatype,snippet", null),

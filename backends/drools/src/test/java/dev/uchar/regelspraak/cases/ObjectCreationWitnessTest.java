@@ -432,34 +432,42 @@ class ObjectCreationWitnessTest {
         assertTrue(e.getMessage().contains("zusterrol 'penning' meervoudig"), e.getMessage());
     }
 
-    @Test void a_type_pair_via_a_supertype_is_refused_on_build() throws Exception {
+    @Test void a_type_pair_via_a_supertype_plays() throws Exception {
         // The penningbesluit golden with its creation making a SUBTYPE, `Jaarbesluit is een Penningbesluit`, so that
         // the created-side role `toegekend besluit` is declared on the supertype. The shared decision reaches both roles
-        // through the supertype and links them, and the verifier, ref and clingo do too (ref's connecting_pair asks
-        // whether a type FILLS a role, which a subtype does): all PASS, uitkering 250, as does the DRL-text branch
-        // (PLAYED 1). The strata of this branch derive the back-link from the exact types (Cycles.backLink), see
-        // no relation written, and could let a creation that reads the relation fire before this one has made its
-        // links; so the branch refuses the creation by name when it builds. Measured 2026-10-11 on the document of the
-        // row below with a Jaarbesluit as the created type: a build of this branch without the refusal put both
-        // creations in stratum 0 and gave J1 "aantal afwijzingen" 1, where the verifier, ref and clingo pass 0.
-        CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
-                () -> play(jaarbesluit(), gerechtigdeJutter()));
-        assertTrue(e.getMessage().contains("objectcreatie: stel het penningbesluit vast — een objectcreatie zonder"
-                + " connectingRole-binding waarvan de terugkoppeling uit het typenpaar ('begunstigde' en 'toegekend"
-                + " besluit') via een supertype van het onderwerp of van het gemaakte type loopt"), e.getMessage());
+        // through the supertype and links them, and so does the relation of the back-link (typePairRelation and
+        // Cycles.backLink read the pair as the verifier's connecting_candidates and ref's connecting_pair do: a type
+        // fills a role that its supertype fills). Verifier, ref and clingo PASS: uitkering 250, uitkeringsjaar 2025.
+        assertNull(play(jaarbesluit(), gerechtigdeJutter()), "ref agrees: uitkering 250, uitkeringsjaar 2025");
     }
 
     @Test void a_second_creation_reads_the_derived_relation_after_the_first() throws Exception {
         // Two creations without a connectingRole binding. "wijs af zonder besluit" makes an Afwijzing for a Jutter that
         // is no begunstigde; "stel het penningbesluit vast" makes the Penningbesluit that makes a penninggerechtigde
         // Jutter one. The first reads, negatively, the relation the second derives from its type pair, so it belongs a
-        // stratum above it (RUNTIME-SEMANTICS ch. 6.1, 6.3). The strata of this branch see that only because Kringen
-        // derives the back-link of a creation without a binding as well; declared first, the first creation would
-        // otherwise fire in the same generation and give J1 an Afwijzing (measured on the subtype twin, see the row
-        // above). The document comes from the RegelSpraak frontend, its source.rgs beside it; verifier PASS, ref and
-        // clingo PASS (J1 penninggerechtigd and 0 afwijzingen, J2 1). The DRL-text branch gives J1 1 afwijzing.
+        // stratum above it (RUNTIME-SEMANTICS ch. 6.1, 6.3). The strata see that only because Cycles derives the
+        // back-link of a creation without a binding as well; declared first, the first creation would otherwise fire
+        // in the same generation and give J1 an Afwijzing (measured on the subtype twin, the row below). The document
+        // comes from the RegelSpraak frontend, its source.rgs beside it; verifier PASS, ref and clingo PASS (J1
+        // penninggerechtigd and 0 afwijzingen, J2 1).
         Path map = Path.of("src", "test", "resources", "object-creation", "rejection-after-the-decision");
         assertNull(play(map.resolve("ir.json"), JSON.readTree(Files.readString(map.resolve("case.json")))),
+                "ref agrees: J1 0 afwijzingen, J2 1");
+    }
+
+    @Test void a_second_creation_reads_a_relation_derived_through_a_supertype_after_the_first() throws Exception {
+        // The subtype twin of the row above: "stel het penningbesluit vast" makes a Jaarbesluit, a subtype of the
+        // Penningbesluit whose role `toegekend besluit` the relation declares. The strata must see that creation write
+        // penningtoekenning through the supertype, or "wijs af zonder besluit" fires in the same generation and gives
+        // J1 an Afwijzing (measured 2026-10-11 on a build that read the pair from the exact types). Verifier, ref and
+        // clingo PASS (J1 0 afwijzingen, J2 1).
+        Path map = Path.of("src", "test", "resources", "object-creation", "rejection-after-the-decision");
+        var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(map.resolve("ir.json")));
+        IrPath.modelList(ir, "objectTypes").add(JSON.readTree("""
+                { "node": "ObjectType", "name": "Jaarbesluit", "supertype": "Penningbesluit", "animate": false,
+                  "plural": "Jaarbesluiten", "attributes": [], "characteristics": [] }"""));
+        IrPath.version(ir, "objectCreations", "stel het penningbesluit vast").put("createdType", "Jaarbesluit");
+        assertNull(play(write(ir, "afwijzing-jaarbesluit"), JSON.readTree(Files.readString(map.resolve("case.json")))),
                 "ref agrees: J1 0 afwijzingen, J2 1");
     }
 

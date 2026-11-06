@@ -1019,11 +1019,8 @@ never as a silent fall:
   over the fixpoint (`spec/CONSTRUCTS.md` row 30), which the reference interpreter and the ASP backend do not evaluate
   either, and an instance-set union where a value is read (WF-110 (a));
 - the creations it does not build yet: an object creation whose back-link is ambiguous, which ch. 5.5 makes a fault of
-  the program and this branch refuses when it builds (red case `ambiguous-backlink`), an object creation without a
-  `connectingRole` whose type pair reaches the connecting relation only through a supertype of the subject or of the
-  created type, since the strata derive that relation from the exact types (`Cycles`) and would not see the creation
-  write it, a created
-  relation that is not one of two roles, a division or a square root in a member assignment, whose §6.5 or §6.6
+  the program and this branch refuses when it builds (red case `ambiguous-backlink`), a created relation that is not
+  one of two roles, a division or a square root in a member assignment, whose §6.5 or §6.6
   deposit the branch does not make, a fold whose range of more than one step goes over a created relation, a fold
   whose filter can fault over a created relation and a quantifier fold whose matrix can fault or deposit over one,
   whose made links have no place in the fold order, a fold over a time-dependent member over a created relation

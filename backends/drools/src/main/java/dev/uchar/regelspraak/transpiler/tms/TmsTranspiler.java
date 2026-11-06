@@ -4104,10 +4104,9 @@ public final class TmsTranspiler {
      * creation's {@code connectingRole} binding, or without one the derivation from the type pair that the DRL-text
      * branch takes as well. The relation of a derived pair is {@link #typePairRelation}, and either way the link is the
      * same {@link RelationLink}, put on both ends at the write-back. Refused by name besides: an ambiguous back-link, which
-     * ch. 5.5 makes a fault of the program; a derived pair whose roles the decision reaches only through a supertype of
-     * either end, whose relation the strata of this branch do not see written; a connecting relation that is not one of
-     * two roles; a characteristic assignment whose value is no truth value (WF-027); and
-     * a division in a member value, whose §6.5 deposit this branch does not make. Where the condition can fault, its
+     * ch. 5.5 makes a fault of the program; a connecting relation that is not one of two roles; a characteristic
+     * assignment whose value is no truth value (WF-027); and a division in a member value, whose §6.5 deposit this
+     * branch does not make. Where the condition can fault, its
      * fault rule is an ordinary rule of the rule layer, without the marks and without the 1:1 guard: the reference
      * interpreter evaluates the condition first, in every pass.
      */
@@ -4120,9 +4119,10 @@ public final class TmsTranspiler {
         if (k.ambiguous() != null)
             throw new Refusal(k.ambiguous().framed("still-not"));
         if (k.refusal() != null) throw new Refusal(k.refusal());
-        RegelSpraakModel.FactType ft = vr != null ? factType(vr.factType()) : typePairRelation(subject, fresh, k);
+        RegelSpraakModel.FactType ft = vr != null ? factType(vr.factType()) : typePairRelation(model, subject, fresh, k);
         if (vr == null && ft == null)
-            throw new Refusal(DroolsCode.CREATION_BACK_LINK_SUPERTYPE.reason("backRole", k.backRole(), "fwdRole", k.fwdRole()));
+            throw new IllegalStateException("exec-model: objectcreatie " + oc.name() + ": het gedeelde besluit koppelde de"
+                    + " rollen '" + k.backRole() + "' en '" + k.fwdRole() + "', maar geen feittype draagt ze");
         if (ft == null || ft.roles.size() != 2 || ft.reciprocal)
             throw new Refusal(DroolsCode.CREATION_RELATION_NOT_BINARY.reason("factType", vr != null ? vr.factType() : ft.name));
         String relation = Namen.norm(ft.name);
@@ -4247,36 +4247,36 @@ public final class TmsTranspiler {
         return periodArithmetic(produced, member, subject, reads, null);
     }
 
-    /** {@link #typePairRelation(Objecttype, Objecttype, FactModelGenerator.CreationLink)} for the object creation
-     *  {@code oc} without a {@code connectingRole} binding, before any form lowers; null where the shared decision does
-     *  not link the creation, which {@link #objectCreation} then refuses by name. */
+    /** {@link #typePairRelation(RegelSpraakModel, ObjectType, ObjectType, FactModelGenerator.CreationLink)} for the
+     *  object creation {@code oc} without a {@code connectingRole} binding, before any form lowers; null where the
+     *  shared decision does not link the creation, which {@link #objectCreation} then refuses by name. */
     private RegelSpraakModel.FactType typePairRelation(ResolvedObjectCreation oc) {
         ObjectType fresh = oc.createdType(), subject = oc.subject();
         if (oc.name() == null || fresh == null || subject == null) return null;
         FactModelGenerator.CreationLink k = FactModelGenerator.creationLink(model, fresh, subject, null, oc.name());
-        return k.ambiguous() != null || k.refusal() != null ? null : typePairRelation(subject, fresh, k);
+        return k.ambiguous() != null || k.refusal() != null ? null : typePairRelation(model, subject, fresh, k);
     }
 
     /**
      * The connecting relation of an object creation without a {@code connectingRole} binding (RUNTIME-SEMANTICS ch.
      * 5.5): the fact type of the two roles that the shared decision {@code k} derived from the type pair, the role the
      * made object plays ({@code fwdRole}) filled by the created type and the other ({@code backRole}) by the subject's, and
-     * for a subject of the created type a reciprocal fact type of that one role. The fillers are compared exactly, as
-     * {@link Cycles} derives the back-link for the strata: where the decision reached a role through a supertype of
-     * either end, the strata would not see the creation write the relation, so a creation that reads it could fire
-     * before this one has made its links. Null then, and {@link #objectCreation} refuses the creation by name. Two fact
-     * types cannot match where the decision linked: its roles are unique among the roles the pair reaches through any
-     * supertype, of which the exact ones are a part.
+     * for a subject of the created type a reciprocal fact type of that one role. A type fills a role that one of its
+     * supertypes fills (IR-SPEC ch. 2.6), as the decision reached the roles and as the verifier
+     * ({@code connecting_candidates}) and the reference interpreter ({@code connecting_pair}) read the pair; the strata
+     * read the back-link through this method too ({@link Cycles}), so they see the creation write the relation that its
+     * readers join over. Two fact types cannot match where the decision linked: its roles are unique among the roles
+     * the pair reaches.
      */
-    private RegelSpraakModel.FactType typePairRelation(ObjectType subject, ObjectType fresh,
-                                                        FactModelGenerator.CreationLink k) {
+    static RegelSpraakModel.FactType typePairRelation(RegelSpraakModel model, ObjectType subject, ObjectType fresh,
+                                                       FactModelGenerator.CreationLink k) {
         RegelSpraakModel.FactType found = null;
         for (RegelSpraakModel.FactType ft : model.factTypes.values()) {
             List<RegelSpraakModel.Role> r = ft.roles;
             boolean fits = r.size() == 2
-                    ? fills(r.get(0), k.fwdRole(), fresh) && fills(r.get(1), k.backRole(), subject)
-                      || fills(r.get(1), k.fwdRole(), fresh) && fills(r.get(0), k.backRole(), subject)
-                    : r.size() == 1 && ft.reciprocal && subject == fresh && fills(r.get(0), k.fwdRole(), fresh);
+                    ? fills(model, r.get(0), k.fwdRole(), fresh) && fills(model, r.get(1), k.backRole(), subject)
+                      || fills(model, r.get(1), k.fwdRole(), fresh) && fills(model, r.get(0), k.backRole(), subject)
+                    : r.size() == 1 && ft.reciprocal && subject == fresh && fills(model, r.get(0), k.fwdRole(), fresh);
             if (!fits) continue;
             if (found != null)
                 throw new IllegalStateException("exec-model: de terugkoppeling ('" + k.backRole() + "' en '" + k.fwdRole()
@@ -4287,10 +4287,12 @@ public final class TmsTranspiler {
         return found;
     }
 
-    /** Whether role {@code r} carries the name {@code name} and is filled by exactly {@code type}. */
-    private static boolean fills(RegelSpraakModel.Role r, String name, ObjectType type) {
-        return name != null && Namen.norm(r.name()).equals(Namen.norm(name))
-                && type.name.equalsIgnoreCase(r.objectTypeName());
+    /** Whether role {@code r} carries the name {@code name} and {@code type} fills it: the declared filler or one of
+     *  its subtypes, and by name for a filler the model does not declare. */
+    private static boolean fills(RegelSpraakModel model, RegelSpraakModel.Role r, String name, ObjectType type) {
+        if (name == null || !Namen.norm(r.name()).equals(Namen.norm(name))) return false;
+        ObjectType filler = model.objectTypeByName(r.objectTypeName());
+        return filler != null ? type.isA(filler) : type.name.equalsIgnoreCase(r.objectTypeName());
     }
 
     /** The guard of an object creation beside its condition: no {@link CreationStamp} of creation {@code name} for the

@@ -3,6 +3,7 @@ package dev.uchar.regelspraak.transpiler.tms;
 import dev.uchar.regelspraak.graph.ProducerConsumer;
 import dev.uchar.regelspraak.refusal.DroolsCode;
 import dev.uchar.regelspraak.refusal.Reason;
+import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Default;
 import dev.uchar.regelspraak.ir.ExceptionGroup;
@@ -750,30 +751,20 @@ public final class Cycles {
             return out;
         }
 
-        /** The relation an object creation writes as its back-link: its {@code connectingRole} binding's, else the one
-         *  fact type relating its subject and created type, none for a self-typed two-role pair, which the derivation
-         *  leaves unlinked (the verifier's reading of the by-pair route). */
+        /** The relation an object creation writes as its back-link: its {@code connectingRole} binding's, else the fact
+         *  type of the roles the shared decision derives from the type pair ({@link FactModelGenerator#creationLink}),
+         *  read as the lowering reads it ({@link TmsTranspiler#typePairRelation}: a type fills a role that one of its
+         *  supertypes fills, the verifier's reading of the by-pair route). None where the decision links nothing, a
+         *  self-typed two-role pair among them; the lowering refuses such a creation by name. */
         private String backLink(ResolvedObjectCreation o) {
             RoleBindingRef rb = roleBindings.get(o);
             if (rb != null) return rb.factType();
             ObjectType s = o.subject(), n = o.createdType();
-            if (s == null || n == null) return null;
-            List<RegelSpraakModel.FactType> candidates = new ArrayList<>();
-            for (RegelSpraakModel.FactType ft : model.factTypes.values()) {
-                List<RegelSpraakModel.Role> r = ft.roles;
-                if (r.size() == 2) {
-                    boolean ab = s.name.equalsIgnoreCase(r.get(0).objectTypeName())
-                            && n.name.equalsIgnoreCase(r.get(1).objectTypeName());
-                    boolean ba = s.name.equalsIgnoreCase(r.get(1).objectTypeName())
-                            && n.name.equalsIgnoreCase(r.get(0).objectTypeName());
-                    if (ab || ba) candidates.add(ft);
-                } else if (r.size() == 1 && ft.reciprocal && s == n && s.name.equalsIgnoreCase(r.get(0).objectTypeName())) {
-                    candidates.add(ft);
-                }
-            }
-            if (candidates.size() != 1) return null;
-            RegelSpraakModel.FactType ft = candidates.get(0);
-            return s == n && !ft.reciprocal ? null : ft.name;
+            if (s == null || n == null || o.name() == null) return null;
+            FactModelGenerator.CreationLink k = FactModelGenerator.creationLink(model, n, s, null, o.name());
+            if (k.ambiguous() != null || k.refusal() != null) return null;
+            RegelSpraakModel.FactType ft = TmsTranspiler.typePairRelation(model, s, n, k);
+            return ft == null ? null : ft.name;
         }
 
         private void defaultReads(Default d, ObjectType subjectType, List<Read> out) {
