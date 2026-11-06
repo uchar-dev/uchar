@@ -84,7 +84,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       both). <b>Red before the change</b> (measured 2026-10-10 on {@code f4b83d7b}): the row does not compile there,
  *       "method lees in class dev.uchar.regelspraak.cases.DroolsBackend cannot be applied to given types", since the
  *       entry read without labels only.</li>
- *   <li>On the exec-model and the DRL-text branch {@code read} refuses: their rules write the beans as they fire.</li>
+ *   <li>On the destructive exec-model and DRL-text lowerings, until cards tms-omschakeling and
+ *       drl-teksttak-op-truth-maintenance, {@code read} refused: their rules wrote the beans as they fired.</li>
  *   <li>The entry is public, the seams of the scale harness and the witnesses are not.</li>
  * </ul>
  *

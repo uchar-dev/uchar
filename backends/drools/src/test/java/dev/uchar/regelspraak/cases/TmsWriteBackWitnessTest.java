@@ -43,13 +43,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The write-back of the exec-model branch ({@code DroolsBackend.setDerivedValues}). The branch derives with
+ * The write-back of both branches ({@code DroolsBackend.setDerivedValues}). They derive with
  * logical inserts and never writes a bean while it fires, so a derived characteristic reaches the bean through this call
  * only, after the fire. "Een Jutter is vergund indien hij erkend is" over J1 (erkend in the input), J2 (vergund in the
  * input, not erkend) and J3 (neither): before the call J1's bean is not vergund, though the session holds the
  * derivation; after it J1 is vergund and still erkend, J2 stays vergund, since input on a characteristic stands and
- * nothing writes false, and J3 carries neither. On the DRL-text branch the call writes nothing: its rules write the
- * beans while they fire.
+ * nothing writes false, and J3 carries neither. Until card drl-teksttak-op-truth-maintenance the DRL-text branch was a
+ * lowering of its own, whose rules wrote the beans while they fired, and the call wrote nothing there.
  *
  * <p>The same holds for every other writer the branch carries, which a second document puts on one Vondst type: "De
  * uitkering van een Vondst moet berekend worden als zijn gewicht maal 2", "Het vindloon van een Vondst moet
@@ -92,9 +92,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * attribuut uitkering van een Vondst (Vondst@…); divergentie is een fout (RUNTIME-SEMANTICS ch. 5.7), …]&gt;".
  *
  * <p><b>Both branches of the analysis</b> (card drl-teksttak-op-truth-maintenance, rest of step 4; lens on round 4:
- * these orders of rules and defaults groups ran on the executable model only): every row but the one of the DRL-text
- * branch runs on the exec-model branch and on {@code DRL_TEXT}, its rendering as DRL text, whose write-back is the same
- * code; and a seeded sample of the orders of the generated rules fires the Vondsten and writes back on both, on
+ * these orders of rules and defaults groups ran on the executable model only): every row runs on the exec-model branch
+ * and on {@code DRL_TEXT}, its rendering as DRL text, whose write-back is the same code; and a seeded sample of the orders of the generated rules fires the Vondsten and writes back on both, on
  * {@code DRL_TEXT} with the rules of the text in each order ({@code TextOrder}). The sample passes no intermediate
  * standing: each position of the two groups reads an input characteristic, whose standing is fixed before the fire, so
  * no lower default decides before a higher one (measured on the exec-model branch: no order of the sample withdrew a

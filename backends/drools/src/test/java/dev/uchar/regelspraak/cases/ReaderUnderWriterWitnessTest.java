@@ -36,6 +36,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * it was tested after the first writer and before the second ({@code verwacht leeg, werkelijk 2026-09-15}, red on the
  * commit before its order).
  *
+ * <p>Every row plays on both branches, which render one analysis with truth maintenance: a derivation that rested on a
+ * transient read goes when the read changes, so the reader's place on the agenda decides nothing (IR-SPEC ch. 5.5). The
+ * measurements above are those of the destructive exec-model branch, which ordered by salience.
+ *
  * <p>Two flanks of the same order, red on the commit before theirs (measured 2026-10-01): a consistency rule reads its
  * assertion stratum-strict, since its channel is never withdrawn, and was added to the model before the creations and
  * the groups, so it reported a violation on the transient leeg ({@code verwacht consistent, werkelijk inconsistent});
@@ -320,8 +324,8 @@ class ReaderUnderWriterWitnessTest {
     @Test void an_empty_test_on_a_cycle_with_its_writer_is_refused_with_the_form() throws Exception {
         // "De afgeleide registratiedag … op zijn registratiedag indien zijn afgeleide controledag leeg is" and "De
         // afgeleide controledag … op zijn controledag indien zijn afgeleide registratiedag leeg is": a negative edge on a
-        // cycle, which WF-046 refuses; ref refuses the document too. The exec-model branch refuses the cycle
-        // itself before it builds the KieBase, as WF-045 does (Kringen), and names its members and rules.
+        // cycle, which WF-046 refuses; ref refuses the document too. Both branches refuse the cycle itself before
+        // they build the KieBase, as WF-045 does (Cycles), and name its members and rules.
         String registratie = rule("afgeleide registratiedag", "Vondst", "afgeleide registratiedag", own("registratiedag"),
                 predicate("empty", own("afgeleide controledag")));
         String check = rule("afgeleide controledag", "Vondst", "afgeleide controledag", own("controledag"),
@@ -329,7 +333,7 @@ class ReaderUnderWriterWitnessTest {
         String caseDocument = caseDocument(List.of(vondst("V", "2026-09-15", null, "\"registratiedag\":{\"date\":\"2026-06-01\"}")),
                 day("V", "afgeleide registratiedag", "2026-06-01"));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> playTms(document(List.of(registratie, check)), caseDocument));
+                () -> play(document(List.of(registratie, check)), caseDocument));
         assertTrue(e.getMessage().contains("kring in de afhankelijkheden over de leden Vondst.afgeleide controledag en"
                 + " Vondst.afgeleide registratiedag via de regel \"afgeleide controledag\" en de regel \"afgeleide"
                 + " registratiedag\" — een kring die niet door een creatielid van een recursieve regelgroep loopt, is"
@@ -338,12 +342,12 @@ class ReaderUnderWriterWitnessTest {
 
     @Test void an_empty_test_on_the_own_target_is_refused_with_the_form() throws Exception {
         // "De afgeleide registratiedag van een Vondst moet gesteld worden op zijn vinddag indien zijn afgeleide
-        // registratiedag leeg is": the rule reads its own target negatively, a cycle WF-046 refuses. The
-        // exec-model branch refuses the cycle by name, as the row above.
+        // registratiedag leeg is": the rule reads its own target negatively, a cycle WF-046 refuses. Both
+        // branches refuse the cycle by name, as the row above.
         String selfReadingRule = rule("afgeleide registratiedag", "Vondst", "afgeleide registratiedag", own("vinddag"),
                 predicate("empty", own("afgeleide registratiedag")));
         String caseDocument = caseDocument(List.of(vondst("V", "2026-09-15", null, "")), day("V", "afgeleide registratiedag", "2026-09-15"));
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> playTms(document(List.of(selfReadingRule)), caseDocument));
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> play(document(List.of(selfReadingRule)), caseDocument));
         assertTrue(e.getMessage().contains("kring in de afhankelijkheden over het lid Vondst.afgeleide registratiedag via"
                 + " de regel \"afgeleide registratiedag\" — een kring die niet door een creatielid van een recursieve"
                 + " regelgroep loopt, is onwelgevormd (WF-045)"), e.getMessage());
@@ -607,20 +611,13 @@ class ReaderUnderWriterWitnessTest {
                 + "],\"parameters\":{}},\"expected\":[" + expected + "]}";
     }
 
-    /** The exec-model branch's verdict on one case: null when every expectation holds. */
+    /** The verdict of both branches on one case ({@link BothBranches#verdict}): null when every expectation holds on
+     *  both. */
     private static String play(String ir, String caseDocument) throws Exception {
         Path tmp = Files.createTempFile("lezer-onder-schrijver", ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir);
         JsonNode c = JSON.readTree(caseDocument);
-        return CaseRunner.playCase(tmp, c, false);
-    }
-
-    /** The exec-model branch's verdict on one case. */
-    private static String playTms(String ir, String caseDocument) throws Exception {
-        Path tmp = Files.createTempFile("lezer-onder-schrijver", ".json");
-        tmp.toFile().deleteOnExit();
-        Files.writeString(tmp, ir);
-        return CaseRunner.playCase(tmp, JSON.readTree(caseDocument), DroolsBackend.Branch.EXEC_MODEL);
+        return BothBranches.verdict(tmp, c);
     }
 }

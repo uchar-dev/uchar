@@ -21,8 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * <p><b>Measured</b> 2026-10-10 on that document with the case of J1 (grondslag 800, heffing 800 expected): the
  * verifier refuses it, "WF-027 FAIL /rules/objectCreations/0/versions/0/assignments/1: characteristic
  * assignment's value must be a boolean-typed expression"; the reference interpreter faults, "characteristic
- * assignment of "overzees" is not boolean: 5"; the ASP runner declines the expression at translation; the
- * exec-model and the DRL-text branch fault at fire, "kenmerkinitialisatie van 'overzees' is niet booleaans: 5 (WF-027)".
+ * assignment of "overzees" is not boolean: 5"; the ASP runner declines the expression at translation; the destructive
+ * exec-model and DRL-text lowerings faulted at fire, "kenmerkinitialisatie van 'overzees' is niet booleaans: 5 (WF-027)".
  *
  * <p><b>Red</b> on the claim of the card, 331b1179: the manifest carried no refusal, and the case played.
  */

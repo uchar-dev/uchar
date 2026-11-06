@@ -13,9 +13,11 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
- * An object creation that reads a value another form writes, where that form fires later on the agenda: a defaults group
- * (added after every creation, at a salience of 0 or below), a rule the stratification places below the others (a
- * negated characteristic), a creation declared after it, and a fact creation (added after every object creation).
+ * An object creation that reads a value another form writes, where that form fired later on the agenda of the
+ * destructive lowerings: a defaults group (added after every creation, at a salience of 0 or below), a rule their
+ * stratification placed below the others (a negated characteristic), a creation declared after it, and a fact creation
+ * (added after every object creation). Both branches now fire a creation at a fixpoint of the rule layer, in the
+ * stratum the reference interpreter gives it, and every row plays on both.
  * RUNTIME-SEMANTICS ch. 6.1: a creation reads stratum-strict, so it evaluates strictly above the producers of what its
  * condition and its toekenningen read; it mints once, so a value that arrives after it is never seen. Every document
  * here is authored in this class on Jutterswet material, each one measured form with the values {@code ref} and clingo
@@ -266,16 +268,13 @@ class CreationOrderWitnessTest {
                 + "],\"parameters\":{}},\"expected\":[" + expected + "]}";
     }
 
-    /** The exec-model branch's verdict on one case: null when every expectation holds. */
+    /** The verdict of both branches on one case ({@link BothBranches#verdict}): null when every expectation holds on
+     *  both. */
     private static String play(String ir, String caseDocument) throws Exception {
-        return play(ir, caseDocument, false);
-    }
-
-    private static String play(String ir, String caseDocument, boolean drl) throws Exception {
         Path tmp = Files.createTempFile("creatie-volgorde", ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir);
         JsonNode c = JSON.readTree(caseDocument);
-        return CaseRunner.playCase(tmp, c, drl);
+        return BothBranches.verdict(tmp, c);
     }
 }

@@ -22,11 +22,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 2026-09-19 — a {@code Compound} composite (at any depth) and a comparison whose bound is a
  * Parameter — replayed through BOTH transpiler branches, plus the refusals that remain.
  *
- * <p><b>Why beside gate 12.</b> Gate 12 replays every golden through the EXEC-MODEL branch only, and
- * gate 13 drives the DRL-text branch over the goldens it can twist — the unit-bearing ones, which
- * neither of these documents is. So the DRL-text lowering of these two forms has no gate that would
- * notice it breaking, and the two branches carrying the SAME set is exactly what this card was about.
- * This is that gate: both branches, the corpus's own hand-computed expectations on both sides.
+ * <p><b>Beside gate 12.</b> When this test was written gate 12 replayed every golden through the
+ * exec-model branch only, and gate 13 drove the DRL-text branch over the goldens it can twist, the
+ * unit-bearing ones, which this golden is not; so it was the one gate of the DRL-text branch here. Since
+ * card gate12-drl-takteller (2026-09-19) gate 12 sweeps the DRL-text branch over every golden as well, and
+ * this test keeps the forms as rows on both branches, against the corpus's own hand-computed expectations.
  *
  * <p><b>Why the mutants.</b> PLAYED alone is not a witness — a branch that silently lowers nothing
  * writes nothing, and every cell expecting a characteristic ABSENT then passes by itself. Each mutant

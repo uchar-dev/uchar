@@ -89,9 +89,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 2026-10-08). The four documents of the fold order pass the verifier (the quotient carries the fractional type a
  * quotient derives, WF-091); the reference interpreter faults on each with "division by numeric zero", a sentence
  * without the operands, and with its dividend added for the measurement only (not committed) it named 9 on all four,
- * the member this class pins; the ASP runner reports a violation per member, without an order (measured 2026-10-08). The exec-model branch and the DRL-text branch fault where J1 is not actief as well, the exec-model branch
- * with this class's sentence and the DRL-text branch in a constraint of its accumulate: that is theirs, and not this
- * class's business.
+ * the member this class pins; the ASP runner reports a violation per member, without an order (measured 2026-10-08).
+ * The destructive exec-model and DRL-text lowerings faulted where J1 is not actief as well, the first with this class's
+ * sentence and the second in a constraint of its accumulate.
  *
  * <p><b>Red before the change</b> (measured 2026-10-08 on the branch after its second step, where the filter's fault
  * rule inserted the fault on the fold's subject in an activation of its own): where J1 is not actief, "expected:

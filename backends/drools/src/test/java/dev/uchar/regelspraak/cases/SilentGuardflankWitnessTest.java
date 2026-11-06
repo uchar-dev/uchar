@@ -20,9 +20,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * two answers, and the exec one was SILENT. A guard is attached to the anker's pattern when it lowers there and to
  * the doel's pattern otherwise; a guard that lowers to neither must not be dropped, because dropping it fires the
  * rule unconditionally and OVER-CREATES the relation. Both branches understood that and stopped creating. Only the
- * DRL-text branch SAID so: it emits an {@code eval(false)} carrying a marker, so {@code Dekking} reports MARKER and
- * the replay refuses the document by name. The exec branch returned no rule and recorded no skip, which the coverage
- * manifest reads as LOWERED — the document replayed as PLAYED with the creation's count at 0.
+ * DRL-text branch SAID so: it emitted an {@code eval(false)} carrying a marker, so {@code Dekking} reported MARKER and
+ * the replay refused the document by name. The exec branch returned no rule and recorded no skip, which the coverage
+ * manifest read as LOWERED — the document replayed as PLAYED with the creation's count at 0.
  *
  * <p>That is the gate-8 principle inside one backend: the two measured shapes below are an {@code Unresolved} guard
  * and a hosting the reader cannot honour, and both are FAULTS in {@code ref} and in the clingo backend. A fault that

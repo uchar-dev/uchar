@@ -374,7 +374,7 @@ class TmsAggregationWitnessTest {
 
     /** The fault of a fold's filter is the fault of the rule that reads the fold, which the rule raises where its
      *  evaluation reaches the fold while the member's {@code FilterFault} stands ({@code TmsFilterFaultWitnessTest}),
-     *  reported at the fixpoint with the sentence the exec-model branch gives for the same filter, and the fire ends at
+     *  reported at the fixpoint with the sentence the destructive exec-model branch gave for the same filter, and the fire ends at
      *  its fixpoint in every order of the generated rules. */
     @Test void a_fault_in_the_filter_of_a_fold_stands_at_the_fixpoint() throws Exception {
         String sentence = "ComputeFault: " + TmsDocuments.irrational("zware vondsten", "2");

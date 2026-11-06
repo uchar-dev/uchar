@@ -30,8 +30,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * A fold with the far member in the case input, a literal bound, a characteristic on the element that a rule derives
  * from the far member, and a rule that updates the element after the writer, played before and play after.
  *
- * <p>The DRL-text branch writes such a test into the element pattern of its accumulate or quantifier and does not see
- * the later write either ({@code verwacht 2, werkelijk 0}); it refuses the form by name.
+ * <p>The destructive DRL-text lowering wrote such a test into the element pattern of its accumulate or quantifier and did
+ * not see the later write either ({@code verwacht 2, werkelijk 0}); it refused the form by name until card
+ * drl-teksttak-op-truth-maintenance. Every row plays on both branches, which render one analysis.
  */
 class FoldFilterFarSideWitnessTest {
 
@@ -288,7 +289,7 @@ class FoldFilterFarSideWitnessTest {
                 "een kenmerk op het element");
     }
 
-    // ---------------- forms that refuse by name ----------------
+    // ---------------- forms the destructive lowerings refused by name ----------------
 
     @Test void a_union_selection_via_a_role_plays_with_truth_maintenance() throws Exception {
         // "het aantal vondsten van de Jutter die gedateerd zijn en vondsten van de Jutter wier jutter actief is": a union
@@ -302,7 +303,7 @@ class FoldFilterFarSideWitnessTest {
                 + ",\"source\":{\"snippet\":\"het aantal vondsten die gedateerd zijn en vondsten wier jutter actief is\"}}";
         String actief = characteristicRule("actief", "Jutter", predicate("filled", own("sluitdag", "Jutter")));
         String ir = document(List.of(rule("aantal late vondsten", "Jutter", "aantal late vondsten", union, null), actief, SLUITDAG));
-        assertNull(playTms(ir, caseDocument(THREE_VONDSTEN, number("J", "aantal late vondsten", 3))), "ref agrees: 3");
+        assertNull(play(ir, caseDocument(THREE_VONDSTEN, number("J", "aantal late vondsten", 3))), "ref agrees: 3");
     }
 
     @Test void the_text_branch_plays_a_test_via_the_role_of_the_element() throws Exception {
@@ -620,9 +621,13 @@ class FoldFilterFarSideWitnessTest {
                 + "],\"parameters\":{}},\"expected\":[" + expected + "]}";
     }
 
-    /** The exec-model branch's verdict on one case: null when every expectation holds. */
+    /** The verdict of both branches on one case ({@link BothBranches#verdict}): null when every expectation holds on
+     *  both. */
     private static String play(String ir, String caseDocument) throws Exception {
-        return play(ir, caseDocument, false);
+        Path tmp = Files.createTempFile("vouwfilter-verre-kant", ".json");
+        tmp.toFile().deleteOnExit();
+        Files.writeString(tmp, ir);
+        return BothBranches.verdict(tmp, JSON.readTree(caseDocument));
     }
 
     /** The DRL-text branch's verdict on one case. */
@@ -630,13 +635,6 @@ class FoldFilterFarSideWitnessTest {
         return play(ir, caseDocument, true);
     }
 
-    /** The exec-model branch's verdict on one case. */
-    private static String playTms(String ir, String caseDocument) throws Exception {
-        Path tmp = Files.createTempFile("vouwfilter-verre-kant", ".json");
-        tmp.toFile().deleteOnExit();
-        Files.writeString(tmp, ir);
-        return CaseRunner.playCase(tmp, JSON.readTree(caseDocument), DroolsBackend.Branch.EXEC_MODEL);
-    }
 
     private static String play(String ir, String caseDocument, boolean viaDrl) throws Exception {
         Path tmp = Files.createTempFile("vouwfilter-verre-kant", ".json");

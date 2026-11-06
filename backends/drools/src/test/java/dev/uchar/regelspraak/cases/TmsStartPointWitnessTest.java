@@ -41,8 +41,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * seven by name, as the decision of the card asks.
  *
  * <p><b>Not pinned</b>: a leeg anchor. Ch. 3.2 says that the anchor rule's own §6.8 error surfaces on the §9.5 channel
- * then; the reference interpreter and the ASP runner answer consistent, as this branch does, and the exec-model and the
- * DRL-text branch deposit an inconsistency through a companion of the anchor rule. This branch keeps the answer of the
+ * then; the reference interpreter and the ASP runner answer consistent, as this branch does, and the destructive
+ * exec-model and DRL-text lowerings deposited an inconsistency through a companion of the anchor rule. This branch keeps
+ * the answer of the
  * two: where no form reads or writes a timeline on the grid, nothing evaluates the anchor (call-by-need, ch. 10.6), and
  * every form that does is refused by name, so a leeg anchor has nothing here to surface through.
  *

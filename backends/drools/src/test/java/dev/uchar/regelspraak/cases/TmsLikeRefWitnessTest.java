@@ -72,7 +72,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * <p><b>Measured</b> 2026-10-10 with the verifier, the reference interpreter, the ASP runner, the jar of the claim of
  * the card (331b1179, no flag and {@code --tms}) and this branch: the verifier passes every document, the reference
  * interpreter passes every case, the ASP runner every case but the five named above, and this branch plays every case.
- * The destructive branch refuses 22 documents and answers four otherwise, as listed.
+ * The destructive branch refused 22 documents and answered four otherwise, as listed.
  */
 class TmsLikeRefWitnessTest {
 

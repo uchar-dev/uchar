@@ -498,9 +498,9 @@ public final class FactModelGenerator {
         // question, and the answer decides how much this sentence may claim: "both sides to-many" is the
         // erflijn shape, where neither bean can hold the relation, and asserting it where the far side does
         // derive a field (the gemeenteberging shape: a to-one sibling, whose field exists and is simply on the
-        // other bean) would diagnose a cardinality defect the document does not have. The exec branch never
-        // reached that case — its own conservative arm refuses a to-one element role with a to-many sister
-        // first — but the DRL-text branch does not mirror that arm and arrives here.
+        // other bean) would diagnose a cardinality defect the document does not have. The destructive exec branch
+        // never reached that case — its own conservative arm refused a to-one element role with a to-many sister
+        // first — but the destructive DRL-text lowering did not mirror that arm and arrived here.
         ObjectType far = model.objectTypeByName(targetName.name);
         String sister = model.connectingRoleViaElementName(carrier, role);
         boolean otherSideCarries = sister != null && far != null && hasReferenceField(model, far, sister, carrier);

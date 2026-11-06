@@ -2497,10 +2497,10 @@ public final class IrLoader {
         ResolvedRule r = new ResolvedRule(version.name(), ruleKind, target, expr(jsonNode(n, path, "value")),
                 condition(nodeField(n, "condition")), validity(n, path), annotations);
         positions.version(r, path);
-        // WF-022's value clause: a characteristic attribution writes the boolean constant true. Neither branch
-        // reads the value — the exec-model one writes true whatever it says, the DRL-text one writes what it
-        // says — so on a false (measured 2026-09-23 on the negative wf022-characteristic-false, verifier bypassed)
-        // they gave opposite answers where the ASP backend refuses. Refused here, once for both branches.
+        // WF-022's value clause: a characteristic attribution writes the boolean constant true. The destructive
+        // lowerings did not read the value — the exec-model one wrote true whatever it said, the DRL-text one wrote
+        // what it said — so on a false (measured 2026-09-23 on the negative wf022-characteristic-false, verifier
+        // bypassed) they gave opposite answers where the ASP backend refuses. Refused here, once for both branches.
         if (ruleKind == ResolvedRule.Kind.KENMERKTOEKENNING
                 && !(r.value() instanceof Expr.Literal l && "waar".equals(l.valueText())
                      && l.type() instanceof Datatype.BooleanType)) {

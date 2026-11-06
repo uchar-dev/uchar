@@ -21,11 +21,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * The QUANTIFIER FOLD with a NON-temporal matrix (RUNTIME-SEMANTICS ch. 3.9a), replayed through BOTH
  * transpiler branches over the corpus golden that pins it.
  *
- * <p><b>Why this test exists beside gate 12.</b> Gate 12 replays every golden through the EXEC-MODEL
- * branch only, and gate 13 drives the DRL-TEXT branch over the goldens it can TWIST — which are the
- * unit-bearing ones, and this document declares no units. So the DRL-text lowering of this node has no
- * gate that would notice it breaking. This is that gate: one file, both branches, the corpus's own
- * hand-computed expectations on both sides.
+ * <p><b>Beside gate 12.</b> When this test was written gate 12 replayed every golden through the
+ * exec-model branch only, and gate 13 drove the DRL-text branch over the goldens it can twist, the
+ * unit-bearing ones, which this golden is not; so it was the one gate of the DRL-text branch here. Since
+ * card gate12-drl-takteller (2026-09-19) gate 12 sweeps the DRL-text branch over every golden as well, and
+ * this test keeps the forms as rows on both branches, against the corpus's own hand-computed expectations.
  *
  * <p>A pass here is the square closing on this form: the same five cells that {@code ref} and the
  * clingo backend replay (gates 5 and 6) are replayed by the two Drools lowerings, each of which
@@ -117,8 +117,8 @@ class NonTemporalQuantifierFoldWitnessTest {
      * {@code corpus/golden/jutterswet-vuurtoren} is the counting sibling of the golden above: the three
      * counting quantifiers over an ordinary comparison, each at its threshold from both sides. It is the
      * ONLY corpus document that reaches the DRL-text branch's counting lowering at all — the whole-period
-     * counting golden ({@code jutterswet-reddingsvloot}) is markered there, exactly as its ALLE/GEEN sibling
-     * is — and until card tms-omschakeling (2026-10-10) it was the only one that reached the destructive exec
+     * counting golden ({@code jutterswet-reddingsvloot}) was markered there, exactly as its ALLE/GEEN sibling
+     * was, until card drl-teksttak-op-truth-maintenance — and until card tms-omschakeling (2026-10-10) it was the only one that reached the destructive exec
      * branch's NON-temporal counting route, since gate 12 would otherwise only ever have seen the timeline
      * route. The two lowerings were different roads again: that exec branch counted over a {@code collectList}
      * accumulate of the contributors; the DRL branch writes a

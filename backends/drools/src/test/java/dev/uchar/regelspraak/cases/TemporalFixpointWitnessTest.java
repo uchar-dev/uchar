@@ -21,11 +21,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * {@code ref/test/fixtures/writers-per-day} with their cases:
  *
  * <ol>
- *   <li>TERMINATION — two temporal writers on one subject reach a fixpoint. Each temporal write whose value
- *       reads an own attribute carries the §9.9 freshness expr, which leaves its pattern class-reactive; an
- *       unconditional {@code drools.update} then re-activates the sibling forever (NO_LOOP blocks only
- *       self-retrigger). Gate 12 sees only "geen fixpunt" on a whole golden, so the two shapes are pinned
- *       here directly — including the ANCHOR-free one, which the idempotency guard used to skip.</li>
+ *   <li>TERMINATION — two temporal writers on one subject reach a fixpoint. In the destructive lowering each
+ *       temporal write whose value read an own attribute carried the §9.9 freshness expr, which left its pattern
+ *       class-reactive, and an unconditional {@code drools.update} re-activated the sibling forever (NO_LOOP
+ *       blocked only self-retrigger). Gate 12 sees only "geen fixpunt" on a whole golden, so the two shapes are
+ *       pinned here directly — including the ANCHOR-free one, which the idempotency guard used to skip.</li>
  *   <li>RUNTIME-SEMANTICS ch. 3.11, "Leeg in a write" — a writer of a timeline target, also its only one,
  *       decides the days on which its timeline reads a value, and on every other day the case-supplied input
  *       timeline stands. Both sides are asserted for the ch. 3.7 pro-rata part: an EMPTY result decides no day and

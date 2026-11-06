@@ -195,7 +195,7 @@ class TmsBuiltinWitnessTest {
      *  §6.6 deposit. Measured 2026-10-09: the reference interpreter's runner gives these outcomes where the oppervlak
      *  rule comes first, and in the other order faults on V1's transient √2, the fault of an intermediate state that
      *  the owner's decision of 2026-10-09 (PLAN §9) does not count; the ASP runner declines the root ("squareRoot is
-     *  not translated"); the exec-model branch plays V4 without a fault, from its approximate root, where the reference
+     *  not translated"); the destructive exec-model branch played V4 without a fault, from its approximate root, where the reference
      *  interpreter faults. <b>Red</b> (2026-10-09) at the claim of the card, "een BuiltinCall in een waarde ('de wortel
      *  van zijn oppervlak'): buiten de proef van de truth-maintenance-tak", and in the first commit of the card, which
      *  refused it as "een squareRoot die niet de basis van een afronding is". */

@@ -62,8 +62,7 @@ class DateSetFoldWitnessTest {
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up.
     private static final Path CORPUS = Path.of("..", "..", "corpus", "golden");
 
-    /** The MINIMUM/MAXIMUM-over-a-date-set golden: ref, clingo and the exec-model branch play it, the DRL-text
-     *  branch refuses it. */
+    /** The MINIMUM/MAXIMUM-over-a-date-set golden: ref, clingo and both Drools branches play it. */
     private static final String RANGE = "jutterswet-vondstbereik";
 
     /** Its numeric sibling — MINIMUM/MAXIMUM over a `kg` member — which both branches PLAY. */

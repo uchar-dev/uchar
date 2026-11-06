@@ -180,11 +180,12 @@ class DefaultsJustificationWitnessTest {
     }
 
     @Test void the_group_decides_again_if_the_far_side_value_changes_after_it() throws Exception {
-        // "De bonuspremie van een Jutter moet berekend worden als 20 indien hij niet ijverig is" (a negated read, so
-        // the stratification puts it below salience 0), "De premie van een Jutter moet gesteld worden op de
-        // bonuspremie van de Jutter" (salience 0), and the gemelde premie of the card's R2 over that premie with the
-        // threshold 15. The premie rule is the producer the group reads; in its band, 0, the group would read the
-        // premie before the bonuspremie is written. It waits in the band of the bonuspremie instead. ref and clingo:
+        // "De bonuspremie van een Jutter moet berekend worden als 20 indien hij niet ijverig is" (a negated read, which
+        // the destructive lowering's stratification put below salience 0), "De premie van een Jutter moet gesteld
+        // worden op de bonuspremie van de Jutter" (salience 0 there), and the gemelde premie of the card's R2 over
+        // that premie with the threshold 15. The premie rule is the producer the group reads; in its band the group
+        // read the premie before the bonuspremie was written, until it waited in the band of the bonuspremie. Under
+        // truth maintenance the group decides again when the premie changes. ref and clingo:
         // J1 (not ijverig) premie 20 and M1 20; J2 (ijverig) premie leeg and M2 10.
         String jutter = objectType("Jutter", "Jutters", true, List.of(attribute("premie"), attribute("bonuspremie")),
                 List.of("ijverig"));

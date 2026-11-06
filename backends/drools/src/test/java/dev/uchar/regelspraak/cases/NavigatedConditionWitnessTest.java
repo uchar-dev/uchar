@@ -105,7 +105,7 @@ class NavigatedConditionWitnessTest {
                 + "\"initialisation\":false}]}";
         String ir = document(model, rules(DERIVED, rule("uitkomst", "Vondst", "uitkomst", viaJutter("meldingsdatum"),
                 filled(viaJutter("afgeleide datum"))), afgehandeld), "", "");
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> playTms(ir, caseDocument(List.of(jutter("J",
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> play(ir, caseDocument(List.of(jutter("J",
                 MESSAGE_MARCH), vondst("V", "J", "\"uitkomst\":{\"date\":\"2026-03-01\"}")), value("V", "uitkomst",
                 "2026-03-01") + ", {\"kind\":\"characteristicPresent\",\"label\":\"V\",\"characteristic\":\"afgehandeld\"}")));
         assertTrue(e.getMessage().contains("regel: afgehandeld — een Regelversie 'is gevuurd' in de voorwaarde"
@@ -210,7 +210,7 @@ class NavigatedConditionWitnessTest {
                 + "{\"label\":\"S1\",\"objectType\":\"Schuit\",\"attributes\":{" + number("lengte", "8") + ", "
                 + number("werf", "5") + "},\"roles\":{},\"characteristics\":[]}],\"parameters\":{}},"
                 + "\"expected\":[" + emptyExpected("S1", "toeslag") + "]}";
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> playTms(ir.toString(), caseDocument));
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> play(ir.toString(), caseDocument));
         assertTrue(e.getMessage().contains("regel: toeslag van een schuit — de kenmerkcheck 'zijn werf bedrijvig is':"
                 + " Schuit heeft geen referentieveld 'werf' naar Werf (§13.3.9 opslagrichting)"), e.getMessage());
     }
@@ -222,7 +222,7 @@ class NavigatedConditionWitnessTest {
         // one run at insertion, so rustwacht held for a wachter whose post became a risicopost.
         Path golden = Path.of("..", "..", "corpus", "golden", "anchor", "jutterswet-kustwacht");
         for (String c : List.of("case1.json", "case2.json"))
-            assertNull(CaseRunner.playCase(golden.resolve("ir.json"), JSON.readTree(Files.readString(golden.resolve(c))), false),
+            assertNull(BothBranches.verdict(golden.resolve("ir.json"), JSON.readTree(Files.readString(golden.resolve(c)))),
                     "jutterswet-kustwacht " + c);
     }
 
@@ -343,19 +343,13 @@ class NavigatedConditionWitnessTest {
                 + "],\"parameters\":{}},\"expected\":[" + expected + "]}";
     }
 
-    /** The exec-model branch's verdict on one case: null when every expectation holds. */
+    /** The verdict of both branches on one case ({@link BothBranches#verdict}): null when every expectation holds on
+     *  both. */
     private static String play(String ir, String caseDocument) throws Exception {
         Path tmp = Files.createTempFile("genavigeerde-voorwaarde", ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir);
         JsonNode c = JSON.readTree(caseDocument);
-        return CaseRunner.playCase(tmp, c, false);
-    }
-
-    private static String playTms(String ir, String caseDocument) throws Exception {
-        Path tmp = Files.createTempFile("genavigeerde-voorwaarde", ".json");
-        tmp.toFile().deleteOnExit();
-        Files.writeString(tmp, ir);
-        return CaseRunner.playCase(tmp, JSON.readTree(caseDocument), DroolsBackend.Branch.EXEC_MODEL);
+        return BothBranches.verdict(tmp, c);
     }
 }

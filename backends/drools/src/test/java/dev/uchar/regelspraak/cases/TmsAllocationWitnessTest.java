@@ -109,16 +109,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * validity-bounded form needs an evaluation date; this session is time-free"; the ASP runner does not translate the
  * validity window of an allocation ("allocation validity windows are not translated (no corpus case)").
  *
- * <p>The exec-model branch plays A, B, C, F and of D the zero weights and the ordered empty pot; on G it leaves the rest
- * leeg ("onverdeelde rest: verwacht 0, werkelijk leeg"), its rule for the rest not woken by a pot derived later; on D it
- * splits the
+ * <p>The destructive exec-model branch (until card tms-omschakeling) played A, B, C, F and of D the zero weights and the
+ * ordered empty pot; on G it left the rest leeg ("onverdeelde rest: verwacht 0, werkelijk leeg"), its rule for the rest
+ * not woken by a pot derived later; on D it split the
  * all-empty tie group equally ("rangaandeel: verwacht 0, werkelijk 50; … verwacht 100, werkelijk 0") and the keys in
  * two scales apart ("verwacht 50, werkelijk 0; … verwacht 50, werkelijk 100"), takes the v0 hole on the negative
- * weight, throws a NullPointerException on the empty pots of the other two methods, and refuses E, whose two versions
- * it reads as two allocations on one target. The DRL-text branch does the same on D, fails A ("rangaandeel: verwacht
- * 900, werkelijk 450; … verwacht 0, werkelijk 450"), throws on B ("ConsequenceException … cannot invoke method:
- * setBergingsaandeel", the fault of {@code 20260923-drl-verdeling-dubbelbezet}), deposits on J1 and J2 in E's 2026 and
- * does not fault E's time-free session; it plays G.
+ * weight, threw a NullPointerException on the empty pots of the other two methods, and refused E, whose two versions
+ * it read as two allocations on one target. The destructive DRL-text lowering (until card
+ * drl-teksttak-op-truth-maintenance) did the same on D, failed A ("rangaandeel: verwacht 900, werkelijk 450; … verwacht
+ * 0, werkelijk 450"), threw on B ("ConsequenceException … cannot invoke method: setBergingsaandeel", the fault of
+ * {@code 20260923-drl-verdeling-dubbelbezet}), deposited on J1 and J2 in E's 2026 and did not fault E's time-free
+ * session; it played G.
  *
  * <p><b>Red before the change</b> (2026-10-09, this class on the branch at the card's claim): all thirteen tests, each on
  * "Excluded: tms-transpiler SKIP: verdeling: verdeel de opbrengst naar rato — een Allocation: buiten de proef van de

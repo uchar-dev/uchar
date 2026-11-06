@@ -146,8 +146,9 @@ class LetClusterWitnessTest {
         // constraints has an EMPTY reactivity mask: the rule computes ONCE, here against a leeg `factor`
         // (maal coalesces it to 0), and never recomputes when its producer lands.
         //
-        // The order is FORCED, not left to agenda luck: `factor`'s rule reads a NEGATED kenmerk whose producer
-        // exists, so §9.2 stratification gives it salience -1 and it fires AFTER this rule. ref on this exact
+        // The destructive lowering FORCED the order: `factor`'s rule reads a NEGATED kenmerk whose producer exists, so
+        // its §9.2 stratification gave it salience -1 and it fired AFTER this rule. Under truth maintenance the order
+        // decides nothing and the row holds the fixpoint. ref on this exact
         // model+case: factor 3.0000, gewogen 3000.000000 (the fixpoint). Without the walk descending the Let
         // the replay writes 0.00 — verified by mutation.
         assertNull(play(reactivityModel(), jutter("\"inkomen\": { \"number\": \"1000.00\" }",
@@ -313,9 +314,9 @@ class LetClusterWitnessTest {
                 new String[]{}, group);
     }
 
-    /** A Let-wrapped read of an attribute whose producer is FORCED to fire later (§9.2 stratification: its
-     *  rule reads a negated kenmerk that has a producer, so its salience is -1). Only a freshness watch that
-     *  descends the Let keeps the consumer reactive on that producer's write. */
+    /** A Let-wrapped read of an attribute whose producer the destructive lowering forced to fire later (§9.2
+     *  stratification: its rule reads a negated kenmerk that has a producer, so its salience was -1), where only a
+     *  freshness watch that descended the Let kept the consumer reactive on that producer's write. */
     private static String reactivityModel() {
         String inkomen = attr("inkomen", 2, false, "nonNegative");
         String vermistTarget = ("{\"node\":\"AttributeReference\",\"attribute\":\"vermist\",\"subjectType\":\"Jutter\","

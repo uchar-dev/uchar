@@ -72,9 +72,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       wrote on the element pattern as well, and a member of a path's range that the path does not reach.</li>
  * </ul>
  *
- * <p>Every row runs on both branches. A row where the fold is reached faults on each branch in its own sentence: the
- * exec-model branch's division named after the rule; the DRL-text branch's exception for the constraint that holds the
- * filter, with the division in its cause chain. That exception no longer names a rule: Drools names none for a
+ * <p>Every row runs on both branches. Until card drl-teksttak-op-truth-maintenance a row where the fold is reached
+ * faulted on each branch in its own sentence: the exec-model branch's division named after the rule; the DRL-text
+ * branch's exception for the constraint that holds the filter, with the division in its cause chain (below, the
+ * sentence both give since). That exception named no rule: Drools names none for a
  * constraint on a pattern bound from a declaration in the source of an accumulate, where before it named every rule
  * whose accumulate shared the element pattern's constraint (measured 2026-10-09).
  *

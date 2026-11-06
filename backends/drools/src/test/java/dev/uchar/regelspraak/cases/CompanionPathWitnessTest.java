@@ -346,9 +346,9 @@ class CompanionPathWitnessTest {
     // ---------------- (r) class-reactive: the probe re-runs after a producer that fires AFTER the companion ----------------
 
     @Test void the_deposit_flag_checks_the_carrier_again_after_a_producer_that_fires_after_the_companion() throws Exception {
-        // `deler` is DERIVED by a rule that §9.2 stratification FORCES to fire after this companion (its
-        // voorwaarde reads a negated kenmerk that has a producer -> salience -1; the LetClusterWitnessTest
-        // idiom). At the companion's first activation `deler` is still leeg: the body's read of d raises the
+        // `deler` is DERIVED by a rule that the destructive lowering's §9.2 stratification FORCED to fire after this
+        // companion (its voorwaarde reads a negated kenmerk that has a producer -> salience -1; the
+        // LetClusterWitnessTest idiom); under truth maintenance the row holds the fixpoint. At the companion's first activation `deler` is still leeg: the body's read of d raises the
         // barrier and the division is cut off — no fault yet. Then the producer writes deler = 2,00, the subject
         // is updated, and only a CLASS-REACTIVE companion pattern (the always-true freshness expr) re-probes:
         // now the read succeeds, the division by the absent `tweede` runs and faults. Without the freshness

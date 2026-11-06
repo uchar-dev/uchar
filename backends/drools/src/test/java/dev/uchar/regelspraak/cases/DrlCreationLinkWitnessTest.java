@@ -120,8 +120,8 @@ class DrlCreationLinkWitnessTest {
 
     @Test void an_ambiguous_pair_without_a_binding_is_refused_by_name_in_the_drl_branch() throws Exception {
         // Until card tms-omschakeling (2026-10-10) the destructive exec branch lowered this to a rule that faulted
-        // at fire; the DRL-text branch has no fault-rule idiom and refuses it with the same sentence instead of
-        // minting unlinked.
+        // at fire, and the destructive DRL-text lowering refused it; the analysis refuses it by name on both branches
+        // instead of minting unlinked.
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> CaseRunner.playCase(AMBIGUOUS, jutterWithoutRead(), true));
         assertTrue(e.getMessage().contains("the created object's back-link is ambiguous"), e.getMessage());

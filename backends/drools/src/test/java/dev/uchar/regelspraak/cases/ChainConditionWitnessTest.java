@@ -350,9 +350,13 @@ class ChainConditionWitnessTest {
                 + "],\"parameters\":{}},\"expected\":[" + expected + "]}";
     }
 
-    /** The exec-model branch's verdict on one case: null when every expectation holds. */
+    /** The verdict of both branches on one case ({@link BothBranches#verdict}): null when every expectation holds on
+     *  both. */
     private static String play(String ir, String caseDocument) throws Exception {
-        return play(ir, caseDocument, false);
+        Path tmp = Files.createTempFile("keten-voorwaarde", ".json");
+        tmp.toFile().deleteOnExit();
+        Files.writeString(tmp, ir);
+        return BothBranches.verdict(tmp, JSON.readTree(caseDocument));
     }
 
     private static String playDrl(String ir, String caseDocument) throws Exception {

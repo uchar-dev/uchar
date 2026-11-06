@@ -49,7 +49,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   <li>A bucket scalar ({@link Input#bucketScalar}): on the document of {@link TmsInputFormWitnessTest} part C, the
  *       subject's own total without a clip of J3, whose bedrag the bean holds as the one segment of June 2024, is 7 with
  *       the statement and faults without it, since the branch then reads the segment as a full timeline (ch. 8.4).</li>
- *   <li>On the exec-model and the DRL-text branch it inserts the beans alone.</li>
+ *   <li>On the destructive exec-model and DRL-text lowerings, until cards tms-omschakeling and
+ *       drl-teksttak-op-truth-maintenance, it inserted the beans alone.</li>
  * </ul>
  *
  * <p>Measured on 2026-10-10, both documents passing the verifier: on document C with J3 alone, the reference

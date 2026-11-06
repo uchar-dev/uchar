@@ -57,9 +57,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *
  * <p><b>Measured</b> (2026-10-09, on every order of every document): the reference interpreter's runner passes every
  * case. The ASP runner passes the value forms and the percentage document, and declines the unit documents ("non-identical
- * units under a comparison are not translated", "expression kind not translated" for the listed fold). The exec-model
- * branch refuses a percentage in arithmetic and in a comparison ("regel (waarde buiten scope)"); the DRL-text branch
- * plays the percentage documents.
+ * units under a comparison are not translated", "expression kind not translated" for the listed fold). The destructive
+ * exec-model branch refused a percentage in arithmetic and in a comparison ("regel (waarde buiten scope)"); the
+ * destructive DRL-text lowering played the percentage documents.
  *
  * <p><b>Red before the change</b> (measured 2026-10-09 on a copy of the branch at its claim): every row was refused on
  * its form, "een Rounding in een waarde ('afgerond op 0 decimalen')", "een Clamp in een waarde ('begrensd')", "een
@@ -218,8 +218,8 @@ class TmsComputeFormWitnessTest {
      *  the target's. S1 (G1 300, G2 200 with a lengte 999 in the input): 500; S2 (no baandeel): 1000; S3 (G3 without a
      *  grondlengte, so its lengte stays leeg and the sum has no filled member): 1000. Measured 2026-10-09: the reference
      *  interpreter's runner passes the case in both orders; the ASP runner declines it ("sum fallback other than 0 is
-     *  not translated yet"); the exec-model branch and the DRL-text branch write the fallback unrestated, 1 where 1000
-     *  is expected. <b>Red</b> (2026-10-09) at the claim of the card: "een §5.8.2 terugvalwaarde over eenheden die
+     *  not translated yet"); the destructive exec-model and DRL-text lowerings wrote the fallback unrestated, 1 where
+     *  1000 is expected. <b>Red</b> (2026-10-09) at the claim of the card: "een §5.8.2 terugvalwaarde over eenheden die
      *  herrekend moeten worden (km naar m): de truth-maintenance-tak draagt deze vorm nog niet". */
     @Test void the_fallback_value_of_a_sum_is_recomputed_beside_later_derived_lengths() throws Exception {
         String model = TmsDocuments.modelWith(List.of(

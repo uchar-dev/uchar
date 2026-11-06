@@ -29,8 +29,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * is onvergund indien hij niet vergund is", "Een Jutter is bevoegd indien hij niet onvergund is". In the first document
  * erkend is case input; in the second it is derived itself, "Een Jutter is erkend indien hij aangemeld is". The strata
  * are 0, 1, 2 (one more where erkend is derived, RUNTIME-SEMANTICS ch. 6.4): J1, erkend, ends vergund, not onvergund,
- * bevoegd; J2, not erkend, ends not vergund, onvergund, not bevoegd. The exec-model branch reaches this by placing each
- * negated read below its producers; this branch places nothing, so its answer must not depend on any order: every order
+ * bevoegd; J2, not erkend, ends not vergund, onvergund, not bevoegd. The destructive exec-model branch reached this by
+ * placing each negated read below its producers; this branch, the exec-model branch with truth maintenance since card
+ * tms-omschakeling, places nothing, so its answer must not depend on any order: every order
  * of the rules in the document, and a fixed, seeded sample of orders of the complete list of rules the transpiler
  * generates, the standing rules among them, each fired in a KieBase of its own in EQUALITY mode.
  *

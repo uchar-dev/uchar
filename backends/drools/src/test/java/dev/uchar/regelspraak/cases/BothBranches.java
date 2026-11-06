@@ -28,6 +28,31 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 final class BothBranches {
     private BothBranches() {}
 
+    /** The verdict of both branches on one case: null where every expectation holds on both, the line both give where
+     *  they give one line, and else the line of each. A refusal both give in one sentence is thrown as the exec-model
+     *  branch's; a refusal of one branch alone, or in two sentences, fails the row. The helper of a witness whose every
+     *  row speaks of both branches, as IR-SPEC ch. 5.5 cites them. */
+    static String verdict(Path ir, JsonNode c) throws Exception {
+        CaseRunner.Excluded execRefusal = null, drlRefusal = null;
+        String exec = null, drl = null;
+        try {
+            exec = CaseRunner.playCase(ir, c, false);
+        } catch (CaseRunner.Excluded e) {
+            execRefusal = e;
+        }
+        try {
+            drl = CaseRunner.playCase(ir, c, true);
+        } catch (CaseRunner.Excluded e) {
+            drlRefusal = e;
+        }
+        if (execRefusal != null || drlRefusal != null) {
+            assertEquals(execRefusal == null ? null : execRefusal.getMessage(),
+                    drlRefusal == null ? null : drlRefusal.getMessage(), "drl-tekst refuses as exec-model");
+            throw execRefusal;
+        }
+        return java.util.Objects.equals(exec, drl) ? exec : "exec-model: " + exec + " | drl-tekst: " + drl;
+    }
+
     /** Both branches MATCH the case's expectations. */
     static void green(Path ir, JsonNode c, String message) throws Exception {
         assertNull(CaseRunner.playCase(ir, c, false), "exec-model — " + message);

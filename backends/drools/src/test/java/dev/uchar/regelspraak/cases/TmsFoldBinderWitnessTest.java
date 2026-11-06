@@ -44,8 +44,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * ("WF-064 FAIL …: binder reference 'grens' resolves to no enclosing binder"). The reference interpreter gives J1 2 and
  * J2 1 for the count's filter, 2 and 1 for the matrix, 3 and 0 for the quantifier fold's filter, and 2 and 0 for the
  * shadowing Let. The ASP runner agrees on the count's filter and the shadowing Let, and gives J1 3 and 2 in the two
- * quantifier documents, where it reads J2's drempel as well: with J1 alone in the case it gives 2 and 3. The exec-model
- * and the DRL-text branch refuse every one of these documents.
+ * quantifier documents, where it reads J2's drempel as well: with J1 alone in the case it gives 2 and 3. The destructive
+ * exec-model and DRL-text lowerings refused every one of these documents.
  *
  * <p><b>Red before the change</b> (measured 2026-10-09 on e92d5fee): the three documents with the Let were refused as
  * "een BinderRef 'grens' zonder omsluitende Let die hem bindt ('de grens', WF-064)".
