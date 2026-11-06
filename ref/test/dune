@@ -13,6 +13,10 @@
   ../../corpus/golden/jutterswet-keurgemiddelde/case2-beide-leden-gelezen.json
   ../../corpus/golden/jutterswet-keurgemiddelde/case3-het-tweede-lid-beslist.json
   ../../corpus/golden/jutterswet-keurgemiddelde/case4-de-deling-bereikt.json
+  ; a Let binder in a quantifier fold after its stop
+  ../../corpus/golden/jutterswet-grens-per-jutter/ir.json
+  ../../corpus/golden/jutterswet-grens-per-jutter/case.json
+  ../../corpus/golden/jutterswet-grens-per-jutter/case2-beslissend-lid-eerst.json
   ; and so is its third, a form without a condition
   ../../corpus/golden/jutterswet-opgave-bedrag/ir.json
   ../../corpus/golden/jutterswet-opgave-bedrag/case1-geen-opgave.json

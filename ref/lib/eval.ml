@@ -123,10 +123,13 @@ let rec filter_in_order p = function
    which the evaluation reads as a timeline as well, the timeline each member
    contributes; and [reached] is told, per node that reads a member over a
    path of roles (ch. 5.8), the label of the object the path reached, None
-   where a link on it is absent. With no
+   where a link on it is absent; [records] answers whether [member] records
+   what it is told at this point, which it does only inside a node with a
+   reading of its own. With no
    observer, as in every session, the evaluation is the one it always was;
-   with one, a quantifier fold also evaluates its matrix on the contributors
-   the evaluation does not reach, for the observer alone (ch. 5.12). *)
+   with one, a quantifier fold whose table the observer records also
+   evaluates its matrix on the contributors the evaluation does not reach,
+   for the observer alone (ch. 5.12). *)
 type member_found =
   | Member_value of Value.t (* a value fold: what the member contributes; Empty for a count *)
   | Member_timeline of Timeline.t (* the sum per period: the timeline the member contributes *)
@@ -149,6 +152,7 @@ type observer = {
   periods : condition_expr -> Timeline.t -> unit;
   period_members : expr -> (string * contribution) list -> unit;
   reached : navigating -> string option -> unit;
+  records : unit -> bool;
 }
 
 let observer : observer option ref = ref None
@@ -3050,17 +3054,24 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
         | Exactly -> if hits > cutoff || hits + left < cutoff then Some false else None
       in
       (* ch. 5.12: the reading records the table of ch. 3.9a over every
-         contributor, so under an observer each contributor the evaluation
-         does not reach — after the stop, after a fault — is evaluated too,
-         its deposits dropped, and recorded as not reached; the verdict and
-         the fault are the reading's, never the session's. Without an
-         observer nothing past the stop runs. A binder of an enclosing Let is
-         not forced for such a member: that would evaluate a value the
-         session did not, and record its nodes as reached, so the reading
-         refuses the shape by name. *)
+         contributor, so under an observer that records this fold's table
+         each contributor the evaluation does not reach — after the stop,
+         after a fault — is evaluated too, its deposits dropped, and recorded
+         as not reached; the verdict and the fault are the reading's, never
+         the session's. Without an observer nothing past the stop runs, and
+         neither does it for a fold without a reading of its own: one in the
+         filter of an aggregation or in the filter or matrix of another fold,
+         whose table is written nowhere. Only there can a quantifier fold read
+         a binder of an enclosing Let (WF-077 keeps a quantifier fold out of
+         the condition of an IfThenElse, and a clip admits none), so a fold
+         whose table is recorded never reads one. Forcing it for a member the
+         evaluation did not reach would evaluate a value the session did not
+         and record its nodes as reached; the binder stays a tripwire that
+         names the shape. *)
       let unreached (parts : World.instance list) =
         match !observer with
         | None -> ()
+        | Some o when not (o.records ()) -> ()
         | Some _ ->
             let locals =
               SMap.mapi
@@ -3070,10 +3081,11 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
                         (fun () ->
                           failwith
                             (Printf.sprintf
-                               "ref/lib/eval.ml: the reading of a quantifier fold evaluates a \
-                                member the evaluation did not reach, and its matrix reads %S, a \
-                                binder of an enclosing Let (ch. 10.6), which the evaluation has \
-                                not forced there: not carried"
+                               "ref/lib/eval.ml: the reading records the table of a quantifier \
+                                fold whose matrix reads %S, a binder of an enclosing Let (ch. \
+                                10.6), for a member the evaluation did not reach; a fold with a \
+                                reading of its own stands where no such binder is in scope \
+                                (WF-077), so this is a fault of ref"
                                name))
                   | b -> b)
                 env.locals

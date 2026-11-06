@@ -10540,6 +10540,94 @@ let () =
       check "WV-5.12-fout-in-een-kwantorvouw" (got = expected);
       if got <> expected then List.iter (Printf.printf "  got: %s\n") got)
 
+(* WV-5.12-binder-na-de-stop: a quantifier fold that reads a binder of an
+   enclosing Let stands where it is read per member (the filter of an
+   aggregation, the filter or matrix of another fold; WF-077 keeps it out of
+   the condition of an IfThenElse), so it has no reading of its own and its
+   table is written nowhere: the reading evaluates no member after its stop,
+   and a binder no reached member forced stays unforced. The golden
+   jutterswet-grens-per-jutter on its two cases, the second with the deciding
+   brokstuk of every vondst of two first in label order, so that the folds of
+   V2 and V5 stop before their last member after the reached member forced
+   the binder: no line of any reading names a quantifier fold, and the lines
+   of the "alle" rule and of the "ten minste een" rule are pinned. And a
+   document of two such rules over J1 (grenslengte 1000; V1 with S1 1000 and
+   S2 3000) and J2 (V2 with S3 2500), on J2's grenslengte 2000 and leeg: the
+   "alle" fold stops at S1, after S1 forced the binder; the fold "ten minste
+   2" over V2's one brokstuk stops on the empty prefix, so no member forces
+   the binder, the Let has the value of its body, the count (ch. 10.6), and
+   the binder's value node is not reached (ch. 5.12), with a filled and with
+   a leeg grenslengte; the "alle" rule on J2 reads the leeg binder in S3,
+   which ends the Let leeg. Until 2026-11-06 the reading evaluated every
+   member after the stop and refused to force the binder there. *)
+let () =
+  let golden = "corpus/golden/jutterswet-grens-per-jutter/" in
+  let has_fold line =
+    let k = "QuantifierFold" in
+    let n = String.length line and m = String.length k in
+    let rec at i = i + m <= n && (String.sub line i m = k || at (i + 1)) in
+    at 0
+  in
+  let pinned ~name got expected =
+    check name (got = expected);
+    if got <> expected then List.iter (Printf.printf "  got: %s\n") got
+  in
+  let rule form subject cells =
+    List.map (fun cell -> Printf.sprintf "/rules/rules/%d/versions/0 \"%s\" %s" form subject cell) cells
+  in
+  List.iter
+    (fun file ->
+      let got = readings_of (corpus_file (golden ^ "ir.json")) (corpus_file (golden ^ file)) in
+      check ("WV-5.12-binder-na-de-stop " ^ file ^ ": no line of a quantifier fold")
+        (got <> [] && not (List.exists has_fold got));
+      if file = "case2-beslissend-lid-eerst.json" then
+        pinned
+          ~name:("WV-5.12-binder-na-de-stop " ^ file)
+          (List.filter
+             (fun l ->
+               let p = "/rules/rules/0/" and q = "/rules/rules/5/" in
+               String.length l > String.length p
+               && (String.sub l 0 (String.length p) = p || String.sub l 0 (String.length q) = q))
+             got)
+          (List.sort compare
+             (rule 0 "J1" [ "0 Let 1"; "1 AttributeReference 5"; {|2 Aggregation 1 contributors ["V1" empty reached]|}; "HOLDS" ]
+             @ rule 0 "J2" [ "0 Let 1"; "1 AttributeReference 2"; {|2 Aggregation 1 contributors ["V4" empty reached]|}; "HOLDS" ]
+             @ rule 5 "J1"
+                 [ "0 Let 1"; {|1 AttributeReference 1 "km"|}; {|2 Aggregation 1 contributors ["V2" empty reached]|}; "HOLDS" ]
+             @ rule 5 "J2"
+                 [ "0 Let 1"; {|1 AttributeReference 2 "km"|}; {|2 Aggregation 1 contributors ["V5" empty reached]|}; "HOLDS" ])))
+    [ "case.json"; "case2-beslissend-lid-eerst.json" ];
+  let doc =
+    {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"grenslengte","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"aantal lange vondsten","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"aantal passende vondsten","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"characteristics":[]},{"node":"ObjectType","name":"Vondst","animate":false,"plural":"Vondsten","attributes":[],"characteristics":[]},{"node":"ObjectType","name":"Brokstuk","animate":false,"plural":"Brokstukken","attributes":[{"node":"Attribute","name":"lengte","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"characteristics":[]}],"factTypes":[{"node":"FactType","name":"vondstmelding","reciprocal":false,"roles":[{"node":"Role","name":"melder","objectType":"Jutter","many":false},{"node":"Role","name":"vondst","objectType":"Vondst","plural":"vondsten","many":true}]},{"node":"FactType","name":"vondstsamenstelling","reciprocal":false,"roles":[{"node":"Role","name":"bron","objectType":"Vondst","many":false},{"node":"Role","name":"brokstuk","objectType":"Brokstuk","plural":"brokstukken","many":true}]}],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"lange vondsten van een jutter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"aantal lange vondsten","subjectType":"Jutter","source":{"snippet":"Het aantal lange vondsten van een Jutter"}},"value":{"node":"Let","type":{"node":"Number","whole":true,"decimals":0,"sign":"nonNegative"},"binder":"grens","value":{"node":"AttributeReference","attribute":"grenslengte","subjectType":"Jutter","source":{"snippet":"de grenslengte van de Jutter"}},"body":{"node":"Aggregation","kind":"count","arguments":[{"node":"AttributeReference","attribute":"vondsten","subjectType":"Jutter","source":{"snippet":"vondsten van de Jutter"}}],"elementType":"Vondst","filter":{"node":"QuantifierFold","quantifier":"all","elementType":"Brokstuk","test":{"node":"Comparison","op":"greater","left":{"node":"AttributeReference","attribute":"lengte","subjectType":"Brokstuk","source":{"snippet":"de lengte"}},"right":{"node":"BinderRef","name":"grens","source":{"snippet":"de grens"}},"source":{"snippet":"de lengte greater de grens"}},"source":{"snippet":"all brokstukken"},"sourceRole":{"node":"RoleBinding","factType":"vondstsamenstelling","role":"brokstuk"}},"sourceRole":{"node":"RoleBinding","factType":"vondstmelding","role":"vondst"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"nonNegative"},"source":{"snippet":"het aantal vondsten"}},"source":{"snippet":"de grens is de grenslengte van de Jutter"}},"initialisation":false,"presentation":"calculation"}]},{"node":"Rule","name":"passende vondsten van een jutter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"aantal passende vondsten","subjectType":"Jutter","source":{"snippet":"Het aantal passende vondsten van een Jutter"}},"value":{"node":"Let","type":{"node":"Number","whole":true,"decimals":0,"sign":"nonNegative"},"binder":"grens","value":{"node":"AttributeReference","attribute":"grenslengte","subjectType":"Jutter","source":{"snippet":"de grenslengte van de Jutter"}},"body":{"node":"Aggregation","kind":"count","arguments":[{"node":"AttributeReference","attribute":"vondsten","subjectType":"Jutter","source":{"snippet":"vondsten van de Jutter"}}],"elementType":"Vondst","filter":{"node":"QuantifierFold","quantifier":"atLeast","threshold":2,"elementType":"Brokstuk","test":{"node":"Comparison","op":"equal","left":{"node":"AttributeReference","attribute":"lengte","subjectType":"Brokstuk","source":{"snippet":"de lengte"}},"right":{"node":"BinderRef","name":"grens","source":{"snippet":"de grens"}},"source":{"snippet":"de lengte equal de grens"}},"source":{"snippet":"atLeast brokstukken"},"sourceRole":{"node":"RoleBinding","factType":"vondstsamenstelling","role":"brokstuk"}},"sourceRole":{"node":"RoleBinding","factType":"vondstmelding","role":"vondst"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"nonNegative"},"source":{"snippet":"het aantal vondsten"}},"source":{"snippet":"de grens is de grenslengte van de Jutter"}},"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+  in
+  let write suffix body_text =
+    let f = Filename.temp_file "ref-wv512" suffix in
+    let oc = open_out f in
+    output_string oc body_text;
+    close_out oc;
+    f
+  in
+  List.iter
+    (fun (variant, case_data, j2_alle) ->
+      let irf = write ".ir.json" doc and casef = write ".case.json" case_data in
+      Fun.protect
+        ~finally:(fun () -> List.iter Sys.remove [ irf; casef ])
+        (fun () ->
+          pinned
+            ~name:("WV-5.12-binder-na-de-stop, " ^ variant)
+            (readings_of irf casef)
+            (List.sort compare
+               (rule 0 "J1" [ "0 Let 0"; "1 AttributeReference 1000"; "2 Aggregation 0"; "HOLDS" ]
+               @ rule 0 "J2" j2_alle
+               @ rule 1 "J1" [ "0 Let 0"; "1 AttributeReference 1000"; "2 Aggregation 0"; "HOLDS" ]
+               @ rule 1 "J2" [ "0 Let 0"; "1 AttributeReference unreached"; "2 Aggregation 0"; "HOLDS" ]))))
+    [ ( "grenslengte 2000",
+        {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"J1","objectType":"Jutter","attributes":{"grenslengte":{"number":"1000"}},"roles":{},"characteristics":[]},{"label":"J2","objectType":"Jutter","attributes":{"grenslengte":{"number":"2000"}},"roles":{},"characteristics":[]},{"label":"V1","objectType":"Vondst","attributes":{},"roles":{"melder":["J1"]},"characteristics":[]},{"label":"V2","objectType":"Vondst","attributes":{},"roles":{"melder":["J2"]},"characteristics":[]},{"label":"S1","objectType":"Brokstuk","attributes":{"lengte":{"number":"1000"}},"roles":{"bron":["V1"]},"characteristics":[]},{"label":"S2","objectType":"Brokstuk","attributes":{"lengte":{"number":"3000"}},"roles":{"bron":["V1"]},"characteristics":[]},{"label":"S3","objectType":"Brokstuk","attributes":{"lengte":{"number":"2500"}},"roles":{"bron":["V2"]},"characteristics":[]}],"parameters":{}},"expected":[{"kind":"attributeValue","label":"J1","attribute":"aantal lange vondsten","value":{"number":"0"}},{"kind":"attributeValue","label":"J1","attribute":"aantal passende vondsten","value":{"number":"0"}},{"kind":"attributeValue","label":"J2","attribute":"aantal lange vondsten","value":{"number":"1"}},{"kind":"attributeValue","label":"J2","attribute":"aantal passende vondsten","value":{"number":"0"}}]}|},
+        [ "0 Let 1"; "1 AttributeReference 2000"; {|2 Aggregation 1 contributors ["V2" empty reached]|}; "HOLDS" ] );
+      ( "grenslengte leeg",
+        {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"J1","objectType":"Jutter","attributes":{"grenslengte":{"number":"1000"}},"roles":{},"characteristics":[]},{"label":"J2","objectType":"Jutter","attributes":{},"roles":{},"characteristics":[]},{"label":"V1","objectType":"Vondst","attributes":{},"roles":{"melder":["J1"]},"characteristics":[]},{"label":"V2","objectType":"Vondst","attributes":{},"roles":{"melder":["J2"]},"characteristics":[]},{"label":"S1","objectType":"Brokstuk","attributes":{"lengte":{"number":"1000"}},"roles":{"bron":["V1"]},"characteristics":[]},{"label":"S2","objectType":"Brokstuk","attributes":{"lengte":{"number":"3000"}},"roles":{"bron":["V1"]},"characteristics":[]},{"label":"S3","objectType":"Brokstuk","attributes":{"lengte":{"number":"2500"}},"roles":{"bron":["V2"]},"characteristics":[]}],"parameters":{}},"expected":[{"kind":"attributeValue","label":"J1","attribute":"aantal lange vondsten","value":{"number":"0"}},{"kind":"attributeValue","label":"J1","attribute":"aantal passende vondsten","value":{"number":"0"}},{"kind":"attributeEmpty","label":"J2","attribute":"aantal lange vondsten"},{"kind":"attributeValue","label":"J2","attribute":"aantal passende vondsten","value":{"number":"0"}}]}|},
+        [ "0 Let empty"; "1 AttributeReference empty"; "2 Aggregation empty"; "HOLDS" ] ) ]
+
 (* WV-5.12-opgave-bedrag: the chapter's worked example of a form without a
    condition, verbatim, the golden jutterswet-opgave-bedrag. The rule
    verzekerde waarde has no condition: it holds on every Vondst, with the

@@ -309,6 +309,7 @@ let observing (nodes : node list) f =
                      n.number n.kind);
               n.target <- Some target
           | _ -> ());
+      records = (fun () -> match !stack with `Node _ :: _ -> true | _ -> false);
     }
   in
   let saved = !Eval.observer in

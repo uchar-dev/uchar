@@ -1,0 +1,354 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "drempel": {
+            "number": "5"
+          },
+          "grenslengte": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "drempel": {
+            "number": "2"
+          },
+          "grenslengte": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "nummer": {
+            "number": "3"
+          }
+        },
+        "roles": {
+          "melder": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "nummer": {
+            "number": "6"
+          }
+        },
+        "roles": {
+          "melder": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "nummer": {
+            "number": "7"
+          }
+        },
+        "roles": {
+          "melder": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": {
+          "nummer": {
+            "number": "3"
+          }
+        },
+        "roles": {
+          "melder": [
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V5",
+        "objectType": "Vondst",
+        "attributes": {
+          "nummer": {
+            "number": "4"
+          }
+        },
+        "roles": {
+          "melder": [
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S1",
+        "objectType": "Brokstuk",
+        "attributes": {
+          "gewicht": {
+            "number": "6"
+          },
+          "lengte": {
+            "number": "1500"
+          }
+        },
+        "roles": {
+          "bron": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S2",
+        "objectType": "Brokstuk",
+        "attributes": {
+          "gewicht": {
+            "number": "7"
+          },
+          "lengte": {
+            "number": "2000"
+          }
+        },
+        "roles": {
+          "bron": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S3",
+        "objectType": "Brokstuk",
+        "attributes": {
+          "gewicht": {
+            "number": "3"
+          },
+          "lengte": {
+            "number": "1000"
+          }
+        },
+        "roles": {
+          "bron": [
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S4",
+        "objectType": "Brokstuk",
+        "attributes": {
+          "gewicht": {
+            "number": "8"
+          },
+          "lengte": {
+            "number": "3000"
+          }
+        },
+        "roles": {
+          "bron": [
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S5",
+        "objectType": "Brokstuk",
+        "attributes": {
+          "gewicht": {
+            "number": "5"
+          },
+          "lengte": {
+            "number": "800"
+          }
+        },
+        "roles": {
+          "bron": [
+            "V3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S6",
+        "objectType": "Brokstuk",
+        "attributes": {
+          "gewicht": {
+            "number": "3"
+          },
+          "lengte": {
+            "number": "2500"
+          }
+        },
+        "roles": {
+          "bron": [
+            "V4"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S7",
+        "objectType": "Brokstuk",
+        "attributes": {
+          "gewicht": {
+            "number": "1"
+          },
+          "lengte": {
+            "number": "2000"
+          }
+        },
+        "roles": {
+          "bron": [
+            "V5"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S8",
+        "objectType": "Brokstuk",
+        "attributes": {
+          "gewicht": {
+            "number": "3"
+          },
+          "lengte": {
+            "number": "2500"
+          }
+        },
+        "roles": {
+          "bron": [
+            "V5"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "aantal zware vondsten",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "aantal zware vondsten",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "aantal lichte vondsten",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "aantal lichte vondsten",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "aantal vondsten boven de ondergrens",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "aantal vondsten boven de ondergrens",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "aantal late vondsten",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "aantal late vondsten",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "aantal lange vondsten",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "aantal lange vondsten",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "aantal passende vondsten",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "aantal passende vondsten",
+      "value": {
+        "number": "1"
+      }
+    }
+  ]
+}

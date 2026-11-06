@@ -6697,6 +6697,18 @@ its members — the node carries no contributors. An executor whose
 evaluation keeps no order among the contributors of a quantifier fold whose
 matrix can neither fault nor deposit (ch. 5.11: an invisible order) writes
 `unordered` in place of the position; it reports no position for that fold.
+A quantifier fold read per member or per element (above) has no reading of
+its own: its table is written nowhere, and an executor need not evaluate
+its contributors after the stop. It is the one place where a quantifier
+fold reads a binder of an enclosing `Let`, since WF-077 keeps a quantifier
+fold out of the condition of an `IfThenElse`; the reading then reads the
+binder only where the evaluation read it, and the nodes of the `Let`'s
+value are reached exactly where the evaluation forced the binder
+(ch. 10.6). The golden `jutterswet-grens-per-jutter` pins it: its second
+case stops the folds of two vondsten after a member that forced the
+binder. In `ref/` test `WV-5.12-binder-na-de-stop` a fold that stops on
+the empty prefix forces nothing, and the node of the binder's value reads
+`unreached`, with a filled and with a leeg value.
 
 **The canonical text.** The readings of a case are written one line per
 reading, `<form> <object> <status>`, and one line per node with a reading
