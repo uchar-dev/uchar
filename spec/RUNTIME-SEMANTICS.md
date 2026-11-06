@@ -4370,17 +4370,20 @@ any length is a result. An executor may carry a named resource bound
 of its own beside it. Such a bound is no norm: a run that meets it ends
 loudly in that executor, never with a truncated result, where an
 executor without that bound completes the same run. Two are recorded.
-The Drools backend fires a case at most 100 000 times, in each of its
-three branches. Its exec-model and DRL-text branches carry no creation
-budget at all and run a finite chain past the budget to its end (gate
-8, whose red run drives the exec-model branch, lists each such case with
-that reason, `scripts/check-red.sh`); a run that needs more firings, a
-closure of more than 100 000 links among them, ends at the cap without a
-fixpoint and is reported as such ("geen fixpunt"). Measured 2026-10-09
+The Drools backend fires a case, in both its branches, under a cap of
+max(10 000, 4 × R × N0) firings, R the rules of its KieBase and N0 the
+facts just before the fire, computed again at the start of every
+creation phase (`backends/drools/README.md`); both branches carry the
+creation budget of this chapter. A run that needs more firings ends at
+the cap without a fixpoint and is reported as such. Measured 2026-10-09
 on the anchor `jutterswet-erflijn` over a chain of 450 input Wachters,
 whose closure has 101 025 links: the reference interpreter and the ASP
-backend give erfvolgeraantal(W1) = **449**, the truth-maintenance branch
-ends at the cap, and the other two branches do not carry the document.
+backend give erfvolgeraantal(W1) = **449**; the truth-maintenance branch
+of that day ended at a fixed cap of 100 000 firings, and the two
+destructive branches did not carry the document. Measured again
+2026-11-06, with the cap that grows with the facts: both Drools branches
+give **449** (`PLAYED`, in 719 s on the exec-model branch and 213 s on
+the DRL-text branch).
 The ASP backend refuses by name (`viol("term nesting bound reached …")`,
 the second posture of `IR-SPEC.md` ch. 5.5) a chain of 190 nested
 creations over all strata in a document with a recursive object

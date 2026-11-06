@@ -72,22 +72,33 @@ subagent (opus55) en per zin nagelopen tegen de code; logs in `werk/drools-resid
   ~501, `IrLoader` r. ~2500). Elk naar verleden tijd met "the destructive … lowering", of naar de huidige stand.
 - `backends/drools/README.md`: niets verouderd (r. 389–391 noemt salience en `NO_LOOP` als wat de tak níet nodig heeft).
 - `spec/ASP-TRANSLATION.md`: niets verouderd.
-- Buiten het mandaat van deze branch, met voorstel (open punt 1): `spec/RUNTIME-SEMANTICS.md` r. ~4373–4384 ("in each of
-  its three branches. Its exec-model and DRL-text branches carry no creation budget at all … the other two branches do
-  not carry the document"): er zijn twee takken, beide met het creatiebudget (diepte 101) en een fire-cap die met de
-  invoer groeit (README "Firing"); voorstel: "The Drools backend fires a case at most max(10 000, 4 × R × N0) times, in
-  both its branches, which carry the creation budget", na meting van `anchor/jutterswet-erflijn` met 450 Wachters op
-  beide takken. RUNTIME-SEMANTICS r. ~7384–7388 en IR-SPEC r. ~9409–9411 ("the Drools exec branch answer merk(W1) = 2,
-  the ASP backend and the DRL-text branch 1"): de DRL-teksttak rendert dezelfde analyse en kan niet meer apart
-  antwoorden; voorstel "both Drools branches 2" na meting van de `opvolgerquorum`-variant. IR-SPEC buiten ch. 5.5,
-  elk met een meting nodig: r. ~2873 en ~2981 ("the DRL-text branch answers by document order";
-  `wf079-chain-unconditional-writers`, `wf026-chain-two-allocations`), r. ~3427 (de fire-cap als vast 100 000), r.
-  ~7534–7546 (een doel-poging "lowers … through a fact-only leaf predicate"; de analyse weigert bij naam,
-  `TARGET_CONDITION_NESTED_HOST`), r. ~8034 (een `NullPointerException` bij een lege `filler`), r. ~8174–8180 (de
-  ERROR-tekst "Eenheidsconflict … §6.1.4" bestaat niet meer in de bron; `wf099-clamp-bound-unit`).
+- Na de landingsronde van de hoofdsessie (mandaat verruimd, RUNTIME-SEMANTICS ch. 1.2 uitgezonderd), gemeten op beide
+  takken en uitgevoerd in een eigen commit (zie (c)); metingen in `werk/drools-residue/probe/kaart3/`:
+  - RUNTIME-SEMANTICS ch. 5.5 r. ~4373 ("in each of its three branches. Its exec-model and DRL-text branches carry no
+    creation budget at all", een vaste cap van 100 000): nu twee takken, beide met het creatiebudget, de cap
+    `max(10 000, 4 × R × N0)` van de README. Opnieuw gemeten: `anchor/jutterswet-erflijn` over 450 Wachters (101 025
+    links) geeft op beide takken erfvolgeraantal(W1) = 449, `PLAYED 1`, in 719 s (exec-model) en 213 s (DRL-tekst)
+    (`erflijn/meting.log`); de meting van 2026-10-09 blijft als geschiedenis staan.
+  - RUNTIME-SEMANTICS ch. 6.1 r. ~7384 en IR-SPEC r. ~9409 (`opvolgerquorum`, de `all`-matrix "merk kleiner dan 2" en
+    "merk ongelijk aan 2", case 4): ref en beide Drools-takken 2, clingo 1 (`quorum/meting.log`); was "the DRL-text
+    branch 1".
+  - IR-SPEC r. ~2873 (`wf079-chain-unconditional-writers`): alle vier vallen met een fout die beide schrijvers noemt
+    (ref en clingo EF-016, beide Drools-takken `WritersConflict`); de oude stand in verleden tijd. IR-SPEC r. ~2981
+    (`wf026-chain-two-allocations`): ref EF-016, clingo twee waarden, beide Drools-takken weigeren bij naam (DROOLS-140,
+    WF-026); was "the DRL-text branch answers by document order" (`meting-negatieven.log`).
+  - IR-SPEC r. ~3427: de vaste 100 000 wordt "a cap that grows with the rules and the facts of the session".
+  - IR-SPEC r. ~7534 en ~7543 (de doel-poging, gemeten 2026-09-19): verleden tijd, met de huidige weigering bij naam op
+    beide takken (DROOLS-157; `WholePeriodTargetAttemptWitnessTest`).
+  - IR-SPEC r. ~8034 (een lege `filler`, een `NullPointerException`): de vorm bestaat sinds L2 (2026-09-24,
+    `RoleMembership`) niet meer op de draad, dus niet meer te meten; verleden tijd, met die reden.
+  - IR-SPEC r. ~8174 (`wf099-clamp-bound-unit`, twee routes per tak): beide takken geven nu één zin, `ERROR
+    UnitConflict: onverenigbare eenheden bij een begrenzing (minimum) …` (`meting-wf099.log`).
+  - `scripts/check-drools.sh` r. ~584–591 (`jutterswet-reddingsvloot` "markers it"): verleden tijd, met de stand sinds
+    `drl-teksttak-op-truth-maintenance`. De andere tegenwoordige-tijdzinnen over de DRL-teksttak in de
+    `EXPECTED_PLAYED`-geschiedenis van dat script vallen onder de bestaande NB van r. ~347–351 (2026-10-14): een
+    vermelding daar betekent de destructieve DRL-weergave van haar datum.
 - Overgeslagen als gedateerde geschiedenis: ongeveer 190 regels in ongeveer 80 testbestanden, 7 in IR-SPEC, 8 in
-  RUNTIME-SEMANTICS, 2 in ASP-TRANSLATION. `scripts/check-drools.sh` r. ~584–590 ("the DRL-text branch markers it",
-  `jutterswet-reddingsvloot`) is commentaar van gate 12 en buiten "May touch" van de kaart; het staat in open punt 1.
+  RUNTIME-SEMANTICS, 2 in ASP-TRANSLATION.
 
 **(b) Zinnen over beide takken hebben een getuige op beide takken.** `BothBranches.verdict` speelt een case op beide
 takken en geeft null waar beide alles halen, of de regel van elk; een weigering moet op beide in één zin vallen.
@@ -98,11 +109,8 @@ Gemeten: 66 rijen groen op beide takken (`logs/card3-witnesses.log`). De nieuwe 
 deze vijf getuigen, "every row on both branches". Rood eerst is hier geen reparatie maar een bredere getuige; de
 DRL-teksttak speelt elke rij zoals ref.
 
-**(c) Commits.** `d1ff1a5a1` de IR-SPEC-wijziging (voorstel, eigen commit); de javadoc, het commentaar en de getuigen in
-de commit van deze kaart. Gate 1 groen (`logs/card3-gate1.log`); gate 12 groen (`logs/card3-gate12.log`: 353 gespeeld
+**(c) Commits.** `d1ff1a5a1` de IR-SPEC-wijziging van ch. 5.5 (voorstel, eigen commit); de javadoc, het commentaar en
+de getuigen in de commit van deze kaart; de zinnen in RUNTIME-SEMANTICS, IR-SPEC buiten ch. 5.5 en het commentaar van
+`check-drools.sh` in een eigen commit daarna (gate 1 groen, `logs/punt1-gate1.log`; `bash -n` op het script en
+`check-drools-codes.sh` groen). Gate 1 groen (`logs/card3-gate1.log`); gate 12 groen (`logs/card3-gate12.log`: 353 gespeeld
 op beide takken, JUnit 1880).
-
-**Open punten.**
-1. De zinnen buiten het mandaat hierboven (RUNTIME-SEMANTICS r. ~4373 en ~7384, IR-SPEC buiten ch. 5.5, het commentaar
-   in `check-drools.sh`) vragen elk een meting op beide takken vóór de nieuwe zin; de bouwer van RUNTIME-SEMANTICS
-   (clingo/ref) werkt parallel in ch. 5.5.

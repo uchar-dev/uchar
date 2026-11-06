@@ -2869,12 +2869,15 @@ literal `{"boolean": true}` since L4.)
   zone (ref oscillates and faults the fixpoint budget, clingo is silently
   multi-valued, so the executors disagree and no corpus zone admits it);
   WF-079 refuses it ahead of the differential square. The chain pair
-  behaves the same way (`corpus/negative/wf079-chain-unconditional-writers`): ref
-  and the Drools exec-model branch find no fixpoint, clingo derives two
-  values, and the DRL-text branch answers by document order. Since
-  2026-10-01 all four executors fault such a pair by name where both
-  writers apply to one instance (`RUNTIME-SEMANTICS.md` ch. 5.7); WF-079
-  keeps refusing the unconditional pair ahead of evaluation. **The
+  behaves the same way (`corpus/negative/wf079-chain-unconditional-writers`):
+  until 2026-10-01 ref and the Drools exec-model branch found no fixpoint,
+  clingo derived two values, and the DRL-text branch answered by document
+  order. Since then all four executors fault such a pair by name where both
+  writers apply to one instance (`RUNTIME-SEMANTICS.md` ch. 5.7; measured
+  again 2026-11-06 with a Wrakrecht and a Strandrecht: EF-016 in ref and
+  the ASP backend, `WritersConflict` naming both rules in both Drools
+  branches); WF-079 keeps refusing the unconditional pair ahead of
+  evaluation. **The
   initialisation arm.** A (type, attribute) target that carries no defaults
   MUST NOT be written by two **initialisation** versions (`initialisation`
   true) of different forms whose validities overlap either — conditional or
@@ -2978,8 +2981,11 @@ method value.
   type, the first concrete type both write; the expressible forms are one
   allocation, or the second share written to an attribute the lower type
   declares itself. Witness `corpus/negative/wf026-chain-two-allocations`:
-  ref and the Drools exec-model branch find no fixpoint, clingo derives two
-  values, and the DRL-text branch answers by document order. *v0 mirror
+  ref finds no fixpoint (EF-016), clingo derives two values, and both Drools
+  branches refuse the pair by name as WF-026 (DROOLS-140; measured
+  2026-11-06 with one Hoofdberger in one Berging; until card
+  `drl-teksttak-op-truth-maintenance` the DRL-text branch answered by
+  document order). *v0 mirror
   note:* two allocations on one target are agenda-order-dependent and v0's
   exec backend refuses them as a principled skip; that skip, ported to the
   Drools backend, keys on the declared type and does not see the chain
@@ -3425,10 +3431,10 @@ budget turning divergence into a fault in every executor.
   reference interpreter's pass budget cut a closure of 100+ hops where
   the ASP grounding completed it). An executor's own named resource
   bound, which is no norm, can still end one: the Drools backend fires a
-  case at most 100 000 times, so a closure that needs more firings ends
-  there without a fixpoint, reported as such, where the reference
-  interpreter and the ASP backend complete it (`RUNTIME-SEMANTICS.md`
-  ch. 5.5, Resource bounds). *v0 mirror note:* containment is a
+  case under a cap that grows with the rules and the facts of the session,
+  so a closure that needs more firings ends there without a fixpoint,
+  reported as such, where the reference interpreter and the ASP backend
+  complete it (`RUNTIME-SEMANTICS.md` ch. 5.5, Resource bounds). *v0 mirror note:* containment is a
   v0 error; the unguarded case only warns. **Delta (promotion)** for the
   guard.
 
@@ -7531,17 +7537,20 @@ and it belongs to whoever measures it.
   *Scope of the DOEL, stated with its reason — three fences.* The second bound
   object is admitted only where the check IS the whole `condition`, does not
   navigate, and carries no whole-period qualifier. NESTED inside a composite it
-  is not: the bean model's exec-model branch lowers a doel-side guard through a
-  fact-only leaf predicate and carries no composite there (measured
-  2026-09-19), so admitting it would split the executors instead of closing
-  them — and a verifier that admits what one executor cannot carry is the split
+  is not: the bean model's exec-model branch lowered a doel-side guard through a
+  fact-only leaf predicate and carried no composite there (measured
+  2026-09-19; with truth maintenance both Drools branches refuse a check
+  whose host is not the subject by name, DROOLS-157), so admitting it would
+  split the executors instead of closing them — and a verifier that admits what one executor cannot carry is the split
   this decision exists to end. NAVIGATING it is not either: there the
   characteristic lives on the type the hop REACHES while the owner names the
   host, and the producer emits only the bare form, so widening would norm a
   shape no witness measures. QUALIFIED by ch. 3.9's `gedurende het gehele
   <periode>` it is not, and that fence is the measured one: in both bean-model
-  branches the whole-period fold arm runs BEFORE the host test, so under a
-  qualifier the field decides nothing and the fold picks its own subject —
+  branches the whole-period fold arm ran BEFORE the host test, so under a
+  qualifier the field decided nothing and the fold picked its own subject
+  (both branches refuse such a guard by name since truth maintenance,
+  `WholePeriodTargetAttemptWitnessTest`) —
   measured 2026-09-19 on one verifier-clean document, `ref` and the ASP backend
   answered the doel reading, the exec branch reached the same number by another
   route, and the DRL-text branch lowered the fold onto the ANKER and sank the
@@ -8029,12 +8038,14 @@ and it belongs to whoever measures it.
   other verdict and no other report line over all 690.
   *The two empty spellings are measured off corpus*, each one edit from the
   golden, and they are not the same defect. An absent `backref` is loud
-  everywhere: both OCaml executors fault by the field's own name and both
-  Drools branches refuse the form, naming the role `null`. An absent
-  `filler` is **not**: the OCaml executors fault, but both Drools branches
-  throw an unclassified `NullPointerException` — verifier-clean input
+  everywhere: both OCaml executors faulted by the field's own name and both
+  Drools branches refused the form, naming the role `null`. An absent
+  `filler` was **not**: the OCaml executors faulted, but both Drools branches
+  threw an unclassified `NullPointerException` — verifier-clean input
   crashing an executor, the wave-2 shape — which is the sharper half of the
-  reason the empty spellings are crossed at all.
+  reason the empty spellings were crossed at all. (The far-side node and its
+  `filler` and `backref` left the wire at L2, 2026-09-24, for
+  `RoleMembership`, ch. 4.)
 - **WF-080** A value-position `AttributeReference` MUST resolve to an
   **attribute** of its endpoint type, never a characteristic. A value
   position is where an expression yields a value: a rule/member value, a
@@ -8172,12 +8183,13 @@ and it belongs to whoever measures it.
   Drools backend `ERROR Eenheidsconflict: onverenigbare eenheden bij een
   §6.1.4 begrenzing-ondergrens: 'kg' (canoniek kg) herschaalt niet naar
   'EUR' (canoniek EUR) — er bestaat geen omrekenfactor`. That backend's two
-  branches reach the refusal by different routes, which is worth not
-  eliding: the exec-model branch carries a clamp-SPECIFIC gate per bound
-  (the `§6.1.4 begrenzing-ondergrens` and `-bovengrens` restatings the
-  message names), while the DRL-text branch catches the same defect through
-  its generic §4 value-restating — both arriving at the one shared
-  rescalability demand.
+  branches reached the refusal by different routes then: the exec-model
+  branch carried a clamp-SPECIFIC gate per bound, the DRL-text branch the
+  generic §4 value-restating — both arriving at the one shared
+  rescalability demand. Since they render one analysis, both give one
+  sentence (measured 2026-11-06: `ERROR UnitConflict: onverenigbare
+  eenheden bij een begrenzing (minimum): 'kg' (canoniek kg) herschaalt niet
+  naar 'EUR' (canoniek EUR)`; `ref` and the ASP backend as above).
   **Convertible, not identical — measured, because the three executors do
   not spell the fence alike.** `ref` restates through convertibility and
   faults `incompatible units`; the Drools backend restates through a
@@ -9411,8 +9423,9 @@ the verdict, and it holds only while the matrix itself cannot lose its
 truth. A comparison that a growing value falsifies can: in the golden's
 model, with the `all` matrix read as "merk kleiner dan 2" (or "merk ongelijk
 aan 2") and merk the number of successors, the document is verifier-clean
-and the executors split on case 4 (the reference interpreter and the Drools
-exec branch 2, the ASP backend and the DRL-text branch 1); with "ten minste 1
+and the executors split on case 4 (the reference interpreter and both Drools
+branches 2, the ASP backend 1; measured again 2026-11-06, until card
+`drl-teksttak-op-truth-maintenance` the DRL-text branch answered 1); with "ten minste 1
 ploeglid heeft een merk kleiner dan 2", and a ploeglid under W3 so that W3
 mints, the reference interpreter and both Drools branches answer 2 and the
 ASP backend 1. The same class without a fold predates this card: "het merk

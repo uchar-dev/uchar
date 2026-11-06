@@ -584,11 +584,11 @@ EXPECTED_CHANNEL=(
 # them. `jutterswet-reddingsvloot` is the §8.2 WHOLE-PERIOD matrix under ten minste / ten hoogste /
 # precies: the exec branch reads the counting TWIN of the two ch. 3.9 fold helpers of the runtime
 # (all three left the runtime at card drl-teksttak-op-truth-maintenance, when nothing called them any
-# more) and compares the count with the threshold, and the DRL-text branch markers it
-# for its whole-period matrix exactly as it markers the ALLE/GEEN sibling — the standing channel split,
-# unmoved. `jutterswet-vuurtoren` is the same three quantifiers over a NON-temporal matrix: the exec
+# more) and compares the count with the threshold, and the DRL-text branch then markered it
+# for its whole-period matrix exactly as it markered the ALLE/GEEN sibling — the channel split of that
+# day; since card drl-teksttak-op-truth-maintenance (2026-10-14) both branches play both. `jutterswet-vuurtoren` is the same three quantifiers over a NON-temporal matrix: the exec
 # branch counts over the collectList accumulate of the contributors, and it is the one corpus document
-# that reaches the DRL-text branch's counting lowering at all (a `Number( intValue <op> N ) from
+# that reached the DRL-text branch's counting lowering of that day at all (a `Number( intValue <op> N ) from
 # accumulate( … count(…) )` over the element pattern), measured in
 # NonTemporalQuantifierFoldWitnessTest. Nothing else moved: ALLE and GEEN keep the witness route in both
 # branches, and every form outside the arm still refuses BY NAME, per form.
