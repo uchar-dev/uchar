@@ -176,10 +176,10 @@ DROOLS-146	an object creation without a name (WF-107)
 DROOLS-147	an object creation without a resolved type
 DROOLS-148	an object creation without a connectingRole binding whose back-link from the type pair ('{backRole}' and '{fwdRole}') runs through a supertype of the subject or of the created type: the strata of this branch derive the relation of the back-link from the exact types and then do not see it written: this branch does not yet carry this form
 DROOLS-149	an object creation over the relation '{factType}', which is not a relation of two roles: this branch does not yet carry this form
-DROOLS-150	a member initialisation without a member or value
-DROOLS-151	a characteristic initialisation of '{attribute}' with a value of type {datatype} ('{snippet}'): a characteristic is true or false (WF-027), and the reference interpreter fails on such a value
-DROOLS-152	a division in a member initialisation ('{division}'), of which this branch does not make the §6.5 deposit: this branch does not yet carry this form
-DROOLS-153	a square root in a member initialisation ('{squareRoot}'), of which this branch does not make the §6.6 deposit: this branch does not yet carry this form
+DROOLS-150	a member assignment without a member or value
+DROOLS-151	a characteristic assignment of '{attribute}' with a value of type {datatype} ('{snippet}'): a characteristic is true or false (WF-027), and the reference interpreter fails on such a value
+DROOLS-152	a division in a member assignment ('{division}'), of which this branch does not make the §6.5 deposit: this branch does not yet carry this form
+DROOLS-153	a square root in a member assignment ('{squareRoot}'), of which this branch does not make the §6.6 deposit: this branch does not yet carry this form
 DROOLS-154	a fact creation without a name (WF-107)
 DROOLS-155	a fact creation without a resolved anchor, target, fact type or path
 DROOLS-156	a fact creation of the relation '{factType}', which is not a relation of two roles: this branch does not carry this form yet

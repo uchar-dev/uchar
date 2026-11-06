@@ -147,7 +147,7 @@ class SetReadWithoutFoldTest {
     }
 
 
-    @Test void set_read_as_object_creation_member_init_is_named() {
+    @Test void set_read_as_object_creation_member_assignment_is_named() {
         // The §13.4.6.3 waardetoekenning is a generic expressie RHS and the third (and last) VALUE slot
         // this IR has — a live producer route of its own: before the check the verifier reported
         // WF-096 FAIL /objectCreations/0/toekenningen/0/waarde as the document's ONLY defect (measured
@@ -160,7 +160,7 @@ class SetReadWithoutFoldTest {
                 """));
     }
 
-    @Test void the_sum_in_an_object_creation_member_init_stays_a_valid_fold_source() {
+    @Test void the_sum_in_an_object_creation_member_assignment_stays_a_valid_fold_source() {
         // The counter-proof in that same slot: under a fold the reading is the source the fold consumes.
         noSingleDiagnostic("""
                 Regel nieuw rapport

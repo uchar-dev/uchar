@@ -958,7 +958,7 @@ final class RuleChecker {
         for (var d : model.resolvedDayKindDefinitions) windowPosition(d.condition());
         for (var oc : model.objectCreations) {
             windowPosition(oc.condition());
-            for (var t : oc.initialisations()) windowPositionIn(t.value());
+            for (var t : oc.assignments()) windowPositionIn(t.value());
         }
         for (var v : model.allocations) windowPosition(v.condition());
         for (var c : model.consistencies) windowPosition(c.assertion());
@@ -1063,7 +1063,7 @@ final class RuleChecker {
         for (var d : model.resolvedDayKindDefinitions) navigation(d.condition(), null, reported);
         for (var oc : model.objectCreations) {
             pathForm = oc.subject();
-            for (var t : oc.initialisations()) navigation(t.value(), oc.subject(), reported);
+            for (var t : oc.assignments()) navigation(t.value(), oc.subject(), reported);
             navigation(oc.condition(), oc.subject(), reported);
         }
         for (var v : model.allocations) {
@@ -1136,7 +1136,7 @@ final class RuleChecker {
         }
         for (var d : model.resolvedDayKindDefinitions) Condition.containsOperand(d.condition(), visitor);
         for (var oc : model.objectCreations) {
-            for (var t : oc.initialisations()) Expr.contains(t.value(), visitor);
+            for (var t : oc.assignments()) Expr.contains(t.value(), visitor);
             Condition.containsOperand(oc.condition(), visitor);
         }
         for (var v : model.allocations) Condition.containsOperand(v.condition(), visitor);
@@ -2803,7 +2803,7 @@ final class RuleChecker {
                                 "computedAttribute", o.computed()));
         for (ResolvedObjectCreation oc : model.objectCreations)
             if (inLine(t, oc.createdType())
-                    && oc.initialisations().stream().anyMatch(k -> !k.characteristic() && sameName(k.attribute(), x)))
+                    && oc.assignments().stream().anyMatch(k -> !k.characteristic() && sameName(k.attribute(), x)))
                 return new Typing.Coded("RGS-155",
                         params("head", o.head(), "objectCreation", withoutVersion(oc.name()), "attribute", x,
                                 "computedAttribute", o.computed()));
@@ -2837,7 +2837,7 @@ final class RuleChecker {
             if (writer == null)
                 for (ResolvedObjectCreation oc : model.objectCreations)
                     if (inLine(t, oc.createdType())
-                            && oc.initialisations().stream().anyMatch(k -> sameName(k.attribute(), g))) {
+                            && oc.assignments().stream().anyMatch(k -> sameName(k.attribute(), g))) {
                         writer = Msg.frontend("PART.writer-object-creation", "name", withoutVersion(oc.name()));
                         break;
                     }
@@ -2976,7 +2976,7 @@ final class RuleChecker {
                         || sameName(v.orderingAttribute(), g);
             for (var oc : model.objectCreations) {
                 read |= uses(oc.condition(), ref, check);
-                for (var k : oc.initialisations()) read |= uses(k.value(), ref, check);
+                for (var k : oc.assignments()) read |= uses(k.value(), ref, check);
             }
             for (var fc : model.factCreations) read |= uses(fc.condition(), ref, check);
             for (var d : model.resolvedDayKindDefinitions) read |= uses(d.condition(), ref, check);
@@ -3270,7 +3270,7 @@ final class RuleChecker {
      *  set flag), so it is deliberately not walked.
      *  <p>The three VALUE slots of this repo's IR are all walked, and that is the whole list rather than
      *  a sample: a {@link ResolvedRule}'s waarde, a {@code ResolvedConsistency}'s assertie, and a
-     *  §13.4.6 {@link ResolvedObjectCreation.MemberInit}'s waarde — the last a generic expressie RHS and
+     *  §13.4.6 {@link ResolvedObjectCreation.MemberAssignment}'s waarde — the last a generic expressie RHS and
      *  a measured producer route of its own. {@link ResolvedAllocation} and {@link ResolvedFactCreation}
      *  hold no Expr at all (bare attribute/field NAMES plus a condition), so there is nothing to walk
      *  there; every construct's CONDITION is covered one line after it is built, see the call in
@@ -3281,7 +3281,7 @@ final class RuleChecker {
             checkSetRead(r.value(), r.target() instanceof Expr.AttributeReference d ? d.objectType() : null, false);
         for (var c : model.consistencies) checkSetRead(c.assertion(), c.subject());
         for (var oc : model.objectCreations)
-            for (var t : oc.initialisations()) checkSetRead(t.value(), oc.subject(), false);
+            for (var t : oc.assignments()) checkSetRead(t.value(), oc.subject(), false);
     }
 
     /** Walk {@code e} for set readings outside the fence's exempt position. {@code foldSource} marks the ONE exempt
@@ -4306,19 +4306,19 @@ final class RuleChecker {
                         oc.getStart().getLine()));
         }
 
-        List<ResolvedObjectCreation.MemberInit> assignments = new ArrayList<>();
+        List<ResolvedObjectCreation.MemberAssignment> assignments = new ArrayList<>();
         if (roleAndAttr.length == 2 && !values.isEmpty())
-            assignments.add(makeMemberInit(createdType, stripArticle(roleAndAttr[1]), values.get(0), oc));
+            assignments.add(makeMemberAssignment(createdType, stripArticle(roleAndAttr[1]), values.get(0), oc));
         for (int i = 1; i < names.size() && i < values.size(); i++)
-            assignments.add(makeMemberInit(createdType, stripArticle(src(names.get(i))), values.get(i), oc));
+            assignments.add(makeMemberAssignment(createdType, stripArticle(src(names.get(i))), values.get(i), oc));
 
         // typeringen §6.5: each ATTRIBUUT met-clause init follows the SAME §6.2/Tabel 61 toekenning rules
         // as a gelijkstelling (family + eenheid + §6.1.2 precision; an Expr.Rounding value already reports
         // its rounded decimal count, and toekenning itself no-ops on an Onbekend value). A kenmerk-init was
-        // already §13.4.6.4-checked in makeMemberInit; an unresolved created type carries no claim: skip.
+        // already §13.4.6.4-checked in makeMemberAssignment; an unresolved created type carries no claim: skip.
         if (createdType != null)
             for (int i = 0; i < assignments.size(); i++) {
-                ResolvedObjectCreation.MemberInit t = assignments.get(i);
+                ResolvedObjectCreation.MemberAssignment t = assignments.get(i);
                 Datatype targetType = createdType.attribute(t.attribute());
                 // a marker is no value of the declared datatype, so the typing below has nothing to judge
                 if (targetType == null || t.value() instanceof Expr.Construct) continue;
@@ -4326,7 +4326,7 @@ final class RuleChecker {
                 // type's declared datatype is this enumeratiewaarde's domain — promoted in place, like register.
                 Expr promoted = ExpressionBuilder.enumAgainstContext(t.value(), targetType);
                 if (promoted != t.value()) {
-                    t = new ResolvedObjectCreation.MemberInit(t.attribute(), promoted, t.characteristic(), t.labels());
+                    t = new ResolvedObjectCreation.MemberAssignment(t.attribute(), promoted, t.characteristic(), t.labels());
                     assignments.set(i, t);
                 }
                 // §13.3.4.2 enum-label membership, like registreer
@@ -4380,24 +4380,24 @@ final class RuleChecker {
      *  DECLARED name (the match is case-insensitive, the fact property is not). A name that is NEITHER a
      *  declared attribute NOR a kenmerk of the created type is an ERROR too — a silent skip would emit a
      *  setter on a property that does not exist. */
-    private ResolvedObjectCreation.MemberInit makeMemberInit(ObjectType createdType, String name,
+    private ResolvedObjectCreation.MemberAssignment makeMemberAssignment(ObjectType createdType, String name,
                                                             ExpressieContext valueCtx, ObjectCreatieContext oc) {
         // a marker as the value of a member with absence markers, as a rule writes it ("met taxatie gelijk aan onbekend")
         Expr.Construct marker = createdType == null || createdType.attribute(name) == null ? null
                 : absenceMarkerValue(createdType, name, valueCtx);
-        if (marker != null) return new ResolvedObjectCreation.MemberInit(name, marker);
+        if (marker != null) return new ResolvedObjectCreation.MemberAssignment(name, marker);
         Expr value = builder.build(valueCtx);
         if (createdType == null || createdType.attribute(name) != null)
-            return new ResolvedObjectCreation.MemberInit(name, value);
+            return new ResolvedObjectCreation.MemberAssignment(name, value);
         // "met vangstgewicht in najaar gelijk aan …": the cell of the made object (IR-SPEC ch. 3.3, MemberInit.labels),
         // read as a cell read is; a name with labels of some dimensions only, or that fits two cells, has its ERROR
         Expr cell = builder.dimensionCell(name, createdType, null, null, Source.of(oc, name));
         if (cell instanceof Expr.DimensionCellRead c) {
             Expr.Construct cellMarker = absenceMarkerValue(c, valueCtx);
-            return new ResolvedObjectCreation.MemberInit(c.attribute().attribute(), cellMarker != null ? cellMarker : value,
+            return new ResolvedObjectCreation.MemberAssignment(c.attribute().attribute(), cellMarker != null ? cellMarker : value,
                     false, c.labels());
         }
-        if (cell != null) return new ResolvedObjectCreation.MemberInit(name, value);
+        if (cell != null) return new ResolvedObjectCreation.MemberAssignment(name, value);
         // through the chain, exactly as the attribute branch above: an INHERITED kenmerk of the created
         // type is as much a member of it as its own, and reading the own list alone made one sentence's
         // two branches disagree about what the type has (a binding on the left, an ERROR on the right).
@@ -4412,12 +4412,12 @@ final class RuleChecker {
                 else
                     model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-188",
                             params("characteristic", characteristic, "value", value.source()), oc.getStart().getLine()));
-            return new ResolvedObjectCreation.MemberInit(characteristic, value, true);
+            return new ResolvedObjectCreation.MemberAssignment(characteristic, value, true);
         }
         // the member goes out as an attribute initialisation, which the verifier refuses in these words (WF-027)
         model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-189", params("name", name, "objectType", createdType.name),
                 oc.getStart().getLine()));
-        return new ResolvedObjectCreation.MemberInit(name, value);
+        return new ResolvedObjectCreation.MemberAssignment(name, value);
     }
 
     private static String stripArticle(String s) { return s.replaceFirst("^(?i)(de|het|een)\\s+", "").trim(); }

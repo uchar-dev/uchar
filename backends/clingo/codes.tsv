@@ -25,7 +25,7 @@ CLINGO-023	fallback	value-ifthenelse-condition-shape		value_condition
 CLINGO-024	fallback	temporal-target-shape		translate_rule
 CLINGO-025	fallback	rule-kind-shape		translate_rule
 CLINGO-026	fallback	rule-target-shape		translate_rule
-CLINGO-027	fallback	characteristic-init-expression-shape		bool_atoms
+CLINGO-027	fallback	characteristic-assignment-expression-shape		bool_atoms
 CLINGO-028	refusal	aggregate-in-element-condition-outer-variable		element_aggregate_plan
 CLINGO-029	limit	date-construction-year-range		viol_code
 CLINGO-030	refusal	not-exactly-one-stable-model	models	one_model

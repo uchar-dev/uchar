@@ -134,7 +134,7 @@ class DrlCreationLinkWitnessTest {
         // the document (WF-027). The analysis refuses the creation by name when it lowers it, on the effective type of
         // the value, so no case reaches a fire on either branch. Until card drl-teksttak-op-truth-maintenance the
         // DRL-text branch faulted at fire instead ("… niet booleaans: 5 … (WF-027)").
-        BothBranches.refused(characteristicNumber(), overzeeJutter(), "een kenmerkinitialisatie van 'overzees' met een waarde"
+        BothBranches.refused(characteristicNumber(), overzeeJutter(), "een lidtoekenning van het kenmerk 'overzees' met een waarde"
                 + " van type Numeriek ('5'): een kenmerk is waar of onwaar (WF-027)", "a non-boolean characteristic value");
     }
 

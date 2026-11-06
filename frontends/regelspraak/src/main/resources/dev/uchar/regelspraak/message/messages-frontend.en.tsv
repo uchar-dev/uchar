@@ -470,7 +470,7 @@ RGS-183	uniqueness '{name}' within '{scopeParent}': the scope role '{role}' is t
 RGS-184	allocation with rounding/maximum without a recognizable undivided remainder (§9.7.3/§9.7.4): the remainder is not recorded (rule '{name}')
 RGS-185	allocation '{name}' without a connecting role ({reason}): missing field 'connectingRole'
 RGS-186	object creation '{name}': a {objectType} creates a {objectType}, and the sentence names no role that binds the new object; then the link comes from the type pair, and that derivation links nothing for a self-typed pair (RUNTIME-SEMANTICS ch. 5.5). Name the role: 'Een {objectType} heeft een <rol> met …', with {roles} as <rol>
-RGS-187	characteristic value assignment '{characteristic}': characteristic initialisation's value must be a boolean-typed expression
+RGS-187	characteristic value assignment '{characteristic}': its value must be a boolean-typed expression
 RGS-188	kenmerkwaardetoekenning '{characteristic}' requires true or false (§13.4.6.4), not '{value}'
 RGS-189	object creation: '{name}' is not a declared attribute of '{objectType}'
 RGS-190	feitcreatie is not yet converted to IR/DRL (rule '{name}'): {sentence}

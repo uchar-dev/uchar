@@ -352,7 +352,7 @@ class FilterFaultWitnessTest {
      *  the creation's initialisation. The analysis refuses the creation by name ({@link #initialisationRefused}), on
      *  both branches; until card drl-teksttak-op-truth-maintenance the DRL-text branch played it, J2 counting 1 and J3
      *  0, and faulted on J1 at the constraint that held the filter. */
-    @Test void a_fold_in_the_initialisation_of_a_creation() throws Exception {
+    @Test void a_fold_in_the_assignment_of_a_creation() throws Exception {
         Path ir = document(List.of(MELDTELLING), List.of(creation(fold(), check("actief", false))));
         initialisationRefused(ir);
     }
@@ -363,7 +363,7 @@ class FilterFaultWitnessTest {
         for (DroolsBackend.Branch branch : List.of(EXEC, DRL)) {
             String tms = TmsFaultWitnessTest.play(ir, TmsDocuments.caseDocument(j1(false), List.of(consistent())), branch);
             assertTrue(tms.startsWith("Excluded: ") && tms.contains("objectcreatie: meld — een deling in een"
-                    + " ledeninitialisatie ('zijn gewicht gedeeld door zijn deelnemers'), waarvan deze tak de"
+                    + " lidtoekenning ('zijn gewicht gedeeld door zijn deelnemers'), waarvan deze tak de"
                     + " §6.5-deponering niet maakt"), branch + ": " + tms);
         }
     }

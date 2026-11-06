@@ -85,8 +85,8 @@ class TypingSentenceTest {
         assertTrue(meldingen("Een Jutter is waardevol indien hij gedurende het gehele jaar waardevol is.").contains(
                 "ERROR 30 de check op volledige periode (gedurende de/het gehele jaar/maand): wholePeriod qualifier on a "
                         + "non-time-dependent characteristic"));
-        assertEquals(error("kenmerkwaardetoekenning 'gewogen': characteristic initialisation's value must be a "
-                        + "boolean-typed expression"),
+        assertEquals(error("kenmerkwaardetoekenning 'gewogen': de toegekende waarde moet een booleaanse "
+                        + "expressie zijn"),
                 meldingen("Een Jutter heeft een vondst met gewogen gelijk aan 5."));
     }
 

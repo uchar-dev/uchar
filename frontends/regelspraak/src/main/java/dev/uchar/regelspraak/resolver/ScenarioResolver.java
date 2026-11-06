@@ -320,7 +320,7 @@ public final class ScenarioResolver {
             result.add(new Form(baseName(r.name()), r.validity(), list(r.target(), r.value()), list(r.condition())));
         for (var oc : model.objectCreations) {
             List<Expr> exprs = new ArrayList<>();
-            for (var t : oc.initialisations()) exprs.add(t.value());
+            for (var t : oc.assignments()) exprs.add(t.value());
             result.add(new Form(baseName(oc.name()), oc.validity(), exprs, list(oc.condition())));
         }
         for (var v : model.allocations) result.add(new Form(baseName(v.name()), v.validity(), List.of(), list(v.condition())));

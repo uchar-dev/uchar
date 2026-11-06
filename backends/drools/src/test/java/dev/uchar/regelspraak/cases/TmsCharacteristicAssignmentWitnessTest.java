@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  *
  * <p><b>Red</b> on the claim of the card, 331b1179: the manifest carried no refusal, and the case played.
  */
-class TmsCharacteristicInitialisationWitnessTest {
+class TmsCharacteristicAssignmentWitnessTest {
 
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up.
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden", "anchor", "jutterswet-rekenkamer-overzee");
@@ -50,11 +50,11 @@ class TmsCharacteristicInitialisationWitnessTest {
         return ir;
     }
 
-    @Test void a_characteristic_initialisation_with_a_number_is_refused_by_name() throws Exception {
-        Path ir = Files.writeString(Files.createTempFile("tms-kenmerkinitialisatie", ".json"),
+    @Test void a_characteristic_assignment_with_a_number_is_refused_by_name() throws Exception {
+        Path ir = Files.writeString(Files.createTempFile("tms-characteristic-assignment", ".json"),
                 TmsDocuments.JSON.writeValueAsString(withNumber()));
         ir.toFile().deleteOnExit();
-        assertEquals(List.of("transpiler SKIP: objectcreatie: richt de rekenkamer op — een kenmerkinitialisatie van"
+        assertEquals(List.of("transpiler SKIP: objectcreatie: richt de rekenkamer op — een lidtoekenning van het kenmerk"
                         + " 'overzees' met een waarde van type Numeriek ('5'): een kenmerk is waar of onwaar (WF-027), en de"
                         + " referentie-interpreter faalt op zo'n waarde"),
                 TmsTimelineRefusalWitnessTest.refusals(ir));

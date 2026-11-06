@@ -509,7 +509,7 @@ class SubtypeDialectTest {
     }
 
     @Test void an_object_creation_sets_an_inherited_characteristic() {
-        // Plek 3. The attribute branch of makeMemberInit already resolved through the chain; the kenmerk
+        // Plek 3. The attribute branch of makeMemberAssignment already resolved through the chain; the kenmerk
         // branch read the own list and ended on an ERROR ("is geen attribuut of kenmerk van") where a
         // binding belongs — the two branches of one sentence disagreeing about what the type has.
         String src = """

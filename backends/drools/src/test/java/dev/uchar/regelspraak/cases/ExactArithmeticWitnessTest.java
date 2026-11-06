@@ -124,7 +124,7 @@ class ExactArithmeticWitnessTest {
         }
     }
 
-    @Test void a_value_of_the_unbounded_form_initialises_a_new_object_exactly() throws Exception {
+    @Test void a_value_of_the_unbounded_form_is_assigned_to_a_new_object_exactly() throws Exception {
         String model = TmsDocuments.model(List.of(
                 TmsDocuments.objectType("Jutter", List.of(attribute("controle", WHOLE)),
                         List.of()),

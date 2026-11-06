@@ -106,7 +106,7 @@ class DimensionTargetTest {
         RegelSpraakModel m = Resolver.resolve(rule(
                 "Een Jutter heeft een geboekte vangst met vangstpremie in najaar gelijk aan zijn premie in najaar."));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        ResolvedObjectCreation.MemberInit t = m.objectCreations.get(0).initialisations().get(0);
+        ResolvedObjectCreation.MemberAssignment t = m.objectCreations.get(0).assignments().get(0);
         assertEquals("vangstpremie", t.attribute());
         assertEquals(List.of("najaar"), t.labels());
         assertFalse(t.characteristic());
@@ -143,7 +143,7 @@ class DimensionTargetTest {
         RegelSpraakModel m = Resolver.resolve(rule(
                 "Een Jutter heeft een geboekte vangst met strandvangst in najaar en op zuid gelijk aan zijn premie in najaar."));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        ResolvedObjectCreation.MemberInit t = m.objectCreations.get(0).initialisations().get(0);
+        ResolvedObjectCreation.MemberAssignment t = m.objectCreations.get(0).assignments().get(0);
         assertEquals("strandvangst", t.attribute());
         assertEquals(List.of("najaar", "zuid"), t.labels());
         assertTrue(compactIr(m).contains("{\"node\":\"MemberAssignment\",\"member\":\"strandvangst\",\"labels\":[\"najaar\",\"zuid\"],"),
@@ -172,7 +172,7 @@ class DimensionTargetTest {
         RegelSpraakModel m = Resolver.resolve(rule(
                 "Een Jutter heeft een geboekte vangst met zeevangst uit rivier en op noord gelijk aan zijn premie in najaar."));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        ResolvedObjectCreation.MemberInit t = m.objectCreations.get(0).initialisations().get(0);
+        ResolvedObjectCreation.MemberAssignment t = m.objectCreations.get(0).assignments().get(0);
         assertEquals("zeevangst", t.attribute());
         assertEquals(List.of("noord", "rivier"), t.labels());
     }

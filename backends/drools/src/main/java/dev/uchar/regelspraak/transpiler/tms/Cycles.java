@@ -707,14 +707,14 @@ public final class Cycles {
                 String backLinkRelation = backLink(o);
                 if (backLinkRelation != null) writes.add(relation(backLinkRelation));
                 if (o.createdType() != null)
-                    for (ResolvedObjectCreation.MemberInit t : o.initialisations())
+                    for (ResolvedObjectCreation.MemberAssignment t : o.assignments())
                         if (t.attribute() != null)
                             writes.addAll(mintWrite(o.createdType(), t.attribute(), t.characteristic(), t.labels()));
                 List<Read> reads = new ArrayList<>();
                 if (o.subject() != null) reads.add(new Read(population(o.subject()), false));
                 formSubject = o.subject();
                 condition(o.condition(), o.subject(), false, reads);
-                for (ResolvedObjectCreation.MemberInit t : o.initialisations()) expr(t.value(), o.subject(), reads);
+                for (ResolvedObjectCreation.MemberAssignment t : o.assignments()) expr(t.value(), o.subject(), reads);
                 String name = o.name() == null ? "" : o.name();
                 out.add(new Form(ProducerConsumer.FormKind.OBJECT_CREATION, ProducerConsumer.baseName(o.name()), o,
                         recursive.contains(Namen.norm(withoutVersion(name))), true, writes, reads));

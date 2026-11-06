@@ -14,7 +14,7 @@ import java.util.List;
  * @param name          the regel name
  * @param createdType     the object type being created (null if unresolved)
  * @param subject       the object type that owns the rule (the creator)
- * @param initialisations  the attribute assignments on the new object
+ * @param assignments  the attribute assignments on the new object
  * @param condition    the condition guarding the creation, or null
  * @param validity    the §13.4.2.5 version validity window ({@link Validity#ALTIJD} if always)
  * @param connectingRole the created-side role of the back-link where the sentence names one (IR-SPEC ch. 3.3
@@ -22,13 +22,13 @@ import java.util.List;
  *                      unique role, and the back-link is then derived from the type pair
  */
 public record ResolvedObjectCreation(String name, ObjectType createdType, ObjectType subject,
-                                    List<MemberInit> initialisations, Condition condition, Validity validity,
+                                    List<MemberAssignment> assignments, Condition condition, Validity validity,
                                     RoleBindingRef connectingRole) {
     /** Without a named role: the reader that carries the wire's binding beside the record (the Drools backend's
      *  loader) builds it this way. */
-    public ResolvedObjectCreation(String name, ObjectType createdType, ObjectType subject, List<MemberInit> initialisations,
+    public ResolvedObjectCreation(String name, ObjectType createdType, ObjectType subject, List<MemberAssignment> assignments,
                                  Condition condition, Validity validity) {
-        this(name, createdType, subject, initialisations, condition, validity, null);
+        this(name, createdType, subject, assignments, condition, validity, null);
     }
 
     /** One §13.4.6.2 waardetoekenning on the new object. {@code characteristic} distinguishes the DISTINCT
@@ -37,14 +37,14 @@ public record ResolvedObjectCreation(String name, ObjectType createdType, Object
      *  from the §13.4.6.3 attribuutwaardetoekenning (generic expressie RHS). Both back-ends set the
      *  same-named property either way; the flag keeps the IR honest about which spec form it carries.
      *  {@code labels} name the cell of a dimensioned attribute that the toekenning writes, one label per dimension
-     *  in declared order (IR-SPEC ch. 3.3, {@code MemberInit.labels}); null for a member without dimensions. */
-    public record MemberInit(String attribute, Expr value, boolean characteristic, List<String> labels) {
-        public MemberInit {
+     *  in declared order (IR-SPEC ch. 3.3, {@code MemberAssignment.labels}); null for a member without dimensions. */
+    public record MemberAssignment(String attribute, Expr value, boolean characteristic, List<String> labels) {
+        public MemberAssignment {
             if (labels != null && labels.isEmpty())
-                throw new IllegalArgumentException("MemberInit '" + attribute + "': a cell names at least one label");
+                throw new IllegalArgumentException("MemberAssignment '" + attribute + "': a cell names at least one label");
         }
-        public MemberInit(String attribute, Expr value, boolean characteristic) { this(attribute, value, characteristic, null); }
+        public MemberAssignment(String attribute, Expr value, boolean characteristic) { this(attribute, value, characteristic, null); }
         /** An attribuutwaardetoekenning (§13.4.6.3). */
-        public MemberInit(String attribute, Expr value) { this(attribute, value, false); }
+        public MemberAssignment(String attribute, Expr value) { this(attribute, value, false); }
     }
 }

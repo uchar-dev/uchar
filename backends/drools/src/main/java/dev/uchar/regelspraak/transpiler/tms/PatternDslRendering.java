@@ -440,7 +440,7 @@ final class PatternDslRendering {
      */
     private RuleItemBuilder<?> creation(Consequence.Creation g) {
         List<ValueFunction> values = new ArrayList<>();
-        for (Consequence.Initialisation i : g.initialisations()) values.add(ClosureRendering.valueFunction(i.value()));
+        for (Consequence.Assignment i : g.assignments()) values.add(ClosureRendering.valueFunction(i.value()));
         Consequence.Construction construction = g.construction();
         List<BiConsumer<Object, Object>> setters = new ArrayList<>();
         for (Consequence.Construction.Setting z : construction.settings())
@@ -448,7 +448,7 @@ final class PatternDslRendering {
         Consequence.CreationDepth d = g.depth();
         // an initialisation that stands as an exact Value keeps its exact value; one set on the bean gets its decimal
         Set<Integer> exact = new HashSet<>();
-        for (Consequence.Insert i : g.insertions()) if (i instanceof Consequence.Insert.Exact e) exact.add(e.initialisation());
+        for (Consequence.Insert i : g.insertions()) if (i instanceof Consequence.Insert.Exact e) exact.add(e.assignment());
         return consequenceItem(g.subject(), g.slots(), g.size(), (drools, subject, w) -> {
             int depth = ComputeHelpers.creationDepth(g.creation(), d.stratum(), d.type(), (List<?>) w[d.origin()],
                     d.budget());
@@ -467,7 +467,7 @@ final class PatternDslRendering {
             Object fresh = newObject(construction.javaClass());
             for (int j = 0; j < setters.size(); j++) {
                 Consequence.Construction.Setting z = construction.settings().get(j);
-                Object value = v[z.initialisation()];
+                Object value = v[z.assignment()];
                 if (value == null) continue;
                 if (z.cell() != null) ComputeHelpers.setCell(fresh, z.field().property(), z.cell(), value);
                 else if (z.timeline()) ComputeHelpers.setTimeline(fresh, z.field().property(), value);
@@ -483,14 +483,14 @@ final class PatternDslRendering {
                             ? new RelationLink(l.relation(), fresh, subject, phase)
                             : new RelationLink(l.relation(), subject, fresh, phase));
                     case Consequence.Insert.Characteristic k -> {
-                        if (Boolean.TRUE.equals(v[k.initialisation()]))
+                        if (Boolean.TRUE.equals(v[k.assignment()]))
                             insert(drools, k.insertion(),
-                                    new HasCharacteristic(fresh, g.initialisations().get(k.initialisation()).member()));
+                                    new HasCharacteristic(fresh, g.assignments().get(k.assignment()).member()));
                     }
                     case Consequence.Insert.Exact e -> {
-                        if (v[e.initialisation()] != null)
+                        if (v[e.assignment()] != null)
                             insert(drools, e.insertion(), new Value(fresh,
-                                    g.initialisations().get(e.initialisation()).member(), v[e.initialisation()], e.writer()));
+                                    g.assignments().get(e.assignment()).member(), v[e.assignment()], e.writer()));
                     }
                 }
         });

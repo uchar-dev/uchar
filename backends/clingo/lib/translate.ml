@@ -12626,7 +12626,7 @@ let bool_atoms ctx ~subject ~subject_ot (e : expr) : string list =
       [ Printf.sprintf "has(%s,%s)" subject (str a) ]
   | _ ->
       faultc "CLINGO-027"
-        "a characteristic-initialisation expression here is an own-subject boolean attribute read \
+        "a characteristic-assignment expression here is an own-subject boolean attribute read \
          (no corpus case for more)"
 
 (* object creation (IR-SPEC ch. 3.3; RUNTIME-SEMANTICS ch. 5.5): the
@@ -12758,8 +12758,8 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
   List.iter
     (fun (t : assignment) ->
       (* the member, or the cell it names on the made object (ch. 5.8c, 2) *)
-      let m = Eval.init_member (doc_env ctx) ~created t in
-      let declared = req "MemberInit.member" t.to_attribute in
+      let m = Eval.assigned_member (doc_env ctx) ~created t in
+      let declared = req "MemberAssignment.member" t.to_attribute in
       if (not t.to_characteristic) && m <> declared && attr_temporal ctx ~otype:created ~attr:declared then
         fault "object creation %S sets a cell of the time-dependent attribute %S: not translated (no corpus case)"
           ctx.rule_name declared;
@@ -12772,7 +12772,7 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
            ([timeline_input]) *)
         let p =
           translate_period_arithmetic ~cond:(cond @ guard @ depth_guard) ~write:false ~target_ot:created ctx ~subject
-            ~ot:subject_ot ~a:m (req "MemberInit.value" t.to_value)
+            ~ot:subject_ot ~a:m (req "MemberAssignment.value" t.to_value)
         in
         let pred = if written_timeline ctx ~ot:created ~a:m then "inputtl" else "tl" in
         head_body ctx (Printf.sprintf "%s(%s,%s,X,Y,V)" pred term (str m))
@@ -12792,7 +12792,7 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
                boolean-constant arms above are the v0 form, byte-for-byte. *)
             let batoms = bool_atoms ctx ~subject ~subject_ot e in
             head_body ctx (Printf.sprintf "has(%s,%s)" term (str m)) (body @ batoms)
-        | None -> fault "characteristic initialisation of %S without a value" m)
+        | None -> fault "characteristic assignment of %S without a value" m)
       else if attr_sum_typed ctx ~otype:created ~attr:m || attr_struct_typed ctx ~otype:created ~attr:m
       then begin
         (* a sum-/struct-typed initialisation (the tutorial passes an [Individual]
@@ -12800,7 +12800,7 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
            numeric scale, no unit and no fit — it rides straight into the val head,
            the translate_rule struct/sum-target sibling (ch. 9.1/11.1). *)
         ctx.rule_guard <- cond @ guard @ depth_guard;
-        let bindings, tm, _ = expr_term ctx ~subject ~subject_ot (req "MemberInit.value" t.to_value) in
+        let bindings, tm, _ = expr_term ctx ~subject ~subject_ot (req "MemberAssignment.value" t.to_value) in
         ctx.rule_guard <- [];
         member_head m tm (body @ bindings)
       end
@@ -12816,7 +12816,7 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
         ctx.write_unbounded <- unbounded;
         ctx.write_value <- t.to_value;
         let bindings, tm, scale =
-          expr_term ctx ~subject ~subject_ot (req "MemberInit.value" t.to_value)
+          expr_term ctx ~subject ~subject_ot (req "MemberAssignment.value" t.to_value)
         in
         ctx.rule_guard <- [];
         ctx.write_scale <- 1;
@@ -14647,7 +14647,7 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
                 cycle_creations)
             (writers t)
         in
-        let member (t : assignment) = req "MemberInit.member" t.to_attribute in
+        let member (t : assignment) = req "MemberAssignment.member" t.to_attribute in
         match List.find_map on_the_cycle o.assignments with
         | Some (t, node, p) when Eval.window_admits ~as_of o.oc_validity ->
             fault

@@ -1837,7 +1837,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
       | _ ->
           refuse
             "a subscope input to %S is not an unconditional value: a conditional subscope input, \
-             or one carrying a defaults group, enters as a default, never a member initialisation \
+             or one carrying a defaults group, enters as a default, never a member assignment \
              (the WF-050 route is deferred, PHASE5C-TUTORIAL §3) — refused"
             instance_var
     in

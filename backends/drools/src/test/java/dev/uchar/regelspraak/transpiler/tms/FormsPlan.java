@@ -259,9 +259,9 @@ final class FormsPlan {
                 List.of(new Subject(wachter, O, List.of(), List.of(),
                         List.of(Binding.of("$uitkijkbonus", wachter, "uitkijkbonus"))), phase, origin),
                 new Consequence.Creation(O, "proefcreatie", new Consequence.CreationDepth(2, 0, "Wachter", 3), List.of(
-                        new Consequence.Initialisation(ElementKey.of("post", "hoogte", false), new Term.SlotValue(0,
+                        new Consequence.Assignment(ElementKey.of("post", "hoogte", false), new Term.SlotValue(0,
                                 "uitkijkbonus")),
-                        new Consequence.Initialisation(ElementKey.of("post", "bemand", true),
+                        new Consequence.Assignment(ElementKey.of("post", "bemand", true),
                                 new Term.Const(Boolean.TRUE, null, null))),
                         fault, Consequence.Insertion.STATED, new Consequence.Construction(post, List.of(
                                 new Consequence.Construction.Setting(0, new Binding.Field(post, "hoogte"), null))), 1,

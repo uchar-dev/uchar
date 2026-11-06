@@ -264,14 +264,14 @@ class AbsenceMarkerTest {
                     indien hij actief is.
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        var inits = m.objectCreations.get(0).initialisations();
-        Expr.Construct attribute = assertInstanceOf(Expr.Construct.class, inits.get(0).value());
+        var assignments = m.objectCreations.get(0).assignments();
+        Expr.Construct attribute = assertInstanceOf(Expr.Construct.class, assignments.get(0).value());
         assertEquals("onbekend", attribute.constructor());
         assertEquals("taxatie van een Vondst", attribute.type().domain());
-        Expr.Construct cell = assertInstanceOf(Expr.Construct.class, inits.get(1).value());
+        Expr.Construct cell = assertInstanceOf(Expr.Construct.class, assignments.get(1).value());
         assertEquals("onbekend", cell.constructor());
         assertEquals("gewicht van een Vondst", cell.type().domain());
-        assertEquals(List.of("najaar"), inits.get(1).labels());
+        assertEquals(List.of("najaar"), assignments.get(1).labels());
     }
 
     /** An object creation writes a value into an attribute with markers as a rule does: the payload of a Construct of
@@ -296,7 +296,7 @@ class AbsenceMarkerTest {
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         Expr.Construct written = assertInstanceOf(Expr.Construct.class,
-                m.objectCreations.get(0).initialisations().get(0).value());
+                m.objectCreations.get(0).assignments().get(0).value());
         assertEquals("waarde", written.constructor());
         assertEquals("5,00", assertInstanceOf(Expr.Literal.class, written.argument()).source().snippet());
     }

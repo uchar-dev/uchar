@@ -392,7 +392,7 @@ class DimensionCellWitnessTest {
                 boeking.model().resolvedRules.get(0).target());
         assertEquals("vondstgewicht", target.attribute().attribute());
         assertEquals(List.of("najaar"), target.labels());
-        assertEquals(List.of("najaar"), boeking.model().objectCreations.get(0).initialisations().get(0).labels());
+        assertEquals(List.of("najaar"), boeking.model().objectCreations.get(0).assignments().get(0).labels());
         List<ProducerConsumer.Form> forms = ProducerConsumer.forms(boeking.model(), boeking.prioritizedDefaults(),
                 ProducerConsumer.wireNavigation(boeking));
         assertEquals(List.of("vondstgewicht[najaar]"), writes(forms.get(0)));

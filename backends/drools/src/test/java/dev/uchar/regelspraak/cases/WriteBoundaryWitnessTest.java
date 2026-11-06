@@ -122,7 +122,7 @@ class WriteBoundaryWitnessTest {
         }
     }
 
-    @Test void an_initialisation_of_an_object_creation_that_does_not_fit_faults_and_one_that_fits_plays()
+    @Test void a_member_assignment_of_an_object_creation_that_does_not_fit_faults_and_one_that_fits_plays()
             throws Exception {
         ObjectNode doc = (ObjectNode) TmsDocuments.JSON.readTree(GOLDEN.resolve("jutterswet-strandmelding")
                 .resolve("ir.json").toFile());

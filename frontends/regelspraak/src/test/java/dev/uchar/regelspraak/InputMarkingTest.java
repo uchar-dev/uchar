@@ -807,7 +807,7 @@ class InputMarkingTest {
             """);
         Diagnostic d = onlyError(m);
         assertEquals("attribuut 'grondslag' van Strandrecht: '(mag opgegeven worden)', maar de objectcreatie 'boek een "
-                + "strandrecht' kent 'grondslag' toe bij het aanmaken — de markering verlegt die toekenning niet naar "
+                + "strandrecht' kent 'grondslag' toe bij de objectcreatie — de markering verlegt die toekenning niet naar "
                 + "'berekende grondslag', en naast de defaults-groep op 'grondslag' is zij een tweede schrijver "
                 + "(WF-050) (dialect §7)", d.message());
         assertEquals(2, d.line());

@@ -1864,7 +1864,7 @@ public final class TmsTranspiler {
         Set<ElementKey> out = new HashSet<>();
         for (ResolvedObjectCreation oc : model.objectCreations) {
             if (oc.name() == null || oc.createdType() == null) continue;
-            for (ResolvedObjectCreation.MemberInit t : oc.initialisations()) {
+            for (ResolvedObjectCreation.MemberAssignment t : oc.assignments()) {
                 if (t.characteristic() || t.attribute() == null || !unboundedAttribute(oc.createdType(), t.attribute()))
                     continue;
                 ElementKey key = t.labels() == null ? ProducerConsumer.elementOf(oc.createdType(), t.attribute(), false)
@@ -4080,7 +4080,7 @@ public final class TmsTranspiler {
     // ---------------- object and fact creation ----------------
 
     /** One member initialisation of an object creation: the member on the created type, and its value on the subject. */
-    private record Initialisation(Member member, Term value) {}
+    private record Assignment(Member member, Term value) {}
 
     /**
      * An object creation (RUNTIME-SEMANTICS ch. 5.5, IR-SPEC ch. 3.3), a rule of the agenda group {@link #OBJECT_CREATION}:
@@ -4139,24 +4139,24 @@ public final class TmsTranspiler {
         boolean canFail = reads.canFail();
         reads.stop();
         Set<Integer> use = reads.follow();
-        List<Initialisation> inits = new ArrayList<>();
-        for (ResolvedObjectCreation.MemberInit t : oc.initialisations()) {
+        List<Assignment> assigned = new ArrayList<>();
+        for (ResolvedObjectCreation.MemberAssignment t : oc.assignments()) {
             if (t.attribute() == null || t.value() == null)
-                throw new Refusal(DroolsCode.MEMBER_INITIALISATION_INCOMPLETE.reason());
+                throw new Refusal(DroolsCode.MEMBER_ASSIGNMENT_INCOMPLETE.reason());
             // a characteristic is true or false (WF-027): the reference interpreter faults on a value of another type,
             // and the consequence below would read it as not true and leave the characteristic unset
             Datatype characteristicValue = t.characteristic() ? eff.typeOf(t.value()) : null;
             if (characteristicValue != null && !characteristicValue.isBoolean() && !characteristicValue.isUnknown())
-                throw new Refusal(DroolsCode.CHARACTERISTIC_INIT_NON_BOOLEAN.reason("attribute", t.attribute(), "datatype", characteristicValue.name(), "snippet", snippet(t.value().source())));
+                throw new Refusal(DroolsCode.CHARACTERISTIC_ASSIGNMENT_NON_BOOLEAN.reason("attribute", t.attribute(), "datatype", characteristicValue.name(), "snippet", snippet(t.value().source())));
             String division = division(t.value());
             if (division != null)
-                throw new Refusal(DroolsCode.MEMBER_INIT_DIVISION.reason("division", division));
+                throw new Refusal(DroolsCode.MEMBER_ASSIGNMENT_DIVISION.reason("division", division));
             String squareRoot = squareRoot(t.value());
             if (squareRoot != null)
-                throw new Refusal(DroolsCode.MEMBER_INIT_SQUARE_ROOT.reason("squareRoot", squareRoot));
+                throw new Refusal(DroolsCode.MEMBER_ASSIGNMENT_SQUARE_ROOT.reason("squareRoot", squareRoot));
             if (t.labels() == null && !t.characteristic() && declared(fresh, t.attribute(), false).time() != null) {
                 Member member = timeMember(fresh, t.attribute(), false, Msg.drools("PART.desc.time-dependent-target"));
-                inits.add(new Initialisation(member, madeTimeline(t.value(), member, subject, reads)));
+                assigned.add(new Assignment(member, madeTimeline(t.value(), member, subject, reads)));
                 continue;
             }
             // a member with labels writes one cell of a dimensioned attribute of the new object (IR-SPEC ch. 3.3); a
@@ -4169,7 +4169,7 @@ public final class TmsTranspiler {
             if (!t.characteristic())
                 w = fitted(restated(w, eff.unitOf(t.value()), member.datatype().unitOf(),
                         "een §4 schrijfgrens naar het lid"), member, name);
-            inits.add(new Initialisation(member, w));
+            assigned.add(new Assignment(member, w));
         }
         reads.stop();
         int stratum = stratum(oc, name);
@@ -4189,14 +4189,14 @@ public final class TmsTranspiler {
                     List.of(new Alpha.FieldTest(k.fwdRef(), Alpha.Comparator.LEEG, null))));
         // every initialisation is set on the new bean in its construction where it is an attribute, or inserted as a
         // characteristic after the bean where it is one, in the order of the document
-        List<Consequence.Initialisation> initialisations = new ArrayList<>();
+        List<Consequence.Assignment> assignments = new ArrayList<>();
         List<Consequence.Construction.Setting> settings = new ArrayList<>();
         List<Consequence.Insert> insertions = new ArrayList<>(List.of(new Consequence.Insert.New(Consequence.Insertion.STATED),
                 new Consequence.Insert.Mark(Consequence.Insertion.STATED),
                 new Consequence.Insert.Link(relation, newIsFirst, Consequence.Insertion.STATED)));
-        for (int i = 0; i < inits.size(); i++) {
-            Member member = inits.get(i).member();
-            initialisations.add(new Consequence.Initialisation(member.key(), inits.get(i).value()));
+        for (int i = 0; i < assigned.size(); i++) {
+            Member member = assigned.get(i).member();
+            assignments.add(new Consequence.Assignment(member.key(), assigned.get(i).value()));
             if (member.characteristic()) insertions.add(new Consequence.Insert.Characteristic(i, Consequence.Insertion.STATED));
             // a member of the unbounded form that no form writes stands as the creation's exact Value, not on the bean
             else if (createdExactValues.contains(member.key()))
@@ -4208,11 +4208,11 @@ public final class TmsTranspiler {
         // making, as in the reference interpreter, which then makes nothing; the fault is stated like everything a
         // creation makes, and the rule's guard on it keeps the creation from firing again in a later generation
         Consequence creation = new Consequence.Creation(SUBJECT, name,
-                new Consequence.CreationDepth(origin, stratum, subject.name, CREATION_BUDGET), initialisations,
+                new Consequence.CreationDepth(origin, stratum, subject.name, CREATION_BUDGET), assignments,
                 new Consequence.FaultName(name, ruleName), Consequence.Insertion.STATED,
                 new Consequence.Construction(beanClass(fresh), settings), phase, insertions, List.copyOf(use),
                 reads.size());
-        for (Initialisation i : inits) derived.put(i.member().key(), i.member());
+        for (Assignment i : assigned) derived.put(i.member().key(), i.member());
         reads.recorder();
         creationRules.add(ruleName);
         creationStrata.add(stratum);
@@ -9440,14 +9440,14 @@ public final class TmsTranspiler {
                         new Consequence.Input.MemberTest(z, -1, l.place()), b.slots(), b.size(), b.insertion());
             }
             case Consequence.Creation c -> {
-                List<Consequence.Initialisation> inits = new ArrayList<>();
+                List<Consequence.Assignment> assignments = new ArrayList<>();
                 boolean changed = false;
-                for (Consequence.Initialisation i : c.initialisations()) {
+                for (Consequence.Assignment i : c.assignments()) {
                     Term z = withoutDepositFlag(i.value());
                     changed |= z != i.value();
-                    inits.add(z == i.value() ? i : new Consequence.Initialisation(i.member(), z));
+                    assignments.add(z == i.value() ? i : new Consequence.Assignment(i.member(), z));
                 }
-                return !changed ? c : new Consequence.Creation(c.subject(), c.creation(), c.depth(), inits, c.fault(),
+                return !changed ? c : new Consequence.Creation(c.subject(), c.creation(), c.depth(), assignments, c.fault(),
                         c.faultInsertion(), c.construction(), c.phase(), c.insertions(), c.slots(), c.size());
             }
             case Consequence.Decision a when a.deposit() == null -> {

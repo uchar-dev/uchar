@@ -773,10 +773,10 @@ class TmsCreationWitnessTest {
 
     /** "Een {@code subject} heeft een {@code role} met …": an object creation of one always-valid version, its
      *  {@code connectingRole} the role {@code role} of {@code factType}, the role the created object plays. */
-    static String objectCreation(String name, String subject, String fresh, List<String> inits, String condition,
+    static String objectCreation(String name, String subject, String fresh, List<String> assignments, String condition,
                                 String factType, String role) {
         return "{\"node\":\"ObjectCreation\",\"name\":\"" + name + "\",\"versions\":[{\"createdType\":\"" + fresh
-                + "\",\"subject\":\"" + subject + "\",\"assignments\":[" + String.join(",", inits) + "]"
+                + "\",\"subject\":\"" + subject + "\",\"assignments\":[" + String.join(",", assignments) + "]"
                 + (condition.equals("null") ? "" : ",\"condition\":" + condition)
                 + ",\"validity\":{\"node\":\"Validity\"},\"connectingRole\":" + roleBinding(factType, role) + "}]}";
     }

@@ -410,27 +410,27 @@ public sealed interface Consequence {
      * <ol>
      *   <li>the creation depth of the new object, made by the route {@link Route#CREATION_DEPTH} from {@code depth}:
      *       past the budget it throws, the fault at the making, before anything is made;</li>
-     *   <li>the value of each of {@code initialisations}, in order, each collapsed from an exact rational to a decimal;
+     *   <li>the value of each of {@code assignments}, in order, each collapsed from an exact rational to a decimal;
      *       where one raises an evaluation fault (RUNTIME-SEMANTICS ch. 5.2), that fault, named under {@code fault} and
      *       inserted on the subject as {@code faultInsertion}, is all the creation does, as in the reference
      *       interpreter, which then makes nothing;</li>
      *   <li>the construction of the new object ({@code construction}): a bean of its class, on which the attribute
-     *       initialisations whose value is gevuld are set before the bean is inserted. That is construction and no
+     *       assignments whose value is gevuld are set before the bean is inserted. That is construction and no
      *       write on a bean in working memory: the bean is in none yet, so no rule ever saw it without them;</li>
      *   <li>the insertions {@code insertions}, in order, the new object itself first ({@link Insert}).</li>
      * </ol>
      * The constructor holds the plan to that order, the order of the consequence before the step exactly: every
      * initialisation is set in the construction where it is an attribute, or inserted as a characteristic after the new
-     * object where it is one, exactly once; the attributes are set in the order of the initialisations; the new object is
-     * inserted first, then its mark, then its link, then the characteristics in the order of the initialisations. Any
+     * object where it is one, exactly once; the attributes are set in the order of the assignments; the new object is
+     * inserted first, then its mark, then its link, then the characteristics in the order of the assignments. Any
      * other order fails loudly. A creation states everything it makes, the fault at the making among it
      * (RUNTIME-SEMANTICS ch. 5.5): the constructor refuses an insertion that is not {@link Insertion#STATED}.
      */
-    record Creation(String subject, String creation, CreationDepth depth, List<Initialisation> initialisations,
+    record Creation(String subject, String creation, CreationDepth depth, List<Assignment> assignments,
                    FaultName fault, Insertion faultInsertion, Construction construction, int phase,
                    List<Insert> insertions, List<Integer> slots, int size) implements Consequence {
         public Creation {
-            initialisations = List.copyOf(initialisations);
+            assignments = List.copyOf(assignments);
             insertions = List.copyOf(insertions);
             slots = List.copyOf(slots);
             // a logical insertion lapses when the match of its rule goes, and the match of a creation rule goes as soon
@@ -443,12 +443,12 @@ public sealed interface Consequence {
             if (faultInsertion != Insertion.STATED)
                 throw new IllegalArgumentException("een creatie stelt haar fout bij het maken, want die houdt haar"
                         + " regel tegen: de foutinvoeging " + faultInsertion + " is niet gesteld");
-            int[] time = new int[initialisations.size()];
+            int[] time = new int[assignments.size()];
             for (Construction.Setting z : construction.settings()) {
-                if (initialisations.get(z.initialisation()).member().characteristic())
-                    throw new IllegalArgumentException("een kenmerkinitialisatie wordt ingevoegd, niet gezet: "
-                            + initialisations.get(z.initialisation()).member());
-                time[z.initialisation()]++;
+                if (assignments.get(z.assignment()).member().characteristic())
+                    throw new IllegalArgumentException("een lidtoekenning van een kenmerk wordt ingevoegd, niet gezet: "
+                            + assignments.get(z.assignment()).member());
+                time[z.assignment()]++;
             }
             if (insertions.isEmpty() || !(insertions.get(0) instanceof Insert.New))
                 throw new IllegalArgumentException("een creatie voegt eerst het nieuwe object in: " + insertions);
@@ -459,16 +459,16 @@ public sealed interface Consequence {
                     case Insert.Mark m -> marks++;
                     case Insert.Link l -> left++;
                     case Insert.Characteristic k -> {
-                        if (!initialisations.get(k.initialisation()).member().characteristic())
-                            throw new IllegalArgumentException("een attribuutinitialisatie wordt gezet, niet ingevoegd: "
-                                    + initialisations.get(k.initialisation()).member());
-                        time[k.initialisation()]++;
+                        if (!assignments.get(k.assignment()).member().characteristic())
+                            throw new IllegalArgumentException("een lidtoekenning van een attribuut wordt gezet, niet ingevoegd: "
+                                    + assignments.get(k.assignment()).member());
+                        time[k.assignment()]++;
                     }
                     case Insert.Exact e -> {
-                        if (initialisations.get(e.initialisation()).member().characteristic())
-                            throw new IllegalArgumentException("een kenmerkinitialisatie heeft geen exacte waarde: "
-                                    + initialisations.get(e.initialisation()).member());
-                        time[e.initialisation()]++;
+                        if (assignments.get(e.assignment()).member().characteristic())
+                            throw new IllegalArgumentException("een lidtoekenning van een kenmerk heeft geen exacte waarde: "
+                                    + assignments.get(e.assignment()).member());
+                        time[e.assignment()]++;
                     }
                 }
             if (insertions.stream().filter(i -> i instanceof Insert.New).count() != 1 || marks != 1
@@ -477,28 +477,28 @@ public sealed interface Consequence {
                         + " één keer in: " + insertions);
             for (int i = 0; i < time.length; i++)
                 if (time[i] != 1)
-                    throw new IllegalArgumentException("de initialisatie van " + initialisations.get(i).member() + " komt "
+                    throw new IllegalArgumentException("de lidtoekenning van " + assignments.get(i).member() + " komt "
                             + time[i] + " keer in de constructie of de invoegingen, niet één keer");
             // the order of the consequence before step 1c-C1, which a rendering carries out as the plan lists it: a
             // rendering into DRL text has no other source for the order of the facts the agenda then sees
             Set<Integer> exact = new HashSet<>();
-            for (Insert i : insertions) if (i instanceof Insert.Exact e) exact.add(e.initialisation());
+            for (Insert i : insertions) if (i instanceof Insert.Exact e) exact.add(e.assignment());
             List<Integer> attributes = new ArrayList<>();
             List<String> order = new ArrayList<>(List.of("New", "Mark", "Link"));
-            for (int i = 0; i < initialisations.size(); i++)
-                if (initialisations.get(i).member().characteristic()) order.add("Kenmerk " + i);
+            for (int i = 0; i < assignments.size(); i++)
+                if (assignments.get(i).member().characteristic()) order.add("Kenmerk " + i);
                 else if (exact.contains(i)) order.add("Exact " + i);
                 else attributes.add(i);
-            List<Integer> setInitialisations = construction.settings().stream().map(Construction.Setting::initialisation).toList();
-            if (!setInitialisations.equals(attributes))
-                throw new IllegalArgumentException("een creatie zet haar attribuutinitialisaties in hun volgorde "
-                        + attributes + ", niet " + setInitialisations);
+            List<Integer> setAssignments = construction.settings().stream().map(Construction.Setting::assignment).toList();
+            if (!setAssignments.equals(attributes))
+                throw new IllegalArgumentException("een creatie zet haar lidtoekenningen van attributen in hun volgorde "
+                        + attributes + ", niet " + setAssignments);
             List<String> given = insertions.stream().map(i -> i instanceof Insert.Characteristic k
-                    ? "Kenmerk " + k.initialisation() : i instanceof Insert.Exact e ? "Exact " + e.initialisation()
+                    ? "Kenmerk " + k.assignment() : i instanceof Insert.Exact e ? "Exact " + e.assignment()
                     : i.getClass().getSimpleName()).toList();
             if (!given.equals(order))
                 throw new IllegalArgumentException("een creatie voegt het nieuwe object, zijn merk, zijn koppeling en"
-                        + " dan haar kenmerkinitialisaties in hun volgorde in, " + order + ", niet " + given);
+                        + " dan haar lidtoekenningen van kenmerken in hun volgorde in, " + order + ", niet " + given);
         }
     }
 
@@ -510,7 +510,7 @@ public sealed interface Consequence {
 
     /** One member initialisation of an object creation: the member {@code member} of the new object, and its value
      *  {@code value}, evaluated over the bound values of the rule. */
-    record Initialisation(ElementKey member, Term value) {}
+    record Assignment(ElementKey member, Term value) {}
 
     /** How an object creation makes its new object: a bean of {@code javaClass}, by its constructor without arguments, on
      *  which each of {@code settings} is set, in order, before the bean is inserted. */
@@ -525,7 +525,7 @@ public sealed interface Consequence {
          *  (RUNTIME-SEMANTICS ch. 5.8c), whose value goes into the map of the property under the key {@code cell}.
          *  Where {@code timeline}, it writes a time-dependent attribute, and its value, a timeline of this branch, goes
          *  onto the bean as the bean model's segments where it holds one (ch. 7.8). */
-        public record Setting(int initialisation, Binding.Field field, List<String> cell, boolean timeline) {
+        public record Setting(int assignment, Binding.Field field, List<String> cell, boolean timeline) {
             public Setting {
                 cell = cell == null ? null : List.copyOf(cell);
                 if (timeline && cell != null)
@@ -533,8 +533,8 @@ public sealed interface Consequence {
             }
 
             /** The setting of an initialisation that holds one value. */
-            public Setting(int initialisation, Binding.Field field, List<String> cell) {
-                this(initialisation, field, cell, false);
+            public Setting(int assignment, Binding.Field field, List<String> cell) {
+                this(assignment, field, cell, false);
             }
         }
     }
@@ -557,12 +557,12 @@ public sealed interface Consequence {
 
         /** The {@code HasCharacteristic} of the characteristic of the initialisation at index {@code initialisatie} on the
          *  new object, where its value is true. */
-        record Characteristic(int initialisation, Insertion insertion) implements Insert {}
+        record Characteristic(int assignment, Insertion insertion) implements Insert {}
 
         /** The exact value of the initialisation at index {@code initialisation}, an attribute of the unbounded form, as
          *  the {@code Value} of the new object written by {@code writer}, the creation, where it is not leeg: working
          *  memory holds the exact value, and the write-back puts its decimal on the bean. */
-        record Exact(int initialisation, String writer, Insertion insertion) implements Insert {}
+        record Exact(int assignment, String writer, Insertion insertion) implements Insert {}
     }
 
     /** The link of the relation {@code relation} whose first end is the object the variable {@code first} binds and

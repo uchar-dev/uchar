@@ -111,18 +111,18 @@ final class AbsenceMarkers {
 
     /** An object creation: a member it initialises with markers is written as a rule writes it. */
     private ResolvedObjectCreation objectCreation(ResolvedObjectCreation oc) {
-        List<ResolvedObjectCreation.MemberInit> inits = new ArrayList<>();
+        List<ResolvedObjectCreation.MemberAssignment> assignments = new ArrayList<>();
         boolean same = true;
-        for (var t : oc.initialisations()) {
+        for (var t : oc.assignments()) {
             Datatype.SumType sum = oc.createdType() == null || t.characteristic() ? null
                     : oc.createdType().sumTypeOf(t.attribute());
             Expr v = written(sum, read(t.value()));
             same &= v == t.value();
-            inits.add(v == t.value() ? t : new ResolvedObjectCreation.MemberInit(t.attribute(), v, t.characteristic(), t.labels()));
+            assignments.add(v == t.value() ? t : new ResolvedObjectCreation.MemberAssignment(t.attribute(), v, t.characteristic(), t.labels()));
         }
         Condition c = cond(oc.condition());
         return same && c == oc.condition() ? oc : new ResolvedObjectCreation(oc.name(), oc.createdType(), oc.subject(),
-                inits, c, oc.validity(), oc.connectingRole());
+                assignments, c, oc.validity(), oc.connectingRole());
     }
 
     /** A defaults group: the consequences of an attribute group write its target, the group's own and those of every
@@ -359,7 +359,7 @@ final class AbsenceMarkers {
         for (var d : model.resolvedDayKindDefinitions) form(d.condition(), List.of());
         for (var oc : model.objectCreations) {
             List<Expr> values = new ArrayList<>();
-            for (var t : oc.initialisations()) if (t.value() != null) values.add(t.value());
+            for (var t : oc.assignments()) if (t.value() != null) values.add(t.value());
             form(oc.condition(), values);
         }
         for (var v : model.allocations) form(v.condition(), List.of());

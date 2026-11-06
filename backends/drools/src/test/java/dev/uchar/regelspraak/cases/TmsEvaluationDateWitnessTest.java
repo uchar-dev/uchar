@@ -279,7 +279,7 @@ class TmsEvaluationDateWitnessTest {
      *  both play. <b>Red</b> on a3842004, which made the Melding all the same, so the rule faulted on it too: "but was:
      *  &lt;Evaluatiefouten: aan het fixpunt staan 2 evaluatiefouten, in de regels "melding van een jutter", "tweede jaar
      *  van een melding": …&gt;". */
-    @Test void a_creation_whose_initialisation_fails_makes_nothing() throws Exception {
+    @Test void a_creation_whose_assignment_fails_makes_nothing() throws Exception {
         String model = TmsDocuments.model(List.of(
                 TmsDocuments.objectType("Jutter", List.of(), List.of("aangemeld")),
                 TmsDocuments.objectType("Melding", List.of(attribute("jaar", WHOLE), attribute("tweede jaar", WHOLE)),

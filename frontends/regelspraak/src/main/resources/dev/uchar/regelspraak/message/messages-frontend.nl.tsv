@@ -435,7 +435,7 @@ RGS-151	{head}: '(mag opgegeven worden)' staat niet op een gedimensioneerd attri
 RGS-152	{head}: '(mag opgegeven worden)' genereert niets, omdat geen regel '{attribute}' berekent of vaststelt, maar het model leest '{read}' — die naam bestaat alleen waar de markering een berekening van '{attribute}' verlegt (dialect §7)
 RGS-153	{head}: '(mag opgegeven worden)' staat op een attribuut dat geen regel berekent of vaststelt — '{attribute}' is al invoer, en de markering genereert niets (dialect §7)
 RGS-154	{head}: '(mag opgegeven worden)', maar de verdeling '{allocation}' schrijft '{attribute}' — de markering verlegt een verdeling niet naar '{computedAttribute}', en naast de defaults-groep op '{attribute}' is zij een tweede schrijver (WF-050) (dialect §7)
-RGS-155	{head}: '(mag opgegeven worden)', maar de objectcreatie '{objectCreation}' kent '{attribute}' toe bij het aanmaken — de markering verlegt die toekenning niet naar '{computedAttribute}', en naast de defaults-groep op '{attribute}' is zij een tweede schrijver (WF-050) (dialect §7)
+RGS-155	{head}: '(mag opgegeven worden)', maar de objectcreatie '{objectCreation}' kent '{attribute}' toe bij de objectcreatie — de markering verlegt die toekenning niet naar '{computedAttribute}', en naast de defaults-groep op '{attribute}' is zij een tweede schrijver (WF-050) (dialect §7)
 RGS-156	{head} (bronregel {line}): '(mag opgegeven worden)' genereert {formKind} '{name}', en {earlierForm} heet al zo (bronregel {earlierLine}) — een vormnaam is uniek in het hele model, hoofdletters niet meegeteld (WF-020) (dialect §7)
 RGS-157	{head} (bronregel {line}): '(mag opgegeven worden)' genereert {formKind} '{name}', en de markering op {otherHead} genereert die naam al (bronregel {otherLine}) — een vormnaam is uniek in het hele model, hoofdletters niet meegeteld (WF-020) (dialect §7)
 RGS-158	{head}: '(mag opgegeven worden)', en '{attribute}' heeft meer dan één initialisatie ({names}) — de gegenereerde defaults-groep draagt één initialisatiedefault, de laagste (WF-050) (dialect §7)
@@ -470,7 +470,7 @@ RGS-183	uniciteit '{name}' binnen '{scopeParent}': the scope role '{role}' is to
 RGS-184	verdeling met afronding/maximum zonder herkenbare onverdeelde rest (§9.7.3/§9.7.4): het restant wordt niet vastgelegd (regel '{name}')
 RGS-185	verdeling '{name}' zonder verbindende rol ({reason}): missing field 'connectingRole'
 RGS-186	objectcreatie '{name}': een {objectType} maakt een {objectType}, en de zin noemt geen rol die het nieuwe object bindt; dan komt de koppeling uit het typenpaar, en die afleiding koppelt bij een zelfgetypeerd paar niets (RUNTIME-SEMANTICS ch. 5.5). Noem de rol: 'Een {objectType} heeft een <rol> met …', met als <rol> {roles}
-RGS-187	kenmerkwaardetoekenning '{characteristic}': characteristic initialisation's value must be a boolean-typed expression
+RGS-187	kenmerkwaardetoekenning '{characteristic}': de toegekende waarde moet een booleaanse expressie zijn
 RGS-188	kenmerkwaardetoekenning '{characteristic}' vereist waar of onwaar (§13.4.6.4), niet '{value}'
 RGS-189	objectcreatie: '{name}' is not a declared attribute of '{objectType}'
 RGS-190	feitcreatie wordt nog niet naar IR/DRL omgezet (regel '{name}'): {sentence}

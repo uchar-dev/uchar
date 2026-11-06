@@ -1591,7 +1591,7 @@ public final class IrEmitter {
         w.key("createdType").value(nameOf(oc.createdType()));
         w.key("subject").value(nameOf(oc.subject()));
         w.key("assignments").beginArray();
-        for (ResolvedObjectCreation.MemberInit t : oc.initialisations()) {
+        for (ResolvedObjectCreation.MemberAssignment t : oc.assignments()) {
             w.beginObject();
             w.key("node").value("MemberAssignment");
             w.key("member").value(t.attribute());

@@ -472,7 +472,7 @@ class PrecisionGateTest {
     }
 
     // wf023-precision-creation-member
-    @Test void a_member_initialisation_of_an_object_creation_passes_the_gate() {
+    @Test void a_member_assignment_of_an_object_creation_passes_the_gate() {
         String model = """
             Objecttype het Strandrecht (mv: Strandrechten)
                 de uitkering Numeriek (niet-negatief getal met 2 decimalen);

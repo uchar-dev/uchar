@@ -225,7 +225,7 @@ public final class Resolver {
         }
         for (var d : m.resolvedDayKindDefinitions) Condition.collectUnresolved(d.condition(), report);
         for (var oc : m.objectCreations) {
-            for (var t : oc.initialisations()) Expr.collectUnresolved(t.value(), report);
+            for (var t : oc.assignments()) Expr.collectUnresolved(t.value(), report);
             Condition.collectUnresolved(oc.condition(), report);
         }
         for (var v : m.allocations)  Condition.collectUnresolved(v.condition(), report);

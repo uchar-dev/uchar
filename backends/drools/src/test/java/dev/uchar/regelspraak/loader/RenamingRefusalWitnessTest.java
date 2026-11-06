@@ -444,7 +444,7 @@ class RenamingRefusalWitnessTest {
     /** The rule-layer nodes of the renaming, over every loadable golden that carries them: each wire field equals the
      *  record component it lands in, an absent one the record's null. */
     @Test void the_rule_layer_reads_each_l5_field() throws Exception {
-        int dayKinds = 0, startPoints = 0, groups = 0, initialisations = 0, defaults = 0;
+        int dayKinds = 0, startPoints = 0, groups = 0, assignments = 0, defaults = 0;
         for (Path path : goldens()) {
             ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(path));
             IrLoader.Loaded l;
@@ -475,9 +475,9 @@ class RenamingRefusalWitnessTest {
             for (JsonNode form : rules.get("objectCreations"))
                 for (JsonNode version : form.get("versions")) {
                     ResolvedObjectCreation c = m.objectCreations.get(oc++);
-                    for (int j = 0; j < version.get("assignments").size(); j++, initialisations++) {
+                    for (int j = 0; j < version.get("assignments").size(); j++, assignments++) {
                         JsonNode w = version.get("assignments").get(j);
-                        ResolvedObjectCreation.MemberInit t = c.initialisations().get(j);
+                        ResolvedObjectCreation.MemberAssignment t = c.assignments().get(j);
                         assertEquals(w.get("member").asText(null), t.attribute(), path.toString());
                         assertEquals(w.get("characteristic").asBoolean(), t.characteristic(), path.toString());
                         assertEquals(w.get("value").isNull(), t.value() == null, path.toString());
@@ -498,9 +498,9 @@ class RenamingRefusalWitnessTest {
         }
         // measured 2026-09-25 on L5: 7 day-kind definitions, 1 start-point determination, 4 rule groups, 16 member
         // initialisations, 83 defaults
-        assertTrue(dayKinds >= 7 && startPoints >= 1 && groups >= 4 && initialisations >= 16 && defaults >= 83,
+        assertTrue(dayKinds >= 7 && startPoints >= 1 && groups >= 4 && assignments >= 16 && defaults >= 83,
                 "the corpus carries each rule-layer node: " + dayKinds + " " + startPoints + " " + groups + " "
-                        + initialisations + " " + defaults);
+                        + assignments + " " + defaults);
     }
 
     /** A list of defaults against its records, the exception groups included; the number of defaults compared. */

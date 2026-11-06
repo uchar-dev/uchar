@@ -980,11 +980,11 @@ let period_arithmetic_target (doc : document) ~otype ~attr =
 
 (* The member an object creation's initialisation writes on the object it
    makes (ch. 5.5, 5.8c): the member, or its cell where it carries labels *)
-let init_member env ~created (t : assignment) =
-  let m = req "MemberInit.member" t.to_attribute in
+let assigned_member env ~created (t : assignment) =
+  let m = req "MemberAssignment.member" t.to_attribute in
   match t.to_labels with
   | None -> m
-  | Some labels -> cell_member env ~ot:created ~attr:m (List.map (req "MemberInit.labels") labels)
+  | Some labels -> cell_member env ~ot:created ~attr:m (List.map (req "MemberAssignment.labels") labels)
 
 (* The attribute a member of an instance's [attrs] belongs to: the member
    itself, or the dimensioned attribute of a cell (World.cell) *)
@@ -4382,8 +4382,8 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
        cell of a time-dependent attribute nothing reads it per day *)
     List.iter
       (fun (t : assignment) ->
-        let m = req "MemberInit.member" t.to_attribute in
-        if (not t.to_characteristic) && init_member env ~created t <> m
+        let m = req "MemberAssignment.member" t.to_attribute in
+        if (not t.to_characteristic) && assigned_member env ~created t <> m
            && Ir_v0.Checks.attr_temporal (object_type env created) m
         then Value.fault "object creation %S sets a cell of the time-dependent attribute %S: not executed (no corpus case)" name m)
       oc.assignments;
@@ -4434,8 +4434,8 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
             let w =
               List.fold_left
                 (fun w (t : assignment) ->
-                  let m = req "MemberInit.member" t.to_attribute in
-                  let member = init_member env ~created t in
+                  let m = req "MemberAssignment.member" t.to_attribute in
+                  let member = assigned_member env ~created t in
                   if t.to_characteristic then (
                     match t.to_value with
                     | Some (Literal { variant = Lv_boolean true; _ }) ->
@@ -4461,11 +4461,11 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
                         | Value.Bool false | Value.Empty -> w
                         | v ->
                             Value.fault
-                              "characteristic initialisation of %S is not boolean: %s"
+                              "characteristic assignment of %S is not boolean: %s"
                               m (Value.to_string v))
                     | None ->
                         Value.fault
-                          "characteristic initialisation of %S without a value" m)
+                          "characteristic assignment of %S without a value" m)
                   else if Ir_v0.Checks.attr_temporal (object_type env created) m then begin
                     (* on a time-dependent attribute the value is the input of
                        the made object per day (ch. 7.8): a producer of ch. 3.11
@@ -4476,13 +4476,13 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
                       List.filter
                         (fun (s : Timeline.segment) -> s.s_value <> Value.Empty)
                         (period_timeline env read self ~err ~target ~attr:m ~target_unit:(unit_of_datatype decl)
-                           ~root:true (req "MemberInit.value" t.to_value))
+                           ~root:true (req "MemberAssignment.value" t.to_value))
                     in
                     World.fits ~label ~attr:m ~decl tl;
                     if tl = [] then w else fst (World.write_timeline w ~label ~attr:m tl)
                   end
                   else
-                    let v = eval_expr env read self ~err (req "MemberInit.value" t.to_value) in
+                    let v = eval_expr env read self ~err (req "MemberAssignment.value" t.to_value) in
                     fst
                       (World.write_attr w ~label ~attr:member
                          ~decl:(attr_decl env ~otype:created ~attr:m)

@@ -176,10 +176,10 @@ DROOLS-146	een objectcreatie zonder naam (WF-107)
 DROOLS-147	een objectcreatie zonder opgelost type
 DROOLS-148	een objectcreatie zonder connectingRole-binding waarvan de terugkoppeling uit het typenpaar ('{backRole}' en '{fwdRole}') via een supertype van het onderwerp of van het gemaakte type loopt: de strata van deze tak leiden de relatie van de terugkoppeling af uit de exacte typen en zien haar dan niet geschreven: deze tak draagt deze vorm nog niet
 DROOLS-149	een objectcreatie over de relatie '{factType}', die geen relatie van twee rollen is: deze tak draagt deze vorm nog niet
-DROOLS-150	een ledeninitialisatie zonder lid of waarde
-DROOLS-151	een kenmerkinitialisatie van '{attribute}' met een waarde van type {datatype} ('{snippet}'): een kenmerk is waar of onwaar (WF-027), en de referentie-interpreter faalt op zo'n waarde
-DROOLS-152	een deling in een ledeninitialisatie ('{division}'), waarvan deze tak de §6.5-deponering niet maakt: deze tak draagt deze vorm nog niet
-DROOLS-153	een wortel in een ledeninitialisatie ('{squareRoot}'), waarvan deze tak de §6.6-deponering niet maakt: deze tak draagt deze vorm nog niet
+DROOLS-150	een lidtoekenning zonder lid of waarde
+DROOLS-151	een lidtoekenning van het kenmerk '{attribute}' met een waarde van type {datatype} ('{snippet}'): een kenmerk is waar of onwaar (WF-027), en de referentie-interpreter faalt op zo'n waarde
+DROOLS-152	een deling in een lidtoekenning ('{division}'), waarvan deze tak de §6.5-deponering niet maakt: deze tak draagt deze vorm nog niet
+DROOLS-153	een wortel in een lidtoekenning ('{squareRoot}'), waarvan deze tak de §6.6-deponering niet maakt: deze tak draagt deze vorm nog niet
 DROOLS-154	een feitcreatie zonder naam (WF-107)
 DROOLS-155	een feitcreatie zonder opgelost anker, doel, feittype of pad
 DROOLS-156	een feitcreatie van de relatie '{factType}', die geen relatie van twee rollen is: deze tak draagt deze vorm nog niet

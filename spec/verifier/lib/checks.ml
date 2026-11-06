@@ -2683,7 +2683,7 @@ let wf027 ctx =
                 (fun (j, t) ->
                   let tat = Printf.sprintf "%s/assignments/%d" at j in
                   match t.to_attribute with
-                  | None -> [ v "WF-027.member-name-missing" tat "member initialisation without a member name" ]
+                  | None -> [ v "WF-027.member-name-missing" tat "member assignment without a member name" ]
                   | Some m ->
                       if t.to_characteristic then
                         (if not (has_characteristic ot m) then
@@ -2705,17 +2705,17 @@ let wf027 ctx =
                            stays refused. *)
                         (match t.to_value with
                          | None ->
-                             [ v "WF-027.characteristic-value-missing" tat "characteristic initialisation without a value" ]
+                             [ v "WF-027.characteristic-value-missing" tat "characteristic assignment without a value" ]
                          | Some (Lambda _ | Instance_set_union _) ->
                              [ v "WF-027.value-not-boolean" tat
-                                 "characteristic initialisation's value must be a \
+                                 "characteristic assignment's value must be a \
                                   boolean-typed expression" ]
                          | Some w -> (
                              match expr_type ctx ~binders:[] w with
                              | Some Boolean | None -> []
                              | Some _ ->
                                  [ v "WF-027.value-not-boolean" tat
-                                     "characteristic initialisation's value must be a \
+                                     "characteristic assignment's value must be a \
                                       boolean-typed expression" ]))
                       else if not (has_attr ot m) then
                         [ v ~params:[("member", m); ("objectType", tn)] "WF-027.undeclared-attribute" tat ("'" ^ m ^ "' is not a declared attribute of '" ^ tn ^ "'") ]

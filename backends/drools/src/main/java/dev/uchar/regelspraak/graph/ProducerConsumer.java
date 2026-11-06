@@ -159,13 +159,13 @@ public final class ProducerConsumer {
         }
         for (ResolvedObjectCreation o : model.objectCreations) {
             Set<ElementKey> writes = new LinkedHashSet<>();
-            for (ResolvedObjectCreation.MemberInit t : o.initialisations())
+            for (ResolvedObjectCreation.MemberAssignment t : o.assignments())
                 if (t.attribute() != null)
                     writes.add(t.labels() != null ? cellOf(o.createdType(), t.attribute(), t.labels())
                             : elementOf(o.createdType(), t.attribute(), t.characteristic()));
             Reader l = new Reader(navigation, new LinkedHashSet<>(), o.subject());
             l.condition(o.condition(), o.subject());
-            for (ResolvedObjectCreation.MemberInit t : o.initialisations()) l.expr(t.value(), o.subject());
+            for (ResolvedObjectCreation.MemberAssignment t : o.assignments()) l.expr(t.value(), o.subject());
             out.add(new Form(FormKind.OBJECT_CREATION, baseName(o.name()), writes, l.out()));
         }
         for (ResolvedAllocation v : model.allocations) {

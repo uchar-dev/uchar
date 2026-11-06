@@ -182,7 +182,7 @@ class ValueTermWitnessTest {
     private static List<Term> values(Consequence g) {
         return switch (g) {
             case Consequence.Value w -> List.of(w.value());
-            case Consequence.Creation c -> c.initialisations().stream().map(Consequence.Initialisation::value).toList();
+            case Consequence.Creation c -> c.assignments().stream().map(Consequence.Assignment::value).toList();
             case Consequence.Decision a -> List.of(a.value());
             default -> List.of();
         };

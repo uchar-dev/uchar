@@ -1614,7 +1614,7 @@ final class DrlRendering {
             String name = name("creatie", place);
             List<Term> values = new ArrayList<>();
             List<String> sources = new ArrayList<>();
-            for (Consequence.Initialisation i : x.initialisations()) {
+            for (Consequence.Assignment i : x.assignments()) {
                 values.add(i.value());
                 if (i.value().source() != null) sources.add(i.value().source());
             }
@@ -1630,7 +1630,7 @@ final class DrlRendering {
                 // an initialisation that stands as an exact Value keeps its exact value; one set on the bean its decimal
                 Set<Integer> exact = new HashSet<>();
                 for (Consequence.Insert i : x.insertions())
-                    if (i instanceof Consequence.Insert.Exact e) exact.add(e.initialisation());
+                    if (i instanceof Consequence.Insert.Exact e) exact.add(e.assignment());
                 StringBuilder tryBody = new StringBuilder();
                 for (int i = 0; i < values.size(); i++) {
                     f.append("    Object i").append(i).append(" = null;\n");
@@ -1646,13 +1646,13 @@ final class DrlRendering {
             for (Consequence.Construction.Setting z : x.construction().settings())
                 if (z.cell() != null)
                     f.append("    ").append(route(Route.SET_CELL)).append("(nieuw, ").append(str(z.field().property())).append(", ")
-                            .append(constant(z.cell()).text()).append(", i").append(z.initialisation()).append(");\n");
+                            .append(constant(z.cell()).text()).append(", i").append(z.assignment()).append(");\n");
                 else if (z.timeline())
                     f.append("    ").append(route(Route.SET_TIMELINE)).append("(nieuw, ").append(str(z.field().property()))
-                            .append(", i").append(z.initialisation()).append(");\n");
+                            .append(", i").append(z.assignment()).append(");\n");
                 else
                     f.append("    ").append(route(Route.SET)).append("(nieuw, ").append(str(z.field().property()))
-                            .append(", i").append(z.initialisation()).append(");\n");
+                            .append(", i").append(z.assignment()).append(");\n");
             f.append("    int fase = ((Integer) ").append(slot(x.phase(), c)).append(").intValue();\n");
             f.append("    java.util.List feiten = new java.util.ArrayList();\n");
             for (Consequence.Insert i : x.insertions())
@@ -1662,12 +1662,12 @@ final class DrlRendering {
                             + x.subject() + ", nieuw, fase, " + d.stratum() + ", diepte)";
                     case Consequence.Insert.Link l -> "new " + typeName(RelationLink.class) + "(" + str(l.relation()) + ", "
                             + (l.newIsFirst() ? "nieuw, " + x.subject() : x.subject() + ", nieuw") + ", fase)";
-                    case Consequence.Insert.Characteristic k -> "Boolean.TRUE.equals(i" + k.initialisation() + ") ? new "
+                    case Consequence.Insert.Characteristic k -> "Boolean.TRUE.equals(i" + k.assignment() + ") ? new "
                             + typeName(HasCharacteristic.class) + "(nieuw, "
-                            + key(x.initialisations().get(k.initialisation()).member()) + ") : null";
-                    case Consequence.Insert.Exact e -> "i" + e.initialisation() + " == null ? null : new "
-                            + typeName(Value.class) + "(nieuw, " + key(x.initialisations().get(e.initialisation()).member())
-                            + ", i" + e.initialisation() + ", " + str(e.writer()) + ")";
+                            + key(x.assignments().get(k.assignment()).member()) + ") : null";
+                    case Consequence.Insert.Exact e -> "i" + e.assignment() + " == null ? null : new "
+                            + typeName(Value.class) + "(nieuw, " + key(x.assignments().get(e.assignment()).member())
+                            + ", i" + e.assignment() + ", " + str(e.writer()) + ")";
                 }).append(");\n");
             f.append("    return feiten;\n");
             fill(place, sources.isEmpty() ? null : String.join("; ", sources),
