@@ -1,0 +1,197 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.FilterDeposit;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn gewicht tot de macht -1 naar beneden afgerond op 2 decimalen
+function Object waarde_lichtheid(Object $gewicht, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsMacht(ComputeHelpers.invertedBase($gewicht, Integer.valueOf(-1), sonde), Integer.valueOf(-1)), Integer.valueOf(2), java.math.RoundingMode.FLOOR), Integer.valueOf(2), "lichtheid", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "lichtheid"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_lichtheid($gewicht, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "lichtheid", ComputeHelpers.designate(v, "lichtheid")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("lichtheid", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "lichtheid", false), v, "lichtheid"));
+        }
+    }
+end
+
+// zijn gewicht tot de macht -0,5 naar beneden afgerond op 2 decimalen
+function Object waarde_wortelmaat(Object $gewicht, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.roundedPower(ComputeHelpers.invertedBase($gewicht, Integer.valueOf(-1), sonde), new java.math.BigDecimal("-0.5"), Integer.valueOf(2), java.math.RoundingMode.FLOOR), Integer.valueOf(2), "wortelmaat", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "wortelmaat"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_wortelmaat($gewicht, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "wortelmaat", ComputeHelpers.designate(v, "wortelmaat")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("wortelmaat", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "wortelmaat", false), v, "wortelmaat"));
+        }
+    }
+end
+
+// zijn gewicht tot de macht -1 naar beneden afgerond op 2 decimalen groter is dan 0,2
+function boolean toets_lichteVondst(Object $gewicht) {
+    return RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsMacht(ComputeHelpers.invertedBase($gewicht, Integer.valueOf(-1), null), Integer.valueOf(-1)), Integer.valueOf(2), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0.2"), ">");
+}
+
+rule "lichte vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht )
+    eval( toets_lichteVondst($gewicht) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "licht", true)));
+end
+
+// zijn gewicht tot de macht -1 naar beneden afgerond op 2 decimalen groter is dan 0,2
+function boolean toets_lichteVondstDeponeringInDeVoorwaarde(Object $gewicht, Object sonde) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsMacht(ComputeHelpers.invertedBase($gewicht, Integer.valueOf(-1), sonde), Integer.valueOf(-1)), Integer.valueOf(2), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0.2"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    return ComputeHelpers.reported(sonde);
+}
+
+// zijn gewicht tot de macht -1 naar beneden afgerond op 2 decimalen groter is dan 0,2
+function java.util.List deponering_lichteVondstDeponeringInDeVoorwaarde(Object $gewicht, Object sonde) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsMacht(ComputeHelpers.invertedBase($gewicht, Integer.valueOf(-1), sonde), Integer.valueOf(-1)), Integer.valueOf(2), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0.2"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    if (!ComputeHelpers.reported(sonde)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"lichte vondst\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    return ComputeHelpers.depositCodes(sonde);
+}
+
+rule "lichte vondst: deponering in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht )
+    eval( toets_lichteVondstDeponeringInDeVoorwaarde($gewicht, ComputeHelpers.depositFlag()) )
+then
+    insertLogical(ComputeHelpers.inconsistency("lichte vondst", $onderwerp, deponering_lichteVondstDeponeringInDeVoorwaarde($gewicht, ComputeHelpers.depositFlag())));
+end
+
+// het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht tot de macht -1 naar beneden afgerond op 2 decimalen is groter dan 0,2
+function Object waarde_lichteVondsten(Object $aantal_vouw_9, Object $filterdeponeringen_vouw_13, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(vouwlezing_lichteVondsten($aantal_vouw_9, $filterdeponeringen_vouw_13, sonde), Integer.valueOf(0), "lichte vondsten", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht tot de macht -1 naar beneden afgerond op 2 decimalen is groter dan 0,2
+function Object vouwlezing_lichteVondsten(Object $aantal_vouw_9, Object $filterdeponeringen_vouw_13, Object sonde) {
+    ComputeHelpers.reportFilterDeposits(sonde, $filterdeponeringen_vouw_13);
+    return ComputeHelpers.countOf($aantal_vouw_9);
+}
+
+rule "lichte vondsten"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_6 : Contribution( fold == "lichte vondsten: vouw 0", subject == $onderwerp ); $aantal_vouw_9 : count() )
+    accumulate( $filterdeponering_vouw_10 : FilterDeposit( fold == "lichte vondsten: vouw 0", subject == $onderwerp ); $filterdeponeringen_vouw_13 : collectList($filterdeponering_vouw_10) )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_lichteVondsten($aantal_vouw_9, $filterdeponeringen_vouw_13, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "lichte vondsten", ComputeHelpers.designate(v, "lichte vondsten")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("lichte vondsten", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "lichte vondsten", false), v, "lichte vondsten"));
+        }
+    }
+end
+
+// aan de volgende voorwaarde voldoen: zijn gewicht tot de macht -1 naar beneden afgerond op 2 decimalen is groter dan 0,2
+function boolean toets_lichteVondstenBijdrageAanVouw0(Object $gewicht) {
+    return RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsMacht(ComputeHelpers.invertedBase($gewicht, Integer.valueOf(-1), null), Integer.valueOf(-1)), Integer.valueOf(2), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0.2"), ">");
+}
+
+rule "lichte vondsten: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp, $gewicht : gewicht )
+    eval( toets_lichteVondstenBijdrageAanVouw0($gewicht) )
+then
+    insertLogical(new Contribution("lichte vondsten: vouw 0", $vouwonderwerp, $onderwerp, null));
+end
+
+// aan de volgende voorwaarde voldoen: zijn gewicht tot de macht -1 naar beneden afgerond op 2 decimalen is groter dan 0,2
+function boolean toets_lichteVondstenFilterdeponeringInVouw0(Object $gewicht, Object sonde) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsMacht(ComputeHelpers.invertedBase($gewicht, Integer.valueOf(-1), sonde), Integer.valueOf(-1)), Integer.valueOf(2), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0.2"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    return ComputeHelpers.reported(sonde);
+}
+
+// aan de volgende voorwaarde voldoen: zijn gewicht tot de macht -1 naar beneden afgerond op 2 decimalen is groter dan 0,2
+function java.util.List deponering_lichteVondstenFilterdeponeringInVouw0(Object $gewicht, Object $onderwerp, Object sonde) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsMacht(ComputeHelpers.invertedBase($gewicht, Integer.valueOf(-1), sonde), Integer.valueOf(-1)), Integer.valueOf(2), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0.2"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    if (!ComputeHelpers.reported(sonde)) {
+        ComputeHelpers.contractBreach("het filter van lichte vondsten: vouw 0 deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    return ComputeHelpers.depositCodes(sonde);
+}
+
+rule "lichte vondsten: filterdeponering in vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( aanmelder == $vouwonderwerp, $gewicht : gewicht )
+    eval( toets_lichteVondstenFilterdeponeringInVouw0($gewicht, ComputeHelpers.depositFlag()) )
+then
+    insertLogical(new FilterDeposit("lichte vondsten: vouw 0", $vouwonderwerp, $onderwerp, deponering_lichteVondstenFilterdeponeringInVouw0($gewicht, $onderwerp, ComputeHelpers.depositFlag())));
+end
+

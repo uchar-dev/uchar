@@ -62,3 +62,7 @@ van W1 mat. Daarna hersteld; `git diff` van `DrlRendering` leeg.
 **Voor de hoofdsessie.** Een kaart die een golden toevoegt of de analyse of een weergave verandert, schrijft de pins
 opnieuw: `cd backends/drools && mvn -o test -Dtest=DrlTextPinWitnessTest -Duchar.drlpin=src/test/resources/drl-text`.
 Een golden die een parallelle branch toevoegt (de clingo-bouwer) faalt na de rebase als "no pin" tot die stap.
+
+**Rebase op main `bc3249090` (2026-11-06).** De pins opnieuw geschreven met de aanroep hierboven: twee nieuwe,
+`jutterswet-keurquotient.drl` en `jutterswet-macht-van-nul.drl`, en geen bestaande tekst veranderd (357 pins;
+`logs/rebase-pins.log`). Gate 12 daarna groen (`logs/rebase-gate12.log`: 355 gespeeld op beide takken, JUnit 1882), gate 1 groen.

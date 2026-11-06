@@ -75,7 +75,8 @@ Java-identifier; rood op de oude code (`logs/card2-rood-bewaard.log`: 3 van 3), 
 lidnaam toe): leden `m²`, `final`, `in`, `3e lid` en kenmerk `is`. Rood op de jar van vóór de kaart
 (`logs/card2-golden-rood.log`: beide takken `ERROR … compileren niet`); nu verifier PASS, ref en clingo PASS, beide
 takken `PLAYED 3` en `READINGS 3` (`logs/card2-golden-groen.log`), `--noop` faalt op elke case. Gate 12:
-`EXPECTED_PLAYED` 352 → 353 (`scripts/check-drools.sh`, met de reden).
+`EXPECTED_PLAYED` 352 → 353 (`scripts/check-drools.sh`, met de reden); na de rebase op main `bc3249090`, dat zelf
+354 had (`jutterswet-keurquotient`, `jutterswet-macht-van-nul`), 355 met de drie redenregels.
 
 **Gewijzigde tests (gedrag dat de kaart verandert).**
 - `PropertyWitnessTest.a_member_without_a_java_name_fails_loudly_at_the_bean_source` pinde de crash; nu

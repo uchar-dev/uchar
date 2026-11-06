@@ -1,0 +1,93 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+
+// zijn keurpunten gedeeld door zijn keuringen groter is dan 6
+function boolean toets_bekwameJutter(Object $keurpunten, Object $keuringen) {
+    try {
+        return RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($keurpunten, $keuringen, null), new java.math.BigDecimal("6"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "bekwame jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $keurpunten : keurpunten, $keuringen : keuringen )
+    eval( toets_bekwameJutter($keurpunten, $keuringen) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "bekwaam", true)));
+end
+
+// zijn keurpunten gedeeld door zijn keuringen groter is dan 6
+function boolean toets_bekwameJutterFoutInDeVoorwaarde(Object $keurpunten, Object $keuringen) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($keurpunten, $keuringen, null), new java.math.BigDecimal("6"), ">");
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn keurpunten gedeeld door zijn keuringen groter is dan 6
+function Object fout_bekwameJutterFoutInDeVoorwaarde(Object $keurpunten, Object $keuringen) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($keurpunten, $keuringen, null), new java.math.BigDecimal("6"), ">");
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bekwame jutter: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $keurpunten : keurpunten, $keuringen : keuringen )
+    eval( toets_bekwameJutterFoutInDeVoorwaarde($keurpunten, $keuringen) )
+then
+    Object f = fout_bekwameJutterFoutInDeVoorwaarde($keurpunten, $keuringen);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"bekwame jutter\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    insertLogical(new Fault($onderwerp, "bekwame jutter", ComputeHelpers.designate(f, "bekwame jutter")));
+end
+
+// zijn keurpunten gedeeld door zijn keuringen groter is dan 6
+function boolean toets_bekwameJutterDeponeringInDeVoorwaarde(Object $keurpunten, Object $keuringen, Object sonde) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($keurpunten, $keuringen, sonde), new java.math.BigDecimal("6"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    return ComputeHelpers.reported(sonde);
+}
+
+// zijn keurpunten gedeeld door zijn keuringen groter is dan 6
+function java.util.List deponering_bekwameJutterDeponeringInDeVoorwaarde(Object $keurpunten, Object $keuringen, Object sonde) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($keurpunten, $keuringen, sonde), new java.math.BigDecimal("6"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+    }
+    if (!ComputeHelpers.reported(sonde)) {
+        ComputeHelpers.contractBreach("de voorwaarde van \"bekwame jutter\" deponeerde in de toets en niet in het gevolg, over dezelfde gebonden waarden");
+    }
+    return ComputeHelpers.depositCodes(sonde);
+}
+
+rule "bekwame jutter: deponering in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $keurpunten : keurpunten, $keuringen : keuringen )
+    eval( toets_bekwameJutterDeponeringInDeVoorwaarde($keurpunten, $keuringen, ComputeHelpers.depositFlag()) )
+then
+    insertLogical(ComputeHelpers.inconsistency("bekwame jutter", $onderwerp, deponering_bekwameJutterDeponeringInDeVoorwaarde($keurpunten, $keuringen, ComputeHelpers.depositFlag())));
+end
+

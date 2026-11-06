@@ -81,7 +81,8 @@ subagent (opus55) en per zin nagelopen tegen de code; logs in `werk/drools-resid
     (`erflijn/meting.log`); de meting van 2026-10-09 blijft als geschiedenis staan.
   - RUNTIME-SEMANTICS ch. 6.1 r. ~7384 en IR-SPEC r. ~9409 (`opvolgerquorum`, de `all`-matrix "merk kleiner dan 2" en
     "merk ongelijk aan 2", case 4): ref en beide Drools-takken 2, clingo 1 (`quorum/meting.log`); was "the DRL-text
-    branch 1".
+    branch 1". Bij de rebase op main `bc3249090` bleek de alinea van RUNTIME-SEMANTICS ch. 6.1 door de clingo-ronde
+    herschreven en de passage weg; de tekst van main bleef staan, de wijziging staat alleen in IR-SPEC.
   - IR-SPEC r. ~2873 (`wf079-chain-unconditional-writers`): alle vier vallen met een fout die beide schrijvers noemt
     (ref en clingo EF-016, beide Drools-takken `WritersConflict`); de oude stand in verleden tijd. IR-SPEC r. ~2981
     (`wf026-chain-two-allocations`): ref EF-016, clingo twee waarden, beide Drools-takken weigeren bij naam (DROOLS-140,
@@ -114,3 +115,7 @@ de getuigen in de commit van deze kaart; de zinnen in RUNTIME-SEMANTICS, IR-SPEC
 `check-drools.sh` in een eigen commit daarna (gate 1 groen, `logs/punt1-gate1.log`; `bash -n` op het script en
 `check-drools-codes.sh` groen). Gate 1 groen (`logs/card3-gate1.log`); gate 12 groen (`logs/card3-gate12.log`: 353 gespeeld
 op beide takken, JUnit 1880).
+
+**Rebase op main `bc3249090` (2026-11-06).** Twee conflicten in de spec. IR-SPEC ch. 5.5: main had de zin over de
+ASP-backend verbreed tot twee vormen (lidtoekenning en creatievoorwaarde); die zin van main staat, de zin "Its instance
+is `backends/drools`: …" gaat zoals in deze kaart naar de cursieve geschiedenis. RUNTIME-SEMANTICS ch. 6.1: zie hierboven.
