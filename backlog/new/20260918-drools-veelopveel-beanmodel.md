@@ -28,6 +28,28 @@ cardinaliteit aan elke `toManyRole`-consument zouden misrapporteren —
 die afweging moet herzien, niet omzeild. Middel-tot-groot; eigen
 gate-12-kanaalbeweging.
 
+## Ontwerp en voorlopig besluit (Fable-advies 2026-11-06)
+
+*Het volledige ontwerp, met een proef in een kloon (100 regels, `proef.diff`), het stappenplan, de zes tests die
+kantelen en wat niet mag veranderen: `uchar-dev/werk/norm-advice-2026-11-06/many-to-many/ADVIES.md` (§5 is het
+stappenplan, §6 de bewaking).*
+
+Geen collectieveld op de bean. Een feittype met twee meervoudige rollen wordt altijd als koppelingsfeiten gelezen
+(`RelationLink`, fase 0 voor de invoer), via de route die de tak al gebruikt voor een relatie die een vorm maakt
+(`linkRange`, `linkHop`, `roleCheck`, `recipientsJoin`); nieuw is alleen de koppelingsstap in een meerstaps-
+`sourcePath`. Het beanmodel, de consumenten van `hasReferenceField` en `toManyRole`, `ContractValidator`, de
+productieruntime en de JSON van de distributie blijven onaangeraakt. In de proef spelen `anchor/jutterswet-bootberging`,
+`jutterswet-muntketen`, `jutterswet-ketenkwantor` en `jutterswet-gemeenteberging` in beide takken met hun
+ankerwaarden, de lezingen zijn gelijk aan de trace van ref, en de rest van het corpus beweegt niet. DROOLS-161 en
+DROOLS-078 worden `RETIRED`; de conservatieve arm DROOLS-232 en `anchor/jutterswet-penninguitgifte` (PLAYED 3) blijven.
+
+*Voorlopig besluit (normvraag, de eigenaar kan het omdraaien):* de volgorde van een N:M-bereik is per houder de lijst
+van RUNTIME-SEMANTICS ch. 5.7a (geschreven leden in geschreven volgorde, daarna gematerialiseerde in labelvolgorde),
+zoals ref al doet. De Drools-backend draagt die volgorde in deze kaart niet en weigert een geordende vouw over zo'n
+bereik (een filter die kan falen, een deposito, een geordende kwantor) bij naam op beide takken, met een nieuwe code;
+geen golden heeft die vorm. De hoofdsessie maakt daarvoor geen vervolgkaart (doel van de eigenaar: een kleinere
+backlog): de weigering staat in de lijst van niet-gedragen vormen van `backends/drools/README.md`.
+
 ## Acceptatie (bij oppakken aanscherpen)
 
 - (a) Rood-eerst: de drie goldens met hun huidige, één laag diepere
