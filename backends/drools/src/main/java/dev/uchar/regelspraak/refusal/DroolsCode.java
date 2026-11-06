@@ -79,7 +79,7 @@ public enum DroolsCode {
     DUPLICATE_RULE_NAME("DROOLS-055", Kind.LIMIT, "duplicate-rule-name", "rule,package", null),
     DRL_BEAN_CLASS_CONSTANT("DROOLS-056", Kind.REFUSAL, "drl-bean-class-constant", "category", null),
     DAY_KIND_GLOBAL_INVALID("DROOLS-057", Kind.LIMIT, "day-kind-global-invalid", "category", null),
-    DRL_MEMBER_NO_PROPERTY("DROOLS-058", Kind.LIMIT, "drl-member-no-property", "category", null),
+    DRL_MEMBER_NO_PROPERTY("DROOLS-058", Kind.RETIRED, "drl-member-no-property", "category", null),
     SOURCE_PATH_WITHOUT_SUBJECT("DROOLS-059", Kind.CONTRACT, "source-path-without-subject", "", null),
     SOURCE_PATH_ONE_STEP("DROOLS-060", Kind.CONTRACT, "source-path-one-step", "steps", null),
     SOURCE_PATH_UNKNOWN_FACT("DROOLS-061", Kind.CONTRACT, "source-path-unknown-fact", "step,factType", null),
@@ -337,7 +337,8 @@ public enum DroolsCode {
     EXPR_PAYLOAD_ACCESS("DROOLS-313", Kind.RETIRED, "expr-payload-access", "node", null),
     PAYLOAD_ACCESS_OF_TIMELINE("DROOLS-314", Kind.REFUSAL, "payload-access-of-timeline", "attribute", null),
     ALLOCATION_TIME_DEPENDENT_ATTRIBUTE("DROOLS-315", Kind.CONTRACT, "allocation-time-dependent-attribute", "allocation,field,attribute,objectType", null),
-    TIME_TARGET_PRODUCER_VALUE("DROOLS-316", Kind.REFUSAL, "time-target-producer-value", "form,attribute,declarant,snippet", null);
+    TIME_TARGET_PRODUCER_VALUE("DROOLS-316", Kind.REFUSAL, "time-target-producer-value", "form,attribute,declarant,snippet", null),
+    BEAN_GETTER_OF_OBJECT("DROOLS-317", Kind.LIMIT, "bean-getter-of-object", "property,objectType,getter", null);
 
     /** Why the backend refuses; {@code RETIRED} for a code it no longer raises, which stays here so that its number is
      *  never reused ({@code spec/proposals/MESSAGE-CODES.md} §3.2). */

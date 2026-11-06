@@ -57,9 +57,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * </ul>
  * Fix round 1e adds two checks outside the corpus:
  * <ul>
- *   <li>a read name is {@code $} and a Java identifier for any declared name: of what {@code Namen.ident} keeps, only
- *       the characters a Java identifier may hold stay, so a number such as {@code ²} or {@code ½} goes, and a name of
- *       which nothing stays reads {@code $x}, with a number where that is taken;</li>
+ *   <li>a read name is {@code $} and a Java identifier for any declared name: {@code Namen.ident} keeps only the
+ *       characters a Java identifier may hold, a number such as {@code ²} or {@code ½} in its compatibility form
+ *       ({@code 2}, {@code 12}), and a name of which nothing stays reads {@code $x}, with a number where that is
+ *       taken;</li>
  *   <li>the plan refuses a rule that declares a variable a second time in its scope, or gives two slots one
  *       variable.</li>
  * </ul>
@@ -143,13 +144,14 @@ class ReadNameWitnessTest {
 
     @Test void a_read_name_is_a_java_identifier_also_outside_the_corpus() {
         Map<String, String> expected = new LinkedHashMap<>();
-        expected.put("artikel 3² inconsistent", "$artikel3Inconsistent");
-        expected.put("½ deel", "$Deel");
-        expected.put("3e lid", "$3eLid");
+        expected.put("artikel 3² inconsistent", "$artikel32Inconsistent");
+        expected.put("½ deel", "$x12Deel");
+        expected.put("3e lid", "$x3eLid");
         expected.put("één coördinaat", "$éénCoördinaat");
         expected.put("art. 5, lid 2 (oud)", "$art5Lid2Oud");
         expected.put("", "$x");
-        expected.put("²³", "$x");
+        expected.put("²³", "$x23");
+        expected.put("— § —", "$x");
         expected.put("waarde", "$waarde2");
         Map<String, String> received = new LinkedHashMap<>();
         for (String read : expected.keySet()) received.put(read, TmsTranspiler.readName(read, Set.of()));
@@ -157,7 +159,7 @@ class ReadNameWitnessTest {
         for (String name : received.values())
             assertTrue(identifier(name) && !name.contains("_"), () -> name + " is geen variabele zonder underscore");
         // a name of which nothing stays takes a number where $x is taken, as every read name does
-        assertEquals("$x2", TmsTranspiler.readName("²³", Set.of("$x")));
+        assertEquals("$x2", TmsTranspiler.readName("— § —", Set.of("$x")));
         assertEquals("$x3", TmsTranspiler.readName("", Set.of("$x", "$x2")));
     }
 

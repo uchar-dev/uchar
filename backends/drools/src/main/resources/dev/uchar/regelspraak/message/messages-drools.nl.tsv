@@ -353,6 +353,7 @@ DROOLS-315	de verdeling "{allocation}" noemt in haar veld {field} het tijdsafhan
 DROOLS-316	{form} op het tijdsafhankelijke attribuut '{attribute}' van {declarant} is geen rekenen per periode van ch. 3.4 en 3.5 en geen constructor van een literal ('{snippet}'): deze tak schrijft haar per dag alleen als een van die twee (RUNTIME-SEMANTICS ch. 3.12 rij 10, 7.8)
 DROOLS-316.initialisation	de waarde van een initialisatie
 DROOLS-316.member	de lidwaarde van een objectcreatie
+DROOLS-317	het beanmodel draagt de beaneigenschap {property} van {objectType} niet: haar getter {getter} is een methode van java.lang.Object, die geen bean opnieuw kan declareren
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-004	invoer {place} = {value} past niet in {decimals} decimalen: een casewaarde waarvan de declaratie de exacte waarde niet kan houden, wordt bij de invoer geweigerd (RUNTIME-SEMANTICS ch. 2.4, 5.7)

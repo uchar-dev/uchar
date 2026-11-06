@@ -34,3 +34,63 @@ May touch: `backends/drools/**` (`schema/`, `transpiler/core/Namen`, `transpiler
 `scripts/check-drools.sh` (**voorstel**, pin).
 
 Out of scope: `ref/`, `backends/clingo`, `spec/` (alleen meten; een spec-vraag wordt een eigen voorstel).
+
+## Result
+
+Bouwer drools-residue, 2026-11-06, branch `card/drools-residue`. Logs en proefdocumenten in `werk/drools-residue/`
+(`logs/`, `probe/lidnamen/`, `probe/lidnamen-botsing/`).
+
+**(a) Wat de IR toelaat en wat ref en clingo doen.** WF-057 (IR-SPEC ch. 2.1) weert alleen `"`, `\` en tekens onder
+U+0020; elke andere naam is toegelaten. Gemeten op `anchor/jutterswet-waardestelling` met het gelezen attribuut
+(`taxatiewaarde`) en het geschreven attribuut (`geschatte waarde`) elk hernoemd tot `3e lid`, `3 M`, `m²`, `½ deel`,
+`final`, `class`, `in`, `is`, `with`, `drools`, `nil` (22 documenten, 4 cases elk): de verifier geeft PASS, ref en
+clingo PASS op elke case (`probe/lidnamen/meting-ref-clingo.log`). De Drools-takken vóór de reparatie
+(`probe/lidnamen/meting-oud.log`): `3e lid`, `3 M`, `m²`, `½ deel`, `final`, `class` gaven op beide takken
+`ERROR IllegalStateException: gegenereerde fact-beans compileren niet` (een crash bij de bouw); `in`, `is`, `with`,
+`drools`, `nil` als gelezen lid: exec-model `PLAYED 4`, DRL-tekst `EXCLUDE DROOLS-058`.
+
+**(b) Elke toegelaten naam een geldig Java-veld, of een benoemde weigering.** `Namen.ident` neemt als woord alleen de
+letters en cijfers die een Java-identifier kan dragen, een cijferteken van de categorie `No` in zijn
+compatibiliteitsvorm (`m²` → `m2`, `½` → `12`), en zet een `x`/`X` voor een resultaat dat met een cijfer begint
+(`3e lid` → `x3eLid`/`X3eLid`), zodat `ident` van het resultaat dezelfde Pascal-vorm geeft die de reflectiebrug van de
+runtime leest. `FactModelGenerator.generate` schrijft het veld van een woord van Java als `final_`; getter en setter
+blijven die van de eigenschap (`getFinal`). Een lid waarvan de getter een methode van `java.lang.Object` is
+(`class` → `getClass`) kan geen bean dragen: `DroolsBackend` weigert het document op beide takken met de nieuwe code
+DROOLS-317 (`FactModelGenerator.objectGetter`, register en beide catalogi), in dezelfde zin. Deterministisch: één
+functie, geen toestand. Injectief is `ident` niet en was het niet (`premie som`/`premie-som`); twee leden op één
+eigenschap weigert de bestaande botsingstoets per vorm (gemeten: `m²` naast `m2` op één type geeft op beide takken
+`EXCLUDE DROOLS-054: bean name collision …`, `probe/lidnamen-botsing/`). Na de reparatie
+(`probe/lidnamen/meting-nieuw.log`): 20 van de 22 documenten `PLAYED 4` op beide takken, de twee met `class` `EXCLUDE
+DROOLS-317` op beide; geen crash.
+
+**(c) De DRL-weergave leest een lid zonder DRL-eigenschap via zijn getter.** `DrlRendering.fieldName` spelt zo'n lid
+als `getIn()` of `isIs()` (de vorm die de bean draagt), in binding, constraint en na een patroonvariabele; de meting
+van stap 2a2 (`DrlPropertyWitnessTest`) las de getteraanroep overal als het lid. `Namen.lidnamen` houdt ook een woord
+van Java buiten de DRL-eigenschappen. DROOLS-058 is daarmee `RETIRED` (register, `CLAUDE.md` gate 12).
+
+**(d) Eigen documenten, rood eerst, en een golden.** In de suite `MemberNameWitnessTest`: elf namen als gelezen en als
+geschreven lid op beide takken (`BothBranches.green`), `class` als benoemde weigering, en `Namen.property` als
+Java-identifier; rood op de oude code (`logs/card2-rood-bewaard.log`: 3 van 3), groen erna. Golden
+`jutterswet-lidnamen` (alleen `ir.json`, drie cases, `NOTE.md`; de RegelSpraak-grammatica laat `in` en `is` niet als
+lidnaam toe): leden `m²`, `final`, `in`, `3e lid` en kenmerk `is`. Rood op de jar van vóór de kaart
+(`logs/card2-golden-rood.log`: beide takken `ERROR … compileren niet`); nu verifier PASS, ref en clingo PASS, beide
+takken `PLAYED 3` en `READINGS 3` (`logs/card2-golden-groen.log`), `--noop` faalt op elke case. Gate 12:
+`EXPECTED_PLAYED` 352 → 353 (`scripts/check-drools.sh`, met de reden).
+
+**Gewijzigde tests (gedrag dat de kaart verandert).**
+- `PropertyWitnessTest.a_member_without_a_java_name_fails_loudly_at_the_bean_source` pinde de crash; nu
+  `a_member_without_a_java_name_as_written_gets_one` (`3 M`, `3e lid`, `m²`, `final` bouwen, met de getter en setter van
+  `Namen.lidnamen`).
+- `DrlPropertyWitnessTest`: de twee rijen die de weigering van `in`, `drools`, `nil` pinden, verwachten nu `compiles`
+  (een kenmerk gespeld als `isIn()`, `isDrools()`).
+- `ReadNameWitnessTest.a_read_name_is_a_java_identifier_also_outside_the_corpus` en
+  `DrlFunctionNamesWitnessTest.RULES` pinden namen die `Namen.ident` afleidt: `$artikel32Inconsistent`, `$x12Deel`,
+  `$x3eLid`, `$x23`, `toets_x2JarigeTermijn`, `toets_artikel22En`.
+
+**Gates.** `logs/card2-gates/summary.txt`: 3, 4, 5, 6, 7, 13, 15, 17 groen; gate 2 rood op de round-trip van de nieuwe
+`ir.json` (UTF-8 in plaats van `²`), hersteld en groen (`logs/card2-gate2.log`); gate 12 rood op de twee naampins
+hierboven, hersteld (`logs/card2-namepins.log`) en opnieuw gedraaid (`logs/card2-gate12-b.log`): groen, 353
+gespeeld op beide takken, JUnit 1880. Gate 1 groen.
+
+**Voor de distributie (pin-bump).** Bean-eigenschappen van leden met een cijfer vooraan of een cijferteken heten
+anders (`x3eLid`, `m2`); een document met zo'n lid compileerde voorheen niet, dus er verschuift geen werkende naam.

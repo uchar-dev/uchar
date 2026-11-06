@@ -114,7 +114,8 @@ class DrlPropertyWitnessTest {
     }
 
     /** Documents after {@code eigenschap/turkish-member} whose member "İş" has another name, which the rule reads: the
-     *  rendering spells a member by its name in DRL, and refuses by name a member that has none. */
+     *  rendering spells a member by its name in DRL, and a member that has none by a call of its getter. Until card
+     *  beanlidnamen-zonder-java-identifier it refused such a member by name (DROOLS-058, now retired). */
     @Test void the_rendering_spells_the_member_or_refuses_it() throws Exception {
         String source = Files.readString(Path.of("src", "test", "resources", "property", "turkish-member", "ir.json"));
         List<String> outcome = new ArrayList<>();
@@ -132,10 +133,8 @@ class DrlPropertyWitnessTest {
                 Files.delete(ir);
             }
         }
-        assertEquals(List.of("ışık | compiles", "日 X | compiles",
-                "in | de DRL-weergave draagt het lid \"in\" nog niet",
-                "drools | de DRL-weergave draagt het lid \"drools\" nog niet",
-                "nil | de DRL-weergave draagt het lid \"nil\" nog niet"), outcome);
+        assertEquals(List.of("ışık | compiles", "日 X | compiles", "in | compiles", "drools | compiles", "nil | compiles"),
+                outcome);
     }
 
     /** A characteristic, which the generator writes as a {@code boolean} with an {@code is} getter, is read in each place
@@ -165,7 +164,7 @@ class DrlPropertyWitnessTest {
     }
 
     /** Documents after {@code eigenschap/turkish-characteristic} whose input characteristic "ışık" has another name: the rendering
-     *  spells the characteristic by its name in DRL, and refuses by name one that has none. */
+     *  spells the characteristic by its name in DRL, and one that has none by a call of its getter. */
     @Test void the_rendering_spells_a_characteristic_or_refuses_it() throws Exception {
         String source = Files.readString(Path.of("src", "test", "resources", "property", "turkish-characteristic", "ir.json"));
         List<String> outcome = new ArrayList<>();
@@ -175,7 +174,8 @@ class DrlPropertyWitnessTest {
                 Files.writeString(ir, source.replace("ışık", name));
                 DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
                 String text = DrlRendering.text(b.execModelTranspiler().modelplan());
-                String drl = Namen.lidnamen(Namen.property(name)).drlProperty();
+                Namen.Lidnamen n = Namen.lidnamen(Namen.property(name));
+                String drl = n.drlProperty() != null ? n.drlProperty() : n.isGetter() + "()";
                 List<String> faults = DrlRenderingWitnessTest.compile(text, b.beanLoader());
                 outcome.add(name + " | " + (faults.isEmpty() ? "compiles" : "does not compile: " + faults.get(0))
                         + (text.contains("(" + drl + ")") ? ", spelled as " + drl : ", not spelled as " + drl));
@@ -186,9 +186,8 @@ class DrlPropertyWitnessTest {
             }
         }
         assertEquals(List.of("ışık | compiles, spelled as işık", "日 X | compiles, spelled as 日X",
-                "not | compiles, spelled as not",
-                "in | de DRL-weergave draagt het lid \"in\" nog niet",
-                "drools | de DRL-weergave draagt het lid \"drools\" nog niet"), outcome);
+                "not | compiles, spelled as not", "in | compiles, spelled as isIn()",
+                "drools | compiles, spelled as isDrools()"), outcome);
     }
 
     /** The bean {@code Proef} of the generator, with a number attribute per name, compiled. */

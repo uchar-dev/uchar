@@ -246,7 +246,8 @@ public final class DroolsBackend {
 
     /** Two declarations on one Java name of the bean model, refused before a bean is generated, in the sentences of
      *  {@link FactModelGenerator}: an object type whose fact class another type, a class the generator writes itself
-     *  or a {@code java.lang} type already names; two roles on one reference field of one type; and a member whose
+     *  or a {@code java.lang} type already names; a member whose getter {@code java.lang.Object} declares
+     *  ({@code getClass}); two roles on one reference field of one type; and a member whose
      *  bean property belongs to another declaration, where a form of the rule layer reads or writes it (the forms of
      *  {@link ProducerConsumer}, and a §9.9 start-point determination, which names its anchor member). Such a member
      *  that nothing uses is left alone: its field is simply absent, and a case that names it is refused by the case
@@ -256,6 +257,8 @@ public final class DroolsBackend {
         RegelSpraakModel model = loaded.model();
         Reason javaClass = FactModelGenerator.classCollision(model);
         if (javaClass != null) throw new Excluded(javaClass);
+        Reason getter = FactModelGenerator.objectGetter(model);
+        if (getter != null) throw new Excluded(getter);
         List<FactModelGenerator.Displacement> displacements = FactModelGenerator.displacements(model);
         if (displacements.isEmpty()) return;
         Reason role = FactModelGenerator.roleCollision(displacements);

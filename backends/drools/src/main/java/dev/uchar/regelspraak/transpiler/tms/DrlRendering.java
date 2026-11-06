@@ -802,13 +802,22 @@ final class DrlRendering {
 
         /** How the text spells the field {@code property} of an object of {@code javaClass}: a component of a fact of
          *  the branch by its name, a member of a bean by the name Drools reads its getter under
-         *  ({@link Namen#lidnamen}); a member {@code name} that Drools reads as something else where a pattern spells
-         *  its name is refused, by name, since a constraint on it could hold or fail without a word. */
+         *  ({@link Namen#lidnamen}), and a member whose name Drools reads as something else where a pattern spells it
+         *  ("in", "nil", a word of Java) by a call of its getter, which reads the member in every place of a pattern
+         *  ({@code DrlPropertyWitnessTest}). */
         private String fieldName(Class<?> javaClass, String property, String name) {
             if (!isBean(javaClass)) return property;
-            String drl = Namen.lidnamen(property).drlProperty();
-            if (drl == null) throw new Refusal(DroolsCode.DRL_MEMBER_NO_PROPERTY.reason("category", DroolsCode.DRL_MEMBER_NO_PROPERTY.part("member", "member", str(name))));
-            return drl;
+            Namen.Lidnamen n = Namen.lidnamen(property);
+            if (n.drlProperty() != null) return n.drlProperty();
+            for (String getter : List.of(n.getter(), n.isGetter()))
+                try {
+                    javaClass.getMethod(getter);
+                    return getter + "()";
+                } catch (NoSuchMethodException e) {
+                    // the other form of the getter
+                }
+            throw new IllegalStateException("het lid " + str(name) + " heeft geen getter " + n.getter() + " of "
+                    + n.isGetter() + " op " + javaClass.getName());
         }
 
         /** {@code read} read as {@code form}, through its route. */

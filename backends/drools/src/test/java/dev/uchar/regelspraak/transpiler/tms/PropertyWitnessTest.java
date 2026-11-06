@@ -301,24 +301,24 @@ class PropertyWitnessTest {
                     caseFileName);
     }
 
-    /** Names whose property is no Java identifier: a digit first ("3 M", "3e lid") or a character that is no
-     *  identifier character ({@code ²}, decision 24). The generator writes the property as the field, so the bean source
-     *  does not compile, before any reader or writer comes into play: an older limit of the generator, not of this card
-     *  (decision 27), and no member a document can have yet. */
-    private static final List<String> NO_JAVA_NAME = List.of("3 M", "3e lid", "m²");
+    /** Names that give no Java identifier as they are written: a digit first ("3 M", "3e lid"), a number sign that is
+     *  no identifier character ({@code ²}, decision 24), and a word of Java ("final"). Until card
+     *  beanlidnamen-zonder-java-identifier the generator wrote the property as the field and the bean source did not
+     *  compile (measured on {@code c00897a3}, fix round 2a, point 3). */
+    private static final List<String> NO_JAVA_NAME = List.of("3 M", "3e lid", "m²", "final");
 
-    /** The build of a document with such a member fails loudly on the bean source, and the compiler's report quotes
-     *  the field ("private java.math.BigDecimal 3M;"). Measured on {@code c00897a3} (fix round 2a, point 3). */
-    @Test void a_member_without_a_java_name_fails_loudly_at_the_bean_source() throws Exception {
+    /** The build of a document with such a member compiles its bean, whose getter and setter are those of
+     *  {@link Namen#lidnamen} of the property: {@code getX3M}, {@code getX3eLid}, {@code getM2}, {@code getFinal}. */
+    @Test void a_member_without_a_java_name_as_written_gets_one() throws Exception {
         for (String name : NO_JAVA_NAME) {
             Path ir = Files.createTempFile("geen-javanaam", ".json");
             try {
                 Files.writeString(ir, trialDocument(List.of(name)));
-                IllegalStateException f = assertThrows(IllegalStateException.class,
-                        () -> DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL), name);
-                assertTrue(f.getMessage().startsWith("gegenereerde fact-beans compileren niet:\n"), f::getMessage);
-                assertTrue(f.getMessage().contains("private java.math.BigDecimal " + Namen.property(name) + ";"),
-                        f::getMessage);
+                DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
+                Class<?> bean = Class.forName(FactModelGenerator.PACKAGE + ".Proef", true, b.beanLoader());
+                Namen.Lidnamen n = Namen.lidnamen(Namen.property(name));
+                assertEquals(java.math.BigDecimal.class, bean.getMethod(n.getter()).getReturnType(), name);
+                bean.getMethod(n.setter(), java.math.BigDecimal.class);
             } finally {
                 Files.delete(ir);
             }

@@ -9,24 +9,55 @@ package dev.uchar.regelspraak.transpiler.core;
 public final class Namen {
     private Namen() {}
 
-    /** A RegelSpraak name → a Java identifier: split on non-letter/digit runs, then camel-
-     *  (upperFirst=false) or Pascal-case (true) the words. NO lidwoord stripping: the resolver already
-     *  delivers declared names bare, and a kenmerk whose name deliberately CARRIES an article ("de oudste
-     *  jutter") must bind its full name, not collide with a shorter sibling. A word written ALL-CAPS (a
-     *  shouted parameter, "STANDAARD TERMIJN") is title-cased FIRST — without that the camel form of the
-     *  first word reads "sTANDAARD…". An empty result is "x". A camel result CAN equal a Java
-     *  keyword ("final") — reconciling that is the fact-model generator's contract (the explicit fact-model contract), which must move
-     *  BOTH back-ends at once; a one-sided suffix here would diverge from the runtime's pascal-based reads. */
+    /** A RegelSpraak name → a Java identifier: split into its words, the runs of letters and numbers a Java identifier
+     *  holds, then camel- (upperFirst=false) or Pascal-case (true) the words. A number sign no identifier holds counts as
+     *  its compatibility form ("m²" is "m2", "½" is "1⁄2"), and every other character separates two words. A result that
+     *  begins with a digit ("3e lid") gets an {@code x} or {@code X} in front, so that {@code ident} of the result gives
+     *  the same Pascal form again, which the runtime's reflective bridge reads. NO lidwoord stripping: the resolver
+     *  already delivers declared names bare, and a kenmerk whose name deliberately CARRIES an article ("de oudste
+     *  jutter") must bind its full name, not collide with a shorter sibling. A word written ALL-CAPS (a shouted
+     *  parameter, "STANDAARD TERMIJN") is title-cased FIRST — without that the camel form of the first word reads
+     *  "sTANDAARD…". An empty result is "x". A camel result CAN equal a word of Java ("final"): the fact-model generator
+     *  then writes the field under another name ({@code FactModelGenerator.generate}) and keeps the getter and the
+     *  setter of the property. Not injective ("premie som" and "premie-som"): the bean model refuses two members on one
+     *  property by name. */
     public static String ident(String name, boolean upperFirst) {
         StringBuilder b = new StringBuilder();
-        for (String d : name.trim().split("[^\\p{L}\\p{N}]+")) {
-            if (d.isEmpty()) continue;
+        for (String d : words(name)) {
             if (isShout(d)) d = d.charAt(0) + d.substring(1).toLowerCase();
             boolean head = upperFirst || b.length() > 0;
             b.append(head ? Character.toUpperCase(d.charAt(0)) : Character.toLowerCase(d.charAt(0)))
              .append(d.substring(1));
         }
-        return b.isEmpty() ? "x" : b.toString();
+        if (b.isEmpty()) return "x";
+        if (!Character.isJavaIdentifierStart(b.codePointAt(0))) b.insert(0, upperFirst ? 'X' : 'x');
+        return b.toString();
+    }
+
+    /** The words of {@code name} for {@link #ident}: its maximal runs of letters and numbers that a Java identifier
+     *  holds, a number of the category {@code No} taken in its compatibility form. */
+    private static java.util.List<String> words(String name) {
+        StringBuilder text = new StringBuilder();
+        name.codePoints().forEach(c -> text.append(Character.getType(c) == Character.OTHER_NUMBER
+                ? java.text.Normalizer.normalize(Character.toString(c), java.text.Normalizer.Form.NFKC)
+                : Character.toString(c)));
+        java.util.List<String> out = new java.util.ArrayList<>();
+        StringBuilder word = new StringBuilder();
+        text.codePoints().forEach(c -> {
+            if ((Character.isLetter(c) || isNumber(c)) && Character.isJavaIdentifierPart(c)) word.appendCodePoint(c);
+            else if (!word.isEmpty()) {
+                out.add(word.toString());
+                word.setLength(0);
+            }
+        });
+        if (!word.isEmpty()) out.add(word.toString());
+        return out;
+    }
+
+    /** Whether {@code c} is of a category of {@code \p{N}}. */
+    private static boolean isNumber(int c) {
+        int type = Character.getType(c);
+        return type == Character.DECIMAL_DIGIT_NUMBER || type == Character.LETTER_NUMBER || type == Character.OTHER_NUMBER;
     }
 
     /** An ALL-CAPS word of length > 1 (at least one letter, no lowercase letters). */
@@ -68,7 +99,9 @@ public final class Namen {
      *  names: the words of DRL and of MVEL, the implicit variables of a consequence, and plain names). As the left side
      *  of a constraint these fail to compile, or, for {@code drools}, {@code kcontext} and {@code nil}, compile and
      *  read something else, so that the constraint never holds. Every other name the measurement read as the member
-     *  in each place, also where a global of the text has the same name. */
+     *  in each place, also where a global of the text has the same name; a word of Java it could not measure, since no
+     *  bean compiled with such a field, and the helper withholds those as well. A text reads a member without a DRL
+     *  name through its getter ({@code DrlRendering}), which the measurement read as the member in every place. */
     private static final java.util.Set<String> NO_DRL_PROPERTY = java.util.Set.of("and", "contains", "def",
             "drools", "empty", "foreach", "function", "in", "is", "isdef", "kcontext", "nil", "or", "soundslike",
             "strsim", "until", "var", "with");
@@ -88,7 +121,9 @@ public final class Namen {
         // Drools names a getter's property by the stem with its first letter in lower case, which is not always the
         // property the stem came from: ışık gives the stem Işık, which Drools reads as işık and not as ışık (measured)
         String drl = Character.toLowerCase(stam.charAt(0)) + stam.substring(1);
-        return new Lidnamen("get" + stam, "is" + stam, "set" + stam, NO_DRL_PROPERTY.contains(drl) ? null : drl);
+        // a word of Java is no name an expression of the text can spell as a property either
+        boolean read = !NO_DRL_PROPERTY.contains(drl) && !javax.lang.model.SourceVersion.isKeyword(drl);
+        return new Lidnamen("get" + stam, "is" + stam, "set" + stam, read ? drl : null);
     }
 
     /** A §9.3 regelnaam spliced inside DRL double quotes: {@code \} and {@code "} would end the string (or

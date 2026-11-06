@@ -353,6 +353,7 @@ DROOLS-315	the allocation "{allocation}" names in its field {field} the time-dep
 DROOLS-316	{form} on the time-dependent attribute '{attribute}' of {declarant} is neither the period arithmetic of ch. 3.4 and 3.5 nor the constructor of a literal ('{snippet}'): this branch writes it per day only as one of those (RUNTIME-SEMANTICS ch. 3.12 row 10, 7.8)
 DROOLS-316.initialisation	the value of an initialisation
 DROOLS-316.member	the member value of an object creation
+DROOLS-317	the bean model does not carry the bean property {property} of {objectType}: its getter {getter} is a method of java.lang.Object, which no bean can declare again
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-004	input {place} = {value} does not fit {decimals} decimals: a case value whose exact value its declaration cannot hold is refused at the input (RUNTIME-SEMANTICS ch. 2.4, 5.7)

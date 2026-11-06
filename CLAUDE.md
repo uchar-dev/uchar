@@ -555,7 +555,8 @@ missing line makes `make gates` exit non-zero. Current gates:
     `timeline-initialisation-allocation-creation` (2026-11-05) DROOLS-118, since the card
     `absence-markers` (2026-11-04) DROOLS-010, DROOLS-012 and DROOLS-313, since the card
     `creatie-zonder-binding-via-supertype` (2026-11-06) DROOLS-148, since the card
-    `caselezer-zoals-ref` (2026-11-06) DROOLS-045 and DROOLS-046; every raised code
+    `caselezer-zoals-ref` (2026-11-06) DROOLS-045 and DROOLS-046, since the card
+    `beanlidnamen-zonder-java-identifier` (2026-11-06) DROOLS-058; every raised code
     registered, numbers without gap, keys unique, every `ef` a row of
     RUNTIME-SEMANTICS ch. 5.7b) and carries
     `EXPECTED_MIN_DROOLS_CODES=289`. Since the card `message-catalogues`

@@ -1,0 +1,40 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "m²": {
+            "number": "12.50"
+          },
+          "final": {
+            "number": "0"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "is"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "in",
+      "value": {
+        "number": "12.50"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "3e lid"
+    }
+  ]
+}

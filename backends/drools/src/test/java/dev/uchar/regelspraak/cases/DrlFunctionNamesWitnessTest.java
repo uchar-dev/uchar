@@ -58,8 +58,8 @@ class DrlFunctionNamesWitnessTest {
 
     /** The rules of {@link #ruleParts}: per rule its name and the names of its functions. */
     private static final List<String[]> RULES = List.of(
-            // an ident that begins with a digit: the kind comes first, so the name begins with a letter
-            new String[] {"2 jarige termijn", "toets_2JarigeTermijn"},
+            // an ident that begins with a digit, which Namen.ident gives an x in front
+            new String[] {"2 jarige termijn", "toets_x2JarigeTermijn"},
             // no letter and no digit: Namen.ident gives x
             new String[] {"— § —", "toets_x"},
             // two rules with functions of one ident, numbered after it in the order of the plan; a rule without
@@ -70,9 +70,9 @@ class DrlFunctionNamesWitnessTest {
             new String[] {"beëindiging", "toets_beëindiging"},
             // a letter outside the Basic Multilingual Plane, which the DRL lexer does not read in a name
             new String[] {"penninggerechtigd 𝔘", "toets_penninggerechtigd"},
-            // a digit that is no Java identifier part (U+00B2) and a letter of Unicode 4.1 (U+0237), which the DRL
-            // lexer, whose table of names is that of Java 5, does not read
-            new String[] {"artikel 2² en ȷ", "toets_artikel2En"});
+            // a digit that is no Java identifier part (U+00B2), which Namen.ident takes in its compatibility form 2, and a
+            // letter of Unicode 4.1 (U+0237), which the DRL lexer, whose table of names is that of Java 5, does not read
+            new String[] {"artikel 2² en ȷ", "toets_artikel22En"});
 
     /** The document of {@link #RULES}: per rule "Een Jutter is doelN indien hij lid is", the rule without functions
      *  without a condition. */

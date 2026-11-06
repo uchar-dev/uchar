@@ -887,12 +887,12 @@ public final class FactModelGenerator {
              .append(" {\n");
             List<Member> members = members(model, ot);
             for (Member l : members)
-                b.append("    private ").append(l.javaType()).append(' ').append(l.property()).append(";\n");
+                b.append("    private ").append(l.javaType()).append(' ').append(field(l.property())).append(";\n");
             b.append('\n');
             for (Member l : members) {
                 // the names every reader and writer of the member takes from the same helper
-                String p = l.property();
-                Namen.Lidnamen n = Namen.lidnamen(p);
+                String p = field(l.property());
+                Namen.Lidnamen n = Namen.lidnamen(l.property());
                 b.append("    public ").append(l.javaType()).append(' ').append(l.isForm() ? n.isGetter() : n.getter())
                  .append("() { return ").append(p).append("; }\n")
                  .append("    public void ").append(n.setter()).append('(').append(l.javaType()).append(" v) { this.")
@@ -904,6 +904,29 @@ public final class FactModelGenerator {
         out.put("Segment", SEGMENT_SOURCE);
         out.put("Inconsistentie", INCONSISTENCY_SOURCE);
         return out;
+    }
+
+    /** The field of the bean property {@code property}: the property itself, and a word of Java with an underscore after
+     *  it ({@code final_}), which no property is, since {@link Namen#ident} keeps no underscore. Every reader and writer
+     *  goes through the getter and the setter, which keep the property. */
+    private static String field(String property) {
+        return javax.lang.model.SourceVersion.isKeyword(property) ? property + "_" : property;
+    }
+
+    /** Why a member of {@code model} gets no getter of its own on its bean, or null where every member gets one: a
+     *  getter that {@code java.lang.Object} declares, {@code getClass} for a member whose property is {@code class},
+     *  which no class can declare again. */
+    public static Reason objectGetter(RegelSpraakModel model) {
+        for (ObjectType ot : model.objectTypes.values())
+            for (Member m : members(model, ot)) {
+                Namen.Lidnamen n = Namen.lidnamen(m.property());
+                String getter = m.isForm() ? n.isGetter() : n.getter();
+                for (java.lang.reflect.Method o : Object.class.getMethods())
+                    if (o.getName().equals(getter) && o.getParameterCount() == 0)
+                        return DroolsCode.BEAN_GETTER_OF_OBJECT.reason("property", m.property(), "objectType", ot.name,
+                                "getter", getter);
+            }
+        return null;
     }
 
     private static final String SEGMENT_SOURCE = """
