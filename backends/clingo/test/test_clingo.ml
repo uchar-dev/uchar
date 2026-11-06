@@ -2122,9 +2122,7 @@ let () =
       (set_fold_doc ~kind:"maximum" ~operand_ot:"Vondst" ~rate_unit:(eur mnd_unit)
          ~objective_unit:(eur mnd_unit))
     ~case_text:(set_fold_case ~v1:v1_timeline)
-    ~needle:
-      "a ranking fold (minimum/maximum/first/last) over the temporal attribute \
-       \"bewaartarief\" of a set has no defined moment to fold";
+    ~needle:"the maximum over the temporal attribute \"bewaartarief\" has no defined moment to rank at";
   (* the horizon rule on this frame too: one member with an asOfDate-bucket
      scalar instead of a timeline, refused BY NAME — ref's own convention *)
   faults_at_solving ~name:"§7.1 horizon rule: a member with an asOfDate-bucket scalar (by name)"
@@ -6452,17 +6450,13 @@ let () =
       (set_fold_doc ~kind:"first" ~operand_ot:"Vondst" ~rate_unit:(eur mnd_unit)
          ~objective_unit:(eur mnd_unit))
     ~case_text:(set_fold_case ~v1:v1_timeline)
-    ~needle:
-      "a ranking fold (minimum/maximum/first/last) over the temporal attribute \
-       \"bewaartarief\" of a set has no defined moment to fold";
+    ~needle:"the first over the temporal attribute \"bewaartarief\" has no defined moment to rank at";
   faults_with ~name:"ch3.6 LAATSTE over a temporal set source stays refused"
     ~ir:
       (set_fold_doc ~kind:"last" ~operand_ot:"Vondst" ~rate_unit:(eur mnd_unit)
          ~objective_unit:(eur mnd_unit))
     ~case_text:(set_fold_case ~v1:v1_timeline)
-    ~needle:
-      "a ranking fold (minimum/maximum/first/last) over the temporal attribute \
-       \"bewaartarief\" of a set has no defined moment to fold"
+    ~needle:"the last over the temporal attribute \"bewaartarief\" has no defined moment to rank at"
 
 (* --- de DATUM-setbron splijt op ORDENEN tegen OPTELLEN (kaart
    datum-setbron-breuk, 2026-09-20) ---------------------------------------
@@ -16815,6 +16809,68 @@ let () =
       faults_at_solving ~code:("CLINGO-039", []) ~name ~ir ~case_text ~needle:"non-exact division in a condition" ())
     [ ("a member after the stop of the fold", {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"P1","objectType":"Ploeg","attributes":{},"roles":{"wachten":["W1","W2"]},"characteristics":[]},{"label":"W1","objectType":"Strandwacht","attributes":{"keurpunten":{"number":"70"},"keuringen":{"number":"10"}},"roles":{},"characteristics":[]},{"label":"W2","objectType":"Strandwacht","attributes":{"keurpunten":{"number":"13"},"keuringen":{"number":"2"}},"roles":{},"characteristics":["gekeurd"]}],"parameters":{}},"expected":[{"kind":"characteristicAbsent","label":"P1","characteristic":"inzetbaar"}]}|});
       ("a member the fold reaches", {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"P2","objectType":"Ploeg","attributes":{},"roles":{"wachten":["W3","W4"]},"characteristics":[]},{"label":"W3","objectType":"Strandwacht","attributes":{"keurpunten":{"number":"70"},"keuringen":{"number":"10"}},"roles":{},"characteristics":["gekeurd"]},{"label":"W4","objectType":"Strandwacht","attributes":{"keurpunten":{"number":"13"},"keuringen":{"number":"2"}},"roles":{},"characteristics":["gekeurd"]}],"parameters":{}},"expected":[{"kind":"characteristicPresent","label":"P2","characteristic":"inzetbaar"}]}|}) ]
+
+(* A RANKING FOLD OVER A TIMELINE (card clingo-vouw-bodemzinnen, 2026-11-06).
+   Minimum, maximum, eerste and laatste have no defined moment to rank a
+   timeline at (RUNTIME-SEMANTICS ch. 3.4c, 3.6, 3.12 row 4: only the sum and
+   the total collapse one), so every executor refuses them by name, the fold
+   named with the attribute (ch. 3.4c). Three positions, each fold: over the
+   temporal attribute of the members of a set into a scalar target and into a
+   timeline target, and listed over two own timelines into a timeline target.
+   Until this card ref refused the first with REF-005, the bottom arm of its
+   dispatch, and the other two with its generic sentence for a temporal
+   target, and this backend the first without a code and the other two with
+   CLINGO-024, the bottom arm of its own. Now ref says REF-013 and this
+   backend CLINGO-040, both with the parameters fold and attribute. No red
+   case can hold it: gate 8 pins an EF code, and the form has none. *)
+let () =
+  let number_value = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}|} in
+  let monthly = {|, "timeline": {"node": "TimelineFacet", "granularity": "month", "count": 1}|} in
+  let read one_member type_name =
+    Printf.sprintf {|{"node": "AttributeReference", "attribute": "%s", "subjectType": "%s", "source": {"snippet": "de %s"}}|}
+      one_member type_name one_member
+  in
+  (* a fold over the vondsten of the Jutter, or listed over two of its own timelines *)
+  let over_the_set kind =
+    Printf.sprintf
+      {|{"node": "Aggregation", "kind": "%s", "arguments": [%s], "elementType": "Vondst", "sourceRole": {"node": "RoleBinding", "factType": "aanmelding", "role": "vondst"}, "type": %s, "source": {"snippet": "de %s opbrengst van alle vondsten"}}|}
+      kind (read "opbrengst" "Vondst") number_value kind
+  and listed kind =
+    Printf.sprintf
+      {|{"node": "Aggregation", "kind": "%s", "arguments": [%s, %s], "elementType": "Jutter", "type": %s, "source": {"snippet": "de %s van zijn strandloon en zijn stormtoeslag"}}|}
+      kind (read "strandloon" "Jutter") (read "stormtoeslag" "Jutter") number_value kind
+  in
+  let doc ~timeline_target value_node =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters", "attributes": [{"node": "Attribute", "name": "strandloon", "datatype": %s%s}, {"node": "Attribute", "name": "stormtoeslag", "datatype": %s%s}, {"node": "Attribute", "name": "uitkomst", "datatype": %s%s}], "characteristics": []}, {"node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten", "attributes": [{"node": "Attribute", "name": "opbrengst", "datatype": %s%s}], "characteristics": []}], "factTypes": [{"node": "FactType", "name": "aanmelding", "reciprocal": false, "roles": [{"node": "Role", "name": "aanmeldende jutter", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "vondst", "objectType": "Vondst", "plural": "vondsten", "many": true}]}], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [{"node": "Rule", "name": "uitkomst van een jutter", "versions": [{"validity": {"node": "Validity"}, "target": %s, "value": %s, "initialisation": false, "presentation": "calculation"}]}], "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": []}, "diagnostics": []}|}
+      number_value monthly number_value monthly number_value
+      (if timeline_target then monthly else "")
+      number_value monthly (read "uitkomst" "Jutter") value_node
+  in
+  let case_text =
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "J1", "objectType": "Jutter", "attributes": {"strandloon": {"timeline": [{"from": "2024-01-01", "to": "2024-07-01", "value": {"number": "100"}}]}, "stormtoeslag": {"timeline": [{"from": "2024-04-01", "to": "2024-10-01", "value": {"number": "30"}}]}}, "roles": {"vondsten": ["V1"]}, "characteristics": []}, {"label": "V1", "objectType": "Vondst", "attributes": {"opbrengst": {"timeline": [{"from": "2024-01-01", "to": "2024-02-01", "value": {"number": "50"}}]}}, "roles": {}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "attributeEmpty", "label": "J1", "attribute": "uitkomst"}]}|}
+  in
+  let forms =
+    List.concat_map
+      (fun kind ->
+        [ (kind ^ " over the set, a scalar target", doc ~timeline_target:false (over_the_set kind), "opbrengst");
+          (kind ^ " over the set, a timeline target", doc ~timeline_target:true (over_the_set kind), "opbrengst");
+          (kind ^ " of two timelines, a timeline target", doc ~timeline_target:true (listed kind), "strandloon") ])
+      [ "minimum"; "maximum"; "first"; "last" ]
+  in
+  List.iter
+    (fun (variant, ir, attribute) ->
+      let fold = List.hd (String.split_on_char ' ' variant) in
+      let name = "ch3.12 a ranking fold over a timeline, " ^ variant in
+      verifier_clean ~name ~ir;
+      let doc, case = load_pair ~ir ~case_text in
+      match translate doc case with
+      | (_ : string) -> check (name ^ ": expected a refusal, got a program") false
+      | exception Uchar_ref.Value.Fault { code; params; text } ->
+          check
+            (name ^ ": CLINGO-040 with fold and attribute (" ^ Uchar_ref.Value.report ~code text ^ ")")
+            (code = Some "CLINGO-040" && params = [ ("fold", fold); ("attribute", attribute) ]))
+    forms
 
 (* CLINGO-030: A PROGRAM WITHOUT EXACTLY ONE STABLE MODEL (found by Fable,
    2026-10-22, on a document the verifier rejects with WF-045). clingo was

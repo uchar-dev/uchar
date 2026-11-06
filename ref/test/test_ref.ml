@@ -5812,7 +5812,65 @@ let () =
     (fun () ->
       Eval.eval_expr env_t w (World.get w "J1") ~err:no_err
         (fold_node Minimum [ set_source "vergoeding" ] None None))
-    "has no defined moment to fold"
+    "the minimum over the temporal attribute \"vergoeding\" has no defined moment to rank at"
+
+(* A RANKING FOLD OVER A TIMELINE (card clingo-vouw-bodemzinnen, 2026-11-06).
+   Minimum, maximum, eerste and laatste have no defined moment to rank a
+   timeline at (RUNTIME-SEMANTICS ch. 3.4c, 3.6, 3.12 row 4: only the sum and
+   the total collapse one), so every executor refuses them by name, the fold
+   named with the attribute (ch. 3.4c). Three positions, each fold: over the
+   temporal attribute of the members of a set into a scalar target and into a
+   timeline target, and listed over two own timelines into a timeline target.
+   Until this card the reference interpreter refused the first with REF-005,
+   the bottom arm of its dispatch, and the other two with its generic
+   sentence for a temporal target; now REF-013, with the parameters fold and
+   attribute. The ASP backend's suite pins CLINGO-040 on the same forms. *)
+let () =
+  let number_value = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}|} in
+  let monthly = {|, "timeline": {"node": "TimelineFacet", "granularity": "month", "count": 1}|} in
+  let read one_member type_name =
+    Printf.sprintf {|{"node": "AttributeReference", "attribute": "%s", "subjectType": "%s", "source": {"snippet": "de %s"}}|}
+      one_member type_name one_member
+  in
+  (* a fold over the vondsten of the Jutter, or listed over two of its own timelines *)
+  let over_the_set kind =
+    Printf.sprintf
+      {|{"node": "Aggregation", "kind": "%s", "arguments": [%s], "elementType": "Vondst", "sourceRole": {"node": "RoleBinding", "factType": "aanmelding", "role": "vondst"}, "type": %s, "source": {"snippet": "de %s opbrengst van alle vondsten"}}|}
+      kind (read "opbrengst" "Vondst") number_value kind
+  and listed kind =
+    Printf.sprintf
+      {|{"node": "Aggregation", "kind": "%s", "arguments": [%s, %s], "elementType": "Jutter", "type": %s, "source": {"snippet": "de %s van zijn strandloon en zijn stormtoeslag"}}|}
+      kind (read "strandloon" "Jutter") (read "stormtoeslag" "Jutter") number_value kind
+  in
+  let doc ~timeline_target value_node =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters", "attributes": [{"node": "Attribute", "name": "strandloon", "datatype": %s%s}, {"node": "Attribute", "name": "stormtoeslag", "datatype": %s%s}, {"node": "Attribute", "name": "uitkomst", "datatype": %s%s}], "characteristics": []}, {"node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten", "attributes": [{"node": "Attribute", "name": "opbrengst", "datatype": %s%s}], "characteristics": []}], "factTypes": [{"node": "FactType", "name": "aanmelding", "reciprocal": false, "roles": [{"node": "Role", "name": "aanmeldende jutter", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "vondst", "objectType": "Vondst", "plural": "vondsten", "many": true}]}], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [{"node": "Rule", "name": "uitkomst van een jutter", "versions": [{"validity": {"node": "Validity"}, "target": %s, "value": %s, "initialisation": false, "presentation": "calculation"}]}], "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": []}, "diagnostics": []}|}
+      number_value monthly number_value monthly number_value
+      (if timeline_target then monthly else "")
+      number_value monthly (read "uitkomst" "Jutter") value_node
+  in
+  let case_text =
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "J1", "objectType": "Jutter", "attributes": {"strandloon": {"timeline": [{"from": "2024-01-01", "to": "2024-07-01", "value": {"number": "100"}}]}, "stormtoeslag": {"timeline": [{"from": "2024-04-01", "to": "2024-10-01", "value": {"number": "30"}}]}}, "roles": {"vondsten": ["V1"]}, "characteristics": []}, {"label": "V1", "objectType": "Vondst", "attributes": {"opbrengst": {"timeline": [{"from": "2024-01-01", "to": "2024-02-01", "value": {"number": "50"}}]}}, "roles": {}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "attributeEmpty", "label": "J1", "attribute": "uitkomst"}]}|}
+  in
+  let forms =
+    List.concat_map
+      (fun kind ->
+        [ (kind ^ " over the set, a scalar target", doc ~timeline_target:false (over_the_set kind), "opbrengst");
+          (kind ^ " over the set, a timeline target", doc ~timeline_target:true (over_the_set kind), "opbrengst");
+          (kind ^ " of two timelines, a timeline target", doc ~timeline_target:true (listed kind), "strandloon") ])
+      [ "minimum"; "maximum"; "first"; "last" ]
+  in
+  List.iter
+    (fun (variant, ir, attribute) ->
+      let fold = List.hd (String.split_on_char ' ' variant) in
+      let name = "WV-3.12-rangvouw-over-een-tijdlijn, " ^ variant in
+      match write_boundary_session ir case_text with
+      | Error (code, params, text) ->
+          check
+            (name ^ " (" ^ Value.report ~code text ^ ")")
+            (code = Some "REF-013" && params = [ ("fold", fold); ("attribute", attribute) ])
+      | Ok _ -> check (name ^ " (no fault at all)") false)
+    forms
 
 (* WV-3.4d: the INSTANCE-SET UNION — the §5.7 concatenation of subject
    expressions as the source of an instance count (ch. 3.4d, wire form and

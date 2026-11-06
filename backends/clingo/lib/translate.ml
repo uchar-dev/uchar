@@ -1363,6 +1363,41 @@ let binder_type ctx (value : expr) : datatype option =
 
 let attr_temporal ctx ~otype ~attr = Ir_v0.Checks.attr_temporal (object_type ctx otype) attr
 
+(* ch. 3.4c, 3.6, 3.12: a ranking fold (minimum, maximum, eerste, laatste)
+   over a timeline has no defined moment to rank at, since only the sum and
+   the total collapse a timeline; ref refuses it by name (REF-013), and this
+   backend refuses it in step instead of ranking the asOfDate buckets, the
+   fold named with it *)
+let refuse_ranking_fold (kind : function_kind) attribute =
+  let fold =
+    match kind with
+    | Minimum -> "minimum"
+    | Maximum -> "maximum"
+    | First -> "first"
+    | Last -> "last"
+    | _ -> invalid_arg "backends/clingo/lib/translate.ml, refuse_ranking_fold: not a ranking fold"
+  in
+  faultc
+    ~params:[ ("fold", fold); ("attribute", attribute) ]
+    "CLINGO-040"
+    "the %s over the temporal attribute %S has no defined moment to rank at (ch. 3.4c, 3.6, 3.12): only the \
+     sum and the total collapse a timeline, and a ranking fold over a timeline is refused"
+    fold attribute
+
+(* the ranking fold of [e] and the first temporal attribute it ranks: a
+   member's of a fold over a set, or an operand of a listed fold *)
+let ranked_timeline ctx (e : expr) =
+  match e with
+  | Function_call { kind = (Minimum | Maximum | First | Last) as kind; call_arguments; _ } ->
+      List.find_map
+        (function
+          | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ }
+            when attr_temporal ctx ~otype:ot ~attr:a ->
+              Some (kind, a)
+          | _ -> None)
+        call_arguments
+  | _ -> None
+
 (* the CHARACTERISTIC side of the same question, and this backend's own —
    deliberately not borrowed from `ref`. A characteristic target declares its
    timeline in `characteristic_granularity`, a different table from the
@@ -5880,20 +5915,11 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          ref refuses the form outright (ch. 3.6: only sum and total carry
          the per-element timeline fold). This arm would rank the asOfDate
          buckets instead — an answer where the other executor refuses.
-         Refuse in step. The guard hangs on [el], the anchor
-         ([fold_operand_otype]), where the som/totaal arm above and the
-         temporal-totaal refusal arm below hang theirs too. This is the one
-         temporal set fold that is refused, because ref refuses it. ref's guard names the
-         four ranking kinds as one ("this aggregation over the temporal
-         attribute … has no defined moment to fold"), so eerste/laatste
-         inherit the refusal on the same ground rather than by a second
-         rule. *)
-      if attr_temporal ctx ~otype:el ~attr:a then
-        fault
-          "a ranking fold (minimum/maximum/first/last) over the temporal attribute %S of a \
-           set has no defined moment to fold (ch. 3.6); ref refuses the form, so this arm must \
-           not answer from the asOfDate buckets"
-          a;
+         Refuse in step, the fold named ([refuse_ranking_fold]). The guard
+         hangs on [el], the anchor ([fold_operand_otype]), where the
+         som/totaal arm above and the temporal-totaal refusal arm below hang
+         theirs too. *)
+      if attr_temporal ctx ~otype:el ~attr:a then refuse_ranking_fold kind a;
       let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None } in
       let v = fresh ctx "M" in
       let g = fresh ctx "G" and x = fresh ctx "X" in
@@ -12634,11 +12660,14 @@ let translate_rule ctx (r : resolved_rule) =
                          corpus case for more")
               | Some v when Eval.is_period_arithmetic v ->
                   ignore (translate_period_arithmetic ?periods ?writer ~cond ctx ~subject ~ot ~a v)
-              | _ ->
-                  faultc "CLINGO-024"
-                    "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count \
-                     shape (a gedurende condition over an own temporal characteristic) or the \
-                     period arithmetic of ch. 3.4/3.5; no corpus case for more")
+              | value -> (
+                  match Option.bind value (ranked_timeline ctx) with
+                  | Some (kind, ranked) -> refuse_ranking_fold kind ranked
+                  | None ->
+                      faultc "CLINGO-024"
+                        "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count \
+                         shape (a gedurende condition over an own temporal characteristic) or the \
+                         period arithmetic of ch. 3.4/3.5; no corpus case for more"))
           | Some (Calculation | Equation) ->
               let target_scale = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
               units_identical_ok

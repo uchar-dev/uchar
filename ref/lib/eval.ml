@@ -221,6 +221,40 @@ let object_type env name =
   | Some ot -> ot
   | None -> Value.fault "unknown object type %S" name
 
+(* ch. 3.4c, 3.6, 3.12: a ranking fold (minimum, maximum, eerste, laatste)
+   over a timeline has no defined moment to rank at, since only the sum and
+   the total collapse a timeline; it is refused by name, the fold named with
+   it (ch. 3.4c: one sentence for five constructs would identify none) *)
+let refuse_ranking_fold (kind : function_kind) attribute =
+  let fold =
+    match kind with
+    | Minimum -> "minimum"
+    | Maximum -> "maximum"
+    | First -> "first"
+    | Last -> "last"
+    | _ -> invalid_arg "ref/lib/eval.ml, refuse_ranking_fold: not a ranking fold"
+  in
+  Value.faultc
+    ~params:[ ("fold", fold); ("attribute", attribute) ]
+    "REF-013"
+    "the %s over the temporal attribute %S has no defined moment to rank at (ch. 3.4c, 3.6, 3.12): only the \
+     sum and the total collapse a timeline, and a ranking fold over a timeline is refused"
+    fold attribute
+
+(* the ranking fold of [e] and the first temporal attribute it ranks: a
+   member's of a fold over a set, or an operand of a listed fold *)
+let ranked_timeline env (e : expr) =
+  match e with
+  | Function_call { kind = (Minimum | Maximum | First | Last) as kind; call_arguments; _ } ->
+      List.find_map
+        (function
+          | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ }
+            when Ir_v0.Checks.attr_temporal (object_type env ot) a ->
+              Some (kind, a)
+          | _ -> None)
+        call_arguments
+  | _ -> None
+
 (* S ⊑ T. Reflexive, so it stands wherever two declared type names would
    otherwise be compared for equality. *)
 let isa env sub super = Ir_v0.Checks.subtype_of env.doc ~sub ~super
@@ -2266,6 +2300,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
                  instant, and only sum and total define the per-element collapse that would \
                  supply one"
                 name
+          | (Minimum | Maximum | First | Last) as kind -> refuse_ranking_fold kind name
           | _ ->
               Value.faultc ~params:[ ("attribute", name) ] "REF-005"
                 "this aggregation over the temporal attribute %S of a set has no defined moment \
@@ -4026,10 +4061,11 @@ let run_rule ?only env world (r : resolved_rule) =
               match Option.map Ir_v0.Checks.let_bound_value r.value_node with
               | Some (Function_call { kind = Time_proportional_part | Day_count; _ }) -> ()
               | Some v when is_period_arithmetic v -> ()
-              | _ ->
-                  Value.fault
-                    "temporal attribute %S as a target: temporal writes are not implemented"
-                    attr);
+              | value -> (
+                  match Option.bind value (ranked_timeline env) with
+                  | Some (kind, ranked) -> refuse_ranking_fold kind ranked
+                  | None ->
+                      Value.fault "temporal attribute %S as a target: temporal writes are not implemented" attr));
         (* a condition that reads a timeline or holds a period window is read
            per period on a timeline target: the rule writes where it holds
            (ch. 3.10's clip generalised, spec/proposals/IMPLICIT-TIME.md points

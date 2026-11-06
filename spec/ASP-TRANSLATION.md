@@ -1271,7 +1271,10 @@ the same ordering fold over the contributed VALUES — ch. 1.2e, and
 the normative source reads earliest/latest of the values — so over day
 numbers eerste is `#min` and laatste `#max`, with the same
 empty-skip, the same presence guard and the same temporal refusal (the
-four kinds refuse as one ranking class). Witnessed by
+four kinds refuse as one ranking class, by name with the fold and the
+attribute, CLINGO-040, as ref does with REF-013; a ranking fold over a
+timeline into a timeline target, of a set or listed, is refused by the
+same name). Witnessed by
 `jutterswet-vondstvenster`, whose member-order-reversed case falsifies
 a positional pick in both directions. Unlike the listed eerste/laatste
 fold there is one attribute, one scale, one unit — no harmonisation.
