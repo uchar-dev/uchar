@@ -9640,9 +9640,8 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
 
              The empty contributor set is clingo's own 0, so no arm is
              needed for it: at-least and exactly fail on it, at-most holds.
-             Stratification is the witness route's argument unchanged — the
-             helper is named after a counter that only grows, over a matrix
-             translated before the name existed. *)
+             Stratification holds where the witness route's holds, and for
+             the same reasons (below). *)
           ctx.fresh <- ctx.fresh + 1;
           let p = Printf.sprintf "kvc%d" ctx.fresh in
           let h = fresh ctx "H" in
@@ -9678,12 +9677,24 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
                own subject (a negated characteristic read binds nothing), and
                it is the same atom [source_join] closes the range with.
 
-               Stratification holds by CONSTRUCTION, the counting composite's
-               argument above: the helper is named after a counter that only
-               grows, and the matrix inside it is a strict subterm translated
-               BEFORE the name exists, so no atom the helper's body reads can
-               depend on the helper. Double negation is therefore fine — for
-               the whole-period matrix the body is itself `not gpvN(X)`, and
+               Stratification does NOT hold by construction. The helper's
+               name is fresh, but its body reads the atoms of the matrix, and
+               on a dependency cycle through a recursive creation (WF-045)
+               those atoms can depend on the creation that reads this fold's
+               verdict: `not kvsN` under `not kvM` then lies on a cycle
+               through negation (probe R5 of 2026-09-23, an all fold over a
+               comparison on such a cycle: no stable model). What holds:
+               WF-046 refuses a document in which the range of an all fold,
+               or any part of a none, atMost or exactly fold, lies on a
+               cycle; a creation is refused by name where its condition reads
+               the cycle outside a monotone position, the matrix of an all
+               fold included (CLINGO-038, [refuse_creation_reads_on_a_cycle]),
+               and so is a member assignment that reads it; on a monotone
+               matrix the least fixpoint is a stable model, and where the
+               double negation supports a second one (two Wachters that lead
+               each other, corpus/golden/jutterswet-opvolgerquorum/NOTE.md)
+               the runner refuses the program (CLINGO-030). For the
+               whole-period matrix the body is itself `not gpvN(X)`, and
                `not kvsM(X)` over that is the same verdict the old
                special-cased arm read positively off `gpvN`. *)
             ctx.fresh <- ctx.fresh + 1;
@@ -9728,18 +9739,16 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          binding exists.
 
          The helper is NOT stratified by construction. Its name is fresh, but
-         `not gvN(S)` reads, negated, whatever produces the operand, and the
-         verifier counts no leeg/gevuld test as a negative dependency edge
-         (WF-046 walks the operand as a positive read). A recursive creation
-         group WF-045 admits can therefore close a cycle through the negation:
-         measured, clingo went UNSATISFIABLE on one such document and picked
-         one of five stable models on another, while ref and both Drools
-         branches answered. So the complement route refuses by name in any
-         document with a recursive creation group (maintainer decision
-         2026-09-23). That is a first, conservative cut: document-wide, not
-         "a group that can reach this operand". The root is a norm card
-         (20260923-verifier-leegtest-negafhankelijkheid); the same gap in the
-         `all`-matrix reification is 20260923-clingo-alle-matrix-stratificatie.
+         `not gvN(S)` reads, negated, whatever produces the operand, and a
+         recursive creation group WF-045 admits can close a cycle through
+         that negation. WF-046 reads every node under a leeg/gevuld test as a
+         negative edge and refuses such a cycle, but this backend does not
+         prove that the operand lies off every cycle: the complement route
+         refuses by name in any document with a recursive creation group
+         (maintainer decision 2026-09-23), conservatively, document-wide and
+         not "a group that can reach this operand". A creation whose own
+         condition reads such an operand on the cycle is refused before
+         translation ([refuse_creation_reads_on_a_cycle], CLINGO-038).
 
          An unbound scalar parameter in the operand faults in ref (ch. 5.7);
          the join alone would leave it unbound and ANSWER — leeg waar, gevuld
@@ -9758,9 +9767,10 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
         if has_recursive_creation ctx.doc then
           fault
             "a leeg test (or a negated gevuld test) is not translated in a document with a \
-             recursive creation group: this backend reads it as the negation of a helper, and \
-             WF-046 counts no leeg test as a negative edge, so a creation cycle through it need \
-             not be stratified. Declined in translation, conservatively for the whole document";
+             recursive creation group: this backend reads it as the negation of a helper, which a \
+             creation cycle through the operand leaves unstratified, and it does not prove the \
+             operand off every cycle. Declined in translation, conservatively for the whole \
+             document";
         ctx.fresh <- ctx.fresh + 1;
         let p = Printf.sprintf "gv%d" ctx.fresh in
         let key, opening =
@@ -14615,8 +14625,33 @@ let form_strata (forms : Ir_v0.Checks.dep_form array) : int array =
    The writers and the cycles between them stay read off the static graph,
    as above. With "geef door" valid from 2027-01-01 and a case on
    2026-01-01 no executor lays a maatschap, only W1 is ervaren, and ref and
-   this backend answer rapportaantal(H1) = 1. *)
-let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
+   this backend answer rapportaantal(H1) = 1.
+
+   The condition of a creation, an object creation or a fact creation (card
+   clingo-creatievoorwaarde-op-de-kring, 2026-11-06; a provisional decision
+   on Fable advice). Ref reads it on the settled world of the generation
+   before the creation's own, and a later generation may make it false
+   without undoing the creation; this encoding reads it on the stable model.
+   The two agree where the condition, once true, stays true over the
+   generations, and that is decided per read of a node that the same writers
+   as above can still change (RUNTIME-SEMANTICS ch. 6.1 names the positions):
+   (M1) the reach of an atLeast fold, and a positive role check: a link set
+   only grows; (M2) the left side of greater or greaterOrEqual, or the right
+   side of less or lessOrEqual, where that side only grows and the other
+   reads nothing that changes: a count over its reach (no filter, or a
+   monotone one), an attribute that every such writer computes as such a
+   count without a condition, and plus over these and fixed terms; (M3) a
+   positive characteristic check where every such writer is an attribution
+   of true whose condition is monotone itself, assumed so where the question
+   meets itself again. A composite under all or atLeast and the matrix of an
+   all or atLeast fold are monotone where their parts are; the reach and the
+   filter of an all fold must read nothing that changes. Every other read of
+   a node that changes is refused (CLINGO-038). Measured on the model of the
+   golden jutterswet-opvolgerquorum with its case 4: the all matrix "merk
+   kleiner dan 2" gives merk(W1) = 2 in ref, and this backend answered 1;
+   with "het aantal opvolgers is gelijk aan 0" beside "rang < 5" ref mints
+   W2 to W5 from W1, and this backend found no stable model. *)
+let refuse_creation_reads_on_a_cycle (doc : document) ~as_of =
   let cctx = Ir_v0.Checks.ctx_of doc in
   let forms = Array.of_list (Ir_v0.Checks.dep_forms cctx) in
   (* without a recursive creation WF-045 admits no cycle *)
@@ -14662,8 +14697,8 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
       | None ->
           failwith
             (Printf.sprintf
-               "backends/clingo/lib/translate.ml, refuse_initialisation_reads_on_a_cycle: the \
-                verifier's dep_forms record form %S at %S, a path no form of the document carries"
+               "backends/clingo/lib/translate.ml, refuse_creation_reads_on_a_cycle: the verifier's \
+                dep_forms record form %S at %S, a path no form of the document carries"
                (name_of i) (at_of i))
     in
     let index_of at =
@@ -14671,8 +14706,8 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
         if i >= n then
           failwith
             (Printf.sprintf
-               "backends/clingo/lib/translate.ml, refuse_initialisation_reads_on_a_cycle: the \
-                object creation at %S is not in the verifier's dep_forms"
+               "backends/clingo/lib/translate.ml, refuse_creation_reads_on_a_cycle: the creation at \
+                %S is not in the verifier's dep_forms"
                at)
         else if at_of i = at then i
         else find (i + 1)
@@ -14703,9 +14738,8 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
           | None ->
               failwith
                 (Printf.sprintf
-                   "backends/clingo/lib/translate.ml, refuse_initialisation_reads_on_a_cycle: the \
-                    creation at %S is in the verifier's dep_forms but not among the document's \
-                    creations"
+                   "backends/clingo/lib/translate.ml, refuse_creation_reads_on_a_cycle: the creation at \
+                    %S is in the verifier's dep_forms but not among the document's creations"
                    at))
     in
     (* the creations that lie on a dependency cycle, each with the forms it
@@ -14721,6 +14755,22 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
         (List.init n Fun.id)
     in
     let strata = lazy (form_strata forms) in
+    (* every form that can change [node] after a creation: a creation only
+       where it grows the node *)
+    let writers_of node =
+      List.filter
+        (fun p -> List.mem node forms.(p).Ir_v0.Checks.df_writes && not (snd (kind_of p) && not (grows node)))
+        (List.init n Fun.id)
+    in
+    (* a creation other than [c], on a dependency cycle in [c]'s stratum and
+       in a version the case's date admits, that reaches the form [p] *)
+    let stratum_creation c p =
+      List.find_map
+        (fun (d, r) ->
+          if d <> c && r.(p) && (Lazy.force strata).(d) = (Lazy.force strata).(c) && translated d then Some d
+          else None)
+        cycle_creations
+    in
     List.iter
       (fun (o : resolved_object_creation) ->
         let c = index_of o.oc_pointer in
@@ -14734,28 +14784,14 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
               []
               (Ir_v0.Checks.dep_opt cctx ~subject:o.oc_subject [] t.to_value)
           in
-          List.concat_map
-            (fun node ->
-              List.filter_map
-                (fun p ->
-                  if List.mem node forms.(p).Ir_v0.Checks.df_writes && not (snd (kind_of p) && not (grows node))
-                  then Some (node, p)
-                  else None)
-                (List.init n Fun.id))
-            nodes
+          List.concat_map (fun node -> List.map (fun p -> (node, p)) (writers_of node)) nodes
         in
         let on_the_cycle (t : assignment) =
           List.find_map (fun (node, p) -> if on_cycle.(p) then Some (t, node, p) else None) (writers t)
         in
         let in_the_stratum (t : assignment) =
           List.find_map
-            (fun (node, p) ->
-              List.find_map
-                (fun (d, r) ->
-                  if d <> c && r.(p) && (Lazy.force strata).(d) = (Lazy.force strata).(c) && translated d then
-                    Some (t, node, p, d)
-                  else None)
-                cycle_creations)
+            (fun (node, p) -> Option.map (fun d -> (t, node, p, d)) (stratum_creation c p))
             (writers t)
         in
         let member (t : assignment) = req "MemberAssignment.member" t.to_attribute in
@@ -14783,7 +14819,170 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
                    (IR-SPEC ch. 5.5)"
                   (name_of c) (member t) node (describe p) (describe d)
             | _ -> ()))
-      doc.object_creations
+      doc.object_creations;
+    (* The condition of a creation (comment above): the first read, in the
+       walk below, of a node that a later generation of [c]'s stratum can
+       still change and that stands on no monotone position, with a writer
+       that can change it; None where every such read is monotone. The walk
+       follows the condition's structure; every position it does not name
+       takes the reads of the verifier's dependency walk below it, and any
+       changeable read there is the offence. *)
+    let condition_offence c ~form (condition : condition_expr) =
+      let on_cycle = reached c in
+      let later node = List.filter (fun p -> on_cycle.(p) || stratum_creation c p <> None) (writers_of node) in
+      let actx = { cctx with Ir_v0.Checks.form } in
+      let first_node nodes = List.find_map (fun node -> match later node with p :: _ -> Some (node, p) | [] -> None) nodes in
+      let nodes_of reads = List.map (fun (node, _, _) -> node) reads in
+      let expr_reads ~subject e = nodes_of (Ir_v0.Checks.dep_expr_at actx ~subject ~at:None [] e) in
+      let condition_reads ~subject c = nodes_of (Ir_v0.Checks.dep_cond_at actx ~subject ~at:None ~neg:false [] c) in
+      let fixed ~subject = function Some e -> first_node (expr_reads ~subject e) | None -> None in
+      let ( <|> ) a b = match a with Some _ -> a | None -> Lazy.force b in
+      let prefixed p s = String.length s >= String.length p && String.sub s 0 (String.length p) = p in
+      let reach_of role path =
+        List.map
+          (fun (rb : role_binding) -> Ir_v0.Checks.n_rel rb.rb_fact_type)
+          ((match role with Some rb -> [ rb ] | None -> []) @ Option.value path ~default:[])
+      in
+      let rule_of p = List.find_opt (fun (r : resolved_rule) -> r.rr_pointer = at_of p) doc.resolved_rules in
+      let rule_subject (r : resolved_rule) =
+        match Ir_v0.Checks.written_reference r.objective with
+        | Some (Attribute_reference { object_type; _ }) -> object_type
+        | _ -> None
+      in
+      (* each changeable read in [nodes] passes [carried] or is the offence *)
+      let unless_carried carried nodes =
+        List.find_map
+          (fun node -> match later node with [] -> None | p :: _ as ws -> if carried node ws then None else Some (node, p))
+          nodes
+      in
+      let rec monotone ~assumed ~subject condition =
+        match Ir_v0.Checks.unanchored_cond condition with
+        | Some inner -> monotone ~assumed ~subject:form inner
+        | None -> (
+            match condition with
+            (* M2: the growing side on the side that can only make it true *)
+            | Comparison { op = Greater | Greater_or_equal; left_side; right_side; _ } ->
+                growing ~assumed ~subject left_side <|> lazy (fixed ~subject right_side)
+            | Comparison { op = Less | Less_or_equal; left_side; right_side; _ } ->
+                fixed ~subject left_side <|> lazy (growing ~assumed ~subject right_side)
+            | Compound { quantifier_kind = All | The | At_least; components; _ } ->
+                List.find_map (monotone ~assumed ~subject) components
+            (* M1: under atLeast the reach only grows, and a member that
+               joins it, or newly passes the filter, can only add to the
+               count *)
+            | Quantifier_fold { kv_quantifier = At_least; kv_element_object_type = el; kv_filter; kv_test; _ } ->
+                Option.bind kv_filter (monotone ~assumed ~subject:el)
+                <|> lazy (Option.bind kv_test (monotone ~assumed ~subject:el))
+            (* under all a member that joins the range can lose the verdict:
+               reach and filter read nothing that changes, the matrix stays
+               monotone *)
+            | Quantifier_fold
+                { kv_quantifier = All; kv_element_object_type = el; kv_filter; kv_test; kv_source_role; kv_source_path; _ }
+              ->
+                first_node (reach_of kv_source_role kv_source_path)
+                <|> lazy (Option.bind kv_filter (fun f -> first_node (condition_reads ~subject:el f)))
+                <|> lazy (Option.bind kv_test (monotone ~assumed ~subject:el))
+            (* M3; a navigated check reads its hop relation, which must not
+               change *)
+            | Characteristic_check { negation = false; _ } ->
+                unless_carried
+                  (fun node ws -> prefixed "char:" node && List.for_all (attribution ~assumed node) ws)
+                  (condition_reads ~subject condition)
+            (* M1: a link set only grows *)
+            | Role_membership { negated = false; _ } -> None
+            | _ -> first_node (condition_reads ~subject condition))
+      (* M2: an operand whose value can only grow over the generations *)
+      and growing ~assumed ~subject = function
+        | None -> None
+        | Some e as operand -> (
+            match fixed ~subject operand with
+            | None -> None
+            | Some offence -> (
+                match Ir_v0.Checks.unanchored_expr e with
+                | Some inner -> growing ~assumed ~subject:form (Some inner)
+                | None -> (
+                    match e with
+                    | Function_call ({ kind = Count; element_object_type; source_role; source_path; filter; _ } as f) ->
+                        (* the reach is the population and the relations it
+                           counts over, which only grow *)
+                        let reach =
+                          (match element_object_type with Some el -> [ Ir_v0.Checks.n_pop el ] | None -> [])
+                          @ reach_of source_role source_path
+                        in
+                        first_node
+                          (List.filter
+                             (fun node -> not (List.mem node reach))
+                             (expr_reads ~subject (Function_call { f with filter = None })))
+                        <|> lazy
+                              (Option.bind filter
+                                 (monotone ~assumed
+                                    ~subject:(match element_object_type with Some _ -> element_object_type | None -> subject)))
+                    (* an attribute that only unconditional counting rules
+                       write; a hop over a relation that changes is no such
+                       read *)
+                    | Attribute_reference _ ->
+                        unless_carried
+                          (fun node ws -> prefixed "attr:" node && List.for_all (counting ~assumed node) ws)
+                          (expr_reads ~subject e)
+                    | Binary { op = Plus; left_side; right_side; _ } ->
+                        growing ~assumed ~subject left_side <|> lazy (growing ~assumed ~subject right_side)
+                    | _ -> Some offence)))
+      (* a writer of [node] that leaves it growing: an unconditional rule
+         whose value is a growing count; a node already under that question
+         is assumed so (the greatest fixed point over a cycle of them) *)
+      and counting ~assumed node p =
+        List.mem node assumed
+        ||
+        match rule_of p with
+        | Some ({ rr_condition = None; value_node = Some (Function_call { kind = Count; _ } as v); _ } as r)
+          when r.rr_presentation <> Some Characteristic_attribution ->
+            growing ~assumed:(node :: assumed) ~subject:(rule_subject r) (Some v) = None
+        | _ -> false
+      (* a writer of the characteristic [node] that leaves it monotone: an
+         attribution of true whose condition is monotone itself, under the
+         same assumption *)
+      and attribution ~assumed node p =
+        List.mem node assumed
+        ||
+        match rule_of p with
+        | Some
+            ({ rr_presentation = Some Characteristic_attribution; value_node = Some (Literal { variant = Lv_boolean true; _ }); _ }
+             as r) -> (
+            match r.rr_condition with
+            | None -> true
+            | Some cond -> monotone ~assumed:(node :: assumed) ~subject:(rule_subject r) cond = None)
+        | _ -> false
+      in
+      monotone ~assumed:[] ~subject:form condition
+    in
+    List.iter
+      (fun (kind, at, subject, condition, validity) ->
+        match condition with
+        | Some condition when Eval.window_admits ~as_of validity -> (
+            let c = index_of at in
+            match condition_offence c ~form:subject condition with
+            | Some (node, p) ->
+                let writer = if p = c then "the creation itself" else describe p in
+                faultc
+                  ~params:[ ("creation", name_of c); ("node", node); ("writer", writer) ]
+                  "CLINGO-038"
+                  "%s \"%s\": the condition reads %s, which %s writes, and a later generation of the \
+                   creation's stratum can still change it (a dependency cycle admitted by WF-045 through \
+                   a recursive group), at a position where that change can make the condition false — a \
+                   creation reads its condition on the settled world of the generation before its own \
+                   (RUNTIME-SEMANTICS ch. 5.5, Generations), and this backend reads the stable model, so \
+                   it refuses the creation outside the monotone positions of ch. 6.1 (IR-SPEC ch. 5.5)"
+                  kind (name_of c) node writer
+            | None -> ())
+        | _ -> ())
+      (List.map
+         (fun (o : resolved_object_creation) ->
+           ("object creation", o.oc_pointer, o.oc_subject, o.oc_condition, o.oc_validity))
+         doc.object_creations
+      @ List.map
+          (fun (f : resolved_fact_creation) ->
+            ("fact creation", f.fc_pointer, f.anchor_point, f.fc_condition, f.fc_validity))
+          doc.fact_creations)
   end
 
 (* The stratum of every object creation, by its wire pointer, as ref/
@@ -14885,7 +15084,7 @@ let translate (doc : document) (case : Case.t) : string =
         "%s: the presentation tag \"percentage\" on a type annotation: the tag is written only \
          where a datatype is declared"
         at);
-  refuse_initialisation_reads_on_a_cycle doc ~as_of:case.as_of;
+  refuse_creation_reads_on_a_cycle doc ~as_of:case.as_of;
   refuse_functor_collisions doc;
   (* the day-kind extension tables are per DOCUMENT+CASE (their window is
      read off the case's dates), so the store starts empty at every call —

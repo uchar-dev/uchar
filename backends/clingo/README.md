@@ -250,6 +250,30 @@ spec bug.
   the case's date, carried a stratum higher, beside the cycle out of its
   reach, where it reads only what a creation writes, and where the date
   excludes "geef door".
+- The condition of a creation, an object creation or a fact creation, is
+  read on the settled world of the generation before its own as well
+  (ch. 5.5, Generations), and a later generation may make it false
+  without undoing the creation; this encoding reads it on the stable
+  model. So it is refused by name before solving (CLINGO-038,
+  `creation-condition-reads-on-a-cycle`, parameters `creation`, `node`,
+  `writer`) where it reads a node that the same writers as above can
+  still change, unless the read stands on a monotone position of
+  RUNTIME-SEMANTICS ch. 6.1: the reach of an `atLeast` fold or a
+  positive role check (M1); the growing side of `greater`,
+  `greaterOrEqual`, `less` or `lessOrEqual`, a count over its reach or an
+  attribute that only unconditional counting rules write, with nothing
+  that changes on the other side (M2); a positive characteristic check
+  whose attributions are monotone themselves (M3). On the model of the
+  golden `jutterswet-opvolgerquorum` with its case 4, the `all` matrix
+  "merk kleiner dan 2" gives merk(W1) = 2 in ref, where the encoding
+  answered 1; the six conditions of ch. 6.1 that hold on absence had no
+  stable model. A count that grows by the creation's own product for its
+  own subject ("het aantal opvolgers is groter dan 0" in "werf een
+  opvolger") stands on a monotone position, but the assignment of the
+  count by `#count` is not monotone in clingo's reading, so the program
+  has no stable model and the runner refuses it (CLINGO-030); ref answers
+  merk(W1) = 2. The suite's `ch5.5 creation condition on the cycle`
+  frames pin each refusal beside ref's answer, and the carried forms.
 - Fact creation (IR-SPEC ch. 3.4; ch. 5.5) derives `role/3`: the join
   chain (anchor → tussenstappen → joinRol → target) becomes a body
   join over `role/3`, and the head lands the created relation's links —

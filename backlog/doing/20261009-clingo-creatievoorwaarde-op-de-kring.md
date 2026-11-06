@@ -101,3 +101,59 @@ May touch: `backends/clingo/**` (a1) of `spec/verifier/**` en
 Na `20261009-creatie-initialisatie-leest-groeiende-waarde` (de weigering van
 de toekenningen, op dezelfde graaf) en `20261009-clingo-uitvoer-breekt-af-op-lengte`
 (beide raken de vertaling van een recursieve creatie in clingo).
+
+## Result
+
+*Voorlopig besluit (Fable-advies 2026-11-06), gebouwd op branch `card/creation-condition-and-clingo-cleanup`; de
+eigenaar kan het omdraaien.* Route a1. Logs onder `uchar-dev/werk/clingo-cleanup/logs/`, documenten van de meting onder
+`uchar-dev/werk/clingo-cleanup/k1/rows/` (generator `gen.py`).
+
+- (a) `backends/clingo/lib/translate.ml`: `refuse_initialisation_reads_on_a_cycle` heet nu
+  `refuse_creation_reads_on_a_cycle` en weigert, na de toekenningen, de voorwaarde van elke objectcreatie en
+  feitcreatie (een versie die de casusdatum toelaat) die een knoop leest met een schrijver die een latere generatie
+  van het eigen stratum nog kan draaien (dezelfde `writers_of`, `reached` en stratumtoets als bij een toekenning),
+  buiten de monotone plaatsen M1–M3 van het besluit: `CLINGO-038`, soort `refusal`, sleutel
+  `creation-condition-reads-on-a-cycle`, parameters `creation`, `node`, `writer` (`backends/clingo/codes.tsv`). De
+  analyse loopt over de voorwaarde zelf (`condition_offence`): een samenstelling onder `all`/`the`/`atLeast` en de
+  matrix van een `all`- of `atLeast`-vouw zijn monotoon waar hun delen het zijn; bereik en filter van een `all`-vouw
+  mogen niets veranderlijks lezen; M2 accepteert een telling (bereik populatie en relaties, filter monotoon), een
+  attribuut met alleen onvoorwaardelijke telregels als veranderlijke schrijvers, en `plus`; M3 een positieve
+  kenmerkcheck met alleen toekenningen van waar met een monotone voorwaarde (aangenomen bij een kringvraag). Elke
+  andere lezing van een veranderlijke knoop is de weigering. De verifier en ref veranderen niet.
+- (b) Suite `backends/clingo/test/test_clingo.ml`, blok `ch5.5 creation condition on the cycle` (2726 checks, was
+  2675): per rij `verifier_clean`, `ref_matches` met het absolute antwoord van ref en `faults_with` de CLINGO-038-zin:
+  rij 1 (`all`-matrix `less` en `notEqual`), rij 2 (`atLeast`-matrix `less`, W2 ploeglid van W3), rij 3 (genavigeerd
+  `notEqual`), rij 4 (twee vormen, merk(W1) = 1), rij 5 (zes afwezigheidscondities, merk(W1) = 1 en de rangdetector
+  op W5), en M3 omgekeerd (`gemerkt` onder `merk kleiner dan 2`). Gedragen flank: de golden-voorwaarde (M1, M2),
+  `het aantal voorgangers is groter dan 0` (M2), `gemerkt` onder `merk groter dan 1` (M3); de off-the-cycle-frames met
+  `geef door` blijven groen. Rood op de oude `translate.ml`: 14 FAILURES, de twaalf weigeringen en R1/R3
+  (`logs/k1-suite-old-translate.log`); groen `logs/k1-suite-2.log`. Mutaties: de `less`-arm met de groeiende kant
+  links laat rij 1, rij 2 en M3-omgekeerd vallen (`logs/k1-mutation-m2.log`); de `atLeast`-vouw zonder toets en elke
+  kenmerktoekenning als monotoon laten rij 2 en M3-omgekeerd vallen (`logs/k1-mutation-m1-m3.log`). De proeven van
+  het advies: `logs/k1-probes-before.log` (rij 1a, 1b, 3 MISMATCH, 5a CLINGO-030) en `logs/k1-probes-after.log`
+  (CLINGO-038; de golden PASS).
+- Gemeten op alle zestien documenten (`logs/k1-rows-ref-clingo.log`, `logs/k1-rows-drools.log`): verifier PASS, ref
+  PASS, beide Drools-takken `PLAYED 1` met ref's antwoorden; clingo PASS op de drie gedragen vormen, CLINGO-038 op de
+  twaalf weigeringen.
+- Gevonden en meegenomen: (1) M2 is een toegelaten plaats, geen gegarandeerd oplosbare: een telling die groeit door
+  het eigen product van de creatie voor het eigen onderwerp (`het aantal opvolgers is groter dan 0` in `werf een
+  opvolger`) heeft in deze codering geen stabiel model, omdat de toekenning van de telling door `#count` niet monotoon
+  is; de runner weigert luid met CLINGO-030 (ref merk(W1) = 2). Een frame pint dat, en spec en README zeggen het.
+  (2) De frames R1/R3 (een leegtest in de voorwaarde van een recursieve creatie, WF-046-ongeldig) krijgen nu
+  CLINGO-038 vóór de vertaling in plaats van de documentbrede leegtestweigering; hun naald is aangepast (gedrag dat
+  de kaart uitdrukkelijk verandert), en een nieuw frame R3b (de leegtest alleen in de regel, verifier-schoon) houdt
+  die weigering vast. Haar zin en commentaar zeiden nog dat WF-046 geen leegtest als negatieve kant telt; dat klopt
+  sinds 2026-09-23 niet meer en is rechtgezet. (3) Het commentaar "Stratification holds by CONSTRUCTION" bij de
+  `kvs`-reïficatie (en de verwijzing ernaar bij `kvc`) zegt nu wat geldt (punt 4 van de opdracht).
+- (c) Spec (beschermd pad, mandaat van de eigenaar voor deze ronde): RUNTIME-SEMANTICS ch. 6.1, de twee restposten
+  worden één gesloten alinea met de absolute antwoorden, de weigering en M1–M3; de zin dat de runner een van twee
+  modellen kiest, vervalt. Ch. 5.5 krijgt een alinea dat de voorwaarde op dezelfde knopen geweigerd wordt, buiten de
+  monotone plaatsen. IR-SPEC ch. 5.5: de tweede houding voor twee vormen. IR-SPEC ch. 5.2: beide "recorded open"-
+  alinea's krijgen een slotzin met het besluit. `backends/clingo/README.md`: een alinea naast die over de toekenning.
+- (d) De recursieve goldens en rode gevallen spelen (`logs/k1-recursive-corpus.log`, vóór gate 6); geen golden in
+  `EXPECTED_CHANNEL`, geen corpuswijziging. Gerichte gates groen (`logs/k1-gates.log`): gate 1; gate 3 (462 golden
+  clean, 634 negatieve op hun regel: de verifier is niet veranderd); gate 6 (suite 2726 checks, 1114 cases exact, 2
+  goldens in het weigerkanaal, ongewijzigd); gate 8 (85 rode gevallen; `check-exec-codes` 38 CLINGO-codes).
+
+Voorgestelde CONSTRUCTS-rijtekst (naast rij 21): "the ASP backend refuses by name a creation condition that reads what
+a later generation of its stratum changes, outside the monotone positions of RUNTIME-SEMANTICS ch. 6.1 (CLINGO-038)".

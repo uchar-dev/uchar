@@ -4541,6 +4541,15 @@ suite pins the refusals, each beside the reference interpreter's
 absolute answer, and the carried forms (`ch5.5 generations`, `ch5.5
 generations off the cycle`); no corpus document has a refused form.
 
+The condition of a creation, an object creation or a fact creation, is
+read in the same way and refused by name on the same nodes and writers
+(CLINGO-038), except where the read stands on a position on which a
+condition that held cannot be lost while the stratum grows; there the
+condition holds in the stable model exactly where it held on some
+generation, and the backend carries it. Ch. 6.1 names the positions and
+gives the forms with their absolute answers (the closed residual; the
+suite's `ch5.5 creation condition on the cycle`).
+
 Worked example (absolute; the anchor `jutterswet-wachtersketen`
 verbatim): the chain "a wachter of rank n recruits an opvolger of rank
 n + 1, while n < 5", linked over `opvolging` via the explicit
@@ -7346,36 +7355,96 @@ either order of the two rules (`WV-6.1-written-allocation`; measured
 2026-11-02, the reference interpreter answered 25 and 75 with the
 vrijgavescore first, the ASP backend and both Drools branches leeg).
 
-*Recorded residual — conditions that hold on absence (measured
-2026-09-23, open).* The leeg/gevuld predicate, the range of a quantifier
-fold under *alle*, *geen*, *ten hoogste* and *precies*, and its matrix
-under *geen*, *ten hoogste* and *precies* are not the only conditions that
-are true while an operand is absent and can turn false once it arrives.
-The others carry no `negated` field and keep their positive or
-stratum-strict reading, and on a WF-045-admissible
-creation cycle that reading is unsound in the way the leeg/gevuld decision
-records. Measured on one shape: a recursive creation "werf de opvolger"
-whose condition is "de rang van de Wachter is kleiner dan 5 en X", with X
-reading the successor that the creation itself mints, and one input
-Wachter W1 of rang 1. Every document in the table is verifier-clean. In
-every row the reference interpreter mints W1 to W5, each creation justified
-by an X that the next generation falsifies, and the ASP backend finds no
-stable model:
+*Closed residual — conditions that hold on absence, and a value that grows
+(measured 2026-09-23; decided 2026-11-06, a provisional decision on Fable
+advice, card `clingo-creatievoorwaarde-op-de-kring`; the owner can reverse
+it).* The leeg/gevuld predicate and the negative parts of a quantifier
+fold are not the only conditions that are true while an operand is
+absent, or that a growing value makes false: an inequality with one leeg
+operand, a numeric equality of two leeg operands, a count or a
+filled-value count tested against zero, a propositional *geen* over a
+comparison, arithmetic that coalesces leeg to 0, and a comparison that a
+growing value makes false, inside the monotone part of a fold ("merk
+kleiner dan 2" in an `all` or `atLeast` matrix, merk the number of a
+Wachter's opvolgers) or outside any fold ("het merk van de ploegleider is
+ongelijk aan 2"). They carry no `negated` field and keep their positive
+or stratum-strict reading, so on a WF-045-admissible creation cycle they
+stay verifier-clean. The Generations paragraph of ch. 5.5 gives each of
+them one reading: a creation's condition is read on the settled world of
+the generation before its own, a creation that fired stands, and a later
+generation may make the condition that justified it false.
+
+Worked example (absolute; the reference interpreter and both Drools
+branches answer so, measured 2026-11-06; the ASP backend's suite pins
+each beside its refusal, `ch5.5 creation condition on the cycle`). In the
+model of the golden `jutterswet-opvolgerquorum` with its case 4, the
+`all` matrix "merk kleiner dan 2" or "merk ongelijk aan 2" gives
+merk(W1) = **2** and merk(W3) = **2**, and so does "het merk van de
+ploegleider van de Wachter is ongelijk aan 2" in place of the fold. A
+recursive creation "werf de opvolger" over a to-one opvolger, under "de
+rang van de Wachter is kleiner dan 5 en X", with one input Wachter W1 of
+rang 1, mints W2 to W5 for each X below, every creation justified by an X
+that the next generation makes false:
 
 | X | why it holds on absence |
 |---|---|
 | de rang van de opvolger is ongelijk aan 2 | exactly one leeg operand is waar (ch. 1.2) |
-| de rang van de opvolger is gelijk aan het merk (merk leeg) | two leeg numeric operands are equal (ch. 1.2) |
+| de rang van de opvolger is gelijk aan het peil (peil leeg) | two leeg numeric operands are equal (ch. 1.2) |
 | het aantal opvolgers is gelijk aan 0 | a count over nothing is 0 |
 | het aantal gevulde rangen van alle opvolgers is gelijk aan 0 | idem (ch. 3.4c) |
 | geen van: de rang van de opvolger is groter dan 0 (composite) | a leeg operand makes the member false |
 | de rang van de opvolger plus 0 is kleiner dan 1 | plus coalesces leeg to 0 (ch. 1.2) |
 
-The controls are the same shape with X = "de rang van de opvolger is leeg"
-and with X a quantifier fold over the successors under *alle* or *geen*
-("alle opvolgers hebben een rang groter dan 5", "geen van de opvolgers heeft
-een rang groter dan 0"): the reference interpreter mints the same chain,
-and WF-046 refuses those documents since 2026-09-23 (`IR-SPEC.md` ch. 5.2).
+The two-form shape reads the same way: with "het merk is ongelijk aan 1"
+in the creation and a rule that writes merk = 1 when "de rang van de
+opvolger is ongelijk aan 2", generation 0 writes merk(W1) = 1 on the
+absent opvolger, the creation does not fire, and the answer is
+merk(W1) = **1**. The controls are the same shape with X = "de rang van
+de opvolger is leeg" and with X a quantifier fold over the opvolgers
+under *alle* or *geen*: the reference interpreter mints the same chain,
+and WF-046 refuses those documents (`IR-SPEC.md` ch. 5.2).
+
+The ASP backend has no moment of creation and reads the condition on the
+stable model; it answered 1 on the first three forms, found no stable
+model on the six of the table and two on the two-form shape. It refuses
+by name, before it solves (CLINGO-038, the second posture of `IR-SPEC.md`
+ch. 5.5), every condition of an object creation or a fact creation that
+reads a node a later generation of the creation's stratum can still
+change, the nodes and writers of a member assignment in ch. 5.5, except
+a read on a monotone position, where a condition that held cannot be
+lost while the stratum grows:
+
+- (M1) the reach of an `atLeast` fold, and a positive role check: a link
+  set only grows;
+- (M2) the left side of `greater` or `greaterOrEqual`, or the right side
+  of `less` or `lessOrEqual`, where the other side reads nothing that
+  changes and this side only grows: a count over its reach, without a
+  filter or with a monotone one; an attribute that every writer that can
+  change it computes as such a count, without a condition; and `plus`
+  over such operands and fixed ones;
+- (M3) a positive characteristic check where every writer that can change
+  the characteristic is an attribution of true whose condition is
+  monotone itself (a characteristic whose question meets itself again is
+  taken as monotone there, and refuted by any other read).
+
+A composite under `all` or `atLeast` and the matrix of an `all` or
+`atLeast` fold are monotone where their parts are; the reach and the
+filter of an `all` fold read nothing that changes. The list is closed:
+every other read of such a node is refused, the six of the table, the
+first three forms and the two-form shape among them, and so is "alle
+ploegleden zijn gemerkt" where gemerkt is attributed under "zijn merk is
+kleiner dan 2". On a monotone position "held on some generation" and
+"holds in the stable model" are one, and the backend carries the
+condition: the golden `jutterswet-opvolgerquorum` (M1 and M2), "het
+aantal voorgangers is groter dan 0" (M2), "alle ploegleden zijn gemerkt"
+with gemerkt under "zijn merk is groter dan 1" (M3), and the fact
+creation "geef door" under "hij is ervaren", with ervaren attributed
+where the number of maatgevers is groter dan 0 (M3 over M2). Where a
+count grows by the creation's own product for its own subject ("het
+aantal opvolgers is groter dan 0" in "werf een opvolger", merk(W1) =
+**2** in the reference interpreter), the backend's encoding of the count
+has no stable model, and its runner refuses the program (CLINGO-030).
+None of these forms occurs in the corpus.
 
 Off a cycle the same classes leave no executor order-dependent: a write
 that acted on a transient leeg goes back once the condition is false ("A
@@ -7386,36 +7455,6 @@ indien het aantal dingen waarvan de a groter is dan 0 gelijk is aan 0"
 give b leeg in the reference interpreter, the ASP backend and both Drools
 branches, in both orders; before that day the reference interpreter kept
 the b = 1 it had written on the transient leeg.
-
-*Recorded residual — a value that grows (measured 2026-09-23, open).* The
-discharge of strictness on an admissible creation cycle fails for any read
-that can lose its truth, and absence is only one way to lose it. A
-comparison that a growing value falsifies is another, inside a fold's
-monotone part and outside any fold. In the model of the golden
-`jutterswet-opvolgerquorum` (merk the number of a Wachter's successors),
-with its case 4 as input, the document stays verifier-clean when the `all`
-matrix reads "merk kleiner dan 2" or "merk ongelijk aan 2", and the four
-executors split: the reference interpreter and the Drools exec branch
-answer merk(W1) = 2, the ASP backend and the DRL-text branch 1. An `atLeast`
-fold with "merk kleiner dan 2", given a ploeglid under W3 so that W3 mints,
-splits the reference interpreter and both Drools branches (2) from the ASP
-backend (1). Without any fold, "het merk van de ploegleider van de Wachter
-is ongelijk aan 2" was already verifier-clean on the main line before this
-card, with merk(W3) = 2 in the reference interpreter and both Drools
-branches and 1 in the ASP backend. Whether "monotone in the matrix" should
-demand a matrix that is monotone itself is a norm question the
-quantifier-fold decision leaves open.
-
-The two-form shape splits silently rather than loudly. With "het merk is
-ongelijk aan 1" in the creation and a rule writing merk = 1 when "de rang
-van de opvolger is ongelijk aan 2", the reference interpreter answers
-merk(W1) = 1, the ASP backend has two stable models, and its runner picks
-one with merk(W1) leeg. None of these forms occurs in the corpus. The
-Generations paragraph of ch. 5.5 (2026-10-09) fixes the reference
-interpreter's reading of each of them: a creation's condition is read on
-the settled world of the generation before its own. Whether each of
-them becomes a negative edge is a norm question that the leeg/gevuld
-decision leaves open.
 
 A related gap sat in the role-check narrowing above, with no recursion
 needed: a creation of a Post under "hij is geen bemanner" reads the very

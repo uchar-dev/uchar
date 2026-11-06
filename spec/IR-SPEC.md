@@ -9326,12 +9326,17 @@ comparison, and an ordering over arithmetic that coalesces leeg to 0. On an
 admissible creation cycle each of them was measured verifier-clean with the
 executors split, and off a cycle each leaves the reference interpreter
 order-dependent in the condition of an attribute-writing form
-(`RUNTIME-SEMANTICS.md` ch. 6.1, recorded residuals). This decision does not
-cover them. The quantifier fold, first measured in the same round, is
+(`RUNTIME-SEMANTICS.md` ch. 6.1, the closed residual). This decision does
+not cover them. The quantifier fold, first measured in the same round, is
 covered by the decision that follows, but only in its range under `all`,
 `none`, `atMost` and `exactly` and in its matrix under `none`, `atMost`
 and `exactly`. A comparison in the matrix of an `all` or `atLeast` fold
-keeps its positive or stratum-strict reading.
+keeps its positive or stratum-strict reading. Decided 2026-11-06
+(provisional decision on Fable advice, card
+`clingo-creatievoorwaarde-op-de-kring`): these reads keep their positive or
+stratum-strict kind; the Generations paragraph of `RUNTIME-SEMANTICS.md`
+ch. 5.5 defines them, and the ASP backend refuses by name what it cannot
+carry (ch. 5.5 below, second posture; `RUNTIME-SEMANTICS.md` ch. 6.1).
 
 **The quantifier fold's range and matrix** *(maintainer decision 2026-09-23,
 same card, second fix round)*. The decision, in full:
@@ -9415,7 +9420,13 @@ van de ploegleider is ongelijk aan 2" is verifier-clean on the main line and
 splits the reference interpreter (2) from the ASP backend (1). The
 one-generation progression that discharges strictness on an admissible
 cycle is unsound for every read whose truth can be lost, a growing value
-included (`RUNTIME-SEMANTICS.md` ch. 6.1).
+included (`RUNTIME-SEMANTICS.md` ch. 6.1). Decided 2026-11-06 (provisional
+decision on Fable advice, card `clingo-creatievoorwaarde-op-de-kring`):
+these reads keep their positive or stratum-strict kind; the Generations
+paragraph of `RUNTIME-SEMANTICS.md` ch. 5.5 defines them, the reference
+interpreter and both Drools branches answer merk(W1) = 2 on all three, and
+the ASP backend refuses by name what it cannot carry (ch. 5.5 below,
+second posture; `RUNTIME-SEMANTICS.md` ch. 6.1).
 
 *Cost:* none. Over the 755 corpus and parity-zone documents that this card
 did not add, 62 read positions in 18 documents change kind against the
@@ -9733,14 +9744,17 @@ kenmerk-only salience for the negated-characteristic boundary plus a
 producer of every default justification), each guarded by per-form
 auto-refusals — a loader Refusal
 or transpiler marker naming the uncovered form, loudly excluded at gate 12,
-never played mis-stratified. Since 2026-10-09 the ASP backend takes it for
-one form: a member assignment of an object creation that reads a node
-a later generation of the creation's own stratum can still change, because
-a creation on a dependency cycle that WF-045 admits in that stratum, the
-creation itself included where it lies on one, reaches a writer of the
-node in the dependency graph in a version the case's date admits; the
-backend has no moment of creation and refuses such an assignment by
-name (`RUNTIME-SEMANTICS.md` ch. 5.5, Generations). A backend realising a
+never played mis-stratified. The ASP backend takes it for two forms that
+read a node a later generation of the creation's own stratum can still
+change, because a creation on a dependency cycle that WF-045 admits in
+that stratum, the creation itself included where it lies on one, reaches
+a writer of the node in the dependency graph in a version the case's date
+admits: a member assignment of an object creation (since 2026-10-09), and
+the condition of an object creation or a fact creation outside the
+monotone positions `RUNTIME-SEMANTICS.md` ch. 6.1 names (since 2026-11-06,
+a provisional decision). The backend has no moment of creation and
+refuses both by name (`RUNTIME-SEMANTICS.md` ch. 5.5, Generations). A
+backend realising a
 **coarser**
 stratification than the graph mandates without refusing the uncovered forms
 is non-conforming.
