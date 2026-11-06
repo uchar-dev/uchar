@@ -642,14 +642,11 @@ quotient at 16 significant digits, capped, then floored, the v0 residual ch. 4.2
 edge rows of ch. 4.4 write nothing for no recipients, for an empty pot and for eligible proportional weights that sum to
 0, the last still with the deposit of an empty weight beside them. An empty pot is no distribution in every method, as
 ch. 4.4 decides for v1: no share, no rest, no deposit, not even for an empty weight, and no fault, so an input on a
-share stays and a pot derived later leaves nothing from its empty state. Four readings follow the spec where another
-executor or the runtime's helper reads otherwise: that empty pot in the equal-shares and the proportional method,
-where the reference interpreter and the ASP backend keep the v0 hole and fault ("empty source amount in equal-shares
-allocation (v0 mirror hole, ch. 4.4)", `viol("allocation: empty pot")`); a negative weight of the proportional method
-counts as 0 with a deposit (ch. 4.4, decided for v1), where the reference interpreter keeps the unclamped v0 hole and
-the ASP backend faults; an empty tie-break weight counts as 0 also where every weight of its group is empty, as the
-reference interpreter and the ASP backend read it, where `rsVerdeelOpVolgorde` splits such a group in equal parts; and
-two ordering keys of one value in two scales, 2019 and 2019.0, are one group, as those two executors compare them, where
+share stays and a pot derived later leaves nothing from its empty state. A negative weight of the proportional method
+counts as 0 with the deposit EF-038 (ch. 4.4, decided for v1). Two readings follow the spec where the runtime's helper
+reads otherwise: an empty tie-break weight counts as 0 also where every weight of its group is empty, as the reference
+interpreter and the ASP backend read it, where `rsVerdeelOpVolgorde` splits such a group in equal parts; and two
+ordering keys of one value in two scales, 2019 and 2019.0, are one group, as those two executors compare them, where
 that helper groups by `equals`. A version with a bounded validity gates on the evaluation date and faults a session
 without one; a condition faults and deposits through rules of its own, on the source. A share or a rest replaces the
 input on its target, and a recipient that receives nothing keeps its input. Witness `TmsAllocationWitnessTest`.

@@ -592,10 +592,11 @@ Recorded limitations:
   days …", _)`, where ref holds the exact value: 120 per year clipped to
   five days of 2024 is 100/61 in the unbounded form in ref (suite fixture
   `partial-unit/unrounded`).
-- Negative or empty allocation operands make the generated program
-  UNSATISFIABLE — clingo then fails exactly where `ref/` faults
-  (ch. 4.4), instead of silently diverging by the truncation/floor
-  difference. All fail-fast guards (these, and the to-one creation
+- A negative pot of the equal-shares or the proportional method makes
+  the generated program UNSATISFIABLE, instead of silently diverging by
+  the truncation/floor difference; an empty pot distributes nothing and
+  a negative proportional weight counts as 0 with a §9.5 deposit, as in
+  `ref/` (ch. 4.4). All fail-fast guards (these, and the to-one creation
   guard) derive named `viol/2` witnesses closed by one global integrity
   constraint; on UNSAT the runner re-runs without that constraint and
   reports the fired witnesses, so the fault kind and the

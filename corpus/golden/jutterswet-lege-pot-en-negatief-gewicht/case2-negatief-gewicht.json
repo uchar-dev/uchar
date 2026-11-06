@@ -1,0 +1,136 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "G1",
+        "objectType": "Berging",
+        "attributes": {
+          "opbrengst": {
+            "number": "100"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "B1",
+        "objectType": "Berger",
+        "attributes": {
+          "geborgen gewicht": {
+            "number": "3"
+          }
+        },
+        "roles": {
+          "berging": [
+            "G1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "B2",
+        "objectType": "Berger",
+        "attributes": {
+          "geborgen gewicht": {
+            "number": "-1"
+          }
+        },
+        "roles": {
+          "berging": [
+            "G1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "B3",
+        "objectType": "Berger",
+        "attributes": {},
+        "roles": {
+          "berging": [
+            "G1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "B1",
+      "attribute": "gelijke aandeel",
+      "value": {
+        "number": "33"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B2",
+      "attribute": "gelijke aandeel",
+      "value": {
+        "number": "33"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B3",
+      "attribute": "gelijke aandeel",
+      "value": {
+        "number": "33"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "G1",
+      "attribute": "onverdeelde rest",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B1",
+      "attribute": "rato-aandeel",
+      "value": {
+        "number": "100"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B2",
+      "attribute": "rato-aandeel",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "B3",
+      "attribute": "rato-aandeel"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "G1",
+      "attribute": "ratorest",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "verdeel de opbrengst naar rato",
+      "label": "B2",
+      "code": "EF-038"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "verdeel de opbrengst naar rato",
+      "label": "B3",
+      "code": "EF-028"
+    }
+  ]
+}

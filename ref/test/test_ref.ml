@@ -929,6 +929,36 @@ let () =
     alloc Ordered "1200" [ rcp ~weight:(n "3") ~key:(n "1") "a"; rcp ~weight:(n "-1") ~key:(n "1") "b" ]
   in
   assigned "WV-4.6-h-neg" s [ ("a", Some "1200"); ("b", Some "0") ];
+  (* an empty pot is no distribution in every method, and deposits
+     nothing, also beside an empty weight (ch. 4.4, v1) *)
+  let errs = ref 0 in
+  let on_empty_pot method_name recs =
+    shares_of
+      (Alloc.allocate method_name ~descending:false ~decimals:None ~pot:empty_value
+         ~err:(fun ~id:_ _ -> incr errs) recs)
+  in
+  check "WV-4.6-h-pot-equal" (on_empty_pot Equal_shares [ rcp "a"; rcp "b" ] = ([], None));
+  check "WV-4.6-h-pot-prop"
+    (on_empty_pot Proportional [ rcp ~weight:(n "3") "a"; rcp ~weight:empty_value "b" ] = ([], None));
+  check "WV-4.6-h-pot-ordered"
+    (on_empty_pot Ordered [ rcp ~weight:(n "3") ~key:(n "1") "a"; rcp ~weight:empty_value ~key:(n "1") "b" ]
+    = ([], None));
+  check "WV-4.6-h-pot-err" (!errs = 0);
+  (* a negative proportional weight counts as 0, with one §9.5 error
+     (EF-038); the negative tie-break weight above raises none *)
+  let codes = ref [] in
+  let s, r =
+    alloc ~err:(fun ~id d -> codes := (id, d.Value.code) :: !codes) Proportional "100"
+      [ rcp ~weight:(n "3") "a"; rcp ~weight:(n "-1") "b" ]
+  in
+  assigned "WV-4.6-h-neg-prop" s [ ("a", Some "100"); ("b", Some "0") ];
+  check "WV-4.6-h-neg-prop-rest" (rest_is r "0");
+  check "WV-4.6-h-neg-prop-err" (!codes = [ ("b", Some "EF-038") ]);
+  let errs = ref 0 in
+  ignore
+    (alloc ~err:(fun ~id:_ _ -> incr errs) Ordered "1200"
+       [ rcp ~weight:(n "3") ~key:(n "1") "a"; rcp ~weight:(n "-1") ~key:(n "1") "b" ]);
+  check "WV-4.6-h-neg-err" (!errs = 0);
   let s, _ =
     alloc Ordered "1200"
       [

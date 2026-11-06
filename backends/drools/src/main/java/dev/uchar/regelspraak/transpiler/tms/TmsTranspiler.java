@@ -3890,8 +3890,7 @@ public final class TmsTranspiler {
      * it is logical, so a recipient that arrives or leaves, a weight, key, cap or pot that changes, and a condition that
      * stops holding take the whole distribution of the source along, the rest included (ch. 4.3), and a deposit made on
      * an intermediate state goes again: like a fault it counts at the fixpoint (PLAN §9, 2026-10-09). An empty pot is
-     * no distribution in every method, as ch. 4.4 decides for v1: it writes nothing, deposits nothing and is no fault,
-     * where the reference interpreter keeps the v0 hole of the equal-shares and the proportional method and faults
+     * no distribution in every method, as ch. 4.4 decides for v1: it writes nothing, deposits nothing and is no fault
      * ({@link Allocation}). A version with a bounded validity gates on the evaluation date and faults a session
      * without one, as a rule's version does; a condition that can fault or deposit has its own fault and deposit rules,
      * on the source, as the reference interpreter evaluates the condition per source before anything else.

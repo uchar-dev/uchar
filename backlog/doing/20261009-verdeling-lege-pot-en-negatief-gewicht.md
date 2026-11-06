@@ -47,3 +47,35 @@ Klein.
 
 May touch: `ref/`, `backends/clingo/`, `corpus/golden/<nieuwe golden>/`, `spec/RUNTIME-SEMANTICS.md` en
 `spec/ASP-TRANSLATION.md` (voorstel), `scripts/check-drools.sh` (lijsten, voorstel), kaartverplaatsing.
+
+## Result
+
+Gebouwd 2026-11-06 op branch `card/allocation-letbinder-dates` (van main `17f956d92`), in één commit. Logs onder
+`werk/allocation-letbinder-dates/logs/` (naast de uchar-worktree).
+
+- (a) Golden `corpus/golden/jutterswet-lege-pot-en-negatief-gewicht`, met `source.rgs` (eigen Jutterswet-casus): een
+  Berging verdeelt haar opbrengst in gelijke delen en naar rato van het geborgen gewicht. `case1-lege-pot`: een lege
+  pot naast een leeg gewicht (geen aandeel, geen rest, invoer 7 blijft staan, consistent) en een tweede Berging met
+  pot 10 (zodat de no-op-wacht faalt); `case2-negatief-gewicht`: 100 over gewichten 3, −1 en leeg → naar rato 100, 0
+  (EF-038) en leeg (EF-028), rest 0; gelijk 33, 33, 33, rest 1. Verifier PASS.
+- (b) Rood eerst (`k1-red-before.log`): ref "EVALUATION FAULT: empty source amount in equal-shares allocation (v0
+  mirror hole, ch. 4.4); …" op case 1 en `B1.rato-aandeel = 150 / B2 = -50`, kanaal zonder EF-038, op case 2; clingo
+  UNSAT op `viol("allocation: empty pot","G1")` en `viol("allocation: negative weight","B2")`. Groen
+  (`k1-green-after.log`): ref en clingo PASS (11 en 10 verwachtingen). Ref: `ref/lib/alloc.ml` (lege pot → `Nothing`
+  in elke methode; negatief gewicht naar rato telt als 0 met deponering EF-038), worked examples
+  `WV-4.6-h-pot-*`, `WV-4.6-h-neg-prop*`, `WV-4.6-h-neg-err` in `ref/test/test_ref.ml`. Clingo: de twee `viol`-regels
+  weg, het negatieve gewicht als `vdI_weight(X,0)` met deponering EF-038, en de deponeringen EF-028/EF-038 wachten op
+  de gevulde pot (zoals ref niets deponeert bij een lege pot). `ASP-TRANSLATION.md` (S-sectie verdeling) mee.
+- (c) RUNTIME-SEMANTICS ch. 4.2 (naar rato en de tie-break op volgorde), ch. 4.4 (rijen lege pot, negatief gewicht op
+  volgorde en naar rato) en ch. 4.6 (twee voorbeelden) herschreven: een negatief tiegewicht telt als 0 zonder fout;
+  naar rato als 0 met de §9.5-fout. Het negatieve gewicht naar rato heeft nu een getuige en dus een code: EF-038 in de
+  tabel van ch. 5.7b ("two kinds have no witness" in plaats van drie). De Drools-tak deponeert sindsdien EF-038
+  (`transpiler/tms/Allocation.java`), `TmsAllocationWitnessTest` deel D pint de code; README's van clingo en Drools
+  mee.
+- (d) Gate 12: beide takken `PLAYED 2` op de golden (`k1-drools.log`); `EXPECTED_PLAYED` 347 → 348 met regel.
+  Gerichte gates groen (`logs/k1/summary.txt`, `logs/k1b/summary.txt`): 1, 2, 3, 4, 5 (2504 worked examples), 6, 7,
+  8, 10, 12, 13, 15, 17.
+
+Voorgestelde rijtekst voor CONSTRUCTS (rij 17, verdeling), door de hoofdsessie te landen: "Lege pot: geen verdeling
+in elke methode (v1, ch. 4.4; ref, clingo en Drools sinds 2026-11-06). Negatief gewicht naar rato: telt als 0 + §9.5
+(EF-038), golden `jutterswet-lege-pot-en-negatief-gewicht`."

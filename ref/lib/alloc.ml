@@ -11,9 +11,11 @@
 
    with min(x, leeg) = x, floor_d = round toward −∞ at the declared
    decimals (identity when none declared). The max(0, …) clamps are
-   ordered-method-only. Empty-weight handling differs per method
-   (ch. 4.4); a declared-but-empty or negative cap degrades to uncapped
-   with a §9.5 error (ch. 4.3). *)
+   ordered-method-only. An empty pot is no distribution in every method;
+   empty-weight handling differs per method, and a negative weight counts
+   as 0 in both weighted methods, with a §9.5 error in the proportional
+   one only (ch. 4.4); a declared-but-empty or negative cap degrades to
+   uncapped with a §9.5 error (ch. 4.3). *)
 
 open Value
 
@@ -63,7 +65,7 @@ let allocate (method_name : Ir_v0.Ast.method_name) ~descending ~decimals ~pot ~e
     match method_name with
     | Equal_shares -> (
         match pot with
-        | Empty -> fault "empty source amount in equal-shares allocation (v0 mirror hole, ch. 4.4)"
+        | Empty -> Nothing (* an empty pot is no distribution in every method (ch. 4.4, v1) *)
         | _ ->
             let a, _ = Arith.num_exn "allocation source" pot in
             let n = Q.of_int (List.length recipients) in
@@ -76,23 +78,34 @@ let allocate (method_name : Ir_v0.Ast.method_name) ~descending ~decimals ~pot ~e
             Distributed (shares, Q.sub a total))
     | Proportional -> (
         match pot with
-        | Empty -> fault "empty source amount in proportional allocation (v0 mirror hole, ch. 4.4)"
+        | Empty -> Nothing (* as in the other methods (ch. 4.4, v1): no deposit either *)
         | _ ->
             let a, _ = Arith.num_exn "allocation source" pot in
             (* one group: the recipients whose weight is filled; an
                empty-weight recipient is excluded (stays leeg) + §9.5 error.
-               A negative weight is the recorded v0 hole: unclamped. *)
+               A negative weight counts as 0 + §9.5 error (ch. 4.4, v1): the
+               recipient stays eligible and its share is a real 0, so it
+               neither shrinks the weight sum nor pushes the others past
+               the pot. *)
             let eligible, excluded =
               List.partition (fun r -> match r.weight with Some Empty | None -> false | Some _ -> true) recipients
             in
             List.iter (fun r -> err ~id:r.id { code = Some "EF-028"; text = "empty weight: excluded from the split" }) excluded;
-            let wsum = List.fold_left (fun acc r -> Q.add acc (weight_q r.weight)) Q.zero eligible in
+            let weight_of r =
+              let q = weight_q r.weight in
+              if Q.sign q < 0 then (
+                err ~id:r.id { code = Some "EF-038"; text = "negative weight counts as 0" };
+                Q.zero)
+              else q
+            in
+            let eligible = List.map (fun r -> (r, weight_of r)) eligible in
+            let wsum = List.fold_left (fun acc (_, w) -> Q.add acc w) Q.zero eligible in
             if Q.equal wsum Q.zero then Nothing (* nothing written, no division by zero *)
             else
               let shares =
                 List.map
-                  (fun r ->
-                    let raw = Q.div (Q.mul a (weight_q r.weight)) wsum in
+                  (fun (r, w) ->
+                    let raw = Q.div (Q.mul a w) wsum in
                     (r.id, Assigned (cap_floor ~err ~decimals ~id:r.id raw r.cap)))
                   eligible
                 @ List.map (fun r -> (r.id, Excluded)) excluded

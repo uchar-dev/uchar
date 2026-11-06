@@ -3881,16 +3881,20 @@ executors compute them.
 - **Proportional (naar rato)**: one group, the recipients whose weight is
   **filled** — an empty-weight recipient is excluded and receives no
   share (it stays leeg, never 0), and the exclusion surfaces as a §9.5
-  error (ch. 5.6); when the eligible weights sum to 0 there is no
-  distribution at all (nothing written, no division by zero).
+  error (EF-028, ch. 5.6); a **negative weight counts as 0**: its
+  recipient stays in the group and is assigned a real 0, and the weight
+  surfaces as a §9.5 error (EF-038); when the eligible weights sum to 0
+  there is no distribution at all (nothing written, no division by
+  zero).
 - **Ordered (op volgorde)**: groups are the equal-key classes of the
   ordering attribute, ascending or descending as declared, an **empty key
   sorting last** (no error — mirrored); each group divides the pot *as it
   stands at that group's entry* (ties are simultaneous, not sequentially
   depleted), unweighted or — with the declared tie-break weight —
-  weighted. In the weighted tie-break, a **negative weight counts as 0**
-  and an **empty weight counts as 0** (the member is assigned a real 0,
-  plus the §9.5 error of ch. 4.3); a tie group whose weights sum to 0
+  weighted. In the weighted tie-break, an **empty weight counts as 0**
+  and surfaces as a §9.5 error (EF-029), and a **negative weight counts
+  as 0** without an error; either way its member's raw share is that of
+  weight 0; a tie group whose weights sum to 0
   assigns **0 to every member** (the recurrence's 0/0 case, defined, not
   crashed). The `max(0, …)` clauses make an exhausted pot give later
   groups **0** (a real 0, never leeg). These clamps are
@@ -3921,13 +3925,13 @@ executors compute them.
 | Case | Behaviour |
 |---|---|
 | zero recipients | nothing written, no error |
-| empty source amount | **ordered:** no distribution (mirrors the §9.7.6 discipline). **equal/proportional:** v0 has no guard here — a mirror **hole** (the implementation faults). **Delta (decided, v1):** "empty pot ⇒ no distribution" is uniform across methods; the rule-layer artifacts land with the v1 schema |
+| empty source amount | no distribution, in every method: no share and no rest is written, and no error is raised, also not for an empty weight or cap beside it. *v0 mirror note:* v0 guards the ordered method only (the §9.7.6 discipline) and faults in the other two; v1 makes the rule uniform (decided) |
 | weight empty — proportional | excluded from the split (share stays leeg) + §9.5 error; the others still receive |
 | weight empty — ordered tie-break | assigned a real **0** + §9.5 error (ch. 4.2) |
 | all eligible weights 0 — proportional | no distribution (nothing written) |
 | all weights 0 in an ordered tie group | every member assigned **0** (ch. 4.2) |
-| a negative weight — ordered tie-break | counts as 0: claims nothing, cannot inflate others beyond the pot |
-| a negative weight — proportional | **v0 hole**: unclamped — it enters the weight sum and the product, so a negative share and over-distribution past the pot are possible. **Decided (v1):** the ordered method's clamp is adopted uniformly — a negative weight counts as 0 + §9.5 error; the ch. 4.2 recurrence deliberately does not bless the v0 behaviour |
+| a negative weight — ordered tie-break | counts as 0, no error: claims nothing, cannot inflate others beyond the pot |
+| a negative weight — proportional | counts as 0 + §9.5 error (EF-038): the recipient is assigned a real 0, and the weight neither shrinks the weight sum nor pushes the others past the pot. *v0 mirror note:* v0 leaves the weight unclamped, so a negative share and over-distribution past the pot are possible; v1 adopts the ordered method's clamp and adds the error (decided) |
 | cap empty / negative | uncapped + §9.5 error (never a negative share) |
 | empty ordering key | sorts last, no error |
 | pot exhausted before a group | that group's shares are 0 (real 0, not leeg) |
@@ -3983,9 +3987,15 @@ than picking a winner.
   value 1001/2, decimals 0, and nothing written
   (`corpus/red/jutterswet-verdeling-past-niet`).
 - Edge rows of ch. 4.4, as observable outputs: a source with **no
-  recipients** writes nothing (also no rest); ordered with tie weights
+  recipients** writes nothing (also no rest); an **empty pot** writes
+  nothing in every method and raises no error, also beside an empty
+  weight (`corpus/golden/jutterswet-lege-pot-en-negatief-gewicht`, case
+  1); ordered with tie weights
   {3, −1} over 1200 in one group → the negative weight counts as 0 →
-  **1200, 0**; an ordered tie group with weights {0, 0} over 1200 →
+  **1200, 0**, no error; proportional with weights {3, −1} over 100 →
+  **100, 0**, rest **0**, and one §9.5 error (EF-038) on the second
+  recipient (the golden's case 2 adds a weightless third recipient:
+  leeg, EF-028); an ordered tie group with weights {0, 0} over 1200 →
   **0, 0** and the pot carries to the next group; ordered over keys
   {2020, leeg, 2021} ascending → evaluation order 2020, 2021, leeg (the
   empty key last).
@@ -4938,14 +4948,12 @@ parameters, the clause that defines it and its witnesses.
   text and gets a code when a red case for it lands: today, among others,
   the pass budget of ch. 5.7 step 4 where no divergence by two writers is
   named. A safeguard of one executor (a fire cap) is no fault kind. On the
-  `§9.5` channel three kinds have no witness and so no code; each deposits
+  `§9.5` channel two kinds have no witness and so no code; each deposits
   its fact without a code (ch. 5.6): a negative radicand (ch. 1.2), which no
   golden can witness while the ASP backend has no square root and gate 6
-  replays every golden through it; an anchor of a variable start that is
-  leeg at evaluation time (ch. 3.2), since no executor lays a grid per
-  object; and a negative weight in a proportional allocation, decided for
-  v1 in ch. 4.4 and executed by the Drools backend alone (`ref/` leaves the
-  weight unclamped, the ASP backend faults).
+  replays every golden through it; and an anchor of a variable start that
+  is leeg at evaluation time (ch. 3.2), since no executor lays a grid per
+  object.
 
 | Code | Kind | Channel | Parameters | Spec home | Witnesses |
 |---|---|---|---|---|---|
@@ -4986,6 +4994,7 @@ parameters, the clause that defines it and its witnesses.
 | EF-035 | the case input names one cell of an attribute twice | case input | `label`, `attribute`, `labels` | ch. 5.8c | `corpus/red/jutterswet-cel-dubbel` |
 | EF-036 | a temporal total meets a segment with an open bound whose value is not 0 | fault | `attribute`, `label` | ch. 3.6 | `corpus/red/jutterswet-totaal-open-segment` |
 | EF-037 | a form that reads the full timeline of a time-dependent attribute finds the asOfDate-bucket scalar | fault | `attribute`, `label` | ch. 8.4; ch. 3.3; ch. 3.4; ch. 3.5; ch. 3.6; ch. 3.7; ch. 3.9; ch. 3.10 | `corpus/red/jutterswet-emmerscalair-per-periode`, `corpus/red/jutterswet-emmerscalair-knip`, `corpus/red/jutterswet-emmerscalair-gehele-jaar`, `corpus/red/jutterswet-emmerscalair-gevolg` |
+| EF-038 | a recipient of a proportional allocation has a negative weight | §9.5 | `rule`, `label` | ch. 4.2; ch. 4.4 | `corpus/golden/jutterswet-lege-pot-en-negatief-gewicht` |
 
 The four declined kinds are static properties of the document. Each ends
 as a WF rule (its witness moves to `corpus/negative`) or as a specified

@@ -1853,8 +1853,10 @@ allocation's OWN share atoms. Without declared rounding ref writes
 the EXACT rational share and faults a non-fitting write; that is
 mirrored as an exactness viol at the target scale — the previously
 "aligned" unrounded form floored silently, now it viols.
-**Proportional** (naar rato): weights `vdI_gewicht(X,W)` over the
-gate, the weight sum with `S != 0`, raw shares `vdI_raw`, the cap
+**Proportional** (naar rato): weights `vdI_weight(X,W)` over the
+gate and the filled pot, a negative weight entering as 0 with a §9.5
+deposit (EF-038, RS ch. 4.4), the weight sum with `S != 0`, raw shares
+`vdI_raw`, the cap
 split share = min(floor_d raw, floor_d cap) — the floor commutes
 with min, the declared cap floors to the rounding scale — as the
 R≤C / R>C / uncapped cases. **Equal shares**: one group,
@@ -1871,13 +1873,14 @@ every member), shares are capped, floored and clamped at 0
 recursion through the assignment aggregates grounds because the rank
 strictly increases under the `vdI_ranks` bound. Negative raws (a
 negative pot) clamp to the real 0 ref assigns, so ordered needs no
-negative-pot viol, and an empty ordered pot is Nothing (§9.7.6),
-never a fault. The §9.5 channel carries the ch. 4.4 holes — a
-weightless proportional recipient, an empty ordered tie weight, a
+negative-pot viol. An empty pot is Nothing in every method (RS
+ch. 4.4): no share, no rest, and no deposit, since every share, the
+rest and every deposit join the filled pot. The §9.5 channel carries
+the degradations of ch. 4.3 and 4.4 — a weightless or negatively
+weighted proportional recipient, an empty ordered tie weight, a
 negative or absent cap — keyed by the allocation's name, per
-subject. `viol/2` fences: negative pot and weight and empty pot
-(equal/proportional only — ref faults the empty pot as the ch. 4.4
-v0 mirror hole), the exactness viol, and the wrap bounds on pot,
+subject. `viol/2` fences: a negative pot (equal/proportional only),
+the exactness viol, and the wrap bounds on pot,
 weight, cap and recipient count, which shrink by exactly the scale
 multipliers a misaligned form introduces (46340² < 2^31; equal
 scales keep the historical 46340 everywhere). The wrap fences stay

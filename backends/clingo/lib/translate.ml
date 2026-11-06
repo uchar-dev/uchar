@@ -13784,20 +13784,22 @@ let translate_allocation ctx i (v : resolved_allocation) =
   match method_name with
   | Proportional ->
       let ratio = req "AllocationVersion.ratioAttribute (proportional)" v.ratio_attribute in
-      (* fail-fast guards, mirrored on ref/'s faults and on floor
-         semantics: integer division is floor only on non-negative
-         operands, and an empty pot is the ch. 4.4 v0 hole ref/ faults
-         on — viol/2 witnesses plus the global integrity constraint
-         make clingo fail identically instead of silently diverging *)
+      (* a fail-fast guard on floor semantics: integer division is floor
+         only on non-negative operands — a viol/2 witness plus the global
+         integrity constraint make clingo fail loudly instead of silently
+         diverging. An empty pot is no distribution (ch. 4.4, v1): no share
+         and no rest without val(B,…,A), and every deposit below waits for
+         the pot, as ref deposits nothing there *)
       emit ctx "viol(\"allocation: negative pot\",B) :- %s, val(B,%s,A), A < 0." src (str ba);
-      emit ctx "viol(\"allocation: empty pot\",B) :- %s, %s, not %shas_pot(B)." src
-        recip_any p;
-      (* eligible recipients: filled weight; the weightless are excluded
-         and surface on the channel (ch. 4.4) *)
-      emit ctx "%sweight(X,W) :- %s, %s, val(X,%s,W)." p recip src (str ratio);
-      emit ctx "viol(\"allocation: negative weight\",X) :- %sweight(X,W), W < 0." p;
+      (* eligible recipients: filled weight, a negative one counting as 0
+         with a deposit (ch. 4.4, v1); the weightless are excluded and
+         surface on the channel (ch. 4.4) *)
+      emit ctx "%sweight(X,W) :- %s, %s, %shas_pot(B), val(X,%s,W), W >= 0." p recip src p (str ratio);
+      emit ctx "%sweight(X,0) :- %s, %s, %shas_pot(B), val(X,%s,W), W < 0." p recip src p (str ratio);
+      deposit ctx ~code:"EF-038" ~rule:(str name) ~subject:"X"
+        (Printf.sprintf "%s, %s, %shas_pot(B), val(X,%s,W), W < 0" recip src p (str ratio));
       deposit ctx ~code:"EF-028" ~rule:(str name) ~subject:"X"
-        (Printf.sprintf "%s, %s, not %shas_weight(X)" recip src p);
+        (Printf.sprintf "%s, %s, %shas_pot(B), not %shas_weight(X)" recip src p p);
       emit ctx "%shas_weight(X) :- %sweight(X,_)." p p;
       emit ctx "%swsum(B,S) :- %s, S = #sum { W,X : %s, %sweight(X,W) }, S != 0." p
         src recip p;
@@ -13822,11 +13824,9 @@ let translate_allocation ctx i (v : resolved_allocation) =
         ~sum:(Printf.sprintf "S,X : %s, %sshare(X,S)" recip p)
   | Equal_shares ->
       (* one group, all recipients, unweighted (ch. 4.2); the negative
-         and empty pot guards as in the proportional method (the empty
-         pot is the same ch. 4.4 v0 mirror hole) *)
+         pot guard as in the proportional method, and an empty pot writes
+         nothing there either *)
       emit ctx "viol(\"allocation: negative pot\",B) :- %s, val(B,%s,A), A < 0." src (str ba);
-      emit ctx "viol(\"allocation: empty pot\",B) :- %s, %s, not %shas_pot(B)." src
-        recip_any p;
       emit ctx "%sn(B,N) :- %s, %s, N = #count { X : %s }." p src recip_any recip;
       let num = scaled "A" m_num in
       let den = divd "N" m_den in
@@ -13849,8 +13849,8 @@ let translate_allocation ctx i (v : resolved_allocation) =
          strictly increases under the ranks bound. Negative raws (a
          negative pot) clamp to the real 0 ref assigns, so the
          trunc-vs-floor split of negative division never surfaces and a
-         negative pot needs no viol here; an empty pot is Nothing (the
-         §9.7.6 discipline), never the equal/proportional fault. *)
+         negative pot needs no viol here; an empty pot is Nothing, as in
+         the other two methods (ch. 4.4). *)
       let rolx = recip in
       (match v.ordering_attribute with
       | Some ga ->

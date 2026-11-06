@@ -1,0 +1,141 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "G1",
+        "objectType": "Berging",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "B1",
+        "objectType": "Berger",
+        "attributes": {
+          "geborgen gewicht": {
+            "number": "3"
+          },
+          "gelijke aandeel": {
+            "number": "7"
+          }
+        },
+        "roles": {
+          "berging": [
+            "G1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "B2",
+        "objectType": "Berger",
+        "attributes": {},
+        "roles": {
+          "berging": [
+            "G1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "G2",
+        "objectType": "Berging",
+        "attributes": {
+          "opbrengst": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "B3",
+        "objectType": "Berger",
+        "attributes": {
+          "geborgen gewicht": {
+            "number": "1"
+          }
+        },
+        "roles": {
+          "berging": [
+            "G2"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "B1",
+      "attribute": "gelijke aandeel",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "B2",
+      "attribute": "gelijke aandeel"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "G1",
+      "attribute": "onverdeelde rest"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "B1",
+      "attribute": "rato-aandeel"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "B2",
+      "attribute": "rato-aandeel"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "G1",
+      "attribute": "ratorest"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B3",
+      "attribute": "gelijke aandeel",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "G2",
+      "attribute": "onverdeelde rest",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B3",
+      "attribute": "rato-aandeel",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "G2",
+      "attribute": "ratorest",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

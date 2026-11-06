@@ -75,7 +75,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       no fault and no deposit, also beside an empty weight of the proportional method and an empty tie-break weight
  *       of the ordered one; a tie group whose weights are all empty gives every member a real 0 and passes the pot on;
  *       two ordering keys of one value in two scales are one group; and a negative proportional weight counts as 0
- *       with a deposit, as ch. 4.4 decides for v1.</li>
+ *       with the deposit EF-038, as ch. 4.4 decides for v1.</li>
  *   <li><b>E, the validity of a version and the condition.</b> Two versions: in gelijke delen until 2025-12-31, naar
  *       rato van het basisgewicht from 2026-01-01 where the vrijgavescore is at least 10. 100 over J1 (1) and J2 (3):
  *       50 and 50 in 2025, 25 and 75 in 2026, nothing where the condition fails (J1's input share 7 stays), and a fault
@@ -100,14 +100,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * but H's two allocations, ill-formed on purpose). The reference interpreter's runner and the ASP runner pass A (15
  * expectations), B (10), C (8), F (4), G (6) and of D the eligible weights that sum to 0 (5), the empty pot of the
  * ordered method (4, no deposit beside the empty weight), the all-empty tie group (6) and the keys in two scales (5).
- * Twice the spec and the two executors part, each time where ch. 4.4 decides for v1 and they keep the v0 hole; both
- * executors are to follow the two decisions on the card 20261009-verdeling-lege-pot-en-negatief-gewicht. An empty pot of the equal-shares and the proportional
- * method is no distribution, as this branch reads it, where the reference interpreter faults ("EVALUATION FAULT: empty
- * source amount in equal-shares allocation (v0 mirror hole, ch. 4.4)", and "… in proportional allocation …") and the
- * ASP runner is unsatisfiable on its guard on either ({@code viol("allocation: empty pot","B1")}). A negative
- * proportional weight counts as 0 with a deposit, as this branch reads it, where the reference interpreter keeps the v0
- * hole ("J1.bergingsaandeel = 150, expected 100 … J2.bergingsaandeel = -50, expected 0 … the channel carries:
- * (empty)") and the ASP runner faults ({@code viol("allocation: negative weight","J2")}). E: the
+ * Twice the spec and the two executors parted then, each time where ch. 4.4 decides for v1 and they kept the v0 hole:
+ * an empty pot of the equal-shares and the proportional method, where the reference interpreter faulted and the ASP
+ * runner was unsatisfiable on a guard, and a negative proportional weight, which the reference interpreter left
+ * unclamped and the ASP runner faulted on. Since the card 20261009-verdeling-lege-pot-en-negatief-gewicht both follow
+ * the spec there, witness {@code corpus/golden/jutterswet-lege-pot-en-negatief-gewicht}. E: the
  * reference interpreter passes the three sessions with a date (4 expectations each) and faults the time-free one, "a
  * validity-bounded form needs an evaluation date; this session is time-free"; the ASP runner does not translate the
  * validity window of an allocation ("allocation validity windows are not translated (no corpus case)").
@@ -540,7 +537,8 @@ class TmsAllocationWitnessTest {
                 instance("J1", "Berger", Map.of("gewicht", "3"), List.of()),
                 instance("J2", "Berger", Map.of("gewicht", "-1"), List.of())),
                 List.of(value("J1", "bergingsaandeel", "100"), value("J2", "bergingsaandeel", "0"),
-                        value("B1", "onverdeelde rest", "0"), inconsistent("verdeel de opbrengst naar rato", "J2")))});
+                        value("B1", "onverdeelde rest", "0"),
+                        inconsistent("verdeel de opbrengst naar rato", "J2", "EF-038")))});
         return out;
     }
 

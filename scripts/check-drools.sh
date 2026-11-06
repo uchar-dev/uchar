@@ -1574,7 +1574,10 @@ EXPECTED_CHANNEL=(
 # initialisation on a timeline target, the lowest layer of its stack per day, and jutterswet-creatie-per-dag (PLAYED 2),
 # the member value of a creation as the input of the made object per day (RUNTIME-SEMANTICS ch. 7.8), which both
 # branches carry since that step.
-EXPECTED_PLAYED=347
+# 348 since the card verdeling-lege-pot-en-negatief-gewicht (2026-11-06): the golden
+# jutterswet-lege-pot-en-negatief-gewicht, an empty pot in equal shares and proportional and a negative proportional
+# weight (RUNTIME-SEMANTICS ch. 4.4, the two v1 decisions), with PLAYED 2 on both branches.
+EXPECTED_PLAYED=348
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

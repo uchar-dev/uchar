@@ -20,14 +20,12 @@ import java.util.TreeSet;
  * the exact quotient, capped, and floored once at the rounding's decimals, and the rest is the pot less every share,
  * exactly (ch. 4.2); a value is a decimal where it terminates and an exact rational where it does not, as the runtime's
  * arithmetic gives it. The ordered method computes with the runtime's helper {@code rsVerdeelOpVolgorde}, on the same
- * terms. The edge rows of ch. 4.4 are the reference interpreter's ({@code ref/lib/alloc.ml}), save the two that ch. 4.4
- * decides otherwise for v1 (below).
+ * terms. The edge rows of ch. 4.4 are the reference interpreter's ({@code ref/lib/alloc.ml}).
  *
  * <p>Where the spec and the v0 mirror differ, the spec decides. An empty pot distributes nothing in every method, as
- * ch. 4.4 decides for v1, so nothing is written and nothing deposited; in the equal-shares and the proportional method
- * the reference interpreter keeps the v0 hole there and faults. A negative weight in the proportional method counts as
- * 0 and surfaces the §9.5 deposit, as ch. 4.4 decides for v1; the reference interpreter keeps the v0 hole there, an
- * unclamped weight. In the ordered method an empty tie-break weight counts as 0, as ch. 4.2 and the reference interpreter
+ * ch. 4.4 decides for v1, so nothing is written and nothing deposited. A negative weight in the proportional method
+ * counts as 0 and surfaces the §9.5 deposit EF-038, as ch. 4.4 decides for v1. In the ordered method an empty tie-break
+ * weight counts as 0, as ch. 4.2 and the reference interpreter
  * read it, where {@code rsVerdeelOpVolgorde} splits a group whose weights are all empty in equal parts; and two
  * ordering keys of one value are one group whatever their scale, as the reference interpreter compares them, where that
  * helper groups by {@code equals}. The weights and keys are handed to the helper read so.
@@ -43,7 +41,7 @@ public final class Allocation {
      * the pot less every share, or null where nothing is distributed and nothing written (ch. 4.4: no recipients, an
      * empty pot, eligible weights that sum to 0); and the recipients on which a degradation surfaces the §9.5 deposit
      * of the allocation (ch. 4.3, 4.4), each once, by identity, with the EF codes of its degradations (ch. 5.7b),
-     * ascending: none for a negative weight in the proportional method, a kind without a code. A share and the rest are
+     * ascending. A share and the rest are
      * a {@code BigDecimal} where they terminate and a {@link Breuk} where they do not.
      */
     public record Result(Map<Object, Object> shares, Object rest, Map<Object, Set<String>> depositors) {}
@@ -108,7 +106,7 @@ public final class Allocation {
             }
             Breuk w = Breuk.van(o.weight());
             if (w.signum() < 0) {
-                deposit(depositors, o.recipient(), null);
+                deposit(depositors, o.recipient(), "EF-038");
                 w = ZERO;
             }
             eligible.add(o);
@@ -176,11 +174,9 @@ public final class Allocation {
 
     private static final Breuk ZERO = Breuk.van(BigInteger.ZERO, BigInteger.ONE);
 
-    /** The §9.5 deposit of a degradation on {@code recipient}, with {@code code}, the EF code of its kind, or none (null)
-     *  for a negative weight in the proportional method, decided for v1 in ch. 4.4 and witnessed by no golden. */
+    /** The §9.5 deposit of a degradation on {@code recipient}, with {@code code}, the EF code of its kind. */
     private static void deposit(Map<Object, Set<String>> depositors, Object recipient, String code) {
-        Set<String> codes = depositors.computeIfAbsent(recipient, r -> new TreeSet<>());
-        if (code != null) codes.add(code);
+        depositors.computeIfAbsent(recipient, r -> new TreeSet<>()).add(code);
     }
 
     /** The floor of the exact {@code x} at {@code decimals} decimals (ch. 4.3), rounded once; the identity without

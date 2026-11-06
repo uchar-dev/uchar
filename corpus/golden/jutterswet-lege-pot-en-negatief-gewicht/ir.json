@@ -1,0 +1,175 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Berging",
+        "animate": false,
+        "plural": "Bergingen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "opbrengst",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "onverdeelde rest",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "ratorest",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Berger",
+        "animate": true,
+        "plural": "Bergers",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gelijke aandeel",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "rato-aandeel",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "geborgen gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "bergingsdeelname",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "berging",
+            "objectType": "Berging",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "berger",
+            "objectType": "Berger",
+            "plural": "bergers",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [
+      {
+        "node": "Allocation",
+        "name": "verdeel de opbrengst in gelijke delen",
+        "versions": [
+          {
+            "sourceType": "Berging",
+            "sourceAttribute": "opbrengst",
+            "targetType": "Berger",
+            "targetAttribute": "gelijke aandeel",
+            "method": "equalShares",
+            "roundingDecimals": 0,
+            "remainderAttribute": "onverdeelde rest",
+            "descending": false,
+            "validity": {
+              "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "bergingsdeelname",
+              "role": "berger"
+            }
+          }
+        ]
+      },
+      {
+        "node": "Allocation",
+        "name": "verdeel de opbrengst naar rato",
+        "versions": [
+          {
+            "sourceType": "Berging",
+            "sourceAttribute": "opbrengst",
+            "targetType": "Berger",
+            "targetAttribute": "rato-aandeel",
+            "method": "proportional",
+            "ratioAttribute": "geborgen gewicht",
+            "roundingDecimals": 0,
+            "remainderAttribute": "ratorest",
+            "descending": false,
+            "validity": {
+              "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "bergingsdeelname",
+              "role": "berger"
+            }
+          }
+        ]
+      }
+    ],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

@@ -1,0 +1,28 @@
+Objecttype de Berging (mv: Bergingen)
+    de opbrengst Numeriek (geheel getal);
+    de onverdeelde rest Numeriek (geheel getal);
+    de ratorest Numeriek (geheel getal);
+
+Objecttype de Berger (mv: Bergers) (bezield)
+    het gelijke aandeel Numeriek (geheel getal);
+    het rato-aandeel Numeriek (geheel getal);
+    het geborgen gewicht Numeriek (geheel getal);
+
+Feittype bergingsdeelname
+    de berging Berging
+    de berger (mv: bergers) Berger
+Eén berging heeft meerdere bergers
+
+Regel verdeel de opbrengst in gelijke delen
+    geldig altijd
+        De opbrengst van een berging wordt verdeeld over de gelijke aandelen van alle bergers van de berging, waarbij wordt verdeeld:
+        - in gelijke delen,
+        - afgerond op 0 decimalen naar beneden.
+        Als onverdeelde rest blijft de onverdeelde rest van de berging over.
+
+Regel verdeel de opbrengst naar rato
+    geldig altijd
+        De opbrengst van een berging wordt verdeeld over de rato-aandelen van alle bergers van de berging, waarbij wordt verdeeld:
+        - naar rato van het geborgen gewicht,
+        - afgerond op 0 decimalen naar beneden.
+        Als onverdeelde rest blijft de ratorest van de berging over.
