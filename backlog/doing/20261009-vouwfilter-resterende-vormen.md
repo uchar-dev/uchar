@@ -156,3 +156,51 @@ dezelfde invoer). Op `b-vers-j1` is Drools niet gemeten.
   gemeten; meten bij het oppakken.
 - Een deling in een default weigert de exec-model-tak tot `20261008-fout-op-tussenstand` (dekkingsverlies, punt 2 in het
   `Result:` van de omschakeling).
+
+## Result
+
+*Nagemeten op 2026-11-06 op branch `card/text-output-foldfilter` (worktree `wt/clingo-round2`; ref, clingo en de
+verifier uit `_build` van de worktree, de shaded jar van `backends/drools` daar, na kaart 2). De documenten van
+2026-10-09 in `/tmp` bestonden niet meer; elke rij is opnieuw gebouwd naar haar beschrijving, onder
+`uchar-dev/werk/clingo-round2/k3/` (`probes/`, `rgs/`, `rgs2/`, `rgs3/`), uitkomsten in
+`logs/k3-filterwacht-j1j2.log` en `logs/k3-probes-1.log` … `-4.log`. Alle documenten zijn verifier-schoon.*
+
+Geen rij is nog fout: clingo's foutguard volgt de evaluatie van ref sinds `zero-division-channel` (2026-10-19) en
+`fix/clingo-filter-guard-binding` (2026-10-22), en beide Drools-takken zijn één analyse met truth maintenance. Wat
+nagemeten is, per rij van de tabel en de aanvullingen (ref | clingo | exec-model | DRL-tekst):
+
+| Rij | Uitkomst | Nu vastgelegd in |
+|---|---|---|
+| `g-buiten-bereik` case 2: J1 niet actief naast een actieve J2 | PASS \| PASS \| PLAYED \| PLAYED | `jutterswet-filterwacht` case 3 |
+| `c8`: een Vondst in geen enkel bereik | PASS in alle vier | `jutterswet-filterwacht` case 3 (V9) |
+| `c8b`: idem over een pad van twee rollen | PASS in alle vier | `jutterswet-vouwfilter-buiten-de-beurt` (meldgewicht; S9/V9) |
+| `c7b`: de lagere default leest de delende vouw, de hogere beslist | PASS in alle vier | `jutterswet-vouwfilter-buiten-de-beurt` (zware vondsten) |
+| `c6e`: "ten minste één", V1 beslist, de matrix deelt bij V2 door nul | PASS in alle vier; bereikt (V2 eerst): `drukte × J1` in alle vier | `jutterswet-kwantorvouw-en-unie` (drukte) |
+| `a8`: creatie met een vouw in een toekenning onder een vouwvoorwaarde | ref en clingo PASS (geen gringo-fout meer); beide takken weigeren met naam, `DROOLS-152` (een deling in een toekenning) | meting `k3/rgs/a8-…` |
+| `d1-begeleider`: deling in de waarde, vouw in de voorwaarde | PASS in alle vier | meting `k3/rgs2/d1-companion` |
+| `a9`: "geen" en "ten minste twee" met een datumvouw als lid | alle vier gelijk: onder "geen" na "hij is actief" geen deponering; onder "ten minste twee" wordt de datumvouw bereikt en deponeren alle vier `vlotheid × J1` | `jutterswet-vouwfilter-buiten-de-beurt` (rust) |
+| negatieve wortel in het filter van een bereikte vouw | ref en beide takken: `zware vondsten × J1`; clingo weigert de afgeronde wortel bij de vertaling ("rounded root is not translated") | meting `k3/rgs2/negative-root-in-filter` |
+| onderwerp van een deponering uit een vouwfilter | ref, clingo en beide takken op J2, onder elke lezende vorm; clingo precies twee feiten | golden `fold-filter-divides-by-zero` (al aanwezig) en meting `k3/probes/deposit-subject` |
+| unietelling met een delende tak | alle vier `unietelling × J2`, clingo precies één feit | `jutterswet-kwantorvouw-en-unie` (unietelling) |
+| uitzonderingsgroep onder een verdrongen default | PASS in alle vier, geen deponering; bereikt, met een deling door nul in de consequentie: alle vier `heffing` 2,00 en consistent (de speculatieve-deponeringsregel van ch. 7.1: een doorgevallen default deponeert niet) | meting `k3/rgs/exception-under-displaced` |
+
+- **(a)** `jutterswet-filterwacht` krijgt case 3 (J1 niet actief naast een actieve J2, en V9 in geen bereik), via
+  `scenario.rgs` (gate 16 regenereert hem); NOTE.md beschrijft de drie cases. Twee nieuwe goldens met
+  handgeschreven absolute verwachtingen, elk met een case waarin geen deling bereikt wordt (consistent) en een
+  controlecase waarin elke deling bereikt wordt (de EF-005-feiten exact, per lezende vorm op het onderwerp):
+  `jutterswet-vouwfilter-buiten-de-beurt` (`source.rgs`: defaults, "geen", een pad) en
+  `jutterswet-kwantorvouw-en-unie` (handgeschreven `ir.json`: de frontend schrijft geen deling in de matrix van een
+  kwantorvouw en geen ander filter dan een kenmerk in een tak van een unie).
+- **(b)** Clingo: geen reparatie nodig; de nieuwe goldens houden het gedrag vast (gate 6).
+- **(c)** Drools: geen reparatie nodig; beide takken spelen de nieuwe goldens. `a8` weigeren ze met naam
+  (`DROOLS-152`), geen stil fout antwoord.
+- **(d)** Gates 2, 4, 5, 6, 7, 10 en 16 los gedraaid (`logs/k3-gates.log`); 12, 13, 15 en 17 in de afsluitende
+  `make gates`. Gate 12 `EXPECTED_PLAYED` 355 → 357 (de twee nieuwe goldens spelen op beide takken).
+
+Een zin in ch. 5.6 over het onderwerp van een deponering uit een vouwfilter is niet nodig: ch. 1.4 punt 4 en ch. 5.6
+zeggen al "on the rule × subject that evaluates it", en ref, clingo en beide takken nemen het onderwerp van de
+lezende vorm.
+
+Opgemerkt bij het meten, geen afwijking: het filter van een kwantorvouw wordt volledig uitgerekend vóór de matrix
+kortsluit (ch. 3.9a, "the contributors are settled in full first"); een deling door nul in dat filter deponeert dus
+ook na het beslissende lid, in alle vier.

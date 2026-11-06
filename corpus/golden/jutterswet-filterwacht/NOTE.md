@@ -2,7 +2,7 @@
 
 *Since 2026-10-19 (card `zero-division-channel`) a filled dividend divided by
 a numeric zero is leeg with a §9.5 fact of kind EF-005, no fault
-(`RUNTIME-SEMANTICS.md` ch. 1.4 point 4). Both cases here pin `consistent`, so
+(`RUNTIME-SEMANTICS.md` ch. 1.4 point 4). Every case here pins `consistent`, so
 they pin that the division does not happen where the reading form does not
 reach the fold; the twin where it is reached is the golden
 `fold-filter-divides-by-zero` (a red case until then). What follows about the
@@ -69,32 +69,27 @@ Where `J1` IS actief the fold is reached and `V2` divides by 0: that is the
 red case `corpus/golden/fold-filter-divides-by-zero`, which pins the fault in
 `ref`, clingo and the Drools exec-model branch.
 
-## Why the two cases are separate
+Case 3, a Jutter that is not actief beside one that is, and a vondst that is
+in no Jutter's range: `J1` as in case 1 (`V1` 10 ÷ 2, `V2` 9 ÷ 0), `J2` as in
+case 2 (`V3` 10 ÷ 2, `V4` 3 ÷ 3), and `V9` (9 ÷ 0), which no Jutter has.
 
-The ASP backend faults where the reference interpreter answers when a
-Jutter that is not actief shares a session with one that is, or when a
-vondst whose `deelnemers` is 0 is in no Jutter's range: its fault guard on
-the division in the filter carries the rule's condition but does not join
-the member to the fold's subject (measured 2026-10-09: `ref` passes, clingo
-reports `viol("division by numeric zero","V2")`). So no case here holds a
-Jutter that is not actief beside one that is, nor a vondst outside every
-range; `backends/drools`' `FilterFaultWitnessTest` carries both shapes for
-the Drools branches.
+| Jutter | actief | `vondstental` | `zware vondsten` | `druk` |
+|--------|--------|---------------|------------------|--------|
+| J1 | no | **2** | **leeg** | **no** |
+| J2 | yes | **2** | **1** | **yes** |
 
-*No longer so (measured 2026-10-22):* since `zero-division-channel`
-(2026-10-19) a division by a numeric zero is a channel kind, and a session
-with a Jutter that is not actief beside one that is replays in clingo as in
-`ref`; since `fix/clingo-filter-guard-binding` (2026-10-22) a guard inside a
-fold member also joins the member to the subject of the rule. The two cases
-stay as they are.
+and the session is consistent: the fold is evaluated for `J2` only, over `V3`
+and `V4`, so neither `V2` nor `V9` is divided. An executor that guards the
+division in the filter by the reading form's condition alone, without joining
+the member to the fold's subject, divides `V2` and `V9` here.
 
 ## The differential square
 
-`ref` ≡ clingo over all eleven expectations (gates 5 and 6), anchored to the
-hand-written absolutes above. Gate 12 replays both cases in the exec-model
+`ref` ≡ clingo over all eighteen expectations (gates 5 and 6), anchored to the
+hand-written absolutes above. Gate 12 replays the three cases in the exec-model
 branch and in the DRL-text branch; the truth-maintenance branch plays them
 too (`TmsCorpusWitnessTest`). Gate 10 re-emits `source.rgs` to a
-byte-identical `ir.json`, and gate 16 regenerates both case files from
+byte-identical `ir.json`, and gate 16 regenerates the three case files from
 `scenario.rgs`.
 
 Before the fix, both Drools branches faulted on case 1, because they tested

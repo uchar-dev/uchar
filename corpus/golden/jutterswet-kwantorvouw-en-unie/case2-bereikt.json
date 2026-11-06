@@ -1,0 +1,80 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V3",
+            "V4"
+          ]
+        },
+        "characteristics": [
+          "actief"
+        ]
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "9"
+          },
+          "deelnemers": {
+            "number": "0"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "10"
+          },
+          "deelnemers": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gemerkt"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "J2",
+      "characteristic": "druk"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "unietelling",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "drukte",
+      "label": "J2",
+      "code": "EF-005"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "unietelling",
+      "label": "J2",
+      "code": "EF-005"
+    }
+  ]
+}

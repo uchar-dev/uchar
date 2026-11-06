@@ -1,0 +1,51 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de zware vondsten Numeriek (geheel getal);
+    is actief kenmerk (bijvoeglijk);
+    is rustig kenmerk (bijvoeglijk);
+
+Objecttype de Schipper (mv: Schippers) (bezield)
+    het nummer Numeriek (geheel getal);
+
+Objecttype de Melding (mv: Meldingen)
+    het meldgewicht Numeriek (geheel getal);
+    is dringend kenmerk (bijvoeglijk);
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (geheel getal);
+    de deelnemers Numeriek (geheel getal);
+    de vinddag Datum in dagen;
+
+Feittype aanmelding
+    de aanmelder Jutter
+    de vondst (mv: vondsten) Vondst
+Eén aanmelder heeft meerdere vondsten
+
+Feittype vangst
+    de vanger Schipper
+    de vangst (mv: vangsten) Vondst
+Eén vanger heeft meerdere vangsten
+
+Feittype melding van een schipper
+    de melder Schipper
+    de melding (mv: meldingen) Melding
+Eén melder heeft meerdere meldingen
+
+Regel zware vondsten
+    geldig altijd
+        De zware vondsten van een Jutter moet berekend worden als het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2.
+
+Uitzondering op zware vondsten: actieve jutter
+    geldig altijd
+        De zware vondsten van een Jutter moet gesteld worden op 0 indien hij actief is.
+
+Regel rust
+    geldig altijd
+        Een Jutter is rustig
+        indien hij aan geen van de volgende voorwaarden voldoet:
+        - hij is actief
+        - de eerste van de vinddag van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is later dan dd. 01-01-2026.
+
+Regel meldgewicht
+    geldig altijd
+        Het meldgewicht van een Melding moet berekend worden als de som van het gewicht van alle vangsten van de melder van de Melding die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
+        indien hij dringend is.

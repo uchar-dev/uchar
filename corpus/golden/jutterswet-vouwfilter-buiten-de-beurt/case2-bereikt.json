@@ -1,0 +1,154 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V6",
+            "V7"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V6",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "9"
+          },
+          "deelnemers": {
+            "number": "0"
+          },
+          "vinddag": {
+            "date": "2026-03-06"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V7",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "10"
+          },
+          "deelnemers": {
+            "number": "2"
+          },
+          "vinddag": {
+            "date": "2026-03-07"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S3",
+        "objectType": "Schipper",
+        "attributes": {},
+        "roles": {
+          "vangsten": [
+            "V10",
+            "V11"
+          ],
+          "meldingen": [
+            "M3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V10",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "9"
+          },
+          "deelnemers": {
+            "number": "0"
+          },
+          "vinddag": {
+            "date": "2026-03-10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V11",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "10"
+          },
+          "deelnemers": {
+            "number": "2"
+          },
+          "vinddag": {
+            "date": "2026-03-11"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "M3",
+        "objectType": "Melding",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "dringend"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "zware vondsten",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J3",
+      "characteristic": "rustig"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M3",
+      "attribute": "meldgewicht",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "Jutter.zware vondsten",
+      "label": "J3",
+      "code": "EF-005"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "rust",
+      "label": "J3",
+      "code": "EF-005"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "meldgewicht",
+      "label": "M3",
+      "code": "EF-005"
+    }
+  ]
+}

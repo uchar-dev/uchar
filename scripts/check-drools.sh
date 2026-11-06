@@ -1593,7 +1593,11 @@ EXPECTED_CHANNEL=(
 # 356 since the card tekst-van-een-waarde-in-een-tekstsamenstelling (2026-11-06): the golden
 # jutterswet-tekst-van-een-waarde, the text of a number, a percentage, a truth value, a date, a date-time and an
 # enumeration value in a text composition (RUNTIME-SEMANTICS ch. 1.2; PLAYED 2 on both branches).
-EXPECTED_PLAYED=356
+# 358 since the card vouwfilter-resterende-vormen (2026-11-06): the goldens jutterswet-vouwfilter-buiten-de-beurt, a
+# dividing fold filter under a default below the deciding one, under "geen" after the member that settles it and over
+# a path of two roles, and jutterswet-kwantorvouw-en-unie, a division in the matrix of a quantifier fold and in a
+# branch of a union (PLAYED 2 each on both branches).
+EXPECTED_PLAYED=358
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

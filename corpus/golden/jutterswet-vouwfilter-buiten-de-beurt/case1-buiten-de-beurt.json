@@ -1,0 +1,253 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V1",
+            "V2"
+          ]
+        },
+        "characteristics": [
+          "actief"
+        ]
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "10"
+          },
+          "deelnemers": {
+            "number": "2"
+          },
+          "vinddag": {
+            "date": "2026-03-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "9"
+          },
+          "deelnemers": {
+            "number": "0"
+          },
+          "vinddag": {
+            "date": "2026-03-02"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V3",
+            "V4"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "10"
+          },
+          "deelnemers": {
+            "number": "2"
+          },
+          "vinddag": {
+            "date": "2025-12-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "3"
+          },
+          "deelnemers": {
+            "number": "3"
+          },
+          "vinddag": {
+            "date": "2026-03-04"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S1",
+        "objectType": "Schipper",
+        "attributes": {},
+        "roles": {
+          "vangsten": [
+            "V5"
+          ],
+          "meldingen": [
+            "M1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V5",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "10"
+          },
+          "deelnemers": {
+            "number": "2"
+          },
+          "vinddag": {
+            "date": "2026-03-05"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "M1",
+        "objectType": "Melding",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "dringend"
+        ]
+      },
+      {
+        "label": "S8",
+        "objectType": "Schipper",
+        "attributes": {},
+        "roles": {
+          "vangsten": [
+            "V8"
+          ],
+          "meldingen": [
+            "M2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V8",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "9"
+          },
+          "deelnemers": {
+            "number": "0"
+          },
+          "vinddag": {
+            "date": "2026-03-08"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "M2",
+        "objectType": "Melding",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S9",
+        "objectType": "Schipper",
+        "attributes": {},
+        "roles": {
+          "vangsten": [
+            "V9"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V9",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "9"
+          },
+          "deelnemers": {
+            "number": "0"
+          },
+          "vinddag": {
+            "date": "2026-03-09"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "zware vondsten",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "rustig"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "zware vondsten",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J2",
+      "characteristic": "rustig"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "meldgewicht",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "M2",
+      "attribute": "meldgewicht"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
