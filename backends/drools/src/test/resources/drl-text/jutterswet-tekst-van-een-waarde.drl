@@ -1,0 +1,252 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// "Bedrag: «zijn basis»"
+function Object waarde_omschrijving(Object $basis) {
+    try {
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Bedrag: ", RegelSpraakRuntime.rsTekst($basis)));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "omschrijving"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $basis : basis )
+then
+    Object v = waarde_omschrijving($basis);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "omschrijving", ComputeHelpers.designate(v, "omschrijving")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "omschrijving", false), v, "omschrijving"));
+        }
+    }
+end
+
+// "Deel: «zijn basis gedeeld door 3»"
+function Object waarde_deeltekst(Object $basis, Object sonde) {
+    try {
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Deel: ", RegelSpraakRuntime.rsTekst(ComputeHelpers.divided($basis, new java.math.BigDecimal("3"), sonde))));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "deeltekst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $basis : basis )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_deeltekst($basis, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "deeltekst", ComputeHelpers.designate(v, "deeltekst")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("deeltekst", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "deeltekst", false), v, "deeltekst"));
+        }
+    }
+end
+
+// "Aantal: «zijn aantal»"
+function Object waarde_aantaltekst(Object $aantal) {
+    try {
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Aantal: ", RegelSpraakRuntime.rsTekst($aantal)));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aantaltekst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $aantal : aantal )
+then
+    Object v = waarde_aantaltekst($aantal);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aantaltekst", ComputeHelpers.designate(v, "aantaltekst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "aantaltekst", false), v, "aantaltekst"));
+        }
+    }
+end
+
+// "Aandeel: «zijn aandeel»"
+function Object waarde_aandeeltekst(Object $aandeel) {
+    try {
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Aandeel: ", RegelSpraakRuntime.rsTekst($aandeel)));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aandeeltekst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $aandeel : aandeel )
+then
+    Object v = waarde_aandeeltekst($aandeel);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "aandeeltekst", ComputeHelpers.designate(v, "aandeeltekst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "aandeeltekst", false), v, "aandeeltekst"));
+        }
+    }
+end
+
+// "Gemeld: «zijn bevestiging»"
+function Object waarde_bevestigingstekst(Object $bevestiging) {
+    try {
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Gemeld: ", RegelSpraakRuntime.rsTekst($bevestiging)));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bevestigingstekst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $bevestiging : bevestiging )
+then
+    Object v = waarde_bevestigingstekst($bevestiging);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bevestigingstekst", ComputeHelpers.designate(v, "bevestigingstekst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "bevestigingstekst", false), v, "bevestigingstekst"));
+        }
+    }
+end
+
+// "Gevonden op «zijn vinddatum»"
+function Object waarde_datumtekst(Object $vinddatum) {
+    try {
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Gevonden op ", RegelSpraakRuntime.rsTekst($vinddatum)));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "datumtekst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vinddatum : vinddatum )
+then
+    Object v = waarde_datumtekst($vinddatum);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "datumtekst", ComputeHelpers.designate(v, "datumtekst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "datumtekst", false), v, "datumtekst"));
+        }
+    }
+end
+
+// "Gemeld om «zijn meldtijdstip»"
+function Object waarde_tijdtekst(Object $meldtijdstip) {
+    try {
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Gemeld om ", RegelSpraakRuntime.rsTekst($meldtijdstip)));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "tijdtekst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $meldtijdstip : meldtijdstip )
+then
+    Object v = waarde_tijdtekst($meldtijdstip);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "tijdtekst", ComputeHelpers.designate(v, "tijdtekst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "tijdtekst", false), v, "tijdtekst"));
+        }
+    }
+end
+
+// "Soort: «zijn soort»"
+function Object waarde_soorttekst(Object $soort) {
+    try {
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Soort: ", RegelSpraakRuntime.rsTekst($soort)));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "soorttekst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $soort : soort )
+then
+    Object v = waarde_soorttekst($soort);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "soorttekst", ComputeHelpers.designate(v, "soorttekst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "soorttekst", false), v, "soorttekst"));
+        }
+    }
+end
+
+// "Vast: «5,50»"
+function Object waarde_vasteTekst() {
+    try {
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Vast: ", RegelSpraakRuntime.rsTekst(new java.math.BigDecimal("5.5"))));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vaste tekst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+then
+    Object v = waarde_vasteTekst();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vaste tekst", ComputeHelpers.designate(v, "vaste tekst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "vaste tekst", false), v, "vaste tekst"));
+        }
+    }
+end
+
+// "Bedrag: «zijn basis» voor «zijn soort», gemeld «zijn bevestiging» op «zijn vinddatum»"
+function Object waarde_verslag(Object $basis, Object $soort, Object $bevestiging, Object $vinddatum) {
+    try {
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Bedrag: ", RegelSpraakRuntime.rsTekst($basis), " voor ", RegelSpraakRuntime.rsTekst($soort), ", gemeld ", RegelSpraakRuntime.rsTekst($bevestiging), " op ", RegelSpraakRuntime.rsTekst($vinddatum)));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "verslag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $basis : basis, $soort : soort, $bevestiging : bevestiging, $vinddatum : vinddatum )
+then
+    Object v = waarde_verslag($basis, $soort, $bevestiging, $vinddatum);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "verslag", ComputeHelpers.designate(v, "verslag")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "verslag", false), v, "verslag"));
+        }
+    }
+end
+
