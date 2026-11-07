@@ -892,8 +892,8 @@ public final class DefinitionResolver {
             RawUnit r = raw.get(primary);
             system.units.put(primary, e);
             if (r.symbol() != null) system.symbols.put(primary, r.symbol());
-            if (r.word() != null) system.spellings.put(RegelSpraakModel.normaliseTimeUnit(r.word()), e);
-            if (r.plural() != null) system.spellings.put(RegelSpraakModel.normaliseTimeUnit(r.plural()), e);
+            if (r.word() != null) system.addSpelling(RegelSpraakModel.normaliseTimeUnit(r.word()), primary, e);
+            if (r.plural() != null) system.addSpelling(RegelSpraakModel.normaliseTimeUnit(r.plural()), primary, e);
         }
         model.unitSystems.put(system.name, system);
         // the wire writes a factor as a fraction of two integers from 1 to 2^62 - 1 (IR-SPEC ch. 2.5): a declared zero

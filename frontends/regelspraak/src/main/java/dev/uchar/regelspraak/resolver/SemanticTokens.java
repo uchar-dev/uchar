@@ -517,8 +517,15 @@ public final class SemanticTokens {
         claim(c.eenheidsysteemNaam(), Kind.UNIT_SYSTEM, true, Decl.of(Kind.UNIT_SYSTEM, null, system));
         Map<String, Decl> own = new LinkedHashMap<>();
         Map<String, Integer> symbols = new LinkedHashMap<>();
-        for (EenheidDefinitieContext u : c.eenheidDefinitie())
+        Map<String, Integer> words = new LinkedHashMap<>();
+        for (EenheidDefinitieContext u : c.eenheidDefinitie()) {
             if (u.eenheidAfkorting().size() > 1) symbols.merge(src(u.eenheidAfkorting(1)), 1, Integer::sum);
+            // a word and a plural of one unit that are one spelling count once
+            java.util.Set<String> spellings = new java.util.HashSet<>();
+            if (u.eenheidWoord() != null) spellings.add(RegelSpraakModel.normaliseTimeUnit(src(u.eenheidWoord())));
+            if (u.meervoudsvorm() != null) spellings.add(RegelSpraakModel.normaliseTimeUnit(src(u.meervoudsvorm())));
+            for (String w : spellings) words.merge(w, 1, Integer::sum);
+        }
         for (EenheidDefinitieContext u : c.eenheidDefinitie()) {
             List<String> abbreviations = u.eenheidAfkorting().stream().map(DefinitionResolver::src).toList();
             String primary = !abbreviations.isEmpty() ? abbreviations.get(0)
@@ -536,10 +543,15 @@ public final class SemanticTokens {
                 own.putIfAbsent(a, decl);
                 unitSpellings.putIfAbsent(a, decl);
             }
-            if (u.eenheidWoord() != null)
-                unitSpellings.putIfAbsent(RegelSpraakModel.normaliseTimeUnit(src(u.eenheidWoord())), decl);
-            if (u.meervoudsvorm() != null)
-                unitSpellings.putIfAbsent(RegelSpraakModel.normaliseTimeUnit(src(u.meervoudsvorm())), decl);
+            // a word or plural two units of the system carry names neither (RGS-392), as a shared symbol names none
+            if (u.eenheidWoord() != null) {
+                String w = RegelSpraakModel.normaliseTimeUnit(src(u.eenheidWoord()));
+                if (words.get(w) == 1) unitSpellings.putIfAbsent(w, decl);
+            }
+            if (u.meervoudsvorm() != null) {
+                String w = RegelSpraakModel.normaliseTimeUnit(src(u.meervoudsvorm()));
+                if (words.get(w) == 1) unitSpellings.putIfAbsent(w, decl);
+            }
         }
         for (EenheidDefinitieContext u : c.eenheidDefinitie())
             if (u.omrekenSpecificatie() != null && u.omrekenSpecificatie().eenheidAfkorting() != null) {

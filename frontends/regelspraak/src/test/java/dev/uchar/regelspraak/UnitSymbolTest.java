@@ -282,4 +282,52 @@ class UnitSymbolTest {
                         + "heeft geen rol"),
                 codes(m));
     }
+
+    private static final String ONE_WORD = """
+            Eenheidsysteem Munt
+                de dollar (mv: dollars) USD $
+                de dollar (mv: dollars) CAD $
+                de real (mv: reais) BRL R$
+            """;
+
+    /** A word or plural two units of a system carry names neither (RGS-392), as a shared symbol names none: the
+     *  reference never takes a candidate, and the wire carries the word on both units. */
+    @Test void a_word_two_units_carry_names_neither_and_stands_on_both() {
+        String word = "RGS-392 de eenheid '%s' is dubbelzinnig: in het eenheidstelsel 'Munt' dragen de eenheden 'USD', "
+                + "'CAD' het woord '%s'; schrijf de afkorting van de bedoelde eenheid";
+        RegelSpraakModel singular = Resolver.resolve(ONE_WORD + """
+            Objecttype de Vondst
+                de opbrengst Numeriek (getal met 2 decimalen) met eenheid dollar;
+            """);
+        assertEquals(List.of(word.formatted("dollar", "dollar")), codes(singular));
+        assertEquals(6, singular.diagnostics.get(0).line(), "de melding staat bij de verwijzing");
+
+        RegelSpraakModel plural = Resolver.resolve(ONE_WORD + """
+            Objecttype de Vondst
+                de opbrengst Numeriek (getal met 2 decimalen) met eenheid dollars;
+            """);
+        assertEquals(List.of(word.formatted("dollars", "dollars")), codes(plural));
+
+        RegelSpraakModel value = Resolver.resolve(ONE_WORD + """
+            Objecttype de Vondst
+                de opbrengst Numeriek (getal met 2 decimalen) met eenheid USD;
+            Regel opbrengst
+                geldig altijd
+                    De opbrengst van een Vondst moet berekend worden als 100 dollar.
+            """);
+        assertTrue(codes(value).contains(word.formatted("dollar", "dollar")), () -> "de waarde 100 dollar: " + codes(value));
+
+        String c = emitCompact(ONE_WORD + """
+            Objecttype de Vondst
+                de opbrengst Numeriek (getal met 2 decimalen) met eenheid USD;
+                de waarde Numeriek (getal met 2 decimalen) met eenheid real;
+            """);
+        for (String a : List.of("USD", "CAD"))
+            assertTrue(c.contains("{\"node\":\"Unit\",\"abbreviation\":\"" + a + "\",\"system\":\"Munt\",\"canonical\":\""
+                    + a + "\",\"factorToCanonical\":{\"num\":1,\"den\":1},\"symbol\":\"$\",\"spellings\":[\"dollar\","
+                    + "\"dollars\"]}"), () -> a + " draagt het woord:\n" + c);
+        assertTrue(c.contains("\"unit\":[{\"node\":\"Unit\",\"abbreviation\":\"USD\",\"system\":\"Munt\""), c);
+        assertTrue(c.contains("\"unit\":[{\"node\":\"Unit\",\"abbreviation\":\"BRL\",\"system\":\"Munt\""),
+                () -> "een woord dat één eenheid draagt, noemt haar:\n" + c);
+    }
 }

@@ -731,3 +731,4 @@ RGS-388	het tekstdeel «{part}» schrijft de eenheid van zijn getal, en {type} h
 RGS-389	de eenheid '{abbreviation}' van het eenheidstelsel '{unitSystem}' schrijft '{token}' na haar symbool '{symbol}': een eenheidsregel is een woord, een meervoud, een afkorting en een symbool, en een verder token heeft geen rol
 RGS-390	de eenheid '{symbol}' is dubbelzinnig: in het eenheidstelsel '{unitSystem}' dragen de eenheden {abbreviations} het symbool '{symbol}'; schrijf de afkorting van de bedoelde eenheid
 RGS-391	het symbool '{symbol}' van de eenheid '{abbreviation}' is de afkorting '{other}' in het eenheidstelsel '{unitSystem}', en een verwijzing leest een afkorting vóór een symbool: het symbool noemt zijn eenheid nooit
+RGS-392	de eenheid '{word}' is dubbelzinnig: in het eenheidstelsel '{unitSystem}' dragen de eenheden {abbreviations} het woord '{word}'; schrijf de afkorting van de bedoelde eenheid

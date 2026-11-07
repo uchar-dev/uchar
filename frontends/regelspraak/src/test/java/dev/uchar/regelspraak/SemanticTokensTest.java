@@ -241,6 +241,27 @@ class SemanticTokensTest {
         assertNull(dollar.declaredAt(), "$ names neither of the two units that carry it");
     }
 
+    /** A word two units of a system carry points at neither declaration; a word one unit carries at its own. */
+    @Test void a_shared_word_points_at_no_declaration() {
+        String source = """
+                Eenheidsysteem Munt
+                    de dollar (mv: dollars) USD $
+                    de dollar (mv: dollars) CAD $
+                    de real (mv: reais) BRL R$
+                Objecttype de Vondst
+                    de basis Numeriek (getal met 2 decimalen) met eenheid real;
+                    de opbrengst Numeriek (getal met 2 decimalen) met eenheid dollar;
+                """;
+        SemanticTokens.Document d = Resolver.tokens(List.of(new SemanticTokens.SourceFile("munt.rgs", source)));
+        Span real = d.files().get(0).spans().stream().filter(x -> x.text().equals("real") && x.line() == 6).findFirst().orElseThrow();
+        assertEquals(Kind.UNIT, real.kind());
+        assertNotNull(real.declaredAt(), "real points at the real");
+        assertEquals(4, real.declaredAt().line());
+        Span dollar = d.files().get(0).spans().stream().filter(x -> x.text().equals("dollar") && x.line() == 7).findFirst().orElseThrow();
+        assertEquals(Kind.UNIT, dollar.kind());
+        assertNull(dollar.declaredAt(), "dollar names neither of the two units that carry it");
+    }
+
     /** The grammar admits "en" inside a label, so a set of two labels joined by "en" parses as one member
      *  ("{najaar en voorjaar}"), which the resolution reads as two labels; each is a label of its own then, and "en"
      *  stays a keyword. A member that is a declared label stays one span, also where it holds "en" ("eb en vloed"),

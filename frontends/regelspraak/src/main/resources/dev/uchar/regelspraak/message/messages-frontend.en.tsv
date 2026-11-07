@@ -731,3 +731,4 @@ RGS-388	the text part «{part}» writes the unit of its number, and {type} has n
 RGS-389	the unit '{abbreviation}' of the unit system '{unitSystem}' writes '{token}' after its symbol '{symbol}': a unit line is a word, its plural, an abbreviation and a symbol, and a further token has no role
 RGS-390	the unit '{symbol}' is ambiguous: in the unit system '{unitSystem}' the units {abbreviations} carry the symbol '{symbol}'; write the abbreviation of the unit that is meant
 RGS-391	the symbol '{symbol}' of the unit '{abbreviation}' is the abbreviation '{other}' in the unit system '{unitSystem}', and a reference reads an abbreviation before a symbol: the symbol never names its unit
+RGS-392	the unit '{word}' is ambiguous: in the unit system '{unitSystem}' the units {abbreviations} carry the word '{word}'; write the abbreviation of the unit that is meant

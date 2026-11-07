@@ -851,7 +851,7 @@ public final class RegelSpraakModel {
      * (same-system rule), which is what lets a duration "in hele jaren" assign to an attribute "met eenheid jr". A
      * symbol that two or more units of the system carry names none of them (IR-SPEC ch. 2.5): RGS-390 at {@code line},
      * with the abbreviations of the candidates, and the spelling resolves as one no system declares, never as the first
-     * candidate.
+     * candidate. A word or plural that two or more units of the system carry is the same: RGS-392.
      */
     public Unit resolveUnit(String spelling, int line) {
         String norm = normaliseTimeUnit(spelling);
@@ -863,6 +863,12 @@ public final class RegelSpraakModel {
             if (carriers.size() > 1) {
                 diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-390", Diagnostic.params("symbol", spelling,
                         "unitSystem", s.name, "abbreviations", quotedList(carriers)), line));
+                return new Unit(norm, null);
+            }
+            List<String> wordCarriers = s.spellingCarriers.getOrDefault(norm, List.of());
+            if (wordCarriers.size() > 1) {
+                diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-392", Diagnostic.params("word", spelling,
+                        "unitSystem", s.name, "abbreviations", quotedList(wordCarriers)), line));
                 return new Unit(norm, null);
             }
             e = s.spellings.get(norm);
@@ -1316,7 +1322,19 @@ public final class RegelSpraakModel {
         public final Map<String, Unit> units = new LinkedHashMap<>(); // abbreviation -> unit
         public final Map<String, String> symbols = new LinkedHashMap<>(); // abbreviation -> the unit's symbol
         public final Map<String, Unit> spellings = new LinkedHashMap<>(); // unit word / plural (normalised) -> unit
+        /** Unit word / plural (normalised) -> the abbreviations of the units that carry it, in declaration order: more
+         *  than one where units share it, which IR-SPEC ch. 2.5 admits. Filled by the resolver of a source. */
+        public final Map<String, List<String>> spellingCarriers = new LinkedHashMap<>();
         public UnitSystem(String name) { this.name = name; }
+
+        /** Records that the unit {@code abbreviation} carries the word or plural {@code spelling} (normalised). The
+         *  first carrier stays in {@link #spellings}; a reference reads {@link #spellingCarriers} first, so a word two
+         *  units carry names neither. */
+        public void addSpelling(String spelling, String abbreviation, Unit unit) {
+            spellings.putIfAbsent(spelling, unit);
+            List<String> carriers = spellingCarriers.computeIfAbsent(spelling, k -> new java.util.ArrayList<>());
+            if (!carriers.contains(abbreviation)) carriers.add(abbreviation);
+        }
 
         /** The abbreviations of the units that carry {@code symbol}, in declaration order: more than one where units
          *  share it, which IR-SPEC ch. 2.5 admits. */

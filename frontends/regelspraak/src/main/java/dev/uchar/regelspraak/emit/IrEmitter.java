@@ -560,6 +560,16 @@ public final class IrEmitter {
             List<String> sp = spellingsByAbbreviation.get(e.abbreviation());
             if (!entry.getKey().equals(e.abbreviation()) && !sp.contains(entry.getKey())) sp.add(entry.getKey());
         }
+        // a word or plural two units carry stands on each of them (IR-SPEC ch. 2.5 admits it); the loop above gave it
+        // to the first
+        for (var entry : es.spellingCarriers.entrySet())
+            for (String carrier : entry.getValue().subList(1, entry.getValue().size())) {
+                List<String> sp = spellingsByAbbreviation.get(carrier);
+                if (sp == null)
+                    throw new IllegalStateException("IrEmitter: unit system '" + es.name + "' gives the spelling '"
+                            + entry.getKey() + "' to the unit '" + carrier + "', which it does not declare");
+                if (!entry.getKey().equals(carrier) && !sp.contains(entry.getKey())) sp.add(entry.getKey());
+            }
         for (var entry : es.symbols.entrySet()) {
             Unit e = units.get(entry.getKey());
             if (e == null)

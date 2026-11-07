@@ -4654,7 +4654,13 @@ conversion `= 1/100 kr` alike. The resolver never takes the first candidate; `me
 conversion names its target by the abbreviation or by the symbol of one unit of its system
 (`de cent (mv: centen) ct = 1/100 €`). A symbol equal to an abbreviation of its own system under the name identity, its
 own included (`het kilogram kg KG`, or `de gram g kg` beside `het kilogram kg`), never reaches its unit, because a
-reference reads the abbreviation first: RGS-391. In the semantic tokens a reference with a shared symbol has no place.
+reference reads the abbreviation first: RGS-391. Two units of a system may carry one word or plural too
+(`de dollar (mv: dollars) USD $` beside `de dollar (mv: dollars) CAD $`), and the emitter writes it in the `spellings` of
+both (IR-SPEC ch. 2.5 admits a spelling on two units). A reference with such a word or plural in the system where it
+lands is ambiguous in the same way: RGS-392 at the reference, which names the word and the abbreviations of the
+candidates (`met eenheid dollar`, `100 dollars`); `met eenheid USD` always works, and a word one unit carries names it
+as before. None of the repository's sources gives two units of one system one word or plural (counted 2026-11-07). In
+the semantic tokens a reference with a shared symbol or a shared word has no place.
 
 **Measured.** Of the 150 unit lines of the repository's RegelSpraak sources (counted 2026-11-07), 116 write one token
 after the noun, 34 write two (33 × `EUR €`, 1 × `kg kgm`) and none three. Until this reading the second token was a
@@ -4680,5 +4686,6 @@ token for `€` alone. They write 178 currency signs, every one `€` and none d
 
 **Witnesses.** `UnitSymbolTest`, `IrEmitterTest`, `SemanticTokensTest.a_shared_symbol_points_at_no_declaration`,
 `SemanticTokensTest.a_currency_sign_is_one_span_and_a_shared_one_points_at_no_declaration`,
+`SemanticTokensTest.a_shared_word_points_at_no_declaration`,
 `UnitIdentityTest.a_calendar_unit_and_a_currency_sign_need_no_declaration_over_a_number`; the goldens
 `jutterswet-tekst-van-een-waarde` and `jutterswet-stelselweging`.
