@@ -278,6 +278,29 @@ class TypeSystemRefusalWitnessTest {
         }
     }
 
+    // ---------------- the symbol ----------------
+
+    @Test void the_symbol_is_a_non_empty_string_on_the_declaration_only() throws Exception {
+        String euro = SYSTEM + "/units/0";
+        ObjectNode ir = golden(PENNINGJAAR);
+        ((ObjectNode) ir.at(euro)).put("symbol", "\u20ac");
+        assertEquals("\u20ac", IrLoader.load(ir).unitSystems.get("Munt").symbols.get("EUR"), "the symbol under its abbreviation");
+
+        ir = golden(PENNINGJAAR);
+        ((ObjectNode) ir.at(UNIT)).put("symbol", "\u20ac");
+        unknownField(ir, UNIT + "/symbol", "Unit");
+
+        for (String json : List.of("\"\"", "1", "[\"\u20ac\"]")) {
+            ObjectNode twisted = golden(PENNINGJAAR);
+            set(twisted, euro + "/symbol", json);
+            assertTrue(refuses(twisted, euro + "/symbol").getMessage().contains(IrLoader.SYMBOL_FORM), json);
+        }
+
+        ir = golden(PENNINGJAAR);
+        ((ObjectNode) ir.at(euro)).putNull("symbol");
+        assertTrue(refuses(ir, euro + "/symbol").getMessage().contains("null is neither"));
+    }
+
     // ---------------- the parameter ----------------
 
     @Test void a_parameter_carries_its_datatype_and_a_timeline_facet_without_a_name() throws Exception {

@@ -344,7 +344,7 @@ end
 // "Bedrag: «zijn basis (eenheid)», aandeel «zijn aandeel (eenheid)», toeslag «zijn basis maal 1,1 (eenheid)», zonder eenheid «zijn basis»"
 function Object waarde_eenheidtekst(Object $basis, Object $aandeel) {
     try {
-        return ComputeHelpers.textComposition(java.util.Arrays.asList("Bedrag: ", RegelSpraakRuntime.rsTekst($basis, Integer.valueOf(2), "EUR"), ", aandeel ", RegelSpraakRuntime.rsTekst($aandeel, Integer.valueOf(2), "%"), ", toeslag ", RegelSpraakRuntime.rsTekst(RegelSpraakRuntime.rsMaal($basis, new java.math.BigDecimal("1.1")), Integer.valueOf(3), "EUR"), ", zonder eenheid ", RegelSpraakRuntime.rsTekst($basis, Integer.valueOf(2), null)));
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Bedrag: ", RegelSpraakRuntime.rsTekst($basis, Integer.valueOf(2), "€"), ", aandeel ", RegelSpraakRuntime.rsTekst($aandeel, Integer.valueOf(2), "%"), ", toeslag ", RegelSpraakRuntime.rsTekst(RegelSpraakRuntime.rsMaal($basis, new java.math.BigDecimal("1.1")), Integer.valueOf(3), "€"), ", zonder eenheid ", RegelSpraakRuntime.rsTekst($basis, Integer.valueOf(2), null)));
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
@@ -361,6 +361,30 @@ then
     } else {
         if (!ComputeHelpers.isEmpty(v)) {
             insertLogical(new Value($onderwerp, ElementKey.of("vondst", "eenheidtekst", false), v, "eenheidtekst"));
+        }
+    }
+end
+
+// "Gewicht: «zijn gewicht (eenheid)», prijs «zijn prijs (eenheid)», samen «zijn prijs maal zijn gewicht (eenheid)»"
+function Object waarde_gewichttekst(Object $gewicht, Object $prijs) {
+    try {
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Gewicht: ", RegelSpraakRuntime.rsTekst($gewicht, Integer.valueOf(2), "kg"), ", prijs ", RegelSpraakRuntime.rsTekst($prijs, Integer.valueOf(2), "€/kg"), ", samen ", RegelSpraakRuntime.rsTekst(RegelSpraakRuntime.rsMaal($prijs, $gewicht), Integer.valueOf(4), "€")));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "gewichttekst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht, $prijs : prijs )
+then
+    Object v = waarde_gewichttekst($gewicht, $prijs);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "gewichttekst", ComputeHelpers.designate(v, "gewichttekst")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "gewichttekst", false), v, "gewichttekst"));
         }
     }
 end

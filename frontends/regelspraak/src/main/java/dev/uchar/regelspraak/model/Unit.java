@@ -87,8 +87,9 @@ public record Unit(List<Factor> factors) {
         /** Both fields of the conversion pair, or neither (a bare unit, factor 1). Half a pair has no factor. */
         boolean hasFactor() { return (canonical == null) == (factorToCanonical == null); }
 
-        private String rendering() {
-            return exponent == 1 || exponent == -1 ? abbreviation : abbreviation + "^" + Math.abs(exponent);
+        private String rendering(java.util.function.Function<Factor, String> name) {
+            String n = name.apply(this);
+            return exponent == 1 || exponent == -1 ? n : n + "^" + Math.abs(exponent);
         }
     }
 
@@ -285,11 +286,15 @@ public record Unit(List<Factor> factors) {
 
     /** Human-readable spelling (IR-SPEC ch. 2.5): the positive factors joined by "·", "1" if there is none, then "/"
      *  and each negative factor, a power written where its size is not 1 ("€/jr", "1/dg", "m^2"). */
-    public String rendering() {
+    public String rendering() { return rendering(Factor::abbreviation); }
+
+    /** {@link #rendering()} with each factor written as {@code name} gives it: a text part writes a factor by the symbol
+     *  of its declaration (RUNTIME-SEMANTICS ch. 1.2), every other reader by its abbreviation. */
+    public String rendering(java.util.function.Function<Factor, String> name) {
         List<Factor> numerator = positives();
         StringBuilder b = new StringBuilder(numerator.isEmpty() ? ONE_ABBREVIATION
-                : String.join("·", numerator.stream().map(Factor::rendering).toList()));
-        for (Factor f : negatives()) b.append('/').append(f.rendering());
+                : String.join("·", numerator.stream().map(f -> f.rendering(name)).toList()));
+        for (Factor f : negatives()) b.append('/').append(f.rendering(name));
         return b.toString();
     }
 

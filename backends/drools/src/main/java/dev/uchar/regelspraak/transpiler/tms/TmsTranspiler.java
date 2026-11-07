@@ -6353,8 +6353,8 @@ public final class TmsTranspiler {
     /** An inserted part of a text composition or an argument of a concatenation, as its text: the text of its value
      *  in the type of the part (RUNTIME-SEMANTICS ch. 1.2, "Text coercion"), which {@code rsTekst} writes for every
      *  type, a leeg part as "", with the form of the part a constant ({@link #textForm}) and, where the part writes
-     *  the unit of its number ({@code unit}), that unit as IR-SPEC ch. 2.5 spells it: the unit the part derives
-     *  ({@link EffectiveUnit}). A part that asks for a unit it does not have breaks WF-129 and is refused by name. */
+     *  the unit of its number ({@code unit}), the unit the part derives ({@link EffectiveUnit}) as {@link #textUnit}
+     *  writes it. A part that asks for a unit it does not have breaks WF-129 and is refused by name. */
     private Term textPart(Expr e, boolean unit, Reads reads) {
         Term f = value(e, reads);
         String unitText = null;
@@ -6364,10 +6364,29 @@ public final class TmsTranspiler {
             if (u == null)
                 throw new Refusal(DroolsCode.TEXT_PART_UNIT_WITHOUT_UNIT.reason("snippet", snippet(e.source()), "type",
                         t == null ? "?" : t.name()));
-            unitText = u.rendering();
+            unitText = textUnit(u, e);
         }
         return new Term.Call(StaticFunction.RS_TEXT, List.of(f, constant(textForm(e, reads)), constant(unitText)),
                 f.source());
+    }
+
+    /** The unit of a text part as RUNTIME-SEMANTICS ch. 1.2 writes it: each factor by the symbol of its declaration,
+     *  the declared unit of the same system and abbreviation under the name identity, and by its abbreviation where
+     *  that declaration has none or where the factor names no system ('%', a bare calendar unit). A factor that no
+     *  declaration of the document carries has no symbol to take, and is refused by name rather than written by its
+     *  abbreviation. A message keeps {@link Unit#rendering()}. */
+    private String textUnit(Unit u, Expr e) {
+        return u.rendering(f -> {
+            if (f.system() == null) return f.abbreviation();
+            RegelSpraakModel.UnitSystem system = model.unitSystems.values().stream()
+                    .filter(s -> Namen.norm(s.name).equals(Namen.norm(f.system()))).findFirst().orElse(null);
+            String declared = system == null ? null : system.units.keySet().stream()
+                    .filter(a -> Namen.norm(a).equals(Namen.norm(f.abbreviation()))).findFirst().orElse(null);
+            if (declared == null)
+                throw new Refusal(DroolsCode.TEXT_PART_UNIT_UNDECLARED.reason("snippet", snippet(e.source()),
+                        "unit", u.rendering(), "factor", f.abbreviation(), "unitSystem", f.system()));
+            return system.symbols.getOrDefault(declared, f.abbreviation());
+        });
     }
 
     /** The type of the part {@code e} as {@code rsTekst} reads it (RUNTIME-SEMANTICS ch. 1.2): for a number the

@@ -295,6 +295,46 @@ class TmsBuiltinWitnessTest {
                 + " eenheid van zijn getal, en Numeriek heeft geen eenheid (WF-129)", e.getMessage());
     }
 
+    /** EUR of Munt, declared with the symbol €; kg of Gewicht, declared without one (IR-SPEC ch. 2.5). */
+    private static final String EUR = unit("EUR", "Munt", "EUR", 1, 1), KG = unit("kg", "Gewicht", "kg", 1, 1),
+            PER_KG = KG.replace("}}", "},\"exponent\":-1}");
+    private static final String SYMBOL_MODEL = TmsDocuments.modelWith(List.of(TmsDocuments.objectType("Vondst", List.of(
+            attribute("omschrijving", TEKST), attribute("basis", numberType(false, 2, EUR)),
+            attribute("prijs", numberType(false, 2, EUR + "," + PER_KG)),
+            attribute("elders", numberType(false, 2, unit("EUR", "Elders", "EUR", 1, 1)))), List.of())),
+            List.of(), List.of(), List.of(TmsDocuments.unitSystem("Munt", List.of(EUR.replace("}}", "},\"symbol\":\"\u20ac\"}"))),
+                    TmsDocuments.unitSystem("Gewicht", List.of(KG))));
+
+    private static String withUnit(String expr) {
+        return "{\"node\":\"EmbeddedExpression\",\"expr\":" + expr + ",\"unit\":true}";
+    }
+
+    /** A part with its unit writes each factor by the symbol of its declaration and by its abbreviation where that has
+     *  none (RUNTIME-SEMANTICS ch. 1.2): "5,50 (€)" and, mixed, "2,50 (€/kg)". */
+    @Test void a_part_with_its_unit_writes_the_symbol_of_its_declaration() throws Exception {
+        String description = computingRule("omschrijving van een vondst", "BEREKENING", "Vondst", "omschrijving",
+                textComposition(List.of(textPart("Bedrag: "), withUnit(ownRead("basis", "Vondst")), textPart(", prijs "),
+                        withUnit(ownRead("prijs", "Vondst")))), "null");
+        JsonNode caseDocument = TmsDocuments.caseOn(null, List.of(
+                instanceWith("V1", "Vondst", Map.of("basis", numberValue("5.5"), "prijs", numberValue("2.5")), List.of()),
+                instanceWith("V2", "Vondst", Map.of(), List.of())),
+                List.of(valueJson("V1", "omschrijving", textValue("Bedrag: 5,50 (\u20ac), prijs 2,50 (\u20ac/kg)")),
+                        valueJson("V2", "omschrijving", textValue("Bedrag: , prijs ")), consistent()));
+        assertEveryOrder(SYMBOL_MODEL, List.of(description), caseDocument);
+    }
+
+    /** A factor that names a unit system the document does not declare has no declaration to take its symbol from; the
+     *  backend refuses it by name (DROOLS-369) rather than write the abbreviation. */
+    @Test void a_part_whose_factor_has_no_declaration_is_refused_by_name() throws Exception {
+        String description = computingRule("omschrijving van een vondst", "BEREKENING", "Vondst", "omschrijving",
+                textComposition(List.of(textPart("Bedrag: "), withUnit(ownRead("elders", "Vondst")))), "null");
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(
+                TmsDocuments.document(SYMBOL_MODEL, List.of(description)), DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("transpiler SKIP: regel: omschrijving van een vondst — het tekstdeel 'zijn elders' schrijft de"
+                + " eenheid EUR, en geen eenheidstelsel van het document declareert haar factor 'EUR' van het"
+                + " eenheidstelsel 'Elders': een factor zonder declaratie heeft geen symbool om te schrijven", e.getMessage());
+    }
+
     // ---------------- the eleven test and the exact digits ----------------
 
     private static final String TRIAL_MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(

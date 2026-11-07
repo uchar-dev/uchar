@@ -427,6 +427,7 @@ DROOLS-365	{description} names {end}, which is no bean of the input
 DROOLS-366	{description}: {end} is a {objectType} and does not fill the role '{role}' of {roleType}
 DROOLS-367	{description} occurs twice
 DROOLS-368	the text part '{snippet}' writes the unit of its number, and {type} has no unit (WF-129)
+DROOLS-369	the text part '{snippet}' writes the unit {unit}, and no unit system of the document declares its factor '{factor}' of the unit system '{unitSystem}': a factor without a declaration has no symbol to write
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-004	input {place} = {value} does not fit {decimals} decimals: a case value whose exact value its declaration cannot hold is refused at the input (RUNTIME-SEMANTICS ch. 2.4, 5.7)

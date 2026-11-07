@@ -1168,7 +1168,7 @@ public final class IrLoader {
 
     /** IR-SPEC ch. 2.5: a unit system and its units, one Unit per abbreviation under the name identity of ch. 2.1
      *  (WF-009, the identity its canonical lookup resolves under). The model keeps every unit under its abbreviation,
-     *  its further spellings in the alias map. */
+     *  its symbol under its abbreviation, and its further spellings in the alias map. */
     private UnitSystem unitSystem(String path, JsonNode n) {
         fields(n, path, "UnitSystem", List.of("node", "name", "units"), List.of());
         UnitSystem es = new UnitSystem(name(n, path, "name"));
@@ -1178,6 +1178,7 @@ public final class IrLoader {
                 throw new DocumentError(up + "/abbreviation", "the unit '" + e.abbreviation() + "' is declared twice in"
                         + " the unit system '" + es.name + "': one Unit per abbreviation");
             es.units.put(e.abbreviation(), e);
+            if (u.has("symbol")) es.symbols.put(e.abbreviation(), u.get("symbol").asText());
             if (u.has("spellings"))
                 for (String spelling : textList(u, up, "spellings")) es.spellings.put(spelling, e);
         });
@@ -1185,7 +1186,7 @@ public final class IrLoader {
     }
 
     /** A unit where it occurs, on a number: a list of factors, each with IR-SPEC ch. 2.5's fields and nothing else, so
-     *  a spelling there is an unknown field (spellings belong to the declaration). What the list must look like beyond
+     *  a symbol or a spelling there is an unknown field (both belong to the declaration). What the list must look like beyond
      *  that is the verifier's WF-124; a list with no factor and an exponent 0 name no unit at all and stop here. */
     private Unit unit(JsonNode n, String path) {
         if (!n.isArray()) throw new DocumentError(path, "expected an array, got " + shortQuote(n));
@@ -1204,17 +1205,19 @@ public final class IrLoader {
     }
 
     /** One unit record, {@code declared} in a unit system, or else a factor of a unit that occurs. A declared unit may
-     *  carry its further spellings, at least one. */
+     *  carry its symbol, a non-empty string, and its further spellings, at least one. */
     private Unit unit(JsonNode n, String path, boolean declared) {
         // a factor written null is a factor in no form, refused in the factor's own sentence
         if (n.isObject() && n.has("factorToCanonical") && n.get("factorToCanonical").isNull())
             throw new DocumentError(path + "/factorToCanonical", FACTOR_FORM + "null");
         fields(n, path, "Unit", List.of("node", "abbreviation"), declared
-                ? List.of("system", "canonical", "factorToCanonical", "spellings")
+                ? List.of("system", "canonical", "factorToCanonical", "symbol", "spellings")
                 : List.of("system", "canonical", "factorToCanonical", "exponent"));
         String abbreviation = textAt(n, path, "abbreviation");
         Unit.Fraction factor = n.has("factorToCanonical")
                 ? factor(n.get("factorToCanonical"), path + "/factorToCanonical") : null;
+        if (declared && n.has("symbol") && (!n.get("symbol").isTextual() || n.get("symbol").asText().isEmpty()))
+            throw new DocumentError(path + "/symbol", SYMBOL_FORM);
         if (declared && n.has("spellings") && textList(n, path, "spellings").isEmpty())
             throw new DocumentError(path + "/spellings", SPELLINGS_EMPTY);
         return new Unit(abbreviation, optText(n, path, "system"), optText(n, path, "canonical"), factor);
@@ -1222,6 +1225,9 @@ public final class IrLoader {
 
     /** The shared loader's sentence for an empty list of spellings. */
     static final String SPELLINGS_EMPTY = "a unit's spellings are at least one spelling, or the field is absent";
+
+    /** The shared loader's sentence for a symbol that is no non-empty string, null included. */
+    static final String SYMBOL_FORM = "a unit's symbol is a non-empty string, or the field is absent";
 
     /** The exact factor (IR-SPEC ch. 2.5): an object of exactly the two integers {@code num} and {@code den}, each at
      *  least 1 and at most 2^62 - 1, the schema's bound and the shared loader's native integer range. Every other form

@@ -389,7 +389,8 @@ public enum DroolsCode {
     LINK_END_NOT_IN_INPUT("DROOLS-365", Kind.CONTRACT, "link-end-not-in-input", "description,end", null),
     LINK_END_WRONG_TYPE("DROOLS-366", Kind.CONTRACT, "link-end-wrong-type", "description,end,objectType,role,roleType", null),
     LINK_TWICE("DROOLS-367", Kind.CONTRACT, "link-twice", "description", null),
-    TEXT_PART_UNIT_WITHOUT_UNIT("DROOLS-368", Kind.CONTRACT, "text-part-unit-without-unit", "snippet,type", null);
+    TEXT_PART_UNIT_WITHOUT_UNIT("DROOLS-368", Kind.CONTRACT, "text-part-unit-without-unit", "snippet,type", null),
+    TEXT_PART_UNIT_UNDECLARED("DROOLS-369", Kind.CONTRACT, "text-part-unit-undeclared", "snippet,unit,factor,unitSystem", null);
 
     /** Why the backend refuses; {@code RETIRED} for a code it no longer raises, which stays here so that its number is
      *  never reused ({@code spec/proposals/MESSAGE-CODES.md} §3.2). */
