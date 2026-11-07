@@ -40,3 +40,16 @@ and passes here; frontend suite 1543/1543; `make gates` green on `220c053a8` (17
 `out/gates/20261107-105757/`). Left: the sweep of `SemanticTokensRecoveryTest` still mutates `source.rgs` only, which
 is why it never reached the scenario layer; the toolchain needs a pin bump for the playground and
 `bin/regelspraak scenario` to carry the fix.
+
+## Extension (2026-11-07, owner's request): the sweep reads the scenario layer
+
+Goal: `SemanticTokensRecoveryTest` sweeps the `scenario.rgs` of every golden test document as it sweeps `source.rgs`
+(cut at forty places, each of twenty lines left out in turn), read beside its `source.rgs` on the tokens route, which
+runs the scenario layer; no exception, the output passes `SemanticTokensCheck`, floors on the runs and on the runs
+with a syntax error (RGS-216).
+
+Acceptance: the new sweep fails on `a5b857a47` (measured: 115 problems, at `validateInstance`, `readAndType` and
+`labelDeclaration`; a situation header without its `:` is reached by no cut, and stays pinned by
+`ScenarioRecoveryTest`), passes on main; frontend suite and `make gates` green.
+
+May touch: `frontends/regelspraak/src/test/java/dev/uchar/regelspraak/SemanticTokensRecoveryTest.java`, this card.
