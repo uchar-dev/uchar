@@ -82,7 +82,7 @@ dat een gat blijkt: in het Result als open punt); de distributie (pin-bump na de
 
 *Gebouwd op 2026-11-07 op branch `card/currency-signs-and-declared-units` (worktree `wt/currency-signs`), afgetakt van
 main `89950cc4d`. Logs, probes en meetscripts onder `uchar-dev/werk/currency-signs/` (`logs/`, `probe/`,
-`measure_units.py`, `tools/TokenDump.java`).*
+`measure_units.py`, `measure_conversion.py`, `tools/TokenDump.java`).*
 
 ### Commits
 
@@ -91,7 +91,8 @@ main `89950cc4d`. Logs, probes en meetscripts onder `uchar-dev/werk/currency-sig
   ene zin), het negatief `corpus/negative/wf009-undeclared-abbreviation`.
 - `a0b696222` — deel 1: het token `CURRENCY_SIGN` (lexer, grammatica, `DefinitionResolver`, `SemanticTokens`),
   DIVERGENCES, toetsen.
-- Dit Result.
+- `c656436a8` — het Result van de eerste ronde.
+- De vervolgcommits staan onder "Vervolgopdracht van de hoofdsessie".
 
 ### Deel 2: een eenheid die haar stelsel declareert (WF-009)
 
@@ -186,7 +187,7 @@ uitgezonderd. Gedrag voor `€` gelijk. De javadoc noemt de reden nu.
   `a_reference_with_the_shared_dollar_sign_names_none_of_the_three` (`met eenheid $`, `100 $` en `$/jr`: RGS-390 met
   `'USD', 'CAD', 'AUD'`); `a_sign_with_letters_and_a_single_sign_are_the_symbols_of_their_units` (`R$` van BRL, `£`
   van GBP); `a_text_part_with_its_unit_reaches_the_currency_symbol_of_its_declaration`;
-  `the_noun_of_a_unit_line_is_one_word` (zie open punt 1).
+  `the_noun_of_a_unit_line_is_one_word` (zie het besluit van de eigenaar onder "Vervolgopdracht").
 - `SemanticTokensTest.a_currency_sign_is_one_span_and_a_shared_one_points_at_no_declaration` (+1).
 - `UnitIdentityTest.a_calendar_unit_and_the_euro_sign_need_no_declaration_over_a_number` heet nu
   `a_calendar_unit_and_a_currency_sign_need_no_declaration_over_a_number` en kreeg de rijen `2/$`, `2/R$` en `2/£`; de
@@ -209,68 +210,184 @@ code), 11 (45 TOKA-bronnen her-emitteerd, 28 slices verifier-schoon, TOKA-suite 
 case-bestanden), 1. Gate 1 viel eerst op het woord `toka` in DIVERGENCES (de meting noemde de map); de zin noemt nu
 "the parity zone".
 
+### Vervolgopdracht van de hoofdsessie (A–D) en besluit van de eigenaar
+
+*Opdracht 2026-11-07: open punten 2–5 mee in deze landing, elk als eigen commit; besluit van de eigenaar dezelfde
+dag: de tekst van arm 1 is akkoord en arm 2 en 3 staan in dezelfde vorm; een eenheidsnaam van meer woorden krijgt
+voorlopig een koppelteken (open punt 1).*
+
+**Commits** (elk los te laten vallen; zie "Los te laten vallen" hieronder):
+
+- `3392d5854` — D: `corpus/negative/wf034-unit-unknown-system/NOTE.md` naar de huidige stand.
+- `2dbc90ffe` — A: een woord of meervoud dat twee eenheden van één stelsel dragen, RGS-392.
+- `be656b47e` — besluit van de eigenaar: een naam van meer woorden met een koppelteken (DIVERGENCES, toets).
+- `d606fe552` — B: `WF-009.undeclared-conversion`.
+- `43be8117e` — C: `WF-009.declaration-system-mismatch`.
+- Dit Result.
+
+**D, de NOTE van `wf034-unit-unknown-system`.** Herschreven zonder de geschiedenis van de telling en van de L2/L3-namen.
+De scope zegt nu dat WF-009 de afkorting vraagt waar het stelsel oplost (`wf009-undeclared-abbreviation`). De schade is
+opnieuw gemeten (`logs/d-executors.log`): ref `PASS (2)`, clingo `TRANSLATION FAULT: non-identical units …`, Drools
+beide takken `PLAYED 1`. Op de golden zelf geven ze alle drie PASS.
+
+**A, het gedeelde woord (RGS-392).**
+- Twee eenheden van één stelsel mogen één woord of meervoud dragen; de declaratie blijft toegestaan. Een verwijzing met
+  zo'n woord in het stelsel waar ze uitkomt, is **RGS-392** (`unit-word-ambiguous`, ERROR, parameters
+  `abbreviations`, `unitSystem` en `word`) op de regel van de verwijzing, en lost dan op als een eenheid zonder stelsel.
+  Nooit wordt stil een kandidaat gekozen.
+- NL: "de eenheid 'dollar' is dubbelzinnig: in het eenheidstelsel 'Munt' dragen de eenheden 'USD', 'CAD' het woord
+  'dollar'; schrijf de afkorting van de bedoelde eenheid".
+- **Waarom een eigen code en geen RGS-390.** De zin en de parameter van RGS-390 noemen een symbool. De draad houdt
+  `symbol` en `spellings` uit elkaar (IR-SPEC ch. 2.5), dus een parameter `spelling` in RGS-390 zou een symbool een
+  spelling noemen.
+- **Model.** `UnitSystem.spellingCarriers` (woord → afkortingen in declaratievolgorde) met `addSpelling`; `spellings`
+  houdt de eerste drager (`putIfAbsent`), zodat de Drools-loader, die dat veld vult, ongewijzigd blijft.
+  `resolveUnit` leest de dragers vóór `spellings`.
+- **Emitter.** Schrijft het gedeelde woord op elke drager: `"spellings":["dollar","dollars"]` op USD en op CAD.
+  Voorheen alleen op de latere.
+- **Semantic tokens.** Een verwijzing met een gedeeld woord krijgt geen plaats.
+- **Toetsen.** `UnitSymbolTest.a_word_two_units_carry_names_neither_and_stands_on_both` (`met eenheid dollar`,
+  `met eenheid dollars`, `100 dollar`, `met eenheid USD`, het unieke `real`) en
+  `SemanticTokensTest.a_shared_word_points_at_no_declaration`.
+- **DIVERGENCES**, "De eenheidsregel", alinea Resolution.
+- **Gemeten.** Geen bron van de repository geeft twee eenheden van één stelsel één woord of meervoud.
+- **Niet veranderd.** Een woord dat in het eerste stelsel gedeeld is en in een later stelsel uniek, wijst in de
+  semantic tokens naar de eenheid van het latere stelsel, terwijl `resolveUnit` RGS-392 geeft. Voor een gedeeld symbool
+  doet de bestaande code hetzelfde; geen bron doet het.
+
+**Besluit van de eigenaar (2026-11-07): een eenheidsnaam van meer woorden krijgt een koppelteken.** Het woord van een
+eenheidsregel blijft één token. DIVERGENCES ("De eenheidsregel", alinea "The word of a unit line is one token") zegt
+het als de huidige stand. `UnitSymbolTest.a_name_of_more_words_takes_a_hyphen` laat zien dat `de VS-dollar USD $` de
+eenheid USD declareert met de spelling `vs-dollar` en dat `met eenheid VS-dollar` naar USD verwijst.
+`the_noun_of_a_unit_line_is_one_word` houdt de lezing met spaties vast (RGS-389). Open punt 1 is daarmee een besluit,
+geen bouwwerk.
+
+**B, de omrekening van een voorkomen (`WF-009.undeclared-conversion`).**
+- **Meting vooraf** (`measure_conversion.py`, `logs/b-measure.log`). Elke factor met een `system` waarvan een stelsel
+  met die naam de afkorting declareert, vergeleken met die declaratie; een half paar overgeslagen:
+
+  | Zone | Vergeleken | Anders, canonical byte voor byte en factor op beide gehele getallen | Anders, canonical onder `norm` en factor op waarde |
+  |---|---|---|---|
+  | golden | 572 | 0 | 0 |
+  | red | 24 | 0 | 0 |
+  | negatief | 1035 (12 half overgeslagen) | 3: `wf091-plus-unit-case`, `wf076-let-canonical-unit` (canonical `KG` tegen `kg`), `wf092-parameter-datatype-unit` (factor `{2,2}` tegen `{1,1}`) | 0 |
+  | toka | 790 | 0 | 0 |
+  | `ref/test/fixtures` | 257 | 3: `product-into-rate` (kale `m` tegen gedeclareerd `m`, factor 1) | 3 |
+  | Drools-testresources | 32 | 0 | 0 |
+
+  Geen golden, red-case of toka-slice weigert; B kon door.
+- **Identiteit.** De `canonical` byte voor byte, zoals WF-091 een naam vergelijkt (ch. 4.1: een kopie herhaalt haar
+  eenheid letterlijk). De factor op zijn waarde, na reductie, wat waar WF-092 (c) geldt de twee gehele getallen zijn.
+  Daardoor blijft `wf092-parameter-datatype-unit` alleen van WF-092 (c). De `exponent` hoort bij het voorkomen.
+- **Wat erbuiten valt.** Een half paar, op de factor of op de declaratie, is van WF-092. Een afkorting die het stelsel
+  niet declareert, is van arm 1. Waar het stelsel de afkorting twee keer declareert of twee stelsels de naam dragen,
+  volstaat het paar van één declaratie. Daarom blijven `wf009-duplicate-abbreviation` en
+  `wf001-duplicate-unit-system` alleen van hun eigen regel.
+- **Melding.** `the unit 't' of the unit system 'Massa' carries factor 100 to 'kg', and its declaration factor 1000 to
+  'kg': …`, met de parameters `unit`, `unitSystem`, `conversion` en `declaredConversion`; een kaal paar heet
+  `no conversion pair`.
+- **Negatief** `wf009-undeclared-conversion`: `jutterswet-stelselweging` met de factor van de drie voorkomens van `t`
+  op 100, terwijl de declaratie 1000 houdt. Alleen deze arm meldt (drie keer). De verifier zonder arm 2 liet het door
+  (`logs/p2-probe-factor.log`).
+- **Wat de executors erop doen** (`logs/b-executors.log`): ref 12 `MISMATCH` (`V1.ondergewicht = 250, expected 1000`),
+  clingo dezelfde 12 in geschaalde getallen, Drools beide takken `FAIL` op dezelfde attributen. Ze zijn het onderling
+  eens: elk rekent met het paar op de factor.
+- **Twee negatieven van andere regels** krijgen een tweede, ware melding: `wf091-plus-unit-case` en
+  `wf076-let-canonical-unit`, omdat hun canonical `KG` niet byte voor byte de `kg` van de declaratie is. Gate 3 laat dat
+  toe (het eist de eigen arm), en de hoofdletters van de canonical zijn wat die negatieven vastleggen, dus ze zijn niet
+  omgebouwd. Hun NOTE.md zegt het; in `wf091-plus-unit-case` zegt de falsifieerbaarheidszin nu "leaves WF-091" in
+  plaats van "turns clean", want WF-009 weigert het document dan nog.
+- **Fixture van ref.** `ref/test/fixtures/product-into-rate` krijgt drie WF-009-meldingen. De suite van ref vraagt daar
+  alleen of WF-091 meldt (`List.exists`) en blijft groen. Het commentaar in `ref/test/dune` ("the verifier admits it")
+  was al vóór deze kaart onwaar: WF-091 weigert de fixture. Ref valt buiten de kaart; niet aangepast.
+
+**C, het stelsel van een declaratie (`WF-009.declaration-system-mismatch`).**
+- **Meting vooraf** (`logs/b-measure.log`): 810 declaraties in de vier zones (golden 107, red 7, negatief 276, toka
+  420; de twee van het nieuwe negatief van deel 2 inbegrepen) en 59 in de fixtures. Alle dragen een `system`, en elk
+  noemt het eigen stelsel onder de naamidentiteit. Geen golden, red-case of toka-slice weigert.
+- **De arm** staat in `wf009`, in de tabel zelf. Hij meldt op `/model/unitSystems/<i>/units/<j>/system` met de
+  parameters `unit`, `unitSystem` (het declarerende stelsel) en `system` (het geschreven stelsel). Een `system` dat geen
+  stelsel noemt, blijft van WF-034; een declaratie zonder `system` valt erbuiten.
+- **Waarom WF-009 en niet WF-034.** WF-009 leest de tabel van een stelsel; WF-034 vraagt of een verwijzing oplost, en
+  dat doet de declaratie hier wel.
+- **Negatief** `wf009-declaration-system-mismatch`: in `jutterswet-stelselweging` noemt het kilogram van `Massa`
+  `system: Gewicht`. `Gewicht` declareert een `kg` met hetzelfde paar, dus alleen arm 3 meldt.
+- **Executors** (`logs/c-executors.log`): ref en clingo `PASS (37)`, Drools beide takken `PLAYED 1`. Geen executor
+  leest het veld; ref zoekt een declaratie via het stelsel dat haar bevat. De reden voor de regel staat in ch. 2.5: een
+  voorkomen is de declaratie zonder `symbol` en `spellings`, dus een kopie van deze declaratie is een eenheid van een
+  ander stelsel.
+
+**IR-SPEC** (WF-009): arm 2 en arm 3 in de vorm van arm 1, na arm 1. De scope-noot noemt nu "the abbreviation and
+conversion pair of every unit that names it". Ch. 4.6 (r) zegt dat WF-009 binnen een stelsel dat oplost de afkorting en
+het omrekenpaar van het voorkomen toetst. De WF-tabel noemt de drie armen, hun gate en hun negatieven.
+
+**Gate 3** na C (`logs/c-gate3.log`): 472 golden/red schoon, 639 negatieven, 484 op hun arm, 268 armsleutels, 811
+parameterregels, 366 rapportsleutels, 466 sleutelliteralen, 803 pointers.
+
+**Los te laten vallen** (gecontroleerd met `git show <c> | git apply --check -R` op `43be8117e`):
+- D, A, het besluit en C draaien schoon terug.
+- B botst alleen in IR-SPEC: de rij van WF-009 in de WF-tabel (één regel, die C ook raakt) en de alinea van arm 2
+  direct vóór arm 3. Zijn code in `checks.ml`, het negatief en de twee NOTE's draaien schoon terug.
+- De commits van de eerste ronde (`8f68b5c53`, `a0b696222`) zijn de basis van de rest.
+
 ### make gates
 
-Op `a0b696222`: alle zeventien gates en `after-run` rc=0, red=0, 435 s (`out/gates/20261107-113420/summary.txt` in de
-worktree; kopie met de statusregels onder `werk/currency-signs/logs/gates-20261107-113420/`, log
-`logs/gates-final.log`). Gate 9 (catala) draaide mee: 250 checks, 12 goldens. Het Result (dit commit) raakt alleen de
-kaart.
+- Eerste ronde, op `a0b696222`: alle zeventien gates en `after-run` rc=0, red=0, 435 s
+  (`out/gates/20261107-113420/summary.txt`; kopie met de statusregels onder
+  `werk/currency-signs/logs/gates-20261107-113420/`, log `logs/gates-final.log`).
+- Vervolg, op `43be8117e` (A–D en het besluit): alle zeventien gates en `after-run` rc=0, red=0, 442 s
+  (`out/gates/20261107-115924/summary.txt` in de worktree; kopie met de statusregels onder
+  `werk/currency-signs/logs/gates-20261107-115924/`, log `logs/gates-final-2.log`). Gate 3: 639 negatieven, 803
+  pointers; gate 10: JUnit 1553, 381 RGS-codes, 209 goldens her-emitteerd; gate 9 (catala): 250 checks, 12 goldens.
+- Vooraf los, na de vervolgcommits: 2 (472 bestanden, 64031 objecten in sleutelvolgorde), 3, 10, 11 (45 bronnen, 28
+  slices schoon), 16 (43 goldens, 155 cases) en 1, alle rc=0 (`logs/v-gate*.log`, `logs/c-gate3.log`). Het Result
+  raakt alleen de kaart.
 
 ### Afwijkingen en eigen keuzes (met reden)
 
 1. **Twee stelsels met één naam.** De kaart zegt "het stelsel zelf lost op zoals WF-034 (r) het oplost"; WF-034 vraagt
    alleen of er een stelsel met die naam is. Waar twee stelsels de naam dragen, mag elk van beide de eenheid
    declareren: anders citeert de arm onwaar op een document dat WF-001 al weigert (gemeten op
-   `wf001-duplicate-unit-system`). IR-SPEC zegt het in één bijzin.
-2. **Sleutel `undeclared-abbreviation`.** Gate 3 eist een slug van ten hoogste drie woorden;
-   `unit-undeclared-in-system` (vier) viel af.
-3. **Ch. 2.5 aangepast** buiten de vijf plaatsen die "May touch" noemt: de zin "WF-009 checks only the table's
-   internal consistency" in "The wire form of a unit" was met de arm onwaar geworden.
+   `wf001-duplicate-unit-system`). IR-SPEC zegt het in één bijzin. Arm 2 doet hetzelfde.
+2. **Sleutels van ten hoogste drie woorden** (gate 3): `undeclared-abbreviation`, `undeclared-conversion`,
+   `declaration-system-mismatch`.
+3. **Ch. 2.5 aangepast** buiten de plaatsen die "May touch" noemt: de zin "WF-009 checks only the table's internal
+   consistency" in "The wire form of a unit" was met arm 1 onwaar geworden.
 4. **Valutatekens met letters** (`R$`): het prefix is `LETTER*` zoals de kaart zegt, dus ook kleine letters
    (`bedrag€` is één token); de meting liet geen bron zien die daardoor anders lext.
+5. **RGS-392 in plaats van een verbrede RGS-390** (A, reden boven).
+6. **Arm 2 vergelijkt de factor op zijn waarde.** WF-092 (c) houdt de gehele getallen in kleinste termen, en anders
+   zou `wf092-parameter-datatype-unit` een tweede melding krijgen voor wat WF-092 (c) al zegt.
 
 ### Open punten
 
-1. **Het woord van een eenheidsregel is één token.** `de Amerikaanse dollar USD $`, het voorbeeld uit het doel van de
-   kaart, leest `Amerikaanse` als woord, `dollar` als afkorting en `USD` als symbool, en `$` is RGS-389
-   (`UnitSymbolTest.the_noun_of_a_unit_line_is_one_word`). De RegelSpraak-specificatie schrijft een `<naamwoord>`
-   (§13.3.5.1), dat meer woorden kan hebben. Met een woord met koppelteken is het te schrijven
-   (`de VS-dollar (mv: VS-dollars) USD $`). Meer woorden toelaten is een grammaticabesluit: met `(mv: …)` is de grens
-   van het woord zichtbaar, zonder is de regel dubbelzinnig (`de grote euro EUR` tegen `de euro EUR €`). Niet gebouwd.
-2. **Twee eenheden met één woord in een stelsel**: de latere neemt het woord stil. `de dollar USD $` en
-   `de dollar CAD $`: `met eenheid dollar` noemt CAD zonder melding, en de emitter schrijft de spelling `dollar` alleen
-   op CAD (`probe/dollar-word.rgs`). Geen bron van de repository doet het (79 eenheidstelsels, 115 eenheidsregels
-   geteld). Het raakt deze kaart direct: drie dollars met één woord is de voor de hand liggende schrijfwijze. IR-SPEC
-   ch. 2.5 ("What a spelling means is OPEN") zegt dat de eerste lezer die op spelling oplost, spellingen uniek binnen
-   hun stelsel nodig heeft. Voorstel: een RGS-code bij de tweede declaratie van een woord of meervoud in een stelsel,
-   zoals RGS-016 voor een afkorting (of, naar het model van RGS-390, een dubbelzinnige verwijzing). Niet gebouwd: niet
-   gevraagd, en het vraagt een normkeuze en een code met catalogi.
-3. **Factor van een voorkomen tegen die van de declaratie** (buiten scope, gemeten): in `jutterswet-stelselweging` de
-   drie voorkomens van `t` met `factorToCanonical` 100 in plaats van de gedeclareerde 1000
-   (`probe/stelselweging-t-factor100.json`, `logs/p2-probe-factor.log`): `verifier: PASS`, en ref rekent met de factor
-   van het voorkomen (`MISMATCH: V1.ondergewicht = 250, expected 1000`, vijf mismatches). Een gat: geen regel houdt
-   `canonical` en `factorToCanonical` van een voorkomen gelijk aan die van haar declaratie, en de executors lezen het
-   voorkomen. Clingo en Drools niet gemeten.
-4. **Het `system` van een declaratie** tegen haar eigen stelsel: geen regel; gemeten 808 van 808 gelijk. Een
-   declaratie in A met `system: B`, waar B dezelfde afkorting declareert, passeert elke regel.
-5. **`corpus/negative/wf034-unit-unknown-system/NOTE.md`** zegt in "Scope" dat de afkortingsvraag van WF-009 is "and
-   stays out of scope (ch. 4.6, and the open list says so)": dat laatste is niet meer waar. Niet aangepast (het negatief
-   raakt de arm niet, dus buiten "May touch").
-6. **De distributie**: pin-bump na de landing. Het token `EURO` bestaat niet meer; de distributie noemt het nergens.
+1. **De distributie**: pin-bump na de landing. Het token `EURO` bestaat niet meer, `UnitSystem` kreeg het publieke veld
+   `spellingCarriers`, en er is een nieuwe code RGS-392. De distributie noemt `EURO` nergens (gezocht in de lokale
+   checkout buiten de submodule, alleen gelezen).
+2. **`ref/test/dune`**: het commentaar bij `fixtures/product-into-rate` ("the verifier admits it") klopt niet: WF-091
+   weigert de fixture, en nu WF-009 ook. Ref valt buiten deze kaart.
+3. **Inline documenten in toetsen** met `€` als eerste spelling (uit `unit-symbol`) staan er nog; ongewijzigd.
 
 ### Voorstellen voor de hoofdsessie
 
 - **CLAUDE.md, gate 3** (achter de zin van WF-129): "Since the card `currency-signs-and-declared-units` (2026-11-07)
-  WF-009 refuses a unit that names a declared unit system which does not declare its abbreviation
-  (`WF-009.undeclared-abbreviation`, with `unit` and `unitSystem`; IR-SPEC ch. 2.5), at every position a unit occupies,
-  in the walk WF-034 (r) and WF-092 share; witness `wf009-undeclared-abbreviation`."
+  WF-009 holds a unit that names a declared unit system to an abbreviation that system declares
+  (`WF-009.undeclared-abbreviation`, with `unit` and `unitSystem`) and to the conversion pair of that declaration
+  (`WF-009.undeclared-conversion`, with `unit`, `unitSystem`, `conversion` and `declaredConversion`; the canonical
+  byte for byte and the factor on its value), at every position a unit occupies, in the walk WF-034 (r) and WF-092
+  share, and the `system` of a declaration to the system that declares it (`WF-009.declaration-system-mismatch`, with
+  `unit`, `unitSystem` and `system`; IR-SPEC ch. 2.5); witnesses `wf009-undeclared-abbreviation`,
+  `wf009-undeclared-conversion` and `wf009-declaration-system-mismatch`."
 - **CLAUDE.md, gate 10** (achter de zin van RGS-388): "Since the card `currency-signs-and-declared-units` (2026-11-07)
   a currency sign is one token, `CURRENCY_SIGN` (a character of the Unicode category Sc after the letters it writes:
   `€`, `$`, `R$`; it replaced `EURO`), which a unit line and a unit reference take as abbreviation or symbol and which
-  needs no declaration after the slash of a number (DIVERGENCES "De eenheidsregel"); no new RGS code."
+  needs no declaration after the slash of a number; RGS-392 refuses a reference with a word or plural two units of its
+  system carry, as RGS-390 one with a shared symbol; the word of a unit line is one token, and a name of more words
+  takes a hyphen (maintainer decision 2026-11-07; DIVERGENCES "De eenheidsregel")."
 - **CONSTRUCTS rij 26**, in de datumgeschiedenis vóór de regel van `unit-symbol`: "2026-11-07, card
-  `currency-signs-and-declared-units`: a unit that names a system has an abbreviation that system declares
-  (`WF-009.undeclared-abbreviation`); the RegelSpraak frontend reads a currency sign (Unicode Sc, after its letters:
-  `$`, `R$`) as one token, an abbreviation or a symbol."
-- **Geen vloer daalde.** Gate 3 zie boven; JUnit 1550 (vloer 173); RGS-codes 380 (vloer 347). Geen vloer telt
-  valutatekens of WF-009-armen, dus er hoeft geen vloer omhoog.
+  `currency-signs-and-declared-units`: a unit that names a system has an abbreviation that system declares and its
+  conversion pair, and a declaration names its own system (WF-009); the RegelSpraak frontend reads a currency sign
+  (Unicode Sc, after its letters: `$`, `R$`) as one token, an abbreviation or a symbol, and refuses a reference with a
+  shared word (RGS-392)."
+- **Geen vloer daalde.** Gate 3 zie boven; RGS-codes 381 (vloer 347); JUnit zie make gates (vloer 173). Geen vloer
+  telt valutatekens of WF-009-armen, dus er hoeft geen vloer omhoog.
