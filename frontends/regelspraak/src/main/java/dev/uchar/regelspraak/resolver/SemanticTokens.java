@@ -353,7 +353,7 @@ public final class SemanticTokens {
                  RegelSpraakLexer.RPAREN, RegelSpraakLexer.LBRACE, RegelSpraakLexer.RBRACE, RegelSpraakLexer.COMMA,
                  RegelSpraakLexer.DOT, RegelSpraakLexer.COLON, RegelSpraakLexer.SEMICOLON, RegelSpraakLexer.DASH,
                  RegelSpraakLexer.SLASH, RegelSpraakLexer.EQUALS, RegelSpraakLexer.PERCENT_SIGN, RegelSpraakLexer.CARET,
-                 RegelSpraakLexer.EURO, RegelSpraakLexer.APOSTROPHE, RegelSpraakLexer.L_ANGLE_QUOTE,
+                 RegelSpraakLexer.CURRENCY_SIGN, RegelSpraakLexer.APOSTROPHE, RegelSpraakLexer.L_ANGLE_QUOTE,
                  RegelSpraakLexer.R_ANGLE_QUOTE, RegelSpraakLexer.BENAMING_EINDE -> Kind.PUNCTUATION;
             default -> Kind.KEYWORD;
         };

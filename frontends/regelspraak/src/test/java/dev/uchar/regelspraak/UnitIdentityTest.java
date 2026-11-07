@@ -398,9 +398,11 @@ class UnitIdentityTest {
         }
     }
 
-    /** What may follow the slash without a declaration: a time unit of the calendar table, and the euro sign. */
-    @Test void a_calendar_unit_and_the_euro_sign_need_no_declaration_over_a_number() {
-        for (String[] form : new String[][]{{"2/dag", "1/dag"}, {"2/uur", "1/uur"}, {"2/€", "1/€"}, {"2/ms", "1/ms"}}) {
+    /** What may follow the slash without a declaration: a time unit of the calendar table, and a currency sign, which
+     *  is no name of a value, so the slash before it reads as no division. */
+    @Test void a_calendar_unit_and_a_currency_sign_need_no_declaration_over_a_number() {
+        for (String[] form : new String[][]{{"2/dag", "1/dag"}, {"2/uur", "1/uur"}, {"2/€", "1/€"}, {"2/ms", "1/ms"},
+                {"2/$", "1/$"}, {"2/R$", "1/R$"}, {"2/£", "1/£"}}) {
             RegelSpraakModel m = Resolver.resolve("Objecttype de Verkoop\n"
                     + "    het cijfer Numeriek (getal met 2 decimalen) met eenheid " + form[1] + ";\n"
                     + "Regel r\n    geldig altijd\n        Het cijfer van een Verkoop moet berekend worden als " + form[0] + ".\n");

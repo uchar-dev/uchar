@@ -4390,8 +4390,10 @@ Measured for the owner's decision of 2026-11-01:
 | `5 €·m`, `5 m*€` | syntax error | 5 in the unit `€·m` |
 
 A name after the slash must be a unit: a unit system of the document declares it, or it stands in the calendar table of
-RUNTIME-SEMANTICS ch. 3.8, or it is the sign `€`. `2 foo` and `2 1/foo` keep the older reading of a name no system declares,
-a bare unit; with a slash directly after the number the name would otherwise read as a division that does not happen. In
+RUNTIME-SEMANTICS ch. 3.8, or it is a currency sign (`€`, `$`, `R$`; below, "De eenheidsregel"). `2 foo` and `2 1/foo` keep
+the older reading of a name no system declares, a bare unit; with a slash directly after the number the name would
+otherwise read as a division that does not happen. A currency sign is no name of a value, so `2/$` reads as no division
+and needs no declaration, as `2/€` and `5 €` do. In
 `met eenheid 2/dg` the same text is RGS-361: a declaration has no value to carry the 2.
 
 ## Semantic tokens — a kind and a position per piece of source text, beside the IR
@@ -4462,7 +4464,8 @@ articles, prepositions and quantifiers, the comparison and arithmetic words, the
 `(bezield)` and the like, `(taal:` in a vocabulary head, the word `geen` (a word to the lexer, the negation to the
 language) and the table cell `n.v.t.`. `comment`: a `//` comment, the `// Bron:` annotations included. `heading`: a
 `---` heading line of an object type. `number`, `date`: the literals. `string`: a text literal. `punctuation`: brackets,
-`;` `.` `:` `,` `-` `..` `•` `/` `=` `%` `^` `€` `'` `«` `»`, the `)` closing a designation, and a table's pipes.
+`;` `.` `:` `,` `-` `..` `•` `/` `=` `%` `^` `'` `«` `»`, a currency sign (`€`, `R$`) outside a unit, the `)` closing
+a designation, and a table's pipes.
 `designation`: the text of a designation `(<vocabulary>: <text>)`. `relationDescription`: the free text a fact type's
 cardinality line writes after a role name ("heeft", "wordt verdeeld over"). `word`: a word outside every name the
 parse gave; only ANTLR's recovery after a syntax error leaves one (below).
@@ -4660,5 +4663,22 @@ as the symbol instead of the first spelling. `jutterswet-stelselweging` reached 
 through the second abbreviation `kgm`, which as a symbol would name the unit too; the golden now reaches it through its
 word, `met eenheid massakilogram`.
 
-**Witnesses.** `UnitSymbolTest`, `IrEmitterTest`, `SemanticTokensTest.a_shared_symbol_points_at_no_declaration`; the
-goldens `jutterswet-tekst-van-een-waarde` and `jutterswet-stelselweging`.
+**What a token after the noun may be.** The RegelSpraak specification writes an abbreviation as a `<karakterreeks>`
+(§13.3.5.4); the lexer is narrower. An abbreviation or a symbol is a name word (`LOWER_ID` or `UPPER_ID`: a letter, then
+letters, digits, `_`, `-` and `'`), a time-unit word (`jaar`, `dagen`), or a currency sign (`CURRENCY_SIGN`): one
+character of the Unicode category Sc, after the letters the sign writes where it writes them (`€`, `$`, `£`, `¥`, `₽`,
+`R$`, `US$`). So `de VS-dollar (mv: VS-dollars) USD $` beside `de Canada-dollar (mv: Canada-dollars) CAD $` declares two
+units with the symbol `$`, of which `met eenheid $`, `100 $` and `$/jr` name none (RGS-390) and `met eenheid USD` names
+one; `de real (mv: reais) BRL R$` declares the real with the symbol `R$`, and a text part writes `12,50 (R$)`. A letter
+directly before a sign belongs to the sign: `bedrag€` outside a text is one token, no word and a sign. The noun of a unit
+line is one word (`eenheidWoord`) where §13.3.5.1 writes a `<naamwoord>`: of `de Amerikaanse dollar USD $` the noun is
+`Amerikaanse`, the abbreviation `dollar` and the symbol `USD`, and `$` is RGS-389.
+
+*Measured* (2026-11-07) over the 359 RegelSpraak sources of the repository (the corpus, the parity zone and the
+fixtures of `ref` and of the Drools backend): their 59424 tokens lex the same with the currency sign as with the earlier
+token for `€` alone. They write 178 currency signs, every one `€` and none directly after a letter.
+
+**Witnesses.** `UnitSymbolTest`, `IrEmitterTest`, `SemanticTokensTest.a_shared_symbol_points_at_no_declaration`,
+`SemanticTokensTest.a_currency_sign_is_one_span_and_a_shared_one_points_at_no_declaration`,
+`UnitIdentityTest.a_calendar_unit_and_a_currency_sign_need_no_declaration_over_a_number`; the goldens
+`jutterswet-tekst-van-een-waarde` and `jutterswet-stelselweging`.

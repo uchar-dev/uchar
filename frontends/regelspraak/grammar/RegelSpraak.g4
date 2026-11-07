@@ -547,14 +547,14 @@ eenheidExpressie
 eenheidOperator  : SLASH | PRODUCT_SIGN ;
 eenheidMacht     : eenheidAfkorting ( CARET exponent )? ;  // §13.3.5.5
 exponent         : NUMBER ;                                // §13.3.5.6
-// Unit words / abbreviations may be plain identifiers, the currency glyph, or a
+// Unit words / abbreviations may be plain identifiers, a currency sign (an abbreviation only), or a
 // time-unit keyword used as its own name ("de minuut minuut", "met eenheid minuut").
 eenheidWoord
     : LOWER_ID | UPPER_ID
     | UUR | MINUUT | SECONDE | MILLISECONDE | DAG | WEEK | MAAND | KWARTAAL | JAAR
     ;
 eenheidAfkorting
-    : LOWER_ID | UPPER_ID | EURO
+    : LOWER_ID | UPPER_ID | CURRENCY_SIGN
     | UUR | MINUUT | SECONDE | MILLISECONDE | DAG | WEEK | MAAND | KWARTAAL | JAAR
     | DAGEN | WEKEN | MAANDEN | KWARTALEN | JAREN // units spelled out plural ("met eenheid jaren")
     ;

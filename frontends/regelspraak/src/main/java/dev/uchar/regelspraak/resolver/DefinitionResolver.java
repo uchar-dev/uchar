@@ -722,8 +722,8 @@ public final class DefinitionResolver {
      *  a unit") the powers after the slash with their exponents negated. A number in a product ("2·m") is RGS-363, which
      *  says how to write the value. A name after the slash that no unit system declares is RGS-362 and no unit: with a
      *  number before it, a slash and a word that names nothing would read as a division that does not happen. The
-     *  calendar's time units and the euro sign are units without a declaration, as in "5 dagen" and "5 €". Null where the
-     *  value has no unit. */
+     *  calendar's time units and a currency sign are units without a declaration, as in "5 dagen" and "5 €": a sign is no
+     *  name of a value, so a slash before it reads as no division. Null where the value has no unit. */
     static Unit unitOf(RegelSpraakModel model, GetalWaardeContext g) {
         if (g.perEenheid() == null) return unitOf(model, g.eenheidExpressie());
         List<EenheidMachtContext> powers = g.perEenheid().eenheidMacht();
@@ -742,7 +742,7 @@ public final class DefinitionResolver {
         for (EenheidMachtContext power : powers) {
             EenheidAfkortingContext a = power.eenheidAfkorting();
             String name = src(a);
-            if (a.EURO() == null && !model.declaresUnit(name)
+            if (a.CURRENCY_SIGN() == null && !model.declaresUnit(name)
                     && !TimeCalculation.isCalendarSpelling(RegelSpraakModel.normaliseTimeUnit(name))) {
                 model.diagnostics.add(new Typing.Coded("RGS-362", params("spelling", src(g), "name", name))
                         .at(RegelSpraakModel.Severity.ERROR, g.getStart().getLine()));

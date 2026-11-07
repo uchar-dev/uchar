@@ -219,6 +219,28 @@ class SemanticTokensTest {
         assertNull(kroon.declaredAt(), "kr names neither of the two units that carry it");
     }
 
+    /** A currency sign is one span, with the kind of a unit where it names one: R$ points at its unit, and $, which two
+     *  units carry, at none. */
+    @Test void a_currency_sign_is_one_span_and_a_shared_one_points_at_no_declaration() {
+        String source = """
+                Eenheidsysteem Munt
+                    de VS-dollar (mv: VS-dollars) USD $
+                    de Canada-dollar (mv: Canada-dollars) CAD $
+                    de real (mv: reais) BRL R$
+                Objecttype de Vondst
+                    de basis Numeriek (getal met 2 decimalen) met eenheid R$;
+                    de opbrengst Numeriek (getal met 2 decimalen) met eenheid $;
+                """;
+        SemanticTokens.Document d = Resolver.tokens(List.of(new SemanticTokens.SourceFile("munt.rgs", source)));
+        Span real = d.files().get(0).spans().stream().filter(x -> x.text().equals("R$") && x.line() == 6).findFirst().orElseThrow();
+        assertEquals(Kind.UNIT, real.kind());
+        assertNotNull(real.declaredAt(), "R$ points at the real");
+        assertEquals(4, real.declaredAt().line());
+        Span dollar = d.files().get(0).spans().stream().filter(x -> x.text().equals("$") && x.line() == 7).findFirst().orElseThrow();
+        assertEquals(Kind.UNIT, dollar.kind());
+        assertNull(dollar.declaredAt(), "$ names neither of the two units that carry it");
+    }
+
     /** The grammar admits "en" inside a label, so a set of two labels joined by "en" parses as one member
      *  ("{najaar en voorjaar}"), which the resolution reads as two labels; each is a label of its own then, and "en"
      *  stays a keyword. A member that is a declared label stays one span, also where it holds "en" ("eb en vloed"),

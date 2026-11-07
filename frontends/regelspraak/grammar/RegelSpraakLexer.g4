@@ -481,7 +481,10 @@ EQUALS     : '='   ;
 PERCENT_SIGN : '%' ;
 CARET      : '^'   ;
 PRODUCT_SIGN : [·*] ; // between the units of a product, nowhere else (grammar/DIVERGENCES.md, "An inverse unit")
-EURO       : '€' ; // unit abbreviation
+// A unit abbreviation or symbol that is a currency sign: a character of the Unicode category Sc, after letters where
+// the sign writes them (R$, US$). A word holds no such character, so the longest match makes R$ one token, not R
+// and $ (grammar/DIVERGENCES.md, "De eenheidsregel").
+CURRENCY_SIGN : LETTER* [\p{Sc}] ;
 APOSTROPHE : '\''  ;
 
 // ============================================================================
