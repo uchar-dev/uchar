@@ -4676,9 +4676,13 @@ character of the Unicode category Sc, after the letters the sign writes where it
 `R$`, `US$`). So `de VS-dollar (mv: VS-dollars) USD $` beside `de Canada-dollar (mv: Canada-dollars) CAD $` declares two
 units with the symbol `$`, of which `met eenheid $`, `100 $` and `$/jr` name none (RGS-390) and `met eenheid USD` names
 one; `de real (mv: reais) BRL R$` declares the real with the symbol `R$`, and a text part writes `12,50 (R$)`. A letter
-directly before a sign belongs to the sign: `bedrag€` outside a text is one token, no word and a sign. The noun of a unit
-line is one word (`eenheidWoord`) where §13.3.5.1 writes a `<naamwoord>`: of `de Amerikaanse dollar USD $` the noun is
-`Amerikaanse`, the abbreviation `dollar` and the symbol `USD`, and `$` is RGS-389.
+directly before a sign belongs to the sign: `bedrag€` outside a text is one token, no word and a sign.
+
+**The word of a unit line is one token** (`eenheidWoord`) where §13.3.5.1 writes a `<naamwoord>` (decision of the
+maintainer, 2026-11-07). A name of more words is written with a hyphen: `de VS-dollar (mv: VS-dollars) USD $` declares
+the unit `USD` with the word `VS-dollar`, and `met eenheid VS-dollar` refers to it. Written with spaces, the line reads
+otherwise: of `de Amerikaanse dollar USD $` the word is `Amerikaanse`, the abbreviation `dollar` and the symbol `USD`, and
+`$` is RGS-389.
 
 *Measured* (2026-11-07) over the 359 RegelSpraak sources of the repository (the corpus, the parity zone and the
 fixtures of `ref` and of the Drools backend): their 59424 tokens lex the same with the currency sign as with the earlier

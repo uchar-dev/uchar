@@ -268,7 +268,22 @@ class UnitSymbolTest {
         assertTrue(c.contains("\"symbol\":\"\\u00a3\""), c);
     }
 
-    /** The noun of a unit line is one word: of "de Amerikaanse dollar USD $" the noun is "Amerikaanse", the abbreviation
+    /** A name of more words takes a hyphen (decision of the maintainer, 2026-11-07): "de VS-dollar USD $" declares USD
+     *  with the word VS-dollar, and "met eenheid VS-dollar" refers to it. */
+    @Test void a_name_of_more_words_takes_a_hyphen() {
+        String c = emitCompact("""
+            Eenheidsysteem Munt
+                de VS-dollar USD $
+            Objecttype de Vondst
+                de opbrengst Numeriek (getal met 2 decimalen) met eenheid VS-dollar;
+            """);
+        assertTrue(c.contains("{\"node\":\"Unit\",\"abbreviation\":\"USD\",\"system\":\"Munt\",\"canonical\":\"USD\","
+                + "\"factorToCanonical\":{\"num\":1,\"den\":1},\"symbol\":\"$\",\"spellings\":[\"vs-dollar\"]}"), c);
+        assertTrue(c.contains("\"unit\":[{\"node\":\"Unit\",\"abbreviation\":\"USD\",\"system\":\"Munt\",\"canonical\":"
+                + "\"USD\",\"factorToCanonical\":{\"num\":1,\"den\":1}}]"), () -> "met eenheid VS-dollar is USD:\n" + c);
+    }
+
+    /** The word of a unit line is one token: of "de Amerikaanse dollar USD $" the word is "Amerikaanse", the abbreviation
      *  "dollar" and the symbol "USD", and "$" has no role (grammar/DIVERGENCES.md, "De eenheidsregel"). */
     @Test void the_noun_of_a_unit_line_is_one_word() {
         RegelSpraakModel m = Resolver.resolve("""
