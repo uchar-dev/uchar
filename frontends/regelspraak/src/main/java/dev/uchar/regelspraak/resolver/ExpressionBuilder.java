@@ -3085,7 +3085,7 @@ final class ExpressionBuilder {
      *  convertible with a declared "jr". */
     private Datatype durationType(TijdsduurFuncContext t) {
         dev.uchar.regelspraak.model.Unit e = t.eenheidMeervoud() != null
-                ? model.resolveUnit(src(t.eenheidMeervoud())) : null;
+                ? model.resolveUnit(src(t.eenheidMeervoud()), t.eenheidMeervoud().getStart().getLine()) : null;
         return new Datatype.Numeric(t.HELE() != null, 0, Datatype.Sign.ONBEPAALD, e);
     }
 
@@ -3516,7 +3516,8 @@ final class ExpressionBuilder {
             if (sp > 0) {
                 Datatype bareDt = ot.attribute(attr.substring(0, sp));
                 Unit nativeE = bareDt == null ? null : bareDt.unitOf();
-                Unit named = nativeE == null ? null : model.resolveUnit(attr.substring(sp + 4).trim());
+                Unit named = nativeE == null ? null
+                        : model.resolveUnit(attr.substring(sp + 4).trim(), source == null ? 0 : source.line());
                 if (nativeE != null && nativeE.convertibleTo(named) && !nativeE.requiredConversion(named)) {
                     attr = attr.substring(0, sp);
                     dt = bareDt;

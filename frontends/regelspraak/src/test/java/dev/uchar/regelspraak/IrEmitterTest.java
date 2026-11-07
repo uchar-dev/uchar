@@ -235,8 +235,8 @@ class IrEmitterTest {
     @Test void the_factor_is_the_declared_rational_and_the_spellings_are_on_the_declaration() {
         // IR-SPEC ch. 2.5: a unit's factor is the exact fraction its declarations write, multiplied along the chain
         // ("1/60" over "1/24" is 1/1440; "1,5" is 3/2), not the product of 16-digit decimals the unit record holds. A
-        // unit's further spellings — a second abbreviation, then its word and plural — stand on its declaration and
-        // nowhere else, and a spelling equal to the abbreviation is none.
+        // unit's symbol — the token after its abbreviation — and its further spellings — its word and plural — stand on
+        // its declaration and nowhere else, and a spelling equal to the abbreviation is none.
         String src = """
             Eenheidsysteem Inhoud
                 de emmer (mv: emmers) em
@@ -254,7 +254,7 @@ class IrEmitterTest {
                 + "{\"node\":\"Unit\",\"abbreviation\":\"sp\"," + system + "{\"num\":1,\"den\":24},"
                 + "\"spellings\":[\"schep\"]},"
                 + "{\"node\":\"Unit\",\"abbreviation\":\"kr\"," + system + "{\"num\":1,\"den\":1440},"
-                + "\"spellings\":[\"kl\",\"korrel\"]},"
+                + "\"symbol\":\"kl\",\"spellings\":[\"korrel\"]},"
                 + "{\"node\":\"Unit\",\"abbreviation\":\"bl\"," + system + "{\"num\":3,\"den\":2},"
                 + "\"spellings\":[\"baal\"]}]}"),
                 () -> "het stelsel draagt de gedeclareerde breuken en de spellingen op de declaratie:\n" + c);
@@ -297,20 +297,20 @@ class IrEmitterTest {
                 caseCollision.errors().stream().map(Diagnostic::message).toList());
         assertFalse(caseCollision.unitSystems.get("Gewicht").units.containsKey("KG"), "de tweede declaratie is geweigerd");
 
-        // two spellings of one abbreviation inside ONE declaration are that unit's own, and no collision
+        // the token after the abbreviation inside ONE declaration is that unit's symbol, which WF-009 does not count;
+        // equal to the abbreviation under the name identity it never reaches its unit, RGS-391 (UnitSymbolTest)
         RegelSpraakModel own = Resolver.resolve("""
             Eenheidsysteem Gewicht
                 het kilogram kg KG
             Objecttype de Vondst
                 het gewicht Numeriek (geheel getal) met eenheid kg;
             """);
-        assertTrue(own.errors().isEmpty(), () -> "onverwachte fouten: " + own.errors());
+        assertEquals(List.of("RGS-391"), own.errors().stream().map(Diagnostic::code).toList());
     }
 
-    @Test void an_abbreviation_that_is_also_the_unit_word_stands_once_in_the_spellings() {
-        // "de meter (mv: meters) m meter" writes 'meter' as a second abbreviation and as the unit's word: one spelling
-        // of one unit. Before: the emitter's exception ("draagt een spelling van 'm' tweemaal, als afkorting en als
-        // alias: [meter, meter, meters]").
+    @Test void a_symbol_that_is_also_the_unit_word_is_no_spelling() {
+        // "de meter (mv: meters) m meter" writes 'meter' as the unit's symbol and as its word: the symbol stands in its
+        // own field, and no spelling equals it.
         String c = emitCompact("""
             Eenheidsysteem Lengte
                 de meter (mv: meters) m meter
@@ -318,7 +318,19 @@ class IrEmitterTest {
                 de lengte Numeriek (getal) met eenheid m;
             """);
         assertTrue(c.contains("\"abbreviation\":\"m\",\"system\":\"Lengte\",\"canonical\":\"m\","
-                + "\"factorToCanonical\":{\"num\":1,\"den\":1},\"spellings\":[\"meter\",\"meters\"]}"), c);
+                + "\"factorToCanonical\":{\"num\":1,\"den\":1},\"symbol\":\"meter\",\"spellings\":[\"meters\"]}"), c);
+    }
+
+    @Test void a_symbol_equal_to_its_abbreviation_is_refused_by_the_emitter() {
+        // The emitter's own guard behind RGS-391: a symbol that is the unit's abbreviation under the name identity is
+        // no second written form of it. Only a model the resolver did not build reaches it, so this one is built by hand.
+        RegelSpraakModel m = new RegelSpraakModel();
+        RegelSpraakModel.UnitSystem weight = new RegelSpraakModel.UnitSystem("Gewicht");
+        weight.units.put("kg", new dev.uchar.regelspraak.model.Unit("kg", "Gewicht"));
+        weight.symbols.put("kg", "KG");
+        m.unitSystems.put("Gewicht", weight);
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
+        assertTrue(e.getMessage().contains("the symbol 'KG', which is its abbreviation"), e.getMessage());
     }
 
     @Test void two_abbreviation_that_is_a_name_in_a_system_is_refused() {

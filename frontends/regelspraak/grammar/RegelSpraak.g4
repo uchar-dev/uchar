@@ -527,9 +527,10 @@ eenheidsysteemDefinition // §13.3.5.1
     : EENHEIDSYSTEEM eenheidsysteemNaam eenheidDefinitie+
     ;
 eenheidsysteemNaam : ( UPPER_ID | LOWER_ID )+ ;
-// A unit line: '<lidwoord> <unit-word> [(mv: ...)] <abbreviation>+ [= n abk]'.
-// The next unit line starts with an article (DE/HET), so the abbreviation run and
-// optional omrekenspecificatie bound this line without needing newline tokens.
+// A unit line: '<lidwoord> <unit-word> [(mv: ...)] [<abbreviation> [<symbol>]] [= n abk]'. The rule takes any
+// number of tokens after the word; the resolver reads the first as the abbreviation, the second as the symbol (§3.7)
+// and refuses a third (grammar/DIVERGENCES.md, "De eenheidsregel"). The next unit line starts with an article (DE/HET),
+// so the token run and optional omrekenspecificatie bound this line without needing newline tokens.
 eenheidDefinitie
     : bepaaldLidwoord? eenheidWoord ( MV_START meervoudsvorm RPAREN )? eenheidAfkorting* omrekenSpecificatie?
     ;

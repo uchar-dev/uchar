@@ -529,12 +529,14 @@ public final class IrEmitter {
         w.endObject();
     }
 
-    /** IR-SPEC ch. 2.5: a unit system is its list of units in declaration order, each unit once with its further
-     *  spellings on it. The model keeps two maps — every written abbreviation, and the unit words and plurals
-     *  (normalised) — and a key of either that is not the unit's own abbreviation is one of its spellings, the map's
-     *  keys before the aliases; a spelling is never the abbreviation itself. What the list cannot carry — an alias of
-     *  a unit the system does not declare, one abbreviation for two different units (under the name identity too), a
-     *  spelling reached twice — is a frontend defect, refused rather than dropped. */
+    /** IR-SPEC ch. 2.5: a unit system is its list of units in declaration order, each unit once with its symbol and its
+     *  further spellings on it. The model keeps three maps — the abbreviations, the symbol of a unit by its abbreviation,
+     *  and the unit words and plurals (normalised) — and a key of the first or the last that is not the unit's own
+     *  abbreviation is one of its spellings, the abbreviations' keys before the aliases; a spelling is never the
+     *  abbreviation itself nor the symbol. What the list cannot carry — an alias of a unit the system does not declare,
+     *  one abbreviation for two different units (under the name identity too), a spelling reached twice, a symbol of a
+     *  unit the system does not declare or one equal to the unit's abbreviation — is a frontend defect, refused rather
+     *  than dropped. */
     private void unitSystem(UnitSystem es) {
         Map<String, Unit> units = new java.util.LinkedHashMap<>();
         Map<String, List<String>> spellingsByAbbreviation = new java.util.LinkedHashMap<>();
@@ -558,6 +560,16 @@ public final class IrEmitter {
             List<String> sp = spellingsByAbbreviation.get(e.abbreviation());
             if (!entry.getKey().equals(e.abbreviation()) && !sp.contains(entry.getKey())) sp.add(entry.getKey());
         }
+        for (var entry : es.symbols.entrySet()) {
+            Unit e = units.get(entry.getKey());
+            if (e == null)
+                throw new IllegalStateException("IrEmitter: unit system '" + es.name + "' gives the symbol '"
+                        + entry.getValue() + "' to the unit '" + entry.getKey() + "', which it does not declare");
+            if (norm(entry.getValue()).equals(norm(e.abbreviation())))
+                throw new IllegalStateException("IrEmitter: unit system '" + es.name + "' gives the unit '"
+                        + e.abbreviation() + "' the symbol '" + entry.getValue() + "', which is its abbreviation");
+            spellingsByAbbreviation.get(e.abbreviation()).remove(entry.getValue());
+        }
         // one Unit per abbreviation under the name identity (WF-009): the model keys its units on the exact
         // spelling, so two declarations whose abbreviations differ in case alone are two units here and one name there
         Map<String, String> perName = new java.util.HashMap<>();
@@ -579,6 +591,8 @@ public final class IrEmitter {
                         + e.abbreviation() + "' twice, as abbreviation and as alias: " + sp);
             w.beginObject();
             unitFields(e.factors().get(0));
+            String symbol = es.symbols.get(e.abbreviation());
+            if (symbol != null) w.key("symbol").value(symbol);
             if (!sp.isEmpty()) { w.key("spellings"); stringList(sp); }
             w.endObject();
         }

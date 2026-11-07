@@ -844,27 +844,48 @@ public final class RegelSpraakModel {
     }
 
     /**
-     * Resolve a unit spelling to the Eenheid declared in some system. A unit's
-     * abbreviation ("jr"), word ("jaar") and plural ("jaren") all denote the same
-     * unit, so the spelling is matched as an abbreviation and, normalised to its
-     * singular time-unit word, as an alias of a declared unit. Resolving "jaren" and
-     * "jr" to the same system makes them inter-convertible (same-system rule), which
-     * is what lets a duration "in hele jaren" assign to an attribute "met eenheid jr".
+     * Resolve a unit spelling to the Eenheid declared in some system, system by system in declaration order. A unit's
+     * abbreviation ("jr"), symbol ("€"), word ("jaar") and plural ("jaren") all denote the same unit, so within a
+     * system the spelling is matched as an abbreviation, then as a symbol, then, normalised to its singular time-unit
+     * word, as an alias of a declared unit. Resolving "jaren" and "jr" to the same system makes them inter-convertible
+     * (same-system rule), which is what lets a duration "in hele jaren" assign to an attribute "met eenheid jr". A
+     * symbol that two or more units of the system carry names none of them (IR-SPEC ch. 2.5): RGS-390 at {@code line},
+     * with the abbreviations of the candidates, and the spelling resolves as one no system declares, never as the first
+     * candidate.
      */
-    public Unit resolveUnit(String spelling) {
+    public Unit resolveUnit(String spelling, int line) {
         String norm = normaliseTimeUnit(spelling);
         for (UnitSystem s : unitSystems.values()) {
             Unit e = s.units.get(spelling);
-            if (e == null) e = s.spellings.get(norm);
+            if (e != null) return e;
+            List<String> carriers = s.carriersOf(spelling);
+            if (carriers.size() == 1) return s.units.get(carriers.get(0));
+            if (carriers.size() > 1) {
+                diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-390", Diagnostic.params("symbol", spelling,
+                        "unitSystem", s.name, "abbreviations", quotedList(carriers)), line));
+                return new Unit(norm, null);
+            }
+            e = s.spellings.get(norm);
             if (e != null) return e;
         }
         return new Unit(norm, null); // unknown system; normalised so plural/singular still unify
     }
 
-    /** Whether a unit system of this model declares {@code spelling}, as {@link #resolveUnit} reads it. */
+    /** {@link #resolveUnit(String, int)} for a spelling without a place in the source: an ambiguous symbol is reported
+     *  at line 0. */
+    public Unit resolveUnit(String spelling) { return resolveUnit(spelling, 0); }
+
+    /** The abbreviations of an ambiguous symbol in a message: each quoted, separated by commas. */
+    public static String quotedList(List<String> abbreviations) {
+        return String.join(", ", abbreviations.stream().map(a -> "'" + a + "'").toList());
+    }
+
+    /** Whether a unit system of this model declares {@code spelling}, as {@link #resolveUnit} reads it: as an
+     *  abbreviation, a symbol (an ambiguous one included) or a word. */
     public boolean declaresUnit(String spelling) {
         String norm = normaliseTimeUnit(spelling);
-        return unitSystems.values().stream().anyMatch(s -> s.units.containsKey(spelling) || s.spellings.containsKey(norm));
+        return unitSystems.values().stream().anyMatch(s -> s.units.containsKey(spelling)
+                || !s.carriersOf(spelling).isEmpty() || s.spellings.containsKey(norm));
     }
 
     /** Singular form of a built-in time unit (the lexer's nine units), else the spelling trimmed and
@@ -1293,8 +1314,15 @@ public final class RegelSpraakModel {
     public static final class UnitSystem {
         public final String name;
         public final Map<String, Unit> units = new LinkedHashMap<>(); // abbreviation -> unit
+        public final Map<String, String> symbols = new LinkedHashMap<>(); // abbreviation -> the unit's symbol
         public final Map<String, Unit> spellings = new LinkedHashMap<>(); // unit word / plural (normalised) -> unit
         public UnitSystem(String name) { this.name = name; }
+
+        /** The abbreviations of the units that carry {@code symbol}, in declaration order: more than one where units
+         *  share it, which IR-SPEC ch. 2.5 admits. */
+        public List<String> carriersOf(String symbol) {
+            return symbols.entrySet().stream().filter(x -> x.getValue().equals(symbol)).map(Map.Entry::getKey).toList();
+        }
     }
 
     /** §13.3.6.2/§13.3.6.10 the period unit of a tijdlijn — the granularity at which a temporal value

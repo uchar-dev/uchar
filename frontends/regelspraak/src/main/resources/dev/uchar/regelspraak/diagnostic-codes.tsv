@@ -376,3 +376,6 @@ RGS-385	unit-not-convertible	ERROR	target,unit
 RGS-386	tokens-without-source-file	ERROR	-
 RGS-387	source-file-incomplete	ERROR	-
 RGS-388	text-part-unit-without-unit	ERROR	part,type
+RGS-389	unit-line-token-without-role	ERROR	abbreviation,symbol,token,unitSystem
+RGS-390	unit-symbol-ambiguous	ERROR	abbreviations,symbol,unitSystem
+RGS-391	unit-symbol-is-an-abbreviation	ERROR	abbreviation,other,symbol,unitSystem

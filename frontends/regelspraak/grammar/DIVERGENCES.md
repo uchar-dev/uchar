@@ -4588,7 +4588,9 @@ complete coverage, every reference linked, and 24 spans `unresolved`, each a nam
 uchar DIALECT EXTENSION (decision of the maintainer, 2026-11-06; card `tekst-van-een-waarde-in-een-tekstsamenstelling`).
 The RegelSpraak specification §5.4 writes a value into a text without its unit. The dialect lets an author ask for it:
 `"Bedrag: «zijn basis (eenheid)»"` writes the number as RUNTIME-SEMANTICS ch. 1.2 writes it, a space and the unit of
-its value in parentheses, `Bedrag: 5,50 (EUR)`; without the suffix the number stays without its unit.
+its value in parentheses, each factor with the symbol of its declaration and with its abbreviation where that has none
+(below, "De eenheidsregel"): `Bedrag: 5,50 (€)` over `de euro (mv: euros) EUR €`, `1,20 (kg)` over a `kg` without a
+symbol, `2,50 (€/kg)` over both; without the suffix the number stays without its unit.
 
 ### Surface syntax (one token and one optional element)
 
@@ -4618,4 +4620,44 @@ no unit to write: RGS-388, the rule WF-129 of the verifier. A part whose type di
 A scenario document's text value is literal and takes no «…» escape, the suffix included (RGS-279).
 
 **Witnesses.** `TextPartUnitTest`; the golden `jutterswet-tekst-van-een-waarde` (a part with € and with %, a product
-with its unit and a part without), which gates 5 and 12 replay.
+with its unit, a part without, a unit without a symbol and a composite unit of a symbol and an abbreviation), which
+gates 5 and 12 replay.
+
+## De eenheidsregel — afkorting en symbool
+
+Reconstruction of §13.3.5.1 after §3.7 (decision of the maintainer, 2026-11-07; card `unit-symbol`). The EBNF of
+§13.3.5.1 gives a unit line one `<eenheidsafkorting>`; the running text of §3.7 and its example
+`de euro (mv: euros) EUR €` give a unit a noun and an abbreviation and/or a symbol, and the specification refers to a
+unit by its symbol (`met eenheid €`, `1000 €`). The grammar takes any number of tokens after the noun
+(`eenheidAfkorting*`, unchanged); the resolver reads them:
+
+| Line | Abbreviation | Symbol |
+|---|---|---|
+| `de euro (mv: euros) EUR €` | `EUR` | `€` |
+| `de euro (mv: euros) €` | `€` | none |
+| `de euro (mv: euros)` | `euro`, the word | none |
+| `de euro (mv: euros) EUR € E` | RGS-389: a token after the symbol has no role | |
+
+The emitter writes the symbol as `DeclaredUnit.symbol` (IR-SPEC ch. 2.5) and no spelling equal to it; a text part
+writes the unit with it (RUNTIME-SEMANTICS ch. 1.2). A message, a dump and the case output keep the abbreviation.
+
+**Resolution.** A reference resolves system by system in declaration order, and within a system by the abbreviation,
+then the symbol, then the word and the plural. Two units may carry one symbol (`de kroon (mv: kronen) SEK kr` beside
+`de krone (mv: kroner) NOK kr`): WF-009 (RGS-016) counts the abbreviations only. A reference with a symbol that two or
+more units of the system where it lands carry is ambiguous: RGS-390 at the reference, which names the symbol and the
+abbreviations of the candidates, in `met eenheid kr`, in a value `100 kr`, in a composite unit `kr/jr` and in a
+conversion `= 1/100 kr` alike. The resolver never takes the first candidate; `met eenheid SEK` always works. A
+conversion names its target by the abbreviation or by the symbol of one unit of its system
+(`de cent (mv: centen) ct = 1/100 €`). A symbol equal to an abbreviation of its own system under the name identity, its
+own included (`het kilogram kg KG`, or `de gram g kg` beside `het kilogram kg`), never reaches its unit, because a
+reference reads the abbreviation first: RGS-391. In the semantic tokens a reference with a shared symbol has no place.
+
+**Measured.** Of the 150 unit lines of the repository's RegelSpraak sources (counted 2026-11-07), 116 write one token
+after the noun, 34 write two (33 × `EUR €`, 1 × `kg kgm`) and none three. Until this reading the second token was a
+second abbreviation; `€` resolves to the unit it resolved to before, and the IR of every source with `EUR €` writes it
+as the symbol instead of the first spelling. `jutterswet-stelselweging` reached the kilogram of its second system
+through the second abbreviation `kgm`, which as a symbol would name the unit too; the golden now reaches it through its
+word, `met eenheid massakilogram`.
+
+**Witnesses.** `UnitSymbolTest`, `IrEmitterTest`, `SemanticTokensTest.a_shared_symbol_points_at_no_declaration`; the
+goldens `jutterswet-tekst-van-een-waarde` and `jutterswet-stelselweging`.

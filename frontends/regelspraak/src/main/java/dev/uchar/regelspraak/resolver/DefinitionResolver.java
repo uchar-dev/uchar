@@ -649,7 +649,8 @@ public final class DefinitionResolver {
             // §3.3.5: a Percentage is always "%", optionally specialized to a rate "%/<eenheid>"
             // (grammar: "met eenheid % ( / <eenheidAfkorting> )?"); a bare or absent clause is "%".
             Unit e = pd.SLASH() != null
-                    ? Unit.divide(Datatype.Percentage.PERCENT, model.resolveUnit(src(pd.eenheidAfkorting())))
+                    ? Unit.divide(Datatype.Percentage.PERCENT, model.resolveUnit(src(pd.eenheidAfkorting()),
+                            pd.eenheidAfkorting().getStart().getLine()))
                     : Datatype.Percentage.PERCENT;
             return new Datatype.Percentage(g.wholeNumber, g.decimals, e);
         }
@@ -791,7 +792,8 @@ public final class DefinitionResolver {
                 refuseSpelling(model, spelling, src(power), powers, exponent == null ? ".exponent-not-whole" : ".exponent-zero", at);
                 return null;
             }
-            parts.add(model.resolveUnit(src(power.eenheidAfkorting())).toThePower(below ? -exponent : exponent));
+            parts.add(model.resolveUnit(src(power.eenheidAfkorting()), power.getStart().getLine())
+                    .toThePower(below ? -exponent : exponent));
         }
         Unit unit = Unit.ofParts(parts);
         if (unit == null) refuseSpelling(model, spelling, spelling, powers, ".factors-cancel", at);
@@ -816,9 +818,13 @@ public final class DefinitionResolver {
     }
 
     // ---------------- §13.3.5 unit systems ----------------
-    /** A unit's raw declaration before its conversion factor is resolved. */
-    private record RawUnit(java.util.List<String> abbreviations, String word, String plural,
-                              Unit.Fraction conversionFactor, String conversionTarget) {}
+    /** A unit's raw declaration before its conversion factor is resolved: its abbreviation (the word where the line
+     *  writes none), its symbol, null where the line writes none, its word and its plural. */
+    private record RawUnit(String abbreviation, String symbol, String word, String plural,
+                              Unit.Fraction conversionFactor, String conversionTarget) {
+        RawUnit withSymbol(String s) { return new RawUnit(abbreviation, s, word, plural, conversionFactor, conversionTarget); }
+        RawUnit withTarget(String t) { return new RawUnit(abbreviation, symbol, word, plural, conversionFactor, t); }
+    }
 
     private void unitSystem(EenheidsysteemDefinitionContext ctx) {
         UnitSystem system = new UnitSystem(src(ctx.eenheidsysteemNaam()));
@@ -828,13 +834,20 @@ public final class DefinitionResolver {
         // every abbreviation a declaration writes, under the name identity: {as written, the unit's primary}
         java.util.Map<String, String[]> written = new java.util.HashMap<>();
         for (EenheidDefinitieContext u : ctx.eenheidDefinitie()) {
-            java.util.List<String> abbr = u.eenheidAfkorting().stream().map(DefinitionResolver::src).toList();
-            String primary = !abbr.isEmpty() ? abbr.get(0) : (u.eenheidWoord() != null ? src(u.eenheidWoord()) : null);
+            // a unit line is a word, its plural, an abbreviation and a symbol (RegelSpraak specification §3.7): the
+            // token after the abbreviation is the symbol, and a token after the symbol has no role
+            java.util.List<String> tokens = u.eenheidAfkorting().stream().map(DefinitionResolver::src).toList();
+            String primary = !tokens.isEmpty() ? tokens.get(0) : (u.eenheidWoord() != null ? src(u.eenheidWoord()) : null);
             if (primary == null) continue;
+            String symbol = tokens.size() > 1 ? tokens.get(1) : null;
+            if (tokens.size() > 2)
+                model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                        "RGS-389", params("abbreviation", primary, "symbol", symbol, "token", tokens.get(2),
+                                "unitSystem", system.name), u.getStart().getLine()));
             // WF-009, one unit per abbreviation under the name identity the emitter checks too: a second declaration
             // of an abbreviation would replace the first in the maps below without a word, so it is refused by name
-            // and the first declaration stands
-            if (refuseRepeatedAbbreviation(system.name, abbr.isEmpty() ? List.of(primary) : abbr, written, u)) continue;
+            // and the first declaration stands. The symbol does not count: two units may carry one.
+            if (refuseRepeatedAbbreviation(system.name, List.of(primary), written, u)) continue;
             Unit.Fraction n = null; String to = null;
             // a conversion ANTLR's recovery left without its number has none: the syntax error is reported, and reading
             // the missing token crashed the resolution before it was
@@ -842,16 +855,43 @@ public final class DefinitionResolver {
                 n = rational(u.omrekenSpecificatie().NUMBER().getText(), primary);
                 to = src(u.omrekenSpecificatie().eenheidAfkorting());
             }
-            raw.put(primary, new RawUnit(abbr, u.eenheidWoord() != null ? src(u.eenheidWoord()) : null,
+            raw.put(primary, new RawUnit(primary, symbol, u.eenheidWoord() != null ? src(u.eenheidWoord()) : null,
                     u.meervoudsvorm() != null ? src(u.meervoudsvorm()) : null, n, to));
             rules.put(primary, u.getStart().getLine());
+        }
+        // a symbol equal to an abbreviation of its own system, its own included, never reaches its unit: a reference
+        // reads the abbreviation first, so the symbol names the unit of that abbreviation. Refused by name, and the
+        // unit keeps no symbol.
+        for (var entry : raw.entrySet()) {
+            RawUnit r = entry.getValue();
+            String[] same = r.symbol() == null ? null : written.get(dev.uchar.regelspraak.emit.IrEmitter.norm(r.symbol()));
+            if (same == null) continue;
+            model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                    "RGS-391", params("abbreviation", r.abbreviation(), "symbol", r.symbol(), "other", same[0],
+                            "unitSystem", system.name), rules.getOrDefault(entry.getKey(), 0)));
+            entry.setValue(r.withSymbol(null));
+        }
+        // a conversion names its target as a reference does: by its abbreviation, else by the symbol of one unit of the
+        // system; a symbol two or more units carry names none of them (RGS-390), and the conversion is dropped
+        for (var entry : raw.entrySet()) {
+            String to = entry.getValue().conversionTarget();
+            if (to == null || raw.containsKey(to)) continue;
+            List<String> carriers = raw.values().stream().filter(x -> to.equals(x.symbol())).map(RawUnit::abbreviation).toList();
+            if (carriers.size() == 1) entry.setValue(entry.getValue().withTarget(carriers.get(0)));
+            else if (carriers.size() > 1) {
+                model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                        "RGS-390", params("symbol", to, "unitSystem", system.name,
+                                "abbreviations", RegelSpraakModel.quotedList(carriers)), rules.getOrDefault(entry.getKey(), 0)));
+                entry.setValue(entry.getValue().withTarget(null));
+            }
         }
         // pass 2: resolve each unit's canonical + factor, then register every spelling
         java.util.Map<String, Unit> resolvedUnits = new java.util.LinkedHashMap<>();
         for (String primary : raw.keySet()) {
             Unit e = resolveFactor(primary, raw, system.name, resolvedUnits, new java.util.HashSet<>());
             RawUnit r = raw.get(primary);
-            for (String a : r.abbreviations()) system.units.put(a, e);
+            system.units.put(primary, e);
+            if (r.symbol() != null) system.symbols.put(primary, r.symbol());
             if (r.word() != null) system.spellings.put(RegelSpraakModel.normaliseTimeUnit(r.word()), e);
             if (r.plural() != null) system.spellings.put(RegelSpraakModel.normaliseTimeUnit(r.plural()), e);
         }

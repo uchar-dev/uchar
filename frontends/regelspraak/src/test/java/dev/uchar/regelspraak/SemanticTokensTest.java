@@ -197,6 +197,28 @@ class SemanticTokensTest {
         }
     }
 
+    /** A symbol names its unit as its abbreviation does; a symbol two declarations of the system carry names neither
+     *  (RGS-390), so its reference has no place, never the first declaration's. */
+    @Test void a_shared_symbol_points_at_no_declaration() {
+        String source = """
+                Eenheidsysteem Munt
+                    de euro (mv: euros) EUR €
+                    de kroon (mv: kronen) SEK kr
+                    de krone (mv: kroner) NOK kr
+                Objecttype de Vondst
+                    de basis Numeriek (getal met 2 decimalen) met eenheid €;
+                    de opbrengst Numeriek (getal met 2 decimalen) met eenheid kr;
+                """;
+        SemanticTokens.Document d = Resolver.tokens(List.of(new SemanticTokens.SourceFile("munt.rgs", source)));
+        Span euro = d.files().get(0).spans().stream().filter(x -> x.text().equals("€") && x.line() == 6).findFirst().orElseThrow();
+        assertEquals(Kind.UNIT, euro.kind());
+        assertNotNull(euro.declaredAt(), "€ points at the euro");
+        assertEquals(2, euro.declaredAt().line());
+        Span kroon = d.files().get(0).spans().stream().filter(x -> x.text().equals("kr") && x.line() == 7).findFirst().orElseThrow();
+        assertEquals(Kind.UNIT, kroon.kind());
+        assertNull(kroon.declaredAt(), "kr names neither of the two units that carry it");
+    }
+
     /** The grammar admits "en" inside a label, so a set of two labels joined by "en" parses as one member
      *  ("{najaar en voorjaar}"), which the resolution reads as two labels; each is a label of its own then, and "en"
      *  stays a keyword. A member that is a declared label stays one span, also where it holds "en" ("eb en vloed"),

@@ -507,14 +507,18 @@ public final class SemanticTokens {
                     Decl.of(Kind.ENUMERATION_VALUE, name, unquote(w.ENUM_LITERAL().getText())));
     }
 
-    /** The unit declarations of a system, keyed as the resolution keys them: the first abbreviation, or the word
-     *  where there is none. The word is the declaration; its plural and its abbreviations name it. */
+    /** The unit declarations of a system, keyed as the resolution keys them: the abbreviation, or the word where there
+     *  is none. The word is the declaration; its plural, its abbreviation and its symbol name it, except a symbol two
+     *  declarations of the system carry, which names neither ({@link RegelSpraakModel#resolveUnit}). */
     private final Map<String, Decl> unitSpellings = new LinkedHashMap<>();
 
     private void unitSystem(EenheidsysteemDefinitionContext c) {
         String system = src(c.eenheidsysteemNaam());
         claim(c.eenheidsysteemNaam(), Kind.UNIT_SYSTEM, true, Decl.of(Kind.UNIT_SYSTEM, null, system));
         Map<String, Decl> own = new LinkedHashMap<>();
+        Map<String, Integer> symbols = new LinkedHashMap<>();
+        for (EenheidDefinitieContext u : c.eenheidDefinitie())
+            if (u.eenheidAfkorting().size() > 1) symbols.merge(src(u.eenheidAfkorting(1)), 1, Integer::sum);
         for (EenheidDefinitieContext u : c.eenheidDefinitie()) {
             List<String> abbreviations = u.eenheidAfkorting().stream().map(DefinitionResolver::src).toList();
             String primary = !abbreviations.isEmpty() ? abbreviations.get(0)
@@ -526,7 +530,12 @@ public final class SemanticTokens {
             claim(u.meervoudsvorm(), Kind.UNIT, false, decl);
             for (int i = u.eenheidWoord() != null ? 0 : 1; i < u.eenheidAfkorting().size(); i++)
                 claim(u.eenheidAfkorting(i), Kind.UNIT, false, decl);
-            for (String a : abbreviations) { own.putIfAbsent(a, decl); unitSpellings.putIfAbsent(a, decl); }
+            for (int i = 0; i < abbreviations.size(); i++) {
+                String a = abbreviations.get(i);
+                if (i == 1 && symbols.get(a) > 1) continue;
+                own.putIfAbsent(a, decl);
+                unitSpellings.putIfAbsent(a, decl);
+            }
             if (u.eenheidWoord() != null)
                 unitSpellings.putIfAbsent(RegelSpraakModel.normaliseTimeUnit(src(u.eenheidWoord())), decl);
             if (u.meervoudsvorm() != null)
