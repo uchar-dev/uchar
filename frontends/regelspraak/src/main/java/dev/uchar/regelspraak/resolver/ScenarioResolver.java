@@ -203,7 +203,9 @@ public final class ScenarioResolver {
     private void registerSituation(SituatieDefinitieContext sd) {
         String written = src(sd.situatieNaam());
         String name = norm(written);
-        BlockResult block = validateBlock(sd.situatieBlok());   // a duplicate's block is still checked
+        // a header without its ':' leaves the situation without a block; the syntax error names it already
+        BlockResult block = sd.situatieBlok() == null ? new BlockResult(List.of(), List.of())
+                : validateBlock(sd.situatieBlok());   // a duplicate's block is still checked
         if (situations.containsKey(name)) {
             error(sd.getStart().getLine(),
                     "RGS-218", params("situation", written));
@@ -627,7 +629,10 @@ public final class ScenarioResolver {
         List<ParameterValue> parameters = new ArrayList<>();
         Map<String, List<Segment>> parameterTimelines = new LinkedHashMap<>();
         for (SituatieOnderdeelContext situationPart : block.situatieOnderdeel()) {
-            if (situationPart instanceof InstantieOnderdeelContext io) instances.add(validateInstance(io.instantie()));
+            if (situationPart instanceof InstantieOnderdeelContext io) {
+                // error recovery can leave an opener without its label; the syntax error names it already
+                if (io.instantie().UPPER_ID() != null) instances.add(validateInstance(io.instantie()));
+            }
             else if (situationPart instanceof ParameterWaardeOnderdeelContext po) {
                 ParameterValue pw = validateParameter(po.parameterWaarde(), parameters, parameterTimelines);
                 if (pw != null) parameters.add(pw);
@@ -1467,6 +1472,8 @@ public final class ScenarioResolver {
     private ScenarioValue readAndType(SituatieWaardeContext ctx, Datatype target, List<String> markers, int line,
                                       Object what) {
         if (ctx instanceof AfwezigheidSituatieWaardeContext m) {
+            // error recovery can make up a word of a marker ('niet toepassing'); the syntax error names it already
+            if (DefinitionResolver.recovered(m)) return null;
             String marker = String.join(" ", src(m).trim().split("\\s+"));
             if (markers != null && markers.contains(marker)) return ScenarioValue.fromConstructor(marker, null);
             // the dialect has two markers, so a target that declares both takes every marker written

@@ -1423,7 +1423,7 @@ public final class DefinitionResolver {
     /** Whether the parser recovered inside {@code t}: an error node, or a rule that caught a recognition error. The
      *  boundaries of a recovered definition are the recovery's and not the author's, so the checks below leave it
      *  alone; its syntax error is reported already, and it is the one to act on. */
-    private static boolean recovered(ParseTree t) {
+    static boolean recovered(ParseTree t) {
         if (t instanceof ErrorNode) return true;
         if (t instanceof ParserRuleContext p && p.exception != null) return true;
         for (int i = 0; i < t.getChildCount(); i++) if (recovered(t.getChild(i))) return true;

@@ -1237,12 +1237,19 @@ public final class SemanticTokens {
         Map<String, Opened> result = new LinkedHashMap<>();
         for (SituatieBlokContext block : merge)
             for (SituatieOnderdeelContext part : block.situatieOnderdeel())
-                if (part instanceof InstantieOnderdeelContext io && io.instantie().UPPER_ID() != null) {
+                if (part instanceof InstantieOnderdeelContext io && label(io.instantie()) != null) {
                     InstantieContext inst = io.instantie();
                     result.putIfAbsent(inst.UPPER_ID().getText(),
                             new Opened(labelDeclaration(inst), objectTypeOf(inst)));
                 }
         return result;
+    }
+
+    /** The label of an opener, or null where error recovery left it out or made one up (an error node outside the
+     *  token stream); the syntax error names it already. */
+    private static TerminalNode label(InstantieContext inst) {
+        TerminalNode label = inst.UPPER_ID();
+        return label == null || label.getSymbol().getTokenIndex() < 0 ? null : label;
     }
 
     /** The declaration an opener {@code een <objecttype> <LABEL>} would be: one per opener, since the same label
@@ -1272,7 +1279,7 @@ public final class SemanticTokens {
 
     private void instance(InstantieContext inst, Map<String, Opened> labels) {
         objectTypeReference(inst.objectTypeNaam());
-        if (inst.UPPER_ID() != null) {
+        if (label(inst) != null) {
             Decl own = labelDeclaration(inst);
             Decl first = labels.get(inst.UPPER_ID().getText()).label();
             claim(range(inst.UPPER_ID()), Kind.LABEL, first.equals(own), first);
