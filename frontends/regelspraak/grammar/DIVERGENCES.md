@@ -4475,8 +4475,9 @@ block, and a reference to one: `regelversie <naam>`, the carrier of `Uitzonderin
 `Daarbij geldt` variable, declared there and read in its own rule), `label`, `situation`, `parameterSet` and
 `scenario` in a test document (below), and `unresolved` for a word in a name place that names nothing (also an
 enumeration value no domain declares). A plural (`(mv: …)`) is a reference to the singular's
-declaration. A unit is declared by its word (`de meter`); its abbreviations and plural refer to it. A time unit and a
-sign that no unit system of the files declares are a `unit` without `declaredAt`.
+declaration. A unit is declared by its word (`de meter`); its abbreviation, its symbol and its plural refer to it. A
+time unit, a sign that no unit system of the files declares and a symbol two units of one system carry are a `unit`
+without `declaredAt`.
 
 **How a name is read.** A pass after the resolution, over the token stream and the parse tree, asks the finished
 model what each run of words names, with the lookups the resolution uses (`objectTypeByName`, `attributeName` and

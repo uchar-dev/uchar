@@ -49,8 +49,8 @@ class TypeSystemRefusalWitnessTest {
     /** cwd under surefire is the module dir (backends/drools); the corpus is two levels up. */
     private static final Path CORPUS = Path.of("..", "..", "corpus", "golden");
 
-    /** Parameter 0 a number, parameter 1 a number in EUR with a year timeline; Munt declares EUR with three
-     *  spellings. */
+    /** Parameter 0 a number, parameter 1 a number in EUR with a year timeline; Munt declares EUR with the symbol € and
+     *  two spellings. */
     private static final String PENNINGJAAR = "jutterswet-penningjaar";
     /** Two percentage attributes, tagged at their declaration; rule 0 writes a percentage literal, untagged. */
     private static final String VONDSTTARIEF = "jutterswet-vondsttarief";
@@ -347,7 +347,8 @@ class TypeSystemRefusalWitnessTest {
         UnitSystem unitSystem = m.unitSystems.get("Munt");
         Unit eur = unitSystem.units.get("EUR");
         assertEquals(List.of("EUR"), List.copyOf(unitSystem.units.keySet()));
-        assertEquals(List.of("€", "euro", "euros"), List.copyOf(unitSystem.spellings.keySet()));
+        assertEquals(Map.of("EUR", "€"), unitSystem.symbols);
+        assertEquals(List.of("euro", "euros"), List.copyOf(unitSystem.spellings.keySet()));
         for (Unit e : unitSystem.spellings.values()) assertEquals(eur, e);
         assertEquals(eur, ((Datatype.Numeric) m.parameters.get("penningbedrag").datatype()).unit());
 
