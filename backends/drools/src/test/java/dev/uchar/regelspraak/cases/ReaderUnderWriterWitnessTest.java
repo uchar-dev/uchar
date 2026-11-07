@@ -416,7 +416,7 @@ class ReaderUnderWriterWitnessTest {
             + factType("bergingsdeelname", "berging", "Berging", "berger", "bergers", "Berger")
             + "],\"parameters\":[],\"domains\":[],\"unitSystems\":[{\"node\":\"UnitSystem\",\"name\":\"Munt\",\"units\":["
             + "{\"node\":\"Unit\",\"abbreviation\":\"EUR\",\"system\":\"Munt\",\"canonical\":\"EUR\",\"factorToCanonical\":"
-            + "{\"num\":1,\"den\":1},\"spellings\":[\"€\",\"euro\",\"euros\"]}]}],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
+            + "{\"num\":1,\"den\":1},\"symbol\":\"€\",\"spellings\":[\"euro\",\"euros\"]}]}],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
 
     private static String roleBinding(String factType, String role) {
         return "{\"node\":\"RoleBinding\",\"factType\":\"" + factType + "\",\"role\":\"" + role + "\"}";
