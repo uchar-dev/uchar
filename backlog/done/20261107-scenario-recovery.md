@@ -53,3 +53,14 @@ Acceptance: the new sweep fails on `a5b857a47` (measured: 115 problems, at `vali
 `ScenarioRecoveryTest`), passes on main; frontend suite and `make gates` green.
 
 May touch: `frontends/regelspraak/src/test/java/dev/uchar/regelspraak/SemanticTokensRecoveryTest.java`, this card.
+
+Result (extension): landed 2026-11-07. `SemanticTokensRecoveryTest` carries a second sweep,
+`every_golden_test_document_with_its_scenarios_cut_or_with_a_line_left_out_gives_its_tokens`: each of the 43
+`scenario.rgs`, cut at forty places and with each of twenty lines left out, read beside its `source.rgs` through
+`Resolver.tokens` and `SemanticTokensCheck`; floors `MIN_SCENARIO_RUNS=2580` and `MIN_SCENARIO_SYNTAX_ERRORS=1715`
+(measured 2026-11-07), about 10 s. The two sweeps share their variants and their corpus walk; the first sweep reads
+the same files and variants as before. Measured: on the code and corpus of `a5b857a47` the new sweep reports 115
+problems (113 at `validateInstance`, one at `readAndType` on the cut marker `'niet van to'`, one at
+`labelDeclaration`), here none; frontend suite 1544/1544; `make gates` green on `1d39a0776` (17 gates, 454 s). Left:
+no cut reaches a situation header without its `:`; `ScenarioRecoveryTest` pins that form. A sweep that leaves out
+single tokens reaches it, but over all tokens it takes minutes, too long for the suite.
