@@ -125,8 +125,9 @@ recorded as such.
   the symbol `€` is `1200,00 (€/jr)` and one in `EUR/kg` `2,50 (€/kg)`; an
   empty part is `""` without its unit. A factor that names a system the
   document does not declare, or an abbreviation its system does not declare,
-  has no declaration to take a symbol from: a broken document, which an
-  executor reports, never a factor it writes by its abbreviation. A part
+  has no declaration to take a symbol from: a broken document (WF-034,
+  IR-SPEC ch. 4.6 (r); WF-009, ch. 2.5), which an executor that looks for the
+  declaration reports as well, never a factor it writes by its abbreviation. A part
   whose type has no unit asks for none (WF-129). Only the text part writes
   the symbol: a message, the trace of ch. 5.12, a dump and the case output
   write a unit with its abbreviations. A

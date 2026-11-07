@@ -1,0 +1,3 @@
+WF-009.undeclared-abbreviation
+unit=kg
+unitSystem=Munt

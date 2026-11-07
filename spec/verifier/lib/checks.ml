@@ -1463,10 +1463,10 @@ let check_number_form at = function
       else []
   | _ -> []
 
-(* the declared unit systems, by name — the table every unit's `system`
-   back-reference (in memory [stelsel]) resolves against (WF-034,
-   ch. 4.6 (r)). *)
-let system_names ctx = List.map fst ctx.doc.unit_systems
+(* the declared unit systems — the table every unit's `system`
+   back-reference resolves against (WF-034, ch. 4.6 (r)), and whose units
+   that unit's abbreviation must be one of (WF-009). *)
+let declared_systems ctx = ctx.doc.unit_systems
 
 (* A factor as a message writes it: a whole number bare, any other as
    num/den, the two integers exactly as the wire carries them. *)
@@ -1503,22 +1503,45 @@ let rec ggd a b = if b = 0 then a else ggd b (a mod b)
    same reason WF-092 lives here: [check_unit_form] is the ONE walk that
    reaches every unit record in a document, every factor included, and the
    `system` is a reference like any other — it names the declared unit system
-   whose conversion table gives the unit its meaning. [systems] is the
-   declared-system name list, threaded from the context; it is a required
-   argument rather than an optional one so a new call site cannot silently opt
-   out of the cross. *)
+   whose conversion table gives the unit its meaning. It carries WF-009's arm
+   on the abbreviation for the same reason: a system that resolves gives the
+   unit a meaning only through a declaration of its abbreviation, and a reader
+   that takes the declaration (the symbol of a text part, RUNTIME-SEMANTICS
+   ch. 1.2) finds none. [systems] is the declared systems, threaded from the
+   context; it is a required argument rather than an optional one so a new
+   call site cannot silently opt out of the cross. *)
 let check_unit_form ~systems at (u : unit_factor) =
   let named =
     match u.abbr_text with Some a -> "'" ^ a ^ "'" | None -> "an unnamed unit"
   in
   (match u.system with
-   | Some s when not (mem_ci systems s) ->
-       [ v ~params:[("unit", named); ("unitSystem", s)] "WF-034.undeclared-unit-system" (at ^ "/system")
-           (Printf.sprintf
-              "unit %s declares unit system '%s', which no declaration carries: the unit \
-               resolves against no conversion table"
-              named s) ]
-   | _ -> [])
+   | None -> []
+   | Some s -> (
+       (* two systems of one name are WF-001's; either may then declare the unit *)
+       match List.filter (fun (n, _) -> norm n = norm s) systems with
+       | [] ->
+           [ v ~params:[("unit", named); ("unitSystem", s)] "WF-034.undeclared-unit-system" (at ^ "/system")
+               (Printf.sprintf
+                  "unit %s declares unit system '%s', which no declaration carries: the unit \
+                   resolves against no conversion table"
+                  named s) ]
+       | named_systems -> (
+           match u.abbr_text with
+           | Some a
+             when not
+                    (List.exists
+                       (fun (_, es) ->
+                         List.exists
+                           (fun (d : declared_unit) ->
+                             match d.ge_unit.abbr_text with Some b -> norm b = norm a | None -> false)
+                           es.unit_list)
+                       named_systems) ->
+               [ v ~params:[("unit", a); ("unitSystem", s)] "WF-009.undeclared-abbreviation" at
+                   (Printf.sprintf
+                      "the unit '%s' names the unit system '%s', which declares no unit '%s': the \
+                       unit resolves against no declaration"
+                      a s a) ]
+           | _ -> [])))
   @ (match (u.canonical_form, u.factor_to_canonical) with
   | Some c, None ->
       [ v ~params:[("unit", named); ("canonical", c)] "WF-092.canonical-without-factor" at
@@ -1630,7 +1653,7 @@ let rec check_datatype_units ~systems at = function
    rides walk_expr's type prologue, where WF-007 collects the same "every
    datatype in the document" split. *)
 let wf092 ctx =
-  let systems = system_names ctx in
+  let systems = declared_systems ctx in
   let site at = function Some d -> check_datatype_units ~systems at d | None -> [] in
   List.concat_map
     (fun (sn, es) ->
@@ -1719,7 +1742,11 @@ let wf007_presentation ctx =
    part: this verifier, `ref` and the ASP backend passed a second `t` with
    another factor while the Drools loader refused the document (measured
    2026-09-24). So the second declaration is refused here, at its own
-   position, in the sentence the Drools loader writes too. *)
+   position, in the sentence the Drools loader writes too.
+
+   The arm on a unit where it occurs — its abbreviation is a unit of the
+   system it names — rides [check_unit_form], the walk that reaches every
+   factor in the document. *)
 let wf009 ctx =
   List.concat_map
     (fun (sn, es) ->
@@ -5354,7 +5381,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
         match annotation e with
         | Some d ->
             check_number_form (sub "type") d
-            @ check_datatype_units ~systems:(system_names ctx) (sub "type") d
+            @ check_datatype_units ~systems:(declared_systems ctx) (sub "type") d
             @ enum_use_site ctx (sub "type") d
             @ struct_use_site ctx (sub "type") d
         | None ->
@@ -7168,7 +7195,7 @@ and check_fold_fn ctx ~binders ~subject ~host at ~params ~result (fn : fold_fn) 
       @ List.concat
           (List.mapi
              (fun j (_, pt) ->
-               check_datatype_units ~systems:(system_names ctx)
+               check_datatype_units ~systems:(declared_systems ctx)
                  (Printf.sprintf "%s/parameters/%d/datatype" at j)
                  pt)
              parameters)
