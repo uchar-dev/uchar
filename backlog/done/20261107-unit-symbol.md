@@ -320,3 +320,12 @@ en `(kg)` al klopten (`logs/red-ref-base.log`); de jar van `a5b857a47` `FAIL` op
 - **`make gates`** op `b548fb003`: alle zeventien gates en `after-run` rc=0, red=0, 467 s
   (`out/gates/20261107-103955/summary.txt` in de worktree, kopie onder `logs/gates-20261107-103955/`, log
   `logs/gates-final.log`). Gate 9 (catala) draaide mee: 250 checks, 12 goldens.
+
+### Landing (hoofdsessie, 2026-11-07)
+
+Geland op main na `make gates` op `b548fb003` (17 van 17 groen en `after-run`, 467 s); main bewoog niet sinds de
+aftakking. De IR-SPEC-tekst is de door de eigenaar goedgekeurde, met één zin minder: de alinea *The symbol.* herhaalde
+dat een factor op een `Number` geen `symbol` en geen `spellings` draagt, wat de alinea erboven al zegt. CONSTRUCTS rij 26
+en rij 31 en `CLAUDE.md` gate 2, 10 en 12 beschrijven de nieuwe stand. Open, als vraag voor de eigenaar: `$` lext niet,
+dus `USD $` is in de bron niet te schrijven; en een factor waarvan het stelsel de afkorting niet declareert, is
+verifier-schoon (alleen het tekstdeel weigert hem nu).

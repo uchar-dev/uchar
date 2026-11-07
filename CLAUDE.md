@@ -196,7 +196,8 @@ missing line makes `make gates` exit non-zero. Current gates:
    reported explicitly, never silently green. Since the card
    `tekst-van-een-waarde-in-een-tekstsamenstelling` (2026-11-06) the shape
    self-test holds `EmbeddedExpression.unit` to its one spelling, `true`
-   (four rows).
+   (four rows), and since the card `unit-symbol` (2026-11-07)
+   `DeclaredUnit.symbol` to a non-empty string on a declaration (six rows).
 3. `scripts/check-verifier.sh` — the OCaml verifier (`spec/verifier/`)
    builds, in the workspace `_build` (`scripts/lib/ocaml-build.sh`), the
    verifier gates 11 and 15 run as well, and builds on its own: no dune
@@ -408,7 +409,12 @@ missing line makes `make gates` exit non-zero. Current gates:
     params(...))`, the form of an exception text a user sees
     (RGS-380..387). RGS-388 refuses at `check` a text part
     that asks for a unit its type does not have (`«X (eenheid)»`,
-    DIVERGENCES "De eenheid van een tekstdeel"). The frontend
+    DIVERGENCES "De eenheid van een tekstdeel"). Since the card
+    `unit-symbol` (2026-11-07) the token after the abbreviation on a unit
+    line is the unit's symbol (DIVERGENCES "De eenheidsregel — afkorting en
+    symbool"): RGS-389 refuses a third token, RGS-390 a reference by a
+    symbol two units of its system carry, RGS-391 a symbol equal to an
+    abbreviation of its own system. The frontend
     renders Dutch by default; the frontend Makefile copies
     `src/main/resources` to `out/`.
 
@@ -590,7 +596,9 @@ missing line makes `make gates` exit non-zero. Current gates:
     `tekst-van-een-waarde-in-een-tekstsamenstelling` (2026-11-06) the
     analysis passes `rsTekst` the form of a text part (its decimals,
     RUNTIME-SEMANTICS ch. 1.2) and its unit, and DROOLS-368 refuses a part
-    that asks for a unit it does not have. The
+    that asks for a unit it does not have; since the card `unit-symbol`
+    (2026-11-07) each factor of that unit is written by the symbol of its
+    declaration, and DROOLS-369 refuses a factor without a declaration. The
     Drools backend renders English by default; its own suite runs under
     `uchar.messages.locale=nl` (`backends/drools/pom.xml`). Since 2026-09-06 an expected-channel floor IN THE SCRIPT pins
     the played channel itself: every NON-played golden is listed by name

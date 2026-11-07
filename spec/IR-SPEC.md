@@ -1344,9 +1344,8 @@ one differed, is the unit's `symbol` today.
 *The symbol.* A unit is identified by its system and its abbreviation. Its
 symbol is only the form in which a value of the unit is written for a reader.
 Two units may carry one symbol, so no rule holds a symbol unique and no reader
-identifies a unit by it. A factor on a `Number` carries neither `symbol` nor
-`spellings`. The RegelSpraak frontend takes as the symbol the token after the
-abbreviation on a unit line (`de euro (mv: euros) EUR €`; RegelSpraak
+identifies a unit by it. The RegelSpraak frontend takes as the symbol the
+token after the abbreviation on a unit line (`de euro (mv: euros) EUR €`; RegelSpraak
 specification §3.7).
 
 *What a spelling means is **OPEN**.* No rule constrains the content of
