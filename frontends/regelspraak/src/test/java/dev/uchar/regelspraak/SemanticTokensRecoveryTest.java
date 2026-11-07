@@ -24,7 +24,9 @@ import static org.junit.jupiter.api.Assertions.fail;
  * where the recovery leaves a parse node without a child each crashed the resolution — and with it {@code --ir} — on a
  * missing token until the card semantic-tokens (2026-10-22); each now reports its syntax error and gives the tokens. A
  * sweep over every golden, cut at forty places and with each of twenty lines left out in turn, keeps the rest of the
- * resolution honest on recovered trees: no exception, and the output passes {@link SemanticTokensCheck}.
+ * resolution honest on recovered trees: no exception, and the output passes {@link SemanticTokensCheck}. A second sweep
+ * does the same to the {@code scenario.rgs} of every golden test document, read beside its {@code source.rgs}, so the
+ * scenario layer comes through the recovery too ({@link ScenarioRecoveryTest} pins the four forms that failed there).
  */
 class SemanticTokensRecoveryTest {
 
@@ -112,27 +114,12 @@ class SemanticTokensRecoveryTest {
     private static final int MIN_SYNTAX_ERRORS = 4699;
 
     @Test void every_golden_cut_or_with_a_line_left_out_gives_its_tokens() throws IOException {
-        Path corpus = null;
-        for (Path p = Path.of("").toAbsolutePath(); p != null && corpus == null; p = p.getParent())
-            if (Files.isDirectory(p.resolve("corpus/golden"))) corpus = p.resolve("corpus/golden");
-        if (corpus == null) fail("kon corpus/golden niet vinden vanaf " + Path.of("").toAbsolutePath());
-        List<Path> sources;
-        try (Stream<Path> s = Files.walk(corpus)) {
-            sources = s.filter(p -> p.getFileName().toString().equals("source.rgs")).sorted().toList();
-        }
+        Path corpus = corpus();
         List<String> problems = new ArrayList<>();
         int runs = 0, syntaxErrors = 0;
-        for (Path source : sources) {
+        for (Path source : files(corpus, "source.rgs")) {
             String text = Files.readString(source, StandardCharsets.UTF_8);
-            List<String> variants = new ArrayList<>();
-            for (int k = 1; k <= 40; k++) variants.add(text.substring(0, text.length() * k / 41));
-            String[] lines = text.split("\n", -1);
-            for (int k = 1; k <= 20; k++) {
-                List<String> rest = new ArrayList<>(Arrays.asList(lines));
-                rest.remove(lines.length * k / 21);
-                variants.add(String.join("\n", rest));
-            }
-            for (String v : variants) {
+            for (String v : variants(text)) {
                 runs++;
                 List<SemanticTokens.SourceFile> files = List.of(new SemanticTokens.SourceFile("cut.rgs", v));
                 try {
@@ -148,5 +135,65 @@ class SemanticTokensRecoveryTest {
         int r = runs, s = syntaxErrors;
         assertTrue(r >= MIN_RUNS, () -> "cut sources " + r + " < floor " + MIN_RUNS);
         assertTrue(s >= MIN_SYNTAX_ERRORS, () -> "cut sources with a syntax error " + s + " < floor " + MIN_SYNTAX_ERRORS);
+    }
+
+    /** Floors, measured at the build (card scenario-recovery, 2026-11-07): the cut test documents read, and how many of
+     *  them carry a syntax error, so the sweep keeps reaching the recovery of the scenario layer. */
+    private static final int MIN_SCENARIO_RUNS = 2580;
+    private static final int MIN_SCENARIO_SYNTAX_ERRORS = 1715;
+
+    @Test void every_golden_test_document_with_its_scenarios_cut_or_with_a_line_left_out_gives_its_tokens()
+            throws IOException {
+        Path corpus = corpus();
+        List<String> problems = new ArrayList<>();
+        int runs = 0, syntaxErrors = 0;
+        for (Path scenario : files(corpus, "scenario.rgs")) {
+            Path sourcePath = scenario.resolveSibling("source.rgs");
+            if (!Files.isRegularFile(sourcePath)) fail(corpus.relativize(scenario) + " has no source.rgs beside it");
+            String source = Files.readString(sourcePath, StandardCharsets.UTF_8);
+            String text = Files.readString(scenario, StandardCharsets.UTF_8);
+            for (String v : variants(text)) {
+                runs++;
+                List<SemanticTokens.SourceFile> files = List.of(new SemanticTokens.SourceFile("source.rgs", source),
+                        new SemanticTokens.SourceFile("scenario.rgs", v));
+                try {
+                    SemanticTokens.Document d = Resolver.tokens(files);
+                    SemanticTokensCheck.check(files, d);
+                    if (d.diagnostics().stream().anyMatch(x -> "RGS-216".equals(x.code()))) syntaxErrors++;
+                } catch (AssertionError | RuntimeException e) {
+                    problems.add(corpus.relativize(scenario) + " (" + v.length() + " characters): " + e);
+                }
+            }
+        }
+        assertTrue(problems.isEmpty(), () -> problems.size() + " problem(s):\n  " + String.join("\n  ", problems));
+        int r = runs, s = syntaxErrors;
+        assertTrue(r >= MIN_SCENARIO_RUNS, () -> "cut test documents " + r + " < floor " + MIN_SCENARIO_RUNS);
+        assertTrue(s >= MIN_SCENARIO_SYNTAX_ERRORS,
+                () -> "cut test documents with a syntax error " + s + " < floor " + MIN_SCENARIO_SYNTAX_ERRORS);
+    }
+
+    /** {@code text} cut at forty places, and with each of twenty lines left out in turn. */
+    private static List<String> variants(String text) {
+        List<String> variants = new ArrayList<>();
+        for (int k = 1; k <= 40; k++) variants.add(text.substring(0, text.length() * k / 41));
+        String[] lines = text.split("\n", -1);
+        for (int k = 1; k <= 20; k++) {
+            List<String> rest = new ArrayList<>(Arrays.asList(lines));
+            rest.remove(lines.length * k / 21);
+            variants.add(String.join("\n", rest));
+        }
+        return variants;
+    }
+
+    private static Path corpus() {
+        for (Path p = Path.of("").toAbsolutePath(); p != null; p = p.getParent())
+            if (Files.isDirectory(p.resolve("corpus/golden"))) return p.resolve("corpus/golden");
+        return fail("kon corpus/golden niet vinden vanaf " + Path.of("").toAbsolutePath());
+    }
+
+    private static List<Path> files(Path corpus, String name) throws IOException {
+        try (Stream<Path> s = Files.walk(corpus)) {
+            return s.filter(p -> p.getFileName().toString().equals(name)).sorted().toList();
+        }
     }
 }
