@@ -1,0 +1,5 @@
+WF-009.undeclared-conversion
+unit=t
+unitSystem=Massa
+conversion=factor 100 to 'kg'
+declaredConversion=factor 1000 to 'kg'

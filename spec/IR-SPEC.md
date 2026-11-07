@@ -1525,12 +1525,32 @@ Worked examples (expected values exact):
   `symbol` of its declaration (`RUNTIME-SEMANTICS.md` ch. 1.2), and such a
   factor has none. Witness `wf009-undeclared-abbreviation` (`kg` naming
   the system `Munt`, which declares only `EUR`); passing: every golden with
-  a unit system. *v0 mirror note:* a conversion cycle silently makes the re-entered unit its own base; an *unknown* target is
-  worse — v0 adopts the unknown name as the canonical, so two units both
+  a unit system. **The arm on the conversion of a unit where it occurs**
+  (`WF-009.undeclared-conversion`, with `unit`, `unitSystem`, `conversion`
+  and `declaredConversion`): a factor of a unit that names a `system`
+  declaring its `abbreviation` MUST carry the `canonical` and
+  `factorToCanonical` of that declaration, both present or both absent as
+  there; its `exponent` belongs to the factor. The `canonical` is compared
+  byte for byte and the factor on its value, as WF-091 compares them
+  (ch. 4.1; WF-092 (c) holds both integers in lowest terms); where the
+  system declares the abbreviation twice, which this rule refuses, or two
+  systems carry the name, which WF-001 refuses, the pair of either
+  declaration will do. It holds at every position a unit occupies, a
+  declaration in `units` included, and is reported at the factor's own
+  position. A factor without a `system` falls outside it, an `abbreviation`
+  the system does not declare is the arm on a unit where it occurs, and a
+  half pair, on the factor or on its declaration, is WF-092's. Every
+  executor converts a value by the pair on the factor, so a factor with
+  another pair than its declaration converts as its unit system does not
+  say. Witness `wf009-undeclared-conversion` (`t` of `Massa` with the
+  factor 100 where its declaration has 1000); passing: every golden with a
+  unit system. *v0 mirror note:* a conversion cycle silently makes the
+  re-entered unit its own base; an *unknown* target is worse — v0 adopts the unknown name as the canonical, so two units both
   declared against the same unknown target silently become convertible
   through a unit that does not exist; an unreadable factor warns and
   drops. **Delta (promotion).** *Scope note:* this rule reads a declared
-  system's own table and the abbreviation of every unit that names it. That
+  system's own table and the abbreviation and conversion pair of every unit
+  that names it. That
   a present `system` names a declared system at all is WF-034's
   (ch. 4.6 (r)).
 - **WF-010** Restatement (in any layer) between non-convertible units is
@@ -7698,7 +7718,8 @@ and it belongs to whoever measures it.
   (ch. 2.5).
   It is the unit occurrence's one link back to the conversion table that gives
   it meaning, and no other rule crosses it: WF-009 checks a declared table
-  and, within a system that resolves, the occurrence's abbreviation, WF-092
+  and, within a system that resolves, the occurrence's abbreviation and
+  conversion pair, WF-092
   the record's own conversion pair, and neither asks whether an occurrence
   points into a declared table at all. Two
   readers do: the ASP backend's literal-restating pass gates on it (a literal
@@ -10220,7 +10241,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-006 | enumeration domain: ≥ 1 value, values unique | gate 3 | `jutterswet-keurstaat` (the keurklasse domain) | `wf006-duplicate-enum-value` |
 | WF-007 | **Since L3 (2026-09-24, B14):** a second arm — the presentation tag `presentation: "percentage"` stands only at a declaration position, never inside a type annotation (ch. 2.4); the precision forms are unchanged, on `whole`/`decimals`. number precision is exactly one of whole / fixed / unbounded — at every `Number` in the document: the declarations (model layer) and every `type` a value node carries of its own (since L2, 2026-09-24, a reference and a rule target carry none, B13; the rule-target arm of 2026-09-04 left the wire with the target's `type`). Measured and OPEN: the form check reaches none of a `ListType` element, `StructType` field, `SumType` payload, `FunctionDef` result/parameter or lambda parameter's `datatype`; two of those yield verifier-clean documents today (witnesses `jutterswet-postenheffing`, `jutterswet-waarderingsinvoer`), the other four are refused everywhere by neighbouring rules (WF-062/067/068/070/073/074/091); the enum walk recurses through lists, sums and structs, the struct walk only through lists, and a lambda parameter's `datatype` is reached by neither | gate 3 (model layer + the walk's type prologue) | `jutterswet-vondstnummer` (declarations) + `jutterswet-vondsttarief` (until L2 the rule-target arm crossing a percentage target clean; since L3 the presentation arm's positive side, the tag on its two declarations and on none of its annotations) | `wf007-whole-with-decimals`; `wf007-presentation-tag-by-annotation` (the presentation arm, since L3: a `Literal.type` carrying the tag); `wf007-doeltype-geheel-met-decimalen` (the rule-target arm) was removed with reason at L2 (`corpus/negative/README.md`, L2) |
 | WF-008 | enumeration compatibility = same declaring domain (use-time; expression layer) | OPEN (no document carries two enum operands in one expression; the WF-036 guard already covers the equality site — fold WF-008 into the expression layer when such a witness lands) | OPEN | OPEN |
-| WF-009 | unit conversions reduce: no cycles, no unknown targets, positive rational factors. **Since L3 (2026-09-24, B17 (i)):** a factor is the exact rational `{num, den}` of two integers ≥ 1, so positivity is its wire form (the schema and every loader) and lowest terms is WF-092 (c); a `canonical` resolves against its system's units by `abbreviation`; and a unit system declares each abbreviation once, under the ch. 2.1 identity (ch. 2.5: one `Unit` per abbreviation, which the v0 map key could not violate and the L3 list can); no declared factor between the day family and the month family of the calendar (ch. 2.5, the calendar arm; `RUNTIME-SEMANTICS.md` ch. 3.6, maintainer decision 2026-11-03); and a unit that names a `system` has an `abbreviation` that system declares, at every position a unit occupies (the arm on a unit where it occurs) | gate 3 (termination, unknown targets and, since L3, the abbreviation declared twice; the calendar arm; the arm on a unit where it occurs, in the walk WF-034 (r) and WF-092 share; until L3 also positivity, while exactness was not representable in v0's float factor) | `jutterswet-berging`; for the calendar arm `anchor/jutterswet-verzuimrente-dagen`; for the arm on a unit where it occurs every golden with a unit system | `wf009-conversion-cycle` + `wf009-duplicate-abbreviation` (an abbreviation declared twice, since L3) + `wf009-calendar-family-factor` (`jr = 365 dg`) + `wf009-undeclared-abbreviation` (`kg` naming the system `Munt`, which declares only `EUR`) |
+| WF-009 | unit conversions reduce: no cycles, no unknown targets, positive rational factors. **Since L3 (2026-09-24, B17 (i)):** a factor is the exact rational `{num, den}` of two integers ≥ 1, so positivity is its wire form (the schema and every loader) and lowest terms is WF-092 (c); a `canonical` resolves against its system's units by `abbreviation`; and a unit system declares each abbreviation once, under the ch. 2.1 identity (ch. 2.5: one `Unit` per abbreviation, which the v0 map key could not violate and the L3 list can); no declared factor between the day family and the month family of the calendar (ch. 2.5, the calendar arm; `RUNTIME-SEMANTICS.md` ch. 3.6, maintainer decision 2026-11-03); and a unit that names a `system` has an `abbreviation` that system declares, at every position a unit occupies (the arm on a unit where it occurs), and carries the conversion pair of that declaration (the arm on the conversion of a unit where it occurs) | gate 3 (termination, unknown targets and, since L3, the abbreviation declared twice; the calendar arm; the two arms on a unit where it occurs, in the walk WF-034 (r) and WF-092 share; until L3 also positivity, while exactness was not representable in v0's float factor) | `jutterswet-berging`; for the calendar arm `anchor/jutterswet-verzuimrente-dagen`; for the two arms on a unit where it occurs every golden with a unit system | `wf009-conversion-cycle` + `wf009-duplicate-abbreviation` (an abbreviation declared twice, since L3) + `wf009-calendar-family-factor` (`jr = 365 dg`) + `wf009-undeclared-abbreviation` (`kg` naming the system `Munt`, which declares only `EUR`) + `wf009-undeclared-conversion` (`t` of `Massa` with the factor 100 where its declaration has 1000) |
 | WF-010 | no restatement between non-convertible units (use-time; expression layer) | OPEN (v0 has no restatement node to anchor the check) | OPEN | OPEN |
 | WF-011 | fact-type arity: reciprocal = 1 role, else ≥ 2 (>2 OPEN) | gate 3 | `jutterswet-vondsttelling` | `wf011-one-role` |
 | WF-012 | role names unambiguous within a fact type (incl. plurals) | gate 3 | `jutterswet-vondsttelling` | `wf012-ambiguous-roles` |

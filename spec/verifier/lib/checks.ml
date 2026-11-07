@@ -1542,6 +1542,47 @@ let check_unit_form ~systems at (u : unit_factor) =
                        unit resolves against no declaration"
                       a s a) ]
            | _ -> [])))
+  (* WF-009, the conversion of a unit where it occurs: every reader converts a value by the pair on the factor, so the
+     pair must be its declaration's. The canonical is compared byte for byte and the factor on its value, as WF-091
+     compares them (WF-092 (c) holds the integers in lowest terms); a half pair is WF-092's, an abbreviation the
+     system does not declare the arm above. *)
+  @ (match (u.system, u.abbr_text) with
+     | Some s, Some a -> (
+         let declarations =
+           List.concat_map
+             (fun (n, (es : unit_system)) ->
+               if norm n <> norm s then []
+               else
+                 List.filter
+                   (fun (d : declared_unit) ->
+                     match d.ge_unit.abbr_text with Some b -> norm b = norm a | None -> false)
+                   es.unit_list)
+             systems
+         in
+         let pair (f : unit_factor) =
+           ( f.canonical_form,
+             Option.map (fun { num; den } -> let g = ggd num den in (num / g, den / g)) f.factor_to_canonical )
+         in
+         let half (c, f) = (c = None) <> (f = None) in
+         let conversion (f : unit_factor) =
+           match (f.canonical_form, f.factor_to_canonical) with
+           | Some c, Some r -> Printf.sprintf "factor %s to '%s'" (rational_render r) c
+           | _ -> "no conversion pair"
+         in
+         match declarations with
+         | first :: _
+           when (not (half (pair u)))
+                && (not (List.for_all (fun (d : declared_unit) -> half (pair d.ge_unit)) declarations))
+                && not (List.exists (fun (d : declared_unit) -> pair d.ge_unit = pair u) declarations) ->
+             [ v ~params:[ ("unit", a); ("unitSystem", s); ("conversion", conversion u);
+                           ("declaredConversion", conversion first.ge_unit) ]
+                 "WF-009.undeclared-conversion" at
+                 (Printf.sprintf
+                    "the unit '%s' of the unit system '%s' carries %s, and its declaration %s: a unit where \
+                     it occurs carries the conversion pair of its declaration"
+                    a s (conversion u) (conversion first.ge_unit)) ]
+         | _ -> [])
+     | _ -> [])
   @ (match (u.canonical_form, u.factor_to_canonical) with
   | Some c, None ->
       [ v ~params:[("unit", named); ("canonical", c)] "WF-092.canonical-without-factor" at

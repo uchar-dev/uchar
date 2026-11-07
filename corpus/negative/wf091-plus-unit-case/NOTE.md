@@ -30,10 +30,16 @@ this witness puts the same lie there.
 
 Falsifiable, facet-exact: let `eenheid_identical` in
 `spec/verifier/lib/checks.ml` compare the three names in their WF-001 form
-(`norm`) instead of byte for byte, and this case turns clean. Measured in the
+(`norm`) instead of byte for byte, and this case leaves WF-091. Measured in the
 L2 fix round (2026-09-24) over golden, red, negative and the parity zone (715
 documents): that mutation changes exactly one report, this one;
 `wf091-binary-unit`, whose lie is a convertible unit (`t`), stays rejected.
+
+The document is also refused by WF-009's arm on the conversion of a unit where
+it occurs (`WF-009.undeclared-conversion`): the annotation's canonical `KG` is
+not its declaration's `kg` byte for byte. The case keeps the canonical's case,
+because copy fidelity of all three names is what it pins; gate 3 holds it to
+its own arm.
 
 The document is `wf091-binary-unit` with the annotation's unit changed from
 `t` (factor 1000) to `KG`/`GEWICHT`/`KG` (factor 1). `expect.txt` pins the arm.
