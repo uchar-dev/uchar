@@ -2,16 +2,16 @@ Eenheidsysteem Gewicht
     het kilogram (mv: kilogrammen) kg
 
 Eenheidsysteem Massa
-    het kilogram (mv: kilogrammen) kg kgm
+    het massakilogram (mv: massakilogrammen) kg
     de ton (mv: tonnen) t = 1000 kg
 
 Objecttype de Vangst (mv: Vangsten)
     het ruwgewicht Numeriek (getal met 2 decimalen) met eenheid kg;
     het ondergewicht Numeriek (getal met 2 decimalen) met eenheid kg;
-    het spiegelgewicht Numeriek (getal met 2 decimalen) met eenheid kgm;
+    het spiegelgewicht Numeriek (getal met 2 decimalen) met eenheid massakilogram;
     het somgewicht Numeriek (getal met 2 decimalen) met eenheid kg;
     het toeslaggewicht Numeriek (getal met 2 decimalen) met eenheid kg;
-    het lastgewicht Numeriek (getal met 2 decimalen) met eenheid kgm;
+    het lastgewicht Numeriek (getal met 2 decimalen) met eenheid massakilogram;
     het keurgewicht Numeriek (getal met 2 decimalen) met eenheid kg;
 
 Regel ondergewicht van een vangst

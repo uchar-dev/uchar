@@ -375,6 +375,17 @@ stays honest about where it no longer proves toolchain agreement.
   eenheden"); nothing else in the file, and nothing in any `cases/` slice, moved.
   The original toolchain still writes the English sentence, so for this one
   message the comparison proves "frontend == the recorded state".
+- **2026-11-07 — a unit's symbol stands in its own field.** Executed by the card
+  `20261107-unit-symbol.md` in `backlog/`. On a unit line the token after the
+  abbreviation is the unit's symbol (IR-SPEC ch. 2.5, `DeclaredUnit.symbol`), where
+  the frontend wrote it as the first spelling until then. The casus declares
+  `de euro (mv: euros) EUR €` (`toka-12`), so `spec/proposals/v1-migratie/m8.py` moved
+  `€` from the spellings of `EUR` to its `symbol`, one symbol in each of the 30
+  documents of the zone (`casus/ir.json` and the 29 `cases/` slices); nothing else
+  changed and nothing was refused. `casus/ir.json` was then re-emitted by uchar's
+  frontend, which reproduced the migrated file byte for byte. The original
+  toolchain still writes `€` as the first spelling, so here too the comparison
+  proves "frontend == the recorded state".
 
 ## Lifecycle
 

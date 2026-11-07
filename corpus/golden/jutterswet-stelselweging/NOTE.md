@@ -19,21 +19,21 @@ Eenheidsysteem Gewicht
     het kilogram (mv: kilogrammen) kg
 
 Eenheidsysteem Massa
-    het kilogram (mv: kilogrammen) kg kgm
+    het massakilogram (mv: massakilogrammen) kg
     de ton (mv: tonnen) t = 1000 kg
 ```
 
-Both systems declare a kilogram, canonical `kg`, factor 1. A unit spelling
-resolves against the first system that declares it, so `kg` and `kilogram`
-reach **Gewicht**'s record, `t` reaches **Massa**'s, and the second
-abbreviation `kgm` is what reaches **Massa**'s kilogram — a record identical
-to Gewicht's in every field but `system`.
+Both systems declare a kilogram, abbreviation and canonical `kg`, factor 1. A
+unit spelling resolves against the first system that declares it, so `kg` and
+`kilogram` reach **Gewicht**'s record, `t` reaches **Massa**'s, and the word
+`massakilogram` is what reaches **Massa**'s kilogram — a record identical to
+Gewicht's in every field but `system`.
 
 That gives the two cross-system pairs the document needs:
 
 * **with a factor** — `t` (Massa, ×1000) against `kg` (Gewicht): one unit is
   restated into the other by an exact integer;
-* **without a factor** — `kgm` (Massa, ×1) against `kg` (Gewicht): the same
+* **without a factor** — `massakilogram` (Massa, ×1) against `kg` (Gewicht): the same
   quantity in two records, exact conversion factor 1, nothing to restate.
 
 ## The four unit positions, each crossed
@@ -41,11 +41,11 @@ That gives the two cross-system pairs the document needs:
 | rule | position | pair | needs |
 |------|----------|------|-------|
 | `ondergewicht` | WF-099 clamp bound | `1 t` (Massa) over a `kg` (Gewicht) base | factor ×1000 |
-| `spiegelgewicht` | WF-023 write | `kg` (Gewicht) value into a `kgm` (Massa) target | factor 1 |
-| `somgewicht` | WF-035 additive join | `kg` (Gewicht) plus `kgm` (Massa) | factor 1 |
+| `spiegelgewicht` | WF-023 write | `kg` (Gewicht) value into a `massakilogram` (Massa) target | factor 1 |
+| `somgewicht` | WF-035 additive join | `kg` (Gewicht) plus `massakilogram` (Massa) | factor 1 |
 | `toeslaggewicht` | WF-035 additive join | `kg` (Gewicht) plus `1 t` (Massa) | factor ×1000 |
-| `lastgewicht` | WF-099 bound **and** WF-023 write | `2 t` (Massa) bound over a `kg` (Gewicht) base, written to a `kgm` (Massa) target | both at once |
-| `keurgewicht` | WF-036 comparison | `kgm` (Massa) greater than `1000 kg` (Gewicht) | factor 1 |
+| `lastgewicht` | WF-099 bound **and** WF-023 write | `2 t` (Massa) bound over a `kg` (Gewicht) base, written to a `massakilogram` (Massa) target | both at once |
+| `keurgewicht` | WF-036 comparison | `massakilogram` (Massa) greater than `1000 kg` (Gewicht) | factor 1 |
 
 `lastgewicht` is the one that crosses twice in a single rule: the target, the
 base and the bound sit in three different records, two of them in the other
