@@ -1787,7 +1787,8 @@ let wf007_presentation ctx =
 
    The arm on a unit where it occurs — its abbreviation is a unit of the
    system it names — rides [check_unit_form], the walk that reaches every
-   factor in the document. *)
+   factor in the document. The `system` of a declaration is read here: it
+   names the system that declares it. *)
 let wf009 ctx =
   List.concat_map
     (fun (sn, es) ->
@@ -1870,6 +1871,22 @@ let wf009 ctx =
                                by the actual length of the calendar unit (RUNTIME-SEMANTICS ch. 3.6)"
                               a (family fu) c (family fr)) ]
                    | _ -> [])
+               | _ -> [])
+             es.unit_list)
+      (* a declaration that names another declared system would be read as a unit of that system by a reader that
+         takes the declaration's own field; a system no declaration carries is WF-034's *)
+      @ List.concat
+          (List.mapi
+             (fun j (d : declared_unit) ->
+               match d.ge_unit.system with
+               | Some s when norm s <> norm sn && List.exists (fun (n, _) -> norm n = norm s) ctx.doc.unit_systems ->
+                   [ v ~params:[ ("unit", Units.name d.ge_unit); ("unitSystem", sn); ("system", s) ]
+                       "WF-009.declaration-system-mismatch"
+                       (Printf.sprintf "/eenheidstelsels/%s/units/%d/system" sn j)
+                       (Printf.sprintf
+                          "the unit system '%s' declares the unit '%s' as a unit of the unit system '%s': a \
+                           declaration names the system that declares it"
+                          sn (Units.name d.ge_unit) s) ]
                | _ -> [])
              es.unit_list))
     ctx.doc.unit_systems
