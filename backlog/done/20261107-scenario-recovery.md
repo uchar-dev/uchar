@@ -28,3 +28,15 @@ May touch: `frontends/regelspraak/src/main/java/dev/uchar/regelspraak/resolver/S
 
 Out of scope: extending the sweep of `SemanticTokensRecoveryTest` (which mutates `source.rgs` only) to `scenario.rgs`;
 the wording of ANTLR's syntax error; the pin of the toolchain.
+
+Result: landed 2026-11-07. Each of the four places skips the recovered node and leaves the syntax error as the ERROR
+the route reports: `registerSituation` reads a situation without a block as an empty block, `validateBlock` skips an
+opener without a label, `SemanticTokens.label` treats a made-up label (token index -1) as absent, and `readAndType`
+returns null on a marker the recovery read (`DefinitionResolver.recovered`, now package-private). `--cases` writes
+nothing then, as for every ERROR. Measured: the workbench's reproduction gives `syntaxfout: mismatched input 'is'
+expecting {GEBASEERD_OP_DE_SITUATIE, ':'}` on line 10, exit 1, no files; the harness throws in none of 31,835 variants
+(token left out, token doubled, line left out); `ScenarioRecoveryTest` fails in four of its five tests on `a5b857a47`
+and passes here; frontend suite 1543/1543; `make gates` green on `220c053a8` (17 gates, 470 s,
+`out/gates/20261107-105757/`). Left: the sweep of `SemanticTokensRecoveryTest` still mutates `source.rgs` only, which
+is why it never reached the scenario layer; the toolchain needs a pin bump for the playground and
+`bin/regelspraak scenario` to carry the fix.
