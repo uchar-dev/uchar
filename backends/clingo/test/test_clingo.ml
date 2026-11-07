@@ -279,7 +279,7 @@ let eenh ~system ~canonical_form afk factor : Ir_v0.Ast.measure_unit =
       factor_to_canonical = Option.map (fun (num, den) -> { Ir_v0.Ast.num; den }) factor; exponent = None } ]
 
 let system ~ident units : Ir_v0.Ast.unit_system =
-  { es_name = Some ident; unit_list = List.map (fun u -> { Ir_v0.Ast.ge_unit = List.hd u; ge_spellings = [] }) units }
+  { es_name = Some ident; unit_list = List.map (fun u -> { Ir_v0.Ast.ge_unit = List.hd u; ge_symbol = None; ge_spellings = [] }) units }
 
 (* FINEST-UNIT DERIVATION picks the smallest-factor unit, and every declared
    unit restates INTO it by an exact positive INTEGER — the multiply-only

@@ -188,20 +188,23 @@ let name (f : unit_factor) = Option.value f.abbr_text ~default:"?"
 
 let power text e = if e = 1 then text else text ^ "^" ^ string_of_int e
 
-(* The factors of one side joined, [fallback] where the side is empty. *)
-let side_text ~fallback (fs : measure_unit) =
+(* The factors of one side joined, [fallback] where the side is empty; each
+   factor written as [spell] gives it, its abbreviation by default. *)
+let side_text ?(spell = name) ~fallback (fs : measure_unit) =
   match fs with
   | [] -> fallback
-  | _ -> String.concat "·" (List.map (fun f -> power (name f) (abs (exponent f))) fs)
+  | _ -> String.concat "·" (List.map (fun f -> power (spell f) (abs (exponent f))) fs)
 
 (* The spelling of the numerator alone: "1" for a unit without a positive factor,
    for a sentence that names the denominator apart ([Checks.datatype_detail]). *)
-let numerator_text (u : measure_unit) = side_text ~fallback:"1" (positives u)
+let numerator_text ?spell (u : measure_unit) = side_text ?spell ~fallback:"1" (positives u)
 
 (* The spelling of a unit in a message (IR-SPEC ch. 2.5): the positive factors
    in wire order joined by '·', "1" if there is none, then '/' and each negative
-   factor, a power written where its size is not 1. *)
-let render (u : measure_unit) =
-  numerator_text u
+   factor, a power written where its size is not 1. A text part writes its
+   factors by their symbols ([spell], RUNTIME-SEMANTICS ch. 1.2); every other
+   reader by their abbreviations. *)
+let render ?(spell = name) (u : measure_unit) =
+  numerator_text ~spell u
   ^ String.concat ""
-      (List.map (fun f -> "/" ^ power (name f) (abs (exponent f))) (negatives u))
+      (List.map (fun f -> "/" ^ power (spell f) (abs (exponent f))) (negatives u))

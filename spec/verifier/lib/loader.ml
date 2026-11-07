@@ -234,9 +234,10 @@ let rational path j : rational =
   | _ -> refuse ()
 
 (* The fields of a unit at every position it occupies (IR-SPEC ch. 2.5).
-   [extra] is the one further field a declaration in a unit system admits,
-   its spellings: an occurrence admits none, so a spelling written there is
-   an unknown field, refused by name rather than read and dropped. *)
+   [extra] are the further fields a declaration in a unit system admits, its
+   symbol and its spellings: an occurrence admits neither, so a symbol or a
+   spelling written there is an unknown field, refused by name rather than
+   read and dropped. *)
 let unit_fields ~extra path kvs : unit_factor =
   expect_node path kvs "Unit";
   check_keys path kvs
@@ -260,12 +261,17 @@ let measure_unit path j : measure_unit =
       unit_fields ~extra:[] p (obj p x))
     (list_ path j)
 
-(* A unit as its unit system declares it, with its further spellings. The
-   list is written whole or not at all: absent is no spelling, and an empty
-   list is refused like an explicit null. *)
+(* A unit as its unit system declares it, with its symbol and its further
+   spellings. Each is written whole or not at all: absent is no symbol and no
+   spelling, and an empty symbol or an empty list is refused like an explicit
+   null. *)
 let declared_unit path j : declared_unit =
   let kvs = obj path j in
-  let u = unit_fields ~extra:[ "spellings" ] path kvs in
+  let u = unit_fields ~extra:[ "symbol"; "spellings" ] path kvs in
+  let symbol p = function
+    | `String s when s <> "" -> s
+    | _ -> fail p "a unit's symbol is a non-empty string, or the field is absent"
+  in
   let spellings p j =
     match list_ p j with
     | [] -> fail p "a unit's spellings are at least one spelling, or the field is absent"
@@ -273,6 +279,7 @@ let declared_unit path j : declared_unit =
   in
   {
     ge_unit = u;
+    ge_symbol = ext_field path kvs "symbol" symbol;
     ge_spellings = Option.value ~default:[] (ext_field path kvs "spellings" spellings);
   }
 

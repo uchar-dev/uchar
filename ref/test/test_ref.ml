@@ -1384,8 +1384,26 @@ let () =
   let besluit : Ir_v0.Ast.datatype =
     Sum_type { domain_spec = "Besluit"; constructor_list = [ ("Toegekend", Some num2); ("Afgewezen", None) ] }
   in
+  (* the units a part writes by their declarations (ch. 1.2): EUR of Munt with
+     the symbol €, EUR of Oud and kg of Gewicht without one, and the units of
+     the system test, whose € is an abbreviation *)
+  let atom system a : Ir_v0.Ast.unit_factor =
+    { abbr_text = Some a; system = Some system; canonical_form = Some a; factor_to_canonical = Some { num = 1; den = 1 };
+      exponent = None }
+  in
+  let declared ?symbol f : Ir_v0.Ast.declared_unit = { ge_unit = f; ge_symbol = symbol; ge_spellings = [] } in
+  let system name units : string * Ir_v0.Ast.unit_system = (name, { es_name = Some name; unit_list = units }) in
+  let eur_munt = [ atom "Munt" "EUR" ] and eur_oud = [ atom "Oud" "EUR" ] and kg = [ atom "Gewicht" "kg" ] in
+  let num2_in u : Ir_v0.Ast.datatype =
+    Number { whole_part = false; decimal_places = 2; sign_char = None; measure_unit = Some u }
+  in
   let doc =
     { empty_doc with
+      unit_systems =
+        [ system "test" [ declared (List.hd eur); declared (List.hd mnd); declared (List.hd jr) ];
+          system "Munt" [ declared ~symbol:"\u{20ac}" (List.hd eur_munt) ];
+          system "Oud" [ declared (List.hd eur_oud) ];
+          system "Gewicht" [ declared (List.hd kg) ] ];
       object_types =
         [ ot "Vondst"
             [ ("basis", Some num2); ("aantal", Some num0);
@@ -1394,7 +1412,10 @@ let () =
               ("bevestiging", Some Boolean); ("vinddatum", Some Date_in_days); ("besluit", Some besluit);
               ("bedrag", Some (Number { whole_part = false; decimal_places = 2; sign_char = None; measure_unit = Some eur }));
               ("tarief", Some (Number { whole_part = false; decimal_places = 2; sign_char = None; measure_unit = Some eur_per_jr }));
-              ("percentage", Some (Percentage { whole_part = false; decimal_places = 2; measure_unit = Some percent })) ]
+              ("percentage", Some (Percentage { whole_part = false; decimal_places = 2; measure_unit = Some percent }));
+              ("munt", Some (num2_in eur_munt)); ("oud", Some (num2_in eur_oud)); ("gewicht", Some (num2_in kg));
+              ("prijs", Some (num2_in (over eur_munt kg))); ("jaartarief", Some (num2_in (over eur_munt jr)));
+              ("elders", Some (num2_in [ atom "Elders" "EUR" ])); ("ton", Some (num2_in [ atom "Gewicht" "t" ])) ]
             [] ] }
   in
   let env = env_of doc in
@@ -1405,7 +1426,12 @@ let () =
             ("soort", Value.Enum "wrakhout"); ("bevestiging", Value.Bool true);
             ("vinddatum", Value.date_of_iso "2026-06-21"); ("besluit", Value.Ctor ("Toegekend", Some (n "1250.5")));
             ("bedrag", Value.Num (q "11/2", Value.Unit eur)); ("tarief", Value.Num (q "1200", Value.Unit eur_per_jr));
-            ("percentage", Value.Num (q "25/2", Value.Unit percent)) ];
+            ("percentage", Value.Num (q "25/2", Value.Unit percent)); ("munt", Value.Num (q "11/2", Value.Unit eur_munt));
+            ("oud", Value.Num (q "11/2", Value.Unit eur_oud)); ("gewicht", Value.Num (q "5/4", Value.Unit kg));
+            ("prijs", Value.Num (q "5/2", Value.Unit (over eur_munt kg)));
+            ("jaartarief", Value.Num (q "1200", Value.Unit (over eur_munt jr)));
+            ("elders", Value.Num (q "1", Value.Unit [ atom "Elders" "EUR" ]));
+            ("ton", Value.Num (q "1", Value.Unit [ atom "Gewicht" "t" ])) ];
         inst "V2" "Vondst" [ ("basis", n "5"); ("aandeel", n "100"); ("factor", n "0.25") ];
         inst "V3" "Vondst" [ ("soort", Value.Enum "wrakhout"); ("bevestiging", Value.Bool true); ("vinddatum", Value.date_of_iso "2026-06-21") ] ]
   in
@@ -1505,6 +1531,20 @@ let () =
               source_name = None })
     "6,050 (€)" "WV-1.2c-text-eenheid-samengesteld";
   with_unit "V3" (aref "bedrag" "Vondst") "" "WV-1.2c-text-eenheid-leeg";
+  (* each factor by the symbol of its declaration, by its abbreviation where
+     that has none; '%' names no system and writes its abbreviation *)
+  with_unit "V1" (aref "munt" "Vondst") "5,50 (\u{20ac})" "WV-1.2c-text-symbool";
+  with_unit "V1" (aref "oud" "Vondst") "5,50 (EUR)" "WV-1.2c-text-zonder-symbool";
+  with_unit "V1" (aref "gewicht" "Vondst") "1,25 (kg)" "WV-1.2c-text-zonder-symbool-kg";
+  with_unit "V1" (aref "prijs" "Vondst") "2,50 (\u{20ac}/kg)" "WV-1.2c-text-samengesteld-gemengd";
+  with_unit "V1" (aref "jaartarief" "Vondst") "1200,00 (\u{20ac}/jr)" "WV-1.2c-text-symbool-tarief";
+  (* a factor without a declaration has no symbol to take: a broken document *)
+  expect_fault "WV-1.2c-text-eenheid-onbekend-stelsel" (fun () ->
+      Eval.eval_expr env w (World.get w "V1") ~err:no_err
+        (composition [ Embedded_expression { expr = Some (aref "elders" "Vondst"); with_unit = true } ]));
+  expect_fault "WV-1.2c-text-eenheid-ongedeclareerd" (fun () ->
+      Eval.eval_expr env w (World.get w "V1") ~err:no_err
+        (composition [ Embedded_expression { expr = Some (aref "ton" "Vondst"); with_unit = true } ]));
   (* WF-129 holds that the part has a unit; a document that breaks it faults *)
   expect_fault "WV-1.2c-text-eenheid-zonder-eenheid" (fun () ->
       Eval.eval_expr env w (World.get w "V1") ~err:no_err
@@ -3665,7 +3705,7 @@ let () =
   let system name unit_list : string * Ir_v0.Ast.unit_system =
     ( name,
       { es_name = Some name;
-        unit_list = List.map (fun e -> { Ir_v0.Ast.ge_unit = List.hd e; ge_spellings = [] }) unit_list } )
+        unit_list = List.map (fun e -> { Ir_v0.Ast.ge_unit = List.hd e; ge_symbol = None; ge_spellings = [] }) unit_list } )
   in
   let doc_of systems = { empty_doc with unit_systems = systems } in
   (match Timeline.grid_unit (doc_of [ system "Munt" [ eur ]; system "Tijd" [ mnd; jr ] ]) Month with
@@ -3711,8 +3751,8 @@ let () =
     (nm, { o with attribute_granularity = [ ("bewaartarief", Some Ir_v0.Ast.Year) ] })
   in
   let systems : (string * Ir_v0.Ast.unit_system) list =
-    [ ("Munt", { es_name = Some "Munt"; unit_list = [ { ge_unit = List.hd eur; ge_spellings = [] } ] });
-      ("Tijd", { es_name = Some "Tijd"; unit_list = [ { ge_unit = List.hd mnd; ge_spellings = [] } ] }) ]
+    [ ("Munt", { es_name = Some "Munt"; unit_list = [ { ge_unit = List.hd eur; ge_symbol = None; ge_spellings = [] } ] });
+      ("Tijd", { es_name = Some "Tijd"; unit_list = [ { ge_unit = List.hd mnd; ge_symbol = None; ge_spellings = [] } ] }) ]
   in
   let doc =
     {

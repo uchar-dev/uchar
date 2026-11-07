@@ -21,7 +21,8 @@
      dimension's preposition, a default's decision and justification, a
      defaults group's characteristic, a predicate's dayKind, a quantifier
      fold's filter): absent is [None] there (a declared unit's absent
-     spellings are []), and an explicit null is a load error;
+     spellings are [], its absent symbol [None]), and an explicit null is a
+     load error;
    - since L4 the rule layer and the expression layer keep their in-memory
      constructors while the wire writes their L4 nodes, and the loader reads
      the one onto the other (IR-SPEC ch. 3 and 4.1–4.3): a named form with
@@ -542,10 +543,12 @@ type parameter = {
   par_fixed_start_point : string option;
 }
 
-(* A unit as its unit system declares it: the unit itself and the further
-   spellings that resolve to it. Only the declaration carries spellings; an
-   occurrence of the unit elsewhere is a bare [measure_unit]. *)
-type declared_unit = { ge_unit : unit_factor; ge_spellings : string list }
+(* A unit as its unit system declares it: the unit itself, its symbol — the
+   written form a text part writes it in (RUNTIME-SEMANTICS ch. 1.2), [None]
+   where it has none — and the further spellings that resolve to it. Only the
+   declaration carries a symbol and spellings; an occurrence of the unit
+   elsewhere is a bare [measure_unit]. *)
+type declared_unit = { ge_unit : unit_factor; ge_symbol : string option; ge_spellings : string list }
 
 type unit_system = {
   es_name : string option;

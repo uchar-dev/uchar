@@ -1009,11 +1009,16 @@ let duration ?(absolute = false) ?unit_ ?(result_unit = Unitless) a b =
 (* The form a value is written in: a number in exactly [decimals] decimals,
    or in its exact shortest form where [None] (a part without a finite
    precision bound, ch. 2.3), followed by its unit in parentheses where
-   [with_unit]; the payload of a constructor value in the form [payload]
-   gives for its tag. *)
-type text_form = { decimals : int option; with_unit : bool; payload : string -> text_form }
+   [unit_text] gives the spelling of the unit (the symbols of its factors,
+   ch. 1.2); the payload of a constructor value in the form [payload] gives
+   for its tag. *)
+type text_form = {
+  decimals : int option;
+  unit_text : (Ir_v0.Ast.measure_unit -> string) option;
+  payload : string -> text_form;
+}
 
-let rec exact_form = { decimals = None; with_unit = false; payload = (fun _ -> exact_form) }
+let rec exact_form = { decimals = None; unit_text = None; payload = (fun _ -> exact_form) }
 
 let decimal_comma s = String.map (fun c -> if c = '.' then ',' else c) s
 
@@ -1051,14 +1056,13 @@ let rec text_of ?(form = exact_form) = function
      rule yields *)
   | Num (q, u) ->
       (match form.decimals with Some d -> decimals_text d q | None -> decimal_comma (lexeme_of_q q))
-      ^
-      if not form.with_unit then ""
-      else (
-        (* the unit as IR-SPEC ch. 2.5 spells it; WF-129 holds that the part
-           has one *)
-        match u with
-        | Unit e -> " (" ^ display_unit e ^ ")"
-        | Unitless -> fault "the text part writes the unit of its number, and %s has no unit (WF-129)" (lexeme_of_q q))
+      ^ (match form.unit_text with
+        | None -> ""
+        | Some spell -> (
+            (* WF-129 holds that the part has a unit *)
+            match u with
+            | Unit e -> " (" ^ spell e ^ ")"
+            | Unitless -> fault "the text part writes the unit of its number, and %s has no unit (WF-129)" (lexeme_of_q q)))
   | Bool b -> if b then "waar" else "onwaar"
   | Date z -> text_of_date z
   | Date_time t ->

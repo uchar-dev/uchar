@@ -1275,6 +1275,35 @@ let text_form env (e : expr) (v : Value.t) : Arith.text_form =
   | Value.Ctor _, _ -> declared_form (static_type env e)
   | _ -> Arith.exact_form
 
+(* The unit of a text part as ch. 1.2 writes it: each factor by the symbol of
+   its declaration, the DeclaredUnit of the same system and abbreviation, and
+   by its abbreviation where that declaration has none or where the factor
+   names no system ('%', a bare calendar unit). A factor whose system or
+   abbreviation no declaration of the document carries is a broken document,
+   never a factor written by its abbreviation. *)
+let text_unit env (u : measure_unit) =
+  let spell (f : unit_factor) =
+    let abbreviation = Ir_v0.Units.name f in
+    match f.system with
+    | None -> abbreviation
+    | Some system -> (
+        match List.find_opt (fun (n, _) -> norm n = norm system) env.doc.unit_systems with
+        | None ->
+            Value.fault "the text part writes the unit %s, whose factor '%s' names the unit system '%s', which the document does not declare"
+              (Ir_v0.Units.render u) abbreviation system
+        | Some (_, (es : unit_system)) -> (
+            match
+              List.find_opt
+                (fun (d : declared_unit) -> Option.map norm d.ge_unit.abbr_text = Some (norm abbreviation))
+                es.unit_list
+            with
+            | None ->
+                Value.fault "the text part writes the unit %s, whose factor '%s' the unit system '%s' does not declare"
+                  (Ir_v0.Units.render u) abbreviation system
+            | Some d -> Option.value d.ge_symbol ~default:abbreviation))
+  in
+  Ir_v0.Units.render ~spell u
+
 (* the unit of [op] over operands of units [ul] and [ur], as Arith gives it to
    filled operands (ch. 2.6, rules 2, 3, 4 and 7; a power is unitless, WF-035) *)
 let operator_unit (op : bin_op) ul ur =
@@ -1609,7 +1638,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
                      if with_unit then
                        Value.fault "the text part writes the unit of its number, and its value %s is no number (WF-129)"
                          (Value.to_string v));
-                 (v, { (text_form env e v) with with_unit }))
+                 (v, { (text_form env e v) with unit_text = (if with_unit then Some (text_unit env) else None) }))
            pieces)
   | Expr_unresolved _ ->
       Value.faultc "EF-019" "Unresolved reached in evaluation: this rule fails observably"
