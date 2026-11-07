@@ -1,6 +1,9 @@
 Eenheidsysteem Munt
     de euro (mv: euros) EUR €
 
+Eenheidsysteem Gewicht
+    het kilogram (mv: kilogrammen) kg
+
 Domein Vondstsoort is van het type Enumeratie
     'wrakhout'
     'zeewier'
@@ -28,6 +31,9 @@ Objecttype de Vondst (mv: Vondsten)
     de factortekst Tekst;
     de heffingtekst Tekst;
     de eenheidtekst Tekst;
+    het gewicht Numeriek (getal met 2 decimalen) met eenheid kg;
+    de prijs Numeriek (getal met 2 decimalen) met eenheid €/kg;
+    de gewichttekst Tekst;
 
 Regel omschrijving
     geldig altijd
@@ -86,3 +92,7 @@ Regel heffingtekst
 Regel eenheidtekst
     geldig altijd
         De eenheidtekst van een Vondst moet berekend worden als "Bedrag: «zijn basis (eenheid)», aandeel «zijn aandeel (eenheid)», toeslag «zijn basis maal 1,1 (eenheid)», zonder eenheid «zijn basis»".
+
+Regel gewichttekst
+    geldig altijd
+        De gewichttekst van een Vondst moet berekend worden als "Gewicht: «zijn gewicht (eenheid)», prijs «zijn prijs (eenheid)», samen «zijn prijs maal zijn gewicht (eenheid)»".

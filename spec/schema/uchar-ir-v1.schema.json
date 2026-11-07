@@ -512,7 +512,7 @@
       }
     },
     "Unit": {
-      "description": "One factor of a unit where it occurs (IR-SPEC ch. 2.5): Number.unit is a non-empty list of these. 'abbreviation' is its primary spelling. 'system' names the declaring UnitSystem (WF-034 (r)); it is absent for the built-in '%' and for the bare calendar units. 'canonical' and 'factorToCanonical' are the conversion pair, both present or both absent (WF-092). The factor is an exact positive rational, how many canonical units equal one of this unit, written {num, den} without a node discriminator (delta B17 (i) of spec/proposals/V1-WIREMIGRATIE.md, CONSTRUCTS row 26); that it is in lowest terms is a verifier check (WF-092), because a schema cannot state a greatest common divisor. 'exponent' is the whole exponent of the factor, absent where it is 1: never 0, never a written 1. That one atom stands once and that the factors stand in the canonical order is a verifier check (WF-124), because a schema cannot state either. No field is ever null: absent is the one spelling of a field not given. A unit's further spellings belong to its declaration (DeclaredUnit), so an occurrence cannot carry them. Key order is this 'properties' order.",
+      "description": "One factor of a unit where it occurs (IR-SPEC ch. 2.5): Number.unit is a non-empty list of these. 'abbreviation' is its primary spelling. 'system' names the declaring UnitSystem (WF-034 (r)); it is absent for the built-in '%' and for the bare calendar units. 'canonical' and 'factorToCanonical' are the conversion pair, both present or both absent (WF-092). The factor is an exact positive rational, how many canonical units equal one of this unit, written {num, den} without a node discriminator (delta B17 (i) of spec/proposals/V1-WIREMIGRATIE.md, CONSTRUCTS row 26); that it is in lowest terms is a verifier check (WF-092), because a schema cannot state a greatest common divisor. 'exponent' is the whole exponent of the factor, absent where it is 1: never 0, never a written 1. That one atom stands once and that the factors stand in the canonical order is a verifier check (WF-124), because a schema cannot state either. No field is ever null: absent is the one spelling of a field not given. A unit's symbol and its further spellings belong to its declaration (DeclaredUnit), so an occurrence cannot carry them. Key order is this 'properties' order.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -564,7 +564,7 @@
       }
     },
     "DeclaredUnit": {
-      "description": "A unit as its UnitSystem declares it (IR-SPEC ch. 2.5): the node of Unit, and after its fields 'spellings', the further spellings that resolve to this unit (word and plural aliases), at least one when present. Only the declaration carries them: an occurrence of the unit is a Unit, which has no such field, so a spelling written there cannot be accepted and dropped. The other fields are Unit's own field schemas, by JSON pointer, so each is defined once. Key order is this 'properties' order.",
+      "description": "A unit as its UnitSystem declares it (IR-SPEC ch. 2.5): the node of Unit, and after its fields 'symbol', the written form of the unit beside its abbreviation in which a text part writes it (RUNTIME-SEMANTICS ch. 1.2), never empty and absent where the unit has none, and 'spellings', the further spellings that resolve to this unit (word and plural aliases), at least one when present. No rule holds a symbol unique: two units may carry one symbol, and no reader identifies a unit by it. Only the declaration carries the two: an occurrence of the unit is a Unit, which has neither field, so a symbol or a spelling written there cannot be accepted and dropped. The other fields are Unit's own field schemas, by JSON pointer, so each is defined once. Key order is this 'properties' order.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -586,6 +586,10 @@
         },
         "factorToCanonical": {
           "$ref": "#/$defs/Unit/properties/factorToCanonical"
+        },
+        "symbol": {
+          "type": "string",
+          "minLength": 1
         },
         "spellings": {
           "type": "array",

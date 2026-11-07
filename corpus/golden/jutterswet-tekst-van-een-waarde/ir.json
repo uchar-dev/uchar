@@ -204,6 +204,68 @@
             "datatype": {
               "node": "Text"
             }
+          },
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "prijs",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "gewichttekst",
+            "datatype": {
+              "node": "Text"
+            }
           }
         ],
         "characteristics": []
@@ -242,6 +304,26 @@
               "\u20ac",
               "euro",
               "euros"
+            ]
+          }
+        ]
+      },
+      {
+        "node": "UnitSystem",
+        "name": "Gewicht",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "kg",
+            "system": "Gewicht",
+            "canonical": "kg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "kilogram",
+              "kilogrammen"
             ]
           }
         ]
@@ -1181,6 +1263,119 @@
               },
               "source": {
                 "snippet": "\"Bedrag: \u00abzijn basis (eenheid)\u00bb, aandeel \u00abzijn aandeel (eenheid)\u00bb, toeslag \u00abzijn basis maal 1,1 (eenheid)\u00bb, zonder eenheid \u00abzijn basis\u00bb\""
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "gewichttekst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "gewichttekst",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De gewichttekst van een Vondst"
+              }
+            },
+            "value": {
+              "node": "TextComposition",
+              "parts": [
+                {
+                  "node": "LiteralChunk",
+                  "text": "Gewicht: "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "AttributeReference",
+                    "attribute": "gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn gewicht"
+                    }
+                  },
+                  "unit": true
+                },
+                {
+                  "node": "LiteralChunk",
+                  "text": ", prijs "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "AttributeReference",
+                    "attribute": "prijs",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn prijs"
+                    }
+                  },
+                  "unit": true
+                },
+                {
+                  "node": "LiteralChunk",
+                  "text": ", samen "
+                },
+                {
+                  "node": "EmbeddedExpression",
+                  "expr": {
+                    "node": "Binary",
+                    "op": "times",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "prijs",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn prijs"
+                      }
+                    },
+                    "right": {
+                      "node": "AttributeReference",
+                      "attribute": "gewicht",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn gewicht"
+                      }
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 4,
+                      "sign": "unspecified",
+                      "unit": [
+                        {
+                          "node": "Unit",
+                          "abbreviation": "EUR",
+                          "system": "Munt",
+                          "canonical": "EUR",
+                          "factorToCanonical": {
+                            "num": 1,
+                            "den": 1
+                          }
+                        }
+                      ]
+                    },
+                    "source": {
+                      "snippet": "zijn prijs maal zijn gewicht"
+                    }
+                  },
+                  "unit": true
+                }
+              ],
+              "type": {
+                "node": "Text"
+              },
+              "source": {
+                "snippet": "\"Gewicht: \u00abzijn gewicht (eenheid)\u00bb, prijs \u00abzijn prijs (eenheid)\u00bb, samen \u00abzijn prijs maal zijn gewicht (eenheid)\u00bb\""
               }
             },
             "initialisation": false,

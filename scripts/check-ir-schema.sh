@@ -1922,11 +1922,31 @@ UNIT_SHAPE_ROWS = [
 ]
 
 
+# A declared unit may carry its symbol (card unit-symbol, 2026-11-07): a non-empty string beside its abbreviation, in
+# which a text part writes the unit, on the declaration only and unique nowhere.
+_EUR = lambda d: d["model"]["unitSystems"][0]["units"][0]
+SYMBOL_SHAPE_ROWS = [
+    ("DeclaredUnit.symbol = '\u20ac'", _set(_EUR, "symbol", "\u20ac"), True,
+     "the written form a text part writes the unit in (IR-SPEC ch. 2.5, RUNTIME-SEMANTICS ch. 1.2)"),
+    ("two declared units with one symbol", lambda d: [_jr(d).update(symbol="m"), _tijd(d)["units"][0].update(symbol="m")],
+     True, "no rule holds a symbol unique: two units may carry one, and no reader identifies a unit by it"),
+    ("DeclaredUnit.symbol = ''", _set(_EUR, "symbol", ""), False,
+     "a symbol is never empty: absent is the one spelling of a unit without one"),
+    ("DeclaredUnit.symbol = null", _set(_EUR, "symbol", None), False,
+     "absent is the one spelling of a unit without a symbol"),
+    ("DeclaredUnit.symbol as a list", _set(_EUR, "symbol", ["\u20ac"]), False,
+     "a unit has one symbol, a string"),
+    ("a unit occurrence carries a symbol", _set(lambda d: _tarief(d)["unit"][0], "symbol", "\u20ac"), False,
+     "only the declaration in a UnitSystem carries the symbol; on an occurrence it would be accepted and dropped"),
+]
+
+
 shape_bad = 0
 for base, rows in ((_m1_base, M1_SHAPE_ROWS), (_l2_base, L2_SHAPE_ROWS),
                    (_l3_base, L3_SHAPE_ROWS), (_l4_base, L4_SHAPE_ROWS),
                    (_l5_base, L5_SHAPE_ROWS), (_l5_base, CELL_SHAPE_ROWS),
-                   (_l5_base, L7_SHAPE_ROWS), (_l5_base, UNIT_SHAPE_ROWS)):
+                   (_l5_base, L7_SHAPE_ROWS), (_l5_base, UNIT_SHAPE_ROWS),
+                   (_l3_base, SYMBOL_SHAPE_ROWS)):
     for row, mutate, want_ok, why in rows:
         probe = base()
         mutate(probe)
@@ -1940,7 +1960,8 @@ if shape_bad:
     sys.stderr.write("check-ir-schema: FAIL (%d shape self-test row(s) bad)\n" % shape_bad)
     sys.exit(1)
 n_shape = (len(M1_SHAPE_ROWS) + len(L2_SHAPE_ROWS) + len(L3_SHAPE_ROWS) + len(L4_SHAPE_ROWS)
-           + len(L5_SHAPE_ROWS) + len(CELL_SHAPE_ROWS) + len(L7_SHAPE_ROWS) + len(UNIT_SHAPE_ROWS))
+           + len(L5_SHAPE_ROWS) + len(CELL_SHAPE_ROWS) + len(L7_SHAPE_ROWS) + len(UNIT_SHAPE_ROWS)
+           + len(SYMBOL_SHAPE_ROWS))
 
 
 # NOTE: gate 9 (scripts/check-catala.sh) executes the slice of this

@@ -112,13 +112,24 @@ recorded as such.
   part may write the unit of its number (`EmbeddedExpression.unit`, IR-SPEC
   ch. 4.2): the number is then followed by a space and, in parentheses, the
   unit its value is in — of a read its declaration, of a composite part the
-  unit it derives (ch. 2.6, ch. 2.10) — spelled as IR-SPEC ch. 2.5 spells a
-  unit: the abbreviations of its factors, the positive ones joined by `·`,
-  then `/` and each negative one, a power where its size is not 1. So 5,50
-  in 2 decimals of a unit declared with the abbreviation `EUR` is `5,50
-  (EUR)`, 12,50 % is `12,50 (%)` and a rate in €/jr `1200,00 (EUR/jr)`; an
-  empty part is `""` without its unit. A part whose type has no unit asks
-  for none (WF-129). A
+  unit it derives (ch. 2.6, ch. 2.10). Each factor is written with the
+  symbol of its declaration, the `symbol` of the `DeclaredUnit` with the
+  same `system` and `abbreviation` (IR-SPEC ch. 2.5), and where that
+  declaration has none with its abbreviation; `%` and the bare calendar
+  units, which name no system, with their abbreviation. The factors stand as
+  IR-SPEC ch. 2.5 spells a unit: the positive ones joined by `·`, then `/`
+  and each negative one, a power where its size is not 1. So 5,50 in 2
+  decimals of the unit `EUR` declared with the symbol `€` is `5,50 (€)`, and
+  of an `EUR` declared without a symbol `5,50 (EUR)`; 1,25 in a `kg` without
+  a symbol is `1,25 (kg)`, 12,50 % is `12,50 (%)`, a rate in `EUR/jr` with
+  the symbol `€` is `1200,00 (€/jr)` and one in `EUR/kg` `2,50 (€/kg)`; an
+  empty part is `""` without its unit. A factor that names a system the
+  document does not declare, or an abbreviation its system does not declare,
+  has no declaration to take a symbol from: a broken document, which an
+  executor reports, never a factor it writes by its abbreviation. A part
+  whose type has no unit asks for none (WF-129). Only the text part writes
+  the symbol: a message, the trace of ch. 5.12, a dump and the case output
+  write a unit with its abbreviations. A
   date is `dd-MM-yyyy`; a date-time is `dd-MM-yyyy HH:mm:ss.mmm`, the
   fraction always three digits; a year outside 0000–9999 is written with
   its sign and at least four digits (ISO 8601's expanded form, as ch. 5.12
@@ -142,9 +153,8 @@ recorded as such.
   where ALEF's value form carries nine. The literal written as its lexeme
   and the parameter in its declared type are decisions of the maintainer of
   the same day, as is the unit after the number,
-  where a part asks for it; that unit is its abbreviation, the one spelling every occurrence of a unit
-  carries on the wire (IR-SPEC ch. 2.5), since the further spellings of its
-  declaration carry no role that marks one of them as its symbol.*
+  where a part asks for it. The unit writes its symbol where its declaration
+  carries one: a decision of the maintainer of 2026-11-07.*
 
   | Value, in the type of its part | Text |
   |---|---|
@@ -163,9 +173,13 @@ recorded as such.
   | 2026-06-21 / 0999-12-31 / +12026-03-01 | `21-06-2026` / `31-12-0999` / `01-03-+12026` |
   | 2026-06-21T09:01:59.999 / 2026-06-21T09:01:59 | `21-06-2026 09:01:59.999` / `21-06-2026 09:01:59.000` |
   | Afgewezen / Toegekend(1250,50), payload in 2 decimals | `Afgewezen` / `Toegekend(1250,50)` |
-  | 5,50 in 2 decimals of EUR, with its unit / leeg, with its unit | `5,50 (EUR)` / `""` |
+  | 5,50 in 2 decimals of EUR with the symbol €, with its unit / leeg, with its unit | `5,50 (€)` / `""` |
+  | 5,50 in 2 decimals of EUR without a symbol, with its unit | `5,50 (EUR)` |
+  | 1,25 in 2 decimals of kg without a symbol, with its unit | `1,25 (kg)` |
   | 12,50 % (2 decimals), with its unit | `12,50 (%)` |
-  | zijn basis maal 1,1, basis 5,50 in 2 decimals of EUR, with its unit | `6,050 (EUR)` |
+  | zijn basis maal 1,1, basis 5,50 in 2 decimals of EUR with the symbol €, with its unit | `6,050 (€)` |
+  | 2,50 in 2 decimals of EUR/kg, EUR with the symbol € and kg without one, with its unit | `2,50 (€/kg)` |
+  | 1200,00 in 2 decimals of EUR/jr, EUR with the symbol €, with its unit | `1200,00 (€/jr)` |
   | the list [12,5, 30] / the record {waarde: 125,5} | a fault |
 
   Worked example (WV-1.2c-text): `"Bedrag: «zijn basis» voor «zijn soort»,
@@ -182,11 +196,15 @@ recorded as such.
   a boolean, a number in 2 decimals and in a whole number, a percentage, the
   product by 1,1, the literal, the unbounded form, a quotient by 3, a date
   and a date-time, a binder of a "Daarbij geldt" (`de heffing is zijn
-  basis maal 1,1`, written `6,050`), and the three rows with a unit:
-  `"Bedrag: «zijn basis (eenheid)», aandeel «zijn aandeel (eenheid)»,
-  toeslag «zijn basis maal 1,1 (eenheid)», zonder eenheid «zijn basis»"`
-  reads `Bedrag: 5,50 (EUR), aandeel 12,50 (%), toeslag 6,050 (EUR),
-  zonder eenheid 5,50`.
+  basis maal 1,1`, written `6,050`), and the rows with a unit, over `EUR`
+  declared with the symbol `€` and a second unit system that declares `kg`
+  without one: `"Bedrag: «zijn basis (eenheid)», aandeel «zijn aandeel
+  (eenheid)», toeslag «zijn basis maal 1,1 (eenheid)», zonder eenheid «zijn
+  basis»"` reads `Bedrag: 5,50 (€), aandeel 12,50 (%), toeslag 6,050 (€),
+  zonder eenheid 5,50`, and `"Gewicht: «zijn gewicht (eenheid)», prijs «zijn
+  prijs (eenheid)», samen «zijn prijs maal zijn gewicht (eenheid)»"` with
+  gewicht 1,20 kg and prijs 2,50 €/kg reads `Gewicht: 1,20 (kg), prijs 2,50
+  (€/kg), samen 3,0000 (€)`.
 - There is no boolean or enumeration coalescing; absence is handled by the
   comparison rules and the leeg/gevuld predicates below.
 

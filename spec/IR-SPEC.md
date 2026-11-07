@@ -406,10 +406,9 @@ to re-normalise inside it.
   rule's scope note recorded, and how it was settled:* in a unit system's v0
   `eenheden` map, 59 of 654 entries (recounted 2026-09-10) were keyed `€`
   against the stored abbreviation `EUR`, a question of unit identity next to
-  WF-009 and ch. 4.6 (r). Since L3 the map is a list and a key that differs
-  from the abbreviation became the first spelling of its unit, so `€` is a
-  spelling of `EUR` (ch. 2.5); what a spelling means to a reader is the OPEN
-  point of ch. 2.5.
+  WF-009 and ch. 4.6 (r). Since L3 the map is a list, one `Unit` per
+  abbreviation, and the key `€` is the `symbol` of `EUR` (ch. 2.5): a written
+  form of the unit, not a second name of it.
 
 ### 2.2 ObjectType
 
@@ -1325,20 +1324,30 @@ a number without a unit.
 | `canonical` | string? | the system unit this reduces to, by its `abbreviation`; absent for bare units |
 | `factorToCanonical` | `{num, den}`? | how many canonical units equal one of this unit: an exact rational, two integers of at least 1 and at most 2^62 − 1 in lowest terms (WF-092) |
 | `exponent` | integer? | on a factor where a unit occurs: the whole exponent of the factor, never 0, absent where it is 1 (WF-124). `€/jr` is `€` and `jr` with exponent −1 |
-| `spellings` | list of string? | the further spellings that resolve to this unit (word and plural aliases): on its declaration in `units` only, at least one when present; the migration and the emitters write none equal to the `abbreviation` |
+| `symbol` | string? | the symbol of the unit: a written form beside its abbreviation, in which a text part writes the unit (RUNTIME-SEMANTICS ch. 1.2); on its declaration in `units` only, never empty |
+| `spellings` | list of string? | the further spellings that resolve to this unit (word and plural aliases): on its declaration in `units` only, at least one when present; the migration and the emitters write none equal to the `abbreviation` or to the `symbol` |
 
 v0 name: `Eenheid`/`Eenheidstelsel`. **Landed L3 (2026-09-24).** No field is
 ever `null`: absent is the one spelling of a field not given. The unit system
 is the list `units`, one `Unit` per abbreviation — a second declaration of an
 abbreviation in one system is ill-formed (WF-009) — and a unit carries its
 further spellings on its own declaration; a factor of a unit that occurs on a
-`Number` is the same node without `spellings`, and every reader refuses the field
-there. *(History until L3.)* The v0 unit system was a
+`Number` is the same node without `symbol` and `spellings`, and every reader
+refuses the two fields there. *(History until L3.)* The v0 unit system was a
 map from a key to a unit beside a second map from an alias to a unit, so one
 unit could be written several times over. The migration wrote the map as the
 list in map order, made every alias a spelling of the unit with the same
 abbreviation, and made a map key that differs from the abbreviation the first
-spelling of its unit (card `20260924-l3-typesysteem`).
+spelling of its unit (card `20260924-l3-typesysteem`). That key, `€` wherever
+one differed, is the unit's `symbol` today.
+
+*The symbol.* A unit is identified by its system and its abbreviation. Its
+symbol is only the form in which a value of the unit is written for a reader.
+Two units may carry one symbol, so no rule holds a symbol unique and no reader
+identifies a unit by it. A factor on a `Number` carries neither `symbol` nor
+`spellings`. The RegelSpraak frontend takes as the symbol the token after the
+abbreviation on a unit line (`de euro (mv: euros) EUR €`; RegelSpraak
+specification §3.7).
 
 *What a spelling means is **OPEN**.* No rule constrains the content of
 `spellings`: one spelling may stand on two units of a system, and a spelling

@@ -4,16 +4,16 @@
   "input": {
     "instances": [
       { "label": "V1", "objectType": "Vondst",
-        "attributes": {"basis": {"number": "5.50"}, "aantal": {"number": "1250"}, "aandeel": {"number": "12.50"}, "vinddatum": {"date": "2026-06-21"}, "meldtijdstip": {"dateTime": "2026-06-21T09:01:59.999"}, "soort": {"enumeration": "wrakhout"}, "bevestiging": {"boolean": true}, "factor": {"number": "0.125"}},
+        "attributes": {"basis": {"number": "5.50"}, "aantal": {"number": "1250"}, "aandeel": {"number": "12.50"}, "vinddatum": {"date": "2026-06-21"}, "meldtijdstip": {"dateTime": "2026-06-21T09:01:59.999"}, "soort": {"enumeration": "wrakhout"}, "bevestiging": {"boolean": true}, "factor": {"number": "0.125"}, "gewicht": {"number": "1.20"}, "prijs": {"number": "2.50"}},
         "roles": {}, "characteristics": [] },
       { "label": "V2", "objectType": "Vondst",
-        "attributes": {"basis": {"number": "5"}, "aantal": {"number": "0"}, "aandeel": {"number": "100"}, "vinddatum": {"date": "2026-01-05"}, "meldtijdstip": {"dateTime": "2026-01-05T17:30:00"}, "soort": {"enumeration": "zeewier"}, "bevestiging": {"boolean": false}, "factor": {"number": "2"}},
+        "attributes": {"basis": {"number": "5"}, "aantal": {"number": "0"}, "aandeel": {"number": "100"}, "vinddatum": {"date": "2026-01-05"}, "meldtijdstip": {"dateTime": "2026-01-05T17:30:00"}, "soort": {"enumeration": "zeewier"}, "bevestiging": {"boolean": false}, "factor": {"number": "2"}, "gewicht": {"number": "0"}, "prijs": {"number": "4"}},
         "roles": {}, "characteristics": [] },
       { "label": "V3", "objectType": "Vondst",
-        "attributes": {"basis": {"number": "5.25"}, "aantal": {"number": "7"}, "aandeel": {"number": "0.25"}, "vinddatum": {"date": "0999-12-31"}, "meldtijdstip": {"dateTime": "2026-12-31T23:59:59.050"}, "soort": {"enumeration": "wrakhout"}, "bevestiging": {"boolean": true}, "factor": {"number": "0.5"}},
+        "attributes": {"basis": {"number": "5.25"}, "aantal": {"number": "7"}, "aandeel": {"number": "0.25"}, "vinddatum": {"date": "0999-12-31"}, "meldtijdstip": {"dateTime": "2026-12-31T23:59:59.050"}, "soort": {"enumeration": "wrakhout"}, "bevestiging": {"boolean": true}, "factor": {"number": "0.5"}, "gewicht": {"number": "0.25"}, "prijs": {"number": "0.04"}},
         "roles": {}, "characteristics": [] },
       { "label": "V4", "objectType": "Vondst",
-        "attributes": {"basis": {"number": "-1"}, "aantal": {"number": "-40"}, "aandeel": {"number": "-0.50"}, "vinddatum": {"date": "2026-02-28"}, "meldtijdstip": {"dateTime": "2026-02-28T00:00:00.001"}, "soort": {"enumeration": "zeewier"}, "bevestiging": {"boolean": false}},
+        "attributes": {"basis": {"number": "-1"}, "aantal": {"number": "-40"}, "aandeel": {"number": "-0.50"}, "vinddatum": {"date": "2026-02-28"}, "meldtijdstip": {"dateTime": "2026-02-28T00:00:00.001"}, "soort": {"enumeration": "zeewier"}, "bevestiging": {"boolean": false}, "gewicht": {"number": "-2"}, "prijs": {"number": "1.25"}},
         "roles": {}, "characteristics": [] }
     ],
     "parameters": {}
@@ -32,7 +32,8 @@
     {"kind": "attributeValue", "label": "V1", "attribute": "toeslagtekst", "value": {"text": "Toeslag: 6,050"}},
     {"kind": "attributeValue", "label": "V1", "attribute": "factortekst", "value": {"text": "Factor: 0,125"}},
     {"kind": "attributeValue", "label": "V1", "attribute": "heffingtekst", "value": {"text": "Heffing: 6,050"}},
-    {"kind": "attributeValue", "label": "V1", "attribute": "eenheidtekst", "value": {"text": "Bedrag: 5,50 (EUR), aandeel 12,50 (%), toeslag 6,050 (EUR), zonder eenheid 5,50"}},
+    {"kind": "attributeValue", "label": "V1", "attribute": "eenheidtekst", "value": {"text": "Bedrag: 5,50 (€), aandeel 12,50 (%), toeslag 6,050 (€), zonder eenheid 5,50"}},
+    {"kind": "attributeValue", "label": "V1", "attribute": "gewichttekst", "value": {"text": "Gewicht: 1,20 (kg), prijs 2,50 (€/kg), samen 3,0000 (€)"}},
     {"kind": "attributeValue", "label": "V2", "attribute": "omschrijving", "value": {"text": "Bedrag: 5,00"}},
     {"kind": "attributeValue", "label": "V2", "attribute": "deeltekst", "value": {"text": "Deel: 5/3"}},
     {"kind": "attributeValue", "label": "V2", "attribute": "aantaltekst", "value": {"text": "Aantal: 0"}},
@@ -46,7 +47,8 @@
     {"kind": "attributeValue", "label": "V2", "attribute": "toeslagtekst", "value": {"text": "Toeslag: 5,500"}},
     {"kind": "attributeValue", "label": "V2", "attribute": "factortekst", "value": {"text": "Factor: 2"}},
     {"kind": "attributeValue", "label": "V2", "attribute": "heffingtekst", "value": {"text": "Heffing: 5,500"}},
-    {"kind": "attributeValue", "label": "V2", "attribute": "eenheidtekst", "value": {"text": "Bedrag: 5,00 (EUR), aandeel 100,00 (%), toeslag 5,500 (EUR), zonder eenheid 5,00"}},
+    {"kind": "attributeValue", "label": "V2", "attribute": "eenheidtekst", "value": {"text": "Bedrag: 5,00 (€), aandeel 100,00 (%), toeslag 5,500 (€), zonder eenheid 5,00"}},
+    {"kind": "attributeValue", "label": "V2", "attribute": "gewichttekst", "value": {"text": "Gewicht: 0,00 (kg), prijs 4,00 (€/kg), samen 0,0000 (€)"}},
     {"kind": "attributeValue", "label": "V3", "attribute": "omschrijving", "value": {"text": "Bedrag: 5,25"}},
     {"kind": "attributeValue", "label": "V3", "attribute": "deeltekst", "value": {"text": "Deel: 1,75"}},
     {"kind": "attributeValue", "label": "V3", "attribute": "aantaltekst", "value": {"text": "Aantal: 7"}},
@@ -60,7 +62,8 @@
     {"kind": "attributeValue", "label": "V3", "attribute": "toeslagtekst", "value": {"text": "Toeslag: 5,775"}},
     {"kind": "attributeValue", "label": "V3", "attribute": "factortekst", "value": {"text": "Factor: 0,5"}},
     {"kind": "attributeValue", "label": "V3", "attribute": "heffingtekst", "value": {"text": "Heffing: 5,775"}},
-    {"kind": "attributeValue", "label": "V3", "attribute": "eenheidtekst", "value": {"text": "Bedrag: 5,25 (EUR), aandeel 0,25 (%), toeslag 5,775 (EUR), zonder eenheid 5,25"}},
+    {"kind": "attributeValue", "label": "V3", "attribute": "eenheidtekst", "value": {"text": "Bedrag: 5,25 (€), aandeel 0,25 (%), toeslag 5,775 (€), zonder eenheid 5,25"}},
+    {"kind": "attributeValue", "label": "V3", "attribute": "gewichttekst", "value": {"text": "Gewicht: 0,25 (kg), prijs 0,04 (€/kg), samen 0,0100 (€)"}},
     {"kind": "attributeValue", "label": "V4", "attribute": "omschrijving", "value": {"text": "Bedrag: -1,00"}},
     {"kind": "attributeValue", "label": "V4", "attribute": "deeltekst", "value": {"text": "Deel: -1/3"}},
     {"kind": "attributeValue", "label": "V4", "attribute": "aantaltekst", "value": {"text": "Aantal: -40"}},
@@ -74,7 +77,8 @@
     {"kind": "attributeValue", "label": "V4", "attribute": "toeslagtekst", "value": {"text": "Toeslag: -1,100"}},
     {"kind": "attributeValue", "label": "V4", "attribute": "factortekst", "value": {"text": "Factor: "}},
     {"kind": "attributeValue", "label": "V4", "attribute": "heffingtekst", "value": {"text": "Heffing: -1,100"}},
-    {"kind": "attributeValue", "label": "V4", "attribute": "eenheidtekst", "value": {"text": "Bedrag: -1,00 (EUR), aandeel -0,50 (%), toeslag -1,100 (EUR), zonder eenheid -1,00"}},
+    {"kind": "attributeValue", "label": "V4", "attribute": "eenheidtekst", "value": {"text": "Bedrag: -1,00 (€), aandeel -0,50 (%), toeslag -1,100 (€), zonder eenheid -1,00"}},
+    {"kind": "attributeValue", "label": "V4", "attribute": "gewichttekst", "value": {"text": "Gewicht: -2,00 (kg), prijs 1,25 (€/kg), samen -2,5000 (€)"}},
     {"kind": "consistent"}
   ]
 }
