@@ -391,3 +391,11 @@ parameterregels, 366 rapportsleutels, 466 sleutelliteralen, 803 pointers.
   shared word (RGS-392)."
 - **Geen vloer daalde.** Gate 3 zie boven; RGS-codes 381 (vloer 347); JUnit zie make gates (vloer 173). Geen vloer
   telt valutatekens of WF-009-armen, dus er hoeft geen vloer omhoog.
+
+### Landing (hoofdsessie, 2026-11-07)
+
+De eigenaar keurde de tekst van de drie WF-009-armen goed en besloot dat een eenheidsnaam van meer woorden voorlopig een
+koppelteken krijgt. `make gates` op `43be8117e` was groen (17 van 17 en `after-run`, 442 s). Na de rebase op main
+`1a169b0c3`, die alleen `SemanticTokensRecoveryTest` raakte, draaiden gate 1 en gate 10 opnieuw. `CLAUDE.md` gate 3
+en 10 en CONSTRUCTS rij 26 beschrijven de nieuwe stand. Het commentaar in `ref/test/dune` bij `product-into-rate`
+zegt nu dat de verifier de fixture weigert (WF-091, WF-009).

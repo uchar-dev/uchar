@@ -47,7 +47,7 @@
   ../../corpus/golden/jutterswet-seizoenvouw/ir.json
   ../../corpus/golden/jutterswet-seizoenvouw/case1-twee-seizoenen.json
   ../../corpus/golden/jutterswet-seizoenvouw/case2-leeg-en-zomer.json
-  ; m × m written into a declared m·m/s, no golden: the verifier admits it and ref must fault on it
+  ; m × m written into a declared m·m/s, no golden: the verifier refuses it (WF-091, WF-009) and ref must fault on it
   fixtures/product-into-rate/ir.json
   fixtures/product-into-rate/case.json
   ; the documents of TmsTimelineWitnessTest B2 in both orders, a timeline written on a state between

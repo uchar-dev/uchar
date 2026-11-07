@@ -245,7 +245,13 @@ missing line makes `make gates` exit non-zero. Current gates:
    attribute (IR-SPEC ch. 3.2), with one negative per field. Since the card
    `tekst-van-een-waarde-in-een-tekstsamenstelling` (2026-11-06) WF-129
    refuses a text part that writes the unit of its number where its type
-   has none, with one negative per arm.
+   has none, with one negative per arm. Since the card
+   `currency-signs-and-declared-units` (2026-11-07) WF-009 holds every unit
+   that names a system to a declaration of that system: its abbreviation
+   declared there (`WF-009.undeclared-abbreviation`), its conversion pair
+   that of the declaration (`WF-009.undeclared-conversion`), and the
+   `system` of a declaration its own system
+   (`WF-009.declaration-system-mismatch`), with one negative per arm.
 4. `scripts/check-case-schema.sh` — the case schema
    (`spec/schema/uchar-case-v0.schema.json`) is metaschema-valid; every
    `corpus/golden/**/case*.json` and `corpus/red/**/case*.json`
@@ -414,7 +420,13 @@ missing line makes `make gates` exit non-zero. Current gates:
     line is the unit's symbol (DIVERGENCES "De eenheidsregel — afkorting en
     symbool"): RGS-389 refuses a third token, RGS-390 a reference by a
     symbol two units of its system carry, RGS-391 a symbol equal to an
-    abbreviation of its own system. The frontend
+    abbreviation of its own system. Since the card
+    `currency-signs-and-declared-units` (2026-11-07) a currency sign, a
+    character of the Unicode category Sc after the letters it writes (`€`,
+    `$`, `R$`), is one token (`CURRENCY_SIGN`), and RGS-392 refuses a
+    reference by a word or plural two units of its system carry; the word
+    of a unit line is one token, so a name of more words takes a hyphen
+    (maintainer decision 2026-11-07). The frontend
     renders Dutch by default; the frontend Makefile copies
     `src/main/resources` to `out/`.
 
