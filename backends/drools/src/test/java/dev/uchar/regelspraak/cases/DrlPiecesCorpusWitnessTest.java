@@ -165,7 +165,7 @@ class DrlPiecesCorpusWitnessTest {
 
     /** The kinds of the functions of the text, the word of what a function computes, the first part of its name. */
     static final Set<String> KINDS = Set.of("afloop", "beta", "binder", "componenten", "conflict", "creatie",
-            "deponering", "fout", "kwantorlezing", "let", "lezing", "lidtoets", "lijst", "matrix", "pad", "plaats",
+            "deling", "deponering", "fout", "kwantorlezing", "let", "lezing", "lidtoets", "lijst", "matrix", "pad", "plaats",
             "samengesteld", "toets", "vouwlezing", "waarde", "zonderfout");
 
     /** The line that opens a rule: {@code rule} and its name as a DRL string literal. */
