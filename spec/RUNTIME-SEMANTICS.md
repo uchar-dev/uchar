@@ -4157,8 +4157,10 @@ executors compute them.
 
 ### 4.5 Well-formedness and refusals
 
-WF-024 (no `COMPLEX` — the v0 placeholder for unrecognised forms is not
-admissible IR), WF-025 (field validity per method: ratio iff weighted
+The method is one of the three real methods: a closed enum of the schema
+and of every loader, so the v0 placeholder `COMPLEX` for unrecognised forms
+is a load error, not admissible IR (`IR-SPEC.md` ch. 3.2; WF-024 is retired).
+The rules: WF-025 (field validity per method: ratio iff weighted
 split; cap only with a ratio — v0 demotes a capped equal-shares to
 COMPLEX, strict reading of §9.7.3; ordering key orderable), WF-026 (at
 most one allocation per written target), WF-128 (no time-dependent attribute
@@ -5983,8 +5985,9 @@ single form of ch. 5.6. Mirrored from the pinned runtime:
    summed count exceeds one is marked, whichever source it came from,
    under the shared union name. Rows with an empty key component do not
    participate (an empty key never collides, the ch. 5.6 rule). Source
-   arity, per-position datatype kind and unit agree, and a union
-   carries at least two sources (WF-030). A **temporal key** reads
+   arity, per-position datatype kind and unit agree (WF-030); a version
+   with two or more sources is the union, and one with a single source is
+   the single-type form (`IR-SPEC.md` ch. 3.6). A **temporal key** reads
    **ever-uniqueness**, in the SINGLE form and the union alike — one
    shared tuple function carries both, and the single form composes it
    with its scope machinery (scope parent × ever-tuples), so the same

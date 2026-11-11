@@ -3405,10 +3405,11 @@ one source is the single-type form since L4, and that arm's witness
   datatype kind
   (including unit, for numeric keys). *v0 mirror note:* v0 checks
   arity/kind for the union form (warn-and-drop) and nothing for the
-  single form. **Delta (promotion).** **OPEN** (`CONSTRUCTS.md` row 20):
-  whether a time-dependent attribute is admissible as a key — v0's
-  backends decline temporal keys; the spec must decide, not inherit the
-  refusal.
+  single form. **Delta (promotion).** A time-dependent attribute is
+  admissible as a key: it reads ever-uniqueness, every value its timeline
+  ever carries, in the single form and the union alike
+  (`RUNTIME-SEMANTICS.md` ch. 5.9, decided 2026-08-20; `CONSTRUCTS.md`
+  row 20).
 
 ### 3.7 Day-kind definition
 
