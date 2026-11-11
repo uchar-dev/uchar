@@ -79,3 +79,64 @@ Date norms (maintainer, 2026-11-11), carried out on this card because they are s
   already). The formula gives a day that does not exist for 307 years between −5000 and 0.
 - Year, month and day of a date-time are defined (IR-SPEC WF-038 "either precision"; RS ch. 3.8 follows); ref and
   clingo learn them, Drools computes them already.
+
+Result (2026-11-11):
+
+Definition and layer marks
+- fixed: the definition of core and presentation stands in the conventions of IR-SPEC in the maintainer's wording;
+  ch. 10 "Presentation" is a section with a table per field (chapter, what the schema requires, the test: strip or
+  exchange) and names the core forms the source language spells. Layer marks in ch. 2, 3 and 4 follow; the mark is
+  `layer: presentation`, the dialect mark is gone (schema descriptions too).
+- fixed: the presentation fields and their test in gate 13's new presentation leg, one combined copy per golden, a
+  difference assigned to a field by a copy per field: `Characteristic.kind` (exchanged), the percentage tag,
+  `Dimension.preposition`, a non-recursive `RuleGroup`, the value of `RuleVersion.presentation` (exchanged),
+  `Rule.statuteAnnotations`, `diagnostics` (exchanged) and the source reference `source` (stripped; exchanged on an
+  `Unresolved`). The leg went red on a mutant per field that reads it, naming the field. A Drools refusal sentence
+  that differs only in the quoted snippet counts as the same outcome.
+- fixed: `source` became presentation in fact: the ch. 7.7 desugaring marks its defaults groups in the AST
+  (`pd_desugared`) and clingo reads that field instead of the snippet text; a clingo test pins it.
+- fixed: the rule kind in three states, recursive rule groups, the cell forms, the date builtins, `dayKind`,
+  `exactDigits`, `dividedByAbs`, `filledCount` and the whole-period qualifier are core. The SHOULD `calculation`
+  names the three places the RegelSpraak frontend writes `equation`. The OPEN of the percentage tag is closed.
+- fixed: WF-033 in two clauses, (a) members resolve (presentation) and (b) recursion (core); the group name is read
+  by WF-057, WF-118 and WF-121 (b), and both sentences say so. New negative `wf033-member-names-no-form` for (a).
+- fixed: PLAN (r. 109, the design principle, Phase 1, Phase 5, §9 (4) with the candidate core field for the rule
+  kind, §9 (5)) and CONSTRUCTS (head and rows 14, 28, 29, 102, 103, 107, 121, 131, 149, 159, 169; BinOp variants;
+  side-table rows 41 and 42 to presentation).
+
+Forms without a norm
+- fixed: `elevenTest`, `hourOf`, `minuteOf`, `secondOf`, `millisecondOf` and "is gevuurd" are off the wire: schema,
+  IR-SPEC, RS, ASP-TRANSLATION, the spelling table, the verifier (its two arms go; `inconsistent: false` is a load
+  error), the frontend (an `Unresolved` with an RGS-092 warning, three new reasons), Drools (execution goes,
+  DROOLS-129 RETIRED), the gate-2 self-test rows. 1221 documents scanned: none carried a removed form.
+- fixed: the convention: a form is on the wire when the spec gives it a meaning with a worked example.
+- fixed: `exactDigits` is normed (RS ch. 1.2, WV-1.2-exact in ref/test): ref and Drools evaluate it, clingo refuses
+  with CLINGO-046; golden `jutterswet-registratienummer`, negative `wf036-exact-digits-operand`. N ≥ 1 under WF-036
+  (`wf036-exact-digits-count`; the frontend reports a smaller count as RGS-205). Under the whole-period qualifier it
+  is read per day: RS ch. 3.9 now opens with the per-day reading of every condition of ch. 1.2 (WV-3.9-exact);
+  golden `jutterswet-registratienummer-gehele-jaar`; REF-008 retired (a `retired` kind in
+  `scripts/check-exec-codes.sh`); Drools reads a text value on a timeline.
+- fixed: "is inconsistent" keeps its node; golden `jutterswet-saldotoezicht` (the example of RS ch. 5.6), clingo
+  refuses with CLINGO-047 in place of the fallback CLINGO-011; its consistent case is a gate-7 survivor with reason.
+- open, for the toolchain: `UcharBuild` reports a sentence taken off the wire as "onopgeloste naam"; text in
+  `werk/core-and-presentation/forms/result.md`, carried out at the pin.
+
+Coherence of the text
+- fixed: strata (WF-046, RS ch. 6.3), WF-050, WV-6.4-j (outcome measured, the ref comment follows), the stale WF
+  sentences (WF-024, the WF-030 union, the WF-030 OPEN), the node kind cell in RS ch. 6.1, WF-008/WF-010 under the
+  keys that check them, 68 references to RS named, the two that pointed nowhere.
+- fixed: the two unreachable arms (WF-022 rule without target, WF-029 without assertion) are gone: the loader
+  refuses those documents. 49 WF index rows carry `**OPEN** arms without a negative case:` with 135 keys, made by a
+  script from the measurement; the head of the WF index no longer counts its OPENs.
+- struck: the chapter-introduction counts were right already.
+
+Date norms
+- fixed: under the whole-period qualifier no comparison of dates has a reading, equality included: ref and clingo
+  refuse equal/notEqual as they refuse earlier/later, Drools with DROOLS-246 (it used DROOLS-247).
+- fixed: `easterSunday` before the year 1 faults with EF-007 in ref, clingo and Drools (red case
+  `jutterswet-paasdag-voor-jaar-een`); the test `WV-3.8-d-bereik-paasdag-onder` now expects the year-1 sentence.
+- fixed: year, month and day of a date-time in ref and clingo; golden `jutterswet-meldtijdstip-delen`.
+
+Tests changed because behaviour changed: the Drools tests of the removed forms and DROOLS-129, `TypingSentenceTest`,
+`StructureSentenceTest`, `ReaderSentenceBoundaryTest`, the builtin-kind count in the Drools tests, the clingo test
+that pinned the eleven test and Easter before year 1. `EXPECTED_PLAYED` 373 → 377.
