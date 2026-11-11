@@ -1,0 +1,41 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// 
+function Object waarde_loonVanEenVondst(Object $bonus, Object $opbrengst, Object $aandeel, Object sonde) {
+    try {
+        return deling_loonVanEenVondst($bonus, $opbrengst, $aandeel, sonde);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// 
+function Object deling_loonVanEenVondst(Object $bonus, Object $opbrengst, Object $aandeel, Object sonde) {
+    Object deeltal = $bonus;
+    return deeltal == null ? (Object) ComputeHelpers.divided(null, null, sonde) : (Object) ComputeHelpers.divided(deeltal, ComputeHelpers.divided($opbrengst, $aandeel, sonde), sonde);
+}
+
+rule "loon van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $bonus : bonus, $opbrengst : opbrengst, $aandeel : aandeel )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_loonVanEenVondst($bonus, $opbrengst, $aandeel, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "loon van een vondst", ComputeHelpers.designate(v, "loon van een vondst")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("loon van een vondst", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "loon", false), v, "loon van een vondst"));
+        }
+    }
+end
+
