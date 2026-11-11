@@ -6279,8 +6279,8 @@ let () =
      min(P, X) anders min(Q, X), en de Let z komt alleen in de arm die hem
      leest. J1 verdient 40 boven de drempel: de dan-arm, z = 40 gedeeld door
      0 wordt niet gelezen. Met inkomen 5 en restpost 2 de anders-arm, z =
-     2,50. De eerste en de laatste antwoorden verschillend, zodat een
-     verwisseling opvalt. *)
+     2,50. De eerste en de laatste, en het minimum en het maximum,
+     antwoorden verschillend, zodat een verwisseling opvalt. *)
   let argument_form kind =
     arm_doc ~attributes:arm_attrs3
       ~parameters:(arm_param "drempel" ^ ", " ^ arm_param "basisheffing")
@@ -6308,12 +6308,7 @@ let () =
           clingo_matches ~name ~ir ~case_text)
         [ ("then", agg_body_case_valued (if smallest then "0.00" else "5.00"));
           ("else", agg_body_case_valued ~inkomen:"5" ~restpost:"2" (if smallest then "2.50" else "5.00")) ])
-    [ ("first", true); ("last", false) ];
-  let name = "ch10.6 aggregation body between Let and branch (argument, minimum)" in
-  verifier_clean ~name ~ir:(argument_form "minimum");
-  ref_matches ~name:(name ^ " [ref plays]") ~ir:(argument_form "minimum") ~case_text:agg_body_case;
-  faults_with ~name:(name ^ " refuses loudly") ~ir:(argument_form "minimum") ~case_text:agg_body_case
-    ~needle:"expression kind not translated"
+    [ ("first", true); ("last", false); ("minimum", true); ("maximum", false) ]
 
 (* --- `first`/`last` over een SETBRON (kaart eerste-laatste-setvouw-kloof,
    2026-09-19) ------------------------------------------------------------
@@ -6829,11 +6824,21 @@ let () =
     ~ir:(listed_fold_doc ~kind:"sum" ~element_object_type:"null" ())
     ~case_text:listed_fold_case
     ~needle:"a sum over listed operands is not translated";
-  (* armgrens, as KIND: hetzelfde frame, een buurvouw — de bodem, niet de som *)
-  faults_with ~name:"§5.8.3 arm bounds: the list MINIMUM holds the bottom"
+  (* armgrens, as KIND: hetzelfde frame, een buurvouw — niet de arm van de
+     som, maar die van de gelijste ordenende vouw (ch. 1.2e): min(5, 1) = 1 *)
+  let minimum_case =
+    replace ~tok:{|"expected": [ { "kind": "consistent" } ]|}
+      ~by:
+        {|"expected": [ { "kind": "attributeValue", "label": "V1", "attribute": "vangstsom",
+                          "value": { "number": "1" } }, { "kind": "consistent" } ]|}
+      listed_fold_case
+  in
+  ref_matches ~name:"§5.8.3 arm bounds: the list MINIMUM takes the listed ordering fold"
     ~ir:(listed_fold_doc ~kind:"minimum" ~element_object_type:"null" ())
-    ~case_text:listed_fold_case
-    ~needle:"expression kind not translated (no corpus case exercises it)";
+    ~case_text:minimum_case;
+  clingo_matches ~name:"§5.8.3 arm bounds: the list MINIMUM takes the listed ordering fold"
+    ~ir:(listed_fold_doc ~kind:"minimum" ~element_object_type:"null" ())
+    ~case_text:minimum_case;
   (* armgrens, as ELEMENT: dezelfde som mét bron-stempel — ook de bodem *)
   faults_with ~name:"§5.8.3 arm bounds: a sum with elementType holds the bottom"
     ~ir:(listed_fold_doc ~kind:"sum" ~element_object_type:"\"Vangst\"" ())

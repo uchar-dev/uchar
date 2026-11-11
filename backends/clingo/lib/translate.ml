@@ -4429,12 +4429,12 @@ let rec hoist_branch ctx binder (e : expr) : expr option =
            (fun i d -> ((match d with Embedded_expression { expr; _ } -> expr | Literal_chunk _ -> None), at i))
            pieces)
   (* the listed ordering fold (ch. 1.2e) reads no instance source and is a
-     pure function of its operands, like the wrappers above: `de laatste van
-     (als c dan P anders Q) en X` is `als c dan de laatste van P en X anders
-     de laatste van Q en X` *)
+     pure function of its operands, like the wrappers above: `min(als c dan P
+     anders Q, X)` is `als c dan min(P, X) anders min(Q, X)` *)
   | Function_call
-      ({ kind = First | Last; call_arguments = _ :: _ :: _ as args; filter = None; empty_fallback = None;
-         dimension_selections = None; source_role = None; source_path = None; typ; source_name; _ } as f) ->
+      ({ kind = Minimum | Maximum | First | Last; call_arguments = _ :: _ :: _ as args; filter = None;
+         empty_fallback = None; dimension_selections = None; source_role = None; source_path = None; typ;
+         source_name; _ } as f) ->
       let at i x = Function_call { f with call_arguments = List.mapi (fun j a -> if j = i then x else a) args } in
       one_of typ source_name (List.mapi (fun i a -> (Some a, at i)) args)
   | _ -> None
@@ -6023,11 +6023,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         @ (Printf.sprintf "val(%s,%s,%s)" x (str a) g :: fatoms)
       in
       ( [ Printf.sprintf "%s = #count { %s : %s }" v x (String.concat ", " contrib_body) ], v, 1 )
-  | Function_call { kind = (First | Last) as kind; call_arguments = (_ :: _ :: _ as args); filter; _ }
+  | Function_call { kind = (First | Last | Minimum | Maximum) as kind; call_arguments = (_ :: _ :: _ as args); filter; _ }
     ->
       (* the articulated eerste/laatste fold (RUNTIME-SEMANTICS ch. 1.2e):
          the ORDERING fold — #min/#max over the listed operand terms with
-         the empty-skip discipline. One helper predicate per fold site:
+         the empty-skip discipline. The listed minimum and maximum are the
+         same fold under the same table row of ch. 1.2e (min(5, leeg, 3) = 3,
+         min(leeg, leeg) = leeg), so they take this arm too. One helper
+         predicate per fold site:
          each operand derives its harmonised value into the shared head;
          an empty operand derives nothing and drops out of the aggregate
          set; the definedness atom keeps the fold's body underivable when
@@ -6038,22 +6041,23 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       if filter <> None then
         fault "a filter on a listed-operand fold has no v0 form (the subselection ranges \
                over instances)";
+      let family = match kind with First | Last -> "first/last" | _ -> "minimum/maximum" in
       (* one comparable family only: ref's ordering comparison faults a
          mixed pair at runtime — a day number must not silently order
          against a scaled numeric *)
       let dated = List.map (fun a -> is_date_operand ctx (Some a)) args in
       if List.exists Fun.id dated && not (List.for_all Fun.id dated) then
-        fault "mixed date/non-date operands under a first/last fold are not \
-               translated (ref faults the unordered comparison)";
+        fault "mixed date/non-date operands under a %s fold are not \
+               translated (ref faults the unordered comparison)" family;
       List.iter
         (fun a ->
           if is_symbolic_operand ctx (Some a) then
-            fault "a text/boolean/enum operand under a first/last fold has no order \
-                   (ref faults the unordered comparison)";
+            fault "a text/boolean/enum operand under a %s fold has no order \
+                   (ref faults the unordered comparison)" family;
           match static_type ctx a with
           | Some Date_time_type ->
-              fault "datum-tijd first/last is not translated (the pair term has no fold \
-                     ordering; no corpus case)"
+              fault "datum-tijd %s is not translated (the pair term has no fold \
+                     ordering; no corpus case)" family
           | _ -> ())
         args;
       (* ref restates numeric operands into the first operand's unit with
@@ -6066,7 +6070,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       in
       List.iter
         (fun a ->
-          units_identical_ok ~what:"a first/last fold" first_unit (eff_unit ctx a))
+          units_identical_ok ~what:(Printf.sprintf "a %s fold" family) first_unit (eff_unit ctx a))
         args;
       (* the operand fence above reads the wire `type`, which covers the ch.
          1.2d scalars but never saw a sum/struct operand — and could not, since
@@ -6077,7 +6081,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         List.map
           (fun a ->
             let atoms, t, s = expr_term ctx ~subject ~subject_ot a in
-            (atoms, t, numeric_scale ~what:"a first/last fold" s))
+            (atoms, t, numeric_scale ~what:(Printf.sprintf "a %s fold" family) s))
           args
       in
       let m = List.fold_left (fun acc (_, _, s) -> max acc s) 1 ops in
@@ -6105,7 +6109,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       emit ctx "%s_def(%s) :- %s(%s,X)." pred key pred key;
       let v = fresh ctx "F" in
       let x = Printf.sprintf "X%s" v in
-      let agg = match kind with First -> "#min" | _ -> "#max" in
+      let agg = match kind with First | Minimum -> "#min" | _ -> "#max" in
       ( [ Printf.sprintf "%s_def(%s)" pred key;
           Printf.sprintf "%s = %s { %s : %s(%s,%s) }" v agg x pred key x ],
         v,
