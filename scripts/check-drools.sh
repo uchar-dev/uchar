@@ -1611,7 +1611,9 @@ EXPECTED_CHANNEL=(
 # rest written through the assignment gate from EUR into ct (RUNTIME-SEMANTICS ch. 4.2, 2.4; PLAYED 1).
 # 370 with jutterswet-leeg-deeltal: an empty dividend decides a division before its divisor is read, so a division by
 # zero in the divisor deposits nothing (RUNTIME-SEMANTICS ch. 1.4 point 4; PLAYED 3).
-EXPECTED_PLAYED=370
+# 371 with jutterswet-wrakbasis-vervangen-basis-regel: a subtype's own base, a rule, replaces an inherited form-a base,
+# whose nested exception group stays above it (RUNTIME-SEMANTICS ch. 7.10; PLAYED 1).
+EXPECTED_PLAYED=371
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
