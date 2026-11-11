@@ -2753,7 +2753,7 @@ literal `{"boolean": true}` since L4.)
     'penningjaar'`). A second rule here would only re-refuse it.
   - `ruleGroups` — a **rule group**'s name is a label. WF-033 resolves a
     group's MEMBERS by name; the group's own name the verifier reads only
-    under WF-118 and WF-121 (b), as the name of a declaration, and no
+    under WF-057, WF-118 and WF-121 (b), as the name of a declaration, and no
     executor reads it, so a nameless group is inert rather than ambiguous,
     and refusing it would be a rule without a failure.
   - `regels` — the parse-stage `Regel` **shell index** (ch. 3.1's v0 wart),
@@ -3533,7 +3533,8 @@ budget turning divergence into a fault in every executor.
 - **WF-033** Two clauses. (a) (presentation) Every member name of every
   group, recursive or not, MUST resolve to a rule form in the model. The
   group's own name is no member name: the verifier reads it only as a
-  declaration's name, under WF-118 (unique among the rule groups' effective
+  declaration's name, under WF-057 (target-text-safe characters, the kind
+  "rule group name"), WF-118 (unique among the rule groups' effective
   names in each vocabulary) and WF-121 (b) (an origin's `from` of kind
   `ruleGroup`), and no executor reads it. (b) (core) A `recursive` group
   MUST contain at least one creation
