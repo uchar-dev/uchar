@@ -1,0 +1,657 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "geschatte gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "toeslaggrond",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "toeslag",
+            "datatype": {
+              "node": "SumType",
+              "domain": "toeslag van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vinddatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wachttijd",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vindloon",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "taxatie",
+            "datatype": {
+              "node": "SumType",
+              "domain": "taxatie van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                }
+              ]
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "verdacht",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "toeslag van een Vondst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "waarde",
+              "payload": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              }
+            },
+            {
+              "name": "onbekend",
+              "payload": null
+            }
+          ]
+        }
+      },
+      {
+        "node": "Domain",
+        "name": "taxatie van een Vondst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "waarde",
+              "payload": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              }
+            },
+            {
+              "name": "onbekend",
+              "payload": null
+            }
+          ]
+        }
+      }
+    ],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Tijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "dg",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "dag"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "vindloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vindloon",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het vindloon van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "5.00"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "5,00"
+              }
+            },
+            "condition": {
+              "node": "TimeWindow",
+              "from": {
+                "node": "Binary",
+                "op": "plus",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "vinddatum",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn vinddatum"
+                  }
+                },
+                "right": {
+                  "node": "Rounding",
+                  "base": {
+                    "node": "Binary",
+                    "op": "dividedBy",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "wachttijd",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn wachttijd"
+                      }
+                    },
+                    "right": {
+                      "node": "AttributeReference",
+                      "attribute": "geschatte gewicht",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn geschatte gewicht"
+                      }
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified",
+                      "unit": [
+                        {
+                          "node": "Unit",
+                          "abbreviation": "dg",
+                          "system": "Tijd",
+                          "canonical": "dg",
+                          "factorToCanonical": {
+                            "num": 1,
+                            "den": 1
+                          }
+                        }
+                      ]
+                    },
+                    "source": {
+                      "snippet": "zijn wachttijd gedeeld door zijn geschatte gewicht"
+                    }
+                  },
+                  "mode": "towardZero",
+                  "decimals": 0,
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified",
+                    "unit": [
+                      {
+                        "node": "Unit",
+                        "abbreviation": "dg",
+                        "system": "Tijd",
+                        "canonical": "dg",
+                        "factorToCanonical": {
+                          "num": 1,
+                          "den": 1
+                        }
+                      }
+                    ]
+                  },
+                  "source": {
+                    "snippet": "zijn wachttijd gedeeld door zijn geschatte gewicht richting nul afgerond op 0 decimalen"
+                  }
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "zijn vinddatum plus (zijn wachttijd gedeeld door zijn geschatte gewicht richting nul afgerond op 0 decimalen)"
+                }
+              },
+              "toInclusive": false,
+              "source": {
+                "snippet": "vanaf zijn vinddatum plus (zijn wachttijd gedeeld door zijn geschatte gewicht richting nul afgerond op 0 decimalen)"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "taxatie",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "taxatie",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De taxatie van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "taxatie van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "waarde",
+              "argument": {
+                "node": "Rounding",
+                "base": {
+                  "node": "Binary",
+                  "op": "dividedBy",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "toeslaggrond",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn toeslaggrond"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "geschatte gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn geschatte gewicht"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "zijn toeslaggrond gedeeld door zijn geschatte gewicht"
+                  }
+                },
+                "mode": "halfAwayFromZero",
+                "decimals": 2,
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "zijn toeslaggrond gedeeld door zijn geschatte gewicht rekenkundig afgerond op 2 decimalen"
+                }
+              },
+              "source": {
+                "snippet": "zijn toeslaggrond gedeeld door zijn geschatte gewicht rekenkundig afgerond op 2 decimalen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "verdacht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "verdacht",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is verdacht"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Regelversie",
+              "regel": "taxatie",
+              "inconsistent": true,
+              "source": {
+                "snippet": "regelversie taxatie is inconsistent"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "toeslag",
+        "subject": "Vondst",
+        "attribute": "toeslag",
+        "defaults": [
+          {
+            "node": "Default",
+            "name": "gewogen toeslag",
+            "justification": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "toeslaggrond",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn toeslaggrond"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn toeslaggrond gevuld is"
+              }
+            },
+            "consequence": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "toeslag van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "waarde",
+              "argument": {
+                "node": "Binary",
+                "op": "plus",
+                "left": {
+                  "node": "Rounding",
+                  "base": {
+                    "node": "Binary",
+                    "op": "dividedBy",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "toeslaggrond",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn toeslaggrond"
+                      }
+                    },
+                    "right": {
+                      "node": "AttributeReference",
+                      "attribute": "geschatte gewicht",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn geschatte gewicht"
+                      }
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "zijn toeslaggrond gedeeld door zijn geschatte gewicht"
+                    }
+                  },
+                  "mode": "halfAwayFromZero",
+                  "decimals": 2,
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "zijn toeslaggrond gedeeld door zijn geschatte gewicht rekenkundig afgerond op 2 decimalen"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "5.00"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "5,00"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "(zijn toeslaggrond gedeeld door zijn geschatte gewicht rekenkundig afgerond op 2 decimalen) plus 5,00"
+                }
+              },
+              "source": {
+                "snippet": "(zijn toeslaggrond gedeeld door zijn geschatte gewicht rekenkundig afgerond op 2 decimalen) plus 5,00"
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "name": "toeslag",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "toeslag van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "waarde",
+              "argument": {
+                "node": "Literal",
+                "value": {
+                  "number": "1.00"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "1,00"
+                }
+              },
+              "source": {
+                "snippet": "1,00"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}

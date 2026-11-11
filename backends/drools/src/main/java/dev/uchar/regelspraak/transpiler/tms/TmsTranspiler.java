@@ -3021,6 +3021,8 @@ public final class TmsTranspiler {
                     || deposits(k.otherwise(), site);
             case Expr.TextComposition t -> t.parts().stream()
                     .anyMatch(d -> d instanceof Expr.TextComposition.EmbeddedExpression i && deposits(i.expr(), site));
+            case Expr.Construct c -> deposits(c.argument(), site);
+            case Expr.PayloadAccess p -> deposits(p.base(), site);
             default -> false;
         };
     }
@@ -3037,6 +3039,7 @@ public final class TmsTranspiler {
             case Condition.Predicate p -> deposits(p.operand(), site);
             case Condition.Compound s -> s.components().stream().anyMatch(d -> deposits(d, site));
             case Condition.QuantifierFold kv -> deposits(kv.filter(), site) || deposits(kv.test(), site);
+            case Condition.TimeWindow w -> deposits(w.from(), site) || deposits(w.until(), site);
             default -> false;
         };
     }

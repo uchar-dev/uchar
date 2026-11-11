@@ -1,0 +1,69 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2025-06-01",
+  "input": {
+    "instances": [
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "geschatte gewicht": {
+            "number": "20.00"
+          },
+          "toeslaggrond": {
+            "number": "60.00"
+          },
+          "vinddatum": {
+            "date": "2025-01-01"
+          },
+          "wachttijd": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "toeslag",
+      "value": {
+        "constructor": "waarde",
+        "payload": {
+          "number": "8.00"
+        }
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "vindloon",
+      "value": {
+        "number": "5.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "taxatie",
+      "value": {
+        "constructor": "waarde",
+        "payload": {
+          "number": "3.00"
+        }
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V2",
+      "characteristic": "verdacht"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+Eenheidsysteem Tijd
+    de dag (mv: dagen) dg
+
+Objecttype de Vondst (mv: Vondsten)
+    het geschatte gewicht Numeriek (getal met 2 decimalen);
+    de toeslaggrond Numeriek (getal met 2 decimalen);
+    de toeslag Numeriek (getal met 2 decimalen) (of onbekend);
+    de vinddatum Datum in dagen;
+    de wachttijd Numeriek (geheel getal) met eenheid dg;
+    het vindloon Numeriek (getal met 2 decimalen);
+    de taxatie Numeriek (getal met 2 decimalen) (of onbekend);
+    is verdacht kenmerk (bijvoeglijk);
+
+Afwijking van toeslag: gewogen toeslag
+    geldig altijd
+        De toeslag van een Vondst moet berekend worden als (zijn toeslaggrond gedeeld door zijn geschatte gewicht rekenkundig afgerond op 2 decimalen) plus 5,00 indien zijn toeslaggrond gevuld is.
+
+Regel toeslag
+    geldig altijd
+        De toeslag van een Vondst moet gesteld worden op 1,00.
+
+Regel vindloon
+    geldig altijd
+        Het vindloon van een Vondst moet gesteld worden op 5,00 vanaf zijn vinddatum plus (zijn wachttijd gedeeld door zijn geschatte gewicht richting nul afgerond op 0 decimalen).
+
+Regel taxatie
+    geldig altijd
+        De taxatie van een Vondst moet berekend worden als zijn toeslaggrond gedeeld door zijn geschatte gewicht rekenkundig afgerond op 2 decimalen.
+
+Regel verdacht
+    geldig altijd
+        Een Vondst is verdacht
+        indien regelversie taxatie is inconsistent.
