@@ -5047,6 +5047,17 @@ row, and that is the flank: nothing fills `voorligger` toward W1, so the
 absent-link rule of ch. 5.8 reads leeg — establishing a relation in both
 directions is not the same as inventing one.
 
+**A label that a role list repeats is one link.** A supplied link
+establishes a relation instance, and a second occurrence of a label in the
+same role list names that instance again: the reader keeps one link per
+label, and the list keeps the order of each label's first occurrence. A
+to-one role whose list repeats its one label carries one link. Worked
+example (`ref/` test verbatim): the golden `jutterswet-munttelling` with the
+vondsten of J1 listed as `[M2, V1, M1, M2, M1]` — the munten M2 (gewicht
+5,00) and M1 (7,00) and the vondst V1 (3,00) — links M2, V1, M1, in that
+order, and J1's `aantal munten` is **2** and its `muntgewicht` **12,00**,
+not 4 and 24,00.
+
 ### 5.7b Fault kinds and their codes
 
 A **fault kind** is a property of the semantics, not of an executor: a
