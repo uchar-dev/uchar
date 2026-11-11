@@ -18714,6 +18714,112 @@ let () =
   faults_at_solving ~code:("CLINGO-034", []) ~name:"300 000 001 days: the count fence"
     ~ir ~case_text:(case "wachtdagen" "300000001") ~needle:"arithmetic range exceeded" ()
 
+(* A scaled operand wraps clingo's machine integers before any fence on the
+   scaled term can see it, so every rescale is fenced on the operand it
+   rescales, with bound max_int31 / k (the closed-body additive join: half
+   that, since the sum must fit too). Three places rescale an operand that the
+   document can make large: the additive join in a closed body, a comparison
+   in a closed body and a comparison in a value-position IfThenElse. With x
+   whole and the other side at two decimals, x is scaled by 100; at
+   x = 42 949 673 the product wraps to 4, and each place answered a wrong
+   number (0,04 for `acc + x`, the else branch for `x > 5,00`) where ref
+   answers 42949673. Below the bound each fence must let the value through. *)
+let () =
+  let num ~whole ~decimals =
+    Printf.sprintf {|{ "node": "Number", "whole": %b, "decimals": %d, "sign": "unspecified" }|} whole decimals
+  in
+  let dec2 = num ~whole:false ~decimals:2 and whole = num ~whole:true ~decimals:0 in
+  let binder name = Printf.sprintf {|{ "node": "BinderRef", "name": "%s", "source": { "snippet": "%s" } }|} name name in
+  let five = Printf.sprintf {|{ "node": "Literal", "value": { "number": "5.00" }, "type": %s, "source": { "snippet": "5,00" } }|} dec2 in
+  let greater_than_five operand =
+    Printf.sprintf
+      {|{ "node": "Comparison", "op": "greater", "left": %s, "right": %s, "source": { "snippet": "groter dan 5,00" } }|}
+      operand five
+  in
+  let acc_plus_x =
+    Printf.sprintf
+      {|{ "node": "Binary", "op": "plus", "left": %s, "right": %s, "type": %s, "source": { "snippet": "acc plus x" } }|}
+      (binder "acc") (binder "x") dec2
+  in
+  let fold body =
+    Printf.sprintf
+      {|{ "node": "Fold", "type": %s,
+        "list": { "node": "ParameterReference", "parameter": "vondsten", "source": { "snippet": "de vondsten" } },
+        "function": { "node": "Lambda",
+          "parameters": [ { "name": "acc", "datatype": %s }, { "name": "x", "datatype": %s } ],
+          "body": %s, "source": { "snippet": "de vondsten opgeteld" } },
+        "init": { "node": "Literal", "value": { "number": "0.00" }, "type": %s, "source": { "snippet": "0,00" } },
+        "source": { "snippet": "de vondsten gevouwen" } }|}
+      dec2 dec2 whole body dec2
+  in
+  let doc ~datatype value =
+    Printf.sprintf
+      {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [ { "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
+      "attributes": [ { "node": "Attribute", "name": "vondsttotaal", "datatype": %s } ],
+      "characteristics": [] } ],
+    "factTypes": [],
+    "parameters": [
+      { "node": "Parameter", "name": "vondsten", "datatype": { "node": "ListType", "element": %s } },
+      { "node": "Parameter", "name": "drempel", "datatype": %s } ],
+    "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [] },
+  "rules": {
+    "rules": [ { "node": "Rule", "name": "vondsttotaal van een jutter", "versions": [ {
+      "validity": { "node": "Validity" },
+      "target": { "node": "AttributeReference", "attribute": "vondsttotaal", "subjectType": "Jutter",
+        "source": { "snippet": "Het vondsttotaal van een Jutter" } },
+      "value": %s,
+      "initialisation": false, "presentation": "calculation" } ] } ],
+    "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [],
+    "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": [] },
+  "diagnostics": [] }|}
+      datatype whole whole value
+  in
+  let additive = doc ~datatype:dec2 (fold acc_plus_x) in
+  let closed_comparison =
+    doc ~datatype:dec2
+      (fold
+         (Printf.sprintf
+            {|{ "node": "IfThenElse", "type": %s, "condition": %s, "then": %s, "else": %s, "source": { "snippet": "als" } }|}
+            dec2 (greater_than_five (binder "x")) acc_plus_x (binder "acc")))
+  in
+  let value_comparison =
+    doc ~datatype:whole
+      (Printf.sprintf
+         {|{ "node": "Let", "type": %s, "binder": "k",
+           "value": { "node": "ParameterReference", "parameter": "drempel", "source": { "snippet": "de drempel" } },
+           "body": { "node": "IfThenElse", "type": %s, "condition": %s, "then": %s,
+             "else": { "node": "Literal", "value": { "number": "0" }, "type": %s, "source": { "snippet": "0" } },
+             "source": { "snippet": "als" } },
+           "source": { "snippet": "laat k" } }|}
+         whole whole (greater_than_five (binder "k")) (binder "k") whole)
+  in
+  let case ~n ~expected =
+    Printf.sprintf
+      {|{ "format": "uchar-case-v0", "asOfDate": null, "input": { "instances": [
+        { "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": {}, "characteristics": [] } ],
+        "parameters": { "vondsten": { "list": [ { "number": "%s" } ] }, "drempel": { "number": "%s" } } },
+        "expected": [ %s ] }|}
+      n n expected
+  in
+  List.iter
+    (fun (what, ir) ->
+      faults_at_solving ~code:("CLINGO-034", [])
+        ~name:(what ^ ": 42 949 673 wraps when scaled by 100")
+        ~ir ~case_text:(case ~n:"42949673" ~expected:{|{ "kind": "consistent" }|})
+        ~needle:"arithmetic range exceeded" ();
+      let below =
+        case ~n:"200000"
+          ~expected:
+            {|{ "kind": "attributeValue", "label": "J1", "attribute": "vondsttotaal", "value": { "number": "200000" } }|}
+      in
+      ref_matches ~name:(what ^ ": 200 000 below the bound") ~ir ~case_text:below;
+      clingo_matches ~name:(what ^ ": 200 000 below the bound") ~ir ~case_text:below)
+    [ ("closed-body acc + x", additive);
+      ("closed-body x > 5,00", closed_comparison);
+      ("value-position k > 5,00", value_comparison) ]
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

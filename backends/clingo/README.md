@@ -501,7 +501,9 @@ Recorded limitations:
   ±2³¹ (the allocation forms A×W before dividing). A mismatch fails
   loud against the absolute expectations, but a bignum/rational
   encoding is follow-up work for realistic monetary magnitudes. The
-  range guards on products and sums fire the witness
+  range guards on products, on sums and on an operand rescaled to the
+  scale of the other (fenced before the multiplication, which itself
+  can wrap) fire the witness
   `viol("arithmetic range exceeded …", _)`, the limit CLINGO-034; a
   number of the unbounded form whose declaration and values fix no
   finite scale is held as a whole number, and a division, a pro-rata

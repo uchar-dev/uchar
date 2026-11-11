@@ -10472,7 +10472,14 @@ and body_condition ctx ~guard_body ~witness (c : condition_expr) : string list *
       (* two convertible units restate by the factors of [comparison_factors] *)
       let lt, rt = closed_compared_with_factors ctx ~guard_body ~witness l r (la @ ra) lt rt in
       let m = max ls rs in
-      let sc t s = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
+      (* the fence reads the operand before the rescale, which can wrap *)
+      let sc t s =
+        if s = m then t
+        else begin
+          range_guard ctx ~subject:witness ~body:(guard_body @ la @ ra) [ (t, max_int31 / (m / s)) ];
+          Printf.sprintf "(%s*%d)" t (m / s)
+        end
+      in
       let lt = sc lt ls and rt = sc rt rs in
       ( la @ ra,
         Printf.sprintf "%s %s %s" lt (cmp_sym op) rt,
@@ -10541,9 +10548,10 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
       let m = max sl sr in
       let sc t s = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
       let tl' = sc tl sl and tr' = sc tr sr in
+      (* the fence reads the raw operand: the rescaled one can wrap inside it *)
       range_guard ctx ~subject:witness
         ~body:(guard_body @ bl @ br)
-        [ (tl', 1073741823 / (m / sl)); (tr', 1073741823 / (m / sr)) ];
+        [ (tl, 1073741823 / (m / sl)); (tr, 1073741823 / (m / sr)) ];
       let term = Printf.sprintf "(%s%s%s)" tl' (if op = Plus then "+" else "-") tr' in
       ctx.signs <- (term, Sum { l = tl; r = tr; minus = op = Min; subject = witness }) :: ctx.signs;
       (bl @ br, term, m)
@@ -11019,7 +11027,16 @@ and value_condition ctx ~subject ~subject_ot (c : condition_expr) : string list 
         compared_with_factors ctx ~subject ~subject_ot (comparison_factors ctx l r) (la, lt, ls) (ra, rt, rs)
       in
       let m = max ls rs in
-      let sc t s = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
+      (* the fence reads the operand before the rescale, which can wrap *)
+      let sc t s =
+        if s = m then t
+        else begin
+          range_guard ctx ~subject
+            ~body:((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard) @ la @ ra)
+            [ (t, max_int31 / (m / s)) ];
+          Printf.sprintf "(%s*%d)" t (m / s)
+        end
+      in
       let lt = sc lt ls and rt = sc rt rs in
       ( la @ ra,
         Printf.sprintf "%s %s %s" lt (cmp_sym op) rt,
