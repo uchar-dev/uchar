@@ -33,7 +33,7 @@ CLINGO-031	limit	nested-non-exact-division		division_misfit
 CLINGO-032	limit	calendar-total-outside-rounding	attribute	expr_term
 CLINGO-033	limit	unbounded-form-held-whole		division_misfit,fitted,translate_pro_rata
 CLINGO-034	limit	machine-integer-range		range_guard,money_mult_fences,expr_term,translate_pro_rata,translate_day_count,translate_period_arithmetic,translate_allocation,translate_uniqueness_union
-CLINGO-035	refusal	creation-order-not-normed		refuse_order_dependent
+CLINGO-035	limit	creation-order-not-carried		refuse_order_dependent
 CLINGO-036	refusal	sum-timeline-producer	attribute	sum_timeline_producer
 CLINGO-037	limit	date-arithmetic-range		translate_date_plus_months,day_number_fence
 CLINGO-038	refusal	creation-condition-reads-on-a-cycle	creation,node,writer	refuse_creation_reads_on_a_cycle

@@ -1623,8 +1623,8 @@ subselection the subselection read on that member, so a member the
 subselection drops in the model is no contributor. An unbound parameter of the period arithmetic,
 time-dependent or a scalar operand, faults (EF-014) under the same reach.
 Where that reach can hang on the order of the members a creation adds, which
-is not normed (RS ch. 3.9a/5.7a), the translation is refused (CLINGO-035), as
-for the unbound-parameter guard. Each operator applies its ch. 1.2
+RS ch. 5.7a norms and this encoding does not carry, the translation is refused
+(CLINGO-035, a limit), as for the unbound-parameter guard. Each operator applies its ch. 1.2
 empty rule per period: plus, min, maal and percentage van coalesce a leeg
 operand to 0 (`…_z`, `not …_d`), verminderd met only its right; a division
 writes 0 where the dividend is leeg, and where it is filled over a leeg

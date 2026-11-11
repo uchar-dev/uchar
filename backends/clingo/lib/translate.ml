@@ -348,9 +348,10 @@ let ms_of_lexeme s = match Value.datetime_of_lexeme s with Value.Date_time t -> 
 
 (* --- document lookups --------------------------------------------------- *)
 
-(* ch. 3.9a / 5.7a: the order the spec allows for the members of one fold's
-   range — the case's own links in their case order, and a member a creation
-   adds anywhere; its predicates are written once, when a guard first needs
+(* ch. 3.9a / 5.7a: the order of the members of one fold's range as this
+   encoding carries it — the case's own links in their case order, and a
+   member a creation adds anywhere, since the place ch. 5.7a gives it is not
+   carried; its predicates are written once, when a guard first needs
    them ([use_ro]) *)
 type range_order = {
   ro_id : int;
@@ -369,8 +370,8 @@ type range_order = {
 type part = { pt_id : int; pt_order : range_order; pt_parent : string; pt_member : string }
 
 (* an atom whose truth may hang on the order of the members a creation or a
-   fact creation adds to a fold's range, which the spec does not norm (ch.
-   3.9a/5.7a): the matrix reach of a quantifier fold over such a range, with
+   fact creation adds to a fold's range, which ch. 5.7a norms and this
+   encoding does not carry: the matrix reach of a quantifier fold over such a range, with
    what the refusal names; a Let barrier by the binder and the ask; a Let's
    demand by the binder. A guard that reads one is refused where the atom does
    hang on that order ([refuse_order_dependent]) *)
@@ -1255,9 +1256,10 @@ let other_day_test_reason =
    composition is carried on the bound day only)"
 
 (* the tail of the refusal of a fault whose reach may hang on the order of the
-   members a creation adds (CLINGO-035, [refuse_order_dependent]): the spec
-   does not norm that order, and ref's own order is no norm either *)
-let order_not_normed = "depends on the order of the members a creation adds, which is not normed (ch. 3.9a/5.7a)"
+   members a creation adds (CLINGO-035, [refuse_order_dependent]): ch. 5.7a
+   norms that order, and this encoding does not carry it *)
+let order_not_carried =
+  "depends on the order of the members a creation adds (ch. 5.7a), which this encoding does not carry"
 
 (* The code (RUNTIME-SEMANTICS ch. 5.7b, or this backend's register) of a
    viol/2 witness as the UNSAT diagnosis returns it ([Solve.diagnostic]:
@@ -1777,8 +1779,9 @@ let has_recursive_creation (doc : document) =
     doc.rule_groups
 
 (* does the document have a creation or a fact creation, which may add a
-   member to a range at run time? Such a member has no normed place in the
-   range (ch. 3.9a/5.7a); [created_fact_types] says which ranges *)
+   member to a range at run time? This encoding does not carry the place
+   ch. 5.7a gives such a member in the range; [created_fact_types] says which
+   ranges *)
 let doc_dynamic (doc : document) = doc.object_creations <> [] || doc.fact_creations <> []
 
 (* the predicates of a range order, written once:
@@ -1786,16 +1789,14 @@ let doc_dynamic (doc : document) = doc.object_creations <> [] || doc.fact_creati
    - roN_o(P,X,I): the case's own links, in their case order (ch. 5.7a: a list
      the case writes in its written order, a materialised one by ascending
      label; a multi-step range as its flat union, first reach first);
-   - roN_n(P,X,Y): X comes before Y in every order the spec allows — the
-     case's links among themselves. A link a creation or a fact creation adds
-     has no normed place, not among the case's links either, and in a
-     multi-step range a fact creation can move a case member forward through
-     the union, so there the case order holds only without fact creations;
-   There is no relation for ref's own order of the added links. That order
-   follows from how ref runs the creations, which the spec does not norm: ref
-   runs a fixpoint per stratum, so a creation for each Werf sits above a
-   creation that makes Werven, while one for each Droogdok (a subtype of Werf)
-   stays in stratum 0, and ref runs the later creation first.
+   - roN_n(P,X,Y): X comes before Y in every order this encoding cannot
+     exclude — the case's links among themselves. The place ch. 5.7a gives a
+     link a creation or a fact creation adds (after the case's links, in
+     instance order) is not carried, so such a link may stand anywhere, and
+     in a multi-step range a fact creation can move a case member forward
+     through the union, so there the case order holds only without fact
+     creations;
+   There is no relation for the order of the added links among themselves.
    Returns the prefix. *)
 let use_ro ctx (ro : range_order) =
   let p = Printf.sprintf "ro%d" ro.ro_id in
@@ -1839,10 +1840,10 @@ let unbound_param_reason name =
    may depend on that order: a quantifier fold, or a Let whose value waits for
    its binder or whose barrier may end it first *)
 let unbound_param_order_reason name what =
-  Printf.sprintf "parameter %S is unbound in this case, and whether %s reads it %s" name what order_not_normed
+  Printf.sprintf "parameter %S is unbound in this case, and whether %s reads it %s" name what order_not_carried
 
 (* that refusal for any other fault ref raises at a read, in ref's [reason] *)
-let reached_order_reason reason what = Printf.sprintf "%s; whether %s reaches it %s" reason what order_not_normed
+let reached_order_reason reason what = Printf.sprintf "%s; whether %s reaches it %s" reason what order_not_carried
 
 (* [reach_guard] is the fail-fast [reason] of a read whose reach is [body], and
    [unbound_param_guard] below that of a parameter the case does not bind.
@@ -1859,25 +1860,25 @@ let reached_order_reason reason what = Printf.sprintf "%s; whether %s reaches it
    witness is the guard's subject, so the diagnosis names who read it.
 
    Where the members a creation adds to a fold's range decide the read, their
-   order is not normed (ch. 3.9a/5.7a), and ref's own order is no norm either:
-   the guard would fire in one allowed order and not in another. Three kinds
+   order is the one ch. 5.7a norms, which this encoding does not carry: the
+   guard would fire in one order of those members and not in another. Three kinds
    of atom in [guard] can hang on that order ([order_source]): a quantifier
    fold's matrix reach over such a range ([emit_kv_reach]), a Let barrier that
    compares the members of such a range ([barred], [emit_barriers]), and the
    demand of a Let whose binder is read behind one of these
    ([note_binder_read]). A guard that reads one is refused at translation
    with CLINGO-035 ([refuse_order_dependent]), as the Drools backend refuses
-   the form (DROOLS-259), also where every allowed order reads the parameter
-   or none does.
+   the form (DROOLS-259), also where every order of those members reads the
+   parameter or none does.
 
    The guard is read at the fixpoint, as ref reads faults (RUNTIME-SEMANTICS
    ch. 5.7): a read ref reaches only in a pass before a creation or a rule of
    the same stratum wrote what its short circuit depends on fires nothing.
    Where the body is not exact otherwise, it errs in one of two directions.
    Loud: a Let barrier that a read of the binder in the matrix of a quantifier
-   fold over created members raises counts that read where every allowed order
-   reaches it, so the guard fires where the order ref keeps bars it (README
-   [L3]). Silent: the Let lowering keeps a value behind an enclosing need on a
+   fold over created members raises counts that read only where every order of
+   those members reaches it, so the guard fires where the order of ch. 5.7a
+   bars it (README [L3]). Silent: the Let lowering keeps a value behind an enclosing need on a
    path that does not read it, and the guard follows the lowering ([reach_at],
    README [S1]). *)
 let reach_guard ctx ~witness ~reason ?code ~(order_reason : string -> string) body =
@@ -2055,8 +2056,8 @@ let rel_parts li (s : site) =
    a per-member part "before" also compares members ([emit_barriers]), so the
    atom carries the member of every part between the Let and the node.
    Registers the ask, so [emit_barriers] writes its rules. Where a part ranges
-   over members a creation can add, "before" can hang on an order the spec does
-   not norm, and the atom is an [order_source] *)
+   over members a creation can add, "before" can hang on the order of ch. 5.7a,
+   which this encoding does not carry, and the atom is an [order_source] *)
 let barred ctx li (s : site) i =
   let parts = rel_parts li s in
   let ids = List.map (fun p -> p.pt_id) parts in
@@ -2265,9 +2266,9 @@ let rec order_dependent ctx ~seen atom =
             else None)
     ctx.order_atoms
 
-(* ch. 3.9a/5.7a: the order of the members a creation adds is not normed, so a
-   fault whose reach hangs on it would be raised in one allowed order and not
-   in another. The translation is refused at the first such guard, after
+(* ch. 5.7a norms the order of the members a creation adds, and this encoding
+   does not carry it, so a fault whose reach hangs on it would be raised in one
+   order of those members and not in another. The translation is refused at the first such guard, after
    [emit_barriers], when every read of every binder is known *)
 let refuse_order_dependent ctx =
   List.iter
@@ -2406,7 +2407,7 @@ let bound_role_term doc (rb : role_binding) = role_term ~fact_type:rb.rb_fact_ty
    range walked from every object the previous one reached, an object reached
    twice kept at its first reach (ch. 3.4b), and of those the objects of the
    element type (ch. 2.2). A member a creation adds is not among them; its
-   order is no norm (ch. 3.9a). *)
+   place in the order of ch. 5.7a is not carried. *)
 let fold_members ctx ?binding ?path (self : Uchar_ref.World.instance) ~element =
   let steps =
     match (path, binding) with
@@ -5013,11 +5014,12 @@ let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation 
    The members before X are counted over contributors only, so the filter
    keeps the order exactly, and the outcome is open or settled by the trigger
    table over them. [reach](S,X) counts every contributor that may come
-   before X in some order the spec allows — all but those the case order
-   ([use_ro]) puts after it — against N, the contributor count at the
-   fixpoint; open there, X is read in every allowed order. Where a creation
-   or a fact creation can add a member to the range, that order is not normed
-   and a guard that reads [reach] is refused ([reach_guard]). Stratified by
+   before X in some order this encoding cannot exclude — all but those the
+   case order ([use_ro]) puts after it — against N, the contributor count at
+   the fixpoint; open there, X is read in every such order. Where a creation
+   or a fact creation can add a member to the range, that order is the one of
+   ch. 5.7a, which this encoding does not carry, and a guard that reads
+   [reach] is refused ([reach_guard]). Stratified by
    construction: the helpers read the matrix and the range, and only the
    guards read them. *)
 let emit_kv_reach ctx ~reach ~subject ~subject_ot ~x ~join ~fatoms ~atoms ~quantifier_kind ~cutoff
@@ -8822,8 +8824,9 @@ and dk_duration ctx ~subject ~subject_ot ~kind ~absolute ~(node : expr) a b =
    The value rules do not wait for it: the stop is read off the matrix's own
    atoms, so a value behind it would close a loop through the fold's count.
    At rule level the reach is [], and a step there translates as before.
-   Where a creation can add a member, the stop hangs on an order the spec
-   does not norm (the atom says "in every allowed order"), and the fences keep
+   Where a creation can add a member, the stop hangs on the order of ch. 5.7a,
+   which this encoding does not carry (the atom says "in every order of those
+   members"), and the fences keep
    firing for every member, reached or not: loud, never silent (README
    [V5]). *)
 and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus ~datetime ~(node : expr) date_e dur_e =
@@ -9636,8 +9639,9 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          the fold's outcome is still open ([emit_kv_reach]). The guard in the
          matrix waits for that; the helpers exist only once such a guard asks,
          so a case that binds its parameters translates as before. Where a
-         creation can add a member, the order the guard depends on is not
-         normed, and the reach is an [order_source] *)
+         creation can add a member, the guard depends on the order of ch.
+         5.7a, which this encoding does not carry, and the reach is an
+         [order_source] *)
       let reach = ref None and matrix = ref None in
       let reached () =
         match !reach with

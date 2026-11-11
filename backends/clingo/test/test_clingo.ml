@@ -10879,9 +10879,9 @@ let () =
   both_answer ~name:"Let, lazy: k read in a nested matrix ends the Let before p (late matrix reach)" ~ir:late
     ~case_text:(pf_case ~instances:(loaded "8" "3") bonus_empty)
 
-(* members a creation adds to a fold's range have no normed order (ch.
-   3.9a/5.7a), and ref's own order is no norm either. Where the reach of the
-   unbound parameter's read may hang on that order, clingo refuses the
+(* members a creation adds to a fold's range stand in the order of ch. 5.7a,
+   which this encoding does not carry. Where the reach of the unbound
+   parameter's read may hang on that order, clingo refuses the
    translation with CLINGO-035, in a sentence that names the node whose read
    hangs on it — whether ref plays in its own order ([~ref_plays], its rows
    pinned) or faults. [by] is that node: a quantifier fold, or a Let whose
@@ -10899,7 +10899,7 @@ let named_refusal ~by ~ref_plays ~name ~ir ~case_text ~param =
     | exception Uchar_ref.Value.Fault { text = m; _ } ->
         check (name ^ ": ref faults (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle:(pf_reason param) m));
   let named = Printf.sprintf "parameter %S is unbound in this case, and whether %s" param by
-  and not_normed = "depends on the order of the members a creation adds, which is not normed (ch. 3.9a/5.7a)" in
+  and not_carried = "depends on the order of the members a creation adds (ch. 5.7a), which this encoding does not carry" in
   let label = name ^ ": clingo refuses with CLINGO-035" in
   match translate doc case with
   | (_ : string) -> check (label ^ " (it translated)") false
@@ -10907,7 +10907,7 @@ let named_refusal ~by ~ref_plays ~name ~ir ~case_text ~param =
       check
         (label ^ " (" ^ Uchar_ref.Value.report ~code m ^ ")")
         (code = Some "CLINGO-035" && Uchar_ref.Case.contains ~needle:named m
-        && Uchar_ref.Case.contains ~needle:not_normed m)
+        && Uchar_ref.Case.contains ~needle:not_carried m)
 
 let order_named = named_refusal ~by:"the quantifier fold" ~ref_plays:false
 
@@ -11922,8 +11922,8 @@ let () =
    keurtermijn ligt na de rekendatum]`, keurdag every day of 2026; W1 is not
    gekeurd, so the fold stops before W2, whose step from 2027-03-01 finds no
    keurdag. The same document with an object creation that adds nothing to the
-   range is README [V5]: the order of created members is not normed, so the
-   fences keep firing for every member there *)
+   range is README [V5]: the encoding does not carry the order of created
+   members (ch. 5.7a), so the fences keep firing for every member there *)
 let keurtermijn_doc ~creation =
   replace ~tok:"@CREATION@"
     ~by:
@@ -18660,14 +18660,15 @@ let () =
     ~case_text:(case "1" [ uitkomst "0"; pf_cons ])
 
 (* EF-037 where whether the read is reached hangs on the order of the members a
-   creation adds (ch. 3.9a/5.7a): the point read of a schuit's peil in the
+   creation adds (ch. 5.7a): the point read of a schuit's peil in the
    matrix "TEN MINSTE 1 [lengte > 5, de peil op 1 januari 2025 > 0]" of "TEN
    MINSTE 1 schuiten" of a Werf, its schuit S1 of the case with the peil as the
    asOfDate-bucket scalar, and one schuit created for every Werf. The read sits
    in the matrix of a fold over members a creation adds, so clingo refuses the
-   translation (CLINGO-035), whichever order ref keeps: S1 of 3 beside a
-   created 8, where the 8 settles the fold where it comes first and S1 does
-   not, so one allowed order reads S1's peil and another does not; S1 of 3
+   translation (CLINGO-035), whatever the order of ch. 5.7a gives: S1 of 3
+   beside a created 8, where the 8 settles the fold where it comes first and
+   S1 does not, so one order of those members reads S1's peil and another
+   does not; S1 of 3
    beside a created 3, where every order reads it; and S1 of 8, which settles
    the fold at itself, so no order reads it and ref plays. *)
 let () =
@@ -18727,8 +18728,8 @@ let () =
                ~needle:{|whether the quantifier fold "de schuiten" reaches it depends on the order of the members a creation adds|}
                m)
   in
-  (* one allowed order reads S1's peil; ref's own order reads S1, the case's
-     link, first *)
+  (* one order of those members reads S1's peil; the order of ch. 5.7a reads
+     S1, the case's link, first *)
   let some_order = doc "8" and case3 = case "3" keur in
   (let d, c = load_pair ~ir:some_order ~case_text:case3 in
    match ref_report d c with
@@ -18736,7 +18737,7 @@ let () =
    | exception Uchar_ref.Value.Fault { code; text = m; _ } ->
        check ("EF-037, some order: ref faults in its own order (" ^ m ^ ")") (code = Some "EF-037"));
   order_refused ~name:"EF-037, some order: clingo refuses with CLINGO-035" ~ir:some_order ~case_text:case3;
-  (* every allowed order reads S1's peil *)
+  (* every order of those members reads S1's peil *)
   let every_order = doc "3" in
   (let d, c = load_pair ~ir:every_order ~case_text:case3 in
    match ref_report d c with
@@ -18744,7 +18745,7 @@ let () =
    | exception Uchar_ref.Value.Fault { code; text = m; _ } ->
        check ("EF-037, every order: ref faults (" ^ m ^ ")") (code = Some "EF-037"));
   order_refused ~name:"EF-037, every order: clingo refuses with CLINGO-035" ~ir:every_order ~case_text:case3;
-  (* no allowed order reads S1's peil *)
+  (* no order of those members reads S1's peil *)
   ref_matches ~name:"EF-037, no order: S1 of 8 settles the fold at itself" ~ir:every_order ~case_text:(case "8" keur);
   order_refused ~name:"EF-037, no order: clingo refuses with CLINGO-035" ~ir:every_order ~case_text:(case "8" keur)
 
