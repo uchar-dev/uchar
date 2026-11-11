@@ -279,7 +279,13 @@
 #   - rule-annotations: every `statuteAnnotations` of a Rule stripped (those of a Default ride the name leg);
 #   - diagnostics: every entry of the root list `diagnostics` (required in the schema) keeps its place, its
 #     `message` gets the prefix "(exchanged) " and its `line` grows by one; the old message stays inside the
-#     new one, so every Unresolved snippet it accounted for it still accounts for (WF-113 (b)).
+#     new one, so every Unresolved snippet it accounted for it still accounts for (WF-113 (b));
+#   - source: every source record stripped, except on an Unresolved, where the schema requires it: there the
+#     snippet loses its last character, which stays inside every diagnostic message that accounted for the
+#     marker (WF-113 (b)). The Drools backend quotes a node's snippet in many refusal sentences ('{snippet}'),
+#     so a Drools status line on a copy without the snippet is compared after each quoted old snippet of the
+#     untouched line is rendered as the copy has it (same_drools_line); no other difference passes, and the
+#     report counts the lines that differed only there.
 # Every golden with at least one of these fields and with case files is replayed ONCE, against one
 # combined copy with every field changed at once, with the executors and the comparison of the origin
 # leg (ref and clingo per case against the pinned expectations; the two Drools branches print their own
@@ -935,7 +941,8 @@ import json, os, sys
 # The copies of the presentation leg (see the script header): one copy per field, the field alone
 # stripped or exchanged, and one combined copy with every field changed at once. Numbers keep their
 # lexemes, so a copy differs from the golden in its field(s) and in nothing else. Prints the number of
-# places each field changes, in the order of FIELDS.
+# places each field changes, in the order of FIELDS; source prints two, the records stripped and the
+# Unresolved snippets exchanged. With --same-line it compares two Drools status lines instead (same_line).
 
 
 class RawNum:
@@ -1039,15 +1046,76 @@ def diagnostics(doc):
     return n
 
 
-FIELDS = [("kind", kind), ("rule-presentation", rule_presentation), ("preposition", preposition),
-          ("percentage", percentage), ("rule-group", rule_group), ("rule-annotations", rule_annotations),
-          ("diagnostics", diagnostics)]
+# The snippets the source change moved, as (old, new): "" where the record was stripped, the shorter snippet where
+# an Unresolved kept it. The Drools comparison below renders them in the untouched status line.
+rendered = set()
 
-source, target = sys.argv[1], sys.argv[2]
+
+def source(doc):
+    # Optional on every node but an Unresolved, where the schema requires it (IR-SPEC ch. 4.4): there the snippet
+    # loses its last character, which stays inside every diagnostic message that contained the whole snippet, so
+    # WF-113 (b) still accounts for the marker, on this copy alone and beside the diagnostics exchange.
+    counts = [0, 0]
+
+    def walk(j):
+        if isinstance(j, dict):
+            if "source" in j:
+                record = j["source"]
+                if not (isinstance(record, dict) and isinstance(record.get("snippet"), str)):
+                    sys.exit("a source field that is no source record in %s: %r" % (source_path, record))
+                old = record["snippet"]
+                if j.get("node") == "Unresolved":
+                    if len(old) < 2:
+                        sys.exit("an Unresolved snippet too short to exchange in %s: %r" % (source_path, old))
+                    record["snippet"] = old[:-1]
+                    counts[1] += 1
+                else:
+                    del j["source"]
+                    counts[0] += 1
+                rendered.add((old, record["snippet"] if "source" in j else ""))
+            for v in j.values():
+                walk(v)
+        elif isinstance(j, list):
+            for v in j:
+                walk(v)
+
+    walk(doc)
+    return tuple(counts)
+
+
+# rule-group comes last: the groups it takes out carry source records, which the source change must count on the
+# combined copy as on its own.
+FIELDS = [("kind", kind), ("rule-presentation", rule_presentation), ("preposition", preposition),
+          ("percentage", percentage), ("rule-annotations", rule_annotations), ("diagnostics", diagnostics),
+          ("source", source), ("rule-group", rule_group)]
+
+
+def same_line(snippets, untouched, changed):
+    # The Drools backend quotes the snippet of a node in many refusal sentences ('{snippet}', '' without one). A
+    # line that differs only there is the same answer: each quoted old snippet of the untouched line is rendered as
+    # the copy has it, in one pass, and nothing else is touched. A snippet the copy moved to two different values is
+    # left alone, so such a line stays different.
+    import re
+    with open(snippets, encoding="utf-8") as fh:
+        pairs = json.load(fh)
+    to = {}
+    for old, new in pairs:
+        to.setdefault(old, set()).add(new)
+    to = {old: news.pop() for old, news in to.items() if len(news) == 1}
+    if not to:
+        return untouched == changed
+    pattern = re.compile("|".join(re.escape("'" + old + "'") for old in sorted(to, key=len, reverse=True)))
+    return pattern.sub(lambda m: "'" + to[m.group(0)[1:-1]] + "'", untouched) == changed
+
+
+if sys.argv[1] == "--same-line":
+    sys.exit(0 if same_line(sys.argv[2], sys.argv[3], sys.argv[4]) else 1)
+
+source_path, target = sys.argv[1], sys.argv[2]
 
 
 def load():
-    with open(source, encoding="utf-8") as fh:
+    with open(source_path, encoding="utf-8") as fh:
         return json.load(fh, parse_int=RawNum, parse_float=RawNum)
 
 
@@ -1057,13 +1125,17 @@ for name, change in FIELDS:
     single = load()
     n = change(single)
     if change(combined) != n:
-        sys.exit("the %s change counts differently on the combined copy of %s" % (name, source))
-    if n:
+        sys.exit("the %s change counts differently on the combined copy of %s" % (name, source_path))
+    n = n if isinstance(n, tuple) else (n,)
+    if any(n):
         os.makedirs(target, exist_ok=True)
         write_json(single, os.path.join(target, name + ".json"))
-    counts.append(n)
+    counts.extend(n)
 if any(counts):
     write_json(combined, os.path.join(target, "combined.json"))
+if rendered:
+    with open(os.path.join(target, "snippets.json"), "w", encoding="utf-8") as fh:
+        json.dump(sorted(rendered), fh, ensure_ascii=False)
 print(" ".join(str(n) for n in counts))
 PY
 
@@ -1167,7 +1239,9 @@ EXPECTED_MIN_ANNOTATIONS_STRIPPED=29 # 2026-10-21: measured 29 statuteAnnotation
 # The presentation leg's floors (see the script header), measured 2026-11-11 at the card core-and-presentation:
 # the goldens it replays, and per field the goldens that carry it and the places its copy changes, so a copier
 # that quietly changes less, or a field that leaves the corpus, fails by the name of the field.
-EXPECTED_MIN_PRESENTATION_GOLDENS=394       # 2026-11-11: measured 394 goldens with a presentation field and case files
+EXPECTED_MIN_PRESENTATION_GOLDENS=407       # 2026-11-11: measured 407 goldens with a presentation field and case files;
+                                            # RAISED from 394 when the source record joined the leg (11 goldens carry
+                                            # no other presentation field)
 EXPECTED_MIN_KIND_GOLDENS=211               # 2026-11-11: measured 211 goldens with a characteristic
 EXPECTED_MIN_KIND_ROTATED=438               # 2026-11-11: measured 438 characteristic kinds rotated
 EXPECTED_MIN_RULE_PRESENTATION_GOLDENS=342  # 2026-11-11: measured 342 goldens with a tagged rule version
@@ -1183,6 +1257,11 @@ EXPECTED_MIN_RULE_ANNOTATIONS_GOLDENS=11    # 2026-11-11: measured 11 goldens wi
 EXPECTED_MIN_RULE_ANNOTATIONS_STRIPPED=34   # 2026-11-11: measured 34 statuteAnnotations lists of rules stripped
 EXPECTED_MIN_DIAGNOSTICS_GOLDENS=3          # 2026-11-11: measured 3 goldens with a diagnostic
 EXPECTED_MIN_DIAGNOSTICS_EXCHANGED=5        # 2026-11-11: measured 5 diagnostics exchanged (message and line)
+# The source record, measured 2026-11-11 when it joined the leg: stripped where optional, the snippet exchanged on an
+# Unresolved, where the schema requires the record.
+EXPECTED_MIN_SOURCE_GOLDENS=402             # 2026-11-11: measured 402 goldens with a source record
+EXPECTED_MIN_SOURCE_STRIPPED=7021           # 2026-11-11: measured 7021 source records stripped
+EXPECTED_MIN_SOURCE_EXCHANGED=3             # 2026-11-11: measured 3 Unresolved snippets exchanged (unresolved-behind-a-failing-condition)
 
 status=0
 find corpus/golden -name ir.json 2>/dev/null | sort > "$LIST"
@@ -1478,6 +1557,14 @@ outcome() {   # <ref|clingo> <ir.json> <case>
 # golden (for ref and clingo the outcome of the case, for a Drools branch the status line). ref and clingo
 # are judged above against the pinned expectations, so the combined copy can fail where the untouched golden
 # fails too; then no field is assigned, and gates 5 and 6 are the ones that hold that case.
+# A Drools status line on a copy against the untouched one: equal, or equal once every snippet the source change
+# moved is rendered in the untouched line as the copy has it, inside the quotes Drools writes around a snippet
+# ('{snippet}' in its refusal sentences). Only those quoted snippets move; any other difference stays one.
+same_drools_line() {   # <copies' directory> <untouched line> <copy's line>
+    [ "$2" = "$3" ] && return 0
+    [ -f "$1/snippets.json" ] || return 1
+    python3 "$PRESENTER" --same-line "$1/snippets.json" "$2" "$3"
+}
 fields_alone() {   # <executor> <untouched ir.json> <copies' directory> <file of case paths> <exec-model line> <DRL-text line>
     fa_moved=
     case $1 in
@@ -1488,7 +1575,7 @@ fields_alone() {   # <executor> <untouched ir.json> <copies' directory> <file of
                 echo "  $1 gives the same outcome on the untouched golden: it misses the pinned outcome there too (gates 5 and 6), so no field is assigned"
                 return
             fi
-            for fa_field in kind rule-presentation preposition percentage rule-group rule-annotations diagnostics; do
+            for fa_field in kind rule-presentation preposition percentage rule-annotations diagnostics source rule-group; do
                 [ -f "$3/$fa_field.json" ] || continue
                 [ "$(outcome "$1" "$3/$fa_field.json" "$fa_case")" = "$fa_base" ] || fa_moved="$fa_moved $fa_field"
             done ;;
@@ -1498,10 +1585,14 @@ fields_alone() {   # <executor> <untouched ir.json> <copies' directory> <file of
             fa_dir=$3 fa_cases=$4
             set --
             while IFS= read -r fa_case; do set -- "$@" "$fa_case"; done < "$fa_cases"
-            for fa_field in kind rule-presentation preposition percentage rule-group rule-annotations diagnostics; do
+            for fa_field in kind rule-presentation preposition percentage rule-annotations diagnostics source rule-group; do
                 [ -f "$fa_dir/$fa_field.json" ] || continue
-                [ "$(java $PARALLEL_JVM_FLAGS -jar "$JAR" $fa_flag "$fa_dir/$fa_field.json" "$@" 2>/dev/null | tail -1)" = "$fa_line" ] \
-                    || fa_moved="$fa_moved $fa_field"
+                fa_copy=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" $fa_flag "$fa_dir/$fa_field.json" "$@" 2>/dev/null | tail -1)
+                if [ "$fa_field" = source ]; then
+                    same_drools_line "$fa_dir" "$fa_line" "$fa_copy" || fa_moved="$fa_moved $fa_field"
+                else
+                    [ "$fa_copy" = "$fa_line" ] || fa_moved="$fa_moved $fa_field"
+                fi
             done ;;
     esac
     if [ -n "$fa_moved" ]; then
@@ -1552,8 +1643,9 @@ leg_presentation() {
     n_rg_goldens=0 n_rg=0
     n_ra_goldens=0 n_ra=0
     n_diag_goldens=0 n_diag=0
+    n_src_goldens=0 n_src=0 n_srcx=0 n_rendered=0
     n_preplays=0
-    while read -r i dir nk nrp nprep npct nrg nra ndiag; do
+    while read -r i dir nk nrp nprep npct nra ndiag nsrc nsrcx nrg; do
         ident=${dir#corpus/golden/}
         ir=$dir/ir.json
         pdir="$WORK/presentation/$ident"
@@ -1565,6 +1657,7 @@ leg_presentation() {
         [ "$nrg" -eq 0 ] || { n_rg_goldens=$((n_rg_goldens + 1)); n_rg=$((n_rg + nrg)); }
         [ "$nra" -eq 0 ] || { n_ra_goldens=$((n_ra_goldens + 1)); n_ra=$((n_ra + nra)); }
         [ "$ndiag" -eq 0 ] || { n_diag_goldens=$((n_diag_goldens + 1)); n_diag=$((n_diag + ndiag)); }
+        [ $((nsrc + nsrcx)) -eq 0 ] || { n_src_goldens=$((n_src_goldens + 1)); n_src=$((n_src + nsrc)); n_srcx=$((n_srcx + nsrcx)); }
         c=0
         while IFS= read -r case; do
             c=$((c + 1))
@@ -1590,24 +1683,32 @@ leg_presentation() {
         if ! drools_status "$base_expr"; then
             no_status "$ident" presentation Drools "$base_expr"
         elif [ "$p" != "$base_expr" ]; then
-            printf 'FAIL: %s — Drools answers differently on the presentation copy:\n  untouched: %s\n  changed:   %s\n' \
-                "$ident" "$base_expr" "$p" >&2
-            fields_alone drools "$ir" "$pdir" "$pdir/cases" "$base_expr" "$drl_baseline" >&2
-            status=1
+            if same_drools_line "$pdir" "$base_expr" "$p"; then
+                n_rendered=$((n_rendered + 1))
+            else
+                printf 'FAIL: %s — Drools answers differently on the presentation copy:\n  untouched: %s\n  changed:   %s\n' \
+                    "$ident" "$base_expr" "$p" >&2
+                fields_alone drools "$ir" "$pdir" "$pdir/cases" "$base_expr" "$drl_baseline" >&2
+                status=1
+            fi
         fi
         if ! drools_status "$drl_baseline"; then
             no_status "$ident" presentation "the DRL-text branch" "$drl_baseline"
         elif [ "$dp" != "$drl_baseline" ]; then
-            printf 'FAIL: %s — the DRL-text branch answers differently on the presentation copy:\n  untouched: %s\n  changed:   %s\n' \
-                "$ident" "$drl_baseline" "$dp" >&2
-            fields_alone drl "$ir" "$pdir" "$pdir/cases" "$base_expr" "$drl_baseline" >&2
-            status=1
+            if same_drools_line "$pdir" "$drl_baseline" "$dp"; then
+                n_rendered=$((n_rendered + 1))
+            else
+                printf 'FAIL: %s — the DRL-text branch answers differently on the presentation copy:\n  untouched: %s\n  changed:   %s\n' \
+                    "$ident" "$drl_baseline" "$dp" >&2
+                fields_alone drl "$ir" "$pdir" "$pdir/cases" "$base_expr" "$drl_baseline" >&2
+                status=1
+            fi
         fi
     done < "$WORK/presentation.list"
-    printf 'leg_status=%s n_pgoldens=%s n_kind_goldens=%s n_kind=%s n_rp_goldens=%s n_rp=%s n_prep_goldens=%s n_prep=%s n_pct_goldens=%s n_pct=%s n_rg_goldens=%s n_rg=%s n_ra_goldens=%s n_ra=%s n_diag_goldens=%s n_diag=%s n_preplays=%s\n' \
+    printf 'leg_status=%s n_pgoldens=%s n_kind_goldens=%s n_kind=%s n_rp_goldens=%s n_rp=%s n_prep_goldens=%s n_prep=%s n_pct_goldens=%s n_pct=%s n_rg_goldens=%s n_rg=%s n_ra_goldens=%s n_ra=%s n_diag_goldens=%s n_diag=%s n_src_goldens=%s n_src=%s n_srcx=%s n_rendered=%s n_preplays=%s\n' \
         "$status" "$n_pgoldens" "$n_kind_goldens" "$n_kind" "$n_rp_goldens" "$n_rp" "$n_prep_goldens" "$n_prep" \
         "$n_pct_goldens" "$n_pct" "$n_rg_goldens" "$n_rg" "$n_ra_goldens" "$n_ra" \
-        "$n_diag_goldens" "$n_diag" "$n_preplays" > "$WORK/presentation.counts"
+        "$n_diag_goldens" "$n_diag" "$n_src_goldens" "$n_src" "$n_srcx" "$n_rendered" "$n_preplays" > "$WORK/presentation.counts"
 }
 
 # --- the five legs, side by side --------------------------------------------------------------------
@@ -1719,6 +1820,9 @@ presentation_floor "$n_ra_goldens" "$EXPECTED_MIN_RULE_ANNOTATIONS_GOLDENS" EXPE
 presentation_floor "$n_ra" "$EXPECTED_MIN_RULE_ANNOTATIONS_STRIPPED" EXPECTED_MIN_RULE_ANNOTATIONS_STRIPPED 'statuteAnnotations list(s) of rules stripped'
 presentation_floor "$n_diag_goldens" "$EXPECTED_MIN_DIAGNOSTICS_GOLDENS" EXPECTED_MIN_DIAGNOSTICS_GOLDENS 'golden(s) with a diagnostic'
 presentation_floor "$n_diag" "$EXPECTED_MIN_DIAGNOSTICS_EXCHANGED" EXPECTED_MIN_DIAGNOSTICS_EXCHANGED 'diagnostic(s) exchanged'
+presentation_floor "$n_src_goldens" "$EXPECTED_MIN_SOURCE_GOLDENS" EXPECTED_MIN_SOURCE_GOLDENS 'golden(s) with a source record'
+presentation_floor "$n_src" "$EXPECTED_MIN_SOURCE_STRIPPED" EXPECTED_MIN_SOURCE_STRIPPED 'source record(s) stripped'
+presentation_floor "$n_srcx" "$EXPECTED_MIN_SOURCE_EXCHANGED" EXPECTED_MIN_SOURCE_EXCHANGED 'Unresolved snippet(s) exchanged'
 
 # The survivor list, BOTH halves (the check-noop pattern): an entry whose golden is gone is stale,
 # and so is an entry that no longer diverges — it then admits an exception nothing needs any more,
@@ -1808,7 +1912,7 @@ if [ "$status" -eq 0 ]; then
     printf '  name leg: %s golden(s) with named or annotated defaults, floor %s; %s names stripped (floor %s), %s statuteAnnotations lists (floor %s); %s executor replays reproduce the untouched outcome\n' \
         "$n_ngoldens" "$EXPECTED_MIN_NAME_GOLDENS" "$n_n_stripped" "$EXPECTED_MIN_NAME_STRIPPED" \
         "$n_a_stripped" "$EXPECTED_MIN_ANNOTATIONS_STRIPPED" "$n_nreplays"
-    printf '  presentation leg: %s golden(s) on one combined copy each, floor %s; %s characteristic kinds rotated over %s goldens (floors %s, %s), %s rule presentation values exchanged over %s (floors %s, %s), %s prepositions stripped over %s (floors %s, %s), %s percentage tags stripped over %s (floors %s, %s), %s non-recursive rule groups stripped over %s (floors %s, %s), %s statuteAnnotations lists of rules stripped over %s (floors %s, %s), %s diagnostics exchanged over %s (floors %s, %s); %s executor replays reproduce the untouched outcome\n' \
+    printf '  presentation leg: %s golden(s) on one combined copy each, floor %s; %s characteristic kinds rotated over %s goldens (floors %s, %s), %s rule presentation values exchanged over %s (floors %s, %s), %s prepositions stripped over %s (floors %s, %s), %s percentage tags stripped over %s (floors %s, %s), %s non-recursive rule groups stripped over %s (floors %s, %s), %s statuteAnnotations lists of rules stripped over %s (floors %s, %s), %s diagnostics exchanged over %s (floors %s, %s), %s source records stripped and %s Unresolved snippets exchanged over %s (floors %s, %s, %s; %s Drools status lines differ only in a quoted snippet); %s executor replays reproduce the untouched outcome\n' \
         "$n_pgoldens" "$EXPECTED_MIN_PRESENTATION_GOLDENS" \
         "$n_kind" "$n_kind_goldens" "$EXPECTED_MIN_KIND_ROTATED" "$EXPECTED_MIN_KIND_GOLDENS" \
         "$n_rp" "$n_rp_goldens" "$EXPECTED_MIN_RULE_PRESENTATION_EXCHANGED" "$EXPECTED_MIN_RULE_PRESENTATION_GOLDENS" \
@@ -1816,7 +1920,9 @@ if [ "$status" -eq 0 ]; then
         "$n_pct" "$n_pct_goldens" "$EXPECTED_MIN_PERCENTAGE_STRIPPED" "$EXPECTED_MIN_PERCENTAGE_GOLDENS" \
         "$n_rg" "$n_rg_goldens" "$EXPECTED_MIN_RULE_GROUP_STRIPPED" "$EXPECTED_MIN_RULE_GROUP_GOLDENS" \
         "$n_ra" "$n_ra_goldens" "$EXPECTED_MIN_RULE_ANNOTATIONS_STRIPPED" "$EXPECTED_MIN_RULE_ANNOTATIONS_GOLDENS" \
-        "$n_diag" "$n_diag_goldens" "$EXPECTED_MIN_DIAGNOSTICS_EXCHANGED" "$EXPECTED_MIN_DIAGNOSTICS_GOLDENS" "$n_preplays"
+        "$n_diag" "$n_diag_goldens" "$EXPECTED_MIN_DIAGNOSTICS_EXCHANGED" "$EXPECTED_MIN_DIAGNOSTICS_GOLDENS" \
+        "$n_src" "$n_srcx" "$n_src_goldens" "$EXPECTED_MIN_SOURCE_STRIPPED" "$EXPECTED_MIN_SOURCE_EXCHANGED" \
+        "$EXPECTED_MIN_SOURCE_GOLDENS" "$n_rendered" "$n_preplays"
     printf '  corpus-wide accounting: %s unit-bearing annotations = %s twistable + %s exempt (the annotation IS the source) + %s without a convertible sister + %s at a §2.10 fourth-class branch (v0 derives no result unit) + %s outside the twist table\n' \
         "$n_unit" "$((n_unit - n_exempt - n_without_sister - n_uncovered))" \
         "$n_exempt" "$n_without_sister" "$n_fourth" "$n_unknown"
