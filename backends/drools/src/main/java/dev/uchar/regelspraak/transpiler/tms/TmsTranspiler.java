@@ -5269,8 +5269,7 @@ public final class TmsTranspiler {
         if (f.arguments().size() != 1)
             throw new Refusal(DroolsCode.SQUARE_ROOT_ARGUMENT_COUNT.reason("argumentCount", f.arguments().size(), "snippet", snippet(f.source())));
         Term radicand = value(f.arguments().get(0), reads);
-        int depositFlag = depositSite(f) ? reads.depositFlag() : -1;
-        return new Term.SquareRoot(StaticFunction.RADICAND, radicand, depositFlag, source(f.source()));
+        return new Term.SquareRoot(StaticFunction.RADICAND, radicand, reads.depositFlag(), source(f.source()));
     }
 
     /** A clamp (RUNTIME-SEMANTICS ch. 2.7): its base, then its minimum, then its maximum, in the order of ch. 5.11 and
