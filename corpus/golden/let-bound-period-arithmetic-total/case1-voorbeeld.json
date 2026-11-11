@@ -1,0 +1,75 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "strandloon": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2024-07-01",
+                "value": {
+                  "number": "100"
+                }
+              }
+            ]
+          },
+          "stormtoeslag": {
+            "timeline": [
+              {
+                "from": "2024-04-01",
+                "to": "2024-10-01",
+                "value": {
+                  "number": "25"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "loonproduct",
+      "timeline": [
+        {
+          "to": "2024-04-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-04-01",
+          "to": "2024-07-01",
+          "value": {
+            "number": "2500"
+          }
+        },
+        {
+          "from": "2024-07-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "jaarproduct",
+      "value": {
+        "number": "227500"
+      }
+    }
+  ]
+}

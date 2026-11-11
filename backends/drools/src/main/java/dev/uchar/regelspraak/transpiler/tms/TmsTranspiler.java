@@ -1857,10 +1857,11 @@ public final class TmsTranspiler {
                 source(value.source()));
     }
 
-    /** Whether a rule or an initialisation writes {@code member} by period arithmetic ({@link #isPeriodArithmetic}):
-     *  such a timeline divides all time, so the subject's own total reads it whole (RUNTIME-SEMANTICS ch. 3.6, 7.8). */
+    /** Whether a rule or an initialisation writes {@code member} by period arithmetic ({@link #isPeriodArithmetic}),
+     *  its value read through its {@link #letBound} producer as the writer reads it: such a timeline divides all time,
+     *  so the subject's own total reads it whole (RUNTIME-SEMANTICS ch. 3.6, 7.8). */
     private boolean periodArithmeticTarget(Member member) {
-        return timelineForms(member.key()).stream().anyMatch(x -> isPeriodArithmetic(x.value()));
+        return timelineForms(member.key()).stream().anyMatch(x -> isPeriodArithmetic(letBound(x.value())));
     }
 
     /**

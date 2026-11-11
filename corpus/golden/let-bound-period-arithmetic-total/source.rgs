@@ -1,0 +1,15 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het strandloon Numeriek (geheel getal) voor elke dag;
+    de stormtoeslag Numeriek (geheel getal) voor elke dag;
+    het loonproduct Numeriek (geheel getal) voor elke dag;
+    het jaarproduct Numeriek (geheel getal);
+
+Regel loonproduct van een jutter
+    geldig altijd
+        Het loonproduct van een Jutter moet berekend worden als het product.
+        Daarbij geldt:
+            het product is zijn strandloon maal zijn stormtoeslag.
+
+Regel jaarproduct van een jutter
+    geldig altijd
+        Het jaarproduct van een Jutter moet gesteld worden op het totaal van zijn loonproduct.

@@ -1,0 +1,143 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn strandloon maal zijn stormtoeslag
+function Object waarde_loonproductVanEenJutter(Object $tijdlijn_0, Object $onderwerp, Object $tijdlijn_2) {
+    try {
+        return PeriodArithmetic.written(PeriodArithmetic.times(ComputeHelpers.complete($tijdlijn_0, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"strandloon\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "strandloon", Boolean.TRUE), ComputeHelpers.complete($tijdlijn_2, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"stormtoeslag\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "stormtoeslag", Boolean.TRUE)), Integer.valueOf(0), "loonproduct");
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "loonproduct van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "strandloon", false), subject == $onderwerp, $tijdlijn_0 : value )
+    $stand_2 : State( attribute == ElementKey.of("jutter", "stormtoeslag", false), subject == $onderwerp, $tijdlijn_2 : value )
+then
+    Object v = waarde_loonproductVanEenJutter($tijdlijn_0, $onderwerp, $tijdlijn_2);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "loonproduct van een jutter", ComputeHelpers.designate(v, "loonproduct van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "loonproduct", false), v, "loonproduct van een jutter"));
+        }
+    }
+end
+
+// het totaal van zijn loonproduct
+function Object waarde_jaarproductVanEenJutter(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        return ComputeHelpers.fitTarget(PeriodArithmetic.total(ComputeHelpers.complete($tijdlijn_0, "the temporal total of \"loonproduct\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", "loonproduct", Boolean.TRUE), "DAG", null, null, "loonproduct", $onderwerp), Integer.valueOf(0), "jaarproduct", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "jaarproduct van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "loonproduct", false), subject == $onderwerp, $tijdlijn_0 : value )
+then
+    Object v = waarde_jaarproductVanEenJutter($tijdlijn_0, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "jaarproduct van een jutter", ComputeHelpers.designate(v, "jaarproduct van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "jaarproduct", false), v, "jaarproduct van een jutter"));
+        }
+    }
+end
+
+rule "stand Jutter.strandloon: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(strandloon)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "strandloon", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "strandloon", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "strandloon", false), $invoer));
+end
+
+rule "stand Jutter.strandloon: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(strandloon)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "strandloon", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "strandloon", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "strandloon", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+rule "stand Jutter.stormtoeslag: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(stormtoeslag)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "stormtoeslag", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "stormtoeslag", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "stormtoeslag", false), $invoer));
+end
+
+rule "stand Jutter.stormtoeslag: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(stormtoeslag)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "stormtoeslag", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "stormtoeslag", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "stormtoeslag", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+rule "stand Jutter.loonproduct: de vereniging van de schrijvers"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(loonproduct)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "loonproduct", false), subject == $onderwerp ) )
+    exists( $schrijver : Value( attribute == ElementKey.of("jutter", "loonproduct", false), subject == $onderwerp ) )
+    accumulate( $waarde : Value( attribute == ElementKey.of("jutter", "loonproduct", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+then
+    insertLogical(ComputeHelpers.writersUnion($onderwerp, ElementKey.of("jutter", "loonproduct", false), $waarden, $invoer, ComputeHelpers.list2("loonproduct van een jutter", "jaarproduct van een jutter")));
+end
+
+rule "stand Jutter.loonproduct: de vereniging van de schrijvers, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "loonproduct", false), subject == $onderwerp ) )
+    exists( $schrijver : Value( attribute == ElementKey.of("jutter", "loonproduct", false), subject == $onderwerp ) )
+    accumulate( $waarde : Value( attribute == ElementKey.of("jutter", "loonproduct", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+then
+    insertLogical(ComputeHelpers.writersUnion($onderwerp, ElementKey.of("jutter", "loonproduct", false), $waarden, null, ComputeHelpers.list2("loonproduct van een jutter", "jaarproduct van een jutter")));
+end
+
+rule "stand Jutter.loonproduct: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(loonproduct)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "loonproduct", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "loonproduct", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "loonproduct", false), $invoer));
+end
+
+rule "stand Jutter.loonproduct: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(loonproduct)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "loonproduct", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "loonproduct", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "loonproduct", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+

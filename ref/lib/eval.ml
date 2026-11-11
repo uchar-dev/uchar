@@ -1026,8 +1026,9 @@ let rec is_period_arithmetic (e : expr) =
 
 (* Whether a rule writes [attr] of [otype] as ch. 3.4/3.5 period arithmetic.
    Such a timeline divides all time, open segments included, so the subject's
-   own total reads it whole (ch. 3.6) instead of an asOfDate bucket. A static
-   property of the document, so the ASP backend asks the same question. *)
+   own total reads it whole (ch. 3.6) instead of an asOfDate bucket. The
+   value is read through its [let_bound_value], as the writer reads it. A
+   static property of the document, so the ASP backend asks the same question. *)
 let period_arithmetic_target (doc : document) ~otype ~attr =
   List.exists
     (fun (r : resolved_rule) ->
@@ -1036,7 +1037,9 @@ let period_arithmetic_target (doc : document) ~otype ~attr =
          | Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ }) ->
              norm a = norm attr && Ir_v0.Checks.populations_overlap doc ot otype
          | _ -> false)
-      && match r.value_node with Some v -> is_period_arithmetic v | None -> false)
+      && match r.value_node with
+         | Some v -> is_period_arithmetic (Ir_v0.Checks.let_bound_value v)
+         | None -> false)
     doc.resolved_rules
 
 (* The member an object creation's member assignment writes on the object it
