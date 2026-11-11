@@ -2154,19 +2154,17 @@ let () =
     ~code:("EF-037", [ ("attribute", "bewaartarief"); ("label", "V1") ])
     ()
 
-(* --- the die/dat FILTER on the horizon fence (card diedat-filter, 2026-09-16)
+(* --- the die/dat FILTER on the horizon fence
 
-   The fence walks the CONTRIBUTORS, and since this card that includes the
-   §5.6 subselection: a member the filter drops is not folded, so its missing
-   timeline is not this fold's business and the document translates (witness
+   The fence walks the CONTRIBUTORS, the §5.6 subselection included: a member
+   the filter drops is not folded, so its missing timeline is not this fold's
+   business and the document translates (witness
    `corpus/golden/jutterswet-keurlast`, which is where the ANSWERING side is
-   pinned).
-
-   Reading a filter at TRANSLATE time is only sound while its verdict can no
-   longer change, so two shapes keep the refusal. Neither can be a corpus
-   case: `ref` ANSWERS both documents, and gate 8 demands an observable fault
-   in BOTH executors. So the fault texts are pinned here, beside the
-   answering witness in the corpus. *)
+   pinned). The filter is read in the program, on the model, so a filter over
+   a value a rule writes, or of any shape the filter translation carries,
+   keeps a member exactly where ref keeps it. Both rows below keep the
+   member V1, which supplies an asOfDate-bucket scalar: ref faults EF-037 on
+   V1, and so does the program. *)
 let () =
   (* a literal one-shot replacement; this executable links no Str. It FAILS
      LOUDLY when the anchor is gone, so a reformat of [set_fold_doc] above
@@ -2203,11 +2201,23 @@ let () =
     {|{ "node": "CharacteristicCheck", "characteristic": "gekeurd", "negated": false,
         "source": { "snippet": "die gekeurd zijn" } }|}
   in
-  (* ROW 1 — the subselection reads a value a RULE writes. Its verdict is not
-     settled at translate time, so which members carry a horizon is not
-     either: a member wrongly dropped here contributes a silent 0 where ref
-     faults. ref answers this document (it evaluates the filter after the
-     rule has fired); this arm refuses it, naming the value and the writer. *)
+  let horizon_fault ~name ~ir =
+    let case_text = set_fold_case ~v1:v1_bucket_scalar in
+    let doc, case = load_pair ~ir ~case_text in
+    (match ref_report doc case with
+    | (_ : string list) -> check (name ^ ": ref faults on V1, found a model") false
+    | exception Uchar_ref.Value.Fault { code; text; _ } ->
+        check (name ^ ": ref faults EF-037 on V1 (" ^ text ^ ")")
+          (code = Some "EF-037" && Uchar_ref.Case.contains ~needle:{|over "V1"|} text));
+    faults_at_solving ~name ~ir ~case_text
+      ~needle:
+        "the per-element temporal fold of \"bewaartarief\" over \"V1\": the case supplies an \
+         asOfDate-bucket scalar"
+      ~code:("EF-037", [ ("attribute", "bewaartarief"); ("label", "V1") ])
+      ()
+  in
+  (* ROW 1 — the subselection reads a value a RULE writes: every Vondst is
+     gekeurd, so V1 is a contributor *)
   let derived_value =
     substitute (with_filter characteristic_filter)
       ~oud:{|"rules": [ { "node": "Rule", "name": "bewaarlast van een jutter",|}
@@ -2221,36 +2231,20 @@ let () =
       "validity": { "node": "Validity" } } ] },
     { "node": "Rule", "name": "bewaarlast van een jutter",|}
   in
-  faults_with ~name:"§7.1 horizon fence: a die/dat subselection a rule still DERIVES"
-    ~ir:derived_value
-    ~case_text:(set_fold_case ~v1:v1_bucket_scalar)
-    ~needle:
-      "the per-element temporal fold of \"bewaartarief\" carries a die/dat subselection over \
-       \"gekeurd\", which a rule DERIVES on \"Vondst\": its verdict is not settled at translate \
-       time, and a member without its own timeline hangs on the answer (ch. 3.4a/3.6)";
-  (* ROW 2 — a subselection shape the reads-walk cannot account for. An
-     unknown read is never taken for case data: the walk answers None and the
-     fence refuses rather than guessing which members it drops. A role
-     membership is the witness; ref evaluates it and answers. *)
+  horizon_fault ~name:"§7.1 horizon fence: a die/dat subselection a rule DERIVES" ~ir:derived_value;
+  (* ROW 2 — a role membership: V1 is a vondst of J1, so it is a
+     contributor *)
   let unreadable =
     with_filter
       {|{ "node": "RoleMembership", "factType": "bewaring", "role": "vondst",
         "negated": false, "source": { "snippet": "die vondst van een Jutter zijn" } }|}
   in
-  faults_with ~name:"§7.1 horizon fence: a die/dat subselection shape the reads-walk cannot account for"
-    ~ir:unreadable
-    ~case_text:(set_fold_case ~v1:v1_bucket_scalar)
-    ~needle:
-      "the per-element temporal fold of \"bewaartarief\" carries a die/dat subselection this \
-       translation cannot settle at translate time (an unrecognised read), and a member without \
-       its own timeline hangs on the answer (ch. 3.4a/3.6)";
+  horizon_fault ~name:"§7.1 horizon fence: a die/dat subselection over a role membership" ~ir:unreadable;
   (* and the boundary beside them: WITHOUT a suspect there is nothing hanging
-     on the filter's verdict, so neither refusal fires and the document is
-     answered — a fence that refused here would refuse documents it was never
-     about. *)
+     on the filter's verdict, and the document is answered *)
   ref_matches ~name:"§7.1 horizon fence: an underivable filter without a suspect is answered"
     ~ir:unreadable ~case_text:(set_fold_case ~v1:v1_timeline);
-  clingo_matches ~name:"§7.1 horizon fence: no suspect, no refusal (clingo)" ~ir:unreadable
+  clingo_matches ~name:"§7.1 horizon fence: no suspect, an answer (clingo)" ~ir:unreadable
     ~case_text:(set_fold_case ~v1:v1_timeline)
 
 (* --- the wrap fence counts TUPLES, not distinct spans ---------------------

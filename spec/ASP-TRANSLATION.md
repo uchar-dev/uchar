@@ -1608,7 +1608,9 @@ is the reach of the read — the condition that gates the rule, the reach of
 a default's consequence or of its justification and the initialisation
 default's input (S10), or inside a condition or a value the reach of the
 unbound-parameter guard (S5) — with the path or the set from the subject
-to the instance. An unbound parameter of the period arithmetic,
+to the instance, and for a member of a per-element total under a die/dat
+subselection the subselection read on that member, so a member the
+subselection drops in the model is no contributor. An unbound parameter of the period arithmetic,
 time-dependent or a scalar operand, faults (EF-014) under the same reach.
 Where that reach can hang on the order of the members a creation adds, which
 is not normed (RS ch. 3.9a/5.7a), the translation is refused (CLINGO-035), as

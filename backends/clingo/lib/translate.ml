@@ -5151,14 +5151,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             | Some _ -> fault "sum fallback other than 0 is not translated yet"
             | None -> false)
       in
-      (* the range: the node's binding, never derived (B12). The environment
-         carries the case's parameters because the horizon fence below EVALUATES a
-         die/dat filter here: without them a bound parameter in that filter
-         read as unbound, the member stayed a contributor, and the fence
-         refused a document ref plays (measured 2026-09-23). *)
-      let env =
-        { ctx.doc_env with params = ctx.case.params; param_tls = ctx.case.param_tls }
-      in
+      (* the range: the node's binding, never derived (B12) *)
+      let env = ctx.doc_env in
       let v = fresh ctx "S" in
       let g = fresh ctx "G" and x = fresh ctx "X" in
       let join = source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x in
@@ -5288,86 +5282,17 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
              without the element type refused by name on a plain Vondst
              carrying a bucket scalar.
 
-             The die/dat FILTER narrows the walk the third way (2026-09-16,
-             the residue the typerange card parked). ref settles the
-             contributors IN FULL — filter and all — before the integration
-             runs (ch. 3.4a), so a member the subselection drops is not
-             this fold's business either, and refusing on its missing
-             timeline refused a document ref and the Drools backend both
-             answer. Witnessed by `golden/jutterswet-keurlast`.
-
-             Evaluating a filter at TRANSLATION time is only sound while
-             its verdict can no longer change, so the drop is guarded by
-             exactly the question [derived_writer] above asks about the
-             folded attribute, asked about the names the filter READS: a
-             subselection over a value some rule, allocation or defaults
-             group still writes is refused under its OWN reason, because a
-             member wrongly dropped here contributes a silent 0 where ref
-             faults. [filter_reads] answers None for any shape it cannot
-             account for, so an unrecognised read is never taken for case
-             data.
-
-             Both of those refusals are asked ONLY of a SUSPECT — a member
-             with no timeline and a non-empty scalar. A subselection this
-             translation cannot settle is harmless while nothing hangs on
-             the answer, and refusing there would refuse documents the
-             fence was never about. *)
-          let derived_on name =
-            let related o = isa ctx o el || isa ctx el o in
-            if
-              List.exists
-                (fun (r : resolved_rule) ->
-                  match r.objective with
-                  | Some (Attribute_reference { attribute_ref = Some x; object_type = Some o; _ }) ->
-                      norm x = norm name && related o
-                  | _ -> false)
-                ctx.doc.resolved_rules
-            then Some "a rule"
-            else if
-              List.exists
-                (fun (v : resolved_allocation) ->
-                  (match v.target_attribute with Some x -> norm x = norm name | None -> false)
-                  && match v.objective_type_name with Some o -> related o | None -> false)
-                ctx.doc.allocations
-            then Some "an allocation (verdeling)"
-            else if
-              List.exists
-                (fun (l : prioritized_defaults) ->
-                  (match l.pd_attribute with Some x -> norm x = norm name | None -> false)
-                  && related l.pd_subject)
-                ctx.doc.prioritized_defaults
-            then Some "a defaults group"
-            else None
-          in
-          (* the ELEMENT-OWN names a subselection reads, or None for a shape
-             this walk cannot account for. A characteristic and an attribute
-             share one namespace here on purpose: a kenmerktoekenning writes
-             its characteristic through the same doel field a value rule
-             writes an attribute through, so ONE scan covers both. *)
-          let rec filter_reads (c : condition_expr) : string list option =
-            let operand = function
-              | None -> Some []
-              | Some (Literal _) | Some (Parameter_ref _) -> Some []
-              | Some
-                  (Attribute_reference
-                    { attribute_ref = Some n; navigation_bindings = None; _ })
-                ->
-                  Some [ n ]
-              | Some _ -> None
-            in
-            match c with
-            | Characteristic_check { characteristic = Some k; navigation_binding = None; holder = None; _ } -> Some [ k ]
-            | Comparison { left_side; right_side; time_period = None; _ } -> (
-                match (operand left_side, operand right_side) with
-                | Some l, Some r -> Some (l @ r)
-                | _ -> None)
-            | Compound { components; _ } ->
-                List.fold_left
-                  (fun acc c ->
-                    match (acc, filter_reads c) with Some a, Some b -> Some (a @ b) | _ -> None)
-                  (Some []) components
-            | _ -> None
-          in
+             The die/dat FILTER narrows the walk the third way. A
+             member the subselection drops is no contributor (ch. 3.4a),
+             so its missing timeline is not this fold's business either,
+             and refusing on it refused a document ref and the Drools
+             backend both answer (`golden/jutterswet-keurlast`). The filter
+             is read in the program: the guard of a suspect — a member
+             with no timeline and a non-empty scalar — carries the member's
+             range join and the filter's atoms for that member, so it fires
+             where the filter holds in the model. A filter that reads a
+             parameter the case does not bind holds nowhere, and the
+             fail-fast of that read fires instead. *)
           (* each subject with each of its suspect members *)
           let suspects =
             Eval.SMap.fold
@@ -5387,45 +5312,6 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                   @ acc)
               ctx.case.world.instances []
           in
-          let contributes =
-            match filter with
-            | _ when suspects = [] -> fun _ -> false
-            | None -> fun _ -> true
-            | Some c ->
-                (match filter_reads c with
-                | None ->
-                    fault
-                      "the per-element temporal fold of %S carries a die/dat subselection this \
-                       translation cannot settle at translate time (an unrecognised read), and a \
-                       member without its own timeline hangs on the answer (ch. 3.4a/3.6)"
-                      a
-                | Some names ->
-                    List.iter
-                      (fun n ->
-                        match derived_on n with
-                        | None -> ()
-                        | Some who ->
-                            fault
-                              "the per-element temporal fold of %S carries a die/dat subselection \
-                               over %S, which %s DERIVES on %S: its verdict is not settled at \
-                               translate time, and a member without its own timeline hangs on the \
-                               answer (ch. 3.4a/3.6)"
-                              a n who el)
-                      names);
-                fun (i : Uchar_ref.World.instance) ->
-                  (* the filter is READ here, for a suspect whose verdict the
-                     fold hangs on. Where it reads a parameter the case does
-                     not bind, the translation of the filter above carries the
-                     fail-fast of that read, which fires where the member's
-                     filter is reached, before ref integrates any member, so
-                     the member is no contributor here. A filter that cannot be
-                     evaluated otherwise keeps the member: the fence then
-                     fires, which is the conservative side — a member wrongly
-                     DROPPED would contribute a silent 0 *)
-                  (try Eval.eval_cond env ctx.case.world i ~err:(fun _ -> ()) c with
-                   | Value.Fault { code = Some "EF-014"; _ } -> false
-                   | Value.Fault _ -> true)
-          in
           (* a contributing suspect faults where its subject's fold is reached *)
           bucket_scalar_fault ctx
             ~reach:(fun () -> rule_reach ctx ~subject ~subject_ot e)
@@ -5435,9 +5321,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                 "the per-element temporal fold of %S over %S: the case supplies an asOfDate-bucket scalar, which \
                  carries no period of its own; a set fold needs each member's own timeline (ch. 3.6/§7.1, ch. 8.4)"
                 a label)
-            (List.filter_map
+            (List.map
                (fun ((self : Uchar_ref.World.instance), (i : Uchar_ref.World.instance)) ->
-                 if contributes i then Some (i, [ Printf.sprintf "%s = %s" subject (str_raw self.label) ]) else None)
+                 let on_member =
+                   match filter with
+                   | None -> []
+                   | Some _ -> (Printf.sprintf "%s = %s" x (str_raw i.label) :: join) @ fatoms
+                 in
+                 (i, Printf.sprintf "%s = %s" subject (str_raw self.label) :: on_member))
                suspects);
           (* one entry PER (member, segment) — the multiplicity is
              load-bearing for the fence below, which must count the
