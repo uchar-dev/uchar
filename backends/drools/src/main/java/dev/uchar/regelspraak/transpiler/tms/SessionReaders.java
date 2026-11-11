@@ -189,8 +189,7 @@ final class SessionReaders {
                 Settling settled = facts == null ? null : s.general() ? settledInGeneralForm(name, s, subject, facts)
                         : settledInSimpleForm(name, s, subject, facts, written.getOrDefault(name, Map.of()),
                                 misfits.getOrDefault(name, Map.of()));
-                List<List<String>> chains = rootChains.computeIfAbsent(name, n -> s.roots().stream()
-                        .map(chain -> chain.stream().map(k -> analysis.pointerOf(k.d())).toList()).toList());
+                List<List<String>> chains = rootChains.computeIfAbsent(name, n -> rootChains(s));
                 out.add(new DefaultsDecision(subject, s.member().name(), s.member().characteristic(), chains,
                         settled == null ? null : atRest(settled.decider()),
                         settled == null || settled.conflict() == null ? null : new DefaultsDecision.Conflict(
@@ -288,13 +287,17 @@ final class SessionReaders {
                     continue;
                 }
                 StackLayout s = layouts.get(stack);
-                List<List<String>> chains = s.roots().stream()
-                        .map(chain -> chain.stream().map(k -> analysis.pointerOf(k.d())).toList()).toList();
-                out.add(new PeriodDecisions(subject, m.name(), chains, stackSpans(stack, s, subject,
+                out.add(new PeriodDecisions(subject, m.name(), rootChains(s), stackSpans(stack, s, subject,
                         outcomes.getOrDefault(stack, Map.of()).getOrDefault(subject, List.of()), values, input,
                         faulted.getOrDefault(stack, Set.of()).contains(subject))));
             }
         return out;
+    }
+
+    /** The pointers of the defaults at the root of the stack laid out as {@code s}, per group, highest first
+     *  ({@link DefaultsDecision#rootChains}). */
+    private List<List<String>> rootChains(StackLayout s) {
+        return s.roots().stream().map(chain -> chain.stream().map(k -> analysis.pointerOf(k.d())).toList()).toList();
     }
 
     /** The spans of the member {@code m} on a timeline that computing rules write on one object: per day the rules
