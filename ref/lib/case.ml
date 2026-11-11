@@ -624,9 +624,9 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
         if not (role_declared doc key) then undeclared key "role key %S names no declared role" key;
         let role = resolve_role doc ~otype:otype_name ~key in
         (* one role, one key: a split delivery (the same role under its
-           name AND its plural) would make the first-non-empty-key
-           readers see only half the links — refuse it at load time,
-           never read it silently wrong *)
+           name AND its plural) would land two lists on the one key of the
+           relation (World.link_key), one replacing the other — refuse it
+           at load time, never read it silently wrong *)
         let role_id = Option.value role.role_identifier ~default:key in
         (match List.assoc_opt (norm role_id) seen with
         | Some prev ->
