@@ -7898,7 +7898,16 @@ and translate_division ?(root = true) ctx ~subject ~subject_ot ~left_side ~right
   numeric_ok ctx (Some right_side);
   quotient_units_ok ctx left_side right_side;
   let bl, tl, sl = expr_term ctx ~subject ~subject_ot left_side in
-  let br, tr, sr = expr_term ctx ~subject ~subject_ot right_side in
+  (* an empty dividend decides the quotient before the divisor is read
+     (RUNTIME-SEMANTICS ch. 1.4 point 4), so every fault and deposit the
+     divisor raises fires only where the dividend is filled *)
+  let br, tr, sr =
+    let saved_g = ctx.rule_guard in
+    ctx.rule_guard <- saved_g @ bl;
+    Fun.protect
+      ~finally:(fun () -> ctx.rule_guard <- saved_g)
+      (fun () -> expr_term ctx ~subject ~subject_ot right_side)
+  in
   (* the numeric_ok ctx pair reads the wire `type`; both scales become gcd
      operands and divisors below, where a 0 is the crash, not a fault *)
   let sl = numeric_scale ~what:"a division dividend" sl in

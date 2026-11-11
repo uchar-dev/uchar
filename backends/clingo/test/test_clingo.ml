@@ -18837,6 +18837,61 @@ let () =
     ~case_text:(read "corpus/golden/jutterswet-meldtermijnen/case1-eigen-termijnen.json")
     ~needle:"normalises to \"not\", a keyword of ASP and no functor symbol"
 
+(* An empty dividend decides the quotient before the divisor is read
+   (RUNTIME-SEMANTICS ch. 1.4 point 4): leeg ÷ (90 ÷ 0) is 0, and the division
+   by zero inside the divisor deposits nothing. With the dividend filled the
+   divisor is read, and its EF-005 stands beside the outer EF-031. *)
+let empty_dividend_doc =
+  let attr name datatype = Printf.sprintf {|{ "node": "Attribute", "name": "%s", "datatype": %s }|} name datatype in
+  let whole = {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }|}
+  and unbounded = {|{ "node": "Number", "whole": false, "decimals": 0, "sign": "unspecified" }|} in
+  let read name = Printf.sprintf {|{ "node": "AttributeReference", "attribute": "%s", "subjectType": "Vondst" }|} name in
+  Printf.sprintf
+    {|{ "format": "uchar-ir-v1",
+  "model": { "objectTypes": [ { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
+      "attributes": [ %s, %s, %s, %s ], "characteristics": [] } ],
+    "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [],
+    "dayKinds": [] },
+  "rules": { "rules": [ { "node": "Rule", "name": "loon van een vondst", "versions": [ {
+      "validity": { "node": "Validity" },
+      "target": { "node": "AttributeReference", "attribute": "loon", "subjectType": "Vondst",
+                  "source": { "snippet": "Het loon van een Vondst" } },
+      "value": { "node": "Binary", "op": "dividedBy", "left": %s,
+                 "right": { "node": "Binary", "op": "dividedBy", "left": %s, "right": %s, "type": %s },
+                 "type": %s },
+      "initialisation": false, "presentation": "calculation" } ] } ],
+    "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [], "uniquenesses": [],
+    "factCreations": [], "startPointDeterminations": [], "ruleGroups": [] },
+  "diagnostics": [] }|}
+    (attr "bonus" whole) (attr "opbrengst" whole) (attr "aandeel" whole) (attr "loon" unbounded) (read "bonus")
+    (read "opbrengst") (read "aandeel") unbounded unbounded
+
+let empty_dividend_case ~attributes ~expected =
+  Printf.sprintf
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "V1", "objectType": "Vondst", "attributes": { %s },
+      "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ %s ] }|}
+    attributes expected
+
+let () =
+  let name = "an empty dividend does not read its divisor" in
+  verifier_clean ~name ~ir:empty_dividend_doc;
+  clingo_matches ~name ~ir:empty_dividend_doc
+    ~case_text:
+      (empty_dividend_case ~attributes:{|"opbrengst": { "number": "90" }, "aandeel": { "number": "0" }|}
+         ~expected:
+           {|{ "kind": "attributeValue", "label": "V1", "attribute": "loon", "value": { "number": "0" } },
+             { "kind": "consistent" }|});
+  clingo_matches ~name:"a filled dividend reads its divisor, which divides by zero" ~ir:empty_dividend_doc
+    ~case_text:
+      (empty_dividend_case
+         ~attributes:{|"bonus": { "number": "60" }, "opbrengst": { "number": "90" }, "aandeel": { "number": "0" }|}
+         ~expected:
+           {|{ "kind": "attributeEmpty", "label": "V1", "attribute": "loon" },
+             { "kind": "inconsistent", "rule": "loon van een vondst", "label": "V1", "code": "EF-005" },
+             { "kind": "inconsistent", "rule": "loon van een vondst", "label": "V1", "code": "EF-031" }|})
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
