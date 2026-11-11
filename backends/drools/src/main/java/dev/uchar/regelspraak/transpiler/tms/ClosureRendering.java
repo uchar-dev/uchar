@@ -428,7 +428,6 @@ final class ClosureRendering {
             case TEXT_EQUAL -> x -> ComputeHelpers.textEqual(x[0], x[1], (Boolean) x[2]);
             case RS_ENUM_NAME -> x -> RegelSpraakRuntime.rsEnumNaam(x[0]);
             case EMPTY_TEST -> x -> ComputeHelpers.emptyTest(x[0], (Boolean) x[1]);
-            case ELEVEN_TEST -> x -> ComputeHelpers.elevenTest(x[0], (Boolean) x[1]);
             case NUMERIEK_MET_EXACT -> x -> ComputeHelpers.exactDigits(x[0], (Integer) x[1], (Boolean) x[2]);
             case KENMERK -> x -> ComputeHelpers.characteristic(x[0], (Boolean) x[1]);
             case SAME_OBJECT -> x -> ComputeHelpers.sameObject(x[0], x[1], (Boolean) x[2]);

@@ -2023,6 +2023,9 @@ public final class IrLoader {
             + " ONE member, not a quantification over the set — a fold over it has no reading";
     /** WF-113 (b)'s arm for a marker without a source, the verifier's sentence: the executors refuse such a marker at
      *  load, as the shared loader does when it reads for an executor. */
+    /** "is gevuurd" has no norm and no wire form: the rule-status check reads only the inconsistency channel. */
+    static final String FIRED_CHECK = "inconsistent is false: the rule-status check reads only the inconsistency channel";
+
     static final String MARKER_WITHOUT_SOURCE = "Unresolved marker without a source: no diagnostic message can contain it,"
             + " so it cannot be accounted for";
 
@@ -2366,7 +2369,10 @@ public final class IrLoader {
                 anchorValue(n, p);
                 yield new Condition.IdentityCheck(truth(n, p, "negated"), source(n));
             }
-            case "Regelversie" -> new Condition.RuleStatusCheck(text(n, "regel"), bool(n, "inconsistent"), source(n));
+            case "Regelversie" -> {
+                if (!bool(n, "inconsistent")) throw new DocumentError(pathOf(n) + "/inconsistent", FIRED_CHECK);
+                yield new Condition.RuleStatusCheck(text(n, "regel"), source(n));
+            }
             case "Unresolved" -> {
                 if (!n.has("source")) throw new DocumentError(pathOf(n), MARKER_WITHOUT_SOURCE);
                 yield new Condition.Unresolved(source(n), null);   // frontend-internal field, absent from the wire

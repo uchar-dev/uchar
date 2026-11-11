@@ -750,6 +750,26 @@ let () =
   refused "WV-2.5-an-executor-refuses-a-factor-with-exponent-0" "corpus/negative/wf124-exponent-zero/ir.json"
     "/exponent" "has exponent 0"
 
+(* "regelversie X is gevuurd" has no norm and no wire form: the shared loader
+   refuses a rule-status check with inconsistent false at the field, for every
+   reader; "is inconsistent" loads. *)
+let () =
+  let check_node inconsistent =
+    Yojson.Safe.from_string
+      (Printf.sprintf
+         {|{"node":"Regelversie","regel":"r","inconsistent":%b,"source":{"snippet":"regelversie r"}}|}
+         inconsistent)
+  in
+  check "IR-4.5-a-fired-rule-version-is-no-wire-form"
+    (match Ir_v0.Loader.condition_expr "/c" (check_node false) with
+    | _ -> false
+    | exception Ir_v0.Loader.Error (path, m) ->
+        path = "/c/inconsistent" && substring m "reads only the inconsistency channel");
+  check "IR-4.5-an-inconsistent-rule-version-loads"
+    (match Ir_v0.Loader.condition_expr "/c" (check_node true) with
+    | Ir_v0.Ast.Rule_status_check { rule_def = Some "r"; _ } -> true
+    | _ -> false)
+
 (* A half-filled conversion pair is a fault of the unit it stands on, wherever a
    product meets it (WF-092; ch. 2.5, Restatement). *)
 let () =
@@ -1749,7 +1769,7 @@ let () =
           rr "verscherpt toezicht" Characteristic_attribution
             (Some (aref "onder verscherpt toezicht" "Dossier"))
             (Some (litv "waar" Boolean))
-            (Some (Rule_status_check { rule_def = Some "controle saldo"; inconsistent = true; source_name = None }));
+            (Some (Rule_status_check { rule_def = Some "controle saldo"; source_name = None }));
         ];
     }
   in

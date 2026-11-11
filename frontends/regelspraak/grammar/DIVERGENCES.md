@@ -18,7 +18,7 @@ the main sources point here for text this register does not carry: the sections
 `'§9.10 recursie / regelgroep'`, `'negated membership'` and
 `"concatenatie as a standalone value"`, and the untitled topics at the other
 sites: the unit checks of the aggregations, the begrenzing bound, the period
-lowering, the "is gevuurd" predicate, the mixed date precision, the best-effort
+lowering, the mixed date precision, the best-effort
 role plural, and the `Regelgroep` extension itself beyond the introduction
 above. At each site the comment states its own rationale, and a card that
 touches such a construct writes its section here. Three pointers land on text:
@@ -3956,6 +3956,22 @@ binding of a fact type with two roles) have no reader either, because no
 document carries them. The same holds for the refusals of the scenariotoetsen
 extension (its section above): no reader refuses a case file for them, because a
 case file that carries such a defect is never written.
+
+---
+
+## §8.1.3, §8.1.9, §13.4.17.21–.24 Forms without a norm — a marker on the wire
+
+Three forms of the source language have no norm in the IR: the eleven test
+("voldoet aan de elfproef"), the hour, minute, second and millisecond of a
+date-time ("het uur uit …" and its sisters), and "regelversie X is gevuurd".
+The wire has no node or value for them, so each sentence is written as an
+Unresolved marker with the RGS-092 warning that names the form (WF-113): the
+document stays valid, an executor that reaches the marker faults with EF-019,
+and one that does not reach it is unaffected. The source language's typing
+still holds: an eleven test over a value that is neither text nor a whole
+unitless number (RGS-290) and an hour of a "Datum in dagen" (RGS-083) are
+refused as before. "Regelversie X is inconsistent" is normed (RUNTIME-SEMANTICS
+ch. 5.6) and stays a `Regelversie` node.
 
 ---
 

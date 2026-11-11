@@ -47,11 +47,11 @@ public sealed interface Condition {
     /** §5.11-5.16 one-sided predicates. {@code dayKind} names the §3.12 dagsoort for a
      *  {@link PredicateKind#DAGSOORT} control ("&lt;datum&gt; is een kerstdag", §8.1.5) — the date is
      *  tested against that dagsoort's §9.8 definitie predicate; it is null for every other soort.
-     *  {@code negation} marks the §8.1 Tabel 16 NEGATED form of the ELFPROEF / NUMERIEK_MET_EXACT predicates
-     *  ("voldoet NIET aan de elfproef", "is NIET numeriek met exact N cijfers"); false for the others.
+     *  {@code negation} marks the §8.1 Tabel 16 NEGATED form of the NUMERIEK_MET_EXACT predicate
+     *  ("is NIET numeriek met exact N cijfers"); false for the others.
      *  {@code digits} is the §8.1.4 digit-count N of the NUMERIEK_MET_EXACT predicate ("numeriek met exact N
      *  cijfers" — the §13.4.15.84 &lt;geheelgetal&gt;); 0 for every other soort. */
-    enum PredicateKind { LEEG, GEVULD, ELFPROEF, NUMERIEK_MET_EXACT, DAGSOORT }
+    enum PredicateKind { LEEG, GEVULD, NUMERIEK_MET_EXACT, DAGSOORT }
     record Predicate(PredicateKind kind, Expr operand, String dayKind, boolean negation, int digits, WholePeriod period, Source source) implements Condition {
         public Predicate(PredicateKind kind, Expr operand, String dayKind, WholePeriod period, Source source) { this(kind, operand, dayKind, false, 0, period, source); }
         public Predicate(PredicateKind kind, Expr operand, boolean negation, WholePeriod period, Source source) { this(kind, operand, null, negation, 0, period, source); }
@@ -117,21 +117,6 @@ public sealed interface Condition {
         if (c instanceof Compound s) return s.components().stream().anyMatch(Condition::containsTimeWindow);
         if (c instanceof QuantifierFold k) return containsTimeWindow(k.filter()) || containsTimeWindow(k.test());
         return false;
-    }
-
-    /** §8.1.9 collect the rule names referenced by a "regelversie &lt;X&gt; is gevuurd" predicate inside
-     *  {@code c} into {@code result} — the gevuurd (NOT inconsistent) arm of {@link RuleStatusCheck}, recursing
-     *  through compound children. The transpilers walk every construct's voorwaarde with this FIRST, so
-     *  only a rule whose fired-status is actually referenced emits the {@code RuleFired} marker (§8.1.9
-     *  opt-in emission — no fact-base bloat from markers no rule reads). Null-safe. */
-    static void collectFiredReferences(Condition c, java.util.Set<String> result) {
-        if (c == null) return;
-        if (c instanceof RuleStatusCheck rv && !rv.inconsistent() && rv.rule() != null) result.add(rv.rule());
-        if (c instanceof Compound s) s.components().forEach(d -> collectFiredReferences(d, result));
-        if (c instanceof QuantifierFold k) {
-            collectFiredReferences(k.filter(), result);
-            collectFiredReferences(k.test(), result);
-        }
     }
 
     /** Whether any operand {@link Expr} inside {@code c} matches {@code test} — comparison sides, the
@@ -204,15 +189,12 @@ public sealed interface Condition {
         }
     }
 
-    /** §8.1.9 / §13.4.15.66 regelpredicaat: "regelversie &lt;regel&gt; [(&lt;geldigheid&gt;)] is gevuurd |
-     *  is inconsistent" — a control on the EXECUTION of the named rule, not on a subject. {@code rule} is
-     *  the referenced rule's name (the parenthesised versie-aanduiding is parsed but kept only in
-     *  {@code source}: the §9.5 Inconsistentie channel is already geldigheids-window-gated at insert time).
-     *  {@code inconsistent} distinguishes "is inconsistent" (reads the §9.5 Inconsistentie flag facts of a
-     *  consistentie/uniciteit/verdeling rule — an exists-join) from "is gevuurd" (whether the named rule's
-     *  voorwaardendeel was satisfied — no observable runtime record, so both back-ends decline it
-     *  symmetrically; see grammar/DIVERGENCES.md). */
-    record RuleStatusCheck(String rule, boolean inconsistent, Source source) implements Condition {}
+    /** §8.1.9 / §13.4.15.66 regelpredicaat: "regelversie &lt;regel&gt; [(&lt;geldigheid&gt;)] is inconsistent" —
+     *  true iff the §9.5 inconsistency channel holds a fact of the named rule (RUNTIME-SEMANTICS ch. 5.6), not a
+     *  test on a subject. {@code rule} is the referenced rule's name (the parenthesised versie-aanduiding is parsed
+     *  but kept only in {@code source}: the channel is already geldigheids-window-gated at insert time). The sister
+     *  form "is gevuurd" has no norm and is never this record: the frontend writes it as an Unresolved marker. */
+    record RuleStatusCheck(String rule, Source source) implements Condition {}
 
     /** IR-SPEC ch. 4.5 / 4.1a, WF-122: the identity check of the subject of the context, the element of a fold's
      *  filter or of a quantifier fold's filter or test, against the subject of the form ("hij is niet de Vergunning

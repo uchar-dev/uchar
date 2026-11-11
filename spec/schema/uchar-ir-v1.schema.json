@@ -990,10 +990,6 @@
             "yearOf",
             "monthOf",
             "dayOf",
-            "hourOf",
-            "minuteOf",
-            "secondOf",
-            "millisecondOf",
             "dateWith",
             "dateTimeWith"
           ]
@@ -2197,7 +2193,6 @@
           "enum": [
             "empty",
             "filled",
-            "elevenTest",
             "exactDigits",
             "dayKind"
           ]
@@ -2527,13 +2522,13 @@
           ]
         },
         "inconsistent": {
-          "type": "boolean"
+          "const": true
         },
         "source": {
           "$ref": "#/$defs/sourceReference"
         }
       },
-      "description": "The rule-status check (IR-SPEC ch. 4.5, RuleStatusCheck): the wire keeps its v0 node Regelversie with its v0 fields regel and inconsistent until the v1 form lands (B25); its source text is in 'source' since L5."
+      "description": "The rule-status check (IR-SPEC ch. 4.5, RuleStatusCheck), 'regelversie X is inconsistent': true iff the inconsistency channel holds a fact of the rule 'regel' (RUNTIME-SEMANTICS ch. 5.6). The wire keeps its v0 node Regelversie with its v0 fields regel and inconsistent (B25); 'inconsistent' is always true, since 'is gevuurd' has no norm and no wire form. Its source text is in 'source' since L5."
     },
     "ConditionUnresolved": {
       "type": "object",

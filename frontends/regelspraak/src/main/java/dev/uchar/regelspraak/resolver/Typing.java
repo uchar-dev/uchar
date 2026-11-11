@@ -323,7 +323,7 @@ public final class Typing {
                     operand.isText()
                         || (operand instanceof Datatype.Numeric n && n.wholeNumber() && !n.hasUnit())
                     ? Result.ok(new Datatype.BooleanType())
-                    : Result.error(new Coded("RGS-290", params("kind", kindWord(operand))));   // the verifier's WF-036
+                    : Result.error(new Coded("RGS-290", params("kind", kindWord(operand))));
             case NUMERIEK_MET_EXACT -> operand.isText()                 // §5.16 Tekst only
                     ? Result.ok(new Datatype.BooleanType())
                     : Result.error(new Coded("RGS-291", params("kind", kindWord(operand))));

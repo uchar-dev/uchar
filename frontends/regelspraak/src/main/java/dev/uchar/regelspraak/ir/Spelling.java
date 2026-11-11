@@ -262,10 +262,6 @@ public final class Spelling {
             .row(Expr.FunctionKind.JAAR_UIT, "yearOf")
             .row(Expr.FunctionKind.MAAND_UIT, "monthOf")
             .row(Expr.FunctionKind.DAG_UIT, "dayOf")
-            .row(Expr.FunctionKind.UUR_UIT, "hourOf")
-            .row(Expr.FunctionKind.MINUUT_UIT, "minuteOf")
-            .row(Expr.FunctionKind.SECONDE_UIT, "secondOf")
-            .row(Expr.FunctionKind.MILLISECONDE_UIT, "millisecondOf")
             .row(Expr.FunctionKind.DATUM_MET, "dateWith")
             .row(Expr.FunctionKind.DATUMTIJD_MET, "dateTimeWith");
 
@@ -281,7 +277,6 @@ public final class Spelling {
             "Predicate.kind", "Predicate.kind")
             .row(Condition.PredicateKind.LEEG, "empty")
             .row(Condition.PredicateKind.GEVULD, "filled")
-            .row(Condition.PredicateKind.ELFPROEF, "elevenTest")
             .row(Condition.PredicateKind.NUMERIEK_MET_EXACT, "exactDigits")
             .row(Condition.PredicateKind.DAGSOORT, "dayKind");
 

@@ -343,7 +343,7 @@ class StructureSentenceTest {
                     Regel Dagsoortdefinitie springtijdag
                         geldig altijd
                             Een dag is een springtijdag
-                            indien regelversie peilregel is gevuurd.
+                            indien regelversie peilregel is inconsistent.
                     """));
     }
 

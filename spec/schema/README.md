@@ -394,7 +394,9 @@ its v0 boolean `jaar` now the granularity `year` or `month`. The schema
 definitions carry the node names (`$defs/Clamp`, `$defs/Validity`, …), and the
 three unions are `datatype`, `expr` and `condition`. The one node that keeps its
 v0 shape is the rule-status check `Regelversie` (`regel`, `inconsistent`, and
-`source` since the first step), until its v1 form lands (delta B25).
+`source` since the first step), until its v1 form lands (delta B25); its
+`inconsistent` is always `true` ("is inconsistent"), since "is gevuurd" has no
+norm and no wire form.
 
 Every enum value is an English identifier in lowerCamel case (IR-SPEC,
 Conventions), family by family: a `Number`'s `sign`, a `Characteristic`'s
@@ -586,7 +588,8 @@ The repo's second CI gate. It performs three checks, and two self-tests:
      a `Validity` and a `TimeWindow` without bounds (the latter WF-042's), a
      context value named `Rekendatum` (WF-098's), the quantifier `the` on a
      compound, the granularity `month` of a whole period, and the rule-status
-     check in its v0 node `Regelversie`.
+     check in its v0 node `Regelversie`; and it refuses that check with
+     `inconsistent` false.
 2. **Validation** — every `corpus/golden/**/ir.json` validates against the
    schema. The file count is reported; an empty corpus passes and says so.
 3. **Round-trip** — each such file is parsed (preserving the original number

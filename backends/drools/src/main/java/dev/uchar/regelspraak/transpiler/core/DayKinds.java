@@ -114,10 +114,6 @@ public final class DayKinds {
                 case JAAR_UIT         -> java.time.temporal.ChronoField.YEAR;
                 case MAAND_UIT        -> java.time.temporal.ChronoField.MONTH_OF_YEAR;
                 case DAG_UIT          -> java.time.temporal.ChronoField.DAY_OF_MONTH;
-                case UUR_UIT          -> java.time.temporal.ChronoField.HOUR_OF_DAY;
-                case MINUUT_UIT       -> java.time.temporal.ChronoField.MINUTE_OF_HOUR;
-                case SECONDE_UIT      -> java.time.temporal.ChronoField.SECOND_OF_MINUTE;
-                case MILLISECONDE_UIT -> java.time.temporal.ChronoField.MILLI_OF_SECOND;
                 default               -> null;
             };
             Function<LocalDate, Object> inner = value(f.arguments().get(0));

@@ -146,8 +146,12 @@ class TypingSentenceTest {
                 meldingen("De dag van een Jutter moet gesteld worden op zijn vondstmoment."));
         assertEquals(error("eerste van: first ordent datums van twee precisies (dag en milliseconde), en die delen geen ordening"),
                 meldingen("De dag van een Jutter moet gesteld worden op de eerste van zijn vondstdag en zijn vondstmoment."));
-        assertEquals(error("een tijd-component (uur/minuut/seconde/milliseconde uit): de operand van de extractor binnen de "
-                        + "dag heeft de soort datum in dagen, moet een datum met millisecondeprecisie zijn"),
+        // the hour has no norm in the IR, so beside the type error the sentence stays a marker (RGS-092)
+        assertEquals(List.of("ERROR 30 een tijd-component (uur/minuut/seconde/milliseconde uit): de operand van de "
+                        + "extractor binnen de dag heeft de soort datum in dagen, moet een datum met millisecondeprecisie zijn",
+                        "WARNING 30 onopgelost: het IR draagt het uur, de minuut, de seconde of de milliseconde van een "
+                        + "datum-tijd niet: de vorm heeft geen norm (RUNTIME-SEMANTICS geeft hem geen betekenis) — 'het uur "
+                        + "uit zijn vondstdag' blijft als marker op de wire staan"),
                 meldingen("De uitkomst van een Jutter moet gesteld worden op het uur uit zijn vondstdag."));
         // the duration's own result also meets the unitless target, so only the precision line is pinned here
         assertTrue(meldingen("De uitkomst van een Jutter moet gesteld worden op de tijdsduur van zijn vondstdag tot "
@@ -236,7 +240,12 @@ class TypingSentenceTest {
     }
 
     @Test void predicates() {
-        assertEquals(error("voorwaarde: elfproef: de operand van elevenTest heeft de soort datum in dagen, moet tekst of een geheel getal zonder eenheid zijn"),
+        // the eleven test has no norm in the IR, so beside the type error the sentence stays a marker (RGS-092)
+        assertEquals(List.of("ERROR 30 voorwaarde: elfproef: de operand heeft de soort datum in dagen, moet tekst of een "
+                        + "geheel getal zonder eenheid zijn",
+                        "WARNING 30 onopgelost: het IR draagt de elfproef ('voldoet aan de elfproef') niet: de vorm heeft "
+                        + "geen norm (RUNTIME-SEMANTICS geeft hem geen betekenis) — 'zijn vondstdag aan de elfproef "
+                        + "voldoet' blijft als marker op de wire staan"),
                 meldingen("Een Jutter is waardevol indien zijn vondstdag aan de elfproef voldoet."));
         assertEquals(error("voorwaarde: numeriek met exact: de operand van exactDigits heeft de soort getal, moet tekst zijn"),
                 meldingen("Een Jutter is waardevol indien zijn telling numeriek is met exact 4 cijfers."));

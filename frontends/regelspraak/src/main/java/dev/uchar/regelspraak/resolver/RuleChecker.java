@@ -5647,7 +5647,8 @@ final class RuleChecker {
      *  honest marker (never a silent never-matching exists). The parenthesised versie-aanduiding is parsed
      *  but only carried in bron (see Condition.RuleStatusCheck). */
     private Condition buildRuleStatusCheck(ConsistentieVoorwaardeContext c) {
-        return new Condition.RuleStatusCheck(src(c.vrijeNaam()), c.INCONSISTENT() != null, source(c));
+        if (c.INCONSISTENT() == null) return new Condition.Unresolved(source(c), Msg.frontend("RGS-092.rule-fired"));
+        return new Condition.RuleStatusCheck(src(c.vrijeNaam()), source(c));
     }
 
     /** §8.2 / §13.4.15.70: the optional "(niet) gedurende de/het gehele jaar|maand" whole-period qualifier that
@@ -5705,6 +5706,8 @@ final class RuleChecker {
      *  written twice because the grammar spells the operator twice, and one text per axis keeps the
      *  author's two readings of one sentence identical. */
     private static final Msg REASON_NOT_ABSORBED = Msg.frontend("RGS-092.not-absorbed");
+    /** The eleven test has no norm in the IR, so its sentence stays an Unresolved marker (WF-113). */
+    private static final Msg REASON_ELEVEN_TEST = Msg.frontend("RGS-092.eleven-test");
     private static final Msg REASON_NO_CHARACTERISTIC_NO_ROLE = Msg.frontend("RGS-092.no-characteristic-no-role");
 
     /** {@code lhsCtx} is the parse subtree the left operand was built from: the §5.6 die/dat
@@ -5735,10 +5738,7 @@ final class RuleChecker {
                     lhs, builder.build(op.expressie()), period, source);
         if (op.LEEG() != null)   return new Condition.Predicate(Condition.PredicateKind.LEEG, lhs, period, source);
         if (op.GEVULD() != null) return new Condition.Predicate(Condition.PredicateKind.GEVULD, lhs, period, source);
-        if (op.AAN_DE_ELFPROEF() != null) {
-            ElfOperand e = elfOperand(op.NIET() != null, lhs);   // recover an absorbed vragende "niet"
-            return new Condition.Predicate(Condition.PredicateKind.ELFPROEF, e.operand(), e.negation(), period, source);
-        }
+        if (op.AAN_DE_ELFPROEF() != null) return new Condition.Unresolved(source, REASON_ELEVEN_TEST);
         if (op.NUMERIEK_IS_MET_EXACT() != null || op.NUMERIEK_ZIJN_MET_EXACT() != null) {
             ElfOperand e = elfOperand(op.NIET() != null, lhs);
             return new Condition.Predicate(Condition.PredicateKind.NUMERIEK_MET_EXACT, e.operand(), e.negation(),
@@ -6304,10 +6304,7 @@ final class RuleChecker {
                     lhs, builder.build(op.expressie()), period, source);
         if (op.LEEG() != null)   return new Condition.Predicate(Condition.PredicateKind.LEEG, lhs, period, source);
         if (op.GEVULD() != null) return new Condition.Predicate(Condition.PredicateKind.GEVULD, lhs, period, source);
-        if (op.AAN_DE_ELFPROEF() != null) {
-            ElfOperand e = elfOperand(op.NIET() != null, lhs);   // recover an absorbed vragende "niet"
-            return new Condition.Predicate(Condition.PredicateKind.ELFPROEF, e.operand(), e.negation(), period, source);
-        }
+        if (op.AAN_DE_ELFPROEF() != null) return new Condition.Unresolved(source, REASON_ELEVEN_TEST);
         if (op.NUMERIEK_MET_EXACT() != null) {
             ElfOperand e = elfOperand(op.NIET() != null, lhs);
             return new Condition.Predicate(Condition.PredicateKind.NUMERIEK_MET_EXACT, e.operand(), e.negation(),

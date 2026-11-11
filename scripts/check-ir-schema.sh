@@ -1553,8 +1553,8 @@ def _l5_base():
                  "navigation": rb("vondst")},
                 {"node": "TimeWindow", "from": lit({"date": "2026-01-01"}, dict(day)),
                  "to": ref("aangemeldOp", "Jutter"), "toInclusive": False},
-                {"node": "Regelversie", "regel": "vondstwaarde", "inconsistent": False,
-                 "source": {"snippet": "regel vondstwaarde is gevuurd"}}]}),
+                {"node": "Regelversie", "regel": "vondstwaarde", "inconsistent": True,
+                 "source": {"snippet": "regelversie vondstwaarde is inconsistent"}}]}),
         rule("bijnaamtekst", ref("bijnaam", "Jutter"), {
             "node": "TextComposition", "parts": [
                 {"node": "LiteralChunk", "text": "jutter "},
@@ -1815,8 +1815,17 @@ L5_SHAPE_ROWS = [
     # --- the rule-status check keeps its v0 node --------------------------------------------------
     ("Regelversie with regel, inconsistent and source",
      lambda d: _RSC(d).update(regel="vondstaantal",
-                              source={"snippet": "regel vondstaantal is gevuurd"}), True,
+                              source={"snippet": "regelversie vondstaantal is inconsistent"}), True,
      "B25: the wire keeps the v0 node of the rule-status check until its v1 form lands"),
+    ("Regelversie with inconsistent false", _set(_RSC, "inconsistent", False), False,
+     "'is gevuurd' has no norm and no wire form: the check reads only the inconsistency channel"),
+    # --- forms without a norm are not on the wire ---------------------------------------------------
+    ("BuiltinCall.kind = 'hourOf'", _set(_DAG_UIT, "kind", "hourOf"), False,
+     "the time-of-day parts have no norm and no wire form"),
+    ("BuiltinCall.kind = 'millisecondOf'", _set(_DAG_UIT, "kind", "millisecondOf"), False,
+     "the time-of-day parts have no norm and no wire form"),
+    ("Predicate.kind = 'elevenTest'", _set(_PRED, "kind", "elevenTest"), False,
+     "the eleven test has no norm and no wire form"),
     ("the RuleStatusCheck node where the rule-status check stands",
      _set(_RSC, "node", "RuleStatusCheck"), False,
      "B25: the v1 form of the rule-status check has not landed; the wire keeps Regelversie"),

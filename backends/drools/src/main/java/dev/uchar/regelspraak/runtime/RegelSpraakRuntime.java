@@ -299,28 +299,6 @@ public final class RegelSpraakRuntime {
         return toBd(basis).pow(exponent);
     }
 
-    /** §8.1.3 elfproef: weight each digit from the last (the controlecijfer, weight -1), the next 2, 3, … and the
-     *  weighted sum must be a POSITIEF geheel getal divisible by 11 and not all zeros. Admits a Numeriek (geheel
-     *  getal) — leading zeros already gone — or a Tekst of digits (which preserves voor-/achterloopnullen); a null,
-     *  fractional, or non-digit value is not a valid reeks -> false. The single implementation (single-runtime principle). */
-    public static boolean rsElfproef(Object x) {
-        if (x == null) return false;
-        String s;
-        if (x instanceof BigDecimal bd) {
-            if (bd.stripTrailingZeros().scale() > 0) return false;   // §8.1.3 Numeriek (geheel getal) only — never truncate a fractional value
-            s = bd.toBigInteger().toString();
-        } else s = x.toString();
-        int n = s.length();
-        if (n == 0) return false;
-        long som = 0;
-        for (int i = 0; i < n; i++) {
-            char ch = s.charAt(i);
-            if (ch < '0' || ch > '9') return false;
-            som += (long) (ch - '0') * ((i == n - 1) ? -1 : (n - i));
-        }
-        return som > 0 && (som % 11 == 0);
-    }
-
     /** §8.1.4 "numeriek met exact N cijfers" (Tekst-only): true iff the value reads as a cijferreeks of EXACTLY N
      *  digits — every character a digit and the length exactly N (voor-/achterloopnullen count). A null / non-digit /
      *  wrong-length value is false. The single implementation (single-runtime principle). */

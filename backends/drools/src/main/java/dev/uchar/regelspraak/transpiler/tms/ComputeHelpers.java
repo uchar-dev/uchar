@@ -528,12 +528,6 @@ public final class ComputeHelpers {
         return (value == null) == empty;
     }
 
-    /** The eleven test (§8.1.3, {@code rsElfproef}) of {@code value}, a leeg value failing it, whose verdict must equal
-     *  {@code desired}: false for the written negation, which complements it. */
-    public static boolean elevenTest(Object value, boolean desired) {
-        return RegelSpraakRuntime.rsElfproef(value) == desired;
-    }
-
     /** The exact-digit test (§8.1.4, {@code rsNumeriekMetExact}) of {@code value} with {@code digits} digits, whose
      *  verdict must equal {@code desired}. */
     public static boolean exactDigits(Object value, int digits, boolean desired) {

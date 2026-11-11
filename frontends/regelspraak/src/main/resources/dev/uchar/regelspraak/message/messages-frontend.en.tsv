@@ -348,6 +348,9 @@ RGS-092.whole-period-role	the check 'gedurende de/het gehele <periode>' belongs 
 RGS-092.negation-form	the form 'is niet een <naam>' bound no characteristic and no role of the subject (§8.1.8.3), so there is nothing to negate
 RGS-092.day-count-name-unbound	the condition of a day count names '{name}', which is no characteristic of the subject '{subject}'; a day count counts the days on which the subject has a characteristic (§13.4.17.57)
 RGS-092.day-count-condition-form	a day count counts only the days on which the subject itself has one time-dependent characteristic, in the form 'dat hij <kenmerk> is' or 'dat hij <kenmerk> heeft'; this condition does not have that form (§13.4.17.57, RUNTIME-SEMANTICS ch. 3.8)
+RGS-092.time-of-day-part	the IR does not carry the hour, minute, second or millisecond of a date-time: the form has no norm (RUNTIME-SEMANTICS gives it no meaning)
+RGS-092.eleven-test	the IR does not carry the eleven test ('voldoet aan de elfproef'): the form has no norm (RUNTIME-SEMANTICS gives it no meaning)
+RGS-092.rule-fired	the IR does not carry 'regelversie X is gevuurd': the form has no norm (RUNTIME-SEMANTICS gives it no meaning); of the rule-status checks the IR carries only 'regelversie X is inconsistent'
 RGS-093	head form: 'is {word}' lacks the article — a supertype is written as 'is een {word}'
 RGS-094	head form: the 'is een' clause stands after the (mv: …) group — it belongs directly after the object type name, before (mv: …) and (bezield)
 RGS-095	scenario: the document carries no scenario, so no case file can be written
@@ -608,7 +611,7 @@ RGS-286	equality operands have incompatible units
 RGS-287	equal/unequal requires operands of the same datatype, got {left} and {right}
 RGS-288	gelijk: equality across date precisions
 RGS-289	gelijk: equality across different enumeration domains
-RGS-290	elfproef: elevenTest operand is {kind}, must be text or a whole unitless number
+RGS-290	elfproef: the operand is {kind}, must be text or a whole unitless number
 RGS-291	numeriek met exact: exactDigits operand is {kind}, must be text
 RGS-292	dagsoort: day-kind predicate operand is {kind}, must be a date
 RGS-295	date ± date is ill-formed (date arithmetic takes a date and a duration)

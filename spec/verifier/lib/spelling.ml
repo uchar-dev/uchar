@@ -138,8 +138,7 @@ let builtin_kind : function_kind family =
         ("concatenation", Concatenation); ("duration", Duration);
         ("absoluteDuration", Absolute_duration); ("easterSunday", Easter_sunday);
         ("timeProportionalPart", Time_proportional_part); ("dayCount", Day_count);
-        ("yearOf", Year_of); ("monthOf", Month_of); ("dayOf", Day_of); ("hourOf", Hour_of);
-        ("minuteOf", Minute_of); ("secondOf", Second_of); ("millisecondOf", Millisecond_of);
+        ("yearOf", Year_of); ("monthOf", Month_of); ("dayOf", Day_of);
         ("dateWith", Date_with); ("dateTimeWith", Date_time_with) ];
     refused = [];
   }
@@ -148,8 +147,8 @@ let predicate_kind : predicate_kind_type family =
   {
     field = "kind";
     values =
-      [ ("empty", Empty_predicate); ("filled", Filled); ("elevenTest", Eleven_test);
-        ("exactDigits", Exact_digits); ("dayKind", Day_kind_predicate) ];
+      [ ("empty", Empty_predicate); ("filled", Filled); ("exactDigits", Exact_digits);
+        ("dayKind", Day_kind_predicate) ];
     refused = [];
   }
 

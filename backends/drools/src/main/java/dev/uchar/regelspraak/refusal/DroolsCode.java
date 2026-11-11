@@ -150,7 +150,7 @@ public enum DroolsCode {
     UNIQUENESS_WITHOUT_NAME("DROOLS-126", Kind.CONTRACT, "uniqueness-without-name", "", null),
     TIME_KEY_BESIDE_SECOND("DROOLS-127", Kind.REFUSAL, "time-key-beside-second", "description", null),
     TIME_KEY_NOT_NUMBER("DROOLS-128", Kind.REFUSAL, "time-key-not-number", "description", null),
-    DIALECT_FIRED_PREDICATE("DROOLS-129", Kind.REFUSAL, "dialect-fired-predicate", "snippet", null),
+    DIALECT_FIRED_PREDICATE("DROOLS-129", Kind.RETIRED, "dialect-fired-predicate", "snippet", null),
     INCONSISTENT_PRODUCER_NOT_CARRIED("DROOLS-130", Kind.REFUSAL, "inconsistent-producer-not-carried", "producer,snippet", null),
     ALLOCATION_WITHOUT_NAME("DROOLS-131", Kind.CONTRACT, "allocation-without-name", "", null),
     ALLOCATION_UNRESOLVED_OPERAND("DROOLS-132", Kind.CONTRACT, "allocation-unresolved-operand", "", null),

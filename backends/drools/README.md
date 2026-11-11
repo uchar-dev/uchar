@@ -504,12 +504,11 @@ longer reads deposits nothing (ch. 5.10). Witness `TmsDepositWitnessTest`. Round
 clamp, the builtins outside the folds, a text composition (each part in the type of the part, `rsTekst` with the
 form the analysis reads from its precision bound and, where the part asks for it, its unit, ch. 1.2), percentages
 and `percentageOf`, a power with a
-whole exponent, the exact restatement of units at every operand boundary (ch. 2.6), the eleven and exact-digit tests,
+whole exponent, the exact restatement of units at every operand boundary (ch. 2.6), the exact-digit test,
 a cell of a dimensioned attribute over any number of dimensions and a sum, minimum or maximum over the cells of the
 product of its selections (ch. 5.8c) compute through the runtime's helpers from bound values, and a first, a last and a
-filled count over them, by position, through the branch's (`ComputeHelpers.firstCell`, `lastCell`, `filledCells`); the two tests and the
-sub-day extractors, dateWith and dateTimeWith, the reference interpreter declines (ch. 5.11), so only this backend
-computes them. The
+filled count over them, by position, through the branch's (`ComputeHelpers.firstCell`, `lastCell`, `filledCells`); the
+exact-digit test the reference interpreter declines (ch. 5.11), so only this backend computes it. The
 evaluation date is the fact `EvaluationDate`, put in working memory once per session from the global `evaluationDate` the case
 runner sets, with a null date in a time-free session. A version with a bounded validity gates on it with a pattern that
 admits the date (ch. 8.2) and beside it a rule inserts the fault where the session carries no date, as the reference
@@ -1037,9 +1036,7 @@ never as a silent fall:
   one that reads a parameter, which WF-031 admits and the other two executors read and this branch does not (golden
   `jutterswet-havenrooster`), and any other shape outside the compiler.
   Witness `TmsDayKindWitnessTest`;
-- what is no construct of the core or is ill-formed: "regelversie X is gevuurd", a predicate of the RegelSpraak dialect
-  over the fixpoint (`spec/CONSTRUCTS.md` row 30), which the reference interpreter and the ASP backend do not evaluate
-  either, and an instance-set union where a value is read (WF-110 (a));
+- what is ill-formed: an instance-set union where a value is read (WF-110 (a));
 - the creations it does not build yet: an object creation whose back-link is ambiguous, which ch. 5.5 makes a fault of
   the program and this branch refuses when it builds (red case `ambiguous-backlink`), a created relation that is not
   one of two roles, a division or a square root in a member assignment, whose §6.5 or §6.6

@@ -789,7 +789,7 @@ final class ExpressionBuilder {
             };
             case Expr.FunctionCall f -> switch (f.kind()) {
                 case AANTAL, AANTAL_GEVULDE, TIJDSDUUR, ABSOLUTE_TIJDSDUUR, AANTAL_DAGEN_IN, JAAR_UIT, MAAND_UIT,
-                     DAG_UIT, UUR_UIT, MINUUT_UIT, SECONDE_UIT, MILLISECONDE_UIT, EERSTE_PAASDAG, DATUM_MET,
+                     DAG_UIT, EERSTE_PAASDAG, DATUM_MET,
                      DATUMTIJD_MET, CONCATENATIE -> null;
                 case TOTAAL -> new Rational(f, Msg.frontend("PART.fraction-total"));
                 case TIJDSEVENREDIG_DEEL -> new Rational(f, Msg.frontend("PART.fraction-pro-rata"));
@@ -1352,6 +1352,7 @@ final class ExpressionBuilder {
     }
 
     private Expr buildFunction(FunctieAanroepContext f) {
+        if (timeOfDayPart(f)) return timeOfDayPartMarker(f);
         Source source = source(f);
         Expr.FunctionKind kind = functionKind(f);
         // §11/ch. 4.10 an AGGREGATION is a structure-sensitive position through and through: its element type, its
@@ -2803,10 +2804,6 @@ final class ExpressionBuilder {
             case LAATSTE -> !dimensionSelectionsOf(f).isEmpty() ? null : verifierSentence("laatste van",
                     Typing.dateAggregation("laatste van", Spelling.AGGREGATION_KIND.spelling(kind), types),
                     Typing.orderingFoldSentence(Spelling.AGGREGATION_KIND.spelling(kind), types));
-            // §6.12 / §13.4.17.21-.24: a time-of-day component is defined only on a datum-TIJD — a plain
-            // "Datum in dagen" has no hour/minute/second. The DATE parts (jaar/maand/dag) accept any date, so
-            // they are NOT checked. Onbekend is skipped (no claim); only a concrete DateInDays is a violation.
-            case UUR_UIT, MINUUT_UIT, SECONDE_UIT, MILLISECONDE_UIT -> timeComponentError(types);
             // §4.16/§4.17 typeringen: the two operands of a (absolute) tijdsduur must BOTH be datum AND have the
             // SAME tijd-precisie.
             case TIJDSDUUR, ABSOLUTE_TIJDSDUUR -> durationPrecisionError(kind, types);
@@ -3023,12 +3020,28 @@ final class ExpressionBuilder {
         return null;
     }
 
+    /** §13.4.17.21-.24: the hour, minute, second or millisecond of a datum-tijd. */
+    private static boolean timeOfDayPart(FunctieAanroepContext f) {
+        return f instanceof UurUitFuncContext || f instanceof MinuutUitFuncContext
+                || f instanceof SecondeUitFuncContext || f instanceof MilliUitFuncContext;
+    }
+
+    /** A time-of-day part has no norm in the IR, so it reaches the wire as an Unresolved marker with its diagnostic
+     *  (WF-113). Its operand is still type-checked against the source language: §6.12 defines the part only on a
+     *  datum-tijd, and a plain "Datum in dagen" has no hour, minute or second. */
+    private Expr timeOfDayPartMarker(FunctieAanroepContext f) {
+        Typing.Coded error = timeComponentError(args(f).stream().map(Expr::type).toList());
+        if (error != null)
+            model.diagnostics.add(error.at(RegelSpraakModel.Severity.ERROR, f.getStart().getLine()));
+        return unresolvedMarker(f, Msg.frontend("RGS-092.time-of-day-part"));
+    }
+
     /** §6.12 / §13.4.17.21-.24: the operand of a time-of-day component (uur/minuut/seconde/milliseconde uit)
      *  must be a datum-tijd; a plain "Datum in dagen" carries no time. Returns the fout message for a concrete
      *  DateInDays operand, else null (Onbekend and any non-date type are not this check's concern). */
     private static Typing.Coded timeComponentError(List<Datatype> types) {
         if (types.size() != 1 || !(types.get(0) instanceof Datatype.DateInDays)) return null;
-        return new Typing.Coded("RGS-083", params("kind", Typing.kindWord(types.get(0))));   // the verifier's WF-038
+        return new Typing.Coded("RGS-083", params("kind", Typing.kindWord(types.get(0))));
     }
 
     /** §4.16/§4.17 (typeringen, normative): the two operands (van, tot) of a (absolute) tijdsduur must BOTH be a
@@ -3238,7 +3251,7 @@ final class ExpressionBuilder {
             // Onbekend, which makes Typing.compare short-circuit OK) lets the comparison matrix REJECT an
             // illegal use — e.g. "de maand uit X eerder dan <een datum>", which Tabel 45 restricts to two dates
             // — instead of the transpiler lowering it to an uncompilable BigDecimal-vs-LocalDate term.
-            case JAAR_UIT, MAAND_UIT, DAG_UIT, UUR_UIT, MINUUT_UIT, SECONDE_UIT, MILLISECONDE_UIT ->
+            case JAAR_UIT, MAAND_UIT, DAG_UIT ->
                     new Datatype.Numeric(true, 0, Datatype.Sign.NIET_NEGATIEF, null);
             // §7.3.2/§13.4.17.58: the pro-rata part carries the BASE's value type — the per-bucket fraction
             // scales the base within one bucket and never changes its unit or family (a rate base is restated
@@ -3268,10 +3281,6 @@ final class ExpressionBuilder {
         if (f instanceof JaarUitFuncContext)    return Expr.FunctionKind.JAAR_UIT;
         if (f instanceof MaandUitFuncContext)   return Expr.FunctionKind.MAAND_UIT;
         if (f instanceof DagUitFuncContext)     return Expr.FunctionKind.DAG_UIT;
-        if (f instanceof UurUitFuncContext)     return Expr.FunctionKind.UUR_UIT;
-        if (f instanceof MinuutUitFuncContext)  return Expr.FunctionKind.MINUUT_UIT;
-        if (f instanceof SecondeUitFuncContext) return Expr.FunctionKind.SECONDE_UIT;
-        if (f instanceof MilliUitFuncContext)   return Expr.FunctionKind.MILLISECONDE_UIT;
         if (f instanceof MinMaxFuncContext m)   return m.MAXIMALE_WAARDE_VAN() != null ? Expr.FunctionKind.MAXIMUM : Expr.FunctionKind.MINIMUM;
         if (f instanceof EersteLaatsteFuncContext el) return el.EERSTE_VAN() != null ? Expr.FunctionKind.EERSTE : Expr.FunctionKind.LAATSTE;
         if (f instanceof TijdsduurFuncContext t) return t.ABSOLUTE_TIJDSDUUR_VAN() != null ? Expr.FunctionKind.ABSOLUTE_TIJDSDUUR : Expr.FunctionKind.TIJDSDUUR;

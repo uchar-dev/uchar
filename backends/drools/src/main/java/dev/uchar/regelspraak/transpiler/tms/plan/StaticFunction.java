@@ -316,9 +316,6 @@ public enum StaticFunction {
     /** The leeg test, where a {@code Boolean} constant is true, or the gevuld test, where it is false, of a value
      *  (ch. 5.8 rule 1: a read over an absent link is leeg). */
     EMPTY_TEST(ComputeHelpers.class, "emptyTest", false),
-    /** The eleven test of a value ({@code rsElfproef}, §8.1.3), whose verdict a {@code Boolean} constant must equal:
-     *  false for the written negation. */
-    ELEVEN_TEST(ComputeHelpers.class, "elevenTest", false),
     /** The exact-digit test of a value ({@code rsNumeriekMetExact}, §8.1.4) with an {@code Integer} constant of
      *  digits, whose verdict a {@code Boolean} constant must equal. */
     NUMERIEK_MET_EXACT(ComputeHelpers.class, "exactDigits", false),

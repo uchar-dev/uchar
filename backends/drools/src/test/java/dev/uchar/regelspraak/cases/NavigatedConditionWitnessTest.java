@@ -86,13 +86,9 @@ class NavigatedConditionWitnessTest {
                 "de deling door 2");
     }
 
-    @Test void a_fired_condition_is_refused_by_name() throws Exception {
-        // "Een Vondst is afgehandeld indien regelversie uitkomst is gevuurd", over the reproduction's rule. No arbiter:
-        // ref faults on 'is gevuurd' and the ASP backend does not translate it. The destructive exec-model branch
-        // carried it with a companion that repeated the host's voorwaarde, and this row pinned that reading, the host
-        // fired (V afgehandeld). The exec-model branch refuses the predicate by name: it is no form of the
-        // kernel but a predicate of the RegelSpraak dialect over the fixpoint (RUNTIME-SEMANTICS ch. 5.6, CONSTRUCTS
-        // row 30). Coverage lost against the destructive branch, accepted (card tms-omschakeling).
+    @Test void a_fired_condition_is_refused_at_load() throws Exception {
+        // "Een Vondst is afgehandeld indien regelversie uitkomst is gevuurd", over the reproduction's rule. "is gevuurd"
+        // has no norm and no wire form: the loader refuses a Regelversie with inconsistent false at the field.
         String model = "{\"objectTypes\":[" + JUTTER_DATES + ",{\"node\":\"ObjectType\",\"name\":\"Vondst\",\"animate\":false,"
                 + "\"plural\":\"Vondsten\",\"attributes\":[" + VONDST_OUTCOME + "],\"characteristics\":[{\"node\":"
                 + "\"Characteristic\",\"name\":\"afgehandeld\",\"kind\":\"adjectival\"}]}],\"factTypes\":[" + JUTTER_VONDST
@@ -105,12 +101,12 @@ class NavigatedConditionWitnessTest {
                 + "\"initialisation\":false}]}";
         String ir = document(model, rules(DERIVED, rule("uitkomst", "Vondst", "uitkomst", viaJutter("meldingsdatum"),
                 filled(viaJutter("afgeleide datum"))), afgehandeld), "", "");
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> play(ir, caseDocument(List.of(jutter("J",
+        dev.uchar.regelspraak.loader.IrLoader.DocumentError e = assertThrows(
+                dev.uchar.regelspraak.loader.IrLoader.DocumentError.class, () -> play(ir, caseDocument(List.of(jutter("J",
                 MESSAGE_MARCH), vondst("V", "J", "\"uitkomst\":{\"date\":\"2026-03-01\"}")), value("V", "uitkomst",
                 "2026-03-01") + ", {\"kind\":\"characteristicPresent\",\"label\":\"V\",\"characteristic\":\"afgehandeld\"}")));
-        assertTrue(e.getMessage().contains("regel: afgehandeld — een Regelversie 'is gevuurd' in de voorwaarde"
-                + " ('regelversie uitkomst is gevuurd'): geen vorm van de kern maar een predicaat van het"
-                + " RegelSpraak-dialect over het fixpunt (RUNTIME-SEMANTICS ch. 5.6, CONSTRUCTS rij 30)"), e.getMessage());
+        assertTrue(e.getMessage().endsWith(": inconsistent is false: the rule-status check reads only the inconsistency"
+                + " channel"), e.getMessage());
     }
 
     @Test void an_object_creation_sees_the_derived_value() throws Exception {

@@ -82,11 +82,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * "een Let in een waarde ('k is …')" and "een DimensionCellRead in een waarde ('zijn omzet in k2')"; the row of the
  * text of a number expected its own sentence and got the TextComposition's.
  *
- * <p>One row pins a refusal whose sentence the switch-over rewrote (card tms-omschakeling, step 5a2): the eleven test
- * over a path. The verifier passes the document (measured 2026-10-10). <b>Red</b> on {@code 3d50652a}, before that
- * rewrite: "… ('elevenTest'): de exec-modeltak laat een afwezige link beide polariteiten onwaar maken, …". Step 6c of card drl-teksttak-op-truth-maintenance rewrote the eleven test's sentence once more, with what
- * the analysis itself cannot tell apart instead of the behaviour of a branch. <b>Red</b> on {@code fbd2f2c0}, before
- * that rewrite: "… ('elevenTest'): de DRL-teksttak laat een afwezige link beide polariteiten onwaar maken, …".
+ * <p>One row pins a refusal by name: the exact-digit test over a path, whose operand the analysis reads as a value in
+ * which an absent link is leeg.
  */
 class TmsBuiltinWitnessTest {
 
@@ -335,77 +332,62 @@ class TmsBuiltinWitnessTest {
                 + " eenheidstelsel 'Elders': een factor zonder declaratie heeft geen symbool om te schrijven", e.getMessage());
     }
 
-    // ---------------- the eleven test and the exact digits ----------------
+    // ---------------- the exact digits ----------------
 
     private static final String TRIAL_MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(
-            attribute("grondnummer", WHOLE), attribute("nummer", WHOLE), attribute("grondcode", TEKST),
-            attribute("postcode", TEKST)), List.of("geldig", "viercijferig"))), List.of());
+            attribute("grondcode", TEKST), attribute("postcode", TEKST)), List.of("viercijferig"))), List.of());
 
     private static String trial(String kind, String operand, int digits) {
         return "{\"node\":\"Predicate\",\"kind\":\"" + kind + "\",\"operand\":" + operand + ",\"negated\":false,\"digits\":"
                 + digits + ",\"source\":{\"snippet\":\"" + kind + "\"}}";
     }
 
-    @Test void the_eleven_test_and_exact_four_digits_over_a_later_derived_value() throws Exception {
-        String number = computingRule("nummer van een vondst", "BEREKENING", "Vondst", "nummer",
-                ownRead("grondnummer", "Vondst"), "null");
-        String valid = characteristicRule("geldig bij elfproef", "Vondst", "geldig",
-                trial("elevenTest", ownRead("nummer", "Vondst"), 0));
+    @Test void exact_four_digits_over_a_later_derived_value() throws Exception {
         String postcode = computingRule("postcode van een vondst", "BEREKENING", "Vondst", "postcode",
                 ownRead("grondcode", "Vondst"), "null");
         String four = characteristicRule("viercijferig bij postcode", "Vondst", "viercijferig",
                 trial("exactDigits", ownRead("postcode", "Vondst"), 4));
         JsonNode caseDocument = TmsDocuments.caseOn(null, List.of(
-                instanceWith("V1", "Vondst", Map.of("grondnummer", numberValue("123456782"), "nummer",
-                        numberValue("111111111"), "grondcode", textValue("1234"), "postcode", textValue("abcd")),
+                instanceWith("V1", "Vondst", Map.of("grondcode", textValue("1234"), "postcode", textValue("abcd")),
                         List.of()),
-                instanceWith("V2", "Vondst", Map.of("grondnummer", numberValue("111111111"), "grondcode",
-                        textValue("12a4")), List.of())),
-                List.of(expected("V1", "geldig", true), expected("V2", "geldig", false), expected("V1", "viercijferig", true),
-                        expected("V2", "viercijferig", false), consistent()));
-        assertEveryOrder(TRIAL_MODEL, List.of(number, valid, postcode, four), caseDocument);
+                instanceWith("V2", "Vondst", Map.of("grondcode", textValue("12a4")), List.of())),
+                List.of(expected("V1", "viercijferig", true), expected("V2", "viercijferig", false), consistent()));
+        assertEveryOrder(TRIAL_MODEL, List.of(postcode, four), caseDocument);
     }
 
-    /** "Een Vondst is geldig indien het nummer van zijn vinder aan de elfproef voldoet": the eleven test over a path of
-     *  one role. The branch reads the operand as any value, in which an absent link is leeg (RUNTIME-SEMANTICS ch. 5.8,
-     *  rule 1), so it cannot tell an absent link from a leeg nummer; it refuses the form by name. */
-    @Test void the_eleven_test_over_a_path_is_refused_by_name() throws Exception {
+    /** "Een Vondst is geldig indien de code van zijn vinder numeriek is met exact 4 cijfers": the exact-digit test over
+     *  a path of one role. The branch reads the operand as any value, in which an absent link is leeg
+     *  (RUNTIME-SEMANTICS ch. 5.8, rule 1), so it cannot tell an absent link from a leeg code; it refuses the form by
+     *  name. */
+    @Test void the_exact_digit_test_over_a_path_is_refused_by_name() throws Exception {
         String model = TmsDocuments.model(List.of(
-                TmsDocuments.objectType("Jutter", List.of(attribute("nummer", WHOLE)), List.of()),
+                TmsDocuments.objectType("Jutter", List.of(attribute("code", TEKST)), List.of()),
                 TmsDocuments.objectType("Vondst", List.of(), List.of("geldig"))),
                 List.of(TmsDocuments.factTypeOneToMany("vinding", "vinder", "Jutter", "vondst", "Vondst", "vondsten")));
-        String valid = characteristicRule("geldig bij elfproef", "Vondst", "geldig",
-                trial("elevenTest", TmsDocuments.pathRead("nummer", "Jutter", "vinding", "vinder"), 0));
+        String valid = characteristicRule("geldig bij vier cijfers", "Vondst", "geldig",
+                trial("exactDigits", TmsDocuments.pathRead("code", "Jutter", "vinding", "vinder"), 4));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(
                 TmsDocuments.document(model, List.of(valid)), DroolsBackend.Branch.EXEC_MODEL));
-        assertEquals("transpiler SKIP: regel: geldig bij elfproef — een Predicate elevenTest over een pad"
-                + " ('elevenTest'): de operand wordt als een waarde gelezen, waarin een afwezige link leeg is"
+        assertEquals("transpiler SKIP: regel: geldig bij vier cijfers — een Predicate exactDigits over een pad"
+                + " ('exactDigits'): de operand wordt als een waarde gelezen, waarin een afwezige link leeg is"
                 + " (RUNTIME-SEMANTICS ch. 5.8, regel 1), zodat de toets een afwezige link hier niet van een lege waarde"
                 + " kan onderscheiden", e.getMessage());
     }
 
-    // ---------------- the sub-day extractors, dateWith and dateTimeWith ----------------
+    // ---------------- dateWith and dateTimeWith ----------------
 
     private static final String GETIJMODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Getij", List.of(
-            attribute("vertrek", DATE_TIME), attribute("aankomst", DATE_TIME), attribute("uur", WHOLE),
-            attribute("minuut", WHOLE), attribute("seconde", WHOLE), attribute("milliseconde", WHOLE),
+            attribute("vertrek", DATE_TIME), attribute("aankomst", DATE_TIME),
             attribute("einddatum", DATE), attribute("eindtijd", DATE_TIME)), List.of())), List.of());
 
     private static final String AANKOMST = ownRead("aankomst", "Getij");
 
-    @Test void time_parts_and_date_construction_of_a_later_derived_aankomst() throws Exception {
+    @Test void date_construction_of_a_later_derived_aankomst() throws Exception {
         String aankomst = computingRule("aankomst van een getij", "BEREKENING", "Getij", "aankomst",
                 binary("plus", ownRead("vertrek", "Getij"), literal("2", numberType(true, 0, unit("uur"))), DATE_TIME),
                 "null");
         String year = builtin("yearOf", List.of(AANKOMST), WHOLE, "het jaar uit zijn aankomst");
         List<String> rules = List.of(aankomst,
-                computingRule("uur", "BEREKENING", "Getij", "uur", builtin("hourOf", List.of(AANKOMST), WHOLE, "uur"), "null"),
-                computingRule("minuut", "BEREKENING", "Getij", "minuut", builtin("minuteOf", List.of(AANKOMST), WHOLE,
-                        "minuut"), "null"),
-                computingRule("seconde", "BEREKENING", "Getij", "seconde", builtin("secondOf", List.of(AANKOMST), WHOLE,
-                        "seconde"), "null"),
-                computingRule("milliseconde", "BEREKENING", "Getij", "milliseconde", builtin("millisecondOf",
-                        List.of(AANKOMST), WHOLE, "milliseconde"), "null"),
                 computingRule("einddatum", "BEREKENING", "Getij", "einddatum", builtin("dateWith", List.of(year,
                         literal("12", WHOLE), literal("31", WHOLE)), DATE, "de datum met …"), "null"),
                 computingRule("eindtijd", "BEREKENING", "Getij", "eindtijd", builtin("dateTimeWith", List.of(year,
@@ -414,14 +396,13 @@ class TmsBuiltinWitnessTest {
         JsonNode caseDocument = TmsDocuments.caseOn(null, List.of(instanceWith("G1", "Getij", Map.of(
                 "vertrek", "{\"dateTime\":\"2026-03-01T22:30:15.250\"}",
                 "aankomst", "{\"dateTime\":\"2000-01-01T00:00:00.000\"}"), List.of())),
-                List.of(value("G1", "uur", "0"), value("G1", "minuut", "30"), value("G1", "seconde", "15"),
-                        value("G1", "milliseconde", "250"), valueJson("G1", "einddatum", dateValue("2026-12-31")),
+                List.of(valueJson("G1", "einddatum", dateValue("2026-12-31")),
                         valueJson("G1", "eindtijd", "{\"dateTime\":\"2026-12-31T23:59:59.999\"}"), consistent()));
         for (int i = 1; i < rules.size(); i++)
             assertEveryOrder(GETIJMODEL, List.of(rules.get(0), rules.get(i)), caseDocument(caseDocument, i));
     }
 
-    /** {@code caseDocument} with only the expectation of reader {@code i} (1-based: uur first) and the channel. */
+    /** {@code caseDocument} with only the expectation of reader {@code i} (1-based: einddatum first) and the channel. */
     private static JsonNode caseDocument(JsonNode caseDocument, int i) {
         JsonNode copy = caseDocument.deepCopy();
         com.fasterxml.jackson.databind.node.ArrayNode expected = (com.fasterxml.jackson.databind.node.ArrayNode)

@@ -97,7 +97,7 @@ class UnknownFieldWitnessTest {
                 + "\"source\":{\"snippet\":\"x\"},\"" + FOREIGN + "\":1}],\"type\":null,\"source\":{\"snippet\":\"x\"}}", w + "/dimensionSelections/0" });
         rows.put("ContextValue", new String[] { w, "{\"node\":\"ContextValue\",\"name\":\"evaluationDate\",\"type\":"
                 + "{\"node\":\"Date\",\"precision\":\"day\"},\"source\":{\"snippet\":\"de Rekendatum\"},\"" + FOREIGN + "\":1}", w });
-        rows.put("Regelversie", new String[] { v, "{\"node\":\"Regelversie\",\"regel\":\"x\",\"inconsistent\":false,"
+        rows.put("Regelversie", new String[] { v, "{\"node\":\"Regelversie\",\"regel\":\"x\",\"inconsistent\":true,"
                 + "\"source\":{\"snippet\":\"x\"},\"" + FOREIGN + "\":1}", v });
         rows.put("Unresolved (condition)", new String[] { v, "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"x\"},\"" + FOREIGN
                 + "\":1}", v });

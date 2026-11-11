@@ -247,8 +247,8 @@ public final class PrecisionBound {
     private Bounded function(Expr.FunctionCall f, Map<String, Bounded> binders) {
         List<Expr> args = f.arguments();
         return switch (f.kind()) {
-            case AANTAL, AANTAL_GEVULDE, AANTAL_DAGEN_IN, TIJDSDUUR, ABSOLUTE_TIJDSDUUR, JAAR_UIT, MAAND_UIT, DAG_UIT,
-                 UUR_UIT, MINUUT_UIT, SECONDE_UIT, MILLISECONDE_UIT -> new Bounded(new Precision(0), null);
+            case AANTAL, AANTAL_GEVULDE, AANTAL_DAGEN_IN, TIJDSDUUR, ABSOLUTE_TIJDSDUUR, JAAR_UIT, MAAND_UIT, DAG_UIT ->
+                    new Bounded(new Precision(0), null);
             case SOM, MINIMUM, MAXIMUM, EERSTE, LAATSTE, CONCATENATIE -> operands(f, binders);
             case TOTAAL -> {
                 if (setRead(f) || args.size() != 1) yield operands(f, binders);

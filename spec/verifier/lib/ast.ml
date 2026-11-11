@@ -103,8 +103,7 @@ type function_kind =
   | Square_root | Absolute_value | Concatenation
   | Duration | Absolute_duration | Easter_sunday
   | Time_proportional_part | Day_count
-  | Year_of | Month_of | Day_of | Hour_of | Minute_of
-  | Second_of | Millisecond_of
+  | Year_of | Month_of | Day_of
   | Date_with | Date_time_with
 
 type compare_op =
@@ -112,7 +111,7 @@ type compare_op =
   | Equal | Not_equal
   | Earlier | Earlier_or_equal | Later | Later_or_equal
 
-type predicate_kind_type = Empty_predicate | Filled | Eleven_test | Exact_digits | Day_kind_predicate
+type predicate_kind_type = Empty_predicate | Filled | Exact_digits | Day_kind_predicate
 type quantifier_kind = The | All | None_of | At_least | At_most | Exactly
 type rule_presentation = Equation | Calculation | Initialisation | Characteristic_attribution
 type method_name = Equal_shares | Proportional | Ordered
@@ -491,7 +490,7 @@ and condition_expr =
      same object as the subject of the form; [negation] turns that around. Its
      anchor is required on the wire and has one value, so it is not kept. *)
   | Identity_check of { negation : bool; source_name : string option }
-  | Rule_status_check of { rule_def : string option; inconsistent : bool; source_name : string option }
+  | Rule_status_check of { rule_def : string option; source_name : string option }
   | Condition_unresolved of { source_name : string option }
 
 (* --- model layer ------------------------------------------------------- *)

@@ -3149,11 +3149,8 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
                 read (if hit then hits + 1 else hits) (left - 1) rest)
       in
       read 0 n components
-  | Rule_status_check { rule_def; inconsistent = true; _ } ->
+  | Rule_status_check { rule_def; _ } ->
       World.channel_has world ~rule:(req "Regelversie.regel" rule_def)
-  | Rule_status_check { inconsistent = false; _ } ->
-      Value.fault
-        "'is gevuurd' is not implemented (row 30: decided as a dialect-only fixpoint predicate)"
   | Role_membership { fact_type; role; counterpart_type; negated; _ } ->
       (* ch. 5.8a, the role check (D11, U12): true iff a link of [fact_type]
          exists in which the subject fills [role] and the filler of the OTHER

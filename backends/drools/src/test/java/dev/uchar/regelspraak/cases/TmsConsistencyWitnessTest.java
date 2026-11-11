@@ -365,6 +365,7 @@ class TmsConsistencyWitnessTest {
             + " model, en een oneven ontkenningskring wisselt tot het vuurplafond";
 
     @Test void is_fired_and_a_channel_without_carried_producer_are_refused() throws Exception {
+        // "is gevuurd" has no wire form: the loader refuses the document at the field
         String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(),
                 List.of("gemeld", "geregistreerd", "nagekeken"))), List.of());
         String registratie = characteristicRule("registratie", "Vondst", "geregistreerd", check("gemeld", false));
@@ -373,12 +374,11 @@ class TmsConsistencyWitnessTest {
         Path withFired = TmsDocuments.document(model,
                 List.of(registratie, characteristicRule("nakijken", "Vondst", "nagekeken", fired)));
         for (DroolsBackend.Branch branch : BRANCHES) {
-            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(withFired, branch),
-                    branch.toString());
-            assertEquals("transpiler SKIP: regel: nakijken — een Regelversie 'is gevuurd' in de voorwaarde ('regelversie"
-                + " registratie is gevuurd'): geen vorm van de kern maar een predicaat van het"
-                + " RegelSpraak-dialect over het fixpunt (RUNTIME-SEMANTICS ch. 5.6, CONSTRUCTS rij 30), dat de"
-                + " referentie-interpreter en de ASP-backend niet evalueren", e.getMessage(), branch.toString());
+            dev.uchar.regelspraak.loader.IrLoader.DocumentError e = assertThrows(
+                    dev.uchar.regelspraak.loader.IrLoader.DocumentError.class,
+                    () -> DroolsBackend.build(withFired, branch), branch.toString());
+            assertTrue(e.getMessage().endsWith(": inconsistent is false: the rule-status check reads only the"
+                    + " inconsistency channel"), e.getMessage());
         }
         Path withoutProducer = TmsDocuments.document(model,
                 List.of(registratie, characteristicRule("nakijken", "Vondst", "nagekeken", channelTest("registratie"))));

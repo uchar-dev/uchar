@@ -116,8 +116,7 @@ public sealed interface Expr {
     enum FunctionKind {
         SOM, TOTAAL, AANTAL, MINIMUM, MAXIMUM, EERSTE, LAATSTE, AANTAL_GEVULDE, WORTEL, ABSOLUTE_WAARDE,
         CONCATENATIE, TIJDSDUUR, ABSOLUTE_TIJDSDUUR, EERSTE_PAASDAG, TIJDSEVENREDIG_DEEL,
-        AANTAL_DAGEN_IN, JAAR_UIT, MAAND_UIT, DAG_UIT, UUR_UIT, MINUUT_UIT, SECONDE_UIT, MILLISECONDE_UIT,
-        DATUM_MET, DATUMTIJD_MET
+        AANTAL_DAGEN_IN, JAAR_UIT, MAAND_UIT, DAG_UIT, DATUM_MET, DATUMTIJD_MET
     }
     /** `elementObjectType` is the object type the aggregation ranges over — the type
      *  whose instances are summed/counted/etc. (null if unresolved). It is what the

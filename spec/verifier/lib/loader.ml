@@ -1077,10 +1077,14 @@ and condition_expr path j : condition_expr =
          for its parity golden (delta B25); only its source text moved into
          the source record *)
       check_keys path kvs ~ext:[ "source" ] [ "node"; "regel"; "inconsistent" ];
+      (* the check reads the §9.5 channel ("is inconsistent"); `inconsistent`
+         false would be "is gevuurd", which has no norm and no wire form *)
+      if not (bool_ (path / "inconsistent") (f "inconsistent")) then
+        fail (path / "inconsistent")
+          "inconsistent is false: the rule-status check reads only the inconsistency channel";
       Rule_status_check
         {
           rule_def = str_opt (path / "regel") (f "regel");
-          inconsistent = bool_ (path / "inconsistent") (f "inconsistent");
           source_name = source_name ();
         }
   | "Unresolved" ->

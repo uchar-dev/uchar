@@ -4366,8 +4366,7 @@ let admissible_element ctx = function
   | _ -> false
 
 let scalar_one_arg_kinds =
-  [ Square_root; Absolute_value; Easter_sunday; Year_of; Month_of; Day_of;
-    Hour_of; Minute_of; Second_of; Millisecond_of ]
+  [ Square_root; Absolute_value; Easter_sunday; Year_of; Month_of; Day_of ]
 
 let aggregation_kinds =
   [ Sum_function; Total; Count; Minimum; Maximum; First; Last; Filled_count ]
@@ -5856,12 +5855,6 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
                  [ v ~params:[("type", datatype_kind d)] "WF-038.easter-sunday-operand" at ("easterSunday operand is " ^ datatype_kind d
                                   ^ ", must be a whole unitless number") ]
              | None -> [])
-         | (Hour_of | Minute_of | Second_of | Millisecond_of), [ a ] -> (
-             match ty a with
-             | Some Date_time_type | None -> []
-             | Some d ->
-                 [ v ~params:[("type", datatype_kind d)] "WF-038.sub-day-extractor" at ("sub-day extractor operand is " ^ datatype_kind d
-                                  ^ ", must be a millisecond-precision date") ])
          | (Year_of | Month_of | Day_of), [ a ] -> (
              (* the day-precision extractors read civil components (ch. 3.8
                 of RUNTIME-SEMANTICS): the operand must be a date — either
@@ -7419,14 +7412,6 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
   | Predicate { variety; operand; day_kind; time_period; _ } ->
       let ot = Option.bind operand (expr_type ctx ~binders) in
       (match variety, ot with
-       | Eleven_test, Some d -> (
-           match d with
-           | Text_type -> []
-           | Number { whole_part = true; measure_unit = None; _ } -> []
-           | _ ->
-               [ v ~params:[("type", datatype_kind d)] "WF-036.eleven-test-operand" at
-                   ("elevenTest operand is " ^ datatype_kind d
-                    ^ ", must be text or a whole unitless number") ])
        | Exact_digits, Some d when d <> Text_type ->
            [ v ~params:[("type", datatype_kind d)] "WF-036.exact-digits-operand" at ("exactDigits operand is " ^ datatype_kind d ^ ", must be text") ]
        | Day_kind_predicate, Some d when not (is_date d) ->
@@ -10395,8 +10380,7 @@ let rec precision ctx ?(calls = []) ~env (e : expr) : bounded option =
         match call_arguments with [] -> None | args -> combine (args @ Option.to_list empty_fallback)
       in
       match kind with
-      | Count | Filled_count | Day_count | Duration | Absolute_duration | Year_of | Month_of | Day_of
-      | Hour_of | Minute_of | Second_of | Millisecond_of ->
+      | Count | Filled_count | Day_count | Duration | Absolute_duration | Year_of | Month_of | Day_of ->
           make ~u:None (Finite 0)
       | Sum_function | Minimum | Maximum | First | Last | Concatenation -> operands ()
       | Total -> (

@@ -254,8 +254,9 @@ class RenamingRefusalWitnessTest {
         }
         assertEquals(18, covered.size(), "every place of the fifteen families the renaming respelled: " + covered);
         // sign 4, kind 3, granularity 5 x 3 places, presentation 2, method 3, comparison 10, binary 8, rounding 5,
-        // aggregation 8, builtin 17, predicate 5, quantifier 6 x 2 places, context value 2, whole period 2, severity 3
-        assertEquals(99, rows, "every v0 value at every place of its family");
+        // aggregation 8, builtin 13, predicate 4, quantifier 6 x 2 places, context value 2, whole period 2, severity 3
+        // (the time-of-day parts and the eleven test have no norm and no spelling)
+        assertEquals(94, rows, "every v0 value at every place of its family");
     }
 
     /** A null on a field the renaming made optional: absent is what the v0 null was, so a null is neither. */
@@ -316,8 +317,13 @@ class RenamingRefusalWitnessTest {
         Condition.RuleStatusCheck rv = assertInstanceOf(Condition.RuleStatusCheck.class,
                 IrLoader.load(doc).resolvedRules.get(0).condition());
         assertEquals("penningdrempel", rv.rule());
-        assertTrue(rv.inconsistent());
         assertEquals("regelversie penningdrempel is inconsistent", rv.source().snippet());
+        // "is gevuurd" has no wire form: inconsistent false is refused at the field
+        node(doc, V).put("inconsistent", false);
+        IrLoader.DocumentError f = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.load(doc));
+        assertEquals(V + "/inconsistent", f.site(), f.getMessage());
+        assertTrue(f.getMessage().endsWith(": " + IrLoader.FIRED_CHECK), f.getMessage());
+        node(doc, V).put("inconsistent", true);
         node(doc, V).put("rule", "penningdrempel");
         IrLoader.DocumentError e = refuses(doc, "Regelversie.rule");
         assertEquals(V + "/rule", e.site(), e.getMessage());

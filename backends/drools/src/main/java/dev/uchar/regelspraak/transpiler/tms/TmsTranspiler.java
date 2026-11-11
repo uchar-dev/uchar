@@ -2972,14 +2972,9 @@ public final class TmsTranspiler {
      * error facts of the form X, with no subject of its own, read through X's {@link ChannelState}. The producers this
      * branch carries are a consistency, a uniqueness, and a rule whose condition or value can deposit a §6.5 or §6.6
      * inconsistency ({@link #writeRule}, {@link #depositRule}); any other name is refused, since a test of a
-     * channel nothing fills would never hold and say nothing. "is gevuurd" reads no channel; it is no construct of the
-     * core, and is refused with that reason.
+     * channel nothing fills would never hold and say nothing.
      */
     private Term channelRead(Condition.RuleStatusCheck rv, Reads reads) {
-        // decided as a predicate of the dialect over the fixpoint, never a construct of the core: the reference
-        // interpreter faults on it ("not implemented") and the ASP backend does not translate it
-        if (!rv.inconsistent())
-            throw new Refusal(DroolsCode.DIALECT_FIRED_PREDICATE.reason("snippet", snippet(rv)));
         String producer = rv.rule();
         if (!channelProducer(producer))
             throw new Refusal(DroolsCode.INCONSISTENT_PRODUCER_NOT_CARRIED.reason("producer", producer, "snippet", snippet(rv)));
@@ -5786,10 +5781,6 @@ public final class TmsTranspiler {
             case JAAR_UIT -> datePart(f, reads, spelling, ChronoField.YEAR, false);
             case MAAND_UIT -> datePart(f, reads, spelling, ChronoField.MONTH_OF_YEAR, false);
             case DAG_UIT -> datePart(f, reads, spelling, ChronoField.DAY_OF_MONTH, false);
-            case UUR_UIT -> datePart(f, reads, spelling, ChronoField.HOUR_OF_DAY, true);
-            case MINUUT_UIT -> datePart(f, reads, spelling, ChronoField.MINUTE_OF_HOUR, true);
-            case SECONDE_UIT -> datePart(f, reads, spelling, ChronoField.SECOND_OF_MINUTE, true);
-            case MILLISECONDE_UIT -> datePart(f, reads, spelling, ChronoField.MILLI_OF_SECOND, true);
             case DATUM_MET, DATUMTIJD_MET -> dateConstruction(f, reads, spelling);
             default -> throw new IllegalStateException("the kind " + kind + " is a fold, not a builtin");
         };
@@ -7563,7 +7554,7 @@ public final class TmsTranspiler {
                 return new Term.Call(StaticFunction.EMPTY_TEST, List.of(operand,
                         constant(p.kind() == Condition.PredicateKind.LEEG)), source(p.source()));
             }
-            case ELFPROEF, NUMERIEK_MET_EXACT -> {
+            case NUMERIEK_MET_EXACT -> {
                 return digitTrial(p, reads);
             }
             // a day kind is consulted as a classifier of a bare date before the rule graph, never as a read inside the
@@ -7573,18 +7564,15 @@ public final class TmsTranspiler {
         }
     }
 
-    /** The eleven test and the exact-digit test (§8.1.3, §8.1.4), through the runtime's
-     *  {@code rsElfproef} and {@code rsNumeriekMetExact}, the written negation complementing the verdict: a leeg value
-     *  passes neither test. The operand is read as any value, in which an absent link over a path of roles is leeg
-     *  (RUNTIME-SEMANTICS ch. 5.8, rule 1), so the test cannot tell an absent link from a leeg value there; such an
-     *  operand is refused by name. The reference interpreter and the ASP backend do not evaluate these predicates. */
+    /** The exact-digit test (§8.1.4), through the runtime's {@code rsNumeriekMetExact}, the written negation
+     *  complementing the verdict: a leeg value fails the test. The operand is read as any value, in which an absent link
+     *  over a path of roles is leeg (RUNTIME-SEMANTICS ch. 5.8, rule 1), so the test cannot tell an absent link from a
+     *  leeg value there; such an operand is refused by name. */
     private Term digitTrial(Condition.Predicate p, Reads reads) {
         if (p.operand() instanceof Expr.AttributeReference a && navigationBindings.containsKey(a))
             throw new Refusal(DroolsCode.PREDICATE_OVER_NAVIGATED_PATH.reason("spelling", Spelling.PREDICATE_KIND.spelling(p.kind()), "snippet", snippet(p)));
         Term operand = value(p.operand(), reads);
         boolean desired = !p.negation();
-        if (p.kind() == Condition.PredicateKind.ELFPROEF)
-            return new Term.Call(StaticFunction.ELEVEN_TEST, List.of(operand, constant(desired)), source(p.source()));
         return new Term.Call(StaticFunction.NUMERIEK_MET_EXACT, List.of(operand, constant(p.digits()), constant(desired)),
                 source(p.source()));
     }

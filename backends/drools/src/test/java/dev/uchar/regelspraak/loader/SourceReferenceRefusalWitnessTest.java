@@ -122,7 +122,7 @@ class SourceReferenceRefusalWitnessTest {
         rows.put("ContextValue", new String[] { w, "{\"node\":\"ContextValue\",\"name\":\"evaluationDate\",\"type\":"
                 + "{\"node\":\"Date\",\"precision\":\"day\"}," + sourceReference + "}", w });
         rows.put("Unresolved (expression)", new String[] { w, "{\"node\":\"Unresolved\"," + sourceReference + "}", w });
-        rows.put("Regelversie", new String[] { v, "{\"node\":\"Regelversie\",\"regel\":\"x\",\"inconsistent\":false,"
+        rows.put("Regelversie", new String[] { v, "{\"node\":\"Regelversie\",\"regel\":\"x\",\"inconsistent\":true,"
                 + sourceReference + "}", v });
         rows.put("Unresolved (condition)", new String[] { v, "{\"node\":\"Unresolved\"," + sourceReference + "}", v });
         for (Map.Entry<String, String[]> r : rows.entrySet()) {

@@ -1361,7 +1361,7 @@ public final class IrEmitter {
             case Condition.RuleStatusCheck r -> {
                 w.key("node").value("Regelversie");
                 w.key("regel").value(r.rule());
-                w.key("inconsistent").value(r.inconsistent());
+                w.key("inconsistent").value(true);
                 sourceReference(r.source().snippet());
             }
             case Condition.Unresolved o -> {

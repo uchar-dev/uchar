@@ -78,7 +78,7 @@ class ReaderSentenceBoundaryTest {
     private static final String VERIFIER_COPIES = ("RGS-015:1 RGS-016:1 RGS-018 RGS-035 RGS-036 RGS-037 RGS-060 "
             + "RGS-066 RGS-067 RGS-071 RGS-077 RGS-078:1 RGS-079 RGS-080 "
             + "RGS-081.operand-parameter RGS-081.operand-position RGS-081.rationale-date RGS-081.rationale-other "
-            + "RGS-081.sentence RGS-083:1 RGS-084.operand-sentence RGS-085:1 RGS-086 RGS-087 RGS-088 "
+            + "RGS-081.sentence RGS-084.operand-sentence RGS-085:1 RGS-086 RGS-087 RGS-088 "
             + "RGS-098.duplicate-name RGS-098.name-collision RGS-102:1 RGS-103:1 RGS-104 RGS-106:1 RGS-107 RGS-108:1 "
             + "RGS-110:1 RGS-114:1 RGS-115:1 RGS-118:1 RGS-120.hop RGS-122:1 RGS-123:1 RGS-124:2 "
             + "RGS-125.neither-member RGS-125.reaches RGS-126:2 RGS-127:1 RGS-128.range-anchor RGS-128.range-element "
@@ -86,7 +86,7 @@ class ReaderSentenceBoundaryTest {
             + "RGS-178 RGS-183 RGS-189:1 RGS-192 RGS-193 RGS-194:1 RGS-196:1 RGS-197 RGS-197.negative-literal "
             + "RGS-198 RGS-200 RGS-201:1 RGS-202:1 RGS-202.computed RGS-202.navigated-read "
             + "RGS-202.no-subject RGS-202.parameter-bound RGS-202.time-dependent RGS-203:1 RGS-206 RGS-207 RGS-280 "
-            + "RGS-283:1 RGS-285 RGS-286 RGS-288 RGS-289 RGS-290 RGS-291 RGS-292 RGS-295 RGS-296 RGS-297 RGS-298 "
+            + "RGS-283:1 RGS-285 RGS-286 RGS-288 RGS-289 RGS-291 RGS-292 RGS-295 RGS-296 RGS-297 RGS-298 "
             + "RGS-299 RGS-309:2 RGS-318 RGS-319 RGS-323.side RGS-324 RGS-325.side RGS-326 RGS-327.side RGS-328 "
             + "RGS-333 RGS-334 RGS-335 RGS-337 RGS-343 RGS-344.dates-of-two-precisions RGS-344.numbers-and-dates "
             + "RGS-344.operand-sentence");

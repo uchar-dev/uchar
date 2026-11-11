@@ -233,43 +233,6 @@ public final class RegelSpraakModel {
                 || allocations.stream().anyMatch(v -> name.equals(v.name()));
     }
 
-    /** §8.1.9 the rule names referenced by a live "regelversie &lt;X&gt; is gevuurd" predicate anywhere in the
-     *  model — walked across every construct that carries a condition (a regel voorwaarde, a verdeling/creatie
-     *  voorwaarde, a consistentie assertie). The transpilers emit a {@code RuleFired} marker in the consequence
-     *  of a referenced rule ONLY (opt-in emission, no fact-base bloat), and lower the predicate to an
-     *  {@code exists RuleFired} only for a name that is both referenced AND an instrumented producer. */
-    public java.util.Set<String> firedReferences() {
-        java.util.Set<String> result = new java.util.LinkedHashSet<>();
-        for (var r : resolvedRules) dev.uchar.regelspraak.ir.Condition.collectFiredReferences(r.condition(), result);
-        for (var v : allocations)    dev.uchar.regelspraak.ir.Condition.collectFiredReferences(v.condition(), result);
-        for (var oc : objectCreations) dev.uchar.regelspraak.ir.Condition.collectFiredReferences(oc.condition(), result);
-        for (var fc : factCreations)  dev.uchar.regelspraak.ir.Condition.collectFiredReferences(fc.condition(), result);
-        for (var c : consistencies)  dev.uchar.regelspraak.ir.Condition.collectFiredReferences(c.assertion(), result);
-        return result;
-    }
-
-    /** §8.1.9 whether {@code name} names a rule the back-ends INSTRUMENT with a {@code RuleFired} marker — a
-     *  main {@code regel()}-path rule (gelijkstelling / berekening / initialisatie / kenmerktoekenning), the
-     *  common case whose consequence both back-ends unconditionally mark. "regelversie X is gevuurd" lowers to
-     *  an {@code exists RuleFired} ONLY for such a name (else the exists would never match — a silent never-fire);
-     *  a gevuurd-reference to any other kind (a consistentie/uniciteit rule, whose "result" is the Inconsistentie
-     *  channel that "is inconsistent" reads, or an unknown name) stays an honest symmetric marker. This gates
-     *  ONLY the lowering; emission is additionally gated on the name being in {@link #firedReferences()}. */
-    public boolean firedProducer(String name) {
-        if (name == null) return false;
-        return resolvedRules.stream().anyMatch(r -> name.equals(r.name()) && firedInstrumentable(r.kind()));
-    }
-
-    /** The §8.1.9 main-regel() rule kinds whose consequence carries a {@code RuleFired} insert (the scalar/kenmerk
-     *  value writers routed through {@code regel()}); an objectcreatie/feitcreatie/verdeling/consistentie is out
-     *  of this instrumented set (its status stays a marker). */
-    private static boolean firedInstrumentable(dev.uchar.regelspraak.ir.ResolvedRule.Kind s) {
-        return s == dev.uchar.regelspraak.ir.ResolvedRule.Kind.GELIJKSTELLING
-                || s == dev.uchar.regelspraak.ir.ResolvedRule.Kind.BEREKENING
-                || s == dev.uchar.regelspraak.ir.ResolvedRule.Kind.INITIALISATIE
-                || s == dev.uchar.regelspraak.ir.ResolvedRule.Kind.KENMERKTOEKENNING;
-    }
-
     /**
      * Resolve a subject noun to the object type it denotes (§13.4.1). The noun may
      * name an object type directly (case-insensitive: "de groep" → Ploeg) or be a

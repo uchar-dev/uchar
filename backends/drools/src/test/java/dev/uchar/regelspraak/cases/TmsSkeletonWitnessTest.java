@@ -102,11 +102,9 @@ class TmsSkeletonWitnessTest {
                 + " 3.11)", e.getMessage());
     }
 
-    /** "Een Vuurtoren is helder indien regelversie verlichting is gevuurd": a Regelversie 'is gevuurd', which the branch
-     *  does not carry, since it is no construct of the core. Until the condition forms were carried (card tms-expressievormen-en-rekendatum, 2026-10-09) this
-     *  row pinned the refusal of "de sterkte van ten minste 2 van de lampen van de Vuurtoren groter is dan 5", a
-     *  QuantifierFold, which the branch now lowers. */
-    @Test void a_condition_outside_the_trial_is_refused_with_the_node() throws Exception {
+    /** "Een Vuurtoren is helder indien regelversie verlichting is gevuurd": a Regelversie with {@code inconsistent}
+     *  false, which is no form of the wire ("is gevuurd" has no norm), so the loader refuses the document at the field. */
+    @Test void a_fired_rule_version_is_refused_at_load() throws Exception {
         String snippet = "regelversie verlichting is gevuurd";
         String fired = "{\"node\":\"Regelversie\",\"regel\":\"verlichting\",\"inconsistent\":false,\"source\":"
                 + "{\"snippet\":\"" + snippet + "\"}}";
@@ -114,12 +112,12 @@ class TmsSkeletonWitnessTest {
                 + "\"helder\",\"subjectType\":\"Vuurtoren\",\"source\":{\"snippet\":\"Een Vuurtoren is helder\"}}",
                 IrPath.literal("waar", "{\"node\":\"Boolean\"}", "waar"), fired);
         Path ir = TmsDocuments.document(VUURTOREN, List.of(helder));
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+        dev.uchar.regelspraak.loader.IrLoader.DocumentError e = assertThrows(
+                dev.uchar.regelspraak.loader.IrLoader.DocumentError.class,
                 () -> DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL));
-        assertEquals("transpiler SKIP: regel: helder — een Regelversie 'is gevuurd' in de voorwaarde ('" + snippet
-                + "'): geen vorm van de kern maar een predicaat van het"
-                + " RegelSpraak-dialect over het fixpunt (RUNTIME-SEMANTICS ch. 5.6, CONSTRUCTS rij 30), dat de"
-                + " referentie-interpreter en de ASP-backend niet evalueren", e.getMessage());
+        assertTrue(e.site().endsWith("/condition/inconsistent"), e.getMessage());
+        assertTrue(e.getMessage().endsWith(": inconsistent is false: the rule-status check reads only the inconsistency"
+                + " channel"), e.getMessage());
     }
 
     /** A Vuurtoren with its lampen over a role to many, as the jutterswet-vuurtoren golden declares them. */
