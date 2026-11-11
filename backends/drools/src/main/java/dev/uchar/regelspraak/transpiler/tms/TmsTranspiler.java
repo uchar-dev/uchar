@@ -1406,8 +1406,8 @@ public final class TmsTranspiler {
      *  it), whether it took the general form, the knots of its chains at the root, the bean class of its owner, the
      *  type it runs on ({@link StackBuild#javaClass}), and whether it decides per day, on a timeline target
      *  ({@link #dayStackRules}). */
-    private record StackLayout(Member member, String targetForm, boolean general, List<List<Node>> roots,
-                               Class<?> javaClass, boolean perDay) {}
+    record StackLayout(Member member, String targetForm, boolean general, List<List<Node>> roots,
+                       Class<?> javaClass, boolean perDay) {}
 
     /** How a chain or a reconciliation came out: a default that decided, or a conflict. */
     private record Settling(DefaultsDecision.Decider decider, DefaultsDecision.Conflict conflict) {}
@@ -1513,7 +1513,7 @@ public final class TmsTranspiler {
 
     /** The JSON pointer of default {@code d} into the document ({@link DefaultsDecision}): the {@code Default} node, or
      *  for a default the fold of ch. 7.10 made of an ordinary rule the version of that rule. */
-    private String pointerOf(Default d) {
+    String pointerOf(Default d) {
         if (pointers == null) {
             pointers = new IdentityHashMap<>();
             for (int i = 0; i < defaults.size(); i++)
@@ -1543,7 +1543,7 @@ public final class TmsTranspiler {
      *  #1" … "#n" in a row (the loader's naming, IR-SPEC ch. 3, Versioning), so a version continues a form where it
      *  follows the version before it by name; a rule without a name says nothing of its form, and one before {@code r}
      *  leaves the place of {@code r} open, which is refused. */
-    private String rulePointer(ResolvedRule r) {
+    String rulePointer(ResolvedRule r) {
         int form = -1, version = 0;
         String previous = null;
         for (ResolvedRule x : model.resolvedRules) {
@@ -2597,7 +2597,7 @@ public final class TmsTranspiler {
      *  the union of their segments with its input on the days none decides (RUNTIME-SEMANTICS ch. 3.11, ch. 5.7, "Two
      *  writers per day", ch. 7.8, 7.11), its standing ({@link #writersUnionRules}) and its write-back
      *  ({@link #readFixpoint}), for one writer as for two or more. */
-    private boolean timelineWriters(ElementKey key) {
+    boolean timelineWriters(ElementKey key) {
         if (dayStackTargets.contains(key)) return true;
         for (ResolvedRule r : timelineForms(key)) {
             Expr.AttributeReference a = writtenReference(r.target());
@@ -4574,8 +4574,8 @@ public final class TmsTranspiler {
      * the target form and the default indices from the root, member indices left out), and, where it has exception
      * groups, their chains, numbered consecutively from {@code firstMember}.
      */
-    private record Node(Default d, ObjectType levelOf, int chain, int position, String label, String key,
-                         List<List<Node>> members, int firstMember, Validity validity) {
+    record Node(Default d, ObjectType levelOf, int chain, int position, String label, String key,
+                 List<List<Node>> members, int firstMember, Validity validity) {
         boolean hasMembers() { return members != null; }
     }
 
@@ -5404,7 +5404,7 @@ public final class TmsTranspiler {
      * {@code raises}, the inputs are the node's own evaluation, and a fault of one is the fault the node raised or
      * passed on.
      */
-    private record Derived(List<Term> inputs, Function<List<Object>, Object> compute, boolean raises) {}
+    record Derived(List<Term> inputs, Function<List<Object>, Object> compute, boolean raises) {}
 
     /** Starts noting the terms of the nodes the condition and the value of a form's own rule compile, in a build with
      *  readings; nothing in a build without. */
@@ -5443,8 +5443,8 @@ public final class TmsTranspiler {
      *  form's own rule, its unit, and for the node of a fold over a set the fold, whose contributions are its
      *  contributors, with the quantifier fold the node is where it is one; and for a node that reads a member over a
      *  path, the slot of the object the path reaches, -1 for every other node. */
-    private record Site(int node, String kind, Term term, Unit unit, Fold fold, Condition.QuantifierFold quantifier,
-                        Derived derived, int objectSlot) {
+    record Site(int node, String kind, Term term, Unit unit, Fold fold, Condition.QuantifierFold quantifier,
+                Derived derived, int objectSlot) {
 
         /** Whether the node reads a member over a path of roles (RUNTIME-SEMANTICS ch. 5.8). */
         boolean navigates() {
@@ -5465,9 +5465,9 @@ public final class TmsTranspiler {
      * days of its turn ({@code turn}) and, for its initialisation default, of the days on which the input leaves the
      * target empty ({@code inputDays}), each null for every other form (RUNTIME-SEMANTICS ch. 5.12, 7.11).
      */
-    private record ReadingRule(RulePlan plan, RulePlan speculative, String ownRule, String pointer, Validity validity,
-                               boolean guarded, Term condition, Term periods, Term value, List<Site> sites, Term turn,
-                               Term inputDays) {
+    record ReadingRule(RulePlan plan, RulePlan speculative, String ownRule, String pointer, Validity validity,
+                       boolean guarded, Term condition, Term periods, Term value, List<Site> sites, Term turn,
+                       Term inputDays) {
 
         /** The subject pattern of the reading rule. */
         Subject subject() {
@@ -6728,8 +6728,8 @@ public final class TmsTranspiler {
      *  in which case its contributions carry a {@link MemberTest} ({@link #quantifierFold}); and for a per-element fold over
      *  an attribute on a timeline, that a member's value can fault, in which case the rule that reads it binds its
      *  {@link MemberFault} facts as well ({@link #memberFaultRule}). */
-    private record Fold(String key, List<RulePlan> rules, List<Reads> readings, boolean canFail,
-                        boolean deposits, boolean memberCanFail, boolean memberDeposits, boolean valueCanFail) {
+    record Fold(String key, List<RulePlan> rules, List<Reads> readings, boolean canFail,
+                boolean deposits, boolean memberCanFail, boolean memberDeposits, boolean valueCanFail) {
         /** A fold over a set source or a union: no matrix per member. */
         Fold(String key, List<RulePlan> rules, List<Reads> readings, boolean canFail, boolean deposits) {
             this(key, rules, readings, canFail, deposits, false, false, false);
@@ -10089,8 +10089,8 @@ public final class TmsTranspiler {
      *  of its own: its key is the cell's ({@link ProducerConsumer#cellOf}), {@code name} its attribute's, the bean
      *  property of the map that holds the cells, and {@code cell} its key in that map ({@link FactModelGenerator#cellKey});
      *  null for every other member. */
-    private record Member(ElementKey key, ObjectType declarant, String name, boolean characteristic, Datatype datatype,
-                       Class<?> javaClass, RegelSpraakModel.Granularity time, List<String> cell) {
+    record Member(ElementKey key, ObjectType declarant, String name, boolean characteristic, Datatype datatype,
+               Class<?> javaClass, RegelSpraakModel.Granularity time, List<String> cell) {
 
         /** The member as a sentence names it: a cell as its attribute with its labels, {@code vondstgewicht[najaar]},
          *  the spelling of the place of a fault and of the node of IR-SPEC ch. 5.1. */
@@ -10101,7 +10101,7 @@ public final class TmsTranspiler {
 
     /** Whether {@code member} is an attribute on a timeline: one the branch reads through its standing, derived or input,
      *  whose input stands in the convention the case gave it ({@link #attributeStateRules}). */
-    private static boolean timelineAttribute(Member member) {
+    static boolean timelineAttribute(Member member) {
         return member.time() != null && !member.characteristic();
     }
 
@@ -10291,13 +10291,13 @@ public final class TmsTranspiler {
     }
 
     /** The declared fact type named {@code name}, compared as the verifier compares names, or null. */
-    private RegelSpraakModel.FactType factType(String name) {
+    RegelSpraakModel.FactType factType(String name) {
         for (RegelSpraakModel.FactType ft : model.factTypes.values())
             if (Namen.norm(ft.name).equals(Namen.norm(name))) return ft;
         return null;
     }
 
-    private Class<?> beanClass(ObjectType ot) {
+    Class<?> beanClass(ObjectType ot) {
         try {
             return Class.forName(FactModelGenerator.PACKAGE + "." + Namen.ident(ot.name, true), true, beanLoader);
         } catch (ClassNotFoundException e) {
