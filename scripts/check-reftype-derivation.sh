@@ -309,7 +309,8 @@
 # reported as missing the pinned outcome there too). Measured by mutation the same day for the two fields that
 # joined the leg after: ref failing on a diagnostic with an odd line and the Drools loader refusing a rule with
 # statute annotations made the leg red, naming diagnostics for ref on 5 cases of 3 goldens and rule-annotations
-# for both Drools branches on 11 goldens. No survivor list: no reading of a presentation field
+# for both Drools branches on 11 goldens. For the source record: the Drools loader refusing a comparison without
+# one made the leg red on 189 goldens for both branches, naming source. No survivor list: no reading of a presentation field
 # is a legitimate one. A field that no golden carries fails its floor.
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
