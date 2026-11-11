@@ -11002,14 +11002,15 @@ let () =
     ~ir:(ms "none" []) ~param:"p" ~case_text:(pf_case ~instances:haven_case (validate ~label:"H1" None))
     ~silent:"keur leeg"
 
-(* ref's order of the members a creation adds is not the document order of the
-   creations. ref runs a fixpoint per stratum: a creation for each Werf sits
-   above the creation that makes Werven, while one for each Droogdok (a
-   subtype of Werf) stays in stratum 0, so on D1 ref runs the Droogdok
-   creation first. Neither order is a norm, so clingo refuses on all three
-   paths that would lean on one: a quantifier fold's matrix, a Let barrier per
-   member, and the demand of a Let value read in a matrix. c0 mints a schuit
-   for each Werf, c1 a werf for each Haven, c2 a schuit for each Droogdok. *)
+(* The member order of RUNTIME-SEMANTICS ch. 5.7a is not the order in which
+   the creations run. A creation for each Werf sits above the creation that
+   makes Werven, while one for each Droogdok (a subtype of Werf) stays in
+   stratum 0, so on D1 the Droogdok creation runs first; the member order
+   still puts c0's schuit before c2's, by creation index, and ref reads it so.
+   clingo does not carry that order, so it refuses on all three paths that
+   lean on it: a quantifier fold's matrix, a Let barrier per member, and the
+   demand of a Let value read in a matrix. c0 mints a schuit for each Werf, c1
+   a werf for each Haven, c2 a schuit for each Droogdok. *)
 let () =
   let haven = pf_ot ~ident:"Haven" ~plural:"Havens" [ ("keur", pf_n0); ("bonus", pf_n0) ]
   and werf =
@@ -11086,16 +11087,19 @@ let () =
   let validate v = [ (match v with Some v -> pf_is ~label:"D1" ~attr:"keur" v | None -> pf_empty ~label:"D1" ~attr:"keur" ()); pf_cons ] in
   let minst = kv ~cutoff:1 "atLeast" (pf_comp ~cutoff:1 "atLeast" [ gt length (lit "5"); gt length p ])
   and every = kv "all" (pf_comp "all" [ gt length (lit "5"); gt length p ]) in
-  order_named ~name:"stratum: at-least 1, 8 for each Werf and 3 for each Droogdok, ref reads 3 first (stratum-8-w-3dd)"
+  named_refusal ~by:"the quantifier fold" ~ref_plays:true
+    ~name:"stratum: at-least 1, 8 for each Werf and 3 for each Droogdok, ref reads 8 first and plays (stratum-8-w-3dd)"
     ~ir:(check_doc (creations "8" "3") minst) ~param:"p" ~case_text:(pf_case ~instances:d1 (validate (Some "99")));
-  order_named ~name:"stratum: ALLE, 3 for each Werf and 8 for each Droogdok, ref reads 8 first (stratum-alle-3-w-8dd)"
+  named_refusal ~by:"the quantifier fold" ~ref_plays:true
+    ~name:"stratum: ALLE, 3 for each Werf and 8 for each Droogdok, ref reads 3 first and plays (stratum-alle-3-w-8dd)"
     ~ir:(check_doc (creations "3" "8") every) ~param:"p" ~case_text:(pf_case ~instances:d1 (validate None));
   named_refusal ~by:"the quantifier fold" ~ref_plays:true
     ~name:"stratum: without the werf creation ref reads 8 first and plays (stratum-8-3dd-zonder-werfcreatie, control)"
     ~ir:(check_doc (creations ~werf:false "8" "3") minst) ~param:"p" ~case_text:(pf_case ~instances:d1 (validate (Some "99")));
   both_answer ~name:"stratum: at-least 1 with p bound (stratum-8-w-3dd-gebonden, control)"
     ~ir:(check_doc (creations "8" "3") minst) ~case_text:(pf_case ~params:bound ~instances:d1 (validate (Some "99")));
-  order_named ~name:"stratum: the werf creation assigns 1 plus 0 (stratum-ctl-nietliteral, control)"
+  named_refusal ~by:"the quantifier fold" ~ref_plays:true
+    ~name:"stratum: the werf creation assigns 1 plus 0 (stratum-ctl-nietliteral, control)"
     ~ir:(check_doc (creations ~werf_check:[ ("keur", pf_bin ~typ:pf_n0 "plus" (lit "1") (lit "0")) ] "8" "3") minst)
     ~param:"p" ~case_text:(pf_case ~instances:d1 (validate (Some "99")));
   (* the barrier per member: bonus = Let k = restpost in som(lengte van
@@ -11110,8 +11114,8 @@ let () =
                (pf_comp ~cutoff:1 "atLeast" [ pf_comp "all" [ gt length (lit "5"); gt k (lit "0") ]; gt length p ]))))
   in
   let bonus_empty = [ pf_empty ~label:"D1" ~attr:"bonus" (); pf_cons ] in
-  named_refusal ~by:{|the Let "k"|} ~ref_plays:false
-    ~name:"stratum: a Let barrier per member, ref reads 3 first (stratum-pm2-8-w-3dd)" ~ir:(pm_doc (creations "8" "3"))
+  named_refusal ~by:{|the Let "k"|} ~ref_plays:true
+    ~name:"stratum: a Let barrier per member, ref's barrier at 8 (stratum-pm2-8-w-3dd)" ~ir:(pm_doc (creations "8" "3"))
     ~param:"p" ~case_text:(pf_case ~instances:d1 bonus_empty);
   named_refusal ~by:{|the Let "k"|} ~ref_plays:true
     ~name:"stratum: the barrier per member without the werf creation, ref's barrier at 8 (stratum-pm2-8-3dd-zonder-werfcreatie, control)"
@@ -11129,8 +11133,8 @@ let () =
                (kv ~cutoff:1 "atLeast" (pf_comp ~cutoff:1 "atLeast" [ gt length (lit "5"); gt length k ])))))
   in
   let h1 = [ inst "H1" "Haven" "" {|"werven": [ "D1" ]|}; inst "D1" "Droogdok" {|"keur": { "number": "4" }|} "" ] in
-  named_refusal ~by:{|the Let "k"|} ~ref_plays:false
-    ~name:"stratum: a Let value read in a matrix, ref reads 3 first (stratum-vraag-8-w-3dd)"
+  named_refusal ~by:{|the Let "k"|} ~ref_plays:true
+    ~name:"stratum: a Let value read in a matrix, ref's 8 settles the matrix (stratum-vraag-8-w-3dd)"
     ~ir:(question_doc (creations "8" "3")) ~param:"p" ~case_text:(pf_case ~instances:h1 [ pf_cons ]);
   named_refusal ~by:{|the Let "k"|} ~ref_plays:true
     ~name:"stratum: the Let value without the werf creation, ref's 8 settles the matrix (stratum-vraag-8-3dd-zonder-werfcreatie, control)"
