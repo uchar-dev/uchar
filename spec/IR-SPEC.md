@@ -953,10 +953,9 @@ false`, `decimals = 0` (no precision ceiling; §13.3.3 form (c)). The
   WF-060, is a use site WF-088 walks in the declaration as well
   (`wf088-sum-payload-drift`). The one nested form these leave, a
   declared `SumType` repeated as a payload or field inside `domains`, is
-  verifier-clean when its inline copy drifts (WF-061 walks attribute and
-  parameter datatypes only) and is recorded as an open flank rather than
-  pinned here: every verifier rule that consumes it resolves the *named*
-  domain, never the inline copy. *One neighbouring gap, recorded here and
+  a use site WF-061 walks, so its inline copy agrees with its declaration
+  (`corpus/negative/wf061-sum-payload-drift`,
+  `wf061-struct-field-drift`). *One neighbouring gap, recorded here and
   since closed.* **Orderability of the
   element-passing folds.** This rule makes the fold's domain honest, not
   its kind admissible: `first`/`last`/`minimum`/`maximum` are
@@ -1070,7 +1069,12 @@ the enumeration alone (WF-087).
   constructors, same payload datatypes, same order); and two sum-typed
   operands of one comparison MUST name the same declaring domain — the
   nominal-identity rule, the sum-type sibling of WF-008 (which stays
-  stated over `Enumeration` and keeps its own OPEN).
+  stated over `Enumeration` and keeps its own OPEN). A use site is every
+  `SumType` at any depth of a datatype: of an attribute or a parameter, a
+  list element, the payload of another sum type, a struct field and a
+  `FunctionDef` parameter (`corpus/negative/wf061-list-element-drift`,
+  `wf061-sum-payload-drift`, `wf061-struct-field-drift`,
+  `wf061-functiondef-param-drift`).
 
 A recorded flank, deliberately not a WF clause: the ASP backend carries
 each constructor name as a *functor symbol*, so a name that does not
@@ -1155,8 +1159,7 @@ no-hole/equality semantics are `RUNTIME-SEMANTICS.md` ch. 11.
   already makes the enclosing copy disagree — the argument WF-073/074
   make for their nested forms), a sum-type payload (WF-060 admits no
   struct payload in a declaration at all, so such a payload can only sit
-  in a drifted inline sum copy — WF-061's recorded open flank, not
-  this rule's), and — exactly as WF-088 records for enumerations — a
+  in a drifted inline sum copy, which WF-061 refuses), and — exactly as WF-088 records for enumerations — a
   rule's TARGET `type`, which is WF-022's lvalue rather than an
   expression node, so the expression walk never enters it. That third
   position is real: five goldens and two red documents carry a
@@ -2824,7 +2827,8 @@ literal `{"boolean": true}` since L4.)
   that the calendar integrates has no finite bound
   (`corpus/negative/wf023-precision-calendar-total`). Deferrals: the
   pro-rata write of `RUNTIME-SEMANTICS.md` ch. 3.7 into a target with a
-  timeline (no executor carries a rounding around it), and a value whose
+  timeline (no executor carries a rounding around it), bare or as the bound
+  value of a `Let` whose body reads its binder and nothing else, and a value whose
   bound nothing declares (an `Unresolved`, an unbound variable, a node that
   is no number). Witnesses
   `corpus/negative/wf023-precision-*`, one per row of the bound's table, and
@@ -2849,8 +2853,8 @@ literal `{"boolean": true}` since L4.)
 - **WF-126** The grid of a timeline read per period (`RUNTIME-SEMANTICS.md`
   ch. 3.4, 3.10, 7.11; RegelSpraak typeringen §3; maintainer decision
   2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 8). Every timeline
-  that the value or the condition of a computing rule version on a
-  timeline attribute target reads per period, and every timeline that the
+  that the value or the condition of a computing or initialisation rule
+  version on a timeline attribute target reads per period, and every timeline that the
   consequence or the justification of a default of a defaults group on such
   a target reads (an exception group's included), MUST lie on a grid that
   fits the target's grid, so the target can carry each cut it makes: every wall
@@ -2869,8 +2873,14 @@ literal `{"boolean": true}` since L4.)
   (`WF-126.justification-grid`). Exempt, each by a rule of its own:
   the time-proportional part and the day count (WF-056, WF-058) and the
   operand of a whole-period qualifier, which the qualifier reads per
-  bucket. The parameters name the `operand`, its `operandGrid`, the
-  `target` and its `targetGrid`. *Motivation:* a rate for every day in a
+  bucket. An initialisation on a timeline target is read per day as a
+  computing version is (`RUNTIME-SEMANTICS.md` ch. 3.11, 7.8), so its value
+  and its condition are judged the same way
+  (`corpus/negative/wf126-initialisation-grid`). A value that is a `Let`
+  whose body reads its binder and nothing else is read as its bound value,
+  through every such `Let`, as the executors read it (`RUNTIME-SEMANTICS.md`
+  ch. 10.6; `corpus/negative/wf126-let-bound-value`). The parameters name
+  the `operand`, its `operandGrid`, the `target` and its `targetGrid`. *Motivation:* a rate for every day in a
   rent for every month changes value inside a month, and no executor turns
   a finer operand into a coarser target; v0 enforced the granularity
   sentence of ch. 3.4 nowhere (measured: a parameter for every day in a
@@ -8897,8 +8907,10 @@ nothing, so neither node has an enumeration reading.
   node in a condition, whose members are read in order and stop at the
   first that fails (`RUNTIME-SEMANTICS.md` ch. 5.10); in the `filter` of
   the fold over members it stands in, for the fold's argument and for a
-  quantifier fold's `test`; in the `condition` of an `IfThenElse` for its
-  `then` branch. A per-member position and a closed body start without
+  quantifier fold's `test`. The `condition` of an `IfThenElse` guards
+  neither branch: WF-077 admits no attribute read there, so it cannot hold
+  a gevuld test of a `PayloadAccess` over a base this rule compares. A
+  per-member position and a closed body start without
   the tests outside them. Two bases are the same when they are an
   `AttributeReference` to one attribute on one type over one path with
   one anchor, or a `DimensionCellRead` of the same labels over two such
@@ -10304,7 +10316,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-058 | the day count (`dayCount`, `RUNTIME-SEMANTICS.md` ch. 3.8) MUST carry a gedurende condition — a check of an own temporal characteristic, or an `all` composite of one such check and day-kind tests (`Predicate` of kind `dayKind`) of the counted day, the `BoundDay` (widened 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` 7b) — takes no arguments, and its stated bucket MUST equal the target's declared granularity; a target that declares a unit MUST declare a day unit over the unit the bucket counts in, dg/mnd or dg/jr by the spelling table of ch. 3.8 (added 2026-11-03, IMPLICIT-TIME VB 7.2), and WF-023 then reads the count in that unit | gate 3 | `anchor/jutterswet-dagentelling` (the ch. 3.8 worked example verbatim, executed by gates 5–6), `anchor/jutterswet-verzuimrente-30-360` (the day-kind test and the unit, read through a variable that binds the count) | `wf058-no-during-condition` + `wf058-bucket-target-mismatch` + `wf058-with-argument` + `wf058-day-count-without-characteristic` + `wf058-day-count-target-unit` |
 | WF-059 | every declared attribute carries a datatype — the attribute pendant of WF-018's datatype clause; a null datatype splits the executors on otherwise clean input (ch. 2.2). Arms (2) and (3) — every `kenmerkGranulariteit` / `attribuutGranulariteit` entry carries a granularity (maintainer decisions 2026-09-09 and 2026-09-10) — were removed at M1 (2026-09-23): the side tables left the wire and `TimelineFacet.granularity` is a required, non-null enum, so a timeline without a grid cannot be written; their measurements are in `backlog/done/20260906-gedurende-kwalificatie-stiltes.md` and `backlog/done/20260909-attribuutgranulariteit-null.md` | gate 3 | every golden (a universal declaration property; gate 3 witnesses none over-rejects) | `wf059-attribute-without-datatype` (rewritten by hand in the M1 shape at M1: an Attribute node with `"datatype": null`, which the schema admits, still rejected on WF-059 and not by a load error); arms (2) and (3) lost `wf059-kenmerk-zonder-granulariteit` and `wf059-attribuut-zonder-granulariteit` with them (stamp verwijderd-met-reden, `corpus/negative/README.md`) |
 | WF-060 | SumType declaration: ≥ 1 constructor, unique names (ci), admissible payload datatypes (a scalar datatype or a declared SumType; no list or struct), acyclic payload graph (ch. 2.4) | gate 3 | `anchor/jutterswet-beschikkingsom` (executed by gates 5–6), `jutterswet-afwezigheidsmarkers` | `wf060-duplicate-constructor` + `wf060-list-payload` + `wf060-recursive-sumtype` |
-| WF-061 | **Since 2026-09-25:** the datatypes this rule compares are compared as ch. 2.1 matches names — a domain, value, constructor or field name case-insensitively, a unit byte for byte; no golden carries the drift at this rule, which compares through the one function WF-064, WF-069 and WF-070 are witnessed at. SumType use site agrees with its declaring domain; two sum-typed comparison operands name the same domain (the nominal rule, ch. 2.4) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf061-use-site-drift` + `wf061-cross-sumtype-equality` + `wf061-undeclared-domain` |
+| WF-061 | **Since 2026-09-25:** the datatypes this rule compares are compared as ch. 2.1 matches names — a domain, value, constructor or field name case-insensitively, a unit byte for byte; no golden carries the drift at this rule, which compares through the one function WF-064, WF-069 and WF-070 are witnessed at. SumType use site agrees with its declaring domain; two sum-typed comparison operands name the same domain (the nominal rule, ch. 2.4) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf061-use-site-drift` + `wf061-cross-sumtype-equality` + `wf061-undeclared-domain` + the nested use sites `wf061-list-element-drift`, `wf061-sum-payload-drift`, `wf061-struct-field-drift`, `wf061-functiondef-param-drift` |
 | WF-062 | Construct: sum-typed node; declared constructor; argument present iff unary; the argument a write into the declared payload — assignable as WF-023 reads a write, whose keuzetype and struct domains match as ch. 2.1 matches names, and at a write position of WF-023 within its precision gate (ch. 4.7; the write since card `absence-markers-residue`, 2026-11-05) | gate 3 | `anchor/jutterswet-beschikkingsom` + `jutterswet-afwezigheidsmarkers-creatie` (a literal of fewer decimals than its payload) | `wf062-nullary-with-argument` + `wf062-payload-type-mismatch` + `wf062-argument-incompatible-units` + `wf062-argument-precision-exceeds` + `wf062-argument-precision-unbounded` + `wf062-construct-on-enum` (the asymmetry the 2026-09-01 widening left standing: `Match` widened to enumeration scrutinees, `Construct` deliberately did not — an enumeration value is a `Literal`) |
 | WF-063 | Match totality over BOTH keuzetype variants (ch. 2.4/4.7): keuzetype-typed scrutinee (sum type or enumeration) naming a domain declared in that variant; arms cover the declared alternatives exactly, each once, none alien; on a sum scrutinee binder iff unary, on an enumeration scrutinee binder always null | gate 3 | `anchor/jutterswet-beschikkingsom` (the sum arm) + `jutterswet-vaarwatertoeslag-catala` (the enumeration arm: an all-nullary keuzetype normalised to its `Enumeration` domain, WF-087, matched arm by arm — replayed by gates 5–6) | `wf063-missing-arm` + `wf063-alien-constructor` + `wf063-binder-on-nullary` + `wf063-duplicate-arm` (sum) + `wf063-enum-missing-value` + `wf063-enum-binder-on-arm` + `wf063-enum-alien-value` (enumeration) |
 | WF-064 | **Since 2026-09-25:** the datatypes this rule compares are compared as ch. 2.1 matches names — a domain, value, constructor or field name case-insensitively, a unit byte for byte; `jutterswet-meldtermijnen` carries the case-only drift at this rule. every BinderRef resolves to an enclosing binder (a match arm's binder, a lambda/function parameter, or — the 5c widening — a `Let` binder scoped to its body); the closure clause: inside a closed lambda/function body the set is closed at the boundary, so a BinderRef reaching an enclosing rule's Let binder or an outer fold's parameter is ill-formed (an inside-body Let stays in scope); match arm bodies agree on one result datatype (ch. 4.7/4.8/4.10; `VariableReference` stays outside — row 24) | gate 3 | `anchor/jutterswet-beschikkingsom` + `anchor/jutterswet-tariefstelling` (Let binders) + `jutterswet-meldtermijnen` (a domain name in another case at this rule, since 2026-09-25) | `wf064-unbound-binderref` + `wf064-mixed-arm-types` + `wf064-enclosing-binder-in-closed-body` (the closure clause) |
@@ -10369,7 +10381,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-123 | *Retired at L6 (history):* the numerator `"1"` of a reciprocal. The factor list has no such numerator, so the rule lost its object and its five witnesses left the corpus with a reason (`corpus/negative/README.md`). |
 | WF-124 | one unit, one list (ch. 2.5, point 5): (a) at least one factor, (b) an `exponent` is never 0 and never 1, (c) one factor per `abbreviation` and `system`, (d) the factors in the canonical order, (e) a declaration carries no `exponent`. Check: gate 3, in the walk of WF-092. Golden: `jutterswet-vondsttempo`. Negative: `wf124-empty-unit` (a), `wf124-exponent-zero` (b), `wf124-exponent-one-written` (b), `wf124-duplicate-factor` (c), `wf124-factors-unsorted` (d), `wf124-declared-exponent` (e). |
 | WF-125 | a dimensioned attribute has a value per cell and none of its own (ch. 2.7; card `dimensions-executed`, 2026-11-02): (a) a reference to it stands only as the attribute of a cell read or as the argument of a dimension fold, (b) a write position names one cell — a rule target, an object creation's member, (c) no form that names a member whole names it — an allocation, a uniqueness key, a defaults group, a start-point determination, (d) no timeline beside its dimensions | gate 3 | `jutterswet-seizoenvondst`, `jutterswet-seizoenvouw` (reads through a cell and a fold), `jutterswet-seizoenkopie` (writes through a cell) | `wf125-bare-read` (a), `wf125-whole-target` (b, a rule target), `wf125-member-without-labels` (b, a member), `wf125-defaults-target` (c), `wf125-dimension-and-timeline` (d) |
-| WF-126 | the grid of a timeline read per period fits the grid of the rule's timeline target (ch. 3.1; card `conditions-per-period`, 2026-11-03): (a) a timeline the value reads — an own time-dependent attribute, the member attribute of a sum over a set, a time-dependent parameter; (b) one the condition reads — a check of an own time-dependent characteristic, a compared own time-dependent attribute, a whole-period qualifier on the grid it names; (c) and (d) the same in the consequence and the justification of a default of a defaults group on a timeline attribute target (RUNTIME-SEMANTICS ch. 7.11); the time-proportional part, the day count and the operand of a qualifier exempt | gate 3 | `jutterswet-loon-per-periode`, `jutterswet-wachtmaanden` (a month and a year qualifier on monthly targets), `jutterswet-rekenen-per-dag` and `anchor/jutterswet-verzuimrente-dagen` (operands on a day target), `jutterswet-opgave-per-periode` (defaults on monthly targets) | `wf126-value-grid` (a), `wf126-condition-grid` (b, a characteristic), `wf126-whole-period-grid` (b, a qualifier), `wf126-defaults-value-grid` (c), `wf126-defaults-condition-grid` (d) |
+| WF-126 | the grid of a timeline read per period fits the grid of the rule's timeline target (ch. 3.1; card `conditions-per-period`, 2026-11-03): (a) a timeline the value reads — an own time-dependent attribute, the member attribute of a sum over a set, a time-dependent parameter; (b) one the condition reads — a check of an own time-dependent characteristic, a compared own time-dependent attribute, a whole-period qualifier on the grid it names; (c) and (d) the same in the consequence and the justification of a default of a defaults group on a timeline attribute target (RUNTIME-SEMANTICS ch. 7.11); the time-proportional part, the day count and the operand of a qualifier exempt | gate 3 | `jutterswet-loon-per-periode`, `jutterswet-wachtmaanden` (a month and a year qualifier on monthly targets), `jutterswet-rekenen-per-dag` and `anchor/jutterswet-verzuimrente-dagen` (operands on a day target), `jutterswet-opgave-per-periode` (defaults on monthly targets) | `wf126-value-grid` (a), `wf126-condition-grid` (b, a characteristic), `wf126-whole-period-grid` (b, a qualifier), `wf126-defaults-value-grid` (c), `wf126-defaults-condition-grid` (d), `wf126-let-bound-value` (a value bound through a `Let`), `wf126-initialisation-grid` (an initialisation version) |
 | WF-127 | a `PayloadAccess` reads a sum type — a sum-typed base naming a declared domain, a declared unary constructor, the declared payload as its type — and stands under a gevuld test of the same access before it, the same attribute read or the same cell of it, or is the operand of a leeg or gevuld test (ch. 4.7; card `absence-markers`, 2026-11-04; the cell since card `absence-markers-residue`, 2026-11-05) | gate 3 | `jutterswet-afwezigheidsmarkers` + `jutterswet-afwezigheidsmarkers-cel` (executed by gates 5–6) | `wf127-unguarded` + `wf127-guard-after-read` + `wf127-fold-unguarded` + `wf127-cell-guarded-by-another-cell` + `wf127-base-not-sum` + `wf127-base-untyped` + `wf127-domain-undeclared` + `wf127-constructor-undeclared` + `wf127-constructor-nullary` + `wf127-type-differs` + `wf127-access-untyped` |
 | WF-128 | an allocation names no time-dependent attribute: not as its amount, share or rest, and not as its weight, cap or ordering key (ch. 3.2; card `timeline-initialisation-allocation-creation`, 2026-11-05) | gate 3 | every golden allocation, among them `jutterswet-berging` + `jutterswet-rangaflopend` (executed by gates 5–6) | `wf128-source-attribute` + `wf128-target-attribute` + `wf128-remainder-attribute` + `wf128-ratio-attribute` + `wf128-maximum-attribute` + `wf128-ordering-attribute` |
 | WF-129 | a text part that writes the unit of its number (`EmbeddedExpression.unit`) has a type with a unit — a number with a `unit`, a percentage among them (ch. 4.2; card `tekst-van-een-waarde-in-een-tekstsamenstelling`, 2026-11-06) | gate 3 | `jutterswet-tekst-van-een-waarde` (executed by gates 5 and 12) | `wf129-number-without-unit` + `wf129-not-a-number` |
