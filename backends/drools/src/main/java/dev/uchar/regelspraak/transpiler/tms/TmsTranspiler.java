@@ -1033,8 +1033,9 @@ public final class TmsTranspiler {
     record StackLayout(Member member, String targetForm, boolean general, List<List<Node>> roots,
                        Class<?> javaClass, boolean perDay) {}
 
-    /** The JSON pointer of default {@code d} into the document ({@link DefaultsDecision}): the {@code Default} node, or
-     *  for a default the fold of ch. 7.10 made of an ordinary rule the version of that rule. */
+    /** The JSON pointer of default {@code d} into the document ({@link DefaultsDecision}): the {@code Default} node, for
+     *  the group-default of a replaced inherited base (ch. 7.10) that base's node, or for a default the fold of ch. 7.10
+     *  made of an ordinary rule the version of that rule. */
     String pointerOf(Default d) {
         if (pointers == null) {
             pointers = new IdentityHashMap<>();
@@ -1043,6 +1044,8 @@ public final class TmsTranspiler {
         }
         String p = pointers.get(d);
         if (p != null) return p;
+        Default replaced = stacks.replacedBase(d);
+        if (replaced != null) return pointerOf(replaced);
         ResolvedRule r = stacks.ruleOf(d);
         if (r == null) throw new IllegalStateException("a default of a stack that the document does not declare and"
                 + " that is no rule of the document: " + d);

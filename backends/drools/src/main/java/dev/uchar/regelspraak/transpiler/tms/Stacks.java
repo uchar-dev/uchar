@@ -60,6 +60,9 @@ final class Stacks {
     private final Map<Default, ObjectType> origin = new IdentityHashMap<>();
     /** The ordinary rule each default the fold made of one comes from, by identity ({@link #ruleOf}). */
     private final Map<Default, ResolvedRule> madeFrom = new IdentityHashMap<>();
+    /** The inherited form-a base each group-default {@link #merge} made of its exception groups stands for, by
+     *  identity ({@link #replacedBase}). */
+    private final Map<Default, Default> replaced = new IdentityHashMap<>();
 
     Stacks(RegelSpraakModel model, List<PrioritizedDefaults> defaults) {
         this.model = model;
@@ -80,6 +83,13 @@ final class Stacks {
      *  declares. */
     ResolvedRule ruleOf(Default d) {
         return madeFrom.get(d);
+    }
+
+    /** The inherited form-a base whose exception groups the group-default {@code d} carries where an own base replaced
+     *  it ({@link #merge}), or null for any other default: {@code d} stands in the stack at that base's place in the
+     *  document. */
+    Default replacedBase(Default d) {
+        return replaced.get(d);
     }
 
     /** The level default {@code d} of a stack owned by {@code owner} is read on. */
@@ -196,12 +206,23 @@ final class Stacks {
         return out;
     }
 
-    /** The block order of ch. 7.10, one own group over one inherited group. */
-    private static PrioritizedDefaults merge(PrioritizedDefaults own, PrioritizedDefaults inherited) {
+    /** The block order of ch. 7.10, one own group over one inherited group. An own base replaces only the inherited
+     *  base's own consequence: the exception groups a replaced form-a base carries (ch. 7.9) are exceptions the subtype
+     *  inherits, which still outrank its own base, so they stay as a group-default at the bottom of the inherited
+     *  exceptions, without the justification, which gates only the consequence that is replaced. */
+    private PrioritizedDefaults merge(PrioritizedDefaults own, PrioritizedDefaults inherited) {
         List<Default> out = new ArrayList<>();
         out.addAll(exceptions(own));
         out.addAll(exceptions(inherited));
-        Default base = baseOf(own) != null ? baseOf(own) : baseOf(inherited);
+        Default inheritedBase = baseOf(inherited);
+        if (baseOf(own) != null && inheritedBase != null && inheritedBase.exceptions() != null) {
+            Default groups = new Default(null, null, null, false, inheritedBase.exceptions(), inheritedBase.source(),
+                    inheritedBase.name(), inheritedBase.statuteAnnotations());
+            replaced.put(groups, inheritedBase);
+            origin.put(groups, origin.get(inheritedBase));
+            out.add(groups);
+        }
+        Default base = baseOf(own) != null ? baseOf(own) : inheritedBase;
         if (base != null) out.add(base);
         out.addAll(initialisations(inherited));
         out.addAll(initialisations(own));
