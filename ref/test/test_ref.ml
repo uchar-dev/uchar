@@ -14130,7 +14130,8 @@ let () =
    (1800 EUR over five Wachters, ordered by wachtjaar, capped, whole euros)
    with one attribute moved to the sister unit ct = 1/100 EUR. The recurrence
    runs in the unit of the pot: a cap of 50000 ct compares as 500 EUR
-   (ch. 2.6, rule 5), and a share or rest is written through the assignment
+   (ch. 2.6, rule 5), restated before the floor, so the 50099 ct of W1 is
+   500.99 EUR and floors to 500; a share or rest is written through the assignment
    gate into the unit of its target (ch. 2.4): 500 EUR is 50000 ct, a rest of
    26 EUR is 2600 ct. Every variant distributes 500/500/433/250/91, rest 26 *)
 let () =
