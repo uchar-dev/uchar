@@ -1,0 +1,39 @@
+{
+ "format": "uchar-case-v0",
+ "asOfDate": null,
+ "input": {
+  "instances": [
+   {
+    "label": "V1",
+    "objectType": "Vondst",
+    "attributes": {
+     "opbrengst": {
+      "number": "90"
+     },
+     "aandeel": {
+      "number": "0"
+     },
+     "bonus": {
+      "number": "10"
+     }
+    },
+    "roles": {},
+    "characteristics": []
+   }
+  ],
+  "parameters": {}
+ },
+ "expected": [
+  {
+   "kind": "attributeEmpty",
+   "label": "V1",
+   "attribute": "loon"
+  },
+  {
+   "kind": "inconsistent",
+   "rule": "loon van een vondst",
+   "label": "V1",
+   "code": "EF-005"
+  }
+ ]
+}

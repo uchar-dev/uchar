@@ -1516,7 +1516,11 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
   | Binary { op; left_side; right_side; _ } -> (
       let le = req "Binary.left" left_side and re = req "Binary.right" right_side in
       let l = eval_expr env world self ~err le in
-      let r = eval_expr env world self ~err re in
+      (* an empty dividend decides the division before the divisor is read
+         (ch. 1.4 point 4): the divisor is not evaluated, so it deposits and
+         faults nothing, and the 0 takes the unit its declarations give *)
+      let lazy_divisor = (match op with Divided_by | Divided_by_abs -> true | _ -> false) && l = Value.Empty in
+      let r = if lazy_divisor then Value.Empty else eval_expr env world self ~err re in
       (* the unit is derived only for a leeg operand, the one that coalesces *)
       let leeg_unit v x = match v with Value.Empty -> declared_unit env x | _ -> Value.Unitless in
       let units = (leeg_unit l le, leeg_unit r re) in

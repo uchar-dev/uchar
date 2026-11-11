@@ -14162,6 +14162,22 @@ let () =
     [ ("vintage-without-evaluation-date", "EF-011", []);
       ("vintage-without-timeline", "EF-014", [ ("parameter", "penningbedrag") ]) ]
 
+(* WV-1.4-leeg-deeltal: the golden division-by-numeric-zero with one rule,
+   loon := (bonus gedeeld door (opbrengst gedeeld door aandeel)) afgerond op 0
+   decimalen, opbrengst 90 and aandeel 0. An empty dividend decides the
+   division before the divisor is read (ch. 1.4 point 4): with bonus leeg the
+   loon is 0 and the channel stays empty, the inner division by 0 never
+   evaluated (case1); with bonus 10 the divisor is read, deposits EF-005 and
+   the loon is leeg (case2) *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/empty-dividend/" in
+  List.iter
+    (fun case_file ->
+      plays ~ident:("WV-1.4-leeg-deeltal-" ^ case_file) ~ir:(read (dir ^ "ir.json"))
+        ~case_data:(read (dir ^ case_file ^ ".json")) (fun _ -> ()))
+    [ "case1-leeg-deeltal"; "case2-gevuld-deeltal" ]
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

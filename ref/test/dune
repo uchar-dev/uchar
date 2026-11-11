@@ -140,5 +140,7 @@
   (glob_files fixtures/duplicate-link/*.json)
   ; the session-start check without an evaluation date and without a Parameterset timeline
   ../../corpus/golden/anchor/jutterswet-penningvintage/ir.json
-  (glob_files fixtures/session-start/*.json))
+  (glob_files fixtures/session-start/*.json)
+  ; an empty dividend over a divisor that would deposit
+  (glob_files fixtures/empty-dividend/*.json))
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

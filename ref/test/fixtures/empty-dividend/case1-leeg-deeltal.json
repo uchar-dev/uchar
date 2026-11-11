@@ -1,0 +1,36 @@
+{
+ "format": "uchar-case-v0",
+ "asOfDate": null,
+ "input": {
+  "instances": [
+   {
+    "label": "V1",
+    "objectType": "Vondst",
+    "attributes": {
+     "opbrengst": {
+      "number": "90"
+     },
+     "aandeel": {
+      "number": "0"
+     }
+    },
+    "roles": {},
+    "characteristics": []
+   }
+  ],
+  "parameters": {}
+ },
+ "expected": [
+  {
+   "kind": "attributeValue",
+   "label": "V1",
+   "attribute": "loon",
+   "value": {
+    "number": "0"
+   }
+  },
+  {
+   "kind": "consistent"
+  }
+ ]
+}
