@@ -6230,16 +6230,18 @@ let with_vondsten ir =
 
 (* J1 earns more than the threshold and has restpost 0: the branch takes its then arm, so the
    division in the else arm, k by a zero restpost, is never read *)
-let agg_body_case =
+let agg_body_case_valued ?(inkomen = "40") ?(restpost = "0") value =
   Printf.sprintf
     {|{ "format": "uchar-case-v0", "asOfDate": null,
   "input": { "instances": [
       { "label": "J1", "objectType": "Jutter",
-        "attributes": { "inkomen": { "number": "40" }, "restpost": { "number": "0" } },
+        "attributes": { "inkomen": { "number": "%s" }, "restpost": { "number": "%s" } },
         "roles": {}, "characteristics": [] } ],
     "parameters": { %s } },
   %s }|}
-    arm_params12 (arm_val "0.00")
+    inkomen restpost arm_params12 (arm_val value)
+
+let agg_body_case = agg_body_case_valued "0.00"
 
 let () =
   (* positie 1: de §5.8.2-leegwaarde, een zuivere waardepositie *)
@@ -6270,8 +6272,16 @@ let () =
   ref_matches ~name:(name ^ " [ref plays]") ~ir:empty_fallback_form ~case_text:agg_body_case;
   faults_with ~name:(name ^ " refuses loudly") ~ir:empty_fallback_form ~case_text:agg_body_case
     ~needle:"sum fallback other than 0 is not translated";
-  (* positie 2: een gelijst waardefold-argument (§5.8.3) *)
-  let argument_form =
+  (* positie 2: een gelijst waardefold-argument (§5.8.3), de ordenende vouw
+     van ch. 1.2e. Die leest geen instantiebron en is een zuivere functie van
+     haar operanden, dus de takknoop gaat erdoorheen naar buiten zoals door
+     een rekenkundige omhulling: min(als c dan P anders Q, X) is als c dan
+     min(P, X) anders min(Q, X), en de Let z komt alleen in de arm die hem
+     leest. J1 verdient 40 boven de drempel: de dan-arm, z = 40 gedeeld door
+     0 wordt niet gelezen. Met inkomen 5 en restpost 2 de anders-arm, z =
+     2,50. De eerste en de laatste antwoorden verschillend, zodat een
+     verwisseling opvalt. *)
+  let argument_form kind =
     arm_doc ~attributes:arm_attrs3
       ~parameters:(arm_param "drempel" ^ ", " ^ arm_param "basisheffing")
       ~value_node:
@@ -6280,16 +6290,29 @@ let () =
              (arm_let ~typ:arm_ob ~binder:"z" ~value:arm_division
                 ~body:
                   (Printf.sprintf
-                     {|{ "node": "Aggregation", "kind": "minimum",
+                     {|{ "node": "Aggregation", "kind": "%s",
                          "arguments": [ %s, %s ],
                          "type": %s,
-                         "source": { "snippet": "het minimum van de twee" } }|}
-                     (arm_on_k ~then_branch:(arm_lit "0.00")) (arm_par "basisheffing") arm_ob)))
+                         "source": { "snippet": "het %s van de twee" } }|}
+                     kind (arm_on_k ~then_branch:(arm_lit "0.00")) (arm_par "basisheffing") arm_ob kind)))
   in
-  let name = "ch10.6 aggregation body between Let and branch (argument)" in
-  verifier_clean ~name ~ir:argument_form;
-  ref_matches ~name:(name ^ " [ref plays]") ~ir:argument_form ~case_text:agg_body_case;
-  faults_with ~name:(name ^ " refuses loudly") ~ir:argument_form ~case_text:agg_body_case
+  List.iter
+    (fun (kind, smallest) ->
+      let ir = argument_form kind in
+      let name = Printf.sprintf "ch10.6 aggregation body between Let and branch (argument, %s)" kind in
+      verifier_clean ~name ~ir;
+      List.iter
+        (fun (arm, case_text) ->
+          let name = Printf.sprintf "%s, %s arm" name arm in
+          ref_matches ~name:(name ^ " [ref plays]") ~ir ~case_text;
+          clingo_matches ~name ~ir ~case_text)
+        [ ("then", agg_body_case_valued (if smallest then "0.00" else "5.00"));
+          ("else", agg_body_case_valued ~inkomen:"5" ~restpost:"2" (if smallest then "2.50" else "5.00")) ])
+    [ ("first", true); ("last", false) ];
+  let name = "ch10.6 aggregation body between Let and branch (argument, minimum)" in
+  verifier_clean ~name ~ir:(argument_form "minimum");
+  ref_matches ~name:(name ^ " [ref plays]") ~ir:(argument_form "minimum") ~case_text:agg_body_case;
+  faults_with ~name:(name ^ " refuses loudly") ~ir:(argument_form "minimum") ~case_text:agg_body_case
     ~needle:"expression kind not translated"
 
 (* --- `first`/`last` over een SETBRON (kaart eerste-laatste-setvouw-kloof,

@@ -4428,6 +4428,15 @@ let rec hoist_branch ctx binder (e : expr) : expr option =
         (List.mapi
            (fun i d -> ((match d with Embedded_expression { expr; _ } -> expr | Literal_chunk _ -> None), at i))
            pieces)
+  (* the listed ordering fold (ch. 1.2e) reads no instance source and is a
+     pure function of its operands, like the wrappers above: `de laatste van
+     (als c dan P anders Q) en X` is `als c dan de laatste van P en X anders
+     de laatste van Q en X` *)
+  | Function_call
+      ({ kind = First | Last; call_arguments = _ :: _ :: _ as args; filter = None; empty_fallback = None;
+         dimension_selections = None; source_role = None; source_path = None; typ; source_name; _ } as f) ->
+      let at i x = Function_call { f with call_arguments = List.mapi (fun j a -> if j = i then x else a) args } in
+      one_of typ source_name (List.mapi (fun i a -> (Some a, at i)) args)
   | _ -> None
 
 (* The SWAP, and why it sits here rather than in [hoist_branch]. Two ADJACENT
