@@ -2311,8 +2311,8 @@ count 0 together; counting a part by its days is a tracked delta.
   so does an **absent** timeline (the member itself leeg): it reads leeg on
   every day (ch. 3.1), the total counts a leeg value as 0, and it is 0 where
   every value is leeg (typ. §4.20). This holds on every route: the clip, the
-  timeline a rule writes, the asOfDate bucket, and each member of the
-  per-element fold. *v0 mirror note:* v0 totals an absent timeline leeg and a
+  timeline a rule writes, the asOfDate bucket (in a session with an
+  evaluation date, below), and each member of the per-element fold. *v0 mirror note:* v0 totals an absent timeline leeg and a
   segmentless one 0; 0 for both is a tracked delta.
 - **Which timeline the subject's own total reads.** A timeline that a rule
   writes by ch. 3.4 or 3.5 divides all time, and the subject's own total
@@ -2321,7 +2321,17 @@ count 0 together; counting a part by its days is a tracked delta.
   of its grid that holds the evaluation date, and the total counts that one
   period; a full timeline there is refused, and a session without an
   evaluation date has no such period, so the total faults (the two input
-  conventions, below and ch. 8.4; ch. 3.12).
+  conventions, below and ch. 8.4; ch. 3.12). The evaluation date is tested
+  before the absence of the timeline: without an evaluation date the own
+  total faults also where the case leaves the subject's timeline absent,
+  and the absent timeline totals 0 only in a session that has one. The same
+  document thus does not switch between a fault and a value by what the
+  case fills, the principle ch. 3.8 states for the day-kind duration over
+  date-times. Worked example: the golden `jutterswet-tempototaal`, whose
+  `bewaargeld` of a Jutter is "het totaal van zijn bewaarvergoeding per
+  maand", on a Jutter J2 without a `bewaarvergoeding per maand`: with the
+  evaluation date 2026-03-15 J2's `bewaargeld` is **0**; with `asOfDate`
+  null the session faults.
 
 **The "gedurende" clip (§7.1, WF-055).** A filter on the temporal total
 restricts the totalled timeline to the periods of its condition before the
