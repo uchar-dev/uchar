@@ -187,7 +187,8 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
 
 4. `scripts/check-case-schema.sh` — `spec/schema/uchar-case-v0.schema.json` is metaschema-valid; every golden and
    red `case*.json` validates against it and sits beside an `ir.json`; golden carries `expected`, red carries
-   `expectedFault`. Self-test rows hold the shape of `expectedFault` (a `params` object of strings, no fragment key).
+   `expectedFault`; a zone without a case file fails. Self-test rows hold the shape of `expectedFault` (a `params`
+   object of strings, no fragment key).
 
 5. `scripts/check-oracle.sh` — the reference interpreter (`ref/`) builds and replays every golden `case*.json` with
    exact expectation match (the oracle guard of PLAN §8); goldens without a case file are listed. It also runs
@@ -218,7 +219,8 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
    (never a shell scrape), and the pinned code with its pinned parameters must be among the emitted ones (a subset).
    The Drools leg reads the same from its status line `FAULT EF-### {…}: …` for every case not in its exclusion list,
    whose `EXCLUDE` entry (`name|EXCLUDE DROOLS-###  <reason>`) pins the register code of the refusal, compared with
-   the head of the status line by case name with both codes; a `NOFAULT` entry carries none. `Unresolved` reached in
+   the head of the status line by case name with both codes; a `NOFAULT` entry carries none; every entry carries its
+   reason, and the leg needs java and fails without it. `Unresolved` reached in
    evaluation faults with EF-019 (WF-044). An executor that fails a case for a reason of its own stands in the
    divergence list `<case>|<executor>|<CODE>|<CATEGORY> <reason>`, with its `REF-###` or `CLINGO-###` code and the
    category of that code's kind (`REFUSAL`, `LIMIT`); stale-failing in both directions. `scripts/check-exec-codes.sh`,
@@ -241,7 +243,7 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
    `EXPECTED_MIN_CHECKS`, `EXPECTED_MIN_GOLDENS`.
 
 10. `scripts/check-regelspraak.sh` — the RegelSpraak frontend (`frontends/regelspraak`, jar-only: JDK 21+, ANTLR and
-    JUnit jars fetched into a gitignored `lib/`) builds and its JUnit suite passes; every golden carrying a
+    JUnit jars fetched into a gitignored `lib/`) builds and its JUnit suite passes with no skipped test; every golden carrying a
     `source.rgs` re-emits through `--ir` byte-identically. The frontend renders Dutch by default; its Makefile copies
     `src/main/resources` to `out/`. Floors: `EXPECTED_MIN_GOLDENS`, `EXPECTED_MIN_TESTS`. It first calls
     `scripts/check-rgs-codes.sh`: every message the frontend raises, and the three the Drools backend raises itself,
@@ -265,7 +267,8 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
     This is a regression form: the zone migrates with every wire landing (the casus dump re-emitted by the frontend,
     the slices through the landing's migration script), so the comparison proves frontend ≡ the recorded state;
     `toka/README.md` lists each landing under its deliberate divergences. `HOLDOUTS` (casus quirks and fragments
-    where uchar deliberately diverges from the toolchain) is reason-carrying and stale-failing. A well-formedness leg
+    where uchar deliberately diverges from the toolchain) is reason-carrying and stale-failing; a manifest entry that
+    expects a fault or a refusal names its fragment. A well-formedness leg
     holds every replay slice verifier-clean (the workspace `_build` verifier), with `VERIFIER_HOLDOUTS`
     reason-carrying and stale-failing; the casus dump stays outside it (its scenarios write the same targets each in
     their own way). Floors: `EXPECTED_MIN_CASES`, `EXPECTED_MIN_FRAGMENTS`, `EXPECTED_MIN_TESTS`,
