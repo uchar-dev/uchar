@@ -89,8 +89,8 @@ EXPECTED_MIN_RED_CODES=82   # 2026-10-19: measured 82 (ref 44 + clingo 38; 93 on
 # The parameter checks (card fragment-cleanup, 2026-10-19). RED_PARAMS counts, over the code checks of ref and clingo that
 # did not stand in the divergence list, the pinned parameter pairs the executor confirmed among its own, an empty pin
 # counting once: it is the one count that says the pins carry parameters at all, so a corpus whose params quietly emptied
-# would keep every other check green. DROOLS_PARAMS is the same count over the Drools leg, kept apart because that leg
-# may be skipped and the floor of the two OCaml executors must not move with it.
+# would keep every other check green. DROOLS_PARAMS is the same count over the Drools leg, kept apart so that the floor
+# of the two OCaml executors holds them alone.
 EXPECTED_MIN_RED_PARAMS=120   # 2026-10-19: measured 120 (ref 63 + clingo 57: the pinned pairs of the 44 cases, an empty pin once, clingo
                               # on 38 of them; 131 before the card zero-division-channel moved six cases, each an empty pin)
 EXPECTED_MIN_DROOLS_PARAMS=28 # 2026-10-19: measured 28 (the 21 cases that FAULT on Drools; 33 on 26 before the card
@@ -307,7 +307,7 @@ code_check() {
         n_div=$((n_div + 1))
     else
         set -- $ck_res
-        # the Drools leg counts its own: it may be skipped, and the floors of the two OCaml executors must not move with it
+        # the Drools leg counts its own, so that the floors of the two OCaml executors hold them alone
         if [ "$ck_exec" = drools ]; then
             n_drools_params=$((n_drools_params + $3))
         else
@@ -560,16 +560,16 @@ bash scripts/check-exec-codes.sh || status=1
 # aanroepen …". A crash after the build is a FAULT without a code: such a case cannot be pinned, and
 # the leg fails it as a case that reports no code.
 #
-# Conditional on a JDK + python3 (gate-9 pattern for the RUNNER: skip loudly where java is
-# absent; the ref/clingo legs above remain the CI blocker). WITHIN the leg, mvn is a hard
-# requirement since 2026-08-30 (the stale-jar guard): a missing tool there is a FAILURE, no
-# longer a skip — a machine with java but no mvn cannot vouch for jar freshness. NB the hosted
-# ubuntu runner DOES carry a JDK and Maven (lens finding 2026-08-30 — the earlier "carries no
-# JDK" premise was untrue), so on hosted CI this leg RUNS and needs a warm ~/.m2; the gate-8
-# workflow job provides none today, so hosted gate 8 goes red the day CI revives until that job
-# gains a maven cache/build step (a .github card, out of this card's reach). Not hidden: red,
-# never a silent skip.
-if command -v java >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
+# The leg needs a JDK, python3 and mvn, and a missing one is a FAILURE, never a skip: the gate
+# promises that every red case faults in the Drools backend too, and a machine that cannot run
+# the backend cannot vouch for that (gate 9 fails the same way without catala). mvn is needed
+# because only mvn can rebuild a stale jar. NB the hosted ubuntu runner carries a JDK and Maven,
+# so on hosted CI this leg runs and needs a warm ~/.m2; the gate-8 workflow job provides none
+# today, so hosted gate 8 is red until that job gains a maven cache or build step.
+if ! command -v java >/dev/null 2>&1 || ! command -v python3 >/dev/null 2>&1; then
+    echo 'check-red: FAIL — Drools leg: needs java and python3 (and mvn: the leg takes the jar fresh or rebuilt); a machine without them cannot show that the red cases fault in the Drools backend' >&2
+    status=1
+else
     # When the leg runs, the jar is taken FRESH OR REBUILT (scripts/lib/drools-jar.sh, 2026-09-23):
     # rebuilt when it is absent or older than any path it is built from, and exactly one shaded jar
     # is demanded. The lens-proven stale-jar flank — a build-only-when-absent jar can silently
@@ -757,8 +757,6 @@ PYEOF
         fi
         drools_ran=1
     fi
-else
-    echo 'check-red: Drools leg SKIPPED — needs java + python3 (and, once running, mvn: the leg takes the jar fresh or rebuilt). Not a blocker on a machine without java; the ref/clingo legs above are the CI blocker. NB hosted ubuntu runners DO carry java, so there the leg runs (and needs a warm ~/.m2).' >&2
 fi
 
 # the divergence list's gone-guard: every entry was consulted by a check, and names an executor that carries a
