@@ -7932,17 +7932,21 @@ the level of the member (ch. 6.2): stratum k, then depth d, then level l.
   three as its case 3 (einddag of the third 01-06-2027 + 183 dagen =
   01-12-2027), and the same chain in the positive form over a satellite
   Termijn.
-- What the order buys (`ref/` test WV-6.4-j, absolute, in two orders of the
-  rules): add "een Vergunning is zonder verlenging indien het restant van
-  de vorige vergunning leeg is" and let "einddag zonder restant" write the
-  basiseinddag on a Vergunning zonder verlenging. The characteristic is a
-  member of the cycle, and it is never withdrawn (ch. 5.3). Evaluated on V2
-  before the restant of V1 exists, it would hold for V2 for good, and the
-  two writers of the einddag of V2 would disagree: measured 2026-10-22 with
-  the depth order switched off, the reference interpreter faulted EF-016
-  ("einddag zonder restant" writes 01-12-2026, "einddag" 03-03-2027). In
-  depth order: **V1 zonder verlenging, V2 not, einddag V2 03-03-2027**,
-  which is the ASP backend's stable model as well.
+- A characteristic on the cycle (`ref/` test WV-6.4-j, absolute, in two
+  orders of the rules): add "een Vergunning is zonder verlenging indien het
+  restant van de vorige vergunning leeg is" and let "einddag zonder restant"
+  write the basiseinddag on a Vergunning zonder verlenging. The
+  characteristic is a member of the cycle. At the fixpoint the restant of V1
+  is gevuld, so the attribution does not decide for V2, and an attribution
+  that does not decide withdraws what it set (ch. 5.3): V2 is not zonder
+  verlenging, and "einddag zonder restant" writes nothing on V2. Evaluated
+  on V2 before the restant of V1 exists, the attribution would decide for a
+  while and "einddag zonder restant" would write 01-12-2026 beside the
+  03-03-2027 of "einddag"; the depth order does not let that state arise,
+  because V1 settles before V2 reads it. Outcome, in both orders of the
+  rules: **V1 zonder verlenging, V2 not, einddag V1 01-06-2026, restant V1
+  92, einddag V2 03-03-2027**, consistent, which is the ASP backend's stable
+  model as well.
 - A defaults group on the cycle (`ref/` test WV-6.4-l, absolute, in two orders
   of the rules): the einddag "mag opgegeven worden", so the group "opgave boven
   berekening einddag" puts a given einddag above the berekende einddag, which
