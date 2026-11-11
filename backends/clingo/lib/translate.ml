@@ -2830,12 +2830,12 @@ let lexeme_decimals lex =
 (* the whole units of the asOfDate bucket, the factor of the subject's own
    temporal total (RUNTIME-SEMANTICS ch. 3.2, 3.6): a scalar case value is
    the value of the period of the member's grid that holds the evaluation
-   date, and ref weighs that one period. The period is ref's own, from ref's
-   grid function: the calendar's month or year bucket, or the period a fixed
-   start point lays on a week, month, quarter or year grid. A grid ref
-   refuses — the calendar's week, quarter or day, which lay no bucket, a grid
-   of several units, a variable start — is refused in ref's sentence, and so
-   is a session without an evaluation date. A period of one unit weighs 1. *)
+   date, and the total weighs that one period. The period is [Calendar.period]:
+   the calendar's month or year bucket, or the period a fixed start point lays
+   on a week, month, quarter or year grid. A grid that lays no such period —
+   the calendar's week, quarter or day, which lay no bucket, a grid of several
+   units, a variable start — is refused in ref's sentence, and so is a session
+   without an evaluation date. A period of one unit weighs 1. *)
 let as_of_bucket_units ctx ~otype ~attr =
   match ctx.case.as_of with
   | None ->
