@@ -5,15 +5,17 @@ import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * The two builtins whose result the resolver leaves without a claim still carry a static type on the wire: a
- * derived position that writes null is refused by WF-034 ("value node without a static type"), and both types
- * are fixed by the spec whatever the operands are. The day count counts days, so it is typed as every count is
- * (RUNTIME-SEMANTICS ch. 2.3 and ch. 3.8: whole, non-negative, unitless — the type every dayCount in the corpus
- * carries); the concatenation joins its parts into one text (IR-SPEC ch. 4.3, the text fold). Measured on the
- * frontend before this: both went out as {@code "type": null}.
+ * Two builtins carry a static type on the wire that the spec fixes whatever their operands are: a derived position
+ * that writes null is refused by WF-034 ("value node without a static type"). The day count counts days, so it is
+ * typed as every count is (RUNTIME-SEMANTICS ch. 2.3 and ch. 3.8: whole, non-negative, unitless — the type every
+ * dayCount in the corpus carries), in the resolver as well, so an assignment of it to a target of another family is
+ * refused before the verifier's WF-023; the concatenation joins its parts into one text (IR-SPEC ch. 4.3, the text
+ * fold).
  */
 class BuiltinTypeTest {
 
@@ -36,6 +38,25 @@ class BuiltinTypeTest {
         assertTrue(c.contains("\"granularity\":\"month\",\"type\":{\"node\":\"Number\",\"whole\":true,\"decimals\":0,"
                 + "\"sign\":\"nonNegative\"},\"source\":{\"snippet\":\"hetaantaldageninde"), () -> "de dagentelling:\n" + c);
         assertFalse(c.contains("\"type\":null"), () -> "een type null op de wire:\n" + c);
+    }
+
+    /** The day count is a number in the resolver too: assigned to a text or a date target it is refused as any
+     *  number is, where the document reached disk and the verifier refused it (WF-023). */
+    @Test void the_day_count_is_a_number_to_the_assignment_check() {
+        for (List<String> declaredAndWritten : List.of(List.of("de borgnaam Tekst", "De borgnaam"),
+                List.of("de borgdatum Datum in dagen", "De borgdatum"))) {
+            RegelSpraakModel m = Resolver.resolve("""
+                Objecttype de Jutter (mv: Jutters) (bezield)
+                    is borgplichtig kenmerk (bijvoeglijk) voor elke maand;
+                    %s voor elke maand;
+
+                Regel r
+                    geldig altijd
+                        %s van een Jutter moet gesteld worden op het aantal dagen in de maand dat hij borgplichtig is.
+                """.formatted(declaredAndWritten.get(0), declaredAndWritten.get(1)));
+            assertEquals(1, m.diagnostics.size(), () -> "verwachtte precies één diagnose, kreeg: " + m.diagnostics);
+            assertEquals("RGS-334", m.diagnostics.get(0).code(), m.diagnostics.get(0)::toString);
+        }
     }
 
     @Test void the_concatenation_carries_the_text_type() {

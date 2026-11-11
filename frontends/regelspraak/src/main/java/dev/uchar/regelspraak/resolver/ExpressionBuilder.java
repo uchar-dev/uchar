@@ -3216,7 +3216,7 @@ final class ExpressionBuilder {
                     : new Datatype.Numeric(allWhole(args), minDecimals(args), n.sign(), n.unit());
             // both counts: a cardinality is a whole, UNITLESS number whatever the folded attribute
             // measures (RUNTIME-SEMANTICS ch. 3.4c) — the source's kg never reaches the result
-            case AANTAL, AANTAL_GEVULDE -> new Datatype.Numeric(true, 0, Datatype.Sign.NIET_NEGATIEF, null);
+            case AANTAL, AANTAL_GEVULDE, AANTAL_DAGEN_IN -> new Datatype.Numeric(true, 0, Datatype.Sign.NIET_NEGATIEF, null);
             // §5.7/§13.4.17.2: a concatenatie is a MULTI-VALUED set (§5.8.1 "altijd meervoudig"), NOT a scalar
             // Tekst — it carries the common type of its operands and is only meaningful once an aggregation
             // (het aantal / de som / de min-max / de eerste-laatste) consumes it (§5.8). This "de concatenatie
@@ -3272,7 +3272,9 @@ final class ExpressionBuilder {
         if (f instanceof MinMaxFuncContext m)   return m.MAXIMALE_WAARDE_VAN() != null ? Expr.FunctionKind.MAXIMUM : Expr.FunctionKind.MINIMUM;
         if (f instanceof EersteLaatsteFuncContext el) return el.EERSTE_VAN() != null ? Expr.FunctionKind.EERSTE : Expr.FunctionKind.LAATSTE;
         if (f instanceof TijdsduurFuncContext t) return t.ABSOLUTE_TIJDSDUUR_VAN() != null ? Expr.FunctionKind.ABSOLUTE_TIJDSDUUR : Expr.FunctionKind.TIJDSDUUR;
-        return Expr.FunctionKind.SOM; // unreachable: every functieAanroep alternative is covered above
+        // every functieAanroep alternative is covered above; a new one is a function this builder cannot name
+        throw new IllegalStateException("ExpressionBuilder: the function call '" + src(f) + "' is the grammar alternative "
+                + f.getClass().getSimpleName() + ", which names no function kind");
     }
 
     /** The direct expression children of a context, built in order — an aggregation's
@@ -3291,14 +3293,17 @@ final class ExpressionBuilder {
     }
 
     // ---------------- §13.2.12 rangtelwoord (§5.5.3) ----------------
-    /** The 1-based mention position a §13.2.12 rangtelwoord denotes, or -1 for "laatstgenoemde". */
+    /** The 1-based mention position a §13.2.12 rangtelwoord denotes, -1 for "laatstgenoemde", or 0 where "als
+     *  &lt;N&gt;e genoemde" writes no position: N is a number the lexer admits that is no positive whole number (0, -1,
+     *  2,5, 1/2), or one beyond any rule's count of subjects. */
     private static int ordinalPosition(RangtelwoordContext r) {
         if (r.EERSTGENOEMDE() != null) return 1;
         if (r.ALS_TWEEDE_GENOEMDE() != null) return 2;
         if (r.ALS_DERDE_GENOEMDE() != null) return 3;
         if (r.ALS_VIERDE_GENOEMDE() != null) return 4;
         if (r.LAATSTGENOEMDE() != null) return -1;
-        return r.NUMBER() != null ? Integer.parseInt(r.NUMBER().getText()) : 1;   // "als <N>e genoemde"
+        String n = r.NUMBER() == null ? "" : r.NUMBER().getText();
+        return n.matches("[1-9][0-9]{0,8}") ? Integer.parseInt(n) : 0;
     }
 
     /** The subject reference (onderwerpVerwijzing) of a reference's keten that carries a rangtelwoord, or null. */
@@ -3338,6 +3343,11 @@ final class ExpressionBuilder {
     private Expr checkOrdinal(RangtelwoordContext r, String name, ParserRuleContext ref, Source source) {
         if (r == null) return null;
         int position = ordinalPosition(r);
+        if (position == 0) {
+            model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                    "RGS-393", params("ordinal", src(r), "name", name), r.getStart().getLine()));
+            return unresolvedMarker(source, null);   // the ERROR above is this marker's diagnosis
+        }
         int bindings = countBindings(ref, name);
         if (position > Math.max(bindings, 1)) {
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
