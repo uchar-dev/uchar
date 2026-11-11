@@ -1268,14 +1268,18 @@ no-hole/equality semantics are `RUNTIME-SEMANTICS.md` ch. 11.
 **Deltas (tracked, `CONSTRUCTS.md` row 27):**
 
 - v0 `Percentage` is removed as a separate variant: a percentage is a
-  `Number` whose unit is `%` (or a rate `%/<unit>`), plus a
-  `dialect(regelspraak)` presentation tag on the declaration. *Migration:*
+  `Number` whose unit is `%` (or a rate `%/<unit>`), plus a presentation
+  tag on the declaration (`layer: presentation`, ch. 10). *Migration:*
   `Percentage(whole, decimals, unit)` → `Number(whole, decimals,
   unspecified, unit)` + tag. The v0 rule that number and percentage are
   distinct typing families is preserved observationally by unit
-  compatibility (`%` converts to nothing but itself); whether the
-  expression layer needs the tag for the §4 percentage-of operations is
-  decided in that chapter — **OPEN**. **Landed L3 (2026-09-24, B14).** The
+  compatibility (`%` converts to nothing but itself). The expression layer
+  does not need the tag for the §4 percentage-of operations
+  (`CONSTRUCTS.md` row 27): `percentageOf` reads the unit `%` of its
+  operand, and a copy of every golden that carries the tag, with the tag
+  removed, gives every executor the same answer, the two goldens whose
+  `percentageOf` reads a tagged parameter (`jutterswet-havengeld`,
+  `jutterswet-precisiepoort`) included. **Landed L3 (2026-09-24, B14).** The
   tag is `presentation: "percentage"`, the one value, written only at a
   declaration position and refused on a type annotation (WF-007, the
   presentation arm above); it carries no meaning for evaluation — every
