@@ -325,8 +325,9 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
     stripped. NAME leg: every golden whose defaults carry a `name` (ch. 6.1) replays with every name and every
     `statuteAnnotations` of a Default stripped. PRESENTATION leg (IR-SPEC ch. 10): every golden with a presentation
     field and case files replays once, on one copy with every field changed at once — `Dimension.preposition`, the
-    percentage tag and every non-recursive `RuleGroup` stripped, every `Characteristic.kind` rotated to another
-    kind, the `presentation` of every rule version exchanged (`equation` ↔ `calculation`, the tag kept); a
+    percentage tag, every non-recursive `RuleGroup` and every `statuteAnnotations` of a Rule stripped, every
+    `Characteristic.kind` rotated to another kind, the `presentation` of every rule version exchanged (`equation` ↔
+    `calculation`, the tag kept), every diagnostic exchanged (its message prefixed, its line plus one); a
     difference is assigned to a field by replaying the differing executor on a copy per field, and the report
     names the fields that move it alone. In those four legs the four executors must reproduce the untouched
     outcome, with no survivor list. The legs run as five processes, the presentation leg's calls through
@@ -338,7 +339,9 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
     field of the presentation leg a golden count and a place count: `EXPECTED_MIN_KIND_GOLDENS`,
     `EXPECTED_MIN_KIND_ROTATED`, `EXPECTED_MIN_RULE_PRESENTATION_GOLDENS`, `EXPECTED_MIN_RULE_PRESENTATION_EXCHANGED`,
     `EXPECTED_MIN_PREPOSITION_GOLDENS`, `EXPECTED_MIN_PREPOSITION_STRIPPED`, `EXPECTED_MIN_PERCENTAGE_GOLDENS`,
-    `EXPECTED_MIN_PERCENTAGE_STRIPPED`, `EXPECTED_MIN_RULE_GROUP_GOLDENS`, `EXPECTED_MIN_RULE_GROUP_STRIPPED`.
+    `EXPECTED_MIN_PERCENTAGE_STRIPPED`, `EXPECTED_MIN_RULE_GROUP_GOLDENS`, `EXPECTED_MIN_RULE_GROUP_STRIPPED`,
+    `EXPECTED_MIN_RULE_ANNOTATIONS_GOLDENS`, `EXPECTED_MIN_RULE_ANNOTATIONS_STRIPPED`,
+    `EXPECTED_MIN_DIAGNOSTICS_GOLDENS`, `EXPECTED_MIN_DIAGNOSTICS_EXCHANGED`.
 
 14. `scripts/check-flogic.sh` — the F-logic frontend (`frontends/flogic`, plain OCaml in the workspace dune build, no
     external toolchain) builds and its suite passes: it emits every test program, holds it verifier-clean, replays
