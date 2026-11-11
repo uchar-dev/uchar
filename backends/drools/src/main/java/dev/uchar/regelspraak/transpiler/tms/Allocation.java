@@ -51,10 +51,14 @@ public final class Allocation {
      * {@code weighted} where the allocation declares a ratio attribute, {@code capped} where it declares a cap,
      * {@code decimals} the floor's decimals (null for none), {@code descending} the ordered method's direction. The
      * order of {@code recipients} decides nothing: every share depends only on the values, and a tie group divides the
-     * pot as it stands at the group's entry.
+     * pot as it stands at the group's entry. The equations run in the unit of the pot: a cap is taken into it by
+     * {@code capFactor} before it is compared (ch. 2.6 rule 5), and a share and the rest are taken out of it into the
+     * unit of their targets by {@code shareFactor} and {@code restFactor} after the floor, as a write restates (ch. 2.4,
+     * 2.6 rule 6), so the floor applies in the unit of the pot. Each factor is exact and 1 where no restatement is due.
      */
     public static Result compute(ResolvedAllocation.Method method, Object pot, List<Recipient> recipients, boolean weighted,
-                           boolean capped, Integer decimals, boolean descending) {
+                           boolean capped, Integer decimals, boolean descending, Breuk capFactor, Breuk shareFactor,
+                           Breuk restFactor) {
         Map<Object, Object> shares = new IdentityHashMap<>();
         Map<Object, Set<String>> depositors = new IdentityHashMap<>();
         // ch. 4.4: zero recipients write nothing and raise nothing, whatever the pot
@@ -62,14 +66,20 @@ public final class Allocation {
         // ch. 4.4, decided for v1 and uniform across the methods: an empty pot is no distribution, so it writes no
         // share and no rest and deposits nothing, not even for an empty weight or cap, and it is no fault
         if (pot == null) return new Result(shares, null, depositors);
-        return switch (method) {
+        Result inPot = switch (method) {
             case GELIJKE_DELEN -> equalShares(pot, recipients, decimals, shares, depositors);
-            case NAAR_RATO -> proportional(pot, recipients, capped, decimals, shares, depositors);
-            case OP_VOLGORDE -> ordered(pot, recipients, weighted, capped, decimals, descending, shares,
+            case NAAR_RATO -> proportional(pot, recipients, capped, decimals, capFactor, shares, depositors);
+            case OP_VOLGORDE -> ordered(pot, recipients, weighted, capped, decimals, descending, capFactor, shares,
                     depositors);
             case COMPLEX -> throw new IllegalStateException("an allocation with the method COMPLEX reaches the computation;"
                     + " the loader refuses that value since L4");
         };
+        if (shareFactor.equals(ONE) && restFactor.equals(ONE)) return inPot;
+        Map<Object, Object> restated = new IdentityHashMap<>();
+        for (Map.Entry<Object, Object> e : inPot.shares().entrySet())
+            restated.put(e.getKey(), atRest(Breuk.van(e.getValue()).vermenigvuldigen(shareFactor)));
+        Object rest = inPot.rest() == null ? null : atRest(Breuk.van(inPot.rest()).vermenigvuldigen(restFactor));
+        return new Result(restated, rest, inPot.depositors());
     }
 
     /** One group, every recipient, unweighted (ch. 4.2); a cap is ill-formed here (WF-025) and refused before. */
@@ -94,7 +104,8 @@ public final class Allocation {
      * split that distributes, as the reference interpreter reads it (ch. 4.3).
      */
     private static Result proportional(Object pot, List<Recipient> recipients, boolean capped, Integer decimals,
-                                    Map<Object, Object> shares, Map<Object, Set<String>> depositors) {
+                                    Breuk capFactor, Map<Object, Object> shares,
+                                    Map<Object, Set<String>> depositors) {
         Breuk a = Breuk.van(pot);
         List<Recipient> eligible = new ArrayList<>();
         List<Breuk> weights = new ArrayList<>();
@@ -122,7 +133,7 @@ public final class Allocation {
                 Breuk max = Breuk.van(o.maximum());
                 if (max == null || max.signum() < 0) deposit(depositors, o.recipient(), "EF-030");
                 // a leeg or negative cap degrades to uncapped (ch. 4.3), as rsPlafond reads it
-                else if (share.compareTo(max) > 0) share = max;
+                else if (share.compareTo(max.vermenigvuldigen(capFactor)) > 0) share = max.vermenigvuldigen(capFactor);
             }
             share = floor(share, decimals);
             shares.put(o.recipient(), atRest(share));
@@ -139,8 +150,8 @@ public final class Allocation {
      * member of every group.
      */
     private static Result ordered(Object pot, List<Recipient> recipients, boolean weighted, boolean capped,
-                                      Integer decimals, boolean descending, Map<Object, Object> shares,
-                                      Map<Object, Set<String>> depositors) {
+                                      Integer decimals, boolean descending, Breuk capFactor,
+                                      Map<Object, Object> shares, Map<Object, Set<String>> depositors) {
         Breuk a = Breuk.van(pot);
         List<Object> facts = new ArrayList<>(), orderKeys = new ArrayList<>();
         List<Object> weights = weighted ? new ArrayList<>() : null, maxima = capped ? new ArrayList<>() : null;
@@ -156,7 +167,7 @@ public final class Allocation {
             if (capped) {
                 Breuk max = Breuk.van(o.maximum());
                 if (max == null || max.signum() < 0) deposit(depositors, o.recipient(), "EF-030");
-                maxima.add(max);
+                maxima.add(max == null ? null : max.vermenigvuldigen(capFactor));
             }
         }
         Map<Object, Object> out = RegelSpraakRuntime.rsVerdeelOpVolgorde(a, facts, orderKeys, !descending, weights,
@@ -173,6 +184,8 @@ public final class Allocation {
     }
 
     private static final Breuk ZERO = Breuk.van(BigInteger.ZERO, BigInteger.ONE);
+    /** The factor of no restatement. */
+    public static final Breuk ONE = Breuk.van(BigInteger.ONE, BigInteger.ONE);
 
     /** The §9.5 deposit of a degradation on {@code recipient}, with {@code code}, the EF code of its kind. */
     private static void deposit(Map<Object, Set<String>> depositors, Object recipient, String code) {

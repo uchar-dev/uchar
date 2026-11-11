@@ -1708,14 +1708,19 @@ final class DrlRendering {
          *  enumeration label, which MVEL reads in the argument of a call (FABLE-3 §2.2), each number of decimals as an
          *  {@code Integer} or null ({@link #boxed}), and the keys as {@link ElementKey#of}. */
         private void payout(Consequence.Payout x, StringBuilder b) {
-            b.append("    for (Object feit : ").append(route(Route.PAYOUT)).append("(").append(str(x.form()))
+            Consequence.Restatement r = x.restatement();
+            b.append("    for (Object feit : ").append(route(r == null ? Route.PAYOUT : Route.PAYOUT_RESTATED)).append("(").append(str(x.form()))
                     .append(", ").append(x.subject()).append(", ").append(enumlabel(x.method())).append(", ")
                     .append(variable(x.pot())).append(", ").append(variable(x.list())).append(", ").append(x.weighted())
                     .append(", ").append(x.capped()).append(", ").append(x.descending()).append(", ")
                     .append(boxed(x.decimals())).append(", ")
                     .append(key(x.share())).append(", ").append(x.rest() == null ? "null" : key(x.rest()))
                     .append(", ").append(str(x.writer())).append(", ").append(boxed(x.shareDecimals())).append(", ")
-                    .append(boxed(x.restDecimals())).append(", ").append(str(x.fault().rule())).append(")) {\n");
+                    .append(boxed(x.restDecimals())).append(", ").append(str(x.fault().rule()));
+            if (r != null)
+                b.append(", ").append(constant(r.maximum()).text()).append(", ").append(constant(r.share()).text())
+                        .append(", ").append(constant(r.rest()).text());
+            b.append(")) {\n");
             insert(b, "        ", x.insertion(), "feit");
             b.append("    }\n");
         }

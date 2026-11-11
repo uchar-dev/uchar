@@ -2,6 +2,7 @@ package dev.uchar.regelspraak.transpiler.tms.plan;
 
 import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 import dev.uchar.regelspraak.ir.ResolvedAllocation;
+import dev.uchar.regelspraak.runtime.Breuk;
 import dev.uchar.regelspraak.transpiler.tms.Outcome.Kind;
 
 import java.util.ArrayList;
@@ -263,12 +264,18 @@ public sealed interface Consequence {
      * recipient. Where the share declares {@code shareDecimals} or the rest {@code restDecimals} (null: it holds every
      * value), a share or the rest that does not fit them makes the distribution of the source the fault of the write
      * boundary under {@code fault}, in place of every share, the rest and the deposits (RUNTIME-SEMANTICS ch. 2.4
-     * point 1, ch. 4.2).
+     * point 1, ch. 4.2). {@code restatement} carries the unit factors where one of them is not 1, and is null where the
+     * cap, the share and the rest are all in the unit of the pot.
      */
     record Payout(String subject, String form, ResolvedAllocation.Method method, int pot, int list,
                      boolean weighted, boolean capped, boolean descending, Integer decimals, ElementKey share,
-                     ElementKey rest, String writer, Integer shareDecimals, Integer restDecimals, FaultName fault,
-                     Insertion insertion) implements Consequence {}
+                     ElementKey rest, String writer, Integer shareDecimals, Integer restDecimals,
+                     Restatement restatement, FaultName fault, Insertion insertion) implements Consequence {}
+
+    /** The exact unit factors of an allocation (RUNTIME-SEMANTICS ch. 2.6): {@code maximum} takes the cap into the
+     *  unit of the pot, {@code share} and {@code rest} take a share and the rest out of it into the unit of their
+     *  targets, each 1 where no restatement is due. */
+    record Restatement(Breuk maximum, Breuk share, Breuk rest) {}
 
     /**
      * A member's place in the order of a fold, as a rule of the fold binds it, computed by the route

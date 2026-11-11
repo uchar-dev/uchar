@@ -259,9 +259,11 @@ final class PatternDslRendering {
                     insert(drools, x.insertion(), new Reading(subject, x.form(), w,
                             x.speculative() ? Reading.Kind.SPECULATIVE : Reading.Kind.TURN)));
             case Consequence.Payout x -> consequenceItem(x.subject(), slotsOf(x.pot(), x.list()), (drools, source, w) -> {
-                for (Object fact : ComputeHelpers.payout(x.form(), source, x.method(), w[x.pot()], w[x.list()],
+                Consequence.Restatement r = x.restatement();
+                for (Object fact : ComputeHelpers.payoutRestated(x.form(), source, x.method(), w[x.pot()], w[x.list()],
                         x.weighted(), x.capped(), x.descending(), x.decimals(), x.share(), x.rest(), x.writer(),
-                        x.shareDecimals(), x.restDecimals(), x.fault().rule()))
+                        x.shareDecimals(), x.restDecimals(), x.fault().rule(), r == null ? Allocation.ONE : r.maximum(),
+                        r == null ? Allocation.ONE : r.share(), r == null ? Allocation.ONE : r.rest()))
                     insert(drools, x.insertion(), fact);
             });
         };

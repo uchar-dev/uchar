@@ -189,15 +189,15 @@ final class FormsPlan {
         ElementKey share = ElementKey.of("wachter", "uitkijkbonus", false);
         rules.add(new RulePlan("uitdeling naar rato", "proefverdeling", null, payout, List.of(pot, recipients),
                 new Consequence.Payout(O, "proefverdeling", ResolvedAllocation.Method.NAAR_RATO, 0, 1, true, true, false, 2,
-                        share, ElementKey.of("post", "hoogte", false), "proefverdeling", 2, 0,
+                        share, ElementKey.of("post", "hoogte", false), "proefverdeling", 2, 0, null,
                         new Consequence.FaultName("proefverdeling", "uitdeling naar rato"), Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("uitdeling op volgorde", "proefverdeling", null, payout, List.of(pot, recipients),
                 new Consequence.Payout(O, "proefverdeling", ResolvedAllocation.Method.OP_VOLGORDE, 0, 1, false, false, true,
-                        null, share, null, "proefverdeling", null, null,
+                        null, share, null, "proefverdeling", null, null, null,
                         new Consequence.FaultName("proefverdeling", "uitdeling op volgorde"), Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("uitdeling in gelijke delen", "proefverdeling", null, payout, List.of(pot, recipients),
                 new Consequence.Payout(O, "proefverdeling", ResolvedAllocation.Method.GELIJKE_DELEN, 0, 1, false, false,
-                        false, 0, share, null, "proefverdeling", 0, null,
+                        false, 0, share, null, "proefverdeling", 0, null, null,
                         new Consequence.FaultName("proefverdeling", "uitdeling in gelijke delen"), Consequence.Insertion.LOGICAL)));
         return new Modelplan(List.of(), rules);
     }

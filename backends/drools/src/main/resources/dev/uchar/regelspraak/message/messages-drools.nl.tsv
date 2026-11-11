@@ -419,6 +419,9 @@ DROOLS-360.listed-fold-operand	een §5.8.3 operand van een gelijste vouw
 DROOLS-360.empty-fallback	een §5.8.2 terugvalwaarde
 DROOLS-360.timeline-bound	een §8.2 tijdlijngrens
 DROOLS-360.comparison	een §5.1 vergelijking
+DROOLS-360.allocation-maximum	het maximum van een verdeling
+DROOLS-360.allocation-share	het aandeel van een verdeling
+DROOLS-360.allocation-remainder	de rest van een verdeling
 DROOLS-361	enkelvoudige rol '{role}' krijgt een tweede, ander doel — ref weigert die case bij het laden (WF-013)
 DROOLS-362	wederkerige rol '{role}': het doel is al verbonden met een ander — de omgekeerde poot botst (WF-013, enkelvoudige rol)
 DROOLS-363	geen JDK-compiler beschikbaar (draai op een JDK, niet een JRE)

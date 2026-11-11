@@ -3223,10 +3223,22 @@ public final class TmsTranspiler {
         int list = reads.recipients(name);
         List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read);
         ElementKey shareKey = share.key(), restKey = rest == null ? null : rest.key();
+        // the distribution computes in the unit of the pot: the cap restated into it, as a comparison restates (ch. 2.6
+        // rule 5), and the share and the rest restated out of it into their targets, as a write does (ch. 2.4, 2.6 rule 6)
+        Unit potUnit = pot.datatype().unitOf();
+        Unit.Fraction capFactor = maximum == null ? Unit.Fraction.ONE : allocationFactor(maximum.datatype().unitOf(),
+                potUnit, DroolsCode.UNIT_CONFLICT.part("allocation-maximum"));
+        Unit.Fraction shareFactor = allocationFactor(potUnit, share.datatype().unitOf(),
+                DroolsCode.UNIT_CONFLICT.part("allocation-share"));
+        Unit.Fraction restFactor = rest == null ? Unit.Fraction.ONE : allocationFactor(potUnit,
+                rest.datatype().unitOf(), DroolsCode.UNIT_CONFLICT.part("allocation-remainder"));
+        Consequence.Restatement restatement = capFactor.equals(Unit.Fraction.ONE) && shareFactor.equals(Unit.Fraction.ONE)
+                && restFactor.equals(Unit.Fraction.ONE) ? null
+                : new Consequence.Restatement(breuk(capFactor), breuk(shareFactor), breuk(restFactor));
         reads.recorder();
         out.add(as(RuleOrigin.Role.OWN, reads.rulePlan(ruleName, items, new Consequence.Payout(SUBJECT, name, method,
                 p, list, weight != null, maximum != null, v.descending(), v.roundingDecimals(), shareKey, restKey,
-                name, ceiling(share.datatype()), rest == null ? null : ceiling(rest.datatype()),
+                name, ceiling(share.datatype()), rest == null ? null : ceiling(rest.datatype()), restatement,
                 new Consequence.FaultName(name, ruleName), Consequence.Insertion.LOGICAL))));
         if (noted != null && testTerm != null)
             conditionReadingRule(ruleName, positions.versionOf(v), reads, reads.readingPlan(List.of(), false),
@@ -3235,6 +3247,19 @@ public final class TmsTranspiler {
         if (rest != null) derived.put(restKey, rest);
         out.addAll(conditionSideRules(canFail, ruleName, fresh, v.condition(), name, null, name, null, v.validity()));
         return out;
+    }
+
+    /** The exact factor that restates a value of an allocation from unit {@code from} into {@code destination}: 1 where
+     *  no restatement is due, a unitless side adopting the other's unit (ch. 2.6); two units that do not convert fault
+     *  while the model is built ({@link UnitConflict}). */
+    private static Unit.Fraction allocationFactor(Unit from, Unit destination, Msg site) {
+        UnitConflict.requireRescalable(from, destination, site);
+        if (from == null || destination == null || !from.requiredConversion(destination)) return Unit.Fraction.ONE;
+        return from.exactRestateFactors(destination);
+    }
+
+    private static Breuk breuk(Unit.Fraction f) {
+        return Breuk.van(f.num(), f.den());
     }
 
     /** Attribute {@code name} of {@code holder} as an allocation reads or writes it as a number: the pot, a share, the

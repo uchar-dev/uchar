@@ -419,6 +419,9 @@ DROOLS-360.listed-fold-operand	a §5.8.3 operand of a listed fold
 DROOLS-360.empty-fallback	a §5.8.2 empty fallback
 DROOLS-360.timeline-bound	a §8.2 timeline bound
 DROOLS-360.comparison	a §5.1 comparison
+DROOLS-360.allocation-maximum	the cap of an allocation
+DROOLS-360.allocation-share	the share of an allocation
+DROOLS-360.allocation-remainder	the remainder of an allocation
 DROOLS-361	the to-one role '{role}' gets a second, different target — ref refuses that case at load (WF-013)
 DROOLS-362	reciprocal role '{role}': the target is already linked to another — the reverse leg collides (WF-013 to-one)
 DROOLS-363	no JDK compiler available (run on a JDK, not a JRE)

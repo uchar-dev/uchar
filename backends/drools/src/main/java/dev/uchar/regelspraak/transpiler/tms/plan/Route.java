@@ -62,6 +62,9 @@ public enum Route {
     /** The facts of the distribution of an allocation over the recipients of one source, computed by
      *  {@code Allocation.compute}: its deposits, its shares and its rest, which {@link Consequence.Payout} inserts. */
     PAYOUT(ComputeHelpers.class, "payout"),
+    /** {@link #PAYOUT} with the unit factors of {@link Consequence.Restatement}, for an allocation whose cap, share or
+     *  rest is in another unit than its pot; a payout in one unit keeps the shorter call. */
+    PAYOUT_RESTATED(ComputeHelpers.class, "payoutRestated"),
     /** The contribution of a member to a fold by its value, or none where the value is leeg or the member's timeline
      *  stands as the asOfDate-bucket scalar, which {@link Consequence.Input.MemberValue} inserts. */
     CONTRIBUTION(ComputeHelpers.class, "contribution"),

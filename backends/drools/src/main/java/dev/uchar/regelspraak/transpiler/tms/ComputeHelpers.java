@@ -985,9 +985,22 @@ public final class ComputeHelpers {
                                          Object recipients, boolean weighted, boolean capped, boolean descending,
                                          Integer decimals, ElementKey share, ElementKey rest, String writer,
                                          Integer shareDecimals, Integer restDecimals, String fault) {
+        return payoutRestated(form, source, method, pot, recipients, weighted, capped, descending, decimals, share,
+                rest, writer, shareDecimals, restDecimals, fault, Allocation.ONE, Allocation.ONE, Allocation.ONE);
+    }
+
+    /** {@link #payout} of an allocation whose cap, share or rest is in another unit than its pot: {@code capFactor}
+     *  restates the cap into the unit of the pot, {@code shareFactor} and {@code restFactor} restate a share and the
+     *  rest into the unit of their targets (RUNTIME-SEMANTICS ch. 2.4, 2.6), before the write boundary tests them. */
+    public static List<Object> payoutRestated(String form, Object source, ResolvedAllocation.Method method, Object pot,
+                                         Object recipients, boolean weighted, boolean capped, boolean descending,
+                                         Integer decimals, ElementKey share, ElementKey rest, String writer,
+                                         Integer shareDecimals, Integer restDecimals, String fault, Breuk capFactor,
+                                         Breuk shareFactor, Breuk restFactor) {
         List<Recipient> list = new ArrayList<>();
         for (Object o : (List<?>) recipients) list.add((Recipient) o);
-        Allocation.Result u = Allocation.compute(method, pot, list, weighted, capped, decimals, descending);
+        Allocation.Result u = Allocation.compute(method, pot, list, weighted, capped, decimals, descending, capFactor,
+                shareFactor, restFactor);
         List<WriteBoundaryFault.Misfit> misfits = new ArrayList<>();
         if (shareDecimals != null)
             for (Map.Entry<Object, Object> e : u.shares().entrySet()) {
