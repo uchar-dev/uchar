@@ -12960,10 +12960,10 @@ let wf127_payload_guards ctx =
     | Let { value; body; _ } -> ex tests (sub "value") value @ ex tests (sub "body") body
     | List_literal { elements; _ } -> each "elements" elements
     | Lambda { body; _ } -> ex [] (sub "body") body
+    (* the condition guards no branch: WF-077 admits no attribute read there,
+       so it cannot carry a gevuld test of a payload access *)
     | If_then_else { condition; then_; else_; _ } ->
-        co tests (sub "condition") condition
-        @ ex (conjunct_tests condition @ tests) (sub "then") then_
-        @ ex tests (sub "else") else_
+        co tests (sub "condition") condition @ ex tests (sub "then") then_ @ ex tests (sub "else") else_
     | Invoke { arguments; _ } -> each "arguments" arguments
     | Fold { list; function_name; init; _ } -> ex tests (sub "list") list @ fn (sub "function") function_name @ ex tests (sub "init") init
     | Map_list { list; function_name; _ } -> ex tests (sub "list") list @ fn (sub "function") function_name
