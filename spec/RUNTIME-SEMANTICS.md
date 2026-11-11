@@ -440,9 +440,10 @@ on the table, kept as the decision's rationale:
    `gedeeld door` and its abs variant alike — is leeg and deposits a §9.5
    fact of kind **EF-005** (ch. 5.7b) on the rule × subject that evaluates
    it, as a leeg divisor does with EF-031; an empty dividend still yields 0
-   before the divisor is read (ch. 1.2). The kind kept its code; its
+   before the divisor is read (ch. 1.2): the divisor is not evaluated, so
+   it deposits nothing and faults on nothing. The kind kept its code; its
    witnesses moved from the red corpus to golden `inconsistent`
-   expectations. Worked example: ch. 2.2.
+   expectations. Worked examples: ch. 2.2.
 
 ---
 
@@ -525,6 +526,20 @@ kind EF-005; 0 ÷ 0 and leeg ÷ 0 follow the dividend rule of ch. 1.2
 instead — 0 ÷ 0 has a filled dividend and is leeg with the deposit, leeg ÷ 0
 is 0 without one. A rational literal with denominator zero is rejected at
 parse time.
+
+An empty dividend decides the division before the divisor is read
+(ch. 1.4 point 4): the divisor is not evaluated, so a division by zero
+inside it deposits nothing. Worked example (`ref/` test verbatim; the golden
+`division-by-numeric-zero` with one rule, `loon` of a Vondst = (bonus ÷
+(opbrengst ÷ aandeel)) rekenkundig afgerond op 0 decimalen, opbrengst 90 and
+aandeel 0): with bonus leeg, leeg ÷ (90 ÷ 0) is **0** and the §9.5 channel
+stays empty; with bonus 10, 10 ÷ (90 ÷ 0) reads the divisor, whose division by zero is leeg
+with a deposit of kind EF-005, and 10 ÷ leeg is leeg with one of kind EF-031,
+so the loon is **leeg** and the channel carries one fact on the rule × the
+vondst with the codes EF-005 and EF-031. The reading of ch. 5.12 records the
+same order: under the leeg dividend the nodes of the divisor read
+`unreached`, under the filled one they carry their values, the inner
+quotient `empty`.
 
 A negative exponent inverts the power of its base, so a numeric zero to a
 negative power is a division by a numeric zero (ch. 1.4 point 4): **leeg**,
