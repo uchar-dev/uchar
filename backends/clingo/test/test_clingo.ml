@@ -19298,6 +19298,73 @@ let () =
   in
   both_answer ~name:"a consistency the evaluation date excludes asserts nothing" ~ir ~case_text
 
+(* RUNTIME-SEMANTICS ch. 3.2 and 3.6, the worked examples, on the backend's
+   own calendar: the whole units of a span, the measure of a span on a grid,
+   the periods a fixed start point lays, and the calendar measure of a day. *)
+let () =
+  let day s = Scanf.sscanf s "%4d-%2d-%2d" (fun y m d -> Calendar.days_from_civil ~y ~m ~d) in
+  let iso z = let y, m, d = Calendar.civil_from_days z in Printf.sprintf "%04d-%02d-%02d" y m d in
+  let span (a, b) = Printf.sprintf "[%s, %s)" (iso a) (iso b) in
+  let grid gran fixed = Calendar.grid_of ~gran ~count:1 ~fixed ~variable:false in
+  check "calendar: day 0 is 1970-01-01" (Calendar.days_from_civil ~y:1970 ~m:1 ~d:1 = 0);
+  check "calendar: the case reader's 2024-02-29 is the calendar's"
+    (match Uchar_ref.Value.date_of_iso "2024-02-29" with Uchar_ref.Value.Date z -> z = day "2024-02-29" | _ -> false);
+  List.iter
+    (fun (gran, van, tot, expected) ->
+      check (Printf.sprintf "ch3.2 whole units of [%s, %s)" van tot) (Calendar.whole_units gran (day van) (day tot) = expected))
+    Ir_v0.Ast.[ (Month, "2024-01-31", "2024-02-29", 1); (Quarter, "2024-11-30", "2025-02-28", 1);
+                (Year, "2024-02-29", "2025-02-28", 1); (Month, "2024-01-31", "2024-02-28", 0) ];
+  check "ch3.2 [2024-01-31, 2024-02-29) is 1 period of the --01-31 month grid"
+    (Q.equal (Calendar.grid_measure (grid Month (Some "--01-31")) (day "2024-01-31") (day "2024-02-29")) Q.one);
+  check "ch3.2 [2024-01-31, 2024-02-29) is 1/31 + 28/29 of a calendar month"
+    (Q.equal
+       (Calendar.grid_measure (Calendar.calendar Month) (day "2024-01-31") (day "2024-02-29"))
+       (Q.add (Q.of_ints 1 31) (Q.of_ints 28 29)));
+  let holds name gr d expected = check (Printf.sprintf "ch3.2 %s: the period that holds %s" name d) (span (Calendar.period gr (day d)) = expected) in
+  holds "year grid --10-01" (grid Year (Some "--10-01")) "2025-02-01" "[2024-10-01, 2025-10-01)";
+  holds "year grid --10-01" (grid Year (Some "--10-01")) "2024-09-30" "[2023-10-01, 2024-10-01)";
+  holds "week grid 2026-01-05" (grid Week (Some "2026-01-05")) "2026-01-04" "[2025-12-29, 2026-01-05)";
+  holds "week grid 2026-01-05" (grid Week (Some "2026-01-05")) "2026-01-05" "[2026-01-05, 2026-01-12)";
+  holds "week grid 2024-09-30" (grid Week (Some "2024-09-30")) "2025-02-15" "[2025-02-10, 2025-02-17)";
+  holds "quarter grid --05-31" (grid Quarter (Some "--05-31")) "2025-02-15" "[2024-11-30, 2025-02-28)";
+  let walls name gr first n expected =
+    let rec go d k acc = if k = 0 then List.rev acc else let _, next = Calendar.period gr d in go next (k - 1) (iso next :: acc) in
+    check (Printf.sprintf "ch3.2 %s: walls from %s" name first) (go (day first) n [ first ] = expected)
+  in
+  walls "month grid --01-31" (grid Month (Some "--01-31")) "2024-01-31" 3
+    [ "2024-01-31"; "2024-02-29"; "2024-03-31"; "2024-04-30" ];
+  walls "quarter grid --05-31" (grid Quarter (Some "--05-31")) "2024-02-29" 4
+    [ "2024-02-29"; "2024-05-31"; "2024-08-31"; "2024-11-30"; "2025-02-28" ];
+  walls "year grid --02-29" (grid Year (Some "--02-29")) "2024-02-29" 4
+    [ "2024-02-29"; "2025-02-28"; "2026-02-28"; "2027-02-28"; "2028-02-29" ];
+  check "ch3.6 a day of 2024 weighs 1/366 of a year"
+    (Q.equal (Calendar.calendar_measure Ir_v0.Checks.Tu_year (day "2024-03-01") (day "2024-03-02")) (Q.of_ints 1 366));
+  check "ch3.6 a day of 2025 weighs 1/365 of a year"
+    (Q.equal (Calendar.calendar_measure Ir_v0.Checks.Tu_year (day "2025-03-01") (day "2025-03-02")) (Q.of_ints 1 365))
+
+(* RUNTIME-SEMANTICS ch. 2.6, the algebra, on the backend's own reading of the
+   declared factors: with cm = 1/100 m, F(m^2)/F(cm^2) is 10000, F(1/dg)/F(1/wk)
+   is 7 with wk = 7 dg, and half a conversion pair faults (WF-092). *)
+let () =
+  let atom ?exponent abbr canonical num den =
+    Ir_v0.Ast.
+      { abbr_text = Some abbr; system = Some "S"; canonical_form = canonical;
+        factor_to_canonical = Option.map (fun _ -> { num; den }) canonical; exponent }
+  in
+  let m = atom "m" (Some "m") 1 1 and cm = atom "cm" (Some "m") 1 100 in
+  let dg = atom "dg" (Some "dg") 1 1 and wk = atom "wk" (Some "dg") 7 1 in
+  let sq f = { f with Ir_v0.Ast.exponent = Some 2 } and inv f = { f with Ir_v0.Ast.exponent = Some (-1) } in
+  check "ch2.6 m^2 into cm^2 by 10000" (Q.equal (Factors.conversion [ sq m ] [ sq cm ]) (Q.of_int 10000));
+  check "ch2.6 1/dg into 1/wk by 7" (Q.equal (Factors.conversion [ inv dg ] [ inv wk ]) (Q.of_int 7));
+  check "ch2.6 jr into mnd by 12"
+    (Q.equal (Factors.conversion [ atom "jr" (Some "mnd") 12 1 ] [ atom "mnd" (Some "mnd") 1 1 ]) (Q.of_int 12));
+  check "ch2.6 m against 1/dg is incompatible"
+    (match Factors.conversion [ m ] [ inv dg ] with _ -> false | exception Uchar_ref.Value.Fault _ -> true);
+  check "WF-092 half a conversion pair faults"
+    (match Factors.total [ { cm with Ir_v0.Ast.factor_to_canonical = None } ] with
+     | _ -> false
+     | exception Uchar_ref.Value.Fault _ -> true)
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
