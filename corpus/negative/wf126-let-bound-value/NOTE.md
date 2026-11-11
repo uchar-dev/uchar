@@ -1,0 +1,3 @@
+Violates WF-126 (`spec/IR-SPEC.md` ch. 3.1): a timeline that the value of a rule on a timeline target reads per period lies on a grid that does not fit the target's.
+
+The document of `wf126-value-grid`, with the product bound to a variable: the rule writes `maandrente`, declared for every month, as a `Let` that binds `rente` to the dagrentevoet maal the afdrachtbedrag and reads `rente` and nothing else. Such a `Let` stands for its bound value (RUNTIME-SEMANTICS ch. 10.6): the executors write the bound value, so the parameter `dagrentevoet`, declared for every day, is read per period exactly as in the bare product. The arm this case pins: the value read through a `Let`.

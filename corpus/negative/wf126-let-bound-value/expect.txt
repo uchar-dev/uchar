@@ -1,0 +1,5 @@
+WF-126.value-grid
+operand=the parameter 'dagrentevoet'
+operandGrid=day
+target=maandrente
+targetGrid=month

@@ -12791,7 +12791,11 @@ let wf126 ctx =
     in
     (value, condition)
   in
-  let own_value value at = function
+  (* a Let whose body reads its binder and nothing else writes its bound value
+     ([let_bound_value]), so the bound value is what is read per period *)
+  let rec own_value value at = function
+    | Some (Let { binder; value = bound; body = Binder_ref { ident; _ }; _ }) when norm ident = norm binder ->
+        own_value value (at ^ "/value") (Some bound)
     | Some (Function_call { kind = Time_proportional_part | Day_count; _ }) | None -> []
     | Some e -> value at e
   in
