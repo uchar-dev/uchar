@@ -608,9 +608,12 @@ Recorded limitations:
   `ref/` (ch. 4.4). All fail-fast guards (these, and the to-one creation
   guard) derive named `viol/2` witnesses closed by one global integrity
   constraint; on UNSAT the runner re-runs without that constraint and
-  reports the fired witnesses, so the fault kind and the
-  parameters read off the fired witness (`Translate.viol_code`; corpus/red,
-  gate 8) pin the *reason*, never merely "some constraint fired".
+  reports the fired witnesses, so the fault kind and its parameters pin the
+  *reason*, never merely "some constraint fired" (corpus/red, gate 8). The
+  place that writes a guard registers the code its witness stands for
+  (`emit_viol`, `guardc`), and the diagnosis reads it back by the witness's
+  reason (`Translate.viol_code`); a parameter is fixed there or read off the
+  ground witness (its label, or a part of a tuple reason).
 
 ## Run
 

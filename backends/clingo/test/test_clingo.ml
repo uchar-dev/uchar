@@ -39,6 +39,13 @@ let translate doc case =
   | Uchar_ref.Value.Fault _ as f -> raise f
   | e -> raise (Uchar_ref.Value.Fault { code = None; params = []; text = ("a CRASH, not a fault: " ^ Printexc.to_string e) })
 
+(* the program with the register of its guards, which [Translate.viol_code]
+   reads a witness's code from *)
+let translate_guarded doc case =
+  try Translate.translate_guarded doc case with
+  | Uchar_ref.Value.Fault _ as f -> raise f
+  | e -> raise (Uchar_ref.Value.Fault { code = None; params = []; text = ("a CRASH, not a fault: " ^ Printexc.to_string e) })
+
 (* the frontend-faithful pure-% spelling (jutterswet-vondsttarief) *)
 let pct_unit =
   {|{
@@ -1123,7 +1130,7 @@ let faults_with ~name ~ir ~case_text ~needle =
 (* a fail-fast the program carries as a viol/2 witness, where ref raises it at
    evaluation: the document translates, clingo finds it UNSATISFIABLE, and a
    fired witness carries [needle] and, where [code] is given, the fault kind and
-   parameters [Translate.viol_code] reads off it *)
+   parameters the translation registered for it ([Translate.viol_code]) *)
 let faults_at_solving ?code ~name ~ir ~case_text ~needle () =
   let irf = write_temp ".ir.json" ir in
   let casef = write_temp ".case.json" case_text in
@@ -1131,10 +1138,10 @@ let faults_at_solving ?code ~name ~ir ~case_text ~needle () =
   let case = Uchar_ref.Case.load_file doc casef in
   Sys.remove irf;
   Sys.remove casef;
-  match translate doc case with
+  match translate_guarded doc case with
   | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check (name ^ ": expected a fault at solving, got one in translation (" ^ m ^ ")") false
-  | program -> (
+  | program, guards -> (
       match Solve.run_clingo program with
       | _, Unix.WEXITED 20 ->
           let ws = Solve.diagnostic program in
@@ -1143,7 +1150,7 @@ let faults_at_solving ?code ~name ~ir ~case_text ~needle () =
             (List.exists
                (fun w ->
                  Uchar_ref.Case.contains ~needle w
-                 && match code with None -> true | Some c -> Translate.viol_code w = Some c)
+                 && match code with None -> true | Some c -> Translate.viol_code guards w = Some c)
                ws)
       | _, _ -> check (name ^ ": expected a fault at solving, got a model") false)
 
@@ -1634,6 +1641,19 @@ let load_pair ~ir ~case_text =
   Sys.remove irf;
   Sys.remove casef;
   (doc, case)
+
+(* a file of the repository, read from its root, or from the build tree dune
+   runs the suite in *)
+let corpus_file rel =
+  In_channel.with_open_text (if Sys.file_exists rel then rel else Filename.concat "../../../../.." rel)
+    In_channel.input_all
+
+(* the code and parameters [witness] stands for after the translation of [ir]
+   with [case_text]: the ones that translation registered where it wrote the
+   guard ([Translate.viol_code]) *)
+let registered_code ~ir ~case_text witness =
+  let doc, case = load_pair ~ir ~case_text in
+  Translate.viol_code (snd (translate_guarded doc case)) witness
 
 let ref_matches ~name ~ir ~case_text =
   let doc, case = load_pair ~ir ~case_text in
@@ -15408,15 +15428,20 @@ let () =
   translates_carrying ~name:"x/3 as the value" ~ir:(ir third) ~case_text:case_data
     ~needle:Translate.non_exact_division_bounded;
   check "x/3 maal 3: the witness is CLINGO-031"
-    (Translate.viol_code (Printf.sprintf "viol(\"%s\",\"V1\")" Translate.nested_non_exact_division)
+    (registered_code ~ir:(ir thrice) ~case_text:case_data
+       (Printf.sprintf "viol(\"%s\",\"V1\")" Translate.nested_non_exact_division)
     = Some ("CLINGO-031", []));
   check "x/3: the witness is EF-006"
-    (Translate.viol_code (Printf.sprintf "viol(\"%s\",\"V1\")" Translate.non_exact_division_bounded)
+    (registered_code ~ir:(ir third) ~case_text:case_data
+       (Printf.sprintf "viol(\"%s\",\"V1\")" Translate.non_exact_division_bounded)
     = Some ("EF-006", []));
   (* a pro-rata segment that does not fit its target is the write boundary
      of ch. 2.4 on that segment (ch. 3.7) *)
   check "a pro-rata part that does not fit: the witness is EF-006"
-    (Translate.viol_code (Printf.sprintf "viol(\"%s\",l1)" Translate.pro_rata_misfit) = Some ("EF-006", []))
+    (registered_code ~ir:(corpus_file "corpus/golden/jutterswet-bakenmeester/ir.json")
+       ~case_text:(corpus_file "corpus/golden/jutterswet-bakenmeester/case1.json")
+       (Printf.sprintf "viol(\"%s\",l1)" Translate.pro_rata_misfit)
+    = Some ("EF-006", []))
 
 (* THE UNBOUNDED FORM (IR-SPEC ch. 2.4 (c): a Number that is not whole and
    has 0 decimals, a "getal" declared without decimals). It has no ceiling:
@@ -15565,20 +15590,32 @@ let () =
       "a division into a number declared without decimals is not whole, and this encoding holds the \
        unbounded form as a whole number";
   check "a defaults consequence into the unbounded form: the witness has no fault kind, the limit CLINGO-033"
-    (Translate.viol_code
+    (registered_code ~ir ~case_text:(case_data "6" "2" [ pf_is ~attr:"aandeel" "3"; pf_is ~attr:"toeslag" "9/2"; pf_cons ])
        "viol(\"result of jutter.toeslag is not a whole number, and this encoding holds a number declared \
         without decimals (the unbounded form) as a whole number\",\"J1\")"
     = Some ("CLINGO-033", []));
   check "a division into the unbounded form held whole: the limit CLINGO-033"
-    (Translate.viol_code (Printf.sprintf "viol(\"%s\",\"J1\")" Translate.unbounded_non_whole_division)
+    (registered_code ~ir:quotient ~case_text:(case_data "7" "2" [ pf_is ~attr:"toeslag" "7/2"; pf_cons ])
+       (Printf.sprintf "viol(\"%s\",\"J1\")" Translate.unbounded_non_whole_division)
     = Some ("CLINGO-033", []));
+  (* the pro-rata part of jutterswet-bakenmeester written into the unbounded form *)
+  let unbounded_part =
+    List.fold_left
+      (fun ir needle -> replace_first ~needle ~by:(replace_first ~needle:"\"decimals\": 2" ~by:"\"decimals\": 0" needle) ir)
+      (corpus_file "corpus/golden/jutterswet-bakenmeester/ir.json")
+      [ "\"name\": \"onderhoudsbijdrage\",\n            \"datatype\": {\n              \"node\": \"Number\",\n              \
+         \"whole\": false,\n              \"decimals\": 2,";
+        "\"type\": {\n                \"node\": \"Number\",\n                \"whole\": false,\n                \
+         \"decimals\": 2," ]
+  in
   check "a pro-rata part into the unbounded form held whole: the limit CLINGO-033"
-    (Translate.viol_code
+    (registered_code ~ir:unbounded_part ~case_text:(corpus_file "corpus/golden/jutterswet-bakenmeester/case1.json")
        "viol(\"a pro-rata part into a number declared without decimals is not whole, and this encoding holds \
         the unbounded form as a whole number\",l1)"
     = Some ("CLINGO-033", []));
   check "a term past the machine integers: the limit CLINGO-034"
-    (Translate.viol_code "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",\"A1\")"
+    (registered_code ~ir ~case_text:(case_data "6" "2" [ pf_is ~attr:"aandeel" "3"; pf_is ~attr:"toeslag" "9/2"; pf_cons ])
+       "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",\"A1\")"
     = Some ("CLINGO-034", []));
   let rate =
     pf_doc
@@ -17935,15 +17972,15 @@ let () =
      "two writers of one target disagree: rules \"rentedagen in een gehele maand\" and \"rentedagen in elke maand\" \
       write different values to the attribute rentedagen of a Afdracht"
    in
-   match translate doc case with
+   match translate_guarded doc case with
    | exception Uchar_ref.Value.Fault { text = m; _ } -> check (name ^ " (translation fault: " ^ m ^ ")") false
-   | program -> (
+   | program, guards -> (
        match Solve.run_clingo program with
        | _, Unix.WEXITED 20 ->
            let ws = Solve.diagnostic program in
            check (name ^ " (" ^ String.concat "; " ws ^ ")")
              (List.exists (fun w -> Uchar_ref.Case.contains ~needle w) ws
-             && List.exists (fun w -> Translate.viol_code w = Some ("EF-016", [ ("rules", "rentedagen in een gehele maand, rentedagen in elke maand"); ("attribute", "rentedagen"); ("label", "A1"); ("objectType", "Afdracht") ])) ws)
+             && List.exists (fun w -> Translate.viol_code guards w = Some ("EF-016", [ ("rules", "rentedagen in een gehele maand, rentedagen in elke maand"); ("attribute", "rentedagen"); ("label", "A1"); ("objectType", "Afdracht") ])) ws)
        | _, _ -> check (name ^ " (it found a model)") false));
   (let ir, case_text = pair "afdracht-fijner" in
    faults_with ~name:"condition per period: a finer operand" ~ir ~case_text

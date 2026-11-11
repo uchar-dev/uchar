@@ -23,13 +23,14 @@ let diagnostic = Clingo_backend.Solve.diagnostic
 
 (* run clingo on [program]; [`Sat model] with its one stable model, or
    [`Fails (msg, codes)] with the report and its codes with their parameters,
-   in report order, each pair once: an UNSAT diagnosed through the fault kinds
-   of its guards' witnesses ([Translate.viol_code]), or a program without
-   exactly one stable model (CLINGO-030, raised where clingo's answer is read,
-   [Model.one_model]). The model is read here, in both paths, so a red case
-   whose program has two models is not reported as "clingo found a model", and
-   the refusal is reported as clingo's, not as a translation fault. *)
-let solve program =
+   in report order, each pair once: an UNSAT diagnosed through the codes the
+   translation registered for its guards ([guards], [Translate.viol_code]), or
+   a program without exactly one stable model (CLINGO-030, raised where
+   clingo's answer is read, [Model.one_model]). The model is read here, in
+   both paths, so a red case whose program has two models is not reported as
+   "clingo found a model", and the refusal is reported as clingo's, not as a
+   translation fault. *)
+let solve (program, guards) =
   try
     match run_clingo program with
     | out, Unix.WEXITED (10 | 30) ->
@@ -46,7 +47,7 @@ let solve program =
         let codes =
           List.fold_left
             (fun acc w ->
-              match Clingo_backend.Translate.viol_code w with
+              match Clingo_backend.Translate.viol_code guards w with
               | Some c when not (List.mem c acc) -> acc @ [ c ]
               | _ -> acc)
             [] witnesses
@@ -120,8 +121,7 @@ let () =
                pinned code — never a silent model *)
             let observed =
               match
-                let program = Clingo_backend.Translate.translate doc case in
-                solve program
+                solve (Clingo_backend.Translate.translate_guarded doc case)
               with
               | `Sat _ -> None
               | `Fails (msg, codes) -> Some (with_codes codes msg, codes)
@@ -136,9 +136,8 @@ let () =
                 exit 1
             | Some (msg, codes) -> verdict ~pinned ~observed:codes ~what:"" msg)
         | None -> (
-            let program = Clingo_backend.Translate.translate doc case in
             let model =
-              match solve program with
+              match solve (Clingo_backend.Translate.translate_guarded doc case) with
               | `Sat model -> model
               | `Fails (msg, codes) ->
                   prerr_endline (with_codes codes msg);

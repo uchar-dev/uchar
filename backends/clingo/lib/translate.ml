@@ -264,7 +264,7 @@ let non_exact_division_in_condition =
    quotient is not whole: this encoding holds that form as a whole number, where
    ref writes the exact value (RUNTIME-SEMANTICS ch. 2.4 point 3), so it is a
    limit of the encoding (CLINGO-033), as the reasons of a pro-rata part and of a
-   result into that form are ([viol_code]) *)
+   result into that form are *)
 let unbounded_non_whole_division =
   "a division into a number declared without decimals is not whole, and this encoding holds the \
    unbounded form as a whole number"
@@ -424,6 +424,35 @@ type sign_src =
   | Sum of { l : string; r : string; minus : bool; subject : string }
   | Bound of { pred : string; subject : string; body : string list; inner : string }
 
+(* THE REGISTER OF THE GUARDS. A viol/2 guard carries no code: a code spliced
+   into the atom would move the words of its reason. So the place that writes a
+   guard ([emit_viol]) registers its reason with the fault kind
+   (RUNTIME-SEMANTICS ch. 5.7b) or the register code of this backend it stands
+   for, and the parameters of that code, and the diagnosis of an UNSAT program
+   reads them back by reason ([viol_code]). A parameter is fixed where the guard
+   is written, or read off the ground witness: its subject where that is a
+   label, or a part of a reason written as a tuple with the terms it is about. *)
+type guard_param = Fixed of string | Witness_label | Witness_part of int
+type guard_code = { gc_code : string; gc_params : (string * guard_param) list }
+
+(* the code of a guard, in the shape of [faultc]: its parameters, then the code *)
+let guardc ?(params = []) code = { gc_code = code; gc_params = params }
+
+(* EF-016 (RUNTIME-SEMANTICS ch. 5.7): two writers of one target disagree on
+   an object of [object_type]; [rules] the writers' names *)
+let disagree_code ~rules ~attribute ~object_type =
+  guardc
+    ~params:
+      [ ("rules", Fixed (String.concat ", " (List.map (Option.value ~default:"<naamloos>") rules)));
+        ("attribute", Fixed attribute);
+        ("label", Witness_label);
+        ("objectType", Fixed object_type) ]
+    "EF-016"
+
+(* per reason a guard is written with, its code; none for a guard of a kind
+   this backend names no code for *)
+type guards = (string, guard_code option) Hashtbl.t
+
 type ctx = {
   doc : document;
   (* the document before the ch. 7.7 desugaring, the forms ref replays: a
@@ -435,6 +464,7 @@ type ctx = {
      resolvers read the document and nothing of a session *)
   doc_env : Eval.env;
   buf : Buffer.t;
+  guards : guards;
   mutable fresh : int;
   (* the enclosing rule's condition atoms: every viol/2 or
      inconsistent/2 head a value expression emits must fire only where
@@ -745,6 +775,18 @@ let emit_rule ctx ~head ~(body : string list) =
   unkeyed_form_read ctx ~head ~body text;
   Buffer.add_string ctx.buf (text ^ "\n")
 
+(* the viol/2 guard of [reason] on [subject] under [body], its [code] in the
+   register ([guards]). [parts], the terms the witness is about, ride beside
+   the reason in a tuple. A reason is written with one code wherever it is
+   written *)
+let emit_viol ctx ?code ?(parts = []) ~subject reason body =
+  (match Hashtbl.find_opt ctx.guards reason with
+  | Some c when c <> code -> fault "the guard %S is written with two codes" reason
+  | Some _ -> ()
+  | None -> Hashtbl.replace ctx.guards reason code);
+  let first = match parts with [] -> quote reason | _ -> "(" ^ String.concat "," (quote reason :: parts) ^ ")" in
+  emit_rule ctx ~head:(Printf.sprintf "viol(%s,%s)" first subject) ~body
+
 (* a §9.5 deposit (RUNTIME-SEMANTICS ch. 5.6) under [body]: the channel fact
    inconsistent/2, whose identity is rule × subject, and beside it
    inconsistent_code/3, the EF code (ch. 5.7b) of the kind deposited for that
@@ -766,59 +808,22 @@ let open_total_reason a =
 let open_total_guard ctx ~witness ~body ~bounds:(v, t) ~value ~attr =
   List.iter
     (fun open_bound ->
-      emit_rule ctx ~head:(Printf.sprintf "viol(%s,%s)" (quote (open_total_reason attr)) witness)
-        ~body:(body @ [ Printf.sprintf "%s != 0" value; open_bound ]))
+      emit_viol ctx
+        ~code:(guardc ~params:[ ("attribute", Fixed attr); ("label", Witness_label) ] "EF-036")
+        ~subject:witness (open_total_reason attr)
+        (body @ [ Printf.sprintf "%s != 0" value; open_bound ]))
     [ Printf.sprintf "%s = #inf" v; Printf.sprintf "%s = #sup" t ]
 
-(* a bare division's non-exact viol/2: inside the write of the unbounded form
-   it names that form, since the spec mandates no rounding there *)
+(* a bare division's non-exact viol/2 with its code: the write boundary of
+   ch. 2.4 (EF-006); inside the write of the unbounded form it names that form,
+   since the spec mandates no rounding there, a limit of this encoding
+   (CLINGO-033) *)
 let non_exact_division ctx =
-  if ctx.write_unbounded then unbounded_non_whole_division else non_exact_division_bounded
-
-(* [s] cut at every occurrence of [sep] *)
-let split_on_string sep s =
-  let n = String.length sep and l = String.length s in
-  let rec go start i acc =
-    if i + n > l then List.rev (String.sub s start (l - start) :: acc)
-    else if String.sub s i n = sep then go (i + n) (i + n) (String.sub s start (i - start) :: acc)
-    else go start (i + 1) acc
-  in
-  go 0 0 []
-
-(* The fault kind (RUNTIME-SEMANTICS ch. 5.7b) of a viol/2 witness, as the UNSAT
-   diagnosis returns it ([Solve.diagnostic]: `viol("<reason>",<subject>)`, the
-   string escapes undone), with the parameters its reason and its subject
-   carry. The code is not an argument of viol/2: a code spliced into the atom
-   would move the words of the reason. So the translator, which writes the
-   reasons, knows the code per reason, and the runner renders it beside the
-   report. Each arm reads the opening of a reason the emitters in this file
-   write, up to its first interpolation, and reads its parameters out of the
-   same sentence (a viol/2 atom has no other room for them); the subject, a
-   label as a quoted string, is the `label` of the kinds that name one. A
-   parameter the sentence does not carry is not emitted. Two guards of this
-   backend's own limits carry a register code and no parameter: a value
-   written into the unbounded form that is not whole, which this encoding holds
-   as a whole number (CLINGO-033), and a term past the range of clingo's
-   machine integers (CLINGO-034). A reason no arm names has no code: a kind no
-   red case witnesses yet. *)
-(* the parts a date-construction witness carries after its sentence,
-   `viol(("…",2026,4,31),"S1")`, named in order *)
-let date_parts witness names =
-  match String.index_opt witness ')' with
-  | None -> []
-  | Some close -> (
-      let inner = String.sub witness 0 close in
-      match String.rindex_opt inner '"' with
-      | None -> []
-      | Some q -> (
-          let values =
-            String.split_on_char ',' (String.sub inner (q + 1) (String.length inner - q - 1))
-            |> List.filter (fun v -> v <> "")
-          in
-          try List.combine names values with Invalid_argument _ -> []))
+  if ctx.write_unbounded then (unbounded_non_whole_division, guardc "CLINGO-033")
+  else (non_exact_division_bounded, guardc "EF-006")
 
 (* the sentences of the faults ref raises where it evaluates their node, in
-   ref's words ([fault_where_reached], [viol_code]) *)
+   ref's words ([fault_where_reached]) *)
 let bound_day_reason =
   "a BoundDay is the bound day of a day-kind definition (ch. 3.7); outside a day-kind evaluation it denotes nothing"
 
@@ -851,144 +856,58 @@ let other_day_test_reason =
 (* the tail of every refusal where a read hangs on the order of the members a
    creation adds (maintainer decision 2026-09-23): one order the spec allows
    reaches the read and another does not, so the refusal is named and never in
-   ref's words, whichever order ref itself keeps. [viol_code] reads it as
-   CLINGO-035, a refusal, never as the fault kind of the read *)
+   ref's words, whichever order ref itself keeps. Its guard carries CLINGO-035,
+   a refusal, never the fault kind of the read ([order_code]) *)
 let order_not_normed = "depends on the order of the members a creation adds, which is not normed (ch. 3.9a/5.7a)"
 
-let viol_code witness =
-  let opens p = String.starts_with ~prefix:("viol(\"" ^ p) witness in
-  let holds s = Case.contains ~needle:s witness in
-  let find ?(from = 0) needle =
-    let n = String.length needle and l = String.length witness in
-    let rec go i = if i + n > l then None else if String.sub witness i n = needle then Some i else go (i + 1) in
-    go from
+(* The code (RUNTIME-SEMANTICS ch. 5.7b, or this backend's register) of a
+   viol/2 witness as the UNSAT diagnosis returns it ([Solve.diagnostic]:
+   `viol("<reason>",<subject>)` or `viol(("<reason>",<part>,…),<subject>)`, the
+   string escapes undone), with its parameters: read from [guards], the
+   register the translation filled where it wrote the guards. A witness opens
+   with the reason of its guard, so the reason is found by its opening, the
+   longest where one reason opens another. None for a guard with no code. *)
+let viol_code (guards : guards) witness =
+  let opens p = String.starts_with ~prefix:p witness in
+  let found =
+    Hashtbl.fold
+      (fun reason code best ->
+        let plain = "viol(\"" ^ reason ^ "\"," and tuple = "viol((\"" ^ reason ^ "\"," in
+        let hit = if opens plain then Some (plain, false) else if opens tuple then Some (tuple, true) else None in
+        match (hit, best) with
+        | Some (o, _), Some (o', _, _) when String.length o <= String.length o' -> best
+        | Some (o, t), _ -> Some (o, t, code)
+        | None, _ -> best)
+      guards None
   in
-  (* the text between [after] and the next [before] *)
-  let between ?(from = 0) after before =
-    Option.bind (find ~from after) (fun i ->
-        let start = i + String.length after in
-        Option.map (fun j -> String.sub witness start (j - start)) (find ~from:start before))
-  in
-  (* the subject, when it is a label (a quoted string): the argument after the reason *)
-  let label =
-    match between ~from:6 "\"," ")" with
-    | Some a when String.length a >= 2 && a.[0] = '"' && a.[String.length a - 1] = '"' ->
-        [ ("label", String.sub a 1 (String.length a - 2)) ]
-    | _ -> []
-  in
-  let found k = function Some v -> [ (k, v) ] | None -> [] in
-  (* the named twin of a fail-fast whose reach hangs on the order of the members
-     a creation adds: a refusal of this encoding, whatever fault ref raises there *)
-  if holds (order_not_normed ^ "\",") then Some ("CLINGO-035", [])
-  else if opens (non_exact_division_bounded ^ "\"") then Some ("EF-006", [])
-  (* the sentence names none of place, value and decimals; the subject is a
-     label, which is no parameter of EF-006 *)
-  else if opens (allocation_share_misfit ^ "\"") then Some ("EF-006", [])
-  else if opens (allocation_rest_misfit ^ "\"") then Some ("EF-006", [])
-  else if opens (pro_rata_misfit ^ "\"") then Some ("EF-006", [])
-  else if opens (period_arithmetic_misfit ^ "\"") then Some ("EF-006", [])
-  else if opens (nested_non_exact_division ^ "\"") then Some ("CLINGO-031", [])
-  else if opens (non_exact_division_in_condition ^ "\"") then Some ("CLINGO-039", [])
-  else if
-    opens (unbounded_non_whole_division ^ "\"")
-    || opens
-         "a pro-rata part into a number declared without decimals is not whole, and this encoding \
-          holds the unbounded form as a whole number\""
-    || opens "result of "
-       && holds
-            " is not a whole number, and this encoding holds a number declared without decimals (the \
-             unbounded form) as a whole number\""
-  then Some ("CLINGO-033", [])
-  else if opens "arithmetic range exceeded (clingo grounds in machine integers)\"" then Some ("CLINGO-034", [])
-  else if
-    opens (date_year_after_reason ^ "\"")
-    || opens (date_day_below_reason ^ "\"")
-    || opens "date arithmetic reaches a year before 0000-03\""
-  then Some ("CLINGO-037", [])
-  else if opens "result of " && holds " does not fit its declared decimals\"" then
-    Some ("EF-006", found "place" (between "result of " " does not fit its declared decimals"))
-  else if opens "day-kind walk: no day of the kind within " then
-    Some ("EF-009", found "reach" (between "within " " calendar days"))
-  else if opens "parameter \"" && holds "\" is unbound in this case" then
-    Some ("EF-014", found "parameter" (between "parameter \"" "\" is unbound in this case"))
-  else if opens "creation budget exhausted\"" then Some ("EF-015", [])
-  else if opens (bound_day_reason ^ "\"") then Some ("EF-010", [])
-  else if
-    opens (no_evaluation_date_reason Ir_v0.Spelling.evaluation_date ^ "\"")
-    || opens (no_evaluation_date_reason Ir_v0.Spelling.evaluation_year ^ "\"")
-  then Some ("EF-011", [])
-  else if opens (unresolved_reason ^ "\"") || opens (unresolved_condition_reason ^ "\"") then Some ("EF-019", [])
-  else if opens "the temporal attribute \"" && holds "\" of a set has no moment at which a filled count can ask" then
-    Some ("EF-021", found "attribute" (between "the temporal attribute \"" "\" of a set"))
-  else if opens (two_temporal_keys_reason ^ "\"") then Some ("EF-024", [])
-  else if opens (other_day_test_reason ^ "\"") then Some ("EF-022", [])
-  else if opens (easter_before_year_one_reason ^ "\"") then Some ("EF-007", [])
-  else if opens "the periods in which the time-dependent characteristic " && holds " holds have an open bound" then
-    Some ("EF-023", found "characteristic" (between "the periods in which the time-dependent characteristic " " holds have"))
-  else if opens "the temporal total of \"" && holds "\" meets a segment with an open bound" then
-    Some ("EF-036", found "attribute" (between "the temporal total of \"" "\" meets") @ label)
-  (* the sentences of [bucket_scalar_fault], the subject the instance read *)
-  else if holds "\" whole; the case supplies only the asOfDate-bucket scalar, which carries no period\"," then
-    (* [read_whole_sentence]: the attribute is the first name it quotes *)
-    Some ("EF-037", found "attribute" (between ~from:6 "\"" "\" of \"") @ label)
-  else if opens "the initialisation of the timeline target \"" && holds "\" reads the input per day, and the case supplies for \"" then
-    Some ("EF-037", found "attribute" (between "the initialisation of the timeline target \"" "\" reads the input") @ label)
-  else if opens "the whole-period qualifier over \"" && holds "\" supplies only the asOfDate-bucket scalar (ch. 3.9" then
-    Some ("EF-037", found "attribute" (between "the whole-period qualifier over \"" "\" needs the full timeline") @ label)
-  else if opens "the gedurende clip of \"" && holds "\" compares \"" && holds "\" supplies only the asOfDate-bucket scalar"
-  then Some ("EF-037", found "attribute" (between "\" compares \"" "\" per segment") @ label)
-  else if opens "the gedurende clip of \"" && holds "\" supplies only the asOfDate-bucket scalar\"," then
-    Some ("EF-037", found "attribute" (between "the gedurende clip of \"" "\" needs the full timeline") @ label)
-  else if opens "the pro-rata base \"" && holds "\" supplies only the asOfDate-bucket scalar (ch. 3.7" then
-    Some ("EF-037", found "attribute" (between "the pro-rata base \"" "\" needs the full timeline") @ label)
-  else if opens "the temporal read of \"" && holds "(the asOfDate-bucket scalar cannot serve a point read)\"," then
-    Some ("EF-037", found "attribute" (between "the temporal read of \"" "\" needs the full timeline") @ label)
-  else if opens "the per-element temporal fold of \"" && holds "\": the case supplies an asOfDate-bucket scalar" then
-    Some ("EF-037", found "attribute" (between "the per-element temporal fold of \"" "\" over \"") @ label)
-  else if opens "two writers of one target disagree: " then
-    (* the writers' names are quoted, each after its kind: rules "A" and "B"
-       write …, rule "A" and allocation "B" write …; a name holds no quote *)
-    let rec quoted s i acc =
-      match String.index_from_opt s i '"' with
-      | None -> List.rev acc
-      | Some a -> (
-          match String.index_from_opt s (a + 1) '"' with
-          | None -> List.rev acc
-          | Some b -> quoted s (b + 1) (String.sub s (a + 1) (b - a - 1) :: acc))
-    in
-    let rules =
-      Option.map (fun r -> String.concat ", " (quoted r 0 [])) (between "disagree: " " write different values")
-    in
-    let attribute_of =
-      match between "to the attribute " " — no fixpoint" with
-      | None -> (None, None)
-      | Some t -> (
-          match split_on_string " of a " t with
-          | [ a; o ] -> (Some a, Some o)
-          | _ -> (None, None))
-    in
-    Some
-      ( "EF-016",
-        found "rules" rules @ found "attribute" (fst attribute_of) @ label
-        @ found "objectType" (snd attribute_of) )
-  else if opens "to-one second filler on role " then
-    Some ("EF-017", found "role" (between "second filler on role " "\",") @ label)
-  else if
-    String.starts_with ~prefix:"viol((\"dateWith: the parts name no calendar day\"," witness
-    || String.starts_with ~prefix:"viol((\"dateTimeWith: the parts name no calendar day\"," witness
-  then
-    (* the date construction (ch. 3.8): the witness carries the parts *)
-    Some ("EF-032", date_parts witness [ "year"; "month"; "day" ])
-  else if String.starts_with ~prefix:"viol((\"dateTimeWith: the parts name no clock time\"," witness
-  then Some ("EF-032", date_parts witness [ "hour"; "minute"; "second"; "millisecond" ])
-  else if
-    (opens "dateWith of a year " || opens "dateTimeWith of a year ") && holds " is not translated"
-  then
-    (* this backend's year fence of the date construction, a limit of its
-       integers: where the instant also leaves the millisecond range, ref and
-       Drools fault with EF-007 and gate 8 lists this code as the divergence *)
-    Some ("CLINGO-029", [])
-  else None
+  match found with
+  | None | Some (_, _, None) -> None
+  | Some (o, tuple, Some { gc_code; gc_params }) ->
+      let rest = String.sub witness (String.length o) (String.length witness - String.length o) in
+      let after i = String.sub rest i (String.length rest - i) in
+      (* [rest] is "<subject>)", or after a tuple's reason "<part>,…,<part>),<subject>)" *)
+      let parts, subject =
+        match String.index_opt rest ')' with
+        | Some k when tuple ->
+            (String.split_on_char ',' (String.sub rest 0 k), after (min (k + 2) (String.length rest)))
+        | _ -> ([], rest)
+      in
+      let subject =
+        if String.ends_with ~suffix:")" subject then String.sub subject 0 (String.length subject - 1) else subject
+      in
+      let label =
+        let n = String.length subject in
+        if n >= 2 && subject.[0] = '"' && subject.[n - 1] = '"' then Some (String.sub subject 1 (n - 2)) else None
+      in
+      Some
+        ( gc_code,
+          List.filter_map
+            (fun (name, p) ->
+              match p with
+              | Fixed v -> Some (name, v)
+              | Witness_label -> Option.map (fun l -> (name, l)) label
+              | Witness_part k -> Option.map (fun v -> (name, v)) (List.nth_opt parts k))
+            gc_params )
 
 (* the conjunctions under which term [t] is negative ([~neg:true]) or positive
    ([~neg:false]), read without any product formed on the way. A product
@@ -1581,6 +1500,9 @@ let unbound_param_reason name =
 let unbound_param_order_reason name what =
   Printf.sprintf "parameter %S is unbound in this case, and whether %s reads it %s" name what order_not_normed
 
+(* the code of every refusal that ends in [order_not_normed] *)
+let order_code = guardc "CLINGO-035"
+
 (* that refusal for any other fault ref raises at a read, in ref's [reason] *)
 let reached_order_reason reason what = Printf.sprintf "%s; whether %s reaches it %s" reason what order_not_normed
 
@@ -1635,9 +1557,9 @@ let reached_order_reason reason what = Printf.sprintf "%s; whether %s reaches it
    reaches only in the pass before a creation through a condition that holds
    on absence, in an `all` prefix, a taken arm or a rule's condition (README
    [S4]). *)
-let reach_guard ctx ~witness ~reason ~(order_reason : string -> string) body =
+let reach_guard ctx ~witness ~reason ?code ~(order_reason : string -> string) body =
   begin
-    emit_rule ctx ~head:(Printf.sprintf "viol(%s,%s)" (quote reason) witness) ~body:(body);
+    emit_viol ctx ?code ~subject:witness reason body;
     (* the named twins: the rest of "read in some allowed order". One rule per
        order-dependent atom, split on the first that does not hold in every
        order: the atoms before it in their every-order form, it in its
@@ -1659,7 +1581,7 @@ let reach_guard ctx ~witness ~reason ~(order_reason : string -> string) body =
               | _ -> b)
             body
         in
-        emit_rule ctx ~head:(Printf.sprintf "viol(%s,%s)" (quote (order_reason fold)) witness) ~body:(body'))
+        emit_viol ctx ~code:order_code ~subject:witness (order_reason fold) body')
       dep;
     (* the pass before a creation's twins: every atom as it reads in that
        pass ([pre_form]), and one short circuit that pass leaves open is
@@ -1677,13 +1599,16 @@ let reach_guard ctx ~witness ~reason ~(order_reason : string -> string) body =
                 (fun b -> if b = a then [ e.pe_form; e.pe_not_fix ] else [ pre_form ctx ~certain:false b ])
                 body
             in
-            emit_rule ctx ~head:(Printf.sprintf "viol(%s,%s)" (quote (order_reason e.pe_desc)) witness) ~body:(body'))
+            emit_viol ctx ~code:order_code ~subject:witness (order_reason e.pe_desc) body')
       (List.sort_uniq compare body)
   end
 
+let unbound_param_code name = guardc ~params:[ ("parameter", Fixed name) ] "EF-014"
+
 let unbound_param_guard ctx ~witness ~guard name =
   if param_unbound ctx name then
-    reach_guard ctx ~witness ~reason:(unbound_param_reason name) ~order_reason:(unbound_param_order_reason name)
+    reach_guard ctx ~witness ~reason:(unbound_param_reason name) ~code:(unbound_param_code name)
+      ~order_reason:(unbound_param_order_reason name)
       (guard ())
 
 (* the case instances of [otype] that give [attr] as the asOfDate-bucket scalar,
@@ -1714,13 +1639,14 @@ let bucket_scalars ctx ~otype ~attr =
    other document translates as before. Where an atom of [reach] hangs on the
    order of the members a creation adds, the named twins of [reach_guard] say
    the rest, in CLINGO-035. *)
-let bucket_scalar_fault ctx ~(reach : unit -> string list) ~(sentence : string -> string)
+let bucket_scalar_fault ctx ~(reach : unit -> string list) ~attr ~(sentence : string -> string)
     (reads : (Uchar_ref.World.instance * string list) list) =
   if reads <> [] then begin
     let reach = reach () in
+    let code = guardc ~params:[ ("attribute", Fixed attr); ("label", Witness_label) ] "EF-037" in
     List.iter
       (fun ((i : Uchar_ref.World.instance), binds) ->
-        reach_guard ctx ~witness:(str_raw i.label) ~reason:(sentence i.label)
+        reach_guard ctx ~witness:(str_raw i.label) ~reason:(sentence i.label) ~code
           ~order_reason:(reached_order_reason (sentence i.label))
           (reach @ binds))
       reads
@@ -1729,7 +1655,7 @@ let bucket_scalar_fault ctx ~(reach : unit -> string list) ~(sentence : string -
 (* [bucket_scalar_fault] for a read of [attr] on the object [holder], a
    variable of [reach], of type [otype] *)
 let bucket_scalar_guard ctx ~holder ~reach ~otype ~attr ~sentence =
-  bucket_scalar_fault ctx ~reach ~sentence
+  bucket_scalar_fault ctx ~reach ~attr ~sentence
     (List.map
        (fun (i : Uchar_ref.World.instance) -> (i, [ Printf.sprintf "%s = %s" holder (str_raw i.label) ]))
        (bucket_scalars ctx ~otype ~attr))
@@ -2876,14 +2802,12 @@ let span_weights ctx ~p ~(measure : int -> int -> Q.t) (endpoints : int list) =
    Returns the atoms and the term of the total at [scale]. *)
 let exact_span_total ctx ~subject ~subject_ot ~what ~p ~q ~d =
   let e = fresh ctx "E" in
-  emit_rule ctx
-    ~head:(Printf.sprintf "viol(%s,%s)" (quote
-       (Printf.sprintf
+  emit_viol ctx ~subject
+    (Printf.sprintf
           "%s counts a part of a unit of its grid by its days (ch. 3.6), and its value has no exact form at the \
            scale of its attribute in this encoding (README [V8])"
-          what)) subject)
-    ~body:
-      ((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard)
+          what)
+    ((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard)
       @ [ Printf.sprintf "%s_total(%s,%s)" p subject q;
           Printf.sprintf "%s \\ %d != 0" q d ]);
   ([ Printf.sprintf "%s_total(%s,%s)" p subject q; Printf.sprintf "%s = %s / %d" e q d ], e)
@@ -2950,7 +2874,7 @@ let day_kind_reach = 40_000
    of a use site, so two duration positions on one day kind share it. Reset
    per translation (the one entry point below). *)
 let dk_tables :
-    (string, string * string * string * string * (int * int) * (string * string) list) Hashtbl.t =
+    (string, string * string * string * string * (int * int) * (string * string * guard_code) list) Hashtbl.t =
   Hashtbl.create 4
 
 let day_kind_spells = Ir_v0.Checks.day_kind_of_unit
@@ -3094,10 +3018,10 @@ let civil_pm_day ctx (t : string) =
    day number negative and turn gringo truncation away from floor —
    fenced with a viol/2 witness, never a silent wrong month *)
 let pre_epoch_fence ctx ~subject ~body t =
-  emit_rule ctx
-    ~head:(Printf.sprintf "viol(\"date before 0000-03-01 in calendar arithmetic (the civil decomposition needs a \
-       non-negative shifted day number)\",%s)" subject)
-    ~body:(body @ [ Printf.sprintf "(%s) < -719468" t ])
+  emit_viol ctx ~subject
+    "date before 0000-03-01 in calendar arithmetic (the civil decomposition needs a \
+       non-negative shifted day number)"
+    (body @ [ Printf.sprintf "(%s) < -719468" t ])
 
 (* date + count whole months (ch. 3.8): re-anchor the proleptic month and
    clamp the day to the target month's length — one helper predicate per
@@ -3130,13 +3054,15 @@ let translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms ~date_term ~
   in
   (* the year-zero fence: PMT < 2 reaches a March-shifted year below 0,
      where the re-encode divisions would truncate away from floor *)
-  emit_rule ctx ~head:(Printf.sprintf "viol(\"date arithmetic reaches a year before 0000-03\",%s)" subject)
-    ~body:(((base :: ctx.rule_guard) @ chain @ [ count_ok ]) @ [ Printf.sprintf "%s < 2" pmt ]);
+  emit_viol ctx ~code:(guardc "CLINGO-037") ~subject
+    "date arithmetic reaches a year before 0000-03"
+    (((base :: ctx.rule_guard) @ chain @ [ count_ok ]) @ [ Printf.sprintf "%s < 2" pmt ]);
   (* and above 5000000, where the re-encoded day number would leave clingo's
      integers; the count is fenced by the caller ([count_ok]), so PMT itself
      does not wrap where these fences read it *)
-  emit_rule ctx ~head:(Printf.sprintf "viol(%s,%s)" (quote date_year_after_reason) subject)
-    ~body:(((base :: ctx.rule_guard) @ chain @ [ count_ok ]) @ [ Printf.sprintf "%s > 5000000" yt ]);
+  emit_viol ctx ~code:(guardc "CLINGO-037") ~subject
+    date_year_after_reason
+    (((base :: ctx.rule_guard) @ chain @ [ count_ok ]) @ [ Printf.sprintf "%s > 5000000" yt ]);
   let finish ml_atoms mlv =
     let dt = fresh ctx "DT" and y2 = fresh ctx "Y2" and e2 = fresh ctx "E2" in
     let yoe2 = fresh ctx "YOE" and mp2 = fresh ctx "MP" and doy2 = fresh ctx "DOY" in
@@ -3459,9 +3385,9 @@ let quotient_units_ok ?per_period ctx left_side right_side =
 let range_guard ctx ~subject ~body terms_with_bounds =
   List.iter
     (fun (t, bound) ->
-      emit_rule ctx
-        ~head:(Printf.sprintf "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s)" subject)
-        ~body:(body @ [ Printf.sprintf "|(%s)| > %d" t bound ]))
+      emit_viol ctx ~code:(guardc "CLINGO-034") ~subject
+        "arithmetic range exceeded (clingo grounds in machine integers)"
+        (body @ [ Printf.sprintf "|(%s)| > %d" t bound ]))
     terms_with_bounds
 
 (* the count of a date step in [tu], at most what keeps the step from a day
@@ -3486,10 +3412,8 @@ let date_step_count_fence ctx ~subject ~body (tu : Ir_v0.Checks.time_unit) n =
    numbers this encoding holds *)
 let day_number_fence ctx ~subject ~body ~count_ok t =
   let b = (body @ [ count_ok ]) in
-  emit_rule ctx ~head:(Printf.sprintf "viol(%s,%s)" (quote date_year_after_reason) subject)
-    ~body:(b @ [ Printf.sprintf "(%s) > %d" t day_number_limit ]);
-  emit_rule ctx ~head:(Printf.sprintf "viol(%s,%s)" (quote date_day_below_reason) subject)
-    ~body:(b @ [ Printf.sprintf "(%s) < -%d" t day_number_limit ])
+  emit_viol ctx ~code:(guardc "CLINGO-037") ~subject date_year_after_reason (b @ [ Printf.sprintf "(%s) > %d" t day_number_limit ]);
+  emit_viol ctx ~code:(guardc "CLINGO-037") ~subject date_day_below_reason (b @ [ Printf.sprintf "(%s) < -%d" t day_number_limit ])
 
 (* both compared operands times their factors from [comparison_factors]. Each
    fence stands on the bare term: past max_int31 / k the product itself would
@@ -3537,22 +3461,20 @@ let money_mult_fences ctx ~subject ~gbody ~tm ~tr ~tr_sign =
     (fun t ->
       List.iter
         (fun conds ->
-          emit_rule ctx
-            ~head:(Printf.sprintf "viol(\"negative operand under money multiplication is not translated\",%s)" subject)
-            ~body:(gbody @ conds))
+          emit_viol ctx ~subject "negative operand under money multiplication is not translated" (gbody @ conds))
         (sign_conds ctx ~neg:true t))
     [ tm; tr_sign ];
   (* A = M·Rh fence: |M| <= max_int31/(|Rh|+1) keeps |M·Rh| inside 2^31; the
      |Rh|+1 divisor is >= 1 for either sign, so a negative rate (fenced UNSAT
      above) can never divide by zero during grounding *)
-  emit_rule ctx
-    ~head:(Printf.sprintf "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s)" subject)
-    ~body:(gbody @ [ Printf.sprintf "|%s| > %d/(|(%s)/100|+1)" tm max_int31 tr ]);
+  emit_viol ctx ~code:(guardc "CLINGO-034") ~subject
+    "arithmetic range exceeded (clingo grounds in machine integers)"
+    (gbody @ [ Printf.sprintf "|%s| > %d/(|(%s)/100|+1)" tm max_int31 tr ]);
   (* B = M·Rl fence: Rl = R\100 < 100, so |M| <= (max_int31-20000)/99 keeps the
      rounded numerator 100·rA + M·Rl + 5000 inside 2^31 *)
-  emit_rule ctx
-    ~head:(Printf.sprintf "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s)" subject)
-    ~body:(gbody @ [ Printf.sprintf "|%s| > %d" tm ((max_int31 - 20000) / 99) ])
+  emit_viol ctx ~code:(guardc "CLINGO-034") ~subject
+    "arithmetic range exceeded (clingo grounds in machine integers)"
+    (gbody @ [ Printf.sprintf "|%s| > %d" tm ((max_int31 - 20000) / 99) ])
 
 let money_mult_body ~a ~c ~tm ~tr ~tr_sign =
   [ Printf.sprintf "(%s) >= 0" tm;
@@ -4800,7 +4722,7 @@ let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation 
                         (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (bound_role_term env rb) n ], n))
                       ([], subject) rbs
                   in
-                  bucket_scalar_fault ctx ~reach ~sentence:(qualifier_sentence a)
+                  bucket_scalar_fault ctx ~reach ~attr:a ~sentence:(qualifier_sentence a)
                     (List.map
                        (fun (i : Uchar_ref.World.instance) ->
                          (i, path @ [ Printf.sprintf "%s = %s" last (str_raw i.label) ]))
@@ -5074,9 +4996,9 @@ let beside_hoisted_arms ctx (e : expr) f =
    the node, so the term derives nothing (#false) and the witness's subject is
    [subject]. A node in a condition has no place of its own in a Let's
    evaluation order; [node] is then the expression the reach is taken at. *)
-let fault_where_reached ctx ~subject ~subject_ot (node : expr) reason =
+let fault_where_reached ctx ~subject ~subject_ot ~code (node : expr) reason =
   let guard () =
-    reach_guard ctx ~witness:subject ~reason ~order_reason:(reached_order_reason reason)
+    reach_guard ctx ~witness:subject ~reason ~code ~order_reason:(reached_order_reason reason)
       (rule_reach ctx ~subject ~subject_ot node)
   in
   guard ();
@@ -5528,10 +5450,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
              46340 × 46340 < 2^31. *)
           let body = join @ (Printf.sprintf "val(%s,%s,%s)" x (str a) g :: fatoms) in
           range_guard ctx ~subject ~body:((base :: ctx.rule_guard) @ body) [ (g, 46340) ];
-          emit_rule ctx
-            ~head:(Printf.sprintf "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s)" subject)
-            ~body:
-              ((base :: ctx.rule_guard)
+          emit_viol ctx ~code:(guardc "CLINGO-034") ~subject
+            "arithmetic range exceeded (clingo grounds in machine integers)"
+            ((base :: ctx.rule_guard)
               @ [ Printf.sprintf "46340 < #count { %s : %s }" x (String.concat ", " body) ]);
           (body, (g, x))
         end
@@ -5777,6 +5698,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           (* a contributing suspect faults where its subject's fold is reached *)
           bucket_scalar_fault ctx
             ~reach:(fun () -> rule_reach ctx ~subject ~subject_ot e)
+            ~attr:a
             ~sentence:(fun label ->
               Printf.sprintf
                 "the per-element temporal fold of %S over %S: the case supplies an asOfDate-bucket scalar, which \
@@ -6007,7 +5929,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          buckets would be this backend inventing a moment the chapter does not
          carry, so the count derives nothing and faults where it is reached *)
       if attr_temporal ctx ~otype:el ~attr:a then begin
-        fault_where_reached ctx ~subject ~subject_ot e (filled_count_temporal_reason a);
+        fault_where_reached ctx ~subject ~subject_ot ~code:(guardc ~params:[ ("attribute", Fixed a) ] "EF-021") e
+          (filled_count_temporal_reason a);
         ([ "#false" ], "0", 1)
       end
       else
@@ -6544,10 +6467,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          not fire this fence. Keying it on the helper's own free "S" also left
          it ungrounded by anything but the seg atom. Witness:
          corpus/golden/jutterswet-klipwacht. *)
-      emit_rule ctx
-        ~head:(Printf.sprintf "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s)" subject)
-        ~body:
-          ((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard)
+      emit_viol ctx ~code:(guardc "CLINGO-034") ~subject
+        "arithmetic range exceeded (clingo grounds in machine integers)"
+        ((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard)
           @ [ Printf.sprintf "%s_seg(%s,V,T,W)" p subject; Printf.sprintf "|W| > %d" w_bound ]);
       open_total_guard ctx ~witness:subject
         ~body:
@@ -6633,14 +6555,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       in
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       let seg = Printf.sprintf "tl(%s,%s,V,T,W)" subject (str a) in
-      emit_rule ctx
-        ~head:(Printf.sprintf "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s)" subject)
-        ~body:((base :: ctx.rule_guard) @ [ seg; Printf.sprintf "|W| > %d" w_bound ]);
+      emit_viol ctx ~code:(guardc "CLINGO-034") ~subject
+        "arithmetic range exceeded (clingo grounds in machine integers)"
+        ((base :: ctx.rule_guard) @ [ seg; Printf.sprintf "|W| > %d" w_bound ]);
       emit_rule ctx ~head:(Printf.sprintf "%s_wud(V,T)" p) ~body:[ Printf.sprintf "%s_wu(V,T,_)" p ];
-      emit_rule ctx
-        ~head:(Printf.sprintf "viol(\"the temporal total of %s meets a segment whose bounds are neither bounds of the \
-           case nor walls of the grid (no corpus case)\",%s)" (norm a) subject)
-        ~body:((base :: ctx.rule_guard) @ [ seg; "V != #inf"; "T != #sup"; Printf.sprintf "not %s_wud(V,T)" p ]);
+      emit_viol ctx ~subject
+        (Printf.sprintf "the temporal total of %s meets a segment whose bounds are neither bounds of the \
+           case nor walls of the grid (no corpus case)" (norm a))
+        ((base :: ctx.rule_guard) @ [ seg; "V != #inf"; "T != #sup"; Printf.sprintf "not %s_wud(V,T)" p ]);
       open_total_guard ctx ~witness:subject ~body:((base :: ctx.rule_guard) @ [ seg ]) ~bounds:("V", "T")
         ~value:"W" ~attr:a;
       let q = fresh ctx "Q" in
@@ -6773,7 +6695,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                  param_tl join below then derives nothing *)
               if Eval.SMap.find_opt (Ir_v0.Checks.norm p) ctx.case.param_tls = None then begin
                 let guard () =
-                  reach_guard ctx ~witness:subject ~reason:(unbound_param_reason p)
+                  reach_guard ctx ~witness:subject ~reason:(unbound_param_reason p) ~code:(unbound_param_code p)
                     ~order_reason:(unbound_param_order_reason p)
                     (rule_reach ctx ~subject ~subject_ot e @ db)
                 in
@@ -6967,14 +6889,15 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let by, ty, sy = expr_term ctx ~subject ~subject_ot y in
       if sy <> 1 then fault "easterSunday year operand must be an unscaled whole term";
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
-      emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" easter_before_year_one_reason subject)
-        ~body:(((base :: ctx.rule_guard) @ by) @ [ Printf.sprintf "(%s) < 1" ty ]);
+      emit_viol ctx ~code:(guardc "EF-007") ~subject
+        easter_before_year_one_reason
+        (((base :: ctx.rule_guard) @ by) @ [ Printf.sprintf "(%s) < 1" ty ]);
       (* beyond year 5 000 000 the day number leaves clingo's integers and the
          chain wrapped silently (year 6 000 000 gave day -2104231732) *)
-      emit_rule ctx
-        ~head:(Printf.sprintf "viol(\"easterSunday of a year after 5000000 is not translated (the civil day number \
-           would leave clingo's integers)\",%s)" subject)
-        ~body:(((base :: ctx.rule_guard) @ by) @ [ Printf.sprintf "(%s) > 5000000" ty ]);
+      emit_viol ctx ~subject
+        "easterSunday of a year after 5000000 is not translated (the civil day number \
+           would leave clingo's integers)"
+        (((base :: ctx.rule_guard) @ by) @ [ Printf.sprintf "(%s) > 5000000" ty ]);
       let av = fresh ctx "A" and bv = fresh ctx "B" and cv = fresh ctx "C" in
       let dv = fresh ctx "D" and ev = fresh ctx "E" in
       let fv = fresh ctx "F" and gv = fresh ctx "G" and hv = fresh ctx "H" in
@@ -7232,9 +7155,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         | _ ->
             List.iter
               (fun conds ->
-                emit_rule ctx
-                  ~head:(Printf.sprintf "viol(\"negative operand under rounding is not translated\",%s)" subject)
-                  ~body:(gbody @ conds))
+                emit_viol ctx ~subject "negative operand under rounding is not translated" (gbody @ conds))
               (sign_conds ctx ~neg:true t));
         (b, rounded, target)
       end
@@ -7262,9 +7183,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             (* the base's sign read without the product it may be ([sign_conds]) *)
             List.iter
               (fun conds ->
-                emit_rule ctx
-                  ~head:(Printf.sprintf "viol(\"negative operand under rounding is not translated\",%s)" subject)
-                  ~body:(gbody @ conds))
+                emit_viol ctx ~subject "negative operand under rounding is not translated" (gbody @ conds))
               (sign_conds ctx ~neg:true t));
         (b, rounded, target))
   | Clamp { base_expr; minimum; maximum; _ } ->
@@ -7340,7 +7259,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          table), so the only way here is a bound day OUTSIDE a day-kind
          condition, which denotes nothing, a fault where it is evaluated
          (EF-010) *)
-      fault_where_reached ctx ~subject ~subject_ot e bound_day_reason;
+      fault_where_reached ctx ~subject ~subject_ot ~code:(guardc "EF-010") e bound_day_reason;
       ([ "#false" ], "0", 1)
   | Context_value { ident = Some n; _ } when n = Ir_v0.Spelling.evaluation_date -> (
       (* ch. 8.2: the execution-date context value is a program constant —
@@ -7349,7 +7268,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       match ctx.case.as_of with
       | Some d -> ([], string_of_int (day_of_lexeme d), 1)
       | None ->
-          fault_where_reached ctx ~subject ~subject_ot e (no_evaluation_date_reason n);
+          fault_where_reached ctx ~subject ~subject_ot ~code:(guardc "EF-011") e (no_evaluation_date_reason n);
           ([ "#false" ], "0", 1))
   | Context_value { ident = Some n; _ } when n = Ir_v0.Spelling.evaluation_year -> (
       (* ch. 8.2: the execution year is a program constant too — the civil
@@ -7360,7 +7279,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           let y, _, _ = Value.civil_from_days (day_of_lexeme d) in
           ([], string_of_int y, 1)
       | None ->
-          fault_where_reached ctx ~subject ~subject_ot e (no_evaluation_date_reason n);
+          fault_where_reached ctx ~subject ~subject_ot ~code:(guardc "EF-011") e (no_evaluation_date_reason n);
           ([ "#false" ], "0", 1))
   (* a name outside WF-098's closed set, spelled byte for byte (the bound
      day included, which is a BoundDay): refused at load for an executor, so
@@ -7613,7 +7532,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
   | Expr_unresolved _ ->
       (* the unsolved-state guard: an Unresolved node never vanishes —
          the rule whose evaluation reaches it fails observably (WF-044) *)
-      fault_where_reached ctx ~subject ~subject_ot e unresolved_reason;
+      fault_where_reached ctx ~subject ~subject_ot ~code:(guardc "EF-019") e unresolved_reason;
       ([ "#false" ], "0", 1)
   | Function_call { kind = Sum_function; element_object_type = None; dimension_selections = None; _ } ->
       (* the LISTED-operand som (§5.8.3, RUNTIME-SEMANTICS ch. 5.11): the
@@ -7905,38 +7824,46 @@ and date_construction ctx ~subject ~subject_ot ~time (args : expr list) =
   in
   let atoms = List.concat_map fst parts in
   let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
-  (* [reason] is the witness's first argument: a quoted sentence, or for the
-     fault kind EF-032 a tuple of the sentence and the parts it is about, so
-     that [viol_code] reads the parameters of ch. 5.7b off the ground atom *)
-  let witness reason test =
-    emit_rule ctx ~head:(Printf.sprintf "viol(%s,%s)" reason subject)
-      ~body:(((base :: ctx.rule_guard) @ atoms) @ [ test ])
+  (* for the fault kind EF-032 the witness carries the parts it is about
+     beside its sentence, and the parameters of ch. 5.7b are read off the
+     ground atom *)
+  let witness ?code ?parts reason test =
+    emit_viol ctx ?code ?parts ~subject reason (((base :: ctx.rule_guard) @ atoms) @ [ test ])
   in
-  let quoted text = Printf.sprintf "\"%s\"" text in
+  (* this backend's year fence of the date construction, a limit of its
+     integers: where the instant also leaves the millisecond range, ref and
+     Drools fault with EF-007 and gate 8 lists this code as the divergence *)
+  let year_fence = guardc "CLINGO-029" in
   let y, m, d, clock =
     match List.map snd parts with
     | y :: m :: d :: clock -> (y, m, d, clock)
     | _ -> assert false (* the arity test above *)
   in
-  witness
-    (quoted
-       (name ^ " of a year before 1 is not translated (the civil chain needs non-negative \
-                intermediates)"))
+  witness ~code:year_fence
+    (name ^ " of a year before 1 is not translated (the civil chain needs non-negative \
+             intermediates)")
     (y ^ " < 1");
-  witness
-    (quoted
-       (name ^ " of a year after 5000000 is not translated (the civil day number would leave \
-                clingo's integers)"))
+  witness ~code:year_fence
+    (name ^ " of a year after 5000000 is not translated (the civil day number would leave \
+             clingo's integers)")
     (y ^ " > 5000000");
-  let no_day = Printf.sprintf "(\"%s: the parts name no calendar day\",%s,%s,%s)" name y m d in
-  witness no_day (m ^ " < 1");
-  witness no_day (m ^ " > 12");
-  witness no_day (d ^ " < 1");
+  let no_day =
+    witness
+      ~code:
+        (guardc
+           ~params:[ ("year", Witness_part 0); ("month", Witness_part 1); ("day", Witness_part 2) ]
+           "EF-032")
+      ~parts:[ y; m; d ]
+      (name ^ ": the parts name no calendar day")
+  in
+  no_day (m ^ " < 1");
+  no_day (m ^ " > 12");
+  no_day (d ^ " < 1");
   (* the month length: 30 + ((m + m/8) mod 2) outside February, 28 + the
      leap indicator in it (the rule pair of [translate_date_plus_months]) *)
-  witness no_day
+  no_day
     (Printf.sprintf "%s != 2, %s >= 1, %s <= 12, %s > 30+((%s+(%s/8)) \\ 2)" m m m d m m);
-  witness no_day
+  no_day
     (Printf.sprintf
        "%s = 2, %s > 28+((((4-(%s \\ 4))/4)-((100-(%s \\ 100))/100))+((400-(%s \\ 400))/400))" m d
        y y y);
@@ -7956,12 +7883,22 @@ and date_construction ctx ~subject ~subject_ot ~time (args : expr list) =
   | [] -> (atoms @ chain, zt, None)
   | [ hh; mi; ss; ms ] ->
       let no_time =
-        Printf.sprintf "(\"%s: the parts name no clock time\",%s,%s,%s,%s)" name hh mi ss ms
+        witness
+          ~code:
+            (guardc
+               ~params:
+                 [ ("hour", Witness_part 0);
+                   ("minute", Witness_part 1);
+                   ("second", Witness_part 2);
+                   ("millisecond", Witness_part 3) ]
+               "EF-032")
+          ~parts:[ hh; mi; ss; ms ]
+          (name ^ ": the parts name no clock time")
       in
       List.iter
         (fun (t, hi) ->
-          witness no_time (t ^ " < 0");
-          witness no_time (Printf.sprintf "%s > %d" t hi))
+          no_time (t ^ " < 0");
+          no_time (Printf.sprintf "%s > %d" t hi))
         [ (hh, 23); (mi, 59); (ss, 59); (ms, 999) ];
       let msv = fresh ctx "MS" in
       ( atoms @ chain
@@ -8070,11 +8007,13 @@ and translate_division ?(root = true) ctx ~subject ~subject_ot ~left_side ~right
           @ [ Printf.sprintf "(%s) != 0" tr;
               Printf.sprintf "%s \\ %s == 0" numt dent;
               Printf.sprintf "V = %s/%s" numt dent ]);
-      emit_rule ctx
-        ~head:(Printf.sprintf "viol(\"%s\",%s)" (if ctx.in_condition then non_exact_division_in_condition
-         else if root then non_exact_division ctx
-         else nested_non_exact_division) subject)
-        ~body:(full @ [ Printf.sprintf "(%s) != 0" tr; Printf.sprintf "%s \\ %s != 0" numt dent ])
+      let reason, code =
+        if ctx.in_condition then (non_exact_division_in_condition, guardc "CLINGO-039")
+        else if root then non_exact_division ctx
+        else (nested_non_exact_division, guardc "CLINGO-031")
+      in
+      emit_viol ctx ~code ~subject reason
+        (full @ [ Printf.sprintf "(%s) != 0" tr; Printf.sprintf "%s \\ %s != 0" numt dent ])
   | Some (mode_kind, _) ->
       let value =
         match mode_kind with
@@ -8092,10 +8031,10 @@ and translate_division ?(root = true) ctx ~subject ~subject_ot ~left_side ~right
             (fun t ->
               List.iter
                 (fun conds ->
-                  emit_rule ctx
-                    ~head:(Printf.sprintf "viol(\"negative operand under rounded division is not \
-                       translated\",%s)" subject)
-                    ~body:((full @ conds) @ [ Printf.sprintf "(%s) != 0" tr ]))
+                  emit_viol ctx ~subject
+                    "negative operand under rounded division is not \
+                       translated"
+                    ((full @ conds) @ [ Printf.sprintf "(%s) != 0" tr ]))
                 (sign_conds ctx ~neg:true t))
             [ tl; tr ]);
       let guards =
@@ -8690,9 +8629,10 @@ and dk_seen_days ctx : int list =
    not bind, EF-014, or tests a day kind on another day, EF-022): no match,
    and a fault where a walk or a count reaches it, as in ref, one predicate
    per sentence, `fp(D,M)` with M the number of matching days before D. Returns (predicate, far-predicate, lo-edge fact, hi-edge
-   fact, window, the fault predicates with their sentences). *)
+   fact, window, the fault predicates with their sentences and the code of
+   each). *)
 and dk_table ctx (name : string) :
-    string * string * string * string * (int * int) * (string * string) list =
+    string * string * string * string * (int * int) * (string * string * guard_code) list =
   let key = norm name in
   match Hashtbl.find_opt dk_tables key with
   | Some t -> t
@@ -8709,13 +8649,15 @@ and dk_table ctx (name : string) :
       let p = Printf.sprintf "dkt%d" n and far = Printf.sprintf "dkf%d" n in
       let edge_lo = Printf.sprintf "dkl%d" n and edge_hi = Printf.sprintf "dkh%d" n in
       let rank = ref 0 and prev = ref None and fars = ref 0 in
-      let faults = ref [] and seen = Hashtbl.create 16 in
+      let faults = ref [] and seen = Hashtbl.create 16 and codes = Hashtbl.create 4 in
       let holds d =
         match dk_holds ctx ~stack:[] name d with
         | b -> b
-        | exception Value.Fault { code = Some ("EF-014" | "EF-022"); text; _ } ->
+        | exception Value.Fault { code = Some (("EF-014" | "EF-022") as code); params; text } ->
             if not (Hashtbl.mem seen (d, text)) then begin
               Hashtbl.replace seen (d, text) ();
+              Hashtbl.replace codes text
+                (guardc ~params:(List.map (fun (name, v) -> (name, Fixed v)) params) code);
               faults := (d, text, !rank) :: !faults
             end;
             false
@@ -8768,7 +8710,7 @@ and dk_table ctx (name : string) :
           (fun k text ->
             let fp = Printf.sprintf "dke%d_%d" n (k + 1) in
             List.iter (fun (d, t, m) -> if t = text then emit ctx "%s(%d,%d)." fp d m) days;
-            (fp, text))
+            (fp, text, Hashtbl.find codes text))
           sentences
       in
       let t = (p, far, edge_lo, edge_hi, (lo, hi), fault_preds) in
@@ -8785,10 +8727,8 @@ and dk_window_guard ctx ~subject ~body ~(win : int * int) (t : string) =
        be reckoned against the day kind's extension"
       lo hi
   in
-  emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" msg subject)
-    ~body:(body @ [ Printf.sprintf "(%s) < %d" t lo ]);
-  emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" msg subject)
-    ~body:(body @ [ Printf.sprintf "(%s) > %d" t hi ])
+  emit_viol ctx ~subject msg (body @ [ Printf.sprintf "(%s) < %d" t lo ]);
+  emit_viol ctx ~subject msg (body @ [ Printf.sprintf "(%s) > %d" t hi ])
 
 (* §6.10: the days of the kind in (A, B], signed by operand order. The
    interval bounds the work, so this form has no reach fence of its own, and
@@ -8803,11 +8743,11 @@ and dk_duration ctx ~subject ~subject_ot ~kind ~absolute ~(node : expr) a b =
      interval on which the condition faults raises that fault where the count
      is reached *)
   List.iter
-    (fun (fp, reason) ->
+    (fun (fp, reason, code) ->
       let f = fresh ctx "DKF" in
       List.iter
         (fun (lo, hi) ->
-          reach_guard ctx ~witness:subject ~reason ~order_reason:(reached_order_reason reason)
+          reach_guard ctx ~witness:subject ~reason ~code ~order_reason:(reached_order_reason reason)
             (rule_reach ctx ~subject ~subject_ot node @ ba @ bb
             @ [ Printf.sprintf "%s(%s,_)" fp f; Printf.sprintf "%s < %s" lo f; Printf.sprintf "%s <= %s" f hi ]))
         [ (ta, tb); (tb, ta) ])
@@ -8876,11 +8816,11 @@ and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus ~datetime ~(node : expr) 
      the condition faults raises that fault where the step is reached and
      fewer days of the kind than the count lie between the start and it *)
   List.iter
-    (fun (fp, reason) ->
+    (fun (fp, reason, code) ->
       let f = fresh ctx "DKF" and m = fresh ctx "DKG" and k = fresh ctx "DKC" and r = fresh ctx "DKQ" in
       List.iter
         (fun (sign, start, ahead) ->
-          reach_guard ctx ~witness:subject ~reason ~order_reason:(reached_order_reason reason)
+          reach_guard ctx ~witness:subject ~reason ~code ~order_reason:(reached_order_reason reason)
             (rule_reach ctx ~subject ~subject_ot node @ bd @ bn
             @ [ Printf.sprintf "%s = %s(%s)" k sign n_term; Printf.sprintf "%s > 0" k;
                 Printf.sprintf "%s = #count { DKX : %s(DKX,DKJ), DKX %s %s }" r tbl start td;
@@ -8946,7 +8886,7 @@ and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus ~datetime ~(node : expr) 
     else begin
       let x = Printf.sprintf "dkx%d" id in
       List.iter
-        (fun (fp, _) ->
+        (fun (fp, _, _) ->
           emit_rule ctx ~head:(Printf.sprintf "%s(%s)" x subject)
             ~body:
               [ Printf.sprintf "%s(%s,DKD,DKM)" fwd subject;
@@ -8979,36 +8919,37 @@ and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus ~datetime ~(node : expr) 
        a day kind whose next occurrence lies beyond the reach is refused, not diagnosed)"
       day_kind_reach
   in
-  emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" reach_msg subject)
-    ~body:
-      ([ Printf.sprintf "%s(%s,DKD,_)" fwd subject ]
+  let dk_reach_code = guardc ~params:[ ("reach", Fixed (string_of_int day_kind_reach)) ] "EF-009" in
+  emit_viol ctx ~code:dk_reach_code ~subject
+    reach_msg
+    ([ Printf.sprintf "%s(%s,DKD,_)" fwd subject ]
       @ ia
       @ [ Printf.sprintf "#count { DKX : %s(DKX,DKJ), DKX > DKD, DKX <= DKD+%d } == 0" tbl day_kind_reach ]);
-  emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" reach_msg subject)
-    ~body:
-      ([ Printf.sprintf "%s(%s,DKD,_)" bwd subject ]
+  emit_viol ctx ~code:dk_reach_code ~subject
+    reach_msg
+    ([ Printf.sprintf "%s(%s,DKD,_)" bwd subject ]
       @ ia
       @ [ Printf.sprintf "#count { DKX : %s(DKX,DKJ), DKX < DKD, DKX >= DKD-%d } == 0" tbl day_kind_reach ]);
-  emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" reach_msg subject)
-    ~body:
-      ([ Printf.sprintf "%s(%s,_,DKM)" fwd subject ]
+  emit_viol ctx ~code:dk_reach_code ~subject
+    reach_msg
+    ([ Printf.sprintf "%s(%s,_,DKM)" fwd subject ]
       @ ia
       @ [ Printf.sprintf "%s(%s,DKR)" rnk subject; Printf.sprintf "%s(DKQ)" far; "DKQ >= DKR+2"; "DKQ <= DKR+DKM" ]);
-  emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" reach_msg subject)
-    ~body:
-      ([ Printf.sprintf "%s(%s,_,DKM)" bwd subject ]
+  emit_viol ctx ~code:dk_reach_code ~subject
+    reach_msg
+    ([ Printf.sprintf "%s(%s,_,DKM)" bwd subject ]
       @ ia
       @ [ Printf.sprintf "%s(%s,DKR)" rnk subject; Printf.sprintf "%s(DKQ)" far; "DKQ >= DKR-DKM+2"; "DKQ <= DKR" ]);
-  emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" reach_msg subject)
-    ~body:
-      ([ Printf.sprintf "%s(%s,_,DKM)" fwd subject ]
+  emit_viol ctx ~code:dk_reach_code ~subject
+    reach_msg
+    ([ Printf.sprintf "%s(%s,_,DKM)" fwd subject ]
       @ ia
       @ [ Printf.sprintf "%s(%s,DKR)" rnk subject;
           Printf.sprintf "not %s_r(DKR+DKM)" tbl;
           Printf.sprintf "not %s" edge_hi ]);
-  emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" reach_msg subject)
-    ~body:
-      ([ Printf.sprintf "%s(%s,_,DKM)" bwd subject ]
+  emit_viol ctx ~code:dk_reach_code ~subject
+    reach_msg
+    ([ Printf.sprintf "%s(%s,_,DKM)" bwd subject ]
       @ ia
       @ [ Printf.sprintf "%s(%s,DKR)" rnk subject;
           Printf.sprintf "not %s_r(DKR-DKM+1)" tbl;
@@ -9019,18 +8960,16 @@ and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus ~datetime ~(node : expr) 
      have hit the reach fence out there anyway, the two executors fault with
      DIFFERENT sentences — this backend cannot tell the two apart from a
      truncated table, and says the one it can stand behind. *)
-  emit_rule ctx
-    ~head:(Printf.sprintf "viol(\"day-kind step beyond the window this backend materialises (the extension is \
-       truncated at its edge)\",%s)" subject)
-    ~body:
-      ([ Printf.sprintf "%s(%s,_,DKM)" fwd subject ]
+  emit_viol ctx ~subject
+    "day-kind step beyond the window this backend materialises (the extension is \
+       truncated at its edge)"
+    ([ Printf.sprintf "%s(%s,_,DKM)" fwd subject ]
       @ ia
       @ [ Printf.sprintf "%s(%s,DKR)" rnk subject; Printf.sprintf "not %s_r(DKR+DKM)" tbl; edge_hi ]);
-  emit_rule ctx
-    ~head:(Printf.sprintf "viol(\"day-kind step beyond the window this backend materialises (the extension is \
-       truncated at its edge)\",%s)" subject)
-    ~body:
-      ([ Printf.sprintf "%s(%s,_,DKM)" bwd subject ]
+  emit_viol ctx ~subject
+    "day-kind step beyond the window this backend materialises (the extension is \
+       truncated at its edge)"
+    ([ Printf.sprintf "%s(%s,_,DKM)" bwd subject ]
       @ ia
       @ [ Printf.sprintf "%s(%s,DKR)" rnk subject; Printf.sprintf "not %s_r(DKR-DKM+1)" tbl; edge_lo ]);
   let v = fresh ctx "DKP" in
@@ -10008,7 +9947,8 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          reaches the condition, in ref's words (WF-044). The reach is taken at
          a fresh expression, since a condition has no place of its own in a
          Let's evaluation order ([fault_where_reached]) *)
-      fault_where_reached ctx ~subject ~subject_ot (Expr_unresolved { typ = None; source_name })
+      fault_where_reached ctx ~subject ~subject_ot ~code:(guardc "EF-019")
+        (Expr_unresolved { typ = None; source_name })
         unresolved_condition_reason;
       [ "#false" ]
   | Identity_check { negation; _ } ->
@@ -11119,7 +11059,7 @@ and closed_division ctx ~guard_body ~witness ~coalesced ~rounding ~left_side ~ri
       deposit ctx ~code:"EF-005" ~rule:(str ctx.rule_name) ~subject
         (ctx.param_reach right_side @ gbody @ [ zero ])
   | true, None ->
-      emit_rule ctx ~head:(Printf.sprintf "viol(%s,%s)" (quote closed_zero_division) witness) ~body:(gbody @ [ zero ]));
+      emit_viol ctx ~subject:witness closed_zero_division (gbody @ [ zero ]));
   (* the coalesced quotient: numt and dent as they are where the divisor is not
      zero, 0 over 1 where it is *)
   let numt, dent, value_guard =
@@ -11133,8 +11073,9 @@ and closed_division ctx ~guard_body ~witness ~coalesced ~rounding ~left_side ~ri
   in
   match rounding with
   | None ->
-      emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" (non_exact_division ctx) witness)
-        ~body:((gbody @ value_guard) @ [ Printf.sprintf "%s \\ %s != 0" numt dent ]);
+      let reason, code = non_exact_division ctx in
+      emit_viol ctx ~code ~subject:witness reason
+        ((gbody @ value_guard) @ [ Printf.sprintf "%s \\ %s != 0" numt dent ]);
       ( bl @ br @ value_guard @ [ Printf.sprintf "%s \\ %s == 0" numt dent ],
         Printf.sprintf "(%s/%s)" numt dent,
         out_scale )
@@ -11403,14 +11344,14 @@ let fitted ?(unbounded = false) ctx ~subject ~what ~body term scale target =
     else if scale > target && scale mod target = 0 then begin
       let k = scale / target in
       (if unbounded then
-         emit_rule ctx
-           ~head:(Printf.sprintf "viol(\"result of %s is not a whole number, and this encoding holds a number \
-              declared without decimals (the unbounded form) as a whole number\",%s)" (norm what) subject)
-           ~body:(body @ [ Printf.sprintf "(%s) \\ %d != 0" term k ])
+         emit_viol ctx ~code:(guardc "CLINGO-033") ~subject
+           (Printf.sprintf "result of %s is not a whole number, and this encoding holds a number \
+              declared without decimals (the unbounded form) as a whole number" (norm what))
+           (body @ [ Printf.sprintf "(%s) \\ %d != 0" term k ])
        else
-         emit_rule ctx
-           ~head:(Printf.sprintf "viol(\"result of %s does not fit its declared decimals\",%s)" (norm what) subject)
-           ~body:(body @ [ Printf.sprintf "(%s) \\ %d != 0" term k ]));
+         emit_viol ctx ~code:(guardc ~params:[ ("place", Fixed (norm what)) ] "EF-006") ~subject
+           (Printf.sprintf "result of %s does not fit its declared decimals" (norm what))
+           (body @ [ Printf.sprintf "(%s) \\ %d != 0" term k ]));
       (Printf.sprintf "((%s)/%d)" term k, [ Printf.sprintf "(%s) \\ %d == 0" term k ])
     end
     else fault "value scale %d does not align with target scale %d for %S" scale target what
@@ -11807,24 +11748,24 @@ let translate_pro_rata ?clip ?periods ?writer ctx ~subject ~ot ~a ~cond ~b ~k ~(
   in
   (* the wrap fence: |W×TD×kn| ≤ 2^31 with TD ≤ 366 per bucket, and the
      #sum's contributors (D ≤ 366) count-bounded like every sum *)
-  emit_rule ctx ~head:"viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S)"
-    ~body:(body @ [ Printf.sprintf "|W| > %d" (max_int31 / (366 * kn)) ]);
-  emit_rule ctx ~head:"viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S)"
-    ~body:
-      ((base :: ctx.rule_guard) @ cond
+  emit_viol ctx ~code:(guardc "CLINGO-034") ~subject:"S"
+    "arithmetic range exceeded (clingo grounds in machine integers)"
+    (body @ [ Printf.sprintf "|W| > %d" (max_int31 / (366 * kn)) ]);
+  emit_viol ctx ~code:(guardc "CLINGO-034") ~subject:"S"
+    "arithmetic range exceeded (clingo grounds in machine integers)"
+    ((base :: ctx.rule_guard) @ cond
       @ (Printf.sprintf "%s_b(B,N,_)" p :: window_overlap ?periods ctx ~subject ~ot clip)
       @ [ Printf.sprintf "46340 < #count { KV,KT : %s_d(S,B,KV,KT,_) }" p ]);
   (* a part that does not fit the target's scale is the write boundary of
      ch. 2.4 on its segment (EF-006); the unbounded form fixes no scale, and a
      part that is not whole there is this encoding's limit *)
   (if unbounded_datatype (attr_datatype ctx ~otype:ot ~attr:a) then
-     emit_rule ctx
-       ~head:"viol(\"a pro-rata part into a number declared without decimals is not whole, and this encoding holds \
-          the unbounded form as a whole number\",S)"
-       ~body:(body @ [ Printf.sprintf "%s \\ %s != 0" numt dent ])
+     emit_viol ctx ~code:(guardc "CLINGO-033") ~subject:"S"
+       "a pro-rata part into a number declared without decimals is not whole, and this encoding holds \
+          the unbounded form as a whole number"
+       (body @ [ Printf.sprintf "%s \\ %s != 0" numt dent ])
    else
-     emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",S)" pro_rata_misfit)
-       ~body:(body @ [ Printf.sprintf "%s \\ %s != 0" numt dent ]));
+     emit_viol ctx ~code:(guardc "EF-006") ~subject:"S" pro_rata_misfit (body @ [ Printf.sprintf "%s \\ %s != 0" numt dent ]));
   (* the fold decides the buckets it derives; a bucket without a true day or
      with a leeg base it does not decide (ch. 3.11) *)
   write_segment ?periods ?writer ctx ~subject ~ot ~a ~clip
@@ -11911,22 +11852,22 @@ let translate_day_count ?clip ?periods ?writer ctx ~subject ~ot ~a ~cond ~k ~day
     @ [ Printf.sprintf "%s_b(B,N,_)" p; counted; "TD > 0" ]
     @ window_overlap ?periods ctx ~subject ~ot clip
   in
-  emit_rule ctx ~head:"viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S)"
-    ~body:
-      ((base :: ctx.rule_guard) @ cond
+  emit_viol ctx ~code:(guardc "CLINGO-034") ~subject:"S"
+    "arithmetic range exceeded (clingo grounds in machine integers)"
+    ((base :: ctx.rule_guard) @ cond
       @ (Printf.sprintf "%s_b(B,N,_)" p :: window_overlap ?periods ctx ~subject ~ot clip)
       @ [ Printf.sprintf "46340 < #count { KV,KT : %s_d(S,B,KV,KT,_) }" p ]);
   (* a derived true period outside the span has true days in buckets this
      translation does not lay *)
   (let lo, hi = calendar_span ctx in
-   emit_rule ctx
-     ~head:(Printf.sprintf "viol(\"the true periods of %s reach outside the calendar this translation lays \
-        (%d..%d)\",S)" (norm k) lo hi)
-     ~body:[ base; Printf.sprintf "ktl(S,%s,KV,KT)" (str k); Printf.sprintf "KV < %d" lo ];
-   emit_rule ctx
-     ~head:(Printf.sprintf "viol(\"the true periods of %s reach outside the calendar this translation lays \
-        (%d..%d)\",S)" (norm k) lo hi)
-     ~body:[ base; Printf.sprintf "ktl(S,%s,KV,KT)" (str k); Printf.sprintf "KT > %d" hi ]);
+   emit_viol ctx ~subject:"S"
+     (Printf.sprintf "the true periods of %s reach outside the calendar this translation lays \
+        (%d..%d)" (norm k) lo hi)
+     [ base; Printf.sprintf "ktl(S,%s,KV,KT)" (str k); Printf.sprintf "KV < %d" lo ];
+   emit_viol ctx ~subject:"S"
+     (Printf.sprintf "the true periods of %s reach outside the calendar this translation lays \
+        (%d..%d)" (norm k) lo hi)
+     [ base; Printf.sprintf "ktl(S,%s,KV,KT)" (str k); Printf.sprintf "KT > %d" hi ]);
   emit_rule ctx ~head:(Printf.sprintf "%s_cnt(S,B)" p)
     ~body:((base :: ctx.rule_guard) @ cond @ [ Printf.sprintf "%s_b(B,N,_)" p; counted; "TD > 0" ]);
   write_segment ?periods ?writer ctx ~subject ~ot ~a ~clip ~value:vterm ~body;
@@ -12087,14 +12028,13 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
                     Printf.sprintf "V = (%s)/(%s)" numt dent ]);
             (* the quotient as the whole value is the write, where the unbounded
                form held as a whole number names its own limit *)
-            let reason =
-              if e != value then nested_non_exact_division
+            let reason, code =
+              if e != value then (nested_non_exact_division, guardc "CLINGO-031")
               else if unbounded_datatype (attr_datatype ctx ~otype:target_ot ~attr:a) then
-                unbounded_non_whole_division
-              else non_exact_division_bounded
+                (unbounded_non_whole_division, guardc "CLINGO-033")
+              else (non_exact_division_bounded, guardc "EF-006")
             in
-            emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" reason subject)
-              ~body:((base :: body) @ [ Printf.sprintf "(%s) \\ (%s) != 0" numt dent ]));
+            emit_viol ctx ~code ~subject reason ((base :: body) @ [ Printf.sprintf "(%s) \\ (%s) != 0" numt dent ]));
         (q, false, out)
     | Attribute_reference
         { attribute_ref = Some b; object_type = Some otn; navigation_bindings = None; anchor = None; _ }
@@ -12135,9 +12075,9 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
         let q = fresh ctx (p ^ "_s") in
         let reads = Printf.sprintf "tl(%s,%s,F,T,W), F <= X, X < T" m (str x) in
         range_guard ctx ~subject ~body:(at_x :: join @ [ reads ]) [ ("W", 46340) ];
-        emit_rule ctx
-          ~head:(Printf.sprintf "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s)" subject)
-          ~body:[ at_x; Printf.sprintf "46340 < #count { %s : %s }" m (String.concat ", " (join @ [ reads ])) ];
+        emit_viol ctx ~code:(guardc "CLINGO-034") ~subject
+          "arithmetic range exceeded (clingo grounds in machine integers)"
+          [ at_x; Printf.sprintf "46340 < #count { %s : %s }" m (String.concat ", " (join @ [ reads ])) ];
         emit_rule ctx ~head:(Printf.sprintf "%s_any(%s,X)" q subject) ~body:(at_x :: join @ [ reads ]);
         emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject)
           ~body:
@@ -12174,9 +12114,9 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
           match mode_kind with
           | Toward_zero -> ()
           | _ ->
-              emit_rule ctx
-                ~head:(Printf.sprintf "viol(\"negative operand under rounding is not translated\",%s)" subject)
-                ~body:((base :: body) @ [ Printf.sprintf "%s < 0" v ])
+              emit_viol ctx ~subject
+                "negative operand under rounding is not translated"
+                ((base :: body) @ [ Printf.sprintf "%s < 0" v ])
         in
         (match b with
         | Binary { op = Divided_by; left_side = Some l; right_side = Some r; _ } ->
@@ -12234,7 +12174,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
             Eval.refuse_finer ~what:(Printf.sprintf "the parameter %S" n) ~operand:(Uchar_ref.Timeline.param_grid decl)
               ~target ~attr:a;
             if not (Eval.SMap.mem (norm n) ctx.case.param_tls) then
-              reach_guard ctx ~witness:subject ~reason:(unbound_param_reason n)
+              reach_guard ctx ~witness:subject ~reason:(unbound_param_reason n) ~code:(unbound_param_code n)
                 ~order_reason:(unbound_param_order_reason n) (base :: cond);
             emit_rule ctx ~head:(Printf.sprintf "%s_cut(%s,X)" p subject)
               ~body:[ base; Printf.sprintf "param_tl(%s,X,_,_)" (str n) ];
@@ -12315,8 +12255,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
       let body = [ at_x; Printf.sprintf "%s(%s,X,W)" root0 subject ] in
       emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject)
         ~body:(body @ [ Printf.sprintf "W \\ %d == 0" k; Printf.sprintf "V = W/%d" k ]);
-      emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" period_arithmetic_misfit subject)
-        ~body:((base :: body) @ [ Printf.sprintf "W \\ %d != 0" k ]);
+      emit_viol ctx ~code:(guardc "EF-006") ~subject period_arithmetic_misfit ((base :: body) @ [ Printf.sprintf "W \\ %d != 0" k ]);
       q
     end
   in
@@ -12454,20 +12393,20 @@ let writer_timeline_conflicts ctx (r : resolved_rule) ~ot ~a =
                 [ Printf.sprintf "wtl(S,%s,F1,T1,V1,%d)" (str a) i; Printf.sprintf "wtl(S,%s,F2,T2,V2,%d)" (str a) j;
                   "F1 < T2"; "F2 < T1" ]
               in
-              emit_rule ctx
-                ~head:(Printf.sprintf "viol(%s,S)" (quote
-                   (Printf.sprintf
+              emit_viol ctx
+                ~code:(disagree_code ~rules:[ ri.rr_name; r.rr_name ] ~attribute:a ~object_type:lower)
+                ~subject:"S"
+                (Printf.sprintf
                       "two writers of one target disagree: rules %s and %s write different values to the \
                        attribute %s of a %s — no fixpoint, divergence is a fault (ch. 5.7)"
-                      (name ri) (name r) a lower)))
-                ~body:(overlap @ [ "V1 != V2" ]);
-              emit_rule ctx
-                ~head:(Printf.sprintf "viol(%s,S)" (quote
-                   (Printf.sprintf
+                      (name ri) (name r) a lower)
+                (overlap @ [ "V1 != V2" ]);
+              emit_viol ctx ~subject:"S"
+                (Printf.sprintf
                       "rules %s and %s decide one day of the timeline %s with one value, and this encoding writes \
                        their segments as written, so it has no segment for the day of one of them (no corpus case)"
-                      (name ri) (name r) a)))
-                ~body:(overlap @ [ "V1 == V2" ])
+                      (name ri) (name r) a)
+                (overlap @ [ "V1 == V2" ])
           | _ -> ())
         comps
 
@@ -12650,10 +12589,10 @@ let translate_characteristic_timeline ctx (r : resolved_rule) ~ot ~k =
     ~body:[ Printf.sprintf "isa(S,%s)" (str ot); Printf.sprintf "%s(S,F,T)" q ];
   List.iter
     (fun open_side ->
-      emit_rule ctx
-        ~head:(Printf.sprintf "viol(\"the periods in which the time-dependent characteristic %s holds have an open \
-           bound: a characteristic holds in bounded periods only (ch. 3.11). Declined in translation\",S)" k)
-        ~body:[ Printf.sprintf "isa(S,%s)" (str ot); open_side ])
+      emit_viol ctx ~code:(guardc ~params:[ ("characteristic", Fixed k) ] "EF-023") ~subject:"S"
+        (Printf.sprintf "the periods in which the time-dependent characteristic %s holds have an open \
+           bound: a characteristic holds in bounded periods only (ch. 3.11). Declined in translation" k)
+        [ Printf.sprintf "isa(S,%s)" (str ot); open_side ])
     [ Printf.sprintf "%s(S,#inf,_)" q; Printf.sprintf "%s(S,_,#sup)" q ]
 
 (* An initialisation of the timeline target (ot, a) outside the ch. 7.7
@@ -13184,14 +13123,13 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
   (match stratum with
   | Some k ->
       head_body ctx (Printf.sprintf "depth(%s,%d,D+1)" term k) body;
-      emit_rule ctx
-        ~head:(Printf.sprintf "viol(%s,%s)" (quote
-           (Printf.sprintf
+      emit_viol ctx ~subject
+        (Printf.sprintf
               "the subject of object creation \"%s\" (stratum %d) has no creation depth in that \
                stratum: only a mint of a higher stratum lacks one, and a creation reads its \
                subject's population strictly, so the strata of this backend do not hold (ch. 6.3)"
-              ctx.rule_name k)) subject)
-        ~body:[ Printf.sprintf "isa(%s,%s)" subject (str subject_ot); Printf.sprintf "not hasdepth(%s,%d)" subject k ]
+              ctx.rule_name k)
+        [ Printf.sprintf "isa(%s,%s)" subject (str subject_ot); Printf.sprintf "not hasdepth(%s,%d)" subject k ]
   | None -> ());
   head_body ctx (Printf.sprintf "is_a(%s,%s)" term (str created)) body;
   (* the member value is the input of the object it makes (RUNTIME-SEMANTICS
@@ -13353,9 +13291,11 @@ let translate_fact_creation ctx (fc : resolved_fact_creation) =
      re-run can name WHICH guard fired *)
   let to_one_guard (r : role_ref) holder_type =
     if not r.role_many then
-      emit_rule ctx ~head:(Printf.sprintf "viol(\"to-one second filler on role %s\",X)" (norm (role_canonical r)))
-        ~body:
-          [ Printf.sprintf "isa(X,%s)" (str holder_type);
+      emit_viol ctx
+        ~code:(guardc ~params:[ ("role", Fixed (norm (role_canonical r))); ("label", Witness_label) ] "EF-017")
+        ~subject:"X"
+        (Printf.sprintf "to-one second filler on role %s" (norm (role_canonical r)))
+        [ Printf.sprintf "isa(X,%s)" (str holder_type);
             Printf.sprintf "2 <= #count { Y : role(X,%s,Y) }" (role_term ~fact_type:ftn r) ]
   in
   to_one_guard objective_role anchor_point;
@@ -14236,18 +14176,19 @@ let translate_allocation ctx i (v : resolved_allocation) =
         (max (pow10 (max 0 (tdec - pdec))) (pow10 (max 0 (ddec - pdec))))
         (match rdec with Some r -> pow10 (max 0 (r - pdec)) | None -> 1)
   in
-  emit_rule ctx ~head:"viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",B)"
-    ~body:
-      [ Printf.sprintf "isa(B,%s)" (str bt);
+  emit_viol ctx ~code:(guardc "CLINGO-034") ~subject:"B"
+    "arithmetic range exceeded (clingo grounds in machine integers)"
+    [ Printf.sprintf "isa(B,%s)" (str bt);
         Printf.sprintf "val(B,%s,A)" (str ba);
         Printf.sprintf "|A| > %d" pot_bound ];
-  emit_rule ctx ~head:"viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",B)"
-    ~body:[ Printf.sprintf "isa(B,%s)" (str bt); Printf.sprintf "46340 < #count { X : %s }" recip ];
+  emit_viol ctx ~code:(guardc "CLINGO-034") ~subject:"B"
+    "arithmetic range exceeded (clingo grounds in machine integers)"
+    [ Printf.sprintf "isa(B,%s)" (str bt); Printf.sprintf "46340 < #count { X : %s }" recip ];
   (match v.ratio_attribute with
   | Some ratio ->
-      emit_rule ctx ~head:"viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",X)"
-        ~body:
-          [ recip;
+      emit_viol ctx ~code:(guardc "CLINGO-034") ~subject:"X"
+        "arithmetic range exceeded (clingo grounds in machine integers)"
+        [ recip;
             Printf.sprintf "isa(B,%s)" (str bt);
             Printf.sprintf "val(X,%s,W)" (str ratio);
             Printf.sprintf "|W| > %d" (46340 / m_den) ]
@@ -14256,9 +14197,9 @@ let translate_allocation ctx i (v : resolved_allocation) =
   let cap_ratio = Option.map (fun c -> ratio k_cap ~from_dec:c ~to_dec:ddec) cdec in
   (match (v.maximum_attribute, cap_ratio) with
   | Some cap, Some (c_num, _) when c_num > 1 ->
-      emit_rule ctx ~head:"viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",X)"
-        ~body:
-          [ recip;
+      emit_viol ctx ~code:(guardc "CLINGO-034") ~subject:"X"
+        "arithmetic range exceeded (clingo grounds in machine integers)"
+        [ recip;
             Printf.sprintf "isa(B,%s)" (str bt);
             Printf.sprintf "val(X,%s,C)" (str cap);
             Printf.sprintf "|C| > %d" (46340 / c_num) ]
@@ -14274,14 +14215,16 @@ let translate_allocation ctx i (v : resolved_allocation) =
       else begin
         (* restated into a coarser unit, a share fits its target only where the
            division leaves nothing (ch. 2.4 point 1) *)
-        emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",X)" allocation_share_misfit)
-          ~body:[ share_atom; Printf.sprintf "(%s) \\ %d != 0" (scaled "S" t_num) t_den ];
+        emit_viol ctx ~code:(guardc "EF-006") ~subject:"X"
+          allocation_share_misfit
+          [ share_atom; Printf.sprintf "(%s) \\ %d != 0" (scaled "S" t_num) t_den ];
         Printf.sprintf "(%s)/%d" (scaled "S" t_num) t_den
       end
     in
     if (not (Q.equal k_share Q.one)) && t_num > 1 then
-      emit_rule ctx ~head:"viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",X)"
-        ~body:[ share_atom; Printf.sprintf "|S| > %d" (max_int31 / t_num) ];
+      emit_viol ctx ~code:(guardc "CLINGO-034") ~subject:"X"
+        "arithmetic range exceeded (clingo grounds in machine integers)"
+        [ share_atom; Printf.sprintf "|S| > %d" (max_int31 / t_num) ];
     emit_rule ctx ~head:(Printf.sprintf "val(X,%s,%s)" (str da) written) ~body:[ share_atom ];
     emit_rule ctx ~head:(Printf.sprintf "wval(X,%s,%s,%s)" (str da) written writer) ~body:[ share_atom ];
     emit_rule ctx ~head:(Printf.sprintf "wdecides(X,%s)" (str da))
@@ -14301,12 +14244,14 @@ let translate_allocation ctx i (v : resolved_allocation) =
             let in_pot = Printf.sprintf "(%s-%s)" (scaled "A" (pow10 (l - pdec))) (scaled "T" (pow10 (l - ddec))) in
             let r_num, r_den = ratio k_rest ~from_dec:l ~to_dec:r in
             if r_num > 1 then
-              emit_rule ctx ~head:"viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",B)"
-                ~body:[ body; Printf.sprintf "|%s| > %d" in_pot (max_int31 / r_num) ];
+              emit_viol ctx ~code:(guardc "CLINGO-034") ~subject:"B"
+                "arithmetic range exceeded (clingo grounds in machine integers)"
+                [ body; Printf.sprintf "|%s| > %d" in_pot (max_int31 / r_num) ];
             if r_den = 1 then scaled in_pot r_num
             else begin
-              emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",B)" allocation_rest_misfit)
-                ~body:[ body; Printf.sprintf "(%s) \\ %d != 0" (scaled in_pot r_num) r_den ];
+              emit_viol ctx ~code:(guardc "EF-006") ~subject:"B"
+                allocation_rest_misfit
+                [ body; Printf.sprintf "(%s) \\ %d != 0" (scaled in_pot r_num) r_den ];
               Printf.sprintf "(%s)/%d" (scaled in_pot r_num) r_den
             end
           end
@@ -14338,7 +14283,7 @@ let translate_allocation ctx i (v : resolved_allocation) =
     emit_rule ctx ~head:(Printf.sprintf "%shas_cap(X)" p)
       ~body:[ Printf.sprintf "val(X,%s,C)" (str cap); "C >= 0"; raw_pat ]
   in
-  let exact_viol = allocation_share_misfit in
+  let exact_viol = allocation_share_misfit and exact_code = guardc "EF-006" in
   match method_name with
   | Proportional ->
       let ratio = req "AllocationVersion.ratioAttribute (proportional)" v.ratio_attribute in
@@ -14348,8 +14293,7 @@ let translate_allocation ctx i (v : resolved_allocation) =
          diverging. An empty pot is no distribution (ch. 4.4, v1): no share
          and no rest without val(B,…,A), and every deposit below waits for
          the pot, as ref deposits nothing there *)
-      emit_rule ctx ~head:"viol(\"allocation: negative pot\",B)"
-        ~body:[ src; Printf.sprintf "val(B,%s,A)" (str ba); "A < 0" ];
+      emit_viol ctx ~subject:"B" "allocation: negative pot" [ src; Printf.sprintf "val(B,%s,A)" (str ba); "A < 0" ];
       (* eligible recipients: filled weight, a negative one counting as 0
          with a deposit (ch. 4.4, v1); the weightless are excluded and
          surface on the channel (ch. 4.4) *)
@@ -14372,8 +14316,7 @@ let translate_allocation ctx i (v : resolved_allocation) =
       in
       emit_rule ctx ~head:(Printf.sprintf "%sraw(X,(%s)/%s)" p num den) ~body:[ raw_body ];
       if exact then
-        emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",X)" exact_viol)
-          ~body:[ raw_body; Printf.sprintf "(%s) \\ %s != 0" num den ];
+        emit_viol ctx ~code:exact_code ~subject:"X" exact_viol [ raw_body; Printf.sprintf "(%s) \\ %s != 0" num den ];
       (match v.maximum_attribute with
       | Some _ ->
           emit_cap_atoms ~raw_pat:(Printf.sprintf "%sraw(X,_)" p);
@@ -14391,8 +14334,7 @@ let translate_allocation ctx i (v : resolved_allocation) =
       (* one group, all recipients, unweighted (ch. 4.2); the negative
          pot guard as in the proportional method, and an empty pot writes
          nothing there either *)
-      emit_rule ctx ~head:"viol(\"allocation: negative pot\",B)"
-        ~body:[ src; Printf.sprintf "val(B,%s,A)" (str ba); "A < 0" ];
+      emit_viol ctx ~subject:"B" "allocation: negative pot" [ src; Printf.sprintf "val(B,%s,A)" (str ba); "A < 0" ];
       emit_rule ctx ~head:(Printf.sprintf "%sn(B,N)" p)
         ~body:[ src; recip_any; Printf.sprintf "N = #count { X : %s }" recip ];
       let num = scaled "A" m_num in
@@ -14400,8 +14342,7 @@ let translate_allocation ctx i (v : resolved_allocation) =
       let raw_body = Printf.sprintf "%s, %sn(B,N), val(B,%s,A)" recip p (str ba) in
       emit_rule ctx ~head:(Printf.sprintf "%sshare(X,(%s)/%s)" p num den) ~body:[ raw_body ];
       if exact then
-        emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",X)" exact_viol)
-          ~body:[ raw_body; Printf.sprintf "(%s) \\ %s != 0" num den ];
+        emit_viol ctx ~code:exact_code ~subject:"X" exact_viol [ raw_body; Printf.sprintf "(%s) \\ %s != 0" num den ];
       emit_write (Printf.sprintf "%sshare(X,S)" p);
       emit_rest ~guard:(Printf.sprintf "%sn(B,_)" p)
         ~sum:(Printf.sprintf "S,X : %s, %sshare(X,S)" recip p)
@@ -14482,9 +14423,9 @@ let translate_allocation ctx i (v : resolved_allocation) =
                 Printf.sprintf "%spot(B,R,_)" p;
                 Printf.sprintf "%sgwsum(B,R,0)" p ];
           if exact then
-            emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",X)" exact_viol)
-              ~body:
-                [ Printf.sprintf "%smrank(B,X,R)" p;
+            emit_viol ctx ~code:exact_code ~subject:"X"
+              exact_viol
+              [ Printf.sprintf "%smrank(B,X,R)" p;
                   Printf.sprintf "%spot(B,R,P)" p;
                   Printf.sprintf "%stw(B,X,W)" p;
                   Printf.sprintf "%sgwsum(B,R,S)" p;
@@ -14503,9 +14444,9 @@ let translate_allocation ctx i (v : resolved_allocation) =
                 Printf.sprintf "%spot(B,R,P)" p;
                 Printf.sprintf "%sgsize(B,R,N)" p ];
           if exact then
-            emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",X)" exact_viol)
-              ~body:
-                [ Printf.sprintf "%smrank(B,X,R)" p;
+            emit_viol ctx ~code:exact_code ~subject:"X"
+              exact_viol
+              [ Printf.sprintf "%smrank(B,X,R)" p;
                   Printf.sprintf "%spot(B,R,P)" p;
                   Printf.sprintf "%sgsize(B,R,N)" p;
                   "P > 0";
@@ -14575,8 +14516,7 @@ let uni_key_guards ctx ~otype ~keys =
      instances faults nowhere (EF-024), and with that fault the key form of no
      instance is asked (EF-020) *)
   if List.length temporal > 1 then
-    emit_rule ctx ~head:(Printf.sprintf "viol(%s,S)" (quote two_temporal_keys_reason))
-      ~body:[ Printf.sprintf "isa(S,%s)" (str otype) ]
+    emit_viol ctx ~code:(guardc "EF-024") ~subject:"S" two_temporal_keys_reason [ Printf.sprintf "isa(S,%s)" (str otype) ]
   else
     List.iter
       (fun k ->
@@ -14702,8 +14642,9 @@ let translate_uniqueness_union ctx i (u : resolved_uniqueness_union) =
         (fun pos k ->
           let m = factor pos k in
           if m > 1 then
-            emit_rule ctx ~head:"viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S)"
-              ~body:(body @ [ Printf.sprintf "|K%d| > %d" pos (max_int31 / m) ]))
+            emit_viol ctx ~code:(guardc "CLINGO-034") ~subject:"S"
+              "arithmetic range exceeded (clingo grounds in machine integers)"
+              (body @ [ Printf.sprintf "|K%d| > %d" pos (max_int31 / m) ]))
         b.uub_keys;
       emit_rule ctx ~head:(Printf.sprintf "%s(S,%d,%s)" pred j (String.concat "," head_args)) ~body:(body))
     u.source_list;
@@ -14936,14 +14877,14 @@ let writer_conflicts ctx =
             if i < j && List.memq rj comps then begin
               let lower = if Ir_v0.Checks.subtype_of ctx.doc ~sub:otj ~super:oti then otj else oti in
               let name (r : resolved_rule) = "\"" ^ Option.value r.rr_name ~default:"<naamloos>" ^ "\"" in
-              emit_rule ctx
-                ~head:(Printf.sprintf "viol(%s,S)" (quote
-                   (Printf.sprintf
+              emit_viol ctx
+                ~code:(disagree_code ~rules:[ ri.rr_name; rj.rr_name ] ~attribute:a ~object_type:lower)
+                ~subject:"S"
+                (Printf.sprintf
                       "two writers of one target disagree: rules %s and %s write different values to the \
                        attribute %s of a %s — no fixpoint, divergence is a fault (ch. 5.7)"
-                      (name ri) (name rj) a lower)))
-                ~body:
-                  [ Printf.sprintf "wval(S,%s,X,%d)" (str a) i;
+                      (name ri) (name rj) a lower)
+                [ Printf.sprintf "wval(S,%s,X,%d)" (str a) i;
                     Printf.sprintf "wval(S,%s,Y,%d)" (str a) j;
                     "X != Y" ]
             end)
@@ -14954,16 +14895,16 @@ let writer_conflicts ctx =
         List.iteri
           (fun k (v : resolved_allocation) ->
             if allocation_writes ctx ~ot:oti ~a v then
-              emit_rule ctx
-                ~head:(Printf.sprintf "viol(%s,S)" (quote
-                   (Printf.sprintf
+              emit_viol ctx
+                ~code:(disagree_code ~rules:[ ri.rr_name; v.vd_name ] ~attribute:a ~object_type:oti)
+                ~subject:"S"
+                (Printf.sprintf
                       "two writers of one target disagree: rule \"%s\" and allocation \"%s\" write different \
                        values to the attribute %s of a %s — no fixpoint, divergence is a fault (ch. 5.7)"
                       (Option.value ri.rr_name ~default:"<naamloos>")
                       (Option.value v.vd_name ~default:"<naamloos>")
-                      a oti)))
-                ~body:
-                  [ Printf.sprintf "wval(S,%s,X,%d)" (str a) i;
+                      a oti)
+                [ Printf.sprintf "wval(S,%s,X,%d)" (str a) i;
                     Printf.sprintf "wval(S,%s,Y,vd%d)" (str a) k;
                     "X != Y" ])
           ctx.doc.allocations)
@@ -15596,7 +15537,7 @@ let refuse_functor_collisions (doc : document) =
       | _ -> ())
     doc.domain_specs
 
-let translate (doc : document) (case : Case.t) : string =
+let translate_guarded (doc : document) (case : Case.t) : string * guards =
   (* the unbounded form at the scale its writes and the case give it
      ([Scale]); [Model.check] reads the model through the same declarations *)
   let doc = Scale.document doc case in
@@ -15641,7 +15582,7 @@ let translate (doc : document) (case : Case.t) : string =
       btypes = Eval.SMap.empty; subj = None; form = None }
   in
   let ctx =
-    { doc; wire_doc; case; doc_env; buf = Buffer.create 4096; fresh = 0; rule_guard = []; deposit_guard = [];
+    { doc; wire_doc; case; doc_env; buf = Buffer.create 4096; guards = Hashtbl.create 32; fresh = 0; rule_guard = []; deposit_guard = [];
       write_scale = 1;
       write_unbounded = false; write_value = None; in_condition = false; desugared_group = false; rule_name = "?"; binders = []; param_reach = (fun _ -> []); deposit_subject = None; let_needs = [];
       value_of = None;
@@ -15694,7 +15635,7 @@ let translate (doc : document) (case : Case.t) : string =
        stratum of a creation. hasdepth/2 serves the clamp each creation
        carries. *)
     emit ctx "#const oc_budget = 100. #defined depth/3.";
-    emit_rule ctx ~head:"viol(\"creation budget exhausted\",X)" ~body:[ "depth(X,_,D)"; "D > oc_budget" ];
+    emit_viol ctx ~code:(guardc "EF-015") ~subject:"X" "creation budget exhausted" [ "depth(X,_,D)"; "D > oc_budget" ];
     emit_rule ctx ~head:"hasdepth(X,K)" ~body:[ "depth(X,K,_)" ];
     List.iter (fun k -> emit ctx "ocstratum(%d)." k) (oc_strata_of ctx);
     emit_rule ctx ~head:"depth(X,K,0)" ~body:[ "depth(X,K0,D)"; "D > 0"; "ocstratum(K)"; "K > K0" ]
@@ -15743,4 +15684,7 @@ let translate (doc : document) (case : Case.t) : string =
   translate_case ctx case;
   emit ctx "#show val/3. #show has/2. #show inconsistent/2. #show tl/5.";
   emit ctx "#show inconsistent_code/3.";
-  Buffer.contents ctx.buf
+  (Buffer.contents ctx.buf, ctx.guards)
+
+(* the program alone *)
+let translate doc case = fst (translate_guarded doc case)
