@@ -133,6 +133,12 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
 - Every semantics clause carries a worked example with concrete expected
   output; those examples are the reference interpreter's test suite
   (`ref/`), verbatim.
+- A form is on the wire when `RUNTIME-SEMANTICS.md` gives it a meaning with a
+  worked example, or this document does for a form that is not evaluated.
+  A form without such a clause is not on the wire; a producer writes an
+  `Unresolved` with a diagnostic for its source (ch. 4.4, WF-113). A form
+  with a clause but without a golden or a negative case stays on the wire,
+  and the WF index marks the missing artifact `OPEN`.
 - Every node, field and value is core or presentation. Core is what this
   document and `RUNTIME-SEMANTICS.md` give a meaning, whatever source
   language it comes from: an executor evaluates a core form as specified or
