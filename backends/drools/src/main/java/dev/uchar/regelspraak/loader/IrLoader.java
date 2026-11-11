@@ -871,8 +871,7 @@ public final class IrLoader {
                 List.of("name", "decision", "justification", "consequence", "initialisation", "exceptions", "source",
                         "statuteAnnotations"));
         // an absent decision or justification is what the v0 null was; a null there velden has refused
-        JsonNode b = n.get("decision");
-        Boolean decision = b == null ? null : b.asBoolean();
+        Boolean decision = n.has("decision") ? bool(n, "decision") : null;
         // the block's statute annotations, carried through as a rule's are (IR-SPEC ch. 6.1); no executor reads them
         List<String> annotations = n.has("statuteAnnotations")
                 ? textList(n, pathOf(n), "statuteAnnotations") : List.of();

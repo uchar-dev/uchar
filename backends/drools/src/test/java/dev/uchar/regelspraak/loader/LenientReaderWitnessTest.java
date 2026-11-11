@@ -15,8 +15,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The readers of the loader that take an optional field ({@code text}, {@code bool}, {@code intOf},
- * {@code stringList}, {@code elements}) read an absent field as none, and refuse a value of another JSON type at the
- * field's pointer, as the strict readers do. An integer beyond a Java {@code int} is well-formed (the OCaml loader
+ * {@code stringList}, {@code elements}, and the {@code decision} of a default) read an absent field as none, and refuse
+ * a value of another JSON type at the field's pointer, as the strict readers do. An integer beyond a Java {@code int} is well-formed (the OCaml loader
  * reads it into its 63-bit int, and the verifier admits a threshold of 4294967297) and is a form this backend does
  * not carry, a {@link IrLoader.Refusal} under {@code <node>.<field>}.
  *
@@ -53,6 +53,8 @@ class LenientReaderWitnessTest {
     /** Rule 3 sums over a DimensionSelection of three seasons. */
     private static final String PLOEGSEIZOEN = "jutterswet-ploegseizoen";
     private static final String SELECTION = "/rules/rules/3/versions/0/value/dimensionSelections/0";
+    /** Defaults group 0 attributes bergingsbevoegd; its default 0 decides true. */
+    private static final String BERGINGSDREMPEL = "jutterswet-bergingsdrempel";
 
     @Test void an_integer_beyond_int_is_a_form_not_carried_and_not_wrapped() throws Exception {
         // 2^32 + 1 wraps to 1 under asInt, 2^32 + 2 to 2
@@ -90,6 +92,16 @@ class LenientReaderWitnessTest {
             ObjectNode ir = golden(KEURHOUDER);
             ((ObjectNode) ir.at(CHECK)).set("negated", JSON.readTree(written));
             assertTrue(refuses(ir, CHECK + "/negated").getMessage().contains("expected a boolean"), written);
+        }
+    }
+
+    @Test void a_decision_holds_a_boolean() throws Exception {
+        // read inline through asBoolean, beside the readers: "true" was true and "ja" false
+        String dflt = "/rules/prioritizedDefaults/0/defaults/0";
+        for (String written : new String[] { "\"true\"", "\"ja\"", "1" }) {
+            ObjectNode ir = golden(BERGINGSDREMPEL);
+            ((ObjectNode) ir.at(dflt)).set("decision", JSON.readTree(written));
+            assertTrue(refuses(ir, dflt + "/decision").getMessage().contains("expected a boolean"), written);
         }
     }
 
