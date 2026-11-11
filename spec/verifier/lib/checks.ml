@@ -7638,6 +7638,12 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
                          [ v ~params:[("characteristic", k); ("objectType", filler bound)] "WF-034.characteristic-undeclared" at
                              ("'" ^ k ^ "' is not a declared characteristic of '"
                             ^ filler bound ^ "'") ]
+                     (* WF-043 on the reached type: the qualifier is about the
+                        characteristic the check reads, wherever it lives *)
+                     | Some ot
+                       when time_period <> None
+                            && not (List.exists (fun (n, _) -> norm n = norm k) ot.characteristic_granularity) ->
+                         [ v "WF-043.whole-period-characteristic" at "wholePeriod qualifier on a non-time-dependent characteristic" ]
                      | _ -> [])
                  | None -> []))
   | Role_membership { fact_type; role; counterpart_type; _ } -> (
