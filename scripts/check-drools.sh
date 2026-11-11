@@ -329,6 +329,7 @@ EXPECTED_CHANNEL=(
   "jutterswet-vaarwatertoeslag-catala|EXCLUDE DROOLS-021|loader Refusal: Expr:Match"
   "jutterswet-vangstwaardering|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "jutterswet-waarderingsinvoer|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
+  "jutterswet-werfkeur|EXCLUDE DROOLS-259|transpiler SKIP: a quantifier fold over the relation ligplaats, which creations write, with a member condition that can fail (it reads the evaluation date the case does not carry): the branch keeps no place for a created link, and RUNTIME-SEMANTICS ch. 5.7a orders the members, which decides whether the stop comes before the fault; both branches refuse, where ref plays both cases and clingo refuses with CLINGO-035 (card created-member-order, 2026-11-11)"
   "synth3-armlichaam|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType — a closed lambda body needs a list-typed fold operand (WF-069/WF-070), which the v0 loader does not carry; the form itself is pinned by ref and clingo"
   "synth3-besluitschakel|EXCLUDE DROOLS-021|loader Refusal: Expr:Match — the loader carries the sum type (card absence-markers, step B), and the match over it is refused"
   "synth3-keuringtal|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"

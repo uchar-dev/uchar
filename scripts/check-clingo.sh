@@ -137,6 +137,7 @@ jutterswet-registratienummer|CLINGO-046|the exact-digit test ("numeriek met exac
 jutterswet-registratienummer-gehele-jaar|CLINGO-046|the exact-digit test read per day under the whole-period qualifier (RUNTIME-SEMANTICS ch. 3.9 on ch. 1.2) reads the characters of a text on every day, which needs the string functions this encoding does not have; ref and both Drools branches play all six cases
 jutterswet-saldotoezicht|CLINGO-047|a read of the inconsistency channel ("regelversie controle saldo is inconsistent", RUNTIME-SEMANTICS ch. 5.6) has no translation in this encoding; ref and both Drools branches play both cases
 jutterswet-tekst-van-een-waarde|CLINGO-042|the text of a value in a text composition (RUNTIME-SEMANTICS ch. 1.2, "Text coercion": 5,5, waar, 21-06-2026) needs string functions, which ASP-Core-2 does not have and this encoding, running no script, does not add; ref and both Drools branches play both cases (card tekst-van-een-waarde-in-een-tekstsamenstelling, 2026-11-06)
+jutterswet-werfkeur|CLINGO-035|a quantifier fold over a relation that creations write, whose matrix reads the evaluation date the case does not carry: whether the fold reaches that read depends on the member order of RUNTIME-SEMANTICS ch. 5.7a (the links the case wrote, then instance order), which this encoding does not carry, so it refuses at translation where ref stops before the fault; the Drools backend refuses the same fold with DROOLS-259 (card created-member-order, 2026-11-11)
 '
 
 list=$(mktemp) || exit 2
