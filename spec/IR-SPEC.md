@@ -4010,7 +4010,7 @@ priced before it was taken.
 
 **What stays uncrossed, and is named.** ch. 2.10's **fourth class** — a
 division (`dividedBy`, `dividedByAbs`), a power, a percentage-of, a
-root, an absolute value and the seven date/time extractors — derives no
+root, an absolute value and the three date part extractors — derives no
 result unit in v0, so this rule claims no unit there. It claims one facet
 of two of them since 2026-09-25: a `dividedBy` and a `power` annotated whole
 are refused on the wholeness facet, because ch. 2.3 makes a quotient and a
