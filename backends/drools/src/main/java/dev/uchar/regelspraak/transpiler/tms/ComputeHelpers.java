@@ -189,15 +189,15 @@ public final class ComputeHelpers {
     }
 
     /** {@code base} to the whole power {@code numerator}, of which a fractional exponent takes its root: leeg for a leeg
-     *  base, and the fault of the reference interpreter for a negative one, which it gives no real power. */
+     *  base, and a fault for a negative base, also where the power to the numerator is positive, as (−32)^(2/5) is:
+     *  RUNTIME-SEMANTICS ch. 2.2 gives a negative base no fractional power at all. */
     private static Breuk powerRadicand(Object base, int numerator, int denominator) {
         Breuk b = Breuk.van(base);
         if (b == null) return null;
+        if (b.signum() < 0) throw irrationalPower(base, numerator, denominator);
         int e = Math.abs(numerator);
         Breuk p = Breuk.van(b.teller().pow(e), b.noemer().pow(e));
-        if (numerator < 0) p = Breuk.van(p.noemer(), p.teller());
-        if (p.signum() < 0) throw irrationalPower(base, numerator, denominator);
-        return p;
+        return numerator < 0 ? Breuk.van(p.noemer(), p.teller()) : p;
     }
 
     private static ComputeFault irrationalPower(Object base, int numerator, int denominator) {
