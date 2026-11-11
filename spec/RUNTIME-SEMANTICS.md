@@ -5156,10 +5156,10 @@ parameters, the clause that defines it and its witnesses.
 | EF-008 | a duration count is out of range | fault | `count` | ch. 3.8 | `corpus/red/date-time-step-outside-range` |
 | EF-009 | a day-kind walk passes the reach fence without a day of the kind | fault | `from`, `reach` | ch. 3.8 | `corpus/red/day-kind-unsatisfiable-walk`, `corpus/red/day-kind-scope-outside-table` |
 | EF-010 | the bound day is read outside a day-kind evaluation | fault | — | ch. 3.8 | `corpus/red/context-value-de-dag-outside-day-kind`, `corpus/red/bound-day-behind-a-holding-condition` |
-| EF-011 | a context value needs an evaluation date the case does not carry | fault | `contextValue` | ch. 8.2 | `corpus/red/evaluation-year-without-evaluation-date`, `corpus/red/duration-reads-van-before-tot`, `corpus/red/context-value-behind-a-holding-condition` |
+| EF-011 | a context value, or a vintage read at session start, needs an evaluation date the case does not carry | fault | `contextValue` | ch. 8.2; ch. 8.4 | `corpus/red/evaluation-year-without-evaluation-date`, `corpus/red/duration-reads-van-before-tot`, `corpus/red/context-value-behind-a-holding-condition` |
 | EF-012 | a validity-bounded form in a session without an evaluation date | fault | — | ch. 8.1 | `corpus/red/jutterswet-uitsluiting-zonder-rekendatum` |
 | EF-013 | the Parameterset timeline of a parameter does not cover the evaluation date | fault | `parameter`, `date` | ch. 8.4 | `corpus/red/vintage-uncovered-date` |
-| EF-014 | a parameter the case does not bind is read | fault | `parameter` | ch. 5.7 step 2 | `corpus/red/aanvoergeld-parameter-unbound`, `corpus/red/day-kind-parameter-unbound` |
+| EF-014 | a parameter the case does not bind is read, or a vintage read finds no timeline for its parameter in the Parameterset at session start | fault | `parameter` | ch. 5.7 step 2; ch. 8.4 | `corpus/red/aanvoergeld-parameter-unbound`, `corpus/red/day-kind-parameter-unbound` |
 | EF-015 | the creation budget is exhausted | fault | `creation`, `stratum`, `depth` | ch. 5.5 | `corpus/red/finite-chain-over-budget`, `corpus/red/jutterswet-budgetgrens-over`, `corpus/red/runaway-recursion` |
 | EF-016 | two writers of one target disagree | fault | `rules`, `values`, `attribute`, `label`, `objectType` | ch. 5.7 | `corpus/red/jutterswet-dubbele-melding` |
 | EF-017 | a to-one role gets a second filler | fault | `role`, `label`, `filler` | ch. 5.5 | `corpus/red/to-one-second-filler` |
@@ -8110,7 +8110,14 @@ loader's cross-checks:
   would activate the carrying rule version at this date, and whether
   or not any instance exists for it to fire over — an inactive
   version's missing vintage is still a configuration error. The check
-  can therefore only be too strict, never silently too lenient.
+  can therefore only be too strict, never silently too lenient. Each
+  violation is a fault of its kind (ch. 5.7b): a session without an
+  evaluation date is **EF-011**, the evaluation date being the context
+  value the vintage read needs; a Parameterset without the parameter's
+  timeline is **EF-014**, naming the `parameter`, the timeline being the
+  binding of a granular parameter (ch. 5.7 step 2); a timeline that does
+  not cover the evaluation date is **EF-013**, naming the `parameter` and
+  the `date`. The worked examples are those of ch. 8.5.
 
 The two conventions of the case format stay strictly apart (ch. 3.6,
 `spec/schema/README.md`): the asOfDate-bucket scalar serves the
@@ -8165,16 +8172,13 @@ date 2026-03-15; Parameterset `penningbedrag` = [2025: 4, 2026: 5]
 - The read: the 2026 segment → **5**; every Jutter's `huidig
   penningbedrag` is 5 (`corpus/golden/anchor/jutterswet-penningvintage`,
   replayed by gates 5 and 6).
-- The red variants (same document): evaluation date 2028-03-15 (gap),
-  the timeline absent, or `asOfDate` null — each fails the
-  session-start check before any rule fires, and both executors report
-  the same missing coverage; nothing is evaluated. These variants
-  cannot sit in the golden corpus (a golden must replay green); they
-  are pinned here and exercised in the card's verification record. A
-  standing regression guard for the red path needs an expected-fault
-  case form the harness does not have yet — open debt of the same
-  class as the standing harness guards (no-op, unsolved-state) still
-  to land, recorded here rather than silently absent.
+- The red variants (same document, one Jutter J1): evaluation date
+  2028-03-15 (gap) → **EF-013** `{"parameter": "penningbedrag", "date":
+  "2028-03-15"}` (`corpus/red/vintage-uncovered-date`); evaluation date
+  2025-06-15 and no timeline for `penningbedrag` in the Parameterset →
+  **EF-014** `{"parameter": "penningbedrag"}`; `asOfDate` null beside the
+  full Parameterset → **EF-011**. Each fails the session-start check
+  before any rule fires, and nothing is evaluated.
 
 ## 7. Defaults and defeasibility (design — the Phase-4 gate)
 
