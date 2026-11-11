@@ -1,0 +1,248 @@
+{
+ "format": "uchar-ir-v1",
+ "model": {
+  "objectTypes": [
+   {
+    "node": "ObjectType",
+    "name": "Jutter",
+    "animate": true,
+    "plural": "Jutters",
+    "attributes": [
+     {
+      "node": "Attribute",
+      "name": "opbrengst",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified",
+       "unit": [
+        {
+         "node": "Unit",
+         "abbreviation": "ct",
+         "system": "Munt",
+         "canonical": "EUR",
+         "factorToCanonical": {
+          "num": 1,
+          "den": 100
+         }
+        }
+       ]
+      },
+      "timeline": {
+       "node": "TimelineFacet",
+       "granularity": "month",
+       "count": 1
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "tussen",
+      "datatype": {
+       "node": "Number",
+       "whole": false,
+       "decimals": 2,
+       "sign": "unspecified",
+       "unit": [
+        {
+         "node": "Unit",
+         "abbreviation": "EUR",
+         "system": "Munt",
+         "canonical": "EUR",
+         "factorToCanonical": {
+          "num": 1,
+          "den": 1
+         }
+        }
+       ]
+      },
+      "timeline": {
+       "node": "TimelineFacet",
+       "granularity": "month",
+       "count": 1
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "afgerond",
+      "datatype": {
+       "node": "Number",
+       "whole": false,
+       "decimals": 2,
+       "sign": "unspecified",
+       "unit": [
+        {
+         "node": "Unit",
+         "abbreviation": "EUR",
+         "system": "Munt",
+         "canonical": "EUR",
+         "factorToCanonical": {
+          "num": 1,
+          "den": 1
+         }
+        }
+       ]
+      },
+      "timeline": {
+       "node": "TimelineFacet",
+       "granularity": "month",
+       "count": 1
+      }
+     }
+    ],
+    "characteristics": []
+   },
+   {
+    "node": "ObjectType",
+    "name": "Vondst",
+    "animate": false,
+    "plural": "Vondsten",
+    "attributes": [],
+    "characteristics": []
+   }
+  ],
+  "factTypes": [
+   {
+    "node": "FactType",
+    "name": "aanmelding",
+    "reciprocal": false,
+    "roles": [
+     {
+      "node": "Role",
+      "name": "aanmeldende jutter",
+      "objectType": "Jutter",
+      "many": false
+     },
+     {
+      "node": "Role",
+      "name": "vondst",
+      "objectType": "Vondst",
+      "plural": "vondsten",
+      "many": true
+     }
+    ]
+   }
+  ],
+  "parameters": [],
+  "domains": [],
+  "unitSystems": [
+   {
+    "node": "UnitSystem",
+    "name": "Munt",
+    "units": [
+     {
+      "node": "Unit",
+      "abbreviation": "EUR",
+      "system": "Munt",
+      "canonical": "EUR",
+      "factorToCanonical": {
+       "num": 1,
+       "den": 1
+      },
+      "spellings": [
+       "euro"
+      ]
+     },
+     {
+      "node": "Unit",
+      "abbreviation": "ct",
+      "system": "Munt",
+      "canonical": "EUR",
+      "factorToCanonical": {
+       "num": 1,
+       "den": 100
+      },
+      "spellings": [
+       "cent"
+      ]
+     }
+    ]
+   }
+  ],
+  "dimensions": [],
+  "timelines": [],
+  "dayKinds": []
+ },
+ "rules": {
+  "rules": [
+   {
+    "node": "Rule",
+    "name": "afgerond",
+    "versions": [
+     {
+      "validity": {
+       "node": "Validity"
+      },
+      "target": {
+       "node": "AttributeReference",
+       "attribute": "afgerond",
+       "subjectType": "Jutter"
+      },
+      "value": {
+       "node": "Rounding",
+       "base": {
+        "node": "AttributeReference",
+        "attribute": "tussen",
+        "subjectType": "Jutter"
+       },
+       "mode": "floor",
+       "decimals": 0,
+       "type": {
+        "node": "Number",
+        "whole": true,
+        "decimals": 0,
+        "sign": "unspecified",
+        "unit": [
+         {
+          "node": "Unit",
+          "abbreviation": "EUR",
+          "system": "Munt",
+          "canonical": "EUR",
+          "factorToCanonical": {
+           "num": 1,
+           "den": 1
+          }
+         }
+        ]
+       }
+      },
+      "initialisation": false,
+      "presentation": "equation"
+     }
+    ]
+   },
+   {
+    "node": "Rule",
+    "name": "tussen",
+    "versions": [
+     {
+      "validity": {
+       "node": "Validity"
+      },
+      "target": {
+       "node": "AttributeReference",
+       "attribute": "tussen",
+       "subjectType": "Jutter"
+      },
+      "value": {
+       "node": "AttributeReference",
+       "attribute": "opbrengst",
+       "subjectType": "Jutter"
+      },
+      "initialisation": false,
+      "presentation": "equation"
+     }
+    ]
+   }
+  ],
+  "dayKindDefinitions": [],
+  "objectCreations": [],
+  "allocations": [],
+  "consistencies": [],
+  "uniquenesses": [],
+  "factCreations": [],
+  "startPointDeterminations": [],
+  "ruleGroups": []
+ },
+ "diagnostics": []
+}

@@ -118,5 +118,7 @@
   (glob_files fixtures/links-per-relation/created-link/*.json)
   (glob_files fixtures/links-per-relation/creation-blocked/*.json)
   ; a StructLiteral writing its fields in another order than the declaration
-  (glob_files fixtures/struct-literal-field-order/*.json))
+  (glob_files fixtures/struct-literal-field-order/*.json)
+  ; a timeline written from a value in a sister unit of the target's
+  (glob_files fixtures/timeline-write-unit/*.json))
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

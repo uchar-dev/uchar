@@ -1,0 +1,58 @@
+{
+ "format": "uchar-case-v0",
+ "asOfDate": null,
+ "input": {
+  "instances": [
+   {
+    "label": "J1",
+    "objectType": "Jutter",
+    "attributes": {
+     "opbrengst": {
+      "timeline": [
+       {
+        "from": "2024-01-01",
+        "to": "2024-02-01",
+        "value": {
+         "number": "249"
+        }
+       }
+      ]
+     }
+    },
+    "roles": {},
+    "characteristics": []
+   }
+  ],
+  "parameters": {}
+ },
+ "expected": [
+  {
+   "kind": "attributeTimeline",
+   "label": "J1",
+   "attribute": "tussen",
+   "timeline": [
+    {
+     "from": "2024-01-01",
+     "to": "2024-02-01",
+     "value": {
+      "number": "2.49"
+     }
+    }
+   ]
+  },
+  {
+   "kind": "attributeTimeline",
+   "label": "J1",
+   "attribute": "afgerond",
+   "timeline": [
+    {
+     "from": "2024-01-01",
+     "to": "2024-02-01",
+     "value": {
+      "number": "2"
+     }
+    }
+   ]
+  }
+ ]
+}

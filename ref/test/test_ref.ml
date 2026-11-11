@@ -14029,6 +14029,18 @@ let () =
   plays ~ident:"WV-11.2-velden-in-andere-volgorde" ~ir:(read (dir ^ "ir.json")) ~case_data:(read (dir ^ "case.json"))
     (fun _ -> ())
 
+(* WV-3.4-schrijven-in-de-doeleenheid: a rule writes the timeline target
+   tussen (EUR, 2 decimals) from opbrengst (ct), 249 ct in January 2024; a
+   second rule writes afgerond := tussen naar beneden afgerond op 0 decimalen.
+   The value of a rule is restated once, to the target's unit (ch. 3.4), and a
+   reader reads tussen in its declared unit (ch. 2.10): tussen = 2.49 and
+   afgerond = 2 in January *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/timeline-write-unit/" in
+  plays ~ident:"WV-3.4-schrijven-in-de-doeleenheid" ~ir:(read (dir ^ "ir.json")) ~case_data:(read (dir ^ "case.json"))
+    (fun _ -> ())
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

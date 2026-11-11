@@ -3911,7 +3911,7 @@ let run_timeline_initialisation ?periods env w (self : World.instance) ~err ~for
       if decided <> [] then List.iter err (List.rev !deposits);
       (* the write boundary holds on the segments it decides (ch. 3.11) *)
       World.fits ~label:self.label ~attr ~decl decided;
-      World.write_timeline_init w ~form ~label:self.label ~attr result
+      World.write_timeline_init w ~form ~label:self.label ~attr (World.restate_timeline ~decl result)
 
 (* The true periods of the condition of a day count (WF-058, ch. 3.8): its own
    time-dependent characteristic, and of its days those on which each day-kind
@@ -4694,7 +4694,7 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
                            ~root:true (req "MemberAssignment.value" t.to_value))
                     in
                     World.fits ~label ~attr:m ~decl tl;
-                    if tl = [] then w else fst (World.write_timeline w ~label ~attr:m tl)
+                    if tl = [] then w else fst (World.write_timeline w ~label ~attr:m (World.restate_timeline ~decl tl))
                   end
                   else
                     let v = eval_expr env read self ~err (req "MemberAssignment.value" t.to_value) in

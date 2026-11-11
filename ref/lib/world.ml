@@ -274,7 +274,7 @@ let write_attr_init w ~form ~label ~attr:name ~decl v =
   in
   ({ w with owners }, changed)
 
-(* a timeline store (ch. 3.11): the segments land exactly as computed;
+(* a timeline store (ch. 3.11): the segments land as the caller gives them;
    idempotence compares segment lists exactly — same bounds, value-equal
    payloads. *)
 let write_timeline w ~label ~attr:name (tl : Timeline.t) =
@@ -373,10 +373,27 @@ let store_stack w ~label ~attr:name (st : stack) =
 let fits ~label ~attr:name ~decl (tl : Timeline.t) =
   List.iter (fun (sg : Timeline.segment) -> ignore (collapse ~at:(label ^ "." ^ name) decl sg.s_value)) tl
 
+(* the segments in the unit the target declares: the value of a rule is
+   restated once, to the target's unit (ch. 3.4), as a scalar write is
+   ([collapse]), so a reader of the target reads it in the unit of its
+   declaration (ch. 2.10) *)
+let restate_timeline ~(decl : Ir_v0.Ast.datatype option) (tl : Timeline.t) =
+  match decl with
+  | Some (Number { measure_unit; _ } | Percentage { measure_unit; _ }) ->
+      let target_u = match measure_unit with Some e -> Value.Unit e | None -> Value.Unitless in
+      List.map
+        (fun (sg : Timeline.segment) ->
+          match sg.s_value with
+          | Num (q, u) -> { sg with s_value = Num (Arith.restate_into target_u q u, target_u) }
+          | _ -> sg)
+        tl
+  | _ -> tl
+
 (* [form], the writer at [rank] in the document, decides the segments [tl] of
    the target (none: it decides no day) *)
 let write_timeline_part w ~form ~rank ~label ~attr:name ~decl (tl : Timeline.t) =
   fits ~label ~attr:name ~decl tl;
+  let tl = restate_timeline ~decl tl in
   let st = stack_of w ~label ~attr:name in
   let others = timeline_parts_but w ~form ~label ~attr:name in
   store_stack w ~label ~attr:name { st with writers = (if tl = [] then others else (rank, form, tl) :: others) }
