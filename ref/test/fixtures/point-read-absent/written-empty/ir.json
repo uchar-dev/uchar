@@ -1,0 +1,579 @@
+{
+ "format": "uchar-ir-v1",
+ "model": {
+  "objectTypes": [
+   {
+    "node": "ObjectType",
+    "name": "Jutter",
+    "animate": true,
+    "plural": "Jutters",
+    "attributes": [
+     {
+      "node": "Attribute",
+      "name": "strandloon",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified"
+      },
+      "timeline": {
+       "node": "TimelineFacet",
+       "granularity": "month",
+       "count": 1
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "stormtoeslag",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified"
+      },
+      "timeline": {
+       "node": "TimelineFacet",
+       "granularity": "month",
+       "count": 1
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "maandloon",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified"
+      },
+      "timeline": {
+       "node": "TimelineFacet",
+       "granularity": "month",
+       "count": 1
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "loonverschil",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified"
+      },
+      "timeline": {
+       "node": "TimelineFacet",
+       "granularity": "month",
+       "count": 1
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "opgehoogde strandloon",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified"
+      },
+      "timeline": {
+       "node": "TimelineFacet",
+       "granularity": "month",
+       "count": 1
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "vondstopbrengst",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified"
+      },
+      "timeline": {
+       "node": "TimelineFacet",
+       "granularity": "month",
+       "count": 1
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "gewaarborgde vondstopbrengst",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified"
+      },
+      "timeline": {
+       "node": "TimelineFacet",
+       "granularity": "month",
+       "count": 1
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "jaarloon",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified"
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "peilopbrengst",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified"
+      }
+     }
+    ],
+    "characteristics": []
+   },
+   {
+    "node": "ObjectType",
+    "name": "Vondst",
+    "animate": false,
+    "plural": "Vondsten",
+    "attributes": [
+     {
+      "node": "Attribute",
+      "name": "opbrengst",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified"
+      },
+      "timeline": {
+       "node": "TimelineFacet",
+       "granularity": "month",
+       "count": 1
+      }
+     }
+    ],
+    "characteristics": []
+   }
+  ],
+  "factTypes": [
+   {
+    "node": "FactType",
+    "name": "aanmelding",
+    "reciprocal": false,
+    "roles": [
+     {
+      "node": "Role",
+      "name": "aanmeldende jutter",
+      "objectType": "Jutter",
+      "many": false
+     },
+     {
+      "node": "Role",
+      "name": "vondst",
+      "objectType": "Vondst",
+      "plural": "vondsten",
+      "many": true
+     }
+    ]
+   }
+  ],
+  "parameters": [],
+  "domains": [],
+  "unitSystems": [],
+  "dimensions": [],
+  "timelines": [],
+  "dayKinds": []
+ },
+ "rules": {
+  "rules": [
+   {
+    "node": "Rule",
+    "name": "maandloon van een jutter",
+    "versions": [
+     {
+      "validity": {
+       "node": "Validity"
+      },
+      "target": {
+       "node": "AttributeReference",
+       "attribute": "maandloon",
+       "subjectType": "Jutter",
+       "source": {
+        "snippet": "Het maandloon van een Jutter"
+       }
+      },
+      "value": {
+       "node": "Binary",
+       "op": "plus",
+       "left": {
+        "node": "AttributeReference",
+        "attribute": "strandloon",
+        "subjectType": "Jutter",
+        "source": {
+         "snippet": "zijn strandloon"
+        }
+       },
+       "right": {
+        "node": "AttributeReference",
+        "attribute": "stormtoeslag",
+        "subjectType": "Jutter",
+        "source": {
+         "snippet": "zijn stormtoeslag"
+        }
+       },
+       "type": {
+        "node": "Number",
+        "whole": true,
+        "decimals": 0,
+        "sign": "unspecified"
+       },
+       "source": {
+        "snippet": "zijn strandloon plus zijn stormtoeslag"
+       }
+      },
+      "initialisation": false,
+      "presentation": "calculation"
+     }
+    ]
+   },
+   {
+    "node": "Rule",
+    "name": "loonverschil van een jutter",
+    "versions": [
+     {
+      "validity": {
+       "node": "Validity"
+      },
+      "target": {
+       "node": "AttributeReference",
+       "attribute": "loonverschil",
+       "subjectType": "Jutter",
+       "source": {
+        "snippet": "Het loonverschil van een Jutter"
+       }
+      },
+      "value": {
+       "node": "Binary",
+       "op": "minus",
+       "left": {
+        "node": "AttributeReference",
+        "attribute": "strandloon",
+        "subjectType": "Jutter",
+        "source": {
+         "snippet": "zijn strandloon"
+        }
+       },
+       "right": {
+        "node": "AttributeReference",
+        "attribute": "stormtoeslag",
+        "subjectType": "Jutter",
+        "source": {
+         "snippet": "zijn stormtoeslag"
+        }
+       },
+       "type": {
+        "node": "Number",
+        "whole": true,
+        "decimals": 0,
+        "sign": "unspecified"
+       },
+       "source": {
+        "snippet": "zijn strandloon min zijn stormtoeslag"
+       }
+      },
+      "initialisation": false,
+      "presentation": "calculation"
+     }
+    ]
+   },
+   {
+    "node": "Rule",
+    "name": "opgehoogd strandloon van een jutter",
+    "versions": [
+     {
+      "validity": {
+       "node": "Validity"
+      },
+      "target": {
+       "node": "AttributeReference",
+       "attribute": "opgehoogde strandloon",
+       "subjectType": "Jutter",
+       "source": {
+        "snippet": "Het opgehoogde strandloon van een Jutter"
+       }
+      },
+      "value": {
+       "node": "Binary",
+       "op": "plus",
+       "left": {
+        "node": "Literal",
+        "value": {
+         "number": "5"
+        },
+        "type": {
+         "node": "Number",
+         "whole": true,
+         "decimals": 0,
+         "sign": "unspecified"
+        },
+        "source": {
+         "snippet": "5"
+        }
+       },
+       "right": {
+        "node": "AttributeReference",
+        "attribute": "strandloon",
+        "subjectType": "Jutter",
+        "source": {
+         "snippet": "zijn strandloon"
+        }
+       },
+       "type": {
+        "node": "Number",
+        "whole": true,
+        "decimals": 0,
+        "sign": "unspecified"
+       },
+       "source": {
+        "snippet": "5 plus zijn strandloon"
+       }
+      },
+      "initialisation": false,
+      "presentation": "calculation"
+     }
+    ]
+   },
+   {
+    "node": "Rule",
+    "name": "vondstopbrengst van een jutter",
+    "versions": [
+     {
+      "validity": {
+       "node": "Validity"
+      },
+      "target": {
+       "node": "AttributeReference",
+       "attribute": "vondstopbrengst",
+       "subjectType": "Jutter",
+       "source": {
+        "snippet": "De vondstopbrengst van een Jutter"
+       }
+      },
+      "value": {
+       "node": "Aggregation",
+       "kind": "sum",
+       "arguments": [
+        {
+         "node": "AttributeReference",
+         "attribute": "opbrengst",
+         "subjectType": "Vondst",
+         "source": {
+          "snippet": "de opbrengst van alle vondsten van de Jutter"
+         }
+        }
+       ],
+       "elementType": "Vondst",
+       "sourceRole": {
+        "node": "RoleBinding",
+        "factType": "aanmelding",
+        "role": "vondst"
+       },
+       "type": {
+        "node": "Number",
+        "whole": true,
+        "decimals": 0,
+        "sign": "unspecified"
+       },
+       "source": {
+        "snippet": "de som van de opbrengst van alle vondsten van de Jutter"
+       }
+      },
+      "initialisation": false,
+      "presentation": "calculation"
+     }
+    ]
+   },
+   {
+    "node": "Rule",
+    "name": "gewaarborgde vondstopbrengst van een jutter",
+    "versions": [
+     {
+      "validity": {
+       "node": "Validity"
+      },
+      "target": {
+       "node": "AttributeReference",
+       "attribute": "gewaarborgde vondstopbrengst",
+       "subjectType": "Jutter",
+       "source": {
+        "snippet": "De gewaarborgde vondstopbrengst van een Jutter"
+       }
+      },
+      "value": {
+       "node": "Aggregation",
+       "kind": "sum",
+       "arguments": [
+        {
+         "node": "AttributeReference",
+         "attribute": "opbrengst",
+         "subjectType": "Vondst",
+         "source": {
+          "snippet": "de opbrengst van alle vondsten van de Jutter"
+         }
+        }
+       ],
+       "elementType": "Vondst",
+       "emptyFallback": {
+        "node": "Literal",
+        "value": {
+         "number": "0"
+        },
+        "type": {
+         "node": "Number",
+         "whole": true,
+         "decimals": 0,
+         "sign": "unspecified"
+        },
+        "source": {
+         "snippet": "0"
+        }
+       },
+       "sourceRole": {
+        "node": "RoleBinding",
+        "factType": "aanmelding",
+        "role": "vondst"
+       },
+       "type": {
+        "node": "Number",
+        "whole": true,
+        "decimals": 0,
+        "sign": "unspecified"
+       },
+       "source": {
+        "snippet": "de som van de opbrengst van alle vondsten van de Jutter of 0 als die er niet zijn"
+       }
+      },
+      "initialisation": false,
+      "presentation": "calculation"
+     }
+    ]
+   },
+   {
+    "node": "Rule",
+    "name": "jaarloon van een jutter",
+    "versions": [
+     {
+      "validity": {
+       "node": "Validity"
+      },
+      "target": {
+       "node": "AttributeReference",
+       "attribute": "jaarloon",
+       "subjectType": "Jutter",
+       "source": {
+        "snippet": "Het jaarloon van een Jutter"
+       }
+      },
+      "value": {
+       "node": "Rounding",
+       "base": {
+        "node": "Aggregation",
+        "kind": "total",
+        "arguments": [
+         {
+          "node": "AttributeReference",
+          "attribute": "maandloon",
+          "subjectType": "Jutter",
+          "source": {
+           "snippet": "zijn maandloon"
+          }
+         }
+        ],
+        "elementType": "Jutter",
+        "type": {
+         "node": "Number",
+         "whole": true,
+         "decimals": 0,
+         "sign": "unspecified"
+        },
+        "source": {
+         "snippet": "het totaal van zijn maandloon"
+        }
+       },
+       "mode": "halfAwayFromZero",
+       "decimals": 0,
+       "type": {
+        "node": "Number",
+        "whole": true,
+        "decimals": 0,
+        "sign": "unspecified"
+       },
+       "source": {
+        "snippet": "(het totaal van zijn maandloon) rekenkundig afgerond op 0 decimalen"
+       }
+      },
+      "initialisation": false,
+      "presentation": "equation"
+     }
+    ]
+   },
+   {
+    "node": "Rule",
+    "name": "peilopbrengst",
+    "versions": [
+     {
+      "validity": {
+       "node": "Validity"
+      },
+      "target": {
+       "node": "AttributeReference",
+       "attribute": "peilopbrengst",
+       "subjectType": "Jutter"
+      },
+      "value": {
+       "node": "TemporalRead",
+       "base": {
+        "node": "AttributeReference",
+        "attribute": "vondstopbrengst",
+        "subjectType": "Jutter"
+       },
+       "date": {
+        "node": "Literal",
+        "value": {
+         "date": "2024-02-15"
+        },
+        "type": {
+         "node": "Date",
+         "precision": "day"
+        }
+       },
+       "type": {
+        "node": "Number",
+        "whole": true,
+        "decimals": 0,
+        "sign": "unspecified"
+       }
+      },
+      "initialisation": false,
+      "presentation": "calculation"
+     }
+    ]
+   }
+  ],
+  "dayKindDefinitions": [],
+  "objectCreations": [],
+  "allocations": [],
+  "consistencies": [],
+  "uniquenesses": [],
+  "factCreations": [],
+  "startPointDeterminations": [],
+  "ruleGroups": []
+ },
+ "diagnostics": []
+}

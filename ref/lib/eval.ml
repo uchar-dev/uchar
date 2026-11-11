@@ -1704,9 +1704,10 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
   | Temporal_read { base_expr; date_value; typ = _; source_name = _ } -> (
       (* ch. 3.3, the point-in-time read: read(tl, d). The base is never
          evaluated as a scalar (that is the refused shape); it names the
-         timeline. An empty date index reads to leeg; a gap reads to leeg
-         (ch. 3.1); a case that supplies only the asOfDate-bucket scalar
-         cannot serve a read — fault, never a guess. *)
+         timeline. An empty date index reads to leeg; a gap reads to leeg,
+         and so does every day of an absent timeline (ch. 3.1, 3.6); a case
+         that supplies only the asOfDate-bucket scalar cannot serve a read —
+         fault, never a guess. *)
       match eval_expr env world self ~err date_value with
       | Value.Empty -> Value.Empty
       | Value.Date d -> (
@@ -1721,12 +1722,12 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
               (match World.timeline self a with
               | Some tl -> Timeline.read tl d
               | None ->
-                  (* the asOfDate-bucket scalar is EF-037; an absent attribute is not *)
-                  let fault = if World.attr self a = Value.Empty then Value.fault else bucket_scalar ~attr:a self in
-                  fault
-                    "the temporal read of %S needs the full timeline; the case supplies none \
-                     (the asOfDate-bucket scalar cannot serve a point read)"
-                    a)
+                  if World.attr self a = Value.Empty then Value.Empty
+                  else
+                    bucket_scalar ~attr:a self
+                      "the temporal read of %S needs the full timeline; the case supplies none \
+                       (the asOfDate-bucket scalar cannot serve a point read)"
+                      a)
           | Parameter_ref { parameter = Some p; _ } -> (
               (match Ir_v0.Checks.find_ci env.doc.parameters p with
               | Some { par_granularity = Some _; _ } -> ()

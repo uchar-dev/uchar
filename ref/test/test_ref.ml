@@ -14053,6 +14053,22 @@ let () =
   plays ~ident:"WV-3.5-som-onder-afronding" ~ir:(read (dir ^ "ir.json")) ~case_data:(read (dir ^ "case.json"))
     (fun _ -> ())
 
+(* WV-3.3-puntlezing-afwezige-tijdlijn: a point read reads leeg on a day no
+   segment covers, and an absent timeline reads leeg on every day (ch. 3.1,
+   3.3, 3.6). absent: the anchor jutterswet-aanmeldquotum with a Jutter J4 whose
+   jaarquotum the case does not supply: its quotum bij aanmelding is leeg.
+   written-empty: the golden jutterswet-maandloon (case3, no vondsten) with
+   peilopbrengst := the vondstopbrengst at 2024-02-15; the sum per period over
+   no contributors is the empty timeline (ch. 3.5), so the read is leeg *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/point-read-absent/" in
+  List.iter
+    (fun d ->
+      plays ~ident:("WV-3.3-puntlezing-afwezige-tijdlijn-" ^ d) ~ir:(read (dir ^ d ^ "/ir.json"))
+        ~case_data:(read (dir ^ d ^ "/case.json")) (fun _ -> ()))
+    [ "absent"; "written-empty" ]
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

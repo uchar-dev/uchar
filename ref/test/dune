@@ -122,5 +122,8 @@
   ; a timeline written from a value in a sister unit of the target's
   (glob_files fixtures/timeline-write-unit/*.json)
   ; a sum per period under a rounding, its contributors in a sister unit of the target's
-  (glob_files fixtures/rounded-sum-unit/*.json))
+  (glob_files fixtures/rounded-sum-unit/*.json)
+  ; a point read of an absent timeline and of an empty written one
+  (glob_files fixtures/point-read-absent/absent/*.json)
+  (glob_files fixtures/point-read-absent/written-empty/*.json))
  (libraries uchar_ref uchar-ir-v0 zarith yojson))
