@@ -246,6 +246,9 @@
                   "snippet": "aan ten minste een van de volgende voorwaarden voldoen"
                 }
               },
+              "source": {
+                "snippet": "ten minste drie schuiten van de werf"
+              },
               "sourceRole": {
                 "node": "RoleBinding",
                 "factType": "ligplaats",
