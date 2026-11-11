@@ -2594,15 +2594,20 @@ writes none.
 
 The rule layer holds the executable forms: assignment, allocation, object
 and fact creation, consistency, uniqueness, day-kind definitions,
-start-point determinations, and (dialect) rule groups. Rule forms reference
+start-point determinations, and rule groups. Rule forms reference
 model-layer declarations by name (WF-003 applies throughout); their
 operational meaning — forward chaining to a fixpoint, freshness,
 idempotence — is `RUNTIME-SEMANTICS.md` ch. 5. List order is preserved by
 serialization (WF-019) but carries no execution semantics: the evaluation
 model is order-independent, and nothing in this chapter introduces a
 priority. Layer marks: every node in this chapter is `layer: core`, with
-two exceptions — RuleGroup (ch. 3.9) and the `RuleVersion.presentation`
-tag (ch. 3.1), both `layer: dialect(regelspraak)`.
+two presentation fields (`layer: presentation`, ch. 10) — the value of the
+`RuleVersion.presentation` tag, whose presence is core (ch. 3.1), and a
+RuleGroup whose `recursive` is false (ch. 3.9). Core with them: the rule
+kind a version's two fields spell (ch. 3.1), the membership of a creation
+form in a recursive group (ch. 3.9), and the cell forms — a
+`DimensionCellRead` as a version's `target` (ch. 3.1) and
+`MemberAssignment.labels` (ch. 3.3).
 
 **The unresolved `regels` stubs left the wire at M1** (2026-09-23, delta B3;
 history). The v0 wire carried, beside the resolved rule forms, a top-level
@@ -2662,7 +2667,7 @@ One node covers computing an attribute and attributing a characteristic
 | `value` | expression | the computed value; for a characteristic target: the boolean constant true — v0 mirror, the emitter's only form (Phase 4 generalises this into the default model; the ch. 3.3 member assignment now generalises the characteristic value to a boolean-typed expression, WF-027 — the v1 relaxation the Catala frontend uses) |
 | `condition` | Condition? | absent = unconditional |
 | `initialisation` | boolean | write-only-if-empty (§9.6) — the defeasible default of `CONSTRUCTS.md` row 7; semantics in `RUNTIME-SEMANTICS.md` ch. 7 |
-| `presentation` | (`equation` \| `calculation`)? | dialect tag: which surface form (§13.4.4/.9) produced it; no semantic difference. Written only on a computing version and never beside `initialisation` true; absent is no tag. v0 values: `GELIJKSTELLING` → `equation`, `BEREKENING` → `calculation` |
+| `presentation` | (`equation` \| `calculation`)? | its presence is core: the version computes an attribute (the rule kind, below). Its value is `layer: presentation` (ch. 10): which surface form (§13.4.4/.9) produced the version, with no difference in meaning. Written only on a computing version and never beside `initialisation` true. A producer whose source language does not tell the two apart SHOULD write `calculation`; the RegelSpraak frontend writes `equation` on three kinds of version that have no such surface form: the rows of a decision table, the rule of a fold with to-one steps after its set (origin `stepsAfterSet`, ch. 2.13) and the rule that writes the anchor of a start-point determination (ch. 3.8). v0 values: `GELIJKSTELLING` → `equation`, `BEREKENING` → `calculation` |
 
 v0 name: `ResolvedRegel` with `Soort` ∈ {GELIJKSTELLING, BEREKENING,
 INITIALISATIE, KENMERKTOEKENNING}. **Delta (tracked, `CONSTRUCTS.md`
@@ -2683,10 +2688,12 @@ whose `target` names a characteristic — the "target-kind flag" of
 member a version writes is its declaration's, and WF-022 crosses it
 against the version's own fields, needing no separate boolean; ch. 3.3's
 MemberAssignment keeps an explicit flag only because its member is a bare name.
-The wire writes no rule kind: a reader reads it from the two fields alone,
-never from the model — a `presentation` tag is a computation,
+The wire writes no rule kind field: a reader reads the kind from the two
+fields alone, never from the model — a `presentation` tag is a computation,
 `initialisation` true an initialisation, and neither a characteristic
-attribution. (v0 marked the attribution with the tag, typed the target
+attribution. That kind, in these three states, is core: every executor
+reads it, and WF-022 crosses it against the target. Only the value of the
+tag is presentation. (v0 marked the attribution with the tag, typed the target
 boolean and fixed `value` to the literal true; the value is the typed
 literal `{"boolean": true}` since L4.)
 
@@ -3483,10 +3490,14 @@ list `startPointDeterminations` under `rules` (ch. 2).
   at most one determination per (objectType, timeline) — v0 deduplicates
   silently, v1 makes the duplicate ill-formed.
 
-### 3.9 RuleGroup — `layer: dialect(regelspraak)`
+### 3.9 RuleGroup
 
-Namespacing over member rules plus a recursion marker (§9.10, documented
-extension; stays out of the core per PLAN §9, decision 5). v0 name:
+A name over member rules plus a recursion marker (§9.10, documented
+extension). Layer: the `recursive` marker and the membership of a creation
+form in a recursive group are `layer: core` (PLAN §9, decision 5, amended
+2026-11-11), because WF-045 admits a dependency cycle only through them; a
+group whose `recursive` is false is `layer: presentation` (ch. 10), a name
+over its members that every executor may ignore. v0 name:
 `ResolvedRegelGroep`. The wire has written it as a `RuleGroup` node since
 L5, in the list `ruleGroups` under `rules` (ch. 2).
 
@@ -3500,7 +3511,7 @@ L5, in the list `ruleGroups` under `rules` (ch. 2).
 | `designations` | list of Designation? | extension field: the group's names in the vocabularies (ch. 2.12) |
 
 Members are ordinary rules; a non-recursive group adds no execution
-semantics (namespacing only). The `recursive` marker HAS its neutral
+semantics (a name only). The `recursive` marker HAS its neutral
 meaning (decided with `CONSTRUCTS.md` row 14): membership of a
 recursive group is exactly what WF-045 admits — a creation member may
 sit on a dependency cycle, advancing one generation per instance to
