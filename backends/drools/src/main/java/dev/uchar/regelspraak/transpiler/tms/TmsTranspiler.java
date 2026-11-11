@@ -5084,7 +5084,7 @@ public final class TmsTranspiler {
     private Term invertedBase(Expr.Binary b, Breuk e, Term base, Reads reads) {
         if (e.signum() >= 0) return base;
         return new Term.Division(StaticFunction.INVERTED_BASE, base, constant(e.teller().intValueExact()),
-                depositSite(b) ? reads.depositFlag() : -1, source(b.source()));
+                reads.depositFlag(), source(b.source()));
     }
 
     /** The exponent of the power {@code b} as the literal writes it, a rational in lowest terms; refused where it is no
