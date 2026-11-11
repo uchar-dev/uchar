@@ -71,3 +71,11 @@ May touch: this card, corpus witnesses outside `corpus/golden/anchor`, `ref/`, `
 `spec/PLAN.md`, `spec/CONSTRUCTS.md`, `spec/proposals/`, `scripts/`.
 
 Out of scope: the executor faults and norm decisions of card `review-findings-2026-11-11`; a wire epoch.
+
+Date norms (maintainer, 2026-11-11), carried out on this card because they are spec text with small executor changes:
+- Under the whole-period qualifier every date comparison is refused, equality and inequality too (RS ch. 3.9 names
+  all date comparisons; ch. 3.12 says so already); ref refuses equality as well, Drools does already.
+- `easterSunday` is defined from year 1; before it a fault with a code in ref and Drools (clingo refuses years before 1
+  already). The formula gives a day that does not exist for 307 years between −5000 and 0.
+- Year, month and day of a date-time are defined (IR-SPEC WF-038 "either precision"; RS ch. 3.8 follows); ref and
+  clingo learn them, Drools computes them already.
