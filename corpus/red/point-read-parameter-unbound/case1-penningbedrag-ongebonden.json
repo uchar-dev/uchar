@@ -1,0 +1,49 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "aanmelddatum": { "date": "2025-06-01" },
+          "jaarquotum": { "timeline": [
+            { "from": "2024-01-01", "to": "2025-01-01", "value": { "number": "10" } },
+            { "from": "2025-01-01", "to": "2026-01-01", "value": { "number": "12" } },
+            { "from": "2027-01-01", "to": "2028-01-01", "value": { "number": "15" } }
+          ] }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "aanmelddatum": { "date": "2026-07-01" },
+          "jaarquotum": { "timeline": [
+            { "from": "2024-01-01", "to": "2025-01-01", "value": { "number": "10" } },
+            { "from": "2025-01-01", "to": "2026-01-01", "value": { "number": "12" } },
+            { "from": "2027-01-01", "to": "2028-01-01", "value": { "number": "15" } }
+          ] }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {
+          "jaarquotum": { "timeline": [
+            { "from": "2025-01-01", "to": "2026-01-01", "value": { "number": "12" } }
+          ] }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": { "code": "EF-014", "params": { "parameter": "penningbedrag" } }
+}

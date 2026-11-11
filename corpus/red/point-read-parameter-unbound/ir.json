@@ -1,0 +1,192 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "aanmelddatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "jaarquotum",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "year",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "quotum bij aanmelding",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "penning bij aanmelding",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "penningbedrag",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified"
+        },
+        "timeline": {
+          "node": "TimelineFacet",
+          "granularity": "year",
+          "count": 1
+        }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "quotum bij aanmelding",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "quotum bij aanmelding",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het quotum bij aanmelding van een Jutter"
+              }
+            },
+            "value": {
+              "node": "TemporalRead",
+              "base": {
+                "node": "AttributeReference",
+                "attribute": "jaarquotum",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn jaarquotum"
+                }
+              },
+              "date": {
+                "node": "AttributeReference",
+                "attribute": "aanmelddatum",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn aanmelddatum"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn jaarquotum op zijn aanmelddatum"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "penning bij aanmelding",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "penning bij aanmelding",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De penning bij aanmelding van een Jutter"
+              }
+            },
+            "value": {
+              "node": "TemporalRead",
+              "base": {
+                "node": "ParameterReference",
+                "parameter": "penningbedrag",
+                "source": {
+                  "snippet": "het penningbedrag"
+                }
+              },
+              "date": {
+                "node": "AttributeReference",
+                "attribute": "aanmelddatum",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn aanmelddatum"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "het penningbedrag op zijn aanmelddatum"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
