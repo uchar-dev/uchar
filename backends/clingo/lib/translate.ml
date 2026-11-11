@@ -926,22 +926,15 @@ let quantifier_fold_shape ~(quantifier_kind : quantifier_kind) ~(cutoff : int op
 (* WF-126, behind the verifier: a timeline a rule of a timeline target reads
    per period lies on a grid that fits the target's, so the target can carry
    every cut it makes. [what] names the operand *)
-let refuse_finer ~what ~(operand : Uchar_ref.Timeline.grid) ~(target : Uchar_ref.Timeline.grid) ~attr =
-  let key (g : Uchar_ref.Timeline.grid) =
-    ( g.g_gran,
-      match g.g_start with
-      | Uchar_ref.Timeline.Calendar -> None
-      | Fixed_date z -> Some (Value.iso_of_date z)
-      | Fixed_day_month z -> Some ("--" ^ String.sub (Value.iso_of_date z) 5 5)
-      | Variable -> Some "variable" )
-  in
+let refuse_finer ~what ~(operand : Calendar.grid) ~(target : Calendar.grid) ~attr =
+  let key (g : Calendar.grid) = (g.gran, Calendar.start_key g) in
   if not (Ir_v0.Checks.grid_fits ~operand:(key operand) ~target:(key target)) then
     fault
       "%s lies on the %s grid, which does not fit the %s grid of the timeline target %S: the target cannot carry \
        its cuts (WF-126)"
       what
-      (Ir_v0.Spelling.encode Ir_v0.Spelling.granularity operand.g_gran)
-      (Ir_v0.Spelling.encode Ir_v0.Spelling.granularity target.g_gran)
+      (Ir_v0.Spelling.encode Ir_v0.Spelling.granularity operand.gran)
+      (Ir_v0.Spelling.encode Ir_v0.Spelling.granularity target.gran)
       attr
 
 (* the static type of an expression (RUNTIME-SEMANTICS ch. 2.10). A
@@ -1602,7 +1595,7 @@ let rec eff_unit ?(per_period = false) ?(scope = []) ctx (e : expr) : measure_un
                 Option.bind (Ir_v0.Checks.effective_ot ctx.doc ot) (fun (decl : object_type) ->
                     match Ir_v0.Checks.find_ci decl.attribute_granularity a with
                     | Some (Some g) -> (
-                        match Uchar_ref.Timeline.grid_unit ctx.doc g with
+                        match Calendar.grid_unit ctx.doc g with
                         | Ok [ gf ] -> Some gf
                         | _ -> None)
                     | _ -> None))
@@ -2851,9 +2844,9 @@ let as_of_bucket_units ctx ~otype ~attr =
          value"
         attr
   | Some d ->
-      let grid = Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx otype) attr in
-      let van, up_to = Uchar_ref.Timeline.grid_bucket grid (day_of_lexeme d) in
-      Uchar_ref.Timeline.whole_units grid.g_gran van up_to
+      let grid = Calendar.of_attribute ctx.doc (object_type ctx otype) attr in
+      let van, up_to = Calendar.period grid (day_of_lexeme d) in
+      Calendar.whole_units grid.gran van up_to
 
 (* the §4.20 noemer strip, as ARITHMETIC. ref integrates a rate by
    multiplying the segment value by a duration stated in the GRID's own
@@ -2872,13 +2865,13 @@ let as_of_bucket_units ctx ~otype ~attr =
 let grid_strip ctx ~what ~(gran : grain) (u : measure_unit option) : Ir_v0.Checks.time_unit option =
   match u with
   | Some rate when Ir_v0.Units.negatives rate <> [] -> (
-      let grid = Uchar_ref.Timeline.grid_unit ctx.doc gran in
+      let grid = Calendar.grid_unit ctx.doc gran in
       let own =
         match grid with
         | Ok gu -> Option.map (fun f -> (gu, f)) (Ir_v0.Units.negative_of_grid (List.hd gu) rate)
         | Error _ -> None
       in
-      match (own, Uchar_ref.Timeline.calendar_denominator gran rate) with
+      match (own, Ir_v0.Checks.calendar_denominator gran rate) with
       | Some (gu, f), _ ->
           (match (Ir_v0.Checks.unit_calendar_family f, Ir_v0.Checks.unit_calendar_family (List.hd gu)) with
           | Some x, Some y when x <> y ->
@@ -4680,12 +4673,10 @@ let fixed_grid_span ctx (lo, hi) =
           match g with
           | None -> (lo, hi)
           | Some _ -> (
-              match Uchar_ref.Timeline.attr_grid ctx.doc ot a with
-              | { Uchar_ref.Timeline.g_count = 1;
-                  g_start = Uchar_ref.Timeline.Fixed_date _ | Uchar_ref.Timeline.Fixed_day_month _;
-                  _ } as gr ->
-                  ( min lo (fst (Uchar_ref.Timeline.grid_bucket gr lo)),
-                    max hi (snd (Uchar_ref.Timeline.grid_bucket gr (hi - 1))) )
+              match Calendar.of_attribute ctx.doc ot a with
+              | { Calendar.count = 1; start = Calendar.From_date _ | Calendar.From_day_month _; _ } as gr ->
+                  ( min lo (fst (Calendar.period gr lo)),
+                    max hi (snd (Calendar.period gr (hi - 1))) )
               | _ -> (lo, hi)))
         (lo, hi) ot.attribute_granularity)
     (lo, hi) ctx.doc.object_types
@@ -4750,17 +4741,17 @@ let calendar_span ctx =
   in
   fixed_grid_span ctx (lo - margin_days, hi + margin_days)
 
-let emit_grid_buckets ctx ~p ~(grid : Uchar_ref.Timeline.grid) =
+let emit_grid_buckets ctx ~p ~(grid : Calendar.grid) =
   let lo, hi = calendar_span ctx in
   let rec walk d n =
     if d < hi then begin
       if n > 46340 then fault "the bucket endpoint span exceeds the guarded range";
-      let bs, bn = Uchar_ref.Timeline.grid_bucket grid d in
+      let bs, bn = Calendar.period grid d in
       emit ctx "%s_b(%d,%d,%d)." p bs bn (bn - bs);
       walk bn (n + 1)
     end
   in
-  let first, _ = Uchar_ref.Timeline.grid_bucket grid lo in
+  let first, _ = Calendar.period grid lo in
   walk first 0
 
 (* the intersection of a segment [KV,KT) with a bucket [B,N), as the four
@@ -4901,7 +4892,7 @@ let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation 
   if populated then begin
     (* the qualifier's OWN grid, never the attribute's declared granularity *)
     let g : grain = if gp.gp_granularity then Year else Month in
-    emit_grid_buckets ctx ~p ~grid:(Uchar_ref.Timeline.calendar_grid g);
+    emit_grid_buckets ctx ~p ~grid:(Calendar.calendar g);
     emit_value_days ctx ~p ~attr:a ~sat:[];
     emit_rule ctx ~head:(Printf.sprintf "%s(S)" p)
       ~body:
@@ -5724,7 +5715,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                   | Some tl ->
                       List.filter_map
                         (fun (s : Uchar_ref.Timeline.segment) ->
-                          if Uchar_ref.Timeline.is_open s then None else Some (s.s_from, s.s_to))
+                          if s.s_from = Uchar_ref.Timeline.open_from || s.s_to = Uchar_ref.Timeline.open_to then None else Some (s.s_from, s.s_to))
                         tl
                       @ acc)
               ctx.case.world.instances []
@@ -5758,9 +5749,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
              written. *)
           (* a member's case timeline sits on its grid (the loader), so each of
              its segments is a whole number of grid units *)
-          let grid = Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx el) a in
+          let grid = Calendar.of_attribute ctx.doc (object_type ctx el) a in
           let units (van, up_to) =
-            let m = Uchar_ref.Timeline.grid_measure grid van up_to in
+            let m = Calendar.grid_measure grid van up_to in
             if not (Z.equal (Q.den m) Z.one) then
               fault "the per-element temporal fold of %S meets a member segment that holds a part of a unit of its grid"
                 a;
@@ -6406,10 +6397,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                 let rec walls d acc =
                   if d >= hi then acc
                   else
-                    let _, bn = Uchar_ref.Timeline.bucket g d in
+                    let _, bn = Calendar.calendar_bucket g d in
                     walls bn (bn :: acc)
                 in
-                let first, _ = Uchar_ref.Timeline.bucket g lo in
+                let first, _ = Calendar.calendar_bucket g lo in
                 first :: walls first []
               in
               List.sort_uniq compare (endpoints @ List.concat_map walls_of derived_attrs)
@@ -6444,11 +6435,11 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                       List.filter (fun d -> lo <= d && d <= hi) endpoints)
               | _ -> endpoints
             in
-            let d, span_weight = span_weights ctx ~p ~measure:(Uchar_ref.Timeline.calendar_measure tu) inside in
+            let d, span_weight = span_weights ctx ~p ~measure:(Calendar.calendar_measure tu) inside in
             (max_int31 / max 1 span_weight, d)
         | None ->
-            let grid = Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx aot) a in
-            let d, span_weight = span_weights ctx ~p ~measure:(Uchar_ref.Timeline.grid_measure grid) endpoints in
+            let grid = Calendar.of_attribute ctx.doc (object_type ctx aot) a in
+            let d, span_weight = span_weights ctx ~p ~measure:(Calendar.grid_measure grid) endpoints in
             if d > 1 then (max_int31 / max 1 span_weight, d)
             else begin
               if span_weight > 46340 then
@@ -6514,15 +6505,15 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         List.concat_map (fun (s : Uchar_ref.Timeline.segment) -> [ s.s_from; s.s_to ]) tl @ acc
       in
       let walls =
-        let grid = Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx aot) a in
+        let grid = Calendar.of_attribute ctx.doc (object_type ctx aot) a in
         let lo, hi = calendar_span ctx in
         match grid with
-        | { g_count = 1; g_start = Calendar; g_gran = Month | Year }
-        | { g_count = 1; g_start = Fixed_date _ | Fixed_day_month _; _ } ->
+        | { Calendar.count = 1; start = On_calendar; gran = Month | Year }
+        | { Calendar.count = 1; start = From_date _ | From_day_month _; _ } ->
             let rec walk d acc =
               if d > hi then acc
               else
-                let bs, bn = Uchar_ref.Timeline.grid_bucket grid d in
+                let bs, bn = Calendar.period grid d in
                 walk bn (bs :: bn :: acc)
             in
             walk lo []
@@ -6539,9 +6530,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           (Uchar_ref.World.SMap.fold (fun _ tl acc -> bounds_of tl acc) ctx.case.param_tls walls)
         |> finite_bounds |> List.sort_uniq compare
       in
-      let grid = Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx aot) a in
+      let grid = Calendar.of_attribute ctx.doc (object_type ctx aot) a in
       let denominator, span_weight =
-        span_weights ctx ~p ~measure:(Uchar_ref.Timeline.grid_measure grid) endpoints
+        span_weights ctx ~p ~measure:(Calendar.grid_measure grid) endpoints
       in
       (* as in the clip: a whole-unit span bounded at 46340, a span with a part
          of a unit by the guard on W over the weight of the full span *)
@@ -7276,7 +7267,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          the value yearOf gives that date *)
       match ctx.case.as_of with
       | Some d ->
-          let y, _, _ = Value.civil_from_days (day_of_lexeme d) in
+          let y, _, _ = Calendar.civil_from_days (day_of_lexeme d) in
           ([], string_of_int y, 1)
       | None ->
           fault_where_reached ctx ~subject ~subject_ot ~code:(guardc "EF-011") e (no_evaluation_date_reason n);
@@ -8274,7 +8265,7 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~left_side ~right_side ~(gp 
   let g : grain = if gp.gp_granularity then Year else Month in
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "gpv%d" ctx.fresh in
-  emit_grid_buckets ctx ~p ~grid:(Uchar_ref.Timeline.calendar_grid g);
+  emit_grid_buckets ctx ~p ~grid:(Calendar.calendar g);
   emit_value_days ctx ~p ~attr:a ~sat:(sat_atoms @ [ Printf.sprintf "%s %s %s" vt sym bt ]);
   (* per TOUCHED bucket: fail when the satisfying days fall short of the
      bucket's whole calendar length. A gap day contributes to _t and not to
@@ -8407,7 +8398,7 @@ and dk_value ctx ~stack ~day (e : expr) : Value.t =
   | Function_call { kind; grain = Some _; _ } when not (bucketing kind) -> foreign_granularity ()
   | Function_call { kind = (Year_of | Month_of | Day_of) as k; call_arguments; filter = None; _ } -> (
       let part z =
-        let y, m, dd = Value.civil_from_days z in
+        let y, m, dd = Calendar.civil_from_days z in
         Value.Num (Q.of_int (match k with Year_of -> y | Month_of -> m | _ -> dd), Value.Unitless)
       in
       match dk_value ctx ~stack ~day (one "a date-part extractor" call_arguments) with
@@ -8433,7 +8424,7 @@ and dk_value ctx ~stack ~day (e : expr) : Value.t =
           let m = (a + (11 * h) + (22 * l)) / 451 in
           let month_kind = (h + l - (7 * m) + 114) / 31 in
           let day_number = ((h + l - (7 * m) + 114) mod 31) + 1 in
-          Value.Date (Value.days_from_civil ~y:j ~m:month_kind ~d:day_number)
+          Value.Date (Calendar.days_from_civil ~y:j ~m:month_kind ~d:day_number)
       | v -> fault "easterSunday needs a whole unitless year, got %s" (Value.to_string v))
   | _ -> fault "a day-kind condition carries an expression this backend does not evaluate"
 
@@ -9260,7 +9251,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       let g : grain = if gp.gp_granularity then Year else Month in
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "gp%d" ctx.fresh in
-      emit_grid_buckets ctx ~p ~grid:(Uchar_ref.Timeline.calendar_grid g);
+      emit_grid_buckets ctx ~p ~grid:(Calendar.calendar g);
       emit_true_days ctx ~p ~k;
       (* satisfied days per touched bucket: the true days for the positive
          test, their complement inside the bucket for "gedurende … niet" —
@@ -11232,7 +11223,7 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
   let reached = ctx.rule_guard in
   let per = Printf.sprintf "%s_per(S,X,_)" p in
   let target =
-    match target with Some g -> g | None -> Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx ot) a
+    match target with Some g -> g | None -> Calendar.of_attribute ctx.doc (object_type ctx ot) a
   in
   let ot_decl = object_type ctx ot in
   emit_rule ctx ~head:(Printf.sprintf "%s_cut(S,#inf)" p) ~body:[ base ];
@@ -11291,7 +11282,7 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
               (match Ir_v0.Checks.find_ci ot_decl.characteristic_granularity k with
               | Some (Some g) ->
                   refuse_finer ~what:(Printf.sprintf "the characteristic %S" k)
-                    ~operand:(Uchar_ref.Timeline.calendar_grid g) ~target ~attr:a
+                    ~operand:(Calendar.calendar g) ~target ~attr:a
               | _ -> ());
               emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" n) ~body:[ Printf.sprintf "%s(S,X)" inner ]);
           n
@@ -11372,7 +11363,7 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
           | Some gp -> qualifier n gp inner
           | None ->
               refuse_finer ~what:(Printf.sprintf "the attribute %S" b)
-                ~operand:(Uchar_ref.Timeline.attr_grid ctx.doc ot_decl b) ~target ~attr:a;
+                ~operand:(Calendar.of_attribute ctx.doc ot_decl b) ~target ~attr:a;
               emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" n) ~body:[ Printf.sprintf "%s(S,X)" inner ]);
           n
       | Compound { quantifier_kind; cutoff; components; _ } ->
@@ -11405,9 +11396,9 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
      holds *)
   and qualifier n (gp : entire_period) inner =
     let g : grain = if gp.gp_granularity then Year else Month in
-    refuse_finer ~what:"the whole-period qualifier" ~operand:(Uchar_ref.Timeline.calendar_grid g) ~target ~attr:a;
+    refuse_finer ~what:"the whole-period qualifier" ~operand:(Calendar.calendar g) ~target ~attr:a;
     let qb = n ^ "_w" in
-    emit_grid_buckets ctx ~p:qb ~grid:(Uchar_ref.Timeline.calendar_grid g);
+    emit_grid_buckets ctx ~p:qb ~grid:(Calendar.calendar g);
     emit_rule ctx ~head:(Printf.sprintf "%s_cut(S,B)" p) ~body:[ base; Printf.sprintf "%s_b(B,_,_)" qb ];
     emit_rule ctx ~head:(Printf.sprintf "%s_cut(S,N)" p) ~body:[ base; Printf.sprintf "%s_b(_,N,_)" qb ];
     emit_rule ctx ~head:(Printf.sprintf "%s_fail(S,B)" qb)
@@ -11572,8 +11563,8 @@ let translate_pro_rata ?clip ?periods ?writer ctx ~subject ~ot ~a ~cond ~b ~k ~(
   | _ -> fault "pro-rata target and base carry declared granularities");
   (* ref's fence, in ref's sentence (RUNTIME-SEMANTICS ch. 3.2) *)
   if
-    (Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx ot) a).g_start <> Uchar_ref.Timeline.Calendar
-    || (Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx ot) b).g_start <> Uchar_ref.Timeline.Calendar
+    (Calendar.of_attribute ctx.doc (object_type ctx ot) a).start <> Calendar.On_calendar
+    || (Calendar.of_attribute ctx.doc (object_type ctx ot) b).start <> Calendar.On_calendar
   then
     fault
       "pro-rata onto or from a grid that does not lie on the calendar is fenced (RUNTIME-SEMANTICS \
@@ -11584,7 +11575,7 @@ let translate_pro_rata ?clip ?periods ?writer ctx ~subject ~ot ~a ~cond ~b ~k ~(
         label);
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "pr%d" ctx.fresh in
-  emit_grid_buckets ctx ~p ~grid:(Uchar_ref.Timeline.calendar_grid g);
+  emit_grid_buckets ctx ~p ~grid:(Calendar.calendar g);
   emit_true_days ctx ~p ~k;
   let ta = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
   let tb = pow10 (attr_decimals ctx ~otype:ot ~attr:b) in
@@ -11664,7 +11655,7 @@ let translate_day_count ?clip ?periods ?writer ctx ~subject ~ot ~a ~cond ~k ~day
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "adg%d" ctx.fresh in
   (* the target's periods: the calendar's, or its fixed start point's (ch. 3.2) *)
-  let grid = Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx ot) a in
+  let grid = Calendar.of_attribute ctx.doc (object_type ctx ot) a in
   emit_grid_buckets ctx ~p ~grid;
   emit_true_days ctx ~p ~k;
   (* the days a day-kind test does not count, over the span *)
@@ -11793,7 +11784,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
      its subject and written on the object it makes *)
   let target_ot = Option.value target_ot ~default:ot in
   let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
-  let target = Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx target_ot) a in
+  let target = Calendar.of_attribute ctx.doc (object_type ctx target_ot) a in
   sum_timeline_producer ctx ~otype:target_ot ~a value;
   let sum_target = attr_sum_typed ctx ~otype:target_ot ~attr:a in
   let target_scale = if sum_target then 0 else pow10 (attr_decimals ctx ~otype:target_ot ~attr:a) in
@@ -11900,7 +11891,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
              subject type '%s' — '%s' names another type, which only a navigation reaches"
             ot otn;
         refuse_finer ~what:(Printf.sprintf "the attribute %S" b)
-          ~operand:(Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx otn) b) ~target ~attr:a;
+          ~operand:(Calendar.of_attribute ctx.doc (object_type ctx otn) b) ~target ~attr:a;
         bucket_scalar_guard ctx ~holder:subject ~reach:(fun () -> base :: cond) ~otype:ot ~attr:b
           ~sentence:(read_whole_sentence ~reads:period_reads ~attr:b);
         read_cuts [ base ] ~holder:subject ~attr:b;
@@ -11916,7 +11907,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
           source_role; source_path; anchor = None; _ }
       when (source_role <> None || source_path <> None) && attr_temporal ctx ~otype:el ~attr:x ->
         refuse_finer ~what:(Printf.sprintf "the attribute %S" x)
-          ~operand:(Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx el) x) ~target ~attr:a;
+          ~operand:(Calendar.of_attribute ctx.doc (object_type ctx el) x) ~target ~attr:a;
         let sx = pow10 (attr_decimals ctx ~otype:el ~attr:x) in
         let m = fresh ctx "M" in
         let join = base :: source_join ctx ~subject ~subject_ot:ot ~el ~source_role ~source_path ~x:m in
@@ -12023,7 +12014,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
             (* a time-dependent parameter is a timeline operand; its timeline is its
                binding, so an absent one is an unbound parameter (ch. 5.7), which
                faults where the period arithmetic is evaluated *)
-            refuse_finer ~what:(Printf.sprintf "the parameter %S" n) ~operand:(Uchar_ref.Timeline.param_grid decl)
+            refuse_finer ~what:(Printf.sprintf "the parameter %S" n) ~operand:(Calendar.of_parameter decl)
               ~target ~attr:a;
             if not (Uchar_ref.World.SMap.mem (norm n) ctx.case.param_tls) then
               reach_guard ctx ~witness:subject ~reason:(unbound_param_reason n) ~code:(unbound_param_code n)
@@ -12432,7 +12423,7 @@ let translate_characteristic_timeline ctx (r : resolved_rule) ~ot ~k =
     ctx.case.world.instances;
   let grid =
     match Ir_v0.Checks.find_ci (object_type ctx ot).characteristic_granularity k with
-    | Some (Some g) -> Uchar_ref.Timeline.calendar_grid g
+    | Some (Some g) -> Calendar.calendar g
     | _ -> fault "temporal characteristic %S without a granularity" k
   in
   let q = period_condition ~target:grid ctx ~ot ~a:k c in
@@ -13441,7 +13432,7 @@ let rec translate_chain_days ctx ~g ~cuts ~subject ~origins ~base ~path ~a ~targ
   let dec n = Printf.sprintf "%s_dec%d" tag n in
   let conf n = Printf.sprintf "%s_conf%d" tag n in
   let displaced n = outer_displaced @ List.init n (fun m -> Printf.sprintf "not %s(%s,X,Y)" (stl m) subject) in
-  let target = Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx (ot_at 0)) a in
+  let target = Calendar.of_attribute ctx.doc (object_type ctx (ot_at 0)) a in
   let emit_own_dec n (r : default) ~extra =
     let reached = (base :: per :: displaced n) @ extra in
     let rch = Printf.sprintf "%s_rch%d" tag n in
