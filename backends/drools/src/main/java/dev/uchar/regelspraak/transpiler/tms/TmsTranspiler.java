@@ -1409,9 +1409,7 @@ public final class TmsTranspiler {
         if (noted != null && testTerm != null)
             readingRule(ruleName, positions.versionOf(r), reads, reads.readingPlan(List.of(), false), testTerm, null,
                     r.condition(), null, noted, r.validity(), false);
-        if (canFail) out.add(conditionFaultRule(r.name(), ruleName, fresh, r.condition(), null));
-        RulePlan deposit = depositRule(r.name(), ruleName, fresh, r.condition(), null);
-        if (deposit != null) out.add(deposit);
+        out.addAll(conditionSideRules(canFail, ruleName, fresh, r.condition(), r.name(), null, r.name(), null, null));
         return out;
     }
 
@@ -2516,9 +2514,7 @@ public final class TmsTranspiler {
             readingRule(ruleName, positions.versionOf(r), reads, reads.readingPlan(List.of(), false), null, testTerm,
                     periods, reading, r.condition(), r.value(), noted, r.validity(), false, null, left);
         if (perPeriod) return out;
-        if (canFail) out.add(conditionFaultRule(name, ruleName, fresh, r.condition(), null));
-        RulePlan deposit = depositRule(name, ruleName, fresh, r.condition(), null);
-        if (deposit != null) out.add(deposit);
+        out.addAll(conditionSideRules(canFail, ruleName, fresh, r.condition(), name, null, name, null, null));
         return out;
     }
 
@@ -2610,9 +2606,7 @@ public final class TmsTranspiler {
                     r.condition(), r.value(), noted, r.validity(), blockade != null);
         }
         if (perPeriod) return out;
-        if (canFail) out.add(conditionFaultRule(name, ruleName, fresh, r.condition(), blockade));
-        RulePlan deposit = depositRule(name, ruleName, fresh, r.condition(), blockade);
-        if (deposit != null) out.add(deposit);
+        out.addAll(conditionSideRules(canFail, ruleName, fresh, r.condition(), name, blockade, name, blockade, null));
         return out;
     }
 
@@ -2673,6 +2667,28 @@ public final class TmsTranspiler {
     }
 
     // ---------------- an evaluation fault in a condition ----------------
+
+    /**
+     * The rules beside the rule {@code ruleName} of a form that tests the condition {@code c}, in this order: where the
+     * condition can fault ({@code canFail}), the rule that inserts its fault under {@code form}, after {@code blockade}
+     * ({@link #conditionFaultRule}); where the condition deposits, the rule that deposits under {@code depositForm},
+     * after {@code depositBlockade} ({@link #depositRule}); and where {@code validity} is bounded, the rule that faults
+     * a session without an evaluation date under {@code form} ({@link #validityFault}). {@code fresh} builds the
+     * left-hand side of the form's rule again for the first two. A version of a rule passes null for {@code validity},
+     * since {@link #rule} adds that rule for every kind, and so does a default, whose stack has a rule of its own for
+     * a session without a date ({@link #stackValidityFault}).
+     */
+    private List<RulePlan> conditionSideRules(boolean canFail, String ruleName, Supplier<Reads> fresh, Condition c,
+                                              String form, Function<Reads, List<LhsItem>> blockade, String depositForm,
+                                              Function<Reads, List<LhsItem>> depositBlockade, Validity validity) {
+        List<RulePlan> out = new ArrayList<>();
+        if (canFail) out.add(conditionFaultRule(form, ruleName, fresh, c, blockade));
+        RulePlan deposit = depositRule(depositForm, ruleName, fresh, c, depositBlockade);
+        if (deposit != null) out.add(deposit);
+        RulePlan withoutDate = validityFault(ruleName, form, validity);
+        if (withoutDate != null) out.add(withoutDate);
+        return out;
+    }
 
     /**
      * The rule that inserts the fault of a condition that can fault, beside the rule {@code ruleName} of the form
@@ -2773,11 +2789,8 @@ public final class TmsTranspiler {
         if (noted != null)
             readingRule(model.emittedRuleName(name), positions.versionOf(c), reads, reads.readingPlan(List.of(), false),
                     holds, null, c.assertion(), null, noted, c.validity(), false);
-        if (canFail) out.add(conditionFaultRule(name, model.emittedRuleName(name), fresh, c.assertion(), null));
-        RulePlan deposit = depositRule(name, model.emittedRuleName(name), fresh, c.assertion(), null);
-        if (deposit != null) out.add(deposit);
-        RulePlan withoutDate = validityFault(model.emittedRuleName(name), name, c.validity());
-        if (withoutDate != null) out.add(withoutDate);
+        out.addAll(conditionSideRules(canFail, model.emittedRuleName(name), fresh, c.assertion(), name, null, name,
+                null, c.validity()));
         return out;
     }
 
@@ -3216,11 +3229,7 @@ public final class TmsTranspiler {
                     v.condition(), null, noted, v.validity(), false);
         derived.put(shareKey, share);
         if (rest != null) derived.put(restKey, rest);
-        if (canFail) out.add(conditionFaultRule(name, ruleName, fresh, v.condition(), null));
-        RulePlan deposit = depositRule(name, ruleName, fresh, v.condition(), null);
-        if (deposit != null) out.add(deposit);
-        RulePlan withoutDate = validityFault(ruleName, name, v.validity());
-        if (withoutDate != null) out.add(withoutDate);
+        out.addAll(conditionSideRules(canFail, ruleName, fresh, v.condition(), name, null, name, null, v.validity()));
         return out;
     }
 
@@ -3449,11 +3458,8 @@ public final class TmsTranspiler {
         if (noted != null && testTerm != null)
             readingRule(ruleName, positions.versionOf(oc), reads, reads.readingPlan(List.of(), true), testTerm, null,
                     oc.condition(), null, noted, oc.validity(), k.oneToOne());
-        if (canFail) out.add(conditionFaultRule(name, ruleName, newReads, oc.condition(), null));
-        RulePlan deposit = depositRule(name, ruleName, newReads, oc.condition(), null);
-        if (deposit != null) out.add(deposit);
-        RulePlan withoutDate = validityFault(ruleName, name, oc.validity());
-        if (withoutDate != null) out.add(withoutDate);
+        out.addAll(conditionSideRules(canFail, ruleName, newReads, oc.condition(), name, null, name, null,
+                oc.validity()));
         return out;
     }
 
@@ -3625,11 +3631,8 @@ public final class TmsTranspiler {
         if (noted != null && testTerm != null)
             readingRule(ruleName, positions.versionOf(fc), reads, reads.readingPlan(List.of(), true), testTerm, null,
                     anchorGuard, null, noted, fc.validity(), false);
-        if (canFail) out.add(conditionFaultRule(fc.name(), ruleName, fresh, anchorGuard, null));
-        RulePlan deposit = depositRule(fc.name(), ruleName, fresh, anchorGuard, null);
-        if (deposit != null) out.add(deposit);
-        RulePlan withoutDate = validityFault(ruleName, fc.name(), fc.validity());
-        if (withoutDate != null) out.add(withoutDate);
+        out.addAll(conditionSideRules(canFail, ruleName, fresh, anchorGuard, fc.name(), null, fc.name(), null,
+                fc.validity()));
         return out;
     }
 
@@ -4328,13 +4331,12 @@ public final class TmsTranspiler {
                     control.isEmpty() ? null : reads.readingPlan(List.of(), false), unconditional ? null : testTerm,
                     null, value, unconditional ? null : d.condition(), b.characteristic ? null : d.consequence(), noted,
                     k.validity(), !control.isEmpty() || d.initialisation());
-        if (canFail) out.add(conditionFaultRule(name, ruleName, fresh, d.condition(), l -> guard.get()));
-        RulePlan deposit = depositRule(b.targetForm, ruleName, fresh, d.condition(), l -> {
-            List<LhsItem> decided = new ArrayList<>(guard.get());
-            decided.add(decidedBy(facts));
-            return decided;
-        });
-        if (deposit != null) out.add(deposit);
+        out.addAll(conditionSideRules(canFail, ruleName, fresh, d.condition(), name, l -> guard.get(), b.targetForm,
+                l -> {
+                    List<LhsItem> decided = new ArrayList<>(guard.get());
+                    decided.add(decidedBy(facts));
+                    return decided;
+                }, null));
         return out;
     }
 
