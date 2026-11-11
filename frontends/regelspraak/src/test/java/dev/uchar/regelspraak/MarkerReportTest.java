@@ -93,7 +93,8 @@ class MarkerReportTest {
                 + "vouwbron_tussenstap, vouwbron_rolanker, vouwbron_bindt_niet_op_de_geschreven_naam");
         CLASSIFICATION.put("ExpressionBuilder.java#aggregationFilter", "WARNING (van buildFunction): deelselectie_op_een_aggregatie_operand");
         CLASSIFICATION.put("ExpressionBuilder.java#checkOrdinal",
-                "WARNING: rangtelwoord_over_twee_bindingen; ERROR (positie voorbij de bindingen): geen document");
+                "WARNING: rangtelwoord_over_twee_bindingen; ERROR (RGS-393, een getal dat geen plaats noemt; positie "
+                + "voorbij de bindingen): geen document");
     }
 
     // ---------------- the predicate itself ----------------

@@ -4906,6 +4906,14 @@ final class RuleChecker {
         // `de tint`, defined as the literal, keeps the marker AND still reports an undeclared label here.
         checkEnumLabel(targetType, ExpressionBuilder.valueEnumLabel(peeledValue), line);
         checkSign(targetType, peeledValue, line);   // §3.3.1 Teken-beperking, static over a literal value
+        // the day count claims no type, because its unit is the target's (WF-058), but it is a number whatever its
+        // target (RUNTIME-SEMANTICS ch. 3.8), so a target of another family is refused as the verifier's WF-023 does
+        if (peeledValue instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.AANTAL_DAGEN_IN
+                && !targetType.isUnknown() && !targetType.isNumberLike()) {
+            model.diagnostics.add(Typing.assignment(targetType, new Datatype.Numeric(true, 0, Datatype.Sign.NIET_NEGATIEF, null), false)
+                    .frame("category", "category", category.name().toLowerCase()).at(Severity.ERROR, line));
+            return;
+        }
         if (targetType.isUnknown() || valueType.isUnknown()) return; // not enough resolved to judge
         Typing.Coded error = Typing.assignment(targetType, valueType, ExpressionBuilder.unitlessNumberLiteral(valueExpr));
         boolean outside = timelineTarget(targetExpr) && proRata(valueExpr);

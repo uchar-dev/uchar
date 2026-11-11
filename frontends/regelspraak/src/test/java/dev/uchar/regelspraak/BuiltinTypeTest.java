@@ -10,12 +10,12 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Two builtins carry a static type on the wire that the spec fixes whatever their operands are: a derived position
- * that writes null is refused by WF-034 ("value node without a static type"). The day count counts days, so it is
- * typed as every count is (RUNTIME-SEMANTICS ch. 2.3 and ch. 3.8: whole, non-negative, unitless — the type every
- * dayCount in the corpus carries), in the resolver as well, so an assignment of it to a target of another family is
- * refused before the verifier's WF-023; the concatenation joins its parts into one text (IR-SPEC ch. 4.3, the text
- * fold).
+ * The two builtins whose result the resolver leaves without a claim still carry a static type on the wire: a
+ * derived position that writes null is refused by WF-034 ("value node without a static type"), and both types
+ * are fixed by the spec whatever the operands are. The day count counts days, so it is typed as every count is
+ * (RUNTIME-SEMANTICS ch. 2.3 and ch. 3.8: whole, non-negative, unitless — the type every dayCount in the corpus
+ * carries); the concatenation joins its parts into one text (IR-SPEC ch. 4.3, the text fold). A day count assigned to
+ * a target of another family than a number is refused before the verifier's WF-023.
  */
 class BuiltinTypeTest {
 
@@ -40,8 +40,8 @@ class BuiltinTypeTest {
         assertFalse(c.contains("\"type\":null"), () -> "een type null op de wire:\n" + c);
     }
 
-    /** The day count is a number in the resolver too: assigned to a text or a date target it is refused as any
-     *  number is, where the document reached disk and the verifier refused it (WF-023). */
+    /** The day count is a number: assigned to a text or a date target it is refused as any number is (RGS-334), and
+     *  the document does not reach the verifier's WF-023. */
     @Test void the_day_count_is_a_number_to_the_assignment_check() {
         for (List<String> declaredAndWritten : List.of(List.of("de borgnaam Tekst", "De borgnaam"),
                 List.of("de borgdatum Datum in dagen", "De borgdatum"))) {

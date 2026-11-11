@@ -101,8 +101,9 @@ class MarkerReasonPinTest {
             new Site("ExpressionBuilder.java", "aggregationFilter", 3,
                     "de enige aanroeper (bouwFunctie) toetst het resultaat op Onopgelost en waarschuwt; "
                     + "de sweep zou dat herhalen"),
-            new Site("ExpressionBuilder.java", "checkOrdinal", 2,
-                    "de §5.5.3-ERROR respectievelijk -WARNING staat vlak boven de marker"),
+            new Site("ExpressionBuilder.java", "checkOrdinal", 3,
+                    "de RGS-393-ERROR (een getal dat geen plaats noemt), de RGS-089-ERROR (een positie voorbij de "
+                    + "bindingen) respectievelijk de §5.5.3-WARNING staat vlak boven de marker"),
             new Site("ExpressionBuilder.java", "variableInFilter", 1,
                     "de RGS-358-ERROR die de regel erboven opwerpt (een variabele van de regel in een deelselectie "
                     + "waarvan de definitie geen vorm met het vormanker heeft; 2026-10-23) IS de diagnose van deze "

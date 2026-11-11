@@ -832,12 +832,12 @@ public final class IrEmitter {
         if (dt instanceof Datatype.Unknown) w.valueNull(); else datatype(dt);
     }
 
-    /** The type a function node writes. Two builtins have a result type the spec fixes whatever their operands are:
-     *  the day count counts days and is typed as every count is (RUNTIME-SEMANTICS ch. 2.3 and ch. 3.8: whole,
-     *  non-negative, unitless), which the resolver claims as well, and the concatenation joins its parts into one text
-     *  (IR-SPEC ch. 4.3, the text fold), which the resolver leaves without a claim, so its null would be refused by
-     *  WF-034. Every other kind writes the resolver's type. A resolver claim that differs from the fixed type would
-     *  give one annotation two sources, so it is refused rather than overwritten. */
+    /** The type a function node writes. Two builtins have a result type the spec fixes whatever their operands are,
+     *  and the resolver leaves both without a claim, so their null would be refused by WF-034: the day count counts
+     *  days and is typed as every count is (RUNTIME-SEMANTICS ch. 2.3 and ch. 3.8: whole, non-negative, unitless),
+     *  and the concatenation joins its parts into one text (IR-SPEC ch. 4.3, the text fold). Every other kind writes
+     *  the resolver's type. A resolver claim that differs from the fixed type would give one annotation two sources,
+     *  so it is refused rather than overwritten. */
     private static Datatype functionType(Expr.FunctionCall f) {
         Datatype fixed = switch (f.kind()) {
             case AANTAL_DAGEN_IN -> new Datatype.Numeric(true, 0, Datatype.Sign.NIET_NEGATIEF, null);
@@ -852,8 +852,8 @@ public final class IrEmitter {
     }
 
     /** The type a Let writes: the type of its body (WF-076). A variable bound to a builtin whose type the spec fixes and
-     *  read as the whole body takes that type where the resolver leaves the Let without a claim; every other Let writes
-     *  the resolver's type. */
+     *  read as the whole body ("de getelde dagen" bound to a day count) takes that type, which the resolver leaves without
+     *  a claim; every other Let writes the resolver's type. */
     private static Datatype letType(Expr.Let l) {
         if (l.type() instanceof Datatype.Unknown && l.body() instanceof Expr.BinderRef b && b.name().equals(l.binder())) {
             Datatype bound = switch (l.value()) {

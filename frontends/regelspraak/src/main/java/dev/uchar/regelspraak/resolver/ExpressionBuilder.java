@@ -3216,7 +3216,7 @@ final class ExpressionBuilder {
                     : new Datatype.Numeric(allWhole(args), minDecimals(args), n.sign(), n.unit());
             // both counts: a cardinality is a whole, UNITLESS number whatever the folded attribute
             // measures (RUNTIME-SEMANTICS ch. 3.4c) — the source's kg never reaches the result
-            case AANTAL, AANTAL_GEVULDE, AANTAL_DAGEN_IN -> new Datatype.Numeric(true, 0, Datatype.Sign.NIET_NEGATIEF, null);
+            case AANTAL, AANTAL_GEVULDE -> new Datatype.Numeric(true, 0, Datatype.Sign.NIET_NEGATIEF, null);
             // §5.7/§13.4.17.2: a concatenatie is a MULTI-VALUED set (§5.8.1 "altijd meervoudig"), NOT a scalar
             // Tekst — it carries the common type of its operands and is only meaningful once an aggregation
             // (het aantal / de som / de min-max / de eerste-laatste) consumes it (§5.8). This "de concatenatie
@@ -3246,6 +3246,9 @@ final class ExpressionBuilder {
             // onbekend — puts the concrete datatype on the emitted IR node (the uchar spec forbids the
             // unknown-type sentinel inside a structured node, its WF-034).
             case TIJDSEVENREDIG_DEEL -> first;
+            // the day count is a whole number of days whose unit is the target's: days per its bucket where the
+            // target declares a unit, none where it declares none (WF-058), so it claims no type of its own; the
+            // assignment check judges its family (RuleChecker, the rule's value)
             default -> unknown();
         };
     }
