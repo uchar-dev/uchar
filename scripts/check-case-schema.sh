@@ -13,7 +13,7 @@
 #   4. zone discipline: a golden case carries `expected` (never
 #      `expectedFault`), a red case carries `expectedFault` — a red
 #      case can never hide inside the green corpus, or vice versa.
-# An empty case set is reported explicitly, never silently green.
+# A zone without a case file fails: an empty input set is never silently green.
 #
 # NO monotone floor here (maintainer decision 2026-09-09, the counting-floors
 # regime): this gate's count is the disjoint union of the two zone counts that
@@ -44,6 +44,12 @@ trap 'rm -f "$list"' EXIT
 find corpus/golden corpus/red -name 'case*.json' 2>/dev/null | sort > "$list"
 
 status=0
+for zone in corpus/golden corpus/red; do
+    if ! grep -q "^$zone/" "$list"; then
+        echo "FAIL: $zone holds no case file (an empty input set is a failure, never silently green)" >&2
+        status=1
+    fi
+done
 n=0
 while IFS= read -r f; do
     n=$((n + 1))
@@ -321,10 +327,6 @@ print(n_selftest)
 PY
 ) || status=1
 
-if [ "$n" -eq 0 ]; then
-    echo "check-case-schema: schema valid; ${selftest:-no} self-test row(s); 0 case files (cases not yet populated)"
-    exit "$status"
-fi
 if [ "$status" -eq 0 ]; then
     echo "check-case-schema: PASS (schema valid; $selftest self-test row(s); $n case file(s) validate)"
 fi
