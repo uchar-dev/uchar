@@ -135,5 +135,7 @@
   ; an allocation whose cap, share or rest is declared in a sister unit of the pot's
   (glob_files fixtures/allocation-units/cap-in-ct/*.json)
   (glob_files fixtures/allocation-units/share-in-ct/*.json)
-  (glob_files fixtures/allocation-units/rest-in-ct/*.json))
+  (glob_files fixtures/allocation-units/rest-in-ct/*.json)
+  ; a role list of the case that repeats a label
+  (glob_files fixtures/duplicate-link/*.json))
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

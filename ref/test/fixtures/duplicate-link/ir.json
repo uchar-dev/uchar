@@ -1,0 +1,289 @@
+{
+ "format": "uchar-ir-v1",
+ "model": {
+  "objectTypes": [
+   {
+    "node": "ObjectType",
+    "name": "Jutter",
+    "animate": true,
+    "plural": "Jutters",
+    "attributes": [
+     {
+      "node": "Attribute",
+      "name": "aantal munten",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "nonNegative"
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "muntgewicht",
+      "datatype": {
+       "node": "Number",
+       "whole": false,
+       "decimals": 2,
+       "sign": "unspecified",
+       "unit": [
+        {
+         "node": "Unit",
+         "abbreviation": "kg",
+         "system": "Gewicht",
+         "canonical": "kg",
+         "factorToCanonical": {
+          "num": 1,
+          "den": 1
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "characteristics": []
+   },
+   {
+    "node": "ObjectType",
+    "name": "Vondst",
+    "animate": false,
+    "plural": "Vondsten",
+    "attributes": [
+     {
+      "node": "Attribute",
+      "name": "gewicht",
+      "datatype": {
+       "node": "Number",
+       "whole": false,
+       "decimals": 2,
+       "sign": "unspecified",
+       "unit": [
+        {
+         "node": "Unit",
+         "abbreviation": "kg",
+         "system": "Gewicht",
+         "canonical": "kg",
+         "factorToCanonical": {
+          "num": 1,
+          "den": 1
+         }
+        }
+       ]
+      },
+      "plural": "gewichten"
+     }
+    ],
+    "characteristics": []
+   },
+   {
+    "node": "ObjectType",
+    "name": "Munt",
+    "supertype": "Vondst",
+    "animate": false,
+    "plural": "Munten",
+    "attributes": [
+     {
+      "node": "Attribute",
+      "name": "jaartal",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "nonNegative"
+      }
+     }
+    ],
+    "characteristics": []
+   }
+  ],
+  "factTypes": [
+   {
+    "node": "FactType",
+    "name": "vondstaanmelding",
+    "reciprocal": false,
+    "roles": [
+     {
+      "node": "Role",
+      "name": "aanmelder",
+      "objectType": "Jutter",
+      "many": false
+     },
+     {
+      "node": "Role",
+      "name": "vondst",
+      "objectType": "Vondst",
+      "plural": "vondsten",
+      "many": true
+     }
+    ]
+   }
+  ],
+  "parameters": [],
+  "domains": [],
+  "unitSystems": [
+   {
+    "node": "UnitSystem",
+    "name": "Gewicht",
+    "units": [
+     {
+      "node": "Unit",
+      "abbreviation": "kg",
+      "system": "Gewicht",
+      "canonical": "kg",
+      "factorToCanonical": {
+       "num": 1,
+       "den": 1
+      },
+      "spellings": [
+       "kilogram",
+       "kilogrammen"
+      ]
+     }
+    ]
+   }
+  ],
+  "dimensions": [],
+  "timelines": [],
+  "dayKinds": []
+ },
+ "rules": {
+  "rules": [
+   {
+    "node": "Rule",
+    "name": "aantal munten",
+    "versions": [
+     {
+      "validity": {
+       "node": "Validity"
+      },
+      "target": {
+       "node": "AttributeReference",
+       "attribute": "aantal munten",
+       "subjectType": "Jutter",
+       "source": {
+        "snippet": "Het aantal munten van een Jutter"
+       }
+      },
+      "value": {
+       "node": "Aggregation",
+       "kind": "count",
+       "arguments": [
+        {
+         "node": "AttributeReference",
+         "attribute": "vondsten",
+         "subjectType": "Jutter",
+         "source": {
+          "snippet": "vondsten van de Jutter"
+         }
+        }
+       ],
+       "elementType": "Munt",
+       "sourceRole": {
+        "node": "RoleBinding",
+        "factType": "vondstaanmelding",
+        "role": "vondst"
+       },
+       "type": {
+        "node": "Number",
+        "whole": true,
+        "decimals": 0,
+        "sign": "nonNegative"
+       },
+       "source": {
+        "snippet": "het aantal munten van de Jutter"
+       }
+      },
+      "initialisation": false,
+      "presentation": "calculation"
+     }
+    ]
+   },
+   {
+    "node": "Rule",
+    "name": "muntgewicht",
+    "versions": [
+     {
+      "validity": {
+       "node": "Validity"
+      },
+      "target": {
+       "node": "AttributeReference",
+       "attribute": "muntgewicht",
+       "subjectType": "Jutter",
+       "source": {
+        "snippet": "Het muntgewicht van een Jutter"
+       }
+      },
+      "value": {
+       "node": "Aggregation",
+       "kind": "sum",
+       "arguments": [
+        {
+         "node": "AttributeReference",
+         "attribute": "gewicht",
+         "subjectType": "Munt",
+         "source": {
+          "snippet": "het gewicht van alle munten van de Jutter"
+         }
+        }
+       ],
+       "elementType": "Munt",
+       "emptyFallback": {
+        "node": "Literal",
+        "value": {
+         "number": "0"
+        },
+        "type": {
+         "node": "Number",
+         "whole": true,
+         "decimals": 0,
+         "sign": "unspecified"
+        },
+        "source": {
+         "snippet": "0"
+        }
+       },
+       "sourceRole": {
+        "node": "RoleBinding",
+        "factType": "vondstaanmelding",
+        "role": "vondst"
+       },
+       "type": {
+        "node": "Number",
+        "whole": false,
+        "decimals": 2,
+        "sign": "unspecified",
+        "unit": [
+         {
+          "node": "Unit",
+          "abbreviation": "kg",
+          "system": "Gewicht",
+          "canonical": "kg",
+          "factorToCanonical": {
+           "num": 1,
+           "den": 1
+          }
+         }
+        ]
+       },
+       "source": {
+        "snippet": "de som van het gewicht van alle munten van de Jutter"
+       }
+      },
+      "initialisation": false,
+      "presentation": "calculation"
+     }
+    ]
+   }
+  ],
+  "dayKindDefinitions": [],
+  "objectCreations": [],
+  "allocations": [],
+  "consistencies": [],
+  "uniquenesses": [],
+  "factCreations": [],
+  "startPointDeterminations": [],
+  "ruleGroups": []
+ },
+ "diagnostics": []
+}

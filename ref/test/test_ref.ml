@@ -14127,6 +14127,19 @@ let () =
         ~case_data:(read (dir ^ d ^ "/case.json")) (fun _ -> ()))
     [ "cap-in-ct"; "share-in-ct"; "rest-in-ct" ]
 
+(* WV-5.7a-herhaald-label: the golden jutterswet-munttelling with the vondsten
+   of J1 listed as M2, V1, M1, M2, M1. A label the role list repeats is one link
+   (ch. 5.7a), in the order of its first occurrence: J1 links M2, V1, M1 and
+   counts 2 munten of together 12.00, not 4 of 24.00 *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/duplicate-link/" in
+  plays ~ident:"WV-5.7a-herhaald-label" ~ir:(read (dir ^ "ir.json")) ~case_data:(read (dir ^ "case.json")) (fun _ -> ());
+  with_files ~ir:(read (dir ^ "ir.json")) ~case_data:(read (dir ^ "case.json")) (fun _ (c : Case.t) _ ->
+      let j1 = World.get c.world "J1" in
+      let lists = World.SMap.fold (fun _ labels acc -> labels :: acc) j1.left_side [] in
+      check "WV-5.7a-herhaald-label: volgorde van het eerste voorkomen" (lists = [ [ "M2"; "V1"; "M1" ] ]))
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

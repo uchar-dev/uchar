@@ -635,6 +635,9 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
         | None -> ());
         let role_ref = child (child label "roles") key in
         let labels = List.mapi (fun i l -> str ~at:(Printf.sprintf "%s[%d]" role_ref i) l) (list_ ~at:role_ref vj) in
+        (* a label the list repeats names the one relation instance again
+           (ch. 5.7a): one link, in the order of its first occurrence *)
+        let labels = List.rev (List.fold_left (fun acc l -> if List.mem l acc then acc else l :: acc) [] labels) in
         if (not role.role_many) && List.length labels <> 1 then
           fail "%s: to-one role %S carries %d labels" role_ref key (List.length labels);
         (SMap.add (norm key) labels acc, (norm role_id, key) :: seen))
