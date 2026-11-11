@@ -1,0 +1,234 @@
+{
+ "format": "uchar-ir-v1",
+ "model": {
+  "objectTypes": [
+   {
+    "node": "ObjectType",
+    "name": "Penningkas",
+    "animate": false,
+    "plural": "Penningkassen",
+    "attributes": [
+     {
+      "node": "Attribute",
+      "name": "penningbudget",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified",
+       "unit": [
+        {
+         "node": "Unit",
+         "abbreviation": "EUR",
+         "system": "Munt",
+         "canonical": "EUR",
+         "factorToCanonical": {
+          "num": 1,
+          "den": 1
+         }
+        }
+       ]
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "onuitgekeerd budget",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified",
+       "unit": [
+        {
+         "node": "Unit",
+         "abbreviation": "ct",
+         "system": "Munt",
+         "canonical": "EUR",
+         "factorToCanonical": {
+          "num": 1,
+          "den": 100
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "characteristics": []
+   },
+   {
+    "node": "ObjectType",
+    "name": "Wachter",
+    "animate": true,
+    "plural": "Wachters",
+    "attributes": [
+     {
+      "node": "Attribute",
+      "name": "wachtjaar",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified"
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "voorranggewicht",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified"
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "penningmaximum",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified",
+       "unit": [
+        {
+         "node": "Unit",
+         "abbreviation": "EUR",
+         "system": "Munt",
+         "canonical": "EUR",
+         "factorToCanonical": {
+          "num": 1,
+          "den": 1
+         }
+        }
+       ]
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "penningtoewijzing",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified",
+       "unit": [
+        {
+         "node": "Unit",
+         "abbreviation": "EUR",
+         "system": "Munt",
+         "canonical": "EUR",
+         "factorToCanonical": {
+          "num": 1,
+          "den": 1
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "characteristics": []
+   }
+  ],
+  "factTypes": [
+   {
+    "node": "FactType",
+    "name": "wachtdienst",
+    "reciprocal": false,
+    "roles": [
+     {
+      "node": "Role",
+      "name": "penningkas",
+      "objectType": "Penningkas",
+      "many": false
+     },
+     {
+      "node": "Role",
+      "name": "wachter",
+      "objectType": "Wachter",
+      "plural": "wachters",
+      "many": true
+     }
+    ]
+   }
+  ],
+  "parameters": [],
+  "domains": [],
+  "unitSystems": [
+   {
+    "node": "UnitSystem",
+    "name": "Munt",
+    "units": [
+     {
+      "node": "Unit",
+      "abbreviation": "EUR",
+      "system": "Munt",
+      "canonical": "EUR",
+      "factorToCanonical": {
+       "num": 1,
+       "den": 1
+      },
+      "spellings": [
+       "euro"
+      ]
+     },
+     {
+      "node": "Unit",
+      "abbreviation": "ct",
+      "system": "Munt",
+      "canonical": "EUR",
+      "factorToCanonical": {
+       "num": 1,
+       "den": 100
+      },
+      "spellings": [
+       "cent"
+      ]
+     }
+    ]
+   }
+  ],
+  "dimensions": [],
+  "timelines": [],
+  "dayKinds": []
+ },
+ "rules": {
+  "rules": [],
+  "dayKindDefinitions": [],
+  "objectCreations": [],
+  "allocations": [
+   {
+    "node": "Allocation",
+    "name": "verdeel het penningbudget van een penningkas",
+    "versions": [
+     {
+      "sourceType": "Penningkas",
+      "sourceAttribute": "penningbudget",
+      "targetType": "Wachter",
+      "targetAttribute": "penningtoewijzing",
+      "method": "ordered",
+      "ratioAttribute": "voorranggewicht",
+      "maximumAttribute": "penningmaximum",
+      "roundingDecimals": 0,
+      "remainderAttribute": "onuitgekeerd budget",
+      "orderingAttribute": "wachtjaar",
+      "descending": false,
+      "validity": {
+       "node": "Validity"
+      },
+      "connectingRole": {
+       "node": "RoleBinding",
+       "factType": "wachtdienst",
+       "role": "wachter"
+      }
+     }
+    ]
+   }
+  ],
+  "consistencies": [],
+  "uniquenesses": [],
+  "factCreations": [],
+  "startPointDeterminations": [],
+  "ruleGroups": []
+ },
+ "diagnostics": []
+}

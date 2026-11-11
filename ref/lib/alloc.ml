@@ -10,7 +10,10 @@
      rest = A − Σ_all share_i
 
    with min(x, leeg) = x, floor_d = round toward −∞ at the declared
-   decimals (identity when none declared). The max(0, …) clamps are
+   decimals (identity when none declared). The recurrence runs in the unit
+   of the pot: the cap compares restated into it (ch. 2.6, rule 5), and the
+   caller writes shares and rest through the assignment gate, which restates
+   them into the unit of their target (ch. 2.4). The max(0, …) clamps are
    ordered-method-only. An empty pot is no distribution in every method;
    empty-weight handling differs per method, and a negative weight counts
    as 0 in both weighted methods, with a §9.5 error in the proportional
@@ -37,8 +40,9 @@ type outcome =
 let floor_d decimals q =
   match decimals with None -> q | Some d -> Arith.round_q Floor d q
 
-(* cap, then floor (ch. 4.3: the cap applies before rounding) *)
-let cap_floor ~err ~decimals ~id raw cap =
+(* cap, then floor (ch. 4.3: the cap applies before rounding); [unit] is the
+   pot's, into which a cap in a sister unit restates *)
+let cap_floor ~err ~decimals ~unit ~id raw cap =
   let capped =
     match cap with
     | None -> raw
@@ -48,7 +52,7 @@ let cap_floor ~err ~decimals ~id raw cap =
     | Some (Num (c, _)) when Q.sign c < 0 ->
         err ~id { code = Some "EF-030"; text = "negative maximum degrades to uncapped" };
         raw
-    | Some (Num (c, _)) -> Q.min raw c
+    | Some (Num (c, cu)) -> Q.min raw (Arith.restate_into unit c cu)
     | Some v -> fault "maximum is not a number: %s" (to_string v)
   in
   floor_d decimals capped
@@ -67,11 +71,11 @@ let allocate (method_name : Ir_v0.Ast.method_name) ~descending ~decimals ~pot ~e
         match pot with
         | Empty -> Nothing (* an empty pot is no distribution in every method (ch. 4.4, v1) *)
         | _ ->
-            let a, _ = Arith.num_exn "allocation source" pot in
+            let a, unit = Arith.num_exn "allocation source" pot in
             let n = Q.of_int (List.length recipients) in
             let shares =
               List.map
-                (fun r -> (r.id, Assigned (cap_floor ~err ~decimals ~id:r.id (Q.div a n) r.cap)))
+                (fun r -> (r.id, Assigned (cap_floor ~err ~decimals ~unit ~id:r.id (Q.div a n) r.cap)))
                 recipients
             in
             let total = List.fold_left (fun acc (_, s) -> match s with Assigned q -> Q.add acc q | Excluded -> acc) Q.zero shares in
@@ -80,7 +84,7 @@ let allocate (method_name : Ir_v0.Ast.method_name) ~descending ~decimals ~pot ~e
         match pot with
         | Empty -> Nothing (* as in the other methods (ch. 4.4, v1): no deposit either *)
         | _ ->
-            let a, _ = Arith.num_exn "allocation source" pot in
+            let a, unit = Arith.num_exn "allocation source" pot in
             (* one group: the recipients whose weight is filled; an
                empty-weight recipient is excluded (stays leeg) + §9.5 error.
                A negative weight counts as 0 + §9.5 error (ch. 4.4, v1): the
@@ -106,7 +110,7 @@ let allocate (method_name : Ir_v0.Ast.method_name) ~descending ~decimals ~pot ~e
                 List.map
                   (fun (r, w) ->
                     let raw = Q.div (Q.mul a w) wsum in
-                    (r.id, Assigned (cap_floor ~err ~decimals ~id:r.id raw r.cap)))
+                    (r.id, Assigned (cap_floor ~err ~decimals ~unit ~id:r.id raw r.cap)))
                   eligible
                 @ List.map (fun r -> (r.id, Excluded)) excluded
               in
@@ -116,7 +120,7 @@ let allocate (method_name : Ir_v0.Ast.method_name) ~descending ~decimals ~pot ~e
         match pot with
         | Empty -> Nothing (* ordered: no distribution (§9.7.6 discipline) *)
         | _ ->
-            let a, _ = Arith.num_exn "allocation source" pot in
+            let a, unit = Arith.num_exn "allocation source" pot in
             (* groups are the equal-key classes of the ordering key,
                ascending/descending as declared, an empty key sorting last *)
             let cmp_key ra rb =
@@ -169,7 +173,7 @@ let allocate (method_name : Ir_v0.Ast.method_name) ~descending ~decimals ~pot ~e
                           (* the recurrence's 0/0 case: every member 0 *)
                         else Q.div (Q.mul !pot_k wq) wsum
                       in
-                      let s = Q.max Q.zero (cap_floor ~err ~decimals ~id:r.id raw r.cap) in
+                      let s = Q.max Q.zero (cap_floor ~err ~decimals ~unit ~id:r.id raw r.cap) in
                       (r.id, s))
                     ws
                 in

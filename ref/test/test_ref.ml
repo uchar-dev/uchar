@@ -14111,6 +14111,22 @@ let () =
       check "WV-3.9-datumordening-geweigerd: verifier-clean" (findings = []);
       expect_fault_msg "WV-3.9-datumordening-geweigerd" evaluate "a date-valued whole-period comparison")
 
+(* WV-4.2-omrekenen-in-een-verdeling: the golden jutterswet-rangmaximering
+   (1800 EUR over five Wachters, ordered by wachtjaar, capped, whole euros)
+   with one attribute moved to the sister unit ct = 1/100 EUR. The recurrence
+   runs in the unit of the pot: a cap of 50000 ct compares as 500 EUR
+   (ch. 2.6, rule 5), and a share or rest is written through the assignment
+   gate into the unit of its target (ch. 2.4): 500 EUR is 50000 ct, a rest of
+   26 EUR is 2600 ct. Every variant distributes 500/500/433/250/91, rest 26 *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/allocation-units/" in
+  List.iter
+    (fun d ->
+      plays ~ident:("WV-4.2-omrekenen-in-een-verdeling-" ^ d) ~ir:(read (dir ^ d ^ "/ir.json"))
+        ~case_data:(read (dir ^ d ^ "/case.json")) (fun _ -> ()))
+    [ "cap-in-ct"; "share-in-ct"; "rest-in-ct" ]
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

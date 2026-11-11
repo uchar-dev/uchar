@@ -4430,10 +4430,14 @@ let run_allocation env world (v : resolved_allocation) =
           in
           let alloc_errs = ref [] in
           let err ~id (d : Value.deposit) = alloc_errs := (id, d.code) :: !alloc_errs in
+          let pot = World.attr src source_attr in
+          (* shares and rest are amounts in the pot's unit; the write
+             restates them into their target's (ch. 2.4, 2.6 rule 6) *)
+          let pot_unit = match pot with Value.Num (_, u) -> u | _ -> Value.Unitless in
           let outcome =
             Alloc.allocate method_name
               ~descending:v.descending ~decimals:v.rounding_decimals
-              ~pot:(World.attr src source_attr) ~err recs
+              ~pot ~err recs
           in
           let w =
             List.fold_left
@@ -4466,7 +4470,7 @@ let run_allocation env world (v : resolved_allocation) =
                     | Alloc.Assigned q ->
                         let w, c =
                           World.write_attr_by w ~form ~label:id ~attr:target_attr ~decl
-                            (Value.Num (q, Value.Unitless))
+                            (Value.Num (q, pot_unit))
                         in
                         (w, ch || c))
                   (w, false) shares
@@ -4477,7 +4481,7 @@ let run_allocation env world (v : resolved_allocation) =
                 | Some ra ->
                     World.write_attr_by w ~form ~label:src.label ~attr:ra
                       ~decl:(attr_decl env ~otype:source_type ~attr:ra)
-                      (Value.Num (rest, Value.Unitless))
+                      (Value.Num (rest, pot_unit))
               in
               (w, ch || ch2))
   end
