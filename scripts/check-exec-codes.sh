@@ -13,7 +13,8 @@
 #   - every `"EF-###"` a source names is a row of the table of fault kinds, RUNTIME-SEMANTICS ch. 5.7b;
 #   - the parameters a `faultc`/`failc` site passes (`~params:[ ("name", …); … ]` before the code) are, for a REF or
 #     CLINGO code, exactly the parameters of its line, and for an EF code names of its row (an executor may emit
-#     fewer than the row names, never another);
+#     fewer than the row names, never another); so are those of a `guardc` site, where the clingo backend writes a
+#     viol/2 guard and registers the code its witness stands for;
 #   - numbers run 001, 002, … without a gap, a repeat or a reordering; keys are unique; the kind is `refusal`, `limit`
 #     or `fallback` (a `contract` code is no executor code, ch. 2.3 of the design), or `retired`: a code no place
 #     raises any more, kept so that the numbers after it, which a test or a gate list may pin, stay as they are; a
@@ -131,7 +132,7 @@ for comp, (srcdirs, tsv) in components.items():
     if len(reg) < floors[comp]:
         err("%s holds %d code(s), but EXPECTED_MIN_%s_CODES pins at least %d — the register shrank (a deliberate removal lowers the floor in the same commit)" % (tsv, len(reg), comp, floors[comp]))
 
-SITE = re.compile(r'(?<![A-Za-z0-9_\'])(?:Value\.|Case\.)?(?:faultc|failc)\b')
+SITE = re.compile(r'(?<![A-Za-z0-9_\'])(?:Value\.|Case\.)?(?:faultc|failc|guardc)\b')
 raised = {c: set() for c in components}
 n_scanned = 0
 for comp, (srcdirs, tsv) in components.items():
