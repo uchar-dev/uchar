@@ -300,7 +300,10 @@
 # tag, and a non-recursive rule group. The leg went red and named the field: kind for ref on 191 goldens,
 # rule-presentation for clingo on 73, preposition on 10, percentage on 7 and rule-group on 1 for both
 # Drools branches (13 goldens for ref and 54 for clingo carried the read value untouched, and were
-# reported as missing the pinned outcome there too). No survivor list: no reading of a presentation field
+# reported as missing the pinned outcome there too). Measured by mutation the same day for the two fields that
+# joined the leg after: ref failing on a diagnostic with an odd line and the Drools loader refusing a rule with
+# statute annotations made the leg red, naming diagnostics for ref on 5 cases of 3 goldens and rule-annotations
+# for both Drools branches on 11 goldens. No survivor list: no reading of a presentation field
 # is a legitimate one. A field that no golden carries fails its floor.
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
