@@ -5402,7 +5402,9 @@ let parameter_set_check env =
     (fun p ->
       match env.as_of with
       | None ->
-          Value.fault
+          (* the evaluation date is the one context value a vintage read
+             needs (ch. 8.3), so its absence is the kind of ch. 8.2 *)
+          Value.faultc "EF-011"
             "session start: the document vintage-reads parameter %S, but the session carries \
              no evaluation date (asOfDate is null) — ch. 8.4"
             p
@@ -5412,7 +5414,10 @@ let parameter_set_check env =
           in
           match SMap.find_opt (norm p) env.param_tls with
           | None ->
-              Value.fault
+              (* the timeline is the binding of a granular parameter, so a
+                 vintage read of one the Parameterset lacks reads an unbound
+                 parameter *)
+              Value.faultc ~params:[ ("parameter", p) ] "EF-014"
                 "session start: the document vintage-reads parameter %S, but the Parameterset \
                  carries no timeline for it — ch. 8.4"
                 p

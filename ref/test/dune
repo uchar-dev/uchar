@@ -137,5 +137,8 @@
   (glob_files fixtures/allocation-units/share-in-ct/*.json)
   (glob_files fixtures/allocation-units/rest-in-ct/*.json)
   ; a role list of the case that repeats a label
-  (glob_files fixtures/duplicate-link/*.json))
+  (glob_files fixtures/duplicate-link/*.json)
+  ; the session-start check without an evaluation date and without a Parameterset timeline
+  ../../corpus/golden/anchor/jutterswet-penningvintage/ir.json
+  (glob_files fixtures/session-start/*.json))
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

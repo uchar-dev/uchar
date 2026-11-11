@@ -14140,6 +14140,28 @@ let () =
       let lists = World.SMap.fold (fun _ labels acc -> labels :: acc) j1.left_side [] in
       check "WV-5.7a-herhaald-label: volgorde van het eerste voorkomen" (lists = [ [ "M2"; "V1"; "M1" ] ]))
 
+(* WV-8.4-sessiestart: the anchor jutterswet-penningvintage, which
+   vintage-reads the parameter penningbedrag, in a session without an
+   evaluation date and in one whose Parameterset carries no timeline for it.
+   The session-start check (ch. 8.4) faults before any rule fires: EF-011,
+   the evaluation date being the context value the read needs, and EF-014
+   naming the parameter, the timeline being its binding *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let ir = read "corpus/golden/anchor/jutterswet-penningvintage/ir.json" in
+  List.iter
+    (fun (case_file, code, params) ->
+      let ident = "WV-8.4-sessiestart-" ^ case_file in
+      with_files ~ir ~case_data:(read ("ref/test/fixtures/session-start/" ^ case_file ^ ".json"))
+        (fun findings _ evaluate ->
+          check (ident ^ ": verifier-clean") (findings = []);
+          match evaluate () with
+          | exception Value.Fault { code = c; params = ps; text } ->
+              check (ident ^ " (got: " ^ Value.report ~code:c text ^ ")") (c = Some code && ps = params)
+          | _ -> check (ident ^ " (no fault at all)") false))
+    [ ("vintage-without-evaluation-date", "EF-011", []);
+      ("vintage-without-timeline", "EF-014", [ ("parameter", "penningbedrag") ]) ]
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;
