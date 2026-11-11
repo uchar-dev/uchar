@@ -2397,6 +2397,35 @@ let role_canonical (r : role_ref) =
   | Some m, None -> m
   | None, None -> fault "role without a name"
 
+(* the relation term of role/3: a link belongs to its fact type (ch. 5.7a)
+   and a reader reads the relation it names (ch. 3.4a), so the term pairs
+   the fact type with the role; two fact types whose roles carry one name
+   keep their links apart, as ref's World.link_key keeps them *)
+let role_term ~fact_type (r : role_ref) = Printf.sprintf "(%s,%s)" (str fact_type) (str (role_canonical r))
+
+(* the relation term of a role binding *)
+let bound_role_term env (rb : role_binding) = role_term ~fact_type:rb.rb_fact_type (Eval.bound_role env rb)
+
+(* the fact type and role a loaded world stores a link under: the case
+   loader keys every link by World.link_key, which names both *)
+let stored_relation (doc : document) key =
+  let hits =
+    List.concat_map
+      (fun (ftn, (ft : fact_type_name)) ->
+        List.filter_map
+          (fun (r : role_ref) ->
+            if (r.role_identifier <> None || r.role_plural <> None)
+               && String.equal (Uchar_ref.World.link_key ~fact_type:ftn r) key
+            then Some (ftn, r)
+            else None)
+          ft.role_names)
+      doc.fact_types
+  in
+  match hits with
+  | [ hit ] -> hit
+  | [] -> fault "the link key %S of the loaded case names no role of a fact type" key
+  | _ -> fault "the link key %S of the loaded case names more than one role" key
+
 (* ch. 3.4b / WF-102: the fold source's range as role/3 atoms, one per
    step, ending on the element variable [x]. The one-step form is the
    node's sourceRole; a sourcePath walks two or more steps through fresh
@@ -2444,8 +2473,7 @@ let source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x =
               el
       in
       ignore subject_ot;
-      let role_name = role_canonical (Eval.bound_role env rb) in
-      (Printf.sprintf "role(%s,%s,%s)" subject (str role_name) x :: scope)
+      (Printf.sprintf "role(%s,%s,%s)" subject (bound_role_term env rb) x :: scope)
   | Some trail ->
       let n = List.length trail in
       if n < 2 then
@@ -2459,8 +2487,7 @@ let source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x =
         List.fold_left
           (fun (atoms, cur) (i, rb) ->
             let target = if i = n - 1 then x else fresh ctx "M" in
-            let role = role_canonical (Eval.bound_role env rb) in
-            (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (str role) target ], target))
+            (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (bound_role_term env rb) target ], target))
           ([], subject)
           (List.mapi (fun i rb -> (i, rb)) trail)
       in
@@ -3906,10 +3933,10 @@ let rec member_read ?(scaled = true) ctx ~subject ~subject_ot ~member (e : expr)
                 roles;
               let atoms, target =
                 List.fold_left
-                  (fun (atoms, cur) (r : role_ref) ->
+                  (fun (atoms, cur) rb ->
                     let n = fresh ctx "N" in
-                    (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (str (role_canonical r)) n ], n))
-                  ([], subject) roles
+                    (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (bound_role_term (doc_env ctx) rb) n ], n))
+                  ([], subject) rbs
               in
               let v = fresh ctx "A" in
               ( atoms @ [ Printf.sprintf "val(%s,%s,%s)" target (str member) v ],
@@ -4802,17 +4829,17 @@ let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation 
               | ends ->
                   let path, last =
                     List.fold_left
-                      (fun (atoms, cur) (r : role_ref) ->
+                      (fun (atoms, cur) rb ->
                         let n = fresh ctx "N" in
-                        (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (str (role_canonical r)) n ], n))
-                      ([], subject) roles
+                        (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (bound_role_term env rb) n ], n))
+                      ([], subject) rbs
                   in
                   bucket_scalar_fault ctx ~reach ~sentence:(qualifier_sentence a)
                     (List.map
                        (fun (i : Uchar_ref.World.instance) ->
                          (i, path @ [ Printf.sprintf "%s = %s" last (str_raw i.label) ]))
                        ends));
-              roles
+              rbs
         in
         (a, hops)
     | Some (Parameter_ref { parameter; _ }) ->
@@ -4842,13 +4869,13 @@ let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation 
   end;
   match hops with
   | [] -> Printf.sprintf "%s(%s)" p subject
-  | roles ->
+  | rbs ->
       let atoms, target =
         List.fold_left
-          (fun (atoms, cur) (r : role_ref) ->
+          (fun (atoms, cur) rb ->
             let n = fresh ctx "N" in
-            (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (str (role_canonical r)) n ], n))
-          ([], subject) roles
+            (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (bound_role_term (doc_env ctx) rb) n ], n))
+          ([], subject) rbs
       in
       let q = fresh ctx "gplnav" in
       emit ctx "%s(%s) :- %s." q subject
@@ -9171,7 +9198,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
               fault
                 "the navigated check reaches the to-many role %S in a scalar condition"
                 (Option.value role.role_identifier ~default:"?");
-            Some role
+            Some (rb, role)
       in
       (* the type the characteristic is DECLARED on: the reached type on a
          navigated check. WF-043 crosses time-dependence for the
@@ -9181,7 +9208,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       let declared_on =
         match hop with
         | None -> subject_ot
-        | Some role -> Option.value role.role_object_type_name ~default:""
+        | Some (_, role) -> Option.value role.role_object_type_name ~default:""
       in
       if
         not
@@ -9209,7 +9236,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       let fails =
         match hop with
         | None -> Printf.sprintf "%s(%s)" p subject
-        | Some role ->
+        | Some (rb, _) ->
             (* the hop is a POSITIVE literal inside the helper, so a subject
                with no link derives no failure — ch. 3.9's null timeline,
                and a deliberate divergence from the UNQUALIFIED navigated
@@ -9217,7 +9244,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
             let q = fresh ctx "gpnav" in
             let n = fresh ctx "N" in
             emit ctx "%s(%s) :- isa(%s,%s), role(%s,%s,%s), %s(%s)." q subject subject
-              (str subject_ot) subject (str (role_canonical role)) n p n;
+              (str subject_ot) subject (bound_role_term env rb) n p n;
             Printf.sprintf "%s(%s)" q subject
       in
       (* ch. 3.9: "Negation complements the folded result" — the QUALIFIER's
@@ -9263,7 +9290,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
           "the navigated check reaches the to-many role %S in a scalar condition"
           (Option.value role.role_identifier ~default:"?");
       let n = fresh ctx "N" in
-      [ Printf.sprintf "role(%s,%s,%s)" subject (str (role_canonical role)) n;
+      [ Printf.sprintf "role(%s,%s,%s)" subject (role_term ~fact_type:rb.rb_fact_type role) n;
         (if negation then "not " else "") ^ Printf.sprintf "has(%s,%s)" n (str k) ]
   | Role_membership { fact_type; role; counterpart_type; negated; _ } ->
       (* the role check (RUNTIME-SEMANTICS ch. 5.8a, D11, U12): true iff a
@@ -9299,7 +9326,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
           "role check: the subject %S does not fill the role %S of %S, so no link of it can hold \
            the subject there"
           subject_ot role fact_type;
-      let canonical = role_canonical other in
+      let canonical = role_term ~fact_type other in
       (match counterpart_type with
       | None -> ()
       | Some ct ->
@@ -9330,13 +9357,13 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
         emit ctx "%s(%s) :- %s." p subject
           (String.concat ", "
              ([ Printf.sprintf "isa(%s,%s)" subject (str subject_ot);
-                Printf.sprintf "role(%s,%s,%s)" subject (str canonical) n ]
+                Printf.sprintf "role(%s,%s,%s)" subject canonical n ]
              @ narrow n));
         [ Printf.sprintf "not %s(%s)" p subject ]
       end
       else
         let n = fresh ctx "N" in
-        Printf.sprintf "role(%s,%s,%s)" subject (str canonical) n :: narrow n
+        Printf.sprintf "role(%s,%s,%s)" subject canonical n :: narrow n
   | Compound { quantifier_kind = All | The; components; _ } ->
       (* the conjunctive short circuit (RUNTIME-SEMANTICS ch. 5.10): member i is
          read only where members 1..i-1 all held, so the accumulated PREFIX
@@ -12923,8 +12950,8 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
   in
   let guard =
     match pair with
-    | Some (_, new_role, _) when not new_role.role_many ->
-        [ Printf.sprintf "not inputrole(%s,%s,_)" subject (str (role_canonical new_role)) ]
+    | Some (fact_type, new_role, _) when not new_role.role_many ->
+        [ Printf.sprintf "not inputrole(%s,%s,_)" subject (role_term ~fact_type new_role) ]
     | _ -> []
   in
   let stratum =
@@ -13046,12 +13073,12 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
     oc.assignments;
   (match pair with
   | None -> ()
-  | Some (_, new_role, subj_role) ->
+  | Some (fact_type, new_role, subj_role) ->
       head_body ctx
-        (Printf.sprintf "role(%s,%s,%s)" subject (str (role_canonical new_role)) term)
+        (Printf.sprintf "role(%s,%s,%s)" subject (role_term ~fact_type new_role) term)
         body;
       head_body ctx
-        (Printf.sprintf "role(%s,%s,%s)" term (str (role_canonical subj_role)) subject)
+        (Printf.sprintf "role(%s,%s,%s)" term (role_term ~fact_type subj_role) subject)
         body)
   end
 
@@ -13095,7 +13122,7 @@ let translate_fact_creation ctx (fc : resolved_fact_creation) =
   let hop (atoms, cur) rb =
     let v = fresh ctx "H" in
     ( atoms
-      @ [ Printf.sprintf "role(%s,%s,%s)" cur (str (role_canonical (Eval.bound_role env rb))) v ],
+      @ [ Printf.sprintf "role(%s,%s,%s)" cur (bound_role_term env rb) v ],
       v )
   in
   let mids =
@@ -13113,8 +13140,8 @@ let translate_fact_creation ctx (fc : resolved_fact_creation) =
   let body =
     (Printf.sprintf "isa(%s,%s)" subject (str anchor_point) :: cond_anchor) @ chain @ cond_target
   in
-  head_body ctx (Printf.sprintf "role(%s,%s,%s)" subject (str (role_canonical objective_role)) target) body;
-  head_body ctx (Printf.sprintf "role(%s,%s,%s)" target (str (role_canonical anchor_role)) subject) body;
+  head_body ctx (Printf.sprintf "role(%s,%s,%s)" subject (role_term ~fact_type:ftn objective_role) target) body;
+  head_body ctx (Printf.sprintf "role(%s,%s,%s)" target (role_term ~fact_type:ftn anchor_role) subject) body;
   (* a second distinct filler on a to-one end faults in ref/
      (World.add_link, ch. 5.5); a viol/2 witness plus the global
      integrity constraint makes clingo fail identically (UNSAT) instead
@@ -13124,7 +13151,7 @@ let translate_fact_creation ctx (fc : resolved_fact_creation) =
     if not r.role_many then
       emit ctx "viol(\"to-one second filler on role %s\",X) :- isa(X,%s), 2 <= #count { Y : role(X,%s,Y) }."
         (norm (role_canonical r)) (str holder_type)
-        (str (role_canonical r))
+        (role_term ~fact_type:ftn r)
   in
   to_one_guard objective_role anchor_point;
   to_one_guard anchor_role (req "the target type of a fact creation (the declared filler of its targetRole)" fc.fc_target)
@@ -13829,7 +13856,7 @@ let translate_allocation ctx i (v : resolved_allocation) =
      ref's cond_err does (S13) *)
   ctx.rule_name <- name;
   let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None } in
-  let role = role_canonical (Eval.bound_role env v.connecting_role) (* required (B12) *) in
+  let role = bound_role_term env v.connecting_role (* required (B12) *) in
   let p = Printf.sprintf "vd%d_" i in
   (* ch. 4.1: the recipient set of one source instance is every DOELTYPE
      instance the connecting relation reaches — the role supplies the
@@ -13844,7 +13871,7 @@ let translate_allocation ctx i (v : resolved_allocation) =
      [translate]), so where the filler is doelType or below — every
      document written before the chain existed — this derives exactly the
      role's links and the encoding is unchanged. *)
-  emit ctx "%sontv(B,X) :- role(B,%s,X), isa(X,%s)." p (str role) (str dt);
+  emit ctx "%sontv(B,X) :- role(B,%s,X), isa(X,%s)." p role (str dt);
   let recip = Printf.sprintf "%sontv(B,X)" p in
   let recip_any = Printf.sprintf "%sontv(B,_)" p in
   (* the allocation is a writer of the stacks of its share target and its
@@ -14315,9 +14342,9 @@ let translate_uniqueness ctx (u : resolved_uniqueness) =
           { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
             as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
         in
-        let role = Eval.bound_role env rb in
-        [ Printf.sprintf "role(S1,%s,P)" (str (role_canonical role));
-          Printf.sprintf "role(S2,%s,P)" (str (role_canonical role)) ]
+        let role = bound_role_term env rb in
+        [ Printf.sprintf "role(S1,%s,P)" role;
+          Printf.sprintf "role(S2,%s,P)" role ]
   in
   deposit ctx ~code:"EF-026" ~rule:(str name) ~subject:"S1"
     (Printf.sprintf "isa(S1,%s), isa(S2,%s), S1 != S2, %s" (str subject_ot) (str subject_ot)
@@ -14561,15 +14588,16 @@ let translate_case ctx (case : Case.t) =
         i.ctls;
       Eval.SMap.iter
         (fun key targets ->
-          let canonical = role_canonical (Case.resolve_role doc ~otype:i.otype ~key) in
+          let fact_type, role = stored_relation doc key in
+          let canonical = role_term ~fact_type role in
           List.iter
             (fun t ->
-              emit ctx "role(%s,%s,%s)." (str_raw label) (str canonical) (str_raw t);
+              emit ctx "role(%s,%s,%s)." (str_raw label) canonical (str_raw t);
               (* the 1:1 creation guard reads the input links only
                  (ch. 5.5's snapshot narrowing) — mirror them as
                  inputrole/3 when a creation could consult them *)
               if doc.object_creations <> [] then
-                emit ctx "inputrole(%s,%s,%s)." (str_raw label) (str canonical) (str_raw t))
+                emit ctx "inputrole(%s,%s,%s)." (str_raw label) canonical (str_raw t))
             targets)
         i.left_side)
     case.world.instances;

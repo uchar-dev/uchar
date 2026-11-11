@@ -12,7 +12,9 @@ spec bug.
 
 - Instances are constants; a characteristic is `has(Inst, "naam")`; an
   attribute value is `val(Inst, "naam", V)`; a role link is
-  `role(Bron, "rolnaam", Doel)`; a parameter is `param("naam", V)`.
+  `role(Bron, ("feittype", "rolnaam"), Doel)`, the fact type beside the
+  role, since a link belongs to its fact type (ch. 5.7a) and two fact
+  types may name a role alike; a parameter is `param("naam", V)`.
   Names are normalised on both sides. A scalar parameter the case does
   not bind has no fact, and binding is fail-fast (ch. 5.7): every read
   of it carries one `viol/2` guard in ref's own words, whose body is

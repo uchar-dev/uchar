@@ -4869,12 +4869,12 @@ let () =
   translates_carrying ~name:"ch3.9a the count joins on the role within the aggregation"
     ~ir:(tally "atLeast" 2)
     ~case_text:(kv_case ~member_list:[ ("S1", whole_year "50") ] ~truth:false ())
-    ~needle:{|: role(S,"schuiten",|};
+    ~needle:{|: role(S,("ligplaats","schuiten"),|};
   (* the emitted shape itself: one negated witness helper over the fold's own
      range, reading the whole-period FAILURE atom per element *)
   translates_carrying ~name:"ch3.9a ALLE reads the failure atom per element" ~ir:(kv_doc ())
     ~case_text:(kv_case ~member_list:[ ("S1", whole_year "50") ] ~truth:true ())
-    ~needle:{|role(S,"schuiten",|};
+    ~needle:{|role(S,("ligplaats","schuiten"),|};
   (* the REIFICATION itself, so the shape is pinned and not only its verdict:
      `all` emits a satisfaction helper and reads its negation *)
   translates_carrying ~name:"ch3.9a ALLE reifies the matrix" ~ir:(characteristic_matrix ())
@@ -19070,6 +19070,101 @@ let () =
          [ ("penningbudget", eur); ("onuitgekeerd budget", eur); ("penningtoewijzing", eur); ("penningmaximum", ct) ])
     ~case_text:(allocation_case_with_units ~cap_in_ct:true ~value_factor:1)
     ~needle:"restates a unit without a rounding"
+
+(* A link belongs to its fact type (RUNTIME-SEMANTICS ch. 5.7a) and a count
+   reads the one relation its sourceRole names (ch. 3.4a). Two fact types
+   between Jutter and Vondst whose far roles are both named "vondst": a
+   berging is no aanmelding. Read from case links, laid by an object creation,
+   and in the 1:1 guard of that creation, which reads the input links of its
+   own relation only (ch. 5.5). *)
+let links_per_relation_doc ~berging_many ~creation =
+  let whole = {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative" }|} in
+  let attr name = Printf.sprintf {|{ "node": "Attribute", "name": "%s", "datatype": %s }|} name whole in
+  let fact_type name near ~many =
+    Printf.sprintf
+      {|{ "node": "FactType", "name": "%s", "reciprocal": false, "roles": [
+      { "node": "Role", "name": "%s", "objectType": "Jutter", "many": false },
+      { "node": "Role", "name": "vondst", "objectType": "Vondst", "many": %b } ] }|}
+      name near many
+  in
+  let count target fact_type =
+    Printf.sprintf
+      {|{ "node": "Rule", "name": "%s", "versions": [ { "validity": { "node": "Validity" },
+      "target": { "node": "AttributeReference", "attribute": "%s", "subjectType": "Jutter" },
+      "value": { "node": "Aggregation", "kind": "count",
+        "arguments": [ { "node": "AttributeReference", "attribute": "vondst", "subjectType": "Jutter" } ],
+        "elementType": "Vondst", "sourceRole": { "node": "RoleBinding", "factType": "%s", "role": "vondst" },
+        "type": %s },
+      "initialisation": false, "presentation": "calculation" } ] }|}
+      target target fact_type whole
+  in
+  let creations =
+    if creation then
+      {|{ "node": "ObjectCreation", "name": "berg een vondst", "versions": [ { "createdType": "Vondst",
+      "subject": "Jutter", "assignments": [], "validity": { "node": "Validity" },
+      "connectingRole": { "node": "RoleBinding", "factType": "vondstberging", "role": "vondst" } } ] }|}
+    else ""
+  in
+  Printf.sprintf
+    {|{ "format": "uchar-ir-v1",
+  "model": { "objectTypes": [
+      { "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
+        "attributes": [ %s, %s ], "characteristics": [] },
+      { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten", "attributes": [],
+        "characteristics": [] } ],
+    "factTypes": [ %s, %s ], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
+    "timelines": [], "dayKinds": [] },
+  "rules": { "rules": [ %s, %s ], "dayKindDefinitions": [], "objectCreations": [ %s ], "allocations": [],
+    "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [],
+    "ruleGroups": [] },
+  "diagnostics": [] }|}
+    (attr "aangemeld") (attr "geborgen")
+    (fact_type "vondstaanmelding" "aanmelder" ~many:true)
+    (fact_type "vondstberging" "berger" ~many:berging_many)
+    (count "aangemeld" "vondstaanmelding") (count "geborgen" "vondstberging") creations
+
+let links_per_relation_case ~instances ~aangemeld ~geborgen =
+  Printf.sprintf
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ %s ], "parameters": {} },
+  "expected": [ { "kind": "attributeValue", "label": "J1", "attribute": "aangemeld", "value": { "number": "%d" } },
+    { "kind": "attributeValue", "label": "J1", "attribute": "geborgen", "value": { "number": "%d" } } ] }|}
+    (String.concat ", "
+       (List.map
+          (fun (label, otype, roles) ->
+            Printf.sprintf
+              {|{ "label": "%s", "objectType": "%s", "attributes": {}, "roles": { %s }, "characteristics": [] }|}
+              label otype roles)
+          instances))
+    aangemeld geborgen
+
+let () =
+  let jutter = ("J1", "Jutter", "") in
+  let vondst label roles = (label, "Vondst", roles) in
+  let input_doc = links_per_relation_doc ~berging_many:true ~creation:false in
+  verifier_clean ~name:"links per relation, case input" ~ir:input_doc;
+  clingo_matches ~name:"links per relation: a count reads the case links of its own fact type" ~ir:input_doc
+    ~case_text:
+      (links_per_relation_case
+         ~instances:
+           [ jutter; vondst "V1" {|"aanmelder": ["J1"]|}; vondst "V2" {|"berger": ["J1"]|};
+             vondst "V3" {|"aanmelder": ["J1"], "berger": ["J1"]|}; vondst "V4" {|"berger": ["J1"]|} ]
+         ~aangemeld:2 ~geborgen:3);
+  let created_doc = links_per_relation_doc ~berging_many:true ~creation:true in
+  verifier_clean ~name:"links per relation, created link" ~ir:created_doc;
+  clingo_matches ~name:"links per relation: a created link belongs to the fact type of its connectingRole"
+    ~ir:created_doc
+    ~case_text:(links_per_relation_case ~instances:[ jutter ] ~aangemeld:0 ~geborgen:1);
+  let blocked_doc = links_per_relation_doc ~berging_many:false ~creation:true in
+  verifier_clean ~name:"links per relation, 1:1 creation" ~ir:blocked_doc;
+  clingo_matches ~name:"links per relation: an input link of another fact type does not block a 1:1 creation"
+    ~ir:blocked_doc
+    ~case_text:
+      (links_per_relation_case ~instances:[ jutter; vondst "V1" {|"aanmelder": ["J1"]|} ] ~aangemeld:1 ~geborgen:1);
+  clingo_matches ~name:"links per relation: an input link of its own fact type blocks a 1:1 creation"
+    ~ir:blocked_doc
+    ~case_text:
+      (links_per_relation_case ~instances:[ jutter; vondst "V1" {|"berger": ["J1"]|} ] ~aangemeld:0 ~geborgen:1)
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
