@@ -183,7 +183,7 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
 7. **Time** *(skeleton)*
 8. **Serialization** *(lands with `spec/schema/`)*
 9. **Well-formedness rules** — the WF index, at the end of this document.
-10. **The RegelSpraak dialect** *(skeleton)*
+10. **Presentation** — the presentation fields, each with its test in gate 13.
 11. **Versioning policy** *(skeleton)*
 
 ---
@@ -10256,6 +10256,56 @@ carries the defaults reading directly through the ch. 7.8 standing norm
 `jutterswet-waardestelling`). Rule-readability of the conflict fact is
 **closed** for v1 (`RUNTIME-SEMANTICS.md` ch. 7.2, decided
 2026-08-20; reopening is additive).
+
+---
+
+## 10. Presentation
+
+The fields below are presentation in the sense of the conventions: each
+records how a source spelled something, and no executor's answer depends on
+it. Every other node, field and value of this document is core. A
+presentation field can still be bound by a well-formedness rule — the
+verifier holds a designation to WF-116 to WF-120, an origin to WF-121, the
+percentage tag to WF-007 and a group's members to WF-033 — because a field
+a consumer shows has to be well-formed for that consumer; what such a rule
+never decides is an executor's outcome.
+
+Each field has one of two tests, and gate 13
+(`scripts/check-reftype-derivation.sh`) runs it on every golden with case
+files that carries the field: ref, clingo and both Drools branches replay
+the changed copy and must give the outcome of the untouched document.
+
+- **Strip**: the field is optional in the schema, so a copy without it is a
+  document; the test removes it.
+- **Exchange**: the schema requires the field, or its presence is core, so
+  a copy without it is no document or another document; the test replaces
+  its value by another value the schema admits.
+
+| Field | Chapter | Schema | Test |
+|---|---|---|---|
+| `Characteristic.kind` (`adjectival`, `possessive`, `nominal`) | ch. 2.2 | required | exchange: each value replaced by the next of the three, the last by the first |
+| the percentage tag `presentation: "percentage"` on a `Number` | ch. 2.4 | optional, one value | strip |
+| `Dimension.preposition` | ch. 2.7 | optional | strip |
+| the vocabularies: `vocabularies`, `designations`, `valueDesignations` | ch. 2.12 | optional | strip, and exchange: the designations rotated within each scope of WF-118 and the vocabularies exchanged |
+| `origin` | ch. 2.13 | optional; `form` and `from` required inside it | strip the whole record |
+| the value of `RuleVersion.presentation` (`equation`, `calculation`) | ch. 3.1 | optional; its presence is core (the rule kind) | exchange: `equation` and `calculation` swapped |
+| a `RuleGroup` with `recursive` false | ch. 3.9 | the list `rules.ruleGroups` required, may be empty | strip the node from the list |
+| `Default.name` and `Default.statuteAnnotations` | ch. 6.1 | optional | strip |
+
+The three side tables of ch. 2.12, ch. 2.13 and ch. 6.1 have their own legs
+in gate 13 (VOCABULARY, ORIGIN, NAME); the other fields are changed together
+in one copy per golden, so that each golden replays once.
+
+What is core beside these fields, named because the source language spells
+it: the rule kind in its three states (ch. 3.1), the membership of a
+creation form in a recursive rule group (ch. 3.9), the cell forms of ch. 3
+and ch. 4 (ch. 2.7), the date builtins (ch. 4.3), the `dayKind` predicate
+(ch. 4.5), `dividedByAbs` (ch. 4.2), `filledCount` (ch. 4.3) and the
+whole-period qualifier (ch. 4.5).
+
+**OPEN:** `Rule.statuteAnnotations` (ch. 3.1), the source reference (ch. 4)
+and `diagnostics` (ch. 2) carry no semantics either and no executor reads
+them for evaluation, but no leg of gate 13 removes them yet.
 
 ---
 
