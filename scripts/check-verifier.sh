@@ -234,7 +234,8 @@ while IFS= read -r f; do
         printf 'FAIL: negative case %s passed the verifier (must violate %s):\n%s\n' \
             "$f" "$expect" "$out" >&2
         status=1
-    elif ! printf '%s\n' "$out" | grep -q "$expect"; then
+    # the rule as the key of a report line, never a mention of it in a message or a pointer
+    elif ! printf '%s\n' "$out" | grep -qE "^${expect}(\.[a-z0-9-]+)? FAIL "; then
         printf 'FAIL: negative case %s rejected, but not for %s:\n%s\n' \
             "$f" "$expect" "$out" >&2
         status=1

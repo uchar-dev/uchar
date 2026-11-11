@@ -116,9 +116,10 @@ if [ "$n_cases" -lt "$EXPECTED_MIN_CASES" ]; then
 fi
 
 # check 4: goldens without any case file are listed, never silently green.
+# Every directory holding an ir.json, at any depth: the anchor goldens sit one level below the rest.
 uncovered=''
-for d in corpus/golden/*/; do
-    [ -f "${d}ir.json" ] || continue
+for f in $(find corpus/golden -name ir.json | sort); do
+    d=${f%ir.json}
     if ! ls "${d}"case*.json >/dev/null 2>&1; then
         uncovered="$uncovered ${d%/}"
     fi

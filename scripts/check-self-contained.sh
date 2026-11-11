@@ -40,6 +40,18 @@ PRIVATE='(/users/|/home/|~/|regelspraak-java|calculemus|[^a-zA-Z]main-spec)'
 
 status=0
 
+# git grep exits 0 on a hit, 1 on none and above 1 on its own error; an error read as "no hit"
+# would pass every sweep below in silence.
+zone_grep() {
+    git grep "$@"
+    rc=$?
+    if [ "$rc" -gt 1 ]; then
+        echo "FAIL: git grep exited $rc (arguments: $*)" >&2
+        exit 2
+    fi
+    return "$rc"
+}
+
 # the graduated normative documents must always exist — a rename would
 # otherwise skip them silently green through the [ -e ] guard below
 for doc in spec/IR-SPEC.md spec/RUNTIME-SEMANTICS.md; do
@@ -55,7 +67,7 @@ for zone in $ZONES; do
         status=1
         continue
     fi
-    if git grep -nIiE "$PRIVATE" -- "$zone" $EXCEPTIONS; then
+    if zone_grep -nIiE "$PRIVATE" -- "$zone" $EXCEPTIONS; then
         echo "FAIL: machine-local or private-repo reference in artifact zone '$zone' (WAY-OF-WORKING.md section 6)" >&2
         status=1
     fi
@@ -75,7 +87,7 @@ done
 # missing zone is reported once instead of three times.
 for zone in $ZONES; do
     [ -e "$zone" ] || continue
-    if git grep -nIiE '(^|[^[:alpha:]])toka([^[:alpha:]]|$)' -- "$zone"; then
+    if zone_grep -nIiE '(^|[^[:alpha:]])toka([^[:alpha:]]|$)' -- "$zone"; then
         echo "FAIL: TOKA material in artifact zone '$zone' (corpus provenance, corpus/README.md; the sole exception is the toka/ parity zone)" >&2
         status=1
     fi
@@ -89,7 +101,7 @@ done
 # rsPlus, rsVerdeelOpVolgorde, Breuk) is a LOUD failure here, never a silent copy.
 for zone in ref spec/verifier; do
     [ -e "$zone" ] || continue
-    if git grep -nIE 'RegelSpraakRuntime|org\.drools|rsPlus|rsVerdeelOpVolgorde|Breuk' -- "$zone"; then
+    if zone_grep -nIE 'RegelSpraakRuntime|org\.drools|rsPlus|rsVerdeelOpVolgorde|Breuk' -- "$zone"; then
         echo "FAIL: production-runtime token in '$zone' — the Drools runtime lives ONLY under backends/drools/runtime/; ref/ and spec/verifier/ share no code with it (decision V3-a)" >&2
         status=1
     fi
@@ -99,7 +111,7 @@ done
 # TOKA casus and names the toolchain by design) but MUST carry no machine-local
 # paths — the one rule that still applies inside the zone.
 if [ -e toka ]; then
-    if git grep -nIiE '(/users/|/home/|~/)' -- toka; then
+    if zone_grep -nIiE '(/users/|/home/|~/)' -- toka; then
         echo "FAIL: machine-local path in the toka/ parity zone (WAY-OF-WORKING.md section 6; toka/ is exempt from the prose rules but not from this one)" >&2
         status=1
     fi
@@ -118,7 +130,7 @@ fi
 # vocabulary; the allowance re-greps the line with that token stripped).
 # This script excludes itself: it necessarily spells the patterns it hunts.
 RENAME_HITS=$(mktemp) || exit 2
-git grep -inE 'ladder|rung' -- . ':(exclude)toka' ':(exclude)HERNOEM_LADDER_20260829.md' ':(exclude)scripts/check-self-contained.sh' > "$RENAME_HITS" || true
+zone_grep -inE 'ladder|rung' -- . ':(exclude)toka' ':(exclude)HERNOEM_LADDER_20260829.md' ':(exclude)scripts/check-self-contained.sh' > "$RENAME_HITS" || true
 c_formerly_ir=0; c_formerly_rs=0; c_annex_open=0; c_annex_close=0; c_card=0; c_rungolden=0
 while IFS= read -r hit; do
     hitfile=${hit%%:*}
