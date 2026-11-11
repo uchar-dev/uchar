@@ -2000,8 +2000,65 @@ let role_canonical (r : role_ref) =
    keep their links apart, as ref's World.link_key keeps them *)
 let role_term ~fact_type (r : role_ref) = Printf.sprintf "(%s,%s)" (str fact_type) (str (role_canonical r))
 
+(* the role a binding names (IR-SPEC ch. 2.6): the named role of the named fact
+   type. WF-047 resolves it on a verifier-clean document; a dangling binding
+   faults *)
+let bound_role (doc : document) (rb : role_binding) =
+  match Ir_v0.Checks.find_ci doc.fact_types rb.rb_fact_type with
+  | None -> fault "role binding names unknown fact type %S" rb.rb_fact_type
+  | Some (ft : fact_type_name) -> (
+      match
+        List.find_opt
+          (fun (r : role_ref) -> match r.role_identifier with Some n -> norm n = norm rb.rb_role | None -> false)
+          ft.role_names
+      with
+      | Some r -> r
+      | None -> fault "role binding names unknown role %S of fact type %S" rb.rb_role rb.rb_fact_type)
+
 (* the relation term of a role binding *)
 let bound_role_term env (rb : role_binding) = role_term ~fact_type:rb.rb_fact_type (Eval.bound_role env rb)
+
+(* The members of a fold's range over the case's own links, in their order
+   (RUNTIME-SEMANTICS ch. 5.7a: a list keeps the order the case wrote it in, a
+   leg the loader materialised its ascending label order): each step of the
+   range walked from every object the previous one reached, an object reached
+   twice kept at its first reach (ch. 3.4b), and of those the objects of the
+   element type (ch. 2.2). A member a creation adds is not among them; its
+   order is no norm (ch. 3.9a). *)
+let fold_members ctx ?binding ?path (self : Uchar_ref.World.instance) ~element =
+  let steps =
+    match (path, binding) with
+    | Some trail, _ -> trail
+    | None, Some rb -> [ rb ]
+    | None, None ->
+        fault
+          "an instance fold over %S carries no range: its relation is written as a range (sourceRole \
+           or sourcePath) and never derived"
+          element
+  in
+  let step reached (rb : role_binding) =
+    let role = bound_role ctx.doc rb in
+    List.concat_map
+      (fun (i : Uchar_ref.World.instance) ->
+        List.map
+          (fun label ->
+            match Uchar_ref.World.SMap.find_opt label ctx.case.world.instances with
+            | Some m -> m
+            | None -> fault "the case links %S to %S, which it does not declare" i.label label)
+          (Uchar_ref.World.links i ~fact_type:rb.rb_fact_type role))
+      reached
+  in
+  let reached = List.fold_left step [ self ] steps in
+  let seen = Hashtbl.create 16 in
+  List.filter
+    (fun (i : Uchar_ref.World.instance) ->
+      if Hashtbl.mem seen i.label then false
+      else begin
+        Hashtbl.add seen i.label ();
+        isa ctx i.otype element
+      end)
+    reached
+
 
 (* the fact type and role a loaded world stores a link under: the case
    loader keys every link by World.link_key, which names both *)
@@ -2336,7 +2393,7 @@ let range_order ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x ~j
              if isa ctx i.otype subject_ot then
                List.mapi
                  (fun k (mi : Uchar_ref.World.instance) -> (i.label, mi.label, k))
-                 (Eval.fold_members ?binding:source_role ?path:source_path env ctx.case.world i ~element:el)
+                 (fold_members ctx ?binding:source_role ?path:source_path i ~element:el)
                @ acc
              else acc)
            ctx.case.world.instances []);
@@ -5217,21 +5274,19 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
              asOfDate bucket carries that total) and the asymmetry is
              deliberate — there the session date IS the horizon.
 
-             The fence walks the ACTUAL MEMBERS, through ref's own
-             [fold_members], not every instance of the element type: a
-             disconnected instance is no contributor, and ref answers 0
-             (an empty totaal) where a type-wide fence would have
-             refused. Measured on exactly that shape — a Vondst subject
-             folding over "de bewarende jutter" whose link is declared on
-             the Jutter side, so the walk finds no member — ref says 0
-             and this arm must say 0 too. [fold_members] is the same
-             helper the join uses, so the walk is ch. 2.2-scoped as well
-             (2026-09-16): a linked instance the elementType does
-             not cover is not a member either, and its missing timeline is
-             not this fold's business — witnessed by
-             `golden/jutterswet-muntbewaring`, which the older
-             [linked]/[linked_path] walk refused by name on a plain
-             Vondst carrying a bucket scalar.
+             The fence walks the ACTUAL MEMBERS ([fold_members]), not
+             every instance of the element type: a disconnected instance
+             is no contributor, and the fold answers 0 (an empty totaal)
+             where a type-wide fence would have refused. Measured on
+             exactly that shape — a Vondst subject folding over "de
+             bewarende jutter" whose link is declared on the Jutter side,
+             so the walk finds no member — ref says 0 and this arm must
+             say 0 too. The walk is ch. 2.2-scoped as well: a linked
+             instance the elementType does not cover is not a member
+             either, and its missing timeline is not this fold's business
+             — witnessed by `golden/jutterswet-muntbewaring`, which a walk
+             without the element type refused by name on a plain Vondst
+             carrying a bucket scalar.
 
              The die/dat FILTER narrows the walk the third way (2026-09-16,
              the residue the typerange card parked). ref settles the
@@ -5328,7 +5383,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                       if Uchar_ref.World.timeline i a = None && Uchar_ref.World.attr i a <> Value.Empty then
                         Some (self, i)
                       else None)
-                    (Eval.fold_members ?binding:source_role ?path:source_path env ctx.case.world self ~element:el)
+                    (fold_members ctx ?binding:source_role ?path:source_path self ~element:el)
                   @ acc)
               ctx.case.world.instances []
           in
