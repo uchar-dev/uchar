@@ -55,7 +55,7 @@ The fixed predicate vocabulary:
 | `is_a/2` | instance → object type |
 | `val/3` | instance, attribute, scaled (or S2 symbolic) value |
 | `has/2` | instance, characteristic |
-| `role/3` | holder, canonical role name, filler |
+| `role/3` | holder, relation term (fact type, canonical role name), filler |
 | `tl/5` | instance, attribute, from, to, scaled value (timeline segment) |
 | `ktl/4` | instance, characteristic, from, to (condition timeline) |
 | `param/2`, `param_tl/4` | parameter values, scalar and vintaged |
