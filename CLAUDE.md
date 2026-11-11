@@ -327,12 +327,15 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
     field and case files replays once, on one copy with every field changed at once — `Dimension.preposition`, the
     percentage tag, every non-recursive `RuleGroup` and every `statuteAnnotations` of a Rule stripped, every
     `Characteristic.kind` rotated to another kind, the `presentation` of every rule version exchanged (`equation` ↔
-    `calculation`, the tag kept), every diagnostic exchanged (its message prefixed, its line plus one); a
-    difference is assigned to a field by replaying the differing executor on a copy per field, and the report
-    names the fields that move it alone. In those four legs the four executors must reproduce the untouched
-    outcome, with no survivor list. The legs run as five processes, the presentation leg's calls through
-    `scripts/lib/parallel.sh`; a Drools run on an untouched golden that ends in no status line (`PLAYED`, `FAIL`,
-    `EXCLUDE`, `ERROR`) fails by golden, leg and executor. Floors: `EXPECTED_MIN_TWISTS`,
+    `calculation`, the tag kept), every diagnostic exchanged (its message prefixed, its line plus one), every
+    `source` record stripped and the snippet of every `Unresolved` exchanged (its last character dropped, so
+    WF-113 (b) still holds); a Drools status line that differs only in a quoted snippet ('{snippet}') of a changed
+    record is the same answer, and no other difference is; a difference is assigned to a field by replaying the
+    differing executor on a copy per field, and the report names the fields that move it alone. In those four legs
+    the four executors must reproduce the untouched outcome, with no survivor list. The legs run as five
+    processes, the presentation leg's calls through `scripts/lib/parallel.sh`; a Drools run on an untouched golden
+    that ends in no status line (`PLAYED`, `FAIL`, `EXCLUDE`, `ERROR`) fails by golden, leg and executor. Floors:
+    `EXPECTED_MIN_TWISTS`,
     `EXPECTED_MIN_VOCABULARY_GOLDENS`, `EXPECTED_MIN_VOCABULARY_STRIPPED`, `EXPECTED_MIN_VOCABULARY_ROTATED`,
     `EXPECTED_MIN_ORIGIN_GOLDENS`, `EXPECTED_MIN_ORIGIN_STRIPPED`, `EXPECTED_MIN_NAME_GOLDENS`,
     `EXPECTED_MIN_NAME_STRIPPED`, `EXPECTED_MIN_ANNOTATIONS_STRIPPED`, `EXPECTED_MIN_PRESENTATION_GOLDENS`, and per
@@ -341,7 +344,8 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
     `EXPECTED_MIN_PREPOSITION_GOLDENS`, `EXPECTED_MIN_PREPOSITION_STRIPPED`, `EXPECTED_MIN_PERCENTAGE_GOLDENS`,
     `EXPECTED_MIN_PERCENTAGE_STRIPPED`, `EXPECTED_MIN_RULE_GROUP_GOLDENS`, `EXPECTED_MIN_RULE_GROUP_STRIPPED`,
     `EXPECTED_MIN_RULE_ANNOTATIONS_GOLDENS`, `EXPECTED_MIN_RULE_ANNOTATIONS_STRIPPED`,
-    `EXPECTED_MIN_DIAGNOSTICS_GOLDENS`, `EXPECTED_MIN_DIAGNOSTICS_EXCHANGED`.
+    `EXPECTED_MIN_DIAGNOSTICS_GOLDENS`, `EXPECTED_MIN_DIAGNOSTICS_EXCHANGED`, `EXPECTED_MIN_SOURCE_GOLDENS`,
+    `EXPECTED_MIN_SOURCE_STRIPPED`, `EXPECTED_MIN_SOURCE_EXCHANGED`.
 
 14. `scripts/check-flogic.sh` — the F-logic frontend (`frontends/flogic`, plain OCaml in the workspace dune build, no
     external toolchain) builds and its suite passes: it emits every test program, holds it verifier-clean, replays
