@@ -262,6 +262,38 @@
 # text of one of its annotations, an executor that reads the field, turns the leg red on the two
 # goldens that carry that text (jutterswet-schorsing, -tweeledige-grondslag) on both branches;
 # without it the leg is green.
+#
+# --- the presentation leg (IR-SPEC ch. 10) ---------------------------------------------------
+# The same question for the presentation fields of the model and rule layers: how a source spelled
+# something, which no executor's answer may depend on. A field the schema leaves optional is STRIPPED; a
+# field the schema requires, or whose presence is core, keeps its place and has its value EXCHANGED:
+#   - kind: every `Characteristic.kind` rotated adjectival -> possessive -> nominal -> adjectival, so
+#     every characteristic carries another valid kind (required in the schema);
+#   - rule-presentation: the `presentation` of every rule version that carries one exchanged, equation
+#     <-> calculation; the tag stays, because its presence is what makes a version a computation
+#     (IR-SPEC ch. 3.1), which is core;
+#   - preposition: every `Dimension.preposition` stripped;
+#   - percentage: every percentage tag (`presentation: "percentage"` on a Number) stripped;
+#   - rule-group: every `RuleGroup` with `recursive: false` taken out of `ruleGroups`; a recursive group
+#     stays, because membership of one admits a creation cycle (WF-045), which is core.
+# Every golden with at least one of these fields and with case files is replayed ONCE, against one
+# combined copy with every field changed at once, with the executors and the comparison of the origin
+# leg (ref and clingo per case against the pinned expectations; the two Drools branches print their own
+# untouched status line). One copy per golden instead of one per field: the fields sit on nearly every
+# golden (the rule presentation on 342 of 419), so a replay per field would multiply the leg's JVMs by
+# up to three. A difference on the combined copy is then assigned to a field: the executor that
+# differed runs again on the copies of that golden with one field changed each, and the report names
+# the fields whose own copy moves its answer, or says that only the combination does. The leg replays
+# its calls through scripts/lib/parallel.sh, one process per two cores, and judges them in corpus order.
+# A reader of a stripped field in ref or clingo makes gates 5 and 6 red on the untouched golden; a reader
+# in the Drools loader or transpilers, and a reader of an exchanged value in any executor, is caught
+# here. Measured 2026-11-11 (card core-and-presentation): every executor reproduces the untouched outcome
+# on every combined copy. Measured by mutation the same day, with one executor made to read one field
+# each — ref faulting on a possessive characteristic, clingo faulting on a calculation version, the
+# Drools loader refusing a dimension without a preposition, a percentage number without its tag, and a
+# document with a non-recursive rule group — the leg goes red on the goldens that carry each field, in
+# that executor, and names that field alone. No survivor list: no reading of a presentation field is a
+# legitimate one. A field that no golden carries fails its floor.
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
@@ -354,11 +386,12 @@ TWISTER=$(mktemp) || exit 2
 VOCABULARY_TWISTER=$(mktemp) || exit 2
 HSTRIPPER=$(mktemp) || exit 2
 NSTRIPPER=$(mktemp) || exit 2
+PRESENTER=$(mktemp) || exit 2
 WORK=$(mktemp -d) || exit 2
 LIST=$(mktemp) || exit 2
 UNCOVERED=$(mktemp) || exit 2   # "<golden> <node>" per unit-bearing annotation outside table + exceptions
 HITS=$(mktemp) || exit 2     # "<golden>|<executor>" per survivor entry that ACTUALLY diverged
-trap 'rm -rf "$TWISTER" "$VOCABULARY_TWISTER" "$HSTRIPPER" "$NSTRIPPER" "$WORK" "$LIST" "$UNCOVERED" "$HITS"' EXIT
+trap 'rm -rf "$TWISTER" "$VOCABULARY_TWISTER" "$HSTRIPPER" "$NSTRIPPER" "$PRESENTER" "$WORK" "$LIST" "$UNCOVERED" "$HITS"' EXIT
 
 cat > "$TWISTER" <<'PY'
 import json, os, sys
@@ -885,6 +918,123 @@ if stripped or annotations:
 print(stripped, annotations)
 PY
 
+cat > "$PRESENTER" <<'PY'
+import json, os, sys
+
+# The copies of the presentation leg (see the script header): one copy per field, the field alone
+# stripped or exchanged, and one combined copy with every field changed at once. Numbers keep their
+# lexemes, so a copy differs from the golden in its field(s) and in nothing else. Prints the number of
+# places each field changes, in the order of FIELDS.
+
+
+class RawNum:
+    __slots__ = ("raw",)
+
+    def __init__(self, s):
+        self.raw = s
+
+
+def write_json(o, path):
+    def piece(o):
+        if isinstance(o, RawNum):
+            return o.raw
+        if isinstance(o, dict):
+            return "{" + ",".join(json.dumps(k, ensure_ascii=False) + ":" + piece(v) for k, v in o.items()) + "}"
+        if isinstance(o, list):
+            return "[" + ",".join(piece(v) for v in o) + "]"
+        return json.dumps(o, ensure_ascii=False)
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(piece(o))
+
+
+def nodes(j, kind):
+    if isinstance(j, dict):
+        if j.get("node") == kind:
+            yield j
+        for v in j.values():
+            yield from nodes(v, kind)
+    elif isinstance(j, list):
+        for v in j:
+            yield from nodes(v, kind)
+
+
+# The rotation moves every kind to another valid one, so a reader of any single value sees it change.
+KIND_ROTATION = {"adjectival": "possessive", "possessive": "nominal", "nominal": "adjectival"}
+PRESENTATION_EXCHANGE = {"equation": "calculation", "calculation": "equation"}
+
+
+def kind(doc):
+    n = 0
+    for c in nodes(doc, "Characteristic"):
+        c["kind"] = KIND_ROTATION[c["kind"]]
+        n += 1
+    return n
+
+
+def rule_presentation(doc):
+    # Only the value moves: the tag's presence decides the rule kind (IR-SPEC ch. 3.1), which is core.
+    n = 0
+    for rule in doc["rules"].get("rules", []):
+        for version in rule["versions"]:
+            if "presentation" in version:
+                version["presentation"] = PRESENTATION_EXCHANGE[version["presentation"]]
+                n += 1
+    return n
+
+
+def preposition(doc):
+    n = 0
+    for d in nodes(doc, "Dimension"):
+        if d.pop("preposition", None) is not None:
+            n += 1
+    return n
+
+
+def percentage(doc):
+    n = 0
+    for d in nodes(doc, "Number"):
+        if d.pop("presentation", None) is not None:
+            n += 1
+    return n
+
+
+def rule_group(doc):
+    # A recursive group stays: membership of one admits a creation cycle (WF-045), which is core.
+    groups = doc["rules"].get("ruleGroups")
+    if not groups:
+        return 0
+    kept = [g for g in groups if g["recursive"]]
+    doc["rules"]["ruleGroups"] = kept
+    return len(groups) - len(kept)
+
+
+FIELDS = [("kind", kind), ("rule-presentation", rule_presentation), ("preposition", preposition),
+          ("percentage", percentage), ("rule-group", rule_group)]
+
+source, target = sys.argv[1], sys.argv[2]
+
+
+def load():
+    with open(source, encoding="utf-8") as fh:
+        return json.load(fh, parse_int=RawNum, parse_float=RawNum)
+
+
+combined = load()
+counts = []
+for name, change in FIELDS:
+    single = load()
+    n = change(single)
+    if change(combined) != n:
+        sys.exit("the %s change counts differently on the combined copy of %s" % (name, source))
+    if n:
+        os.makedirs(target, exist_ok=True)
+        write_json(single, os.path.join(target, name + ".json"))
+    counts.append(n)
+if any(counts):
+    write_json(combined, os.path.join(target, "combined.json"))
+print(" ".join(str(n) for n in counts))
+PY
+
 # Is <golden> x <executor> a pinned survivor? Read LINE by line, never word by word: a
 # reason carries spaces, so splitting $SURVIVORS on whitespace would shred every entry the
 # moment the list stops being empty.
@@ -926,7 +1076,12 @@ no_status() {   # <golden> <leg> <executor> <line>
 # reproduce (two runs that both crashed would compare equal), so the copy then fails as a non-zero exit.
 clingo_same() {   # <untouched ir.json> <changed copy> <case>; the copy's report in $report_line
     report_line=$("$RUNNER_CLINGO" "$2" "$3" 2>&1) && return 0
-    untouched=$("$RUNNER_CLINGO" "$1" "$3" 2>&1) && return 1
+    clingo_refused_alike "$1" "$3"
+}
+# The second half of clingo_same, for a copy that exited non-zero with its report in $report_line (the
+# presentation leg runs the copy as a task of its own).
+clingo_refused_alike() {   # <untouched ir.json> <case>
+    untouched=$("$RUNNER_CLINGO" "$1" "$2" 2>&1) && return 1
     case $untouched in
         "TRANSLATION FAULT: CLINGO-"[0-9][0-9][0-9]": "*|"CLINGO-"[0-9][0-9][0-9]": clingo: "*|"CLINGO-"[0-9][0-9][0-9]", CLINGO-"*": clingo: "*) ;;
         *) return 1 ;;
@@ -976,6 +1131,21 @@ EXPECTED_MIN_NAME_STRIPPED=64        # 2026-10-21: measured 64 names stripped ov
 # lists over 12 goldens, the 27 the frontend wrote into Default.source until then and the two of the
 # golden jutterswet-tweeledige-grondslag.
 EXPECTED_MIN_ANNOTATIONS_STRIPPED=29 # 2026-10-21: measured 29 statuteAnnotations lists stripped
+
+# The presentation leg's floors (see the script header), measured 2026-11-11 at the card core-and-presentation:
+# the goldens it replays, and per field the goldens that carry it and the places its copy changes, so a copier
+# that quietly changes less, or a field that leaves the corpus, fails by the name of the field.
+EXPECTED_MIN_PRESENTATION_GOLDENS=394       # 2026-11-11: measured 394 goldens with a presentation field and case files
+EXPECTED_MIN_KIND_GOLDENS=211               # 2026-11-11: measured 211 goldens with a characteristic
+EXPECTED_MIN_KIND_ROTATED=438               # 2026-11-11: measured 438 characteristic kinds rotated
+EXPECTED_MIN_RULE_PRESENTATION_GOLDENS=342  # 2026-11-11: measured 342 goldens with a tagged rule version
+EXPECTED_MIN_RULE_PRESENTATION_EXCHANGED=868  # 2026-11-11: measured 868 presentation values exchanged
+EXPECTED_MIN_PREPOSITION_GOLDENS=10         # 2026-11-11: measured 10 goldens with a dimension preposition
+EXPECTED_MIN_PREPOSITION_STRIPPED=13        # 2026-11-11: measured 13 prepositions stripped
+EXPECTED_MIN_PERCENTAGE_GOLDENS=7           # 2026-11-11: measured 7 goldens with a percentage tag
+EXPECTED_MIN_PERCENTAGE_STRIPPED=13         # 2026-11-11: measured 13 percentage tags stripped
+EXPECTED_MIN_RULE_GROUP_GOLDENS=1           # 2026-11-11: measured 1 golden with a non-recursive rule group (jutterswet-vocabulaires)
+EXPECTED_MIN_RULE_GROUP_STRIPPED=1          # 2026-11-11: measured 1 non-recursive rule group stripped
 
 status=0
 find corpus/golden -name ir.json 2>/dev/null | sort > "$LIST"
@@ -1256,16 +1426,147 @@ leg_name() {
         "$status" "$n_ngoldens" "$n_n_stripped" "$n_a_stripped" "$n_nreplays" > "$WORK/name.counts"
 }
 
-# --- the four legs, side by side --------------------------------------------------------------------
-# The unit, vocabulary, origin and name legs share nothing but the list of goldens and the jar, so they run
-# as four processes at once, each one golden after the other, with its report into $WORK/<leg>.log, its exit
-# status into $WORK/<leg>.rc and its counts into $WORK/<leg>.counts. The gate then reads them in the order
-# of the legs, each report and the checks after it in the place they have, so the report and the first
-# failure are those of the four legs one after the other. Four legs are four processes on any machine; a
-# replay JVM with PARALLEL_JVM_FLAGS uses 1.5 cores (scripts/lib/parallel.sh), so the four keep about 6
-# cores busy.
-echo "  legs: 4 processes (unit, vocabulary, origin, name)"
-for leg in twist vocabulary origin name; do
+# --- the presentation leg (see the script header) --------------------------------------------------
+# Whether an executor gives on a changed copy the answer it gives on the untouched golden, judged as the other
+# legs judge it: ref exits 0 on every case, clingo as clingo_same, a Drools branch prints its untouched line.
+same_answer() {   # <executor> <untouched ir.json> <copy> <file of case paths> <exec-model line> <DRL-text line>
+    case $1 in
+        ref)
+            while IFS= read -r sa_case; do
+                "$RUNNER_REF" "$3" "$sa_case" > /dev/null 2>&1 || return 1
+            done < "$4" ;;
+        clingo)
+            while IFS= read -r sa_case; do
+                clingo_same "$2" "$3" "$sa_case" || return 1
+            done < "$4" ;;
+        drools|drl)
+            sa_flag= sa_line=$5
+            [ "$1" = drl ] && sa_flag=--drl sa_line=$6
+            sa_copy=$3 sa_cases=$4
+            set --
+            while IFS= read -r sa_case; do set -- "$@" "$sa_case"; done < "$sa_cases"
+            [ "$(java $PARALLEL_JVM_FLAGS -jar "$JAR" $sa_flag "$sa_copy" "$@" 2>/dev/null | tail -1)" = "$sa_line" ] ;;
+    esac
+}
+# A difference on the combined copy is assigned to a field by the copies with that field alone changed.
+fields_alone() {   # the arguments of same_answer without the copy, the copies' directory in its place
+    fa_moved=
+    for fa_field in kind rule-presentation preposition percentage rule-group; do
+        [ -f "$3/$fa_field.json" ] || continue
+        same_answer "$1" "$2" "$3/$fa_field.json" "$4" "$5" "$6" || fa_moved="$fa_moved $fa_field"
+    done
+    if [ -n "$fa_moved" ]; then
+        echo "  the field(s) that move the answer on their own:$fa_moved"
+    else
+        echo "  no field moves the answer on its own: only the combination does"
+    fi
+}
+leg_presentation() {
+    CASES=$WORK/presentation.cases
+    TASKS=$WORK/presentation.tasks
+    ONE=$WORK/presentation.one
+    mkdir -p "$TASKS" || exit 2
+    jobs=$(parallel_jobs 2) || exit 2
+    : > "$WORK/presentation.list"
+    i=0
+    while IFS= read -r ir; do
+        dir=$(dirname "$ir")
+        ident=${dir#corpus/golden/}
+        find "$dir" -maxdepth 1 -name 'case*.json' 2>/dev/null | sort > "$CASES"
+        [ -s "$CASES" ] || continue                # no case file: not replayable
+        pdir="$WORK/presentation/$ident"
+        counts=$(python3 "$PRESENTER" "$ir" "$pdir") || { echo "FAIL: the presentation copier could not read $ir" >&2; exit 2; }
+        [ -f "$pdir/combined.json" ] || continue   # no presentation field: nothing to probe here
+        i=$((i + 1))
+        printf '%s %s %s\n' "$i" "$dir" "$counts" >> "$WORK/presentation.list"
+        cp "$CASES" "$pdir/cases" || exit 2
+        c=0
+        while IFS= read -r case; do
+            c=$((c + 1))
+            parallel_task "$TASKS" "$i.ref.$c" out "$RUNNER_REF" "$pdir/combined.json" "$case"
+            parallel_task "$TASKS" "$i.clingo.$c" out "$RUNNER_CLINGO" "$pdir/combined.json" "$case"
+        done < "$CASES"
+        set --
+        while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
+        parallel_task "$TASKS" "$i.exec" null java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" "$@"
+        parallel_task "$TASKS" "$i.exec.copy" null java $PARALLEL_JVM_FLAGS -jar "$JAR" "$pdir/combined.json" "$@"
+        parallel_task "$TASKS" "$i.drl" null java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$ir" "$@"
+        parallel_task "$TASKS" "$i.drl.copy" null java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$pdir/combined.json" "$@"
+    done < "$LIST"
+    parallel_run "$TASKS" "$jobs" || exit 2
+
+    n_pgoldens=0
+    n_kind_goldens=0 n_kind=0
+    n_rp_goldens=0 n_rp=0
+    n_prep_goldens=0 n_prep=0
+    n_pct_goldens=0 n_pct=0
+    n_rg_goldens=0 n_rg=0
+    n_preplays=0
+    while read -r i dir nk nrp nprep npct nrg; do
+        ident=${dir#corpus/golden/}
+        ir=$dir/ir.json
+        pdir="$WORK/presentation/$ident"
+        n_pgoldens=$((n_pgoldens + 1))
+        [ "$nk" -eq 0 ] || { n_kind_goldens=$((n_kind_goldens + 1)); n_kind=$((n_kind + nk)); }
+        [ "$nrp" -eq 0 ] || { n_rp_goldens=$((n_rp_goldens + 1)); n_rp=$((n_rp + nrp)); }
+        [ "$nprep" -eq 0 ] || { n_prep_goldens=$((n_prep_goldens + 1)); n_prep=$((n_prep + nprep)); }
+        [ "$npct" -eq 0 ] || { n_pct_goldens=$((n_pct_goldens + 1)); n_pct=$((n_pct + npct)); }
+        [ "$nrg" -eq 0 ] || { n_rg_goldens=$((n_rg_goldens + 1)); n_rg=$((n_rg + nrg)); }
+        c=0
+        while IFS= read -r case; do
+            c=$((c + 1))
+            n_preplays=$((n_preplays + 2))
+            printf '%s\n' "$case" > "$ONE"
+            if [ "$(cat "$TASKS/$i.ref.$c.rc")" != 0 ]; then
+                printf 'FAIL: %s — ref answers differently on the presentation copy:\n%s\n' "$case" "$(cat "$TASKS/$i.ref.$c.out")" >&2
+                fields_alone ref "$ir" "$pdir" "$ONE" "" "" >&2
+                status=1
+            fi
+            report_line=$(cat "$TASKS/$i.clingo.$c.out")
+            if [ "$(cat "$TASKS/$i.clingo.$c.rc")" != 0 ] && ! clingo_refused_alike "$ir" "$case"; then
+                printf 'FAIL: %s — clingo answers differently on the presentation copy:\n%s\n' "$case" "$(cat "$TASKS/$i.clingo.$c.out")" >&2
+                fields_alone clingo "$ir" "$pdir" "$ONE" "" "" >&2
+                status=1
+            fi
+        done < "$pdir/cases"
+        n_preplays=$((n_preplays + 2))
+        base_expr=$(tail -1 "$TASKS/$i.exec.out")
+        p=$(tail -1 "$TASKS/$i.exec.copy.out")
+        drl_baseline=$(tail -1 "$TASKS/$i.drl.out")
+        dp=$(tail -1 "$TASKS/$i.drl.copy.out")
+        if ! drools_status "$base_expr"; then
+            no_status "$ident" presentation Drools "$base_expr"
+        elif [ "$p" != "$base_expr" ]; then
+            printf 'FAIL: %s — Drools answers differently on the presentation copy:\n  untouched: %s\n  changed:   %s\n' \
+                "$ident" "$base_expr" "$p" >&2
+            fields_alone drools "$ir" "$pdir" "$pdir/cases" "$base_expr" "$drl_baseline" >&2
+            status=1
+        fi
+        if ! drools_status "$drl_baseline"; then
+            no_status "$ident" presentation "the DRL-text branch" "$drl_baseline"
+        elif [ "$dp" != "$drl_baseline" ]; then
+            printf 'FAIL: %s — the DRL-text branch answers differently on the presentation copy:\n  untouched: %s\n  changed:   %s\n' \
+                "$ident" "$drl_baseline" "$dp" >&2
+            fields_alone drl "$ir" "$pdir" "$pdir/cases" "$base_expr" "$drl_baseline" >&2
+            status=1
+        fi
+    done < "$WORK/presentation.list"
+    printf 'leg_status=%s n_pgoldens=%s n_kind_goldens=%s n_kind=%s n_rp_goldens=%s n_rp=%s n_prep_goldens=%s n_prep=%s n_pct_goldens=%s n_pct=%s n_rg_goldens=%s n_rg=%s n_preplays=%s\n' \
+        "$status" "$n_pgoldens" "$n_kind_goldens" "$n_kind" "$n_rp_goldens" "$n_rp" "$n_prep_goldens" "$n_prep" \
+        "$n_pct_goldens" "$n_pct" "$n_rg_goldens" "$n_rg" "$n_preplays" > "$WORK/presentation.counts"
+}
+
+# --- the five legs, side by side --------------------------------------------------------------------
+# The unit, vocabulary, origin, name and presentation legs share nothing but the list of goldens and the jar,
+# so they run as five processes at once, with its report into $WORK/<leg>.log, its exit status into
+# $WORK/<leg>.rc and its counts into $WORK/<leg>.counts. The gate then reads them in the order of the legs,
+# each report and the checks after it in the place they have, so the report and the first failure are those
+# of the five legs one after the other. The first four go one golden after the other; a replay JVM with
+# PARALLEL_JVM_FLAGS uses 1.5 cores (scripts/lib/parallel.sh), so they keep about 6 cores busy. The
+# presentation leg replays nearly every golden, too many for one process, so it runs its calls through
+# scripts/lib/parallel.sh on one process per two cores, as gates 12 and 17 do, and judges them in corpus order.
+echo "  legs: 5 processes (unit, vocabulary, origin, name, presentation)"
+for leg in twist vocabulary origin name presentation; do
     { ( "leg_$leg" ) > "$WORK/$leg.log" 2>&1; echo $? > "$WORK/$leg.rc"; } &
 done
 wait
@@ -1336,6 +1637,30 @@ if [ "$n_a_stripped" -lt "$EXPECTED_MIN_ANNOTATIONS_STRIPPED" ]; then
     echo "FAIL: the name leg stripped $n_a_stripped statuteAnnotations list(s) of defaults, but EXPECTED_MIN_ANNOTATIONS_STRIPPED pins at least $EXPECTED_MIN_ANNOTATIONS_STRIPPED — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
     exit 1
 fi
+
+leg_report presentation
+# A field the leg changed in no golden, or in fewer goldens or places than its floor, fails by its name.
+presentation_floor() {   # <count> <floor> <name of the floor> <what was counted>
+    if [ "$1" -eq 0 ]; then
+        echo "FAIL: the presentation leg found no $4 — it probed nothing there (an empty set is never green)" >&2
+        exit 1
+    fi
+    if [ "$1" -lt "$2" ]; then
+        echo "FAIL: the presentation leg counted $1 $4, but $3 pins at least $2 — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
+        exit 1
+    fi
+}
+presentation_floor "$n_pgoldens" "$EXPECTED_MIN_PRESENTATION_GOLDENS" EXPECTED_MIN_PRESENTATION_GOLDENS 'golden(s) with a presentation field and case files'
+presentation_floor "$n_kind_goldens" "$EXPECTED_MIN_KIND_GOLDENS" EXPECTED_MIN_KIND_GOLDENS 'golden(s) with a characteristic'
+presentation_floor "$n_kind" "$EXPECTED_MIN_KIND_ROTATED" EXPECTED_MIN_KIND_ROTATED 'characteristic kind(s) rotated'
+presentation_floor "$n_rp_goldens" "$EXPECTED_MIN_RULE_PRESENTATION_GOLDENS" EXPECTED_MIN_RULE_PRESENTATION_GOLDENS 'golden(s) with a tagged rule version'
+presentation_floor "$n_rp" "$EXPECTED_MIN_RULE_PRESENTATION_EXCHANGED" EXPECTED_MIN_RULE_PRESENTATION_EXCHANGED 'presentation value(s) of a rule version exchanged'
+presentation_floor "$n_prep_goldens" "$EXPECTED_MIN_PREPOSITION_GOLDENS" EXPECTED_MIN_PREPOSITION_GOLDENS 'golden(s) with a dimension preposition'
+presentation_floor "$n_prep" "$EXPECTED_MIN_PREPOSITION_STRIPPED" EXPECTED_MIN_PREPOSITION_STRIPPED 'preposition(s) stripped'
+presentation_floor "$n_pct_goldens" "$EXPECTED_MIN_PERCENTAGE_GOLDENS" EXPECTED_MIN_PERCENTAGE_GOLDENS 'golden(s) with a percentage tag'
+presentation_floor "$n_pct" "$EXPECTED_MIN_PERCENTAGE_STRIPPED" EXPECTED_MIN_PERCENTAGE_STRIPPED 'percentage tag(s) stripped'
+presentation_floor "$n_rg_goldens" "$EXPECTED_MIN_RULE_GROUP_GOLDENS" EXPECTED_MIN_RULE_GROUP_GOLDENS 'golden(s) with a non-recursive rule group'
+presentation_floor "$n_rg" "$EXPECTED_MIN_RULE_GROUP_STRIPPED" EXPECTED_MIN_RULE_GROUP_STRIPPED 'non-recursive rule group(s) stripped'
 
 # The survivor list, BOTH halves (the check-noop pattern): an entry whose golden is gone is stale,
 # and so is an entry that no longer diverges — it then admits an exception nothing needs any more,
@@ -1425,6 +1750,13 @@ if [ "$status" -eq 0 ]; then
     printf '  name leg: %s golden(s) with named or annotated defaults, floor %s; %s names stripped (floor %s), %s statuteAnnotations lists (floor %s); %s executor replays reproduce the untouched outcome\n' \
         "$n_ngoldens" "$EXPECTED_MIN_NAME_GOLDENS" "$n_n_stripped" "$EXPECTED_MIN_NAME_STRIPPED" \
         "$n_a_stripped" "$EXPECTED_MIN_ANNOTATIONS_STRIPPED" "$n_nreplays"
+    printf '  presentation leg: %s golden(s) on one combined copy each, floor %s; %s characteristic kinds rotated over %s goldens (floors %s, %s), %s rule presentation values exchanged over %s (floors %s, %s), %s prepositions stripped over %s (floors %s, %s), %s percentage tags stripped over %s (floors %s, %s), %s non-recursive rule groups stripped over %s (floors %s, %s); %s executor replays reproduce the untouched outcome\n' \
+        "$n_pgoldens" "$EXPECTED_MIN_PRESENTATION_GOLDENS" \
+        "$n_kind" "$n_kind_goldens" "$EXPECTED_MIN_KIND_ROTATED" "$EXPECTED_MIN_KIND_GOLDENS" \
+        "$n_rp" "$n_rp_goldens" "$EXPECTED_MIN_RULE_PRESENTATION_EXCHANGED" "$EXPECTED_MIN_RULE_PRESENTATION_GOLDENS" \
+        "$n_prep" "$n_prep_goldens" "$EXPECTED_MIN_PREPOSITION_STRIPPED" "$EXPECTED_MIN_PREPOSITION_GOLDENS" \
+        "$n_pct" "$n_pct_goldens" "$EXPECTED_MIN_PERCENTAGE_STRIPPED" "$EXPECTED_MIN_PERCENTAGE_GOLDENS" \
+        "$n_rg" "$n_rg_goldens" "$EXPECTED_MIN_RULE_GROUP_STRIPPED" "$EXPECTED_MIN_RULE_GROUP_GOLDENS" "$n_preplays"
     printf '  corpus-wide accounting: %s unit-bearing annotations = %s twistable + %s exempt (the annotation IS the source) + %s without a convertible sister + %s at a §2.10 fourth-class branch (v0 derives no result unit) + %s outside the twist table\n' \
         "$n_unit" "$((n_unit - n_exempt - n_without_sister - n_uncovered))" \
         "$n_exempt" "$n_without_sister" "$n_fourth" "$n_unknown"

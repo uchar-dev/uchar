@@ -1,9 +1,10 @@
 # shellcheck shell=sh
-# Collect in parallel, judge in order: the helper with which gates 6 (check-clingo), 12 (check-drools) and 17
-# (check-readings) run their costly call per golden or per case on several processes at once: gate 6 the
-# clingo runner, gate 12 a `java -jar` of the Drools backend, gate 17 the reference runner's trace and a
-# `java -jar` of the backend. Gate 13 (check-reftype-derivation) takes only PARALLEL_JVM_FLAGS from it: its
-# four legs run as four processes of its own (`&` and `wait`), each one golden after the other.
+# Collect in parallel, judge in order: the helper with which gates 6 (check-clingo), 12 (check-drools), 13
+# (check-reftype-derivation) and 17 (check-readings) run their costly call per golden or per case on several
+# processes at once: gate 6 the clingo runner, gate 12 a `java -jar` of the Drools backend, gate 13's
+# presentation leg the reference and clingo runners and a `java -jar` of the backend, gate 17 the reference
+# runner's trace and a `java -jar` of the backend. Gate 13's other four legs take only PARALLEL_JVM_FLAGS
+# from it: they run as processes of its own (`&` and `wait`), each one golden after the other.
 # Sourced from the repository root (POSIX sh: dash as CI's /bin/sh, bash, macOS sh):
 #
 #     . scripts/lib/parallel.sh
