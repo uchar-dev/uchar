@@ -1,0 +1,119 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "M1",
+        "objectType": "Melding",
+        "attributes": {
+          "meldtijdstip": {
+            "dateTime": "2026-06-15T14:30:00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "M2",
+        "objectType": "Melding",
+        "attributes": {
+          "meldtijdstip": {
+            "dateTime": "2026-06-15T23:59:59.999"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "M3",
+        "objectType": "Melding",
+        "attributes": {
+          "meldtijdstip": {
+            "dateTime": "2026-06-15T00:00:00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "meldjaar",
+      "value": {
+        "number": "2026"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "meldmaand",
+      "value": {
+        "number": "6"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "melddag",
+      "value": {
+        "number": "15"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M2",
+      "attribute": "meldjaar",
+      "value": {
+        "number": "2026"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M2",
+      "attribute": "meldmaand",
+      "value": {
+        "number": "6"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M2",
+      "attribute": "melddag",
+      "value": {
+        "number": "15"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M3",
+      "attribute": "meldjaar",
+      "value": {
+        "number": "2026"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M3",
+      "attribute": "meldmaand",
+      "value": {
+        "number": "6"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M3",
+      "attribute": "melddag",
+      "value": {
+        "number": "15"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

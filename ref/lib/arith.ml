@@ -576,22 +576,7 @@ let agg_max vs = agg_extreme (fun c -> c > 0) vs
 let agg_first vs = agg_extreme (fun c -> c <= 0) vs
 let agg_last vs = agg_extreme (fun c -> c >= 0) vs
 
-(* --- date part extraction / date arithmetic (ch. 1.2b + ch. 3.8) ------- *)
-
-let year_of = function
-  | Empty -> Empty
-  | Date z -> let y, _, _ = civil_from_days z in Num (Q.of_int y, Unitless)
-  | v -> fault "yearOf: expected a date, got %s" (to_string v)
-
-let month_of = function
-  | Empty -> Empty
-  | Date z -> let _, m, _ = civil_from_days z in Num (Q.of_int m, Unitless)
-  | v -> fault "monthOf: expected a date, got %s" (to_string v)
-
-let day_from = function
-  | Empty -> Empty
-  | Date z -> let _, _, d = civil_from_days z in Num (Q.of_int d, Unitless)
-  | v -> fault "dayOf: expected a date, got %s" (to_string v)
+(* --- date arithmetic (ch. 1.2b + ch. 3.8) ------------------------------ *)
 
 (* THE REPRESENTABLE RANGE OF A DATE (ch. 3.8, normative): the civil days whose
    midnight lies in the representable millisecond range [-2^62, 2^62 - 1],
@@ -781,6 +766,26 @@ let ms_per_day = 86_400_000
 let split_ms t =
   let d = floor_div t ms_per_day in
   (d, t - (d * ms_per_day))
+
+(* date part extraction (ch. 1.2b + ch. 3.8): the civil components of a date
+   of either precision; of a datum-tijd they read the civil day of its
+   instant, so its clock time changes none of the three *)
+let civil_parts name = function
+  | Date z -> civil_from_days z
+  | Date_time t -> civil_from_days (fst (split_ms t))
+  | v -> fault "%s: expected a date, got %s" name (to_string v)
+
+let year_of = function
+  | Empty -> Empty
+  | v -> let y, _, _ = civil_parts "yearOf" v in Num (Q.of_int y, Unitless)
+
+let month_of = function
+  | Empty -> Empty
+  | v -> let _, m, _ = civil_parts "monthOf" v in Num (Q.of_int m, Unitless)
+
+let day_from = function
+  | Empty -> Empty
+  | v -> let _, _, d = civil_parts "dayOf" v in Num (Q.of_int d, Unitless)
 
 let sub_day_ms : Ir_v0.Checks.time_unit -> int option = function
   | Tu_hour -> Some 3_600_000

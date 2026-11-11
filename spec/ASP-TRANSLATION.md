@@ -729,10 +729,12 @@ and this backend); declared factors and stelsel never enter.
   divisibility; operands non-negative, so truncation is floor). The
   day clamps by the exact integer min `(D + ML − |D − ML|)/2`, and the
   re-encode is `days_from_civil` with the `(14 − M)/12` March shift.
-- **The day-precision part extractors** (jaar/maand/dag-uit) bind the
-  same era decomposition once and read the civil components off it —
-  `PM/12`, `(PM mod 12) + 1` and `D` — as unitless whole terms at
-  scale 1 (ch. 3.8: the month 1..12, never a March-based index).
+- **The part extractors** (jaar/maand/dag-uit) bind the same era
+  decomposition once and read the civil components off it — `PM/12`,
+  `(PM mod 12) + 1` and `D` — as unitless whole terms at scale 1
+  (ch. 3.8: the month 1..12, never a March-based index). Of a datum-tijd
+  they decompose the day D of its pair term `dt(D, MS)`, the civil day
+  of its instant; the clock time changes none of the three.
 - **eerste-paasdag** is the ch. 3.8 Gauss/Anonymous chain as binding
   atoms — the spec's `quot`/`mod` are gringo's `/` and `\` verbatim —
   ending in the `days_from_civil` re-encode (the `(14 − MO)/12`

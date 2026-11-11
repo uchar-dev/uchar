@@ -1,0 +1,84 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "M1",
+        "objectType": "Melding",
+        "attributes": {
+          "meldtijdstip": {
+            "dateTime": "1969-12-31T23:00:00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "M2",
+        "objectType": "Melding",
+        "attributes": {
+          "meldtijdstip": {
+            "dateTime": "1600-02-29T12:00:00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "meldjaar",
+      "value": {
+        "number": "1969"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "meldmaand",
+      "value": {
+        "number": "12"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "melddag",
+      "value": {
+        "number": "31"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M2",
+      "attribute": "meldjaar",
+      "value": {
+        "number": "1600"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M2",
+      "attribute": "meldmaand",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M2",
+      "attribute": "melddag",
+      "value": {
+        "number": "29"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

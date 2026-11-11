@@ -1623,7 +1623,9 @@ EXPECTED_CHANNEL=(
 # (PLAYED 8).
 # 375 with jutterswet-saldotoezicht: "regelversie controle saldo is inconsistent" reads the inconsistency channel, one
 # fact (controle saldo x J1) flags every Dossier, and without a fact none (RUNTIME-SEMANTICS ch. 5.6; PLAYED 2).
-EXPECTED_PLAYED=375
+# 376 with jutterswet-meldtijdstip-delen: year, month and day of a datum-tijd, the civil date of its instant
+# (RUNTIME-SEMANTICS ch. 3.8; PLAYED 4).
+EXPECTED_PLAYED=376
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

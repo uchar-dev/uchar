@@ -6899,10 +6899,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             assert false
       end
   | Function_call { kind = (Year_of | Month_of | Day_of) as kind; call_arguments; filter; _ } ->
-      (* the day-precision part extractors (ch. 3.8): the civil components
-         of the operand's day number as unitless whole terms — the same
-         era decomposition the packed-month rule rides (PM = 12·year +
-         month − 1, D the day of month). Leeg propagates by the bare join:
+      (* the part extractors (ch. 3.8): the civil components of the
+         operand's day number as unitless whole terms — the same era
+         decomposition the packed-month rule rides (PM = 12·year + month − 1,
+         D the day of month). Of a datum-tijd that day number is the D of
+         its pair term dt(D, MS), the civil day of its instant; the clock
+         time changes none of the three. Leeg propagates by the bare join:
          an unbound date leaves the chain unbound. *)
       if filter <> None then fault "a filter on a part extractor has no v0 form";
       let a =
@@ -6910,14 +6912,17 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         | [ a ] -> a
         | _ -> fault "a part extractor expects one argument"
       in
-      (match static_type ctx a with
-      | Some Date_in_days -> ()
-      | Some Date_time_type ->
-          fault "datum-tijd part extraction is not translated (the sub-day extractors are not \
-                 the ms layer's arithmetic; no corpus case)"
-      | _ -> fault "part-extractor operand is not statically a day-precision date");
-      let ba, ta, sa = expr_term ctx ~subject ~subject_ot a in
-      if sa <> 1 then fault "part-extractor operand must be an unscaled day term";
+      let ba, ta =
+        match static_type ctx a with
+        | Some Date_in_days ->
+            let ba, ta, sa = expr_term ctx ~subject ~subject_ot a in
+            if sa <> 1 then fault "part-extractor operand must be an unscaled day term";
+            (ba, ta)
+        | Some Date_time_type ->
+            let ba, d, _ = dt_term ctx ~subject ~subject_ot a in
+            (ba, d)
+        | _ -> fault "part-extractor operand is not statically a date"
+      in
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       pre_epoch_fence ctx ~subject ~body:((base :: ctx.rule_guard) @ ba) ta;
       let catoms, pmv, dv = civil_pm_day ctx ta in
@@ -8442,13 +8447,16 @@ and dk_value ctx ~stack ~day (e : expr) : Value.t =
       | None -> fault "unknown parameter %S" nm)
   | Function_call { kind; grain = Some _; _ } when not (bucketing kind) -> foreign_granularity ()
   | Function_call { kind = (Year_of | Month_of | Day_of) as k; call_arguments; filter = None; _ } -> (
+      let part z =
+        let y, m, dd = Value.civil_from_days z in
+        Value.Num (Q.of_int (match k with Year_of -> y | Month_of -> m | _ -> dd), Value.Unitless)
+      in
       match dk_value ctx ~stack ~day (one "a date-part extractor" call_arguments) with
       | Value.Empty -> Value.Empty
-      | Value.Date z ->
-          let y, m, dd = Value.civil_from_days z in
-          Value.Num
-            (Q.of_int (match k with Year_of -> y | Month_of -> m | _ -> dd), Value.Unitless)
-      | v -> fault "a date-part extractor needs a day-precision date, got %s" (Value.to_string v))
+      | Value.Date z -> part z
+      (* of a datum-tijd, the civil day of its instant (ch. 3.8) *)
+      | Value.Date_time t -> part (fst (split_datetime t))
+      | v -> fault "a date-part extractor needs a date, got %s" (Value.to_string v))
   | Function_call { kind = Easter_sunday; call_arguments; filter = None; _ } -> (
       match dk_value ctx ~stack ~day (one "easterSunday" call_arguments) with
       | Value.Empty -> Value.Empty

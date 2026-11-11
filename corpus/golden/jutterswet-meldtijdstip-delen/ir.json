@@ -1,0 +1,206 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Melding",
+        "animate": false,
+        "plural": "Meldingen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "meldtijdstip",
+            "datatype": {
+              "node": "Date",
+              "precision": "millisecond"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "meldjaar",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "meldmaand",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "melddag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "meldjaar van een melding",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "meldjaar",
+              "subjectType": "Melding",
+              "source": {
+                "snippet": "Het meldjaar van een Melding"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "yearOf",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "meldtijdstip",
+                  "subjectType": "Melding",
+                  "source": {
+                    "snippet": "zijn meldtijdstip"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het jaar uit zijn meldtijdstip"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "meldmaand van een melding",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "meldmaand",
+              "subjectType": "Melding",
+              "source": {
+                "snippet": "De meldmaand van een Melding"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "monthOf",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "meldtijdstip",
+                  "subjectType": "Melding",
+                  "source": {
+                    "snippet": "zijn meldtijdstip"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "de maand uit zijn meldtijdstip"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "melddag van een melding",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "melddag",
+              "subjectType": "Melding",
+              "source": {
+                "snippet": "De melddag van een Melding"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "dayOf",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "meldtijdstip",
+                  "subjectType": "Melding",
+                  "source": {
+                    "snippet": "zijn meldtijdstip"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "de dag uit zijn meldtijdstip"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

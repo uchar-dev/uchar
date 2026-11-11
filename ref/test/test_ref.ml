@@ -5281,6 +5281,13 @@ let () =
   expect_num "WV-3.8-jaar-uit" (Arith.year_of (d "2026-11-03")) "2026";
   expect_num "WV-3.8-maand-uit" (Arith.month_of (d "2026-11-03")) "11";
   expect_num "WV-3.8-dag-uit" (Arith.day_from (d "2026-11-03")) "3";
+  (* of a datum-tijd the civil date of its instant; the clock time changes
+     none of the three *)
+  let dt s = Value.Date_time (Case.ms_of_datetime s) in
+  expect_num "WV-3.8-jaar-uit-datum-tijd" (Arith.year_of (dt "2026-06-15T14:30:00")) "2026";
+  expect_num "WV-3.8-maand-uit-datum-tijd" (Arith.month_of (dt "2026-06-15T14:30:00")) "6";
+  expect_num "WV-3.8-dag-uit-datum-tijd" (Arith.day_from (dt "2026-06-15T14:30:00")) "15";
+  expect_num "WV-3.8-dag-uit-datum-tijd-laatste-milliseconde" (Arith.day_from (dt "2026-06-15T23:59:59.999")) "15";
   (* the four pinned Easter Sundays: 2024 (the standing pin), 2026, the
      March Easter 2027, the late-April Easter 2038 *)
   check "WV-3.8-paasdag-2024" (Arith.easter_sunday (n "2024") = d "2024-03-31");

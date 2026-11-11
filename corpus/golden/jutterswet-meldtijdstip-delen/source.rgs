@@ -1,0 +1,17 @@
+Objecttype de Melding (mv: Meldingen)
+    het meldtijdstip Datum en tijd in millisecondes;
+    het meldjaar Numeriek (geheel getal);
+    de meldmaand Numeriek (geheel getal);
+    de melddag Numeriek (geheel getal);
+
+Regel meldjaar van een melding
+    geldig altijd
+        Het meldjaar van een Melding moet berekend worden als het jaar uit zijn meldtijdstip.
+
+Regel meldmaand van een melding
+    geldig altijd
+        De meldmaand van een Melding moet berekend worden als de maand uit zijn meldtijdstip.
+
+Regel melddag van een melding
+    geldig altijd
+        De melddag van een Melding moet berekend worden als de dag uit zijn meldtijdstip.

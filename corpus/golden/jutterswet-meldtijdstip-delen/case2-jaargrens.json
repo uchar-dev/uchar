@@ -1,0 +1,84 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "M1",
+        "objectType": "Melding",
+        "attributes": {
+          "meldtijdstip": {
+            "dateTime": "2025-12-31T23:59:59.999"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "M2",
+        "objectType": "Melding",
+        "attributes": {
+          "meldtijdstip": {
+            "dateTime": "2026-01-01T00:00:00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "meldjaar",
+      "value": {
+        "number": "2025"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "meldmaand",
+      "value": {
+        "number": "12"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "melddag",
+      "value": {
+        "number": "31"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M2",
+      "attribute": "meldjaar",
+      "value": {
+        "number": "2026"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M2",
+      "attribute": "meldmaand",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M2",
+      "attribute": "melddag",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
