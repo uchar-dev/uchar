@@ -329,9 +329,10 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
     `Characteristic.kind` rotated to another kind, the `presentation` of every rule version exchanged (`equation` ↔
     `calculation`, the tag kept), every diagnostic exchanged (its message prefixed, its line plus one), every
     `source` record stripped and the snippet of every `Unresolved` exchanged (its last character dropped, so
-    WF-113 (b) still holds); a Drools status line that differs only in a quoted snippet ('{snippet}') of a changed
-    record is the same answer, and no other difference is; a difference is assigned to a field by replaying the
-    differing executor on a copy per field, and the report names the fields that move it alone. In those four legs
+    WF-113 (b) still holds); a Drools status line or a clingo refusal that differs only in a quoted snippet
+    ('{snippet}' in Drools, "{snippet}" in clingo) of a changed record is the same answer, and no other difference
+    is; a difference is assigned to a field by replaying the differing executor on a copy per field, and the report
+    names the fields that move it alone. In those four legs
     the four executors must reproduce the untouched outcome, with no survivor list. The legs run as five
     processes, the presentation leg's calls through `scripts/lib/parallel.sh`; a Drools run on an untouched golden
     that ends in no status line (`PLAYED`, `FAIL`, `EXCLUDE`, `ERROR`) fails by golden, leg and executor. Floors:

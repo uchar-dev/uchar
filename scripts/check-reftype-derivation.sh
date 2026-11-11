@@ -283,9 +283,10 @@
 #   - source: every source record stripped, except on an Unresolved, where the schema requires it: there the
 #     snippet loses its last character, which stays inside every diagnostic message that accounted for the
 #     marker (WF-113 (b)). The Drools backend quotes a node's snippet in many refusal sentences ('{snippet}'),
-#     so a Drools status line on a copy without the snippet is compared after each quoted old snippet of the
-#     untouched line is rendered as the copy has it (same_drools_line); no other difference passes, and the
-#     report counts the lines that differed only there.
+#     and the clingo backend in the refusal CLINGO-035 ("{snippet}", OCaml's %S, "" without one), so a Drools
+#     status line or a clingo refusal on a copy without the snippet is compared after each quoted old snippet of
+#     the untouched one is rendered as the copy has it (same_drools_line, clingo_refused_alike); no other
+#     difference passes, and the report counts the lines that differed only there.
 # Every golden with at least one of these fields and with case files is replayed ONCE, against one
 # combined copy with every field changed at once, with the executors and the comparison of the origin
 # leg (ref and clingo per case against the pinned expectations; the two Drools branches print their own
@@ -1091,26 +1092,41 @@ FIELDS = [("kind", kind), ("rule-presentation", rule_presentation), ("prepositio
           ("source", source), ("rule-group", rule_group)]
 
 
-def same_line(snippets, untouched, changed):
-    # The Drools backend quotes the snippet of a node in many refusal sentences ('{snippet}', '' without one). A
-    # line that differs only there is the same answer: each quoted old snippet of the untouched line is rendered as
-    # the copy has it, in one pass, and nothing else is touched. A snippet the copy moved to two different values is
-    # left alone, so such a line stays different.
+def ocaml_quoted(s):
+    # OCaml's %S: the UTF-8 bytes between double quotes, with String.escaped's escapes (a byte outside ' '..'~'
+    # as \ddd in decimal).
+    named = {'"': '\\"', "\\": "\\\\", "\n": "\\n", "\t": "\\t", "\r": "\\r", "\b": "\\b"}
+    out = []
+    for b in s.encode("utf-8"):
+        c = chr(b)
+        out.append(named[c] if c in named else c if 32 <= b <= 126 else "\\%03d" % b)
+    return '"' + "".join(out) + '"'
+
+
+def same_line(quote, snippets, untouched, changed):
+    # The Drools backend quotes the snippet of a node in many refusal sentences ('{snippet}', '' without one), the
+    # clingo backend in the refusal CLINGO-035 ("{snippet}" as OCaml's %S writes it, "" without one); [quote] says
+    # which. A line that differs only there is the same answer: each quoted old snippet of the untouched line is
+    # rendered as the copy has it, in one pass, and nothing else is touched. A snippet the copy moved to two
+    # different values is left alone, so such a line stays different.
     import re
+    render = (lambda t: "'" + t + "'") if quote == "'" else ocaml_quoted
     with open(snippets, encoding="utf-8") as fh:
         pairs = json.load(fh)
     to = {}
     for old, new in pairs:
         to.setdefault(old, set()).add(new)
-    to = {old: news.pop() for old, news in to.items() if len(news) == 1}
+    to = {render(old): render(news.pop()) for old, news in to.items() if len(news) == 1}
     if not to:
         return untouched == changed
-    pattern = re.compile("|".join(re.escape("'" + old + "'") for old in sorted(to, key=len, reverse=True)))
-    return pattern.sub(lambda m: "'" + to[m.group(0)[1:-1]] + "'", untouched) == changed
+    pattern = re.compile("|".join(re.escape(old) for old in sorted(to, key=len, reverse=True)))
+    return pattern.sub(lambda m: to[m.group(0)], untouched) == changed
 
 
 if sys.argv[1] == "--same-line":
-    sys.exit(0 if same_line(sys.argv[2], sys.argv[3], sys.argv[4]) else 1)
+    if sys.argv[2] not in ("'", '"'):
+        sys.exit("--same-line takes the quote ' (Drools) or \" (clingo), not %r" % sys.argv[2])
+    sys.exit(0 if same_line(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]) else 1)
 
 source_path, target = sys.argv[1], sys.argv[2]
 
@@ -1184,14 +1200,20 @@ clingo_same() {   # <untouched ir.json> <changed copy> <case>; the copy's report
     clingo_refused_alike "$1" "$3"
 }
 # The second half of clingo_same, for a copy that exited non-zero with its report in $report_line (the
-# presentation leg runs the copy as a task of its own).
-clingo_refused_alike() {   # <untouched ir.json> <case>
+# presentation leg runs the copy as a task of its own). With the copies' directory of the presentation leg, a
+# refusal that differs from the untouched one only in a quoted snippet the source change moved is the same answer
+# (same_line in the presenter, as for a Drools status line), and clingo_rendered says so.
+clingo_refused_alike() {   # <untouched ir.json> <case> [<copies' directory>]
+    clingo_rendered=0
     untouched=$("$RUNNER_CLINGO" "$1" "$2" 2>&1) && return 1
     case $untouched in
         "TRANSLATION FAULT: CLINGO-"[0-9][0-9][0-9]": "*|"CLINGO-"[0-9][0-9][0-9]": clingo: "*|"CLINGO-"[0-9][0-9][0-9]", CLINGO-"*": clingo: "*) ;;
         *) return 1 ;;
     esac
-    [ "$untouched" = "$report_line" ]
+    [ "$untouched" = "$report_line" ] && return 0
+    [ $# -ge 3 ] && [ -f "$3/snippets.json" ] || return 1
+    python3 "$PRESENTER" --same-line '"' "$3/snippets.json" "$untouched" "$report_line" || return 1
+    clingo_rendered=1
 }
 
 # --- monotone floors (maintainer decision 2026-09-09) --------------------------------------------
@@ -1564,7 +1586,7 @@ outcome() {   # <ref|clingo> <ir.json> <case>
 same_drools_line() {   # <copies' directory> <untouched line> <copy's line>
     [ "$2" = "$3" ] && return 0
     [ -f "$1/snippets.json" ] || return 1
-    python3 "$PRESENTER" --same-line "$1/snippets.json" "$2" "$3"
+    python3 "$PRESENTER" --same-line "'" "$1/snippets.json" "$2" "$3"
 }
 fields_alone() {   # <executor> <untouched ir.json> <copies' directory> <file of case paths> <exec-model line> <DRL-text line>
     fa_moved=
@@ -1578,7 +1600,12 @@ fields_alone() {   # <executor> <untouched ir.json> <copies' directory> <file of
             fi
             for fa_field in kind rule-presentation preposition percentage rule-annotations diagnostics source rule-group; do
                 [ -f "$3/$fa_field.json" ] || continue
-                [ "$(outcome "$1" "$3/$fa_field.json" "$fa_case")" = "$fa_base" ] || fa_moved="$fa_moved $fa_field"
+                fa_out=$(outcome "$1" "$3/$fa_field.json" "$fa_case")
+                [ "$fa_out" = "$fa_base" ] && continue
+                # a clingo refusal that differs only in a quoted snippet, as in clingo_refused_alike
+                [ "$1" = clingo ] && [ "$fa_field" = source ] \
+                    && python3 "$PRESENTER" --same-line '"' "$3/snippets.json" "$fa_base" "$fa_out" && continue
+                fa_moved="$fa_moved $fa_field"
             done ;;
         drools|drl)
             fa_flag= fa_line=$5
@@ -1644,7 +1671,7 @@ leg_presentation() {
     n_rg_goldens=0 n_rg=0
     n_ra_goldens=0 n_ra=0
     n_diag_goldens=0 n_diag=0
-    n_src_goldens=0 n_src=0 n_srcx=0 n_rendered=0
+    n_src_goldens=0 n_src=0 n_srcx=0 n_rendered=0 n_rendered_clingo=0
     n_preplays=0
     while read -r i dir nk nrp nprep npct nra ndiag nsrc nsrcx nrg; do
         ident=${dir#corpus/golden/}
@@ -1670,10 +1697,14 @@ leg_presentation() {
                 status=1
             fi
             report_line=$(cat "$TASKS/$i.clingo.$c.out")
-            if [ "$(cat "$TASKS/$i.clingo.$c.rc")" != 0 ] && ! clingo_refused_alike "$ir" "$case"; then
-                printf 'FAIL: %s — clingo answers differently on the presentation copy:\n%s\n' "$case" "$(cat "$TASKS/$i.clingo.$c.out")" >&2
-                fields_alone clingo "$ir" "$pdir" "$ONE" "" "" >&2
-                status=1
+            if [ "$(cat "$TASKS/$i.clingo.$c.rc")" != 0 ]; then
+                if ! clingo_refused_alike "$ir" "$case" "$pdir"; then
+                    printf 'FAIL: %s — clingo answers differently on the presentation copy:\n%s\n' "$case" "$(cat "$TASKS/$i.clingo.$c.out")" >&2
+                    fields_alone clingo "$ir" "$pdir" "$ONE" "" "" >&2
+                    status=1
+                elif [ "$clingo_rendered" = 1 ]; then
+                    n_rendered_clingo=$((n_rendered_clingo + 1))
+                fi
             fi
         done < "$pdir/cases"
         n_preplays=$((n_preplays + 2))
@@ -1706,10 +1737,10 @@ leg_presentation() {
             fi
         fi
     done < "$WORK/presentation.list"
-    printf 'leg_status=%s n_pgoldens=%s n_kind_goldens=%s n_kind=%s n_rp_goldens=%s n_rp=%s n_prep_goldens=%s n_prep=%s n_pct_goldens=%s n_pct=%s n_rg_goldens=%s n_rg=%s n_ra_goldens=%s n_ra=%s n_diag_goldens=%s n_diag=%s n_src_goldens=%s n_src=%s n_srcx=%s n_rendered=%s n_preplays=%s\n' \
+    printf 'leg_status=%s n_pgoldens=%s n_kind_goldens=%s n_kind=%s n_rp_goldens=%s n_rp=%s n_prep_goldens=%s n_prep=%s n_pct_goldens=%s n_pct=%s n_rg_goldens=%s n_rg=%s n_ra_goldens=%s n_ra=%s n_diag_goldens=%s n_diag=%s n_src_goldens=%s n_src=%s n_srcx=%s n_rendered=%s n_rendered_clingo=%s n_preplays=%s\n' \
         "$status" "$n_pgoldens" "$n_kind_goldens" "$n_kind" "$n_rp_goldens" "$n_rp" "$n_prep_goldens" "$n_prep" \
         "$n_pct_goldens" "$n_pct" "$n_rg_goldens" "$n_rg" "$n_ra_goldens" "$n_ra" \
-        "$n_diag_goldens" "$n_diag" "$n_src_goldens" "$n_src" "$n_srcx" "$n_rendered" "$n_preplays" > "$WORK/presentation.counts"
+        "$n_diag_goldens" "$n_diag" "$n_src_goldens" "$n_src" "$n_srcx" "$n_rendered" "$n_rendered_clingo" "$n_preplays" > "$WORK/presentation.counts"
 }
 
 # --- the five legs, side by side --------------------------------------------------------------------
@@ -1913,7 +1944,7 @@ if [ "$status" -eq 0 ]; then
     printf '  name leg: %s golden(s) with named or annotated defaults, floor %s; %s names stripped (floor %s), %s statuteAnnotations lists (floor %s); %s executor replays reproduce the untouched outcome\n' \
         "$n_ngoldens" "$EXPECTED_MIN_NAME_GOLDENS" "$n_n_stripped" "$EXPECTED_MIN_NAME_STRIPPED" \
         "$n_a_stripped" "$EXPECTED_MIN_ANNOTATIONS_STRIPPED" "$n_nreplays"
-    printf '  presentation leg: %s golden(s) on one combined copy each, floor %s; %s characteristic kinds rotated over %s goldens (floors %s, %s), %s rule presentation values exchanged over %s (floors %s, %s), %s prepositions stripped over %s (floors %s, %s), %s percentage tags stripped over %s (floors %s, %s), %s non-recursive rule groups stripped over %s (floors %s, %s), %s statuteAnnotations lists of rules stripped over %s (floors %s, %s), %s diagnostics exchanged over %s (floors %s, %s), %s source records stripped and %s Unresolved snippets exchanged over %s (floors %s, %s, %s; %s Drools status lines differ only in a quoted snippet); %s executor replays reproduce the untouched outcome\n' \
+    printf '  presentation leg: %s golden(s) on one combined copy each, floor %s; %s characteristic kinds rotated over %s goldens (floors %s, %s), %s rule presentation values exchanged over %s (floors %s, %s), %s prepositions stripped over %s (floors %s, %s), %s percentage tags stripped over %s (floors %s, %s), %s non-recursive rule groups stripped over %s (floors %s, %s), %s statuteAnnotations lists of rules stripped over %s (floors %s, %s), %s diagnostics exchanged over %s (floors %s, %s), %s source records stripped and %s Unresolved snippets exchanged over %s (floors %s, %s, %s; %s Drools status lines and %s clingo refusals differ only in a quoted snippet); %s executor replays reproduce the untouched outcome\n' \
         "$n_pgoldens" "$EXPECTED_MIN_PRESENTATION_GOLDENS" \
         "$n_kind" "$n_kind_goldens" "$EXPECTED_MIN_KIND_ROTATED" "$EXPECTED_MIN_KIND_GOLDENS" \
         "$n_rp" "$n_rp_goldens" "$EXPECTED_MIN_RULE_PRESENTATION_EXCHANGED" "$EXPECTED_MIN_RULE_PRESENTATION_GOLDENS" \
@@ -1923,7 +1954,7 @@ if [ "$status" -eq 0 ]; then
         "$n_ra" "$n_ra_goldens" "$EXPECTED_MIN_RULE_ANNOTATIONS_STRIPPED" "$EXPECTED_MIN_RULE_ANNOTATIONS_GOLDENS" \
         "$n_diag" "$n_diag_goldens" "$EXPECTED_MIN_DIAGNOSTICS_EXCHANGED" "$EXPECTED_MIN_DIAGNOSTICS_GOLDENS" \
         "$n_src" "$n_srcx" "$n_src_goldens" "$EXPECTED_MIN_SOURCE_STRIPPED" "$EXPECTED_MIN_SOURCE_EXCHANGED" \
-        "$EXPECTED_MIN_SOURCE_GOLDENS" "$n_rendered" "$n_preplays"
+        "$EXPECTED_MIN_SOURCE_GOLDENS" "$n_rendered" "$n_rendered_clingo" "$n_preplays"
     printf '  corpus-wide accounting: %s unit-bearing annotations = %s twistable + %s exempt (the annotation IS the source) + %s without a convertible sister + %s at a §2.10 fourth-class branch (v0 derives no result unit) + %s outside the twist table\n' \
         "$n_unit" "$((n_unit - n_exempt - n_without_sister - n_uncovered))" \
         "$n_exempt" "$n_without_sister" "$n_fourth" "$n_unknown"
