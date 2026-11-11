@@ -422,7 +422,7 @@ and site = {
 type sign_src =
   | Product of string * string
   | Sum of { l : string; r : string; minus : bool; subject : string }
-  | Bound of { pred : string; subject : string; body : string; inner : string }
+  | Bound of { pred : string; subject : string; body : string list; inner : string }
 
 type ctx = {
   doc : document;
@@ -690,64 +690,17 @@ let asp_variables (s : string) =
    for the member exactly where some form subject reaches it, which is all
    the reader asks; unless such a literal shares a variable outside the head
    with the rest of the body (a Let's value the guard binds), through which
-   the helper's value would depend on the form subject. *)
-let split_rule text =
-  let n = String.length text in
-  let rec go i =
-    if i + 1 >= n then None
-    else if text.[i] = '"' then
-      let rec close j =
-        if j >= n then n else if text.[j] = '\\' then close (j + 2) else if text.[j] = '"' then j + 1 else close (j + 1)
-      in
-      go (close (i + 1))
-    else if text.[i] = ':' && text.[i + 1] = '-' then
-      Some (String.trim (String.sub text 0 i), String.sub text (i + 2) (n - i - 2))
-    else go (i + 1)
-  in
-  go 0
-
-(* the literals of a rule body: the text up to its closing period, cut at the
-   commas outside parentheses, braces, brackets and string literals *)
-let body_literals (body : string) : string list =
-  let body = String.trim body in
-  let body =
-    if String.ends_with ~suffix:"." body then String.sub body 0 (String.length body - 1) else body
-  in
-  let n = String.length body in
-  let cur = Buffer.create 64 and out = ref [] in
-  let flush () =
-    out := String.trim (Buffer.contents cur) :: !out;
-    Buffer.clear cur
-  in
-  let rec go i depth =
-    if i < n then
-      match body.[i] with
-      | '"' ->
-          let rec close j =
-            if j >= n then n else if body.[j] = '\\' then close (j + 2) else if body.[j] = '"' then j + 1 else close (j + 1)
-          in
-          let j = min n (close (i + 1)) in
-          Buffer.add_string cur (String.sub body i (j - i));
-          go j depth
-      | ',' when depth = 0 ->
-          flush ();
-          go (i + 1) depth
-      | c ->
-          Buffer.add_char cur c;
-          go (i + 1)
-            (match c with '(' | '{' | '[' -> depth + 1 | ')' | '}' | ']' -> depth - 1 | _ -> depth)
-  in
-  go 0 0;
-  flush ();
-  List.rev (List.filter (fun l -> l <> "") !out)
-
-let unkeyed_form_read ctx text =
-  match (ctx.anchored, split_rule text) with
-  | [], _ | _, None -> ()
-  | vars, Some (head, body) ->
+   the helper's value would depend on the form subject. A guard literal is
+   recognised as an element of the body [emit_rule] receives that is one of
+   [rule_guard]'s, so a rule written under the guard passes it in its own
+   elements, never joined into a conjunction. *)
+let unkeyed_form_read ctx ~head ~body text =
+  match ctx.anchored with
+  | [] -> ()
+  | vars ->
       if head <> "" && not (String.starts_with ~prefix:"viol(" head) then begin
         let in_head = asp_variables head in
-        let guard, own = List.partition (fun l -> List.mem l ctx.rule_guard) (body_literals body) in
+        let guard, own = List.partition (fun l -> List.mem l ctx.rule_guard) body in
         let own_vars = List.concat_map asp_variables own in
         (* the variables of the guard literals joined to [v] through variables
            outside the head, [v] included *)
@@ -779,22 +732,28 @@ let unkeyed_form_read ctx text =
           vars
       end
 
-let emit ctx fmt =
-  Printf.ksprintf
-    (fun s ->
-      unkeyed_form_read ctx s;
-      Buffer.add_string ctx.buf (s ^ "\n"))
-    fmt
+(* one line of the program that is no rule: a fact, a directive, a comment.
+   A rule goes through [emit_rule], which hands the fence above its head and
+   its body *)
+let emit ctx fmt = Printf.ksprintf (fun s -> Buffer.add_string ctx.buf (s ^ "\n")) fmt
+
+(* the rule [head :- body.], [body] its literals in order; an element may be a
+   conjunction of several where none of them is a literal of [rule_guard]. An
+   empty [head] writes an integrity constraint *)
+let emit_rule ctx ~head ~(body : string list) =
+  let text = (if head = "" then ":- " else head ^ " :- ") ^ String.concat ", " body ^ "." in
+  unkeyed_form_read ctx ~head ~body text;
+  Buffer.add_string ctx.buf (text ^ "\n")
 
 (* a §9.5 deposit (RUNTIME-SEMANTICS ch. 5.6) under [body]: the channel fact
    inconsistent/2, whose identity is rule × subject, and beside it
    inconsistent_code/3, the EF code (ch. 5.7b) of the kind deposited for that
    pair. The channel read and the consistent check look at inconsistent/2
    alone; the codes deposited for one pair form a set beside it *)
-let deposit ctx ~code ~rule ~subject body =
-  let body = String.concat ", " (body :: ctx.deposit_guard) in
-  emit ctx "inconsistent(%s,%s) :- %s." rule subject body;
-  emit ctx "inconsistent_code(%s,%s,%s) :- %s." rule subject (quote code) body
+let deposit ctx ~code ~rule ~subject (body : string list) =
+  let body = body @ ctx.deposit_guard in
+  emit_rule ctx ~head:(Printf.sprintf "inconsistent(%s,%s)" rule subject) ~body;
+  emit_rule ctx ~head:(Printf.sprintf "inconsistent_code(%s,%s,%s)" rule subject (quote code)) ~body
 
 (* EF-036 (RUNTIME-SEMANTICS ch. 3.6): a total meets a segment with an open bound
    and a value other than 0. The whole-unit facts lie between days, so such a
@@ -807,8 +766,8 @@ let open_total_reason a =
 let open_total_guard ctx ~witness ~body ~bounds:(v, t) ~value ~attr =
   List.iter
     (fun open_bound ->
-      emit ctx "viol(%s,%s) :- %s, %s != 0, %s." (quote (open_total_reason attr)) witness
-        (String.concat ", " body) value open_bound)
+      emit_rule ctx ~head:(Printf.sprintf "viol(%s,%s)" (quote (open_total_reason attr)) witness)
+        ~body:(body @ [ Printf.sprintf "%s != 0" value; open_bound ]))
     [ Printf.sprintf "%s = #inf" v; Printf.sprintf "%s = #sup" t ]
 
 (* a bare division's non-exact viol/2: inside the write of the unbounded form
@@ -1071,7 +1030,7 @@ let rec sign_conds ctx ~neg (t : string) : string list list =
           if not (List.mem helper ctx.sign_helpers) then begin
             ctx.sign_helpers <- helper :: ctx.sign_helpers;
             List.iter
-              (fun conds -> emit ctx "%s(%s) :- %s." helper subject (String.concat ", " (body :: conds)))
+              (fun conds -> emit_rule ctx ~head:(Printf.sprintf "%s(%s)" helper subject) ~body:(body @ conds))
               dnf
           end;
           [ [ Printf.sprintf "%s(%s)" helper subject ] ])
@@ -1543,14 +1502,15 @@ let use_ro ctx (ro : range_order) =
   let p = Printf.sprintf "ro%d" ro.ro_id in
   if not ro.ro_emitted then begin
     ro.ro_emitted <- true;
-    emit ctx "%s_m(%s,%s) :- %s." p ro.ro_parent ro.ro_member
-      (String.concat ", " (Printf.sprintf "isa(%s,%s)" ro.ro_parent (str ro.ro_parent_ot) :: ro.ro_join ()));
+    emit_rule ctx ~head:(Printf.sprintf "%s_m(%s,%s)" p ro.ro_parent ro.ro_member)
+      ~body:(Printf.sprintf "isa(%s,%s)" ro.ro_parent (str ro.ro_parent_ot) :: ro.ro_join ());
     emit ctx "#defined %s_o/3." p;
     List.iter (fun (a, b, i) -> emit ctx "%s_o(%s,%s,%d)." p (str_raw a) (str_raw b) i) (Lazy.force ro.ro_facts);
     if ro.ro_one_step || not (ro.ro_dynamic && ctx.doc.fact_creations <> []) then
-      emit ctx "%s_n(P,X,Y) :- %s_o(P,X,I), %s_o(P,Y,J), I < J." p p p
+      emit_rule ctx ~head:(Printf.sprintf "%s_n(P,X,Y)" p)
+        ~body:[ Printf.sprintf "%s_o(P,X,I)" p; Printf.sprintf "%s_o(P,Y,J)" p; "I < J" ]
     else emit ctx "#defined %s_n/3." p;
-    if ro.ro_dynamic then emit ctx "%s_q(P,X) :- %s_o(P,X,_)." p p
+    if ro.ro_dynamic then emit_rule ctx ~head:(Printf.sprintf "%s_q(P,X)" p) ~body:[ Printf.sprintf "%s_o(P,X,_)" p ]
   end;
   p
 
@@ -1677,7 +1637,7 @@ let reached_order_reason reason what = Printf.sprintf "%s; whether %s reaches it
    [S4]). *)
 let reach_guard ctx ~witness ~reason ~(order_reason : string -> string) body =
   begin
-    emit ctx "viol(%s,%s) :- %s." (quote reason) witness (String.concat ", " body);
+    emit_rule ctx ~head:(Printf.sprintf "viol(%s,%s)" (quote reason) witness) ~body:(body);
     (* the named twins: the rest of "read in some allowed order". One rule per
        order-dependent atom, split on the first that does not hold in every
        order: the atoms before it in their every-order form, it in its
@@ -1699,7 +1659,7 @@ let reach_guard ctx ~witness ~reason ~(order_reason : string -> string) body =
               | _ -> b)
             body
         in
-        emit ctx "viol(%s,%s) :- %s." (quote (order_reason fold)) witness (String.concat ", " body'))
+        emit_rule ctx ~head:(Printf.sprintf "viol(%s,%s)" (quote (order_reason fold)) witness) ~body:(body'))
       dep;
     (* the pass before a creation's twins: every atom as it reads in that
        pass ([pre_form]), and one short circuit that pass leaves open is
@@ -1717,7 +1677,7 @@ let reach_guard ctx ~witness ~reason ~(order_reason : string -> string) body =
                 (fun b -> if b = a then [ e.pe_form; e.pe_not_fix ] else [ pre_form ctx ~certain:false b ])
                 body
             in
-            emit ctx "viol(%s,%s) :- %s." (quote (order_reason e.pe_desc)) witness (String.concat ", " body'))
+            emit_rule ctx ~head:(Printf.sprintf "viol(%s,%s)" (quote (order_reason e.pe_desc)) witness) ~body:(body'))
       (List.sort_uniq compare body)
   end
 
@@ -2021,7 +1981,7 @@ let emit_barriers ctx =
         let lbr = Printf.sprintf "lbr%d" li.li_id and lbr_o = Printf.sprintf "lbr%d_o" li.li_id in
         emit ctx "#defined %s/3." lbr;
         if dynamic then emit ctx "#defined %s/3." lbr_o;
-        emit ctx "lbn%d(%s) :- %s." li.li_id sv (String.concat ", " (base :: li.li_va));
+        emit_rule ctx ~head:(Printf.sprintf "lbn%d(%s)" li.li_id sv) ~body:(base :: li.li_va);
         let reads = List.concat_map (read_places ctx li ~skip:li) (List.rev li.li_reads) in
         (* "barred in every allowed order" has to hold in the pass before a
            creation too: ref runs a pass's rules before its creations, so the
@@ -2046,7 +2006,7 @@ let emit_barriers ctx =
           List.iter
             (fun (i, atoms, parts, inner) ->
               let top = match parts with q :: _ -> q.pt_id | [] -> 0 in
-              emit ctx "%s(%s,%d,%d) :- %s." lbr sv i top (String.concat ", " (form atoms parts inner)))
+              emit_rule ctx ~head:(Printf.sprintf "%s(%s,%d,%d)" lbr sv i top) ~body:(form atoms parts inner))
             reads
         in
         (* a read that every allowed order reaches is reached in the pass
@@ -2076,7 +2036,11 @@ let emit_barriers ctx =
             | None -> if some then List.map some_order else fun atoms -> atoms @ open_there atoms
           in
           match gparts with
-          | [] -> emit ctx "%s(S,%d) :- %s(S,I,_), I < %d, not lbn%d(S)." name i lbr i li.li_id
+          | [] -> emit_rule ctx ~head:(Printf.sprintf "%s(S,%d)" name i)
+                    ~body:
+                      [ Printf.sprintf "%s(S,I,_)" lbr;
+                        Printf.sprintf "I < %d" i;
+                        Printf.sprintf "not lbn%d(S)" li.li_id ]
           | q1 :: _ ->
               let bg = List.mapi (fun j _ -> Printf.sprintf "BG%d" (j + 1)) gparts in
               let head = Printf.sprintf "%s(%s)" name (String.concat "," (sv :: bg)) in
@@ -2095,11 +2059,11 @@ let emit_barriers ctx =
               if q1.pt_parent <> sv then
                 fault "a per-member part directly in a Let's body ranges over the subject %s, not the Let's %s"
                   q1.pt_parent sv;
-              emit ctx "%s :- %s." head
-                (String.concat ", "
-                   ([ Printf.sprintf "%s(%s,I,T)" lbr sv; Printf.sprintf "T != %d" q1.pt_id;
+              emit_rule ctx ~head
+                ~body:
+                  ([ Printf.sprintf "%s(%s,I,T)" lbr sv; Printf.sprintf "T != %d" q1.pt_id;
                       Printf.sprintf "I < %d" i; not_n ]
-                   @ dom 0));
+                   @ dom 0);
               List.iter
                 (fun (ir, atoms, rparts, inner) ->
                   match rparts with
@@ -2130,12 +2094,10 @@ let emit_barriers ctx =
                             @ dom lvl
                           else Printf.sprintf "%s_n(%s,%s,%s)" ro parent x g :: dom (lvl + 1)
                         in
-                        emit ctx "%s :- %s." head
-                          (String.concat ", " (form atoms @ pres (lvl + 1) @ eqs lvl @ first @ [ not_n ]))
+                        emit_rule ctx ~head ~body:(form atoms @ pres (lvl + 1) @ eqs lvl @ first @ [ not_n ])
                       done;
                       if ir < i then
-                        emit ctx "%s :- %s." head
-                          (String.concat ", " (form atoms @ pres c @ eqs c @ dom c @ [ not_n ]))
+                        emit_rule ctx ~head ~body:(form atoms @ pres c @ eqs c @ dom c @ [ not_n ])
                   | _ -> ())
                 reads
         in
@@ -2325,6 +2287,8 @@ let pre_clone ctx segment atoms =
                 (String.length (String.trim l) - 9 - String.length h)
             else l
           in
+          (* a copy of a line already emitted, the fence of [emit_rule]
+             passed on it, with predicates renamed and its variables kept *)
           emit ctx "%s" l
       | _ -> ())
     lines;
@@ -2383,15 +2347,14 @@ let note_binder_read ctx ~subject ~subject_ot (node : expr) ident =
           | None -> ()
           | Some d ->
               let reach = rule_reach ~skip:li ctx ~subject ~subject_ot node in
-              emit ctx "%s :- %s." d (String.concat ", " reach);
+              emit_rule ctx ~head:d ~body:(reach);
               if doc_dynamic ctx.doc then begin
                 let some_order a = match List.assoc_opt a ctx.named with Some (o, _, _) -> o | None -> a in
-                emit ctx "%s :- %s." (demand_form d "_o") (String.concat ", " (List.map some_order reach));
+                emit_rule ctx ~head:(demand_form d "_o") ~body:(List.map some_order reach);
                 (* and where the pass before a creation leaves open a short
                    circuit the fixpoint settles, that pass reads the binder *)
                 if List.exists (fun a -> pre_entry ctx a <> None) reach then
-                  emit ctx "%s :- %s." (demand_form d "_o")
-                    (String.concat ", " (List.map (pre_form ctx ~certain:false) reach))
+                  emit_rule ctx ~head:(demand_form d "_o") ~body:(List.map (pre_form ctx ~certain:false) reach)
               end))
 
 (* the canonical role name: the plural for a to-many role, the singular
@@ -2665,8 +2628,8 @@ let hoist_element_aggregates ctx ~x ~el ~outside atoms =
           ctx.fresh <- ctx.fresh + 1;
           let p = Printf.sprintf "agh%d" ctx.fresh in
           let head = String.concat "," ((x :: shared) @ [ v ]) in
-          emit ctx "%s(%s) :- %s." p head
-            (String.concat ", " ((Printf.sprintf "isa(%s,%s)" x (str el) :: body) @ [ a ]));
+          emit_rule ctx ~head:(Printf.sprintf "%s(%s)" p head)
+            ~body:((Printf.sprintf "isa(%s,%s)" x (str el) :: body) @ [ a ]);
           Printf.sprintf "%s(%s)" p head)
     (element_aggregate_plan ?form:ctx.form_subject ~x
        ~outside:(outside @ ctx.rule_guard @ binders) atoms)
@@ -2913,15 +2876,16 @@ let span_weights ctx ~p ~(measure : int -> int -> Q.t) (endpoints : int list) =
    Returns the atoms and the term of the total at [scale]. *)
 let exact_span_total ctx ~subject ~subject_ot ~what ~p ~q ~d =
   let e = fresh ctx "E" in
-  emit ctx "viol(%s,%s) :- %s, %s_total(%s,%s), %s \\ %d != 0."
-    (quote
+  emit_rule ctx
+    ~head:(Printf.sprintf "viol(%s,%s)" (quote
        (Printf.sprintf
           "%s counts a part of a unit of its grid by its days (ch. 3.6), and its value has no exact form at the \
            scale of its attribute in this encoding (README [V8])"
-          what))
-    subject
-    (String.concat ", " (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard))
-    p subject q q d;
+          what)) subject)
+    ~body:
+      ((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard)
+      @ [ Printf.sprintf "%s_total(%s,%s)" p subject q;
+          Printf.sprintf "%s \\ %d != 0" q d ]);
   ([ Printf.sprintf "%s_total(%s,%s)" p subject q; Printf.sprintf "%s = %s / %d" e q d ], e)
 
 (* harmonise two scaled terms for comparison. Self-fenced: every caller
@@ -2950,10 +2914,11 @@ let coalesce0 ctx ~subject ~subject_ot (atoms, term, scale) =
     ctx.fresh <- ctx.fresh + 1;
     let pred = Printf.sprintf "co%d" ctx.fresh in
     let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
-    let body = String.concat ", " (base :: atoms) in
-    emit ctx "%s(%s,%s) :- %s." pred subject term body;
-    emit ctx "%s_def(%s) :- %s." pred subject body;
-    emit ctx "%s(%s,0) :- %s, not %s_def(%s)." pred subject base pred subject;
+    let body = (base :: atoms) in
+    emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" pred subject term) ~body:body;
+    emit_rule ctx ~head:(Printf.sprintf "%s_def(%s)" pred subject) ~body:body;
+    emit_rule ctx ~head:(Printf.sprintf "%s(%s,0)" pred subject)
+      ~body:[ base; Printf.sprintf "not %s_def(%s)" pred subject ];
     let v = fresh ctx "C" in
     register_bound ctx ~pred ~subject ~body ~term ~v;
     ([ Printf.sprintf "%s(%s,%s)" pred subject v ], v, scale)
@@ -3129,12 +3094,10 @@ let civil_pm_day ctx (t : string) =
    day number negative and turn gringo truncation away from floor —
    fenced with a viol/2 witness, never a silent wrong month *)
 let pre_epoch_fence ctx ~subject ~body t =
-  emit ctx
-    "viol(\"date before 0000-03-01 in calendar arithmetic (the civil decomposition needs \
-     a non-negative shifted day number)\",%s) :- %s, (%s) < -719468."
-    subject
-    (String.concat ", " body)
-    t
+  emit_rule ctx
+    ~head:(Printf.sprintf "viol(\"date before 0000-03-01 in calendar arithmetic (the civil decomposition needs a \
+       non-negative shifted day number)\",%s)" subject)
+    ~body:(body @ [ Printf.sprintf "(%s) < -719468" t ])
 
 (* date + count whole months (ch. 3.8): re-anchor the proleptic month and
    clamp the day to the target month's length — one helper predicate per
@@ -3167,17 +3130,13 @@ let translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms ~date_term ~
   in
   (* the year-zero fence: PMT < 2 reaches a March-shifted year below 0,
      where the re-encode divisions would truncate away from floor *)
-  emit ctx "viol(\"date arithmetic reaches a year before 0000-03\",%s) :- %s, %s < 2."
-    subject
-    (String.concat ", " ((base :: ctx.rule_guard) @ chain @ [ count_ok ]))
-    pmt;
+  emit_rule ctx ~head:(Printf.sprintf "viol(\"date arithmetic reaches a year before 0000-03\",%s)" subject)
+    ~body:(((base :: ctx.rule_guard) @ chain @ [ count_ok ]) @ [ Printf.sprintf "%s < 2" pmt ]);
   (* and above 5000000, where the re-encoded day number would leave clingo's
      integers; the count is fenced by the caller ([count_ok]), so PMT itself
      does not wrap where these fences read it *)
-  emit ctx "viol(%s,%s) :- %s, %s > 5000000."
-    (quote date_year_after_reason) subject
-    (String.concat ", " ((base :: ctx.rule_guard) @ chain @ [ count_ok ]))
-    yt;
+  emit_rule ctx ~head:(Printf.sprintf "viol(%s,%s)" (quote date_year_after_reason) subject)
+    ~body:(((base :: ctx.rule_guard) @ chain @ [ count_ok ]) @ [ Printf.sprintf "%s > 5000000" yt ]);
   let finish ml_atoms mlv =
     let dt = fresh ctx "DT" and y2 = fresh ctx "Y2" and e2 = fresh ctx "E2" in
     let yoe2 = fresh ctx "YOE" and mp2 = fresh ctx "MP" and doy2 = fresh ctx "DOY" in
@@ -3200,7 +3159,7 @@ let translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms ~date_term ~
         Printf.sprintf "%s = 30+((%s+(%s/8)) \\ 2)" ml mt mt ]
       ml
   in
-  emit ctx "%s(%s,%s) :- %s." p key z1 (String.concat ", " (opening @ body1));
+  emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" p key z1) ~body:(opening @ body1);
   let lv = fresh ctx "L" in
   let body2, z2 =
     finish
@@ -3210,7 +3169,7 @@ let translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms ~date_term ~
         Printf.sprintf "%s = 28+%s" ml lv ]
       ml
   in
-  emit ctx "%s(%s,%s) :- %s." p key z2 (String.concat ", " (opening @ body2));
+  emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" p key z2) ~body:(opening @ body2);
   let v = fresh ctx "DP" in
   ([ Printf.sprintf "%s(%s,%s)" p key v ], v, 1)
 
@@ -3500,12 +3459,9 @@ let quotient_units_ok ?per_period ctx left_side right_side =
 let range_guard ctx ~subject ~body terms_with_bounds =
   List.iter
     (fun (t, bound) ->
-      emit ctx
-        "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, \
-         |(%s)| > %d."
-        subject
-        (String.concat ", " body)
-        t bound)
+      emit_rule ctx
+        ~head:(Printf.sprintf "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s)" subject)
+        ~body:(body @ [ Printf.sprintf "|(%s)| > %d" t bound ]))
     terms_with_bounds
 
 (* the count of a date step in [tu], at most what keeps the step from a day
@@ -3529,9 +3485,11 @@ let date_step_count_fence ctx ~subject ~body (tu : Ir_v0.Checks.time_unit) n =
 (* the day number [t] a linear step (days, weeks) reaches, within the day
    numbers this encoding holds *)
 let day_number_fence ctx ~subject ~body ~count_ok t =
-  let b = String.concat ", " (body @ [ count_ok ]) in
-  emit ctx "viol(%s,%s) :- %s, (%s) > %d." (quote date_year_after_reason) subject b t day_number_limit;
-  emit ctx "viol(%s,%s) :- %s, (%s) < -%d." (quote date_day_below_reason) subject b t day_number_limit
+  let b = (body @ [ count_ok ]) in
+  emit_rule ctx ~head:(Printf.sprintf "viol(%s,%s)" (quote date_year_after_reason) subject)
+    ~body:(b @ [ Printf.sprintf "(%s) > %d" t day_number_limit ]);
+  emit_rule ctx ~head:(Printf.sprintf "viol(%s,%s)" (quote date_day_below_reason) subject)
+    ~body:(b @ [ Printf.sprintf "(%s) < -%d" t day_number_limit ])
 
 (* both compared operands times their factors from [comparison_factors]. Each
    fence stands on the bare term: past max_int31 / k the product itself would
@@ -3579,23 +3537,22 @@ let money_mult_fences ctx ~subject ~gbody ~tm ~tr ~tr_sign =
     (fun t ->
       List.iter
         (fun conds ->
-          emit ctx "viol(\"negative operand under money multiplication is not translated\",%s) :- %s."
-            subject (String.concat ", " (gbody :: conds)))
+          emit_rule ctx
+            ~head:(Printf.sprintf "viol(\"negative operand under money multiplication is not translated\",%s)" subject)
+            ~body:(gbody @ conds))
         (sign_conds ctx ~neg:true t))
     [ tm; tr_sign ];
   (* A = M·Rh fence: |M| <= max_int31/(|Rh|+1) keeps |M·Rh| inside 2^31; the
      |Rh|+1 divisor is >= 1 for either sign, so a negative rate (fenced UNSAT
      above) can never divide by zero during grounding *)
-  emit ctx
-    "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, |%s| > \
-     %d/(|(%s)/100|+1)."
-    subject gbody tm max_int31 tr;
+  emit_rule ctx
+    ~head:(Printf.sprintf "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s)" subject)
+    ~body:(gbody @ [ Printf.sprintf "|%s| > %d/(|(%s)/100|+1)" tm max_int31 tr ]);
   (* B = M·Rl fence: Rl = R\100 < 100, so |M| <= (max_int31-20000)/99 keeps the
      rounded numerator 100·rA + M·Rl + 5000 inside 2^31 *)
-  emit ctx
-    "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, |%s| > %d."
-    subject gbody tm
-    ((max_int31 - 20000) / 99)
+  emit_rule ctx
+    ~head:(Printf.sprintf "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s)" subject)
+    ~body:(gbody @ [ Printf.sprintf "|%s| > %d" tm ((max_int31 - 20000) / 99) ])
 
 let money_mult_body ~a ~c ~tm ~tr ~tr_sign =
   [ Printf.sprintf "(%s) >= 0" tm;
@@ -4079,9 +4036,10 @@ let rec symbolic_term ctx ~subject ~subject_ot (e : expr) : string list * string
           | _ -> false) ->
       let pred, key, opening, reads = dimension_cells ctx ~subject ~subject_ot ~scaled:false argument selections in
       List.iteri
-        (fun i (atoms, t, _) -> emit ctx "%s(%s,%d,%s) :- %s." pred key i t (String.concat ", " (opening @ atoms)))
+        (fun i (atoms, t, _) -> emit_rule ctx ~head:(Printf.sprintf "%s(%s,%d,%s)" pred key i t)
+                                  ~body:(opening @ atoms))
         reads;
-      emit ctx "%s_def(%s) :- %s(%s,_,_)." pred key pred key;
+      emit_rule ctx ~head:(Printf.sprintf "%s_def(%s)" pred key) ~body:[ Printf.sprintf "%s(%s,_,_)" pred key ];
       let v = fresh ctx "D" in
       let c = "C" ^ v and i = "I" ^ v in
       ( [ Printf.sprintf "%s_def(%s)" pred key;
@@ -4548,8 +4506,8 @@ let let_binder ctx ~subject ~subject_ot ((va, vt, vs) : string list * string * i
     let key, opening =
       helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot) va
     in
-    let body = String.concat ", " (opening @ va) in
-    emit ctx "%s(%s,%s) :- %s." p key vt body;
+    let body = (opening @ va) in
+    emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" p key vt) ~body:body;
     let v = fresh ctx "LB" in
     register_bound ctx ~pred:p ~subject:key ~body ~term:vt ~v;
     ([ Printf.sprintf "%s(%s,%s)" p key v ], v, vs)
@@ -4577,7 +4535,7 @@ let bind_let ctx ~subject ~subject_ot ~binder ~value ~body translate_value =
   (match li.li_demand with
   | Some d when doc_dynamic ctx.doc ->
       let o = demand_form d "_o" and q = demand_form d "_q" in
-      emit ctx "%s :- %s, not %s." q o d;
+      emit_rule ctx ~head:q ~body:[ o; Printf.sprintf "not %s" d ];
       ctx.named <- (d, (o, q, Printf.sprintf "the Let %S" li.li_binder)) :: ctx.named
   | _ -> ());
   let saved_v = ctx.value_of in
@@ -4612,13 +4570,14 @@ let neq_helper ctx ~subject ~subject_ot (ll, tl) (rr, tr) : string list =
   let key, opening =
     helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot) (ll @ rr)
   in
-  let base = String.concat ", " opening in
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "eq%d" ctx.fresh in
-  emit ctx "%s_l(%s) :- %s." p key (String.concat ", " (base :: ll));
-  emit ctx "%s_r(%s) :- %s." p key (String.concat ", " (base :: rr));
-  emit ctx "%s(%s) :- %s, %s == %s." p key (String.concat ", " (base :: (ll @ rr))) tl tr;
-  emit ctx "%s(%s) :- %s, not %s_l(%s), not %s_r(%s)." p key base p key p key;
+  emit_rule ctx ~head:(Printf.sprintf "%s_l(%s)" p key) ~body:(opening @ ll);
+  emit_rule ctx ~head:(Printf.sprintf "%s_r(%s)" p key) ~body:(opening @ rr);
+  emit_rule ctx ~head:(Printf.sprintf "%s(%s)" p key)
+    ~body:(opening @ ll @ rr @ [ Printf.sprintf "%s == %s" tl tr ]);
+  emit_rule ctx ~head:(Printf.sprintf "%s(%s)" p key)
+    ~body:(opening @ [ Printf.sprintf "not %s_l(%s)" p key; Printf.sprintf "not %s_r(%s)" p key ]);
   [ "not " ^ Printf.sprintf "%s(%s)" p key ]
 
 (* The span the buckets must cover: the case's endpoints [lo, hi), widened
@@ -4741,8 +4700,13 @@ let bucket_cases =
 let emit_true_days ctx ~p ~k =
   List.iter
     (fun (vcmp, vpick, tcmp, tpick) ->
-      emit ctx "%s_d(S,B,KV,KT,%s-%s) :- ktl(S,%s,KV,KT), %s_b(B,N,_), %s, %s, %s < %s." p tpick
-        vpick (str k) p vcmp tcmp vpick tpick)
+      emit_rule ctx ~head:(Printf.sprintf "%s_d(S,B,KV,KT,%s-%s)" p tpick vpick)
+        ~body:
+          [ Printf.sprintf "ktl(S,%s,KV,KT)" (str k);
+            Printf.sprintf "%s_b(B,N,_)" p;
+            vcmp;
+            tcmp;
+            Printf.sprintf "%s < %s" vpick tpick ])
     bucket_cases
 
 (* the same intersection over a VALUE timeline (ch. 3.9's comparison arm):
@@ -4766,8 +4730,13 @@ let emit_value_days ctx ~p ~attr ~sat =
   let rules suffix v extra =
     List.iter
       (fun (vcmp, vpick, tcmp, tpick) ->
-        emit ctx "%s_%s(S,B,KV,KT,%s-%s) :- tl(S,%s,KV,KT,%s), %s_b(B,N,_), %s, %s, %s < %s%s." p
-          suffix tpick vpick (str attr) v p vcmp tcmp vpick tpick extra)
+        emit_rule ctx ~head:(Printf.sprintf "%s_%s(S,B,KV,KT,%s-%s)" p suffix tpick vpick)
+          ~body:
+            [ Printf.sprintf "tl(S,%s,KV,KT,%s)" (str attr) v;
+              Printf.sprintf "%s_b(B,N,_)" p;
+              vcmp;
+              tcmp;
+              Printf.sprintf "%s < %s%s" vpick tpick extra ])
       bucket_cases
   in
   rules "t" "_" "";
@@ -4856,13 +4825,15 @@ let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation 
     let g : grain = if gp.gp_granularity then Year else Month in
     emit_grid_buckets ctx ~p ~grid:(Uchar_ref.Timeline.calendar_grid g);
     emit_value_days ctx ~p ~attr:a ~sat:[];
-    emit ctx
-      "%s(S) :- %s_t(S,B,_,_,_), %s_b(B,_,Tot), GD = #sum { D,KV,KT : %s_g(S,B,KV,KT,D) }, GD < \
-       Tot."
-      p p p p
+    emit_rule ctx ~head:(Printf.sprintf "%s(S)" p)
+      ~body:
+        [ Printf.sprintf "%s_t(S,B,_,_,_)" p;
+          Printf.sprintf "%s_b(B,_,Tot)" p;
+          Printf.sprintf "GD = #sum { D,KV,KT : %s_g(S,B,KV,KT,D) }" p;
+          "GD < Tot" ]
   end
   else begin
-    emit ctx "%s(S) :- tl(S,%s,KV,KT,_), KV < KT." p (str a)
+    emit_rule ctx ~head:(Printf.sprintf "%s(S)" p) ~body:[ Printf.sprintf "tl(S,%s,KV,KT,_)" (str a); "KV < KT" ]
   end;
   match hops with
   | [] -> Printf.sprintf "%s(%s)" p subject
@@ -4875,10 +4846,10 @@ let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation 
           ([], subject) rbs
       in
       let q = fresh ctx "gplnav" in
-      emit ctx "%s(%s) :- %s." q subject
-        (String.concat ", "
-           ((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: atoms)
-           @ [ Printf.sprintf "%s(%s)" p target ]));
+      emit_rule ctx ~head:(Printf.sprintf "%s(%s)" q subject)
+        ~body:
+          ((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: atoms)
+           @ [ Printf.sprintf "%s(%s)" p target ]);
       Printf.sprintf "%s(%s)" q subject
 
 (* ch. 3.9a, the quantifier fold's short circuit, for the unbound-parameter
@@ -4915,13 +4886,16 @@ let emit_kv_reach ctx ~reach ~subject ~subject_ot ~x ~join ~fatoms ~atoms ~quant
   let rp = use_ro ctx ro in
   let m = reach ^ "_m" and h = reach ^ "_h" and n = reach ^ "_n" and b = reach ^ "_b" in
   let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
-  emit ctx "%s(%s,%s) :- %s." m subject x (String.concat ", " ((base :: join) @ fatoms));
-  emit ctx "%s(%s,%s) :- %s." h subject x
-    (String.concat ", " (Printf.sprintf "%s(%s,%s)" m subject x :: atoms));
-  emit ctx "%s(S,N) :- isa(S,%s), N = #count{ X : %s(S,X) }." n (str subject_ot) m;
+  emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" m subject x) ~body:((base :: join) @ fatoms);
+  emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" h subject x) ~body:(Printf.sprintf "%s(%s,%s)" m subject x :: atoms);
+  emit_rule ctx ~head:(Printf.sprintf "%s(S,N)" n)
+    ~body:[ Printf.sprintf "isa(S,%s)" (str subject_ot); Printf.sprintf "N = #count{ X : %s(S,X) }" m ];
   let prefix name before =
-    emit ctx "%s(S,X,K,H) :- %s(S,X), K = #count{ Y : %s(S,Y), %s }, H = #count{ Y : %s(S,Y), %s }."
-      name m m before h before
+    emit_rule ctx ~head:(Printf.sprintf "%s(S,X,K,H)" name)
+      ~body:
+        [ Printf.sprintf "%s(S,X)" m;
+          Printf.sprintf "K = #count{ Y : %s(S,Y), %s }" m before;
+          Printf.sprintf "H = #count{ Y : %s(S,Y), %s }" h before ]
   in
   let still_open =
     match quantifier_kind with
@@ -4932,12 +4906,15 @@ let emit_kv_reach ctx ~reach ~subject ~subject_ot ~x ~join ~fatoms ~atoms ~quant
     | Exactly -> Printf.sprintf "H <= %d, H + N - K >= %d" cutoff cutoff
   in
   prefix b (Printf.sprintf "Y != X, not %s_n(S,X,Y)" rp);
-  emit ctx "%s(S,X) :- %s(S,X,K,H), %s(S,N), %s." reach b n still_open;
+  emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" reach)
+    ~body:[ Printf.sprintf "%s(S,X,K,H)" b; Printf.sprintf "%s(S,N)" n; still_open ];
   if ro.ro_dynamic then begin
     let c = reach ^ "_c" in
     prefix c (Printf.sprintf "%s_n(S,Y,X)" rp);
-    emit ctx "%s_o(S,X) :- %s(S,X,K,H), %s(S,N), %s." reach c n still_open;
-    emit ctx "%s_q(S,X) :- %s_o(S,X), not %s(S,X)." reach reach reach
+    emit_rule ctx ~head:(Printf.sprintf "%s_o(S,X)" reach)
+      ~body:[ Printf.sprintf "%s(S,X,K,H)" c; Printf.sprintf "%s(S,N)" n; still_open ];
+    emit_rule ctx ~head:(Printf.sprintf "%s_q(S,X)" reach)
+      ~body:[ Printf.sprintf "%s_o(S,X)" reach; Printf.sprintf "not %s(S,X)" reach ]
   end;
   (* [reach]_p(S,X), where the pass before a creation opens the prefix
      ([pre_sensitive]): X a case link, the case links before it in the case
@@ -4948,15 +4925,20 @@ let emit_kv_reach ctx ~reach ~subject ~subject_ot ~x ~join ~fatoms ~atoms ~quant
   | Some f ->
       let fp, mp = f () in
       let pm = reach ^ "_pm" and ph = reach ^ "_ph" and pn = reach ^ "_pn" and pc = reach ^ "_pc" in
-      emit ctx "%s(%s,%s) :- %s." pm subject x
-        (String.concat ", "
-           ((base :: join) @ (Printf.sprintf "%s_q(%s,%s)" rp subject x :: Option.value fp ~default:fatoms)));
-      emit ctx "%s(%s,%s) :- %s." ph subject x
-        (String.concat ", " (Printf.sprintf "%s(%s,%s)" pm subject x :: Option.value mp ~default:atoms));
-      emit ctx "%s(S,N) :- isa(S,%s), N = #count{ X : %s(S,X) }." pn (str subject_ot) pm;
-      emit ctx "%s(S,X,K,H) :- %s(S,X), K = #count{ Y : %s(S,Y), %s_n(S,Y,X) }, H = #count{ Y : %s(S,Y), %s_n(S,Y,X) }."
-        pc pm pm rp ph rp;
-      emit ctx "%s_p(S,X) :- %s(S,X,K,H), %s(S,N), %s." reach pc pn still_open
+      emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" pm subject x)
+        ~body:
+          ((base :: join) @ (Printf.sprintf "%s_q(%s,%s)" rp subject x :: Option.value fp ~default:fatoms));
+      emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" ph subject x)
+        ~body:(Printf.sprintf "%s(%s,%s)" pm subject x :: Option.value mp ~default:atoms);
+      emit_rule ctx ~head:(Printf.sprintf "%s(S,N)" pn)
+        ~body:[ Printf.sprintf "isa(S,%s)" (str subject_ot); Printf.sprintf "N = #count{ X : %s(S,X) }" pm ];
+      emit_rule ctx ~head:(Printf.sprintf "%s(S,X,K,H)" pc)
+        ~body:
+          [ Printf.sprintf "%s(S,X)" pm;
+            Printf.sprintf "K = #count{ Y : %s(S,Y), %s_n(S,Y,X) }" pm rp;
+            Printf.sprintf "H = #count{ Y : %s(S,Y), %s_n(S,Y,X) }" ph rp ];
+      emit_rule ctx ~head:(Printf.sprintf "%s_p(S,X)" reach)
+        ~body:[ Printf.sprintf "%s(S,X,K,H)" pc; Printf.sprintf "%s(S,N)" pn; still_open ]
 
 (* a chain of Lets over a Match in a closed body, as [body_branches] pushes it
    into the arms: [Some (lets, scrutinee, arms)], the Lets outermost first, when
@@ -5193,12 +5175,13 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           (* the #sum of n cells stays inside 2^31 when each stays inside 2^31 / n *)
           if kind = Sum_function then
             range_guard ctx ~subject ~body:(opening @ ctx.rule_guard @ atoms) [ (t, max_int31 / List.length reads) ];
-          emit ctx "%s(%s,%d,%s) :- %s." pred key i t (String.concat ", " (opening @ atoms)))
+          emit_rule ctx ~head:(Printf.sprintf "%s(%s,%d,%s)" pred key i t) ~body:(opening @ atoms))
         reads;
       let v = fresh ctx "D" in
       let x = Printf.sprintf "X%s" v and c = Printf.sprintf "C%s" v in
       let defined = Printf.sprintf "%s_def(%s)" pred key in
-      let filled () = emit ctx "%s_def(%s) :- %s(%s,_,_)." pred key pred key in
+      let filled () = emit_rule ctx ~head:(Printf.sprintf "%s_def(%s)" pred key)
+                        ~body:[ Printf.sprintf "%s(%s,_,_)" pred key ] in
       let pick agg =
         filled ();
         let i = Printf.sprintf "I%s" v in
@@ -5208,7 +5191,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       in
       (match (kind, empty_fallback) with
       | Filled_count, _ ->
-          emit ctx "%s_def(%s) :- %s." pred key (String.concat ", " opening);
+          emit_rule ctx ~head:(Printf.sprintf "%s_def(%s)" pred key) ~body:(opening);
           ([ defined; Printf.sprintf "%s = #count { %s : %s(%s,%s,_) }" v c pred key c ], v, scale)
       | First, _ -> pick "min"
       | Last, _ -> pick "max"
@@ -5232,10 +5215,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           if common mod scale <> 0 || common mod fscale <> 0 then
             fault "the emptyFallback of a dimension fold has scale %d against the fold's %d" fscale scale;
           let lift t s = if s = common then t else Printf.sprintf "(%s)*%d" t (common / s) in
-          emit ctx "%s_val(%s,%s) :- %s(%s,_,_), %s = #sum { %s,%s : %s(%s,%s,%s) }." pred key (lift v scale) pred key v x c
-            pred key c x;
-          emit ctx "%s_val(%s,%s) :- %s." pred key (lift fterm fscale)
-            (String.concat ", " (opening @ [ Printf.sprintf "not %s(%s,_,_)" pred key ] @ fatoms));
+          emit_rule ctx ~head:(Printf.sprintf "%s_val(%s,%s)" pred key (lift v scale))
+            ~body:
+              [ Printf.sprintf "%s(%s,_,_)" pred key;
+                Printf.sprintf "%s = #sum { %s,%s : %s(%s,%s,%s) }" v x c pred key c x ];
+          emit_rule ctx ~head:(Printf.sprintf "%s_val(%s,%s)" pred key (lift fterm fscale))
+            ~body:(opening @ [ Printf.sprintf "not %s(%s,_,_)" pred key ] @ fatoms);
           let w = fresh ctx "D" in
           ([ Printf.sprintf "%s_val(%s,%s)" pred key w ], w, common))
   (* the INSTANCE-SET UNION (IR-SPEC ch. 4.3 / WF-110, semantics
@@ -5306,8 +5291,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                 with_member_reach ctx ~subject ~subject_ot ~join:(fun () -> join) (fun () ->
                     cond_atoms ctx ~subject:bx ~subject_ot:el c)
           in
-          emit ctx "%s(%s,%s) :- %s." p subject bx
-            (String.concat ", " ((base :: join) @ fatoms)))
+          emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" p subject bx) ~body:((base :: join) @ fatoms))
         branches;
       let v = fresh ctx "C" in
       let x = Printf.sprintf "X%s" v in
@@ -5544,13 +5528,11 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
              46340 × 46340 < 2^31. *)
           let body = join @ (Printf.sprintf "val(%s,%s,%s)" x (str a) g :: fatoms) in
           range_guard ctx ~subject ~body:((base :: ctx.rule_guard) @ body) [ (g, 46340) ];
-          emit ctx
-            "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, \
-             46340 < #count { %s : %s }."
-            subject
-            (String.concat ", " (base :: ctx.rule_guard))
-            x
-            (String.concat ", " body);
+          emit_rule ctx
+            ~head:(Printf.sprintf "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s)" subject)
+            ~body:
+              ((base :: ctx.rule_guard)
+              @ [ Printf.sprintf "46340 < #count { %s : %s }" x (String.concat ", " body) ]);
           (body, (g, x))
         end
         else begin
@@ -5904,7 +5886,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot)
               presence_body
           in
-          emit ctx "%s(%s) :- %s." p key (String.concat ", " (opening @ presence_body));
+          emit_rule ctx ~head:(Printf.sprintf "%s(%s)" p key) ~body:(opening @ presence_body);
           [ Printf.sprintf "%s(%s)" p key ]
         end
       in
@@ -5985,7 +5967,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       in
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "extp%d" ctx.fresh in
-      emit ctx "%s(%s) :- %s." p key (String.concat ", " (opening @ contrib_body));
+      emit_rule ctx ~head:(Printf.sprintf "%s(%s)" p key) ~body:(opening @ contrib_body);
       let agg = match kind with Minimum | First -> "#min" | _ -> "#max" in
       ( [ Printf.sprintf "%s(%s)" p key;
           Printf.sprintf "%s = %s { %s : %s }" v agg g (String.concat ", " contrib_body) ],
@@ -6129,9 +6111,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             range_guard ctx ~subject ~body:((base :: ctx.rule_guard) @ atoms)
               [ (t, 1073741823 / (m / s)) ];
           let t' = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
-          emit ctx "%s(%s,%s) :- %s." pred key t' (String.concat ", " body))
+          emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" pred key t') ~body:(body))
         ops;
-      emit ctx "%s_def(%s) :- %s(%s,X)." pred key pred key;
+      emit_rule ctx ~head:(Printf.sprintf "%s_def(%s)" pred key) ~body:[ Printf.sprintf "%s(%s,X)" pred key ];
       let v = fresh ctx "F" in
       let x = Printf.sprintf "X%s" v in
       let agg = match kind with First | Minimum -> "#min" | _ -> "#max" in
@@ -6193,8 +6175,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let emit_period_and q a1 a2 =
         List.iter
           (fun (vcmp, vpick, tcmp, tpick) ->
-            emit ctx "%s(S,%s,%s) :- %s, %s, %s, %s, %s < %s." q vpick tpick (a1 "V1" "T1")
-              (a2 "V2" "T2") vcmp tcmp vpick tpick)
+            emit_rule ctx ~head:(Printf.sprintf "%s(S,%s,%s)" q vpick tpick)
+              ~body:[ (a1 "V1" "T1"); (a2 "V2" "T2"); vcmp; tcmp; Printf.sprintf "%s < %s" vpick tpick ])
           [ ("V1 >= V2", "V1", "T1 <= T2", "T1");
             ("V1 >= V2", "V1", "T1 > T2", "T2");
             ("V1 < V2", "V2", "T1 <= T2", "T1");
@@ -6261,17 +6243,29 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                  model, as everywhere else in this translation. *)
               ctx.fresh <- ctx.fresh + 1;
               let q = Printf.sprintf "cl%d_not" ctx.fresh in
-              emit ctx "%s_lo(S,X) :- tl(S,%s,X,_,_)." q (str a);
-              emit ctx "%s_lo(S,X) :- ktl(S,%s,V,X), V < X." q (str k);
-              emit ctx "%s_hi(S,Y) :- tl(S,%s,_,Y,_)." q (str a);
-              emit ctx "%s_hi(S,Y) :- ktl(S,%s,Y,T), Y < T." q (str k);
-              emit ctx
-                "%s_cov(S,X,Y) :- %s_lo(S,X), %s_hi(S,Y), X < Y, ktl(S,%s,V,T), V < Y, X < T." q q
-                q (str k);
-              emit ctx
-                "%s(S,X,Y) :- tl(S,%s,SV,ST,_), %s_lo(S,X), %s_hi(S,Y), SV <= X, X < Y, Y <= ST, \
-                 not %s_cov(S,X,Y)."
-                q (str a) q q q;
+              emit_rule ctx ~head:(Printf.sprintf "%s_lo(S,X)" q) ~body:[ Printf.sprintf "tl(S,%s,X,_,_)" (str a) ];
+              emit_rule ctx ~head:(Printf.sprintf "%s_lo(S,X)" q)
+                ~body:[ Printf.sprintf "ktl(S,%s,V,X)" (str k); "V < X" ];
+              emit_rule ctx ~head:(Printf.sprintf "%s_hi(S,Y)" q) ~body:[ Printf.sprintf "tl(S,%s,_,Y,_)" (str a) ];
+              emit_rule ctx ~head:(Printf.sprintf "%s_hi(S,Y)" q)
+                ~body:[ Printf.sprintf "ktl(S,%s,Y,T)" (str k); "Y < T" ];
+              emit_rule ctx ~head:(Printf.sprintf "%s_cov(S,X,Y)" q)
+                ~body:
+                  [ Printf.sprintf "%s_lo(S,X)" q;
+                    Printf.sprintf "%s_hi(S,Y)" q;
+                    "X < Y";
+                    Printf.sprintf "ktl(S,%s,V,T)" (str k);
+                    "V < Y";
+                    "X < T" ];
+              emit_rule ctx ~head:(Printf.sprintf "%s(S,X,Y)" q)
+                ~body:
+                  [ Printf.sprintf "tl(S,%s,SV,ST,_)" (str a);
+                    Printf.sprintf "%s_lo(S,X)" q;
+                    Printf.sprintf "%s_hi(S,Y)" q;
+                    "SV <= X";
+                    "X < Y";
+                    "Y <= ST";
+                    Printf.sprintf "not %s_cov(S,X,Y)" q ];
               fun v t -> Printf.sprintf "%s(S,%s,%s)" q v t
             end
         | Comparison
@@ -6324,11 +6318,11 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             ctx.fresh <- ctx.fresh + 1;
             let q = Printf.sprintf "cl%d_cond" ctx.fresh in
             let filled sym =
-              emit ctx "%s(S,V2,T2) :- %s." q
-                (String.concat ", "
-                   (Printf.sprintf "tl(S,%s,V2,T2,WB)" (str b)
+              emit_rule ctx ~head:(Printf.sprintf "%s(S,V2,T2)" q)
+                ~body:
+                  (Printf.sprintf "tl(S,%s,V2,T2,WB)" (str b)
                    :: gb
-                   @ [ Printf.sprintf "%s %s %s" wl sym gl ]))
+                   @ [ Printf.sprintf "%s %s %s" wl sym gl ])
             in
             (match op with
             | Equal | Not_equal ->
@@ -6351,28 +6345,45 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                 (* the bound's definedness, keyed on the caller's subject like the
                    fence above *)
                 let bound = q ^ "_bound" in
-                emit ctx "%s(%s) :- %s." bound subject
-                  (String.concat ", " (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: gb));
+                emit_rule ctx ~head:(Printf.sprintf "%s(%s)" bound subject)
+                  ~body:(Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: gb);
                 (* the gaps of the tested timeline: the maximal stretches of a
                    segment of the clipped timeline that no tested segment covers,
                    derived by the two candidate rules of the negated characteristic
                    clip above, with the tested segments as the covered periods *)
                 let gap = q ^ "_gap" in
-                emit ctx "%s_lo(S,X) :- tl(S,%s,X,_,_)." gap (str a);
-                emit ctx "%s_lo(S,X) :- tl(S,%s,V,X,_), V < X." gap (str b);
-                emit ctx "%s_hi(S,Y) :- tl(S,%s,_,Y,_)." gap (str a);
-                emit ctx "%s_hi(S,Y) :- tl(S,%s,Y,T,_), Y < T." gap (str b);
-                emit ctx
-                  "%s_cov(S,X,Y) :- %s_lo(S,X), %s_hi(S,Y), X < Y, tl(S,%s,V,T,_), V < Y, X < T." gap
-                  gap gap (str b);
-                emit ctx
-                  "%s(S,X,Y) :- tl(S,%s,SV,ST,_), %s_lo(S,X), %s_hi(S,Y), SV <= X, X < Y, Y <= ST, \
-                   not %s_cov(S,X,Y)."
-                  gap (str a) gap gap gap;
-                if op = Equal then emit ctx "%s(S,X,Y) :- %s(S,X,Y), not %s(S)." q gap bound
+                emit_rule ctx ~head:(Printf.sprintf "%s_lo(S,X)" gap)
+                  ~body:[ Printf.sprintf "tl(S,%s,X,_,_)" (str a) ];
+                emit_rule ctx ~head:(Printf.sprintf "%s_lo(S,X)" gap)
+                  ~body:[ Printf.sprintf "tl(S,%s,V,X,_)" (str b); "V < X" ];
+                emit_rule ctx ~head:(Printf.sprintf "%s_hi(S,Y)" gap)
+                  ~body:[ Printf.sprintf "tl(S,%s,_,Y,_)" (str a) ];
+                emit_rule ctx ~head:(Printf.sprintf "%s_hi(S,Y)" gap)
+                  ~body:[ Printf.sprintf "tl(S,%s,Y,T,_)" (str b); "Y < T" ];
+                emit_rule ctx ~head:(Printf.sprintf "%s_cov(S,X,Y)" gap)
+                  ~body:
+                    [ Printf.sprintf "%s_lo(S,X)" gap;
+                      Printf.sprintf "%s_hi(S,Y)" gap;
+                      "X < Y";
+                      Printf.sprintf "tl(S,%s,V,T,_)" (str b);
+                      "V < Y";
+                      "X < T" ];
+                emit_rule ctx ~head:(Printf.sprintf "%s(S,X,Y)" gap)
+                  ~body:
+                    [ Printf.sprintf "tl(S,%s,SV,ST,_)" (str a);
+                      Printf.sprintf "%s_lo(S,X)" gap;
+                      Printf.sprintf "%s_hi(S,Y)" gap;
+                      "SV <= X";
+                      "X < Y";
+                      "Y <= ST";
+                      Printf.sprintf "not %s_cov(S,X,Y)" gap ];
+                if op = Equal then emit_rule ctx ~head:(Printf.sprintf "%s(S,X,Y)" q)
+                                     ~body:[ Printf.sprintf "%s(S,X,Y)" gap; Printf.sprintf "not %s(S)" bound ]
                 else begin
-                  emit ctx "%s(S,V2,T2) :- tl(S,%s,V2,T2,_), not %s(S)." q (str b) bound;
-                  emit ctx "%s(S,X,Y) :- %s(S,X,Y), %s(S)." q gap bound
+                  emit_rule ctx ~head:(Printf.sprintf "%s(S,V2,T2)" q)
+                    ~body:[ Printf.sprintf "tl(S,%s,V2,T2,_)" (str b); Printf.sprintf "not %s(S)" bound ];
+                  emit_rule ctx ~head:(Printf.sprintf "%s(S,X,Y)" q)
+                    ~body:[ Printf.sprintf "%s(S,X,Y)" gap; Printf.sprintf "%s(S)" bound ]
                 end
             | _ -> filled (compare_sym op));
             fun v t -> Printf.sprintf "%s(S,%s,%s)" q v t
@@ -6408,8 +6419,13 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (* four-case integer intersection: V = max(V1,V2), T = min(T1,T2) *)
       List.iter
         (fun (vcmp, vpick, tcmp, tpick) ->
-          emit ctx "%s_seg(S,%s,%s,W) :- tl(S,%s,V1,T1,W), %s, %s, %s, %s < %s." p vpick
-            tpick (str a) cond_atom vcmp tcmp vpick tpick)
+          emit_rule ctx ~head:(Printf.sprintf "%s_seg(S,%s,%s,W)" p vpick tpick)
+            ~body:
+              [ Printf.sprintf "tl(S,%s,V1,T1,W)" (str a);
+                cond_atom;
+                vcmp;
+                tcmp;
+                Printf.sprintf "%s < %s" vpick tpick ])
         [ ("V1 >= V2", "V1", "T1 <= T2", "T1");
           ("V1 >= V2", "V1", "T1 > T2", "T2");
           ("V1 < V2", "V2", "T1 <= T2", "T1");
@@ -6528,20 +6544,20 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          not fire this fence. Keying it on the helper's own free "S" also left
          it ungrounded by anything but the seg atom. Witness:
          corpus/golden/jutterswet-klipwacht. *)
-      emit ctx
-        "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, \
-         %s_seg(%s,V,T,W), |W| > %d."
-        subject
-        (String.concat ", "
-           (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard))
-        p subject w_bound;
+      emit_rule ctx
+        ~head:(Printf.sprintf "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s)" subject)
+        ~body:
+          ((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard)
+          @ [ Printf.sprintf "%s_seg(%s,V,T,W)" p subject; Printf.sprintf "|W| > %d" w_bound ]);
       open_total_guard ctx ~witness:subject
         ~body:
           ((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard)
           @ [ Printf.sprintf "%s_seg(%s,V,T,W)" p subject ])
         ~bounds:("V", "T") ~value:"W" ~attr:a;
-      emit ctx "%s_total(S,%s) :- isa(S,%s), %s = #sum { W*N,V,T : %s_seg(S,V,T,W), %s_wu(V,T,N) }."
-        p q (str subject_ot) q p p;
+      emit_rule ctx ~head:(Printf.sprintf "%s_total(S,%s)" p q)
+        ~body:
+          [ Printf.sprintf "isa(S,%s)" (str subject_ot);
+            Printf.sprintf "%s = #sum { W*N,V,T : %s_seg(S,V,T,W), %s_wu(V,T,N) }" q p p ];
       let scale = pow10 (attr_decimals ctx ~otype:aot ~attr:a) in
       if denominator > 1 && not calendar_ok then
         let atoms, e =
@@ -6617,18 +6633,21 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       in
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       let seg = Printf.sprintf "tl(%s,%s,V,T,W)" subject (str a) in
-      emit ctx "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, %s, |W| > %d."
-        subject (String.concat ", " (base :: ctx.rule_guard)) seg w_bound;
-      emit ctx "%s_wud(V,T) :- %s_wu(V,T,_)." p p;
-      emit ctx
-        "viol(\"the temporal total of %s meets a segment whose bounds are neither bounds of the case nor walls of \
-         the grid (no corpus case)\",%s) :- %s, %s, V != #inf, T != #sup, not %s_wud(V,T)."
-        (norm a) subject (String.concat ", " (base :: ctx.rule_guard)) seg p;
+      emit_rule ctx
+        ~head:(Printf.sprintf "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s)" subject)
+        ~body:((base :: ctx.rule_guard) @ [ seg; Printf.sprintf "|W| > %d" w_bound ]);
+      emit_rule ctx ~head:(Printf.sprintf "%s_wud(V,T)" p) ~body:[ Printf.sprintf "%s_wu(V,T,_)" p ];
+      emit_rule ctx
+        ~head:(Printf.sprintf "viol(\"the temporal total of %s meets a segment whose bounds are neither bounds of the \
+           case nor walls of the grid (no corpus case)\",%s)" (norm a) subject)
+        ~body:((base :: ctx.rule_guard) @ [ seg; "V != #inf"; "T != #sup"; Printf.sprintf "not %s_wud(V,T)" p ]);
       open_total_guard ctx ~witness:subject ~body:((base :: ctx.rule_guard) @ [ seg ]) ~bounds:("V", "T")
         ~value:"W" ~attr:a;
       let q = fresh ctx "Q" in
-      emit ctx "%s_total(S,%s) :- isa(S,%s), %s = #sum { W*N,V,T : tl(S,%s,V,T,W), %s_wu(V,T,N) }." p q
-        (str subject_ot) q (str a) p;
+      emit_rule ctx ~head:(Printf.sprintf "%s_total(S,%s)" p q)
+        ~body:
+          [ Printf.sprintf "isa(S,%s)" (str subject_ot);
+            Printf.sprintf "%s = #sum { W*N,V,T : tl(S,%s,V,T,W), %s_wu(V,T,N) }" q (str a) p ];
       let scale = pow10 (attr_decimals ctx ~otype:aot ~attr:a) in
       if denominator > 1 && not calendar_ok then
         let atoms, e =
@@ -6663,7 +6682,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (* an absent timeline is leeg on every day and totals 0: the #sum over a
          member without a value *)
       let p = fresh ctx "ab" and v = fresh ctx "T" in
-      emit ctx "%s_total(S,%s) :- isa(S,%s), %s = #sum { V : val(S,%s,V) }." p v (str subject_ot) v (str a);
+      emit_rule ctx ~head:(Printf.sprintf "%s_total(S,%s)" p v)
+        ~body:
+          [ Printf.sprintf "isa(S,%s)" (str subject_ot);
+            Printf.sprintf "%s = #sum { V : val(S,%s,V) }" v (str a) ];
       let term = if f = 1 then v else Printf.sprintf "(%s*%d)" v f in
       ( [ Printf.sprintf "%s_total(%s,%s)" p subject v ],
         term,
@@ -6815,13 +6837,17 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         | None ->
             ctx.fresh <- ctx.fresh + 1;
             let bp = Printf.sprintf "dbb%d" ctx.fresh in
-            let gb = String.concat ", " gbody in
-            emit ctx "%s(%s,(%s)-1) :- %s, %s > %s, %s < %s." bp subject db gb db da msb msa;
-            emit ctx "%s(%s,(%s)+1) :- %s, %s < %s, %s > %s." bp subject db gb db da msb msa;
-            emit ctx "%s_lo(%s) :- %s, %s > %s, %s < %s." bp subject gb db da msb msa;
-            emit ctx "%s_hi(%s) :- %s, %s < %s, %s > %s." bp subject gb db da msb msa;
-            emit ctx "%s(%s,%s) :- %s, not %s_lo(%s), not %s_hi(%s)." bp subject db gb bp subject
-              bp subject;
+            let gb = gbody in
+            emit_rule ctx ~head:(Printf.sprintf "%s(%s,(%s)-1)" bp subject db)
+              ~body:(gb @ [ Printf.sprintf "%s > %s" db da; Printf.sprintf "%s < %s" msb msa ]);
+            emit_rule ctx ~head:(Printf.sprintf "%s(%s,(%s)+1)" bp subject db)
+              ~body:(gb @ [ Printf.sprintf "%s < %s" db da; Printf.sprintf "%s > %s" msb msa ]);
+            emit_rule ctx ~head:(Printf.sprintf "%s_lo(%s)" bp subject)
+              ~body:(gb @ [ Printf.sprintf "%s > %s" db da; Printf.sprintf "%s < %s" msb msa ]);
+            emit_rule ctx ~head:(Printf.sprintf "%s_hi(%s)" bp subject)
+              ~body:(gb @ [ Printf.sprintf "%s < %s" db da; Printf.sprintf "%s > %s" msb msa ]);
+            emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" bp subject db)
+              ~body:(gb @ [ Printf.sprintf "not %s_lo(%s)" bp subject; Printf.sprintf "not %s_hi(%s)" bp subject ]);
             let dbp = fresh ctx "DBP" in
             let dbp_atom = Printf.sprintf "%s(%s,%s)" bp subject dbp in
             (match tu with
@@ -6941,18 +6967,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let by, ty, sy = expr_term ctx ~subject ~subject_ot y in
       if sy <> 1 then fault "easterSunday year operand must be an unscaled whole term";
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
-      emit ctx "viol(\"%s\",%s) :- %s, (%s) < 1." easter_before_year_one_reason
-        subject
-        (String.concat ", " ((base :: ctx.rule_guard) @ by))
-        ty;
+      emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" easter_before_year_one_reason subject)
+        ~body:(((base :: ctx.rule_guard) @ by) @ [ Printf.sprintf "(%s) < 1" ty ]);
       (* beyond year 5 000 000 the day number leaves clingo's integers and the
          chain wrapped silently (year 6 000 000 gave day -2104231732) *)
-      emit ctx
-        "viol(\"easterSunday of a year after 5000000 is not translated (the civil day number \
-         would leave clingo's integers)\",%s) :- %s, (%s) > 5000000."
-        subject
-        (String.concat ", " ((base :: ctx.rule_guard) @ by))
-        ty;
+      emit_rule ctx
+        ~head:(Printf.sprintf "viol(\"easterSunday of a year after 5000000 is not translated (the civil day number \
+           would leave clingo's integers)\",%s)" subject)
+        ~body:(((base :: ctx.rule_guard) @ by) @ [ Printf.sprintf "(%s) > 5000000" ty ]);
       let av = fresh ctx "A" and bv = fresh ctx "B" and cv = fresh ctx "C" in
       let dv = fresh ctx "D" and ev = fresh ctx "E" in
       let fv = fresh ctx "F" and gv = fresh ctx "G" and hv = fresh ctx "H" in
@@ -7210,8 +7232,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         | _ ->
             List.iter
               (fun conds ->
-                emit ctx "viol(\"negative operand under rounding is not translated\",%s) :- %s."
-                  subject (String.concat ", " (gbody @ conds)))
+                emit_rule ctx
+                  ~head:(Printf.sprintf "viol(\"negative operand under rounding is not translated\",%s)" subject)
+                  ~body:(gbody @ conds))
               (sign_conds ctx ~neg:true t));
         (b, rounded, target)
       end
@@ -7239,8 +7262,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             (* the base's sign read without the product it may be ([sign_conds]) *)
             List.iter
               (fun conds ->
-                emit ctx "viol(\"negative operand under rounding is not translated\",%s) :- %s."
-                  subject (String.concat ", " (gbody @ conds)))
+                emit_rule ctx
+                  ~head:(Printf.sprintf "viol(\"negative operand under rounding is not translated\",%s)" subject)
+                  ~body:(gbody @ conds))
               (sign_conds ctx ~neg:true t));
         (b, rounded, target))
   | Clamp { base_expr; minimum; maximum; _ } ->
@@ -7530,8 +7554,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             fault "a named FunctionDef as a fold operand is refused (the operand must be an inline lambda)"
       in
       let base_body = Printf.sprintf "lpres(%s)" lterm in
-      emit ctx "%s(%s,0,%s) :- %s." fa lterm init_term
-        (String.concat ", " (base_body :: init_atoms));
+      emit_rule ctx ~head:(Printf.sprintf "%s(%s,0,%s)" fa lterm init_term) ~body:(base_body :: init_atoms);
       let rec_body =
         [ Printf.sprintf "%s(%s,I-1,A)" fa lterm; Printf.sprintf "lelem(%s,I,V)" lterm ]
       in
@@ -7552,10 +7575,13 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           if s <> out_scale then
             fault "a fold body branch scale %d does not match the fold's declared scale %d" s
               out_scale;
-          emit ctx "%s(%s,I,%s) :- %s." fa lterm t (String.concat ", " (rec_body @ g)))
+          emit_rule ctx ~head:(Printf.sprintf "%s(%s,I,%s)" fa lterm t) ~body:(rec_body @ g))
         branches;
-      emit ctx "%s(%s,F) :- lpres(%s), N = #count { I : lelem(%s,I,_) }, %s(%s,N,F)." fr lterm
-        lterm lterm fa lterm;
+      emit_rule ctx ~head:(Printf.sprintf "%s(%s,F)" fr lterm)
+        ~body:
+          [ Printf.sprintf "lpres(%s)" lterm;
+            Printf.sprintf "N = #count { I : lelem(%s,I,_) }" lterm;
+            Printf.sprintf "%s(%s,N,F)" fa lterm ];
       let v = fresh ctx "F" in
       ([ Printf.sprintf "%s(%s,%s)" fr lterm v ], v, out_scale)
   | List_length { list; _ } ->
@@ -7566,7 +7592,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let lterm, _ = list_source ctx ~subject ~subject_ot list in
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "ll%d" ctx.fresh in
-      emit ctx "%s(%s,C) :- lpres(%s), C = #count { I : lelem(%s,I,_) }." p lterm lterm lterm;
+      emit_rule ctx ~head:(Printf.sprintf "%s(%s,C)" p lterm)
+        ~body:[ Printf.sprintf "lpres(%s)" lterm; Printf.sprintf "C = #count { I : lelem(%s,I,_) }" lterm ];
       let v = fresh ctx "L" in
       ([ Printf.sprintf "%s(%s,%s)" p lterm v ], v, 1)
   | Field_access { base; field_name; _ } ->
@@ -7754,10 +7781,10 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
       List.iter
         (fun a ->
           let atoms, d, ms = dt_term ctx ~subject ~subject_ot a in
-          emit ctx "%s(%s,%s,%s) :- %s." pred subject d ms
-            (String.concat ", " (base :: atoms)))
+          emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s,%s)" pred subject d ms) ~body:(base :: atoms))
         args;
-      emit ctx "%s_def(%s) :- %s(%s,_,_)." pred subject pred subject;
+      emit_rule ctx ~head:(Printf.sprintf "%s_def(%s)" pred subject)
+        ~body:[ Printf.sprintf "%s(%s,_,_)" pred subject ];
       let agg = match kind with First -> "#min" | _ -> "#max" in
       let dd = fresh ctx "DFD" and dm = fresh ctx "DFM" in
       let ld = fresh ctx "DLD" and lm = fresh ctx "DLM" in
@@ -7882,9 +7909,8 @@ and date_construction ctx ~subject ~subject_ot ~time (args : expr list) =
      fault kind EF-032 a tuple of the sentence and the parts it is about, so
      that [viol_code] reads the parameters of ch. 5.7b off the ground atom *)
   let witness reason test =
-    emit ctx "viol(%s,%s) :- %s, %s." reason subject
-      (String.concat ", " ((base :: ctx.rule_guard) @ atoms))
-      test
+    emit_rule ctx ~head:(Printf.sprintf "viol(%s,%s)" reason subject)
+      ~body:(((base :: ctx.rule_guard) @ atoms) @ [ test ])
   in
   let quoted text = Printf.sprintf "\"%s\"" text in
   let y, m, d, clock =
@@ -8019,15 +8045,12 @@ and translate_division ?(root = true) ctx ~subject ~subject_ot ~left_side ~right
   let hkey, opening =
     helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot) (bl @ br)
   in
-  let base = String.concat ", " opening in
   let guard = ctx.rule_guard in
-  let lbody = String.concat ", " (base :: bl) in
-  let rbody = String.concat ", " (base :: br) in
-  let full = String.concat ", " ((base :: guard) @ bl @ br) in
-  range_guard ctx ~subject ~body:((base :: guard) @ bl @ br) range_bounds;
-  emit ctx "%s_ldef(%s) :- %s." p hkey lbody;
-  emit ctx "%s_rdef(%s) :- %s." p hkey rbody;
-  emit ctx "%s(%s,0) :- %s, not %s_ldef(%s)." p hkey base p hkey;
+  let full = opening @ guard @ bl @ br in
+  range_guard ctx ~subject ~body:full range_bounds;
+  emit_rule ctx ~head:(Printf.sprintf "%s_ldef(%s)" p hkey) ~body:(opening @ bl);
+  emit_rule ctx ~head:(Printf.sprintf "%s_rdef(%s)" p hkey) ~body:(opening @ br);
+  emit_rule ctx ~head:(Printf.sprintf "%s(%s,0)" p hkey) ~body:(opening @ [ Printf.sprintf "not %s_ldef(%s)" p hkey ]);
   (* the deposits ride the reading form's rule × subject: inside a fold member,
      a quantifier element or a closed body that is [deposit_subject], joined
      through the reach of the place ([param_reach]) *)
@@ -8037,19 +8060,21 @@ and translate_division ?(root = true) ctx ~subject ~subject_ot ~left_side ~right
     | None -> (subject, [])
   in
   deposit ctx ~code:"EF-031" ~rule:(str ctx.rule_name) ~subject:key
-    (Printf.sprintf "%s, %s_ldef(%s), not %s_rdef(%s)" (String.concat ", " (reach @ (base :: guard))) p
-       hkey p hkey);
-  deposit ctx ~code:"EF-005" ~rule:(str ctx.rule_name) ~subject:key
-    (Printf.sprintf "%s, (%s) == 0" (String.concat ", " (reach @ [ full ])) tr);
+    (reach @ opening @ guard @ [ Printf.sprintf "%s_ldef(%s)" p hkey; Printf.sprintf "not %s_rdef(%s)" p hkey ]);
+  deposit ctx ~code:"EF-005" ~rule:(str ctx.rule_name) ~subject:key (reach @ full @ [ Printf.sprintf "(%s) == 0" tr ]);
   (match rounding with
   | None ->
-      emit ctx "%s(%s,V) :- %s, (%s) != 0, %s \\ %s == 0, V = %s/%s." p hkey full tr numt
-        dent numt dent;
-      emit ctx "viol(\"%s\",%s) :- %s, (%s) != 0, %s \\ %s != 0."
-        (if ctx.in_condition then non_exact_division_in_condition
+      emit_rule ctx ~head:(Printf.sprintf "%s(%s,V)" p hkey)
+        ~body:
+          (full
+          @ [ Printf.sprintf "(%s) != 0" tr;
+              Printf.sprintf "%s \\ %s == 0" numt dent;
+              Printf.sprintf "V = %s/%s" numt dent ]);
+      emit_rule ctx
+        ~head:(Printf.sprintf "viol(\"%s\",%s)" (if ctx.in_condition then non_exact_division_in_condition
          else if root then non_exact_division ctx
-         else nested_non_exact_division)
-        subject full tr numt dent
+         else nested_non_exact_division) subject)
+        ~body:(full @ [ Printf.sprintf "(%s) != 0" tr; Printf.sprintf "%s \\ %s != 0" numt dent ])
   | Some (mode_kind, _) ->
       let value =
         match mode_kind with
@@ -8067,9 +8092,10 @@ and translate_division ?(root = true) ctx ~subject ~subject_ot ~left_side ~right
             (fun t ->
               List.iter
                 (fun conds ->
-                  emit ctx
-                    "viol(\"negative operand under rounded division is not translated\",%s) :- %s, (%s) != 0."
-                    subject (String.concat ", " (full :: conds)) tr)
+                  emit_rule ctx
+                    ~head:(Printf.sprintf "viol(\"negative operand under rounded division is not \
+                       translated\",%s)" subject)
+                    ~body:((full @ conds) @ [ Printf.sprintf "(%s) != 0" tr ]))
                 (sign_conds ctx ~neg:true t))
             [ tl; tr ]);
       let guards =
@@ -8077,7 +8103,7 @@ and translate_division ?(root = true) ctx ~subject ~subject_ot ~left_side ~right
         | Toward_zero -> Printf.sprintf "(%s) != 0" tr
         | _ -> Printf.sprintf "%s >= 0, %s > 0" numt dent
       in
-      emit ctx "%s(%s,V) :- %s, %s, V = %s." p hkey full guards value);
+      emit_rule ctx ~head:(Printf.sprintf "%s(%s,V)" p hkey) ~body:(full @ [ guards; Printf.sprintf "V = %s" value ]));
   let v = fresh ctx "Q" in
   ([ Printf.sprintf "%s(%s,%s)" p hkey v ], v, out_scale)
 
@@ -8324,21 +8350,28 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~left_side ~right_side ~(gp 
      failure, and passes vacuously. *)
   (match op with
   | Not_equal ->
-      emit ctx "%s_bound(S) :- %s." p
-        (String.concat ", " (Printf.sprintf "%s_t(S,_,_,_,_)" p :: batoms));
-      emit ctx
-        "%s(S) :- %s_t(S,B,_,_,_), %s_bound(S), TD = #sum { D,KV,KT : %s_t(S,B,KV,KT,D) }, GD = #sum \
-         { D,KV,KT : %s_g(S,B,KV,KT,D) }, GD < TD."
-        p p p p p;
-      emit ctx
-        "%s(S) :- %s_t(S,B,_,_,_), not %s_bound(S), %s_b(B,_,Tot), TD = #sum { D,KV,KT : \
-         %s_t(S,B,KV,KT,D) }, TD < Tot."
-        p p p p p
+      emit_rule ctx ~head:(Printf.sprintf "%s_bound(S)" p) ~body:(Printf.sprintf "%s_t(S,_,_,_,_)" p :: batoms);
+      emit_rule ctx ~head:(Printf.sprintf "%s(S)" p)
+        ~body:
+          [ Printf.sprintf "%s_t(S,B,_,_,_)" p;
+            Printf.sprintf "%s_bound(S)" p;
+            Printf.sprintf "TD = #sum { D,KV,KT : %s_t(S,B,KV,KT,D) }" p;
+            Printf.sprintf "GD = #sum { D,KV,KT : %s_g(S,B,KV,KT,D) }" p;
+            "GD < TD" ];
+      emit_rule ctx ~head:(Printf.sprintf "%s(S)" p)
+        ~body:
+          [ Printf.sprintf "%s_t(S,B,_,_,_)" p;
+            Printf.sprintf "not %s_bound(S)" p;
+            Printf.sprintf "%s_b(B,_,Tot)" p;
+            Printf.sprintf "TD = #sum { D,KV,KT : %s_t(S,B,KV,KT,D) }" p;
+            "TD < Tot" ]
   | _ ->
-      emit ctx
-        "%s(S) :- %s_t(S,B,_,_,_), %s_b(B,_,Tot), GD = #sum { D,KV,KT : %s_g(S,B,KV,KT,D) }, GD < \
-         Tot."
-        p p p p);
+      emit_rule ctx ~head:(Printf.sprintf "%s(S)" p)
+        ~body:
+          [ Printf.sprintf "%s_t(S,B,_,_,_)" p;
+            Printf.sprintf "%s_b(B,_,Tot)" p;
+            Printf.sprintf "GD = #sum { D,KV,KT : %s_g(S,B,KV,KT,D) }" p;
+            "GD < Tot" ]);
   p
 
 (* --- day kinds as duration units (ch. 3.7/3.8) --------------------------
@@ -8708,7 +8741,7 @@ and dk_table ctx (name : string) :
          chapter's fence *)
       (match !prev with
       | Some q when hi - q <= day_kind_reach -> emit ctx "%s." edge_hi
-      | _ -> emit ctx "%s :- #false." edge_hi);
+      | _ -> emit_rule ctx ~head:edge_hi ~body:[ "#false" ]);
       (* the LOW edge mirrors it: a first match within a reach of the window
          floor means the extension may be truncating a backward step *)
       let rec first d =
@@ -8718,16 +8751,16 @@ and dk_table ctx (name : string) :
       in
       (match first lo with
       | Some _ -> emit ctx "%s." edge_lo
-      | None -> emit ctx "%s :- #false." edge_lo);
+      | None -> emit_rule ctx ~head:edge_lo ~body:[ "#false" ]);
       (* every predicate a rule below reads positively or under `not` gets a
          head even when it has no instance, so gringo reports no "atom does
          not occur in any rule head" for a table that simply has no far gap
          and no truncated edge *)
       if !rank = 0 then begin
-        emit ctx "%s(0,0) :- #false." p;
-        emit ctx "%s_r(0) :- #false." p
+        emit_rule ctx ~head:(Printf.sprintf "%s(0,0)" p) ~body:[ "#false" ];
+        emit_rule ctx ~head:(Printf.sprintf "%s_r(0)" p) ~body:[ "#false" ]
       end;
-      if !fars = 0 then emit ctx "%s(0) :- #false." far;
+      if !fars = 0 then emit_rule ctx ~head:(Printf.sprintf "%s(0)" far) ~body:[ "#false" ];
       let sentences = List.sort_uniq compare (List.map (fun (_, t, _) -> t) !faults) in
       let days = List.sort compare !faults in
       let fault_preds =
@@ -8752,8 +8785,10 @@ and dk_window_guard ctx ~subject ~body ~(win : int * int) (t : string) =
        be reckoned against the day kind's extension"
       lo hi
   in
-  emit ctx "viol(\"%s\",%s) :- %s, (%s) < %d." msg subject (String.concat ", " body) t lo;
-  emit ctx "viol(\"%s\",%s) :- %s, (%s) > %d." msg subject (String.concat ", " body) t hi
+  emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" msg subject)
+    ~body:(body @ [ Printf.sprintf "(%s) < %d" t lo ]);
+  emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" msg subject)
+    ~body:(body @ [ Printf.sprintf "(%s) > %d" t hi ])
 
 (* §6.10: the days of the kind in (A, B], signed by operand order. The
    interval bounds the work, so this form has no reach fence of its own, and
@@ -8781,13 +8816,19 @@ and dk_duration ctx ~subject ~subject_ot ~kind ~absolute ~(node : expr) a b =
   let id = ctx.fresh in
   let seed = Printf.sprintf "dks%d" id and res = Printf.sprintf "dkr%d" id in
   let gbody = (base :: ctx.rule_guard) @ ba @ bb in
-  emit ctx "%s(%s,%s,%s) :- %s." seed subject ta tb (String.concat ", " gbody);
+  emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s,%s)" seed subject ta tb) ~body:(gbody);
   dk_window_guard ctx ~subject ~body:gbody ~win ta;
   dk_window_guard ctx ~subject ~body:gbody ~win tb;
-  emit ctx "%s(%s,DKN) :- %s(%s,DKA,DKB), DKA <= DKB, DKN = #count { DKX : %s(DKX,DKJ), DKX > DKA, DKX <= DKB }."
-    res subject seed subject tbl;
-  emit ctx "%s(%s,-DKN) :- %s(%s,DKA,DKB), DKB < DKA, DKN = #count { DKX : %s(DKX,DKJ), DKX > DKB, DKX <= DKA }."
-    res subject seed subject tbl;
+  emit_rule ctx ~head:(Printf.sprintf "%s(%s,DKN)" res subject)
+    ~body:
+      [ Printf.sprintf "%s(%s,DKA,DKB)" seed subject;
+        "DKA <= DKB";
+        Printf.sprintf "DKN = #count { DKX : %s(DKX,DKJ), DKX > DKA, DKX <= DKB }" tbl ];
+  emit_rule ctx ~head:(Printf.sprintf "%s(%s,-DKN)" res subject)
+    ~body:
+      [ Printf.sprintf "%s(%s,DKA,DKB)" seed subject;
+        "DKB < DKA";
+        Printf.sprintf "DKN = #count { DKX : %s(DKX,DKJ), DKX > DKB, DKX <= DKA }" tbl ];
   let v = fresh ctx "DKV" in
   ( [ Printf.sprintf "%s(%s,%s)" res subject v ],
     (if absolute then Printf.sprintf "|%s|" v else v),
@@ -8855,24 +8896,36 @@ and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus ~datetime ~(node : expr) 
   and rnk = Printf.sprintf "dkk%d" id
   and res = Printf.sprintf "dkp%d" id in
   let gbody = (base :: ctx.rule_guard) @ bd @ bn in
-  let g = String.concat ", " gbody in
+  let g = gbody in
   let reach = if doc_dynamic ctx.doc then [] else ctx.param_reach node in
   dk_window_guard ctx ~subject ~body:(gbody @ reach) ~win td;
-  emit ctx "%s(%s,%s) :- %s, %s == 0." zero subject td g n_term;
-  emit ctx "%s(%s,%s,%s) :- %s, %s > 0." fwd subject td n_term g n_term;
-  emit ctx "%s(%s,%s,0-(%s)) :- %s, %s < 0." bwd subject td n_term g n_term;
+  emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" zero subject td) ~body:(g @ [ Printf.sprintf "%s == 0" n_term ]);
+  emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s,%s)" fwd subject td n_term)
+    ~body:(g @ [ Printf.sprintf "%s > 0" n_term ]);
+  emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s,0-(%s))" bwd subject td n_term)
+    ~body:(g @ [ Printf.sprintf "%s < 0" n_term ]);
   (* the rank the walk starts from: matches UP TO the start going forward,
      matches STRICTLY BEFORE it going backward — the start day itself never
      counts, in either direction *)
-  emit ctx "%s(%s,DKR) :- %s(%s,DKD,_), DKR = #count { DKX : %s(DKX,DKJ), DKX <= DKD }." rnk subject
-    fwd subject tbl;
-  emit ctx "%s(%s,DKR) :- %s(%s,DKD,_), DKR = #count { DKX : %s(DKX,DKJ), DKX < DKD }." rnk subject
-    bwd subject tbl;
-  emit ctx "%s(%s,DKD) :- %s(%s,DKD)." res subject zero subject;
-  emit ctx "%s(%s,DKX) :- %s(%s,_,DKM), %s(%s,DKR), %s(DKX,DKR+DKM)." res subject fwd subject rnk
-    subject tbl;
-  emit ctx "%s(%s,DKX) :- %s(%s,_,DKM), %s(%s,DKR), %s(DKX,DKR-DKM+1)." res subject bwd subject rnk
-    subject tbl;
+  emit_rule ctx ~head:(Printf.sprintf "%s(%s,DKR)" rnk subject)
+    ~body:
+      [ Printf.sprintf "%s(%s,DKD,_)" fwd subject;
+        Printf.sprintf "DKR = #count { DKX : %s(DKX,DKJ), DKX <= DKD }" tbl ];
+  emit_rule ctx ~head:(Printf.sprintf "%s(%s,DKR)" rnk subject)
+    ~body:
+      [ Printf.sprintf "%s(%s,DKD,_)" bwd subject;
+        Printf.sprintf "DKR = #count { DKX : %s(DKX,DKJ), DKX < DKD }" tbl ];
+  emit_rule ctx ~head:(Printf.sprintf "%s(%s,DKD)" res subject) ~body:[ Printf.sprintf "%s(%s,DKD)" zero subject ];
+  emit_rule ctx ~head:(Printf.sprintf "%s(%s,DKX)" res subject)
+    ~body:
+      [ Printf.sprintf "%s(%s,_,DKM)" fwd subject;
+        Printf.sprintf "%s(%s,DKR)" rnk subject;
+        Printf.sprintf "%s(DKX,DKR+DKM)" tbl ];
+  emit_rule ctx ~head:(Printf.sprintf "%s(%s,DKX)" res subject)
+    ~body:
+      [ Printf.sprintf "%s(%s,_,DKM)" bwd subject;
+        Printf.sprintf "%s(%s,DKR)" rnk subject;
+        Printf.sprintf "%s(DKX,DKR-DKM+1)" tbl ];
   (* THE START IS INSIDE THE WINDOW — the precondition of every reach
      statement below. Outside it the window guard has already spoken, and one
      cause gets one sentence: without this, a start past the window's edge
@@ -8882,8 +8935,10 @@ and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus ~datetime ~(node : expr) 
      below. *)
   let lo, hi = win in
   let inwin = Printf.sprintf "dki%d" id in
-  emit ctx "%s(%s) :- %s(%s,DKD,_), DKD >= %d, DKD <= %d." inwin subject fwd subject lo hi;
-  emit ctx "%s(%s) :- %s(%s,DKD,_), DKD >= %d, DKD <= %d." inwin subject bwd subject lo hi;
+  emit_rule ctx ~head:(Printf.sprintf "%s(%s)" inwin subject)
+    ~body:[ Printf.sprintf "%s(%s,DKD,_)" fwd subject; Printf.sprintf "DKD >= %d" lo; Printf.sprintf "DKD <= %d" hi ];
+  emit_rule ctx ~head:(Printf.sprintf "%s(%s)" inwin subject)
+    ~body:[ Printf.sprintf "%s(%s,DKD,_)" bwd subject; Printf.sprintf "DKD >= %d" lo; Printf.sprintf "DKD <= %d" hi ];
   (* a walk that reaches a day on which the condition faults stops there, as
      ref's does, so no fence after it fires: [dkx] says it reaches one *)
   let stopped =
@@ -8892,15 +8947,25 @@ and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus ~datetime ~(node : expr) 
       let x = Printf.sprintf "dkx%d" id in
       List.iter
         (fun (fp, _) ->
-          emit ctx "%s(%s) :- %s(%s,DKD,DKM), %s(%s,DKR), %s(DKF,DKG), DKF > DKD, DKG - DKR < DKM." x subject fwd
-            subject rnk subject fp;
-          emit ctx "%s(%s) :- %s(%s,DKD,DKM), %s(%s,DKR), %s(DKF,DKG), DKF < DKD, DKR - DKG < DKM." x subject bwd
-            subject rnk subject fp)
+          emit_rule ctx ~head:(Printf.sprintf "%s(%s)" x subject)
+            ~body:
+              [ Printf.sprintf "%s(%s,DKD,DKM)" fwd subject;
+                Printf.sprintf "%s(%s,DKR)" rnk subject;
+                Printf.sprintf "%s(DKF,DKG)" fp;
+                "DKF > DKD";
+                "DKG - DKR < DKM" ];
+          emit_rule ctx ~head:(Printf.sprintf "%s(%s)" x subject)
+            ~body:
+              [ Printf.sprintf "%s(%s,DKD,DKM)" bwd subject;
+                Printf.sprintf "%s(%s,DKR)" rnk subject;
+                Printf.sprintf "%s(DKF,DKG)" fp;
+                "DKF < DKD";
+                "DKR - DKG < DKM" ])
         faults;
       [ Printf.sprintf "not %s(%s)" x subject ]
     end
   in
-  let ia = String.concat ", " ((Printf.sprintf "%s(%s)" inwin subject :: reach) @ stopped) in
+  let ia = ((Printf.sprintf "%s(%s)" inwin subject :: reach) @ stopped) in
   (* the REACH fence, read off the table. Three ways it fires, and they are
      the three ways ref's walk hits it: no match within the reach of the
      start; a gap wider than the reach along the way; and — the one a table
@@ -8914,34 +8979,60 @@ and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus ~datetime ~(node : expr) 
        a day kind whose next occurrence lies beyond the reach is refused, not diagnosed)"
       day_kind_reach
   in
-  emit ctx "viol(\"%s\",%s) :- %s(%s,DKD,_), %s, #count { DKX : %s(DKX,DKJ), DKX > DKD, DKX <= DKD+%d } == 0."
-    reach_msg subject fwd subject ia tbl day_kind_reach;
-  emit ctx "viol(\"%s\",%s) :- %s(%s,DKD,_), %s, #count { DKX : %s(DKX,DKJ), DKX < DKD, DKX >= DKD-%d } == 0."
-    reach_msg subject bwd subject ia tbl day_kind_reach;
-  emit ctx "viol(\"%s\",%s) :- %s(%s,_,DKM), %s, %s(%s,DKR), %s(DKQ), DKQ >= DKR+2, DKQ <= DKR+DKM."
-    reach_msg subject fwd subject ia rnk subject far;
-  emit ctx "viol(\"%s\",%s) :- %s(%s,_,DKM), %s, %s(%s,DKR), %s(DKQ), DKQ >= DKR-DKM+2, DKQ <= DKR."
-    reach_msg subject bwd subject ia rnk subject far;
-  emit ctx
-    "viol(\"%s\",%s) :- %s(%s,_,DKM), %s, %s(%s,DKR), not %s_r(DKR+DKM), not %s."
-    reach_msg subject fwd subject ia rnk subject tbl edge_hi;
-  emit ctx
-    "viol(\"%s\",%s) :- %s(%s,_,DKM), %s, %s(%s,DKR), not %s_r(DKR-DKM+1), not %s."
-    reach_msg subject bwd subject ia rnk subject tbl edge_lo;
+  emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" reach_msg subject)
+    ~body:
+      ([ Printf.sprintf "%s(%s,DKD,_)" fwd subject ]
+      @ ia
+      @ [ Printf.sprintf "#count { DKX : %s(DKX,DKJ), DKX > DKD, DKX <= DKD+%d } == 0" tbl day_kind_reach ]);
+  emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" reach_msg subject)
+    ~body:
+      ([ Printf.sprintf "%s(%s,DKD,_)" bwd subject ]
+      @ ia
+      @ [ Printf.sprintf "#count { DKX : %s(DKX,DKJ), DKX < DKD, DKX >= DKD-%d } == 0" tbl day_kind_reach ]);
+  emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" reach_msg subject)
+    ~body:
+      ([ Printf.sprintf "%s(%s,_,DKM)" fwd subject ]
+      @ ia
+      @ [ Printf.sprintf "%s(%s,DKR)" rnk subject; Printf.sprintf "%s(DKQ)" far; "DKQ >= DKR+2"; "DKQ <= DKR+DKM" ]);
+  emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" reach_msg subject)
+    ~body:
+      ([ Printf.sprintf "%s(%s,_,DKM)" bwd subject ]
+      @ ia
+      @ [ Printf.sprintf "%s(%s,DKR)" rnk subject; Printf.sprintf "%s(DKQ)" far; "DKQ >= DKR-DKM+2"; "DKQ <= DKR" ]);
+  emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" reach_msg subject)
+    ~body:
+      ([ Printf.sprintf "%s(%s,_,DKM)" fwd subject ]
+      @ ia
+      @ [ Printf.sprintf "%s(%s,DKR)" rnk subject;
+          Printf.sprintf "not %s_r(DKR+DKM)" tbl;
+          Printf.sprintf "not %s" edge_hi ]);
+  emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" reach_msg subject)
+    ~body:
+      ([ Printf.sprintf "%s(%s,_,DKM)" bwd subject ]
+      @ ia
+      @ [ Printf.sprintf "%s(%s,DKR)" rnk subject;
+          Printf.sprintf "not %s_r(DKR-DKM+1)" tbl;
+          Printf.sprintf "not %s" edge_lo ]);
   (* the WINDOW limit: the answer's rank is missing AND the table IS truncated
      on that side, so there may be matching days past the edge that ref steps
      to and this backend cannot see. The residual, recorded: where ref would
      have hit the reach fence out there anyway, the two executors fault with
      DIFFERENT sentences — this backend cannot tell the two apart from a
      truncated table, and says the one it can stand behind. *)
-  emit ctx
-    "viol(\"day-kind step beyond the window this backend materialises (the extension is \
-     truncated at its edge)\",%s) :- %s(%s,_,DKM), %s, %s(%s,DKR), not %s_r(DKR+DKM), %s."
-    subject fwd subject ia rnk subject tbl edge_hi;
-  emit ctx
-    "viol(\"day-kind step beyond the window this backend materialises (the extension is \
-     truncated at its edge)\",%s) :- %s(%s,_,DKM), %s, %s(%s,DKR), not %s_r(DKR-DKM+1), %s."
-    subject bwd subject ia rnk subject tbl edge_lo;
+  emit_rule ctx
+    ~head:(Printf.sprintf "viol(\"day-kind step beyond the window this backend materialises (the extension is \
+       truncated at its edge)\",%s)" subject)
+    ~body:
+      ([ Printf.sprintf "%s(%s,_,DKM)" fwd subject ]
+      @ ia
+      @ [ Printf.sprintf "%s(%s,DKR)" rnk subject; Printf.sprintf "not %s_r(DKR+DKM)" tbl; edge_hi ]);
+  emit_rule ctx
+    ~head:(Printf.sprintf "viol(\"day-kind step beyond the window this backend materialises (the extension is \
+       truncated at its edge)\",%s)" subject)
+    ~body:
+      ([ Printf.sprintf "%s(%s,_,DKM)" bwd subject ]
+      @ ia
+      @ [ Printf.sprintf "%s(%s,DKR)" rnk subject; Printf.sprintf "not %s_r(DKR-DKM+1)" tbl; edge_lo ]);
   let v = fresh ctx "DKP" in
   let atom = Printf.sprintf "%s(%s,%s)" res subject v in
   (* the ms-of-day rides through untouched, so the pair term's atoms come
@@ -9093,11 +9184,12 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       let key, opening =
         helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot) (a1 @ a2)
       in
-      let body = String.concat ", " (opening @ a1 @ a2) in
+      let body = (opening @ a1 @ a2) in
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "dtcmp%d" ctx.fresh in
-      emit ctx "%s(%s) :- %s, %s %s %s." p key body d1 day_sym d2;
-      emit ctx "%s(%s) :- %s, %s == %s, %s %s %s." p key body d1 d2 m1 ms_sym m2;
+      emit_rule ctx ~head:(Printf.sprintf "%s(%s)" p key) ~body:(body @ [ Printf.sprintf "%s %s %s" d1 day_sym d2 ]);
+      emit_rule ctx ~head:(Printf.sprintf "%s(%s)" p key)
+        ~body:(body @ [ Printf.sprintf "%s == %s" d1 d2; Printf.sprintf "%s %s %s" m1 ms_sym m2 ]);
       [ Printf.sprintf "%s(%s)" p key ]
   | Comparison { op = (Equal | Not_equal) as op; left_side; right_side; time_period = None; _ }
     when not (op = Equal && (is_date_operand ctx left_side || is_date_operand ctx right_side)) ->
@@ -9141,15 +9233,14 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       let key, opening =
         helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot) (b1 @ b2)
       in
-      let base = String.concat ", " opening in
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "eq%d" ctx.fresh in
-      emit ctx "%s_l(%s) :- %s." p key (String.concat ", " (base :: b1));
-      emit ctx "%s_r(%s) :- %s." p key (String.concat ", " (base :: b2));
-      emit ctx "%s(%s) :- %s, %s == %s." p key
-        (String.concat ", " (base :: bindings))
-        tl tr;
-      emit ctx "%s(%s) :- %s, not %s_l(%s), not %s_r(%s)." p key base p key p key;
+      emit_rule ctx ~head:(Printf.sprintf "%s_l(%s)" p key) ~body:(opening @ b1);
+      emit_rule ctx ~head:(Printf.sprintf "%s_r(%s)" p key) ~body:(opening @ b2);
+      emit_rule ctx ~head:(Printf.sprintf "%s(%s)" p key)
+        ~body:(opening @ bindings @ [ Printf.sprintf "%s == %s" tl tr ]);
+      emit_rule ctx ~head:(Printf.sprintf "%s(%s)" p key)
+        ~body:(opening @ [ Printf.sprintf "not %s_l(%s)" p key; Printf.sprintf "not %s_r(%s)" p key ]);
       [ (if op = Equal then "" else "not ") ^ Printf.sprintf "%s(%s)" p key ]
   | Comparison { op; left_side; right_side; time_period = None; _ } ->
       (* the orderings, plus date-typed gelijk-aan (routed here by the
@@ -9245,10 +9336,12 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          the INNER negation, which moves the satisfied days and leaves the
          touched buckets alone (the qualifier's own negation is below) *)
       let satisfied = if negation then "(Tot-TD)" else "TD" in
-      emit ctx
-        "%s(S) :- %s_d(S,B,_,_,_), %s_b(B,_,Tot), TD = #sum { D,KV,KT : %s_d(S,B,KV,KT,D) }, %s \
-         < Tot."
-        p p p p satisfied;
+      emit_rule ctx ~head:(Printf.sprintf "%s(S)" p)
+        ~body:
+          [ Printf.sprintf "%s_d(S,B,_,_,_)" p;
+            Printf.sprintf "%s_b(B,_,Tot)" p;
+            Printf.sprintf "TD = #sum { D,KV,KT : %s_d(S,B,KV,KT,D) }" p;
+            Printf.sprintf "%s < Tot" satisfied ];
       let fails =
         match hop with
         | None -> Printf.sprintf "%s(%s)" p subject
@@ -9259,8 +9352,11 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
                check, whose absent link answers false either way *)
             let q = fresh ctx "gpnav" in
             let n = fresh ctx "N" in
-            emit ctx "%s(%s) :- isa(%s,%s), role(%s,%s,%s), %s(%s)." q subject subject
-              (str subject_ot) subject (bound_role_term env rb) n p n;
+            emit_rule ctx ~head:(Printf.sprintf "%s(%s)" q subject)
+              ~body:
+                [ Printf.sprintf "isa(%s,%s)" subject (str subject_ot);
+                  Printf.sprintf "role(%s,%s,%s)" subject (bound_role_term env rb) n;
+                  Printf.sprintf "%s(%s)" p n ];
             Printf.sprintf "%s(%s)" q subject
       in
       (* ch. 3.9: "Negation complements the folded result" — the QUALIFIER's
@@ -9280,8 +9376,8 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
           if negation then begin
             ctx.fresh <- ctx.fresh + 1;
             let p = Printf.sprintf "nh%d" ctx.fresh in
-            emit ctx "%s(%s) :- %s." p subject
-              (String.concat ", " (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: within));
+            emit_rule ctx ~head:(Printf.sprintf "%s(%s)" p subject)
+              ~body:(Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: within);
             [ Printf.sprintf "not %s(%s)" p subject ]
           end
           else within)
@@ -9367,11 +9463,11 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
         ctx.fresh <- ctx.fresh + 1;
         let p = Printf.sprintf "rm%d" ctx.fresh in
         let n = fresh ctx "N" in
-        emit ctx "%s(%s) :- %s." p subject
-          (String.concat ", "
-             ([ Printf.sprintf "isa(%s,%s)" subject (str subject_ot);
+        emit_rule ctx ~head:(Printf.sprintf "%s(%s)" p subject)
+          ~body:
+            ([ Printf.sprintf "isa(%s,%s)" subject (str subject_ot);
                 Printf.sprintf "role(%s,%s,%s)" subject canonical n ]
-             @ narrow n));
+             @ narrow n);
         [ Printf.sprintf "not %s(%s)" p subject ]
       end
       else
@@ -9448,12 +9544,12 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       let n = List.length components in
       let saved = ctx.rule_guard in
-      emit ctx "%s_h0(%s,0) :- %s." p subject base;
+      emit_rule ctx ~head:(Printf.sprintf "%s_h0(%s,0)" p subject) ~body:[ base ];
       (* the pass before a creation ([pre_sensitive]): the same chain over each
          member as it reads there, written only once a guard asks. [handles]
          are the members' as they are translated *)
       let handles = Array.make n (lazy None) and chain = Array.make (n + 1) (lazy ()) in
-      chain.(0) <- lazy (emit ctx "%s_ph0(%s,0) :- %s." p subject base);
+      chain.(0) <- lazy (emit_rule ctx ~head:(Printf.sprintf "%s_ph0(%s,0)" p subject) ~body:[ base ]);
       for j = 1 to n do
         chain.(j) <-
           lazy
@@ -9462,11 +9558,13 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
                match Lazy.force handles.(j - 1) with
                | None -> Printf.sprintf "%s_m%d(%s)" p j subject
                | Some a ->
-                   emit ctx "%s_pm%d(%s) :- %s." p j subject (String.concat ", " (base :: a));
+                   emit_rule ctx ~head:(Printf.sprintf "%s_pm%d(%s)" p j subject) ~body:(base :: a);
                    Printf.sprintf "%s_pm%d(%s)" p j subject
              in
-             emit ctx "%s_ph%d(%s,H1) :- %s_ph%d(%s,H0), %s, H1 = H0+1." p j subject p (j - 1) subject m;
-             emit ctx "%s_ph%d(%s,H0) :- %s_ph%d(%s,H0), not %s." p j subject p (j - 1) subject m)
+             emit_rule ctx ~head:(Printf.sprintf "%s_ph%d(%s,H1)" p j subject)
+               ~body:[ Printf.sprintf "%s_ph%d(%s,H0)" p (j - 1) subject; m; "H1 = H0+1" ];
+             emit_rule ctx ~head:(Printf.sprintf "%s_ph%d(%s,H0)" p j subject)
+               ~body:[ Printf.sprintf "%s_ph%d(%s,H0)" p (j - 1) subject; Printf.sprintf "not %s" m ])
       done;
       let desc =
         match source_name with
@@ -9524,8 +9622,8 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
                      else begin
                        Lazy.force chain.(i);
                        let form = Printf.sprintf "%s_ph%d(%s,%s)" p i subject hv in
-                       emit ctx "%s_fu%d(%s) :- %s." p i subject (String.concat ", " unsettled);
-                       emit ctx "%s_pu%d(%s) :- %s." p i subject (String.concat ", " (form :: cmps));
+                       emit_rule ctx ~head:(Printf.sprintf "%s_fu%d(%s)" p i subject) ~body:(unsettled);
+                       emit_rule ctx ~head:(Printf.sprintf "%s_pu%d(%s)" p i subject) ~body:(form :: cmps);
                        Some
                          { pe_form = form; pe_not_fix = Printf.sprintf "not %s_fu%d(%s)" p i subject;
                            pe_holds = Printf.sprintf "%s_pu%d(%s)" p i subject; pe_desc = desc }
@@ -9535,11 +9633,14 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
           ctx.rule_guard <- saved @ unsettled;
           let atoms, pre = with_pre ctx c (fun () -> cond_atoms ctx ~subject ~subject_ot c) in
           handles.(i) <- pre;
-          emit ctx "%s_m%d(%s) :- %s." p (i + 1) subject (String.concat ", " (base :: atoms));
-          emit ctx "%s_h%d(%s,H1) :- %s_h%d(%s,H0), %s_m%d(%s), H1 = H0+1." p (i + 1) subject p i
-            subject p (i + 1) subject;
-          emit ctx "%s_h%d(%s,H0) :- %s_h%d(%s,H0), not %s_m%d(%s)." p (i + 1) subject p i subject
-            p (i + 1) subject)
+          emit_rule ctx ~head:(Printf.sprintf "%s_m%d(%s)" p (i + 1) subject) ~body:(base :: atoms);
+          emit_rule ctx ~head:(Printf.sprintf "%s_h%d(%s,H1)" p (i + 1) subject)
+            ~body:
+              [ Printf.sprintf "%s_h%d(%s,H0)" p i subject;
+                Printf.sprintf "%s_m%d(%s)" p (i + 1) subject;
+                "H1 = H0+1" ];
+          emit_rule ctx ~head:(Printf.sprintf "%s_h%d(%s,H0)" p (i + 1) subject)
+            ~body:[ Printf.sprintf "%s_h%d(%s,H0)" p i subject; Printf.sprintf "not %s_m%d(%s)" p (i + 1) subject ])
         components;
       ctx.rule_guard <- saved;
       register_pre ctx self
@@ -9711,9 +9812,11 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
               ctx.fresh <- ctx.fresh + 1;
               let pp = Printf.sprintf "kvp%d" ctx.fresh in
               let h = fresh ctx "H" in
-              emit ctx "%s(%s,%s) :- isa(%s,%s), %s = #count { %s : %s }." pp subject h subject
-                (str subject_ot) h x
-                (String.concat ", " (join @ (Printf.sprintf "%s_q(%s,%s)" (use_ro ctx ro) subject x :: f) @ m));
+              emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" pp subject h)
+                ~body:
+                  [ Printf.sprintf "isa(%s,%s)" subject (str subject_ot);
+                    Printf.sprintf "%s = #count { %s : %s }" h x
+                      (String.concat ", " (join @ (Printf.sprintf "%s_q(%s,%s)" (use_ro ctx ro) subject x :: f) @ m)) ];
               let hc = fresh ctx "H" in
               Some [ Printf.sprintf "%s(%s,%s)" pp subject hc; Printf.sprintf "%s >= %d" hc cutoff ]
           | All -> (
@@ -9722,13 +9825,13 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
               | Some m ->
                   ctx.fresh <- ctx.fresh + 1;
                   let pp = Printf.sprintf "kvp%d" ctx.fresh in
-                  emit ctx "%s_s(%s) :- %s." pp x
-                    (String.concat ", " (Printf.sprintf "isa(%s,%s)" x (str el) :: m));
-                  emit ctx "%s(%s) :- %s." pp subject
-                    (String.concat ", "
-                       ((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: join)
+                  emit_rule ctx ~head:(Printf.sprintf "%s_s(%s)" pp x)
+                    ~body:(Printf.sprintf "isa(%s,%s)" x (str el) :: m);
+                  emit_rule ctx ~head:(Printf.sprintf "%s(%s)" pp subject)
+                    ~body:
+                      ((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: join)
                        @ fatoms
-                       @ [ Printf.sprintf "not %s_s(%s)" pp x ]));
+                       @ [ Printf.sprintf "not %s_s(%s)" pp x ]);
                   Some [ Printf.sprintf "not %s(%s)" pp subject ])
           | _ -> None));
       (match kv_quantifier with
@@ -9768,8 +9871,8 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
           let key, opening =
             helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot) counted
           in
-          emit ctx "%s(%s,%s) :- %s, %s = #count { %s : %s }." p key h
-            (String.concat ", " opening) h x (String.concat ", " counted);
+          emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" p key h)
+            ~body:(opening @ [ Printf.sprintf "%s = #count { %s : %s }" h x (String.concat ", " counted) ]);
           let hc = fresh ctx "H" in
           [ Printf.sprintf "%s(%s,%s)" p key hc;
             (match kv_quantifier with
@@ -9823,7 +9926,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
             let key, opening =
               helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(x, el) atoms
             in
-            emit ctx "%s(%s) :- %s." s key (String.concat ", " (opening @ atoms));
+            emit_rule ctx ~head:(Printf.sprintf "%s(%s)" s key) ~body:(opening @ atoms);
             [ Printf.sprintf "not %s(%s)" s key ]
       in
       ctx.fresh <- ctx.fresh + 1;
@@ -9832,7 +9935,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       let key, opening =
         helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot) body
       in
-      emit ctx "%s(%s) :- %s." p key (String.concat ", " (opening @ body));
+      emit_rule ctx ~head:(Printf.sprintf "%s(%s)" p key) ~body:(opening @ body);
       [ Printf.sprintf "not %s(%s)" p key ])
   | Predicate { variety = (Empty_predicate | Filled) as variety; operand; negation; day_kind = None; time_period = None; _ }
     ->
@@ -9895,7 +9998,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
         let key, opening =
           helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot) atoms
         in
-        emit ctx "%s(%s) :- %s." p key (String.concat ", " (opening @ atoms));
+        emit_rule ctx ~head:(Printf.sprintf "%s(%s)" p key) ~body:(opening @ atoms);
         [ Printf.sprintf "not %s(%s)" p key ]
       end
   | Condition_unresolved { source_name } ->
@@ -10262,8 +10365,7 @@ and translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms =
       if body_scale <> out_scale then
         fault "match arm %S result scale %d does not match the match's declared scale %d" ctor
           body_scale out_scale;
-      emit ctx "%s(%s,%s) :- %s." p subject body_term
-        (String.concat ", " ((base :: scrut_atoms) @ body_atoms)))
+      emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" p subject body_term) ~body:((base :: scrut_atoms) @ body_atoms))
     arms;
   let v = fresh ctx "M" in
   ([ Printf.sprintf "%s(%s,%s)" p subject v ], v, out_scale)
@@ -10331,9 +10433,9 @@ and list_source ctx ~subject ~subject_ot (e : expr) : string * int =
         (fun (g, t, s) ->
           if s <> out_es then
             fault "a MapList body scale %d does not match its declared element scale %d" s out_es;
-          emit ctx "lelem(%s,I,%s) :- %s." mapid t (String.concat ", " (base @ g)))
+          emit_rule ctx ~head:(Printf.sprintf "lelem(%s,I,%s)" mapid t) ~body:(base @ g))
         branches;
-      emit ctx "lpres(%s) :- lpres(%s)." mapid inner;
+      emit_rule ctx ~head:(Printf.sprintf "lpres(%s)" mapid) ~body:[ Printf.sprintf "lpres(%s)" inner ];
       (mapid, out_es)
   | Filter_list { list; binder; condition; _ } ->
       let inner, inner_es = list_source ctx ~subject ~subject_ot list in
@@ -10346,9 +10448,9 @@ and list_source ctx ~subject ~subject_ot (e : expr) : string * int =
       ctx.binders <- (norm binder, ([], "V", inner_es, element_t)) :: ctx.binders;
       let catoms = filter_condition ctx condition in
       ctx.binders <- saved;
-      emit ctx "lelem(%s,I,V) :- %s." fltid
-        (String.concat ", " (Printf.sprintf "lelem(%s,I,V)" inner :: catoms));
-      emit ctx "lpres(%s) :- lpres(%s)." fltid inner;
+      emit_rule ctx ~head:(Printf.sprintf "lelem(%s,I,V)" fltid)
+        ~body:(Printf.sprintf "lelem(%s,I,V)" inner :: catoms);
+      emit_rule ctx ~head:(Printf.sprintf "lpres(%s)" fltid) ~body:[ Printf.sprintf "lpres(%s)" inner ];
       (fltid, inner_es)
   | List_literal _ ->
       fault "a ListLiteral list source is not translated (no corpus case; S19 inventory)"
@@ -10880,15 +10982,15 @@ and translate_money_mult ctx ~subject ~subject_ot ~base_expr : string list * str
   let ra, tr, sr = coalesce0 ctx ~subject ~subject_ot (expr_term ctx ~subject ~subject_ot r) in
   let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
   let tr, tr_sign = money_mult_rate ctx ~subject ~body:((base :: ctx.rule_guard) @ ma @ ra) ~sm ~tr ~sr in
-  let gbody = String.concat ", " ((base :: ctx.rule_guard) @ ma @ ra) in
+  let gbody = ((base :: ctx.rule_guard) @ ma @ ra) in
   (* the fences and halfAwayFromZero encoding are shared with the closed
      body (one encoding); here the value rides a subject-keyed helper predicate,
      the operand atoms baked into its body *)
   money_mult_fences ctx ~subject ~gbody ~tm ~tr ~tr_sign;
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "mm%d" ctx.fresh in
-  emit ctx "%s(%s,C) :- %s, %s." p subject gbody
-    (String.concat ", " (money_mult_body ~a:"A" ~c:"C" ~tm ~tr ~tr_sign));
+  emit_rule ctx ~head:(Printf.sprintf "%s(%s,C)" p subject)
+    ~body:(gbody @ money_mult_body ~a:"A" ~c:"C" ~tm ~tr ~tr_sign);
   let v = fresh ctx "MM" in
   ctx.binders <- saved_b;
   ctx.rule_guard <- saved_g;
@@ -10921,7 +11023,7 @@ and closed_money_mult ctx ~guard_body ~witness ~base_expr : string list * string
   let ma, tm, sm = closed_term ctx ~guard_body ~witness m in
   let ra, tr, sr = closed_term ctx ~guard_body ~witness r in
   let tr, tr_sign = money_mult_rate ctx ~subject:witness ~body:(guard_body @ ma @ ra) ~sm ~tr ~sr in
-  let gbody = String.concat ", " (guard_body @ ma @ ra) in
+  let gbody = (guard_body @ ma @ ra) in
   money_mult_fences ctx ~subject:witness ~gbody ~tm ~tr ~tr_sign;
   let a = fresh ctx "A" and c = fresh ctx "C" in
   (ma @ ra @ money_mult_body ~a ~c ~tm ~tr ~tr_sign, c, 100)
@@ -11015,10 +11117,9 @@ and closed_division ctx ~guard_body ~witness ~coalesced ~rounding ~left_side ~ri
   | false, _ -> ()
   | true, Some subject ->
       deposit ctx ~code:"EF-005" ~rule:(str ctx.rule_name) ~subject
-        (String.concat ", " (ctx.param_reach right_side @ gbody @ [ zero ]))
+        (ctx.param_reach right_side @ gbody @ [ zero ])
   | true, None ->
-      emit ctx "viol(%s,%s) :- %s." (quote closed_zero_division) witness
-        (String.concat ", " (gbody @ [ zero ])));
+      emit_rule ctx ~head:(Printf.sprintf "viol(%s,%s)" (quote closed_zero_division) witness) ~body:(gbody @ [ zero ]));
   (* the coalesced quotient: numt and dent as they are where the divisor is not
      zero, 0 over 1 where it is *)
   let numt, dent, value_guard =
@@ -11032,9 +11133,8 @@ and closed_division ctx ~guard_body ~witness ~coalesced ~rounding ~left_side ~ri
   in
   match rounding with
   | None ->
-      emit ctx "viol(\"%s\",%s) :- %s, %s \\ %s != 0." (non_exact_division ctx) witness
-        (String.concat ", " (gbody @ value_guard))
-        numt dent;
+      emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" (non_exact_division ctx) witness)
+        ~body:((gbody @ value_guard) @ [ Printf.sprintf "%s \\ %s != 0" numt dent ]);
       ( bl @ br @ value_guard @ [ Printf.sprintf "%s \\ %s == 0" numt dent ],
         Printf.sprintf "(%s/%s)" numt dent,
         out_scale )
@@ -11172,7 +11272,7 @@ and translate_ite ctx ~subject ~subject_ot ~typ ~condition ~then_ ~else_ ~before
           "the %s branch of an IfThenElse is at scale %d, which does not enter the node's \
            declared scale %d exactly" name scale out_scale
     in
-    emit ctx "%s(%s,%s) :- %s." p subject term (String.concat ", " body)
+    emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" p subject term) ~body:(body)
   in
   arm "then" pos then_;
   arm "else" neg else_;
@@ -11181,7 +11281,7 @@ and translate_ite ctx ~subject ~subject_ot ~typ ~condition ~then_ ~else_ ~before
 
 (* --- rule forms ---------------------------------------------------------- *)
 
-let head_body ctx head body = emit ctx "%s :- %s." head (String.concat ", " body)
+let head_body ctx head body = emit_rule ctx ~head ~body
 
 (* one guarded outcome of a rule value: the atoms its rule body joins, the
    result term and its scale, plus [vb_reads] — does THIS branch read the
@@ -11303,18 +11403,14 @@ let fitted ?(unbounded = false) ctx ~subject ~what ~body term scale target =
     else if scale > target && scale mod target = 0 then begin
       let k = scale / target in
       (if unbounded then
-         emit ctx
-           "viol(\"result of %s is not a whole number, and this encoding holds a number declared \
-            without decimals (the unbounded form) as a whole number\",%s) :- %s, (%s) \\ %d != 0."
-           (norm what) subject
-           (String.concat ", " body)
-           term k
+         emit_rule ctx
+           ~head:(Printf.sprintf "viol(\"result of %s is not a whole number, and this encoding holds a number \
+              declared without decimals (the unbounded form) as a whole number\",%s)" (norm what) subject)
+           ~body:(body @ [ Printf.sprintf "(%s) \\ %d != 0" term k ])
        else
-         emit ctx
-           "viol(\"result of %s does not fit its declared decimals\",%s) :- %s, (%s) \\ %d != 0."
-           (norm what) subject
-           (String.concat ", " body)
-           term k);
+         emit_rule ctx
+           ~head:(Printf.sprintf "viol(\"result of %s does not fit its declared decimals\",%s)" (norm what) subject)
+           ~body:(body @ [ Printf.sprintf "(%s) \\ %d != 0" term k ]));
       (Printf.sprintf "((%s)/%d)" term k, [ Printf.sprintf "(%s) \\ %d == 0" term k ])
     end
     else fault "value scale %d does not align with target scale %d for %S" scale target what
@@ -11343,21 +11439,21 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
     match target with Some g -> g | None -> Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx ot) a
   in
   let ot_decl = object_type ctx ot in
-  emit ctx "%s_cut(S,#inf) :- %s." p base;
-  emit ctx "%s_cut(S,#sup) :- %s." p base;
+  emit_rule ctx ~head:(Printf.sprintf "%s_cut(S,#inf)" p) ~body:[ base ];
+  emit_rule ctx ~head:(Printf.sprintf "%s_cut(S,#sup)" p) ~body:[ base ];
   let cuts_of_ktl k =
-    emit ctx "%s_cut(S,X) :- %s, ktl(S,%s,X,_)." p base (str k);
-    emit ctx "%s_cut(S,X) :- %s, ktl(S,%s,_,X)." p base (str k)
+    emit_rule ctx ~head:(Printf.sprintf "%s_cut(S,X)" p) ~body:[ base; Printf.sprintf "ktl(S,%s,X,_)" (str k) ];
+    emit_rule ctx ~head:(Printf.sprintf "%s_cut(S,X)" p) ~body:[ base; Printf.sprintf "ktl(S,%s,_,X)" (str k) ]
   in
   let cuts_of_tl b =
-    emit ctx "%s_cut(S,X) :- %s, tl(S,%s,X,_,_)." p base (str b);
-    emit ctx "%s_cut(S,X) :- %s, tl(S,%s,_,X,_)." p base (str b)
+    emit_rule ctx ~head:(Printf.sprintf "%s_cut(S,X)" p) ~body:[ base; Printf.sprintf "tl(S,%s,X,_,_)" (str b) ];
+    emit_rule ctx ~head:(Printf.sprintf "%s_cut(S,X)" p) ~body:[ base; Printf.sprintf "tl(S,%s,_,X,_)" (str b) ]
   in
   let rec node (c : condition_expr) : string =
     let n = fresh ctx (p ^ "_n") in
     if not (Eval.read_per_period ctx.doc ~ot c) then begin
       let atoms = cond_atoms ctx ~subject:"S" ~subject_ot:ot c in
-      emit ctx "%s(S,X) :- %s." n (String.concat ", " (per :: atoms));
+      emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" n) ~body:(per :: atoms);
       n
     end
     else
@@ -11368,23 +11464,27 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
           let v, t = window_bounds ctx ~subject:"S" ~subject_ot:ot starting_at up_to in
           let lo = Option.map (fun (atoms, l) -> (atoms, l)) v in
           let hi = Option.map (fun (atoms, h) -> (atoms, if to_inclusive then Printf.sprintf "(%s+1)" h else h)) t in
-          Option.iter (fun (atoms, l) -> emit ctx "%s_cut(S,%s) :- %s." p l (String.concat ", " (base :: atoms))) lo;
-          Option.iter (fun (atoms, h) -> emit ctx "%s_cut(S,%s) :- %s." p h (String.concat ", " (base :: atoms))) hi;
+          Option.iter
+            (fun (atoms, l) -> emit_rule ctx ~head:(Printf.sprintf "%s_cut(S,%s)" p l) ~body:(base :: atoms)) lo;
+          Option.iter
+            (fun (atoms, h) -> emit_rule ctx ~head:(Printf.sprintf "%s_cut(S,%s)" p h) ~body:(base :: atoms)) hi;
           let body =
             (per :: Option.fold ~none:[] ~some:(fun (atoms, l) -> atoms @ [ Printf.sprintf "X >= %s" l ]) lo)
             @ Option.fold ~none:[] ~some:(fun (atoms, h) -> atoms @ [ Printf.sprintf "X < %s" h ]) hi
           in
-          emit ctx "%s(S,X) :- %s." n (String.concat ", " body);
+          emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" n) ~body:(body);
           n
       | Characteristic_check { characteristic = Some k; navigation_binding = None; negation; holder = None; time_period; _ } ->
           if not (characteristic_temporal ctx ~otype:ot ~characteristic:k) then
             fault "wholePeriod qualifier on a non-time-dependent operand";
           cuts_of_ktl k;
           let pos = n ^ "_k" in
-          emit ctx "%s(S,X) :- %s, ktl(S,%s,F,T), F <= X, X < T." pos per (str k);
+          emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" pos)
+            ~body:[ per; Printf.sprintf "ktl(S,%s,F,T)" (str k); "F <= X"; "X < T" ];
           let inner =
             if negation then begin
-              emit ctx "%s(S,X) :- %s, not %s(S,X)." (n ^ "_i") per pos;
+              emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" (n ^ "_i"))
+                ~body:[ per; Printf.sprintf "not %s(S,X)" pos ];
               n ^ "_i"
             end
             else pos
@@ -11397,7 +11497,7 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
                   Eval.refuse_finer ~what:(Printf.sprintf "the characteristic %S" k)
                     ~operand:(Uchar_ref.Timeline.calendar_grid g) ~target ~attr:a
               | _ -> ());
-              emit ctx "%s(S,X) :- %s(S,X)." n inner);
+              emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" n) ~body:[ Printf.sprintf "%s(S,X)" inner ]);
           n
       | Comparison { op; left_side = Some le; right_side = Some re; time_period; _ } ->
           let temporal_side (e : expr) =
@@ -11428,9 +11528,10 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
           cuts_of_tl b;
           let gb, gt, gs = expr_term ctx ~subject:"S" ~subject_ot:ot bound_e in
           let tv = n ^ "_v" and bd = n ^ "_b" and inner = n ^ "_c" in
-          emit ctx "%s(S,X,WB) :- %s, tl(S,%s,F,T,WB), F <= X, X < T." tv per (str b);
-          emit ctx "%s(S,X) :- %s(S,X,_)." (tv ^ "d") tv;
-          emit ctx "%s(S) :- %s." bd (String.concat ", " (base :: gb));
+          emit_rule ctx ~head:(Printf.sprintf "%s(S,X,WB)" tv)
+            ~body:[ per; Printf.sprintf "tl(S,%s,F,T,WB)" (str b); "F <= X"; "X < T" ];
+          emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" (tv ^ "d")) ~body:[ Printf.sprintf "%s(S,X,_)" tv ];
+          emit_rule ctx ~head:(Printf.sprintf "%s(S)" bd) ~body:(base :: gb);
           (* a sum-typed timeline holds a ground constructor term per segment
              (ch. 9.5), compared with the bound's by term identity (ch. 9.3);
              a number is harmonised to one scale first *)
@@ -11452,8 +11553,8 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
             end
           in
           let filled sym =
-            emit ctx "%s(S,X) :- %s." inner
-              (String.concat ", " ((Printf.sprintf "%s(S,X,WB)" tv :: gb) @ [ Printf.sprintf "%s %s %s" wl sym gl ]))
+            emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" inner)
+              ~body:((Printf.sprintf "%s(S,X,WB)" tv :: gb) @ [ Printf.sprintf "%s %s %s" wl sym gl ])
           in
           (* ch. 1.2 per day: a gap reads leeg, and so does a bound whose atoms
              bind nothing; gelijk aan holds on two leeg sides, ongelijk aan on
@@ -11461,11 +11562,14 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
           (match op with
           | Equal ->
               filled "==";
-              emit ctx "%s(S,X) :- %s, not %sd(S,X), not %s(S)." inner per tv bd
+              emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" inner)
+                ~body:[ per; Printf.sprintf "not %sd(S,X)" tv; Printf.sprintf "not %s(S)" bd ]
           | Not_equal ->
               filled "!=";
-              emit ctx "%s(S,X) :- %s, not %sd(S,X), %s(S)." inner per tv bd;
-              emit ctx "%s(S,X) :- %sd(S,X), not %s(S)." inner tv bd
+              emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" inner)
+                ~body:[ per; Printf.sprintf "not %sd(S,X)" tv; Printf.sprintf "%s(S)" bd ];
+              emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" inner)
+                ~body:[ Printf.sprintf "%sd(S,X)" tv; Printf.sprintf "not %s(S)" bd ]
           | _ -> filled (compare_sym op));
           emit ctx "#defined %s/2." inner;
           (match time_period with
@@ -11473,7 +11577,7 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
           | None ->
               Eval.refuse_finer ~what:(Printf.sprintf "the attribute %S" b)
                 ~operand:(Uchar_ref.Timeline.attr_grid ctx.doc ot_decl b) ~target ~attr:a;
-              emit ctx "%s(S,X) :- %s(S,X)." n inner);
+              emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" n) ~body:[ Printf.sprintf "%s(S,X)" inner ]);
           n
       | Compound { quantifier_kind; cutoff; components; _ } ->
           period_under_count_quantifier quantifier_kind components;
@@ -11489,7 +11593,8 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
             | At_most -> Printf.sprintf "H <= %d" cutoff
             | Exactly -> Printf.sprintf "H = %d" cutoff
           in
-          emit ctx "%s(S,X) :- %s, H = #count { %s }, %s." n per count verdict;
+          emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" n)
+            ~body:[ per; Printf.sprintf "H = #count { %s }" count; verdict ];
           n
       | _ ->
           fault
@@ -11507,23 +11612,42 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
     Eval.refuse_finer ~what:"the whole-period qualifier" ~operand:(Uchar_ref.Timeline.calendar_grid g) ~target ~attr:a;
     let qb = n ^ "_w" in
     emit_grid_buckets ctx ~p:qb ~grid:(Uchar_ref.Timeline.calendar_grid g);
-    emit ctx "%s_cut(S,B) :- %s, %s_b(B,_,_)." p base qb;
-    emit ctx "%s_cut(S,N) :- %s, %s_b(_,N,_)." p base qb;
-    emit ctx "%s_fail(S,B) :- %s_b(B,N,_), %s, B <= X, X < N, not %s(S,X)." qb qb per inner;
-    emit ctx "%s_in(S,X) :- %s, %s_b(B,N,_), B <= X, X < N." qb per qb;
+    emit_rule ctx ~head:(Printf.sprintf "%s_cut(S,B)" p) ~body:[ base; Printf.sprintf "%s_b(B,_,_)" qb ];
+    emit_rule ctx ~head:(Printf.sprintf "%s_cut(S,N)" p) ~body:[ base; Printf.sprintf "%s_b(_,N,_)" qb ];
+    emit_rule ctx ~head:(Printf.sprintf "%s_fail(S,B)" qb)
+      ~body:[ Printf.sprintf "%s_b(B,N,_)" qb; per; "B <= X"; "X < N"; Printf.sprintf "not %s(S,X)" inner ];
+    emit_rule ctx ~head:(Printf.sprintf "%s_in(S,X)" qb)
+      ~body:[ per; Printf.sprintf "%s_b(B,N,_)" qb; "B <= X"; "X < N" ];
     let held = n ^ "_h" in
-    emit ctx "%s(S,X) :- %s, %s_b(B,N,_), B <= X, X < N, not %s_fail(S,B)." held per qb qb;
-    emit ctx "%s(S,X) :- %s, not %s_in(S,X), %s(S,X)." held per qb inner;
-    if gp.gp_negated then emit ctx "%s(S,X) :- %s, not %s(S,X)." n per held
-    else emit ctx "%s(S,X) :- %s(S,X)." n held
+    emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" held)
+      ~body:[ per; Printf.sprintf "%s_b(B,N,_)" qb; "B <= X"; "X < N"; Printf.sprintf "not %s_fail(S,B)" qb ];
+    emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" held)
+      ~body:[ per; Printf.sprintf "not %s_in(S,X)" qb; Printf.sprintf "%s(S,X)" inner ];
+    if gp.gp_negated then emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" n)
+                            ~body:[ per; Printf.sprintf "not %s(S,X)" held ]
+    else emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" n) ~body:[ Printf.sprintf "%s(S,X)" held ]
   in
   let root = node c in
-  emit ctx "%s_per(S,X,Y) :- %s_cut(S,X), %s_cut(S,Y), X < Y, #count { Z : %s_cut(S,Z), X < Z, Z < Y } = 0." p p p p;
-  emit ctx "%s_t(S,X,Y) :- %s_per(S,X,Y), %s(S,X)." p p root;
-  emit ctx "%s_join(S,Y) :- %s_t(S,_,Y), %s_t(S,Y,_)." p p p;
-  emit ctx "%s_start(S,X) :- %s_t(S,X,_), not %s_join(S,X)." p p p;
-  emit ctx "%s_end(S,Y) :- %s_t(S,_,Y), not %s_join(S,Y)." p p p;
-  emit ctx "%s(S,X,Y) :- %s_start(S,X), %s_end(S,Y), X < Y, #count { Z : %s_end(S,Z), X < Z, Z < Y } = 0." p p p p;
+  emit_rule ctx ~head:(Printf.sprintf "%s_per(S,X,Y)" p)
+    ~body:
+      [ Printf.sprintf "%s_cut(S,X)" p;
+        Printf.sprintf "%s_cut(S,Y)" p;
+        "X < Y";
+        Printf.sprintf "#count { Z : %s_cut(S,Z), X < Z, Z < Y } = 0" p ];
+  emit_rule ctx ~head:(Printf.sprintf "%s_t(S,X,Y)" p)
+    ~body:[ Printf.sprintf "%s_per(S,X,Y)" p; Printf.sprintf "%s(S,X)" root ];
+  emit_rule ctx ~head:(Printf.sprintf "%s_join(S,Y)" p)
+    ~body:[ Printf.sprintf "%s_t(S,_,Y)" p; Printf.sprintf "%s_t(S,Y,_)" p ];
+  emit_rule ctx ~head:(Printf.sprintf "%s_start(S,X)" p)
+    ~body:[ Printf.sprintf "%s_t(S,X,_)" p; Printf.sprintf "not %s_join(S,X)" p ];
+  emit_rule ctx ~head:(Printf.sprintf "%s_end(S,Y)" p)
+    ~body:[ Printf.sprintf "%s_t(S,_,Y)" p; Printf.sprintf "not %s_join(S,Y)" p ];
+  emit_rule ctx ~head:(Printf.sprintf "%s(S,X,Y)" p)
+    ~body:
+      [ Printf.sprintf "%s_start(S,X)" p;
+        Printf.sprintf "%s_end(S,Y)" p;
+        "X < Y";
+        Printf.sprintf "#count { Z : %s_end(S,Z), X < Z, Z < Y } = 0" p ];
   emit ctx "#defined %s/3." p;
   p
 
@@ -11683,28 +11807,24 @@ let translate_pro_rata ?clip ?periods ?writer ctx ~subject ~ot ~a ~cond ~b ~k ~(
   in
   (* the wrap fence: |W×TD×kn| ≤ 2^31 with TD ≤ 366 per bucket, and the
      #sum's contributors (D ≤ 366) count-bounded like every sum *)
-  emit ctx
-    "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S) :- %s, |W| > %d."
-    (String.concat ", " body)
-    (max_int31 / (366 * kn));
-  emit ctx
-    "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S) :- %s, \
-     46340 < #count { KV,KT : %s_d(S,B,KV,KT,_) }."
-    (String.concat ", "
-       ((base :: ctx.rule_guard) @ cond
-        @ (Printf.sprintf "%s_b(B,N,_)" p :: window_overlap ?periods ctx ~subject ~ot clip)))
-    p;
+  emit_rule ctx ~head:"viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S)"
+    ~body:(body @ [ Printf.sprintf "|W| > %d" (max_int31 / (366 * kn)) ]);
+  emit_rule ctx ~head:"viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S)"
+    ~body:
+      ((base :: ctx.rule_guard) @ cond
+      @ (Printf.sprintf "%s_b(B,N,_)" p :: window_overlap ?periods ctx ~subject ~ot clip)
+      @ [ Printf.sprintf "46340 < #count { KV,KT : %s_d(S,B,KV,KT,_) }" p ]);
   (* a part that does not fit the target's scale is the write boundary of
      ch. 2.4 on its segment (EF-006); the unbounded form fixes no scale, and a
      part that is not whole there is this encoding's limit *)
   (if unbounded_datatype (attr_datatype ctx ~otype:ot ~attr:a) then
-     emit ctx
-       "viol(\"a pro-rata part into a number declared without decimals is not whole, and this \
-        encoding holds the unbounded form as a whole number\",S) :- %s, %s \\ %s != 0."
-       (String.concat ", " body)
-       numt dent
+     emit_rule ctx
+       ~head:"viol(\"a pro-rata part into a number declared without decimals is not whole, and this encoding holds \
+          the unbounded form as a whole number\",S)"
+       ~body:(body @ [ Printf.sprintf "%s \\ %s != 0" numt dent ])
    else
-     emit ctx "viol(\"%s\",S) :- %s, %s \\ %s != 0." pro_rata_misfit (String.concat ", " body) numt dent);
+     emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",S)" pro_rata_misfit)
+       ~body:(body @ [ Printf.sprintf "%s \\ %s != 0" numt dent ]));
   (* the fold decides the buckets it derives; a bucket without a true day or
      with a leeg base it does not decide (ch. 3.11) *)
   write_segment ?periods ?writer ctx ~subject ~ot ~a ~clip
@@ -11766,8 +11886,16 @@ let translate_day_count ?clip ?periods ?writer ctx ~subject ~ot ~a ~cond ~k ~day
           end
         done;
         if not !any then emit ctx "#defined %s/1." x;
-        emit ctx "%s_xd(S,B,D) :- %s, ktl(S,%s,KV,KT), %s_b(B,N,_), %s(D), B <= D, D < N, KV <= D, D < KT."
-          p base (str k) p x;
+        emit_rule ctx ~head:(Printf.sprintf "%s_xd(S,B,D)" p)
+          ~body:
+            [ base;
+              Printf.sprintf "ktl(S,%s,KV,KT)" (str k);
+              Printf.sprintf "%s_b(B,N,_)" p;
+              Printf.sprintf "%s(D)" x;
+              "B <= D";
+              "D < N";
+              "KV <= D";
+              "D < KT" ];
         Some (p ^ "_xd")
   in
   let vterm = if ta = 1 then "TD" else Printf.sprintf "(TD*%d)" ta in
@@ -11783,42 +11911,51 @@ let translate_day_count ?clip ?periods ?writer ctx ~subject ~ot ~a ~cond ~k ~day
     @ [ Printf.sprintf "%s_b(B,N,_)" p; counted; "TD > 0" ]
     @ window_overlap ?periods ctx ~subject ~ot clip
   in
-  emit ctx
-    "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S) :- %s, \
-     46340 < #count { KV,KT : %s_d(S,B,KV,KT,_) }."
-    (String.concat ", "
-       ((base :: ctx.rule_guard) @ cond
-        @ (Printf.sprintf "%s_b(B,N,_)" p :: window_overlap ?periods ctx ~subject ~ot clip)))
-    p;
+  emit_rule ctx ~head:"viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S)"
+    ~body:
+      ((base :: ctx.rule_guard) @ cond
+      @ (Printf.sprintf "%s_b(B,N,_)" p :: window_overlap ?periods ctx ~subject ~ot clip)
+      @ [ Printf.sprintf "46340 < #count { KV,KT : %s_d(S,B,KV,KT,_) }" p ]);
   (* a derived true period outside the span has true days in buckets this
      translation does not lay *)
   (let lo, hi = calendar_span ctx in
-   emit ctx
-     "viol(\"the true periods of %s reach outside the calendar this translation lays (%d..%d)\",S) :- %s, \
-      ktl(S,%s,KV,KT), KV < %d."
-     (norm k) lo hi base (str k) lo;
-   emit ctx
-     "viol(\"the true periods of %s reach outside the calendar this translation lays (%d..%d)\",S) :- %s, \
-      ktl(S,%s,KV,KT), KT > %d."
-     (norm k) lo hi base (str k) hi);
-  emit ctx "%s_cnt(S,B) :- %s." p (String.concat ", " ((base :: ctx.rule_guard) @ cond @ [ Printf.sprintf "%s_b(B,N,_)" p; counted; "TD > 0" ]));
+   emit_rule ctx
+     ~head:(Printf.sprintf "viol(\"the true periods of %s reach outside the calendar this translation lays \
+        (%d..%d)\",S)" (norm k) lo hi)
+     ~body:[ base; Printf.sprintf "ktl(S,%s,KV,KT)" (str k); Printf.sprintf "KV < %d" lo ];
+   emit_rule ctx
+     ~head:(Printf.sprintf "viol(\"the true periods of %s reach outside the calendar this translation lays \
+        (%d..%d)\",S)" (norm k) lo hi)
+     ~body:[ base; Printf.sprintf "ktl(S,%s,KV,KT)" (str k); Printf.sprintf "KT > %d" hi ]);
+  emit_rule ctx ~head:(Printf.sprintf "%s_cnt(S,B)" p)
+    ~body:((base :: ctx.rule_guard) @ cond @ [ Printf.sprintf "%s_b(B,N,_)" p; counted; "TD > 0" ]);
   write_segment ?periods ?writer ctx ~subject ~ot ~a ~clip ~value:vterm ~body;
   (* the runs of buckets without a true day, with the open ends beyond the
      span, as maximal segments of 0 *)
   let z = p ^ "_z" in
   let zbase = (base :: ctx.rule_guard) @ cond in
-  emit ctx "%s(S,B,N) :- %s, %s_b(B,N,_), not %s_cnt(S,B)." z (String.concat ", " zbase) p p;
-  emit ctx "%s_bs(B) :- %s_b(B,_,_)." p p;
-  emit ctx "%s_be(N) :- %s_b(_,N,_)." p p;
-  emit ctx "%s_first(B) :- %s_b(B,_,_), not %s_be(B)." p p p;
-  emit ctx "%s_last(N) :- %s_b(_,N,_), not %s_bs(N)." p p p;
-  emit ctx "%s(S,#inf,B) :- %s, %s_first(B)." z (String.concat ", " zbase) p;
-  emit ctx "%s(S,N,#sup) :- %s, %s_last(N)." z (String.concat ", " zbase) p;
-  emit ctx "%s_join(S,Y) :- %s(S,_,Y), %s(S,Y,_)." z z z;
-  emit ctx "%s_start(S,X) :- %s(S,X,_), not %s_join(S,X)." z z z;
-  emit ctx "%s_end(S,Y) :- %s(S,_,Y), not %s_join(S,Y)." z z z;
-  emit ctx "%s_run(S,B,N) :- %s_start(S,B), %s_end(S,N), B < N, #count { Z : %s_end(S,Z), B < Z, Z < N } = 0."
-    z z z z;
+  emit_rule ctx ~head:(Printf.sprintf "%s(S,B,N)" z)
+    ~body:(zbase @ [ Printf.sprintf "%s_b(B,N,_)" p; Printf.sprintf "not %s_cnt(S,B)" p ]);
+  emit_rule ctx ~head:(Printf.sprintf "%s_bs(B)" p) ~body:[ Printf.sprintf "%s_b(B,_,_)" p ];
+  emit_rule ctx ~head:(Printf.sprintf "%s_be(N)" p) ~body:[ Printf.sprintf "%s_b(_,N,_)" p ];
+  emit_rule ctx ~head:(Printf.sprintf "%s_first(B)" p)
+    ~body:[ Printf.sprintf "%s_b(B,_,_)" p; Printf.sprintf "not %s_be(B)" p ];
+  emit_rule ctx ~head:(Printf.sprintf "%s_last(N)" p)
+    ~body:[ Printf.sprintf "%s_b(_,N,_)" p; Printf.sprintf "not %s_bs(N)" p ];
+  emit_rule ctx ~head:(Printf.sprintf "%s(S,#inf,B)" z) ~body:(zbase @ [ Printf.sprintf "%s_first(B)" p ]);
+  emit_rule ctx ~head:(Printf.sprintf "%s(S,N,#sup)" z) ~body:(zbase @ [ Printf.sprintf "%s_last(N)" p ]);
+  emit_rule ctx ~head:(Printf.sprintf "%s_join(S,Y)" z)
+    ~body:[ Printf.sprintf "%s(S,_,Y)" z; Printf.sprintf "%s(S,Y,_)" z ];
+  emit_rule ctx ~head:(Printf.sprintf "%s_start(S,X)" z)
+    ~body:[ Printf.sprintf "%s(S,X,_)" z; Printf.sprintf "not %s_join(S,X)" z ];
+  emit_rule ctx ~head:(Printf.sprintf "%s_end(S,Y)" z)
+    ~body:[ Printf.sprintf "%s(S,_,Y)" z; Printf.sprintf "not %s_join(S,Y)" z ];
+  emit_rule ctx ~head:(Printf.sprintf "%s_run(S,B,N)" z)
+    ~body:
+      [ Printf.sprintf "%s_start(S,B)" z;
+        Printf.sprintf "%s_end(S,N)" z;
+        "B < N";
+        Printf.sprintf "#count { Z : %s_end(S,Z), B < Z, Z < N } = 0" z ];
   write_segment ?periods ?writer ctx ~subject ~ot ~a ~clip ~value:"0"
     ~body:(zbase @ [ Printf.sprintf "%s_run(S,B,N)" z ])
 
@@ -11873,8 +12010,10 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
   let times v k = if k = 1 then v else Printf.sprintf "%s*%d" v k in
   let at_x = Printf.sprintf "%s_per(%s,X,_)" p subject in
   let read_cuts body ~holder ~attr =
-    emit ctx "%s_cut(%s,X) :- %s, tl(%s,%s,X,_,_)." p subject (String.concat ", " body) holder (str attr);
-    emit ctx "%s_cut(%s,X) :- %s, tl(%s,%s,_,X,_)." p subject (String.concat ", " body) holder (str attr)
+    emit_rule ctx ~head:(Printf.sprintf "%s_cut(%s,X)" p subject)
+      ~body:(body @ [ Printf.sprintf "tl(%s,%s,X,_,_)" holder (str attr) ]);
+    emit_rule ctx ~head:(Printf.sprintf "%s_cut(%s,X)" p subject)
+      ~body:(body @ [ Printf.sprintf "tl(%s,%s,_,X,_)" holder (str attr) ])
   in
   (* the value of [e] at the start X of a period, where it is not leeg: a
      predicate over (S, X, V) with V at the scale of the node, whether it is
@@ -11891,9 +12030,12 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
         let q = fresh ctx (p ^ "_n") in
         let body = [ at_x; Printf.sprintf "%s(%s,X,VL)" ql subject; Printf.sprintf "%s(%s,X,VR)" qr subject ] in
         range_guard ctx ~subject ~body:(base :: body) [ ("VL", 1073741823 / (m / sl)); ("VR", 1073741823 / (m / sr)) ];
-        emit ctx "%s(%s,X,V) :- %s, V = %s%s%s." q subject (String.concat ", " body) (times "VL" (m / sl))
-          (match op with Plus -> "+" | _ -> "-")
-          (times "VR" (m / sr));
+        emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject)
+          ~body:
+            (body
+            @ [ Printf.sprintf "V = %s%s%s" (times "VL" (m / sl))
+                  (match op with Plus -> "+" | _ -> "-")
+                  (times "VR" (m / sr)) ]);
         (q, op <> Reduced_by || ltotal, m)
     | Binary { op = (Times | Percentage_of) as op; left_side = Some l; right_side = Some r; _ } ->
         (match op with
@@ -11907,7 +12049,8 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
         let q = fresh ctx (p ^ "_m") in
         let body = [ at_x; Printf.sprintf "%s(%s,X,VL)" ql subject; Printf.sprintf "%s(%s,X,VR)" qr subject ] in
         range_guard ctx ~subject ~body:(base :: body) [ ("VL", 46340); ("VR", 46340 / k) ];
-        emit ctx "%s(%s,X,V) :- %s, V = VL*%s." q subject (String.concat ", " body) (times "VR" k);
+        emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject)
+          ~body:(body @ [ Printf.sprintf "V = VL*%s" (times "VR" k) ]);
         (q, true, scale)
     | Binary { op = (Divided_by | Divided_by_abs) as op; left_side = Some l; right_side = Some r; _ } ->
         quotient_units_ok ~per_period:true ctx l r;
@@ -11923,20 +12066,25 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
         let dividend = Printf.sprintf "%s(%s,X,VL)" ql subject in
         let divisor = Printf.sprintf "%s(%s,X,VR)" qr0 subject in
         (* the dividend is tested first and coalesces: leeg ÷ anything is 0 *)
-        emit ctx "%s(%s,X,0) :- %s, not %s(%s,X)." q subject at_x ldef subject;
+        emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,0)" q subject)
+          ~body:[ at_x; Printf.sprintf "not %s(%s,X)" ldef subject ];
         (* a filled dividend over a leeg or 0 divisor is leeg on its period, and
            the rule × subject takes one §9.5 fact per code (ch. 1.2, 5.6) *)
         deposit ctx ~code:"EF-031" ~rule:(str ctx.rule_name) ~subject
-          (String.concat ", " [ base; at_x; dividend; Printf.sprintf "not %s(%s,X)" rdef subject ]);
+          [ base; at_x; dividend; Printf.sprintf "not %s(%s,X)" rdef subject ];
         deposit ctx ~code:"EF-005" ~rule:(str ctx.rule_name) ~subject
-          (String.concat ", " [ base; at_x; dividend; divisor; "VR == 0" ]);
+          [ base; at_x; dividend; divisor; "VR == 0" ];
         let body = [ at_x; dividend; divisor; "VR != 0" ] in
         range_guard ctx ~subject ~body:(base :: body) [ ("VL", 536870912 / knum); ("VR", 536870912 / kden) ];
         (match op with
-        | Divided_by_abs -> emit ctx "%s(%s,X,V) :- %s, V = (%s)/(%s)." q subject (String.concat ", " body) numt dent
+        | Divided_by_abs -> emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject)
+                              ~body:(body @ [ Printf.sprintf "V = (%s)/(%s)" numt dent ])
         | _ ->
-            emit ctx "%s(%s,X,V) :- %s, (%s) \\ (%s) == 0, V = (%s)/(%s)." q subject (String.concat ", " body) numt
-              dent numt dent;
+            emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject)
+              ~body:
+                (body
+                @ [ Printf.sprintf "(%s) \\ (%s) == 0" numt dent;
+                    Printf.sprintf "V = (%s)/(%s)" numt dent ]);
             (* the quotient as the whole value is the write, where the unbounded
                form held as a whole number names its own limit *)
             let reason =
@@ -11945,8 +12093,8 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
                 unbounded_non_whole_division
               else non_exact_division_bounded
             in
-            emit ctx "viol(\"%s\",%s) :- %s, (%s) \\ (%s) != 0." reason subject
-              (String.concat ", " (base :: body)) numt dent);
+            emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" reason subject)
+              ~body:((base :: body) @ [ Printf.sprintf "(%s) \\ (%s) != 0" numt dent ]));
         (q, false, out)
     | Attribute_reference
         { attribute_ref = Some b; object_type = Some otn; navigation_bindings = None; anchor = None; _ }
@@ -11962,7 +12110,8 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
           ~sentence:(read_whole_sentence ~reads:period_reads ~attr:b);
         read_cuts [ base ] ~holder:subject ~attr:b;
         let q = fresh ctx (p ^ "_r") in
-        emit ctx "%s(%s,X,V) :- %s, tl(%s,%s,F,T,V), F <= X, X < T." q subject at_x subject (str b);
+        emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject)
+          ~body:[ at_x; Printf.sprintf "tl(%s,%s,F,T,V)" subject (str b); "F <= X"; "X < T" ];
         (* a constructor term carries no scale *)
         (q, false, if attr_sum_typed ctx ~otype:otn ~attr:b then 0 else pow10 (attr_decimals ctx ~otype:otn ~attr:b))
     | Function_call
@@ -11986,13 +12135,14 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
         let q = fresh ctx (p ^ "_s") in
         let reads = Printf.sprintf "tl(%s,%s,F,T,W), F <= X, X < T" m (str x) in
         range_guard ctx ~subject ~body:(at_x :: join @ [ reads ]) [ ("W", 46340) ];
-        emit ctx
-          "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, 46340 < \
-           #count { %s : %s }."
-          subject at_x m (String.concat ", " (join @ [ reads ]));
-        emit ctx "%s_any(%s,X) :- %s." q subject (String.concat ", " (at_x :: join @ [ reads ]));
-        emit ctx "%s(%s,X,V) :- %s_any(%s,X), V = #sum { W,%s : %s }." q subject q subject m
-          (String.concat ", " (join @ [ reads ]));
+        emit_rule ctx
+          ~head:(Printf.sprintf "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s)" subject)
+          ~body:[ at_x; Printf.sprintf "46340 < #count { %s : %s }" m (String.concat ", " (join @ [ reads ])) ];
+        emit_rule ctx ~head:(Printf.sprintf "%s_any(%s,X)" q subject) ~body:(at_x :: join @ [ reads ]);
+        emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject)
+          ~body:
+            [ Printf.sprintf "%s_any(%s,X)" q subject;
+              Printf.sprintf "V = #sum { W,%s : %s }" m (String.concat ", " (join @ [ reads ])) ];
         (match empty_fallback with
         | None -> ()
         | Some f ->
@@ -12000,9 +12150,11 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
             let fb, ft, fs = expr_term ctx ~subject ~subject_ot:ot f in
             let fs = numeric_scale ~what:"a sum fallback" fs in
             if fs > sx || sx mod fs <> 0 then fault "%s reads a fallback with more decimals than the sum: not translated" what;
-            emit ctx "%s(%s,X,V) :- %s, not %s_any(%s,X), %s V = %s." q subject at_x q subject
-              (String.concat "" (List.map (fun b -> b ^ ", ") (base :: fb)))
-              (times ("(" ^ ft ^ ")") (sx / fs)));
+            emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject)
+              ~body:
+                ([ at_x; Printf.sprintf "not %s_any(%s,X)" q subject ]
+                @ (base :: fb)
+                @ [ Printf.sprintf "V = %s" (times ("(" ^ ft ^ ")") (sx / fs)) ]));
         (q, false, sx)
     | Rounding { base_expr = Some b; mode_kind; decimal_places; _ } when Eval.is_period_arithmetic b ->
         (* ch. 2.5 per period: the value at the rounding's scale, a quotient
@@ -12022,8 +12174,9 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
           match mode_kind with
           | Toward_zero -> ()
           | _ ->
-              emit ctx "viol(\"negative operand under rounding is not translated\",%s) :- %s, %s < 0." subject
-                (String.concat ", " (base :: body)) v
+              emit_rule ctx
+                ~head:(Printf.sprintf "viol(\"negative operand under rounding is not translated\",%s)" subject)
+                ~body:((base :: body) @ [ Printf.sprintf "%s < 0" v ])
         in
         (match b with
         | Binary { op = Divided_by; left_side = Some l; right_side = Some r; _ } ->
@@ -12035,37 +12188,41 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
             let ldef = defined ql and rdef = defined qr0 in
             let dividend = Printf.sprintf "%s(%s,X,VL)" ql subject in
             let divisor = Printf.sprintf "%s(%s,X,VR)" qr0 subject in
-            emit ctx "%s(%s,X,0) :- %s, not %s(%s,X)." q subject at_x ldef subject;
+            emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,0)" q subject)
+              ~body:[ at_x; Printf.sprintf "not %s(%s,X)" ldef subject ];
             deposit ctx ~code:"EF-031" ~rule:(str ctx.rule_name) ~subject
-              (String.concat ", " [ base; at_x; dividend; Printf.sprintf "not %s(%s,X)" rdef subject ]);
+              [ base; at_x; dividend; Printf.sprintf "not %s(%s,X)" rdef subject ];
             deposit ctx ~code:"EF-005" ~rule:(str ctx.rule_name) ~subject
-              (String.concat ", " [ base; at_x; dividend; divisor; "VR == 0" ]);
+              [ base; at_x; dividend; divisor; "VR == 0" ];
             let body = [ at_x; dividend; divisor; "VR != 0" ] in
             range_guard ctx ~subject ~body:(base :: body) [ ("VL", 536870912 / knum); ("VR", 536870912 / kden) ];
             negative body "VL";
             negative body "VR";
-            emit ctx "%s(%s,X,V) :- %s, V = %s." q subject (String.concat ", " body) (rounded numt dent)
+            emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject)
+              ~body:(body @ [ Printf.sprintf "V = %s" (rounded numt dent) ])
         | _ ->
             let qb, _, sb = node b in
             let body = [ at_x; Printf.sprintf "%s(%s,X,W)" qb subject ] in
             if sb <= out then begin
               if out mod sb <> 0 then fault "%s: a rounding to scale %d of a value at scale %d" what out sb;
               range_guard ctx ~subject ~body:(base :: body) [ ("W", max_int31 / (out / sb)) ];
-              emit ctx "%s(%s,X,V) :- %s, V = %s." q subject (String.concat ", " body) (times "W" (out / sb))
+              emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject)
+                ~body:(body @ [ Printf.sprintf "V = %s" (times "W" (out / sb)) ])
             end
             else begin
               if sb mod out <> 0 then fault "%s: a rounding to scale %d of a value at scale %d" what out sb;
               range_guard ctx ~subject ~body:(base :: body) [ ("W", 536870912) ];
               negative body "W";
-              emit ctx "%s(%s,X,V) :- %s, V = %s." q subject (String.concat ", " body)
-                (rounded "W" (string_of_int (sb / out)))
+              emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject)
+                ~body:(body @ [ Printf.sprintf "V = %s" (rounded "W" (string_of_int (sb / out))) ])
             end);
         (q, false, out)
     | Literal _ | Attribute_reference { navigation_bindings = None; anchor = None; _ } -> scalar e
     | Construct { typ; constructor_; argument = (None | Some (Literal _)) as argument; _ } when sum_target ->
         let q = fresh ctx (p ^ "_k") in
-        emit ctx "%s(%s,X,%s) :- %s." q subject (construct_ground_term ctx typ constructor_ argument)
-          (String.concat ", " [ base; at_x ]);
+        emit_rule ctx
+          ~head:(Printf.sprintf "%s(%s,X,%s)" q subject (construct_ground_term ctx typ constructor_ argument))
+          ~body:[ base; at_x ];
         (q, false, 0)
     | Parameter_ref { parameter = Some n; _ } -> (
         match Ir_v0.Checks.find_ci ctx.doc.parameters n with
@@ -12079,10 +12236,13 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
             if not (Eval.SMap.mem (norm n) ctx.case.param_tls) then
               reach_guard ctx ~witness:subject ~reason:(unbound_param_reason n)
                 ~order_reason:(unbound_param_order_reason n) (base :: cond);
-            emit ctx "%s_cut(%s,X) :- %s, param_tl(%s,X,_,_)." p subject base (str n);
-            emit ctx "%s_cut(%s,X) :- %s, param_tl(%s,_,X,_)." p subject base (str n);
+            emit_rule ctx ~head:(Printf.sprintf "%s_cut(%s,X)" p subject)
+              ~body:[ base; Printf.sprintf "param_tl(%s,X,_,_)" (str n) ];
+            emit_rule ctx ~head:(Printf.sprintf "%s_cut(%s,X)" p subject)
+              ~body:[ base; Printf.sprintf "param_tl(%s,_,X,_)" (str n) ];
             let q = fresh ctx (p ^ "_p") in
-            emit ctx "%s(%s,X,V) :- %s, param_tl(%s,F,T,V), F <= X, X < T." q subject at_x (str n);
+            emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject)
+              ~body:[ at_x; Printf.sprintf "param_tl(%s,F,T,V)" (str n); "F <= X"; "X < T" ];
             (q, false, pow10 (decimals_of_datatype par_datatype))
         | None -> fault "unknown parameter %S" n)
     | _ ->
@@ -12097,30 +12257,35 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
     let s = numeric_scale ~what:"the period arithmetic" s in
     let q = fresh ctx (p ^ "_c") in
     let body = base :: at_x :: bindings in
-    emit ctx "%s(%s,X,V) :- %s, V = %s." q subject (String.concat ", " body) term;
+    emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject) ~body:(body @ [ Printf.sprintf "V = %s" term ]);
     (q, false, s)
   (* the predicate that holds on the periods where [q] has a value *)
   and defined q =
     let d = q ^ "_d" in
-    emit ctx "%s(%s,X) :- %s(%s,X,_)." d subject q subject;
+    emit_rule ctx ~head:(Printf.sprintf "%s(%s,X)" d subject) ~body:[ Printf.sprintf "%s(%s,X,_)" q subject ];
     d
   (* the coalescing of ch. 1.2: a leeg operand counts 0 on its period *)
   and filled (q, total, _) =
     if total then q
     else begin
       let z = q ^ "_z" in
-      emit ctx "%s(%s,X,V) :- %s(%s,X,V)." z subject q subject;
-      emit ctx "%s(%s,X,0) :- %s, not %s(%s,X)." z subject at_x (defined q) subject;
+      emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" z subject) ~body:[ Printf.sprintf "%s(%s,X,V)" q subject ];
+      emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,0)" z subject)
+        ~body:[ at_x; Printf.sprintf "not %s(%s,X)" (defined q) subject ];
       z
     end
   in
-  emit ctx "%s_cut(%s,#inf) :- %s." p subject base;
-  emit ctx "%s_cut(%s,#sup) :- %s." p subject base;
+  emit_rule ctx ~head:(Printf.sprintf "%s_cut(%s,#inf)" p subject) ~body:[ base ];
+  emit_rule ctx ~head:(Printf.sprintf "%s_cut(%s,#sup)" p subject) ~body:[ base ];
   (* a condition that reads no timeline gates the rule (ch. 3.3): without it
      there is no period *)
-  emit ctx "%s_per(%s,X,Y) :- %s_cut(%s,X), %s_cut(%s,Y), X < Y, #count { Z : %s_cut(%s,Z), X < Z, Z < Y } = 0%s."
-    p subject p subject p subject p subject
-    (String.concat "" (List.map (fun c -> ", " ^ c) cond));
+  emit_rule ctx ~head:(Printf.sprintf "%s_per(%s,X,Y)" p subject)
+    ~body:
+      ([ Printf.sprintf "%s_cut(%s,X)" p subject;
+         Printf.sprintf "%s_cut(%s,Y)" p subject;
+         "X < Y";
+         Printf.sprintf "#count { Z : %s_cut(%s,Z), X < Z, Z < Y } = 0" p subject ]
+      @ cond);
   units_identical_ok ~what target_unit (period_unit value);
   (* a scalar operand is read where the value is: under the condition that
      gates the rule, or the reach of a default's consequence *)
@@ -12140,7 +12305,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
         let q = fresh ctx (p ^ "_t") in
         let body = [ at_x; Printf.sprintf "%s(%s,X,W)" root0 subject ] in
         range_guard ctx ~subject ~body:(base :: body) [ ("W", max_int31 / k) ];
-        emit ctx "%s(%s,X,V) :- %s, V = W*%d." q subject (String.concat ", " body) k;
+        emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject) ~body:(body @ [ Printf.sprintf "V = W*%d" k ]);
         q
       end
     end
@@ -12148,20 +12313,25 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
       let k = root_scale / target_scale in
       let q = fresh ctx (p ^ "_t") in
       let body = [ at_x; Printf.sprintf "%s(%s,X,W)" root0 subject ] in
-      emit ctx "%s(%s,X,V) :- %s, W \\ %d == 0, V = W/%d." q subject (String.concat ", " body) k k;
-      emit ctx "viol(\"%s\",%s) :- %s, W \\ %d != 0." period_arithmetic_misfit subject
-        (String.concat ", " (base :: body)) k;
+      emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject)
+        ~body:(body @ [ Printf.sprintf "W \\ %d == 0" k; Printf.sprintf "V = W/%d" k ]);
+      emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",%s)" period_arithmetic_misfit subject)
+        ~body:((base :: body) @ [ Printf.sprintf "W \\ %d != 0" k ]);
       q
     end
   in
-  emit ctx "%s_val(%s,X,Y,V) :- %s_per(%s,X,Y), %s(%s,X,V)." p subject p subject root subject;
+  emit_rule ctx ~head:(Printf.sprintf "%s_val(%s,X,Y,V)" p subject)
+    ~body:[ Printf.sprintf "%s_per(%s,X,Y)" p subject; Printf.sprintf "%s(%s,X,V)" root subject ];
   (* without [write] the caller reads the value per period, p_val, itself (a
      default's consequence, ch. 7.11) *)
   if write then begin
   (* the maximal runs: a cut between two periods of one value joins them *)
-  emit ctx "%s_join(%s,Y) :- %s_val(%s,X,Y,V), %s_val(%s,Y,Z,V)." p subject p subject p subject;
-  emit ctx "%s_start(%s,X) :- %s_val(%s,X,_,_), not %s_join(%s,X)." p subject p subject p subject;
-  emit ctx "%s_end(%s,Y) :- %s_val(%s,_,Y,_), not %s_join(%s,Y)." p subject p subject p subject;
+  emit_rule ctx ~head:(Printf.sprintf "%s_join(%s,Y)" p subject)
+    ~body:[ Printf.sprintf "%s_val(%s,X,Y,V)" p subject; Printf.sprintf "%s_val(%s,Y,Z,V)" p subject ];
+  emit_rule ctx ~head:(Printf.sprintf "%s_start(%s,X)" p subject)
+    ~body:[ Printf.sprintf "%s_val(%s,X,_,_)" p subject; Printf.sprintf "not %s_join(%s,X)" p subject ];
+  emit_rule ctx ~head:(Printf.sprintf "%s_end(%s,Y)" p subject)
+    ~body:[ Printf.sprintf "%s_val(%s,_,Y,_)" p subject; Printf.sprintf "not %s_join(%s,Y)" p subject ];
   (* the written segments, restricted to the periods of a condition read per
      period (ch. 3.10's clip generalised), each also as this writer's
      ([writer_timeline_conflicts], [timeline_input]) *)
@@ -12172,7 +12342,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
     match periods with
     | None -> [ ("X", "Y", [ run ]) ]
     | Some q ->
-        emit ctx "%s_seg(%s,X,Y,V) :- %s." p subject run;
+        emit_rule ctx ~head:(Printf.sprintf "%s_seg(%s,X,Y,V)" p subject) ~body:[ run ];
         List.map (fun (l, h, g) -> (l, h, Printf.sprintf "%s_seg(%s,X,Y,V)" p subject :: g)) (period_cuts q ~van:"X" ~tot:"Y")
   in
   List.iter
@@ -12280,21 +12450,24 @@ let writer_timeline_conflicts ctx (r : resolved_rule) ~ot ~a =
                 | Some (oti, _) -> oti
                 | None -> ot
               in
-              let overlap = Printf.sprintf "wtl(S,%s,F1,T1,V1,%d), wtl(S,%s,F2,T2,V2,%d), F1 < T2, F2 < T1" (str a) i (str a) j in
-              emit ctx "viol(%s,S) :- %s, V1 != V2."
-                (quote
+              let overlap =
+                [ Printf.sprintf "wtl(S,%s,F1,T1,V1,%d)" (str a) i; Printf.sprintf "wtl(S,%s,F2,T2,V2,%d)" (str a) j;
+                  "F1 < T2"; "F2 < T1" ]
+              in
+              emit_rule ctx
+                ~head:(Printf.sprintf "viol(%s,S)" (quote
                    (Printf.sprintf
                       "two writers of one target disagree: rules %s and %s write different values to the \
                        attribute %s of a %s — no fixpoint, divergence is a fault (ch. 5.7)"
-                      (name ri) (name r) a lower))
-                overlap;
-              emit ctx "viol(%s,S) :- %s, V1 == V2."
-                (quote
+                      (name ri) (name r) a lower)))
+                ~body:(overlap @ [ "V1 != V2" ]);
+              emit_rule ctx
+                ~head:(Printf.sprintf "viol(%s,S)" (quote
                    (Printf.sprintf
                       "rules %s and %s decide one day of the timeline %s with one value, and this encoding writes \
                        their segments as written, so it has no segment for the day of one of them (no corpus case)"
-                      (name ri) (name r) a))
-                overlap
+                      (name ri) (name r) a)))
+                ~body:(overlap @ [ "V1 == V2" ])
           | _ -> ())
         comps
 
@@ -12323,14 +12496,15 @@ let timeline_input ctx =
          ctx.doc.prioritized_defaults
   then begin
     emit ctx "#defined wtl/6.";
-    emit ctx "incut(S,A,F,T,F) :- inputtl(S,A,F,T,_).";
-    emit ctx "incut(S,A,F,T,T) :- inputtl(S,A,F,T,_).";
-    emit ctx "incut(S,A,F,T,X) :- inputtl(S,A,F,T,_), wtl(S,A,X,_,_,_), F < X, X < T.";
-    emit ctx "incut(S,A,F,T,Y) :- inputtl(S,A,F,T,_), wtl(S,A,_,Y,_,_), F < Y, Y < T.";
-    emit ctx
-      "inpiece(S,A,F,T,X,Y) :- incut(S,A,F,T,X), incut(S,A,F,T,Y), X < Y, #count { Z : incut(S,A,F,T,Z), X < Z, Z < Y } = 0.";
-    emit ctx "indecided(S,A,X,Y) :- inpiece(S,A,_,_,X,Y), wtl(S,A,F,T,_,_), F <= X, Y <= T.";
-    emit ctx "tl(S,A,X,Y,V) :- inpiece(S,A,F,T,X,Y), inputtl(S,A,F,T,V), not indecided(S,A,X,Y)."
+    emit_rule ctx ~head:"incut(S,A,F,T,F)" ~body:[ "inputtl(S,A,F,T,_)" ];
+    emit_rule ctx ~head:"incut(S,A,F,T,T)" ~body:[ "inputtl(S,A,F,T,_)" ];
+    emit_rule ctx ~head:"incut(S,A,F,T,X)" ~body:[ "inputtl(S,A,F,T,_)"; "wtl(S,A,X,_,_,_)"; "F < X"; "X < T" ];
+    emit_rule ctx ~head:"incut(S,A,F,T,Y)" ~body:[ "inputtl(S,A,F,T,_)"; "wtl(S,A,_,Y,_,_)"; "F < Y"; "Y < T" ];
+    emit_rule ctx ~head:"inpiece(S,A,F,T,X,Y)"
+      ~body:[ "incut(S,A,F,T,X)"; "incut(S,A,F,T,Y)"; "X < Y"; "#count { Z : incut(S,A,F,T,Z), X < Z, Z < Y } = 0" ];
+    emit_rule ctx ~head:"indecided(S,A,X,Y)" ~body:[ "inpiece(S,A,_,_,X,Y)"; "wtl(S,A,F,T,_,_)"; "F <= X"; "Y <= T" ];
+    emit_rule ctx ~head:"tl(S,A,X,Y,V)"
+      ~body:[ "inpiece(S,A,F,T,X,Y)"; "inputtl(S,A,F,T,V)"; "not indecided(S,A,X,Y)" ]
   end
 
 (* Whether the input of the time-dependent attribute [a] on an instance of the
@@ -12472,13 +12646,14 @@ let translate_characteristic_timeline ctx (r : resolved_rule) ~ot ~k =
     | _ -> fault "temporal characteristic %S without a granularity" k
   in
   let q = period_condition ~target:grid ctx ~ot ~a:k c in
-  emit ctx "ktl(S,%s,F,T) :- isa(S,%s), %s(S,F,T)." (str k) (str ot) q;
+  emit_rule ctx ~head:(Printf.sprintf "ktl(S,%s,F,T)" (str k))
+    ~body:[ Printf.sprintf "isa(S,%s)" (str ot); Printf.sprintf "%s(S,F,T)" q ];
   List.iter
     (fun open_side ->
-      emit ctx
-        "viol(\"the periods in which the time-dependent characteristic %s holds have an open bound: a \
-         characteristic holds in bounded periods only (ch. 3.11). Declined in translation\",S) :- isa(S,%s), %s."
-        k (str ot) open_side)
+      emit_rule ctx
+        ~head:(Printf.sprintf "viol(\"the periods in which the time-dependent characteristic %s holds have an open \
+           bound: a characteristic holds in bounded periods only (ch. 3.11). Declined in translation\",S)" k)
+        ~body:[ Printf.sprintf "isa(S,%s)" (str ot); open_side ])
     [ Printf.sprintf "%s(S,#inf,_)" q; Printf.sprintf "%s(S,_,#sup)" q ]
 
 (* An initialisation of the timeline target (ot, a) outside the ch. 7.7
@@ -12517,20 +12692,32 @@ let translate_timeline_initialisation ctx (r : resolved_rule) ~subject ~ot ~a ~c
   let a = str a in
   emit ctx "#defined wtl/6.";
   emit ctx "#defined inputtl/5.";
-  emit ctx "initcut(S,%s,F,T,F) :- itl(S,%s,F,T,_)." a a;
-  emit ctx "initcut(S,%s,F,T,T) :- itl(S,%s,F,T,_)." a a;
+  emit_rule ctx ~head:(Printf.sprintf "initcut(S,%s,F,T,F)" a) ~body:[ Printf.sprintf "itl(S,%s,F,T,_)" a ];
+  emit_rule ctx ~head:(Printf.sprintf "initcut(S,%s,F,T,T)" a) ~body:[ Printf.sprintf "itl(S,%s,F,T,_)" a ];
   List.iter
     (fun (other, x, y) ->
-      emit ctx "initcut(S,%s,F,T,X) :- itl(S,%s,F,T,_), %s(S,%s,X,%s), F < X, X < T." a a other a x;
-      emit ctx "initcut(S,%s,F,T,Y) :- itl(S,%s,F,T,_), %s(S,%s,_,Y%s), F < Y, Y < T." a a other a y)
+      emit_rule ctx ~head:(Printf.sprintf "initcut(S,%s,F,T,X)" a)
+        ~body:[ Printf.sprintf "itl(S,%s,F,T,_)" a; Printf.sprintf "%s(S,%s,X,%s)" other a x; "F < X"; "X < T" ];
+      emit_rule ctx ~head:(Printf.sprintf "initcut(S,%s,F,T,Y)" a)
+        ~body:[ Printf.sprintf "itl(S,%s,F,T,_)" a; Printf.sprintf "%s(S,%s,_,Y%s)" other a y; "F < Y"; "Y < T" ])
     [ ("wtl", "_,_,_", ",_,_"); ("inputtl", "_,_", ",_") ];
-  emit ctx
-    "initpiece(S,%s,F,T,X,Y) :- initcut(S,%s,F,T,X), initcut(S,%s,F,T,Y), X < Y, #count { Z : initcut(S,%s,F,T,Z), X < Z, Z < Y } = 0."
-    a a a a;
-  emit ctx "initdecided(S,%s,X,Y) :- initpiece(S,%s,_,_,X,Y), wtl(S,%s,F,T,_,_), F <= X, Y <= T." a a a;
-  emit ctx "initdecided(S,%s,X,Y) :- initpiece(S,%s,_,_,X,Y), inputtl(S,%s,F,T,_), F <= X, Y <= T." a a a;
-  emit ctx "tl(S,%s,X,Y,V) :- initpiece(S,%s,F,T,X,Y), itl(S,%s,F,T,V), not initdecided(S,%s,X,Y)." a a a a;
-  emit ctx "%s(S) :- initpiece(S,%s,_,_,X,Y), not initdecided(S,%s,X,Y)." decides a a
+  emit_rule ctx ~head:(Printf.sprintf "initpiece(S,%s,F,T,X,Y)" a)
+    ~body:
+      [ Printf.sprintf "initcut(S,%s,F,T,X)" a;
+        Printf.sprintf "initcut(S,%s,F,T,Y)" a;
+        "X < Y";
+        Printf.sprintf "#count { Z : initcut(S,%s,F,T,Z), X < Z, Z < Y } = 0" a ];
+  emit_rule ctx ~head:(Printf.sprintf "initdecided(S,%s,X,Y)" a)
+    ~body:[ Printf.sprintf "initpiece(S,%s,_,_,X,Y)" a; Printf.sprintf "wtl(S,%s,F,T,_,_)" a; "F <= X"; "Y <= T" ];
+  emit_rule ctx ~head:(Printf.sprintf "initdecided(S,%s,X,Y)" a)
+    ~body:[ Printf.sprintf "initpiece(S,%s,_,_,X,Y)" a; Printf.sprintf "inputtl(S,%s,F,T,_)" a; "F <= X"; "Y <= T" ];
+  emit_rule ctx ~head:(Printf.sprintf "tl(S,%s,X,Y,V)" a)
+    ~body:
+      [ Printf.sprintf "initpiece(S,%s,F,T,X,Y)" a;
+        Printf.sprintf "itl(S,%s,F,T,V)" a;
+        Printf.sprintf "not initdecided(S,%s,X,Y)" a ];
+  emit_rule ctx ~head:(Printf.sprintf "%s(S)" decides)
+    ~body:[ Printf.sprintf "initpiece(S,%s,_,_,X,Y)" a; Printf.sprintf "not initdecided(S,%s,X,Y)" a ]
 
 let translate_rule ctx (r : resolved_rule) =
   (* the ch. 8.2 validity gate: an excluded rule does not apply — nothing
@@ -12997,14 +13184,14 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
   (match stratum with
   | Some k ->
       head_body ctx (Printf.sprintf "depth(%s,%d,D+1)" term k) body;
-      emit ctx "viol(%s,%s) :- isa(%s,%s), not hasdepth(%s,%d)."
-        (quote
+      emit_rule ctx
+        ~head:(Printf.sprintf "viol(%s,%s)" (quote
            (Printf.sprintf
               "the subject of object creation \"%s\" (stratum %d) has no creation depth in that \
                stratum: only a mint of a higher stratum lacks one, and a creation reads its \
                subject's population strictly, so the strata of this backend do not hold (ch. 6.3)"
-              ctx.rule_name k))
-        subject subject (str subject_ot) subject k
+              ctx.rule_name k)) subject)
+        ~body:[ Printf.sprintf "isa(%s,%s)" subject (str subject_ot); Printf.sprintf "not hasdepth(%s,%d)" subject k ]
   | None -> ());
   head_body ctx (Printf.sprintf "is_a(%s,%s)" term (str created)) body;
   (* the member value is the input of the object it makes (RUNTIME-SEMANTICS
@@ -13166,9 +13353,10 @@ let translate_fact_creation ctx (fc : resolved_fact_creation) =
      re-run can name WHICH guard fired *)
   let to_one_guard (r : role_ref) holder_type =
     if not r.role_many then
-      emit ctx "viol(\"to-one second filler on role %s\",X) :- isa(X,%s), 2 <= #count { Y : role(X,%s,Y) }."
-        (norm (role_canonical r)) (str holder_type)
-        (role_term ~fact_type:ftn r)
+      emit_rule ctx ~head:(Printf.sprintf "viol(\"to-one second filler on role %s\",X)" (norm (role_canonical r)))
+        ~body:
+          [ Printf.sprintf "isa(X,%s)" (str holder_type);
+            Printf.sprintf "2 <= #count { Y : role(X,%s,Y) }" (role_term ~fact_type:ftn r) ]
   in
   to_one_guard objective_role anchor_point;
   to_one_guard anchor_role (req "the target type of a fact creation (the declared filler of its targetRole)" fc.fc_target)
@@ -13434,7 +13622,7 @@ and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
      not displace each other, so the bare-keyed root deposit stays
      unguarded) *)
   deposit ctx ~code:"EF-027" ~rule:(str (path_key target_form group_path)) ~subject
-    (String.concat ", " (Printf.sprintf "%s(%s)" diff subject :: outer_displaced));
+    (Printf.sprintf "%s(%s)" diff subject :: outer_displaced);
   (out, cfl, any)
 
 (* The defaults group of a timeline attribute target, read per day
@@ -13526,7 +13714,8 @@ let rec translate_chain_days ctx ~g ~cuts ~subject ~origins ~base ~path ~a ~targ
     head_body ctx (Printf.sprintf "%s(%s,X,Y,V)" (dec n) subject)
       ((reached @ justified)
       @ [ Printf.sprintf "%s_val(%s,PX,PY,V)" p subject; "PX <= X"; "Y <= PY" ]);
-    emit ctx "%s(%s) :- %s(%s,_,_,_)." decany subject (dec n) subject;
+    emit_rule ctx ~head:(Printf.sprintf "%s(%s)" decany subject)
+      ~body:[ Printf.sprintf "%s(%s,_,_,_)" (dec n) subject ];
     ctx.param_reach <- saved_r;
     ctx.rule_guard <- saved_g;
     ctx.let_needs <- saved_n;
@@ -13594,7 +13783,7 @@ and translate_group_days ctx ~g ~cuts ~subject ~subject_ot ~base ~group_path ~a 
   head_body ctx (Printf.sprintf "%s(%s,X,Y)" any subject) [ Printf.sprintf "%s(%s,X,Y,_)" out subject ];
   head_body ctx (Printf.sprintf "%s(%s,X,Y)" any subject) [ Printf.sprintf "%s(%s,X,Y)" cfl subject ];
   deposit ctx ~code:"EF-027" ~rule:(str (path_key target_form group_path)) ~subject
-    (String.concat ", " (Printf.sprintf "%s(%s,X,Y)" diff subject :: outer_displaced));
+    (Printf.sprintf "%s(%s,X,Y)" diff subject :: outer_displaced);
   (out, cfl, any)
 
 (* The root of a defaults group on a timeline attribute target (ch. 7.11): the
@@ -13613,7 +13802,8 @@ let translate_defaults_timeline ctx gidx ~base ~target_form ~a
   let g = Printf.sprintf "grp%d_d" gidx in
   let cuts = ref [] in
   let has_input = Printf.sprintf "grp%d_in" gidx in
-  emit ctx "val(%s,%s,V) :- inputval(%s,%s,V), %s." subject (str a) subject (str a) base;
+  emit_rule ctx ~head:(Printf.sprintf "val(%s,%s,V)" subject (str a))
+    ~body:[ Printf.sprintf "inputval(%s,%s,V)" subject (str a); base ];
   let per = Printf.sprintf "%s_per(%s,X,Y)" g subject in
   head_body ctx (Printf.sprintf "%s(%s,X,Y)" has_input subject)
     [ per; Printf.sprintf "inputtl(%s,%s,F,T,_)" subject (str a); "F <= X"; "Y <= T" ];
@@ -13629,20 +13819,29 @@ let translate_defaults_timeline ctx gidx ~base ~target_form ~a
   in
   (* the cut set: both open ends, the input's bounds, and every bound the chain's
      justifications and consequences carry *)
-  emit ctx "%s_cut(%s,#inf) :- %s." g subject base;
-  emit ctx "%s_cut(%s,#sup) :- %s." g subject base;
-  emit ctx "%s_cut(%s,X) :- %s, inputtl(%s,%s,X,_,_)." g subject base subject (str a);
-  emit ctx "%s_cut(%s,X) :- %s, inputtl(%s,%s,_,X,_)." g subject base subject (str a);
+  emit_rule ctx ~head:(Printf.sprintf "%s_cut(%s,#inf)" g subject) ~body:[ base ];
+  emit_rule ctx ~head:(Printf.sprintf "%s_cut(%s,#sup)" g subject) ~body:[ base ];
+  emit_rule ctx ~head:(Printf.sprintf "%s_cut(%s,X)" g subject)
+    ~body:[ base; Printf.sprintf "inputtl(%s,%s,X,_,_)" subject (str a) ];
+  emit_rule ctx ~head:(Printf.sprintf "%s_cut(%s,X)" g subject)
+    ~body:[ base; Printf.sprintf "inputtl(%s,%s,_,X,_)" subject (str a) ];
   List.iter
     (fun q ->
-      if String.ends_with ~suffix:"_cut" q then emit ctx "%s_cut(%s,X) :- %s, %s(%s,X)." g subject base q subject
+      if String.ends_with ~suffix:"_cut" q then emit_rule ctx ~head:(Printf.sprintf "%s_cut(%s,X)" g subject)
+                                                  ~body:[ base; Printf.sprintf "%s(%s,X)" q subject ]
       else begin
-        emit ctx "%s_cut(%s,X) :- %s, %s(%s,X,_)." g subject base q subject;
-        emit ctx "%s_cut(%s,X) :- %s, %s(%s,_,X)." g subject base q subject
+        emit_rule ctx ~head:(Printf.sprintf "%s_cut(%s,X)" g subject)
+          ~body:[ base; Printf.sprintf "%s(%s,X,_)" q subject ];
+        emit_rule ctx ~head:(Printf.sprintf "%s_cut(%s,X)" g subject)
+          ~body:[ base; Printf.sprintf "%s(%s,_,X)" q subject ]
       end)
     (List.sort_uniq compare !cuts);
-  emit ctx "%s_per(%s,X,Y) :- %s_cut(%s,X), %s_cut(%s,Y), X < Y, #count { Z : %s_cut(%s,Z), X < Z, Z < Y } = 0." g
-    subject g subject g subject g subject;
+  emit_rule ctx ~head:(Printf.sprintf "%s_per(%s,X,Y)" g subject)
+    ~body:
+      [ Printf.sprintf "%s_cut(%s,X)" g subject;
+        Printf.sprintf "%s_cut(%s,Y)" g subject;
+        "X < Y";
+        Printf.sprintf "#count { Z : %s_cut(%s,Z), X < Z, Z < Y } = 0" g subject ];
   let nested = List.exists (fun (_, _, c) -> c) member_info in
   let root_cfl = Printf.sprintf "grp%d_conflict(%s,X,Y)" gidx subject in
   let root_diff = Printf.sprintf "grp%d_diff(%s,X,Y)" gidx subject in
@@ -13662,7 +13861,7 @@ let translate_defaults_timeline ctx gidx ~base ~target_form ~a
           member_info)
       member_info;
     head_body ctx root_cfl [ root_diff ];
-    deposit ctx ~code:"EF-027" ~rule:(str target_form) ~subject root_diff
+    deposit ctx ~code:"EF-027" ~rule:(str target_form) ~subject [ root_diff ]
   end;
   let v = Printf.sprintf "grp%d_v" gidx in
   List.iter
@@ -13672,16 +13871,21 @@ let translate_defaults_timeline ctx gidx ~base ~target_form ~a
     member_info;
   (* the maximal runs of the decided periods, the group's segments *)
   emit ctx "#defined %s/4." v;
-  emit ctx "%s_join(%s,Y) :- %s(%s,X,Y,V), %s(%s,Y,Z,V)." v subject v subject v subject;
-  emit ctx "%s_start(%s,X) :- %s(%s,X,_,_), not %s_join(%s,X)." v subject v subject v subject;
-  emit ctx "%s_end(%s,Y) :- %s(%s,_,Y,_), not %s_join(%s,Y)." v subject v subject v subject;
+  emit_rule ctx ~head:(Printf.sprintf "%s_join(%s,Y)" v subject)
+    ~body:[ Printf.sprintf "%s(%s,X,Y,V)" v subject; Printf.sprintf "%s(%s,Y,Z,V)" v subject ];
+  emit_rule ctx ~head:(Printf.sprintf "%s_start(%s,X)" v subject)
+    ~body:[ Printf.sprintf "%s(%s,X,_,_)" v subject; Printf.sprintf "not %s_join(%s,X)" v subject ];
+  emit_rule ctx ~head:(Printf.sprintf "%s_end(%s,Y)" v subject)
+    ~body:[ Printf.sprintf "%s(%s,_,Y,_)" v subject; Printf.sprintf "not %s_join(%s,Y)" v subject ];
   let run =
     Printf.sprintf "%s_start(%s,X), %s(%s,X,_,V), %s_end(%s,Y), X < Y, #count { Z : %s_end(%s,Z), X < Z, Z < Y } = 0" v
       subject v subject v subject v subject
   in
-  emit ctx "tl(%s,%s,X,Y,V) :- %s." subject (str a) run;
+  emit_rule ctx ~head:(Printf.sprintf "tl(%s,%s,X,Y,V)" subject (str a)) ~body:[ run ];
   emit ctx "#defined wtl/6.";
-  emit ctx "wtl(%s,%s,X,Y,V,%d) :- %s." subject (str a) (List.length ctx.doc.resolved_rules + gidx) run
+  emit_rule ctx
+    ~head:(Printf.sprintf "wtl(%s,%s,X,Y,V,%d)" subject (str a) (List.length ctx.doc.resolved_rules + gidx))
+    ~body:[ run ]
 
 (* [owner] is the CONCRETE type whose effective stack these members are
    (RUNTIME-SEMANTICS ch. 7.10). It is the one place in this translator that
@@ -13798,7 +14002,7 @@ let translate_defaults_group ctx gidx ~owner
             member_info)
         member_info;
       head_body ctx root_cfl [ root_diff ];
-      deposit ctx ~code:"EF-027" ~rule:(str target_form) ~subject root_diff
+      deposit ctx ~code:"EF-027" ~rule:(str target_form) ~subject [ root_diff ]
     end
   end;
   let conflict_guard = if conflict_possible then [ "not " ^ root_cfl ] else [] in
@@ -13887,7 +14091,8 @@ let translate_allocation ctx i (v : resolved_allocation) =
      [translate]), so where the filler is doelType or below — every
      document written before the chain existed — this derives exactly the
      role's links and the encoding is unchanged. *)
-  emit ctx "%sontv(B,X) :- role(B,%s,X), isa(X,%s)." p role (str dt);
+  emit_rule ctx ~head:(Printf.sprintf "%sontv(B,X)" p)
+    ~body:[ Printf.sprintf "role(B,%s,X)" role; Printf.sprintf "isa(X,%s)" (str dt) ];
   let recip = Printf.sprintf "%sontv(B,X)" p in
   let recip_any = Printf.sprintf "%sontv(B,_)" p in
   (* the allocation is a writer of the stacks of its share target and its
@@ -13901,7 +14106,11 @@ let translate_allocation ctx i (v : resolved_allocation) =
   let writer = Printf.sprintf "vd%d" i in
   let stands t a =
     if input_on ctx ~otype:t ~attr:a then
-      emit ctx "val(D,%s,V) :- inputval(D,%s,V), isa(D,%s), not wdecides(D,%s)." (str a) (str a) (str t) (str a)
+      emit_rule ctx ~head:(Printf.sprintf "val(D,%s,V)" (str a))
+        ~body:
+          [ Printf.sprintf "inputval(D,%s,V)" (str a);
+            Printf.sprintf "isa(D,%s)" (str t);
+            Printf.sprintf "not wdecides(D,%s)" (str a) ]
   in
   stands dt da;
   Option.iter (stands bt) v.remainder_attribute;
@@ -14027,31 +14236,35 @@ let translate_allocation ctx i (v : resolved_allocation) =
         (max (pow10 (max 0 (tdec - pdec))) (pow10 (max 0 (ddec - pdec))))
         (match rdec with Some r -> pow10 (max 0 (r - pdec)) | None -> 1)
   in
-  emit ctx
-    "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",B) :- \
-     isa(B,%s), val(B,%s,A), |A| > %d."
-    (str bt) (str ba) pot_bound;
-  emit ctx
-    "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",B) :- \
-     isa(B,%s), 46340 < #count { X : %s }."
-    (str bt) recip;
+  emit_rule ctx ~head:"viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",B)"
+    ~body:
+      [ Printf.sprintf "isa(B,%s)" (str bt);
+        Printf.sprintf "val(B,%s,A)" (str ba);
+        Printf.sprintf "|A| > %d" pot_bound ];
+  emit_rule ctx ~head:"viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",B)"
+    ~body:[ Printf.sprintf "isa(B,%s)" (str bt); Printf.sprintf "46340 < #count { X : %s }" recip ];
   (match v.ratio_attribute with
   | Some ratio ->
-      emit ctx
-        "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",X) :- \
-         %s, isa(B,%s), val(X,%s,W), |W| > %d."
-        recip (str bt) (str ratio) (46340 / m_den)
+      emit_rule ctx ~head:"viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",X)"
+        ~body:
+          [ recip;
+            Printf.sprintf "isa(B,%s)" (str bt);
+            Printf.sprintf "val(X,%s,W)" (str ratio);
+            Printf.sprintf "|W| > %d" (46340 / m_den) ]
   | None -> ());
   (* the maximum at [cdec] in its own unit, compared at [ddec] in the pot's *)
   let cap_ratio = Option.map (fun c -> ratio k_cap ~from_dec:c ~to_dec:ddec) cdec in
   (match (v.maximum_attribute, cap_ratio) with
   | Some cap, Some (c_num, _) when c_num > 1 ->
-      emit ctx
-        "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",X) :- \
-         %s, isa(B,%s), val(X,%s,C), |C| > %d."
-        recip (str bt) (str cap) (46340 / c_num)
+      emit_rule ctx ~head:"viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",X)"
+        ~body:
+          [ recip;
+            Printf.sprintf "isa(B,%s)" (str bt);
+            Printf.sprintf "val(X,%s,C)" (str cap);
+            Printf.sprintf "|C| > %d" (46340 / c_num) ]
   | _ -> ());
-  emit ctx "%shas_pot(B) :- isa(B,%s), val(B,%s,_)." p (str bt) (str ba);
+  emit_rule ctx ~head:(Printf.sprintf "%shas_pot(B)" p)
+    ~body:[ Printf.sprintf "isa(B,%s)" (str bt); Printf.sprintf "val(B,%s,_)" (str ba) ];
   (* the target write and the remainder, shared across the methods; the
      remainder guard carries each method's Nothing case (ch. 4.4: zero
      recipients, or an absent/zero weight sum, write NO rest) *)
@@ -14061,18 +14274,18 @@ let translate_allocation ctx i (v : resolved_allocation) =
       else begin
         (* restated into a coarser unit, a share fits its target only where the
            division leaves nothing (ch. 2.4 point 1) *)
-        emit ctx "viol(\"%s\",X) :- %s, (%s) \\ %d != 0." allocation_share_misfit share_atom (scaled "S" t_num)
-          t_den;
+        emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",X)" allocation_share_misfit)
+          ~body:[ share_atom; Printf.sprintf "(%s) \\ %d != 0" (scaled "S" t_num) t_den ];
         Printf.sprintf "(%s)/%d" (scaled "S" t_num) t_den
       end
     in
     if (not (Q.equal k_share Q.one)) && t_num > 1 then
-      emit ctx
-        "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",X) :- %s, |S| > %d."
-        share_atom (max_int31 / t_num);
-    emit ctx "val(X,%s,%s) :- %s." (str da) written share_atom;
-    emit ctx "wval(X,%s,%s,%s) :- %s." (str da) written writer share_atom;
-    emit ctx "wdecides(X,%s) :- wval(X,%s,_,%s)." (str da) (str da) writer
+      emit_rule ctx ~head:"viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",X)"
+        ~body:[ share_atom; Printf.sprintf "|S| > %d" (max_int31 / t_num) ];
+    emit_rule ctx ~head:(Printf.sprintf "val(X,%s,%s)" (str da) written) ~body:[ share_atom ];
+    emit_rule ctx ~head:(Printf.sprintf "wval(X,%s,%s,%s)" (str da) written writer) ~body:[ share_atom ];
+    emit_rule ctx ~head:(Printf.sprintf "wdecides(X,%s)" (str da))
+      ~body:[ Printf.sprintf "wval(X,%s,_,%s)" (str da) writer ]
   in
   let emit_rest ~guard ~sum =
     match (v.remainder_attribute, rdec) with
@@ -14088,20 +14301,20 @@ let translate_allocation ctx i (v : resolved_allocation) =
             let in_pot = Printf.sprintf "(%s-%s)" (scaled "A" (pow10 (l - pdec))) (scaled "T" (pow10 (l - ddec))) in
             let r_num, r_den = ratio k_rest ~from_dec:l ~to_dec:r in
             if r_num > 1 then
-              emit ctx
-                "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",B) :- %s, |%s| > %d."
-                body in_pot (max_int31 / r_num);
+              emit_rule ctx ~head:"viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",B)"
+                ~body:[ body; Printf.sprintf "|%s| > %d" in_pot (max_int31 / r_num) ];
             if r_den = 1 then scaled in_pot r_num
             else begin
-              emit ctx "viol(\"%s\",B) :- %s, (%s) \\ %d != 0." allocation_rest_misfit body (scaled in_pot r_num)
-                r_den;
+              emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",B)" allocation_rest_misfit)
+                ~body:[ body; Printf.sprintf "(%s) \\ %d != 0" (scaled in_pot r_num) r_den ];
               Printf.sprintf "(%s)/%d" (scaled in_pot r_num) r_den
             end
           end
         in
-        emit ctx "val(B,%s,%s) :- %s." (str ra) rest body;
-        emit ctx "wval(B,%s,%s,%s) :- %s." (str ra) rest writer body;
-        emit ctx "wdecides(B,%s) :- wval(B,%s,_,%s)." (str ra) (str ra) writer
+        emit_rule ctx ~head:(Printf.sprintf "val(B,%s,%s)" (str ra) rest) ~body:[ body ];
+        emit_rule ctx ~head:(Printf.sprintf "wval(B,%s,%s,%s)" (str ra) rest writer) ~body:[ body ];
+        emit_rule ctx ~head:(Printf.sprintf "wdecides(B,%s)" (str ra))
+          ~body:[ Printf.sprintf "wval(B,%s,_,%s)" (str ra) writer ]
     | _ -> () (* undeclared: the rest lapses (a SHOULD, no WF rule) *)
   in
   (* cap-before-floor (ch. 4.3): share = min(floor_d raw, floor_d cap) —
@@ -14117,11 +14330,13 @@ let translate_allocation ctx i (v : resolved_allocation) =
       else if c_num = 1 then Printf.sprintf "C/%d" c_den
       else Printf.sprintf "(C*%d)/%d" c_num c_den
     in
-    emit ctx "%scapd(X,%s) :- %s, val(X,%s,C), C >= 0." p capd raw_pat (str cap);
+    emit_rule ctx ~head:(Printf.sprintf "%scapd(X,%s)" p capd)
+      ~body:[ raw_pat; Printf.sprintf "val(X,%s,C)" (str cap); "C >= 0" ];
     deposit ctx ~code:"EF-030" ~rule:(str name) ~subject:"X"
-      (Printf.sprintf "%s, val(X,%s,C), C < 0" raw_pat (str cap));
-    deposit ctx ~code:"EF-030" ~rule:(str name) ~subject:"X" (Printf.sprintf "%s, not %shas_cap(X)" raw_pat p);
-    emit ctx "%shas_cap(X) :- val(X,%s,C), C >= 0, %s." p (str cap) raw_pat
+      [ raw_pat; Printf.sprintf "val(X,%s,C)" (str cap); "C < 0" ];
+    deposit ctx ~code:"EF-030" ~rule:(str name) ~subject:"X" [ raw_pat; Printf.sprintf "not %shas_cap(X)" p ];
+    emit_rule ctx ~head:(Printf.sprintf "%shas_cap(X)" p)
+      ~body:[ Printf.sprintf "val(X,%s,C)" (str cap); "C >= 0"; raw_pat ]
   in
   let exact_viol = allocation_share_misfit in
   match method_name with
@@ -14133,35 +14348,42 @@ let translate_allocation ctx i (v : resolved_allocation) =
          diverging. An empty pot is no distribution (ch. 4.4, v1): no share
          and no rest without val(B,…,A), and every deposit below waits for
          the pot, as ref deposits nothing there *)
-      emit ctx "viol(\"allocation: negative pot\",B) :- %s, val(B,%s,A), A < 0." src (str ba);
+      emit_rule ctx ~head:"viol(\"allocation: negative pot\",B)"
+        ~body:[ src; Printf.sprintf "val(B,%s,A)" (str ba); "A < 0" ];
       (* eligible recipients: filled weight, a negative one counting as 0
          with a deposit (ch. 4.4, v1); the weightless are excluded and
          surface on the channel (ch. 4.4) *)
-      emit ctx "%sweight(X,W) :- %s, %s, %shas_pot(B), val(X,%s,W), W >= 0." p recip src p (str ratio);
-      emit ctx "%sweight(X,0) :- %s, %s, %shas_pot(B), val(X,%s,W), W < 0." p recip src p (str ratio);
+      emit_rule ctx ~head:(Printf.sprintf "%sweight(X,W)" p)
+        ~body:[ recip; src; Printf.sprintf "%shas_pot(B)" p; Printf.sprintf "val(X,%s,W)" (str ratio); "W >= 0" ];
+      emit_rule ctx ~head:(Printf.sprintf "%sweight(X,0)" p)
+        ~body:[ recip; src; Printf.sprintf "%shas_pot(B)" p; Printf.sprintf "val(X,%s,W)" (str ratio); "W < 0" ];
       deposit ctx ~code:"EF-038" ~rule:(str name) ~subject:"X"
-        (Printf.sprintf "%s, %s, %shas_pot(B), val(X,%s,W), W < 0" recip src p (str ratio));
+        [ recip; src; Printf.sprintf "%shas_pot(B)" p; Printf.sprintf "val(X,%s,W)" (str ratio); "W < 0" ];
       deposit ctx ~code:"EF-028" ~rule:(str name) ~subject:"X"
-        (Printf.sprintf "%s, %s, %shas_pot(B), not %shas_weight(X)" recip src p p);
-      emit ctx "%shas_weight(X) :- %sweight(X,_)." p p;
-      emit ctx "%swsum(B,S) :- %s, S = #sum { W,X : %s, %sweight(X,W) }, S != 0." p
-        src recip p;
+        [ recip; src; Printf.sprintf "%shas_pot(B)" p; Printf.sprintf "not %shas_weight(X)" p ];
+      emit_rule ctx ~head:(Printf.sprintf "%shas_weight(X)" p) ~body:[ Printf.sprintf "%sweight(X,_)" p ];
+      emit_rule ctx ~head:(Printf.sprintf "%swsum(B,S)" p)
+        ~body:[ src; Printf.sprintf "S = #sum { W,X : %s, %sweight(X,W) }" recip p; "S != 0" ];
       let num = Printf.sprintf "%s*W" (scaled "A" m_num) in
       let den = divd "S" m_den in
       let raw_body =
         Printf.sprintf "%s, %sweight(X,W), %swsum(B,S), val(B,%s,A)" recip p p
           (str ba)
       in
-      emit ctx "%sraw(X,(%s)/%s) :- %s." p num den raw_body;
+      emit_rule ctx ~head:(Printf.sprintf "%sraw(X,(%s)/%s)" p num den) ~body:[ raw_body ];
       if exact then
-        emit ctx "viol(\"%s\",X) :- %s, (%s) \\ %s != 0." exact_viol raw_body num den;
+        emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",X)" exact_viol)
+          ~body:[ raw_body; Printf.sprintf "(%s) \\ %s != 0" num den ];
       (match v.maximum_attribute with
       | Some _ ->
           emit_cap_atoms ~raw_pat:(Printf.sprintf "%sraw(X,_)" p);
-          emit ctx "%sshare(X,R) :- %sraw(X,R), %scapd(X,C), R <= C." p p p;
-          emit ctx "%sshare(X,C) :- %sraw(X,R), %scapd(X,C), R > C." p p p;
-          emit ctx "%sshare(X,R) :- %sraw(X,R), not %shas_cap(X)." p p p
-      | None -> emit ctx "%sshare(X,R) :- %sraw(X,R)." p p);
+          emit_rule ctx ~head:(Printf.sprintf "%sshare(X,R)" p)
+            ~body:[ Printf.sprintf "%sraw(X,R)" p; Printf.sprintf "%scapd(X,C)" p; "R <= C" ];
+          emit_rule ctx ~head:(Printf.sprintf "%sshare(X,C)" p)
+            ~body:[ Printf.sprintf "%sraw(X,R)" p; Printf.sprintf "%scapd(X,C)" p; "R > C" ];
+          emit_rule ctx ~head:(Printf.sprintf "%sshare(X,R)" p)
+            ~body:[ Printf.sprintf "%sraw(X,R)" p; Printf.sprintf "not %shas_cap(X)" p ]
+      | None -> emit_rule ctx ~head:(Printf.sprintf "%sshare(X,R)" p) ~body:[ Printf.sprintf "%sraw(X,R)" p ]);
       emit_write (Printf.sprintf "%sshare(X,S)" p);
       emit_rest ~guard:(Printf.sprintf "%swsum(B,_)" p)
         ~sum:(Printf.sprintf "S,X : %s, %sshare(X,S)" recip p)
@@ -14169,14 +14391,17 @@ let translate_allocation ctx i (v : resolved_allocation) =
       (* one group, all recipients, unweighted (ch. 4.2); the negative
          pot guard as in the proportional method, and an empty pot writes
          nothing there either *)
-      emit ctx "viol(\"allocation: negative pot\",B) :- %s, val(B,%s,A), A < 0." src (str ba);
-      emit ctx "%sn(B,N) :- %s, %s, N = #count { X : %s }." p src recip_any recip;
+      emit_rule ctx ~head:"viol(\"allocation: negative pot\",B)"
+        ~body:[ src; Printf.sprintf "val(B,%s,A)" (str ba); "A < 0" ];
+      emit_rule ctx ~head:(Printf.sprintf "%sn(B,N)" p)
+        ~body:[ src; recip_any; Printf.sprintf "N = #count { X : %s }" recip ];
       let num = scaled "A" m_num in
       let den = divd "N" m_den in
       let raw_body = Printf.sprintf "%s, %sn(B,N), val(B,%s,A)" recip p (str ba) in
-      emit ctx "%sshare(X,(%s)/%s) :- %s." p num den raw_body;
+      emit_rule ctx ~head:(Printf.sprintf "%sshare(X,(%s)/%s)" p num den) ~body:[ raw_body ];
       if exact then
-        emit ctx "viol(\"%s\",X) :- %s, (%s) \\ %s != 0." exact_viol raw_body num den;
+        emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",X)" exact_viol)
+          ~body:[ raw_body; Printf.sprintf "(%s) \\ %s != 0" num den ];
       emit_write (Printf.sprintf "%sshare(X,S)" p);
       emit_rest ~guard:(Printf.sprintf "%sn(B,_)" p)
         ~sum:(Printf.sprintf "S,X : %s, %sshare(X,S)" recip p)
@@ -14198,81 +14423,124 @@ let translate_allocation ctx i (v : resolved_allocation) =
       (match v.ordering_attribute with
       | Some ga ->
           let cmp = if v.descending then ">" else "<" in
-          emit ctx "%skey(B,X,K) :- %s, %s, val(X,%s,K)." p rolx src (str ga);
-          emit ctx "%shaskey(B,X) :- %skey(B,X,_)." p p;
-          emit ctx "%snokey(B,X) :- %s, %s, not %shaskey(B,X)." p rolx src p;
-          emit ctx "%sgkey(B,K) :- %skey(B,_,K)." p p;
-          emit ctx "%sgrank(B,K,R) :- %sgkey(B,K), R = #count { K2 : %sgkey(B,K2), K2 %s K }."
-            p p p cmp;
-          emit ctx "%sng(B,N) :- %s, %s, N = #count { K : %sgkey(B,K) }." p src
-            recip_any p;
-          emit ctx "%smrank(B,X,R) :- %skey(B,X,K), %sgrank(B,K,R)." p p p;
-          emit ctx "%smrank(B,X,N) :- %snokey(B,X), %sng(B,N)." p p p;
-          emit ctx "%shasnokey(B) :- %snokey(B,_)." p p;
-          emit ctx "%sranks(B,N+1) :- %sng(B,N), %shasnokey(B)." p p p;
-          emit ctx "%sranks(B,N) :- %sng(B,N), not %shasnokey(B)." p p p
+          emit_rule ctx ~head:(Printf.sprintf "%skey(B,X,K)" p)
+            ~body:[ rolx; src; Printf.sprintf "val(X,%s,K)" (str ga) ];
+          emit_rule ctx ~head:(Printf.sprintf "%shaskey(B,X)" p) ~body:[ Printf.sprintf "%skey(B,X,_)" p ];
+          emit_rule ctx ~head:(Printf.sprintf "%snokey(B,X)" p)
+            ~body:[ rolx; src; Printf.sprintf "not %shaskey(B,X)" p ];
+          emit_rule ctx ~head:(Printf.sprintf "%sgkey(B,K)" p) ~body:[ Printf.sprintf "%skey(B,_,K)" p ];
+          emit_rule ctx ~head:(Printf.sprintf "%sgrank(B,K,R)" p)
+            ~body:[ Printf.sprintf "%sgkey(B,K)" p; Printf.sprintf "R = #count { K2 : %sgkey(B,K2), K2 %s K }" p cmp ];
+          emit_rule ctx ~head:(Printf.sprintf "%sng(B,N)" p)
+            ~body:[ src; recip_any; Printf.sprintf "N = #count { K : %sgkey(B,K) }" p ];
+          emit_rule ctx ~head:(Printf.sprintf "%smrank(B,X,R)" p)
+            ~body:[ Printf.sprintf "%skey(B,X,K)" p; Printf.sprintf "%sgrank(B,K,R)" p ];
+          emit_rule ctx ~head:(Printf.sprintf "%smrank(B,X,N)" p)
+            ~body:[ Printf.sprintf "%snokey(B,X)" p; Printf.sprintf "%sng(B,N)" p ];
+          emit_rule ctx ~head:(Printf.sprintf "%shasnokey(B)" p) ~body:[ Printf.sprintf "%snokey(B,_)" p ];
+          emit_rule ctx ~head:(Printf.sprintf "%sranks(B,N+1)" p)
+            ~body:[ Printf.sprintf "%sng(B,N)" p; Printf.sprintf "%shasnokey(B)" p ];
+          emit_rule ctx ~head:(Printf.sprintf "%sranks(B,N)" p)
+            ~body:[ Printf.sprintf "%sng(B,N)" p; Printf.sprintf "not %shasnokey(B)" p ]
       | None ->
           (* keyless: ONE group — ref sorts an all-empty key list into a
              single equal-key class *)
-          emit ctx "%smrank(B,X,0) :- %s, %s." p rolx src;
-          emit ctx "%sranks(B,1) :- %s, %s." p src recip_any);
-      emit ctx "%spot(B,0,%s) :- %s, val(B,%s,A), %s." p (scaled "A" m_num) src
-        (str ba) recip_any;
+          emit_rule ctx ~head:(Printf.sprintf "%smrank(B,X,0)" p) ~body:[ rolx; src ];
+          emit_rule ctx ~head:(Printf.sprintf "%sranks(B,1)" p) ~body:[ src; recip_any ]);
+      emit_rule ctx ~head:(Printf.sprintf "%spot(B,0,%s)" p (scaled "A" m_num))
+        ~body:[ src; Printf.sprintf "val(B,%s,A)" (str ba); recip_any ];
       (match v.ratio_attribute with
       | Some ratio ->
           (* the weighted tie-break (ch. 4.2/4.4): an empty weight is a
              real 0 + a §9.5 deposit, a negative one counts as 0
              silently; a tie group whose weights sum to 0 assigns 0 to
              every member (the recurrence's 0/0 case) *)
-          emit ctx "%shasw(X) :- val(X,%s,_)." p (str ratio);
-          emit ctx "%stw(B,X,W) :- %smrank(B,X,_), val(X,%s,W), W >= 0." p p (str ratio);
-          emit ctx "%stw(B,X,0) :- %smrank(B,X,_), val(X,%s,W), W < 0." p p (str ratio);
-          emit ctx "%stw(B,X,0) :- %smrank(B,X,_), not %shasw(X)." p p p;
+          emit_rule ctx ~head:(Printf.sprintf "%shasw(X)" p) ~body:[ Printf.sprintf "val(X,%s,_)" (str ratio) ];
+          emit_rule ctx ~head:(Printf.sprintf "%stw(B,X,W)" p)
+            ~body:[ Printf.sprintf "%smrank(B,X,_)" p; Printf.sprintf "val(X,%s,W)" (str ratio); "W >= 0" ];
+          emit_rule ctx ~head:(Printf.sprintf "%stw(B,X,0)" p)
+            ~body:[ Printf.sprintf "%smrank(B,X,_)" p; Printf.sprintf "val(X,%s,W)" (str ratio); "W < 0" ];
+          emit_rule ctx ~head:(Printf.sprintf "%stw(B,X,0)" p)
+            ~body:[ Printf.sprintf "%smrank(B,X,_)" p; Printf.sprintf "not %shasw(X)" p ];
           deposit ctx ~code:"EF-029" ~rule:(str name) ~subject:"X"
-            (Printf.sprintf "%smrank(B,X,_), %shas_pot(B), not %shasw(X)" p p p);
-          emit ctx
-            "%sgwsum(B,R,S) :- %spot(B,R,_), %smrank(B,_,R), S = #sum { W,X : %smrank(B,X,R), \
-             %stw(B,X,W) }."
-            p p p p p;
-          emit ctx
-            "%sraw(B,X,(P*W)/%s) :- %smrank(B,X,R), %spot(B,R,P), %stw(B,X,W), %sgwsum(B,R,S), \
-             S != 0."
-            p (divd "S" m_den) p p p p;
-          emit ctx "%sraw(B,X,0) :- %smrank(B,X,R), %spot(B,R,_), %sgwsum(B,R,0)." p p p p;
+            [ Printf.sprintf "%smrank(B,X,_)" p; Printf.sprintf "%shas_pot(B)" p; Printf.sprintf "not %shasw(X)" p ];
+          emit_rule ctx ~head:(Printf.sprintf "%sgwsum(B,R,S)" p)
+            ~body:
+              [ Printf.sprintf "%spot(B,R,_)" p;
+                Printf.sprintf "%smrank(B,_,R)" p;
+                Printf.sprintf "S = #sum { W,X : %smrank(B,X,R), %stw(B,X,W) }" p p ];
+          emit_rule ctx ~head:(Printf.sprintf "%sraw(B,X,(P*W)/%s)" p (divd "S" m_den))
+            ~body:
+              [ Printf.sprintf "%smrank(B,X,R)" p;
+                Printf.sprintf "%spot(B,R,P)" p;
+                Printf.sprintf "%stw(B,X,W)" p;
+                Printf.sprintf "%sgwsum(B,R,S)" p;
+                "S != 0" ];
+          emit_rule ctx ~head:(Printf.sprintf "%sraw(B,X,0)" p)
+            ~body:
+              [ Printf.sprintf "%smrank(B,X,R)" p;
+                Printf.sprintf "%spot(B,R,_)" p;
+                Printf.sprintf "%sgwsum(B,R,0)" p ];
           if exact then
-            emit ctx
-              "viol(\"%s\",X) :- %smrank(B,X,R), %spot(B,R,P), %stw(B,X,W), %sgwsum(B,R,S), \
-               S != 0, P*W > 0, (P*W) \\ %s != 0."
-              exact_viol p p p p (divd "S" m_den)
+            emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",X)" exact_viol)
+              ~body:
+                [ Printf.sprintf "%smrank(B,X,R)" p;
+                  Printf.sprintf "%spot(B,R,P)" p;
+                  Printf.sprintf "%stw(B,X,W)" p;
+                  Printf.sprintf "%sgwsum(B,R,S)" p;
+                  "S != 0";
+                  "P*W > 0";
+                  Printf.sprintf "(P*W) \\ %s != 0" (divd "S" m_den) ]
       | None ->
-          emit ctx
-            "%sgsize(B,R,N) :- %spot(B,R,_), %smrank(B,_,R), N = #count { X : %smrank(B,X,R) }."
-            p p p p;
-          emit ctx "%sraw(B,X,P/%s) :- %smrank(B,X,R), %spot(B,R,P), %sgsize(B,R,N)." p
-            (divd "N" m_den) p p p;
+          emit_rule ctx ~head:(Printf.sprintf "%sgsize(B,R,N)" p)
+            ~body:
+              [ Printf.sprintf "%spot(B,R,_)" p;
+                Printf.sprintf "%smrank(B,_,R)" p;
+                Printf.sprintf "N = #count { X : %smrank(B,X,R) }" p ];
+          emit_rule ctx ~head:(Printf.sprintf "%sraw(B,X,P/%s)" p (divd "N" m_den))
+            ~body:
+              [ Printf.sprintf "%smrank(B,X,R)" p;
+                Printf.sprintf "%spot(B,R,P)" p;
+                Printf.sprintf "%sgsize(B,R,N)" p ];
           if exact then
-            emit ctx
-              "viol(\"%s\",X) :- %smrank(B,X,R), %spot(B,R,P), %sgsize(B,R,N), P > 0, \
-               P \\ %s != 0."
-              exact_viol p p p (divd "N" m_den));
+            emit_rule ctx ~head:(Printf.sprintf "viol(\"%s\",X)" exact_viol)
+              ~body:
+                [ Printf.sprintf "%smrank(B,X,R)" p;
+                  Printf.sprintf "%spot(B,R,P)" p;
+                  Printf.sprintf "%sgsize(B,R,N)" p;
+                  "P > 0";
+                  Printf.sprintf "P \\ %s != 0" (divd "N" m_den) ]);
       (match v.maximum_attribute with
       | Some _ ->
           emit_cap_atoms ~raw_pat:(Printf.sprintf "%sraw(_,X,_)" p);
-          emit ctx "%ssh0(B,X,S) :- %sraw(B,X,S), %scapd(X,C), S <= C." p p p;
-          emit ctx "%ssh0(B,X,C) :- %sraw(B,X,S), %scapd(X,C), S > C." p p p;
-          emit ctx "%ssh0(B,X,S) :- %sraw(B,X,S), not %shas_cap(X)." p p p
-      | None -> emit ctx "%ssh0(B,X,S) :- %sraw(B,X,S)." p p);
+          emit_rule ctx ~head:(Printf.sprintf "%ssh0(B,X,S)" p)
+            ~body:[ Printf.sprintf "%sraw(B,X,S)" p; Printf.sprintf "%scapd(X,C)" p; "S <= C" ];
+          emit_rule ctx ~head:(Printf.sprintf "%ssh0(B,X,C)" p)
+            ~body:[ Printf.sprintf "%sraw(B,X,S)" p; Printf.sprintf "%scapd(X,C)" p; "S > C" ];
+          emit_rule ctx ~head:(Printf.sprintf "%ssh0(B,X,S)" p)
+            ~body:[ Printf.sprintf "%sraw(B,X,S)" p; Printf.sprintf "not %shas_cap(X)" p ]
+      | None -> emit_rule ctx ~head:(Printf.sprintf "%ssh0(B,X,S)" p) ~body:[ Printf.sprintf "%sraw(B,X,S)" p ]);
       (* the ordered-only max(0,·) clamps of ch. 4.2 *)
-      emit ctx "%sshare(B,X,S) :- %ssh0(B,X,S), S >= 0." p p;
-      emit ctx "%sshare(B,X,0) :- %ssh0(B,X,S), S < 0." p p;
-      emit ctx
-        "%sspent(B,R,T) :- %spot(B,R,_), T = #sum { %s,X : %smrank(B,X,R), %sshare(B,X,S) }."
-        p p (scaled "S" m_den) p p;
-      emit ctx
-        "%spot(B,R+1,P-T) :- %spot(B,R,P), %sspent(B,R,T), %sranks(B,N), R+1 < N, P-T >= 0."
-        p p p p;
-      emit ctx "%spot(B,R+1,0) :- %spot(B,R,P), %sspent(B,R,T), %sranks(B,N), R+1 < N, P-T < 0."
-        p p p p;
+      emit_rule ctx ~head:(Printf.sprintf "%sshare(B,X,S)" p) ~body:[ Printf.sprintf "%ssh0(B,X,S)" p; "S >= 0" ];
+      emit_rule ctx ~head:(Printf.sprintf "%sshare(B,X,0)" p) ~body:[ Printf.sprintf "%ssh0(B,X,S)" p; "S < 0" ];
+      emit_rule ctx ~head:(Printf.sprintf "%sspent(B,R,T)" p)
+        ~body:
+          [ Printf.sprintf "%spot(B,R,_)" p;
+            Printf.sprintf "T = #sum { %s,X : %smrank(B,X,R), %sshare(B,X,S) }" (scaled "S" m_den) p p ];
+      emit_rule ctx ~head:(Printf.sprintf "%spot(B,R+1,P-T)" p)
+        ~body:
+          [ Printf.sprintf "%spot(B,R,P)" p;
+            Printf.sprintf "%sspent(B,R,T)" p;
+            Printf.sprintf "%sranks(B,N)" p;
+            "R+1 < N";
+            "P-T >= 0" ];
+      emit_rule ctx ~head:(Printf.sprintf "%spot(B,R+1,0)" p)
+        ~body:
+          [ Printf.sprintf "%spot(B,R,P)" p;
+            Printf.sprintf "%sspent(B,R,T)" p;
+            Printf.sprintf "%sranks(B,N)" p;
+            "R+1 < N";
+            "P-T < 0" ];
       emit_write (Printf.sprintf "%sshare(B,X,S)" p);
       emit_rest ~guard:recip_any
         ~sum:(Printf.sprintf "S,X : %sshare(B,X,S)" p)
@@ -14293,7 +14561,7 @@ let translate_consistency ctx i (c : resolved_consistency) =
   let atoms = cond_atoms ctx ~subject:"S" ~subject_ot (req "ConsistencyVersion.assertion" c.assertion) in
   head_body ctx ok (Printf.sprintf "isa(S,%s)" (str subject_ot) :: atoms);
   deposit ctx ~code:"EF-025" ~rule:(str name) ~subject:"S"
-    (Printf.sprintf "isa(S,%s), not cons%d_ok(S)" (str subject_ot) i)
+    [ Printf.sprintf "isa(S,%s)" (str subject_ot); Printf.sprintf "not cons%d_ok(S)" i ]
 
 (* ch. 5.9 ever-uniqueness, shared by BOTH uniqueness forms
    (compositionality: the same key, the same reading, either form).
@@ -14307,7 +14575,8 @@ let uni_key_guards ctx ~otype ~keys =
      instances faults nowhere (EF-024), and with that fault the key form of no
      instance is asked (EF-020) *)
   if List.length temporal > 1 then
-    emit ctx "viol(%s,S) :- isa(S,%s)." (quote two_temporal_keys_reason) (str otype)
+    emit_rule ctx ~head:(Printf.sprintf "viol(%s,S)" (quote two_temporal_keys_reason))
+      ~body:[ Printf.sprintf "isa(S,%s)" (str otype) ]
   else
     List.iter
       (fun k ->
@@ -14360,8 +14629,8 @@ let translate_uniqueness ctx (u : resolved_uniqueness) =
           Printf.sprintf "role(S2,%s,P)" role ]
   in
   deposit ctx ~code:"EF-026" ~rule:(str name) ~subject:"S1"
-    (Printf.sprintf "isa(S1,%s), isa(S2,%s), S1 != S2, %s" (str subject_ot) (str subject_ot)
-       (String.concat ", " (joins "S1" @ joins "S2" @ scope_atoms)))
+    ([ Printf.sprintf "isa(S1,%s)" (str subject_ot); Printf.sprintf "isa(S2,%s)" (str subject_ot); "S1 != S2" ]
+    @ joins "S1" @ joins "S2" @ scope_atoms)
 
 (* the scale of a key of a uniqueness union: the declared decimals of a number,
    a percentage and a day date, which the union harmonises across its sources;
@@ -14433,19 +14702,15 @@ let translate_uniqueness_union ctx i (u : resolved_uniqueness_union) =
         (fun pos k ->
           let m = factor pos k in
           if m > 1 then
-            emit ctx
-              "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S) :- \
-               %s, |K%d| > %d."
-              (String.concat ", " body)
-              pos (max_int31 / m))
+            emit_rule ctx ~head:"viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S)"
+              ~body:(body @ [ Printf.sprintf "|K%d| > %d" pos (max_int31 / m) ]))
         b.uub_keys;
-      emit ctx "%s(S,%d,%s) :- %s." pred j (String.concat "," head_args)
-        (String.concat ", " body))
+      emit_rule ctx ~head:(Printf.sprintf "%s(S,%d,%s)" pred j (String.concat "," head_args)) ~body:(body))
     u.source_list;
   let vars = List.init arity (fun p -> Printf.sprintf "V%d" p) in
   deposit ctx ~code:"EF-026" ~rule:(str name) ~subject:"S"
-    (Printf.sprintf "%s(S,_,%s), 2 <= #count { O,J : %s(O,J,%s) }" pred (String.concat "," vars) pred
-       (String.concat "," vars))
+    [ Printf.sprintf "%s(S,_,%s)" pred (String.concat "," vars);
+      Printf.sprintf "2 <= #count { O,J : %s(O,J,%s) }" pred (String.concat "," vars) ]
 
 (* reify a list VALUE as the indexed facts the fold family reads (S15):
    [lpres(L)] marks the list present (so a present-but-empty list still fires
@@ -14671,13 +14936,16 @@ let writer_conflicts ctx =
             if i < j && List.memq rj comps then begin
               let lower = if Ir_v0.Checks.subtype_of ctx.doc ~sub:otj ~super:oti then otj else oti in
               let name (r : resolved_rule) = "\"" ^ Option.value r.rr_name ~default:"<naamloos>" ^ "\"" in
-              emit ctx "viol(%s,S) :- wval(S,%s,X,%d), wval(S,%s,Y,%d), X != Y."
-                (quote
+              emit_rule ctx
+                ~head:(Printf.sprintf "viol(%s,S)" (quote
                    (Printf.sprintf
                       "two writers of one target disagree: rules %s and %s write different values to the \
                        attribute %s of a %s — no fixpoint, divergence is a fault (ch. 5.7)"
-                      (name ri) (name rj) a lower))
-                (str a) i (str a) j
+                      (name ri) (name rj) a lower)))
+                ~body:
+                  [ Printf.sprintf "wval(S,%s,X,%d)" (str a) i;
+                    Printf.sprintf "wval(S,%s,Y,%d)" (str a) j;
+                    "X != Y" ]
             end)
           writers;
         (* an allocation that writes the target is a writer of the same rank
@@ -14686,15 +14954,18 @@ let writer_conflicts ctx =
         List.iteri
           (fun k (v : resolved_allocation) ->
             if allocation_writes ctx ~ot:oti ~a v then
-              emit ctx "viol(%s,S) :- wval(S,%s,X,%d), wval(S,%s,Y,vd%d), X != Y."
-                (quote
+              emit_rule ctx
+                ~head:(Printf.sprintf "viol(%s,S)" (quote
                    (Printf.sprintf
                       "two writers of one target disagree: rule \"%s\" and allocation \"%s\" write different \
                        values to the attribute %s of a %s — no fixpoint, divergence is a fault (ch. 5.7)"
                       (Option.value ri.rr_name ~default:"<naamloos>")
                       (Option.value v.vd_name ~default:"<naamloos>")
-                      a oti))
-                (str a) i (str a) k)
+                      a oti)))
+                ~body:
+                  [ Printf.sprintf "wval(S,%s,X,%d)" (str a) i;
+                    Printf.sprintf "wval(S,%s,Y,vd%d)" (str a) k;
+                    "X != Y" ])
           ctx.doc.allocations)
       writers
   end
@@ -15259,7 +15530,8 @@ let payload_projections ctx =
                   List.iter
                     (function
                       | c, Some _ ->
-                          emit ctx "val(O,%s,P) :- val(O,%s,%s(P))." (str (payload_member m c)) (str m) (ctor_functor c)
+                          emit_rule ctx ~head:(Printf.sprintf "val(O,%s,P)" (str (payload_member m c)))
+                            ~body:[ Printf.sprintf "val(O,%s,%s(P))" (str m) (ctor_functor c) ]
                       | _, None -> ())
                     constructor_list)
                 (members ot a)
@@ -15405,7 +15677,7 @@ let translate (doc : document) (case : Case.t) : string =
      rule. The edge's name is the list entry's key, the one name an M1
      object type has; the node's [ot_ident] only copies it, and a [None]
      there must not drop the edge. *)
-  emit ctx "isa(X,T) :- is_a(X,T).";
+  emit_rule ctx ~head:"isa(X,T)" ~body:[ "is_a(X,T)" ];
   List.iter
     (fun (n, (ot : object_type)) ->
       match ot.ot_supertype with
@@ -15413,7 +15685,7 @@ let translate (doc : document) (case : Case.t) : string =
       | None -> ())
     doc.object_types;
   if List.exists (fun (_, (ot : object_type)) -> ot.ot_supertype <> None) doc.object_types then
-    emit ctx "isa(X,S) :- isa(X,S0), isa_sub(S0,S).";
+    emit_rule ctx ~head:"isa(X,S)" ~body:[ "isa(X,S0)"; "isa_sub(S0,S)" ];
   if has_recursive_creation doc then begin
     (* ch. 5.5's creation budget, grounded per stratum
        ([translate_object_creation]): a mint at depth 101 in its stratum
@@ -15422,16 +15694,16 @@ let translate (doc : document) (case : Case.t) : string =
        stratum of a creation. hasdepth/2 serves the clamp each creation
        carries. *)
     emit ctx "#const oc_budget = 100. #defined depth/3.";
-    emit ctx "viol(\"creation budget exhausted\",X) :- depth(X,_,D), D > oc_budget.";
-    emit ctx "hasdepth(X,K) :- depth(X,K,_).";
+    emit_rule ctx ~head:"viol(\"creation budget exhausted\",X)" ~body:[ "depth(X,_,D)"; "D > oc_budget" ];
+    emit_rule ctx ~head:"hasdepth(X,K)" ~body:[ "depth(X,K,_)" ];
     List.iter (fun k -> emit ctx "ocstratum(%d)." k) (oc_strata_of ctx);
-    emit ctx "depth(X,K,0) :- depth(X,K0,D), D > 0, ocstratum(K), K > K0."
+    emit_rule ctx ~head:"depth(X,K,0)" ~body:[ "depth(X,K0,D)"; "D > 0"; "ocstratum(K)"; "K > K0" ]
   end;
   (* the fail-fast guards derive viol/2 witnesses; this single global
      integrity constraint turns any witness into UNSAT — the runner's
      UNSAT diagnosis re-runs without exactly this line to report which
      guard fired *)
-  emit ctx ":- viol(_,_).";
+  emit_rule ctx ~head:"" ~body:[ "viol(_,_)" ];
   (* the fence of the form anchor ([unkeyed_form_read]) holds each form to the
      form subjects of its own anchored nodes: a form without one names its
      subject's variable, or an aggregate's local one, wherever it likes. The
