@@ -1407,8 +1407,8 @@ public final class TmsTranspiler {
         out.add(as(RuleOrigin.Role.OWN, reads.rulePlan(ruleName, items,
                 new Consequence.Characteristic(SUBJECT, key, Consequence.Insertion.LOGICAL))));
         if (noted != null && testTerm != null)
-            readingRule(ruleName, positions.versionOf(r), reads, reads.readingPlan(List.of(), false), testTerm, null,
-                    r.condition(), null, noted, r.validity(), false);
+            conditionReadingRule(ruleName, positions.versionOf(r), reads, reads.readingPlan(List.of(), false),
+                    testTerm, r.condition(), noted, r.validity(), false);
         out.addAll(conditionSideRules(canFail, ruleName, fresh, r.condition(), r.name(), null, r.name(), null, null));
         return out;
     }
@@ -1478,7 +1478,7 @@ public final class TmsTranspiler {
         out.add(as(RuleOrigin.Role.OWN, reads.rulePlan(ruleName, items, consequence)));
         if (noted != null)
             readingRule(ruleName, positions.versionOf(r), reads, reads.readingPlan(List.of(), false), null, null,
-                    periods, value, r.condition(), null, noted, r.validity(), false);
+                    periods, value, r.condition(), null, noted, r.validity(), false, null, null);
         return out;
     }
 
@@ -2603,7 +2603,7 @@ public final class TmsTranspiler {
             List<LhsItem> readingItems = reads.readingPlan(List.of(), false);
             readingItems.addAll(blockadeItems);
             readingRule(ruleName, positions.versionOf(r), reads, readingItems, null, testTerm, periods, value,
-                    r.condition(), r.value(), noted, r.validity(), blockade != null);
+                    r.condition(), r.value(), noted, r.validity(), blockade != null, null, null);
         }
         if (perPeriod) return out;
         out.addAll(conditionSideRules(canFail, ruleName, fresh, r.condition(), name, blockade, name, blockade, null));
@@ -2787,8 +2787,8 @@ public final class TmsTranspiler {
                 new Consequence.Inconsistency(SUBJECT, name, List.of("EF-025"), Consequence.Insertion.LOGICAL))));
         // the reading is of the assertion, which the rule's test negates
         if (noted != null)
-            readingRule(model.emittedRuleName(name), positions.versionOf(c), reads, reads.readingPlan(List.of(), false),
-                    holds, null, c.assertion(), null, noted, c.validity(), false);
+            conditionReadingRule(model.emittedRuleName(name), positions.versionOf(c), reads,
+                    reads.readingPlan(List.of(), false), holds, c.assertion(), noted, c.validity(), false);
         out.addAll(conditionSideRules(canFail, model.emittedRuleName(name), fresh, c.assertion(), name, null, name,
                 null, c.validity()));
         return out;
@@ -3225,8 +3225,8 @@ public final class TmsTranspiler {
                 name, ceiling(share.datatype()), rest == null ? null : ceiling(rest.datatype()),
                 new Consequence.FaultName(name, ruleName), Consequence.Insertion.LOGICAL))));
         if (noted != null && testTerm != null)
-            readingRule(ruleName, positions.versionOf(v), reads, reads.readingPlan(List.of(), false), testTerm, null,
-                    v.condition(), null, noted, v.validity(), false);
+            conditionReadingRule(ruleName, positions.versionOf(v), reads, reads.readingPlan(List.of(), false),
+                    testTerm, v.condition(), noted, v.validity(), false);
         derived.put(shareKey, share);
         if (rest != null) derived.put(restKey, rest);
         out.addAll(conditionSideRules(canFail, ruleName, fresh, v.condition(), name, null, name, null, v.validity()));
@@ -3456,8 +3456,8 @@ public final class TmsTranspiler {
         // and its own fault, which keep it from making twice; the guard of the 1:1 shape stays, under which a subject
         // linked in the input is not the creation's to make for (RUNTIME-SEMANTICS ch. 5.5)
         if (noted != null && testTerm != null)
-            readingRule(ruleName, positions.versionOf(oc), reads, reads.readingPlan(List.of(), true), testTerm, null,
-                    oc.condition(), null, noted, oc.validity(), k.oneToOne());
+            conditionReadingRule(ruleName, positions.versionOf(oc), reads, reads.readingPlan(List.of(), true),
+                    testTerm, oc.condition(), noted, oc.validity(), k.oneToOne());
         out.addAll(conditionSideRules(canFail, ruleName, newReads, oc.condition(), name, null, name, null,
                 oc.validity()));
         return out;
@@ -3629,8 +3629,8 @@ public final class TmsTranspiler {
         // the guard on the anchor at the end world, in the main group, without the creation's phase and the path to
         // its targets, so one reading per anchor
         if (noted != null && testTerm != null)
-            readingRule(ruleName, positions.versionOf(fc), reads, reads.readingPlan(List.of(), true), testTerm, null,
-                    anchorGuard, null, noted, fc.validity(), false);
+            conditionReadingRule(ruleName, positions.versionOf(fc), reads, reads.readingPlan(List.of(), true),
+                    testTerm, anchorGuard, noted, fc.validity(), false);
         out.addAll(conditionSideRules(canFail, ruleName, fresh, anchorGuard, fc.name(), null, fc.name(), null,
                 fc.validity()));
         return out;
@@ -4330,7 +4330,7 @@ public final class TmsTranspiler {
             readingRule(ruleName, pointerOf(d), reads, reads.readingPlan(control, false),
                     control.isEmpty() ? null : reads.readingPlan(List.of(), false), unconditional ? null : testTerm,
                     null, value, unconditional ? null : d.condition(), b.characteristic ? null : d.consequence(), noted,
-                    k.validity(), !control.isEmpty() || d.initialisation());
+                    k.validity(), !control.isEmpty() || d.initialisation(), null, null);
         out.addAll(conditionSideRules(canFail, ruleName, fresh, d.condition(), name, l -> guard.get(), b.targetForm,
                 l -> {
                     List<LhsItem> decided = new ArrayList<>(guard.get());
@@ -4718,31 +4718,15 @@ public final class TmsTranspiler {
      * numbers the nodes of its value from 0. A node without a term below the node of a fold over a set is evaluated per
      * member of the fold; any other node without one is a place of the analysis that does not note its node, a fault
      * of this class, refused loudly.
+     *
+     * <p>Beside it, where {@code speculativeItems} is not null, the speculative reading rule of a default
+     * ({@link Reading.Kind#SPECULATIVE}): the left-hand side of the reading rule with {@code speculativeItems}, those
+     * items without the control facts of the default's stack, after the subject pattern. Where {@code periods} is not
+     * null, the term of the periods of a condition read per period ({@link #periodCondition}), which the form's value
+     * reads and which gates nothing, stands in place of {@code condition}. {@code turn} is the term of the days of the
+     * turn of a default of a stack on a timeline target, and {@code inputDays} the term of the days an initialisation
+     * on a timeline target is left to decide ({@link ReadingRule}); both null for every other form.
      */
-    private void readingRule(String ruleName, String pointer, Reads reads, List<LhsItem> items, Term condition,
-                             Term value, Condition irCondition, Expr irValue, Noted noted, Validity validity,
-                             boolean guarded) {
-        readingRule(ruleName, pointer, reads, items, null, condition, null, value, irCondition, irValue, noted, validity,
-                guarded);
-    }
-
-    /** As {@link #readingRule(String, String, Reads, List, Term, Term, Condition, Expr, Noted, Validity, boolean)},
-     *  with beside it, where {@code speculativeItems} is not null, the speculative reading rule of a default
-     *  ({@link Reading.Kind#SPECULATIVE}): the left-hand side of the reading rule with {@code speculativeItems}, those
-     *  items without the control facts of the default's stack, after the subject pattern; and where {@code periods} is
-     *  not null, the term of the periods of a condition read per period ({@link #periodCondition}), which the form's
-     *  value reads and which gates nothing, in place of {@code condition}. */
-    private void readingRule(String ruleName, String pointer, Reads reads, List<LhsItem> items,
-                             List<LhsItem> speculativeItems, Term condition, Term periods, Term value,
-                             Condition irCondition, Expr irValue, Noted noted, Validity validity, boolean guarded) {
-        readingRule(ruleName, pointer, reads, items, speculativeItems, condition, periods, value, irCondition, irValue,
-                noted, validity, guarded, null, null);
-    }
-
-    /** As {@link #readingRule(String, String, Reads, List, List, Term, Term, Term, Condition, Expr, Noted, Validity,
-     *  boolean)}, for a default of a stack on a timeline target: {@code turn} the term of the days of its turn, and
-     *  {@code inputDays} of the days on which the input leaves its target empty, null but for its initialisation
-     *  default ({@link ReadingRule}). */
     private void readingRule(String ruleName, String pointer, Reads reads, List<LhsItem> items,
                              List<LhsItem> speculativeItems, Term condition, Term periods, Term value,
                              Condition irCondition, Expr irValue, Noted noted, Validity validity, boolean guarded,
@@ -4790,6 +4774,15 @@ public final class TmsTranspiler {
         }
         readingRules.add(new ReadingRule(plan, speculative, ruleName, pointer, validity, guarded, condition, periods, value,
                 sites, turn, inputDays));
+    }
+
+    /** The reading rule ({@link #readingRule}) of a form whose reading is its condition alone: {@code condition} the
+     *  term of the rule's test and {@code irCondition} the condition whose nodes it numbers; no value, no speculative
+     *  reading, no periods, no days. */
+    private void conditionReadingRule(String ruleName, String pointer, Reads reads, List<LhsItem> items, Term condition,
+                                      Condition irCondition, Noted noted, Validity validity, boolean guarded) {
+        readingRule(ruleName, pointer, reads, items, null, condition, null, null, irCondition, null, noted, validity,
+                guarded, null, null);
     }
 
     /** The variables the top level of {@code lhs} declares, which a consequence can name: the variable of each pattern
