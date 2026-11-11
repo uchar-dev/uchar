@@ -1,6 +1,5 @@
 package dev.uchar.regelspraak.graph;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.transpiler.core.Namen;
@@ -33,12 +32,11 @@ public final class GraphProjection {
     private GraphProjection() {}
 
     public static void main(String[] args) throws Exception {
-        ObjectMapper json = new ObjectMapper();
         for (String path : args) {
             System.out.println("document\t" + path);
             IrLoader.Loaded loaded;
             try {
-                loaded = IrLoader.loadAll(json.readTree(Files.readString(Path.of(path))));
+                loaded = IrLoader.loadAll(IrLoader.read(Files.readString(Path.of(path))));
             } catch (IrLoader.Refusal e) {
                 System.out.println("weigering\t" + e.getMessage().replace('\n', ' '));
                 continue;

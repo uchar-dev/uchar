@@ -1,6 +1,12 @@
 package dev.uchar.regelspraak.loader;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.StreamReadFeature;
+import com.fasterxml.jackson.core.exc.StreamReadException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import dev.uchar.regelspraak.ir.Source;
 import dev.uchar.regelspraak.refusal.DroolsCode;
@@ -289,6 +295,26 @@ public final class IrLoader {
      *  a build with readings reads it, which numbers the nodes of a form by it ({@code TmsTranspiler#withReadings}), and
      *  {@code TmsTranspiler#originOf} names the fold of a rule of a fold by it, in every build. */
     public record Positioned(Loaded loaded, NodePositions positions) {}
+
+    /** The reader of a document's text: a key twice in one object is a load error, since a reader that kept the first
+     *  value and one that kept the last would load two documents from one text. */
+    private static final ObjectMapper READER = JsonMapper.builder()
+            .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION).build();
+
+    /** The tree of the {@code uchar-ir-v1} document {@code text}. A key that stands twice in one object is a
+     *  {@link DocumentError} at the pointer of that key; text that is no JSON throws as the JSON reader does. */
+    public static JsonNode read(String text) throws JsonProcessingException {
+        try {
+            return READER.readTree(text);
+        } catch (StreamReadException e) {
+            String message = e.getOriginalMessage();
+            if (message == null || !message.startsWith("Duplicate field '") || !(e.getProcessor() instanceof JsonParser p))
+                throw e;
+            String key = message.substring("Duplicate field '".length(), message.lastIndexOf('\''));
+            throw new DocumentError(p.getParsingContext().pathAsPointer().toString(),
+                    "the key '" + key + "' stands twice in one object");
+        }
+    }
 
     /** Parse a {@code uchar-ir-v1} tree into a resolved model, or throw {@link Refusal} for a form
      *  the v0 backend does not carry. What rides beside the model — the prioritized-defaults extension and every

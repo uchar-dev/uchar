@@ -3,7 +3,6 @@ package dev.uchar.regelspraak.cases;
 import com.fasterxml.jackson.databind.JsonNode;
 import dev.uchar.regelspraak.message.Msg;
 import dev.uchar.regelspraak.refusal.DroolsCode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.uchar.regelspraak.cases.CaseRunner.Excluded;
 import dev.uchar.regelspraak.engine.BeanCompiler;
@@ -113,8 +112,6 @@ import java.util.function.Predicate;
  */
 public final class DroolsBackend {
 
-    private static final ObjectMapper JSON = new ObjectMapper();
-
     private DroolsBackend() {}
 
     /** Which rendering of the analysis ({@code TmsTranspiler}) the build compiles. Both derive with truth maintenance,
@@ -157,12 +154,12 @@ public final class DroolsBackend {
 
     /** {@link #build(JsonNode, Branch)} on the document read from {@code irPath}. */
     public static Build build(Path irPath, Branch branch) throws IOException {
-        return build(JSON.readTree(Files.readString(irPath)), branch);
+        return build(IrLoader.read(Files.readString(irPath)), branch);
     }
 
     /** {@link #build(JsonNode, Branch, boolean)} on the document read from {@code irPath}. */
     public static Build build(Path irPath, Branch branch, boolean readings) throws IOException {
-        return build(JSON.readTree(Files.readString(irPath)), branch, readings);
+        return build(IrLoader.read(Files.readString(irPath)), branch, readings);
     }
 
     /** Load {@code document}, refuse the forms the backend does not carry, generate and contract-check the fact
