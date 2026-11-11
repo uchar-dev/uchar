@@ -615,6 +615,7 @@ ever-unique-two-temporal-keys|EXCLUDE DROOLS-127 measured 2026-10-10 (card tms-o
 vintage-uncovered-date|EXCLUDE DROOLS-023 the v0 loader refuses the TemporalRead expression node (the vintage read) — the temporal-read form is not carried
 point-read-parameter-unbound|EXCLUDE DROOLS-023 measured 2026-11-11: the loader refuses the TemporalRead expression node (the point read of the parameter), "loader: form not carried by the v0 Drools backend: Expr:TemporalRead", so the unbound parameter is never reached; gate 12 lists the green twin anchor/jutterswet-aanmeldquotum with the same code
 jutterswet-penningvintage-zonder-rekendatum|EXCLUDE DROOLS-023 the v0 loader refuses the TemporalRead expression node (the vintage read) before the session start, so the missing evaluation date (EF-011 in ref and clingo) is never reached
+jutterswet-penningvintage-zonder-tijdlijn|EXCLUDE DROOLS-023 the v0 loader refuses the TemporalRead expression node (the vintage read) before the session start, so the parameter without a timeline (EF-014 in ref and clingo) is never reached
 EOF
         # the fence on codes: neither this list nor gate 12's EXPECTED_CHANNEL names a DROOLS code of the kind FALLBACK
         # (the bottom arm of a dispatch), as a code a witness rests on; read from the register itself, in the one form
