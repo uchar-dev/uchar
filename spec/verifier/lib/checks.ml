@@ -2297,7 +2297,7 @@ let wf022 ctx =
       | Some _ ->
           [ v "WF-022.target-not-attribute" (at ^ "/target")
               "rule target is neither an attribute reference nor a cell over one" ]
-      | None -> [ v "WF-022.rule-without-target" (at ^ "/target") "rule without a target" ])
+      | None -> assert false (* the loader refuses a version without a target *))
     ctx.doc.resolved_rules
 
 let wf025 ctx =
@@ -2812,14 +2812,12 @@ let wf029 ctx =
   List.concat_map
     (fun (r : resolved_consistency) ->
       let at = r.cons_pointer in
-      (match r.cons_subject with
-       | None -> [ v "WF-029.no-subject-type" at "consistency without a subject type" ]
-       | Some s when object_type ctx s = None ->
-           [ v ~params:[("objectType", s)] "WF-029.undeclared-subject-type" at ("subject type '" ^ s ^ "' is not declared") ]
-       | Some _ -> [])
-      @ match r.assertion with
-        | None -> [ v "WF-029.no-assertion" at "consistency without an assertion" ]
-        | Some _ -> [])
+      (* the assertion needs no check here: the loader refuses a version without one *)
+      match r.cons_subject with
+      | None -> [ v "WF-029.no-subject-type" at "consistency without a subject type" ]
+      | Some s when object_type ctx s = None ->
+          [ v ~params:[("objectType", s)] "WF-029.undeclared-subject-type" at ("subject type '" ^ s ^ "' is not declared") ]
+      | Some _ -> [])
     ctx.doc.consistencies
 
 let datatype_kind = function
