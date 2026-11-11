@@ -1202,12 +1202,6 @@ final class DrlRendering {
             return name + "(" + c.pass() + ")";
         }
 
-        /**
-         * A {@code Let} by need (RUNTIME-SEMANTICS ch. 10.6): a function per {@code Let}, which makes the cell of its
-         * binder and evaluates its body, and a function per binder, which evaluates the value in the enclosing scope
-         * at the first read and serves that result to every further read. A leeg value raises the barrier of that cell,
-         * which the {@code Let}'s own function catches as leeg; a barrier of an enclosing {@code Let} passes on.
-         */
         /** A division whose divisor can fault, deposit or end a {@code Let}, as a function that evaluates the
          *  dividend first and the divisor only where the dividend is filled: a leeg dividend gives the quotient before
          *  the divisor is read (RUNTIME-SEMANTICS ch. 1.4 point 4). Java evaluates every argument of a call, so a
@@ -1225,6 +1219,12 @@ final class DrlRendering {
             return new Expr(name + "(" + c.pass() + ")", Object.class);
         }
 
+        /**
+         * A {@code Let} by need (RUNTIME-SEMANTICS ch. 10.6): a function per {@code Let}, which makes the cell of its
+         * binder and evaluates its body, and a function per binder, which evaluates the value in the enclosing scope
+         * at the first read and serves that result to every further read. A leeg value raises the barrier of that cell,
+         * which the {@code Let}'s own function catches as leeg; a barrier of an enclosing {@code Let} passes on.
+         */
         private String let(Term.Let l, Context c) {
             int place = reserveer();
             String name = name("let", place);
