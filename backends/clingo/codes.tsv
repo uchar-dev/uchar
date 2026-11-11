@@ -45,3 +45,4 @@ CLINGO-043	refusal	rounded-square-root		expr_term
 CLINGO-044	refusal	creation-cycle-without-recursive-group	creation	refuse_unbounded_creation_cycle
 CLINGO-045	limit	allocation-unit-restatement-not-carried	allocation	translate_allocation
 CLINGO-046	refusal	exact-digits-no-string-functions		cond_atoms_raw
+CLINGO-047	refusal	inconsistency-channel-read		cond_atoms_raw

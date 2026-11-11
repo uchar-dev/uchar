@@ -1,0 +1,53 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ChannelState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+
+// regelversie controle saldo is inconsistent
+function boolean toets_verscherptToezicht(Object $controleSaldoInconsistent) {
+    return ComputeHelpers.channel($controleSaldoInconsistent);
+}
+
+rule "verscherpt toezicht"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Dossier()
+    $kanaal_0 : ChannelState( rule == "controle saldo", $controleSaldoInconsistent : inconsistent )
+    eval( toets_verscherptToezicht($controleSaldoInconsistent) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("dossier", "verscherpt", true)));
+end
+
+// Het saldo van een Jutter moet groter of gelijk zijn aan 0
+function boolean toets_controleSaldo(Object $saldo) {
+    return ComputeHelpers.not(RegelSpraakRuntime.rsAggVergelijk($saldo, new java.math.BigDecimal("0"), ">="));
+}
+
+rule "controle saldo"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $saldo : saldo )
+    eval( toets_controleSaldo($saldo) )
+then
+    insertLogical(ComputeHelpers.inconsistency("controle saldo", $onderwerp, ComputeHelpers.list1("EF-025")));
+end
+
+rule "kanaalstand controle saldo: inconsistent"
+    dialect "mvel"
+when
+    exists( $inconsistentie : dev.uchar.regelspraak.facts.Inconsistentie( rule == "controle saldo" ) )
+then
+    insertLogical(new ChannelState("controle saldo", true));
+end
+
+rule "kanaalstand controle saldo: consistent"
+    dialect "mvel"
+when
+    not( $inconsistentie : dev.uchar.regelspraak.facts.Inconsistentie( rule == "controle saldo" ) )
+then
+    insertLogical(new ChannelState("controle saldo", false));
+end
+

@@ -1,0 +1,3 @@
+WF-031.condition-reads-state
+kind=rule-version state
+name=controle saldo

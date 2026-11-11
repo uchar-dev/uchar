@@ -1,0 +1,14 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het saldo Numeriek (getal met 2 decimalen);
+
+Objecttype het Dossier (mv: Dossiers)
+    is verscherpt kenmerk (bijvoeglijk);
+
+Regel controle saldo
+    geldig altijd
+        Het saldo van een Jutter moet groter of gelijk zijn aan 0.
+
+Regel verscherpt toezicht
+    geldig altijd
+        Een Dossier is verscherpt
+        indien regelversie controle saldo is inconsistent.

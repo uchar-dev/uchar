@@ -1621,7 +1621,9 @@ EXPECTED_CHANNEL=(
 # 374 with jutterswet-registratienummer: the exact-digit test, "numeriek met exact 9 cijfers", true on nine digits with
 # leading zeros and false on eight, ten, a letter, a sign, a space and a leeg value, the negation complementing it
 # (PLAYED 8).
-EXPECTED_PLAYED=374
+# 375 with jutterswet-saldotoezicht: "regelversie controle saldo is inconsistent" reads the inconsistency channel, one
+# fact (controle saldo x J1) flags every Dossier, and without a fact none (RUNTIME-SEMANTICS ch. 5.6; PLAYED 2).
+EXPECTED_PLAYED=375
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

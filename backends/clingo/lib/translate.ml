@@ -9954,6 +9954,12 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       faultc "CLINGO-046"
         "exactDigits is not translated: the test reads the characters of a text, and this encoding has \
          no string functions"
+  | Rule_status_check _ ->
+      (* "regelversie X is inconsistent" (RUNTIME-SEMANTICS ch. 5.6) reads the
+         inconsistency channel inside the fixpoint; this encoding has no
+         translation of that read, so it refuses the form by name *)
+      faultc "CLINGO-047"
+        "a read of the inconsistency channel ('regelversie X is inconsistent') is not translated"
   | _ -> faultc "CLINGO-011" "condition kind not translated (no corpus case exercises it)"
 
 (* the ground term of a Construct (ch. 9.1): a Literal payload scaled to the

@@ -1,0 +1,62 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "saldo": {
+            "number": "-5.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "saldo": {
+            "number": "10.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "D1",
+        "objectType": "Dossier",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "D2",
+        "objectType": "Dossier",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "inconsistent",
+      "rule": "controle saldo",
+      "label": "J1"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "D1",
+      "characteristic": "verscherpt"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "D2",
+      "characteristic": "verscherpt"
+    }
+  ]
+}
