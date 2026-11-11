@@ -10356,8 +10356,8 @@ that quotation follows the copy.
 What is core beside these fields, named because the source language spells
 it: the rule kind in its three states (ch. 3.1), the membership of a
 creation form in a recursive rule group (ch. 3.9), the cell forms of ch. 3
-and ch. 4 (ch. 2.7), the date builtins (ch. 4.3), the `dayKind` predicate
-(ch. 4.5), `dividedByAbs` (ch. 4.2), `filledCount` (ch. 4.3) and the
+and ch. 4 (ch. 2.7), the date builtins (ch. 4.3), the `dayKind` and
+`exactDigits` predicates (ch. 4.5), `dividedByAbs` (ch. 4.2), `filledCount` (ch. 4.3) and the
 whole-period qualifier (ch. 4.5).
 
 ---
