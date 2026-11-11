@@ -10318,9 +10318,9 @@ it. Every other node, field and value of this document is core. A
 presentation field can still be bound by a well-formedness rule — the
 verifier holds a designation to WF-116 to WF-120, an origin to WF-121, the
 percentage tag to WF-007, a group's members to WF-033, a rule's statute
-annotations to WF-082 and the diagnostics to WF-113 — because a field
-a consumer shows has to be well-formed for that consumer; what such a rule
-never decides is an executor's outcome.
+annotations to WF-082, and the diagnostics and the snippet of an `Unresolved`
+to WF-113 — because a field a consumer shows has to be well-formed for that
+consumer; what such a rule never decides is an executor's outcome.
 
 Each field has one of two tests, and gate 13
 (`scripts/check-reftype-derivation.sh`) runs it on every golden with case
@@ -10344,11 +10344,14 @@ the changed copy and must give the outcome of the untouched document.
 | the value of `RuleVersion.presentation` (`equation`, `calculation`) | ch. 3.1 | optional; its presence is core (the rule kind) | exchange: `equation` and `calculation` swapped |
 | `Rule.statuteAnnotations` | ch. 3.1 | optional | strip |
 | a `RuleGroup` with `recursive` false | ch. 3.9 | the list `rules.ruleGroups` required, may be empty | strip the node from the list |
+| the source reference `source` | ch. 4 | optional on every node that carries it, required on an `Unresolved` (ch. 4.4) | strip; on an `Unresolved` exchange: the snippet loses its last character, which stays inside every diagnostic that accounted for the marker (WF-113 (b)) |
 | `Default.name` and `Default.statuteAnnotations` | ch. 6.1 | optional | strip |
 
 The three side tables of ch. 2.12, ch. 2.13 and ch. 6.1 have their own legs
 in gate 13 (VOCABULARY, ORIGIN, NAME); the other fields are changed together
-in one copy per golden, so that each golden replays once.
+in one copy per golden, so that each golden replays once. A refusal
+sentence that quotes the snippet of a node gives the same outcome when only
+that quotation follows the copy.
 
 What is core beside these fields, named because the source language spells
 it: the rule kind in its three states (ch. 3.1), the membership of a
@@ -10356,18 +10359,6 @@ creation form in a recursive rule group (ch. 3.9), the cell forms of ch. 3
 and ch. 4 (ch. 2.7), the date builtins (ch. 4.3), the `dayKind` predicate
 (ch. 4.5), `dividedByAbs` (ch. 4.2), `filledCount` (ch. 4.3) and the
 whole-period qualifier (ch. 4.5).
-
-**OPEN:** the source reference (ch. 4) is presentation as well, but no leg
-of gate 13 removes it yet, for two measured reasons. clingo tells a
-defaults group that the ch. 7.7 desugaring made from the groups on the wire
-by the group's snippet: a group on the wire whose snippet is
-`ch. 7.7 v0 desugaring` is read as a desugared one, and on
-`jutterswet-deling-in-afwijking` and `-omgekeerd` that changes the outcome
-of three cases each. And the Drools backend quotes the snippet of a node in
-its refusal sentences, so a stripped copy changes the status line that gate
-13 compares verbatim on every golden it refuses with such a sentence
-(`anchor-depth-two`, `jutterswet-grens-per-jutter`,
-`jutterswet-havenrooster`).
 
 ---
 
