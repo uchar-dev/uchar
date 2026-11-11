@@ -1,0 +1,87 @@
+{
+ "format": "uchar-case-v0",
+ "asOfDate": null,
+ "input": {
+  "instances": [
+   {
+    "label": "K1",
+    "objectType": "Penningkas",
+    "attributes": {
+     "penningbudget": {
+      "number": "100"
+     }
+    },
+    "roles": {
+     "wachters": [
+      "Wc",
+      "Wa",
+      "Wb"
+     ]
+    },
+    "characteristics": []
+   },
+   {
+    "label": "Wc",
+    "objectType": "Wachter",
+    "attributes": {
+     "wachtjaar": {
+      "number": "2020"
+     },
+     "voorranggewicht": {
+      "number": "1"
+     },
+     "penningmaximum": {
+      "number": "1000"
+     }
+    },
+    "roles": {},
+    "characteristics": []
+   },
+   {
+    "label": "Wa",
+    "objectType": "Wachter",
+    "attributes": {
+     "wachtjaar": {
+      "number": "2010"
+     },
+     "voorranggewicht": {
+      "number": "1"
+     },
+     "penningmaximum": {
+      "number": "10"
+     }
+    },
+    "roles": {},
+    "characteristics": []
+   },
+   {
+    "label": "Wb",
+    "objectType": "Wachter",
+    "attributes": {
+     "wachtjaar": {
+      "number": "2010"
+     },
+     "voorranggewicht": {
+      "number": "2"
+     },
+     "penningmaximum": {
+      "number": "1000"
+     }
+    },
+    "roles": {},
+    "characteristics": []
+   }
+  ],
+  "parameters": {}
+ },
+ "expected": [
+  {
+   "kind": "attributeValue",
+   "label": "Wa",
+   "attribute": "penningtoewijzing",
+   "value": {
+    "number": "10"
+   }
+  }
+ ]
+}

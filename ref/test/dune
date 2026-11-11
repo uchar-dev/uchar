@@ -105,5 +105,7 @@
   (glob_files fixtures/absence-markers/payload-of-a-timeline/*.json)
   (glob_files fixtures/absence-markers/sum-of-a-timeline/*.json)
   (glob_files fixtures/absence-markers/constructors-in-one-symbol/*.json)
-  (glob_files fixtures/absence-markers/copy-of-a-timeline/*.json))
+  (glob_files fixtures/absence-markers/copy-of-a-timeline/*.json)
+  ; an ordered allocation whose shares do not fit, the place of the fault
+  (glob_files fixtures/allocation-fit-order/*.json))
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

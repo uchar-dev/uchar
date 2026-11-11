@@ -4411,6 +4411,17 @@ let run_allocation env world (v : resolved_allocation) =
           match outcome with
           | Alloc.Nothing -> release w
           | Alloc.Distributed (shares, rest) ->
+              (* the recurrence lists the shares in its group order; they are
+                 written in the order of the case, so the first share that does
+                 not fit there is the place of the EF-006 (ch. 4.4) *)
+              let shares =
+                List.map
+                  (fun (r : Alloc.recipient) ->
+                    match List.assoc_opt r.id shares with
+                    | Some s -> (r.id, s)
+                    | None -> Value.fault "allocation: the recurrence gave no share for %s" r.id)
+                  recs
+              in
               let decl = attr_decl env ~otype:objective_type_name ~attr:target_attr in
               let w, ch =
                 List.fold_left

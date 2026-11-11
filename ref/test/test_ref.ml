@@ -13943,6 +13943,23 @@ let () =
   plays ~ident:"WV-9.5-kopie-van-een-tijdlijn" ~ir:(read (dir ^ "copy-of-a-timeline/ir.json"))
     ~case_data:(read (dir ^ "copy-of-a-timeline/case.json")) (fun _ -> ())
 
+(* WV-4.4-plaats-in-de-case: an ordered allocation without rounding over a pot
+   of 100, the case listing Wc (wachtjaar 2020), Wa and Wb (both 2010, weights
+   1 and 2, Wa capped at 10). The group 2010 goes first: Wa 10, Wb 200/3; then
+   Wc the remaining 70/3. Wb and Wc do not fit the whole-number target; the
+   EF-006 falls on the first of them in the order of the case, Wc, not on the
+   first in sort order (ch. 4.4) *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/allocation-fit-order/" in
+  with_files ~ir:(read (dir ^ "ir.json")) ~case_data:(read (dir ^ "case.json")) (fun findings _ evaluate ->
+      check "WV-4.4-plaats-in-de-case: verifier-clean" (findings = []);
+      match evaluate () with
+      | exception Value.Fault { code; params; text } ->
+          check ("WV-4.4-plaats-in-de-case (got: " ^ text ^ ")")
+            (code = Some "EF-006" && List.assoc_opt "place" params = Some "Wc.penningtoewijzing")
+      | _ -> check "WV-4.4-plaats-in-de-case (no fault at all)" false)
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;
