@@ -345,6 +345,25 @@ class ReferenceLayerRefusalWitnessTest {
                 + " check resolves against no declaration"), e.getMessage());
     }
 
+    @Test void a_cell_read_reads_an_attribute_reference() throws Exception {
+        // Measured on ccf6de21c: a literal at the attribute position ended in a ClassCastException at load, and an
+        // absent one in a NullPointerException at the replay, where the verifier refuses both (WF-034).
+        String value = "/rules/rules/0/versions/0/value";
+        ObjectNode ir = golden(PENNINGDREMPEL);
+        ObjectNode rule = IrPath.version(ir, "rules", 0, 0);
+        rule.set("value", JSON.readTree("{\"node\":\"DimensionCellRead\",\"attribute\":{\"node\":\"Literal\",\"value\":"
+                + "{\"number\":\"1\"},\"type\":" + NUMERIEK + ",\"source\":{\"snippet\":\"1\"}},\"labels\":[\"noord\"],"
+                + "\"source\":{\"snippet\":\"de cel noord\"}}"));
+        IrLoader.DocumentError e = refuses(ir, value + "/attribute");
+        assertTrue(e.getMessage().contains("dimension-cell read whose attribute position is not an attribute reference:"
+                + " it resolves against no declaration"), e.getMessage());
+
+        ((ObjectNode) rule.get("value")).putNull("attribute");
+        e = refuses(ir, value);
+        assertTrue(e.getMessage().contains("dimension-cell read without an attribute reference: it resolves against no"
+                + " declaration"), e.getMessage());
+    }
+
     // ---------------- fixtures ----------------
 
     private static ObjectNode roleCheck(ObjectNode ir, int rule) {

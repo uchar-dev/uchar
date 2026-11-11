@@ -1592,10 +1592,18 @@ public final class IrLoader {
                 }
                 yield a;
             }
+            // WF-034, in the verifier's sentences: a cell read reads one dimensioned attribute, so its attribute
+            // position holds an attribute reference and nothing else
             case "DimensionCellRead" -> {
-                yield new Expr.DimensionCellRead((Expr.AttributeReference) expr(nodeField(n, "attribute")),
-                        stringList(n, "labels"),
-                        source(n));
+                String p = pathOf(n);
+                Expr attribute = expr(nodeField(n, "attribute"));
+                if (attribute == null)
+                    throw new DocumentError(p, "dimension-cell read without an attribute reference: it resolves against"
+                            + " no declaration");
+                if (!(attribute instanceof Expr.AttributeReference reference))
+                    throw new DocumentError(p + "/attribute", "dimension-cell read whose attribute position is not an"
+                            + " attribute reference: it resolves against no declaration");
+                yield new Expr.DimensionCellRead(reference, stringList(n, "labels"), source(n));
             }
             case "ParameterReference" -> {
                 yield new Expr.ParameterRef(param(text(n, "parameter")), source(n));
