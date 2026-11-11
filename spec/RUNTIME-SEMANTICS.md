@@ -3469,9 +3469,9 @@ decides what the sentence is about, and that question is not short-circuited
 by its answer, so a filter that faults on a later member faults whether or not
 an earlier member has already decided the verdict. The **matrix then short
 circuits**, as a composite condition does (ch. 5.10): evaluation stops at the
-first contributor whose verdict settles the fold, in the contributors' own
-order (ch. 5.11), and a member never reached produces no fault and no §9.5
-channel fact.
+first contributor whose verdict settles the fold, in the member order of
+ch. 5.7a (the links the case wrote, then instance order; ch. 5.11), and a
+member never reached produces no fault and no §9.5 channel fact.
 
 **The vacuous case.** An empty contributor set reads **waar** under both
 quantifiers. It is the empty conjunction, and it is the answer the empty set
@@ -3485,8 +3485,8 @@ from intuition and get backwards, and because the corpus pins it.
 `Compound`'s rule, WF-041: at least 1). They are not a second kind of fold:
 `all` is `count = |contributors|` and `none` is `count = 0`, so **one** rule
 of evaluation covers all five, and it is ch. 5.10's — the contributors are
-settled in full first, the matrix is then read in the contributors' own order
-(ch. 5.11) and stops at the first one after which the outcome stands, with
+settled in full first, the matrix is then read in the member order of
+ch. 5.7a and stops at the first one after which the outcome stands, with
 ch. 5.10's trigger table applied verbatim, the contributors as its members.
 Two of its rows fire on the **empty prefix** here as they do there:
 `atLeast` *n* and `exactly` *n* over fewer than *n* contributors are
@@ -4482,7 +4482,11 @@ counterpart, not through a mint, in ref, clingo and the Drools backend
 alike.)* Minted instances live in a
 reserved label namespace (`::`), refused for case labels at load, and
 are keyed by the creation's index — never its nullable name — so two
-name-less creations can never collide. The to-many and linkless shapes realise the marker as
+name-less creations can never collide. The index and the subject are also
+the made object's place in the instance order of ch. 5.7a: in a to-many
+role it stands after the links the case wrote and after the case's
+instances, by the index of its creation and then by its subject, at
+whatever point of the session its link is laid. The to-many and linkless shapes realise the marker as
 the deterministic mint itself. More than one connecting relation is a
 **fault** — v0 silently drops the back-link there ("onopgelost
 terugkoppeling"); execution refuses to guess (recorded delta, the red
@@ -4509,7 +4513,9 @@ already-present link is a no-op write. For each anchor whose condition
 holds, the join chain (anchor → path steps → join hop, `IR-SPEC.md`
 ch. 3.4) is navigated over the existing links, and anchor and target
 are linked in the created relation — **both ends** are written, so
-navigation from either side sees the link. A second distinct filler on
+navigation from either side sees the link. At a to-many end the link takes
+the place ch. 5.7a gives the object it reaches: after the links the case
+wrote, in instance order. A second distinct filler on
 a to-one role is a fault, never a silent overwrite.
 
 **The condition is about the anchor, or about the target, and the wire
@@ -5082,21 +5088,10 @@ Two consequences, both mechanical:
    not two. A conflicting reverse leg on a **to-one** sister role is a
    load error (WF-013), never a silent overwrite.
 
-   *Recorded residue — member ORDER.* A supplied to-many list carries
-   the order the case wrote it in; a materialised one accumulates its
-   members in **ascending label order** — plain lexicographic order over
-   the raw labels, that being the order the pass walks the input in, not
-   the order the case file lists them in. The two need not coincide, so
-   a construct that exposes member order — an ordered allocation's tie
-   group, a first/last fold — can see the difference between the two
-   spellings. Nothing this chapter decides is affected (membership and
-   cardinality are order-free, and ch. 4.2 makes a tie group
-   simultaneous), so this is a residue rather than a divergence; it is
-   written down instead of left to be discovered. The two orders never
-   meet in one list: measured over the whole corpus, the pass extends an
-   already non-empty list in six goldens, and in every one of them that
-   list is one the pass itself built earlier in the same walk — no
-   case-written list is ever appended to.
+   *Member order.* The pass adds each reverse leg after the links the
+   case wrote in that list, and the legs it adds stand in ascending label
+   order, not in the order the case file lists the instances in: the
+   member order below ("The order of the members of a to-many role").
 2. **A reference-field fact model writes what it can hold.** Where an
    executor stores one scalar reference per to-one role, a **1:N**
    relation has exactly ONE field and that field already serves both
@@ -5141,6 +5136,72 @@ vondsten of J1 listed as `[M2, V1, M1, M2, M1]` — the munten M2 (gewicht
 5,00) and M1 (7,00) and the vondst V1 (3,00) — links M2, V1, M1, in that
 order, and J1's `aantal munten` is **2** and its `muntgewicht` **12,00**,
 not 4 and 24,00.
+
+**The order of the members of a to-many role.** A fold over a to-many role
+— an aggregation over an instance set, an instance fold, a quantifier fold
+(ch. 3.4, 3.4a, 3.9a) — reads its members in one order, and that order is
+normed for every member, the members a creation adds included. It never
+changes a value; it decides which member a short circuit still reaches, and
+so whether a fault or a §9.5 channel fact comes into being (ch. 5.10, 5.11).
+The members of one subject over one role are read:
+
+1. first the links the case wrote in that role list, in the order the case
+   wrote them (a repeated label at its first occurrence, above);
+2. then every other link — a reverse leg the loader materialised, a link an
+   object creation or a fact creation laid (ch. 5.5) — in **instance
+   order**: the case's instances ascending by label, compared code point by
+   code point; then the objects a creation made, by the index of their
+   creation among the document's object creations, and for one creation by
+   their subject, compared in this same order — a subject that a creation
+   made compares by its own creation and subject, recursively.
+
+A link's place depends on the object it reaches and on whether the case
+wrote it, not on the form that laid it or on when: a creation makes one
+object per subject (ch. 5.5), so the index of the creation and the subject
+name one made object, and a link that the case wrote and a creation lays
+again is one link, in its written place. Instance order is read off the
+objects at the fixpoint: the order in which the case file lists its
+instances, the stratum and the generation in which a creation fires
+(ch. 5.5, 6.3) and the order in which the session lays the links do not
+move it. Over a path of roles (ch. 3.4b) every step reads its links in this
+order, and the union keeps the first reach. Membership and cardinality do
+not depend on the order, and neither does a value: `eerste` and `laatste`
+over instances order by the value (ch. 1.2), and ch. 4.2 makes a tie group
+simultaneous. The order shows only through what a short circuit or a
+fault leaves unread. The ASP backend and the Drools backend do not carry it for a
+relation a creation writes, and refuse a fold whose short circuit can reach
+a fault or a deposit there (CLINGO-035, DROOLS-259): a limit of those
+executors, not an open point of the semantics.
+
+Worked example (absolute; the golden `jutterswet-werfkeur`, replayed by
+gate 5, the red case `jutterswet-werfkeur-bereikt`, gate 8, and the `ref/`
+test `WV-5.7a-ledenvolgorde`, which also pins the member lists). A `Werf`
+reaches its `schuiten` over the to-many role of `ligplaats`; a `Schuit` has
+a `lengte` and a `keurdatum`. The rule *de keur van een Werf is 1 indien
+ten minste drie schuiten van de Werf aan ten minste een van de volgende
+voorwaarden voldoen: zijn lengte is groter dan 5; zijn keurdatum ligt na de
+rekendatum*. No case carries an evaluation date, so a schuit of lengte 5 or
+less that the fold reaches faults (EF-011, ch. 8.2). Three object
+creations, in this index order: 0 *bouw een kotter* (lengte 9) for a Werf
+with at least one werfvlag, 1 *bouw een sloep* (lengte 2) for every Werf, 2
+*hijs de werfvlag* for a vlaggerechtigde Werf; and a fact creation that
+links a Schuit over `ligplaats` to its `bouwwerf`.
+
+| case | input | the members of W1's schuiten, in order (lengte) | the fold | outcome |
+|---|---|---|---|---|
+| golden 1 | W1 vlaggerechtigd, the case writes its schuiten S2 (9), S1 (7) | S2, S1, kotter (9), sloep (2) | true, true, true — stop | keur **1**, schuittal **4** |
+| golden 2 | S1 (8), S3 (6), S4 (2) name W1 as their werf, S2 (9) as its bouwwerf | S1, S2, S3, S4 (2), sloep (2) | true, true, true — stop | keur **1**, schuittal **5** |
+| red | as golden 2, with S2 (3) and S4 (7) | S1, S2 (3), S3, S4, sloep | true, fault | **EF-011** |
+
+Golden 1 reads the written links first, S2 before S1, and then the kotter
+before the sloep, by creation index: the kotter waits for the werfvlag, so
+it is made after the sloep, and read in the order of making the sloep would
+come third and fault. In golden 2 and the red case the case writes no link
+on W1's side; S2 is linked by the fact creation during the evaluation, after
+the loader materialised S1, S3 and S4, and stands between S1 and S3 by its
+label. Read in the order the links were laid — S1, S3, S4, then S2 — golden
+2 would reach S4 and fault, and the red case would stop after S4 with keur
+1.
 
 ### 5.7b Fault kinds and their codes
 
@@ -6329,7 +6390,7 @@ name its kinds the same way.
 | `Clamp` | `base`, `minimum`, `maximum` | **visible** | `base`, then `minimum`, then `maximum`; an absent bound evaluates nothing |
 | `duration` / `absoluteDuration` (tijdsduur / absolute tijdsduur) | argument 0 (`van`), argument 1 (`tot`) | **visible** | `van`, then `tot` |
 | `dateWith` / `dateTimeWith` (datum met / datum-tijd met) | the `arguments` list: year, month, day, and for `dateTimeWith` hour, minute, second, millisecond (WF-037 leaves its arity open; ch. 3.8 fixes it) | **visible** | argument order; every part runs before the leeg test, so a leeg part costs its successors nothing |
-| aggregation (`sum` (som), `total` (totaal), `count` (aantal), `minimum`, `maximum`, `first` (eerste), `last` (laatste), `filledCount`) | the contributors — the listed `arguments`, or the instance fold's members each gated by the `filter` — then the `emptyFallback` | **visible** | the contributors in wire order (an instance fold: the filter per member, members in fold order), then the `emptyFallback` (WF-037 confines it to `sum`) |
+| aggregation (`sum` (som), `total` (totaal), `count` (aantal), `minimum`, `maximum`, `first` (eerste), `last` (laatste), `filledCount`) | the contributors — the listed `arguments`, or the instance fold's members each gated by the `filter` — then the `emptyFallback` | **visible** | the contributors in wire order (an instance fold: the filter per member, members in the member order of ch. 5.7a), then the `emptyFallback` (WF-037 confines it to `sum`) |
 | aggregation over `dimensionSelections` (the third contributor source; WF-037 admits it on `sum`, `minimum`, `maximum`, `first`, `last`, `filledCount`) | the selected cells, then the `emptyFallback` | **visible** | the cells of the product of the selections, the first selection outermost and each in its own label order (ch. 5.8c), then the `emptyFallback`. *All three executors evaluate the form; no cell read faults, and the first and the last over cells witness the order, which they pick by* |
 | `concatenation` (concatenatie), `TextComposition` | the inserted parts | **visible** | part order |
 | `ListLiteral` | `elements` | **visible** | element order |
@@ -6339,6 +6400,7 @@ name its kinds the same way.
 | `MapList` | `list`, the body per element | **visible** | `list`, then element order |
 | `FilterList` | `list`, the condition per element | **visible** | `list`, then element order |
 | `Compound` | the members | **visible** | ch. 5.10: wire order, with the short circuit |
+| `QuantifierFold` | the contributors (the `filter` per member), then the `test` per contributor | **visible** | the contributors settled in full, the filter per member in the member order of ch. 5.7a; then the `test` per contributor in that order, with ch. 5.10's short circuit over the contributors (ch. 3.9a) |
 | `Let` | `value`, `body` | forced | ch. 10.6: the `body` drives; the `value` is evaluated at the **first read**, so it takes that read's position in the enclosing order |
 | `Match` | `scrutinee`, one arm body | forced | the scrutinee selects the arm |
 | `IfThenElse` | `condition`, one branch | forced | the condition selects the branch; the other branch evaluates nothing |
@@ -6511,7 +6573,8 @@ what reaches the rows a barrier cannot, because a closed fold body
 | composite members, wire order + short circuit | ch. 5.10's own witness table |
 | `Comparison` `left` before `right` | `ref/` `WV-5.11-vergelijking-…` (pair) |
 | aggregation contributors, in wire order | `ref/` `WV-5.11-som-bijdrager…` (pair) |
-| the **instance** fold: the filter per member, members in fold order | `ref/` `WV-5.11-instantiefold-…` and `WV-5.11-instantiesom-…` (two pairs — the `Instances` walk a `count` (aantal) takes and the `Values` walk a set-read `sum` (som) takes) |
+| the **instance** fold: the filter per member, members in the member order of ch. 5.7a | `ref/` `WV-5.11-instantiefold-…` and `WV-5.11-instantiesom-…` (two pairs — the `Instances` walk a `count` (aantal) takes and the `Values` walk a set-read `sum` (som) takes) |
+| the member order of a to-many role, created members included (ch. 5.7a), with the quantifier fold's short circuit | `jutterswet-werfkeur` (gate 5) and `jutterswet-werfkeur-bereikt` (gate 8; the ref leg — clingo and Drools refuse the fold), `ref/` `WV-5.7a-ledenvolgorde` |
 | aggregation contributors **before** the `emptyFallback` | `ref/` `WV-5.11-som-…-leegwaarde` (pair) |
 | the `emptyFallback` evaluates unconditionally | `sum-fallback-always-evaluated` (gate 8) + `ref/` `WV-5.11-som-leegwaarde-onvoorwaardelijk` |
 | `concatenation` (concatenatie) and `TextComposition` part order | `ref/` `WV-5.11-concat-…`, `WV-5.11-tekstreeks-…` (pairs) |
@@ -6923,7 +6986,8 @@ fold each member with the verdict of the matrix on it, or its fault — the
 table of ch. 3.9a's `test(m)` over the contributors, evaluated on the
 fixpoint world as a reading evaluates, depositing nothing — and whether the
 evaluation reached it: the contributors after the stop (ch. 5.10 over the
-contributors) and after a fault are not reached. Their verdict or fault is
+contributors, in the member order of ch. 5.7a) and after a fault are not
+reached. Their verdict or fault is
 the reading's, not the session's: the session raised that fault and made
 that deposit no more than it read the contributor, and the status of the
 reading does not change by it. Where the evaluation of a fold faults before
