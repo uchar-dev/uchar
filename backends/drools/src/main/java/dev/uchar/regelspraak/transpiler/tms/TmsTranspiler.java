@@ -5028,7 +5028,6 @@ public final class TmsTranspiler {
                 : op == Expr.BinOp.MAAL ? timesFactor(right, ru, lu, Unit.timesFactors(lu, ru))
                 : division ? divisorFactor(right, ru, lu, Unit.divideFactors(lu, ru))
                 : right;
-        int depositFlag = division && depositSite(b) ? reads.depositFlag() : -1;
         String source = source(b.source());
         return switch (op) {
             case PLUS -> new Term.Call(StaticFunction.RS_PLUS, List.of(l, r), source);
@@ -5036,8 +5035,8 @@ public final class TmsTranspiler {
             case VERMINDERD_MET -> new Term.Call(StaticFunction.RS_REDUCED, List.of(l, r), source);
             case MAAL -> new Term.Call(StaticFunction.RS_TIMES, List.of(l, r), source);
             case PERCENTAGE_VAN -> new Term.Call(StaticFunction.RS_PERCENTAGE_OF, List.of(l, r), source);
-            case GEDEELD_DOOR -> new Term.Division(StaticFunction.DIVIDED, l, r, depositFlag, source);
-            case GEDEELD_DOOR_ABS -> new Term.Division(StaticFunction.DIVIDED_ABS, l, r, depositFlag, source);
+            case GEDEELD_DOOR -> new Term.Division(StaticFunction.DIVIDED, l, r, reads.depositFlag(), source);
+            case GEDEELD_DOOR_ABS -> new Term.Division(StaticFunction.DIVIDED_ABS, l, r, reads.depositFlag(), source);
             case TOT_DE_MACHT -> throw new IllegalStateException("a power goes through macht()");
         };
     }
