@@ -682,6 +682,14 @@ PYEOF
                 # against the observed token, so a reason that drifts (EXCLUDE<->NOFAULT) or a case that now
                 # FAULTs or ERRORs fails the gate — the stale-guard is no longer exit-code-blind.
                 rcat=${reason%% *}
+                # the text after the category (and after the register code of an EXCLUDE) is the reason the
+                # list carries; an entry that names only its category admits the case without saying why
+                rtext=${reason#"$rcat"}
+                [ "$rcat" = EXCLUDE ] && rtext=$(printf '%s\n' "$rtext" | sed 's/^ *DROOLS-[0-9][0-9][0-9]//')
+                if ! printf '%s\n' "$rtext" | grep -q '[^[:space:]]'; then
+                    printf 'FAIL: %s is listed (%s) without a reason after its category: every entry of the exclusion list says why the case is not fault-pinned\n' "$name" "$reason" >&2
+                    status=1
+                fi
                 case "$tok" in
                     FAULT)
                         printf 'FAIL: stale exclusion — %s is listed (%s) but Drools now FAULTS; drop the entry (the case is then pinned on Drools too):\n%s\n' "$name" "$reason" "$out" >&2
