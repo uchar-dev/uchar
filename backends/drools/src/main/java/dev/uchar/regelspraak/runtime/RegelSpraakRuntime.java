@@ -712,13 +712,19 @@ public final class RegelSpraakRuntime {
     /** The fault of {@link #rsRekenjaar} without an evaluation date, verbatim as the two OCaml executors word it. */
     public static final String REKENJAAR_ZONDER_REKENDATUM = Msg.drools("EF-011.year").text();
 
+    /** The fault of an Easter Sunday asked for a year before 1, in the reference interpreter's words. */
+    public static final String PAASDAG_VOOR_JAAR_EEN = Msg.drools("EF-007.easter").text();
+
     /** §13.4.17.37 "de eerste paasdag van" a year — Gauss/Anonymous Easter algorithm; a leeg year -> leeg. The year
      *  is whole (the callers test it); a year whose Easter Sunday lies outside the representable range of a date
-     *  faults (EF-007), the year tested before it is narrowed to an int, so that no year wraps. The single
+     *  faults (EF-007), the year tested before it is narrowed to an int, so that no year wraps. Easter Sunday is
+     *  defined from the year 1 (uchar RUNTIME-SEMANTICS ch. 3.8): before it the algorithm leaves the calendar (the
+     *  year -2 gives the 31st of February), so a year before 1 faults with EF-007 as well. The single
      *  implementation (single-runtime principle). */
     public static java.time.LocalDate rsEerstePaasdag(Object jaar) {
         if (jaar == null) return null;
         toetsJaar(toBd(jaar), DATUM_BUITEN_BEREIK);
+        if (toBd(jaar).compareTo(BigDecimal.ONE) < 0) throw new IllegalStateException(PAASDAG_VOOR_JAAR_EEN);
         int y = toBd(jaar).intValueExact();
         int a = y % 19, b = y / 100, c = y % 100, d = b / 4, e = b % 4;
         int f = (b + 8) / 25, g = (b - f + 1) / 3;

@@ -215,6 +215,18 @@ class DateStepRangeWitnessTest {
         assertTrue(e.getMessage().contains(DATUM), e.getMessage());
     }
 
+    /** Easter Sunday is defined from the year 1 (ch. 3.8, worked examples): of the year 1 it is 0001-04-01, and the
+     *  years 0 and -1 fault with EF-007, as does -2, for which the algorithm names the 31st of February. Red on
+     *  e24af972a: 0000-04-09 and -0001-03-20, and a {@code DateTimeException} for -2. */
+    @Test void easter_sunday_is_defined_from_the_year_one() {
+        assertEquals(LocalDate.of(1, 4, 1), RegelSpraakRuntime.rsEerstePaasdag(BigDecimal.ONE));
+        for (String year : new String[] {"0", "-1", "-2"}) {
+            IllegalStateException e = assertThrows(IllegalStateException.class,
+                    () -> RegelSpraakRuntime.rsEerstePaasdag(new BigDecimal(year)), year);
+            assertEquals(RegelSpraakRuntime.PAASDAG_VOOR_JAAR_EEN, e.getMessage(), year);
+        }
+    }
+
     /**
      * The day kind's step on a datum-tijd ({@code rsDatumTijdPlusDagsoort}) walks the civil days and puts the time of
      * day back, and the day it lands on must lie in the range as at every other calendar step: the reference

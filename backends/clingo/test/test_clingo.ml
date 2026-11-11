@@ -16805,6 +16805,20 @@ let () =
       | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d)" c) false
       | _, _ -> check (label ^ " (clingo killed)") false)
 
+(* RUNTIME-SEMANTICS ch. 3.8: Easter Sunday is defined from the year 1, and a
+   year before it is the fault EF-007 in ref's words (red case
+   jutterswet-paasdag-voor-jaar-een). The year -2 is the one for which the
+   formula names the 31st of February *)
+let () =
+  let read f = In_channel.with_open_bin f In_channel.input_all in
+  let dir = "corpus/red/jutterswet-paasdag-voor-jaar-een/" in
+  List.iter
+    (fun case_file ->
+      faults_at_solving ~code:("EF-007", []) ~name:("easterSunday before the year 1, " ^ case_file)
+        ~ir:(read (dir ^ "ir.json")) ~case_text:(read (dir ^ case_file ^ ".json"))
+        ~needle:Translate.easter_before_year_one_reason ())
+    [ "case1-jaar-nul"; "case2-jaar-min-een"; "case3-jaar-min-twee" ]
+
 (* A BARE NON-EXACT DIVISION IN A CONDITION (card
    clingo-nonexact-division-in-condition, 2026-11-06). The quotient is
    compared, never written, so the fault of a write, EF-006, does not fit it;

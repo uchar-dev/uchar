@@ -133,7 +133,8 @@ DUTCH_EXCEPTIONS = {("DROOLS-257", "de"): "'DE' is the quantifier of the wire, w
 EF_PLACES = {
     "EF-003.malformed": {"lexeme", "field"}, "EF-003.calendar": {"lexeme", "field", "detail"},
     "EF-004": {"place", "value", "decimals"}, "EF-005.bare": set(), "EF-005.in-rule": {"rule", "dividend"},
-    "EF-006": {"place", "value", "decimals"}, "EF-007": set(), "EF-007.date": set(), "EF-008": {"count"},
+    "EF-006": {"place", "value", "decimals"}, "EF-007": set(), "EF-007.date": set(), "EF-007.easter": set(),
+    "EF-008": {"count"},
     "EF-009": {"reach", "from"}, "EF-010": set(), "EF-011.date": set(), "EF-011.year": set(), "EF-012": set(),
     "EF-015": {"creation", "stratum", "depth", "type", "parentDepth"},
     "EF-016": {"count", "enumeration", "attribute", "object"}, "EF-017": {"role", "label"},
@@ -144,9 +145,9 @@ _READ = "the sentence of a fault kind that the runtime writes and ComputeFault r
 _LEFT = "one of the 29 sentences the owner left English in the Dutch catalogue (card message-catalogues, 2026-10-19)"
 _PART = "names a part of this backend, the same in both languages"
 SAME_IN_BOTH = dict(
-    [(k, _READ) for k in ("EF-003.calendar", "EF-003.malformed", "EF-007", "EF-007.date", "EF-008", "EF-009", "EF-010",
-                          "EF-011.date", "EF-011.year", "EF-012", "EF-019.condition", "EF-019.expression",
-                          "EF-032.day", "EF-032.time")]
+    [(k, _READ) for k in ("EF-003.calendar", "EF-003.malformed", "EF-007", "EF-007.date", "EF-007.easter", "EF-008",
+                          "EF-009", "EF-010", "EF-011.date", "EF-011.year", "EF-012", "EF-019.condition",
+                          "EF-019.expression", "EF-032.day", "EF-032.time")]
     + [(k, _LEFT) for k in ("DROOLS-003", "DROOLS-006", "DROOLS-007", "DROOLS-011", "DROOLS-024", "DROOLS-028",
                             "DROOLS-030", "DROOLS-031", "DROOLS-032", "DROOLS-033", "DROOLS-034", "DROOLS-035",
                             "DROOLS-036", "DROOLS-037", "DROOLS-039", "DROOLS-041", "DROOLS-042", "DROOLS-043",

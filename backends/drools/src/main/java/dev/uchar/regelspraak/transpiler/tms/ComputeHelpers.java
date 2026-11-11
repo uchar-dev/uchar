@@ -281,6 +281,7 @@ public final class ComputeHelpers {
         String sentence = String.valueOf(e.getMessage());
         boolean range = sentence.equals(RegelSpraakRuntime.DATUMTIJD_BUITEN_BEREIK)
                 || sentence.equals(RegelSpraakRuntime.DATUM_BUITEN_BEREIK)
+                || sentence.equals(RegelSpraakRuntime.PAASDAG_VOOR_JAAR_EEN)
                 || (sentence.startsWith("duration count ") && sentence.endsWith(" is out of range"))
                 || sentence.startsWith(DAY_KIND_WALK)
                 || ComputeFault.namesNoMoment(sentence);
@@ -298,8 +299,8 @@ public final class ComputeHelpers {
 
     /** easterSunday of a whole year without a unit (RUNTIME-SEMANTICS ch. 3.8, WF-038), by the algorithm of that chapter
      *  ({@code rsEerstePaasdag}); a leeg year leeg. A year that is not whole is a fault in the reference interpreter's
-     *  sentence, never a silent truncation, and a year whose Easter Sunday lies outside the representable range of a
-     *  date is the runtime's fault of EF-007 ({@link #dateFault}). */
+     *  sentence, never a silent truncation, and a year before 1 or one whose Easter Sunday lies outside the
+     *  representable range of a date is the runtime's fault of EF-007 ({@link #dateFault}). */
     public static Object easterSunday(Object year) {
         if (year == null) return null;
         Breuk q = Breuk.van(year);

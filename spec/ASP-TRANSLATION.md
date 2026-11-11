@@ -737,12 +737,12 @@ and this backend); declared factors and stelsel never enter.
   atoms — the spec's `quot`/`mod` are gringo's `/` and `\` verbatim —
   ending in the `days_from_civil` re-encode (the `(14 − MO)/12`
   March-shift term is 0 because the month is always 3 or 4; written
-  anyway so the file has one re-encode shape). Its own fence:
-  `easterSunday of a year before 1 is not translated` — below year 1
-  the chain's intermediates go negative and gringo's toward-zero
-  division stops being the floor the era re-encode needs; ref computes
-  those years, so the fence is a loud narrowing, never a silent wrong
-  date. Since 2026-10-22 a second fence, `easterSunday of a year after
+  anyway so the file has one re-encode shape). A year before 1 is the
+  fault EF-007 (ch. 3.8 defines Easter Sunday from the year 1), a viol/2
+  in ref's sentence `easterSunday is defined from the year 1; a year
+  before it has no Easter Sunday`; the chain, whose toward-zero division
+  is the floor only for non-negative intermediates, never runs there.
+  Since 2026-10-22 a second fence, `easterSunday of a year after
   5000000 is not translated`: beyond that year the day number leaves
   clingo's integers, and until then the chain wrapped silently (year
   6 000 000 gave day −2104231732 where ref gives 6000000-04-02).

@@ -468,8 +468,8 @@ write-back per session").
 **Evaluation faults are logical facts.** Every fault of `ComputeFault` is one: a date step or a duration count outside the range of ch. 3.8, a walk over the
 days of a day kind that passes its reach (ch. 3.8), a context value
 or a validity window in a session without an evaluation date (ch. 8.1, 8.2), an `Unresolved` node the evaluation
-reaches (ch. 5.7, WF-044), an argument a date builtin cannot take (easterSunday of a year that is not whole,
-dateWith over parts that name no day), and an irrational square root without a rounding (ch. 2.2), where the
+reaches (ch. 5.7, WF-044), an argument a date builtin cannot take (easterSunday of a year that is not whole or
+before 1, dateWith over parts that name no day), and an irrational square root without a rounding (ch. 2.2), where the
 reference interpreter computes a rational one exactly. A fault, like a value, belongs to the fixpoint (ch. 5.2; PLAN §9,
 2026-10-09, "Faults and deposits count at the fixpoint"). This branch has no strata and passes intermediate states
 the reference interpreter does not see, such as a radicand a lower default set before a higher one decides, and a

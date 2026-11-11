@@ -5287,6 +5287,16 @@ let () =
   check "WV-3.8-paasdag-2026" (Arith.easter_sunday (n "2026") = d "2026-04-05");
   check "WV-3.8-paasdag-2027" (Arith.easter_sunday (n "2027") = d "2027-03-28");
   check "WV-3.8-paasdag-2038" (Arith.easter_sunday (n "2038") = d "2038-04-25");
+  (* defined from the year 1; a year before it is EF-007, never a computed
+     day: the formula gives 0000-04-09 for 0 and -0001-03-20 for -1 *)
+  check "WV-3.8-paasdag-1" (Arith.easter_sunday (n "1") = d "0001-04-01");
+  List.iter
+    (fun (ident, year) ->
+      match Arith.easter_sunday (n year) with
+      | exception Value.Fault { code; text; _ } ->
+          check (ident ^ " (got: " ^ text ^ ")") (code = Some "EF-007" && substring text "defined from the year 1")
+      | _ -> check (ident ^ " (no fault at all)") false)
+    [ ("WV-3.8-paasdag-0", "0"); ("WV-3.8-paasdag-min-1", "-1") ];
   (* leeg propagates (ch. 1.2b) *)
   expect_empty "WV-3.8-maand-uit-leeg" (Arith.month_of empty_value);
   expect_empty "WV-3.8-dag-uit-leeg" (Arith.day_from empty_value);
@@ -5495,7 +5505,10 @@ let () =
   expect_fault_msg "WV-3.8-d-bereik-datummet-onder" (fun () -> date_with [ "-146136543"; "9"; "8" ]) range;
   check "WV-3.8-d-bereik-paasdag" (Arith.easter_sunday (n "146140482") = Value.Date 53375995557);
   expect_fault_msg "WV-3.8-d-bereik-paasdag-jaar" (fun () -> Arith.easter_sunday (n "4294969320")) range;
-  expect_fault_msg "WV-3.8-d-bereik-paasdag-onder" (fun () -> Arith.easter_sunday (n "-146136543")) range
+  (* the bottom year of the range lies before the year 1, from which ch. 3.8
+     defines Easter Sunday: EF-007 for that reason *)
+  expect_fault_msg "WV-3.8-d-bereik-paasdag-onder" (fun () -> Arith.easter_sunday (n "-146136543"))
+    "defined from the year 1"
 
 (* --- ch. 3.8 through Eval: the datum-tijd routing ------------------------
    The widened WF-035/WF-038 fences in eval.ml admit a Date_time_type operand

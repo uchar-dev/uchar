@@ -439,6 +439,7 @@ EF-005.in-rule	deling door nul in de regel "{rule}": {dividend} gedeeld door 0 â
 EF-006	{place}: de waarde {value} past niet in de gedeclareerde {decimals} decimalen â€” een expliciete afronding is verplicht (RUNTIME-SEMANTICS ch. 2.4)
 EF-007	datum-tijd arithmetic leaves the representable millisecond range
 EF-007.date	date arithmetic leaves the representable range of a date
+EF-007.easter	easterSunday is defined from the year 1; a year before it has no Easter Sunday
 EF-008	duration count {count} is out of range
 EF-009	day-kind walk: no day of the kind within {reach} calendar days of {from} (the walk reaches no further; a day kind whose next occurrence lies beyond the reach is refused, not diagnosed)
 EF-010	a BoundDay is the bound day of a day-kind definition (ch. 3.7); outside a day-kind evaluation it denotes nothing

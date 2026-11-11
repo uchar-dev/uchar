@@ -880,6 +880,11 @@ let two_temporal_keys_reason =
   "a uniqueness key list carries at most one temporal key component (the same-moment tuple join has no corpus case; \
    ch. 5.9)"
 
+(* ch. 3.8 defines Easter Sunday from the year 1; before it the Gauss chain
+   leaves the calendar *)
+let easter_before_year_one_reason =
+  "easterSunday is defined from the year 1; a year before it has no Easter Sunday"
+
 let other_day_test_reason =
   "a nested day-kind test on a date other than the bound day is a recognised, unexecuted form (the \xc2\xa79.8 \
    composition is carried on the bound day only)"
@@ -958,6 +963,7 @@ let viol_code witness =
     Some ("EF-021", found "attribute" (between "the temporal attribute \"" "\" of a set"))
   else if opens (two_temporal_keys_reason ^ "\"") then Some ("EF-024", [])
   else if opens (other_day_test_reason ^ "\"") then Some ("EF-022", [])
+  else if opens (easter_before_year_one_reason ^ "\"") then Some ("EF-007", [])
   else if opens "the periods in which the time-dependent characteristic " && holds " holds have an open bound" then
     Some ("EF-023", found "characteristic" (between "the periods in which the time-dependent characteristic " " holds have"))
   else if opens "the temporal total of \"" && holds "\" meets a segment with an open bound" then
@@ -6943,9 +6949,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let by, ty, sy = expr_term ctx ~subject ~subject_ot y in
       if sy <> 1 then fault "easterSunday year operand must be an unscaled whole term";
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
-      emit ctx
-        "viol(\"easterSunday of a year before 1 is not translated (the Gauss chain \
-         needs non-negative intermediates)\",%s) :- %s, (%s) < 1."
+      emit ctx "viol(\"%s\",%s) :- %s, (%s) < 1." easter_before_year_one_reason
         subject
         (String.concat ", " ((base :: ctx.rule_guard) @ by))
         ty;
@@ -8451,6 +8455,7 @@ and dk_value ctx ~stack ~day (e : expr) : Value.t =
       | Value.Num (q, Value.Unitless) when Q.den q = Z.one ->
           (* the Gauss/Anonymous chain, RUNTIME-SEMANTICS ch. 3.8 verbatim *)
           let j = Z.to_int (Q.num q) in
+          if j < 1 then faultc "EF-007" "%s" easter_before_year_one_reason;
           let a = j mod 19 and b = j / 100 and c = j mod 100 in
           let d = b / 4 and e = b mod 4 in
           let f = (b + 8) / 25 in

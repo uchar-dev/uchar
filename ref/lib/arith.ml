@@ -626,6 +626,9 @@ let easter_sunday = function
         | j when j >= year_min && j <= year_max -> j
         | _ | (exception Z.Overflow) -> date_range_fault ()
       in
+      (* before the year 1 the formula leaves the calendar (the year -2 gives
+         the 31st of February), so ch. 3.8 defines no Easter Sunday there *)
+      if j < 1 then faultc "EF-007" "easterSunday is defined from the year 1; a year before it has no Easter Sunday";
       let a = j mod 19 and b = j / 100 and c = j mod 100 in
       let d = b / 4 and e = b mod 4 in
       let f = (b + 8) / 25 in

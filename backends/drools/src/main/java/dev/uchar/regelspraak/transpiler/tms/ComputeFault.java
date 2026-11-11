@@ -127,7 +127,8 @@ public final class ComputeFault extends RuntimeException {
         if (sentence.equals(DAY_OUTSIDE_DAY_KIND)) return "EF-010";
         if (sentence.equals(UNRESOLVED) || sentence.equals(UNRESOLVED_CONDITION)) return "EF-019";
         if (sentence.equals(RegelSpraakRuntime.DATUMTIJD_BUITEN_BEREIK)
-                || sentence.equals(RegelSpraakRuntime.DATUM_BUITEN_BEREIK)) return "EF-007";
+                || sentence.equals(RegelSpraakRuntime.DATUM_BUITEN_BEREIK)
+                || sentence.equals(RegelSpraakRuntime.PAASDAG_VOOR_JAAR_EEN)) return "EF-007";
         if (sentence.startsWith("duration count ") && sentence.endsWith(" is out of range")) return "EF-008";
         if (sentence.startsWith(ComputeHelpers.DAY_KIND_WALK)) return "EF-009";
         if (namesNoMoment(sentence)) return "EF-032";
