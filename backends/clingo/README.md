@@ -22,44 +22,45 @@ spec bug.
   composite's or quantifier fold's open prefix, the barrier of every
   enclosing Let decided per read and, in a part that runs member by
   member, per member. Where a creation or a fact creation can add a
-  member to a fold's range, the order of the added members is not
-  normed (ch. 3.9a/5.7a), and ref's own order is no norm either: ref
-  runs a fixpoint per stratum, so it can run a creation with a higher
-  index first. A read that every allowed order reaches fires in ref's
-  words; a read that one allowed order reaches and another does not
-  fires in a sentence that names the unnormed order, whichever order
-  ref keeps (maintainer decision 2026-09-23), a refusal of this backend
-  (CLINGO-035) and no fault kind; a read no allowed order reaches fires
-  nothing, but for [N4] below. That holds for a
-  quantifier fold's matrix, for a Let barrier in a part that runs
-  member by member, and for the value of a Let whose binder is read at
-  such a place. The guard is read at the fixpoint, as ref reads faults
+  member to a fold's range — a step of the range runs through the fact
+  type in which an object creation lays its link or a fact creation its
+  relation — the order of the added members is not normed (ch.
+  3.9a/5.7a), and ref's own order is no norm either: ref runs a fixpoint
+  per stratum, so it can run a creation with a higher index first. A
+  read whose reach can hang on that order is refused at translation
+  (CLINGO-035), as the Drools backend refuses the form (DROOLS-259): a
+  read in the matrix of a quantifier fold over such a range, a read
+  behind a Let barrier that compares the members of such a range in a
+  part that runs member by member, and a read in the value of a Let
+  whose binder is read at such a place. The refusal stands also where
+  ref plays on every order: two creations of 8 and 3 for each Werf,
+  each behind a condition that holds, and `TEN MINSTE 1 [lengte > 5,
+  lengte > p]` over the schuiten — ref runs them in document order,
+  reads 8 and stops, and [3, 8] reads p [N1]; the same creations under
+  `Let k = restpost in som(lengte van schuiten die TEN MINSTE 1
+  [ALLE[lengte > 5, k > 0], lengte > p])`, where ref's barrier at 8
+  ends the Let [N2]. It stands where every allowed order reads the
+  parameter: two quantifier folds over the same created 8 and 3 whose
+  matrices read k in opposite orders, under `Let k = p` [N3]. And it
+  stands where no allowed order reads it: `TEN MINSTE 1 schuiten [TEN
+  MINSTE 1 [lengte > 5, TEN MINSTE 1 van de schuiten van zijn werf
+  [TEN MINSTE 1 [lengte < 5, lengte > p]]]]` over a created 8 and 3,
+  where [8, 3] settles the outer fold at 8 and [3, 8] the inner one at
+  3 [N4]. The guard is read at the fixpoint, as ref reads faults
   (RUNTIME-SEMANTICS ch. 5.7): a read ref reaches only in a pass before
   a creation fires nothing, so `Let k = restpost in (som(bonus van
   werven die TEN MINSTE 1 schuiten [k > 0]) plus p)`, with one schuit
   created for each Werf and restpost leeg, answers as ref does: the
-  created schuit reads k, and its barrier ends the Let before p. The
-  named refusal stands where ref plays on every order: two creations
-  of 8 and 3 for each Werf, each behind a condition that holds, and `TEN
-  MINSTE 1 [lengte > 5, lengte > p]` over the schuiten — ref runs them
-  in document order, reads 8 and stops, and [3, 8] reads p [N1]; the
-  same creations under `Let k = restpost in som(lengte van schuiten
-  die TEN MINSTE 1 [ALLE[lengte > 5, k > 0], lengte > p])`, where
-  ref's barrier at 8 ends the Let [N2]. "Every allowed order" is
-  decided per read, so where two reads of one binder each cover some
-  orders and together all, the refusal is named although ref's words
-  were due: two quantifier folds over the same created 8 and 3 whose
-  matrices read k in opposite orders, under `Let k = p` [N3]. And
-  "some allowed order" is decided per fold: each fold's range has an
-  order model of its own, also where two folds range over the same
-  list, so a named twin can join an atom that holds in one order with
-  an atom that holds only in another. The refusal is then named where
-  no allowed order reads the parameter: `TEN MINSTE 1 schuiten [TEN
-  MINSTE 1 [lengte > 5, TEN MINSTE 1 van de schuiten van zijn werf
-  [TEN MINSTE 1 [lengte < 5, lengte > p]]]]` over a created 8 and 3,
-  where [8, 3] settles the outer fold at 8 and [3, 8] the inner one at
-  3 [N4]. Where the guard is not exact otherwise, it errs in one
-  direction:
+  created schuit reads k, and its barrier ends the Let before p. Where
+  the guard is not exact otherwise, it errs in one of two directions:
+  - Loud, a fault where ref plays. [L3] A Let barrier raised by a read
+    of the binder in the matrix of a quantifier fold over such a range
+    counts that read where every allowed order reaches it: the same Let
+    with the matrix `TEN MINSTE 1 [lengte > 5, k > 0]` and two schuiten
+    created for each Werf, 3 then 8: ref reads 3 first, its read of k
+    ends the Let, and bonus is leeg; in the order [8, 3] the fold
+    settles at 8 and k is not read, so clingo faults at p in ref's
+    words.
   - Silent, an answer where ref faults. [S1] The Let lowering keeps a
     value behind an enclosing need on a path that does not read it, and
     the guard follows the lowering: `Let k = restpost in Let bel = (als
@@ -374,15 +375,15 @@ spec bug.
   unbound-parameter guard (the taken arm, a composite's open prefix, the
   Let barriers), with the path or the set from the subject to the
   instance. An unbound parameter in the period arithmetic, time-dependent
-  or a scalar operand, faults (EF-014) under the same reach. Where an atom
-  of that reach hangs on the order of the members a creation adds, the
-  witness takes the two forms of the unbound-parameter guard: ref's words
-  where every allowed order reaches the read, the named sentence
-  (CLINGO-035) where one does and another does not. A point read of an
-  absent attribute faults in translation, without a code.
+  or a scalar operand, faults (EF-014) under the same reach. Where that
+  reach can hang on the order of the members a creation adds, the
+  translation is refused (CLINGO-035), as for the unbound-parameter guard.
+  A point read of an absent attribute faults in translation, without a
+  code.
 - Every other fault kind ref raises where it evaluates a node is a
-  `viol/2` witness in ref's sentence under the reach of that node, with the
-  same two forms: the bound day outside a day-kind evaluation (EF-010), a
+  `viol/2` witness in ref's sentence under the reach of that node, refused
+  in the same way where that reach can hang on the order of created
+  members: the bound day outside a day-kind evaluation (EF-010), a
   context value in a session without an evaluation date (EF-011), an
   `Unresolved` expression or condition (EF-019) and a filled count over a
   temporal attribute of a set (EF-021). The node's term derives nothing

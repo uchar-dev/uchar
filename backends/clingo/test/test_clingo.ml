@@ -10885,19 +10885,17 @@ let () =
   both_answer ~name:"Let, lazy: k read in a nested matrix ends the Let before p (late matrix reach)" ~ir:late
     ~case_text:(pf_case ~instances:(loaded "8" "3") bonus_empty)
 
-(* FIXRONDE 3, point 4, and FIXRONDE 4 (maintainer decision 2026-09-23, upheld):
-   members a creation adds to a fold's range have no normed order (ch.
-   3.9a/5.7a). Where every allowed order reads the unbound parameter, the guard
-   fires in ref's words; where one allowed order reads it and another does not,
-   clingo refuses in a sentence that names the unnormed order, whichever order
-   ref itself keeps — so also where ref plays ([~ref_plays], its rows pinned);
-   where no allowed order reads it, both play. [by] is what the sentence says
-   reads the parameter: a quantifier fold, or a Let whose value waits for its
-   binder or whose barrier may end it first. W1 without schuiten in the case
-   unless stated; each creation mints one schuit for every werf; matrix TEN
-   MINSTE 1 [lengte > 5, lengte > p], or ALLE [lengte > 5, lengte > p] for mx.
-   ms-2/ms-4 range over a haven's werven' schuiten: S1 (3) at W1, S2 (8) at
-   W2, and one created schuit of 8 per werf. *)
+(* members a creation adds to a fold's range have no normed order (ch.
+   3.9a/5.7a), and ref's own order is no norm either. Where the reach of the
+   unbound parameter's read may hang on that order, clingo refuses the
+   translation with CLINGO-035, in a sentence that names the node whose read
+   hangs on it — whether ref plays in its own order ([~ref_plays], its rows
+   pinned) or faults. [by] is that node: a quantifier fold, or a Let whose
+   value waits for its binder or whose barrier may end it first. W1 without
+   schuiten in the case unless stated; each creation mints one schuit for
+   every werf; matrix TEN MINSTE 1 [lengte > 5, lengte > p], or ALLE [lengte
+   > 5, lengte > p] for mx. ms-2/ms-4 range over a haven's werven' schuiten:
+   S1 (3) at W1, S2 (8) at W2, and one created schuit of 8 per werf. *)
 let named_refusal ~by ~ref_plays ~name ~ir ~case_text ~param =
   let doc, case = load_pair ~ir ~case_text in
   if ref_plays then ref_matches ~name ~ir ~case_text
@@ -10908,27 +10906,14 @@ let named_refusal ~by ~ref_plays ~name ~ir ~case_text ~param =
         check (name ^ ": ref faults (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle:(pf_reason param) m));
   let named = Printf.sprintf "parameter %S is unbound in this case, and whether %s" param by
   and not_normed = "depends on the order of the members a creation adds, which is not normed (ch. 3.9a/5.7a)" in
-  let label = name ^ ": clingo refuses in the named sentence" in
+  let label = name ^ ": clingo refuses with CLINGO-035" in
   match translate doc case with
-  | exception Uchar_ref.Value.Fault { text = m; _ } -> check (label ^ " (translation fault: " ^ m ^ ")") false
-  | program -> (
-      match Solve.run_clingo program with
-      | _, Unix.WEXITED 20 ->
-          let ws = Solve.diagnostic program in
-          check
-            (label ^ " (" ^ String.concat "; " ws ^ ")")
-            (List.exists
-               (fun w -> Uchar_ref.Case.contains ~needle:named w && Uchar_ref.Case.contains ~needle:not_normed w)
-               ws
-            && not (List.exists (fun w -> Uchar_ref.Case.contains ~needle:(pf_reason param) w) ws))
-      | out, Unix.WEXITED (10 | 30) ->
-          let answered =
-            match Model.check doc case (Model.model_of_text out) with
-            | [] -> "clingo answered the case's rows"
-            | ms -> "clingo answered: " ^ String.concat "; " ms
-          in
-          check (label ^ " (" ^ answered ^ ")") false
-      | _, _ -> check (label ^ " (clingo did not run)") false)
+  | (_ : string) -> check (label ^ " (it translated)") false
+  | exception Uchar_ref.Value.Fault { code; text = m; _ } ->
+      check
+        (label ^ " (" ^ Uchar_ref.Value.report ~code m ^ ")")
+        (code = Some "CLINGO-035" && Uchar_ref.Case.contains ~needle:named m
+        && Uchar_ref.Case.contains ~needle:not_normed m)
 
 let order_named = named_refusal ~by:"the quantifier fold" ~ref_plays:false
 
@@ -11000,9 +10985,8 @@ let () =
     ~name:"created members: the case's 8 before a created 3 in ref's order, not in every one (cr-case8-new3)"
     ~ir:(doc ~creations:[ "3" ] minst) ~param:"p"
     ~case_text:(pf_case ~instances:(w1 ~case:[ ("S1", "8") ] ()) (validate (Some "99")));
-  unbound_fires ~name:"created members: one created 3 is read in every order (control)"
-    ~ir:(doc ~creations:[ "3" ] minst) ~param:"p" ~case_text:(pf_case ~instances:(w1 ()) (validate None))
-    ~silent:"keur leeg";
+  order_named ~name:"created members: one created 3 is read in every order, refused all the same (cr-3)"
+    ~ir:(doc ~creations:[ "3" ] minst) ~param:"p" ~case_text:(pf_case ~instances:(w1 ()) (validate None));
   let every = kv "all" (pf_comp "all" [ gt length five; gt length p ]) in
   order_named ~name:"created members: ALLE over 8 then 3 reads p at 8 (mx-alle_new8-new3)"
     ~ir:(doc ~creations:[ "8"; "3" ] every) ~param:"p" ~case_text:(pf_case ~instances:(w1 ()) (validate None));
@@ -11024,13 +11008,12 @@ let () =
     ~ir:(ms "none" []) ~param:"p" ~case_text:(pf_case ~instances:haven_case (validate ~label:"H1" None))
     ~silent:"keur leeg"
 
-(* FIXRONDE 4, lens point 1: ref's order of the members a creation adds is
-   not the document order of the creations. ref runs a fixpoint per stratum: a
-   creation for each Werf sits above the creation that makes Werven, while one
-   for each Droogdok (a subtype of Werf) stays in stratum 0, so on D1 ref runs
-   the Droogdok creation first. A translation that took the creation index for
-   ref's order answered on the four witnesses below where ref faults, on all
-   three paths that leaned on it: a quantifier fold's matrix, a Let barrier per
+(* ref's order of the members a creation adds is not the document order of the
+   creations. ref runs a fixpoint per stratum: a creation for each Werf sits
+   above the creation that makes Werven, while one for each Droogdok (a
+   subtype of Werf) stays in stratum 0, so on D1 ref runs the Droogdok
+   creation first. Neither order is a norm, so clingo refuses on all three
+   paths that would lean on one: a quantifier fold's matrix, a Let barrier per
    member, and the demand of a Let value read in a matrix. c0 mints a schuit
    for each Werf, c1 a werf for each Haven, c2 a schuit for each Droogdok. *)
 let () =
@@ -11160,13 +11143,11 @@ let () =
     ~ir:(question_doc (creations ~werf:false "8" "3")) ~param:"p" ~case_text:(pf_case ~instances:h1 [ pf_cons ]);
   both_answer ~name:"stratum: the Let value with p bound (stratum-vraag-8-w-3dd-gebonden, control)"
     ~ir:(question_doc (creations "8" "3")) ~case_text:(pf_case ~params:bound ~instances:h1 [ pf_cons ]);
-  (* README [N1], [N2], [N3]: the named refusal as the maintainer decision
-     makes it, pinned. Two creations of 8 and 3 for each Werf, each with a
-     condition that holds: ref runs them in document order and plays, [3, 8]
-     reads p. And two quantifier folds over the same created schuiten whose
-     matrices read k in opposite orders: every allowed order reads p, but no
-     single read does in every order, so the refusal is named where ref's
-     words were due *)
+  (* README [N1], [N2], [N3]: the refusal pinned. Two creations of 8 and 3 for
+     each Werf, each with a condition that holds: ref runs them in document
+     order and plays, [3, 8] reads p. And two quantifier folds over the same
+     created schuiten whose matrices read k in opposite orders: every allowed
+     order reads p, and clingo refuses all the same *)
   let holds = pf_cmp "equal" (lit "0") (lit "0") in
   let per_werf ?precondition vs =
     List.mapi
@@ -11289,6 +11270,31 @@ let () =
   unbound_fires ~name:"the created schuit reads k, whose need is filled (tr-cr-1-ctl, control)"
     ~ir:(doc ~creations:[ eight_ ] tr) ~param:"p" ~case_text:(pf_case ~instances:(h1 ~rp:"1" ()) hb)
     ~silent:"bonus leeg";
+  (* README [L3]: the read of k that raises the barrier sits in the matrix of a
+     fold over the created schuiten, and clingo counts it where every allowed
+     order reaches it. Two schuiten created for each Werf, 3 then 8, and the
+     matrix TEN MINSTE 1 [lengte > 5, k > 0]: ref reads 3 first, its read of k
+     ends the Let, and bonus is leeg; in the order [8, 3] the fold settles at 8
+     and k is not read, so clingo fires the guard on p in ref's words *)
+  let made v =
+    Printf.sprintf
+      {|{ "node": "ObjectCreation", "name": "maak schuit van %s", "versions": [ { "createdType": "Schuit", "subject": "Werf",
+          "assignments": [ { "node": "MemberAssignment", "member": "lengte", "value": %s, "characteristic": false } ],
+          "validity": { "node": "Validity" },
+          "connectingRole": %s } ] }|}
+      v (lit v) schuiten
+  in
+  let l3 =
+    pf_rule ~ot:"Haven" ~objective:"bonus"
+      (let_ "k" (pf_a ~ot:"Haven" "restpost")
+         (plus
+            (summed ~el:"Werf" ~attr:"bonus" ~role_ref:werven
+               (kv ~cutoff:1 "atLeast" (pf_comp ~cutoff:1 "atLeast" [ gt length (lit "5"); gt k (lit "0") ])))
+            p))
+  in
+  pinned_loud ~entry:"L3"
+    ~name:"a barrier raised in the matrix of a fold over created schuiten, ref reads 3 first (l3-3-8)"
+    ~ir:(doc ~creations:[ made "3"; made "8" ] l3) ~case_text:(pf_case ~instances:(h1 ()) hb) ~needle:(pf_reason "p");
   (* tr-w-1: the read of k in a part inside the value of j *)
   let trw ?precondition () =
     pf_rule ~ot:"Werf" ~objective:"bonus" ?precondition
@@ -11815,17 +11821,13 @@ let () =
     ~ir:(doc ~rule_defs:[ goed ] [ eight ])
     ~case_text:(w1 [ {|{ "kind": "characteristicPresent", "label": "W1", "characteristic": "goed" }|}; pf_cons ])
 
-(* FIXRONDE 5, lens point 3 (README [N4]): each fold's range gets an order
-   model of its own, also where two folds range over the same list, so an
-   order-dependent atom of one fold and one of the other can each hold in an
-   order of their own while no single order makes both true. nr-1: keur 99
-   indien TEN MINSTE 1 schuiten [TEN MINSTE 1 [lengte > 5, TEN MINSTE 1 van de
-   schuiten van zijn werf [TEN MINSTE 1 [lengte < 5, lengte > p]]]] over a
-   created 8 and 3. In [8, 3] the outer fold settles at 8; in [3, 8] the inner
-   fold settles at 3; no order reads p, and ref plays. The twin that fires
-   joins "the outer fold reads 3 in some order" (3 before 8) with "the inner
-   fold reads 8 in some order" (8 before 3). With the two schuiten in the case,
-   in either order, both play. *)
+(* README [N4]: two folds over the same created members, where no order reads
+   p. nr-1: keur 99 indien TEN MINSTE 1 schuiten [TEN MINSTE 1 [lengte > 5,
+   TEN MINSTE 1 van de schuiten van zijn werf [TEN MINSTE 1 [lengte < 5,
+   lengte > p]]]] over a created 8 and 3. In [8, 3] the outer fold settles at
+   8; in [3, 8] the inner fold settles at 3; no order reads p, and ref plays;
+   clingo refuses all the same. With the two schuiten in the case, in either
+   order, both play. *)
 let () =
   let werf = pf_ot ~ident:"Werf" ~plural:"Werven" [ ("keur", pf_n0) ]
   and schuit = pf_ot ~ident:"Schuit" ~plural:"Schuiten" [ ("lengte", pf_n0) ] in
@@ -18599,12 +18601,13 @@ let () =
    creation adds (ch. 3.9a/5.7a): the point read of a schuit's peil in the
    matrix "TEN MINSTE 1 [lengte > 5, de peil op 1 januari 2025 > 0]" of "TEN
    MINSTE 1 schuiten" of a Werf, its schuit S1 of the case with the peil as the
-   asOfDate-bucket scalar, and one schuit created for every Werf. S1 of 3 beside
-   a created 8: the 8 settles the fold where it comes first and S1 does not, so
-   one allowed order reads S1's peil and another does not, and clingo refuses
-   in the named sentence (CLINGO-035), whichever order ref keeps. S1 of 3 beside
-   a created 3: every order reads S1's peil, EF-037 in ref's words. S1 of 8:
-   S1 settles the fold at itself, so no order reads its peil, and both play. *)
+   asOfDate-bucket scalar, and one schuit created for every Werf. The read sits
+   in the matrix of a fold over members a creation adds, so clingo refuses the
+   translation (CLINGO-035), whichever order ref keeps: S1 of 3 beside a
+   created 8, where the 8 settles the fold where it comes first and S1 does
+   not, so one allowed order reads S1's peil and another does not; S1 of 3
+   beside a created 3, where every order reads it; and S1 of 8, which settles
+   the fold at itself, so no order reads it and ref plays. *)
 let () =
   let werf = pf_ot ~ident:"Werf" ~plural:"Werven" [ ("keur", pf_n0) ]
   and schuit = pf_ot ~ident:"Schuit" ~plural:"Schuiten" ~grain:[ ("peil", "month") ] [ ("lengte", pf_n0); ("peil", pf_n0) ] in
@@ -18650,6 +18653,18 @@ let () =
       rows
   in
   let keur = [ pf_is ~label:"W1" ~attr:"keur" "99"; pf_cons ] in
+  let order_refused ~name ~ir ~case_text =
+    let d, c = load_pair ~ir ~case_text in
+    match translate d c with
+    | (_ : string) -> check (name ^ ": expected the refusal CLINGO-035, got a program") false
+    | exception Uchar_ref.Value.Fault { code; text = m; _ } ->
+        check
+          (name ^ " (" ^ Uchar_ref.Value.report ~code m ^ ")")
+          (code = Some "CLINGO-035"
+          && Uchar_ref.Case.contains
+               ~needle:{|whether the quantifier fold "de schuiten" reaches it depends on the order of the members a creation adds|}
+               m)
+  in
   (* one allowed order reads S1's peil; ref's own order reads S1, the case's
      link, first *)
   let some_order = doc "8" and case3 = case "3" keur in
@@ -18658,10 +18673,7 @@ let () =
    | (_ : string list) -> check "EF-037, some order: ref faults in its own order (got a world)" false
    | exception Uchar_ref.Value.Fault { code; text = m; _ } ->
        check ("EF-037, some order: ref faults in its own order (" ^ m ^ ")") (code = Some "EF-037"));
-  faults_at_solving ~code:("CLINGO-035", []) ~name:"EF-037, some order: clingo refuses in the named sentence"
-    ~ir:some_order ~case_text:case3
-    ~needle:{|whether the quantifier fold "de schuiten" reaches it depends on the order of the members a creation adds|}
-    ();
+  order_refused ~name:"EF-037, some order: clingo refuses with CLINGO-035" ~ir:some_order ~case_text:case3;
   (* every allowed order reads S1's peil *)
   let every_order = doc "3" in
   (let d, c = load_pair ~ir:every_order ~case_text:case3 in
@@ -18669,11 +18681,10 @@ let () =
    | (_ : string list) -> check "EF-037, every order: ref faults (got a world)" false
    | exception Uchar_ref.Value.Fault { code; text = m; _ } ->
        check ("EF-037, every order: ref faults (" ^ m ^ ")") (code = Some "EF-037"));
-  faults_at_solving ~code:("EF-037", [ ("attribute", "peil"); ("label", "S1") ])
-    ~name:"EF-037, every order: clingo faults in ref's words" ~ir:every_order ~case_text:case3
-    ~needle:"the temporal read of \"peil\" needs the full timeline" ();
+  order_refused ~name:"EF-037, every order: clingo refuses with CLINGO-035" ~ir:every_order ~case_text:case3;
   (* no allowed order reads S1's peil *)
-  both_answer ~name:"EF-037, no order: S1 of 8 settles the fold at itself" ~ir:every_order ~case_text:(case "8" keur)
+  ref_matches ~name:"EF-037, no order: S1 of 8 settles the fold at itself" ~ir:every_order ~case_text:(case "8" keur);
+  order_refused ~name:"EF-037, no order: clingo refuses with CLINGO-035" ~ir:every_order ~case_text:(case "8" keur)
 
 (* RUNTIME-SEMANTICS ch. 9.5, the absence markers: the golden
    jutterswet-afwezigheidsmarkers in both executors, the constructor name of

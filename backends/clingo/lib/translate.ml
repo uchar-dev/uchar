@@ -369,6 +369,14 @@ type range_order = {
    fold's matrix — as translated for one member variable *)
 type part = { pt_id : int; pt_order : range_order; pt_parent : string; pt_member : string }
 
+(* an atom whose truth may hang on the order of the members a creation or a
+   fact creation adds to a fold's range, which the spec does not norm (ch.
+   3.9a/5.7a): the matrix reach of a quantifier fold over such a range, with
+   what the refusal names; a Let barrier by the binder and the ask; a Let's
+   demand by the binder. A guard that reads one is refused where the atom does
+   hang on that order ([refuse_order_dependent]) *)
+type order_source = Fold_reach of string | Let_barrier of { binder : string; ask : string } | Let_demand of string
+
 (* ch. 10.6 for the unbound-parameter guard ([reach_at]): one record per Let
    the rule level translates *)
 type let_info = {
@@ -541,11 +549,15 @@ type ctx = {
      serial their ids and range orders share *)
   mutable parts : part list;
   mutable part_serial : int;
-  (* a guard atom whose truth depends on the order of the members a creation
-     adds, which the spec does not norm: the atom (it holds in every allowed
-     order) maps to its form that holds in some allowed order, its form that
-     holds in some and not in every one, and what the named sentence names *)
-  mutable named : (string * (string * string * string)) list;
+  (* the atoms whose truth may hang on the order of the members a creation
+     adds ([order_source]); the reach of every read of a binder whose Let has a
+     demand; the guards that read such an atom, each with the sentence of its
+     refusal ([reach_guard]); and the asks of a Let barrier that compare
+     members of a range a creation adds ([emit_barriers]) *)
+  mutable order_atoms : (string * order_source) list;
+  mutable demand_reaches : (string * string list) list;
+  mutable order_guards : (string list * (string -> string)) list;
+  mutable order_asks : string list;
   (* the Let lowering's branch hoist moves the operands beside a branch into
      both arms, behind the branch's condition, while ref evaluates them before
      it ([hoist_branch]; the retired README [S2]). [hoisted]: per branch
@@ -831,11 +843,9 @@ let other_day_test_reason =
   "a nested day-kind test on a date other than the bound day is a recognised, unexecuted form (the \xc2\xa79.8 \
    composition is carried on the bound day only)"
 
-(* the tail of every refusal where a read hangs on the order of the members a
-   creation adds (maintainer decision 2026-09-23): one order the spec allows
-   reaches the read and another does not, so the refusal is named and never in
-   ref's words, whichever order ref itself keeps. Its guard carries CLINGO-035,
-   a refusal, never the fault kind of the read ([order_code]) *)
+(* the tail of the refusal of a fault whose reach may hang on the order of the
+   members a creation adds (CLINGO-035, [refuse_order_dependent]): the spec
+   does not norm that order, and ref's own order is no norm either *)
 let order_not_normed = "depends on the order of the members a creation adds, which is not normed (ch. 3.9a/5.7a)"
 
 (* The code (RUNTIME-SEMANTICS ch. 5.7b, or this backend's register) of a
@@ -1369,8 +1379,9 @@ let has_recursive_creation (doc : document) =
            g.member_list)
     doc.rule_groups
 
-(* can a creation or a fact creation add a member to a fold's range at run
-   time? Such a member has no normed place in the range (ch. 3.9a/5.7a) *)
+(* does the document have a creation or a fact creation, which may add a
+   member to a range at run time? Such a member has no normed place in the
+   range (ch. 3.9a/5.7a); [created_fact_types] says which ranges *)
 let doc_dynamic (doc : document) = doc.object_creations <> [] || doc.fact_creations <> []
 
 (* the predicates of a range order, written once:
@@ -1428,13 +1439,10 @@ let unbound_param_reason name =
   Printf.sprintf "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)" name
 
 (* that refusal for an unbound parameter. [what] names the node whose read
-   depends on that order: a quantifier fold, or a Let whose value waits for
+   may depend on that order: a quantifier fold, or a Let whose value waits for
    its binder or whose barrier may end it first *)
 let unbound_param_order_reason name what =
   Printf.sprintf "parameter %S is unbound in this case, and whether %s reads it %s" name what order_not_normed
-
-(* the code of every refusal that ends in [order_not_normed] *)
-let order_code = guardc "CLINGO-035"
 
 (* that refusal for any other fault ref raises at a read, in ref's [reason] *)
 let reached_order_reason reason what = Printf.sprintf "%s; whether %s reaches it %s" reason what order_not_normed
@@ -1454,54 +1462,31 @@ let reached_order_reason reason what = Printf.sprintf "%s; whether %s reaches it
    witness is the guard's subject, so the diagnosis names who read it.
 
    Where the members a creation adds to a fold's range decide the read, their
-   order is not normed (ch. 3.9a/5.7a), and an atom of [guard] that depends on
-   it has two forms ([ctx.named]): the atom itself says "in every allowed
-   order", its other form "in some allowed order". The guard is written with
-   the first, so it fires in ref's words only where every allowed order reads
-   the parameter; the named twins cover the rest of "some allowed order"; where
-   no allowed order reads it, nothing fires. Three kinds of atom have the two
-   forms: a quantifier fold's matrix reach ([emit_kv_reach]), a Let barrier
-   ([barred], [emit_barriers]) and a Let value's demand ([note_binder_read]).
-   "Every allowed order" is decided per read: where two reads of one binder
-   each cover some orders and together all, the refusal is named although
-   ref's words were due (README [N3]). And "some allowed order" is decided per
-   fold's range: two folds over one list each take an order of their own, so
-   a twin can join atoms that no single order makes true, and the refusal is
-   named where no allowed order reads the parameter (README [N4]).
+   order is not normed (ch. 3.9a/5.7a), and ref's own order is no norm either:
+   the guard would fire in one allowed order and not in another. Three kinds
+   of atom in [guard] can hang on that order ([order_source]): a quantifier
+   fold's matrix reach over such a range ([emit_kv_reach]), a Let barrier that
+   compares the members of such a range ([barred], [emit_barriers]), and the
+   demand of a Let whose binder is read behind one of these
+   ([note_binder_read]). A guard that reads one is refused at translation
+   with CLINGO-035 ([refuse_order_dependent]), as the Drools backend refuses
+   the form (DROOLS-259), also where every allowed order reads the parameter
+   or none does.
 
    The guard is read at the fixpoint, as ref reads faults (RUNTIME-SEMANTICS
    ch. 5.7): a read ref reaches only in a pass before a creation or a rule of
    the same stratum wrote what its short circuit depends on fires nothing.
-   Where the body is not exact otherwise, it errs in one direction. Silent: the
-   Let lowering keeps a value behind an enclosing need on a path that does not
-   read it, and the guard follows the lowering ([reach_at], README [S1]). *)
+   Where the body is not exact otherwise, it errs in one of two directions.
+   Loud: a Let barrier that a read of the binder in the matrix of a quantifier
+   fold over created members raises counts that read where every allowed order
+   reaches it, so the guard fires where the order ref keeps bars it (README
+   [L3]). Silent: the Let lowering keeps a value behind an enclosing need on a
+   path that does not read it, and the guard follows the lowering ([reach_at],
+   README [S1]). *)
 let reach_guard ctx ~witness ~reason ?code ~(order_reason : string -> string) body =
-  begin
-    emit_viol ctx ?code ~subject:witness reason body;
-    (* the named twins: the rest of "read in some allowed order". One rule per
-       order-dependent atom, split on the first that does not hold in every
-       order: the atoms before it in their every-order form, it in its
-       some-but-not-every form, the atoms after it in their some-order form —
-       so the twins never overlap the guard or each other *)
-    let dep = List.sort_uniq compare (List.filter (fun a -> List.mem_assoc a ctx.named) body) in
-    List.iteri
-      (fun j a ->
-        let _, _, fold = List.assoc a ctx.named in
-        let pos b =
-          let rec go k = function [] -> None | x :: r -> if x = b then Some k else go (k + 1) r in
-          go 0 dep
-        in
-        let body' =
-          List.map
-            (fun b ->
-              match (List.assoc_opt b ctx.named, pos b) with
-              | Some (o, q, _), Some k -> if k < j then b else if k = j then q else o
-              | _ -> b)
-            body
-        in
-        emit_viol ctx ~code:order_code ~subject:witness (order_reason fold) body')
-      dep
-  end
+  emit_viol ctx ?code ~subject:witness reason body;
+  if List.exists (fun a -> List.mem_assoc a ctx.order_atoms) body then
+    ctx.order_guards <- (body, order_reason) :: ctx.order_guards
 
 let unbound_param_code name = guardc ~params:[ ("parameter", Fixed name) ] "EF-014"
 
@@ -1536,9 +1521,9 @@ let bucket_scalars ctx ~otype ~attr =
    its subject, so the diagnosis names it: [reach] says that evaluation reaches
    the read, and the atoms beside the instance say that the read is of it. Both
    are built only for a document whose case gives such a scalar, so every
-   other document translates as before. Where an atom of [reach] hangs on the
-   order of the members a creation adds, the named twins of [reach_guard] say
-   the rest, in CLINGO-035. *)
+   other document translates as before. Where an atom of [reach] may hang on
+   the order of the members a creation adds, the translation is refused
+   ([reach_guard]). *)
 let bucket_scalar_fault ctx ~(reach : unit -> string list) ~attr ~(sentence : string -> string)
     (reads : (Uchar_ref.World.instance * string list) list) =
   if reads <> [] then begin
@@ -1672,11 +1657,9 @@ let rel_parts li (s : site) =
    the binder came before, on the path taken, and found the need leeg". Inside
    a per-member part "before" also compares members ([emit_barriers]), so the
    atom carries the member of every part between the Let and the node.
-   Registers the ask, so [emit_barriers] writes its rules. Where a creation can
-   add a fold member, "before" can hang on an order the spec does not norm: the
-   predicate then says "barred in some allowed order", so the atom says "not
-   barred in any", and its other form ([ctx.named]) negates the predicate with
-   suffix _c, "barred in every allowed order" *)
+   Registers the ask, so [emit_barriers] writes its rules. Where a part ranges
+   over members a creation can add, "before" can hang on an order the spec does
+   not norm, and the atom is an [order_source] *)
 let barred ctx li (s : site) i =
   let parts = rel_parts li s in
   let ids = List.map (fun p -> p.pt_id) parts in
@@ -1696,12 +1679,8 @@ let barred ctx li (s : site) i =
     else String.concat "," (li.li_subject :: List.map (fun p -> p.pt_member) parts)
   in
   let atom = Printf.sprintf "not %s(%s)" name args in
-  if doc_dynamic ctx.doc && not (List.mem_assoc atom ctx.named) then begin
-    let not_c = Printf.sprintf "not %s_c(%s)" name args in
-    ctx.named <-
-      (atom, (not_c, Printf.sprintf "%s, %s(%s)" not_c name args, Printf.sprintf "the Let %S" li.li_binder))
-      :: ctx.named
-  end;
+  if List.exists (fun (p : part) -> p.pt_order.ro_dynamic) parts && not (List.mem_assoc atom ctx.order_atoms) then
+    ctx.order_atoms <- (atom, Let_barrier { binder = li.li_binder; ask = name }) :: ctx.order_atoms;
   atom
 
 (* the reach of [node] at site [s]: the subject, the enclosing [rule_guard]
@@ -1779,44 +1758,31 @@ let rec read_places ctx li ~(skip : let_info) (node, (s : site)) =
    member by member, so a read by an earlier member ends the Let for all later
    members, wherever in the part the read stands, and only a read by the same
    member compares places — level by level through nested parts. Which member
-   is earlier is the range order's ([use_ro]). Where no creation can add a
-   member, that is the case order and one family of rules answers. Where one
-   can, the order of the added members is not normed, and each ask gets two
-   families: [name]_c, "barred in every allowed order" (a read that every order
-   reaches, by a member that every order puts first), and [name], "barred in
-   some allowed order" (a read that some order reaches, by a member that some
-   order puts first). The guard reads "not [name]", its
-   named twin "not [name]_c" ([barred]). Lets are taken shallow first, because
-   a barrier rule asks only about Lets nested deeper, so every place is asked
+   is earlier is the range order's ([use_ro]): the case order. Where an ask
+   compares the members of a range a creation can add, whose order is not
+   normed, it is recorded ([ctx.order_asks]), and a guard that reads it is
+   refused ([refuse_order_dependent]). Lets are taken shallow first, because a
+   barrier rule asks only about Lets nested deeper, so every place is asked
    before its Let is written. Only guards ask, so a case that binds its
    parameters writes none of this. *)
 let emit_barriers ctx =
-  let dynamic = doc_dynamic ctx.doc in
-  let some_order a = match List.assoc_opt a ctx.named with Some (o, _, _) -> o | None -> a in
   List.iter
     (fun li ->
       if li.li_asks <> [] then begin
         let sv = li.li_subject in
         let base = Printf.sprintf "isa(%s,%s)" sv (str li.li_ot) in
         let not_n = Printf.sprintf "not lbn%d(%s)" li.li_id sv in
-        let lbr = Printf.sprintf "lbr%d" li.li_id and lbr_o = Printf.sprintf "lbr%d_o" li.li_id in
+        let lbr = Printf.sprintf "lbr%d" li.li_id in
         emit ctx "#defined %s/3." lbr;
-        if dynamic then emit ctx "#defined %s/3." lbr_o;
         emit_rule ctx ~head:(Printf.sprintf "lbn%d(%s)" li.li_id sv) ~body:(base :: li.li_va);
         let reads = List.concat_map (read_places ctx li ~skip:li) (List.rev li.li_reads) in
-        let write_reads lbr form =
-          List.iter
-            (fun (i, atoms, parts) ->
-              let top = match parts with q :: _ -> q.pt_id | [] -> 0 in
-              emit_rule ctx ~head:(Printf.sprintf "%s(%s,%d,%d)" lbr sv i top) ~body:(form atoms))
-            reads
-        in
-        write_reads lbr Fun.id;
-        if dynamic then write_reads lbr_o (List.map some_order);
-        (* the rules of one family for one ask; [some]: barred in some allowed
-           order, else in every one *)
-        let family ~some ~lbr name (i, gparts) =
-          let form = if some then List.map some_order else Fun.id in
+        List.iter
+          (fun (i, atoms, parts) ->
+            let top = match parts with q :: _ -> q.pt_id | [] -> 0 in
+            emit_rule ctx ~head:(Printf.sprintf "%s(%s,%d,%d)" lbr sv i top) ~body:atoms)
+          reads;
+        (* the rules of one ask *)
+        let family name (i, gparts) =
           match gparts with
           | [] -> emit_rule ctx ~head:(Printf.sprintf "%s(S,%d)" name i)
                     ~body:
@@ -1859,35 +1825,60 @@ let emit_barriers ctx =
                       let c = common rparts gparts in
                       let eqs k = List.init k (fun j -> Printf.sprintf "%s = %s" (List.nth bg j) (List.nth xs j)) in
                       for lvl = 0 to c - 1 do
-                        let ro = use_ro ctx (List.nth rparts lvl).pt_order in
+                        let order = (List.nth rparts lvl).pt_order in
+                        if order.ro_dynamic && not (List.mem name ctx.order_asks) then
+                          ctx.order_asks <- name :: ctx.order_asks;
+                        let ro = use_ro ctx order in
                         let parent = parent_of xs lvl and x = List.nth xs lvl and g = List.nth bg lvl in
-                        (* the read's member first: in some order, it is not
-                           the guard's and the case order does not put the
-                           guard's first; in every order, the case order puts
-                           the read's first *)
-                        let first =
-                          if some then
-                            [ Printf.sprintf "%s != %s" x g; Printf.sprintf "not %s_n(%s,%s,%s)" ro parent g x ]
-                            @ dom lvl
-                          else Printf.sprintf "%s_n(%s,%s,%s)" ro parent x g :: dom (lvl + 1)
-                        in
-                        emit_rule ctx ~head ~body:(form atoms @ eqs lvl @ first @ [ not_n ])
+                        (* the read's member first: the case order puts it
+                           before the guard's *)
+                        let first = Printf.sprintf "%s_n(%s,%s,%s)" ro parent x g :: dom (lvl + 1) in
+                        emit_rule ctx ~head ~body:(atoms @ eqs lvl @ first @ [ not_n ])
                       done;
-                      if ir < i then
-                        emit_rule ctx ~head ~body:(form atoms @ eqs c @ dom c @ [ not_n ])
+                      if ir < i then emit_rule ctx ~head ~body:(atoms @ eqs c @ dom c @ [ not_n ])
                   | _ -> ())
                 reads
         in
-        List.iter
-          (fun (i, gparts, name) ->
-            if dynamic then begin
-              family ~some:false ~lbr (name ^ "_c") (i, gparts);
-              family ~some:true ~lbr:lbr_o name (i, gparts)
-            end
-            else family ~some:false ~lbr name (i, gparts))
-          (List.rev li.li_asks)
+        List.iter (fun (i, gparts, name) -> family name (i, gparts)) (List.rev li.li_asks)
       end)
     (List.stable_sort (fun a b -> compare a.li_depth b.li_depth) (List.rev ctx.lets))
+
+(* the place a guard of [reach_guard] reads an atom of [ctx.order_atoms] that
+   does hang on the order of the members a creation adds: what the refusal
+   names. A barrier does where its ask compares such members
+   ([emit_barriers]); a demand does where a read of its binder is reached
+   through an atom that does. [seen] is the chain of demands being asked *)
+let rec order_dependent ctx ~seen atom =
+  if List.mem atom seen then fault "the reach of the demand %s runs through itself" atom;
+  let seen = atom :: seen in
+  let the_let binder = Printf.sprintf "the Let %S" binder in
+  List.find_map
+    (fun (a, src) ->
+      if a <> atom then None
+      else
+        match src with
+        | Fold_reach what -> Some what
+        | Let_barrier { binder; ask } -> if List.mem ask ctx.order_asks then Some (the_let binder) else None
+        | Let_demand binder ->
+            if
+              List.exists
+                (fun (d, reach) -> d = atom && List.exists (fun b -> order_dependent ctx ~seen b <> None) reach)
+                ctx.demand_reaches
+            then Some (the_let binder)
+            else None)
+    ctx.order_atoms
+
+(* ch. 3.9a/5.7a: the order of the members a creation adds is not normed, so a
+   fault whose reach hangs on it would be raised in one allowed order and not
+   in another. The translation is refused at the first such guard, after
+   [emit_barriers], when every read of every binder is known *)
+let refuse_order_dependent ctx =
+  List.iter
+    (fun (body, order_reason) ->
+      match List.find_map (order_dependent ctx ~seen:[]) body with
+      | Some what -> faultc "CLINGO-035" "%s" (order_reason what)
+      | None -> ())
+    (List.rev ctx.order_guards)
 
 (* does evaluating [e] possibly read a node [hit] accepts? Everywhere: closed
    bodies and the bodies of invoked functions included *)
@@ -1944,11 +1935,6 @@ let expr_reaches ctx (hit : expr -> bool) (e : expr) : bool =
   in
   x e
 
-(* a demand atom "dmdN(S)" with its predicate suffixed: "dmdN_o(S)" *)
-let demand_form atom suffix =
-  let i = String.index atom '(' in
-  String.sub atom 0 i ^ suffix ^ String.sub atom i (String.length atom - i)
-
 (* the demand a Let binder needs, if its value may read a parameter the case
    does not bind or a binder that has a demand of its own ([ctx.demands]) *)
 let demand_for ctx ~subject (value : expr) : (string * string) option =
@@ -1977,10 +1963,9 @@ let under_demand ctx demand (f : unit -> 'a) : 'a =
    and an inner Let of the same name is not the outer one. That Let keeps the
    read and where it stands, for the barrier rules of [emit_barriers]; if it has
    a demand, the demand is derived wherever this read is reached — that Let's
-   own need excluded, for the read is what evaluates it. Where a creation can
-   add a fold member, the demand has its two forms ([bind_let]): the demand
-   itself from the reach in its every-order form, [_o] from its some-order
-   form *)
+   own need excluded, for the read is what evaluates it. The reach is kept, so
+   that [refuse_order_dependent] can ask whether it hangs on the order of the
+   members a creation adds *)
 let note_binder_read ctx ~subject ~subject_ot (node : expr) ident =
   match List.assoc_opt (norm ident) ctx.binders with
   | None -> ()
@@ -1998,10 +1983,7 @@ let note_binder_read ctx ~subject ~subject_ot (node : expr) ident =
           | Some d ->
               let reach = rule_reach ~skip:li ctx ~subject ~subject_ot node in
               emit_rule ctx ~head:d ~body:(reach);
-              if doc_dynamic ctx.doc then begin
-                let some_order a = match List.assoc_opt a ctx.named with Some (o, _, _) -> o | None -> a in
-                emit_rule ctx ~head:(demand_form d "_o") ~body:(List.map some_order reach)
-              end))
+              ctx.demand_reaches <- (d, reach) :: ctx.demand_reaches))
 
 (* the canonical role name: the plural for a to-many role, the singular
    otherwise — the same convention the case facts use *)
@@ -2323,11 +2305,29 @@ let with_member_reach ctx ~subject ~subject_ot ~join ?range ?part f =
   ctx.member_reach <- saved_r;
   r
 
+(* the fact types in which a creation or a fact creation lays a link at run
+   time: the link of an object creation to its subject, whose fact type the
+   creation's translation derives the same way ([translate_object_creation]),
+   and the created relation of a fact creation. A member enters a fold's range
+   at run time only through a link of one of them *)
+let created_fact_types ctx env =
+  List.filter_map
+    (fun (oc : resolved_object_creation) ->
+      match oc.oc_connecting_role with
+      | Some rb -> Some rb.rb_fact_type
+      | None ->
+          let subject = req "ObjectCreationVersion.subject" oc.oc_subject
+          and created = req "ObjectCreationVersion.createdType" oc.created_type in
+          Option.map (fun (ft, _, _) -> ft) (Eval.connecting_pair env ~from_type:subject ~to_type:created))
+    ctx.doc.object_creations
+  @ List.map (fun (fc : resolved_fact_creation) -> fc.fc_fact_type) ctx.doc.fact_creations
+
 (* the range order of a fold over [el] from [subject] ([use_ro]), and a part
    of it for member variable [x] *)
 let range_order ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x ~join =
   ctx.part_serial <- ctx.part_serial + 1;
-  let doc = ctx.doc in
+  let created = List.map norm (created_fact_types ctx env) in
+  let steps = Option.to_list source_role @ Option.value source_path ~default:[] in
   { ro_id = ctx.part_serial; ro_parent = subject; ro_member = x; ro_parent_ot = subject_ot; ro_join = join;
     ro_facts =
       lazy
@@ -2341,7 +2341,7 @@ let range_order ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x ~j
              else acc)
            ctx.case.world.instances []);
     ro_one_step = source_path = None;
-    ro_dynamic = doc_dynamic doc;
+    ro_dynamic = List.exists (fun (rb : role_binding) -> List.mem (norm rb.rb_fact_type) created) steps;
     ro_emitted = false }
 
 let new_part ctx (ro : range_order) =
@@ -4172,14 +4172,10 @@ let bind_let ctx ~subject ~subject_ot ~binder ~value ~body translate_value =
   let demand = demand_for ctx ~subject value in
   li.li_demand <- Option.map (fun (d, subj) -> Printf.sprintf "%s(%s)" d subj) demand;
   (* whether a read of the binder is reached can hang on the order of the
-     members a creation adds, and then so does the demand: the demand itself
-     says "in every allowed order", [_o] "in some" ([note_binder_read]) *)
+     members a creation adds, and then so does the demand ([order_dependent]) *)
   (match li.li_demand with
-  | Some d when doc_dynamic ctx.doc ->
-      let o = demand_form d "_o" and q = demand_form d "_q" in
-      emit_rule ctx ~head:q ~body:[ o; Printf.sprintf "not %s" d ];
-      ctx.named <- (d, (o, q, Printf.sprintf "the Let %S" li.li_binder)) :: ctx.named
-  | _ -> ());
+  | Some d -> ctx.order_atoms <- (d, Let_demand li.li_binder) :: ctx.order_atoms
+  | None -> ());
   let saved_v = ctx.value_of in
   ctx.value_of <- Some li;
   let va, vt, vs = under_demand ctx demand translate_value in
@@ -4506,21 +4502,14 @@ let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation 
 
    The members before X are counted over contributors only, so the filter
    keeps the order exactly, and the outcome is open or settled by the trigger
-   table over them. A settled outcome stays settled when the prefix grows, so
-   two prefixes from the range order ([use_ro]) decide:
-   - [reach](S,X): every contributor that may come before X in SOME order the
-     spec allows — all but those the case order puts after it. Open there,
-     X is read in every allowed order, ref's included: the guard fires in
-     ref's words.
-   - [reach]_o(S,X), only where a creation or a fact creation can add a
-     member: the contributors that come before X in EVERY allowed order — the
-     case links the case order puts before it. Open there, X is read in some
-     allowed order; open there and not above ([reach]_q), in one order and not
-     in another, so the guard fires in a sentence that names the unnormed
-     order, never in ref's, whichever order ref keeps. Settled there, no
-     allowed order reads X. N is the contributor count at the fixpoint.
-   Stratified by construction: the helpers read the matrix and the range, and
-   only the guards read them. *)
+   table over them. [reach](S,X) counts every contributor that may come
+   before X in some order the spec allows — all but those the case order
+   ([use_ro]) puts after it — against N, the contributor count at the
+   fixpoint; open there, X is read in every allowed order. Where a creation
+   or a fact creation can add a member to the range, that order is not normed
+   and a guard that reads [reach] is refused ([reach_guard]). Stratified by
+   construction: the helpers read the matrix and the range, and only the
+   guards read them. *)
 let emit_kv_reach ctx ~reach ~subject ~subject_ot ~x ~join ~fatoms ~atoms ~quantifier_kind ~cutoff
     ~(ro : range_order) =
   let rp = use_ro ctx ro in
@@ -4547,15 +4536,7 @@ let emit_kv_reach ctx ~reach ~subject ~subject_ot ~x ~join ~fatoms ~atoms ~quant
   in
   prefix b (Printf.sprintf "Y != X, not %s_n(S,X,Y)" rp);
   emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" reach)
-    ~body:[ Printf.sprintf "%s(S,X,K,H)" b; Printf.sprintf "%s(S,N)" n; still_open ];
-  if ro.ro_dynamic then begin
-    let c = reach ^ "_c" in
-    prefix c (Printf.sprintf "%s_n(S,Y,X)" rp);
-    emit_rule ctx ~head:(Printf.sprintf "%s_o(S,X)" reach)
-      ~body:[ Printf.sprintf "%s(S,X,K,H)" c; Printf.sprintf "%s(S,N)" n; still_open ];
-    emit_rule ctx ~head:(Printf.sprintf "%s_q(S,X)" reach)
-      ~body:[ Printf.sprintf "%s_o(S,X)" reach; Printf.sprintf "not %s(S,X)" reach ]
-  end
+    ~body:[ Printf.sprintf "%s(S,X,K,H)" b; Printf.sprintf "%s(S,N)" n; still_open ]
 
 (* a chain of Lets over a Match in a closed body, as [body_branches] pushes it
    into the arms: [Some (lets, scrutinee, arms)], the Lets outermost first, when
@@ -9290,7 +9271,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          matrix waits for that; the helpers exist only once such a guard asks,
          so a case that binds its parameters translates as before. Where a
          creation can add a member, the order the guard depends on is not
-         normed, and the guard has a named twin ([unbound_param_guard]) *)
+         normed, and the reach is an [order_source] *)
       let reach = ref None and matrix = ref None in
       let reached () =
         match !reach with
@@ -9306,13 +9287,12 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
                   ~quantifier_kind:kv_quantifier ~cutoff ~ro
             | None -> ());
             (if ro.ro_dynamic then
-               let at suffix = Printf.sprintf "%s%s(%s,%s)" r suffix subject x in
                let fold =
                  match kv_source with
                  | Some b -> Printf.sprintf "the quantifier fold %S" b
                  | None -> Printf.sprintf "the quantifier fold over %s" el
                in
-               ctx.named <- (at "", (at "_o", at "_q", fold)) :: ctx.named);
+               ctx.order_atoms <- (Printf.sprintf "%s(%s,%s)" r subject x, Fold_reach fold) :: ctx.order_atoms);
             r
       in
       let atoms =
@@ -15141,7 +15121,8 @@ let translate_guarded (doc : document) (case : Case.t) : string * guards =
       write_scale = 1;
       write_unbounded = false; write_value = None; in_condition = false; desugared_group = false; rule_name = "?"; binders = []; param_reach = (fun _ -> []); deposit_subject = None; let_needs = [];
       value_of = None;
-      lets = []; let_serial = 0; demands = []; parts = []; part_serial = 0; named = []; hoisted = [];
+      lets = []; let_serial = 0; demands = []; parts = []; part_serial = 0; order_atoms = [];
+      demand_reaches = []; order_guards = []; order_asks = []; hoisted = [];
       before_arm = []; signs = []; sign_helpers = []; oc_strata;
       form_subject = None; anchored = []; member_reach = lazy []; calendar_rounding = false }
   in
@@ -15235,6 +15216,7 @@ let translate_guarded (doc : document) (case : Case.t) : string * guards =
   List.iteri (fun i u -> each_form (fun () -> translate_uniqueness_union ctx i u)) doc.uniqueness_unions;
   ctx.anchored <- !all_anchored;
   emit_barriers ctx;
+  refuse_order_dependent ctx;
   translate_case ctx case;
   emit ctx "#show val/3. #show has/2. #show inconsistent/2. #show tl/5.";
   emit ctx "#show inconsistent_code/3.";
