@@ -2237,9 +2237,13 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
                 in
                 read_whole left (World.timeline self b);
                 let bound = eval_expr env world self ~err boundary in
-                let periods =
-                  Timeline.true_periods_of tested ~span (fun v -> Arith.compare_op op v bound)
+                (* the operand types decide the empty cells of the comparison
+                   (ch. 1.2), which two leeg runtime values cannot reveal *)
+                let holds v b =
+                  Arith.compare_op ?static_numeric:(static_numeric env left boundary)
+                    ~static_date:(static_date env left boundary) op v b
                 in
+                let periods = Timeline.true_periods_of tested ~span (fun v -> holds v bound) in
                 (* ch. 5.12: a gap of the compared timeline reads leeg (ch. 3.1), so
                    where a leeg side satisfies the comparison the reading shows it as a
                    period without a value, within each segment of the totalled timeline;
@@ -2251,7 +2255,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
                       ~span
                   with
                   | [] -> []
-                  | gaps when Arith.compare_op op Value.Empty bound ->
+                  | gaps when holds Value.Empty bound ->
                       List.map (fun (v, t) -> { Timeline.s_from = v; s_to = t; s_value = Value.Empty }) gaps
                   | _ -> []
                 in

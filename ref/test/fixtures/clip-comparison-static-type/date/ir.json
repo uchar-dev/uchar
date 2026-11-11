@@ -1,0 +1,228 @@
+{
+ "format": "uchar-ir-v1",
+ "model": {
+  "objectTypes": [
+   {
+    "node": "ObjectType",
+    "name": "Jutter",
+    "animate": true,
+    "plural": "Jutters",
+    "attributes": [
+     {
+      "node": "Attribute",
+      "name": "wachtvergoeding per maand",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified"
+      },
+      "timeline": {
+       "node": "TimelineFacet",
+       "granularity": "month",
+       "count": 1
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "peilstand",
+      "datatype": {
+       "node": "Date",
+       "precision": "day"
+      },
+      "timeline": {
+       "node": "TimelineFacet",
+       "granularity": "month",
+       "count": 1
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "drempelstand",
+      "datatype": {
+       "node": "Date",
+       "precision": "day"
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "peilsom",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified"
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "afwijksom",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified"
+      }
+     }
+    ],
+    "characteristics": []
+   }
+  ],
+  "factTypes": [],
+  "parameters": [],
+  "domains": [],
+  "unitSystems": [],
+  "dimensions": [],
+  "timelines": [],
+  "dayKinds": []
+ },
+ "rules": {
+  "rules": [
+   {
+    "node": "Rule",
+    "name": "peilsom van een jutter",
+    "versions": [
+     {
+      "validity": {
+       "node": "Validity"
+      },
+      "target": {
+       "node": "AttributeReference",
+       "attribute": "peilsom",
+       "subjectType": "Jutter",
+       "source": {
+        "snippet": "De peilsom van een Jutter"
+       }
+      },
+      "value": {
+       "node": "Aggregation",
+       "kind": "total",
+       "arguments": [
+        {
+         "node": "AttributeReference",
+         "attribute": "wachtvergoeding per maand",
+         "subjectType": "Jutter",
+         "source": {
+          "snippet": "zijn wachtvergoeding per maand"
+         }
+        }
+       ],
+       "elementType": "Jutter",
+       "filter": {
+        "node": "Comparison",
+        "op": "equal",
+        "left": {
+         "node": "AttributeReference",
+         "attribute": "peilstand",
+         "subjectType": "Jutter",
+         "source": {
+          "snippet": "zijn peilstand"
+         }
+        },
+        "right": {
+         "node": "AttributeReference",
+         "attribute": "drempelstand",
+         "subjectType": "Jutter",
+         "source": {
+          "snippet": "zijn drempelstand"
+         }
+        },
+        "source": {
+         "snippet": "gedurende de tijd dat zijn peilstand gelijk is aan zijn drempelstand"
+        }
+       },
+       "type": {
+        "node": "Number",
+        "whole": true,
+        "decimals": 0,
+        "sign": "unspecified"
+       },
+       "source": {
+        "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn peilstand gelijk is aan zijn drempelstand"
+       }
+      },
+      "initialisation": false,
+      "presentation": "equation"
+     }
+    ]
+   },
+   {
+    "node": "Rule",
+    "name": "afwijksom van een jutter",
+    "versions": [
+     {
+      "validity": {
+       "node": "Validity"
+      },
+      "target": {
+       "node": "AttributeReference",
+       "attribute": "afwijksom",
+       "subjectType": "Jutter",
+       "source": {
+        "snippet": "De afwijksom van een Jutter"
+       }
+      },
+      "value": {
+       "node": "Aggregation",
+       "kind": "total",
+       "arguments": [
+        {
+         "node": "AttributeReference",
+         "attribute": "wachtvergoeding per maand",
+         "subjectType": "Jutter",
+         "source": {
+          "snippet": "zijn wachtvergoeding per maand"
+         }
+        }
+       ],
+       "elementType": "Jutter",
+       "filter": {
+        "node": "Comparison",
+        "op": "notEqual",
+        "left": {
+         "node": "AttributeReference",
+         "attribute": "peilstand",
+         "subjectType": "Jutter",
+         "source": {
+          "snippet": "zijn peilstand"
+         }
+        },
+        "right": {
+         "node": "AttributeReference",
+         "attribute": "drempelstand",
+         "subjectType": "Jutter",
+         "source": {
+          "snippet": "zijn drempelstand"
+         }
+        },
+        "source": {
+         "snippet": "gedurende de tijd dat zijn peilstand ongelijk is aan zijn drempelstand"
+        }
+       },
+       "type": {
+        "node": "Number",
+        "whole": true,
+        "decimals": 0,
+        "sign": "unspecified"
+       },
+       "source": {
+        "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn peilstand ongelijk is aan zijn drempelstand"
+       }
+      },
+      "initialisation": false,
+      "presentation": "equation"
+     }
+    ]
+   }
+  ],
+  "dayKindDefinitions": [],
+  "objectCreations": [],
+  "allocations": [],
+  "consistencies": [],
+  "uniquenesses": [],
+  "factCreations": [],
+  "startPointDeterminations": [],
+  "ruleGroups": []
+ },
+ "diagnostics": []
+}

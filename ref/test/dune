@@ -109,5 +109,8 @@
   ; an ordered allocation whose shares do not fit, the place of the fault
   (glob_files fixtures/allocation-fit-order/*.json)
   ; a sum per period whose member and emptyFallback both fault
-  (glob_files fixtures/sum-per-period-fallback-order/*.json))
+  (glob_files fixtures/sum-per-period-fallback-order/*.json)
+  ; a clip by a comparison of a text and of a date timeline against a leeg bound
+  (glob_files fixtures/clip-comparison-static-type/text/*.json)
+  (glob_files fixtures/clip-comparison-static-type/date/*.json))
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

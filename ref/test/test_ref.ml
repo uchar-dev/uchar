@@ -13975,6 +13975,21 @@ let () =
           check ("WV-5.11-som-per-periode-leden-voor-leegwaarde (got: " ^ text ^ ")") (code = Some "EF-037")
       | _ -> check "WV-5.11-som-per-periode-leden-voor-leegwaarde (no fault at all)" false)
 
+(* WV-1.2-knip-statisch-type: the golden jutterswet-peilwacht (case1, the
+   drempelstand leeg) with peilstand and drempelstand declared as text, and as
+   a date. "gedurende de tijd dat zijn peilstand gelijk is aan zijn
+   drempelstand" never holds against a leeg bound for a text or a date, also
+   not on a gap of the peilstand (ch. 1.2), so the peilsom is 0 where the
+   numeric golden gives 50 and 60; "ongelijk aan" keeps its cells *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/clip-comparison-static-type/" in
+  List.iter
+    (fun kind ->
+      plays ~ident:("WV-1.2-knip-statisch-type-" ^ kind) ~ir:(read (dir ^ kind ^ "/ir.json"))
+        ~case_data:(read (dir ^ kind ^ "/case.json")) (fun _ -> ()))
+    [ "text"; "date" ]
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;
