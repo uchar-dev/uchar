@@ -3,13 +3,13 @@
 Goal: the layer marks of IR-SPEC say what is true. Core is what the spec gives a meaning, which an executor evaluates
 or refuses with a registered code and never skips; presentation is what no executor's answer depends on, and gate 13
 proves that per field. Forms without a norm leave the wire. The contradictions the Fable review of 2026-11-11 found in
-the spec text are resolved. The maintainer's decisions 9–13 of 2026-11-11 in full:
+the spec text are resolved. The maintainer's norm decisions of 2026-11-11 in full:
 `werk/review-candidates-triage/normbesluiten.md` beside the repository; the reviews: `werk/review-fable/spec-coherence/`,
 `werk/review-fable/dialect-decisions/` (with `inventory.md`, the classification of every layer mark) and
 `werk/review-fable/forms-without-norm/`. Small commits, each with its witness.
 
-Part 1 — the definition (decision 12) and the inventory (decisions 10, 11):
-- IR-SPEC r. 136–137 gets the definition of core and presentation in the wording of decision 12. Ch. 1 and ch. 10
+The definition and the inventory of layer marks:
+- IR-SPEC r. 136–137 gets the definition of core and presentation in the wording the maintainer chose (in the decisions file). Ch. 1 and ch. 10
   exist only as lines of "Document structure"; the definition goes into the conventions, ch. 10 becomes a section.
 - Ch. 10 lists every presentation field with its test: strip (`Dimension.preposition`, `origin`, the percentage tag,
   a non-recursive `RuleGroup`, the side tables: vocabularies, default names) or exchange (`Characteristic.kind`, the
@@ -30,7 +30,7 @@ Part 1 — the definition (decision 12) and the inventory (decisions 10, 11):
 - The OPEN of the percentage tag (IR-SPEC r. 1251–1253) closes: CONSTRUCTS row 27 closed it, and stripping the tag
   on all 7 goldens changes no outcome.
 
-Part 2 — forms without a norm (decision 13):
+Forms without a norm:
 - Off the wire: `elevenTest`, `hourOf`, `minuteOf`, `secondOf`, `millisecondOf`, and "is gevuurd" (`Regelversie` with
   `inconsistent: false`). Schema, IR-SPEC, the spelling table (`v1-naamtabel.json`), the frontend (a Unresolved with
   diagnostic, WF-113), Drools (execution and DROOLS-129 go; their tests follow), the gate-2 self-test rows. No
@@ -39,26 +39,26 @@ Part 2 — forms without a norm (decision 13):
   9 digits), a negative case for its verifier arm, and clingo's translation or a registered refusal.
 - "Is inconsistent" stays and gets a golden, a negative case and a registered clingo refusal in place of the
   fallback CLINGO-011.
-- The convention (decision 13b): a form is on the wire when RUNTIME-SEMANTICS (or IR-SPEC, for a form without
+- The convention: a form is on the wire when RUNTIME-SEMANTICS (or IR-SPEC, for a form without
   evaluation) gives it a meaning with a worked example; a form with a clause but without a golden or a negative case
   stays, as OPEN in the WF index.
 - The distribution: its message "onopgeloste naam" is wrong for a form taken off the wire; the toolchain session gets
   a text (not built here).
 
-Part 3 — coherence of the text (spec-coherence review):
-- S1 (decision 9): WF-046 and RS ch. 6.3 get the exception that inside an instance-ordered part every edge counts
+Coherence of the text:
+- Strata: WF-046 and RS ch. 6.3 get the exception that inside an instance-ordered part every edge counts
   positive and the members share one stratum (ch. 6.2).
-- S2: WF-050's "no second defaults group, no rule" says what the rule already admits (several groups iff all
+- WF-050's "no second defaults group, no rule" says what the rule already admits (several groups iff all
   `unordered`; "no rule" per level of the type chain).
-- S3: WV-6.4-j's "never withdrawn (ch. 5.3)" follows the decision of 2026-11-02 (an attribution that does not decide
+- The worked example WV-6.4-j's "never withdrawn (ch. 5.3)" follows the decision of 2026-11-02 (an attribution that does not decide
   withdraws what it set); measure the example's outcome.
-- S4: stale WF sentences in RS (the WF-030 union clause, WF-024 retired, the WF-030 OPEN decided), and the node kind
+- Stale WF sentences in RS (the WF-030 union clause, WF-024 retired, the WF-030 OPEN decided), and the node kind
   "cell" in RS ch. 6.1.
-- S5: WF-008 and WF-010 are checked under the keys of WF-036 and WF-023/035; their OPEN and its reason go.
-- S8: references: the chapters IR-SPEC names but does not have, about 66 "ch. N" without a document name that mean RS,
+- WF-008 and WF-010 are checked under the keys of WF-036 and WF-023/035; their OPEN and its reason go.
+- References: the chapters IR-SPEC names but does not have, about 66 "ch. N" without a document name that mean RS,
   and the two that point nowhere (r. 520, r. 1823).
 - The chapter-introduction counts (ch. 2: four exceptions; ch. 3: the cell forms; ch. 4: `filledCount`).
-- S6 (141 arms without a negative case, two unreachable): the unreachable two go; the rest as OPEN per decision 13b,
+- Verifier arms without a negative case (141, two unreachable): the unreachable two go; the rest as OPEN per the convention above,
   filled by card `review-findings-2026-11-11` where the reviews named them.
 
 Acceptance:
