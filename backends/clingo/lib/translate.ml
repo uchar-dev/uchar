@@ -3540,6 +3540,9 @@ let quotient_units_ok ?per_period ctx left_side right_side =
    fail-fast guards a form writes at either level ride one *)
 type carrier = { witness : string; guard_body : string list }
 
+let rule_carrier ctx ~subject ~subject_ot =
+  { witness = subject; guard_body = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard }
+
 (* the viol/2 range fence on emitted arithmetic: fires when an operand
    could push the term past clingo's silently-wrapping integer range;
    [body] must ground the subject *)
@@ -3576,24 +3579,10 @@ let day_number_fence ctx ~subject ~body ~count_ok t =
   emit_viol ctx ~code:(guardc "CLINGO-037") ~subject date_year_after_reason (b @ [ Printf.sprintf "(%s) > %d" t day_number_limit ]);
   emit_viol ctx ~code:(guardc "CLINGO-037") ~subject date_day_below_reason (b @ [ Printf.sprintf "(%s) < -%d" t day_number_limit ])
 
-(* both compared operands times their factors from [comparison_factors]. Each
+(* both compared terms times their factors from [comparison_factors]. Each
    fence stands on the bare term: past max_int31 / k the product itself would
-   wrap. *)
-let compared_with_factors ctx ~subject ~subject_ot (kl, kr) ((bl, _, _) as l) ((br, _, _) as r) =
-  let body = (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard) @ bl @ br in
-  let times k ((b, t, s) as operand) =
-    if k = 1 then operand
-    else begin
-      range_guard ctx ~subject ~body [ (t, max_int31 / k) ];
-      (b, Printf.sprintf "(%s*%d)" t k, s)
-    end
-  in
-  (times kl l, times kr r)
-
-(* [compared_with_factors] in a closed body: the fences ride [carrier], as
-   every closed-body fence does; [atoms] bind both terms *)
-let closed_compared_with_factors ctx ~carrier (l : expr) (r : expr) atoms lt rt =
-  let kl, kr = comparison_factors ctx l r in
+   wrap. The fences ride [carrier]; [atoms] bind both terms *)
+let compared_with_factors ctx ~carrier (kl, kr) ~atoms lt rt =
   let times k t =
     if k = 1 then t
     else begin
@@ -4227,6 +4216,26 @@ let cmp_complement = function
   | Greater_or_equal | Later_or_equal -> "<"
   | Equal -> "!="
   | Not_equal -> "=="
+
+(* the IfThenElse condition over operands that are never leeg, at rule level
+   ([value_condition]) and in a closed body ([body_condition]): the terms
+   restated by their factors and brought to one scale, then the positive
+   builtin and its exact complement. Returns (binding atoms, positive builtin,
+   complement builtin); every fence rides [carrier] *)
+let compared_builtins ctx ~carrier ~op (l : expr) (r : expr) (la, lt, ls) (ra, rt, rs) =
+  let atoms = la @ ra in
+  let lt, rt = compared_with_factors ctx ~carrier (comparison_factors ctx l r) ~atoms lt rt in
+  let m = max ls rs in
+  (* the fence reads the operand before the rescale, which can wrap *)
+  let sc t s =
+    if s = m then t
+    else begin
+      range_guard ctx ~subject:carrier.witness ~body:(carrier.guard_body @ atoms) [ (t, max_int31 / (m / s)) ];
+      Printf.sprintf "(%s*%d)" t (m / s)
+    end
+  in
+  let lt = sc lt ls and rt = sc rt rs in
+  (atoms, Printf.sprintf "%s %s %s" lt (cmp_sym op) rt, Printf.sprintf "%s %s %s" lt (cmp_complement op) rt)
 
 (* ch. 10.6 (call-by-need): does evaluating [e] READ the binder [b]? The
    answer decides both halves of the L semantics in this backend — whether the
@@ -9141,7 +9150,13 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       let kl, kr = comparison_factors ctx (req "left" left_side) (req "right" right_side) in
       let l = expr_term ctx ~subject ~subject_ot (req "left" left_side) in
       let r = expr_term ctx ~subject ~subject_ot (req "right" right_side) in
-      let l, r = compared_with_factors ctx ~subject ~subject_ot (kl, kr) l r in
+      let l, r =
+        let (bl, tl, sl), (br, tr, sr) = (l, r) in
+        let tl, tr =
+          compared_with_factors ctx ~carrier:(rule_carrier ctx ~subject ~subject_ot) (kl, kr) ~atoms:(bl @ br) tl tr
+        in
+        ((bl, tl, sl), (br, tr, sr))
+      in
       let b1, t1, s1 = l and b2, t2, s2 = r in
       (* the sum/struct/symbolic arms above route by the wire `type`; the scale
          is the declaration's, so it catches what an absent or lying annotation
@@ -9178,7 +9193,13 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       let kl, kr = comparison_factors ctx (req "left" left_side) (req "right" right_side) in
       let l = expr_term ctx ~subject ~subject_ot (req "left" left_side) in
       let r = expr_term ctx ~subject ~subject_ot (req "right" right_side) in
-      let l, r = compared_with_factors ctx ~subject ~subject_ot (kl, kr) l r in
+      let l, r =
+        let (bl, tl, sl), (br, tr, sr) = (l, r) in
+        let tl, tr =
+          compared_with_factors ctx ~carrier:(rule_carrier ctx ~subject ~subject_ot) (kl, kr) ~atoms:(bl @ br) tl tr
+        in
+        ((bl, tl, sl), (br, tr, sr))
+      in
       let b1, t1, s1 = l and b2, t2, s2 = r in
       (* an ORDERING over a ground constructor term has no meaning: clingo's
          term order would answer where ref faults the unordered comparison.
@@ -10444,20 +10465,7 @@ and body_condition ctx ~carrier (c : condition_expr) : string list * string * st
       let ls = numeric_scale ~what:"a closed-body comparison" ls in
       let rs = numeric_scale ~what:"a closed-body comparison" rs in
       (* two convertible units restate by the factors of [comparison_factors] *)
-      let lt, rt = closed_compared_with_factors ctx ~carrier l r (la @ ra) lt rt in
-      let m = max ls rs in
-      (* the fence reads the operand before the rescale, which can wrap *)
-      let sc t s =
-        if s = m then t
-        else begin
-          range_guard ctx ~subject:carrier.witness ~body:(carrier.guard_body @ la @ ra) [ (t, max_int31 / (m / s)) ];
-          Printf.sprintf "(%s*%d)" t (m / s)
-        end
-      in
-      let lt = sc lt ls and rt = sc rt rs in
-      ( la @ ra,
-        Printf.sprintf "%s %s %s" lt (cmp_sym op) rt,
-        Printf.sprintf "%s %s %s" lt (cmp_complement op) rt )
+      compared_builtins ctx ~carrier ~op l r (la, lt, ls) (ra, rt, rs)
   | _ ->
       faultc "CLINGO-017"
         "an IfThenElse condition in a closed body is a comparison over bound terms (no corpus \
@@ -10995,24 +11003,7 @@ and value_condition ctx ~subject ~subject_ot (c : condition_expr) : string list 
       let rs = numeric_scale ~what:"a value-position IfThenElse comparison" rs in
       (* two convertible units restate by the factors of [comparison_factors], as
          in a condition: a binder carries its value's unit ([eff_unit]) *)
-      let (_, lt, _), (_, rt, _) =
-        compared_with_factors ctx ~subject ~subject_ot (comparison_factors ctx l r) (la, lt, ls) (ra, rt, rs)
-      in
-      let m = max ls rs in
-      (* the fence reads the operand before the rescale, which can wrap *)
-      let sc t s =
-        if s = m then t
-        else begin
-          range_guard ctx ~subject
-            ~body:((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard) @ la @ ra)
-            [ (t, max_int31 / (m / s)) ];
-          Printf.sprintf "(%s*%d)" t (m / s)
-        end
-      in
-      let lt = sc lt ls and rt = sc rt rs in
-      ( la @ ra,
-        Printf.sprintf "%s %s %s" lt (cmp_sym op) rt,
-        Printf.sprintf "%s %s %s" lt (cmp_complement op) rt )
+      compared_builtins ctx ~carrier:(rule_carrier ctx ~subject ~subject_ot) ~op l r (la, lt, ls) (ra, rt, rs)
   | _ ->
       faultc "CLINGO-023"
         "a value-position IfThenElse condition is a comparison over bound operands (no corpus case for more)"
