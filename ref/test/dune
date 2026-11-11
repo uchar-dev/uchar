@@ -129,5 +129,7 @@
   ; a point read of a time-dependent parameter the case does not bind
   (glob_files fixtures/point-read-unbound-parameter/*.json)
   ; a duration in a day kind over two datum-tijden, an operand leeg
-  (glob_files fixtures/day-kind-duration-datetime/*.json))
+  (glob_files fixtures/day-kind-duration-datetime/*.json)
+  ; a date ordering under the whole-period qualifier
+  (glob_files fixtures/whole-period-date-ordering/*.json))
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

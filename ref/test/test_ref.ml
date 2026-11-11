@@ -14100,6 +14100,17 @@ let () =
           expect_fault_msg ident evaluate "duration in a day kind over datum-tijd operands is a recognised, unexecuted form"))
     [ "case1-beide-leeg"; "case2-van-leeg" ]
 
+(* WV-3.9-datumordening-geweigerd: the golden jutterswet-gehele-jaar-lege-grens
+   with wachtdagen and wachtgrens declared as dates and the comparison "later":
+   a date-valued whole-period comparison has no reading (ch. 3.9, 3.12 row 5)
+   and is refused by name *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/whole-period-date-ordering/" in
+  with_files ~ir:(read (dir ^ "ir.json")) ~case_data:(read (dir ^ "case.json")) (fun findings _ evaluate ->
+      check "WV-3.9-datumordening-geweigerd: verifier-clean" (findings = []);
+      expect_fault_msg "WV-3.9-datumordening-geweigerd" evaluate "a date-valued whole-period comparison")
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

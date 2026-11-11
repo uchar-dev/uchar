@@ -2933,6 +2933,14 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
                attribute of %S and a scalar bound"
               self.otype
       in
+      (match (op, static_type env tested_e) with
+      | ( (Less | Less_or_equal | Greater | Greater_or_equal | Earlier | Earlier_or_equal | Later | Later_or_equal),
+          Some (Date_in_days | Date_time_type) ) ->
+          Value.fault
+            "a date-valued whole-period comparison (earlier or later over the timeline of dates %S) has no reading \
+             (ch. 3.9, 3.12)"
+            attr
+      | _ -> ());
       let tl = qualifier_timeline owner attr in
       read_whole tested_e tl;
       let tested = Option.value tl ~default:[] in

@@ -1,0 +1,41 @@
+{
+ "format": "uchar-case-v0",
+ "asOfDate": "2025-06-15",
+ "input": {
+  "instances": [
+   {
+    "label": "J1",
+    "objectType": "Jutter",
+    "attributes": {
+     "wachtdagen": {
+      "timeline": [
+       {
+        "from": "2025-01-01",
+        "to": "2026-01-01",
+        "value": {
+         "date": "2025-03-01"
+        }
+       }
+      ]
+     },
+     "wachtgrens": {
+      "date": "2025-01-01"
+     }
+    },
+    "roles": {},
+    "characteristics": []
+   }
+  ],
+  "parameters": {}
+ },
+ "expected": [
+  {
+   "kind": "attributeValue",
+   "label": "J1",
+   "attribute": "gelijkpremie",
+   "value": {
+    "number": "20"
+   }
+  }
+ ]
+}

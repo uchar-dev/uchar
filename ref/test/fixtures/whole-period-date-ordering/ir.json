@@ -1,0 +1,151 @@
+{
+ "format": "uchar-ir-v1",
+ "model": {
+  "objectTypes": [
+   {
+    "node": "ObjectType",
+    "name": "Jutter",
+    "animate": true,
+    "plural": "Jutters",
+    "attributes": [
+     {
+      "node": "Attribute",
+      "name": "wachtdagen",
+      "datatype": {
+       "node": "Date",
+       "precision": "day"
+      },
+      "timeline": {
+       "node": "TimelineFacet",
+       "granularity": "month",
+       "count": 1
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "wachtgrens",
+      "datatype": {
+       "node": "Date",
+       "precision": "day"
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "gelijkpremie",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified"
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "ongelijkpremie",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified"
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "afwijkpremie",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "unspecified"
+      }
+     }
+    ],
+    "characteristics": []
+   }
+  ],
+  "factTypes": [],
+  "parameters": [],
+  "domains": [],
+  "unitSystems": [],
+  "dimensions": [],
+  "timelines": [],
+  "dayKinds": []
+ },
+ "rules": {
+  "rules": [
+   {
+    "node": "Rule",
+    "name": "gelijkpremie van een jutter",
+    "versions": [
+     {
+      "validity": {
+       "node": "Validity"
+      },
+      "target": {
+       "node": "AttributeReference",
+       "attribute": "gelijkpremie",
+       "subjectType": "Jutter",
+       "source": {
+        "snippet": "De gelijkpremie van een Jutter"
+       }
+      },
+      "value": {
+       "node": "Literal",
+       "value": {
+        "number": "20"
+       },
+       "type": {
+        "node": "Number",
+        "whole": true,
+        "decimals": 0,
+        "sign": "unspecified"
+       },
+       "source": {
+        "snippet": "20"
+       }
+      },
+      "condition": {
+       "node": "Comparison",
+       "op": "later",
+       "left": {
+        "node": "AttributeReference",
+        "attribute": "wachtdagen",
+        "subjectType": "Jutter",
+        "source": {
+         "snippet": "zijn wachtdagen"
+        }
+       },
+       "right": {
+        "node": "AttributeReference",
+        "attribute": "wachtgrens",
+        "subjectType": "Jutter",
+        "source": {
+         "snippet": "zijn wachtgrens"
+        }
+       },
+       "wholePeriod": {
+        "node": "WholePeriod",
+        "granularity": "year",
+        "negated": false
+       },
+       "source": {
+        "snippet": "zijn wachtdagen gedurende het gehele jaar gelijk is aan zijn wachtgrens"
+       }
+      },
+      "initialisation": false,
+      "presentation": "calculation"
+     }
+    ]
+   }
+  ],
+  "dayKindDefinitions": [],
+  "objectCreations": [],
+  "allocations": [],
+  "consistencies": [],
+  "uniquenesses": [],
+  "factCreations": [],
+  "startPointDeterminations": [],
+  "ruleGroups": []
+ },
+ "diagnostics": []
+}
