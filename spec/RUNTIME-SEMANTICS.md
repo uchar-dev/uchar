@@ -4058,10 +4058,17 @@ rest = A − Σ_all share_i
 
 with `min(x, leeg) = x` (no cap) and `floor_d` = round toward −∞ at the
 declared decimals (identity when no rounding is declared), applied once to
-the exact `min(raw_i, max_i)`. Each share and the rest are written through
-the assignment gate (ch. 2.4 point 1): a share or a rest that does not fit
-its target is EF-006, one fault for the allocation on its source, and the
-allocation writes none of its shares and no rest there (ch. 4.4). *v0
+the exact `min(raw_i, max_i)`. The recurrence runs in the unit of the pot
+`A`: every `raw_i`, `share_i`, `pot_k` and the rest is an amount in that
+unit, and `floor_d` floors at the declared decimals in it. A cap declared in
+another unit is restated into the unit of the pot by its exact factor, as a
+comparison restates (ch. 2.6, rule 5), before the `min` and so before
+`floor_d`. Each share and the rest are written through the assignment gate
+(ch. 2.4 point 1), which restates them from the unit of the pot into the
+unit of their target (ch. 2.6, rule 6): a share or a rest that does not fit
+its target there is EF-006, one fault for the allocation on its source, and
+the allocation writes none of its shares and no rest there (ch. 4.4).
+Worked example: ch. 4.6, "Units in the recurrence". *v0
 residual (same class as ch. 2.1/3.7):* v0 computes the share divisions at
 16 significant digits; the exact fractions above are normative, and the
 executors compute them.
@@ -4168,6 +4175,16 @@ than picking a winner.
   floor **433** (pot → 367);
   66s: raw 3/4×367 = 275,25 → cap **250**, and 1/4×367 = 91,75 → floor
   **91**; rest = 1800 − 1774 = **26**.
+- Units in the recurrence (`ref/` tests verbatim): the full recurrence
+  above, as the golden `jutterswet-rangmaximering` carries it, with the pot,
+  the caps, the shares and the rest declared in EUR and one of the last
+  three moved to the sister unit `ct` = 1/100 EUR. Caps in ct, given as 50099/50000/50000/25000/25000 ct:
+  the first cap restates to 500,99 EUR before the `min` and the floor, so
+  the first recipient gets **500**; the shares are **500, 500, 433, 250,
+  91** EUR, rest **26** EUR, as with the caps in EUR. Shares declared in
+  whole ct (caps in EUR): the same recurrence in EUR, written as **50000,
+  50000, 43300, 25000, 9100** ct, rest **26** EUR. The rest declared in
+  whole ct: shares **500, 500, 433, 250, 91** EUR, rest **2600** ct.
 - Exact before the floor: 2999999999999999,97 in equal shares over 3,
   floor at 2 decimals → **999999999999999,99** three times, rest **0**
   (the quotient at 16 significant digits would be 1000000000000000,00 and
