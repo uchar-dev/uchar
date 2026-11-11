@@ -846,8 +846,9 @@ false`, `decimals = 0` (no precision ceiling; §13.3.3 form (c)). The
 - **WF-008** Two `Enumeration` types are compatible only when they name the
   same declaring domain; value-set equality does not create compatibility.
   (v0 behaviour at use-time, lifted into the type identity rule.) This is a
-  *use-time* rule recorded with the type it governs; its verifier check
-  belongs to the expression layer — forward reference, **OPEN**.
+  *use-time* rule recorded with the type it governs; the verifier checks it
+  at the equality of the expression layer, under the key
+  `WF-036.equality-enumeration-domains` (ch. 4.6).
 - **WF-088** An `Enumeration` **use site** — every `Enumeration` datatype
   in the document other than the domain declaration itself: an attribute
   or parameter datatype, a `FunctionDef` parameter or result, an
@@ -1097,7 +1098,7 @@ the enumeration alone (WF-087).
   constructors, same payload datatypes, same order); and two sum-typed
   operands of one comparison MUST name the same declaring domain — the
   nominal-identity rule, the sum-type sibling of WF-008 (which stays
-  stated over `Enumeration` and keeps its own OPEN). A use site is every
+  stated over `Enumeration`). A use site is every
   `SumType` at any depth of a datatype: of an attribute or a parameter, a
   list element, the payload of another sum type, a struct field and a
   `FunctionDef` parameter (`corpus/negative/wf061-list-element-drift`,
@@ -1601,10 +1602,13 @@ Worked examples (expected values exact):
   (ch. 4.6 (r)).
 - **WF-010** Restatement (in any layer) between non-convertible units is
   ill-formed. Like WF-008 this is a *use-time* rule — it constrains the
-  layers where restatement occurs, and its check lands with the expression
-  layer. A unit-less operand meets a unit-bearing operand only where the
-  operator table of the expression layer explicitly allows it (forward
-  reference; specified with that layer — **OPEN**).
+  layers where restatement occurs, and the verifier checks it there, under
+  the key of the rule of each position: a write, `WF-023.incompatible-units`;
+  an addition or a subtraction, `WF-035.additive-unit-mismatch`; an ordering
+  and an equality, `WF-036.ordering-unit-mismatch` and
+  `WF-036.equality-unit-mismatch`. A unit-less operand meets a unit-bearing
+  operand only where the operator table of the expression layer allows it
+  (WF-035, WF-036: a unitless literal adopts its sibling's unit).
 - **WF-092** A unit MUST spell its conversion pair whole: `canonical` and
   `factorToCanonical` (v0 `canoniek`, `factorNaarCanoniek`) are present
   together or absent together, on every factor of a unit. The bare form (both absent) is admissible and
@@ -10355,9 +10359,8 @@ them for evaluation, but no leg of gate 13 removes them yet.
 Format per rule: statement (in ch. 2–4), verifier check, golden case,
 negative case. `OPEN` = the artifact does not exist yet; an `OPEN` entry is
 tracked debt under the spec discipline, and the Phase-1 exit requires every
-row closed or its OPEN motivated in the row itself (three motivated OPENs
-remain: WF-008 and WF-010 await a wire form or witness v0 cannot yet
-produce; WF-019's negative has no data-shaped counterexample). "gate 3" = implemented in `spec/verifier/` and run by
+row closed or its OPEN motivated in the row itself (one motivated OPEN
+remains: WF-019's negative has no data-shaped counterexample). "gate 3" = implemented in `spec/verifier/` and run by
 `scripts/check-verifier.sh` over every golden and negative case; a
 parenthesis names the clause the v0 wire format cannot carry (that clause
 stays OPEN with the reason). Negatief cases live in
@@ -10374,9 +10377,9 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-005 | timeline facet: count ≥ 1; named adoption total and consistent. **Since L3 (2026-09-24, B18):** a parameter carries the same facet, without a timeline name, and its count clause reports here — WF-018 defers the facet to this rule (ch. 2.10); on a parameter the count is 1 while multi-period grids are OPEN (`RUNTIME-SEMANTICS.md` ch. 3.12), since no executor evaluates it | gate 3 (attributes, characteristics and, since L3, parameters) | `jutterswet-penningjaar` + `jutterswet-penningvintage` (a parameter's facet) | `wf005-count-zero` + `wf005-parameter-facet-count-zero` and `wf005-parameter-facet-count-two` (a parameter's facet below and above 1, since L3) |
 | WF-006 | enumeration domain: ≥ 1 value, values unique | gate 3 | `jutterswet-keurstaat` (the keurklasse domain) | `wf006-duplicate-enum-value` |
 | WF-007 | **Since L3 (2026-09-24, B14):** a second arm — the presentation tag `presentation: "percentage"` stands only at a declaration position, never inside a type annotation (ch. 2.4); the precision forms are unchanged, on `whole`/`decimals`. number precision is exactly one of whole / fixed / unbounded — at every `Number` in the document: the declarations (model layer) and every `type` a value node carries of its own (since L2, 2026-09-24, a reference and a rule target carry none, B13; the rule-target arm of 2026-09-04 left the wire with the target's `type`). Measured and OPEN: the form check reaches none of a `ListType` element, `StructType` field, `SumType` payload, `FunctionDef` result/parameter or lambda parameter's `datatype`; two of those yield verifier-clean documents today (witnesses `jutterswet-postenheffing`, `jutterswet-waarderingsinvoer`), the other four are refused everywhere by neighbouring rules (WF-062/067/068/070/073/074/091); the enum walk recurses through lists, sums and structs, the struct walk only through lists, and a lambda parameter's `datatype` is reached by neither | gate 3 (model layer + the walk's type prologue) | `jutterswet-vondstnummer` (declarations) + `jutterswet-vondsttarief` (until L2 the rule-target arm crossing a percentage target clean; since L3 the presentation arm's positive side, the tag on its two declarations and on none of its annotations) | `wf007-whole-with-decimals`; `wf007-presentation-tag-by-annotation` (the presentation arm, since L3: a `Literal.type` carrying the tag); `wf007-doeltype-geheel-met-decimalen` (the rule-target arm) was removed with reason at L2 (`corpus/negative/README.md`, L2) |
-| WF-008 | enumeration compatibility = same declaring domain (use-time; expression layer) | OPEN (no document carries two enum operands in one expression; the WF-036 guard already covers the equality site — fold WF-008 into the expression layer when such a witness lands) | OPEN | OPEN |
+| WF-008 | enumeration compatibility = same declaring domain (use-time; expression layer) | gate 3, under the key `WF-036.equality-enumeration-domains` | `jutterswet-keurspelling` (an equality between two attributes of the domain `Keurklasse`) | **OPEN** (no negative case reaches the arm) |
 | WF-009 | unit conversions reduce: no cycles, no unknown targets, positive rational factors. **Since L3 (2026-09-24, B17 (i)):** a factor is the exact rational `{num, den}` of two integers ≥ 1, so positivity is its wire form (the schema and every loader) and lowest terms is WF-092 (c); a `canonical` resolves against its system's units by `abbreviation`; and a unit system declares each abbreviation once, under the ch. 2.1 identity (ch. 2.5: one `Unit` per abbreviation, which the v0 map key could not violate and the L3 list can); no declared factor between the day family and the month family of the calendar (ch. 2.5, the calendar arm; `RUNTIME-SEMANTICS.md` ch. 3.6, maintainer decision 2026-11-03); and a unit that names a `system` has an `abbreviation` that system declares, at every position a unit occupies (the arm on a unit where it occurs), and carries the conversion pair of that declaration (the arm on the conversion of a unit where it occurs); and the `system` of a declaration names the system that declares it (the arm on the system of a declaration) | gate 3 (termination, unknown targets and, since L3, the abbreviation declared twice; the calendar arm; the two arms on a unit where it occurs, in the walk WF-034 (r) and WF-092 share; the arm on the system of a declaration; until L3 also positivity, while exactness was not representable in v0's float factor) | `jutterswet-berging`; for the calendar arm `anchor/jutterswet-verzuimrente-dagen`; for the two arms on a unit where it occurs and the arm on the system of a declaration every golden with a unit system | `wf009-conversion-cycle` + `wf009-duplicate-abbreviation` (an abbreviation declared twice, since L3) + `wf009-calendar-family-factor` (`jr = 365 dg`) + `wf009-undeclared-abbreviation` (`kg` naming the system `Munt`, which declares only `EUR`) + `wf009-undeclared-conversion` (`t` of `Massa` with the factor 100 where its declaration has 1000) + `wf009-declaration-system-mismatch` (the kilogram of `Massa` naming `Gewicht`) |
-| WF-010 | no restatement between non-convertible units (use-time; expression layer) | OPEN (v0 has no restatement node to anchor the check) | OPEN | OPEN |
+| WF-010 | no restatement between non-convertible units (use-time; expression layer) | gate 3, under the keys `WF-023.incompatible-units`, `WF-035.additive-unit-mismatch`, `WF-036.ordering-unit-mismatch` and `WF-036.equality-unit-mismatch` | every golden (gate 3 runs the four arms on each) | `wf023-kg-read-in-unitless-target`, `wf023-unitless-read-in-kg-target`, `wf023-square-into-length` (the write), `wf035-reduced-with-incompatible-units` (the addition); the ordering and the equality arm **OPEN** (no negative case reaches them) |
 | WF-011 | fact-type arity: reciprocal = 1 role, else ≥ 2 (>2 OPEN) | gate 3 | `jutterswet-vondsttelling` | `wf011-one-role` |
 | WF-012 | role names unambiguous within a fact type (incl. plurals) | gate 3 | `jutterswet-vondsttelling` | `wf012-ambiguous-roles` |
 | WF-013 | reciprocal role is to-one; other roles carry explicit cardinality | gate 3 (first clause; declared-vs-defaulted cardinality has no provenance in v0) | `anchor/jutterswet-maatschap` (a reciprocal fact type, folds replayed by gates 5–6) | `wf013-reciprocal-many` |
