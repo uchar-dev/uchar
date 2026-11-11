@@ -5998,7 +5998,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
                   [ v ~params:[("type", datatype_kind d)] "WF-038.fallback-not-number" (sub "emptyFallback")
                       ("sum fallback is " ^ datatype_kind d ^ ", must be numeric") ]
               | _ -> [])
-             @ walk_expr ctx ~binders ~subject (sub "emptyFallback") lw)
+             @ walk_expr ctx ~binders ~subject ~body (sub "emptyFallback") lw)
          | None -> [])
       (* WF-040: the selections of a dimension fold *)
       @ (match f.dimension_selections with
@@ -6139,7 +6139,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
                       of WF-037 above names it as the operand that is no
                       source: reported once, there, in the sentence ref, the
                       ASP backend and the Drools loader give. *)
-                   walk_expr ctx ~binders ~subject
+                   walk_expr ctx ~binders ~subject ~body
                      ~union_ok:((f.kind = Count && arity = 1) || non_source <> None)
                      ~cell_owner:(f.dimension_selections <> None)
                      p a)
@@ -6509,12 +6509,12 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
            (match object_type ctx otn with
             | Some ot -> wf040_cell ctx at ~ot ~attribute:a labels
             | None -> [])
-           @ walk_expr ctx ~binders ~subject ~cell_owner:true (sub "attribute") inner
+           @ walk_expr ctx ~binders ~subject ~body ~cell_owner:true (sub "attribute") inner
        | Some (Attribute_reference _ as inner) ->
            (* an attribute reference with an empty half: the walk's own
               WF-034 arms report that endpoint, so this arm stays silent
               rather than reporting the same defect twice *)
-           walk_expr ctx ~binders ~subject ~cell_owner:true (sub "attribute") inner
+           walk_expr ctx ~binders ~subject ~body ~cell_owner:true (sub "attribute") inner
        | Some inner ->
            (* WF-034 (widened, maintainer decision 2026-09-04, third wave):
               a cell read reads ONE dimensioned attribute, so its `attribute`
@@ -6532,7 +6532,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
            [ v "WF-034.cell-attribute-kind" (sub "attribute")
                "dimension-cell read whose attribute position is not an attribute reference: it \
                 resolves against no declaration" ]
-           @ walk_expr ctx ~binders ~subject (sub "attribute") inner
+           @ walk_expr ctx ~binders ~subject ~body (sub "attribute") inner
        | None ->
            (* the empty half of the same position, and the same consequence
               one field further: measured verifier-clean on both golden cell
@@ -6654,8 +6654,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
                 "the read's date operand carries no type (extension node: day precision required)" ]
       in
       point_in_time_checks @ date_checks
-      @ walk_expr ctx ~binders ~subject (sub "base") base_expr
-      @ walk_expr ctx ~binders ~subject (sub "date") date_value
+      @ walk_expr ctx ~binders ~subject ~body (sub "base") base_expr
+      @ walk_expr ctx ~binders ~subject ~body (sub "date") date_value
   | Construct { typ; constructor_; argument; _ } ->
       (* WF-062: the constructor is declared in the node's sum type; the
          argument is present iff the constructor is unary; the argument is

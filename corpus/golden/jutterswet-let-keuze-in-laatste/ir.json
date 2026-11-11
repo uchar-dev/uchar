@@ -1,0 +1,191 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "drempel",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "toeslaggrens",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "toeslaggrens van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "toeslaggrens",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De toeslaggrens van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "binder": "grens",
+              "value": {
+                "node": "AttributeReference",
+                "attribute": "drempel",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "de drempel van de Jutter"
+                }
+              },
+              "body": {
+                "node": "Aggregation",
+                "kind": "last",
+                "arguments": [
+                  {
+                    "node": "IfThenElse",
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "condition": {
+                      "node": "Comparison",
+                      "op": "greater",
+                      "left": {
+                        "node": "BinderRef",
+                        "name": "grens",
+                        "source": {
+                          "snippet": "de grens"
+                        }
+                      },
+                      "right": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "3"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "3"
+                        }
+                      },
+                      "source": {
+                        "snippet": "de grens groter is dan 3"
+                      }
+                    },
+                    "then": {
+                      "node": "BinderRef",
+                      "name": "grens",
+                      "source": {
+                        "snippet": "de grens"
+                      }
+                    },
+                    "else": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "0"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "0"
+                      }
+                    },
+                    "source": {
+                      "snippet": "de grens als de grens groter is dan 3, anders 0"
+                    }
+                  },
+                  {
+                    "node": "Literal",
+                    "value": {
+                      "number": "1"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "1"
+                    }
+                  }
+                ],
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "de laatste van de grens als de grens groter is dan 3, anders 0, en 1"
+                }
+              },
+              "source": {
+                "snippet": "de grens is de drempel van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
