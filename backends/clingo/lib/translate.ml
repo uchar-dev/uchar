@@ -431,6 +431,9 @@ type ctx = {
      desugaring turns an initialisation and its computation into a group *)
   wire_doc : document;
   case : Case.t;
+  (* the reference interpreter's environment over [doc] alone, built once: its
+     resolvers read the document and nothing of a session *)
+  doc_env : Eval.env;
   buf : Buffer.t;
   mutable fresh : int;
   (* the enclosing rule's condition atoms: every viol/2 or
@@ -595,10 +598,7 @@ let static_type ctx (e : expr) : datatype option =
       | Some (_, _, _, t) -> t
       | None -> None)
   | _ ->
-      Eval.static_type
-        { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
-          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
-        e
+      Eval.static_type ctx.doc_env e
 
 (* a binder entry: the binding's (atoms, term, scale) and its static type *)
 let typed_binder ((a, v, s) : string list * string * int) (t : datatype option) = (a, v, s, t)
@@ -3873,12 +3873,6 @@ let non_source_fold kind el (a : expr) =
     (Ir_v0.Spelling.encode Ir_v0.Spelling.aggregation_kind kind)
     el (Ir_v0.Spelling.a_node a)
 
-(* The reference interpreter's environment over the document alone: its
-   resolvers below read the document and nothing of a session. *)
-let doc_env ctx =
-  { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None;
-    locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
-
 (* The read of [member] on the object the attribute reference [e] reaches
    (ch. 5.8): its val/3 atom, the value variable and the scale of the
    attribute's declaration. [member] is the attribute itself, or one of its
@@ -3930,7 +3924,7 @@ let rec member_read ?(scaled = true) ctx ~subject ~subject_ot ~member (e : expr)
                  hop — an absent link leaves the body underivable, which IS the
                  leeg-on-absent-relation rule (leeg as absence, for free). The
                  hop roles are the bindings, resolved through ref's resolver. *)
-              let roles = List.map (Eval.bound_role (doc_env ctx)) rbs in
+              let roles = List.map (Eval.bound_role ctx.doc_env) rbs in
               List.iter
                 (fun (r : role_ref) ->
                   if r.role_many then
@@ -3941,7 +3935,7 @@ let rec member_read ?(scaled = true) ctx ~subject ~subject_ot ~member (e : expr)
                 List.fold_left
                   (fun (atoms, cur) rb ->
                     let n = fresh ctx "N" in
-                    (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (bound_role_term (doc_env ctx) rb) n ], n))
+                    (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (bound_role_term ctx.doc_env rb) n ], n))
                   ([], subject) rbs
               in
               let v = fresh ctx "A" in
@@ -3972,7 +3966,7 @@ let dimension_cells ctx ~subject ~subject_ot ~scaled argument selections =
   if List.length selections <> List.length dims then
     fault "dimension fold carries %d selections for the %d dimensions of its argument" (List.length selections)
       (List.length dims);
-  let members = List.map (Eval.cell_member (doc_env ctx) ~ot ~attr:a) (Ir_v0.Checks.selected_cells selections) in
+  let members = List.map (Eval.cell_member ctx.doc_env ~ot ~attr:a) (Ir_v0.Checks.selected_cells selections) in
   let reads = List.map (fun member -> member_read ctx ~scaled ~subject ~subject_ot ~member argument) members in
   ctx.fresh <- ctx.fresh + 1;
   let pred = Printf.sprintf "dim%d" ctx.fresh in
@@ -3997,7 +3991,7 @@ let cell_source_fold ctx (e : expr) =
                  labels; _ } ];
          element_object_type = Some el; dimension_selections = None; _ } as f)
     when f.source_role <> None || f.source_path <> None ->
-      let member = Eval.cell_member (doc_env ctx) ~ot:el ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
+      let member = Eval.cell_member ctx.doc_env ~ot:el ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
       Some (Function_call { f with call_arguments = [ Attribute_reference { r with attribute_ref = Some member } ] })
   (* the payload of each contributor (RUNTIME-SEMANTICS ch. 9.5): the member a
      projection rule derives ([payload_projections]), so the fold is the set
@@ -4067,7 +4061,7 @@ let rec symbolic_term ctx ~subject ~subject_ot (e : expr) : string list * string
       { attribute_ref = Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } as inner);
         labels; _ }
     when attr_symbolic_datatype ctx ~otype:ot ~attr:a <> None ->
-      let member = Eval.cell_member (doc_env ctx) ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
+      let member = Eval.cell_member ctx.doc_env ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
       let atoms, v, _ = member_read ~scaled:false ctx ~subject ~subject_ot ~member inner in
       (atoms, v)
   (* the first and the last filled cell of a text, enumeration or boolean
@@ -4817,10 +4811,7 @@ let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation 
               bucket_scalar_guard ctx ~holder:subject ~reach ~otype:subject_ot ~attr:a ~sentence:(qualifier_sentence a);
               []
           | Some rbs ->
-              let env =
-                { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
-                  as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
-              in
+              let env = ctx.doc_env in
               let roles = List.map (Eval.bound_role env) rbs in
               List.iter
                 (fun (r : role_ref) ->
@@ -4880,7 +4871,7 @@ let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation 
         List.fold_left
           (fun (atoms, cur) rb ->
             let n = fresh ctx "N" in
-            (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (bound_role_term (doc_env ctx) rb) n ], n))
+            (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (bound_role_term ctx.doc_env rb) n ], n))
           ([], subject) rbs
       in
       let q = fresh ctx "gplnav" in
@@ -5175,7 +5166,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
      member of its own on the object its reference reaches *)
   | Dimension_cell_read { attribute_ref = Some inner; labels; _ } ->
       let a, ot = dimensioned_reference inner in
-      let member = Eval.cell_member (doc_env ctx) ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
+      let member = Eval.cell_member ctx.doc_env ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
       member_read ctx ~subject ~subject_ot ~member inner
   (* a dimension fold (RUNTIME-SEMANTICS ch. 5.8c, 3): one helper atom per
      selected cell that holds a value, keyed by the index of the cell in the
@@ -5264,10 +5255,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
   | Function_call
       { kind = Count; call_arguments = [ Instance_set_union { branches; _ } ];
         element_object_type = None; source_role = None; source_path = None; filter = None; _ } ->
-      let env =
-        { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
-          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
-      in
+      let env = ctx.doc_env in
       if List.length branches < 2 then
         fault "an instance-set union carries at least TWO selections, found %d"
           (List.length branches);
@@ -5408,7 +5396,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          subselection joins per contributor: the filter atoms range over the
          element variable (an unbound filter operand excludes the
          contributor for free). *)
-      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None } in
+      let env = ctx.doc_env in
       let v = fresh ctx "C" in
       let x = Printf.sprintf "X%s" v in
       let fatoms =
@@ -5530,8 +5518,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          read as unbound, the member stayed a contributor, and the fence
          refused a document ref plays (measured 2026-09-23). *)
       let env =
-        { Eval.doc = ctx.doc; params = ctx.case.params; param_tls = ctx.case.param_tls;
-          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
+        { ctx.doc_env with params = ctx.case.params; param_tls = ctx.case.param_tls }
       in
       let v = fresh ctx "S" in
       let g = fresh ctx "G" and x = fresh ctx "X" in
@@ -5975,7 +5962,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          som/totaal arm above and the temporal-totaal refusal arm below hang
          theirs too. *)
       if attr_temporal ctx ~otype:el ~attr:a then refuse_ranking_fold kind a;
-      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None } in
+      let env = ctx.doc_env in
       let v = fresh ctx "M" in
       let g = fresh ctx "G" and x = fresh ctx "X" in
       let fatoms =
@@ -6042,7 +6029,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         ([ "#false" ], "0", 1)
       end
       else
-      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None } in
+      let env = ctx.doc_env in
       let v = fresh ctx "F" in
       let g = fresh ctx "G" and x = fresh ctx "X" in
       let fatoms =
@@ -7394,7 +7381,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (* the payload of a cell (ch. 5.8c, 9.5): the member a projection rule
          derives from the cell's constructor term ([payload_projections]) *)
       let a, ot = dimensioned_reference inner in
-      let cell = Eval.cell_member (doc_env ctx) ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
+      let cell = Eval.cell_member ctx.doc_env ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
       let atoms, v, _ = member_read ~scaled:false ctx ~subject ~subject_ot ~member:(payload_member cell constructor_) inner in
       (atoms, v, value_scale typ)
   | Payload_access _ ->
@@ -9217,10 +9204,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
        | Eval.Narrowing e -> Eval.narrowing_refused ~characteristic e "the whole-period qualifier"
        | Eval.Hosted -> ());
       let k = req "characteristic" characteristic in
-      let env =
-        { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
-          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
-      in
+      let env = ctx.doc_env in
       let hop =
         match navigation_binding with
         | None -> None
@@ -9312,10 +9296,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
        | Eval.Narrowing e -> Eval.narrowing_refused ~characteristic e "a role"
        | Eval.Hosted -> ());
       let k = req "characteristic" characteristic in
-      let env =
-        { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
-          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
-      in
+      let env = ctx.doc_env in
       let role = Eval.bound_role env rb (* D53: the hop is the binding *) in
       if role.role_many then
         fault
@@ -9621,10 +9602,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
         Eval.quantifier_fold_shape ~quantifier_kind:kv_quantifier ~cutoff:kv_threshold ~test:kv_test
           ~source_role:kv_source_role ~source_path:kv_source_path
       in
-      let env =
-        { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None;
-          locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
-      in
+      let env = ctx.doc_env in
       let x = fresh ctx "X" in
       let join =
         source_join ctx env ~subject ~subject_ot ~el ~source_role:kv_source_role ~source_path:kv_source_path
@@ -10081,7 +10059,7 @@ and sum_term ctx ~subject ~subject_ot (e : expr) : string list * string =
      on the object its reference reaches *)
   | Dimension_cell_read { attribute_ref = Some inner; labels; _ } ->
       let a, ot = dimensioned_reference inner in
-      let member = Eval.cell_member (doc_env ctx) ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
+      let member = Eval.cell_member ctx.doc_env ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
       let atoms, v, _ = member_read ~scaled:false ctx ~subject ~subject_ot ~member inner in
       (atoms, v)
   | _ ->
@@ -11997,8 +11975,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
           ~operand:(Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx el) x) ~target ~attr:a;
         let sx = pow10 (attr_decimals ctx ~otype:el ~attr:x) in
         let env =
-          { Eval.doc = ctx.doc; params = ctx.case.params; param_tls = ctx.case.param_tls;
-            as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
+          { ctx.doc_env with params = ctx.case.params; param_tls = ctx.case.param_tls }
         in
         let m = fresh ctx "M" in
         let join = base :: source_join ctx env ~subject ~subject_ot:ot ~el ~source_role ~source_path ~x:m in
@@ -12567,7 +12544,7 @@ let translate_rule ctx (r : resolved_rule) =
       (* [a] is the member the target writes, its val/3 name: the attribute,
          or the cell it names (RUNTIME-SEMANTICS ch. 5.8c, 2), whose
          declaration is its attribute's ([find_decl]) *)
-      (match Eval.target_member (doc_env ctx) (Some objective) with
+      (match Eval.target_member ctx.doc_env (Some objective) with
       | Some (ot, declared, a) ->
           if a <> declared && r.rr_presentation = Some Characteristic_attribution then
             fault
@@ -12976,9 +12953,7 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
   let subject_ot = req "ObjectCreationVersion.subject" oc.oc_subject in
   let subject = "S" in
   let term = Printf.sprintf "oc%d(%s)" i subject in
-  let env =
-    { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
-  in
+  let env = ctx.doc_env in
   let pair =
     match oc.oc_connecting_role with
     | Some rb -> (
@@ -13046,7 +13021,7 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
   List.iter
     (fun (t : assignment) ->
       (* the member, or the cell it names on the made object (ch. 5.8c, 2) *)
-      let m = Eval.assigned_member (doc_env ctx) ~created t in
+      let m = Eval.assigned_member ctx.doc_env ~created t in
       let declared = req "MemberAssignment.member" t.to_attribute in
       if (not t.to_characteristic) && m <> declared && attr_temporal ctx ~otype:created ~attr:declared then
         fault "object creation %S sets a cell of the time-dependent attribute %S: not translated (no corpus case)"
@@ -13139,9 +13114,7 @@ let translate_fact_creation ctx (fc : resolved_fact_creation) =
      link, so no second-filler fault can arise from this form) *)
   if applies ctx fc.fc_validity then begin
   let ftn = fc.fc_fact_type in
-  let env =
-    { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
-  in
+  let env = ctx.doc_env in
   let role rname = Eval.created_role env ~fact_type:ftn ~role:rname in
   let anchor_role = role fc.anchor_role in
   let objective_role = role fc.objective_role in
@@ -13898,7 +13871,7 @@ let translate_allocation ctx i (v : resolved_allocation) =
      edge inside the condition) rides the allocation's name, exactly as
      ref's cond_err does (S13) *)
   ctx.rule_name <- name;
-  let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None } in
+  let env = ctx.doc_env in
   let role = bound_role_term env v.connecting_role (* required (B12) *) in
   let p = Printf.sprintf "vd%d_" i in
   (* ch. 4.1: the recipient set of one source instance is every DOELTYPE
@@ -14381,10 +14354,7 @@ let translate_uniqueness ctx (u : resolved_uniqueness) =
     match u.scope_role with
     | None -> []
     | Some rb ->
-        let env =
-          { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
-            as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
-        in
+        let env = ctx.doc_env in
         let role = bound_role_term env rb in
         [ Printf.sprintf "role(S1,%s,P)" role;
           Printf.sprintf "role(S2,%s,P)" role ]
@@ -14530,7 +14500,7 @@ let translate_case ctx (case : Case.t) =
             emit ctx "inputfilled(%s,%s)." (str_raw label) (str aname);
           (* the declaration of the member: the attribute, or that of a cell
              (World.cell), whose val/3 name is the cell's *)
-          let declared = Eval.member_attribute (doc_env ctx) ~otype:i.otype aname in
+          let declared = Eval.member_attribute ctx.doc_env ~otype:i.otype aname in
           match v with
           | Value.Bool b ->
               (* a boolean attribute is a characteristic in v0 (booleans are
@@ -15394,8 +15364,13 @@ let translate (doc : document) (case : Case.t) : string =
   let doc = Normalise.document doc in
   let wire_doc = doc in
   let doc = Ir_v0.Desugar.document doc in
+  let doc_env =
+    { Eval.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty;
+      btypes = Eval.SMap.empty; subj = None; form = None }
+  in
   let ctx =
-    { doc; wire_doc; case; buf = Buffer.create 4096; fresh = 0; rule_guard = []; deposit_guard = []; write_scale = 1;
+    { doc; wire_doc; case; doc_env; buf = Buffer.create 4096; fresh = 0; rule_guard = []; deposit_guard = [];
+      write_scale = 1;
       write_unbounded = false; write_value = None; in_condition = false; desugared_group = false; rule_name = "?"; binders = []; param_reach = (fun _ -> []); deposit_subject = None; let_needs = [];
       value_of = None;
       lets = []; let_serial = 0; demands = []; parts = []; part_serial = 0; named = []; hoisted = [];
@@ -15406,9 +15381,7 @@ let translate (doc : document) (case : Case.t) : string =
   (* ch. 8.4: the shared session-start Parameterset coverage check —
      data-plane validation (like the shared case loader), run before a
      program is emitted, mirroring ref/'s evaluation entry *)
-  Eval.parameter_set_check
-    { Eval.doc; params = case.params; param_tls = case.param_tls; as_of = case.as_of;
-      locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None };
+  Eval.parameter_set_check { doc_env with params = case.params; param_tls = case.param_tls; as_of = case.as_of };
   emit ctx "%% generated by backends/clingo from uchar-ir-v1 + uchar-case-v0.";
   emit ctx "#defined val/3. #defined has/2. #defined role/3. #defined param/2.";
   emit ctx "#defined inconsistent/2. #defined tl/5. #defined param_tl/4. #defined ktl/4.";
