@@ -18725,7 +18725,7 @@ let () =
           (name ^ " (" ^ Uchar_ref.Value.report ~code m ^ ")")
           (code = Some "CLINGO-035"
           && Uchar_ref.Case.contains
-               ~needle:{|whether the quantifier fold "de schuiten" reaches it depends on the order of the members a creation adds|}
+               ~needle:{|whether the quantifier fold "de schuiten" over Schuit reaches it depends on the order of the members a creation adds|}
                m)
   in
   (* one order of those members reads S1's peil; the order of ch. 5.7a reads

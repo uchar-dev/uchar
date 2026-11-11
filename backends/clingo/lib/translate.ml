@@ -9657,10 +9657,11 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
                   ~quantifier_kind:kv_quantifier ~cutoff ~ro
             | None -> ());
             (if ro.ro_dynamic then
+               (* the snippet quoted, "" without one, so a copy without its
+                  source record differs from the sentence only inside the
+                  quotes (gate 13, IR-SPEC ch. 10) *)
                let fold =
-                 match kv_source with
-                 | Some b -> Printf.sprintf "the quantifier fold %S" b
-                 | None -> Printf.sprintf "the quantifier fold over %s" el
+                 Printf.sprintf "the quantifier fold %S over %s" (Option.value kv_source ~default:"") el
                in
                ctx.order_atoms <- (Printf.sprintf "%s(%s,%s)" r subject x, Fold_reach fold) :: ctx.order_atoms);
             r
