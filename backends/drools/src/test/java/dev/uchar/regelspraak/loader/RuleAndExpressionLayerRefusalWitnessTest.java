@@ -356,7 +356,7 @@ class RuleAndExpressionLayerRefusalWitnessTest {
                     kind.name());
             refused++;
         }
-        assertEquals(15, refused, "the seventeen builtin kinds but the two bucketing ones");
+        assertEquals(11, refused, "the thirteen builtin kinds but the two bucketing ones");
     }
 
     // ---------------- the context nodes ----------------

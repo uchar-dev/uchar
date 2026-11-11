@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * A function kind outside its node's set is refused BY NAME, never through {@code Enum.valueOf}'s unattributed
  * {@code IllegalArgumentException}. Since L4 of the v1 wire migration the kind set is closed per node (IR-SPEC
  * ch. 4.3): an {@code Aggregation} carries one of the eight fold kinds and a {@code BuiltinCall} one of the
- * seventeen others, so a kind outside that set — a kind of the other node included — is a malformed document, a
+ * thirteen others, so a kind outside that set — a kind of the other node included — is a malformed document, a
  * {@link IrLoader.DocumentError} at the kind's pointer in the shared loader's sentence ({@code unknown kind value
  * "<v>"}), where until L4 an open-ended kind was a per-form {@link IrLoader.Refusal} the gate filed as not carried.
  *

@@ -54,7 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * the derivation replaces): the day-precision extractors, the duration and the absolute duration in a calendar unit and
  * easterSunday (RUNTIME-SEMANTICS ch. 3.8); the absolute value and the square root under its rounding (ch. 2.2), with
  * the §9.5 inconsistency of a negative radicand (ch. 1.2); a text composition and a concatenation of texts (ch. 1.2);
- * the eleven test and the exact-digits test; the sub-day extractors, dateWith and dateTimeWith; an {@code Unresolved}
+ * the exact-digits test; dateWith and dateTimeWith; an {@code Unresolved}
  * node in a value and in a condition (ch. 5.7, WF-044), which faults only where the evaluation reaches it; and a
  * dimension cell and a fold over a dimension selection, read off the case input.
  *
@@ -66,9 +66,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * intermediate state that the owner's decision of 2026-10-09 (PLAN §9) does not count. It faults on the Unresolved
  * nodes of V2 and V3 in this witness's sentences, passes the input waarde 500 in every order, and faults on the input
  * waarde 3 in the three orders where the heffing reads it before the waarde is derived, the fault of an intermediate
- * state of that decision. It declines the eleven test and the exact-digit test ("predicate kind not implemented in this
- * card"), the sub-day extractors, dateWith and dateTimeWith ("function kind not implemented in this card"), and the
- * dimension forms, as RUNTIME-SEMANTICS ch. 5.11 records; for those the expectations are the exec-model branch's, whose
+ * state of that decision. On that date it declined the exact-digit test ("predicate kind not implemented in this
+ * card"), dateWith and dateTimeWith ("function kind not implemented in this card"), and the dimension forms, as
+ * RUNTIME-SEMANTICS ch. 5.11 recorded; for those the expectations are the exec-model branch's, whose
  * runtime helpers this branch calls, and that branch played every one of those documents that has a case (the
  * dimension rows fire beans set by hand, so that the cells meet every order of the generated rules). The ASP runner passes the
  * date extractors, the duration and easterSunday, and declines the other forms at translation ("absoluteValue is not
