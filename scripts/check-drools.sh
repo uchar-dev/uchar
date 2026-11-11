@@ -1615,7 +1615,9 @@ EXPECTED_CHANNEL=(
 # whose nested exception group stays above it (RUNTIME-SEMANTICS ch. 7.10; PLAYED 1).
 # 372 with jutterswet-wrakbasis-vervangen-basis-groep: the same with the subtype's own base written as a defaults group
 # (RUNTIME-SEMANTICS ch. 7.10; PLAYED 1).
-EXPECTED_PLAYED=372
+# 373 with jutterswet-bakenmeester-let: the pro-rata write of jutterswet-bakenmeester bound by a Let whose body reads
+# only its binder, which the precision gate of WF-023 recognises through the Let (PLAYED 1).
+EXPECTED_PLAYED=373
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

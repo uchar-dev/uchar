@@ -1,0 +1,55 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Period;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// het tijdsevenredig deel per maand van zijn onderhoudstarief gedurende de tijd dat hij dienstdoend is
+function Object waarde_onderhoudsbijdrageVanEenBakenmeester(Object $tijdlijn_0, Object $tijdlijn_1, Object $onderwerp) {
+    try {
+        return Period.list(ComputeHelpers.proRata($tijdlijn_0, ComputeHelpers.complete($tijdlijn_1, "the pro-rata base \"onderhoudstarief\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.7, ch. 8.4)", "onderhoudstarief", Boolean.TRUE), "MAAND", Integer.valueOf(2), "onderhoudsbijdrage"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "onderhoudsbijdrage van een bakenmeester"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Bakenmeester( $tijdlijn_0 : (ComputeHelpers.periods(dienstdoend)) )
+    $stand_1 : State( attribute == ElementKey.of("bakenmeester", "onderhoudstarief", false), subject == $onderwerp, $tijdlijn_1 : value )
+then
+    Object v = waarde_onderhoudsbijdrageVanEenBakenmeester($tijdlijn_0, $tijdlijn_1, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "onderhoudsbijdrage van een bakenmeester", ComputeHelpers.designate(v, "onderhoudsbijdrage van een bakenmeester")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("bakenmeester", "onderhoudsbijdrage", false), v, "onderhoudsbijdrage van een bakenmeester"));
+        }
+    }
+end
+
+rule "stand Bakenmeester.onderhoudstarief: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Bakenmeester( $invoer : (ComputeHelpers.periods(onderhoudstarief)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("bakenmeester", "onderhoudstarief", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("bakenmeester", "onderhoudstarief", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("bakenmeester", "onderhoudstarief", false), $invoer));
+end
+
+rule "stand Bakenmeester.onderhoudstarief: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Bakenmeester( $invoer : (ComputeHelpers.periods(onderhoudstarief)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("bakenmeester", "onderhoudstarief", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("bakenmeester", "onderhoudstarief", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("bakenmeester", "onderhoudstarief", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+

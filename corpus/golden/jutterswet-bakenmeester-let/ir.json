@@ -1,0 +1,150 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Bakenmeester",
+        "animate": true,
+        "plural": "Bakenmeesters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "onderhoudstarief",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "year",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "onderhoudsbijdrage",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "dienstdoend",
+            "kind": "adjectival",
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "onderhoudsbijdrage van een bakenmeester",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "onderhoudsbijdrage",
+              "subjectType": "Bakenmeester",
+              "source": {
+                "snippet": "De onderhoudsbijdrage van een Bakenmeester"
+              }
+            },
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "binder": "het deel",
+              "value": {
+                "node": "BuiltinCall",
+                "kind": "timeProportionalPart",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "onderhoudstarief",
+                    "subjectType": "Bakenmeester",
+                    "source": {
+                      "snippet": "zijn onderhoudstarief"
+                    }
+                  }
+                ],
+                "filter": {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "dienstdoend",
+                  "negated": false,
+                  "source": {
+                    "snippet": "gedurende de tijd dat hij dienstdoend is"
+                  }
+                },
+                "granularity": "month",
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "het tijdsevenredig deel per maand van zijn onderhoudstarief gedurende de tijd dat hij dienstdoend is"
+                }
+              },
+              "body": {
+                "node": "BinderRef",
+                "name": "het deel",
+                "source": {
+                  "snippet": "het deel"
+                }
+              },
+              "source": {
+                "snippet": "Daarbij geldt: het deel is het tijdsevenredig deel per maand van zijn onderhoudstarief"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
