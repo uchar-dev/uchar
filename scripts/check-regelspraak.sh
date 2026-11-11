@@ -5,7 +5,8 @@
 # Four obligations, each loud:
 #   1. the frontend builds jar-only (ANTLR-generated parser + resolver +
 #      IR emitter, JDK 21+) and its JUnit suite passes with a NON-ZERO
-#      test count — a suite that ran nothing is a silent greenlight;
+#      test count and none skipped — a suite that ran nothing, or a
+#      disabled witness, is a silent greenlight;
 #   2. every corpus golden that carries a source.rgs re-emits through the
 #      frontend's --ir mode byte-identically to the checked-in ir.json —
 #      the emitter-golden conformance the toolchain ran against this
@@ -70,6 +71,10 @@ fi
 tests=$(printf '%s\n' "$suite_out" | sed -n 's/^\[ *\([0-9][0-9]*\) tests successful *\]$/\1/p' | tail -1)
 [ -n "$tests" ] || fail "the suite produced no '[ N tests successful ]' line — it did not run"
 [ "$tests" -gt 0 ] || fail "the suite ran zero tests (an empty test set is a failure)"
+# a skipped test passes the launcher's exit code and leaves the successful count above the floor, so it is counted apart
+skipped=$(printf '%s\n' "$suite_out" | sed -n 's/^\[ *\([0-9][0-9]*\) tests skipped *\]$/\1/p' | tail -1)
+[ -n "$skipped" ] || fail "the suite produced no '[ N tests skipped ]' line — the skipped count cannot be read"
+[ "$skipped" -eq 0 ] || fail "the suite skipped $skipped test(s) — a skipped witness is a silent greenlight"
 [ "$tests" -ge "$EXPECTED_MIN_TESTS" ] \
   || fail "the suite ran $tests tests, but EXPECTED_MIN_TESTS pins at least $EXPECTED_MIN_TESTS — the suite shrank (a deliberately dropped test lowers the floor in the same commit)"
 
