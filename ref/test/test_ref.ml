@@ -14041,6 +14041,18 @@ let () =
   plays ~ident:"WV-3.4-schrijven-in-de-doeleenheid" ~ir:(read (dir ^ "ir.json")) ~case_data:(read (dir ^ "case.json"))
     (fun _ -> ())
 
+(* WV-3.5-som-onder-afronding: the vondsten of J1 yield 150 ct and 99 ct in
+   January 2024; kaal (EUR) := their sum per period, afgerond (EUR) := that
+   sum afgerond op 0 decimalen. The sum is the value of kaal and is restated
+   into EUR: 2.49. Under the rounding it is not the value of the rule: it is
+   rounded in its own unit, 249 ct, and that is restated to the target, 2.49
+   (ch. 3.3, 3.4, 3.5), never 2.49 EUR rounded to 2 *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/rounded-sum-unit/" in
+  plays ~ident:"WV-3.5-som-onder-afronding" ~ir:(read (dir ^ "ir.json")) ~case_data:(read (dir ^ "case.json"))
+    (fun _ -> ())
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

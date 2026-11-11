@@ -3799,7 +3799,10 @@ let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.g
   | Rounding { base_expr = Some b; mode_kind; decimal_places; _ } when is_period_arithmetic b ->
       (* ch. 2.5 per day: each segment of the base rounded, its leeg periods
          gaps as before *)
-      let tl = faulted (fun () -> period_timeline env w self ~err ~target ~attr ~target_unit b) in
+      (* the base is not the value of the rule: it computes in the unit its
+         declarations give it and is rounded there, and only the rounded value
+         is restated to the target's (ch. 3.3, 3.4, 3.5) *)
+      let tl = faulted (fun () -> period_timeline env w self ~err ~target ~attr ~target_unit:(period_unit env b) b) in
       seen
         (Timeline.coalesce
            (List.map
