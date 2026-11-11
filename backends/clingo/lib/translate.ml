@@ -15051,6 +15051,147 @@ let refuse_unbounded_creation_cycle (doc : document) =
       forms
   end
 
+(* the direct children of a node: the expressions and the conditions it
+   holds, a closed body named by an Invoke or a fold not among them *)
+let expr_children (e : expr) : expr list * condition_expr list =
+  let o = Option.to_list in
+  match e with
+  | Literal _ | Attribute_reference _ | Parameter_ref _ | Variable_reference _ | Context_value _ | Bound_day _
+  | Expr_unresolved _ | Binder_ref _ ->
+      ([], [])
+  | Text_composition { pieces; _ } ->
+      (List.filter_map (function Embedded_expression { expr; _ } -> expr | Literal_chunk _ -> None) pieces, [])
+  | Binary { left_side; right_side; _ } -> (o left_side @ o right_side, [])
+  | Function_call { call_arguments; empty_fallback; filter; _ } -> (call_arguments @ o empty_fallback, o filter)
+  | Instance_set_union { branches; _ } -> ([], List.filter_map (fun b -> b.isb_filter) branches)
+  | Rounding { base_expr; _ } -> (o base_expr, [])
+  | Clamp { base_expr; minimum; maximum; _ } -> (o base_expr @ o minimum @ o maximum, [])
+  | Dimension_cell_read { attribute_ref; _ } -> (o attribute_ref, [])
+  | Temporal_read { base_expr; date_value; _ } -> ([ base_expr; date_value ], [])
+  | Construct { argument; _ } -> (o argument, [])
+  | Match { scrutinee; arms; _ } -> (scrutinee :: List.map (fun (_, _, b) -> b) arms, [])
+  | Payload_access { base; _ } | Field_access { base; _ } -> ([ base ], [])
+  | Struct_literal { field_list; _ } -> (List.map snd field_list, [])
+  | Let { value; body; _ } -> ([ value; body ], [])
+  | List_literal { elements; _ } -> (elements, [])
+  | Lambda { body; _ } -> ([ body ], [])
+  | If_then_else { condition; then_; else_; _ } -> ([ then_; else_ ], [ condition ])
+  | Invoke { arguments; _ } -> (arguments, [])
+  | Fold { list; function_name; init; _ } ->
+      (list :: init :: (match function_name with Fn_lambda { body; _ } -> [ body ] | Fn_name _ -> []), [])
+  | Map_list { list; function_name; _ } ->
+      (list :: (match function_name with Fn_lambda { body; _ } -> [ body ] | Fn_name _ -> []), [])
+  | Filter_list { list; condition; _ } -> ([ list ], [ condition ])
+  | List_length { list; _ } -> ([ list ], [])
+
+let cond_children (c : condition_expr) : expr list * condition_expr list =
+  let o = Option.to_list in
+  match c with
+  | Comparison { left_side; right_side; _ } -> (o left_side @ o right_side, [])
+  | Predicate { operand; _ } -> (o operand, [])
+  | Time_window { starting_at; up_to; _ } -> (o starting_at @ o up_to, [])
+  | Compound { components; _ } -> ([], components)
+  | Quantifier_fold { kv_filter; kv_test; _ } -> ([], o kv_filter @ o kv_test)
+  | Characteristic_check _ | Role_membership _ | Identity_check _ | Rule_status_check _ | Condition_unresolved _ ->
+      ([], [])
+
+(* every expression and condition position of the document's forms, the
+   bodies of its named functions and fold functions among them, each visited
+   once; [on_expr] and [on_cond] see every node *)
+let walk_document (doc : document) ~(on_expr : expr -> unit) ~(on_cond : condition_expr -> unit) =
+  let visited = Hashtbl.create 8 in
+  let rec body name =
+    let key = norm name in
+    if not (Hashtbl.mem visited key) then begin
+      Hashtbl.add visited key ();
+      match List.find_opt (fun (d : function_def) -> norm d.fd_name = key) doc.function_defs with
+      | Some d -> ex d.fd_body
+      | None -> ()
+    end
+  and ex (e : expr) =
+    on_expr e;
+    (match e with
+    | Invoke { function_name; _ } -> body function_name
+    | Fold { function_name = Fn_name n; _ } | Map_list { function_name = Fn_name n; _ } -> body n
+    | _ -> ());
+    let es, cs = expr_children e in
+    List.iter ex es;
+    List.iter co cs
+  and co (c : condition_expr) =
+    on_cond c;
+    let es, cs = cond_children c in
+    List.iter ex es;
+    List.iter co cs
+  in
+  let ox = Option.iter ex and oc = Option.iter co in
+  let rec default (d : default) =
+    oc d.default_justification;
+    ox d.default_consequence;
+    Option.iter
+      (fun (g : exception_groups) ->
+        List.iter (fun (m : exception_group) -> List.iter default m.eg_defaults) g.egs_members)
+      d.default_exceptions
+  in
+  List.iter (fun (r : resolved_rule) -> ox r.objective; ox r.value_node; oc r.rr_condition) doc.resolved_rules;
+  List.iter (fun (l : prioritized_defaults) -> List.iter default l.defaults) doc.prioritized_defaults;
+  List.iter (fun (v : resolved_allocation) -> oc v.vd_condition) doc.allocations;
+  List.iter (fun (c : resolved_consistency) -> oc c.assertion) doc.consistencies;
+  List.iter (fun (d : resolved_day_kind) -> oc d.rd_condition) doc.resolved_day_kind_definitions;
+  List.iter (fun (f : resolved_fact_creation) -> oc f.fc_condition) doc.fact_creations;
+  List.iter
+    (fun (o : resolved_object_creation) ->
+      List.iter (fun (t : assignment) -> ox t.to_value) o.assignments;
+      oc o.oc_condition)
+    doc.object_creations
+
+(* RUNTIME-SEMANTICS ch. 8.4, the session-start coverage check: every granular
+   parameter the document reads at the evaluation date (a vintage read,
+   ch. 8.3), whatever version carries it and whether or not it is reached,
+   needs an evaluation date (EF-011), its timeline in the Parameterset
+   (EF-014) and a segment of that timeline with a value on that date
+   (EF-013). Run before a program is emitted, as the chapter places it *)
+let check_parameter_set (doc : document) (case : Case.t) =
+  let read = ref [] in
+  walk_document doc
+    ~on_expr:(function
+      | Temporal_read
+          { base_expr = Parameter_ref { parameter = Some p; _ };
+            date_value = Context_value { ident = Some n; _ }; _ }
+        when n = Ir_v0.Spelling.evaluation_date && not (List.exists (fun q -> norm q = norm p) !read) ->
+          read := p :: !read
+      | _ -> ())
+    ~on_cond:ignore;
+  List.iter
+    (fun p ->
+      match case.as_of with
+      | None ->
+          faultc "EF-011"
+            "session start: parameter %S is read at the evaluation date, and the session has none \
+             (asOfDate is null) — ch. 8.4"
+            p
+      | Some d -> (
+          let day = day_of_lexeme d in
+          match Uchar_ref.World.SMap.find_opt (norm p) case.param_tls with
+          | None ->
+              faultc ~params:[ ("parameter", p) ] "EF-014"
+                "session start: parameter %S is read at the evaluation date, and the Parameterset \
+                 carries no timeline for it — ch. 8.4"
+                p
+          | Some tl ->
+              if
+                not
+                  (List.exists
+                     (fun (s : Uchar_ref.Timeline.segment) ->
+                       s.s_from <= day && day < s.s_to
+                       && match s.s_value with Value.Empty -> false | _ -> true)
+                     tl)
+              then
+                faultc ~params:[ ("parameter", p); ("date", d) ] "EF-013"
+                  "session start: the Parameterset timeline of parameter %S has no value on the \
+                   evaluation date %s — ch. 8.4"
+                  p d))
+    (List.rev !read)
+
 (* two constructors of one sum type whose names meet in one ASP symbol
    ([ctor_functor]: "a b" and "a_b") would be one value in the model; the
    document is refused instead, naming both *)
@@ -15126,10 +15267,7 @@ let translate_guarded (doc : document) (case : Case.t) : string * guards =
       before_arm = []; signs = []; sign_helpers = []; oc_strata;
       form_subject = None; anchored = []; member_reach = lazy []; calendar_rounding = false }
   in
-  (* ch. 8.4: the shared session-start Parameterset coverage check —
-     data-plane validation (like the shared case loader), run before a
-     program is emitted, mirroring ref/'s evaluation entry *)
-  Eval.parameter_set_check { doc_env with params = case.params; param_tls = case.param_tls; as_of = case.as_of };
+  check_parameter_set wire_doc case;
   emit ctx "%% generated by backends/clingo from uchar-ir-v1 + uchar-case-v0.";
   emit ctx "#defined val/3. #defined has/2. #defined role/3. #defined param/2.";
   emit ctx "#defined inconsistent/2. #defined tl/5. #defined param_tl/4. #defined ktl/4.";
