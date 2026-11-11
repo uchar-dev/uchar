@@ -936,9 +936,8 @@ and this backend); declared factors and stelsel never enter.
   this backend refuses with CLINGO-029, and gate 8 lists the red cases
   `date-time-with-outside-range` and `date-with-outside-date-range` in its
   divergence list.
-- **Loud flanks**: the sub-day part extractors
-  (`uur/minuut/seconde/milliseconde-uit`), and datum-tijd
-  **(on)gelijk-aan** still fault at translation — outside the arithmetic,
+- **Loud flanks**: datum-tijd
+  **(on)gelijk-aan** still faults at translation — outside the arithmetic,
   the fold ordering and (since 2026-09-06) the scalar ordering the pair
   term carries, no corpus case. The equality row is a different shape, not
   a tighter one: the numeric arm's `eqN` helper harmonises a scale the pair
@@ -3018,10 +3017,7 @@ square, ref ≡ clingo) and, since 2026-09-19, the day-kind (dagsoort)
 durations and tijdsduren (the extension table above, goldens
 `jutterswet-bergingsklok` and `jutterswet-getijklok`, the latter over
 datum-tijd operands); what stays loud in the date family is the day-kind
-`duration` over DATUM-TIJD operands, the sub-day part extractors
-(uur/minuut/seconde/milliseconde-uit, still under the catch-all;
-outside ref too — the extractor slice is not the ms layer's
-arithmetic), and a datum-tijd operand in an EQUALITY comparison
+`duration` over DATUM-TIJD operands and a datum-tijd operand in an EQUALITY comparison
 (the pair term carries the arithmetic, since 2026-08-28 the
 eerste/laatste fold ordering and since 2026-09-06 the scalar ORDERING
 and the datum-tijd LITERAL — S6a, golden `jutterswet-meldstip` — but not

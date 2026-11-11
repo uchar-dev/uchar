@@ -3069,8 +3069,9 @@ Worked examples (absolute, pinned; each a `ref/` test verbatim): jaar uit
 2027 = **2027-03-28**, van 2038 = **2038-04-25**. Golden `jutterswet-paasvondst`
 carries the class: a maand-uit disjunction, an eerste-paasdag∘jaar-uit date
 equality, a jaar-uit/dag-uit Gelijkstelling pair, and the leeg corner.
-Datum-tijd operands of the extractors and the sub-day extractors are not
-defined.
+Datum-tijd operands of the extractors are not defined. The hour, minute,
+second and millisecond of a datum-tijd have no builtin (`IR-SPEC.md`
+ch. 4.3).
 
 **Date construction.** "De datum met jaar: …, maand: … en dag: …" (`dateWith`)
 takes three parts, year, month and day, in that order; "de datumtijd met jaar:
@@ -4779,18 +4780,11 @@ surfaces beside the result. Operational clauses, mirrored:
   graph: a channel-reading rule is downstream of every producer for X
   (ch. 5.2/5.3 apply). An unknown rule name in the test is ill-formed
   (`CONSTRUCTS.md` row 30's split verdict; v0 declines it).
-- "regelversie X **is gevuurd**": *mirror note, corrected against the
-  pinned code* — the pin **does** lower it, as an existential over an
-  opt-in firing marker inserted unconditionally at the top of X's
-  consequence (a no-change write still counts as "fired"; only a
-  reference to a non-instrumentable target declines). The pinned
-  *decision records* still describe it as declined — they are stale, and
-  `CONSTRUCTS.md` row 30's non-goal verdict rests on them. **Decided (row
-  30):** v1 admits it only as a declarative model predicate — "the
-  condition of X holds at the fixpoint" — in the RegelSpraak dialect,
-  never the core; no execution record exists in the model. Edge cases
-  where the pin's firing-marker lowering diverges from the fixpoint
-  reading route to differential triage.
+- "regelversie X **is gevuurd**" has no form on the wire: this document
+  gives the status no meaning with a worked example, so a producer writes
+  an `Unresolved` with a diagnostic for it (`IR-SPEC.md` conventions,
+  WF-113). The node `Regelversie` is the channel test above, with
+  `inconsistent` true.
 
 Worked example (channel read, `ref/` test verbatim): consistency rule
 "controle saldo" asserts saldo ≥ 0 over Rekeninghouder; a second rule
@@ -6300,12 +6294,11 @@ name its kinds the same way.
 | `Match` | `scrutinee`, one arm body | forced | the scrutinee selects the arm |
 | `IfThenElse` | `condition`, one branch | forced | the condition selects the branch; the other branch evaluates nothing |
 | `Rounding`, `squareRoot` (wortel), `absoluteValue` (absolute waarde), `yearOf` (jaar uit), `monthOf` (maand uit), `dayOf` (dag uit), `easterSunday` (eerste paasdag), `ListLength`, `FieldAccess`, `Construct`, `DimensionCellRead` | one | invisible | — |
-| `hourOf` (uur uit), `minuteOf` (minuut uit), `secondOf` (seconde uit), `millisecondOf` (milliseconde uit) | one | invisible | — *(ref declines them; a single operand carries no order either way)* |
 | `timeProportionalPart` (tijdsevenredig deel) | the base, and the `filter` | invisible | WF-056 restricts the base to a **bare** temporal attribute reference, so only the filter is data-dependent — one fault-capable position, no order |
 | `dayCount` (aantal dagen in) | none in `arguments`; the `filter` carries the condition | invisible | — |
 | `TemporalRead` | `date` only — `base` **names** the timeline and is never evaluated (ch. 3.3) | invisible | — |
 | `Predicate` — `empty` / `filled` (leeg / gevuld) | `operand` | invisible | — |
-| `Predicate` — `elevenTest` / `exactDigits` / `dayKind` (elfproef / numeriek met exact / dagsoort) | `operand` | invisible | — *(ref declines them)* |
+| `Predicate` — `exactDigits` / `dayKind` (numeriek met exact / dagsoort) | `operand` | invisible | — |
 | `CharacteristicCheck`, `RoleMembership` (until L2 `Rollidmaatschap` and `VerreRollidmaatschap`), `Regelversie` | none | invisible | — |
 | `Literal`, `AttributeReference`, `ParameterReference`, `VariableReference`, `ContextValue`, `BoundDay`, `BinderRef`, `Unresolved` (the expression and the condition variant) | none | invisible | — (a `BinderRef` forces its ch. 10.6 need **at its own position** in the parent's order) |
 | `Lambda` | — | not an operand position | never a value (WF-069): it is only the `function` slot of a `Fold`/`MapList`, applied once per element under that node's row |
