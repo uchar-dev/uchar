@@ -8139,7 +8139,7 @@ same calendar day differently in two runs of the same document.
 ### 8.3 The vintage read
 
 Selecting a parameter's vintage **is not a separate mechanism**: it is
-the ch. 4.3a temporal read of a granular parameter with the evaluation
+the `IR-SPEC.md` ch. 4.3a temporal read of a granular parameter with the evaluation
 date as index — `read(tl_p, evaluationDate)`. The read itself keeps its
 ch. 3.1 totality (a gap reads to leeg; an empty index reads to leeg);
 everything fail-fast about vintages lives one layer down, in the data
@@ -8194,7 +8194,7 @@ loader's cross-checks:
 The two conventions of the case format stay strictly apart (ch. 3.6,
 `spec/schema/README.md`): the asOfDate-bucket scalar serves the
 temporal total; the full timeline serves reads. An executor that needs
-the one and finds the other faults — never guesses (the ch. 4.3a
+the one and finds the other faults — never guesses (the `IR-SPEC.md` ch. 4.3a
 rule) — and both executors implement the session-start check
 identically (`ref/` at evaluation entry; the ASP backend at
 translation time, before emitting a program). Every form that reads the
@@ -9477,7 +9477,7 @@ empty: **EF-037**, attribute `stormtoelage`, label `J7`.
 chapter mirrors nothing; it is normative from first writing. The
 RegelSpraak dialect lowers its absence markers to these forms (ch. 9.5).
 Node forms and well-formedness: IR-SPEC ch. 2.4 (`SumType`, the keuzetype
-family and its WF-087 normalisation) and ch. 4.7 (`Construct`, `Match`,
+family and its WF-087 normalisation) and IR-SPEC ch. 4.7 (`Construct`, `Match`,
 `BinderRef`, `PayloadAccess`), WF-060..064 and WF-127. `Match` is the one
 node of this chapter that also serves the family's other wire variant,
 the enumeration — its evaluation is ch. 9.2; everything else here is
@@ -9822,8 +9822,8 @@ dat hij verkocht is", beside the writers of the opslagkosten above.
 decisions: `spec/proposals/PHASE5B-KERNEL.md` §3). No v0 counterpart
 exists; this chapter is normative from first writing. Node forms and
 well-formedness: IR-SPEC ch. 2.4 (`ListType`), ch. 2.11
-(`functionDefs`) and ch. 4.8, WF-065..070. DMN's Business Knowledge
-Model + invocation is exactly the ch. 2.11 + `Invoke` pair.*
+(`functionDefs`) and IR-SPEC ch. 4.8, WF-065..070. DMN's Business Knowledge
+Model + invocation is exactly the IR-SPEC ch. 2.11 + `Invoke` pair.*
 
 ### 10.1 List values
 
@@ -10152,7 +10152,7 @@ frontend question, not a semantics one.
 counterpart exists — the toolchain has no source construct that produces
 these forms — so this chapter mirrors nothing; it is normative from first
 writing. Node forms and well-formedness: IR-SPEC ch. 2.4 (`StructType`)
-and ch. 4.9 (`StructLiteral`, `FieldAccess`), WF-071..074. The worked
+and IR-SPEC ch. 4.9 (`StructLiteral`, `FieldAccess`), WF-071..074. The worked
 examples are the `jutterswet-vondstdossier` anchor's, absolute.*
 
 The anchor's declarations, used throughout: domain `dossier` is a struct
