@@ -317,6 +317,21 @@ let () =
   expect_num "WV-2.2-u" (Arith.sqrt_rounded ~err:no_err Floor 20 (n "1/9")) "0.33333333333333333333";
   expect_num "WV-2.2-v"
     (Arith.sqrt_rounded ~err:no_err Floor 40 (n "2")) "1.4142135623730950488016887242096980785696";
+  (* a negative base with a fractional exponent is a fault, also where the
+     exponent's numerator is even and the rational power would be real
+     through the square of the base, and under the rounding; a whole exponent
+     stays the exact power (ch. 2.2) *)
+  expect_fault_msg "WV-2.2-negatief-grondtal-even-teller" (fun () -> Arith.pow_ ~err:no_err (n "-32") (n "0.4"))
+    "of a negative base";
+  expect_fault_msg "WV-2.2-negatief-grondtal-oneven-wortel" (fun () -> Arith.pow_ ~err:no_err (n "-32") (n "1/5"))
+    "of a negative base";
+  expect_fault_msg "WV-2.2-negatief-grondtal-negatieve-exponent"
+    (fun () -> Arith.pow_ ~err:no_err (n "-32") (n "-2/5"))
+    "of a negative base";
+  expect_fault_msg "WV-2.2-negatief-grondtal-afgerond"
+    (fun () -> Arith.pow_rounded ~err:no_err Floor 2 (n "-32") (n "0.4"))
+    "of a negative base";
+  expect_num "WV-2.2-negatief-grondtal-gehele-exponent" (Arith.pow_ ~err:no_err (n "-2") (n "3")) "-8";
   (* division by numeric zero: leeg plus one §9.5 deposit of the kind EF-005
      (ch. 1.4 point 4; the v0 mirror faults) *)
   (let codes = ref [] in

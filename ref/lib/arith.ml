@@ -321,6 +321,13 @@ let inverted_zero ~err =
   err { code = Some "EF-005"; text = "division by numeric zero" };
   Empty
 
+(* a fractional exponent over a negative base is a fault whatever its value
+   (ch. 2.2): (−32)^(2/5) would read as 4 through (−32)², and (−32)^(1/5) as
+   −2 through an odd root, but neither is the real power of a negative
+   number, which does not exist *)
+let negative_base_fault lq rq =
+  fault "fractional power %s^%s of a negative base has no real value (ch. 2.2)" (Q.to_string lq) (Q.to_string rq)
+
 (* tot de macht: exact integer power (negative exponent inverts first);
    a fractional exponent must denote an exact root, else it faults: the real
    power exists only under the rounding §6.7 mandates ([pow_rounded]) *)
@@ -339,6 +346,7 @@ let pow_ ~err l r =
         let e = to_int_exp (Q.num rq) in
         let p q n = Q.make (Z.pow (Q.num q) n) (Z.pow (Q.den q) n) in
         Num ((if e >= 0 then p lq e else Q.inv (p lq (-e))), Unitless)
+      else if Q.sign lq < 0 then negative_base_fault lq rq
       else
         let a = to_int_exp (Z.abs (Q.num rq)) and b = to_int_exp (Q.den rq) in
         let base = Q.make (Z.pow (Q.num lq) a) (Z.pow (Q.den lq) a) in
@@ -353,7 +361,7 @@ let pow_ ~err l r =
 
 (* a power with a fractional exponent under its rounding (§6.7, ch. 2.2):
    the true power rounded once — the base raised to the numerator, its root of
-   the denominator rounded by [root_rounded]; a negative radicand has no real
+   the denominator rounded by [root_rounded]; a negative base has no real
    power here, as in [pow_] *)
 let pow_rounded ~err mode decimals l r =
   match (l, r) with
@@ -366,16 +374,12 @@ let pow_rounded ~err mode decimals l r =
         | exception Z.Overflow -> fault "exponent %s is out of range" (Z.to_string z)
       in
       if inverts_zero lq rq then inverted_zero ~err
+      else if Q.sign lq < 0 then negative_base_fault lq rq
       else
         let a = to_int_exp (Z.abs (Q.num rq)) and b = to_int_exp (Q.den rq) in
         let base = Q.make (Z.pow (Q.num lq) a) (Z.pow (Q.den lq) a) in
         let base = if Z.sign (Q.num rq) < 0 then Q.inv base else base in
-        if Q.sign base < 0 then
-          fault
-            "fractional power %s^%s is not exactly representable without an explicit rounding \
-             (§6.7 mandates one)"
-            (Q.to_string lq) (Q.to_string rq)
-        else Num (root_rounded mode decimals b base, Unitless)
+        Num (root_rounded mode decimals b base, Unitless)
 
 let abs_ = function
   | Empty -> Empty
