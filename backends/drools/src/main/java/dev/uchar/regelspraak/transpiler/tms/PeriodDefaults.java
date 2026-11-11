@@ -6,7 +6,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.TreeSet;
 
 /**
  * A defaults group on a timeline target, decided per day (RUNTIME-SEMANTICS ch. 7.11), as functions of the values the
@@ -104,10 +103,7 @@ public final class PeriodDefaults {
             throw InputFormFault.bucketScalar(attribute, true, "the initialisation default of the timeline target \""
                     + attribute + "\" reads the input per day; the case supplies only the asOfDate-bucket scalar of ",
                     subject, ", which carries no period");
-        List<Period> filled = new ArrayList<>();
-        for (Period p : input == null ? List.<Period>of() : Period.list((List<?>) input))
-            if (p.value() != null) filled.add(new Period(p.from(), p.to(), null));
-        return PeriodCondition.complement(PeriodCondition.merged(filled));
+        return PeriodCondition.complement(PeriodCondition.merged(filled(input)));
     }
 
     /**
@@ -173,27 +169,20 @@ public final class PeriodDefaults {
         }
         List<Days> chains = new ArrayList<>();
         for (List<Days> c : perChain.values()) chains.add(join(c));
-        TreeSet<LocalDate> cuts = new TreeSet<>(List.of(Period.OPEN_FROM, Period.OPEN_TO));
+        List<List<? extends Span<?>>> timelines = new ArrayList<>();
         for (Days d : chains) {
-            for (PeriodArithmetic.Exact s : d.decided()) {
-                cuts.add(s.from());
-                cuts.add(s.to());
-            }
-            for (Conflicted c : d.conflicted())
-                for (Period p : c.periods()) {
-                    cuts.add(p.from());
-                    cuts.add(p.to());
-                }
+            timelines.add(d.decided());
+            for (Conflicted c : d.conflicted()) timelines.add(c.periods());
         }
         List<PeriodArithmetic.Exact> decided = new ArrayList<>();
         Map<String, List<Period>> conflicted = new TreeMap<>();
         LocalDate previous = null;
-        for (LocalDate c : cuts) {
+        for (LocalDate c : Span.cuts(timelines)) {
             if (previous != null) {
                 String passed = null;
                 for (Days d : chains) {
                     for (Conflicted k : d.conflicted())
-                        if (covers(k.periods(), previous)) {
+                        if (Span.covers(k.periods(), previous)) {
                             passed = k.key();
                             break;
                         }
@@ -204,7 +193,7 @@ public final class PeriodDefaults {
                 else {
                     List<Object> values = new ArrayList<>();
                     for (Days d : chains) {
-                        Object v = read(d.decided(), previous);
+                        Object v = Span.read(d.decided(), previous);
                         if (v != null) values.add(v);
                     }
                     if (!values.isEmpty()) {
@@ -220,7 +209,7 @@ public final class PeriodDefaults {
         if (decided.isEmpty() && conflicted.isEmpty()) return null;
         List<Conflicted> keyed = new ArrayList<>();
         conflicted.forEach((k, ps) -> keyed.add(new Conflicted(k, PeriodCondition.merged(ps))));
-        return new Days(PeriodArithmetic.coalesced(decided), keyed);
+        return new Days(Span.coalesced(decided), keyed);
     }
 
     /** The segments {@code days} decides, what the group writes on its target (ch. 7.11); none where it is null. */
@@ -265,27 +254,8 @@ public final class PeriodDefaults {
 
     /** The filled segments of {@code timeline} cut to {@code periods}, segment by segment, period by period. */
     private static List<PeriodArithmetic.Exact> cut(Object timeline, List<Period> periods) {
-        List<PeriodArithmetic.Exact> out = new ArrayList<>();
-        for (PeriodArithmetic.Exact s : PeriodArithmetic.pieces(timeline)) {
-            if (s.value() == null) continue;
-            for (Period p : periods) {
-                LocalDate from = s.from().isAfter(p.from()) ? s.from() : p.from();
-                LocalDate to = s.to().isBefore(p.to()) ? s.to() : p.to();
-                if (from.isBefore(to)) out.add(new PeriodArithmetic.Exact(from, to, s.value()));
-            }
-        }
-        return List.copyOf(out);
-    }
-
-    /** The value of {@code segments} on day {@code d}, leeg where no segment covers it. */
-    private static Object read(List<PeriodArithmetic.Exact> segments, LocalDate d) {
-        for (PeriodArithmetic.Exact s : segments) if (!s.from().isAfter(d) && s.to().isAfter(d)) return s.value();
-        return null;
-    }
-
-    /** Whether a period of {@code periods} covers day {@code d}. */
-    private static boolean covers(List<Period> periods, LocalDate d) {
-        for (Period p : periods) if (!p.from().isAfter(d) && p.to().isAfter(d)) return true;
-        return false;
+        List<PeriodArithmetic.Exact> filled = new ArrayList<>();
+        for (PeriodArithmetic.Exact s : PeriodArithmetic.pieces(timeline)) if (s.value() != null) filled.add(s);
+        return List.copyOf(Span.clip(filled, periods));
     }
 }

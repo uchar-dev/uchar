@@ -11,7 +11,6 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.TreeSet;
 import java.util.function.BinaryOperator;
 
 /**
@@ -41,7 +40,11 @@ public final class PeriodArithmetic {
     /** One segment of a timeline on its way to a written one: from day {@code from} up to {@code to}, its value exact
      *  (a decimal or a {@link Breuk}) or leeg (null). Public so that a reading can name the timeline an operator
      *  computes (RUNTIME-SEMANTICS ch. 5.12). */
-    public record Exact(LocalDate from, LocalDate to, Object value) {}
+    public record Exact(LocalDate from, LocalDate to, Object value) implements Span<Exact> {
+        @Override public Exact between(LocalDate from, LocalDate to) {
+            return new Exact(from, to, value);
+        }
+    }
 
     /** A scalar operand as a timeline (ch. 3.1): the one segment {@code (−∞, +∞)} that carries {@code value}, and the
      *  empty timeline where it is leeg. */
@@ -109,18 +112,13 @@ public final class PeriodArithmetic {
         List<List<Exact>> members = new ArrayList<>();
         for (Object t : (List<?>) timelines) members.add(pieces(t));
         if (members.isEmpty() && fallback == null) return List.of();
-        TreeSet<LocalDate> cuts = cuts(members);
-        if (fallback != null) {
-            cuts.add(Period.OPEN_FROM);
-            cuts.add(Period.OPEN_TO);
-        }
         List<Exact> out = new ArrayList<>();
         LocalDate previous = null;
-        for (LocalDate c : cuts) {
+        for (LocalDate c : Span.cuts(members)) {
             if (previous != null) {
                 Object total = null;
                 for (List<Exact> m : members) {
-                    Object v = read(m, previous);
+                    Object v = Span.read(m, previous);
                     if (v != null) total = total == null ? v : RegelSpraakRuntime.rsPlus(total, v);
                 }
                 if (total == null) total = fallback;
@@ -128,7 +126,7 @@ public final class PeriodArithmetic {
             }
             previous = c;
         }
-        return coalesced(out);
+        return Span.coalesced(out);
     }
 
     /**
@@ -141,16 +139,9 @@ public final class PeriodArithmetic {
     public static List<?> clipped(Object periods, Object timeline) {
         List<Object> out = new ArrayList<>();
         if (timeline == null) return out;
-        for (Object o : (List<?>) timeline) {
-            LocalDate from = o instanceof Exact e ? e.from() : ((Period) o).from();
-            LocalDate to = o instanceof Exact e ? e.to() : ((Period) o).to();
-            for (Object c : (List<?>) periods) {
-                Period p = (Period) c;
-                LocalDate f = from.isAfter(p.from()) ? from : p.from(), t = to.isBefore(p.to()) ? to : p.to();
-                if (!f.isBefore(t)) continue;
-                out.add(o instanceof Exact e ? new Exact(f, t, e.value()) : new Period(f, t, ((Period) o).value()));
-            }
-        }
+        List<Period> held = ((List<?>) periods).stream().map(Period.class::cast).toList();
+        for (Object o : (List<?>) timeline)
+            out.addAll(o instanceof Exact e ? Span.clip(List.of(e), held) : Span.clip(List.of((Period) o), held));
         return List.copyOf(out);
     }
 
@@ -161,7 +152,7 @@ public final class PeriodArithmetic {
         List<Exact> out = new ArrayList<>();
         for (Exact p : pieces(timeline))
             out.add(new Exact(p.from(), p.to(), RegelSpraakRuntime.rsAfronding(p.value(), decimals, mode)));
-        return coalesced(out);
+        return Span.coalesced(out);
     }
 
     /**
@@ -205,14 +196,7 @@ public final class PeriodArithmetic {
                         bound(p.to()));
             out.add(new Period(p.from(), p.to(), q.naarDecimal()));
         }
-        List<Period> joined = new ArrayList<>();
-        for (Period s : out) {
-            Period last = joined.isEmpty() ? null : joined.get(joined.size() - 1);
-            if (last != null && last.to().equals(s.from()) && last.number().compareTo(s.number()) == 0)
-                joined.set(joined.size() - 1, new Period(last.from(), s.to(), last.value()));
-            else joined.add(s);
-        }
-        return List.copyOf(joined);
+        return Span.coalesced(out);
     }
 
     /**
@@ -221,15 +205,10 @@ public final class PeriodArithmetic {
      * write boundary applies.
      */
     public static List<Period> writtenValues(Object timeline) {
-        List<Period> joined = new ArrayList<>();
-        for (Exact p : pieces(timeline)) {
-            if (p.value() == null) continue;
-            Period last = joined.isEmpty() ? null : joined.get(joined.size() - 1);
-            if (last != null && last.to().equals(p.from()) && Period.sameValue(last.value(), p.value()))
-                joined.set(joined.size() - 1, new Period(last.from(), p.to(), last.value()));
-            else joined.add(new Period(p.from(), p.to(), p.value()));
-        }
-        return List.copyOf(joined);
+        List<Period> out = new ArrayList<>();
+        for (Exact p : pieces(timeline))
+            if (p.value() != null) out.add(new Period(p.from(), p.to(), p.value()));
+        return Span.coalesced(out);
     }
 
     /**
@@ -368,47 +347,14 @@ public final class PeriodArithmetic {
      *  the two read there, leeg where a timeline has no segment (ch. 3.4): the operator applies its own leeg rule. */
     private static List<Exact> cutMerge(Object a, Object b, BinaryOperator<Object> op) {
         List<Exact> x = pieces(a), y = pieces(b);
-        TreeSet<LocalDate> cuts = cuts(List.of(x, y));
-        cuts.add(Period.OPEN_FROM);
-        cuts.add(Period.OPEN_TO);
         List<Exact> out = new ArrayList<>();
         LocalDate previous = null;
-        for (LocalDate c : cuts) {
-            if (previous != null) out.add(new Exact(previous, c, op.apply(read(x, previous), read(y, previous))));
+        for (LocalDate c : Span.cuts(List.of(x, y))) {
+            if (previous != null)
+                out.add(new Exact(previous, c, op.apply(Span.read(x, previous), Span.read(y, previous))));
             previous = c;
         }
-        return coalesced(out);
-    }
-
-    /** The bounds of every segment of {@code timelines}, ordered. */
-    private static TreeSet<LocalDate> cuts(List<List<Exact>> timelines) {
-        TreeSet<LocalDate> cuts = new TreeSet<>();
-        for (List<Exact> t : timelines)
-            for (Exact p : t) {
-                cuts.add(p.from());
-                cuts.add(p.to());
-            }
-        return cuts;
-    }
-
-    /** The value of {@code timeline} on day {@code d} (ch. 3.1), leeg where no segment covers it. */
-    private static Object read(List<Exact> timeline, LocalDate d) {
-        for (Exact p : timeline)
-            if (!p.from().isAfter(d) && p.to().isAfter(d)) return p.value();
-        return null;
-    }
-
-    /** {@code segments} with adjacent segments of one value ({@link Period#sameValue}) joined into one, the value of
-     *  the first kept. */
-    static List<Exact> coalesced(List<Exact> segments) {
-        List<Exact> out = new ArrayList<>();
-        for (Exact s : segments) {
-            Exact last = out.isEmpty() ? null : out.get(out.size() - 1);
-            if (last != null && last.to().equals(s.from()) && Period.sameValue(last.value(), s.value()))
-                out.set(out.size() - 1, new Exact(last.from(), s.to(), last.value()));
-            else out.add(s);
-        }
-        return List.copyOf(out);
+        return Span.coalesced(out);
     }
 
     /** {@code t} as exact segments: a timeline of working memory ({@link Period}), one an operator returned, or an

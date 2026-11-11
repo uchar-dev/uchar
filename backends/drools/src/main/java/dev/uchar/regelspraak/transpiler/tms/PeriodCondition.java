@@ -7,7 +7,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.TreeSet;
 import java.util.function.Predicate;
 
 /**
@@ -50,8 +49,8 @@ public final class PeriodCondition {
         List<Period> segments = segmentsOf(timeline);
         List<Period> out = new ArrayList<>();
         LocalDate previous = null;
-        for (LocalDate c : cuts(List.of(segments))) {
-            if (previous != null && RegelSpraakRuntime.rsAggVergelijk(read(segments, previous), bound, operator))
+        for (LocalDate c : Span.cuts(List.of(segments))) {
+            if (previous != null && RegelSpraakRuntime.rsAggVergelijk(Span.read(segments, previous), bound, operator))
                 out.add(new Period(previous, c, null));
             previous = c;
         }
@@ -70,8 +69,8 @@ public final class PeriodCondition {
         List<Period> segments = segmentsOf(timeline);
         List<Period> out = new ArrayList<>();
         LocalDate previous = null;
-        for (LocalDate c : cuts(List.of(segments))) {
-            if (previous != null && ComputeHelpers.textEqual(read(segments, previous), bound, equal))
+        for (LocalDate c : Span.cuts(List.of(segments))) {
+            if (previous != null && ComputeHelpers.textEqual(Span.read(segments, previous), bound, equal))
                 out.add(new Period(previous, c, null));
             previous = c;
         }
@@ -91,17 +90,8 @@ public final class PeriodCondition {
                 spans.add(new Period(p.from(), p.to(), null));
             }
         List<Period> held = periodsOf(periods);
-        List<Period> out = new ArrayList<>();
-        for (Period s : filled)
-            for (Period h : held) {
-                LocalDate from = later(s.from(), h.from()), to = earlier(s.to(), h.to());
-                if (from.isBefore(to)) out.add(new Period(from, to, s.value()));
-            }
-        for (Period g : complement(merged(spans)))
-            for (Period h : held) {
-                LocalDate from = later(g.from(), h.from()), to = earlier(g.to(), h.to());
-                if (from.isBefore(to)) out.add(new Period(from, to, null));
-            }
+        List<Period> out = new ArrayList<>(Span.clip(filled, held));
+        out.addAll(Span.clip(complement(merged(spans)), held));
         out.sort(Comparator.comparing(Period::from));
         return List.copyOf(out);
     }
@@ -153,10 +143,10 @@ public final class PeriodCondition {
         for (Object m : (List<?>) members) parts.add(periodsOf(m));
         List<Period> out = new ArrayList<>();
         LocalDate previous = null;
-        for (LocalDate c : cuts(parts)) {
+        for (LocalDate c : Span.cuts(parts)) {
             if (previous != null) {
                 long hits = 0;
-                for (List<Period> part : parts) if (covers(part, previous)) hits++;
+                for (List<Period> part : parts) if (Span.covers(part, previous)) hits++;
                 if (ComputeHelpers.endVerdict(quantifier, threshold, hits, parts.size()))
                     out.add(new Period(previous, c, null));
             }
@@ -251,8 +241,8 @@ public final class PeriodCondition {
                 for (Period a : segmentsOf(values.get(i).value()))
                     for (Period b : segmentsOf(values.get(j).value())) {
                         if (a.value() == null || b.value() == null || Period.sameValue(a.value(), b.value())) continue;
-                        LocalDate from = later(a.from(), b.from());
-                        if (!from.isBefore(earlier(a.to(), b.to()))) continue;
+                        LocalDate from = Span.later(a.from(), b.from());
+                        if (!from.isBefore(Span.earlier(a.to(), b.to()))) continue;
                         if (out == null || from.isBefore(out.day())) out = new Clash(from, i, j, a.value(), b.value());
                     }
         return out;
@@ -269,27 +259,15 @@ public final class PeriodCondition {
         List<Period> covered = new ArrayList<>(), out = new ArrayList<>();
         for (List<Period> part : parts) {
             List<Period> free = complement(merged(covered));
-            out.addAll(clip(part, free));
+            out.addAll(Span.clip(part, free));
             for (Period p : part) covered.add(new Period(p.from(), p.to(), null));
         }
-        if (input != null) out.addAll(clip(input, complement(merged(covered))));
+        if (input != null) out.addAll(Span.clip(input, complement(merged(covered))));
         out.sort(Comparator.comparing(Period::from));
         return List.copyOf(out);
     }
 
     // ---------------- periods ----------------
-
-    /** {@code segments} cut to {@code periods}, one fragment per overlap of a segment and a period, with the segment's
-     *  value, segment by segment. */
-    private static List<Period> clip(List<Period> segments, List<Period> periods) {
-        List<Period> out = new ArrayList<>();
-        for (Period s : segments)
-            for (Period p : periods) {
-                LocalDate from = later(s.from(), p.from()), to = earlier(s.to(), p.to());
-                if (from.isBefore(to)) out.add(new Period(from, to, s.value()));
-            }
-        return out;
-    }
 
     /** The segments of a timeline of working memory, an absent one (null) none. */
     private static List<Period> segmentsOf(Object timeline) {
@@ -312,7 +290,7 @@ public final class PeriodCondition {
         for (Period p : sorted) {
             Period last = out.isEmpty() ? null : out.get(out.size() - 1);
             if (last != null && !p.from().isAfter(last.to()))
-                out.set(out.size() - 1, new Period(last.from(), later(last.to(), p.to()), null));
+                out.set(out.size() - 1, new Period(last.from(), Span.later(last.to(), p.to()), null));
             else out.add(new Period(p.from(), p.to(), null));
         }
         return List.copyOf(out);
@@ -324,54 +302,19 @@ public final class PeriodCondition {
         LocalDate at = Period.OPEN_FROM;
         for (Period p : merged) {
             if (p.from().isAfter(at)) out.add(new Period(at, p.from(), null));
-            at = later(at, p.to());
+            at = Span.later(at, p.to());
         }
         if (at.isBefore(Period.OPEN_TO)) out.add(new Period(at, Period.OPEN_TO, null));
         return List.copyOf(out);
     }
 
-    /** The days the periods {@code a} and {@code b} share, as maximal periods. */
+    /** The days the periods {@code a} and {@code b} share, as maximal periods ({@link #merged} keeps no value). */
     static List<Period> intersection(List<Period> a, List<Period> b) {
-        List<Period> out = new ArrayList<>();
-        for (Period x : a)
-            for (Period y : b) {
-                LocalDate from = later(x.from(), y.from()), to = earlier(x.to(), y.to());
-                if (from.isBefore(to)) out.add(new Period(from, to, null));
-            }
-        return merged(out);
-    }
-
-    /** The bounds of every segment of {@code timelines} and the two open ends, ordered. */
-    private static TreeSet<LocalDate> cuts(List<List<Period>> timelines) {
-        TreeSet<LocalDate> cuts = new TreeSet<>();
-        cuts.add(Period.OPEN_FROM);
-        cuts.add(Period.OPEN_TO);
-        for (List<Period> t : timelines)
-            for (Period p : t) {
-                cuts.add(p.from());
-                cuts.add(p.to());
-            }
-        return cuts;
-    }
-
-    /** The value of {@code segments} on day {@code d} (ch. 3.1), leeg where no segment covers it. */
-    private static Object read(List<Period> segments, LocalDate d) {
-        for (Period p : segments) if (!p.from().isAfter(d) && p.to().isAfter(d)) return p.value();
-        return null;
-    }
-
-    /** Whether a period of {@code periods} covers day {@code d}. */
-    private static boolean covers(List<Period> periods, LocalDate d) {
-        for (Period p : periods) if (!p.from().isAfter(d) && p.to().isAfter(d)) return true;
-        return false;
+        return merged(Span.clip(a, b));
     }
 
     /** The first day of the calendar month or year {@code d} lies in. */
     private static LocalDate bucketStart(LocalDate d, boolean year) {
         return year ? d.withDayOfYear(1) : d.withDayOfMonth(1);
     }
-
-    private static LocalDate later(LocalDate a, LocalDate b) { return a.isAfter(b) ? a : b; }
-
-    private static LocalDate earlier(LocalDate a, LocalDate b) { return a.isBefore(b) ? a : b; }
 }

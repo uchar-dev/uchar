@@ -46,7 +46,7 @@ import java.util.Objects;
  * or counts its units has to ask for one ({@link #open}). On a bean an open bound is null, as the case format leaves
  * the bound out.
  */
-public record Period(LocalDate from, LocalDate to, Object value) {
+public record Period(LocalDate from, LocalDate to, Object value) implements Span<Period> {
 
     /** The open {@code from} of a segment that begins before every day. */
     public static final LocalDate OPEN_FROM = LocalDate.MIN;
@@ -75,6 +75,10 @@ public record Period(LocalDate from, LocalDate to, Object value) {
     /** Whether this segment has an open bound (ch. 3.1). */
     public boolean open() {
         return from.equals(OPEN_FROM) || to.equals(OPEN_TO);
+    }
+
+    @Override public Period between(LocalDate from, LocalDate to) {
+        return new Period(from, to, value);
     }
 
     public LocalDate getVan() { return from; }
