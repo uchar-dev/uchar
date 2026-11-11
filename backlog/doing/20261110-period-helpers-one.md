@@ -34,3 +34,20 @@ May touch: `PeriodArithmetic.java`, `PeriodCondition.java`, `PeriodDefaults.java
 
 Out of scope: `core/PeriodCoverage`, `core/DayKinds`, `core/WindowPosition`; the period arithmetic of `ref` and
 clingo (separate implementations on purpose); the production runtime.
+
+Result (2026-11-11):
+- fixed, no behaviour change: reading at a day, covers, cuts, clip and the coalescing of adjacent equal segments are
+  written once, in a new interface `Span` (`transpiler/tms/Span.java`) that `Period` and `PeriodArithmetic.Exact`
+  implement; `between` returns a piece of the same type. `intersection` is `merged(Span.clip(a, b))`,
+  `comparisonReading` clips through `Span.clip`, `inputEmpty` uses `filled`, `written` and `writtenValues` coalesce
+  through `Span.coalesced`. A nested interface in `Period` does not compile (cyclic inheritance), hence the file.
+- fixed: one `sameValue`, `Period.sameValue`, exact through `Breuk` with a fast path for two decimals; the five
+  calls in `SessionReaders` go there (only the class name changes).
+- struck as a fault: the two `sameValue` — `Breuk` is a `Number`, but a `Period` never holds a `Breuk` or `Integer`
+  (its constructor refuses them), so no run reaches the difference and no witness exists.
+- struck as a fault: cuts with or without open ends — `PeriodArithmetic.sum` without a fallback writes nothing
+  outside its members' bounds, so the outcome is the same.
+- struck as a fault: `PeriodDefaults.cut` drops empty segments where `clip` does not — that is what `cut` means (what
+  a default decides); the filter stays in `cut`, the clipping goes through `Span.clip`.
+- What the generated rules call keeps name and signature: no test file changed, the DRL pins and
+  `BranchDumpsCorpusWitnessTest` pass unchanged; suite 1931 tests, gate 12 and gate 17 green.
