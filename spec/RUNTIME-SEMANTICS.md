@@ -7762,7 +7762,11 @@ form the smallest stratum such that along every positive edge the
 consumer's stratum is at least the producer's, and along every
 stratum-strict or negative edge strictly greater (strictness on a
 WF-045-admissible creation cycle is discharged by the generation
-progression, ch. 6.1, not by a boundary). WF-046 alone guarantees the
+progression, ch. 6.1, not by a boundary). Inside an instance-ordered part
+(ch. 6.2) every edge between two members of the part counts positive, the
+strict and the negative local edges included, so the members share one
+stratum; the depth of the object and the level of the member order them
+within it (ch. 6.2, "The order"). WF-046 alone guarantees the
 assignment exists — no negative edge on a cycle is exactly the
 stratifiability condition; WF-045 separately makes the within-stratum
 fixpoint unique. The verifier rejects a program where the assignment

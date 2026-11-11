@@ -9636,7 +9636,12 @@ predecessor included.
   that along every positive edge the consumer's stratum is ≥ the producer's,
   and along every stratum-strict or negative edge strictly greater
   (strictness on an admissible creation cycle discharged by the generation
-  progression, not a boundary). "No negative edge on a cycle" is exactly
+  progression, not a boundary). Inside an instance-ordered part (below)
+  every edge between two members of the part counts positive, the strict
+  and the negative local edges included, so the members of the part share
+  one stratum (`RUNTIME-SEMANTICS.md` ch. 6.2): the depth of the object
+  and the level of the member order them within it, not a stratum
+  boundary. "No negative edge on a cycle" is exactly
   the stratifiability condition; the verifier rejects a program for which no
   assignment exists. Evaluation then proceeds by strata
   (`RUNTIME-SEMANTICS.md` ch. 6.3): a negated read sees a settled producer,
