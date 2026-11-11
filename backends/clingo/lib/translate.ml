@@ -3661,14 +3661,15 @@ let quotient_misfit_guard ctx ~carrier ~atoms ~numt ~dent (reason, code) =
    magnitude, so the rate splits into two scale-2 halves — Rh = R/100, Rl = R\100
    — giving round(M·R/10^4) half-up as C = A/100 + (100·(A\100) + M·Rl + 5000)/10^4
    with A = M·Rh (halfAwayFromZero, non-negative operands). [money_mult_fences] emits
-   the four viol/2 fences keyed by [subject], grounded by the caller's [gbody]
-   string; [money_mult_body] returns the non-negativity guards and the A/C
+   the four viol/2 fences on the caller's [carrier] over the operands' [atoms];
+   [money_mult_body] returns the non-negativity guards and the A/C
    assignment atoms over the caller's fresh variables [a] and [c]. The rate's
    sign is read on its own term [tr_sign], not on the term brought to scale
    10^4 ([money_mult_rate]): multiplying by 10^(4-d) leaves a sign as it is,
    and past the rescale fence the multiplied term has wrapped, so its sign
    would name a negative operand the document does not have. *)
-let money_mult_fences ctx ~subject ~gbody ~tm ~tr ~tr_sign =
+let money_mult_fences ctx ~carrier ~atoms ~tm ~tr ~tr_sign =
+  let subject = carrier.witness and gbody = carrier.guard_body @ atoms in
   List.iter
     (fun t ->
       List.iter
@@ -3704,8 +3705,8 @@ let money_mult_body ~a ~c ~tm ~tr ~tr_sign =
    literal 0,8750 carries four whatever its annotation says, so k = 1 there.
    A term that arrives ABOVE scale 10^4 is not brought down; the backstop
    refuses it, and the route ([money_mult_roles]) sends no such term here.
-   [body] grounds the fence. *)
-let money_mult_rate ctx ~subject ~body ~sm ~tr ~sr =
+   The fence rides [carrier] over the operands' [atoms]. *)
+let money_mult_rate ctx ~carrier ~atoms ~sm ~tr ~sr =
   if sm <> 100 || sr < 1 || sr > 10000 || 10000 mod sr <> 0 then
     fault
       "the split money multiplication expects a 2-decimal money and a rate of at most 4 decimals \
@@ -3714,7 +3715,7 @@ let money_mult_rate ctx ~subject ~body ~sm ~tr ~sr =
   let k = 10000 / sr in
   if k = 1 then (tr, tr)
   else begin
-    range_guard ctx ~subject ~body [ (tr, max_int31 / k) ];
+    range_guard ctx ~subject:carrier.witness ~body:(carrier.guard_body @ atoms) [ (tr, max_int31 / k) ];
     (Printf.sprintf "(%s*%d)" tr k, tr)
   end
 
@@ -10807,13 +10808,13 @@ and translate_money_mult ctx ~subject ~subject_ot ~base_expr : string list * str
      value atoms, never in these direct operands) *)
   let ma, tm, sm = coalesce0 ctx ~subject ~subject_ot (expr_term ctx ~subject ~subject_ot m) in
   let ra, tr, sr = coalesce0 ctx ~subject ~subject_ot (expr_term ctx ~subject ~subject_ot r) in
-  let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
-  let tr, tr_sign = money_mult_rate ctx ~subject ~body:((base :: ctx.rule_guard) @ ma @ ra) ~sm ~tr ~sr in
-  let gbody = ((base :: ctx.rule_guard) @ ma @ ra) in
+  let carrier = rule_carrier ctx ~subject ~subject_ot in
+  let tr, tr_sign = money_mult_rate ctx ~carrier ~atoms:(ma @ ra) ~sm ~tr ~sr in
+  let gbody = carrier.guard_body @ ma @ ra in
   (* the fences and halfAwayFromZero encoding are shared with the closed
      body (one encoding); here the value rides a subject-keyed helper predicate,
      the operand atoms baked into its body *)
-  money_mult_fences ctx ~subject ~gbody ~tm ~tr ~tr_sign;
+  money_mult_fences ctx ~carrier ~atoms:(ma @ ra) ~tm ~tr ~tr_sign;
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "mm%d" ctx.fresh in
   emit_rule ctx ~head:(Printf.sprintf "%s(%s,C)" p subject)
@@ -10849,9 +10850,8 @@ and closed_money_mult ctx ~carrier ~base_expr : string list * string * int =
   unit_free_ok ctx (Some r);
   let ma, tm, sm = closed_term ctx ~carrier m in
   let ra, tr, sr = closed_term ctx ~carrier r in
-  let tr, tr_sign = money_mult_rate ctx ~subject:carrier.witness ~body:(carrier.guard_body @ ma @ ra) ~sm ~tr ~sr in
-  let gbody = (carrier.guard_body @ ma @ ra) in
-  money_mult_fences ctx ~subject:carrier.witness ~gbody ~tm ~tr ~tr_sign;
+  let tr, tr_sign = money_mult_rate ctx ~carrier ~atoms:(ma @ ra) ~sm ~tr ~sr in
+  money_mult_fences ctx ~carrier ~atoms:(ma @ ra) ~tm ~tr ~tr_sign;
   let a = fresh ctx "A" and c = fresh ctx "C" in
   (ma @ ra @ money_mult_body ~a ~c ~tm ~tr ~tr_sign, c, 100)
 
