@@ -7381,6 +7381,12 @@ statute text.
 Value nodes, identified up to name normalisation:
 
 - **attribute** — object type × attribute;
+- **cell** — object type × dimensioned attribute × labels (`IR-SPEC.md`
+  ch. 5.1; ch. 5.8c): a cell read, a cell target and a member assignment
+  with labels read or write the cell, and a dimension fold reads every cell
+  of the product of its selections. The labels are literals on the wire, so
+  a rule that computes one cell from another cell of the same attribute is
+  no cycle;
 - **characteristic** — object type × characteristic;
 - **channel** — rule name (version-stripped): the §9.5 error entries the
   named rule can deposit (ch. 5.6);
@@ -7397,11 +7403,11 @@ Each rule form reads and writes nodes:
 
 | Form | Writes | Reads |
 |---|---|---|
-| assignment / initialisation | its target attribute | every attribute and characteristic its value expression and condition reference — a navigated reference reads the referenced type's node; population(element type) per instance fold |
+| assignment / initialisation | its target attribute, or the cell its target names | every attribute, cell and characteristic its value expression and condition reference — a navigated reference reads the referenced type's node, a dimension fold every cell of the product of its selections; population(element type) per instance fold |
 | characteristic attribution | its target characteristic | idem |
 | allocation | target attribute; declared remainder attribute | source amount; ratio, maximum and ordering attributes; condition reads; population(target type) |
 | consistency / uniqueness | channel(own name) | assertion operands / key attributes; a union reads every source's key attributes; a scoped uniqueness also reads relation(scope hop), named by its `scope` binding (`scopeRol` until L4; since L2 the only spelling of the scope, B8; until L2 a scope without a binding was derived from the written scope field) |
-| object creation | the attributes and characteristics its `assignments` set on the created type; population(created type); relation(the uniquely-derivable connecting fact type — the back-link, ch. 5.5) | condition and toekenning-value reads on the anchor; population(subject type) — iterating the subjects is a read: it orders creation-after-creation, and a self-typed creation becomes a WF-045 cycle instead of a diverging fixpoint or an unbounded grounding |
+| object creation | the attributes, cells (a member with `labels`) and characteristics its `assignments` set on the created type; population(created type); relation(the uniquely-derivable connecting fact type — the back-link, ch. 5.5) | condition and toekenning-value reads on the anchor; population(subject type) — iterating the subjects is a read: it orders creation-after-creation, and a self-typed creation becomes a WF-045 cycle instead of a diverging fixpoint or an unbounded grounding |
 | relation creation | relation(created fact type) — no population: it mints no instance, it links instances that exist (since 2026-10-06; below) | condition reads on the anchor; relation(each hop of the join-chain traversal, `IR-SPEC.md` ch. 3.4) |
 
 Edges run producer → consumer — from every form that writes a node to
