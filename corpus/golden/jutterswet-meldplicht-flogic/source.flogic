@@ -1,0 +1,7 @@
+// Jutterswet — de meldplicht.
+
+Strandvondst[|vondstwaarde => numeriek(niet_negatief, geheel)|].
+Strandvondst[|meldplichtig => kenmerk(bijvoeglijk)|].
+
+@!{'meldplicht van een strandvondst'}
+?V : meldplichtig :- ?V : Strandvondst, ?V.vondstwaarde > 100.

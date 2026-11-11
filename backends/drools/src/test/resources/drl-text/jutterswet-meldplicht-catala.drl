@@ -1,0 +1,21 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+
+// 
+function boolean toets_kenmerktoekenningMeldplichtig(Object $vondstwaarde) {
+    return RegelSpraakRuntime.rsAggVergelijk($vondstwaarde, new java.math.BigDecimal("100"), ">");
+}
+
+rule "kenmerktoekenning meldplichtig"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst( $vondstwaarde : vondstwaarde )
+    eval( toets_kenmerktoekenningMeldplichtig($vondstwaarde) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("strandvondst", "meldplichtig", true)));
+end
+

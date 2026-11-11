@@ -1,0 +1,28 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Strandvondst",
+        "attributes": { "vondstwaarde": { "number": "150" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Strandvondst",
+        "attributes": { "vondstwaarde": { "number": "100" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "characteristicPresent", "label": "V1", "characteristic": "meldplichtig" },
+    { "kind": "characteristicAbsent", "label": "V2", "characteristic": "meldplichtig" },
+    { "kind": "consistent" }
+  ]
+}

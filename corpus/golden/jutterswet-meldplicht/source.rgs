@@ -1,0 +1,8 @@
+Objecttype de Strandvondst (mv: Strandvondsten)
+    de vondstwaarde Numeriek (niet-negatief geheel getal);
+    is meldplichtig kenmerk (bijvoeglijk);
+
+Regel meldplicht van een strandvondst
+    geldig altijd
+        Een Strandvondst is meldplichtig
+        indien zijn vondstwaarde groter is dan 100.

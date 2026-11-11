@@ -1599,7 +1599,9 @@ EXPECTED_CHANNEL=(
 # jutterswet-muntketen (PLAYED 1) and jutterswet-ketenkwantor (PLAYED 4), whose sourcePath steps over 'berging'
 # (DROOLS-067), and anchor/jutterswet-gemeenteberging (PLAYED 2), whose fact creation steps over 'aanmelding'
 # (DROOLS-161, retired).
-EXPECTED_PLAYED=362
+# 365 since the card meldplicht-drie-talen (2026-11-11): jutterswet-meldplicht, jutterswet-meldplicht-catala and
+# jutterswet-meldplicht-flogic, one characteristic rule authored in three source languages (PLAYED 1 each).
+EXPECTED_PLAYED=365
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

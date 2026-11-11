@@ -1,0 +1,21 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+
+// ?V.vondstwaarde > 100
+function boolean toets_meldplichtVanEenStrandvondst(Object $vondstwaarde) {
+    return RegelSpraakRuntime.rsAggVergelijk($vondstwaarde, new java.math.BigDecimal("100"), ">");
+}
+
+rule "meldplicht van een strandvondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandvondst( $vondstwaarde : vondstwaarde )
+    eval( toets_meldplichtVanEenStrandvondst($vondstwaarde) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("strandvondst", "meldplichtig", true)));
+end
+

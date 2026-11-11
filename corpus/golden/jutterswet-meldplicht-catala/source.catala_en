@@ -1,0 +1,12 @@
+# Jutterswet — de meldplicht
+
+Een strandvondst met een vondstwaarde van meer dan honderd is meldplichtig.
+
+```catala
+declaration scope Strandvondst:
+  input vondstwaarde content integer
+  output meldplichtig content boolean
+
+scope Strandvondst:
+  definition meldplichtig equals vondstwaarde > 100
+```
