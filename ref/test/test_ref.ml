@@ -14369,6 +14369,47 @@ let () =
       | _ -> check (ident ^ " (loaded)") false)
     [ ("verifier", Ir_v0.Loader.Verifier); ("executor", Ir_v0.Loader.Executor) ]
 
+(* WV-5.7a-ledenvolgorde: the golden jutterswet-werfkeur and the red case
+   jutterswet-werfkeur-bereikt, one document. A Werf gets keur 1 when at least
+   three of its schuiten are longer than 5 or have a keurdatum after the
+   rekendatum; no case carries an evaluation date, so a schuit of 5 or shorter
+   reached by the fold faults (EF-011). Every Werf gets a sloep (lengte 2,
+   creation 1); a vlaggerechtigde Werf a werfvlag (creation 2) and, once it has
+   one, a kotter (lengte 9, creation 0); a schuit links to its bouwwerf over
+   ligplaats (the fact creation). The members of the to-many role read the case
+   wrote first, in written order, then every other link in instance order
+   (ch. 5.7a): case 1 reads S2, S1, the kotter, the sloep and stops after the
+   kotter, case 2 reads S1, S2, S3, S4, the sloep and stops after S3, and the
+   red case reads S2 (3) second and faults *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let ident = "WV-5.7a-ledenvolgorde" in
+  let golden = "corpus/golden/jutterswet-werfkeur/" in
+  let schuiten (w : World.t) =
+    World.links (World.get w "W1") ~fact_type:"ligplaats"
+      { role_identifier = Some "schuit"; role_object_type_name = Some "Schuit"; role_plural = Some "schuiten";
+        role_many = true }
+  in
+  let members name got want =
+    check (Printf.sprintf "%s-%s (got [%s])" ident name (String.concat "; " got)) (got = want)
+  in
+  plays ~ident:(ident ^ "-case1") ~ir:(read (golden ^ "ir.json"))
+    ~case_data:(read (golden ^ "case1-kotter-voor-de-sloep.json"))
+    (fun final -> members "case1" (schuiten final) [ "S2"; "S1"; "oc0::W1"; "oc1::W1" ]);
+  let case2 = read (golden ^ "case2-bouwschuit-tussen-de-ligplaatsen.json") in
+  with_files ~ir:(read (golden ^ "ir.json")) ~case_data:case2 (fun _ (c : Case.t) _ ->
+      members "case2-geladen" (schuiten c.world) [ "S1"; "S3"; "S4" ]);
+  plays ~ident:(ident ^ "-case2") ~ir:(read (golden ^ "ir.json")) ~case_data:case2 (fun final ->
+      members "case2" (schuiten final) [ "S1"; "S2"; "S3"; "S4"; "oc1::W1" ]);
+  let red = "corpus/red/jutterswet-werfkeur-bereikt/" in
+  with_files ~ir:(read (red ^ "ir.json")) ~case_data:(read (red ^ "case1-bouwschuit-bereikt.json"))
+    (fun findings _ evaluate ->
+      check (ident ^ "-rood: verifier-clean") (findings = []);
+      match evaluate () with
+      | exception Value.Fault { code = c; params = ps; text } ->
+          check (ident ^ "-rood (got: " ^ Value.report ~code:c text ^ ")") (c = Some "EF-011" && ps = [])
+      | _ -> check (ident ^ "-rood (no fault at all)") false)
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

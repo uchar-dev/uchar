@@ -1,0 +1,506 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Werf",
+        "animate": false,
+        "plural": "Werven",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "keur",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "schuittal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "vlaggerechtigd",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Schuit",
+        "animate": false,
+        "plural": "Schuiten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "lengte",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "keurdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Werfvlag",
+        "animate": false,
+        "plural": "Werfvlaggen",
+        "attributes": [],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "ligplaats",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "werf",
+            "objectType": "Werf",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "schuit",
+            "objectType": "Schuit",
+            "plural": "schuiten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "bouwopdracht",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "bouwwerf",
+            "objectType": "Werf",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "bouwschuit",
+            "objectType": "Schuit",
+            "plural": "bouwschuiten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "vlagvoering",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vlagwerf",
+            "objectType": "Werf",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "werfvlag",
+            "objectType": "Werfvlag",
+            "plural": "werfvlaggen",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "keur van een werf",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "keur",
+              "subjectType": "Werf",
+              "source": {
+                "snippet": "De keur van een werf"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "1"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "1"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 3,
+              "elementType": "Schuit",
+              "test": {
+                "node": "Compound",
+                "quantifier": "atLeast",
+                "threshold": 1,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "lengte",
+                      "subjectType": "Schuit",
+                      "source": {
+                        "snippet": "zijn lengte"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "5"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "nonNegative"
+                      },
+                      "source": {
+                        "snippet": "5"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn lengte is groter dan 5"
+                    }
+                  },
+                  {
+                    "node": "Comparison",
+                    "op": "later",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "keurdatum",
+                      "subjectType": "Schuit",
+                      "source": {
+                        "snippet": "zijn keurdatum"
+                      }
+                    },
+                    "right": {
+                      "node": "ContextValue",
+                      "name": "evaluationDate",
+                      "type": {
+                        "node": "Date",
+                        "precision": "day"
+                      },
+                      "source": {
+                        "snippet": "de rekendatum"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn keurdatum ligt na de rekendatum"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan ten minste een van de volgende voorwaarden voldoen"
+                }
+              },
+              "source": {
+                "snippet": "ten minste drie schuiten van de werf"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "ligplaats",
+                "role": "schuit"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "schuittal van een werf",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "schuittal",
+              "subjectType": "Werf",
+              "source": {
+                "snippet": "Het schuittal van een werf"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "schuiten",
+                  "subjectType": "Werf",
+                  "source": {
+                    "snippet": "de schuiten van de werf"
+                  }
+                }
+              ],
+              "elementType": "Schuit",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "ligplaats",
+                "role": "schuit"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal schuiten van de werf"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [
+      {
+        "node": "ObjectCreation",
+        "name": "bouw een kotter",
+        "versions": [
+          {
+            "createdType": "Schuit",
+            "subject": "Werf",
+            "assignments": [
+              {
+                "node": "MemberAssignment",
+                "member": "lengte",
+                "value": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "9"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "nonNegative"
+                  },
+                  "source": {
+                    "snippet": "9"
+                  }
+                },
+                "characteristic": false
+              }
+            ],
+            "condition": {
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "Aggregation",
+                "kind": "count",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "werfvlaggen",
+                    "subjectType": "Werf",
+                    "source": {
+                      "snippet": "de werfvlaggen van de werf"
+                    }
+                  }
+                ],
+                "elementType": "Werfvlag",
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "vlagvoering",
+                  "role": "werfvlag"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "het aantal werfvlaggen van de werf"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "1"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "1"
+                }
+              },
+              "source": {
+                "snippet": "het aantal werfvlaggen van de werf is groter dan of gelijk aan 1"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "ligplaats",
+              "role": "schuit"
+            }
+          }
+        ]
+      },
+      {
+        "node": "ObjectCreation",
+        "name": "bouw een sloep",
+        "versions": [
+          {
+            "createdType": "Schuit",
+            "subject": "Werf",
+            "assignments": [
+              {
+                "node": "MemberAssignment",
+                "member": "lengte",
+                "value": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "2"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "nonNegative"
+                  },
+                  "source": {
+                    "snippet": "2"
+                  }
+                },
+                "characteristic": false
+              }
+            ],
+            "validity": {
+              "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "ligplaats",
+              "role": "schuit"
+            }
+          }
+        ]
+      },
+      {
+        "node": "ObjectCreation",
+        "name": "hijs de werfvlag",
+        "versions": [
+          {
+            "createdType": "Werfvlag",
+            "subject": "Werf",
+            "assignments": [],
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "vlaggerechtigd",
+              "negated": false,
+              "source": {
+                "snippet": "de werf is vlaggerechtigd"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "vlagvoering",
+              "role": "werfvlag"
+            }
+          }
+        ]
+      }
+    ],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [
+      {
+        "node": "FactCreation",
+        "name": "ligplaats van een bouwschuit",
+        "versions": [
+          {
+            "factType": "ligplaats",
+            "anchorRole": "schuit",
+            "targetRole": "werf",
+            "anchor": "Schuit",
+            "path": [
+              {
+                "node": "RoleBinding",
+                "factType": "bouwopdracht",
+                "role": "bouwwerf"
+              }
+            ],
+            "validity": {
+              "node": "Validity"
+            }
+          }
+        ]
+      }
+    ],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

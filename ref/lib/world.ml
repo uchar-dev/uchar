@@ -98,6 +98,12 @@ type t = {
          that minted it and its creation depth in that stratum, recorded at
          the creation (RUNTIME-SEMANTICS ch. 5.5, the creation budget). An
          input instance has no entry; its depth is 0 in every stratum *)
+  written : int Key.t;
+      (* by (label, link key): how many links at the head of that list the
+         case wrote, set by the loader (RUNTIME-SEMANTICS ch. 5.7a). The links
+         after them — a reverse leg the loader materialised, a link a creation
+         laid — stand in instance order ([instance_compare]). Without an entry
+         the case wrote none *)
   char_writes : string Key.t;
       (* by (label, norm characteristic), for a time-dependent characteristic:
          the form whose write its true periods are *)
@@ -111,7 +117,7 @@ type t = {
 
 let empty =
   { instances = SMap.empty; order = []; channel = []; outcomes = []; evaluating = []; owners = Key.empty;
-    holders = Key.empty; mints = SMap.empty; char_writes = Key.empty; parts = Key.empty }
+    holders = Key.empty; mints = SMap.empty; written = Key.empty; char_writes = Key.empty; parts = Key.empty }
 
 let add_instance w inst =
   if SMap.mem inst.label w.instances then
@@ -482,9 +488,39 @@ let release_char_timeline w ~form ~label ~char =
       if SMap.mem (norm char) i.ctls then (update w { i with ctls = SMap.remove (norm char) i.ctls }, true) else (w, false)
   | _ -> (w, false)
 
+(* The creation and the subject of a made object: its label is
+   "oc<index>::<subject>" (Eval.run_object_creation), in the "::" namespace
+   the case loader refuses for case labels *)
+let mint_origin w label =
+  if not (SMap.mem label w.mints) then None
+  else
+    let bad () = failwith (Printf.sprintf "ref/lib/world.ml, mint_origin: the made object %S has no origin" label) in
+    match String.index_opt label ':' with
+    | Some k when k > 2 && String.sub label 0 2 = "oc" && k + 1 < String.length label && label.[k + 1] = ':' -> (
+        match int_of_string_opt (String.sub label 2 (k - 2)) with
+        | Some idx -> Some (idx, String.sub label (k + 2) (String.length label - k - 2))
+        | None -> bad ())
+    | _ -> bad ()
+
+(* The instance order (RUNTIME-SEMANTICS ch. 5.7a): the case's instances
+   ascending by label, byte by byte (UTF-8, so code point by code point),
+   then the made objects by the
+   index of their creation and then by their subject in this same order. It
+   is read off the objects alone, so neither the order of the case file nor
+   the stratum or generation in which a creation fired moves it *)
+let rec instance_compare w a b =
+  match (mint_origin w a, mint_origin w b) with
+  | None, None -> String.compare a b
+  | None, Some _ -> -1
+  | Some _, None -> 1
+  | Some (i, s), Some (j, t) -> if i <> j then compare i j else instance_compare w s t
+
 (* role links are naturally idempotent (ch. 5.5): linking an
    already-present target is a no-op. A second distinct filler on a to-one
-   role is a fault, never a silent overwrite. *)
+   role is a fault, never a silent overwrite. A new link takes its place
+   among the links after those the case wrote, in instance order (ch. 5.7a),
+   so the order a fold reads them in is not the order the session laid them
+   in *)
 let add_link w ~label ~fact_type ~(role : Ir_v0.Ast.role_ref) ~target =
   let i = get w label in
   let existing = links i ~fact_type role in
@@ -494,7 +530,14 @@ let add_link w ~label ~fact_type ~(role : Ir_v0.Ast.role_ref) ~target =
     Value.faultc ~params:[ ("role", spelling); ("label", label); ("filler", (String.concat ", " existing)) ] "EF-017" "to-one role %S on %S already links %s; a second filler is ill-typed (ch. 5.5)"
       spelling label
       (String.concat ", " existing)
-  else (update w { i with left_side = SMap.add (link_key ~fact_type role) (existing @ [ target ]) i.left_side }, true)
+  else
+    let key = link_key ~fact_type role in
+    let written = Option.value (Key.find_opt (label, key) w.written) ~default:0 in
+    let rec place k = function
+      | x :: rest when k < written || instance_compare w x target < 0 -> x :: place (k + 1) rest
+      | rest -> target :: rest
+    in
+    (update w { i with left_side = SMap.add key (place 0 existing) i.left_side }, true)
 
 (* a §9.5 deposit of the evaluation under way *)
 let insert_error w ~rule ~subject ~code = { w with evaluating = (rule, subject, code) :: w.evaluating }

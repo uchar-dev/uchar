@@ -737,6 +737,15 @@ let materialise_relations (doc : document) (world : World.t) =
         })
       world.instances
   in
+  (* the boundary of ch. 5.7a: what stands in a list before this pass the case
+     wrote. The pass appends in ascending label order, the order it walks the
+     instances in, so a materialised leg already stands in instance order *)
+  let written =
+    SMap.fold
+      (fun label (i : World.instance) acc ->
+        SMap.fold (fun key targets acc -> World.Key.add (label, key) (List.length targets) acc) i.left_side acc)
+      rekeyed World.Key.empty
+  in
   SMap.fold
     (fun _ (i : World.instance) w ->
       SMap.fold
@@ -782,7 +791,7 @@ let materialise_relations (doc : document) (world : World.t) =
             w targets)
         i.left_side w)
     world.instances
-    { world with instances = rekeyed }
+    { world with instances = rekeyed; written }
 
 let check_role_targets (doc : document) (world : World.t) =
   SMap.iter
