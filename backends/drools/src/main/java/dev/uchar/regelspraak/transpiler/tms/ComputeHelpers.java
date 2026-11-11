@@ -599,6 +599,32 @@ public final class ComputeHelpers {
         return RegelSpraakRuntime.rsGeheelPeriode(read, grid, testCode, bound) != wholePeriodNegated;
     }
 
+    /** The fold of the whole-period qualifier (RUNTIME-SEMANTICS ch. 3.9) with the exact-digit test of ch. 1.2 read per
+     *  day: over {@code timeline}, on the grid {@code grid}, whether the test of {@code digits} digits, complemented
+     *  where {@code desired} is false, holds on every day of every bucket a segment with a value touches; complemented
+     *  where the qualifier is negated. Each segment with a value is read as 1 where the test holds on its value and as
+     *  0 where it does not, and the fold of {@link #wholePeriod} asks per day for equality with 1, which a leeg day
+     *  fails, or, where the test is negated and a leeg day satisfies it, for inequality with 0, which a leeg day
+     *  passes; the touched buckets are those of the segments with a value either way. */
+    public static boolean wholePeriodDigits(Object timeline, String grid, int digits, boolean desired,
+                                            boolean wholePeriodNegated) {
+        List<Object> marked = null;
+        if (timeline != null) {
+            marked = new ArrayList<>();
+            for (Object o : (List<?>) timeline) {
+                Period p = (Period) o;
+                marked.add(p.value() == null ? p : new Period(p.from(), p.to(),
+                        exactDigits(p.value(), digits, desired) ? BigDecimal.ONE : BigDecimal.ZERO));
+            }
+        }
+        // a leeg day fails the test (ch. 1.2), so it satisfies the negated test only
+        return desired ? wholePeriod(marked, BigDecimal.ONE, grid, EQUAL_TEST, wholePeriodNegated)
+                : wholePeriod(marked, BigDecimal.ZERO, grid, NOT_EQUAL_TEST, wholePeriodNegated);
+    }
+
+    /** The codes of "gelijk aan" and "ongelijk aan" in {@code rsGeheelPeriode}. */
+    private static final int EQUAL_TEST = 4, NOT_EQUAL_TEST = 5;
+
     /** The part of the segment {@code p} with an open bound that the fold of the whole-period qualifier on the grid
      *  {@code grid} reads (RUNTIME-SEMANTICS ch. 3.1, 3.9): every bucket that lies inside such a segment reads its
      *  value on every day, so the bucket that holds its finite bound and the one beside it inside the segment stand for

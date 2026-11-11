@@ -38,7 +38,7 @@ DROOLS-034	a variable-start grid is laid per object from the anchor its start-po
 DROOLS-035	bucketing is defined for month and year only (ch. 3.2)
 DROOLS-036	{site}: the declared grid is day, which every day boundary sits on, yet this loader checks a timeline's grid through the calendar bucketing and v0 defines buckets for month and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as a defect of the case
 DROOLS-037	{site}: the declared grid is {granularity}, and v0 defines calendar buckets for month and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12), so this loader has no {granularity} grid to check the segment boundaries against: refused as a v0 limit, not as a defect of the case
-DROOLS-038	a timeline value on '{attribute}' that is neither a number nor a constructor value is not carried by the v0 backend
+DROOLS-038	a timeline value on '{attribute}' that is no number, constructor value or text is not carried by the v0 backend
 DROOLS-039	unknown expectation kind: {kind}
 DROOLS-040	dimensioned attribute read-back '{attribute}' (§3.6, a Map bean member) is not carried by the v0 backend
 DROOLS-041	scalar read-back of temporal attribute '{attribute}' is not carried by the v0 backend — the bean holds a List<Segment>; use an attributeTimeline expectation
@@ -282,7 +282,7 @@ DROOLS-245.between-timelines	 between two timelines
 DROOLS-245.one-sided	 without an own time-dependent attribute on one side
 DROOLS-246	{description} with a date comparison: a date over a whole period has no read (RUNTIME-SEMANTICS ch. 3.9, 3.12)
 DROOLS-247	{description} that does not compare numbers: the fold tests the value of a segment as a number (RUNTIME-SEMANTICS ch. 3.9)
-DROOLS-248	{description} of the kind {spelling}: only the empty and the filled test have a read under the qualification (RUNTIME-SEMANTICS ch. 3.9)
+DROOLS-248	{description} of the kind {spelling}: only the empty, the filled and the exact-digit test have a read under the qualification (RUNTIME-SEMANTICS ch. 3.9)
 DROOLS-249	{description} over something else than a member: the fold reads the timeline of a time-dependent member (RUNTIME-SEMANTICS ch. 3.9)
 DROOLS-250	{description} over an own read that names {objectType} on a {subject} (WF-053)
 DROOLS-251	a RoleMembership in the condition ('{snippet}'): the binding ({binding}) names no declared role

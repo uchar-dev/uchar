@@ -1,0 +1,250 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn registratienummer gedurende het gehele jaar numeriek is met exact 9 cijfers
+function boolean toets_doorlopendGeregistreerd(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        return ComputeHelpers.wholePeriodDigits(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"registratienummer\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "registratienummer", Boolean.TRUE), "JAAR", Integer.valueOf(9), Boolean.TRUE, Boolean.FALSE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "doorlopend geregistreerd"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "registratienummer", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_doorlopendGeregistreerd($tijdlijn_0, $onderwerp) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "doorlopend geregistreerd", true)));
+end
+
+// zijn registratienummer gedurende het gehele jaar numeriek is met exact 9 cijfers
+function boolean toets_doorlopendGeregistreerdFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriodDigits(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"registratienummer\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "registratienummer", Boolean.TRUE), "JAAR", Integer.valueOf(9), Boolean.TRUE, Boolean.FALSE);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn registratienummer gedurende het gehele jaar numeriek is met exact 9 cijfers
+function Object fout_doorlopendGeregistreerdFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriodDigits(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"registratienummer\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "registratienummer", Boolean.TRUE), "JAAR", Integer.valueOf(9), Boolean.TRUE, Boolean.FALSE);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "doorlopend geregistreerd: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "registratienummer", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_doorlopendGeregistreerdFoutInDeVoorwaarde($tijdlijn_0, $onderwerp) )
+then
+    Object f = fout_doorlopendGeregistreerdFoutInDeVoorwaarde($tijdlijn_0, $onderwerp);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("the condition of \"doorlopend geregistreerd\" failed in the test and not in the consequence, over the same bound values");
+    }
+    insertLogical(new Fault($onderwerp, "doorlopend geregistreerd", ComputeHelpers.designate(f, "doorlopend geregistreerd")));
+end
+
+// zijn registratienummer gedurende het gehele jaar niet numeriek is met exact 9 cijfers
+function boolean toets_doorlopendAfwijkend(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        return ComputeHelpers.wholePeriodDigits(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"registratienummer\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "registratienummer", Boolean.TRUE), "JAAR", Integer.valueOf(9), Boolean.FALSE, Boolean.FALSE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "doorlopend afwijkend"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "registratienummer", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_doorlopendAfwijkend($tijdlijn_0, $onderwerp) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "doorlopend afwijkend", true)));
+end
+
+// zijn registratienummer gedurende het gehele jaar niet numeriek is met exact 9 cijfers
+function boolean toets_doorlopendAfwijkendFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriodDigits(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"registratienummer\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "registratienummer", Boolean.TRUE), "JAAR", Integer.valueOf(9), Boolean.FALSE, Boolean.FALSE);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn registratienummer gedurende het gehele jaar niet numeriek is met exact 9 cijfers
+function Object fout_doorlopendAfwijkendFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriodDigits(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"registratienummer\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "registratienummer", Boolean.TRUE), "JAAR", Integer.valueOf(9), Boolean.FALSE, Boolean.FALSE);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "doorlopend afwijkend: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "registratienummer", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_doorlopendAfwijkendFoutInDeVoorwaarde($tijdlijn_0, $onderwerp) )
+then
+    Object f = fout_doorlopendAfwijkendFoutInDeVoorwaarde($tijdlijn_0, $onderwerp);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("the condition of \"doorlopend afwijkend\" failed in the test and not in the consequence, over the same bound values");
+    }
+    insertLogical(new Fault($onderwerp, "doorlopend afwijkend", ComputeHelpers.designate(f, "doorlopend afwijkend")));
+end
+
+// zijn registratienummer niet gedurende het gehele jaar numeriek is met exact 9 cijfers
+function boolean toets_onderbrokenGeregistreerd(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        return ComputeHelpers.wholePeriodDigits(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"registratienummer\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "registratienummer", Boolean.TRUE), "JAAR", Integer.valueOf(9), Boolean.TRUE, Boolean.TRUE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "onderbroken geregistreerd"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "registratienummer", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_onderbrokenGeregistreerd($tijdlijn_0, $onderwerp) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "onderbroken geregistreerd", true)));
+end
+
+// zijn registratienummer niet gedurende het gehele jaar numeriek is met exact 9 cijfers
+function boolean toets_onderbrokenGeregistreerdFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriodDigits(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"registratienummer\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "registratienummer", Boolean.TRUE), "JAAR", Integer.valueOf(9), Boolean.TRUE, Boolean.TRUE);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn registratienummer niet gedurende het gehele jaar numeriek is met exact 9 cijfers
+function Object fout_onderbrokenGeregistreerdFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriodDigits(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"registratienummer\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "registratienummer", Boolean.TRUE), "JAAR", Integer.valueOf(9), Boolean.TRUE, Boolean.TRUE);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "onderbroken geregistreerd: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "registratienummer", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_onderbrokenGeregistreerdFoutInDeVoorwaarde($tijdlijn_0, $onderwerp) )
+then
+    Object f = fout_onderbrokenGeregistreerdFoutInDeVoorwaarde($tijdlijn_0, $onderwerp);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("the condition of \"onderbroken geregistreerd\" failed in the test and not in the consequence, over the same bound values");
+    }
+    insertLogical(new Fault($onderwerp, "onderbroken geregistreerd", ComputeHelpers.designate(f, "onderbroken geregistreerd")));
+end
+
+// zijn registratienummer gedurende de gehele maand numeriek is met exact 9 cijfers
+function boolean toets_maandelijksGeregistreerd(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        return ComputeHelpers.wholePeriodDigits(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"registratienummer\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "registratienummer", Boolean.TRUE), "MAAND", Integer.valueOf(9), Boolean.TRUE, Boolean.FALSE);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "maandelijks geregistreerd"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "registratienummer", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_maandelijksGeregistreerd($tijdlijn_0, $onderwerp) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "maandelijks geregistreerd", true)));
+end
+
+// zijn registratienummer gedurende de gehele maand numeriek is met exact 9 cijfers
+function boolean toets_maandelijksGeregistreerdFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriodDigits(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"registratienummer\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "registratienummer", Boolean.TRUE), "MAAND", Integer.valueOf(9), Boolean.TRUE, Boolean.FALSE);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn registratienummer gedurende de gehele maand numeriek is met exact 9 cijfers
+function Object fout_maandelijksGeregistreerdFoutInDeVoorwaarde(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        boolean uitkomst = ComputeHelpers.wholePeriodDigits(ComputeHelpers.complete($tijdlijn_0, "the whole-period qualifier over \"registratienummer\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", "registratienummer", Boolean.TRUE), "MAAND", Integer.valueOf(9), Boolean.TRUE, Boolean.FALSE);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "maandelijks geregistreerd: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "registratienummer", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_maandelijksGeregistreerdFoutInDeVoorwaarde($tijdlijn_0, $onderwerp) )
+then
+    Object f = fout_maandelijksGeregistreerdFoutInDeVoorwaarde($tijdlijn_0, $onderwerp);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("the condition of \"maandelijks geregistreerd\" failed in the test and not in the consequence, over the same bound values");
+    }
+    insertLogical(new Fault($onderwerp, "maandelijks geregistreerd", ComputeHelpers.designate(f, "maandelijks geregistreerd")));
+end
+
+rule "stand Jutter.registratienummer: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(registratienummer)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "registratienummer", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "registratienummer", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "registratienummer", false), $invoer));
+end
+
+rule "stand Jutter.registratienummer: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(registratienummer)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "registratienummer", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "registratienummer", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "registratienummer", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+

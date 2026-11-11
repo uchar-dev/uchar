@@ -7197,24 +7197,23 @@ public final class TmsTranspiler {
     }
 
     /**
-     * The leeg or the gevuld test under the whole-period qualifier (RUNTIME-SEMANTICS ch. 3.9): whether the timeline of an
-     * attribute reads leeg, or a value, on every day of every calendar year or month in which it reads a value
-     * ({@link #wholePeriod}), the attribute the subject's own or that of the object a path of to-one roles reaches,
-     * whose absent link gives the null timeline, which passes. The inner negation is per day, so a negated test is its
-     * sister test; the loader already writes it so. A test of another kind and an operand that is no attribute on a
+     * The leeg, the gevuld or the exact-digit test under the whole-period qualifier (RUNTIME-SEMANTICS ch. 3.9): whether
+     * the test of ch. 1.2, read per day on the day's value, holds on every day of every calendar year or month in which
+     * the timeline of an attribute reads a value ({@link #wholePeriod}), the attribute the subject's own or that of the
+     * object a path of to-one roles reaches, whose absent link gives the null timeline, which passes. The inner
+     * negation is per day: a negated leeg or gevuld test is its sister test, which the loader already writes, and a
+     * negated exact-digit test holds on a leeg day. A test of another kind and an operand that is no attribute on a
      * timeline are refused by name (the loader refuses a parameter as the operand, in the sentence of the other two
      * executors).
      */
     private Term wholePeriodPredicate(Condition.Predicate p, Reads reads) {
         Msg description = Msg.drools("PART.desc.whole-period-predicate", "snippet", snippet(p));
-        boolean filled = switch (p.kind()) {
-            case LEEG -> p.negation();
-            case GEVULD -> !p.negation();
+        switch (p.kind()) {
+            case LEEG, GEVULD, NUMERIEK_MET_EXACT -> { }
             default -> throw new Refusal(DroolsCode.WHOLE_PERIOD_PREDICATE_KIND.reason("description", description, "spelling", Spelling.PREDICATE_KIND.spelling(p.kind())));
-        };
+        }
         if (!(p.operand() instanceof Expr.AttributeReference a) || a.objectType() == null || a.attribute() == null)
             throw new Refusal(DroolsCode.PERIOD_PREDICATE_NON_ATTRIBUTE.reason("description", description));
-        int testCode = filled ? FILLED_TEST : TEST_EMPTY;
         List<RoleBindingRef> path = navigationBindings.get(a);
         if (path == null) {
             if (a.objectType() != reads.subject)
@@ -7222,7 +7221,7 @@ public final class TmsTranspiler {
             Member member = timeMember(reads.subject, a.attribute(), false, description);
             Term whole = fullTimeline(reads.timeline(member), member, null, reads, source(a.source()));
             note(a, whole);
-            return wholePeriod(p.period(), whole, testCode, null, source(p.source()));
+            return wholePeriodTest(p, whole);
         }
         Path q = path(reads.subject, path, a.objectType(), description);
         Member member = timeMember(q.reaches(), a.attribute(), false, description);
@@ -7230,7 +7229,18 @@ public final class TmsTranspiler {
         noteObject(a, reads, i);
         Term whole = fullTimeline(i, member, q, reads, source(a.source()));
         note(a, whole);
-        return wholePeriod(p.period(), whole, testCode, null, source(p.source()));
+        return wholePeriodTest(p, whole);
+    }
+
+    /** The fold of {@link #wholePeriodPredicate} over the timeline {@code whole}: the exact-digit test by its own
+     *  function, the leeg and the gevuld test by the code of {@code rsGeheelPeriode}. */
+    private Term wholePeriodTest(Condition.Predicate p, Term whole) {
+        if (p.kind() == Condition.PredicateKind.NUMERIEK_MET_EXACT)
+            return new Term.Call(StaticFunction.WHOLE_PERIOD_DIGITS, List.of(whole,
+                    constant(p.period().year() ? "JAAR" : "MAAND"), constant(p.digits()), constant(!p.negation()),
+                    constant(p.period().negated())), source(p.source()));
+        boolean filled = p.kind() == Condition.PredicateKind.GEVULD ? !p.negation() : p.negation();
+        return wholePeriod(p.period(), whole, filled ? FILLED_TEST : TEST_EMPTY, null, source(p.source()));
     }
 
     /**

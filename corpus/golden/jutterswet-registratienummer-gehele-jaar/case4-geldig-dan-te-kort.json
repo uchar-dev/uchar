@@ -1,0 +1,60 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "registratienummer": {
+            "timeline": [
+              {
+                "from": "2026-01-01",
+                "to": "2026-07-01",
+                "value": {
+                  "text": "123456789"
+                }
+              },
+              {
+                "from": "2026-07-01",
+                "to": "2027-01-01",
+                "value": {
+                  "text": "12345678"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "doorlopend geregistreerd"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "doorlopend afwijkend"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "onderbroken geregistreerd"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "maandelijks geregistreerd"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

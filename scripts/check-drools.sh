@@ -1625,7 +1625,9 @@ EXPECTED_CHANNEL=(
 # fact (controle saldo x J1) flags every Dossier, and without a fact none (RUNTIME-SEMANTICS ch. 5.6; PLAYED 2).
 # 376 with jutterswet-meldtijdstip-delen: year, month and day of a datum-tijd, the civil date of its instant
 # (RUNTIME-SEMANTICS ch. 3.8; PLAYED 4).
-EXPECTED_PLAYED=376
+# 377 with jutterswet-registratienummer-gehele-jaar: the exact-digit test read per day on a text timeline under the
+# whole-period qualifier, with its inner negation, the qualifier's negation and the month grid (ch. 3.9; PLAYED 6).
+EXPECTED_PLAYED=377
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

@@ -1,0 +1,26 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het registratienummer Tekst voor elke maand;
+    is doorlopend geregistreerd kenmerk (bijvoeglijk);
+    is doorlopend afwijkend kenmerk (bijvoeglijk);
+    is onderbroken geregistreerd kenmerk (bijvoeglijk);
+    is maandelijks geregistreerd kenmerk (bijvoeglijk);
+
+Regel doorlopend geregistreerd
+    geldig altijd
+        Een Jutter is doorlopend geregistreerd
+        indien zijn registratienummer gedurende het gehele jaar numeriek is met exact 9 cijfers.
+
+Regel doorlopend afwijkend
+    geldig altijd
+        Een Jutter is doorlopend afwijkend
+        indien zijn registratienummer gedurende het gehele jaar niet numeriek is met exact 9 cijfers.
+
+Regel onderbroken geregistreerd
+    geldig altijd
+        Een Jutter is onderbroken geregistreerd
+        indien zijn registratienummer niet gedurende het gehele jaar numeriek is met exact 9 cijfers.
+
+Regel maandelijks geregistreerd
+    geldig altijd
+        Een Jutter is maandelijks geregistreerd
+        indien zijn registratienummer gedurende de gehele maand numeriek is met exact 9 cijfers.

@@ -926,12 +926,13 @@ public final class CaseRunner {
         return Spelling.GRANULARITY.spelling(gran);
     }
 
-    /** The value of one segment: a number, or a constructor value on a timeline of a sum type (RUNTIME-SEMANTICS
-     *  ch. 9.4). The analysis computes per period with numbers and compares constructor values, so a timeline of any
-     *  other value has no reading here — a reason-carrying not-carried, never a coercion. */
+    /** The value of one segment: a number, a constructor value on a timeline of a sum type (RUNTIME-SEMANTICS
+     *  ch. 9.4), or a text, which the whole-period qualifier tests per day (ch. 3.9). The analysis computes per period
+     *  with numbers and compares constructor values, so a timeline of any other value has no reading here — a
+     *  reason-carrying not-carried, never a coercion. */
     Object segmentValue(JsonNode w, String field) {
         Object v = valueToArg(w, field);
-        if (v == null || v instanceof BigDecimal || v instanceof ConstructorValue) return v;
+        if (v == null || v instanceof BigDecimal || v instanceof ConstructorValue || v instanceof String) return v;
         throw new Excluded(DroolsCode.TIMELINE_VALUE_NON_NUMERIC.reason("attribute", field));
     }
 

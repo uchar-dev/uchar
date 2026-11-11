@@ -9261,6 +9261,40 @@ let () =
                 time_period = Some { gp_granularity = true; gp_negated = false }; source_name = None })))
     "whole-period qualifier on a comparison whose operands are not a time-dependent attribute"
 
+(* WV-3.9-exact, ch. 3.9 "The test per day" read on the exact-digit test of
+   ch. 1.2 verbatim: registratienummer per month, N = 9, 2026 has 365 days.
+   Each tuple is: under the year grid the test, its inner negation and the
+   qualifier's negation, and the test under the month grid. *)
+let () =
+  let doc =
+    let o = ot "Jutter" [ ("registratienummer", Some Text_type) ] [] in
+    { empty_doc with
+      object_types = [ (fst o, { (snd o) with attribute_granularity = [ ("registratienummer", Some Month) ] }) ] }
+  in
+  let ev ?(negation = false) ?(year = true) ?(not_flag = false) tl =
+    let i = inst "J1" "Jutter" [] in
+    let i = match tl with [] -> i | _ -> { i with World.tls = World.SMap.add "registratienummer" tl World.SMap.empty } in
+    let w = World.add_instance World.empty i in
+    Eval.eval_cond (env_of doc) w (World.get w "J1") ~err:no_err
+      (Predicate
+         { variety = Exact_digits; operand = Some (aref "registratienummer" "Jutter"); day_kind = None; negation;
+           digit_chars = 9; time_period = Some { gp_granularity = year; gp_negated = not_flag }; source_name = None })
+  in
+  let t s = Value.Text s in
+  let row ident tl (test, inner, qualifier, month) =
+    check ("WV-3.9-exact-" ^ ident ^ "-test") (ev tl = test);
+    check ("WV-3.9-exact-" ^ ident ^ "-inner-negation") (ev ~negation:true tl = inner);
+    check ("WV-3.9-exact-" ^ ident ^ "-qualifier-negation") (ev ~not_flag:true tl = qualifier);
+    check ("WV-3.9-exact-" ^ ident ^ "-month") (ev ~year:false tl = month)
+  in
+  row "a" [] (true, true, false, true);
+  row "b" [ seg "2026-01-01" "2027-01-01" (t "123456789") ] (true, false, false, true);
+  row "c" [ seg "2026-01-01" "2026-07-01" (t "123456789") ] (false, false, true, true);
+  row "d" [ seg "2026-01-01" "2026-07-01" (t "123456789"); seg "2026-07-01" "2027-01-01" (t "12345678") ]
+    (false, false, true, false);
+  row "e" [ seg "2026-01-01" "2027-01-01" (t "1234 5678") ] (false, true, true, false);
+  row "f" [ seg "2026-01-01" "2026-07-01" (t "1234 5678") ] (false, true, true, false)
+
 (* ch. 3.9, the LEEG and GEVULD tests under the whole-period qualifier
    (decided 2026-09-26), the chapter's worked-example table verbatim: one
    threshold, days(B), for both tests; a day that reads leeg satisfies the

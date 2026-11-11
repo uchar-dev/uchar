@@ -342,6 +342,10 @@ public enum StaticFunction {
      *  comparison or none, the grid ("JAAR" or "MAAND") and the test's code as constants, complemented where a
      *  {@code Boolean} constant says the qualifier is negated. */
     WHOLE_PERIOD(ComputeHelpers.class, "wholePeriod", false),
+    /** The fold of the whole-period qualifier (ch. 3.9) over a timeline with the exact-digit test (ch. 1.2) read per
+     *  day, the grid ("JAAR" or "MAAND"), the {@code Integer} digit count, a {@code Boolean} constant that says the test
+     *  is not negated and one that says the qualifier is. */
+    WHOLE_PERIOD_DIGITS(ComputeHelpers.class, "wholePeriodDigits", false),
     /** The verdict of a quantifier fold whose matrix can neither fault nor deposit (ch. 3.9a), from the count of its
      *  contributors and the sum of their verdicts, 1 or 0 each, under a {@code Condition.Quantifier} constant with an
      *  {@code Integer} threshold; over no contributor the sum is not read. */

@@ -20,9 +20,10 @@ import java.util.Objects;
  * ({@link #list}) and back where the write-back puts it on one ({@link #beans}); nothing in between sees a
  * {@code Segment}.
  *
- * <p>A value is a number, or a constructor value ({@link ConstructorValue}) on a timeline of a sum type (ch. 9.4). Two
+ * <p>A value is a number, a constructor value ({@link ConstructorValue}) on a timeline of a sum type (ch. 9.4), or a
+ * text on a timeline of a text, which the whole-period qualifier reads per day (ch. 3.9). Two
  * segments are equal where they have the same {@code from}, the same {@code to}, and values that are equal as numbers,
- * equal constructor values or both leeg: 7 and 7.00 are one value, as in the reference interpreter's comparison of two
+ * equal constructor values, equal texts or both leeg: 7 and 7.00 are one value, as in the reference interpreter's comparison of two
  * timelines ({@code World.write_timeline}, {@code Arith.equal}) and the change detection of ch. 3.1. The hash code is
  * taken over a number without trailing zeros, so that it agrees with that equality: a record's own hash code is that
  * of {@code BigDecimal}, which depends on the scale, and would give two facts for one value. Two timelines are equal
@@ -54,8 +55,9 @@ public record Period(LocalDate from, LocalDate to, Object value) {
     public Period {
         Objects.requireNonNull(from, "van");
         Objects.requireNonNull(to, "to");
-        if (value != null && !(value instanceof BigDecimal) && !(value instanceof ConstructorValue))
-            throw new IllegalArgumentException("a segment holds a decimal or a constructor value, not a "
+        if (value != null && !(value instanceof BigDecimal) && !(value instanceof ConstructorValue)
+                && !(value instanceof String))
+            throw new IllegalArgumentException("a segment holds a decimal, a constructor value or a text, not a "
                     + value.getClass().getName());
     }
 
@@ -88,8 +90,8 @@ public record Period(LocalDate from, LocalDate to, Object value) {
         return Objects.hash(from, to, value instanceof BigDecimal d ? d.stripTrailingZeros() : value);
     }
 
-    /** Whether two values of segments are one value: numbers by value, constructor values by their equality, leeg
-     *  only with leeg. */
+    /** Whether two values of segments are one value: numbers by value, constructor values and texts by their equality,
+     *  leeg only with leeg. */
     public static boolean sameValue(Object a, Object b) {
         if (a instanceof BigDecimal x) return b instanceof BigDecimal y && x.compareTo(y) == 0;
         return Objects.equals(a, b);
@@ -129,8 +131,8 @@ public record Period(LocalDate from, LocalDate to, Object value) {
     }
 
     /** One segment of the bean model's {@code segmentClass}: a number through the runtime's constructor, and a
-     *  constructor value through the one of {@code (LocalDate, LocalDate, Object)} the bean model generates beside it
-     *  for a timeline of a sum type (ch. 9.4). */
+     *  constructor value or a text through the one of {@code (LocalDate, LocalDate, Object)} the bean model generates
+     *  beside it. */
     public static Object bean(Class<?> segmentClass, LocalDate from, LocalDate to, Object value) {
         if (value == null || value instanceof BigDecimal)
             return RegelSpraakRuntime.newSegment(segmentClass, from, to, (BigDecimal) value);

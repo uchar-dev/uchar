@@ -38,7 +38,7 @@ DROOLS-034	a variable-start grid is laid per object from the anchor its start-po
 DROOLS-035	bucketing is defined for month and year only (ch. 3.2)
 DROOLS-036	{site}: the declared grid is day, which every day boundary sits on, yet this loader checks a timeline's grid through the calendar bucketing and v0 defines buckets for month and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as a defect of the case
 DROOLS-037	{site}: the declared grid is {granularity}, and v0 defines calendar buckets for month and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12), so this loader has no {granularity} grid to check the segment boundaries against: refused as a v0 limit, not as a defect of the case
-DROOLS-038	een tijdlijnwaarde op '{attribute}' die geen getal en geen constructorwaarde is, draagt de v0-backend niet
+DROOLS-038	een tijdlijnwaarde op '{attribute}' die geen getal, geen constructorwaarde en geen tekst is, draagt de v0-backend niet
 DROOLS-039	unknown expectation kind: {kind}
 DROOLS-040	teruglezing van een attribuut met dimensie '{attribute}' (§3.6, een Map-beanlid) wordt niet gedragen door de v0-backend
 DROOLS-041	scalar read-back of temporal attribute '{attribute}' is not carried by the v0 backend — the bean holds a List<Segment>; use an attributeTimeline expectation
@@ -282,7 +282,7 @@ DROOLS-245.between-timelines	 tussen twee tijdlijnen
 DROOLS-245.one-sided	 zonder eigen tijdsafhankelijk attribuut aan één kant
 DROOLS-246	{description} met een datumvergelijking: een datum over een gehele periode heeft geen lezing (RUNTIME-SEMANTICS ch. 3.9, 3.12)
 DROOLS-247	{description} die geen getallen vergelijkt: de vouw toetst de waarde van een segment als getal (RUNTIME-SEMANTICS ch. 3.9)
-DROOLS-248	{description} van de soort {spelling}: alleen de leeg- en de gevuldtoets hebben een lezing onder de kwalificatie (RUNTIME-SEMANTICS ch. 3.9)
+DROOLS-248	{description} van de soort {spelling}: alleen de leeg-, de gevuld- en de exacte-cijfertoets hebben een lezing onder de kwalificatie (RUNTIME-SEMANTICS ch. 3.9)
 DROOLS-249	{description} over iets anders dan een attribuut: de vouw leest de tijdlijn van een tijdsafhankelijk attribuut (RUNTIME-SEMANTICS ch. 3.9)
 DROOLS-250	{description} over een eigen lezing die {objectType} noemt op een {subject} (WF-053)
 DROOLS-251	een RoleMembership in de voorwaarde ('{snippet}'): de binding ({binding}) noemt geen gedeclareerde rol

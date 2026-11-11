@@ -1,0 +1,285 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "registratienummer",
+            "datatype": {
+              "node": "Text"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "doorlopend geregistreerd",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "doorlopend afwijkend",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "onderbroken geregistreerd",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "maandelijks geregistreerd",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "doorlopend geregistreerd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "doorlopend geregistreerd",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is doorlopend geregistreerd"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "exactDigits",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "registratienummer",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn registratienummer"
+                }
+              },
+              "negated": false,
+              "digits": 9,
+              "wholePeriod": {
+                "node": "WholePeriod",
+                "granularity": "year",
+                "negated": false
+              },
+              "source": {
+                "snippet": "zijn registratienummer gedurende het gehele jaar numeriek is met exact 9 cijfers"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "doorlopend afwijkend",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "doorlopend afwijkend",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is doorlopend afwijkend"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "exactDigits",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "registratienummer",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn registratienummer"
+                }
+              },
+              "negated": true,
+              "digits": 9,
+              "wholePeriod": {
+                "node": "WholePeriod",
+                "granularity": "year",
+                "negated": false
+              },
+              "source": {
+                "snippet": "zijn registratienummer gedurende het gehele jaar niet numeriek is met exact 9 cijfers"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "onderbroken geregistreerd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "onderbroken geregistreerd",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is onderbroken geregistreerd"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "exactDigits",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "registratienummer",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn registratienummer"
+                }
+              },
+              "negated": false,
+              "digits": 9,
+              "wholePeriod": {
+                "node": "WholePeriod",
+                "granularity": "year",
+                "negated": true
+              },
+              "source": {
+                "snippet": "zijn registratienummer niet gedurende het gehele jaar numeriek is met exact 9 cijfers"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "maandelijks geregistreerd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "maandelijks geregistreerd",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is maandelijks geregistreerd"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "exactDigits",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "registratienummer",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn registratienummer"
+                }
+              },
+              "negated": false,
+              "digits": 9,
+              "wholePeriod": {
+                "node": "WholePeriod",
+                "granularity": "month",
+                "negated": false
+              },
+              "source": {
+                "snippet": "zijn registratienummer gedurende de gehele maand numeriek is met exact 9 cijfers"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

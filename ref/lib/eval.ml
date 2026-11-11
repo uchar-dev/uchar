@@ -1072,6 +1072,21 @@ let qualifier_timeline (i : World.instance) attr =
       attr i.label;
   tl
 
+(* "numeriek met exact N cijfers" (ch. 1.2) on one value: true iff it is a
+   text of exactly [digits] characters, each a decimal digit 0-9. A leading
+   zero is a digit, and a sign, a space or any other character fails the
+   test. A leeg value fails it rather than propagating, and the written
+   negation complements the verdict, leeg included. A text of digits is
+   ASCII, so its byte length is its length in characters. *)
+let exact_digits ~digits ~negation (v : Value.t) : bool =
+  let hit =
+    match v with
+    | Value.Empty -> false
+    | Value.Text s -> String.length s = digits && String.for_all (fun c -> c >= '0' && c <= '9') s
+    | v -> Value.fault "exactDigits needs a text operand, got %s" (Value.to_string v)
+  in
+  if negation then not hit else hit
+
 let whole_period_operand env world (self : World.instance) (e : expr) : Timeline.t =
   (* the observer keeps [e], the node of the wire; an anchored operand is
      read on the form subject (ch. 3.4a) *)
@@ -3028,22 +3043,15 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
          executor reads one inside the rule fixpoint"
         (Option.value day_kind ~default:"?")
   | Predicate { variety = Exact_digits; operand; negation; digit_chars; time_period = None; _ } ->
-      (* "numeriek met exact N cijfers": true iff the operand is a text of
-         exactly [digit_chars] characters, each a decimal digit 0-9. A leading
-         zero is a digit, and a sign, a space or any other character fails the
-         test. A leeg operand fails it rather than propagating, and the written
-         negation complements the verdict, leeg included. A text of digits is
-         ASCII, so its byte length is its length in characters. *)
-      let hit =
-        match eval_expr env world self ~err (req "Predicate.operand" operand) with
-        | Value.Empty -> false
-        | Value.Text s ->
-            String.length s = digit_chars && String.for_all (fun c -> c >= '0' && c <= '9') s
-        | v -> Value.fault "exactDigits needs a text operand, got %s" (Value.to_string v)
-      in
-      if negation then not hit else hit
-  | Predicate _ ->
-      Value.faultc "REF-008" "exactDigits under a whole-period qualifier is not evaluated"
+      exact_digits ~digits:digit_chars ~negation (eval_expr env world self ~err (req "Predicate.operand" operand))
+  (* ch. 3.9: the test of ch. 1.2 read per day on the day's value, a leeg day
+     included, so the inner negation is per day; the qualifier's own negation
+     complements the fold's verdict *)
+  | Predicate { variety = Exact_digits; operand; negation; digit_chars; time_period = Some gp; _ } ->
+      let tl = whole_period_operand env world self (req "Predicate.operand" operand) in
+      let g : Ir_v0.Ast.grain = if gp.gp_granularity then Year else Month in
+      let verdict = Timeline.whole_period_value g ~tl (exact_digits ~digits:digit_chars ~negation) in
+      if gp.gp_negated then not verdict else verdict
   | Characteristic_check { characteristic; navigation_binding = None; negation; holder; time_period; _ } ->
       let hosting = owner_hosts env.doc ~otype:self.otype ~subj:env.subj ~characteristic holder in
       let k = req "CharacteristicCheck.characteristic" characteristic in

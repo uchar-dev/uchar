@@ -438,6 +438,8 @@ final class ClosureRendering {
                     (Boolean) x[4], x[5]);
             case WHOLE_PERIOD -> x -> ComputeHelpers.wholePeriod(x[0], x[1], (String) x[2], (Integer) x[3],
                     (Boolean) x[4]);
+            case WHOLE_PERIOD_DIGITS -> x -> ComputeHelpers.wholePeriodDigits(x[0], (String) x[1], (Integer) x[2],
+                    (Boolean) x[3], (Boolean) x[4]);
             case QUANTIFIER_VERDICT -> x -> ComputeHelpers.quantifierVerdict(x[0], x[1], (Condition.Quantifier) x[2],
                     (Integer) x[3]);
             case QUANTIFIER_READ -> x -> ComputeHelpers.quantifierRead(x[0], x[1], (Condition.Quantifier) x[2], (Integer) x[3],

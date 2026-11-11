@@ -3156,7 +3156,9 @@ geheel(tl, grid, toets) = for EVERY bucket B touched by tl:
                             satisfied-days(B, toets) ≥ days(B)
 ```
 
-**The test per day.** `satisfied-days(B, toets)` is the number of days of B on
+**The test per day.** Every condition of ch. 1.2 is read per day, on the value
+the tested timeline reads that day; the comparison of dates is the one
+exception (below). `satisfied-days(B, toets)` is the number of days of B on
 which the test holds, the test read per day by ch. 1.2. A day on which the
 tested timeline reads leeg — a gap day, or a day under an explicit leeg
 segment (ch. 3.1) — has a leeg side, and so has every day where the bound of a
@@ -3222,7 +3224,8 @@ a rule with a timeline target):
   subject against a scalar bound, the temporal side on the left or on the
   right (reversed, above). The operand of the leeg and the gevuld test is a
   time-dependent attribute of the subject, one reached over to-one hops
-  (ch. 5.8), or a time-dependent parameter (WF-043). The characteristic-holds
+  (ch. 5.8), or a time-dependent parameter (WF-043); so is the operand of the
+  exact-digit test. The characteristic-holds
   test reads a characteristic of the subject or one reached over to-one hops
   (the navigated worked examples below). A hop that reaches nothing
   contributes the null timeline, which passes.
@@ -3373,6 +3376,21 @@ lie, so it is pinned in `ref/`'s suite alone. An **explicit leeg segment**
 changes no verdict: leeg on [2025-01-01, 2026-01-01) alone touches no bucket
 and reads as row a, and 4 on [2025-01-01, 2025-07-01) followed by leeg on
 [2025-07-01, 2026-01-01) reads as row c (`ref/` tests).
+
+Worked example `WV-3.9-exact` (absolute; `ref/` tests verbatim, and the
+cases of `corpus/golden/jutterswet-registratienummer-gehele-jaar`; attribute
+`registratienummer` per month, the test "numeriek met exact 9 cijfers"; 2026
+has 365 days). The inner negation is per day, so a leeg day satisfies the
+negated test:
+
+| # | `registratienummer` timeline | gehele jaar | gehele jaar niet | niet gedurende het gehele jaar | gehele maand |
+|---|---|---|---|---|---|
+| a | no segments | **waar** | **waar** | onwaar | **waar** |
+| b | `"123456789"` on [2026-01-01, 2027-01-01) | **waar** (365 of 365) | onwaar (0 of 365) | onwaar | **waar** |
+| c | `"123456789"` on [2026-01-01, 2026-07-01) | onwaar (181 of 365) | onwaar (184 gap days of 365) | **waar** | **waar** |
+| d | as c, then `"12345678"` on [2026-07-01, 2027-01-01) | onwaar (181 of 365) | onwaar (184 of 365) | **waar** | onwaar (July: 0 of 31) |
+| e | `"1234 5678"` on [2026-01-01, 2027-01-01) | onwaar (0 of 365) | **waar** (365 of 365) | **waar** | onwaar |
+| f | `"1234 5678"` on [2026-01-01, 2026-07-01) | onwaar (0 of 365) | **waar** (181 + 184 gap days) | **waar** | onwaar (January: 0 of 31) |
 
 **Per bucket on a timeline target.** In the condition of a rule with a
 timeline target, which is read per period (ch. 3.10), the qualifier is a truth

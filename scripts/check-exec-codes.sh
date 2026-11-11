@@ -15,7 +15,9 @@
 #     CLINGO code, exactly the parameters of its line, and for an EF code names of its row (an executor may emit
 #     fewer than the row names, never another);
 #   - numbers run 001, 002, … without a gap, a repeat or a reordering; keys are unique; the kind is `refusal`, `limit`
-#     or `fallback` (a `contract` code is no executor code, ch. 2.3 of the design);
+#     or `fallback` (a `contract` code is no executor code, ch. 2.3 of the design), or `retired`: a code no place
+#     raises any more, kept so that the numbers after it, which a test or a gate list may pin, stay as they are; a
+#     retired code that a source raises fails;
 #   - each table holds at least its floor, and an empty scan is a failure, never silently green.
 set -u
 cd "$(dirname "$0")/.."
@@ -115,8 +117,8 @@ for comp, (srcdirs, tsv) in components.items():
         want = "%s-%03d" % (comp, n)
         if code != want:
             err("%s line %d: %s, but the %dth code must be %s (numbers run without a gap, a repeat or a reordering)" % (tsv, n + 1, code, n, want))
-        if kind not in ("refusal", "limit", "fallback"):
-            err("%s: %s has the kind '%s' (refusal, limit or fallback; a contract code is no executor code)" % (tsv, code, kind))
+        if kind not in ("refusal", "limit", "fallback", "retired"):
+            err("%s: %s has the kind '%s' (refusal, limit, fallback or retired; a contract code is no executor code)" % (tsv, code, kind))
         if not re.fullmatch(r"[a-z][a-z0-9]*(-[a-z0-9]+)*", key):
             err("%s: %s has the key '%s', which is no lowercase hyphenated English word group" % (tsv, code, key))
         if key in keys:
@@ -190,6 +192,10 @@ for comp, (srcdirs, tsv) in components.items():
 
 for comp, reg in registers.items():
     for code in reg:
+        if reg[code]["kind"] == "retired":
+            if code in raised[comp]:
+                err("%s is retired in %s but a place of %s raises it" % (code, components[comp][1], " or ".join(components[comp][0])))
+            continue
         if code not in raised[comp]:
             err("%s is registered in %s but no place of %s raises it (a code nobody raises is dead text; remove it and renumber what follows while no gate pins it)" % (code, components[comp][1], " or ".join(components[comp][0])))
 
@@ -199,6 +205,6 @@ if bad:
     for b in bad:
         sys.stderr.write("check-exec-codes: FAIL — %s\n" % b)
     sys.exit(1)
-print("check-exec-codes: PASS — %d REF codes and %d CLINGO codes, numbered without a gap, every one raised in its source, every raised code registered, every EF code a row of ch. 5.7b, the parameters of every site in its line or row (floors %d and %d)"
+print("check-exec-codes: PASS — %d REF codes and %d CLINGO codes, numbered without a gap, every one not retired raised in its source, every raised code registered, every EF code a row of ch. 5.7b, the parameters of every site in its line or row (floors %d and %d)"
       % (len(registers["REF"]), len(registers["CLINGO"]), floors["REF"], floors["CLINGO"]))
 PYEOF
