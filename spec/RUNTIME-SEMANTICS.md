@@ -242,6 +242,26 @@ gelijk-aan → onwaar, a dateless subject gains no kenmerk) beside
 `jutterswet-jutdatum` case3 (one-empty: gelijk-aan onwaar, ongelijk-aan
 waar).
 
+**The exact-digit test** ("is numeriek met exact N cijfers", §8.1.4; the
+`Predicate` kind `exactDigits`, `IR-SPEC.md` ch. 4.5). Its operand is a text
+(WF-036) and N is the predicate's `digits`, a whole number. The test is
+**waar** iff the text has exactly N characters and every character is one of
+the ten digits `0` to `9`; any other character — a minus sign, a space, a
+decimal separator, a letter, a digit of another script — makes it onwaar,
+and so does a text of another length. A leading zero is a digit like any
+other: the test reads characters, not a number. A **leeg** operand is
+onwaar, as is an operand read over an absent to-one link (ch. 5.8 rule 1);
+the empty text `""` is no leeg value (ch. 1.1) and has zero characters, so
+it is waar for N = 0 and onwaar for every other N. A negative N matches no
+text. The `negated` field complements the verdict, as on the leeg/gevuld
+predicates: "is niet numeriek met exact N cijfers" is waar on a leeg
+operand. Worked examples (WV-1.2-exact; absolute): with N = 9, `"123456782"`
+= **waar**; `"012345678"` = **waar** (the leading zero counts);
+`"12345678"` = **onwaar** (eight characters); `"1234567890"` = **onwaar**;
+`"-12345678"` = **onwaar** (the minus sign is no digit); `"1234 5678"` =
+**onwaar**; leeg = **onwaar**, and negated = **waar**; `""` with N = 0 =
+**waar**.
+
 **Aggregations**
 
 Empty contributors are skipped, never counted as 0. The result for an
