@@ -7436,17 +7436,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          value's and the body's, so the caller's rule body binds every variable
          it uses (and a coalescing position that swallows the read's own letN
          atom cannot swallow these). *)
-      let saved_b = ctx.binders and saved_g = ctx.rule_guard and saved_n = ctx.let_needs in
-      let saved_d = ctx.demands in
-      let va =
-        bind_let ctx ~subject ~subject_ot ~binder ~value ~body (fun () ->
-            expr_term ctx ~subject ~subject_ot value)
+      let va, (ba, bt, bs) =
+        rule_let ctx ~subject ~subject_ot ~binder ~value ~body (fun () -> expr_term ctx ~subject ~subject_ot body)
       in
-      let ba, bt, bs = expr_term ctx ~subject ~subject_ot body in
-      ctx.binders <- saved_b;
-      ctx.rule_guard <- saved_g;
-      ctx.let_needs <- saved_n;
-      ctx.demands <- saved_d;
       (va @ ba, bt, bs)
   | Fold { typ; list; function_name; init; _ } ->
       (* ch. 10.2: index recursion over the reified list (S15). The result is
@@ -7639,6 +7631,26 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       | atoms, day, None -> (atoms, day, 1)
       | _, _, Some _ -> assert false)
   | _ -> faultc "CLINGO-008" "expression kind not translated (no corpus case exercises it)"
+
+(* a Let at rule level: [bind_let] binds the value under its demand, [k]
+   translates the body while the binding stands — the binder, the value's atoms
+   in [rule_guard], the Let in [let_needs] — and the context is restored after.
+   Returns the value's atoms beside what [k] returns *)
+and rule_let : 'a. ctx -> subject:string -> subject_ot:string -> binder:string -> value:expr -> body:expr ->
+    (unit -> 'a) -> string list * 'a =
+ fun ctx ~subject ~subject_ot ~binder ~value ~body k ->
+  let saved_b = ctx.binders and saved_g = ctx.rule_guard and saved_n = ctx.let_needs in
+  let saved_d = ctx.demands in
+  let va =
+    bind_let ctx ~subject ~subject_ot ~binder ~value ~body (fun () ->
+        expr_term ctx ~subject ~subject_ot value)
+  in
+  let r = k () in
+  ctx.binders <- saved_b;
+  ctx.rule_guard <- saved_g;
+  ctx.let_needs <- saved_n;
+  ctx.demands <- saved_d;
+  (va, r)
 
 (* gedeeld-door (§6.5, arith.div_gen) — three edges plus the value:
    an empty dividend collapses to 0 before the divisor is read (also
@@ -10346,11 +10358,7 @@ and body_branches ctx ~carrier (e : expr) : (string list * string * int) list =
          here — a closed body is leeg-free (ch. 10.1), so a value that binds at
          all binds on every branch. The arm above is the exception, where the
          value can fault. *)
-      let va, vt, vs = closed_term ctx ~carrier value in
-      let saved = ctx.binders in
-      ctx.binders <- (norm binder, ([], vt, vs, binder_type ctx value)) :: ctx.binders;
-      let branches = body_branches ctx ~carrier:{ carrier with guard_body = carrier.guard_body @ va } body in
-      ctx.binders <- saved;
+      let va, branches = closed_let ctx ~carrier ~binder ~value (fun carrier -> body_branches ctx ~carrier body) in
       List.map (fun (g, t, s) -> (va @ g, t, s)) branches
   | Invoke { function_name; arguments; _ } ->
       let fd =
@@ -10481,6 +10489,23 @@ and body_condition ctx ~carrier (c : condition_expr) : string list * string * st
       faultc "CLINGO-017"
         "an IfThenElse condition in a closed body is a comparison over bound terms (no corpus \
          case for more)"
+
+(* a Let INSIDE a closed body (ch. 10.6, the let_binder discipline carried
+   into the body context): the value is itself a closed-body term, so it is
+   INLINED — the binder maps to the value's term with EMPTY atoms (the
+   recurrence-bound convention, so a nested read is self-contained) — and [k]
+   translates the body under the [carrier] the value's atoms extend. A
+   closed-body binder is never leeg (ch. 10.1), so the read-place barrier is
+   vacuous here and call-by-need coincides with call-by-value. Returns the
+   value's atoms beside what [k] returns *)
+and closed_let : 'a. ctx -> carrier:carrier -> binder:string -> value:expr -> (carrier -> 'a) -> string list * 'a =
+ fun ctx ~carrier ~binder ~value k ->
+  let va, vt, vs = closed_term ctx ~carrier value in
+  let saved = ctx.binders in
+  ctx.binders <- (norm binder, ([], vt, vs, binder_type ctx value)) :: ctx.binders;
+  let r = k { carrier with guard_body = carrier.guard_body @ va } in
+  ctx.binders <- saved;
+  (va, r)
 
 (* a closed-body TERM → (binding atoms, term, scale). Operands are bound
    binders (a lambda/function parameter or a match payload), literals,
@@ -10662,20 +10687,10 @@ and closed_term ctx ~carrier (e : expr) : string list * string * int =
          not inlined and its fences are not emitted *)
       closed_term ctx ~carrier body
   | Let { binder; value; body; _ } ->
-      (* a Let INSIDE a closed body (ch. 10.6, the let_binder discipline carried
-         into the body context): the value is itself a closed-body term, so it is
-         INLINED — the binder maps to the value's term with EMPTY atoms (the
-         recurrence-bound convention, so a nested read is self-contained), and the
-         value's binding atoms thread into every read site through the returned
-         atom list. No subject-keyed let helper (that is the rule level's shape,
-         where a leeg value must break the reading positions); a closed-body
-         binder is never leeg (ch. 10.1), so the read-place barrier is vacuous
-         here and call-by-need coincides with call-by-value. *)
-      let va, vt, vs = closed_term ctx ~carrier value in
-      let saved = ctx.binders in
-      ctx.binders <- (norm binder, ([], vt, vs, binder_type ctx value)) :: ctx.binders;
-      let ba, bt, bs = closed_term ctx ~carrier:{ carrier with guard_body = carrier.guard_body @ va } body in
-      ctx.binders <- saved;
+      (* the value's binding atoms thread into every read site through the
+         returned atom list. No subject-keyed let helper (that is the rule
+         level's shape, where a leeg value must break the reading positions) *)
+      let va, (ba, bt, bs) = closed_let ctx ~carrier ~binder ~value (fun carrier -> closed_term ctx ~carrier body) in
       (va @ ba, bt, bs)
   | Attribute_reference _ ->
       (* the fourth refusing place of the S19 inventory, split out of the
@@ -11077,17 +11092,10 @@ let rec value_branches ctx ~subject ~subject_ot (e : expr) : vbranch list =
          fact, and the body's branches ARE the Let's *)
       value_branches ctx ~subject ~subject_ot body
   | Let { binder; value; body; _ } ->
-      let saved_b = ctx.binders and saved_g = ctx.rule_guard and saved_n = ctx.let_needs in
-      let saved_d = ctx.demands in
-      let va =
-        bind_let ctx ~subject ~subject_ot ~binder ~value ~body (fun () ->
-            expr_term ctx ~subject ~subject_ot value)
+      let va, branches =
+        rule_let ctx ~subject ~subject_ot ~binder ~value ~body (fun () ->
+            value_branches ctx ~subject ~subject_ot body)
       in
-      let branches = value_branches ctx ~subject ~subject_ot body in
-      ctx.binders <- saved_b;
-      ctx.rule_guard <- saved_g;
-      ctx.let_needs <- saved_n;
-      ctx.demands <- saved_d;
       (* ch. 10.6 clause 2: the value atoms guard exactly the READING branches
          — a branch that never reads the binder survives a leeg value, which is
          where L parts company with a strict lowering. The read set moves
