@@ -131,780 +131,254 @@ Within that claim, per item:
 
 ## Gate set
 
-Grows monotonically; nothing that entered may regress; a green subset is not
-green.
+Grows monotonically; nothing that entered may regress; a green subset is not green. What each gate holds is below;
+its numbers (floors, lists) live in its script, and how it came to hold it is in `git log` and `backlog/done/`.
 
-**Where the gates run (maintainer decision 2026-09-26).** The gate set runs
-LOCALLY, on the maintainer's machine, before every landing
-(`WAY-OF-WORKING.md` §6); a red gate blocks the landing. GitHub Actions is
-not used and not paid for: `.github/workflows/gates.yml` documents the order
-and the per-gate environment and is triggered by hand only
-(`workflow_dispatch`), so it never runs on a push. Wherever a gate below
-says "CI leg unconditional and blocking" (or, for gate 9, conditional on
-the runner), read that as the decision taken at the time about the
-workflow; what is enforced is the local run, and gate 9 there is the
-reviewer's duty on a machine that has catala.
+**Where the gates run (maintainer decision 2026-09-26).** Locally, on the maintainer's machine, before every landing
+(`WAY-OF-WORKING.md` §6); a red gate blocks the landing. GitHub Actions is not used: `.github/workflows/gates.yml`
+documents the order and the per-gate environment and is triggered by hand only (`workflow_dispatch`). Gate 9 needs
+catala; on a machine without it the gate fails hard, and running it is the reviewer's duty on a machine that has it.
 
-**How the set runs (maintainer decision 2026-10-25, card
-`gate-builds-when-stale`).** `make gates` in the repository root runs the
-set. It first checks that the gate scripts its targets run are those
-`.github/workflows/gates.yml` runs, in that order, and those this list
-names, and stops before any build, naming the script, where they differ.
-Then it builds the three trees the gates read, side by side: the OCaml
-workspace (`scripts/lib/ocaml-build.sh`), the RegelSpraak frontend
-(`frontends/regelspraak/Makefile`) and the Drools backend jar
-(`scripts/lib/drools-jar.sh`). Then it runs the gates in parallel in the
-same checkout (`make -k -j<cores>`), with one log per gate under
-`out/gates/<run>/` and a summary with one line per gate in the order of
-`.github/workflows/gates.yml`. A single gate runs with its script. Every
-gate builds what it needs only when a source is newer than the product:
-dune only when a source is newer than the stamp of the last green build
-of the workspace, the frontend only when a source is newer than its
-classes, the jar only when a source is newer than the jar. So after the
-build step no gate builds, and no two gates write the same file, on two
-conditions: no source changes while the gates run, and no other gate,
-build or `make gates` runs in the same checkout meanwhile. The first is
-checked at the end, in the step `after-run`: the three builds run again
-and must be fresh, and none of their products may be newer than the end
-of the build step. A red build, a red gate, a red `after-run` or a
-missing line makes `make gates` exit non-zero. Current gates:
+**How the set runs (maintainer decision 2026-10-25).** `make gates` in the repository root first checks that the gate
+scripts its targets run are those `.github/workflows/gates.yml` runs, in that order, and those this list names, and
+stops before any build, naming the script, where they differ. It then builds the three trees the gates read, side by
+side: the OCaml workspace (`scripts/lib/ocaml-build.sh`), the RegelSpraak frontend (`frontends/regelspraak/Makefile`)
+and the Drools backend jar (`scripts/lib/drools-jar.sh`); then it runs the gates in parallel in the same checkout
+(`make -k -j<cores>`), one log per gate under `out/gates/<run>/` and a summary with one line per gate in the order of
+`gates.yml`. A single gate runs with its script. Every gate builds only what is stale: dune when a source is newer
+than the stamp of the last green workspace build, the frontend when a source is newer than its classes, the jar when
+a source is newer than the jar. After the build step no gate builds and no two gates write the same file, provided no
+source changes during the run and no other gate, build or `make gates` runs in the same checkout. The step
+`after-run` checks the first condition: the three builds run again and must be fresh, and none of their products may
+be newer than the end of the build step. A red build, red gate, red `after-run` or missing line exits non-zero.
+Replays run through `scripts/lib/parallel.sh` (one process per two cores, with its replay flags on JVMs) and are
+judged in corpus order; no gate takes arguments.
 
-1. `scripts/check-self-contained.sh` — artifact zones (`corpus/golden`,
-   `corpus/negative`, `corpus/red`, `spec/schema`, `spec/verifier`,
-   `ref`, `backends`, `frontends` — since the Phase-5a skeleton — and,
-   since the Phase-1 exit, `spec/IR-SPEC.md`
-   and `spec/RUNTIME-SEMANTICS.md`)
-   carry no machine-local paths or private-repo references, and corpus data
-   is free of TOKA material (provenance: the corpus is own work, and TOKA is
-   third-party material whose release is not yet confirmed in writing) —
-   with the single exception of the `toka/` parity zone (see Corpus rules),
-   which the tripwire deliberately skips while it keeps firing on every
-   other zone; `toka/` itself is checked only for machine-local paths.
-   Working prose (plan, backlog, reviews) may reference the private source
-   repos during development — see `WAY-OF-WORKING.md` §5–6.
-2. `scripts/check-ir-schema.sh` — the schema file is metaschema-valid;
-   every `corpus/golden/**/ir.json` and `corpus/red/**/ir.json`
-   validates against
-   `spec/schema/uchar-ir-v1.schema.json` (since L1 of the v1 wire
-   migration, 2026-09-24; `regelspraak-ir-v0` until then) and round-trips
-   byte-identically; and, since the card-less fix round of 2026-09-25,
-   every object in `corpus/golden`, `corpus/red` and `corpus/negative`
-   carries its keys in the canonical order of the subschema it instantiates
-   (the `properties` order the schema's description makes canonical; an
-   object no subschema admits is counted apart, never skipped), failing
-   with the path and both orders on a deviation; an unpopulated corpus is
-   reported explicitly, never silently green. Since the card
-   `tekst-van-een-waarde-in-een-tekstsamenstelling` (2026-11-06) the shape
-   self-test holds `EmbeddedExpression.unit` to its one spelling, `true`
-   (four rows), and since the card `unit-symbol` (2026-11-07)
-   `DeclaredUnit.symbol` to a non-empty string on a declaration (six rows).
-3. `scripts/check-verifier.sh` — the OCaml verifier (`spec/verifier/`)
-   builds, in the workspace `_build` (`scripts/lib/ocaml-build.sh`), the
-   verifier gates 11 and 15 run as well, and builds on its own: no dune
-   file under `spec/verifier` names a library another directory of the
-   workspace defines (read from the dune files, without a dune call), so
-   `dune build --root spec/verifier` keeps working; every `corpus/golden/**/ir.json`
-   and `corpus/red/**/ir.json` is verifier-clean; every
-   `corpus/negative/<wf###-slug>/ir.json` is rejected, citing the WF
-   rule its directory name declares — and, since L2 of the v1 wire
-   migration (2026-09-24), on the ARM its `expect.txt` names where that
-   file is present (one literal fragment of the verifier's sentence,
-   pointer-free; a blank or multi-line file fails; the count carries a
-   floor `EXPECTED_MIN_EXPECT`), so a witness that drifts to another arm
-   of its own rule no longer passes unseen; and, since the card-less fix
-   round of 2026-09-25, every JSON pointer a negative report cites resolves
-   in that case's document (RFC 6901; the pointer is read up to the first
-   `: `, spaces included, and a FAIL line without that separator fails the
-   gate; the count carries a floor `EXPECTED_MIN_POINTERS`), so a witness
-   whose report points into the void no longer passes; an empty negative
-   corpus is a failure, never silently green. Since 2026-10-19 (card
-   `verifier-arm-keys`) every violation carries a key `WF-###.<slug>` (one
-   per message template within a rule) and named parameters, the report
-   line is `WF-###.<slug> FAIL <pointer>: <message>`, and `verifier --arms`
-   prints key, pointer and parameters; `expect.txt` is a key line of the
-   declared rule plus `name=value` lines, matched as a subset against the
-   parameters of one violation, so a rewording of a message breaks no pin
-   (the fragment form above is history); gate 3 also refuses a key with two
-   message templates over the negative reports and a violation built
-   without a key in `checks.ml`; floors `EXPECTED_MIN_ARMS=239`,
-   `EXPECTED_MIN_PARAM_LINES=686`, `EXPECTED_MIN_REPORT_KEYS=340`,
-   `EXPECTED_MIN_ARM_SITES=442`, `EXPECTED_MIN_EXPECT=411`,
-   `EXPECTED_MIN_POINTERS=705` and `EXPECTED_MIN_NEGATIVE=568` (measured
-   2026-11-02, card `dimensions-executed`; first set 2026-10-19). Since 2026-10-21 (card
-   `default-statute-annotations`) WF-082 judges the `statuteAnnotations` of a
-   Default too (IR-SPEC ch. 6.1); the verifier reads those lists beside the
-   document (`Loader.default_annotations`), and each of the three WF-082 keys
-   carries the parameter `kind` (`rule` or `default`). Since the card `absence-markers` (2026-11-04) WF-127 holds a
-   `PayloadAccess` under a test of its constructor (IR-SPEC ch. 4.7),
-   with one negative per arm. Since the card `absence-markers-residue`
-   (2026-11-05) WF-062 reads the argument of a `Construct` as a write into
-   its payload (WF-023's assignment typing, and at WF-023's write positions
-   its precision gate), and WF-127 guards the read of a cell by a test of
-   the same cell. Since the card `timeline-initialisation-allocation-creation`
-   (2026-11-05) WF-128 refuses an allocation that names a time-dependent
-   attribute (IR-SPEC ch. 3.2), with one negative per field. Since the card
-   `tekst-van-een-waarde-in-een-tekstsamenstelling` (2026-11-06) WF-129
-   refuses a text part that writes the unit of its number where its type
-   has none, with one negative per arm. Since the card
-   `currency-signs-and-declared-units` (2026-11-07) WF-009 holds every unit
-   that names a system to a declaration of that system: its abbreviation
-   declared there (`WF-009.undeclared-abbreviation`), its conversion pair
-   that of the declaration (`WF-009.undeclared-conversion`), and the
-   `system` of a declaration its own system
-   (`WF-009.declaration-system-mismatch`), with one negative per arm.
-4. `scripts/check-case-schema.sh` — the case schema
-   (`spec/schema/uchar-case-v0.schema.json`) is metaschema-valid; every
-   `corpus/golden/**/case*.json` and `corpus/red/**/case*.json`
-   validates against it and sits beside an `ir.json`; zone discipline
-   holds (golden carries `expected`, red carries `expectedFault`); an
-   empty case set is reported explicitly, never silently green. Since
-   2026-10-19 (card `fragment-cleanup`) the gate carries self-test rows for the shape of `expectedFault` (a `params`
-   object of strings, no fragment key).
-5. `scripts/check-oracle.sh` — the reference interpreter (`ref/`) builds
-   and replays every `corpus/golden/**/case*.json` with exact expectation
-   match (the oracle guard of PLAN §8); goldens without a case file are
-   listed explicitly; an empty case set is a failure, never silently
-   green. Since 2026-09-10 it also runs `ref/`'s own worked-example suite
-   (`ref/test/`) — the executable form of the `RUNTIME-SEMANTICS.md`
-   examples, which until then no gate ran at all — demanding its count
-   line and holding it to a floor, exactly as gate 6 runs the clingo
-   backend's own suite.
-6. `scripts/check-clingo.sh` — the differential: `backends/clingo`
-   translates every corpus case to ASP-Core-2 and clingo's stable model
-   must match the same absolute expectations gate 5 pins for `ref/`
-   (ref ≡ Clingo over the corpus, anchored to hand-written values); an
-   empty case set is a failure, never silently green. Played is the
-   default. A golden whose form the ASP encoding does not carry stands by
-   name in the reason-carrying list `EXPECTED_CHANNEL` IN THE SCRIPT,
-   `<golden>|CLINGO-###[, CLINGO-###…]|<reason>`, and refuses on every
-   case with those codes at the head of the runner's report
-   (`TRANSLATION FAULT: CLINGO-032: …`, `CLINGO-031: clingo: UNSATISFIABLE
-   — …` for a guard at solving, `CLINGO-033, CLINGO-034: clingo: …` where
-   two guards fire), each a code of `backends/clingo/codes.tsv` of the kind
-   `refusal` or `limit`; a line names every code at the head, in any
-   order, and no other; a `fallback` code is named by no pin, as in gate
-   8. The gate compares the codes and fails by golden name on a golden
-   that refuses without a line, on a line whose golden plays every case,
-   refuses with other codes or has no case file (stale in both
-   directions), and on a golden whose cases partly play and partly
-   refuse. A case that fails without a register code at its head, with an
-   EF code among its codes there or with a mismatch fails whether or not
-   its golden is listed: only a refusal of the backend is listable. The
-   list refuses a golden named twice, a line without a reason, a code
-   named twice in a line and a code that is no refusal or limit of the
-   register, and the judge passes twenty-two rows of its own before it
-   judges the corpus. The list has no floor: it is name-carrying and held
-   in both directions, and the count of replayed cases is the case set
-   gate 5 floors. It names the two verzuimrente anchors, whose exact
-   values the encoding does not hold: `anchor/jutterswet-verzuimrente-dagen`
-   (CLINGO-032, the calendar total outside a rounding,
-   `backends/clingo/README.md` [V6]) and `anchor/jutterswet-verzuimrente-30-360`
-   (CLINGO-033, the unbounded form held as a whole number, and CLINGO-034,
-   the range of the encoding's machine integers); their rounded sisters
-   play in every executor. It also names `jutterswet-keurquotient`
-   (CLINGO-039, a non-exact division in a condition, which the scaled
-   integers do not compare exactly) and `jutterswet-macht-van-nul`
-   (CLINGO-041, a negative exponent, which inverts its base), and
-   `jutterswet-tekst-van-een-waarde` (CLINGO-042, the text of a value in a
-   text composition, which ASP-Core-2 cannot build); ref and the Drools
-   branches play all three. It also runs the
-   backend's own unit suite — the normalisation fault modes no corpus
-   witness can exercise — demanding its check-count line and holding
-   that count to a floor; an un-run or shrunken suite is a silent green,
-   so neither is allowed. The replays run on one process per two cores
-   (measured 2026-10-25 on 16 cores: 36 s on 8 processes and on 16, so
-   eight leave the other cores to gate 12's suite in `make gates`) and
-   are judged in the order of the case list (`scripts/lib/parallel.sh`,
-   card `parallel-gate-replays`, 2026-10-25). The gate takes no
-   arguments.
-7. `scripts/check-noop.sh` — the no-op guard (PLAN §8: an identity
-   transpiler must fail): every golden case run through the reference
-   runner's `--noop` mode (expectations against the raw input, no
-   evaluation) must fail; the cases that legitimately survive — they pin
-   defeasible standing, or a consistency that already holds on the input
-   (`jutterswet-vondstnummer/case-consistent`, and since 2026-10-14
-   `jutterswet-uniciteit-drie-bronnen/case2-zonder-botsing`) — live in
-   the script's explicit, reason-carrying survivor list, which fails
-   when stale; an empty case set is a failure.
-8. `scripts/check-red.sh` — the red corpus: every `corpus/red/**/case*.json` declares `expectedFault {code, params}`
-   (the EF code of the fault kind, RUNTIME-SEMANTICS ch. 5.7b, and its parameters as an object of strings; the schema
-   refuses every other key, so no piece of message text is pinned) and MUST fail observably — at load or at evaluation —
-   in **both** executors as that kind: `ref` and clingo print one `CODE <code> <json>` line per observed code and the
-   case's own `CODE-PINNED <code> <json>`, decoded by the runner's case reader (never a shell scrape: a JSON string may
-   spell any character as an escape), and the gate demands the pinned code with the pinned parameters among the emitted
-   ones (a subset; the Drools leg reads the same from its status line `FAULT EF-016 {…}: …`, for every case not in its
-   exclusion list), the unsolved-state guard among them (`Unresolved` reached in evaluation faults with EF-019,
-   WF-044, never vanishes). An executor that fails a case for a reason of its own stands in the divergence list
-   `<case>|<executor>|<CODE>|<CATEGORY> <reason>`, with the `REF-###` or `CLINGO-###` code it reports and a category
-   equal to the kind of that code in its register (`REFUSAL` ↔ `refusal`, `LIMIT` ↔ `limit`); the list is stale-guarded in
-   both directions. The registers of the executors (`ref/codes.tsv`, `backends/clingo/codes.tsv`) are held to their
-   sources in both directions, parameters included, by `scripts/check-exec-codes.sh`, which gate 8 calls (floors
-   `EXPECTED_MIN_REF_CODES=12`, `EXPECTED_MIN_CLINGO_CODES=27`). The fence on codes replaces the bottom-sentence list: a
-   `fallback` code — the bottom arm of a dispatch — is named by no pin (`expectedFault.code` is an `EF` code), no
-   divergence entry, no exclusion entry of the Drools leg and no `EXPECTED_CHANNEL` entry of gate 12, and a fault that
-   reports only a `fallback` code is a code other than the pinned one. Every parameter an executor emits is a key of the
-   parameter column of ch. 5.7b, and the two pairs of cases that differ in a parameter only (`aanvoergeld-parameter-unbound`,
-   `jutterswet-dubbele-melding`) are told apart by their pinned `params` (stale-guarded). An empty red set is a failure,
-   never silently green. Floors: `EXPECTED_MIN_RED_CASES=44`, `EXPECTED_MIN_RED_CODES=82`, `EXPECTED_MIN_RED_PARAMS=120`,
-   `EXPECTED_MIN_EF_CODES=31`, `EXPECTED_MIN_GOLDEN_CODES=80`, `EXPECTED_MIN_DROOLS_EXCLUDE_CODES=15`,
-   `EXPECTED_MIN_DROOLS_PARAMS=28` (the last two on the Drools leg). An `EXCLUDE` entry of the Drools list pins the
-   register code of the refusal (`name|EXCLUDE DROOLS-###  <reason>`) and the leg compares it with the head of the
-   status line, failing by case name with both codes; a `NOFAULT` entry carries none (card `drools-refusal-codes`).
-   Since 2026-10-19 (card `channel-fact-codes`) a §9.5 channel fact carries the EF codes of its kinds beside its
-   identity rule × subject (RUNTIME-SEMANTICS ch. 5.6), and a golden `inconsistent` expectation may pin one (`code`),
-   which gates 5, 6 and 12 hold ref, clingo and both Drools branches to; this gate holds every code a golden pins to
-   a row of the ch. 5.7b table on the §9.5 channel. Since 2026-10-19 (card `zero-division-channel`) EF-005, a
-   division by a numeric zero, is a §9.5 kind and its witnesses are goldens.
+Throughout: "stale-failing" means a list fails on an entry that no longer applies, in both directions where said;
+"reason-carrying" means every entry carries its reason; an empty input set is a failure, never a silent green.
 
-9. `scripts/check-catala.sh` — the Catala frontend builds and its
-   full test suite passes (E2E through verifier, ref and clingo plus
-   the refusal fixtures), and every corpus golden carrying a
-   `source.catala_en` regenerates through the plugin byte-identically
-   after canonicalisation (gate 2's serialiser shape, executed from
-   that script — one source of truth); an empty catala-golden set,
-   a suite that ran zero checks, or
-   a missing catala installation is a failure, never silently green.
-   *Its CI leg is conditional by maintainer decision (2026-08-24):
-   the `gates.yml` job runs the gate in full wherever the catala
-   tools are available on the runner — on the bare PATH or in the
-   runner's own opam switch, in whose environment the gate then runs —
-   and skips loudly — a warning, never a silent green, never a
-   blocker — on runners without them. github.com's hosted runners
-   have no catala, so hosted CI does NOT catch a frontend
-   regression; only a catala-carrying runner does. The gate script
-   itself is unchanged and still fails hard without catala, so gate 9
-   remains the reviewer's pre-merge duty on a machine that has it.*
+1. `scripts/check-self-contained.sh` — the artifact zones (`corpus/golden`, `corpus/negative`, `corpus/red`,
+   `spec/schema`, `spec/verifier`, `ref`, `backends`, `frontends`, `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`)
+   carry no machine-local paths or private-repo references, and corpus data carries no TOKA material (the corpus is
+   own work; TOKA is third-party material whose release is not yet confirmed in writing). The `toka/` parity zone is
+   skipped by the TOKA tripwire and checked only for machine-local paths. The no-share tripwire: `ref/` and
+   `spec/verifier/` carry no production-runtime token (see Repo relationships). Working prose (plan, backlog,
+   reviews) may reference the private source repos (`WAY-OF-WORKING.md` §5–6).
 
-10. `scripts/check-regelspraak.sh` — the RegelSpraak frontend
-    (`frontends/regelspraak`, jar-only: JDK 21+, ANTLR + JUnit jars
-    fetched into a gitignored `lib/`) builds and its JUnit suite
-    passes with a non-zero test count; every corpus golden carrying a
-    `source.rgs` re-emits through `--ir` byte-identically to the
-    committed `ir.json`; an empty rgs-golden set or a zero-test run
-    is a failure, never silently green. Its CI leg is unconditional
-    and blocking (maintainer decision 2026-08-27). Since the card
-    `frontend-codes` (2026-10-19) the gate calls
-    `scripts/check-rgs-codes.sh` first: every message the frontend
-    raises, and the three the Drools backend raises itself, carries a code
-    `RGS-###` and named parameters beside its Dutch text
-    (`Diagnostic(severity, code, params, message, line)`; the code is not
-    on the wire, IR-SPEC ch. 2 is unchanged), from one register,
-    `frontends/regelspraak/src/main/resources/dev/uchar/regelspraak/diagnostic-codes.tsv`.
-    The script holds register and sources together in both directions
-    (every code a site passes is registered, every registered code is
-    passed, the parameter names agree, no `new Diagnostic(` with three
-    arguments outside `IrLoader`) and carries `EXPECTED_MIN_RGS_CODES=347`
-    (measured 2026-10-19); an empty scan is a failure. Since the card
-    `message-catalogues` (2026-10-19) the same script holds the frontend's
-    two catalogues (`frontends/regelspraak/src/main/resources/dev/uchar/regelspraak/message/`,
-    Dutch and English) to the register: every code has an entry in both
-    languages, every entry belongs to a code, a part, a frame or a shared
-    part, the places of an entry are parameters of its code and every brace
-    is a place or doubled, an entry in one language only fails, an English
-    entry carries no Dutch function word except a reason-carrying (entry,
-    word) pair that fails when stale, and a site passes code and parameters
-    and no text (the argument count of every call form); floor
-    `EXPECTED_MIN_RGS_MESSAGES=363` (measured 2026-10-19). Since the card
-    `message-language` (2026-11-06) the same script holds the Dutch
-    catalogue Dutch: a Dutch entry equal to its English sister fails unless
-    it has no word outside its places and quotations or `SAME_IN_BOTH` lists
-    it with the reason (floor `EXPECTED_MIN_RGS_SAME_IN_BOTH=4`), and a
-    Dutch entry that carries an English function word fails unless
-    `ENGLISH_EXCEPTIONS` lists entry and word; both lists fail when stale. A
-    site may pass its code as `new Msg(Component.FRONTEND, code,
-    params(...))`, the form of an exception text a user sees
-    (RGS-380..387). RGS-388 refuses at `check` a text part
-    that asks for a unit its type does not have (`«X (eenheid)»`,
-    DIVERGENCES "De eenheid van een tekstdeel"). Since the card
-    `unit-symbol` (2026-11-07) the token after the abbreviation on a unit
-    line is the unit's symbol (DIVERGENCES "De eenheidsregel — afkorting en
-    symbool"): RGS-389 refuses a third token, RGS-390 a reference by a
-    symbol two units of its system carry, RGS-391 a symbol equal to an
-    abbreviation of its own system. Since the card
-    `currency-signs-and-declared-units` (2026-11-07) a currency sign, a
-    character of the Unicode category Sc after the letters it writes (`€`,
-    `$`, `R$`), is one token (`CURRENCY_SIGN`), and RGS-392 refuses a
-    reference by a word or plural two units of its system carry; the word
-    of a unit line is one token, so a name of more words takes a hyphen
-    (maintainer decision 2026-11-07). The frontend
-    renders Dutch by default; the frontend Makefile copies
-    `src/main/resources` to `out/`.
+2. `scripts/check-ir-schema.sh` — `spec/schema/uchar-ir-v1.schema.json` is metaschema-valid; every
+   `corpus/golden/**/ir.json` and `corpus/red/**/ir.json` validates against it and round-trips byte-identically;
+   every object in `corpus/golden`, `corpus/red` and `corpus/negative` carries its keys in the canonical order of the
+   subschema it instantiates (the `properties` order), failing with the path and both orders; an object no subschema
+   admits is counted apart, never skipped. A shape self-test holds `EmbeddedExpression.unit` to `true` and
+   `DeclaredUnit.symbol` to a non-empty string. Floor: `EXPECTED_MIN_DOCS`.
 
-11. `scripts/check-toka-parity.sh` — the `toka/` parity zone (maintainer
-    decision 2026-08-27; a regular gate of the set since 2026-10-13, when
-    the maintainer decided that the zone stays). The frontend builds and
-    the TOKA tests under `toka/` (two integration tests excluded at the
-    frontend takeover, brought here in original form, and since 2026-10-22
-    the semantic-token witness of the casus) compile + pass against it with a
-    non-zero test count; every toolchain-pinned `toka/**/ir.json` re-emits
-    through uchar's own frontend byte-identically (frontend ≡ toolchain on
-    the TOKA casus, which the corpus does not carry — since L1 of the v1
-    wire migration, 2026-09-24, a REGRESSION form: the zone
-    migrates with every landing, the casus dump is re-emitted by the
-    frontend and the slices go through the landing's migration script, so
-    the comparison proves frontend ≡ the recorded state, `toka/README.md`
-    lists each landing under its deliberate divergences); an empty
-    fixture set, zero tests, or a stale holdout is a failure, never silently
-    green. The reason-carrying holdout list (`toka-23`, the §4.1 datum+datum
-    casus-quirk; `toka-45`, dimensionally inconsistent as written — surfaced
-    by the identity unit typing, decision 16Y 2026-08-29, where uchar-v1
-    deliberately diverges from the toolchain) mirrors gate 7 and fails when
-    stale.
-    Since the card toka-welgevormd (2026-09-25; maintainer decision the same
-    day: the zone stays a while longer, in its own directory) the gate also
-    holds every replay slice VERIFIER-CLEAN (the verifier from the workspace
-    `_build`, as gate 3 builds it) — a well-formedness leg with its
-    own floor `EXPECTED_MIN_CLEAN` and a reason-carrying holdout list
-    (`VERIFIER_HOLDOUTS`, the slice whose clamp bound carries a unit against a
-    unitless base, WF-099) that fails when stale; the casus dump stays outside
-    that leg (the parity object, over-determined by its nature: its scenarios
-    write the same targets each in their own way).
-    CI leg unconditional and blocking.
+3. `scripts/check-verifier.sh` — the OCaml verifier (`spec/verifier/`) builds in the workspace `_build`
+   (`scripts/lib/ocaml-build.sh`), the one gates 11 and 15 use, and builds on its own: no dune file under
+   `spec/verifier` names a library of another directory, so `dune build --root spec/verifier` works. Every golden
+   and red `ir.json` is verifier-clean; every `corpus/negative/<wf###-slug>/ir.json` is rejected citing the rule its
+   directory names, one negative per arm of every rule. A violation carries a key `WF-###.<slug>` (one per message
+   template) and named parameters; the report line is `WF-###.<slug> FAIL <pointer>: <message>`, and
+   `verifier --arms` prints key, pointer and parameters. `expect.txt`, where present, is a key line of the declared
+   rule plus `name=value` lines, matched as a subset against the parameters of one violation. Every JSON pointer a
+   negative report cites resolves in its document (RFC 6901, read up to the first `: `; a FAIL line without that
+   separator fails). The gate refuses a key with two message templates and a violation built without a key in
+   `checks.ml`. Floors: `EXPECTED_MIN_ARMS`, `EXPECTED_MIN_PARAM_LINES`, `EXPECTED_MIN_REPORT_KEYS`,
+   `EXPECTED_MIN_ARM_SITES`, `EXPECTED_MIN_EXPECT`, `EXPECTED_MIN_POINTERS`, `EXPECTED_MIN_NEGATIVE`.
 
-12. `scripts/check-drools.sh` — the Drools differential leg of the square
-    (maintainer decision 2026-08-27). The Drools backend
-    (`backends/drools`, a shaded Maven runtime uber-jar, JAR-ONLY like
-    gate 10) CONSUMES the uchar IR: it loads every golden's `ir.json` off
-    the wire (never the RegelSpraak source — the source-compile path may
-    serve only as an internal test comparison, NEVER as the gate path),
-    builds a KieBase through the exec-model branch — since the card
-    `tms-omschakeling` (2026-10-10) the lowering with truth maintenance
-    (`transpiler/tms`), which replaced the exec-model back-end ported from the
-    production toolchain; like that back-end since the defaults-service card
-    (2026-08-29, PRIORITIZED-DEFAULTS-EVOLUTIE Q3) it carries a spec-ch.-7
-    prioritizedDefaults lowering the production toolchain does not have, so
-    the backend implements the uchar spec beyond the ported production
-    semantics — and replays every `case*.json`. Since the card
-    `test-beyond-thirteen-reads` (2026-10-27) a condition may read any
-    number of values: the exec-model branch passes more than thirteen
-    to its test in bundles (`PatternDslRendering.test`), the DRL-text
-    branch calls its test function with all of them. Since the card
-    `subtype-characteristic-in-fold-filter` (2026-10-27) a characteristic
-    check whose host lies strictly below the subject of its rule (the
-    narrowing host, RUNTIME-SEMANTICS ch. 5.8b rule 4) reads the standing
-    of the host's characteristic, and a rule of its own puts a false
-    standing on every object of the subject's type outside the host
-    (`TmsTranspiler.outsideStateRule`), so such an object reads false
-    instead of leaving the rule. Since the card `timeline-arithmetic-by-rule`
-    (2026-11-03) the lowering writes the period arithmetic of
-    RUNTIME-SEMANTICS ch. 3.4 and 3.5 over all time (`PeriodArithmetic`): an
-    open bound is `LocalDate.MIN`/`LocalDate.MAX` in a `Period` and null on a
-    bean, and a total over an open segment that is not 0 faults with EF-036
-    (`OpenSegmentFault`). Since the card `timeline-arithmetic-per-period`
-    (step B, 2026-11-03) the lowering reads every operator of ch. 1.2 but
-    the power per day over timelines, a time-dependent parameter as a
-    timeline operand (the case runner sets its timeline as a `List<Period>`
-    on its global), and the temporal total by the calendar between the day
-    and the month family; the case reader reads a timeline on the day grid.
-    Since the card `conditions-per-period` (step B, 2026-11-03) a condition
-    that reads a timeline on a rule with a timeline target is read per period
-    in the rule's consequence (`PeriodCondition`), the producer's timeline
-    cut to its periods, the whole-period qualifier there per bucket; the
-    computing rules of one timeline target, one or more, each write their
-    own `Value`, and the write-back puts their union with the target's input
-    on the bean (EF-016 on a day two decide differently; since the card
-    `writers-per-day-beside-input`, 2026-11-04, also for a sole writer). Since step B part ii
-    of the same card both branches write the day count over all time, read a
-    period window per period, its bound a day-precise date expression, and
-    write a time-dependent characteristic within a window as a standing of
-    its true periods (`PeriodCondition`, `CharacteristicPeriodsFault`, EF-023
-    on an open bound); the standing of a timeline target that rules write is
-    the union of its writers with its input (`Consequence.WritersUnion`).
-    Since the card `defaults-per-period-on-timeline` (step B, 2026-11-04) a
-    defaults group on a timeline target decides per day on both branches
-    (RUNTIME-SEMANTICS ch. 7.11; `TmsTranspiler.dayStackRules`,
-    `PeriodDefaults`): every default and every reconciliation of exception
-    groups puts the days it decides or conflicts on in the value of its
-    `Outcome`, a lower default reads those of the defaults above it and
-    decides only on the days they leave, its consequence evaluated only
-    where it can decide, and the root of the stack is one writer of the
-    target, beside whose `Value` the input stands on the other days
-    (`Consequence.WritersUnion`); `decisionsOf` has no record of such a stack,
-    and `periodDecisionsOf` gives per object and timeline target who
-    decided per period, a stack's default, its conflict, the rules or the
-    input (`PeriodDecisions`; card `decisions-per-period`, 2026-11-04,
-    witness `PeriodDecisionsWitnessTest`). Since the card
-    `timeline-initialisation-allocation-creation` (step B, 2026-11-05) an
-    initialisation on a timeline target is the lowest layer of its stack per
-    day on both branches (RUNTIME-SEMANTICS ch. 7.8;
-    `TmsTranspiler.timelineInitialisationRule`,
-    `PeriodDefaults.initialisationDays`): it reads the `Value`s of the other
-    writers and the input on the bean, never its own write, and decides,
-    within the periods of its condition, the days they leave on which its
-    value reads one; the member value of an object creation on a
-    time-dependent attribute is the input of the made object per day
-    (`ComputeHelpers.setTimeline`); and an allocation that names a
-    time-dependent attribute is refused as WF-128 (DROOLS-315). Since the card `absence-markers`
-    (2026-11-04) both branches carry a sum type (RUNTIME-SEMANTICS ch. 9): its
-    value is a `ConstructorValue` on a bean, in a fact and in a segment, built
-    by `Construct`, compared by equality and read by `PayloadAccess`, also as
-    the source of a fold over members; on a timeline target of a sum type a
-    rule writes a constructor of a literal, or a copy of an own timeline of
-    that sum type, in the periods of its condition, and a comparison with a
-    constructor value is read per period; a cell carries a constructor value
-    as an attribute does. A `Match`
-    stays refused (DROOLS-021), and the payload of a timeline is refused by
-    name (DROOLS-314). A golden whose forms the loader+transpiler carry
-    MUST replay with EXACTLY the pinned expectations gates 5 (ref) and 6
-    (clingo) verify — a played pass IS the square (ref ≡ clingo ≡ Drools
-    over the corpus). Not-carried forms never vanish silently: per-form
-    auto-refusals (a loader Refusal on a v1 node/section, a transpiler
-    marker, a contract violation, a dimensioned/rational/list/struct or
-    granular-parameter input, an object creation, an underivable role
-    reference, a name-sharing or ambiguous-reciprocal bean limit — the
-    corpus-exercised temporal case-input forms and the reciprocal
-    self-relation are CARRIED since 2026-08-30) each print their reason,
-    grouped, in the gate report, and a reason-carrying value-divergence
-    list IN THE SCRIPT (the check-noop survivor pattern) names each
-    golden whose fired outcome differs from ref/clingo and FAILS WHEN
-    STALE. Since the card `drools-refusal-codes` (2026-10-19) every such
-    refusal carries a code `DROOLS-###` from one register
-    (`backends/drools/.../refusal/DroolsCode.java`), beside its sentence
-    and at the head of its report (`EXCLUDE DROOLS-014: <sentence>`); the
-    gate compares the code, not only the channel: each `EXCLUDE`
-    pin of `EXPECTED_CHANNEL` names its code, and a changed or missing
-    code fails by golden name with both codes.
-    `scripts/check-drools-codes.sh`, called first, holds the register to
-    the sources in both directions (every code raised but one of the
-    kind `RETIRED`, which no place may name and which keeps its number,
-    since the card `frontend-kwantor-over-een-pad` (2026-10-20)
-    DROOLS-026 and DROOLS-258, since the card
-    `test-beyond-thirteen-reads` (2026-10-27) DROOLS-264, since the card
-    `fout-op-tussenstand` (2026-11-01) DROOLS-120 and DROOLS-165, since the card
-    `dimensions-executed` (2026-11-02) DROOLS-040, DROOLS-047, DROOLS-184,
-    DROOLS-191, DROOLS-297 and DROOLS-298, since the card
-    `dimensions-remaining` (2026-11-02) DROOLS-189, since the card
-    `drools-exact-arithmetic` (2026-11-02) DROOLS-296, since the card
-    `runtime-tijdconditie-leeg` (2026-11-03) DROOLS-222, since the card
-    `timeline-arithmetic-per-period` (2026-11-03) DROOLS-030, DROOLS-036,
-    DROOLS-304 and DROOLS-307, since the card `conditions-per-period`
-    (2026-11-03) DROOLS-302, DROOLS-104 and DROOLS-311, since the card
-    `writers-as-one-defaults-stack` (2026-11-04) DROOLS-142, since the card
-    `timeline-initialisation-allocation-creation` (2026-11-05) DROOLS-118, since the card
-    `absence-markers` (2026-11-04) DROOLS-010, DROOLS-012 and DROOLS-313, since the card
-    `creatie-zonder-binding-via-supertype` (2026-11-06) DROOLS-148, since the card
-    `caselezer-zoals-ref` (2026-11-06) DROOLS-045 and DROOLS-046, since the card
-    `beanlidnamen-zonder-java-identifier` (2026-11-06) DROOLS-058, since the card
-    `tekst-van-een-waarde-in-een-tekstsamenstelling` (2026-11-06) DROOLS-183, since the card
-    `drools-veelopveel-beanmodel` (2026-11-06) DROOLS-078 and DROOLS-161; every raised code
-    registered, numbers without gap, keys unique, every `ef` a row of
-    RUNTIME-SEMANTICS ch. 5.7b) and carries
-    `EXPECTED_MIN_DROOLS_CODES=289`. Since the card `message-catalogues`
-    (2026-10-19) that script holds the Drools backend's catalogues
-    (`backends/drools/src/main/resources/.../message/`) to the register in
-    the same way, with for a fault kind of ch. 5.7b the places `EF_PLACES`
-    names; a site that names a code names it as
-    `DroolsCode.X.reason(name, value, ...)` or `.part(...)` with parameter
-    names of the register; floor `EXPECTED_MIN_DROOLS_MESSAGES=325`. Since the card `message-language`
-    (2026-11-06) a Dutch entry equal to its English sister fails unless it
-    has no word outside its places and quotations or `SAME_IN_BOTH` lists it
-    with the reason: the sentences of the fault kinds that the runtime writes
-    and `ComputeFault` reads back (EF-003, EF-007..012, EF-019, EF-032), the
-    29 sentences left English at the card `message-catalogues` and the names
-    of the backend's parts (floor `EXPECTED_MIN_DROOLS_SAME_IN_BOTH=49`); a
-    Dutch entry that `SAME_IN_BOTH` does not list carries no English function
-    word unless `ENGLISH_EXCEPTIONS` lists entry and word with the reason, and
-    both lists fail when stale. Since the card
-    `tekst-van-een-waarde-in-een-tekstsamenstelling` (2026-11-06) the
-    analysis passes `rsTekst` the form of a text part (its decimals,
-    RUNTIME-SEMANTICS ch. 1.2) and its unit, and DROOLS-368 refuses a part
-    that asks for a unit it does not have; since the card `unit-symbol`
-    (2026-11-07) each factor of that unit is written by the symbol of its
-    declaration, and DROOLS-369 refuses a factor without a declaration. The
-    Drools backend renders English by default; its own suite runs under
-    `uchar.messages.locale=nl` (`backends/drools/pom.xml`). Since 2026-09-06 an expected-channel floor IN THE SCRIPT pins
-    the played channel itself: every NON-played golden is listed by name
-    with its reason (played is the default), so a golden that SHIFTS
-    CHANNEL and loses its PLAYED status fails the gate by name instead of
-    being silently counted among the refusals, and a stale pin — a listed
-    golden that plays again, or is gone — fails too. A pinned played
-    count closes the one direction a played-by-default list cannot see: a
-    newly arrived player. The gate takes the jar fresh or rebuilt
-    (`scripts/lib/drools-jar.sh`), as the other five jar gates do, and runs
-    the backend's own JUnit suite with `mvn -o test` on the same
-    `target/`, which must pass with a non-zero, zero-skip test count
-    (maintainer decisions 2026-08-30 and 2026-10-25). Since 2026-10-25
-    (card `drools-suite-forks`) surefire runs that suite in `forkCount`
-    0.5C JVMs with `reuseForks` (`backends/drools/pom.xml`; 8 on 16 cores,
-    1 on 2), which take the test classes from one queue: the count, the
-    floor and the witnesses by name are those of a run in one JVM, the
-    system property and the environment of the pom hold in every fork, and
-    a test class relies on no state another class leaves in its JVM.
-    Since 2026-09-19 the
-    gate also sweeps the DRL-TEXT branch (card gate12-drl-takteller)
-    through the replay runner's branch flag. Since the card
-    `drl-teksttak-op-truth-maintenance` (2026-10-14) that branch is the
-    second rendering of the one analysis the exec-model branch fires
-    (`transpiler/tms`: the analysis yields a plan per rule, rendered once
-    as PatternDSL and once as DRL text), so it derives with truth
-    maintenance too and carries no list and no pin of its own: per
-    golden its status line must equal the exec-model branch's line
-    verbatim (`PLAYED n`, or `EXCLUDE` in the same sentence), and any
-    other line fails the gate by name — a refusal of the DRL rendering
-    alone or a text the Drools compiler rejects is such a difference,
-    never an entry of a list. Until then the leg had an
-    `EXPECTED_DRL_PLAYED` equality pin and a reason-carrying
-    `DRL_CHANNEL` list; both went with the destructive lowering they
-    described. The sweep runs as the gate's final block, so only an
-    otherwise-green gate pays its cost (measured 2026-10-25, the gate
-    alone on 16 cores: 34 s of 181 s). The gate also fails when the
-    backend's suite did not run `BranchDumpsCorpusWitnessTest`, the
-    case-by-case comparison of the two branches over every golden and
-    red case.
-    Since 2026-10-21 (card `fixpoint-readings`) the backend has a build
-    with readings (`DroolsBackend.build(…, readings)`): beside the rule of
-    every form with a condition a reading rule, with the left-hand side of
-    the form's rule without its test, whose facts `readingsOf` reads per
-    form, object and node, and beside the rule of a default whose turn
-    the control facts of its stack guard a speculative reading rule
-    without them, whose readings `readingsOf` reads as `DISPLACED` where
-    the default was not at its turn (card
-    `readings-of-displaced-defaults`, 2026-10-27); the production build is
-    byte-equal to the one before. The suite holds it: `ReadingRulesFixpointWitnessTest` (with and
-    without readings the facts at the fixpoint are equal, per case, on both
-    branches), `ReadingsCorpusWitnessTest` (the readings agree with the
-    fixpoint: a reading holds where its form fired, an operand has the
-    value of the fixpoint, a composite stops where its members say),
-    `ReadingRulesObserverWitnessTest` (the observer, the coverage and the
-    firings per form are those of the build without), and the dump of
-    `BranchDumpsCorpusWitnessTest` carries a section `reading`, so the two
-    branches agree on the readings as well; floors in those classes,
-    measured 2026-10-21. The gate fails when the suite did not run one of
-    those three witnesses, by name, as for `BranchDumpsCorpusWitnessTest`.
-    `DroolsBackendMain --readings` prints the readings per case in the
-    canonical text the reference interpreter's trace is held to (card
-    `ref-trace-and-readings-gate`). An empty played
-    set is a failure. The replay runs in two passes, the exec-model
-    branch and then the DRL-text branch: each pass runs the `java -jar`
-    of every golden on one process per two cores, with the replay flags
-    of `scripts/lib/parallel.sh`, and then judges the outputs in the
-    order of the corpus, so the DRL-text pass begins only after the
-    exec-model pass is green. The gate takes no arguments (card
-    `parallel-gate-replays`, 2026-10-25). CI leg unconditional and
-    blocking.
+4. `scripts/check-case-schema.sh` — `spec/schema/uchar-case-v0.schema.json` is metaschema-valid; every golden and
+   red `case*.json` validates against it and sits beside an `ir.json`; golden carries `expected`, red carries
+   `expectedFault`. Self-test rows hold the shape of `expectedFault` (a `params` object of strings, no fragment key).
 
-13. `scripts/check-reftype-derivation.sh` — the annotation-indifference
-    harness (maintainer decision 2026-09-04). For every golden with case
-    files, every unit-bearing `type` annotation on the derived (composite)
-    positions that still carry one — since L2 of the v1 wire migration
-    (2026-09-24) the reference positions carry no `type` at all (B13),
-    so the twist table lost `AttribuutRef`, `ParameterRef`, `DimensieCel`
-    and `BinderRef` (v0 names; since L5 `AttributeReference`,
-    `ParameterReference`, `DimensionCellRead`) and `EXPECTED_MIN_TWISTS` was
-    re-measured (V15 (b)); a `percentageOf` is a derived position as
-    well (its right operand's unit, ch. 2.6 rule 7) —
-    is deterministically twisted (a convertible
-    sister unit, or decimals+1) and ref, clingo and BOTH Drools
-    transpiler branches (the exec-model gate-12 path and, since
-    2026-09-04, the DRL-text branch behind the runner's own flag — since
-    2026-10-14 the second rendering of the same analysis) MUST all
-    reproduce the pinned, untwisted outcomes (for a golden in gate 6's
-    refusal channel, clingo's refusal of the untouched run, byte for
-    byte) — consumers
-    derive units from declarations and the effective-type law
-    (`RUNTIME-SEMANTICS.md` §2.10), never from the wire annotation.
-    Each leg is compared against its OWN untouched status line. Since
-    2026-10-14 the DRL-text leg's untouched line must moreover equal the
-    exec-model branch's, and it must play exactly as many twistable
-    goldens as the exec-model branch, never zero; the floor that leg had
-    of its own (`EXPECTED_MIN_DRL_PLAYED`) is gone.
-    Reason-carrying exemption positions (the Literal lexeme, the
-    duration operand of date arithmetic, the `duration` builtin's own unit) are named
-    in the script; a bookkeeping clamp FAILS the gate when a
-    unit-bearing annotation appears at a node/operator class outside the
-    twist table (the §2.10 fourth-class witness arriving), and a
-    reason-carrying survivor list fails when stale (the check-noop
-    pattern). An empty twist set is a failure, never silently green.
-    Since 2026-09-27 (card `vocabulaires-benamingen`) the gate carries a
-    VOCABULARY leg beside the unit twist: every golden with `vocabularies`
-    and case files is replayed with the side table STRIPPED, with the
-    vocabularies EXCHANGED and with the designations ROTATED within each
-    scope of WF-118, and ref, clingo and both Drools branches must
-    reproduce the untouched outcome (IR-SPEC ch. 2.12: the table carries
-    no semantics, so no reading of it is legitimate and there is no
-    survivor list); floors `EXPECTED_MIN_VOCABULARY_GOLDENS=1`,
-    `EXPECTED_MIN_VOCABULARY_STRIPPED=46` and
-    `EXPECTED_MIN_VOCABULARY_ROTATED=36` (measured 2026-09-27); a golden
-    without vocabularies is not probed. Since 2026-10-15 (card
-    `herkomst-op-de-draad`) an ORIGIN leg beside it: every golden with an
-    `origin` (IR-SPEC ch. 2.13) and case files is replayed with the field
-    STRIPPED, and ref, clingo and both Drools branches must reproduce the
-    untouched outcome (no survivor list); floors
-    `EXPECTED_MIN_ORIGIN_GOLDENS=9` and `EXPECTED_MIN_ORIGIN_STRIPPED=71`
-    (measured 2026-10-15). Since 2026-10-21 (card `defaults-decider`) a
-    NAME leg beside it: every golden whose defaults carry a `name` (IR-SPEC
-    ch. 6.1, `Default.name`) and that has case files is replayed with every
-    name STRIPPED, and ref, clingo and both Drools branches must reproduce
-    the untouched outcome (no survivor list); floors
-    `EXPECTED_MIN_NAME_GOLDENS=20` and `EXPECTED_MIN_NAME_STRIPPED=64`
-    (measured 2026-10-21). Since the card `default-statute-annotations`
-    (2026-10-21) the same stripped copy also loses every
-    `statuteAnnotations` of a Default (IR-SPEC ch. 6.1), with its own floor
-    `EXPECTED_MIN_ANNOTATIONS_STRIPPED=29` (measured 2026-10-21). The
-    four legs (unit, vocabulary, origin, name) run as four processes at
-    once, with the replay flags of `scripts/lib/parallel.sh` on their
-    JVMs, and their reports are read in that order (card
-    `parallel-gate-replays`, 2026-10-25). A Drools run on an untouched
-    golden that ends in no status line of the runner (`PLAYED`, `FAIL`,
-    `EXCLUDE`, `ERROR`) fails the gate by golden, leg and executor, so two
-    runs whose JVMs both died never compare equal. CI leg unconditional
-    and blocking.
+5. `scripts/check-oracle.sh` — the reference interpreter (`ref/`) builds and replays every golden `case*.json` with
+   exact expectation match (the oracle guard of PLAN §8); goldens without a case file are listed. It also runs
+   `ref/test/`, the executable form of the `RUNTIME-SEMANTICS.md` worked examples, demanding its count line. Floors:
+   `EXPECTED_MIN_CASES`, `EXPECTED_MIN_EXAMPLES`.
 
-14. `scripts/check-flogic.sh` — the F-logic frontend (`frontends/flogic`,
-    plain OCaml in the workspace's dune build, so no fetched jars and no
-    external compiler) builds and its own suite passes with a non-zero
-    check count: the suite emits every test program, holds it
-    verifier-clean, replays its cases through `ref` AND clingo, and drives
-    one fixture per refusal, checking both the reason and the citation of
-    the mandate document the refusal list belongs to. Every corpus golden
-    carrying a `source.flogic` re-emits through the frontend
-    byte-identically after canonicalisation (gate 2's serialiser shape,
-    executed from that script — one source of truth, as in gate 9). An
-    empty flogic-golden set, a suite that ran zero checks, or a missing
-    dune is a failure, never silently green. Counting floors in the
-    script: `EXPECTED_MIN_CHECKS=81` and `EXPECTED_MIN_GOLDENS=1`, both
-    measured 2026-09-12. CI leg unconditional and blocking — unlike gate
-    9 this frontend links no external toolchain, so every runner can run
-    it.
+6. `scripts/check-clingo.sh` — the differential: `backends/clingo` translates every golden case to ASP-Core-2 and
+   clingo's stable model must match the absolute expectations gate 5 pins. Played is the default. A golden whose form
+   the encoding does not carry stands in `EXPECTED_CHANNEL`, `<golden>|CLINGO-###[, CLINGO-###…]|<reason>`, and
+   refuses on every case with exactly those codes at the head of the runner's report, in any order, each a `refusal`
+   or `limit` code of `backends/clingo/codes.tsv` (never a `fallback` code). The gate fails by golden name on a
+   refusal without a line, a line whose golden plays every case, refuses with other codes or has no case file, and a
+   golden whose cases partly play and partly refuse; a case that fails without a register code at its head, with an
+   EF code there or with a mismatch fails whether listed or not. The list refuses a golden named twice, a line
+   without a reason, a code named twice and a code that is no refusal or limit; its judge passes rows of its own
+   first. The list has no floor: it is name-carrying in both directions, and gate 5 floors the case set. It also runs
+   the backend's unit suite (normalisation fault modes no corpus witness reaches). Floor: `EXPECTED_MIN_SUITE_CHECKS`.
 
-15. `scripts/check-graph.sh` — the rule graph of the Drools backend
-    (`backends/drools/.../graph/`, a reading of the IR the distribution's
-    scope analysis consumes; card `graaf-samenvoeging-en-gate`, 2026-09-26)
-    holds to IR-SPEC ch. 5. SPEC LEG: the graph is built for every golden
-    from its `ir.json` through the loader — never from the source — and
-    compared per golden with the verifier's ch. 5 edges
-    (`verifier --dependency-edges` from the workspace `_build`, the list
-    WF-045/046 walk) over an
-    attribute or characteristic node, whatever forms of the rule layer they
-    join (rules, object and fact creations, allocations, consistencies,
-    uniquenesses, prioritized-defaults groups), without the edge kind and
-    without the type in the node (the graph keys a member on its declaring
-    type); edges over a population, a relation or a channel are counted per
-    class and reported, never compared; a difference fails unless it is
-    listed in `DELIBERATE_DIFFERENCE`, one projected line per entry with both
-    forms' lists and its reason, stale-failing in both directions; a golden
-    the loader refuses cannot be compared and is reported with its form.
-    ROUTE LEG: on every golden with a `source.rgs` the graph from the source
-    route equals the graph from the wire route byte for byte, and the
-    graph's own unit tests (under `backends/drools/src/source-route`, compiled
-    by the gate against the frontend and the backend jar) pass with a
-    non-zero count. Floors in the script (measured 2026-09-26 at the wave's
-    landing): `EXPECTED_MIN_GOLDENS=234`, `EXPECTED_MIN_DEPENDENT=116`,
-    `EXPECTED_MIN_SOURCE_ROUTE=98`, `EXPECTED_MIN_TESTS=23`. An empty
-    comparison is a failure, never silently green. CI leg unconditional and
-    blocking.
+7. `scripts/check-noop.sh` — the no-op guard (PLAN §8: an identity transpiler must fail): every golden case run
+   through the ref runner's `--noop` mode (expectations against the raw input) must fail. Cases that legitimately
+   survive — they pin defeasible standing, or a consistency that already holds on the input — stand in `SURVIVORS`,
+   reason-carrying and stale-failing.
 
-16. `scripts/check-scenario.sh` — the scenariotoetsen extension of the
-    RegelSpraak frontend (`frontends/regelspraak/grammar/DIVERGENCES.md`,
-    "Scenariotoetsen"; card `scenariolaag-in-uchar`, 2026-09-26): every
-    corpus golden carrying a `scenario.rgs` beside its `source.rgs`
-    regenerates, through the frontend's `--cases` mode, exactly its pinned
-    case files (the same names, none missing and none extra)
-    byte-identically, and its `ir.json` byte-identically — without a scope
-    the production route's IR document, with one the forms the scope
-    carries; the handwritten expectations are the anchor, never the
-    lowering. An empty scenario-golden set is a failure; floors
-    `EXPECTED_MIN_SCENARIO_GOLDENS=7` and
-    `EXPECTED_MIN_SCENARIO_CASES=31` (measured 2026-09-27, card
-    `scenario-parametersets`). Gate 4 stays
-    the schema gate of those case files and gates 5, 6 and 12 their
-    replay. CI leg unconditional and blocking (jar-only, like gate 10).
+8. `scripts/check-red.sh` — every red `case*.json` declares `expectedFault {code, params}`: the EF code of its fault
+   kind (RUNTIME-SEMANTICS ch. 5.7b) and its parameters as an object of strings, no other key. Each must fail
+   observably, at load or at evaluation, in both executors as that kind: ref and clingo print one
+   `CODE <code> <json>` line per observed code and `CODE-PINNED <code> <json>`, decoded by the runner's case reader
+   (never a shell scrape), and the pinned code with its pinned parameters must be among the emitted ones (a subset).
+   The Drools leg reads the same from its status line `FAULT EF-### {…}: …` for every case not in its exclusion list,
+   whose `EXCLUDE` entry (`name|EXCLUDE DROOLS-###  <reason>`) pins the register code of the refusal, compared with
+   the head of the status line by case name with both codes; a `NOFAULT` entry carries none. `Unresolved` reached in
+   evaluation faults with EF-019 (WF-044). An executor that fails a case for a reason of its own stands in the
+   divergence list `<case>|<executor>|<CODE>|<CATEGORY> <reason>`, with its `REF-###` or `CLINGO-###` code and the
+   category of that code's kind (`REFUSAL`, `LIMIT`); stale-failing in both directions. `scripts/check-exec-codes.sh`,
+   called by this gate, holds `ref/codes.tsv` and `backends/clingo/codes.tsv` to their sources in both directions,
+   parameters included. A `fallback` code is named by no pin, divergence entry, Drools exclusion or gate-6/12 channel
+   entry, and a fault reporting only a `fallback` code is a code other than the pinned one. Every emitted parameter
+   is a key of the parameter column of ch. 5.7b; the case pairs that differ in a parameter only are told apart by
+   their pinned `params` (stale-guarded). A §9.5 channel fact carries the EF codes of its kinds (ch. 5.6); a golden
+   `inconsistent` expectation may pin one (`code`), gates 5, 6 and 12 hold the executors to it, and this gate holds
+   every such code to a row of ch. 5.7b on the §9.5 channel. Floors: `EXPECTED_MIN_RED_CASES`,
+   `EXPECTED_MIN_RED_CODES`, `EXPECTED_MIN_RED_PARAMS`, `EXPECTED_MIN_EF_CODES`, `EXPECTED_MIN_GOLDEN_CODES`,
+   `EXPECTED_MIN_DROOLS_EXCLUDE_CODES`, `EXPECTED_MIN_DROOLS_PARAMS`, and in check-exec-codes
+   `EXPECTED_MIN_REF_CODES`, `EXPECTED_MIN_CLINGO_CODES`.
 
-17. `scripts/check-readings.sh` — the reading of a condition at the
-    fixpoint (RUNTIME-SEMANTICS ch. 5.12; card
-    `ref-trace-and-readings-gate`, 2026-10-21). The reference
-    interpreter's trace (`runner --trace`, `ref/lib/reading.ml`: per form
-    with a condition and object it runs on, the evaluation of the
-    condition on the fixpoint world through an observer on ref's own
-    evaluation, recorded per node) and the Drools backend's readings
-    (`DroolsBackendMain --readings`, card `fixpoint-readings`) are held
-    equal per golden case file, in the canonical text of ch. 5.12, on
-    both branches of the backend; the two share no code (gate 1). The
-    trace must read every golden case file, also of a golden the backend
-    does not carry; per golden both branches must end in `READINGS <n>`,
-    n its case files, or in the same `EXCLUDE` line the plain replay
-    prints, so no golden the square plays escapes the comparison; an
-    `ERROR` fails unless the golden stands in the reason-carrying
-    `READINGS_ERROR_KNOWN` (empty since card `reading-after-refusal`,
-    2026-10-21: the four goldens it held, whose build with readings
-    refused after a form the transpiler refused part-way, are compared
-    as `EXCLUDE` since `meet` closes the reading of a refused form).
-    Every line is compared verbatim except the position of a
-    contributor of a quantifier fold: since the card
-    `fold-contributor-verdicts` (2026-10-21) ch. 5.12 records the table
-    of ch. 3.9a at that node, so per contributor the member and its
-    verdict, value or fault are compared verbatim, and its position
-    (`reached`/`unreached`) where both write one (`unordered` where the
-    backend's session keeps no order). Where the backend writes
-    `unordered`, no contributor of the trace may carry a fault (a
-    tripwire, held on a listed case too). A difference fails unless the
-    reason-carrying `DEVIATIONS` names the case and the branch (empty
-    since the gate began); both lists fail when stale, in both
-    directions, and the comparison rule passes fourteen rows of its own and
-    the tripwire three. Floors `EXPECTED_MIN_TRACED_CASES=835`,
-    `EXPECTED_MIN_COMPARED_GOLDENS=261`, `EXPECTED_MIN_COMPARED_CASES=706`,
-    `EXPECTED_MIN_READINGS=3826`, `EXPECTED_MIN_NODE_LINES=13971`,
-    `EXPECTED_MIN_UNREACHED=3118`, `EXPECTED_MIN_CONTRIBUTOR_LINES=314`
-    and `EXPECTED_MIN_TIMELINE_LINES=850` (measured 2026-11-04, card `ref-trace-period-arithmetic`; first set 2026-10-21), and
-    `EXPECTED_MIN_UNREACHED_CONTRIBUTORS=106` (contributors of the trace
-    not reached, measured 2026-10-21, card `fold-contributor-verdicts`).
-    Since the card `reading-read-objects` (2026-10-27) a node that reads
-    a member over a path of roles writes, after its value, the object the
-    path reached (`on "<object>"`, `on none` where a link is absent;
-    ch. 5.12, "The object of a read"), compared verbatim with the rest of
-    its line; floor `EXPECTED_MIN_OBJECT_LINES=746` (measured 2026-10-27),
-    and the reader of that object passes five rows of its own.
-    Since the card `readings-of-displaced-defaults` (2026-10-27) a
-    default that a higher default of its chain displaced is read as at
-    its turn and keeps the status `DISPLACED` (ch. 5.12, "A displaced
-    default is read"); its node lines are compared verbatim like every
-    other, and floor `EXPECTED_MIN_DISPLACED_NODE_LINES=484` (measured
-    2026-10-27, 207 readings) counts them, its counter passing two rows
-    of its own.
-    Since the card `defaults-per-period-on-timeline` (step B, 2026-11-04) a
-    default of a group on a timeline target is read per day on both sides
-    (ch. 5.12, "A default on a timeline target"): its justification per
-    period, its consequence where that holds on some day, its root the
-    filled segments within the justification's periods, the status `HOLDS`
-    where it is at its turn on some day and `DISPLACED` where on none; its
-    lines are compared verbatim as every other, and no floor moved.
-    Since the card `absence-markers` (2026-11-04) a constructor value is
-    written as its tag quoted and, for a unary constructor, its payload in
-    parentheses (ch. 5.12).
-    Since the card `reading-and-uniqueness-residue` (2026-11-05) a node of a
-    condition read per period carries the fault it raises or passes on, as
-    in a scalar condition, and a `Let` through which a rule on a timeline
-    target reads its producer has, with the read of its binder, the
-    producer's timeline (ch. 5.12); the golden
-    `jutterswet-voorwaarde-buiten-de-beurt` reads such a fault in a default
-    at its turn on no day.
-    Since the card `timeline-initialisation-allocation-creation` (step B,
-    2026-11-05) an initialisation on a timeline target is read on both
-    sides as ch. 5.12 reads it: `DISPLACED` without nodes where the writers
-    and the input leave it no day, and else its condition and its value,
-    the root the filled segments of its value within the periods of its
-    condition.
-    The jar is taken fresh or rebuilt (`scripts/lib/drools-jar.sh`). The
-    traces run on one process per core, the readings and the plain
-    replays on one per two cores with the replay flags of
-    `scripts/lib/parallel.sh`, and the outputs are judged in the order of
-    the corpus (card `parallel-gate-replays`, 2026-10-25). An
-    empty comparison is a failure, never silently green. CI leg
-    unconditional and blocking.
+9. `scripts/check-catala.sh` — the Catala frontend builds and its full suite passes (E2E through verifier, ref and
+   clingo, plus the refusal fixtures); every golden carrying a `source.catala_en` regenerates through the plugin
+   byte-identically after canonicalisation (gate 2's serialiser, executed from that script). A suite that ran zero
+   checks or a missing catala installation fails. The `gates.yml` job (maintainer decision 2026-08-24) runs it where
+   catala is on the bare PATH or in the runner's opam switch and skips loudly elsewhere. Floors:
+   `EXPECTED_MIN_CHECKS`, `EXPECTED_MIN_GOLDENS`.
 
-**Counting floors (maintainer decision 2026-09-09).** Beside the non-empty
-checks and the name-carrying lists, every gate whose count could shrink unseen
-carries an `EXPECTED_MIN_<name>` constant in its own script, with its reason
-and its measurement date, and fails naming both the measured number and the
-floor. They are lower bounds, not equalities: they catch shrink — a suite that
-quietly runs half, a corpus zone that quietly halves — while growth needs no
-bump, so an ordinary corpus card touches no protected script. Raising a floor
-is a deliberate act, done at an occasion; a deliberate removal lowers it in the
-same commit. The accepted weakness, recorded rather than hidden: a count that
-stays equal while its content shifted passes, and the name-carrying lists are
-what cover that direction. Gate 12's `EXPECTED_PLAYED` stays an equality
-(decision 2026-09-06) — this regime generalised from it and does not reopen it.
-A gate that gets no floor carries one sentence in its script saying why.
+10. `scripts/check-regelspraak.sh` — the RegelSpraak frontend (`frontends/regelspraak`, jar-only: JDK 21+, ANTLR and
+    JUnit jars fetched into a gitignored `lib/`) builds and its JUnit suite passes; every golden carrying a
+    `source.rgs` re-emits through `--ir` byte-identically. The frontend renders Dutch by default; its Makefile copies
+    `src/main/resources` to `out/`. Floors: `EXPECTED_MIN_GOLDENS`, `EXPECTED_MIN_TESTS`. It first calls
+    `scripts/check-rgs-codes.sh`: every message the frontend raises, and the three the Drools backend raises itself,
+    carries a code `RGS-###` and named parameters (`Diagnostic(severity, code, params, message, line)`; the code is
+    not on the wire) from one register,
+    `frontends/regelspraak/src/main/resources/dev/uchar/regelspraak/diagnostic-codes.tsv`, held to the sources in
+    both directions (codes passed and registered, parameter names agreeing, no three-argument `new Diagnostic(`
+    outside `IrLoader`). The two catalogues under `.../regelspraak/message/` (Dutch, English) are held to the
+    register: every code has an entry in both languages, every entry belongs to a code, part, frame or shared part,
+    the places of an entry are parameters of its code, every brace is a place or doubled; a site passes code and
+    parameters and no text (the argument count of every call form), also as `new Msg(Component.FRONTEND, code,
+    params(...))` for an exception text a user sees. An English entry carries no Dutch function word except a listed
+    (entry, word) pair. A Dutch entry equal to its English sister fails unless it has no word outside its places and
+    quotations or `SAME_IN_BOTH` lists it; a Dutch entry with an English function word fails unless
+    `ENGLISH_EXCEPTIONS` lists entry and word; all three lists are reason-carrying and stale-failing. Floors:
+    `EXPECTED_MIN_RGS_CODES`, `EXPECTED_MIN_RGS_MESSAGES`, `EXPECTED_MIN_RGS_SAME_IN_BOTH`.
+
+11. `scripts/check-toka-parity.sh` — the `toka/` parity zone (see Corpus rules). The frontend builds and the TOKA
+    tests under `toka/` (two integration tests in original form and the semantic-token witness of the casus) compile
+    and pass against it; every toolchain-pinned `toka/**/ir.json` re-emits through uchar's frontend byte-identically.
+    This is a regression form: the zone migrates with every wire landing (the casus dump re-emitted by the frontend,
+    the slices through the landing's migration script), so the comparison proves frontend ≡ the recorded state;
+    `toka/README.md` lists each landing under its deliberate divergences. `HOLDOUTS` (casus quirks and fragments
+    where uchar deliberately diverges from the toolchain) is reason-carrying and stale-failing. A well-formedness leg
+    holds every replay slice verifier-clean (the workspace `_build` verifier), with `VERIFIER_HOLDOUTS`
+    reason-carrying and stale-failing; the casus dump stays outside it (its scenarios write the same targets each in
+    their own way). Floors: `EXPECTED_MIN_CASES`, `EXPECTED_MIN_FRAGMENTS`, `EXPECTED_MIN_TESTS`,
+    `EXPECTED_MIN_CLEAN`.
+
+12. `scripts/check-drools.sh` — the Drools differential leg of the square (maintainer decision 2026-08-27). The
+    backend (`backends/drools`, a shaded Maven runtime uber-jar, jar-only) loads every golden's `ir.json` off the
+    wire — never the RegelSpraak source, which serves only as an internal test comparison — builds a KieBase through
+    the exec-model branch, the lowering with truth maintenance (`transpiler/tms`), and replays every `case*.json`. A
+    played golden replays with exactly the expectations gates 5 and 6 verify: a played pass is ref ≡ clingo ≡ Drools.
+    What the lowering carries is in `backends/drools/README.md`. A form it does not carry is refused with a code
+    `DROOLS-###` from one register (`backends/drools/.../refusal/DroolsCode.java`) at the head of its report
+    (`EXCLUDE DROOLS-###: <sentence>`), grouped in the gate report. `EXPECTED_CHANNEL` lists every non-played golden
+    by name with its reason (played is the default), each `EXCLUDE` pin with its code: a golden that shifts channel,
+    a changed or missing code (both codes shown) and a stale pin fail by golden name. `EXCLUDE_KNOWN`, the
+    value-divergence list (a golden whose fired outcome differs from ref/clingo), is reason-carrying and
+    stale-failing. `EXPECTED_PLAYED` is an equality and catches a newly arrived player. The DRL-text branch is the
+    second rendering of the same analysis (a plan per rule, rendered as PatternDSL and as DRL text); per golden its
+    status line must equal the exec-model branch's verbatim, with no list or pin of its own, any other line failing
+    by name. The replay runs in two passes, exec-model then DRL text, the second only after the first is green. The
+    jar is taken fresh or rebuilt (`scripts/lib/drools-jar.sh`), and the backend's JUnit suite runs with
+    `mvn -o test` on the same `target/` and must pass with a non-zero, zero-skip count (maintainer decisions
+    2026-08-30 and 2026-10-25); surefire runs it in `forkCount` 0.5C JVMs with `reuseForks`
+    (`backends/drools/pom.xml`), the pom's system property and environment hold in every fork, and no test class
+    relies on state another class leaves in its JVM. The gate fails by name when the suite did not run
+    `BranchDumpsCorpusWitnessTest` (the two branches compared case by case over every golden and red case, the
+    `reading` section included), `ReadingRulesFixpointWitnessTest`, `ReadingsCorpusWitnessTest` or
+    `ReadingRulesObserverWitnessTest` — the witnesses of the build with readings
+    (`DroolsBackend.build(…, readings)`, read by `readingsOf`; a displaced default reads `DISPLACED`), whose
+    production build is byte-equal to the one without; their floors are in those classes. The backend renders
+    English by default; its suite runs under `uchar.messages.locale=nl`. Floor: `EXPECTED_MIN_TESTS`. It first calls
+    `scripts/check-drools-codes.sh`: the register held to the sources in both directions (every code raised except
+    those of kind `RETIRED`, which no place names and which keep their number; numbers without gap; keys unique;
+    every `ef` a row of RUNTIME-SEMANTICS ch. 5.7b), and the catalogues under `backends/drools/.../message/` held to
+    the register as in gate 10, with `EF_PLACES` for the places of a fault kind; a site names a code as
+    `DroolsCode.X.reason(name, value, ...)` or `.part(...)`. `SAME_IN_BOTH` (the fault-kind sentences the runtime
+    writes and `ComputeFault` reads back, sentences left English, the names of parts) and `ENGLISH_EXCEPTIONS` are
+    reason-carrying and stale-failing. Floors: `EXPECTED_MIN_DROOLS_CODES`, `EXPECTED_MIN_DROOLS_MESSAGES`,
+    `EXPECTED_MIN_DROOLS_SAME_IN_BOTH`.
+
+13. `scripts/check-reftype-derivation.sh` — annotation indifference (maintainer decision 2026-09-04): consumers derive
+    units from declarations and the effective-type law (RUNTIME-SEMANTICS §2.10), never from the wire annotation.
+    UNIT leg: for every golden with case files, every unit-bearing `type` annotation on a derived (composite)
+    position — a `percentageOf` included (ch. 2.6 rule 7); reference positions carry no `type` — is twisted
+    deterministically (a convertible sister unit, or decimals+1), and ref, clingo and both Drools branches must
+    reproduce the pinned outcomes (for a golden in gate 6's refusal channel, clingo's refusal of the untouched run
+    byte for byte), each leg against its own untouched status line; the DRL-text leg's untouched line equals the
+    exec-model branch's and it plays as many twistable goldens, never zero. Exemption positions (the Literal lexeme,
+    the duration operand of date arithmetic, the `duration` builtin's own unit) are named in the script; a
+    bookkeeping clamp fails when a unit-bearing annotation appears outside the twist table (the §2.10 fourth-class
+    witness); `SURVIVORS` is reason-carrying and stale-failing. VOCABULARY leg: every golden with `vocabularies` and
+    case files replays with the side table stripped, the vocabularies exchanged and the designations rotated within
+    each scope of WF-118 (IR-SPEC ch. 2.12). ORIGIN leg: every golden with an `origin` (ch. 2.13) replays with it
+    stripped. NAME leg: every golden whose defaults carry a `name` (ch. 6.1) replays with every name and every
+    `statuteAnnotations` of a Default stripped. In those three legs the four executors must reproduce the untouched
+    outcome, with no survivor list. The four legs run as four processes; a Drools run on an untouched golden that
+    ends in no status line (`PLAYED`, `FAIL`, `EXCLUDE`, `ERROR`) fails by golden, leg and executor. Floors:
+    `EXPECTED_MIN_TWISTS`, `EXPECTED_MIN_VOCABULARY_GOLDENS`, `EXPECTED_MIN_VOCABULARY_STRIPPED`,
+    `EXPECTED_MIN_VOCABULARY_ROTATED`, `EXPECTED_MIN_ORIGIN_GOLDENS`, `EXPECTED_MIN_ORIGIN_STRIPPED`,
+    `EXPECTED_MIN_NAME_GOLDENS`, `EXPECTED_MIN_NAME_STRIPPED`, `EXPECTED_MIN_ANNOTATIONS_STRIPPED`.
+
+14. `scripts/check-flogic.sh` — the F-logic frontend (`frontends/flogic`, plain OCaml in the workspace dune build, no
+    external toolchain) builds and its suite passes: it emits every test program, holds it verifier-clean, replays
+    its cases through ref and clingo, and drives one fixture per refusal, checking the reason and the citation of the
+    mandate document. Every golden carrying a `source.flogic` re-emits byte-identically after canonicalisation (gate
+    2's serialiser). Zero checks or a missing dune fails. Floors: `EXPECTED_MIN_CHECKS`, `EXPECTED_MIN_GOLDENS`.
+
+15. `scripts/check-graph.sh` — the rule graph of the Drools backend (`backends/drools/.../graph/`, the reading of the
+    IR the distribution's scope analysis consumes) holds to IR-SPEC ch. 5. SPEC leg: per golden the graph, built from
+    `ir.json` through the loader, is compared with the verifier's ch. 5 edges (`verifier --dependency-edges` from the
+    workspace `_build`, the list WF-045/046 walk) over attribute and characteristic nodes, whatever forms join them,
+    without the edge kind and the node's type (the graph keys a member on its declaring type); edges over a
+    population, relation or channel are counted per class and reported, not compared; a difference fails unless
+    `DELIBERATE_DIFFERENCE` lists it (one projected line with both lists and the reason, stale-failing in both
+    directions); a golden the loader refuses is reported with its form. ROUTE leg: on every golden with a
+    `source.rgs` the graph from the source route equals the one from the wire byte for byte, and the graph's unit
+    tests (`backends/drools/src/source-route`, compiled by the gate against the frontend and the jar) pass. Floors:
+    `EXPECTED_MIN_GOLDENS`, `EXPECTED_MIN_DEPENDENT`, `EXPECTED_MIN_SOURCE_ROUTE`, `EXPECTED_MIN_TESTS`.
+
+16. `scripts/check-scenario.sh` — the scenariotoetsen extension of the RegelSpraak frontend
+    (`frontends/regelspraak/grammar/DIVERGENCES.md`, "Scenariotoetsen"): every golden carrying a `scenario.rgs`
+    beside its `source.rgs` regenerates through `--cases` exactly its pinned case files (same names, none missing or
+    extra) byte-identically, and its `ir.json` byte-identically (without a scope the production route's document,
+    with one the forms the scope carries); the handwritten expectations are the anchor. Gate 4 checks the schema of
+    those case files, gates 5, 6 and 12 replay them. Floors: `EXPECTED_MIN_SCENARIO_GOLDENS`,
+    `EXPECTED_MIN_SCENARIO_CASES`.
+
+17. `scripts/check-readings.sh` — the reading of a condition at the fixpoint (RUNTIME-SEMANTICS ch. 5.12, which
+    defines the canonical text, timeline targets, constructor values and displaced defaults included). The ref
+    trace (`runner --trace`, `ref/lib/reading.ml`: per form with a condition and object it runs on, the condition
+    evaluated on the fixpoint world through an observer, per node) and the backend's readings
+    (`DroolsBackendMain --readings`) are held equal per golden case file, on both branches; the two share no code
+    (gate 1). The trace reads every golden case file; per golden both branches end in `READINGS <n>`, n its case
+    files, or in the `EXCLUDE` line the plain replay prints; an `ERROR` fails unless `READINGS_ERROR_KNOWN` lists
+    it. Every line is compared verbatim — the object a role path reached (`on "<object>"`, `on none`) and a
+    `DISPLACED` default's node lines included — except the position of a contributor of a quantifier fold: member
+    and verdict, value or fault are compared verbatim, the position (`reached`/`unreached`) where both write one
+    (`unordered` where the session keeps no order), and where the backend writes `unordered` no contributor of the
+    trace may carry a fault (a tripwire, held on a listed case too). A difference fails unless `DEVIATIONS` names case
+    and branch; both lists are reason-carrying and stale-failing in both directions, and the comparison rule, the
+    tripwire, the object reader and the displaced counter pass rows of their own. Traces run on one process per
+    core. Floors: `EXPECTED_MIN_TRACED_CASES`, `EXPECTED_MIN_COMPARED_GOLDENS`, `EXPECTED_MIN_COMPARED_CASES`,
+    `EXPECTED_MIN_READINGS`, `EXPECTED_MIN_NODE_LINES`, `EXPECTED_MIN_UNREACHED`, `EXPECTED_MIN_CONTRIBUTOR_LINES`,
+    `EXPECTED_MIN_TIMELINE_LINES`, `EXPECTED_MIN_UNREACHED_CONTRIBUTORS`, `EXPECTED_MIN_OBJECT_LINES`,
+    `EXPECTED_MIN_DISPLACED_NODE_LINES`.
+
+**Counting floors (maintainer decision 2026-09-09).** Beside the non-empty checks and the name-carrying lists, every
+gate whose count could shrink unseen carries an `EXPECTED_MIN_<name>` constant in its own script, with its reason and
+measurement date, and fails naming both the measured number and the floor. Floors are lower bounds: they catch shrink,
+and growth needs no bump, so an ordinary corpus card touches no protected script. Raising a floor is a deliberate act;
+a deliberate removal lowers it in the same commit. The accepted weakness: a count that stays equal while its content
+shifted passes; the name-carrying lists cover that direction. Gate 12's `EXPECTED_PLAYED` stays an equality (decision
+2026-09-06). A gate that gets no floor carries one sentence in its script saying why.
 
 ## Repo relationships
 
