@@ -9261,6 +9261,27 @@ let () =
                 time_period = Some { gp_granularity = true; gp_negated = false }; source_name = None })))
     "whole-period qualifier on a comparison whose operands are not a time-dependent attribute"
 
+(* WV-1.2-exact, the worked examples of ch. 1.2 "The exact-digit test"
+   verbatim: N = 9 over a text attribute, through the condition evaluator *)
+let () =
+  let doc = { empty_doc with object_types = [ ot "Jutter" [ ("registratienummer", Some Text_type) ] [] ] } in
+  let ev ?(negation = false) v =
+    let attrs = match v with Some s -> [ ("registratienummer", Value.Text s) ] | None -> [] in
+    let w = World.add_instance World.empty (inst "J1" "Jutter" attrs) in
+    Eval.eval_cond (env_of doc) w (World.get w "J1") ~err:no_err
+      (Predicate
+         { variety = Exact_digits; operand = Some (aref "registratienummer" "Jutter"); day_kind = None; negation;
+           digit_chars = 9; time_period = None; source_name = None })
+  in
+  check "WV-1.2-exact-123456782" (ev (Some "123456782"));
+  check "WV-1.2-exact-012345678" (ev (Some "012345678"));
+  check "WV-1.2-exact-12345678" (not (ev (Some "12345678")));
+  check "WV-1.2-exact-1234567890" (not (ev (Some "1234567890")));
+  check "WV-1.2-exact-minus" (not (ev (Some "-12345678")));
+  check "WV-1.2-exact-space" (not (ev (Some "1234 5678")));
+  check "WV-1.2-exact-leeg" (not (ev None));
+  check "WV-1.2-exact-leeg-negated" (ev ~negation:true None)
+
 (* WV-3.9-exact, ch. 3.9 "The test per day" read on the exact-digit test of
    ch. 1.2 verbatim: registratienummer per month, N = 9, 2026 has 365 days.
    Each tuple is: under the year grid the test, its inner negation and the
