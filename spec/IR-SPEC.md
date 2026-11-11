@@ -10365,8 +10365,7 @@ them for evaluation, but no leg of gate 13 removes them yet.
 Format per rule: statement (in ch. 2–4), verifier check, golden case,
 negative case. `OPEN` = the artifact does not exist yet; an `OPEN` entry is
 tracked debt under the spec discipline, and the Phase-1 exit requires every
-row closed or its OPEN motivated in the row itself (one motivated OPEN
-remains: WF-019's negative has no data-shaped counterexample). "gate 3" = implemented in `spec/verifier/` and run by
+row closed or its OPEN motivated in the row itself. "gate 3" = implemented in `spec/verifier/` and run by
 `scripts/check-verifier.sh` over every golden and negative case; a
 parenthesis names the clause the v0 wire format cannot carry (that clause
 stays OPEN with the reason). Negatief cases live in
