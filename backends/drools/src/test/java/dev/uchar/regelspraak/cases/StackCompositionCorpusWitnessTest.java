@@ -53,7 +53,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       and a default that decides itself (an own consequence or decision, an ordinary rule) has exactly one rule of
  *       its own decision there, {@code fallback} where it carries exception groups and {@code own} where it carries
  *       none, while a group-default (exception groups and no own content) has none, only the rules that reconcile
- *       its exception groups;</li>
+ *       its exception groups; so has an inherited form-a base an own base replaced, which stays in the stack as the
+ *       group-default of its exception groups (ch. 7.10, block 3);</li>
  *   <li>against {@code decisionsOf}: on every case of every golden with a defaults group that the exec-model branch
  *       plays, the root chains of each record are the chains at the root of its stack's composition, pointer for
  *       pointer. The stack of a record is the one whose type ({@code Stack.type}) is the object's type and whose member
@@ -203,7 +204,7 @@ class StackCompositionCorpusWitnessTest {
                 }
         }
         for (List<StackComposition.Entry> chain : c.chains()) blockOrder(where, ir, model, type, chain, differences, counts);
-        ownership(where, ir, all, rules, differences, counts);
+        ownership(where, ir, c, all, rules, differences, counts);
     }
 
     /** Every entry of {@code c}, at any depth, in the order of the composition. */
@@ -320,10 +321,11 @@ class StackCompositionCorpusWitnessTest {
     /**
      * Against {@code originOf}: every default of a rule of the stack stands in the composition, and every entry that
      * decides itself has exactly one rule of its own decision, {@code fallback} with exception groups and {@code own}
-     * without; a group-default has none.
+     * without; a group-default has none, and neither has a replaced base ({@link #replacedBases}).
      */
-    private static void ownership(String where, JsonNode ir, List<StackComposition.Entry> all, List<RuleOrigin> rules,
-                                  List<String> differences, Map<String, Integer> counts) {
+    private static void ownership(String where, JsonNode ir, StackComposition c, List<StackComposition.Entry> all,
+                                  List<RuleOrigin> rules, List<String> differences, Map<String, Integer> counts) {
+        Set<String> replaced = replacedBases(ir, c);
         Set<String> inComposition = new HashSet<>();
         for (StackComposition.Entry e : all) inComposition.add(e.pointer());
         Map<String, List<RuleOrigin.Role>> deciding = new HashMap<>();
@@ -336,8 +338,8 @@ class StackCompositionCorpusWitnessTest {
         }
         for (StackComposition.Entry e : all) {
             JsonNode d = ir.at(e.pointer());
-            boolean decidesItself = RULE_VERSION.matcher(e.pointer()).matches() || d.has("consequence")
-                    || d.has("decision");
+            boolean decidesItself = !replaced.contains(e.pointer())
+                    && (RULE_VERSION.matcher(e.pointer()).matches() || d.has("consequence") || d.has("decision"));
             List<RuleOrigin.Role> expected = !decidesItself ? List.of()
                     : List.of(e.exceptions() != null ? RuleOrigin.Role.FALLBACK : RuleOrigin.Role.OWN);
             List<RuleOrigin.Role> actual = deciding.getOrDefault(e.pointer(), List.of());
@@ -346,6 +348,30 @@ class StackCompositionCorpusWitnessTest {
                         + ", verwacht " + expected);
             if (decidesItself) counts.merge("met een eigen beslissing", 1, Integer::sum);
         }
+    }
+
+    /** The root entries of {@code c} that stand for an inherited base an own base replaced (ch. 7.10, block 3): a
+     *  default that is the base of its group in the document, its lowest default that is no initialisation, with
+     *  exception groups, above another ordinary entry of its chain. The document gives it a consequence, but in this
+     *  stack it keeps only its exception groups, as a group-default, and decides nothing itself. */
+    private static Set<String> replacedBases(JsonNode ir, StackComposition c) {
+        Set<String> out = new HashSet<>();
+        for (List<StackComposition.Entry> chain : c.chains()) {
+            int lowestOrdinary = -1;
+            for (int i = 0; i < chain.size(); i++)
+                if (!ir.at(chain.get(i).pointer()).path("initialisation").asBoolean(false)) lowestOrdinary = i;
+            for (int i = 0; i < lowestOrdinary; i++) {
+                StackComposition.Entry e = chain.get(i);
+                Matcher d = ROOT_DEFAULT.matcher(e.pointer());
+                if (e.exceptions() == null || !d.matches()) continue;
+                JsonNode defaults = ir.at("/rules/prioritizedDefaults/" + d.group(1) + "/defaults");
+                int base = -1;
+                for (int j = 0; j < defaults.size(); j++)
+                    if (!defaults.get(j).path("initialisation").asBoolean(false)) base = j;
+                if (Integer.parseInt(d.group(2)) == base) out.add(e.pointer());
+            }
+        }
+        return out;
     }
 
     /** The pointer {@code p} names a node of {@code ir} that writes {@code member}: a {@code Default} of a group on it,
