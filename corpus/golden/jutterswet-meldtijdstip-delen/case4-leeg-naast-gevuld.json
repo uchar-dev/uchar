@@ -1,0 +1,71 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "M1",
+        "objectType": "Melding",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "M2",
+        "objectType": "Melding",
+        "attributes": {
+          "meldtijdstip": {
+            "dateTime": "2024-02-29T08:00:00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "M1",
+      "attribute": "meldjaar"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "M1",
+      "attribute": "meldmaand"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "M1",
+      "attribute": "melddag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M2",
+      "attribute": "meldjaar",
+      "value": {
+        "number": "2024"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M2",
+      "attribute": "meldmaand",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M2",
+      "attribute": "melddag",
+      "value": {
+        "number": "29"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

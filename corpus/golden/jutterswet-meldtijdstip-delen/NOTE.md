@@ -29,8 +29,10 @@ division gives day −1, 1969-12-31: **1969**, **12**, **31** (a division
 toward zero would give day 0, 1970-01-01). M2 1600-02-29T12:00:00 lies on the
 leap day of 1600 (divisible by 400): **1600**, **2**, **29**.
 
-`case4-leeg.json`: M1 without a meldtijdstip: the three parts of a leeg date
-are leeg (ch. 1.2), meldjaar, meldmaand and melddag **leeg**.
+`case4-leeg-naast-gevuld.json`: M1 without a meldtijdstip: the three parts of
+a leeg date are leeg (ch. 1.2), meldjaar, meldmaand and melddag **leeg**. M2
+2024-02-29T08:00:00 beside it, on a leap day: **2024**, **2**, **29**, so
+that an executor that writes nothing fails the case (gate 7).
 
 ## Executors
 
