@@ -19206,6 +19206,38 @@ let () =
                   (fun e -> match member "label" e with `String "J3" -> true | `Null -> true | _ -> false)
                   (to_list (member "expected" case))) ))
 
+(* RUNTIME-SEMANTICS ch. 3.9, 3.12: under the whole-period qualifier no
+   comparison of dates has a reading, an equality and an inequality as well
+   as an ordering. ref's fixture whole-period-date-ordering with a date
+   literal as the bound, which this encoding would otherwise fold *)
+let () =
+  let open Yojson.Safe.Util in
+  let read f = In_channel.with_open_bin f In_channel.input_all in
+  let dir = "ref/test/fixtures/whole-period-date-ordering/" in
+  let map_field k f = function
+    | `Assoc kv -> `Assoc (List.map (fun (k', v) -> if k' = k then (k', f v) else (k', v)) kv)
+    | j -> j
+  in
+  let literal =
+    Yojson.Safe.from_string
+      {|{ "node": "Literal", "value": { "date": "2025-01-01" }, "type": { "node": "Date", "precision": "day" },
+          "source": { "snippet": "1 januari 2025" } }|}
+  in
+  let with_op op =
+    let on_condition c = c |> map_field "op" (fun _ -> `String op) |> map_field "right" (fun _ -> literal) in
+    let on_version = map_field "condition" on_condition in
+    Yojson.Safe.from_string (read (dir ^ "ir.json"))
+    |> map_field "rules"
+         (map_field "rules"
+            (fun rs -> `List (List.map (map_field "versions" (fun vs -> `List (List.map on_version (to_list vs)))) (to_list rs))))
+    |> Yojson.Safe.to_string
+  in
+  List.iter
+    (fun op ->
+      faults_with ~name:("a whole-period comparison of dates, " ^ op) ~ir:(with_op op)
+        ~case_text:(read (dir ^ "case.json")) ~needle:"gives no comparison of dates a reading")
+    [ "equal"; "notEqual"; "later" ]
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

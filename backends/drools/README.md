@@ -1027,7 +1027,7 @@ never as a silent fall:
 - of the whole-period qualifier, with no golden with cases: the negation inside the qualifier of a characteristic
   check ("gedurende het gehele jaar niet …", ch. 3.9) on a scalar target, where the qualifier folds; and what the
   reference interpreter does not fold either: a comparison over a timeline read over a path, between two timelines or
-  with none, and a date ordering (ch. 3.9, 3.12);
+  with none, and every comparison of dates, an equality and an inequality included (ch. 3.9, 3.12);
 - of day kinds: the dayKind predicate as a condition, which the reference interpreter and the ASP backend refuse
   outside a definition (ch. 3.12, 5.4); a duration in whole days of a kind between two date-times, which they refuse as
   well (ch. 3.8, 3.12); and a form that steps or counts in a day kind whose definition does not compile: one that tests

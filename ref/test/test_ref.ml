@@ -14146,6 +14146,30 @@ let () =
       check "WV-3.9-datumordening-geweigerd: verifier-clean" (findings = []);
       expect_fault_msg "WV-3.9-datumordening-geweigerd" evaluate "a date-valued whole-period comparison")
 
+(* WV-3.9-datumgelijkheid-geweigerd: the fixture above with "gelijk aan" and
+   "ongelijk aan" in place of "later": an equality and an inequality of dates
+   under the qualifier have no reading either (ch. 3.9, 3.12 row 5) *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/whole-period-date-ordering/" in
+  let ir = read (dir ^ "ir.json") in
+  let slot = "\"op\": \"later\"" in
+  (* the slot must occur exactly once, or the variant tests another document *)
+  let with_op op =
+    let lines = String.split_on_char '\n' ir in
+    if List.length (List.filter (fun l -> String.trim l = slot ^ ",") lines) <> 1 then
+      failwith "WV-3.9-datumgelijkheid-geweigerd: the comparison operator does not occur exactly once";
+    String.concat "\n"
+      (List.map (fun l -> if String.trim l = slot ^ "," then "\"op\": \"" ^ op ^ "\"," else l) lines)
+  in
+  List.iter
+    (fun op ->
+      let ident = "WV-3.9-datumgelijkheid-geweigerd-" ^ op in
+      with_files ~ir:(with_op op) ~case_data:(read (dir ^ "case.json")) (fun findings _ evaluate ->
+          check (ident ^ ": verifier-clean") (findings = []);
+          expect_fault_msg ident evaluate "a date-valued whole-period comparison"))
+    [ "equal"; "notEqual" ]
+
 (* WV-4.2-omrekenen-in-een-verdeling: the golden jutterswet-rangmaximering
    (1800 EUR over five Wachters, ordered by wachtjaar, capped, whole euros)
    with one attribute moved to the sister unit ct = 1/100 EUR. The recurrence

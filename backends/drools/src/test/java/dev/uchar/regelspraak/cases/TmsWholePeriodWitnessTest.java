@@ -583,6 +583,25 @@ class TmsWholePeriodWitnessTest {
                         refusal(MODEL_R, trouw(twoTimelines))));
     }
 
+    /** A Jutter with a timeline of dates, {@code wachtdatum}, beside {@link #MODEL_R}'s characteristic {@code trouw}. */
+    static final String MODEL_D = TmsDocuments.model(List.of(objectType("Jutter", List.of(
+            timeAttribute("wachtdatum", TmsDocuments.DATE, "month")), List.of(characteristic("trouw")))), List.of());
+
+    /** RUNTIME-SEMANTICS ch. 3.9, 3.12: under the qualifier no comparison of dates has a reading, an equality and an
+     *  inequality as well as an ordering, so all three are refused in one sentence (DROOLS-246). Red on e24af972a:
+     *  equal and notEqual were refused as a side that is no number (DROOLS-247). */
+    @Test void every_comparison_of_dates_under_the_qualifier_is_refused_as_without_reading() throws Exception {
+        for (String[] op : new String[][] {{"equal", "gelijk is aan"}, {"notEqual", "ongelijk is aan"},
+                {"later", "later is dan"}}) {
+            String source = "zijn wachtdatum gedurende het gehele jaar " + op[1] + " 2025-01-01";
+            String rule = trouw(wholeComparison(op[0], ownRead("wachtdatum", "Jutter"),
+                    TmsDocuments.literal("2025-01-01", TmsDocuments.DATE), whole(true, false), source));
+            assertEquals("transpiler SKIP: regel: trouw — een Comparison met wholePeriod ('" + source + "') met een"
+                    + " datumvergelijking: een datum over een gehele periode heeft geen lezing (RUNTIME-SEMANTICS"
+                    + " ch. 3.9, 3.12)", refusal(MODEL_D, rule), op[0]);
+        }
+    }
+
     /** The refusal of the document of {@code model} with the one rule {@code rule}, as the build raises it. */
     static String refusal(String model, String rule) throws Exception {
         Path ir = TmsTimelineDocuments.document(model, List.of(rule), List.of());

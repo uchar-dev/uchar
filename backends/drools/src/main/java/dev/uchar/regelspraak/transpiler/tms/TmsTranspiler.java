@@ -7164,7 +7164,7 @@ public final class TmsTranspiler {
      * fault. Where the timeline stands on the right, the
      * operator is reversed, never negated: on a leeg day the two differ. Refused by name, as the reference interpreter
      * folds none of them: a timeline read over a path (ch. 3.12: it folds no navigated comparison), two timelines, no
-     * timeline, a date ordering (ch. 3.12) and a side that is no number. A bound read over a path is a value like any
+     * timeline, every comparison of dates (ch. 3.12) and a side that is no number. A bound read over a path is a value like any
      * other. The timeline is read before the bound, as the reference interpreter reads them.
      */
     private Term wholePeriodComparison(Condition.Comparison v, Reads reads) {
@@ -7182,6 +7182,9 @@ public final class TmsTranspiler {
         if (testCode == null)
             throw new Refusal(DroolsCode.WHOLE_PERIOD_DATE_COMPARISON.reason("description", description));
         Member member = timeMember(reads.subject, time.attribute(), false, description);
+        // an equality of dates has no reading under the qualifier either (ch. 3.9, 3.12), not merely no fold here
+        if (member.datatype().isDate())
+            throw new Refusal(DroolsCode.WHOLE_PERIOD_DATE_COMPARISON.reason("description", description));
         if (!member.datatype().isNumberLike() || !eff.typeOf(boundExpr).isNumberLike())
             throw new Refusal(DroolsCode.PERIOD_NON_NUMERIC_COMPARE.reason("description", description));
         int timeline = reads.timeline(member);

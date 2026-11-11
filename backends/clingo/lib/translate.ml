@@ -8210,6 +8210,15 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~left_side ~right_side ~(gp 
            its operands"
           subject_ot
   in
+  (* ch. 3.9 gives no comparison of dates a reading under the qualifier, an
+     equality and an inequality as well as an ordering (ch. 3.12) *)
+  (match attr_datatype ctx ~otype:subject_ot ~attr:a with
+  | Some (Date_in_days | Date_time_type) ->
+      fault
+        "a whole-period comparison over the timeline of dates %S is not translated: ch. 3.9 gives \
+         no comparison of dates a reading under the qualifier (ch. 3.12)"
+        a
+  | _ -> ());
   bucket_scalar_guard ctx ~holder:subject
     ~reach:(fun () -> rule_reach ctx ~subject ~subject_ot read)
     ~otype:subject_ot ~attr:a ~sentence:(qualifier_sentence a);
@@ -8259,9 +8268,8 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~left_side ~right_side ~(gp 
     | Equal -> "=="
     | Not_equal -> "!="
     | Earlier | Earlier_or_equal | Later | Later_or_equal ->
-        (* a date-typed timeline: ref's ordering is the same integer
-           comparison, but no corpus case folds one over a period, and the
-           scale harmonisation below is the numeric one *)
+        (* a date timeline is refused above; an earlier or later over any
+           other type has no ch. 3.9 reading either *)
         fault
           "a whole-period comparison with a DATE ordering is not translated (no corpus case \
            folds a date timeline over a period)"
