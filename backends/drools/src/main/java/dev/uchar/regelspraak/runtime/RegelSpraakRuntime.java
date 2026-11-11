@@ -439,10 +439,11 @@ public final class RegelSpraakRuntime {
     public static java.time.LocalDateTime rsDatumtijdMet(Object jaar, Object maand, Object dag, Object uur,
             Object minuut, Object seconde, Object milli) {
         if (jaar == null || maand == null || dag == null || uur == null || minuut == null || seconde == null || milli == null) return null;
+        // the year first (ch. 3.8): one beyond an int lies outside the range, which its exact conversion would hide
+        toetsJaar(toBd(jaar), DATUMTIJD_BUITEN_BEREIK);
         int j = toBd(jaar).intValueExact(), m = toBd(maand).intValueExact(), d = toBd(dag).intValueExact();
         int u = toBd(uur).intValueExact(), mi = toBd(minuut).intValueExact(), s = toBd(seconde).intValueExact(),
                 ms = toBd(milli).intValueExact();
-        toetsJaar(toBd(jaar), DATUMTIJD_BUITEN_BEREIK);
         toetsKalenderdag("dateTimeWith", j, m, d);
         if (u < 0 || u > 23 || mi < 0 || mi > 59 || s < 0 || s > 59 || ms < 0 || ms > 999)
             throw new IllegalStateException(Msg.drools("EF-032.time", "function", "dateTimeWith", "hour", u,
