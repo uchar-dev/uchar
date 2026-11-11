@@ -67,8 +67,11 @@ final class ClosureRendering {
                 ValueFunction l = valueFunction(d.left()), r = valueFunction(d.right());
                 Implementation f = implementation(d.function());
                 int depositFlag = d.depositFlag();
+                boolean lazy = d.emptyDividendDecides();
                 yield w -> {
-                    Object lv = l.of(w), rv = r.of(w);
+                    Object lv = l.of(w);
+                    // a leeg dividend gives the quotient before the divisor is read (RUNTIME-SEMANTICS ch. 1.4 point 4)
+                    Object rv = lazy && lv == null ? null : r.of(w);
                     return f.of(new Object[]{lv, rv, depositFlag < 0 ? null : w[depositFlag]});
                 };
             }

@@ -76,7 +76,9 @@ final class RecordingRendering {
                 yield ComputeHelpers.restateExact(value(h.term(), w), h.counter(), h.denominator());
             }
             case Term.Division d -> {
-                Object lv = value(d.left(), w), rv = value(d.right(), w);
+                Object lv = value(d.left(), w);
+                // a leeg dividend gives the quotient before the divisor is read, which stays unreached (ch. 1.4 point 4)
+                Object rv = d.emptyDividendDecides() && lv == null ? null : value(d.right(), w);
                 yield ClosureRendering.implementation(d.function()).of(new Object[]{lv, rv,
                         d.depositFlag() < 0 ? null : w[d.depositFlag()]});
             }

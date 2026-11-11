@@ -291,6 +291,19 @@ final class DrlRendering {
         throw new IllegalStateException("no wrapper for " + k);
     }
 
+    /** Whether evaluating {@code t} can neither fault, deposit nor end a {@code Let}: a constant, a bound value, a read
+     *  of an input and a call that cannot fail, over such terms. */
+    private static boolean inert(Term t) {
+        return switch (t) {
+            case Term.Const x -> true;
+            case Term.SlotValue x -> true;
+            case Term.Input i -> inert(i.object());
+            case Term.Restate h -> inert(h.term());
+            case Term.Call a -> !a.function().canFail() && a.arguments().stream().allMatch(DrlRendering::inert);
+            default -> false;
+        };
+    }
+
     /** An expression of the Java dialect with its static type, null for the null literal. */
     private record Expr(String text, Class<?> type) {}
 
@@ -1015,10 +1028,8 @@ final class DrlRendering {
                 case Term.Call a -> call(a.function(), a.arguments().stream().map(x -> value(x, c)).toList());
                 case Term.Restate h -> call(StaticFunction.RESTATE_EXACT,
                         List.of(value(h.term(), c), constant(h.counter()), constant(h.denominator())));
-                case Term.Division d -> {
-                    Expr left = value(d.left(), c), right = value(d.right(), c);
-                    yield call(d.function(), List.of(left, right, depositFlag(d.depositFlag(), c)));
-                }
+                case Term.Division d -> d.emptyDividendDecides() && !inert(d.right()) ? lazyDivision(d, c) : call(
+                        d.function(), List.of(value(d.left(), c), value(d.right(), c), depositFlag(d.depositFlag(), c)));
                 case Term.SquareRoot w -> call(w.function(), List.of(value(w.radicand(), c), depositFlag(w.depositFlag(), c)));
                 case Term.Fail f -> routeCall(Route.FAIL, List.of(constant(f.sentence())));
                 case Term.Required v -> routeCall(Route.REQUIRED, List.of(value(v.value(), c), constant(v.sentence())));
@@ -1197,6 +1208,23 @@ final class DrlRendering {
          * at the first read and serves that result to every further read. A leeg value raises the barrier of that cell,
          * which the {@code Let}'s own function catches as leeg; a barrier of an enclosing {@code Let} passes on.
          */
+        /** A division whose divisor can fault, deposit or end a {@code Let}, as a function that evaluates the
+         *  dividend first and the divisor only where the dividend is filled: a leeg dividend gives the quotient before
+         *  the divisor is read (RUNTIME-SEMANTICS ch. 1.4 point 4). Java evaluates every argument of a call, so a
+         *  division whose divisor has no effect stays the plain call. */
+        private Expr lazyDivision(Term.Division d, Context c) {
+            int place = reserveer();
+            String name = name("deling", place);
+            String left = value(d.left(), c).text();
+            Expr right = value(d.right(), c), flag = depositFlag(d.depositFlag(), c);
+            Expr empty = new Expr("null", null), dividend = new Expr("deeltal", Object.class);
+            fill(place, d.source(), "Object " + name + "(" + c.declaration() + ")",
+                    "    Object deeltal = " + left + ";\n    return deeltal == null ? (Object) "
+                            + call(d.function(), List.of(empty, empty, flag)).text() + " : (Object) "
+                            + call(d.function(), List.of(dividend, right, flag)).text() + ";\n");
+            return new Expr(name + "(" + c.pass() + ")", Object.class);
+        }
+
         private String let(Term.Let l, Context c) {
             int place = reserveer();
             String name = name("let", place);

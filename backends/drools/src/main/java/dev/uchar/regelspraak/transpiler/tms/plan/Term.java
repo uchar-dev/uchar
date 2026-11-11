@@ -95,12 +95,20 @@ public sealed interface Term {
                      String source) implements Term {}
 
     /**
-     * A division, {@code left} by {@code right}, both evaluated in that order, through {@code function}
+     * A division, {@code left} by {@code right}, evaluated in that order, through {@code function}
      * ({@link StaticFunction#DIVIDED} or {@link StaticFunction#DIVIDED_ABS}) with the probe of the rule's §6.5 deposit: where a filled
      * dividend meets a leeg divisor the probe in slot {@code depositFlag} of the value array hears it, and with {@code depositFlag}
-     * -1 the place does not deposit (RUNTIME-SEMANTICS ch. 1.2). A numeric zero divisor is the fault of ch. 1.4.
+     * -1 the place does not deposit (RUNTIME-SEMANTICS ch. 1.2). A numeric zero divisor is the fault of ch. 1.4. Where
+     * {@link #emptyDividendDecides} a leeg dividend gives the quotient before the divisor is read, so the divisor is not
+     * evaluated and neither faults nor deposits (ch. 1.4 point 4).
      */
-    record Division(StaticFunction function, Term left, Term right, int depositFlag, String source) implements Term {}
+    record Division(StaticFunction function, Term left, Term right, int depositFlag, String source) implements Term {
+        /** Whether a leeg dividend decides the quotient without the divisor: the scalar divisions; not the division of
+         *  a timeline per period, nor the inverted base of a power, whose right operand is the exponent. */
+        public boolean emptyDividendDecides() {
+            return function == StaticFunction.DIVIDED || function == StaticFunction.DIVIDED_ABS;
+        }
+    }
 
     /**
      * A square root of {@code radicand} through {@code function} ({@link StaticFunction#RADICAND} under a rounding, the
