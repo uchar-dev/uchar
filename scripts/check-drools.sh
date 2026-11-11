@@ -1607,7 +1607,9 @@ EXPECTED_CHANNEL=(
 # period-arithmetic producer through a Let (PLAYED 2).
 # 368 with jutterswet-rangmaximering-maximum-in-centen: an ordered allocation whose caps are declared in ct and its pot
 # in EUR, the cap restated into the unit of the pot before the min and the floor (RUNTIME-SEMANTICS ch. 4.2; PLAYED 1).
-EXPECTED_PLAYED=368
+# 369 with jutterswet-rangmaximering-in-centen: the same allocation with cap, share and rest in ct, the shares and the
+# rest written through the assignment gate from EUR into ct (RUNTIME-SEMANTICS ch. 4.2, 2.4; PLAYED 1).
+EXPECTED_PLAYED=369
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
