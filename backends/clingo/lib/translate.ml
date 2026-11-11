@@ -597,6 +597,12 @@ type ctx = {
      total carries a scale that is no power of ten, and only a rounding divides
      it away ([calendar_weights]) *)
   mutable calendar_rounding : bool;
+  (* the validity gates (RUNTIME-SEMANTICS ch. 8.2) the rules being emitted
+     wait for: the atom of the window of the form being translated, which
+     holds where the session's evaluation date lies in it ([validity_gate]).
+     Empty for a form without a bounded window *)
+  mutable form_gate : string list;
+  mutable windows : int;
 }
 
 (* S ⊑ T, for the OCaml-side scans over case instances. The ASP side does
@@ -761,6 +767,7 @@ let emit ctx fmt = Printf.ksprintf (fun s -> Buffer.add_string ctx.buf (s ^ "\n"
    conjunction of several where none of them is a literal of [rule_guard]. An
    empty [head] writes an integrity constraint *)
 let emit_rule ctx ~head ~(body : string list) =
+  let body = body @ ctx.form_gate in
   let text = (if head = "" then ":- " else head ^ " :- ") ^ String.concat ", " body ^ "." in
   unkeyed_form_read ctx ~head ~body text;
   Buffer.add_string ctx.buf (text ^ "\n")
@@ -786,6 +793,67 @@ let deposit ctx ~code ~rule ~subject (body : string list) =
   let body = body @ ctx.deposit_guard in
   emit_rule ctx ~head:(Printf.sprintf "inconsistent(%s,%s)" rule subject) ~body;
   emit_rule ctx ~head:(Printf.sprintf "inconsistent_code(%s,%s,%s)" rule subject (quote code)) ~body
+
+(* --- the validity gate (RUNTIME-SEMANTICS ch. 3.10, 5.6, 8.2) -------------
+   A version applies where the session's evaluation date lies in its window.
+   Every version is translated; the program carries the date as the fact
+   as_of/1 and each bounded window as the atom valid/1, derived by comparing
+   the two, and every rule of the version waits for that atom. A version
+   whose window excludes the date thus derives nothing, and the case input
+   of its target stands. A bounded window in a session without an evaluation
+   date is the fault EF-012, raised whatever the version would compute. *)
+
+(* a bound of a window, or the evaluation date, as a day number *)
+let validity_day ~what s =
+  match Value.date_of_iso s with
+  | Value.Date z -> z
+  | _ -> fault "validity gate: %s %S is not a date" what s
+  | exception Value.Fault { text = why; _ } ->
+      fault "validity gate: %s %S is not the ISO date lexeme yyyy-mm-dd (%s)" what s why
+
+let bounded_window (g : validity_window option) =
+  match g with None | Some { valid_from = None; valid_to = None } -> false | Some _ -> true
+
+let time_free_reason = "a validity-bounded form needs an evaluation date; this session is time-free"
+
+(* [f] translates a version whose window is [g]; its rules wait for the gate *)
+let validity_gate ctx (g : validity_window option) f =
+  match g with
+  | None | Some { valid_from = None; valid_to = None } -> f ()
+  | Some { valid_from; valid_to } ->
+      let from = Option.map (validity_day ~what:"validity.from") valid_from in
+      let up_to = Option.map (validity_day ~what:"validity.to") valid_to in
+      ctx.windows <- ctx.windows + 1;
+      let gate = Printf.sprintf "valid(%d)" ctx.windows in
+      let saved = ctx.form_gate in
+      ctx.form_gate <- [];
+      emit_rule ctx ~head:gate
+        ~body:
+          ("as_of(D)"
+          :: (Option.to_list (Option.map (Printf.sprintf "%d <= D") from)
+             @ Option.to_list (Option.map (Printf.sprintf "D <= %d") up_to)));
+      emit_viol ctx ~code:(guardc "EF-012") ~subject:(string_of_int ctx.windows) time_free_reason [ "not as_of(_)" ];
+      ctx.form_gate <- gate :: saved;
+      Fun.protect ~finally:(fun () -> ctx.form_gate <- saved) f
+
+(* [f] emits rules that belong to no version: a target's stack, whose input
+   stands where no version decides *)
+let ungated ctx f =
+  let saved = ctx.form_gate in
+  ctx.form_gate <- [];
+  Fun.protect ~finally:(fun () -> ctx.form_gate <- saved) f
+
+(* Whether a version applies on the evaluation date [as_of], for the refusals
+   this backend makes at translation, before a program exists: a creation it
+   cannot carry is refused only where the date admits it. A session without a
+   date admits it, and the program faults with EF-012 *)
+let admitted ~as_of (g : validity_window option) =
+  match (g, as_of) with
+  | (None | Some { valid_from = None; valid_to = None }), _ | _, None -> true
+  | Some { valid_from; valid_to }, Some d ->
+      let day = validity_day ~what:"asOfDate" d in
+      (match valid_from with Some f -> validity_day ~what:"validity.from" f <= day | None -> true)
+      && match valid_to with Some t -> day <= validity_day ~what:"validity.to" t | None -> true
 
 (* EF-036 (RUNTIME-SEMANTICS ch. 3.6): a total meets a segment with an open bound
    and a value other than 0. The whole-unit facts lie between days, so such a
@@ -952,18 +1020,6 @@ let register_bound ctx ~pred ~subject ~body ~term ~v =
 let fresh ctx prefix =
   ctx.fresh <- ctx.fresh + 1;
   Printf.sprintf "%s%d" prefix ctx.fresh
-
-(* the validity gate (RUNTIME-SEMANTICS ch. 3.10/5.6, gated at runtime
-   against the session's asOfDate — ch. 8.2): the mirror of ref's
-   [applies] (ref/lib/eval.ml), decision for decision. The translation is
-   per-case, so the case's asOfDate is a translation-time constant and
-   the runtime gate is decided HERE: a form whose window excludes the
-   date simply does not apply and emits nothing — no head, no helper, no
-   viol/2 fence (ref never evaluates it). The decision is ref's own
-   [Eval.window_admits], called rather than copied (card
-   ref-geldigheid-datumlezing): a bound or asOfDate that is not a date
-   refuses in both executors with one sentence. *)
-let applies ctx (g : validity_window option) = Eval.window_admits ~as_of:ctx.case.as_of g
 
 (* The EFFECTIVE object type (IR-SPEC ch. 2.2): the declaration with its
    member maps closed over the supertype chain. Every declaration lookup in
@@ -11809,7 +11865,6 @@ let init_writers ctx ~ot ~a =
   let co_writes ot' = List.exists (fun t -> List.mem t mine) (native_types ctx ~ot:ot' ~a) in
   let on_target (r : resolved_rule) =
     r.rr_presentation <> Some Characteristic_attribution
-    && applies ctx r.rr_validity
     &&
     match Ir_v0.Desugar.target_of r with
     | Some (ot', a') -> norm a' = norm a && co_writes ot'
@@ -11981,7 +12036,7 @@ let defeasible_input ctx ~otype ~attr =
            (fun (r : resolved_rule) ->
              match Ir_v0.Desugar.target_of r with
              | Some (t, a) ->
-                 norm a = norm attr && inherits t && applies ctx r.rr_validity && writer_index ctx r <> None
+                 norm a = norm attr && inherits t && writer_index ctx r <> None
              | None -> false)
            doc.resolved_rules
         || List.exists
@@ -12140,12 +12195,11 @@ let translate_timeline_initialisation ctx (r : resolved_rule) ~subject ~ot ~a ~c
     ~body:[ Printf.sprintf "initpiece(S,%s,_,_,X,Y)" a; Printf.sprintf "not initdecided(S,%s,X,Y)" a ]
 
 let translate_rule ctx (r : resolved_rule) =
-  (* the ch. 8.2 validity gate: an excluded rule does not apply — nothing
-     is emitted, so its target's case input stands untouched as the plain
-     val/3 fact. No inputval machinery waits on it: translate_case enters
-     an input defeasibly only for a computing rule that applies. An in-window
-     rule translates as any version-free rule. *)
-  if applies ctx r.rr_validity then begin
+  (* the ch. 8.2 validity gate: the rules of a version wait for its window
+     ([validity_gate]); the input of its target stands where no version
+     decides *)
+  validity_gate ctx r.rr_validity @@ fun () ->
+  begin
       let objective = req "RuleVersion.target" r.objective in
       ctx.rule_name <- Option.value r.rr_name ~default:"?";
       (* [a] is the member the target writes, its val/3 name: the attribute,
@@ -12485,10 +12539,11 @@ let translate_rule ctx (r : resolved_rule) =
                 (Printf.sprintf "wdecides(%s,%s)" subject (str a))
                 [ Printf.sprintf "wval(%s,%s,_,%d)" subject (str a) i ];
               if input_on ctx ~otype:ot ~attr:a then
-                head_body ctx
-                  (Printf.sprintf "val(%s,%s,V)" subject (str a))
-                  [ Printf.sprintf "inputval(%s,%s,V)" subject (str a); base;
-                    Printf.sprintf "not wdecides(%s,%s)" subject (str a) ]
+                ungated ctx (fun () ->
+                    head_body ctx
+                      (Printf.sprintf "val(%s,%s,V)" subject (str a))
+                      [ Printf.sprintf "inputval(%s,%s,V)" subject (str a); base;
+                        Printf.sprintf "not wdecides(%s,%s)" subject (str a) ])
           | _ -> ())
       | None -> faultc "CLINGO-026" "unsupported rule target")
   end
@@ -12550,11 +12605,11 @@ let bool_atoms ctx ~subject ~subject_ot (e : expr) : string list =
    The depth guard is part of every creation's body, so the grounding,
    which does not settle the conditions of the chain, stops there too. *)
 let translate_object_creation ctx i (oc : resolved_object_creation) =
-  (* the ch. 8.2 validity gate: an excluded creation does not apply —
-     nothing is minted, no back-link lands, no guard fires (ref skips the
-     whole form). The index [i] stays the iteration index, so the other
-     creations' oc%d terms are unchanged by a skipped neighbour. *)
-  if applies ctx oc.oc_validity then begin
+  (* the ch. 8.2 validity gate: the rules of a version wait for its window
+     ([validity_gate]); one the date excludes mints nothing, lays no link and
+     fires no guard *)
+  validity_gate ctx oc.oc_validity @@ fun () ->
+  begin
   ctx.rule_name <- Option.value oc.oc_name ~default:"?";
   let created = req "ObjectCreationVersion.createdType" oc.created_type in
   let subject_ot = req "ObjectCreationVersion.subject" oc.oc_subject in
@@ -12715,10 +12770,11 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
    symbolic form is the whole of the relational content; the wire
    requires it (B7). *)
 let translate_fact_creation ctx (fc : resolved_fact_creation) =
-  (* the ch. 8.2 validity gate: an excluded fact creation does not apply —
-     no role/3 lands and its to-one guards stay unemitted (ref adds no
-     link, so no second-filler fault can arise from this form) *)
-  if applies ctx fc.fc_validity then begin
+  (* the ch. 8.2 validity gate: the rules of a version wait for its window
+     ([validity_gate]); one the date excludes lays no link, so no
+     second-filler fault can arise from it *)
+  validity_gate ctx fc.fc_validity @@ fun () ->
+  begin
   let ftn = fc.fc_fact_type in
   let env = ctx.doc_env in
   let role rname = Eval.created_role env ~fact_type:ftn ~role:rname in
@@ -13232,8 +13288,9 @@ let translate_defaults_timeline ctx gidx ~base ~target_form ~a
     List.map
       (fun ((l, origins) : prioritized_defaults * string list) ->
         let out, cfl =
-          translate_chain_days ctx ~g ~cuts ~subject ~origins ~base ~path:[] ~a ~target_form ~has_input
-            ~outer_displaced:[] l.defaults
+          validity_gate ctx l.pd_validity (fun () ->
+              translate_chain_days ctx ~g ~cuts ~subject ~origins ~base ~path:[] ~a ~target_form ~has_input
+                ~outer_displaced:[] l.defaults)
         in
         (out, cfl, List.exists (fun (r : default) -> r.default_exceptions <> None) l.defaults))
       members
@@ -13316,32 +13373,10 @@ let translate_defaults_timeline ctx gidx ~base ~target_form ~a
    stack and the subtype's on one instance. *)
 let translate_defaults_group ctx gidx ~owner
     (members : (prioritized_defaults * string list) list) =
-  (* the ch. 8.2 validity gate, per member: an excluded member is
-     Undecided — no decision, no conflict, no §9.5 deposit (ref's
-     member_decision returns Undecided before a single default is
-     evaluated), so it simply leaves the group's member set. The group
-     reconciles the members that remain. *)
-  let l0, _ = List.hd members in
-  let members =
-    List.filter
-      (fun ((l, _) : prioritized_defaults * string list) -> applies ctx l.pd_validity)
-      members
-  in
-  if members = [] then (
-    (* every member excluded: the group decides nothing. The attribute
-       target's case input entered defeasibly (inputval/3 — translate_case
-       keys on the UNFILTERED defaults list), so the pass-through must still
-       be emitted, unconditionally, or the standing input would silently
-       vanish. A characteristic target has no defeasible entry; nothing
-       remains to emit. *)
-    match l0.pd_attribute with
-    | Some a ->
-        head_body ctx
-          (Printf.sprintf "val(S,%s,V)" (str a))
-          [ Printf.sprintf "inputval(S,%s,V)" (str a);
-            Printf.sprintf "is_a(S,%s)" (str owner) ]
-    | None -> ())
-  else begin
+  (* the ch. 8.2 validity gate, per member: the chain of a member waits for its
+     window ([validity_gate]), so a member the date excludes decides nothing —
+     Undecided, no conflict, no §9.5 deposit — and the group reconciles the
+     members that decide *)
   let l0, _ = List.hd members in
   ctx.desugared_group <- l0.pd_desugared;
   let subject = "S" in
@@ -13387,8 +13422,9 @@ let translate_defaults_group ctx gidx ~owner
     List.map
       (fun ((l, origins) : prioritized_defaults * string list) ->
         let out, cfl =
-          translate_chain ctx ~is_char ~subject ~origins ~base ~path:[]
-            ~root:true ~target_form ~target_scale ~target_unbounded ~has_input ~outer_displaced:[] l.defaults
+          validity_gate ctx l.pd_validity (fun () ->
+              translate_chain ctx ~is_char ~subject ~origins ~base ~path:[]
+                ~root:true ~target_form ~target_scale ~target_unbounded ~has_input ~outer_displaced:[] l.defaults)
         in
         (out, cfl, List.exists (fun (r : default) -> r.default_exceptions <> None) l.defaults))
       members
@@ -13447,7 +13483,6 @@ let translate_defaults_group ctx gidx ~owner
     head_body ctx (Printf.sprintf "val(%s,%s,V)" subject (str target_name))
       [ Printf.sprintf "inputval(%s,%s,V)" subject (str target_name); base; "not " ^ eff ]
   end
-  end
 
 (* allocation (RUNTIME-SEMANTICS ch. 4): the ch. 4.2 recurrence over
    ordered recipient groups, in integer arithmetic — all three methods.
@@ -13461,14 +13496,6 @@ let translate_defaults_group ctx gidx ~owner
    non-fitting write — here an exactness viol/2 at the target scale,
    never a silent floor. *)
 let translate_allocation ctx i (v : resolved_allocation) =
-  (* windows on the untranslated-window forms fault LOUDLY (rules,
-     prioritized defaults and creations pass the ch. 8.2 gate): an
-     unwindowed translation of a windowed allocation would silently apply
-     outside its window *)
-  (match v.vd_validity with
-  | Some { valid_from = Some _; _ } | Some { valid_to = Some _; _ } ->
-      fault "allocation validity windows are not translated (no corpus case)"
-  | _ -> ());
   let method_name = req "AllocationVersion.method" v.vd_method in
   let bt = req "AllocationVersion.sourceType" v.source_type and dt = req "AllocationVersion.targetType" v.objective_type_name in
   let ba = req "AllocationVersion.sourceAttribute" v.source_attribute and da = req "AllocationVersion.targetAttribute" v.target_attribute in
@@ -13968,11 +13995,6 @@ let translate_allocation ctx i (v : resolved_allocation) =
         ~sum:(Printf.sprintf "S,X : %sshare(B,X,S)" p)
 
 let translate_consistency ctx i (c : resolved_consistency) =
-  (* the allocation-window sibling: loud, never silently unwindowed *)
-  (match c.cons_validity with
-  | Some { valid_from = Some _; _ } | Some { valid_to = Some _; _ } ->
-      fault "consistency-check validity windows are not translated (no corpus case)"
-  | _ -> ());
   let name = Option.value c.cons_name ~default:(Printf.sprintf "consistentie%d" i) in
   (* a division inside the assertion deposits its channel fact under
      THIS name, like ref's err collector (the verify lens caught the
@@ -14024,11 +14046,6 @@ let uni_key_atom ctx ~otype ~label ~pos k =
   else Printf.sprintf "val(%s,%s,K%d)" label (str k) pos
 
 let translate_uniqueness ctx (u : resolved_uniqueness) =
-  (* the allocation-window sibling: loud, never silently unwindowed *)
-  (match u.uni_validity with
-  | Some { valid_from = Some _; _ } | Some { valid_to = Some _; _ } ->
-      fault "uniqueness validity windows are not translated (no corpus case)"
-  | _ -> ());
   let name = Option.value u.uni_name ~default:"uniciteit" in
   let subject_ot = req "Source.objectType" u.uni_subject in
   let keys = List.map (req "Source.keys entry") u.key_list in
@@ -14068,11 +14085,6 @@ let union_key_scale ctx ~otype ~attr =
    sources, so 5 and 5.00 collide exactly as the runtime's value equality
    does. *)
 let translate_uniqueness_union ctx i (u : resolved_uniqueness_union) =
-  (* the allocation-window sibling: loud, never silently unwindowed *)
-  (match u.uu_validity with
-  | Some { valid_from = Some _; _ } | Some { valid_to = Some _; _ } ->
-      fault "uniqueness-union validity windows are not translated (no corpus case)"
-  | _ -> ());
   let name = Option.value u.uu_name ~default:(Printf.sprintf "uniciteitsunie%d" i) in
   let arity =
     match u.source_list with
@@ -14343,7 +14355,7 @@ let writer_conflicts ctx =
       (fun (i, (r : resolved_rule)) ->
         match Ir_v0.Desugar.target_of r with
         | Some (ot, a)
-          when applies ctx r.rr_validity && writer_index ctx r <> None && not (attr_temporal ctx ~otype:ot ~attr:a) ->
+          when writer_index ctx r <> None && not (attr_temporal ctx ~otype:ot ~attr:a) ->
             Some (i, r, ot, a)
         | _ -> None)
       (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_rules)
@@ -14524,15 +14536,14 @@ let form_strata (forms : Ir_v0.Checks.dep_form array) : int array =
    strata do. The graph is the verifier's ([Ir_v0.Checks.dep_forms]), built
    over the document as loaded, which is the graph ref stratifies, and the
    strata are ref's ([form_strata]). A creation version that the case's
-   date excludes makes nothing and is not translated
-   ([translate_object_creation] and [translate_fact_creation] skip it), so
-   it is not refused, and it does not count as a creation that reaches a
-   writer either. The boundary between the two is deliberate: the test
-   asks whether a later generation can change the value read, and the
-   source of such a change is a creation; a version the date excludes
-   mints and links nothing, in this backend and in ref alike, so no
-   generation brings a change from it, and the same gate that leaves it
-   untranslated ([applies], ref's [Eval.window_admits]) decides that here.
+   date excludes makes nothing (its rules wait for its window,
+   [validity_gate]), so it is not refused, and it does not count as a
+   creation that reaches a writer either. The boundary between the two is
+   deliberate: the test asks whether a later generation can change the value
+   read, and the source of such a change is a creation; a version the date
+   excludes mints and links nothing, in this backend and in ref alike, so no
+   generation brings a change from it. This refusal is made before a program
+   exists, so the window is compared here as well ([admitted]).
    The writers and the cycles between them stay read off the static graph,
    as above. With "geef door" valid from 2027-01-01 and a case on
    2026-01-01 no executor lays a maatschap, only W1 is ervaren, and ref and
@@ -14634,18 +14645,15 @@ let refuse_creation_reads_on_a_cycle (doc : document) ~as_of =
       let kind, _ = kind_of p in
       Printf.sprintf "%s \"%s\"" kind (name_of p)
     in
-    (* whether the backend translates the creation version at form [i] for
-       the case's date: [translate_object_creation] and
-       [translate_fact_creation] gate every version on [applies], which is
-       [Eval.window_admits], the predicate below that leaves a creation
-       version the date excludes unasked *)
+    (* whether the creation version at form [i] applies on the case's date:
+       one the date excludes makes nothing, so it is left unasked *)
     let translated i =
       let at = at_of i in
       match List.find_opt (fun (o : resolved_object_creation) -> o.oc_pointer = at) doc.object_creations with
-      | Some o -> Eval.window_admits ~as_of o.oc_validity
+      | Some o -> admitted ~as_of o.oc_validity
       | None -> (
           match List.find_opt (fun (f : resolved_fact_creation) -> f.fc_pointer = at) doc.fact_creations with
-          | Some f -> Eval.window_admits ~as_of f.fc_validity
+          | Some f -> admitted ~as_of f.fc_validity
           | None ->
               failwith
                 (Printf.sprintf
@@ -14707,7 +14715,7 @@ let refuse_creation_reads_on_a_cycle (doc : document) ~as_of =
         in
         let member (t : assignment) = req "MemberAssignment.member" t.to_attribute in
         match List.find_map on_the_cycle o.assignments with
-        | Some (t, node, p) when Eval.window_admits ~as_of o.oc_validity ->
+        | Some (t, node, p) when admitted ~as_of o.oc_validity ->
             fault
               "object creation \"%s\": the assignment of %s reads %s, which %s writes on a \
                dependency cycle through the creation (admitted by WF-045 through a recursive group) \
@@ -14719,7 +14727,7 @@ let refuse_creation_reads_on_a_cycle (doc : document) ~as_of =
         | Some _ -> ()
         | None -> (
             match List.find_map in_the_stratum o.assignments with
-            | Some (t, node, p, d) when Eval.window_admits ~as_of o.oc_validity ->
+            | Some (t, node, p, d) when admitted ~as_of o.oc_validity ->
                 fault
                   "object creation \"%s\": the assignment of %s reads %s, which %s writes, and %s, \
                    on a dependency cycle in the creation's own stratum (admitted by WF-045 through a \
@@ -14869,7 +14877,7 @@ let refuse_creation_reads_on_a_cycle (doc : document) ~as_of =
     List.iter
       (fun (kind, at, subject, condition, validity) ->
         match condition with
-        | Some condition when Eval.window_admits ~as_of validity -> (
+        | Some condition when admitted ~as_of validity -> (
             let c = index_of at in
             match condition_offence c ~form:subject condition with
             | Some (node, p) ->
@@ -15211,7 +15219,8 @@ let translate_guarded (doc : document) (case : Case.t) : string * guards =
       lets = []; let_serial = 0; demands = []; parts = []; part_serial = 0; order_atoms = [];
       demand_reaches = []; order_guards = []; order_asks = []; hoisted = [];
       before_arm = []; signs = []; sign_helpers = []; oc_strata;
-      form_subject = None; anchored = []; member_reach = lazy []; calendar_rounding = false }
+      form_subject = None; anchored = []; member_reach = lazy []; calendar_rounding = false; form_gate = [];
+      windows = 0 }
   in
   check_parameter_set wire_doc case;
   emit ctx "%% generated by backends/clingo from uchar-ir-v1 + uchar-case-v0.";
@@ -15220,6 +15229,22 @@ let translate_guarded (doc : document) (case : Case.t) : string * guards =
   emit ctx "#defined inconsistent_code/3.";
   emit ctx "#defined inputval/3. #defined inputtl/5. #defined viol/2. #defined inputrole/3.";
   payload_projections ctx;
+  (* the evaluation date the validity gates compare with ([validity_gate]),
+     written where a form carries a bounded window *)
+  if
+    List.exists bounded_window
+      (List.map (fun (r : resolved_rule) -> r.rr_validity) doc.resolved_rules
+      @ List.map (fun (o : resolved_object_creation) -> o.oc_validity) doc.object_creations
+      @ List.map (fun (f : resolved_fact_creation) -> f.fc_validity) doc.fact_creations
+      @ List.map (fun (v : resolved_allocation) -> v.vd_validity) doc.allocations
+      @ List.map (fun (l : prioritized_defaults) -> l.pd_validity) doc.prioritized_defaults
+      @ List.map (fun (c : resolved_consistency) -> c.cons_validity) doc.consistencies
+      @ List.map (fun (u : resolved_uniqueness) -> u.uni_validity) doc.uniquenesses
+      @ List.map (fun (u : resolved_uniqueness_union) -> u.uu_validity) doc.uniqueness_unions)
+  then begin
+    emit ctx "#defined as_of/1.";
+    Option.iter (fun d -> emit ctx "as_of(%d)." (validity_day ~what:"asOfDate" d)) case.as_of
+  end;
   (* the fold family's reified lists (S15): declared so a case with an absent
      list source leaves lpres/lelem head-less without a grounding warning *)
   emit ctx "#defined lpres/1. #defined lelem/3.";
@@ -15282,7 +15307,10 @@ let translate_guarded (doc : document) (case : Case.t) : string * guards =
   timeline_input ctx;
   List.iter (fun f -> each_form (fun () -> translate_fact_creation ctx f)) doc.fact_creations;
   List.iteri (fun i o -> each_form (fun () -> translate_object_creation ctx i o)) doc.object_creations;
-  List.iteri (fun i a -> each_form (fun () -> translate_allocation ctx i a)) doc.allocations;
+  List.iteri
+    (fun i (a : resolved_allocation) ->
+      each_form (fun () -> validity_gate ctx a.vd_validity (fun () -> translate_allocation ctx i a)))
+    doc.allocations;
   (* One stack per (CONCRETE type, target): the block order of ch. 7.10
      composed the inherited declarations into it, so what is translated here
      is already the effective stack. In a document without a supertype edge
@@ -15295,9 +15323,18 @@ let translate_guarded (doc : document) (case : Case.t) : string * guards =
      (fun gidx (owner, _key, members, _contributors) ->
        each_form (fun () -> translate_defaults_group ctx gidx ~owner members))
      groups);
-  List.iteri (fun i c -> each_form (fun () -> translate_consistency ctx i c)) doc.consistencies;
-  List.iter (fun u -> each_form (fun () -> translate_uniqueness ctx u)) doc.uniquenesses;
-  List.iteri (fun i u -> each_form (fun () -> translate_uniqueness_union ctx i u)) doc.uniqueness_unions;
+  List.iteri
+    (fun i (c : resolved_consistency) ->
+      each_form (fun () -> validity_gate ctx c.cons_validity (fun () -> translate_consistency ctx i c)))
+    doc.consistencies;
+  List.iter
+    (fun (u : resolved_uniqueness) ->
+      each_form (fun () -> validity_gate ctx u.uni_validity (fun () -> translate_uniqueness ctx u)))
+    doc.uniquenesses;
+  List.iteri
+    (fun i (u : resolved_uniqueness_union) ->
+      each_form (fun () -> validity_gate ctx u.uu_validity (fun () -> translate_uniqueness_union ctx i u)))
+    doc.uniqueness_unions;
   ctx.anchored <- !all_anchored;
   emit_barriers ctx;
   refuse_order_dependent ctx;

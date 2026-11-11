@@ -8847,11 +8847,11 @@ let () =
    2026-09-23). This translator decided the gate itself by comparing the
    raw strings, as ref did; a day-first bound moved its window and the
    program answered silently (on jutterswet-vensterheffing, a day-first tot
-   kept the transition version on: 140 where leeg is right). It now calls
-   ref's [Eval.window_admits], so a bound that is not a date refuses before
-   any program is grounded. WF-101 keeps such bounds out of the corpus;
-   these pins are the only witnesses. They pin the WHOLE sentence, the
-   reader's reason included, as ref's suite does: one refusal for both. *)
+   kept the transition version on: 140 where leeg is right). It reads every
+   bound as a date, so a bound that is not one refuses before any program is
+   grounded. WF-101 keeps such bounds out of the corpus; these pins are the
+   only witnesses. They pin the WHOLE sentence, the reader's reason included,
+   in the words ref's suite pins. *)
 let () =
   (* a bound is written where there is one: absent is open *)
   let window_ir starting_at up_to =
@@ -19268,6 +19268,35 @@ let () =
       clingo_matches ~name:("the desugaring's snippet on a wire group, " ^ c) ~ir
         ~case_text:(corpus (golden ^ c)))
     [ "case2-nul-valt-door.json"; "case3-leeg-valt-door.json"; "case9-onwaar-met-nul.json" ]
+
+(* THE VALIDITY GATE OF EVERY FORM (RUNTIME-SEMANTICS ch. 8.2). A consistency
+   whose window the evaluation date excludes asserts nothing: the golden
+   jutterswet-keurspelling with its first consistency, "geen wrakhout ter
+   keuring", valid up to 2025-12-31, read on 2026-06-01 over a wrakhout vondst.
+   This backend refused a window on a consistency, an allocation or a
+   uniqueness at translation, where ref plays the form; every form's rules
+   now wait for its window. *)
+let () =
+  let golden = "corpus/golden/jutterswet-keurspelling/" in
+  let open Yojson.Safe.Util in
+  let map_field k f = function
+    | `Assoc kv -> `Assoc (List.map (fun (k', v) -> if k' = k then (k', f v) else (k', v)) kv)
+    | j -> j
+  in
+  let window = `Assoc [ ("node", `String "Validity"); ("to", `String "2025-12-31") ] in
+  let bounded c = map_field "versions" (fun vs -> `List (List.map (map_field "validity" (fun _ -> window)) (to_list vs))) c in
+  let doc = Yojson.Safe.from_string (corpus_file (golden ^ "ir.json")) in
+  let consistencies = doc |> member "rules" |> member "consistencies" |> to_list in
+  let consistencies = List.mapi (fun i c -> if i = 0 then bounded c else c) consistencies in
+  let ir = Yojson.Safe.to_string (map_field "rules" (map_field "consistencies" (fun _ -> `List consistencies)) doc) in
+  let case_text =
+    {|{ "format": "uchar-case-v0", "asOfDate": "2026-06-01",
+  "input": { "instances": [ { "label": "V1", "objectType": "Vondst",
+      "attributes": { "staat": { "enumeration": "wrakhout" }, "herkeuring": { "enumeration": "wrakhout" } },
+      "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }|}
+  in
+  both_answer ~name:"a consistency the evaluation date excludes asserts nothing" ~ir ~case_text
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total

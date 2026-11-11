@@ -98,32 +98,33 @@ the channel are matched version-stripped by both executors' checkers
 (`RUNTIME-SEMANTICS.md` ch. 5.6).
 
 **The validity gate** (IR-SPEC ch. 3.10 Validity; RUNTIME-SEMANTICS
-ch. 8.2 gates it at runtime against the session's `asOfDate`). One
-case, one program also fixes the evaluation date: the case's
-`asOfDate` is a translation-time constant, so ref's *runtime* gate is
-decided at translation, decision for decision (`applies`, which since
-2026-09-23 calls ref's `Eval.window_admits` — one shared gate). A rule, a defaults
-member, an object creation or a fact creation whose window excludes
-the date **does not apply**: nothing of it is emitted — no head, no
-helper predicate, no `viol/2` fence (ref never evaluates an excluded
-form, so a zero divisor or range hazard inside one must not fault
-here either). Window bounds are read through the strict date
-reader and compared as day numbers, both ends inclusive, by ref's own
-gate; a non-date bound faults naming position and lexeme, and a
-non-date `asOfDate` is refused by the shared case loader; a *bounded* window in a
-time-free session (`asOfDate` null) faults with ref's own reason
-(`a validity-bounded form needs an evaluation date; this session is
-time-free`), so the two executors refuse identically. An excluded rule
-is no writer of its target's stack (S10), so a target whose writers are
-all excluded keeps its case input as the plain `val/3` fact — with one
-seam handled explicitly: a defaults
-*group* whose members are all excluded still emits the unconditional
-pass-through `val(S,a,V) :- inputval(S,a,V), is_a(S,ot).`, because
-the defeasible entry keys on the unfiltered defaults list (S10/S17).
-Windows on the forms the gate does not carry — allocation,
-consistency checks, uniqueness — fault loudly (S19). Witness:
-`jutterswet-vensterheffing` (one rule inside its window, one before
-it, replayed at an `asOfDate` on each side).
+ch. 8.2 gates it at runtime against the session's `asOfDate`). Every
+version of every form is translated, and the program decides which
+apply. Where a form carries a bounded window the program holds the
+evaluation date as the fact `as_of(D)`, `D` its day number, and per
+bounded window the atom `valid(K) :- as_of(D), F <= D, D <= T.` with
+the window's bounds as day numbers, both ends inclusive, an absent
+bound left out. Every rule the version emits carries `valid(K)` in its
+body, so a version whose window excludes the date derives nothing — no
+head, no helper predicate, no `viol/2` witness (ref never evaluates an
+excluded form, so a zero divisor or range hazard inside one does not
+fault here either). This holds for rules, defaults members, object and
+fact creations, allocations, consistency checks, uniqueness and the
+uniqueness union. The rules that belong to a target's stack rather than
+to a version — the pass-through by which the case input stands where no
+writer decides — carry no gate, so an input whose writers are all
+excluded stands. A *bounded* window in a time-free session (`asOfDate`
+null) is the witness `viol("a validity-bounded form needs an
+evaluation date; this session is time-free",K) :- not as_of(_).`, the
+fault EF-012. A bound that is not an ISO date lexeme faults at
+translation naming position and lexeme; a non-date `asOfDate` is
+refused by the shared case loader. The refusals this backend makes
+before a program exists (a creation on a dependency cycle, ch. 5.5)
+compare the window with the date at translation, so a version the date
+excludes is not refused. Witnesses: `jutterswet-vensterheffing` (one
+rule inside its window, one before it, replayed at an `asOfDate` on
+each side), `jutterswet-opvolgerversies`, `jutterswet-dubbelverbinding`,
+`jutterswet-uitsluiting-gedateerd`.
 
 ### S2. Case input: facts and types
 
@@ -2967,15 +2968,7 @@ v1 (goldens `division-by-numeric-zero`, `division-abs-by-numeric-zero`),
 where it was the v0-mirror hard fault until then.
 
 *Constructs and shapes without a corpus case (fault at translation):*
-validity windows on the forms OUTSIDE the ch. 8.2 gate — allocation,
-consistency checks, uniqueness and the uniqueness union (`… validity
-windows are not translated (no corpus case)`; before the gate landed
-for rules, defaults members and creations these forms silently ignored
-their window, so the fault is new and load-bearing: an unwindowed
-translation would apply outside its window) — while windows on rules,
-defaults members and both creation forms now translate (S1's validity
-gate, `jutterswet-vensterheffing`), including the time-free refusal
-both executors share; temporal targets
+temporal targets
 outside the ch. 3.7/3.8 fold shapes; the ten-minste-1 composite union (v0
 clips to the union of member regions; loud in both executors); the
 static-comparison composite member (v0 partitions it into a
