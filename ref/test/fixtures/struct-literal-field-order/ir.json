@@ -1,0 +1,697 @@
+{
+ "format": "uchar-ir-v1",
+ "model": {
+  "objectTypes": [
+   {
+    "node": "ObjectType",
+    "name": "Jutter",
+    "animate": true,
+    "plural": "Jutters",
+    "attributes": [
+     {
+      "node": "Attribute",
+      "name": "dossier",
+      "datatype": {
+       "node": "StructType",
+       "domain": "dossier",
+       "fields": [
+        {
+         "name": "waarde",
+         "datatype": {
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "nonNegative"
+         }
+        },
+        {
+         "name": "telling",
+         "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "nonNegative"
+         }
+        }
+       ]
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "dossiers",
+      "datatype": {
+       "node": "ListType",
+       "element": {
+        "node": "StructType",
+        "domain": "dossier",
+        "fields": [
+         {
+          "name": "waarde",
+          "datatype": {
+           "node": "Number",
+           "whole": false,
+           "decimals": 2,
+           "sign": "nonNegative"
+          }
+         },
+         {
+          "name": "telling",
+          "datatype": {
+           "node": "Number",
+           "whole": true,
+           "decimals": 0,
+           "sign": "nonNegative"
+          }
+         }
+        ]
+       }
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "premie",
+      "datatype": {
+       "node": "Number",
+       "whole": false,
+       "decimals": 2,
+       "sign": "nonNegative"
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "waardekopie",
+      "datatype": {
+       "node": "Number",
+       "whole": false,
+       "decimals": 2,
+       "sign": "nonNegative"
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "totaalwaarde",
+      "datatype": {
+       "node": "Number",
+       "whole": false,
+       "decimals": 2,
+       "sign": "unspecified"
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "samenvatting",
+      "datatype": {
+       "node": "StructType",
+       "domain": "dossier",
+       "fields": [
+        {
+         "name": "waarde",
+         "datatype": {
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "nonNegative"
+         }
+        },
+        {
+         "name": "telling",
+         "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "nonNegative"
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "characteristics": [
+     {
+      "node": "Characteristic",
+      "name": "dubbel",
+      "kind": "adjectival"
+     },
+     {
+      "node": "Characteristic",
+      "name": "afwijkend",
+      "kind": "adjectival"
+     }
+    ]
+   }
+  ],
+  "factTypes": [],
+  "parameters": [
+   {
+    "node": "Parameter",
+    "name": "opslag",
+    "datatype": {
+     "node": "Number",
+     "whole": false,
+     "decimals": 2,
+     "sign": "nonNegative"
+    }
+   }
+  ],
+  "domains": [
+   {
+    "node": "Domain",
+    "name": "dossier",
+    "datatype": {
+     "node": "StructType",
+     "fields": [
+      {
+       "name": "waarde",
+       "datatype": {
+        "node": "Number",
+        "whole": false,
+        "decimals": 2,
+        "sign": "nonNegative"
+       }
+      },
+      {
+       "name": "telling",
+       "datatype": {
+        "node": "Number",
+        "whole": true,
+        "decimals": 0,
+        "sign": "nonNegative"
+       }
+      }
+     ]
+    }
+   }
+  ],
+  "unitSystems": [],
+  "dimensions": [],
+  "timelines": [],
+  "dayKinds": []
+ },
+ "rules": {
+  "rules": [
+   {
+    "node": "Rule",
+    "name": "premie van een jutter",
+    "versions": [
+     {
+      "validity": {
+       "node": "Validity"
+      },
+      "target": {
+       "node": "AttributeReference",
+       "attribute": "premie",
+       "subjectType": "Jutter"
+      },
+      "value": {
+       "node": "Binary",
+       "op": "plus",
+       "left": {
+        "node": "FieldAccess",
+        "type": {
+         "node": "Number",
+         "whole": false,
+         "decimals": 2,
+         "sign": "nonNegative"
+        },
+        "base": {
+         "node": "AttributeReference",
+         "attribute": "dossier",
+         "subjectType": "Jutter"
+        },
+        "field": "waarde"
+       },
+       "right": {
+        "node": "ParameterReference",
+        "parameter": "opslag"
+       },
+       "type": {
+        "node": "Number",
+        "whole": false,
+        "decimals": 2,
+        "sign": "nonNegative"
+       }
+      },
+      "condition": {
+       "node": "Predicate",
+       "kind": "filled",
+       "operand": {
+        "node": "AttributeReference",
+        "attribute": "dossier",
+        "subjectType": "Jutter"
+       },
+       "negated": false,
+       "digits": 0
+      },
+      "initialisation": false,
+      "presentation": "calculation"
+     }
+    ]
+   },
+   {
+    "node": "Rule",
+    "name": "totaalwaarde van een jutter",
+    "versions": [
+     {
+      "validity": {
+       "node": "Validity"
+      },
+      "target": {
+       "node": "AttributeReference",
+       "attribute": "totaalwaarde",
+       "subjectType": "Jutter"
+      },
+      "value": {
+       "node": "Fold",
+       "type": {
+        "node": "Number",
+        "whole": false,
+        "decimals": 2,
+        "sign": "unspecified"
+       },
+       "list": {
+        "node": "MapList",
+        "type": {
+         "node": "ListType",
+         "element": {
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "nonNegative"
+         }
+        },
+        "list": {
+         "node": "AttributeReference",
+         "attribute": "dossiers",
+         "subjectType": "Jutter"
+        },
+        "function": {
+         "node": "Lambda",
+         "parameters": [
+          {
+           "name": "d",
+           "datatype": {
+            "node": "StructType",
+            "domain": "dossier",
+            "fields": [
+             {
+              "name": "waarde",
+              "datatype": {
+               "node": "Number",
+               "whole": false,
+               "decimals": 2,
+               "sign": "nonNegative"
+              }
+             },
+             {
+              "name": "telling",
+              "datatype": {
+               "node": "Number",
+               "whole": true,
+               "decimals": 0,
+               "sign": "nonNegative"
+              }
+             }
+            ]
+           }
+          }
+         ],
+         "body": {
+          "node": "FieldAccess",
+          "type": {
+           "node": "Number",
+           "whole": false,
+           "decimals": 2,
+           "sign": "nonNegative"
+          },
+          "base": {
+           "node": "BinderRef",
+           "name": "d"
+          },
+          "field": "waarde"
+         }
+        }
+       },
+       "function": {
+        "node": "Lambda",
+        "parameters": [
+         {
+          "name": "acc",
+          "datatype": {
+           "node": "Number",
+           "whole": false,
+           "decimals": 2,
+           "sign": "unspecified"
+          }
+         },
+         {
+          "name": "x",
+          "datatype": {
+           "node": "Number",
+           "whole": false,
+           "decimals": 2,
+           "sign": "nonNegative"
+          }
+         }
+        ],
+        "body": {
+         "node": "Binary",
+         "op": "plus",
+         "left": {
+          "node": "BinderRef",
+          "name": "acc"
+         },
+         "right": {
+          "node": "BinderRef",
+          "name": "x"
+         },
+         "type": {
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "unspecified"
+         }
+        }
+       },
+       "init": {
+        "node": "Literal",
+        "value": {
+         "number": "0.00"
+        },
+        "type": {
+         "node": "Number",
+         "whole": false,
+         "decimals": 2,
+         "sign": "unspecified"
+        }
+       }
+      },
+      "initialisation": false,
+      "presentation": "calculation"
+     }
+    ]
+   },
+   {
+    "node": "Rule",
+    "name": "samenvatting van een jutter",
+    "versions": [
+     {
+      "validity": {
+       "node": "Validity"
+      },
+      "target": {
+       "node": "AttributeReference",
+       "attribute": "samenvatting",
+       "subjectType": "Jutter"
+      },
+      "value": {
+       "node": "StructLiteral",
+       "type": {
+        "node": "StructType",
+        "domain": "dossier",
+        "fields": [
+         {
+          "name": "waarde",
+          "datatype": {
+           "node": "Number",
+           "whole": false,
+           "decimals": 2,
+           "sign": "nonNegative"
+          }
+         },
+         {
+          "name": "telling",
+          "datatype": {
+           "node": "Number",
+           "whole": true,
+           "decimals": 0,
+           "sign": "nonNegative"
+          }
+         }
+        ]
+       },
+       "fields": [
+        {
+         "name": "telling",
+         "value": {
+          "node": "ListLength",
+          "type": {
+           "node": "Number",
+           "whole": true,
+           "decimals": 0,
+           "sign": "nonNegative"
+          },
+          "list": {
+           "node": "AttributeReference",
+           "attribute": "dossiers",
+           "subjectType": "Jutter"
+          }
+         }
+        },
+        {
+         "name": "waarde",
+         "value": {
+          "node": "AttributeReference",
+          "attribute": "premie",
+          "subjectType": "Jutter"
+         }
+        }
+       ]
+      },
+      "initialisation": false,
+      "presentation": "calculation"
+     }
+    ]
+   },
+   {
+    "node": "Rule",
+    "name": "dubbel bij vast vondstdossier",
+    "versions": [
+     {
+      "validity": {
+       "node": "Validity"
+      },
+      "target": {
+       "node": "AttributeReference",
+       "attribute": "dubbel",
+       "subjectType": "Jutter"
+      },
+      "value": {
+       "node": "Literal",
+       "value": {
+        "boolean": true
+       },
+       "type": {
+        "node": "Boolean"
+       }
+      },
+      "condition": {
+       "node": "Comparison",
+       "op": "equal",
+       "left": {
+        "node": "AttributeReference",
+        "attribute": "dossier",
+        "subjectType": "Jutter"
+       },
+       "right": {
+        "node": "StructLiteral",
+        "type": {
+         "node": "StructType",
+         "domain": "dossier",
+         "fields": [
+          {
+           "name": "waarde",
+           "datatype": {
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "nonNegative"
+           }
+          },
+          {
+           "name": "telling",
+           "datatype": {
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "nonNegative"
+           }
+          }
+         ]
+        },
+        "fields": [
+         {
+          "name": "telling",
+          "value": {
+           "node": "Literal",
+           "value": {
+            "number": "3"
+           },
+           "type": {
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "nonNegative"
+           }
+          }
+         },
+         {
+          "name": "waarde",
+          "value": {
+           "node": "Literal",
+           "value": {
+            "number": "120.50"
+           },
+           "type": {
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "nonNegative"
+           }
+          }
+         }
+        ]
+       }
+      },
+      "initialisation": false
+     }
+    ]
+   },
+   {
+    "node": "Rule",
+    "name": "afwijkend bij ander vondstdossier",
+    "versions": [
+     {
+      "validity": {
+       "node": "Validity"
+      },
+      "target": {
+       "node": "AttributeReference",
+       "attribute": "afwijkend",
+       "subjectType": "Jutter"
+      },
+      "value": {
+       "node": "Literal",
+       "value": {
+        "boolean": true
+       },
+       "type": {
+        "node": "Boolean"
+       }
+      },
+      "condition": {
+       "node": "Comparison",
+       "op": "notEqual",
+       "left": {
+        "node": "AttributeReference",
+        "attribute": "dossier",
+        "subjectType": "Jutter"
+       },
+       "right": {
+        "node": "StructLiteral",
+        "type": {
+         "node": "StructType",
+         "domain": "dossier",
+         "fields": [
+          {
+           "name": "waarde",
+           "datatype": {
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "nonNegative"
+           }
+          },
+          {
+           "name": "telling",
+           "datatype": {
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "nonNegative"
+           }
+          }
+         ]
+        },
+        "fields": [
+         {
+          "name": "telling",
+          "value": {
+           "node": "Literal",
+           "value": {
+            "number": "3"
+           },
+           "type": {
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "nonNegative"
+           }
+          }
+         },
+         {
+          "name": "waarde",
+          "value": {
+           "node": "Literal",
+           "value": {
+            "number": "120.50"
+           },
+           "type": {
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "nonNegative"
+           }
+          }
+         }
+        ]
+       }
+      },
+      "initialisation": false
+     }
+    ]
+   },
+   {
+    "node": "Rule",
+    "name": "waardekopie van een jutter",
+    "versions": [
+     {
+      "validity": {
+       "node": "Validity"
+      },
+      "target": {
+       "node": "AttributeReference",
+       "attribute": "waardekopie",
+       "subjectType": "Jutter"
+      },
+      "value": {
+       "node": "FieldAccess",
+       "type": {
+        "node": "Number",
+        "whole": false,
+        "decimals": 2,
+        "sign": "nonNegative"
+       },
+       "base": {
+        "node": "AttributeReference",
+        "attribute": "dossier",
+        "subjectType": "Jutter"
+       },
+       "field": "waarde"
+      },
+      "initialisation": false,
+      "presentation": "calculation"
+     }
+    ]
+   }
+  ],
+  "dayKindDefinitions": [],
+  "objectCreations": [],
+  "allocations": [],
+  "consistencies": [],
+  "uniquenesses": [],
+  "factCreations": [],
+  "startPointDeterminations": [],
+  "ruleGroups": []
+ },
+ "diagnostics": []
+}

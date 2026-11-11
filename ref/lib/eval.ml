@@ -1864,11 +1864,27 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
       let locals = SMap.add (norm binder) (Later read) env.locals in
       let btypes = SMap.add (norm binder) (bound_of env value, static_type env value) env.btypes in
       (try eval_expr { env with locals; btypes } world self ~err body with Barrier -> Value.Empty)
-  | Struct_literal { field_list; _ } ->
+  | Struct_literal { field_list; typ; _ } ->
       (* ch. 11.1: a record value; a field evaluating leeg propagates — the
-         whole literal evaluates leeg (a record carries no hole). The field
-         order is the wire's declaration order (WF-073). *)
+         whole literal evaluates leeg (a record carries no hole). The fields
+         are evaluated in the literal's wire order (ch. 5.11) and the record
+         carries them in the order of the struct's declaration, which WF-073
+         does not ask of the literal: record equality is positional over that
+         order (ch. 11.2), as is the record the case reader builds *)
       let fs = map_in_order (fun (n, e) -> (n, eval_expr env world self ~err e)) field_list in
+      let declared =
+        match typ with
+        | Some (Struct_type { field_list = declared; _ }) -> declared
+        | _ -> Value.fault "a StructLiteral without its struct type"
+      in
+      let fs =
+        List.map
+          (fun (name, _) ->
+            match List.find_opt (fun (n, _) -> norm n = norm name) fs with
+            | Some (_, v) -> (name, v)
+            | None -> Value.fault "the StructLiteral does not write the declared field %S (WF-073)" name)
+          declared
+      in
       if List.exists (fun (_, v) -> v = Value.Empty) fs then Value.Empty else Value.Record fs
   | Field_access { base; field_name; _ } -> (
       (* ch. 11.1: read one declared field; a leeg base propagates leeg

@@ -14018,6 +14018,17 @@ let () =
     [ ("case-input", "case"); ("created-link", "case"); ("creation-blocked", "case1-andere-relatie");
       ("creation-blocked", "case2-eigen-relatie") ]
 
+(* WV-11.2-velden-in-andere-volgorde: the anchor jutterswet-vondstdossier
+   (case1-gevuld) with every StructLiteral writing its fields in the reverse of
+   the declaration (WF-073 asks each declared field once, no order). The
+   records equal those written in declaration order: dubbel aanwezig,
+   afwijkend afwezig, samenvatting {waarde: 125.50, telling: 2} (ch. 11.2) *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/struct-literal-field-order/" in
+  plays ~ident:"WV-11.2-velden-in-andere-volgorde" ~ir:(read (dir ^ "ir.json")) ~case_data:(read (dir ^ "case.json"))
+    (fun _ -> ())
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

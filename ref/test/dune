@@ -116,5 +116,7 @@
   ; two fact types whose roles share a name, each link read over its own relation
   (glob_files fixtures/links-per-relation/case-input/*.json)
   (glob_files fixtures/links-per-relation/created-link/*.json)
-  (glob_files fixtures/links-per-relation/creation-blocked/*.json))
+  (glob_files fixtures/links-per-relation/creation-blocked/*.json)
+  ; a StructLiteral writing its fields in another order than the declaration
+  (glob_files fixtures/struct-literal-field-order/*.json))
  (libraries uchar_ref uchar-ir-v0 zarith yojson))
