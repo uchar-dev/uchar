@@ -56,7 +56,6 @@
 open Ir_v0.Ast
 module Case = Uchar_ref.Case
 module Value = Uchar_ref.Value
-module Eval = Uchar_ref.Eval
 
 let norm = Ir_v0.Checks.norm
 let fault = Value.fault
@@ -456,9 +455,6 @@ type ctx = {
      desugaring turns an initialisation and its computation into a group *)
   wire_doc : document;
   case : Case.t;
-  (* the reference interpreter's environment over [doc] alone, built once: its
-     resolvers read the document and nothing of a session *)
-  doc_env : Eval.env;
   buf : Buffer.t;
   guards : guards;
   mutable fresh : int;
@@ -612,19 +608,369 @@ type ctx = {
    walk. *)
 let isa ctx sub super = Ir_v0.Checks.subtype_of ctx.doc ~sub ~super
 
+let req what = function Some x -> x | None -> fault "missing %s" what
+
+(* --- the document as this backend reads it --------------------------------
+   The static questions the translation asks of the document — which role a
+   binding names, which member a cell is, which reading a host gives a
+   characteristic check, whether a condition reads a timeline — answered by
+   this backend itself. Gate 6 compares two executors; an answer borrowed
+   from ref's evaluator would compare ref with itself. *)
+
+(* the role a binding names (IR-SPEC ch. 2.6): the named role of the named fact
+   type. WF-047 resolves it on a verifier-clean document; a dangling binding
+   faults *)
+let bound_role (doc : document) (rb : role_binding) =
+  match Ir_v0.Checks.find_ci doc.fact_types rb.rb_fact_type with
+  | None -> fault "role binding names unknown fact type %S" rb.rb_fact_type
+  | Some (ft : fact_type_name) -> (
+      match
+        List.find_opt
+          (fun (r : role_ref) -> match r.role_identifier with Some n -> norm n = norm rb.rb_role | None -> false)
+          ft.role_names
+      with
+      | Some r -> r
+      | None -> fault "role binding names unknown role %S of fact type %S" rb.rb_role rb.rb_fact_type)
+
+(* the role a fact creation names by [role] in [fact_type] (IR-SPEC ch. 3.4,
+   WF-028): of the two roles of the declared fact type, the one that carries
+   the name *)
+let created_role (doc : document) ~fact_type ~role =
+  match Ir_v0.Checks.find_ci doc.fact_types fact_type with
+  | None -> fault "created fact type '%s' is not declared" fact_type
+  | Some (ft : fact_type_name) -> (
+      match ft.role_names with
+      | [ a; b ] -> (
+          let named (r : role_ref) = match r.role_identifier with Some n -> norm n = norm role | None -> false in
+          match (named a, named b) with
+          | true, false -> a
+          | false, true -> b
+          | true, true -> fault "role '%s' is ambiguous within '%s'" role fact_type
+          | false, false -> fault "'%s' is not a role of '%s'" role fact_type)
+      | _ -> fault "created fact type '%s' does not have exactly two roles" fact_type)
+
+(* The fact type, and its roles toward the created object and toward the
+   subject, that link an object a creation makes on a subject of [from_type]
+   to it where the creation names no connecting role (ch. 5.5): the one fact
+   type of two roles one of which [from_type] fills and the other [to_type],
+   or the reciprocal one of a self-typed creation. A self-typed fact type of
+   two roles both of which the type fills names no direction, and leaves no
+   link, as several candidates on a self-typed pair do; several candidates
+   otherwise fault (EF-018) *)
+let connecting_pair (doc : document) ~from_type ~to_type =
+  let fills t (r : role_ref) =
+    Ir_v0.Checks.subtype_of doc ~sub:t ~super:(Option.value r.role_object_type_name ~default:"")
+  in
+  let self_typed = norm from_type = norm to_type in
+  let candidates =
+    List.filter_map
+      (fun (ftn, (ft : fact_type_name)) ->
+        match ft.role_names with
+        | [ a; b ] when self_typed -> if fills from_type a && fills from_type b then Some `Blocked else None
+        | [ a; b ] ->
+            if fills from_type a && fills to_type b then Some (`Pair (ftn, b, a))
+            else if fills from_type b && fills to_type a then Some (`Pair (ftn, a, b))
+            else None
+        | [ r ] when ft.reciprocal && self_typed && fills from_type r -> Some (`Pair (ftn, r, r))
+        | _ -> None)
+      doc.fact_types
+  in
+  match candidates with
+  | [] -> None
+  | [ `Pair p ] -> Some p
+  | _ when self_typed -> None
+  | _ ->
+      faultc ~params:[ ("objectType", from_type); ("createdType", to_type) ] "EF-018"
+        "more than one fact type relates %S to %S; the created object's back-link is ambiguous (ch. 5.5)"
+        from_type to_type
+
+(* the member of the cell [labels] of the dimensioned attribute [attr] of [ot]
+   (RUNTIME-SEMANTICS ch. 5.8c): label i a label of dimension i (WF-040), a
+   tuple that names no cell refused, since it would read a member nothing
+   writes *)
+let cell_member (doc : document) ~ot ~attr labels =
+  let decl =
+    match Ir_v0.Checks.effective_ot doc ot with Some o -> o | None -> fault "unknown object type %S" ot
+  in
+  match Ir_v0.Checks.attr_dimensions decl attr with
+  | None -> fault "cell of undimensioned attribute '%s'" attr
+  | Some dims ->
+      if not (Case.names_cell doc ~dims labels) then
+        fault "the labels [%s] name no cell of '%s', whose dimensions are %s" (String.concat ", " labels) attr
+          (String.concat ", " dims);
+      Uchar_ref.World.cell attr labels
+
+(* what a rule target writes (ch. 5.8c): its subject type, the declared
+   attribute, and the member, the attribute itself or the cell a
+   DimensionCellRead target names; None for any other shape *)
+let target_member (doc : document) (target : expr option) =
+  match target with
+  | Some (Attribute_reference { attribute_ref; object_type = Some ot; _ }) ->
+      let a = req "RuleVersion.target attribute" attribute_ref in
+      Some (ot, a, a)
+  | Some
+      (Dimension_cell_read
+         { attribute_ref =
+             Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; navigation_bindings = None; _ });
+           labels; _ }) ->
+      Some (ot, a, cell_member doc ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels))
+  | _ -> None
+
+(* the member a member assignment of a creation writes on the object it
+   makes (ch. 5.5, 5.8c): the member, or its cell where it carries labels *)
+let assigned_member (doc : document) ~created (t : assignment) =
+  let m = req "MemberAssignment.member" t.to_attribute in
+  match t.to_labels with
+  | None -> m
+  | Some labels -> cell_member doc ~ot:created ~attr:m (List.map (req "MemberAssignment.labels") labels)
+
+(* the attribute a member of an instance's input belongs to: the member
+   itself, or the dimensioned attribute of a cell *)
+let member_attribute (doc : document) ~otype member =
+  let ot =
+    match Ir_v0.Checks.effective_ot doc otype with Some o -> o | None -> fault "unknown object type %S" otype
+  in
+  match Ir_v0.Checks.find_ci ot.attributes member with
+  | Some _ -> member
+  | None -> (
+      match List.filter (fun (a, _) -> Uchar_ref.World.cell_of a member) ot.attribute_dimensions with
+      | [ (a, _) ] -> a
+      | _ -> fault "%S is neither an attribute nor a cell of an attribute of %S" member otype)
+
+(* the comparison read with its operands swapped (ch. 3.9): "40 < x" as a
+   test on x is "x > 40"; reversal, never negation *)
+let reversed : compare_op -> compare_op = function
+  | Less -> Greater
+  | Less_or_equal -> Greater_or_equal
+  | Greater -> Less
+  | Greater_or_equal -> Less_or_equal
+  | Earlier -> Later
+  | Earlier_or_equal -> Later_or_equal
+  | Later -> Earlier
+  | Later_or_equal -> Earlier_or_equal
+  | (Equal | Not_equal) as op -> op
+
+(* whether a condition holds a period window (ch. 3.10), as a part of a
+   composite or of a quantifier fold *)
+let rec contains_time_window (c : condition_expr) =
+  match c with
+  | Time_window _ -> true
+  | Compound { components; _ } -> List.exists contains_time_window components
+  | Quantifier_fold { kv_filter; kv_test; _ } ->
+      List.exists contains_time_window (Option.to_list kv_filter @ Option.to_list kv_test)
+  | Comparison _ | Predicate _ | Characteristic_check _ | Role_membership _ | Rule_status_check _ | Identity_check _
+  | Condition_unresolved _ ->
+      false
+
+(* Whether a condition on a rule of the timeline target of type [ot] reads a
+   timeline (RUNTIME-SEMANTICS ch. 3.10): a time-dependent characteristic or
+   attribute or a granular parameter as an operand, or a whole-period
+   qualifier, which on such a rule is a truth per bucket; under a quantifier
+   fold only a qualifier counts, since the fold's operands are its members'.
+   A condition that reads none holds on every day or on none *)
+let rec reads_timeline (doc : document) ~(ot : string) (c : condition_expr) =
+  let decl name =
+    match Ir_v0.Checks.effective_ot doc name with Some d -> d | None -> fault "unknown object type %S" name
+  in
+  let temporal_operand (e : expr option) =
+    match e with
+    | Some (Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ }) ->
+        Ir_v0.Checks.attr_temporal (decl otn) a
+    | Some (Parameter_ref { parameter = Some p; _ }) -> (
+        match Ir_v0.Checks.find_ci doc.parameters p with Some { par_granularity = Some _; _ } -> true | _ -> false)
+    | _ -> false
+  in
+  let rec qualified (c : condition_expr) =
+    match c with
+    | Characteristic_check { time_period = Some _; _ } | Comparison { time_period = Some _; _ }
+    | Predicate { time_period = Some _; _ } ->
+        true
+    | Compound { components; _ } -> List.exists qualified components
+    | Quantifier_fold { kv_filter; kv_test; _ } -> List.exists qualified (Option.to_list kv_filter @ Option.to_list kv_test)
+    | _ -> false
+  in
+  match c with
+  | Characteristic_check { characteristic = Some k; time_period; navigation_binding = None; _ } ->
+      time_period <> None || List.exists (fun (n, _) -> norm n = norm k) (decl ot).characteristic_granularity
+  | Characteristic_check { time_period; _ } -> time_period <> None
+  | Comparison { left_side; right_side; time_period; _ } ->
+      time_period <> None || temporal_operand left_side || temporal_operand right_side
+  | Predicate { operand; time_period; _ } -> time_period <> None || temporal_operand operand
+  | Compound { components; _ } -> List.exists (reads_timeline doc ~ot) components
+  | Quantifier_fold { kv_filter; kv_test; _ } -> List.exists qualified (Option.to_list kv_filter @ Option.to_list kv_test)
+  | Time_window _ | Role_membership _ | Rule_status_check _ | Identity_check _ | Condition_unresolved _ -> false
+
+(* whether a condition on a rule of a timeline target is read per period: it
+   reads a timeline or holds a period window, whose periods are its days *)
+let read_per_period (doc : document) ~(ot : string) (c : condition_expr) =
+  reads_timeline doc ~ot c || contains_time_window c
+
+(* The value shapes of a rule on a temporal attribute target that ch. 3.4 and
+   3.5 compute over all time: an operator of ch. 1.2 read per day, the sum over
+   the members of a set, an operand standing alone — a scalar, a constructor of
+   a literal, a time-dependent attribute or parameter read whole — and a
+   rounding of one of them, per day as well (ch. 2.5) *)
+let rec is_period_arithmetic (e : expr) =
+  match e with
+  | Binary { op = Plus | Min | Reduced_by | Times | Divided_by | Divided_by_abs | Percentage_of; _ } -> true
+  | Function_call { kind = Sum_function; element_object_type = Some _; _ } -> true
+  | Literal _ | Attribute_reference { navigation_bindings = None; anchor = None; _ } | Parameter_ref _ -> true
+  | Construct { argument = None | Some (Literal _); _ } -> true
+  | Rounding { base_expr = Some b; _ } -> is_period_arithmetic b
+  | _ -> false
+
+(* whether a rule writes [attr] of [otype] as period arithmetic (ch. 3.4/3.5),
+   its value read through the Lets it stands under *)
+let period_arithmetic_target (doc : document) ~otype ~attr =
+  List.exists
+    (fun (r : resolved_rule) ->
+      r.rr_presentation <> Some Characteristic_attribution
+      && (match r.objective with
+         | Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ }) ->
+             norm a = norm attr && Ir_v0.Checks.populations_overlap doc ot otype
+         | _ -> false)
+      && match r.value_node with Some v -> is_period_arithmetic (Ir_v0.Checks.let_bound_value v) | None -> false)
+    doc.resolved_rules
+
+(* The reading the host of a characteristic check gives it on a position with
+   one object, of static type [subj] (WF-100, WF-109, IR-SPEC ch. 4.6): a host
+   the object satisfies reads the object's characteristic ([Hosted]); a host
+   strictly below [subj] narrows, false on an object outside it
+   ([Narrowing]); a host the object can never be faults *)
+type hosting = Hosted | Narrowing of string
+
+let owner_hosts (doc : document) ~(otype : string) ~(subj : string option) ~(characteristic : string option)
+    (holder : string option) =
+  let below e =
+    match subj with
+    | Some s -> norm e <> norm s && Ir_v0.Checks.subtype_of doc ~sub:e ~super:s
+    | None -> false
+  in
+  match holder with
+  | Some e when below e -> Narrowing e
+  | Some e when not (Ir_v0.Checks.subtype_of doc ~sub:otype ~super:e) ->
+      fault
+        "characteristic check %S is hosted on %S while the subject is %S: the host names the object the check \
+         is about, and this reader has no other object to read"
+        (Option.value characteristic ~default:"?") e otype
+  | _ -> Hosted
+
+(* a narrowing host where the check reads no characteristic of the subject's
+   own: a navigated check, a check under the whole-period qualifier (WF-109) *)
+let narrowing_refused ~(characteristic : string option) e form =
+  fault
+    "characteristic check %S on %s is hosted on %S, a type strictly below its subject: a narrowing host reads \
+     the subject's own characteristic, and this form reads another (WF-109)"
+    (Option.value characteristic ~default:"?") form e
+
+(* Whether a fact creation's guard is about the TARGET (RUNTIME-SEMANTICS
+   ch. 5.5, 5.8b, WF-109): a plain characteristic check whose host exactly one
+   of the two bound objects satisfies and no second one overlaps, that one
+   the target. A host two of them could be faults in the verifier's sentence;
+   a host strictly below one of them as well, since this position has no
+   narrowing reading; a host neither satisfies nor overlaps falls to the
+   anchor, where [owner_hosts] refuses it *)
+let guard_on_target (doc : document) (fc : resolved_fact_creation) =
+  match (fc.anchor_point, fc.fc_target, fc.fc_condition) with
+  | Some a, Some d, Some (Characteristic_check { navigation_binding = None; time_period = None; holder = Some e; _ })
+    -> (
+      let bound = [ ("anchor", a); ("target", d) ] in
+      let hits = List.filter (fun (_, t) -> Ir_v0.Checks.subtype_of doc ~sub:t ~super:e) bound in
+      let near = List.filter (fun (_, t) -> Ir_v0.Checks.populations_overlap doc t e) bound in
+      match Ir_v0.Checks.wf109_host_sentence ~host:e ~bound ~hits ~near with
+      | None -> List.exists (fun (r, _) -> r = "target") hits
+      | Some m when hits = [] && near <> [] -> fault "%s" m
+      | Some _ when hits = [] -> false
+      | Some m -> fault "%s" m)
+  | _ -> false
+
+(* WF-108, the quantifier fold's shape, refused in the loader's and the
+   verifier's sentences where a node reaches this backend past them: a matrix,
+   one range spelling, a path of at least two steps, a quantifier other than
+   `the`, a threshold under a counting quantifier. The matrix and the
+   threshold (0 under `all` and `none`) *)
+let quantifier_fold_shape ~(quantifier_kind : quantifier_kind) ~(cutoff : int option)
+    ~(test : condition_expr option) ~(source_role : role_binding option) ~(source_path : role_binding list option) =
+  let test =
+    match test with
+    | Some t -> t
+    | None ->
+        fault
+          "quantifier fold without a test: the matrix is what every contributor must satisfy, and a quantifier \
+           over no condition has no verdict"
+  in
+  (match (source_role, source_path) with
+  | Some _, Some _ -> fault "sourcePath beside sourceRole: a quantifier fold carries one range, never two"
+  | None, None ->
+      fault "a quantifier fold carries its range (sourceRole or sourcePath): the range is written, never derived"
+  | _, Some trail when List.length trail < 2 ->
+      fault
+        "a quantifier fold's sourcePath carries at least TWO steps, found %d — the one-step range is spelled \
+         sourceRole"
+        (List.length trail)
+  | _ -> ());
+  (match quantifier_kind with
+  | All | None_of | At_least | At_most | Exactly -> ()
+  | The -> fault "%s" Ir_v0.Checks.quantifier_fold_the_refusal);
+  let cutoff =
+    match (quantifier_kind, cutoff) with
+    | (At_least | At_most | Exactly), Some d -> d
+    | (At_least | At_most | Exactly), None ->
+        fault
+          "counting quantifier fold without a threshold: the verdict compares the number of contributors \
+           satisfying the matrix with a threshold, and there is none to compare it with"
+    | _, _ -> 0
+  in
+  (test, cutoff)
+
+(* WF-126, behind the verifier: a timeline a rule of a timeline target reads
+   per period lies on a grid that fits the target's, so the target can carry
+   every cut it makes. [what] names the operand *)
+let refuse_finer ~what ~(operand : Uchar_ref.Timeline.grid) ~(target : Uchar_ref.Timeline.grid) ~attr =
+  let key (g : Uchar_ref.Timeline.grid) =
+    ( g.g_gran,
+      match g.g_start with
+      | Uchar_ref.Timeline.Calendar -> None
+      | Fixed_date z -> Some (Value.iso_of_date z)
+      | Fixed_day_month z -> Some ("--" ^ String.sub (Value.iso_of_date z) 5 5)
+      | Variable -> Some "variable" )
+  in
+  if not (Ir_v0.Checks.grid_fits ~operand:(key operand) ~target:(key target)) then
+    fault
+      "%s lies on the %s grid, which does not fit the %s grid of the timeline target %S: the target cannot carry \
+       its cuts (WF-126)"
+      what
+      (Ir_v0.Spelling.encode Ir_v0.Spelling.granularity operand.g_gran)
+      (Ir_v0.Spelling.encode Ir_v0.Spelling.granularity target.g_gran)
+      attr
+
 (* the static type of an expression (RUNTIME-SEMANTICS ch. 2.10). A
-   reference carries no type on the wire (B13): an attribute, parameter or
-   dimension cell takes its declaration's, read through ref's reader of the
-   declarations; a binder the type its binding declares, from this
-   translator's own lexical scope. Every other node carries its annotation. *)
-let static_type ctx (e : expr) : datatype option =
+   reference carries no type on the wire (B13): an attribute or parameter
+   takes its declaration's, a dimension cell its attribute's; a binder the
+   type its binding declares, from this translator's own lexical scope. Every
+   other node carries its annotation; a lambda and an instance-set union
+   denote no value and have none *)
+let rec static_type ctx (e : expr) : datatype option =
   match e with
   | Binder_ref { ident; _ } -> (
       match List.assoc_opt (norm ident) ctx.binders with
       | Some (_, _, _, t) -> t
       | None -> None)
-  | _ ->
-      Eval.static_type ctx.doc_env e
+  | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } ->
+      Option.bind (Ir_v0.Checks.effective_ot ctx.doc ot) (fun o -> Option.join (Ir_v0.Checks.find_ci o.attributes a))
+  | Parameter_ref { parameter = Some p; _ } ->
+      Option.bind (Ir_v0.Checks.find_ci ctx.doc.parameters p) (fun (par : parameter) -> par.par_datatype)
+  | Dimension_cell_read { attribute_ref = Some inner; _ } -> static_type ctx inner
+  | Attribute_reference _ | Parameter_ref _ | Dimension_cell_read _ | Variable_reference _ | Lambda _
+  | Instance_set_union _ ->
+      None
+  | Literal { typ; _ } | Text_composition { typ; _ } | Binary { typ; _ } | Function_call { typ; _ }
+  | Rounding { typ; _ } | Clamp { typ; _ } | Context_value { typ; _ } | Bound_day { typ; _ }
+  | Expr_unresolved { typ; _ } | Temporal_read { typ; _ } | Construct { typ; _ } | Match { typ; _ } | Let { typ; _ }
+  | Struct_literal { typ; _ } | Field_access { typ; _ } | Payload_access { typ; _ } | List_literal { typ; _ }
+  | If_then_else { typ; _ } | Invoke { typ; _ } | Fold { typ; _ } | Map_list { typ; _ } | Filter_list { typ; _ }
+  | List_length { typ; _ } ->
+      typ
 
 (* a binder entry: the binding's (atoms, term, scale) and its static type *)
 let typed_binder ((a, v, s) : string list * string * int) (t : datatype option) = (a, v, s, t)
@@ -644,7 +990,7 @@ let point_read_sentence attr label =
     attr label
 
 let require_attr_timeline ctx ~otype ~attr =
-  Eval.SMap.iter
+  Uchar_ref.World.SMap.iter
     (fun _ (i : Uchar_ref.World.instance) ->
       if
         isa ctx i.otype otype
@@ -654,7 +1000,7 @@ let require_attr_timeline ctx ~otype ~attr =
     ctx.case.world.instances
 
 let refuse_attr_timeline ctx ~otype ~attr =
-  Eval.SMap.iter
+  Uchar_ref.World.SMap.iter
     (fun _ (i : Uchar_ref.World.instance) ->
       if
         isa ctx i.otype otype
@@ -1339,7 +1685,7 @@ let ranked_timeline ctx (e : expr) =
    (measured 2026-09-20:
    this backend PLAYED the scalar gate on a timeline while both Drools
    branches named the clip). The condition WALK the clip test uses is shared
-   with `ref` [Eval.contains_time_window]; this half is not, because a second shared
+   with `ref` [contains_time_window]; this half is not, because a second shared
    helper is a second place where agreement means "one implementation" rather
    than "two that agree". *)
 let characteristic_temporal ctx ~otype ~characteristic =
@@ -1363,7 +1709,7 @@ let period_under_count_quantifier (quantifier_kind : quantifier_kind) (parts : c
   match quantifier_kind with
   | All | The -> ()
   | None_of | At_least | At_most | Exactly ->
-      if List.exists Eval.contains_time_window parts then
+      if List.exists contains_time_window parts then
         fault
           "a period condition under none or a counting quantifier (atLeast / atMost / exactly) \
            is the position WF-112 refuses: the quantifier counts or complements the \
@@ -1376,8 +1722,6 @@ let attr_granularity ctx ~otype ~attr =
   | _ -> fault "temporal attribute %S without granularity" attr
 
 (* --- expressions → (body atoms, integer term, scale) -------------------- *)
-
-let req what = function Some x -> x | None -> fault "missing %s" what
 
 (* does a pro-rata rule write this temporal attribute? — a clip over
    such a DERIVED timeline inherits the fold's interior bucket walls,
@@ -1399,7 +1743,7 @@ let prorata_writes (doc : document) ~otype ~attr =
    fact and the rule head would union into a superset model (a hunted
    silent split), so the translator refuses loudly instead *)
 let case_supplies ctx ~otype ~attr =
-  Eval.SMap.exists
+  Uchar_ref.World.SMap.exists
     (fun _ (i : Uchar_ref.World.instance) ->
       isa ctx i.otype otype
       && (Uchar_ref.World.attr i attr <> Value.Empty
@@ -1487,7 +1831,7 @@ let param_unbound ctx name =
   match Ir_v0.Checks.find_ci ctx.doc.parameters name with
   | Some { par_granularity = None; par_datatype = Some (List_type _); _ } -> false
   | Some { par_granularity = None; _ } ->
-      Eval.SMap.find_opt (norm name) ctx.case.params = None
+      Uchar_ref.World.SMap.find_opt (norm name) ctx.case.params = None
   | _ -> false
 
 (* the one sentence, ref's own words, whichever phase carries it *)
@@ -1555,7 +1899,7 @@ let unbound_param_guard ctx ~witness ~guard name =
 (* the case instances of [otype] that give [attr] as the asOfDate-bucket scalar,
    which carries no period; an absent attribute is the empty timeline *)
 let bucket_scalars ctx ~otype ~attr =
-  Eval.SMap.fold
+  Uchar_ref.World.SMap.fold
     (fun _ (i : Uchar_ref.World.instance) acc ->
       if isa ctx i.otype otype && Uchar_ref.World.timeline i attr = None && Uchar_ref.World.attr i attr <> Value.Empty
       then i :: acc
@@ -2056,23 +2400,8 @@ let role_canonical (r : role_ref) =
    keep their links apart, as ref's World.link_key keeps them *)
 let role_term ~fact_type (r : role_ref) = Printf.sprintf "(%s,%s)" (str fact_type) (str (role_canonical r))
 
-(* the role a binding names (IR-SPEC ch. 2.6): the named role of the named fact
-   type. WF-047 resolves it on a verifier-clean document; a dangling binding
-   faults *)
-let bound_role (doc : document) (rb : role_binding) =
-  match Ir_v0.Checks.find_ci doc.fact_types rb.rb_fact_type with
-  | None -> fault "role binding names unknown fact type %S" rb.rb_fact_type
-  | Some (ft : fact_type_name) -> (
-      match
-        List.find_opt
-          (fun (r : role_ref) -> match r.role_identifier with Some n -> norm n = norm rb.rb_role | None -> false)
-          ft.role_names
-      with
-      | Some r -> r
-      | None -> fault "role binding names unknown role %S of fact type %S" rb.rb_role rb.rb_fact_type)
-
 (* the relation term of a role binding *)
-let bound_role_term env (rb : role_binding) = role_term ~fact_type:rb.rb_fact_type (Eval.bound_role env rb)
+let bound_role_term doc (rb : role_binding) = role_term ~fact_type:rb.rb_fact_type (bound_role doc rb)
 
 (* The members of a fold's range over the case's own links, in their order
    (RUNTIME-SEMANTICS ch. 5.7a: a list keeps the order the case wrote it in, a
@@ -2115,7 +2444,6 @@ let fold_members ctx ?binding ?path (self : Uchar_ref.World.instance) ~element =
       end)
     reached
 
-
 (* the fact type and role a loaded world stores a link under: the case
    loader keys every link by World.link_key, which names both *)
 let stored_relation (doc : document) key =
@@ -2141,7 +2469,7 @@ let stored_relation (doc : document) key =
    node's sourceRole; a sourcePath walks two or more steps through fresh
    intermediate variables. The range is written, never derived (B12). A
    quantifier fold (sourceRole, sourcePath) comes here too, its range's shape
-   already checked in its own sentences ([Eval.quantifier_fold_shape]), so
+   already checked in its own sentences ([quantifier_fold_shape]), so
    the refusals below are an aggregation's.
 
    The DEDUP the flat union demands is free here and deliberately so:
@@ -2169,7 +2497,7 @@ let stored_relation (doc : document) key =
    every instance the role yields and the encoding is unchanged.
    Every fold body goes through here, the count source included, so
    there is one place the population is decided. *)
-let source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x =
+let source_join ctx ~subject ~subject_ot ~el ~source_role ~source_path ~x =
   let scope = [ Printf.sprintf "isa(%s,%s)" x (str el) ] in
   match source_path with
   | None ->
@@ -2183,7 +2511,7 @@ let source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x =
               el
       in
       ignore subject_ot;
-      (Printf.sprintf "role(%s,%s,%s)" subject (bound_role_term env rb) x :: scope)
+      (Printf.sprintf "role(%s,%s,%s)" subject (bound_role_term ctx.doc rb) x :: scope)
   | Some trail ->
       let n = List.length trail in
       if n < 2 then
@@ -2197,7 +2525,7 @@ let source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x =
         List.fold_left
           (fun (atoms, cur) (i, rb) ->
             let target = if i = n - 1 then x else fresh ctx "M" in
-            (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (bound_role_term env rb) target ], target))
+            (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (bound_role_term ctx.doc rb) target ], target))
           ([], subject)
           (List.mapi (fun i rb -> (i, rb)) trail)
       in
@@ -2423,7 +2751,7 @@ let with_member_reach ctx ~subject ~subject_ot ~join ?range ?part f =
    creation's translation derives the same way ([translate_object_creation]),
    and the created relation of a fact creation. A member enters a fold's range
    at run time only through a link of one of them *)
-let created_fact_types ctx env =
+let created_fact_types ctx =
   List.filter_map
     (fun (oc : resolved_object_creation) ->
       match oc.oc_connecting_role with
@@ -2431,20 +2759,20 @@ let created_fact_types ctx env =
       | None ->
           let subject = req "ObjectCreationVersion.subject" oc.oc_subject
           and created = req "ObjectCreationVersion.createdType" oc.created_type in
-          Option.map (fun (ft, _, _) -> ft) (Eval.connecting_pair env ~from_type:subject ~to_type:created))
+          Option.map (fun (ft, _, _) -> ft) (connecting_pair ctx.doc ~from_type:subject ~to_type:created))
     ctx.doc.object_creations
   @ List.map (fun (fc : resolved_fact_creation) -> fc.fc_fact_type) ctx.doc.fact_creations
 
 (* the range order of a fold over [el] from [subject] ([use_ro]), and a part
    of it for member variable [x] *)
-let range_order ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x ~join =
+let range_order ctx ~subject ~subject_ot ~el ~source_role ~source_path ~x ~join =
   ctx.part_serial <- ctx.part_serial + 1;
-  let created = List.map norm (created_fact_types ctx env) in
+  let created = List.map norm (created_fact_types ctx) in
   let steps = Option.to_list source_role @ Option.value source_path ~default:[] in
   { ro_id = ctx.part_serial; ro_parent = subject; ro_member = x; ro_parent_ot = subject_ot; ro_join = join;
     ro_facts =
       lazy
-        (Eval.SMap.fold
+        (Uchar_ref.World.SMap.fold
            (fun _ (i : Uchar_ref.World.instance) acc ->
              if isa ctx i.otype subject_ot then
                List.mapi
@@ -3636,7 +3964,7 @@ let rec member_read ?(scaled = true) ctx ~subject ~subject_ot ~member (e : expr)
                  hop — an absent link leaves the body underivable, which IS the
                  leeg-on-absent-relation rule (leeg as absence, for free). The
                  hop roles are the bindings, resolved through ref's resolver. *)
-              let roles = List.map (Eval.bound_role ctx.doc_env) rbs in
+              let roles = List.map (bound_role ctx.doc) rbs in
               List.iter
                 (fun (r : role_ref) ->
                   if r.role_many then
@@ -3647,7 +3975,7 @@ let rec member_read ?(scaled = true) ctx ~subject ~subject_ot ~member (e : expr)
                 List.fold_left
                   (fun (atoms, cur) rb ->
                     let n = fresh ctx "N" in
-                    (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (bound_role_term ctx.doc_env rb) n ], n))
+                    (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (bound_role_term ctx.doc rb) n ], n))
                   ([], subject) rbs
               in
               let v = fresh ctx "A" in
@@ -3678,7 +4006,7 @@ let dimension_cells ctx ~subject ~subject_ot ~scaled argument selections =
   if List.length selections <> List.length dims then
     fault "dimension fold carries %d selections for the %d dimensions of its argument" (List.length selections)
       (List.length dims);
-  let members = List.map (Eval.cell_member ctx.doc_env ~ot ~attr:a) (Ir_v0.Checks.selected_cells selections) in
+  let members = List.map (cell_member ctx.doc ~ot ~attr:a) (Ir_v0.Checks.selected_cells selections) in
   let reads = List.map (fun member -> member_read ctx ~scaled ~subject ~subject_ot ~member argument) members in
   ctx.fresh <- ctx.fresh + 1;
   let pred = Printf.sprintf "dim%d" ctx.fresh in
@@ -3703,7 +4031,7 @@ let cell_source_fold ctx (e : expr) =
                  labels; _ } ];
          element_object_type = Some el; dimension_selections = None; _ } as f)
     when f.source_role <> None || f.source_path <> None ->
-      let member = Eval.cell_member ctx.doc_env ~ot:el ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
+      let member = cell_member ctx.doc ~ot:el ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
       Some (Function_call { f with call_arguments = [ Attribute_reference { r with attribute_ref = Some member } ] })
   (* the payload of each contributor (RUNTIME-SEMANTICS ch. 9.5): the member a
      projection rule derives ([payload_projections]), so the fold is the set
@@ -3773,7 +4101,7 @@ let rec symbolic_term ctx ~subject ~subject_ot (e : expr) : string list * string
       { attribute_ref = Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } as inner);
         labels; _ }
     when attr_symbolic_datatype ctx ~otype:ot ~attr:a <> None ->
-      let member = Eval.cell_member ctx.doc_env ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
+      let member = cell_member ctx.doc ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
       let atoms, v, _ = member_read ~scaled:false ctx ~subject ~subject_ot ~member inner in
       (atoms, v)
   (* the first and the last filled cell of a text, enumeration or boolean
@@ -4389,17 +4717,17 @@ let margin_days = 366
 let calendar_span ctx =
   let dates = ref [] in
   let add = function Value.Date z -> dates := z :: !dates | _ -> () in
-  Eval.SMap.iter
+  Uchar_ref.World.SMap.iter
     (fun _ (i : Uchar_ref.World.instance) ->
-      Eval.SMap.iter (fun _ v -> add v) i.attrs;
-      Eval.SMap.iter
+      Uchar_ref.World.SMap.iter (fun _ v -> add v) i.attrs;
+      Uchar_ref.World.SMap.iter
         (fun _ (tl : Uchar_ref.Timeline.t) ->
           List.iter (fun (s : Uchar_ref.Timeline.segment) -> dates := s.s_from :: s.s_to :: !dates) tl)
         i.tls;
-      Eval.SMap.iter (fun _ periods -> List.iter (fun (v, t) -> dates := v :: t :: !dates) periods) i.ctls)
+      Uchar_ref.World.SMap.iter (fun _ periods -> List.iter (fun (v, t) -> dates := v :: t :: !dates) periods) i.ctls)
     ctx.case.world.instances;
-  Eval.SMap.iter (fun _ v -> add v) ctx.case.params;
-  Eval.SMap.iter
+  Uchar_ref.World.SMap.iter (fun _ v -> add v) ctx.case.params;
+  Uchar_ref.World.SMap.iter
     (fun _ (tl : Uchar_ref.Timeline.t) ->
       List.iter (fun (s : Uchar_ref.Timeline.segment) -> dates := s.s_from :: s.s_to :: !dates) tl)
     ctx.case.param_tls;
@@ -4531,8 +4859,7 @@ let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation 
               bucket_scalar_guard ctx ~holder:subject ~reach ~otype:subject_ot ~attr:a ~sentence:(qualifier_sentence a);
               []
           | Some rbs ->
-              let env = ctx.doc_env in
-              let roles = List.map (Eval.bound_role env) rbs in
+                      let roles = List.map (bound_role ctx.doc) rbs in
               List.iter
                 (fun (r : role_ref) ->
                   if r.role_many then
@@ -4548,7 +4875,7 @@ let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation 
                     List.fold_left
                       (fun (atoms, cur) rb ->
                         let n = fresh ctx "N" in
-                        (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (bound_role_term env rb) n ], n))
+                        (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (bound_role_term ctx.doc rb) n ], n))
                       ([], subject) rbs
                   in
                   bucket_scalar_fault ctx ~reach ~attr:a ~sentence:(qualifier_sentence a)
@@ -4593,7 +4920,7 @@ let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation 
         List.fold_left
           (fun (atoms, cur) rb ->
             let n = fresh ctx "N" in
-            (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (bound_role_term ctx.doc_env rb) n ], n))
+            (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (bound_role_term ctx.doc rb) n ], n))
           ([], subject) rbs
       in
       let q = fresh ctx "gplnav" in
@@ -4749,11 +5076,11 @@ let rec period_bounds_not_case ctx ~seen ~otype ~attr : (string * string) option
               when norm b = norm attr && Ir_v0.Checks.populations_overlap ctx.doc o otype
                    && r.rr_presentation <> Some Characteristic_attribution -> (
                 match r.value_node with
-                | Some _ when Option.fold ~none:false ~some:(Eval.reads_timeline ctx.doc ~ot:o) r.rr_condition ->
+                | Some _ when Option.fold ~none:false ~some:(reads_timeline ctx.doc ~ot:o) r.rr_condition ->
                     (* a condition read per period cuts the timeline at the bounds of its periods, which a
                        whole-period qualifier lays on the walls of its buckets *)
                     Some (attr, Printf.sprintf "the rule %S under a condition read per period" (Option.value r.rr_name ~default:"?"))
-                | Some v when Eval.is_period_arithmetic v -> operands v
+                | Some v when is_period_arithmetic v -> operands v
                 | _ -> Some (attr, Printf.sprintf "the rule %S" (Option.value r.rr_name ~default:"?")))
             | _ -> None))
       None ctx.doc.resolved_rules
@@ -4859,7 +5186,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
      member of its own on the object its reference reaches *)
   | Dimension_cell_read { attribute_ref = Some inner; labels; _ } ->
       let a, ot = dimensioned_reference inner in
-      let member = Eval.cell_member ctx.doc_env ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
+      let member = cell_member ctx.doc ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
       member_read ctx ~subject ~subject_ot ~member inner
   (* a dimension fold (RUNTIME-SEMANTICS ch. 5.8c, 3): one helper atom per
      selected cell that holds a value, keyed by the index of the cell in the
@@ -4951,7 +5278,6 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
   | Function_call
       { kind = Count; call_arguments = [ Instance_set_union { branches; _ } ];
         element_object_type = None; source_role = None; source_path = None; filter = None; _ } ->
-      let env = ctx.doc_env in
       if List.length branches < 2 then
         fault "an instance-set union carries at least TWO selections, found %d"
           (List.length branches);
@@ -4993,7 +5319,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           let rb = b.isb_source_role in
           let bx = fresh ctx "XU" in
           let join =
-            source_join ctx env ~subject ~subject_ot ~el ~source_role:(Some rb) ~source_path:None ~x:bx
+            source_join ctx ~subject ~subject_ot ~el ~source_role:(Some rb) ~source_path:None ~x:bx
           in
           let fatoms =
             match b.isb_filter with
@@ -5091,23 +5417,22 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          subselection joins per contributor: the filter atoms range over the
          element variable (an unbound filter operand excludes the
          contributor for free). *)
-      let env = ctx.doc_env in
       let v = fresh ctx "C" in
       let x = Printf.sprintf "X%s" v in
       let fatoms =
         match filter with
         | None -> []
         | Some c ->
-            let join () = source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path:None ~x in
+            let join () = source_join ctx ~subject ~subject_ot ~el ~source_role ~source_path:None ~x in
             with_member_reach ctx ~subject ~subject_ot ~join
               ~part:
                 (new_part ctx
-                   (range_order ctx env ~subject ~subject_ot ~el ~source_role ~source_path:None ~x ~join))
+                   (range_order ctx ~subject ~subject_ot ~el ~source_role ~source_path:None ~x ~join))
               (fun () ->
                 hoist_element_aggregates ctx ~x ~el ~outside:[ subject ]
                   (cond_atoms ctx ~subject:x ~subject_ot:el c))
       in
-      let join = source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path:None ~x in
+      let join = source_join ctx ~subject ~subject_ot ~el ~source_role ~source_path:None ~x in
       ( [ Printf.sprintf "%s = #count { %s : %s }" v x (String.concat ", " (join @ fatoms)) ],
         v,
         1 )
@@ -5208,17 +5533,16 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             | None -> false)
       in
       (* the range: the node's binding, never derived (B12) *)
-      let env = ctx.doc_env in
       let v = fresh ctx "S" in
       let g = fresh ctx "G" and x = fresh ctx "X" in
-      let join = source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x in
+      let join = source_join ctx ~subject ~subject_ot ~el ~source_role ~source_path ~x in
       let fatoms =
         match filter with
         | None -> []
         | Some c ->
             let join () = join in
             with_member_reach ctx ~subject ~subject_ot ~join
-              ~part:(new_part ctx (range_order ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x ~join))
+              ~part:(new_part ctx (range_order ctx ~subject ~subject_ot ~el ~source_role ~source_path ~x ~join))
               (fun () ->
                 hoist_element_aggregates ctx ~x ~el ~outside:[ subject ]
                   (cond_atoms ctx ~subject:x ~subject_ot:el c))
@@ -5351,7 +5675,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
              fail-fast of that read fires instead. *)
           (* each subject with each of its suspect members *)
           let suspects =
-            Eval.SMap.fold
+            Uchar_ref.World.SMap.fold
               (fun _ (self : Uchar_ref.World.instance) acc ->
                 if not (isa ctx self.otype subject_ot) then acc
                 else
@@ -5391,7 +5715,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
              tuples the #sum accumulates, not the distinct calendar
              spans among them. *)
           let spans =
-            Eval.SMap.fold
+            Uchar_ref.World.SMap.fold
               (fun _ (i : Uchar_ref.World.instance) acc ->
                 if not (isa ctx i.otype el) then acc
                 else
@@ -5544,22 +5868,21 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          som/totaal arm above and the temporal-totaal refusal arm below hang
          theirs too. *)
       if attr_temporal ctx ~otype:el ~attr:a then refuse_ranking_fold kind a;
-      let env = ctx.doc_env in
       let v = fresh ctx "M" in
       let g = fresh ctx "G" and x = fresh ctx "X" in
       let fatoms =
         match filter with
         | None -> []
         | Some c ->
-            let join () = source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x in
+            let join () = source_join ctx ~subject ~subject_ot ~el ~source_role ~source_path ~x in
             with_member_reach ctx ~subject ~subject_ot ~join
-              ~part:(new_part ctx (range_order ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x ~join))
+              ~part:(new_part ctx (range_order ctx ~subject ~subject_ot ~el ~source_role ~source_path ~x ~join))
               (fun () ->
                 hoist_element_aggregates ctx ~x ~el ~outside:[ subject ]
                   (cond_atoms ctx ~subject:x ~subject_ot:el c))
       in
       let contrib_body =
-        source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x
+        source_join ctx ~subject ~subject_ot ~el ~source_role ~source_path ~x
         @ (Printf.sprintf "val(%s,%s,%s)" x (str a) g :: fatoms)
       in
       let key, opening =
@@ -5612,22 +5935,21 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         ([ "#false" ], "0", 1)
       end
       else
-      let env = ctx.doc_env in
       let v = fresh ctx "F" in
       let g = fresh ctx "G" and x = fresh ctx "X" in
       let fatoms =
         match filter with
         | None -> []
         | Some c ->
-            let join () = source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x in
+            let join () = source_join ctx ~subject ~subject_ot ~el ~source_role ~source_path ~x in
             with_member_reach ctx ~subject ~subject_ot ~join
-              ~part:(new_part ctx (range_order ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x ~join))
+              ~part:(new_part ctx (range_order ctx ~subject ~subject_ot ~el ~source_role ~source_path ~x ~join))
               (fun () ->
                 hoist_element_aggregates ctx ~x ~el ~outside:[ subject ]
                   (cond_atoms ctx ~subject:x ~subject_ot:el c))
       in
       let contrib_body =
-        source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x
+        source_join ctx ~subject ~subject_ot ~el ~source_role ~source_path ~x
         @ (Printf.sprintf "val(%s,%s,%s)" x (str a) g :: fatoms)
       in
       ( [ Printf.sprintf "%s = #count { %s : %s }" v x (String.concat ", " contrib_body) ], v, 1 )
@@ -5755,7 +6077,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           a;
       (* the timeline a rule of ch. 3.4/3.5 writes has the bounds of the timelines
          its value reads: those of the case, unless one of them is derived *)
-      let period_arithmetic = Eval.period_arithmetic_target ctx.wire_doc ~otype:aot ~attr:a in
+      let period_arithmetic = period_arithmetic_target ctx.wire_doc ~otype:aot ~attr:a in
       (if period_arithmetic then
          match period_bounds_not_case ctx ~seen:[] ~otype:aot ~attr:a with
          | Some (b, who) ->
@@ -6033,10 +6355,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           ("V1 < V2", "V2", "T1 > T2", "T2") ];
       (* the calendar as data: the length of every candidate clipped span *)
       let endpoints =
-        Eval.SMap.fold
+        Uchar_ref.World.SMap.fold
           (fun _ (i : Uchar_ref.World.instance) acc ->
             let tl_pts =
-              Eval.SMap.fold
+              Uchar_ref.World.SMap.fold
                 (fun _ (tl : Uchar_ref.Timeline.t) acc ->
                   List.concat_map
                     (fun (s : Uchar_ref.Timeline.segment) -> [ s.s_from; s.s_to ])
@@ -6044,13 +6366,13 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                   @ acc)
                 i.tls acc
             in
-            Eval.SMap.fold
+            Uchar_ref.World.SMap.fold
               (fun _ periods acc ->
                 List.concat_map (fun (v, t) -> [ v; t ]) periods @ acc)
               i.ctls tl_pts)
           ctx.case.world.instances
           (if period_arithmetic then
-             Eval.SMap.fold
+             Uchar_ref.World.SMap.fold
                (fun _ (tl : Uchar_ref.Timeline.t) acc ->
                  List.concat_map (fun (s : Uchar_ref.Timeline.segment) -> [ s.s_from; s.s_to ]) tl @ acc)
                ctx.case.param_tls []
@@ -6109,9 +6431,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
               match c with
               | Characteristic_check { characteristic = Some k; navigation_binding = None; negation = false; _ } -> (
                   let periods =
-                    Eval.SMap.fold
+                    Uchar_ref.World.SMap.fold
                       (fun _ (i : Uchar_ref.World.instance) acc ->
-                        match Eval.SMap.find_opt (norm k) i.ctls with Some ps -> ps @ acc | None -> acc)
+                        match Uchar_ref.World.SMap.find_opt (norm k) i.ctls with Some ps -> ps @ acc | None -> acc)
                       ctx.case.world.instances []
                   in
                   match periods with
@@ -6171,7 +6493,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         call_arguments = [ Attribute_reference { attribute_ref = Some a; object_type = Some aot; navigation_bindings = None; _ } ];
         filter = None; source_role = None; source_path = None; _ }
     when norm aot = norm subject_ot && attr_temporal ctx ~otype:aot ~attr:a
-         && Eval.period_arithmetic_target ctx.wire_doc ~otype:aot ~attr:a ->
+         && period_arithmetic_target ctx.wire_doc ~otype:aot ~attr:a ->
       (* ch. 3.6 over the timeline a rule of ch. 3.4/3.5 writes, as ref totals
          it: the written timeline whole, no asOfDate bucket, 0 where nothing is
          written. Its finite bounds are bounds of case timelines, or walls of
@@ -6209,12 +6531,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         | _ -> []
       in
       let endpoints =
-        Eval.SMap.fold
+        Uchar_ref.World.SMap.fold
           (fun _ (i : Uchar_ref.World.instance) acc ->
-            Eval.SMap.fold (fun _ ps acc -> List.concat_map (fun (v, t) -> [ v; t ]) ps @ acc) i.ctls
-              (Eval.SMap.fold (fun _ tl acc -> bounds_of tl acc) i.tls acc))
+            Uchar_ref.World.SMap.fold (fun _ ps acc -> List.concat_map (fun (v, t) -> [ v; t ]) ps @ acc) i.ctls
+              (Uchar_ref.World.SMap.fold (fun _ tl acc -> bounds_of tl acc) i.tls acc))
           ctx.case.world.instances
-          (Eval.SMap.fold (fun _ tl acc -> bounds_of tl acc) ctx.case.param_tls walls)
+          (Uchar_ref.World.SMap.fold (fun _ tl acc -> bounds_of tl acc) ctx.case.param_tls walls)
         |> finite_bounds |> List.sort_uniq compare
       in
       let grid = Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx aot) a in
@@ -6371,7 +6693,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                  (ch. 3.4): without it the parameter is unbound, EF-014 where
                  the read is reached on a filled date, as ref reads it; the
                  param_tl join below then derives nothing *)
-              if Eval.SMap.find_opt (Ir_v0.Checks.norm p) ctx.case.param_tls = None then begin
+              if Uchar_ref.World.SMap.find_opt (Ir_v0.Checks.norm p) ctx.case.param_tls = None then begin
                 let guard () =
                   reach_guard ctx ~witness:subject ~reason:(unbound_param_reason p) ~code:(unbound_param_code p)
                     ~order_reason:(unbound_param_order_reason p)
@@ -7002,7 +7324,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (* the payload of a cell (ch. 5.8c, 9.5): the member a projection rule
          derives from the cell's constructor term ([payload_projections]) *)
       let a, ot = dimensioned_reference inner in
-      let cell = Eval.cell_member ctx.doc_env ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
+      let cell = cell_member ctx.doc ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
       let atoms, v, _ = member_read ~scaled:false ctx ~subject ~subject_ot ~member:(payload_member cell constructor_) inner in
       (atoms, v, value_scale typ)
   | Payload_access _ ->
@@ -7924,7 +8246,7 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~left_side ~right_side ~(gp 
   if m > sa then begin
     let k = m / sa in
     let worst =
-      Eval.SMap.fold
+      Uchar_ref.World.SMap.fold
         (fun _ (i : Uchar_ref.World.instance) acc ->
           if not (isa ctx i.otype subject_ot) then acc
           else
@@ -8072,7 +8394,7 @@ and dk_value ctx ~stack ~day (e : expr) : Value.t =
       | Some { par_granularity = Some _; _ } ->
           fault "granular parameter %S in a day-kind condition is refused (ch. 3.3/8)" nm
       | Some _ -> (
-          match Eval.SMap.find_opt (norm nm) ctx.case.params with
+          match Uchar_ref.World.SMap.find_opt (norm nm) ctx.case.params with
           | Some v -> v
           | None ->
               (* fail-fast, in ref's terms: a day-kind condition that reads a
@@ -8243,12 +8565,12 @@ and dk_seen_days ctx : int list =
     | Value.Date_time t -> acc := fst (split_datetime t) :: !acc
     | _ -> ()
   in
-  Eval.SMap.iter
+  Uchar_ref.World.SMap.iter
     (fun _ (i : Uchar_ref.World.instance) ->
-      Eval.SMap.iter (fun _ v -> add_v v) i.attrs;
-      Eval.SMap.iter (fun _ tl -> List.iter (fun (s : Uchar_ref.Timeline.segment) -> add_v s.s_value) tl) i.tls)
+      Uchar_ref.World.SMap.iter (fun _ v -> add_v v) i.attrs;
+      Uchar_ref.World.SMap.iter (fun _ tl -> List.iter (fun (s : Uchar_ref.Timeline.segment) -> add_v s.s_value) tl) i.tls)
     ctx.case.world.instances;
-  Eval.SMap.iter (fun _ v -> add_v v) ctx.case.params;
+  Uchar_ref.World.SMap.iter (fun _ v -> add_v v) ctx.case.params;
   (match ctx.case.as_of with Some d -> add_v (Value.date_of_iso d) | None -> ());
   let rec ex (e : expr) =
     let opt = function Some x -> ex x | None -> () in
@@ -8901,16 +9223,15 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          passes for free — a timeline with no segments derives no _d row and
          so no failure, and (on the navigated form) so does a hop that
          reaches nothing. *)
-      (match Eval.owner_hosts ctx.doc ~otype:subject_ot ~subj:(Some subject_ot) ~characteristic holder with
-       | Eval.Narrowing e -> Eval.narrowing_refused ~characteristic e "the whole-period qualifier"
-       | Eval.Hosted -> ());
+      (match owner_hosts ctx.doc ~otype:subject_ot ~subj:(Some subject_ot) ~characteristic holder with
+       | Narrowing e -> narrowing_refused ~characteristic e "the whole-period qualifier"
+       | Hosted -> ());
       let k = req "characteristic" characteristic in
-      let env = ctx.doc_env in
       let hop =
         match navigation_binding with
         | None -> None
         | Some rb ->
-            let role = Eval.bound_role env rb (* D53: the hop is the binding *) in
+            let role = bound_role ctx.doc rb (* D53: the hop is the binding *) in
             if role.role_many then
               fault
                 "the navigated check reaches the to-many role %S in a scalar condition"
@@ -8965,7 +9286,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
             emit_rule ctx ~head:(Printf.sprintf "%s(%s)" q subject)
               ~body:
                 [ Printf.sprintf "isa(%s,%s)" subject (str subject_ot);
-                  Printf.sprintf "role(%s,%s,%s)" subject (bound_role_term env rb) n;
+                  Printf.sprintf "role(%s,%s,%s)" subject (bound_role_term ctx.doc rb) n;
                   Printf.sprintf "%s(%s)" p n ];
             Printf.sprintf "%s(%s)" q subject
       in
@@ -8973,11 +9294,11 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          "niet gedurende …", on top of the verdict *)
       [ (if gp.gp_negated then "" else "not ") ^ fails ]
   | Characteristic_check { characteristic; navigation_binding = None; negation; holder; _ } -> (
-      let hosting = Eval.owner_hosts ctx.doc ~otype:subject_ot ~subj:(Some subject_ot) ~characteristic holder in
+      let hosting = owner_hosts ctx.doc ~otype:subject_ot ~subj:(Some subject_ot) ~characteristic holder in
       let k = req "characteristic" characteristic in
       match hosting with
-      | Eval.Hosted -> [ (if negation then "not " else "") ^ Printf.sprintf "has(%s,%s)" subject (str k) ]
-      | Eval.Narrowing e ->
+      | Hosted -> [ (if negation then "not " else "") ^ Printf.sprintf "has(%s,%s)" subject (str k) ]
+      | Narrowing e ->
           (* the narrowing host (RUNTIME-SEMANTICS ch. 5.8b rule 4): an
              instance of the host that has the characteristic; the negation is
              the plain complement, a helper under negation-as-failure with the
@@ -8998,12 +9319,11 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          deliberate v0 asymmetry, encoded for free. *)
       (* WF-100, keyed on the SUBJECT here too: the owner is a hosting
          statement about the pattern, not about the reached type *)
-      (match Eval.owner_hosts ctx.doc ~otype:subject_ot ~subj:(Some subject_ot) ~characteristic holder with
-       | Eval.Narrowing e -> Eval.narrowing_refused ~characteristic e "a role"
-       | Eval.Hosted -> ());
+      (match owner_hosts ctx.doc ~otype:subject_ot ~subj:(Some subject_ot) ~characteristic holder with
+       | Narrowing e -> narrowing_refused ~characteristic e "a role"
+       | Hosted -> ());
       let k = req "characteristic" characteristic in
-      let env = ctx.doc_env in
-      let role = Eval.bound_role env rb (* D53: the hop is the binding *) in
+      let role = bound_role ctx.doc rb (* D53: the hop is the binding *) in
       if role.role_many then
         fault
           "the navigated check reaches the to-many role %S in a scalar condition"
@@ -9245,17 +9565,16 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       (* the fold's shape in WF-108's sentences, ref's function: before
          [source_join], whose sentences name the aggregation's fields *)
       let test, cutoff =
-        Eval.quantifier_fold_shape ~quantifier_kind:kv_quantifier ~cutoff:kv_threshold ~test:kv_test
+        quantifier_fold_shape ~quantifier_kind:kv_quantifier ~cutoff:kv_threshold ~test:kv_test
           ~source_role:kv_source_role ~source_path:kv_source_path
       in
-      let env = ctx.doc_env in
       let x = fresh ctx "X" in
       let join =
-        source_join ctx env ~subject ~subject_ot ~el ~source_role:kv_source_role ~source_path:kv_source_path
+        source_join ctx ~subject ~subject_ot ~el ~source_role:kv_source_role ~source_path:kv_source_path
           ~x
       in
       let ro =
-        range_order ctx env ~subject ~subject_ot ~el ~source_role:kv_source_role ~source_path:kv_source_path ~x
+        range_order ctx ~subject ~subject_ot ~el ~source_role:kv_source_role ~source_path:kv_source_path ~x
           ~join:(fun () -> join)
       in
       let member f =
@@ -9639,7 +9958,7 @@ and sum_term ctx ~subject ~subject_ot (e : expr) : string list * string =
      on the object its reference reaches *)
   | Dimension_cell_read { attribute_ref = Some inner; labels; _ } ->
       let a, ot = dimensioned_reference inner in
-      let member = Eval.cell_member ctx.doc_env ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
+      let member = cell_member ctx.doc ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
       let atoms, v, _ = member_read ~scaled:false ctx ~subject ~subject_ot ~member inner in
       (atoms, v)
   | _ ->
@@ -10894,8 +11213,7 @@ let fitted ?(unbounded = false) ctx ~subject ~what ~body term scale target =
     else fault "value scale %d does not align with target scale %d for %S" scale target what
 
 (* A condition read per period on a rule of the timeline target [a] of [ot]
-   (RUNTIME-SEMANTICS ch. 3.10, the clip generalised; ref's Eval.cond_periods,
-   whose shapes and refusals this follows): the name [q] of a predicate whose
+   (RUNTIME-SEMANTICS ch. 3.10, the clip generalised): the name [q] of a predicate whose
    atoms q(S,F,T) are the maximal periods of all time in which [c] holds on S.
    One cut set per subject serves the whole condition: #inf, #sup, every bound
    of every timeline the condition reads, and the walls of the buckets of each
@@ -10929,7 +11247,7 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
   in
   let rec node (c : condition_expr) : string =
     let n = fresh ctx (p ^ "_n") in
-    if not (Eval.read_per_period ctx.doc ~ot c) then begin
+    if not (read_per_period ctx.doc ~ot c) then begin
       let atoms = cond_atoms ctx ~subject:"S" ~subject_ot:ot c in
       emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" n) ~body:(per :: atoms);
       n
@@ -10972,7 +11290,7 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
           | None ->
               (match Ir_v0.Checks.find_ci ot_decl.characteristic_granularity k with
               | Some (Some g) ->
-                  Eval.refuse_finer ~what:(Printf.sprintf "the characteristic %S" k)
+                  refuse_finer ~what:(Printf.sprintf "the characteristic %S" k)
                     ~operand:(Uchar_ref.Timeline.calendar_grid g) ~target ~attr:a
               | _ -> ());
               emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" n) ~body:[ Printf.sprintf "%s(S,X)" inner ]);
@@ -10989,7 +11307,7 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
           let b, bound_e, op =
             match (temporal_side le, temporal_side re) with
             | Some b, None -> (b, re, op)
-            | None, Some b -> (b, le, Eval.reversed op)
+            | None, Some b -> (b, le, reversed op)
             | _ ->
                 fault
                   "a comparison in a condition per period compares one time-dependent attribute of the subject \
@@ -11053,7 +11371,7 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
           (match time_period with
           | Some gp -> qualifier n gp inner
           | None ->
-              Eval.refuse_finer ~what:(Printf.sprintf "the attribute %S" b)
+              refuse_finer ~what:(Printf.sprintf "the attribute %S" b)
                 ~operand:(Uchar_ref.Timeline.attr_grid ctx.doc ot_decl b) ~target ~attr:a;
               emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" n) ~body:[ Printf.sprintf "%s(S,X)" inner ]);
           n
@@ -11087,7 +11405,7 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
      holds *)
   and qualifier n (gp : entire_period) inner =
     let g : grain = if gp.gp_granularity then Year else Month in
-    Eval.refuse_finer ~what:"the whole-period qualifier" ~operand:(Uchar_ref.Timeline.calendar_grid g) ~target ~attr:a;
+    refuse_finer ~what:"the whole-period qualifier" ~operand:(Uchar_ref.Timeline.calendar_grid g) ~target ~attr:a;
     let qb = n ^ "_w" in
     emit_grid_buckets ctx ~p:qb ~grid:(Uchar_ref.Timeline.calendar_grid g);
     emit_rule ctx ~head:(Printf.sprintf "%s_cut(S,B)" p) ~body:[ base; Printf.sprintf "%s_b(B,_,_)" qb ];
@@ -11581,7 +11899,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
             "an attribute reference without a path is the subject's own read, so its subjectType is the \
              subject type '%s' — '%s' names another type, which only a navigation reaches"
             ot otn;
-        Eval.refuse_finer ~what:(Printf.sprintf "the attribute %S" b)
+        refuse_finer ~what:(Printf.sprintf "the attribute %S" b)
           ~operand:(Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx otn) b) ~target ~attr:a;
         bucket_scalar_guard ctx ~holder:subject ~reach:(fun () -> base :: cond) ~otype:ot ~attr:b
           ~sentence:(read_whole_sentence ~reads:period_reads ~attr:b);
@@ -11597,14 +11915,11 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
           element_object_type = Some el; empty_fallback; filter = None; grain = None; dimension_selections = None;
           source_role; source_path; anchor = None; _ }
       when (source_role <> None || source_path <> None) && attr_temporal ctx ~otype:el ~attr:x ->
-        Eval.refuse_finer ~what:(Printf.sprintf "the attribute %S" x)
+        refuse_finer ~what:(Printf.sprintf "the attribute %S" x)
           ~operand:(Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx el) x) ~target ~attr:a;
         let sx = pow10 (attr_decimals ctx ~otype:el ~attr:x) in
-        let env =
-          { ctx.doc_env with params = ctx.case.params; param_tls = ctx.case.param_tls }
-        in
         let m = fresh ctx "M" in
-        let join = base :: source_join ctx env ~subject ~subject_ot:ot ~el ~source_role ~source_path ~x:m in
+        let join = base :: source_join ctx ~subject ~subject_ot:ot ~el ~source_role ~source_path ~x:m in
         (* a member's timeline is read where the subject's period arithmetic is *)
         bucket_scalar_guard ctx ~holder:m ~reach:(fun () -> cond @ join) ~otype:el ~attr:x
           ~sentence:(read_whole_sentence ~reads:period_reads ~attr:x);
@@ -11633,7 +11948,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
                 @ (base :: fb)
                 @ [ Printf.sprintf "V = %s" (times ("(" ^ ft ^ ")") (sx / fs)) ]));
         (q, false, sx)
-    | Rounding { base_expr = Some b; mode_kind; decimal_places; _ } when Eval.is_period_arithmetic b ->
+    | Rounding { base_expr = Some b; mode_kind; decimal_places; _ } when is_period_arithmetic b ->
         (* ch. 2.5 per period: the value at the rounding's scale, a quotient
            rounded straight from its two operands (its exact value has no
            decimal scale), any other base from its own scale; the mode's
@@ -11708,9 +12023,9 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
             (* a time-dependent parameter is a timeline operand; its timeline is its
                binding, so an absent one is an unbound parameter (ch. 5.7), which
                faults where the period arithmetic is evaluated *)
-            Eval.refuse_finer ~what:(Printf.sprintf "the parameter %S" n) ~operand:(Uchar_ref.Timeline.param_grid decl)
+            refuse_finer ~what:(Printf.sprintf "the parameter %S" n) ~operand:(Uchar_ref.Timeline.param_grid decl)
               ~target ~attr:a;
-            if not (Eval.SMap.mem (norm n) ctx.case.param_tls) then
+            if not (Uchar_ref.World.SMap.mem (norm n) ctx.case.param_tls) then
               reach_guard ctx ~witness:subject ~reason:(unbound_param_reason n) ~code:(unbound_param_code n)
                 ~order_reason:(unbound_param_order_reason n) (base :: cond);
             emit_rule ctx ~head:(Printf.sprintf "%s_cut(%s,X)" p subject)
@@ -12088,7 +12403,7 @@ let input_on ctx ~otype ~attr =
 let translate_characteristic_timeline ctx (r : resolved_rule) ~ot ~k =
   let c =
     match r.rr_condition with
-    | Some c when Eval.contains_time_window c -> c
+    | Some c when contains_time_window c -> c
     | _ ->
         fault
           "the time-dependent characteristic %S of %S is written within a period window (ch. 3.10, 3.11); \
@@ -12105,9 +12420,9 @@ let translate_characteristic_timeline ctx (r : resolved_rule) ~ot ~k =
   in
   if List.length (List.filter writes ctx.doc.resolved_rules) >= 2 then
     fault "two rules write the time-dependent characteristic %S of %S: not translated (no corpus case)" k ot;
-  Eval.SMap.iter
+  Uchar_ref.World.SMap.iter
     (fun _ (i : Uchar_ref.World.instance) ->
-      match Eval.SMap.find_opt (norm k) i.ctls with
+      match Uchar_ref.World.SMap.find_opt (norm k) i.ctls with
       | Some (_ :: _) when Ir_v0.Checks.populations_overlap ctx.doc i.otype ot ->
           fault
             "the case supplies true periods of the time-dependent characteristic %S of %S, which a rule writes: \
@@ -12145,7 +12460,7 @@ let translate_characteristic_timeline ctx (r : resolved_rule) ~ot ~k =
 let translate_timeline_initialisation ctx (r : resolved_rule) ~subject ~ot ~a ~cond ~periods =
   let value = Ir_v0.Checks.let_bound_value (req "RuleVersion.value" r.value_node) in
   sum_timeline_producer ctx ~otype:ot ~a value;
-  if not (Eval.is_period_arithmetic value) then
+  if not (is_period_arithmetic value) then
     fault
       "the value of the initialisation of the timeline target %S is not period arithmetic of ch. 3.4/3.5 (an \
        operator of ch. 1.2 other than the power, the sum over a set, an own attribute, a parameter, a literal, or a \
@@ -12205,7 +12520,7 @@ let translate_rule ctx (r : resolved_rule) =
       (* [a] is the member the target writes, its val/3 name: the attribute,
          or the cell it names (RUNTIME-SEMANTICS ch. 5.8c, 2), whose
          declaration is its attribute's ([find_decl]) *)
-      (match Eval.target_member ctx.doc_env (Some objective) with
+      (match target_member ctx.doc (Some objective) with
       | Some (ot, declared, a) ->
           if a <> declared && r.rr_presentation = Some Characteristic_attribution then
             fault
@@ -12233,7 +12548,7 @@ let translate_rule ctx (r : resolved_rule) =
           in
           (* ch. 3.10's case distinction is on the TARGET, which the condition
              cannot see — so it is settled here, before the window is
-             translated, and through the walk ref uses (Eval.contains_time_window)
+             translated, and through the walk ref uses (contains_time_window)
              rather than a second one that could drift from it. *)
           let target_timeline =
             match r.rr_presentation with
@@ -12276,11 +12591,11 @@ let translate_rule ctx (r : resolved_rule) =
           in
           (* a condition that reads a timeline is read per period on a timeline
              target (ch. 3.10's clip generalised), in ref's question
-             (Eval.reads_timeline); one that reads none gates the rule *)
+             (reads_timeline); one that reads none gates the rule *)
           let per_period =
             target_timeline && clip = None
             && r.rr_presentation <> Some Characteristic_attribution
-            && Option.fold ~none:false ~some:(Eval.read_per_period ctx.doc ~ot) r.rr_condition
+            && Option.fold ~none:false ~some:(read_per_period ctx.doc ~ot) r.rr_condition
           in
           let temporal_characteristic =
             r.rr_presentation = Some Characteristic_attribution && target_timeline
@@ -12385,7 +12700,7 @@ let translate_rule ctx (r : resolved_rule) =
               let periods =
                 match (r.rr_condition, value) with
                 | Some c, _ when per_period -> Some (period_condition ctx ~ot ~a c)
-                | Some c, Some v when clip <> None && Eval.is_period_arithmetic v -> Some (period_condition ctx ~ot ~a c)
+                | Some c, Some v when clip <> None && is_period_arithmetic v -> Some (period_condition ctx ~ot ~a c)
                 | _ -> None
               in
               match value with
@@ -12419,7 +12734,7 @@ let translate_rule ctx (r : resolved_rule) =
                          shape (a gedurende condition over an own temporal characteristic, with the \
                          day-kind tests of the counted day) or the period arithmetic of ch. 3.4/3.5; no \
                          corpus case for more")
-              | Some v when Eval.is_period_arithmetic v ->
+              | Some v when is_period_arithmetic v ->
                   ignore (translate_period_arithmetic ?periods ?writer ~cond ctx ~subject ~ot ~a v)
               | value -> (
                   match Option.bind value (ranked_timeline ctx) with
@@ -12615,14 +12930,13 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
   let subject_ot = req "ObjectCreationVersion.subject" oc.oc_subject in
   let subject = "S" in
   let term = Printf.sprintf "oc%d(%s)" i subject in
-  let env = ctx.doc_env in
   let pair =
     match oc.oc_connecting_role with
     | Some rb -> (
         match Ir_v0.Checks.resolve_binding (Ir_v0.Checks.ctx_of ctx.doc) rb with
         | Ok (_, bound, other) -> Some (rb.rb_fact_type, bound, other)
         | Error e -> fault "%s" e)
-    | None -> Eval.connecting_pair env ~from_type:subject_ot ~to_type:created
+    | None -> connecting_pair ctx.doc ~from_type:subject_ot ~to_type:created
   in
   let cond =
     match oc.oc_condition with
@@ -12682,7 +12996,7 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
   List.iter
     (fun (t : assignment) ->
       (* the member, or the cell it names on the made object (ch. 5.8c, 2) *)
-      let m = Eval.assigned_member ctx.doc_env ~created t in
+      let m = assigned_member ctx.doc ~created t in
       let declared = req "MemberAssignment.member" t.to_attribute in
       if (not t.to_characteristic) && m <> declared && attr_temporal ctx ~otype:created ~attr:declared then
         fault "object creation %S sets a cell of the time-dependent attribute %S: not translated (no corpus case)"
@@ -12776,8 +13090,7 @@ let translate_fact_creation ctx (fc : resolved_fact_creation) =
   validity_gate ctx fc.fc_validity @@ fun () ->
   begin
   let ftn = fc.fc_fact_type in
-  let env = ctx.doc_env in
-  let role rname = Eval.created_role env ~fact_type:ftn ~role:rname in
+  let role rname = created_role ctx.doc ~fact_type:ftn ~role:rname in
   let anchor_role = role fc.anchor_role in
   let objective_role = role fc.objective_role in
   let anchor_point = req "FactCreationVersion.anchor" fc.anchor_point in
@@ -12792,7 +13105,7 @@ let translate_fact_creation ctx (fc : resolved_fact_creation) =
      anker case emits its literals before the chain exactly as before, and the
      generated program for every document that predates the rule is unchanged
      down to its fresh-name numbering. *)
-  let on_objective = Eval.guard_on_target ctx.doc fc in
+  let on_objective = guard_on_target ctx.doc fc in
   let cond_anchor =
     match fc.fc_condition with
     | Some c when not on_objective -> cond_atoms ctx ~subject ~subject_ot:anchor_point c
@@ -12801,7 +13114,7 @@ let translate_fact_creation ctx (fc : resolved_fact_creation) =
   let hop (atoms, cur) rb =
     let v = fresh ctx "H" in
     ( atoms
-      @ [ Printf.sprintf "role(%s,%s,%s)" cur (bound_role_term env rb) v ],
+      @ [ Printf.sprintf "role(%s,%s,%s)" cur (bound_role_term ctx.doc rb) v ],
       v )
   in
   let mids =
@@ -13103,7 +13416,7 @@ and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
   (out, cfl, any)
 
 (* The defaults group of a timeline attribute target, read per day
-   (RUNTIME-SEMANTICS ch. 7.11; ref's Eval.run_defaults_timeline): the chain and
+   (RUNTIME-SEMANTICS ch. 7.11): the chain and
    the group of [translate_chain] and [translate_group] with every atom of a
    decision, a settling, an outcome and a conflict carried per period (S,X,Y) of
    the group's cut set [g]_per. That cut set holds every bound of a
@@ -13175,7 +13488,7 @@ let rec translate_chain_days ctx ~g ~cuts ~subject ~origins ~base ~path ~a ~targ
     head_body ctx (Printf.sprintf "%s(%s)" jr subject) (reached @ justified);
     let c = req "default consequence" r.default_consequence in
     sum_timeline_producer ctx ~otype:(ot_at n) ~a c;
-    if not (Eval.is_period_arithmetic c) then
+    if not (is_period_arithmetic c) then
       fault
         "the consequence of a default on the timeline target %S is not period arithmetic of ch. 3.4/3.5 (an operator \
          of ch. 1.2 other than the power, the sum over a set, an own attribute, a parameter, a literal, or a \
@@ -13523,8 +13836,7 @@ let translate_allocation ctx i (v : resolved_allocation) =
      edge inside the condition) rides the allocation's name, exactly as
      ref's cond_err does (S13) *)
   ctx.rule_name <- name;
-  let env = ctx.doc_env in
-  let role = bound_role_term env v.connecting_role (* required (B12) *) in
+  let role = bound_role_term ctx.doc v.connecting_role (* required (B12) *) in
   let p = Printf.sprintf "vd%d_" i in
   (* ch. 4.1: the recipient set of one source instance is every DOELTYPE
      instance the connecting relation reaches — the role supplies the
@@ -14024,7 +14336,7 @@ let uni_key_guards ctx ~otype ~keys =
     List.iter
       (fun k ->
         if attr_temporal ctx ~otype ~attr:k then
-          Eval.SMap.iter
+          Uchar_ref.World.SMap.iter
             (fun _ (inst : Uchar_ref.World.instance) ->
               if
                 isa ctx inst.otype otype
@@ -14061,8 +14373,7 @@ let translate_uniqueness ctx (u : resolved_uniqueness) =
     match u.scope_role with
     | None -> []
     | Some rb ->
-        let env = ctx.doc_env in
-        let role = bound_role_term env rb in
+          let role = bound_role_term ctx.doc rb in
         [ Printf.sprintf "role(S1,%s,P)" role;
           Printf.sprintf "role(S2,%s,P)" role ]
   in
@@ -14186,20 +14497,20 @@ let translate_case ctx (case : Case.t) =
      otherwise enter as a hard fact and silently outvote it *)
   let init_target otype aname = init_target ctx ~otype ~attr:aname in
   let input_pred otype aname = if defeasible_input ctx ~otype ~attr:aname then "inputval" else "val" in
-  Eval.SMap.iter
+  Uchar_ref.World.SMap.iter
     (fun label (i : Uchar_ref.World.instance) ->
       emit ctx "is_a(%s,%s)." (str_raw label) (str i.otype);
       (* an input instance is creation depth 0 in every stratum of an
          object creation *)
       if has_recursive_creation doc then
         List.iter (fun k -> emit ctx "depth(%s,%d,0)." (str_raw label) k) (oc_strata_of ctx);
-      Eval.SMap.iter
+      Uchar_ref.World.SMap.iter
         (fun aname v ->
           if v <> Value.Empty && init_target i.otype aname then
             emit ctx "inputfilled(%s,%s)." (str_raw label) (str aname);
           (* the declaration of the member: the attribute, or that of a cell
              (World.cell), whose val/3 name is the cell's *)
-          let declared = Eval.member_attribute ctx.doc_env ~otype:i.otype aname in
+          let declared = member_attribute ctx.doc ~otype:i.otype aname in
           match v with
           | Value.Bool b ->
               (* a boolean attribute is a characteristic in v0 (booleans are
@@ -14264,7 +14575,7 @@ let translate_case ctx (case : Case.t) =
                 (scaled_input ~what:(label ^ "." ^ aname) (attr_datatype ctx ~otype:i.otype ~attr:declared) v))
         i.attrs;
       List.iter (fun k -> emit ctx "has(%s,%s)." (str_raw label) (str k)) i.chars;
-      Eval.SMap.iter
+      Uchar_ref.World.SMap.iter
         (fun aname (tl : Uchar_ref.Timeline.t) ->
           (* ch. 9.4, 9.5: a sum-typed timeline carries a ground constructor
              term per segment, as a scalar sum input does; a struct-typed one
@@ -14292,13 +14603,13 @@ let translate_case ctx (case : Case.t) =
                 (bound_term s.s_to) (segment_term s.s_value))
             tl)
         i.tls;
-      Eval.SMap.iter
+      Uchar_ref.World.SMap.iter
         (fun cname periods ->
           List.iter
             (fun (v, t) -> emit ctx "ktl(%s,%s,%d,%d)." (str_raw label) (str cname) v t)
             periods)
         i.ctls;
-      Eval.SMap.iter
+      Uchar_ref.World.SMap.iter
         (fun key targets ->
           let fact_type, role = stored_relation doc key in
           let canonical = role_term ~fact_type role in
@@ -14313,7 +14624,7 @@ let translate_case ctx (case : Case.t) =
             targets)
         i.left_side)
     case.world.instances;
-  Eval.SMap.iter
+  Uchar_ref.World.SMap.iter
     (fun pname v ->
       match Ir_v0.Checks.find_ci doc.parameters pname with
       | Some { par_granularity = Some _; _ } -> () (* never read; ch. 8 *)
@@ -14328,7 +14639,7 @@ let translate_case ctx (case : Case.t) =
             (scaled_input ~what:("parameter " ^ pname) p.par_datatype v)
       | None -> fault "unknown parameter %S" pname)
     case.params;
-  Eval.SMap.iter
+  Uchar_ref.World.SMap.iter
     (fun pname (tl : Uchar_ref.Timeline.t) ->
       match Ir_v0.Checks.find_ci doc.parameters pname with
       | Some p ->
@@ -14406,8 +14717,7 @@ let writer_conflicts ctx =
 
 (* The evaluation strata of RUNTIME-SEMANTICS ch. 6.3 for every form of
    [forms], the verifier's [Ir_v0.Checks.dep_forms] of the document as
-   loaded, computed as ref/ computes them in [Eval.evaluate] over the same
-   graph: every form gets the least stratum at or above its positive
+   loaded, computed over that graph as ref/ computes them: every form gets the least stratum at or above its positive
    producers and strictly above its other producers, except along a
    dependency cycle, which WF-045 admits through a recursive group and on
    which every edge counts positive. *)
@@ -15207,12 +15517,8 @@ let translate_guarded (doc : document) (case : Case.t) : string * guards =
   let doc = Normalise.document doc in
   let wire_doc = doc in
   let doc = Ir_v0.Desugar.document doc in
-  let doc_env =
-    { Eval.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty;
-      btypes = Eval.SMap.empty; subj = None; form = None }
-  in
   let ctx =
-    { doc; wire_doc; case; doc_env; buf = Buffer.create 4096; guards = Hashtbl.create 32; fresh = 0; rule_guard = []; deposit_guard = [];
+    { doc; wire_doc; case; buf = Buffer.create 4096; guards = Hashtbl.create 32; fresh = 0; rule_guard = []; deposit_guard = [];
       write_scale = 1;
       write_unbounded = false; write_value = None; in_condition = false; desugared_group = false; rule_name = "?"; binders = []; param_reach = (fun _ -> []); deposit_subject = None; let_needs = [];
       value_of = None;

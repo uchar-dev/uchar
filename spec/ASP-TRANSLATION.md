@@ -390,9 +390,8 @@ reference (ch. 5.8) chains one `role/3` atom per to-one hop before the
 final `val` — the shared variable is the join, and an absent link
 simply leaves the body underivable. The hops are the reference's role
 bindings (`path`, since L2 the only spelling of a hop), each
-resolved through the reference interpreter's own `Eval.bound_role`, so
-both executors resolve navigation identically. A reference without
-bindings is the subject's own read (ch. 5.8 rule 4): no `role/3` atom is
+resolved to the named role of the named fact type (`bound_role`). A
+reference without bindings is the subject's own read (ch. 5.8 rule 4): no `role/3` atom is
 emitted at all and the `val` atom reads the subject itself — the
 unconditional own read, structurally (witness
 `jutterswet-aanmelderkrediet`) — and its `subjectType` must be the subject
@@ -1837,9 +1836,9 @@ the *input* world, not the growing one (ch. 5.5). Recursive creation
 is budgeted: `depth(ocI(S),D+1) :- ⟨body⟩, depth(S,D), D <
 oc_budget.` with `viol("generation budget exhausted",X) :-
 depth(X,oc_budget).` — the runaway chain is UNSAT with its reason,
-exactly where ref's pass budget faults. The back-link pair
-resolution reuses `Eval.connecting_pair`; an ambiguous back-link
-faults in both executors (`corpus/red/ambiguous-backlink`).
+exactly where ref's pass budget faults. The back-link pair is the one
+fact type that relates the two types (`connecting_pair`); an ambiguous
+back-link faults in both executors (`corpus/red/ambiguous-backlink`).
 
 **Fact creation** (ch. 3.4): the symbolic form walks its join chain
 — one positive `role/3` atom per step — and asserts the new filling

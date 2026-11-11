@@ -452,8 +452,8 @@ value lexing of `uchar-ref` (IO). The connecting role of an allocation
 or fold is the node's explicit `RoleBinding`: the wire writes every
 range and every recipient role, and the loader refuses a node that omits
 one (`spec/proposals/V1-WIREMIGRATIE.md` B12). The one relation derived
-when absent is an object creation's back-link, through `uchar-ref`'s
-`Eval.connecting_pair` (ch. 5.5). Every route ends in the same
+when absent is an object creation's back-link, the one fact type that
+relates the two types (`connecting_pair`, ch. 5.5). Every route ends in the same
 `role_canonical` convention the case facts use. All evaluation
 semantics run in clingo; the hand-written absolute expectations keep a
 shared-derivation bug from ever passing silently.

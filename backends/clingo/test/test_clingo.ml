@@ -3343,10 +3343,10 @@ let () =
     ~needle:"is hosted on \"Post\" while the subject is \"Kustvak\""
 
 (* --- WF-109's EXTENSIONAL half, and its ambiguity flank (2026-09-19) -------
-   The two rows the SUBTYPE edge adds. Both ask the SHARED host decision
-   ([Eval.guard_on_target]) rather than anything this backend owns, and that is
-   why they are pinned here as well as in ref's suite: the helper has two
-   callers and one of them is this one.
+   The two rows the SUBTYPE edge adds. Both ask the host decision of a fact
+   creation's guard ([Translate.guard_on_target]), which this backend makes
+   itself, and they are pinned here as in ref's suite: the two executors
+   decide it each in their own code.
 
    (a) SUPERTYPE host. `Sein extends Baken`, `gehesen` declared on `Baken`
        alone, host "Baken" — the doel satisfies it through inheritance
