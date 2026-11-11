@@ -133,8 +133,16 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
 - Every semantics clause carries a worked example with concrete expected
   output; those examples are the reference interpreter's test suite
   (`ref/`), verbatim.
-- Every node is marked `layer: core` or `layer: dialect(regelspraak)`; the
-  dialect→core lowering is itself specified and tested.
+- Every node, field and value is core or presentation. Core is what this
+  document and `RUNTIME-SEMANTICS.md` give a meaning, whatever source
+  language it comes from: an executor evaluates a core form as specified or
+  refuses the document with a registered refusal or limit code (ch. 5.5); it
+  never skips one. Presentation records how a source spelled something: no
+  executor's answer depends on it, and gate 13 holds every executor to that,
+  by removing the field or, where the schema requires it, by exchanging its
+  value (ch. 10). A chapter's introduction names the presentation fields of
+  that chapter, marked `layer: presentation`; everything else is
+  `layer: core`.
 - **A spec sentence without a machine-checkable artifact is not done.**
 - Metamodel node and field names are English (PLAN §9, decision 6); each
   node lists its v0 name. *Declared* domain names — object types,
@@ -165,7 +173,8 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
 
 ## Document structure
 
-1. **Scope and conformance** *(skeleton)*
+1. **Scope and conformance** *(skeleton; what core and presentation are
+   stands in the conventions above)*
 2. **The model layer** — normative draft (since v0.1).
 3. **The rule layer** — normative draft (since v0.2).
 4. **The expression and condition layer** — **this release.**
