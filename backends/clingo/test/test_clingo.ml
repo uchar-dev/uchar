@@ -18920,6 +18920,44 @@ let () =
              { "kind": "inconsistent", "rule": "loon van een vondst", "label": "V1", "code": "EF-005" },
              { "kind": "inconsistent", "rule": "loon van een vondst", "label": "V1", "code": "EF-031" }|})
 
+(* A golden whose recursive rule group is removed has a dependency cycle
+   through an object creation of no recursive group (WF-045). This encoding
+   keeps a creation depth only for a recursive group's creation, so clingo
+   grounded the chain of mints without bound and did not return (measured on
+   the four creation chains below). The translation refuses the document, as
+   ref refuses to evaluate it; the check stops at the translation and never
+   starts clingo. *)
+let without_recursive_groups text =
+  let update key f = function
+    | `Assoc fields -> `Assoc (List.map (fun (k, v) -> if k = key then (k, f v) else (k, v)) fields)
+    | _ -> failwith "without_recursive_groups: not an object"
+  in
+  Yojson.Safe.from_string text
+  |> update "rules"
+       (update "ruleGroups" (function
+         | `List gs -> `List (List.filter (fun g -> Yojson.Safe.Util.member "recursive" g <> `Bool true) gs)
+         | _ -> failwith "without_recursive_groups: ruleGroups is no list"))
+  |> Yojson.Safe.to_string
+
+let () =
+  let read path = In_channel.with_open_bin path In_channel.input_all in
+  List.iter
+    (fun (golden, case_file) ->
+      let name = Printf.sprintf "%s without its recursive group is refused" golden in
+      let doc, case =
+        load_pair
+          ~ir:(without_recursive_groups (read ("corpus/golden/" ^ golden ^ "/ir.json")))
+          ~case_text:(read ("corpus/golden/" ^ golden ^ "/" ^ case_file))
+      in
+      match translate doc case with
+      | (_ : string) -> check (name ^ ": expected the refusal CLINGO-044, got a program") false
+      | exception Uchar_ref.Value.Fault { code; text; _ } ->
+          check (Printf.sprintf "%s (%s)" name text) (code = Some "CLINGO-044"))
+    [ ("anchor/jutterswet-wachtersketen", "case1.json");
+      ("jutterswet-wachtersketen-rgs", "case1.json");
+      ("jutterswet-budgetgrens-op", "case1-een-keten.json");
+      ("synth2-budgetgrens-onder", "case1.json") ]
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

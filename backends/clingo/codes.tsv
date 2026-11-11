@@ -42,3 +42,4 @@ CLINGO-040	refusal	ranking-fold-over-a-timeline	fold,attribute	refuse_ranking_fo
 CLINGO-041	refusal	exponent-not-a-whole-non-negative-literal		const_pow_exponent
 CLINGO-042	limit	text-composition-no-string-functions		symbolic_term
 CLINGO-043	refusal	rounded-square-root		expr_term
+CLINGO-044	refusal	creation-cycle-without-recursive-group	creation	refuse_unbounded_creation_cycle

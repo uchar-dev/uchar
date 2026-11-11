@@ -15138,6 +15138,42 @@ let payload_projections ctx =
         ot.attributes)
     ctx.doc.object_types
 
+(* an object creation on a dependency cycle in a document without a recursive
+   creation group: WF-045 refuses it, but an executor can still be handed one,
+   and this encoding keeps a creation depth only where a recursive group carries
+   a creation ([has_recursive_creation]). Without it each mint can make the
+   subject of the next, grounding a chain of mints without bound, and clingo does
+   not return. The cycle is the one WF-045 walks: the dependency graph without
+   the shifted edges of an instance-ordered part. *)
+let refuse_unbounded_creation_cycle (doc : document) =
+  if not (has_recursive_creation doc) then begin
+    let cctx = Ir_v0.Checks.ctx_of doc in
+    let forms = Array.of_list (Ir_v0.Checks.dep_forms cctx) in
+    let edges = Ir_v0.Checks.dep_edges forms in
+    let _, shifted, _ = Ir_v0.Checks.instance_ordering cctx forms edges in
+    let succ = Array.make (Array.length forms) [] in
+    List.iter
+      (fun (pi, ci, node, _) ->
+        if (not (shifted (pi, ci, node))) && not (List.mem ci succ.(pi)) then succ.(pi) <- ci :: succ.(pi))
+      edges;
+    let on_cycle i =
+      let seen = Array.make (Array.length forms) false in
+      let rec go j = j = i || ((not seen.(j)) && (seen.(j) <- true; List.exists go succ.(j))) in
+      List.exists go succ.(i)
+    in
+    Array.iteri
+      (fun i (f : Ir_v0.Checks.dep_form) ->
+        if String.starts_with ~prefix:"/rules/objectCreations/" f.df_at && on_cycle i then
+          faultc
+            ~params:[ ("creation", f.df_name) ]
+            "CLINGO-044"
+            "the object creation %S at %s lies on a dependency cycle, and no recursive rule group carries \
+             a creation (WF-045): this backend keeps no creation depth there, so the chain of mints has no \
+             bound and the document is refused"
+            f.df_name f.df_at)
+      forms
+  end
+
 (* two constructors of one sum type whose names meet in one ASP symbol
    ([ctor_functor]: "a b" and "a_b") would be one value in the model; the
    document is refused instead, naming both *)
@@ -15173,6 +15209,7 @@ let translate (doc : document) (case : Case.t) : string =
         "%s: the presentation tag \"percentage\" on a type annotation: the tag is written only \
          where a datatype is declared"
         at);
+  refuse_unbounded_creation_cycle doc;
   refuse_creation_reads_on_a_cycle doc ~as_of:case.as_of;
   refuse_functor_collisions doc;
   (* the day-kind extension tables are per DOCUMENT+CASE (their window is
