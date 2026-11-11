@@ -369,18 +369,6 @@ type range_order = {
    fold's matrix — as translated for one member variable *)
 type part = { pt_id : int; pt_order : range_order; pt_parent : string; pt_member : string }
 
-(* the pass before a creation, for the unbound-parameter guard ([with_pre]):
-   the truth there of a composite or quantifier fold as translated once, [None]
-   where it is the fixpoint's *)
-type pre_handle = { ph_node : condition_expr; ph_atoms : string list option Lazy.t }
-
-(* a short-circuit atom whose outcome can differ in the pass before a creation
-   ([unbound_param_guard]): its form there, binding the atom's own variables so
-   the comparisons after it read the count of that pass; "not as at the
-   fixpoint"; its outcome there as one atom; and what the named sentence
-   names *)
-type pre_entry = { pe_form : string; pe_not_fix : string; pe_holds : string; pe_desc : string }
-
 (* ch. 10.6 for the unbound-parameter guard ([reach_at]): one record per Let
    the rule level translates *)
 type let_info = {
@@ -567,16 +555,6 @@ type ctx = {
      length), which a read in those operands does not wait for ([expr_term]) *)
   mutable hoisted : (expr * expr list) list;
   mutable before_arm : (expr list * int * int) list;
-  (* the pass before a creation ([with_pre], [unbound_param_guard]): the
-     handles of the conditions translated in the current scope, and the
-     short-circuit atoms with a form there *)
-  mutable pre_scope : pre_handle list;
-  mutable pre_reach : (string * pre_entry option Lazy.t) list;
-  (* a Let barrier's atom, its form in the pass before a creation ("not barred
-     in that pass") and its ask; and the asks whose family for that pass
-     [emit_barriers] writes *)
-  mutable pre_let : (string * (string * string)) list;
-  mutable pre_asks : string list;
   (* the terms whose sign [sign_conds] reads without them, and the sign
      helpers it has emitted *)
   mutable signs : (string * sign_src) list;
@@ -1405,12 +1383,6 @@ let doc_dynamic (doc : document) = doc.object_creations <> [] || doc.fact_creati
      has no normed place, not among the case's links either, and in a
      multi-step range a fact creation can move a case member forward through
      the union, so there the case order holds only without fact creations;
-   - roN_q(P,X): X is in the range in every pass ref makes — a case link.
-     ref runs a pass's rules before its creations, so a member a creation
-     adds is missing in the pass before that creation, the degenerate order
-     in which it is absent; "barred in every allowed order" counts only
-     members that are there in that pass too ([emit_barriers]). Written
-     only where a creation or a fact creation can add a member.
    There is no relation for ref's own order of the added links. That order
    follows from how ref runs the creations, which the spec does not norm: ref
    runs a fixpoint per stratum, so a creation for each Werf sits above a
@@ -1428,47 +1400,9 @@ let use_ro ctx (ro : range_order) =
     if ro.ro_one_step || not (ro.ro_dynamic && ctx.doc.fact_creations <> []) then
       emit_rule ctx ~head:(Printf.sprintf "%s_n(P,X,Y)" p)
         ~body:[ Printf.sprintf "%s_o(P,X,I)" p; Printf.sprintf "%s_o(P,Y,J)" p; "I < J" ]
-    else emit ctx "#defined %s_n/3." p;
-    if ro.ro_dynamic then emit_rule ctx ~head:(Printf.sprintf "%s_q(P,X)" p) ~body:[ Printf.sprintf "%s_o(P,X,_)" p ]
+    else emit ctx "#defined %s_n/3." p
   end;
   p
-
-(* [f] translates [node]; its handle for the pass before a creation, which
-   [node]'s own translation registers ([register_pre]) *)
-let with_pre ctx (node : condition_expr) f =
-  let saved = ctx.pre_scope in
-  ctx.pre_scope <- [];
-  let r = f () in
-  let h =
-    match List.find_opt (fun h -> h.ph_node == node) ctx.pre_scope with
-    | Some h -> h.ph_atoms
-    | None -> lazy None
-  in
-  ctx.pre_scope <- saved;
-  (r, h)
-
-let register_pre ctx (node : condition_expr) atoms =
-  if doc_dynamic ctx.doc then ctx.pre_scope <- { ph_node = node; ph_atoms = atoms } :: ctx.pre_scope
-
-(* the pass before a creation's entry of a short-circuit atom, if it has one *)
-let pre_entry ctx a =
-  match List.assoc_opt a ctx.pre_reach with Some l -> Lazy.force l | None -> None
-
-(* an atom of a reach, read in the pass before a creation: a short circuit in
-   its form there, a Let barrier as "not barred in that pass" (and its family
-   is written), any other atom whose truth hangs on the order of the created
-   members in its some-order form, or, [certain], as it is: a barrier in that
-   pass has to be certain, a read there need not *)
-let pre_form ctx ~certain a =
-  match pre_entry ctx a with
-  | Some e -> e.pe_form
-  | None -> (
-      match List.assoc_opt a ctx.pre_let with
-      | Some (form, ask) ->
-          if not (List.mem ask ctx.pre_asks) then ctx.pre_asks <- ask :: ctx.pre_asks;
-          form
-      | None -> (
-          match List.assoc_opt a ctx.named with Some (o, _, _) when not certain -> o | _ -> a))
 
 (* ch. 5.7, binding is fail-fast: THE reading of a parameter the case does not
    bind, shared by every position that reads a parameter's value. ref faults at
@@ -1494,9 +1428,8 @@ let unbound_param_reason name =
   Printf.sprintf "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)" name
 
 (* that refusal for an unbound parameter. [what] names the node whose read
-   depends on that order: a quantifier fold, a Let whose value waits for its
-   binder or whose barrier may end it first, or a composite condition whose
-   prefix the pass before a creation leaves open *)
+   depends on that order: a quantifier fold, or a Let whose value waits for
+   its binder or whose barrier may end it first *)
 let unbound_param_order_reason name what =
   Printf.sprintf "parameter %S is unbound in this case, and whether %s reads it %s" name what order_not_normed
 
@@ -1534,29 +1467,14 @@ let reached_order_reason reason what = Printf.sprintf "%s; whether %s reaches it
    ref's words were due (README [N3]). And "some allowed order" is decided per
    fold's range: two folds over one list each take an order of their own, so
    a twin can join atoms that no single order makes true, and the refusal is
-   named where no allowed order reads the parameter (README [N4]). The pass
-   before a creation is such an order too: for a Let barrier through the
-   members that are there in it ([emit_barriers]), for a short circuit through
-   the forms the atoms take in it ([pre_sensitive], [pre_form]), with twins of
-   its own below.
+   named where no allowed order reads the parameter (README [N4]).
 
-   Where the body is not exact otherwise, it errs in one of two directions,
-   each written at the place that builds it. Loud: a Let barrier that only a
-   created member raises, or a short
-   circuit that only a created member settles, counts the pass before the
-   creation also where ref has no such pass for the read: ch. 6.1/6.3 puts the
-   form above the creation (a rule, the condition of a creation or fact
-   creation, a consistency assertion), or ref makes the read's own member only
-   after the members that settle it ([emit_barriers], [pre_sensitive], README
-   [L2]).
-   Silent: the Let lowering keeps a value behind an enclosing need on a path
-   that does not read it, and the guard follows the lowering ([reach_at],
-   README [S1]); and the guard is read at the fixpoint, so a read ref reaches
-   only in a pass before a rule of the same stratum wrote what the read's
-   short circuit depends on fires nothing (README [S3]), nor does one ref
-   reaches only in the pass before a creation through a condition that holds
-   on absence, in an `all` prefix, a taken arm or a rule's condition (README
-   [S4]). *)
+   The guard is read at the fixpoint, as ref reads faults (RUNTIME-SEMANTICS
+   ch. 5.7): a read ref reaches only in a pass before a creation or a rule of
+   the same stratum wrote what its short circuit depends on fires nothing.
+   Where the body is not exact otherwise, it errs in one direction. Silent: the
+   Let lowering keeps a value behind an enclosing need on a path that does not
+   read it, and the guard follows the lowering ([reach_at], README [S1]). *)
 let reach_guard ctx ~witness ~reason ?code ~(order_reason : string -> string) body =
   begin
     emit_viol ctx ?code ~subject:witness reason body;
@@ -1582,25 +1500,7 @@ let reach_guard ctx ~witness ~reason ?code ~(order_reason : string -> string) bo
             body
         in
         emit_viol ctx ~code:order_code ~subject:witness (order_reason fold) body')
-      dep;
-    (* the pass before a creation's twins: every atom as it reads in that
-       pass ([pre_form]), and one short circuit that pass leaves open is
-       settled at the fixpoint — so these never overlap the guard. The read's
-       own members are taken to be there, as the Let barrier takes the
-       guard's own member ([emit_barriers]): a member a creation adds exists
-       in a pass before the members that are added to its own ranges *)
-    List.iter
-      (fun a ->
-        match pre_entry ctx a with
-        | None -> ()
-        | Some e ->
-            let body' =
-              List.concat_map
-                (fun b -> if b = a then [ e.pe_form; e.pe_not_fix ] else [ pre_form ctx ~certain:false b ])
-                body
-            in
-            emit_viol ctx ~code:order_code ~subject:witness (order_reason e.pe_desc) body')
-      (List.sort_uniq compare body)
+      dep
   end
 
 let unbound_param_code name = guardc ~params:[ ("parameter", Fixed name) ] "EF-014"
@@ -1800,8 +1700,7 @@ let barred ctx li (s : site) i =
     let not_c = Printf.sprintf "not %s_c(%s)" name args in
     ctx.named <-
       (atom, (not_c, Printf.sprintf "%s, %s(%s)" not_c name args, Printf.sprintf "the Let %S" li.li_binder))
-      :: ctx.named;
-    ctx.pre_let <- (atom, (Printf.sprintf "not %s_p(%s)" name args, name)) :: ctx.pre_let
+      :: ctx.named
   end;
   atom
 
@@ -1855,24 +1754,21 @@ let rule_reach ?(skip : let_info option) ctx ~subject ~subject_ot =
   fun (node : expr) -> reach_at ctx ?skip s node
 
 (* the places in [li]'s body where the read at [node] (site [s]) of a binder
-   happens, each with the atoms that say it does, the per-member parts it
-   stands in, and the parts inside a Let value it stands in. A read inside the
-   value of a Let nested in [li] happens where that value runs: at every read of
-   that Let's binder — the first one runs it, and a later one is reached only
-   after the first — so its places and parts are those of the reads of that
-   binder, joined to its own reach within the value. The parts inside the value
-   order nothing against the guard's members; they only say whose members must
-   be in the range for the read to happen ([emit_barriers]). *)
+   happens, each with the atoms that say it does and the per-member parts it
+   stands in. A read inside the value of a Let nested in [li] happens where that
+   value runs: at every read of that Let's binder — the first one runs it, and a
+   later one is reached only after the first — so its places and parts are
+   those of the reads of that binder, joined to its own reach within the value.
+   The parts inside the value order nothing against the guard's members. *)
 let rec read_places ctx li ~(skip : let_info) (node, (s : site)) =
   match read_place li node with
-  | Some i -> [ (i, reach_at ctx ~skip ~cut:li s node, rel_parts li s, []) ]
+  | Some i -> [ (i, reach_at ctx ~skip ~cut:li s node, rel_parts li s) ]
   | None -> (
       match s.si_value_of with
       | Some m when List.memq li m.li_outer ->
-          let within = reach_at ctx ~skip ~cut:li s node and inner = rel_parts m s in
+          let within = reach_at ctx ~skip ~cut:li s node in
           List.concat_map
-            (fun r ->
-              List.map (fun (i, a, ps, ins) -> (i, a @ within, ps, ins @ inner)) (read_places ctx li ~skip:m r))
+            (fun r -> List.map (fun (i, a, ps) -> (i, a @ within, ps)) (read_places ctx li ~skip:m r))
             (List.rev m.li_reads)
       | _ -> [])
 
@@ -1887,10 +1783,9 @@ let rec read_places ctx li ~(skip : let_info) (node, (s : site)) =
    member, that is the case order and one family of rules answers. Where one
    can, the order of the added members is not normed, and each ask gets two
    families: [name]_c, "barred in every allowed order" (a read that every order
-   reaches, by a member that every order puts first, through members that are
-   in the range in every pass — the pass before a creation is such an order),
-   and [name], "barred in some allowed order" (a read that some order reaches,
-   by a member that some order puts first). The guard reads "not [name]", its
+   reaches, by a member that every order puts first), and [name], "barred in
+   some allowed order" (a read that some order reaches, by a member that some
+   order puts first). The guard reads "not [name]", its
    named twin "not [name]_c" ([barred]). Lets are taken shallow first, because
    a barrier rule asks only about Lets nested deeper, so every place is asked
    before its Let is written. Only guards ask, so a case that binds its
@@ -1909,58 +1804,19 @@ let emit_barriers ctx =
         if dynamic then emit ctx "#defined %s/3." lbr_o;
         emit_rule ctx ~head:(Printf.sprintf "lbn%d(%s)" li.li_id sv) ~body:(base :: li.li_va);
         let reads = List.concat_map (read_places ctx li ~skip:li) (List.rev li.li_reads) in
-        (* "barred in every allowed order" has to hold in the pass before a
-           creation too: ref runs a pass's rules before its creations, so the
-           member that creation adds is not in the range yet, nothing reads by
-           it, and the guard is reached. That family therefore counts a read
-           only through members that are in the range in every pass (roN_q,
-           [use_ro]), at every level of the read's chain — the parts inside a
-           Let value included — except a level its rule equates with the
-           guard's own member, which is there wherever the guard is read *)
-        let present ?(from = 0) parts =
-          if not dynamic then []
-          else
-            List.concat
-              (List.mapi
-                 (fun j (q : part) ->
-                   if j >= from then
-                     [ Printf.sprintf "%s_q(%s,%s)" (use_ro ctx q.pt_order) q.pt_parent q.pt_member ]
-                   else [])
-                 parts)
-        in
         let write_reads lbr form =
           List.iter
-            (fun (i, atoms, parts, inner) ->
+            (fun (i, atoms, parts) ->
               let top = match parts with q :: _ -> q.pt_id | [] -> 0 in
-              emit_rule ctx ~head:(Printf.sprintf "%s(%s,%d,%d)" lbr sv i top) ~body:(form atoms parts inner))
+              emit_rule ctx ~head:(Printf.sprintf "%s(%s,%d,%d)" lbr sv i top) ~body:(form atoms))
             reads
         in
-        (* a read that every allowed order reaches is reached in the pass
-           before a creation too: a short circuit on its path is open there
-           as well ([pre_entry]) *)
-        let open_there atoms =
-          List.filter_map (fun a -> Option.map (fun e -> e.pe_holds) (pre_entry ctx a)) atoms
-        in
-        write_reads lbr (fun atoms parts inner -> atoms @ open_there atoms @ present (parts @ inner));
-        if dynamic then write_reads lbr_o (fun atoms _ _ -> List.map some_order atoms);
-        (* barred in the pass before a creation, for that pass's twins
-           ([unbound_param_guard]): a read there, every atom as it reads
-           there and certain, by a member that is there *)
-        let lbr_p = Printf.sprintf "lbr%d_p" li.li_id in
-        let pre_asked = List.exists (fun (_, _, n) -> List.mem n ctx.pre_asks) li.li_asks in
-        if pre_asked then begin
-          emit ctx "#defined %s/3." lbr_p;
-          write_reads lbr_p (fun atoms parts inner ->
-              List.map (pre_form ctx ~certain:true) atoms @ present (parts @ inner))
-        end;
+        write_reads lbr Fun.id;
+        if dynamic then write_reads lbr_o (List.map some_order);
         (* the rules of one family for one ask; [some]: barred in some allowed
            order, else in every one *)
-        let family ?form ~some ~lbr name (i, gparts) =
-          let form =
-            match form with
-            | Some f -> f
-            | None -> if some then List.map some_order else fun atoms -> atoms @ open_there atoms
-          in
+        let family ~some ~lbr name (i, gparts) =
+          let form = if some then List.map some_order else Fun.id in
           match gparts with
           | [] -> emit_rule ctx ~head:(Printf.sprintf "%s(S,%d)" name i)
                     ~body:
@@ -1991,7 +1847,7 @@ let emit_barriers ctx =
                       Printf.sprintf "I < %d" i; not_n ]
                    @ dom 0);
               List.iter
-                (fun (ir, atoms, rparts, inner) ->
+                (fun (ir, atoms, rparts) ->
                   match rparts with
                   | p1 :: _ when p1.pt_id = q1.pt_id ->
                       let xs = List.map (fun (q : part) -> q.pt_member) rparts in
@@ -2002,11 +1858,6 @@ let emit_barriers ctx =
                       in
                       let c = common rparts gparts in
                       let eqs k = List.init k (fun j -> Printf.sprintf "%s = %s" (List.nth bg j) (List.nth xs j)) in
-                      (* in every order, the read's members on the levels
-                         below the ones this rule equates with the guard's
-                         members or orders before them — the member [first]
-                         orders is a case link already *)
-                      let pres from = if some then [] else present ~from rparts @ present inner in
                       for lvl = 0 to c - 1 do
                         let ro = use_ro ctx (List.nth rparts lvl).pt_order in
                         let parent = parent_of xs lvl and x = List.nth xs lvl and g = List.nth bg lvl in
@@ -2020,10 +1871,10 @@ let emit_barriers ctx =
                             @ dom lvl
                           else Printf.sprintf "%s_n(%s,%s,%s)" ro parent x g :: dom (lvl + 1)
                         in
-                        emit_rule ctx ~head ~body:(form atoms @ pres (lvl + 1) @ eqs lvl @ first @ [ not_n ])
+                        emit_rule ctx ~head ~body:(form atoms @ eqs lvl @ first @ [ not_n ])
                       done;
                       if ir < i then
-                        emit_rule ctx ~head ~body:(form atoms @ pres c @ eqs c @ dom c @ [ not_n ])
+                        emit_rule ctx ~head ~body:(form atoms @ eqs c @ dom c @ [ not_n ])
                   | _ -> ())
                 reads
         in
@@ -2031,10 +1882,7 @@ let emit_barriers ctx =
           (fun (i, gparts, name) ->
             if dynamic then begin
               family ~some:false ~lbr (name ^ "_c") (i, gparts);
-              family ~some:true ~lbr:lbr_o name (i, gparts);
-              if List.mem name ctx.pre_asks then
-                family ~form:(List.map (pre_form ctx ~certain:true)) ~some:false ~lbr:lbr_p (name ^ "_p")
-                  (i, gparts)
+              family ~some:true ~lbr:lbr_o name (i, gparts)
             end
             else family ~some:false ~lbr name (i, gparts))
           (List.rev li.li_asks)
@@ -2096,130 +1944,6 @@ let expr_reaches ctx (hit : expr -> bool) (e : expr) : bool =
   in
   x e
 
-(* THE PASS BEFORE A CREATION, for a short circuit (fixronde 6 of card
-   clingo-parameter-failfast; the Let barrier's is [emit_barriers]). ref runs a
-   pass's rules before its creations, so in the pass before a creation the
-   member it adds is not in any range yet, and a short circuit it settles at
-   the fixpoint can still be open there: the read behind it is reached in that
-   pass and not at the fixpoint. That pass is the degenerate order in which
-   the member is absent, and the refusal is named (decision of the main
-   session, 2026-09-23). It follows the reads ch. 6.3 counts positive (the
-   verifier's dep_cond): only through them can a rule share a stratum with the
-   creation, so only through them does ref have such a pass. So an `atLeast`
-   fold's range, filter and matrix, an `all` fold's matrix, the members of an
-   `all`, `the` or `atLeast` composite, and a comparison, a navigated
-   characteristic or a role check that reads through a role
-   ([leaf_reads_role], read there with the case's own links, [pre_clone]);
-   every other part reads as at the fixpoint. The short circuits it adds
-   reads behind are an `atLeast` composite's prefix and an `atLeast` fold's
-   open prefix: an `all` prefix of monotone members is settled earlier there,
-   not later, and one whose member holds on absence (a count against zero,
-   ch. 6.1) is read at the fixpoint, README [S4]. *)
-let leaf_reads_role ctx (c : condition_expr) =
-  let ranging (e : expr) =
-    match e with
-    | Attribute_reference { navigation_bindings = Some _; _ } | Instance_set_union _ -> true
-    (* a fold reaches instances through its range alone (D8): without one it
-       reads the subject's own value *)
-    | Function_call { source_role; source_path; _ } -> source_role <> None || source_path <> None
-    | _ -> false
-  in
-  let opt = function Some e -> expr_reaches ctx ranging e | None -> false in
-  match c with
-  | Comparison { left_side; right_side; _ } -> opt left_side || opt right_side
-  | Time_window { starting_at; up_to; _ } -> opt starting_at || opt up_to
-  | Characteristic_check { navigation_binding = Some _; _ } | Role_membership _ -> true
-  | _ -> false
-
-let rec pre_sensitive ctx (c : condition_expr) =
-  match c with
-  | Quantifier_fold { kv_quantifier = At_least; _ } -> true
-  | Quantifier_fold { kv_quantifier = All; kv_test = Some t; _ } -> pre_sensitive ctx t
-  | Compound { quantifier_kind = All | The | At_least; components; _ } ->
-      List.exists (pre_sensitive ctx) components
-  | Quantifier_fold _ | Compound _ -> false
-  | _ -> leaf_reads_role ctx c
-
-(* [f] on every predicate name in [s]: a lowercase identifier followed by an
-   opening parenthesis, outside a quoted string *)
-let map_predicates f s =
-  let n = String.length s and b = Buffer.create (String.length s) in
-  let is_id c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c = '_' in
-  let rec go i quoted =
-    if i < n then begin
-      let c = s.[i] in
-      if quoted then begin
-        Buffer.add_char b c;
-        if c = '\\' && i + 1 < n then begin
-          Buffer.add_char b s.[i + 1];
-          go (i + 2) true
-        end
-        else go (i + 1) (c <> '"')
-      end
-      else if c = '"' then begin
-        Buffer.add_char b c;
-        go (i + 1) true
-      end
-      else if c >= 'a' && c <= 'z' && (i = 0 || not (is_id s.[i - 1])) then begin
-        let j = ref i in
-        while !j < n && is_id s.[!j] do incr j done;
-        let id = String.sub s i (!j - i) in
-        Buffer.add_string b (if !j < n && s.[!j] = '(' then f id else id);
-        go !j false
-      end
-      else begin
-        Buffer.add_char b c;
-        go (i + 1) false
-      end
-    end
-  in
-  go 0 false;
-  Buffer.contents b
-
-(* a leaf's truth in the pass before a creation ([leaf_reads_role]): the rules
-   its translation wrote, [segment], written again under names of their own,
-   with every role atom read from the case's own links (inputrole/3), so that a
-   member a creation adds is in no range; its guards and the model's own
-   predicates are not written again. Returns its atoms under those names *)
-let pre_clone ctx segment atoms =
-  let model =
-    [ "val"; "has"; "role"; "isa"; "is_a"; "param"; "viol"; "inconsistent"; "inconsistent_code"; "tl";
-      "param_tl"; "ktl"; "inputval"; "inputtl"; "inputrole" ]
-  in
-  let is_id c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c = '_' in
-  let head l =
-    let l = String.trim l in
-    let l = if String.starts_with ~prefix:"#defined " l then String.sub l 9 (String.length l - 9) else l in
-    let n = String.length l in
-    let j = ref 0 in
-    while !j < n && is_id l.[!j] do incr j done;
-    if !j = 0 || not (l.[0] >= 'a' && l.[0] <= 'z') then None else Some (String.sub l 0 !j)
-  in
-  let lines = String.split_on_char '\n' segment in
-  let own =
-    List.filter (fun h -> not (List.mem h model)) (List.sort_uniq compare (List.filter_map head lines))
-  in
-  ctx.fresh <- ctx.fresh + 1;
-  let suffix = Printf.sprintf "_pre%d" ctx.fresh in
-  let rename id = if id = "role" then "inputrole" else if List.mem id own then id ^ suffix else id in
-  List.iter
-    (fun l ->
-      match head l with
-      | Some h when List.mem h own ->
-          let l = map_predicates rename l in
-          let l =
-            if String.starts_with ~prefix:"#defined " (String.trim l) then
-              "#defined " ^ h ^ suffix ^ String.sub (String.trim l) (9 + String.length h)
-                (String.length (String.trim l) - 9 - String.length h)
-            else l
-          in
-          (* a copy of a line already emitted, the fence of [emit_rule]
-             passed on it, with predicates renamed and its variables kept *)
-          emit ctx "%s" l
-      | _ -> ())
-    lines;
-  List.map (map_predicates rename) atoms
-
 (* a demand atom "dmdN(S)" with its predicate suffixed: "dmdN_o(S)" *)
 let demand_form atom suffix =
   let i = String.index atom '(' in
@@ -2276,11 +2000,7 @@ let note_binder_read ctx ~subject ~subject_ot (node : expr) ident =
               emit_rule ctx ~head:d ~body:(reach);
               if doc_dynamic ctx.doc then begin
                 let some_order a = match List.assoc_opt a ctx.named with Some (o, _, _) -> o | None -> a in
-                emit_rule ctx ~head:(demand_form d "_o") ~body:(List.map some_order reach);
-                (* and where the pass before a creation leaves open a short
-                   circuit the fixpoint settles, that pass reads the binder *)
-                if List.exists (fun a -> pre_entry ctx a <> None) reach then
-                  emit_rule ctx ~head:(demand_form d "_o") ~body:(List.map (pre_form ctx ~certain:false) reach)
+                emit_rule ctx ~head:(demand_form d "_o") ~body:(List.map some_order reach)
               end))
 
 (* the canonical role name: the plural for a to-many role, the singular
@@ -4798,13 +4518,11 @@ let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation 
      allowed order; open there and not above ([reach]_q), in one order and not
      in another, so the guard fires in a sentence that names the unnormed
      order, never in ref's, whichever order ref keeps. Settled there, no
-     allowed order reads X. The case links are in the range from the start, so
-     every pass ref makes, also one before a creation filled the range, has at
-     least this prefix; N is the final contributor count, the largest.
+     allowed order reads X. N is the contributor count at the fixpoint.
    Stratified by construction: the helpers read the matrix and the range, and
    only the guards read them. *)
 let emit_kv_reach ctx ~reach ~subject ~subject_ot ~x ~join ~fatoms ~atoms ~quantifier_kind ~cutoff
-    ~(ro : range_order) ~pre =
+    ~(ro : range_order) =
   let rp = use_ro ctx ro in
   let m = reach ^ "_m" and h = reach ^ "_h" and n = reach ^ "_n" and b = reach ^ "_b" in
   let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
@@ -4837,30 +4555,7 @@ let emit_kv_reach ctx ~reach ~subject ~subject_ot ~x ~join ~fatoms ~atoms ~quant
       ~body:[ Printf.sprintf "%s(S,X,K,H)" c; Printf.sprintf "%s(S,N)" n; still_open ];
     emit_rule ctx ~head:(Printf.sprintf "%s_q(S,X)" reach)
       ~body:[ Printf.sprintf "%s_o(S,X)" reach; Printf.sprintf "not %s(S,X)" reach ]
-  end;
-  (* [reach]_p(S,X), where the pass before a creation opens the prefix
-     ([pre_sensitive]): X a case link, the case links before it in the case
-     order, each with its filter and matrix as they read in that pass, and
-     that pass's count. [pre] gives those two ([None]: as at the fixpoint) *)
-  match pre with
-  | None -> ()
-  | Some f ->
-      let fp, mp = f () in
-      let pm = reach ^ "_pm" and ph = reach ^ "_ph" and pn = reach ^ "_pn" and pc = reach ^ "_pc" in
-      emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" pm subject x)
-        ~body:
-          ((base :: join) @ (Printf.sprintf "%s_q(%s,%s)" rp subject x :: Option.value fp ~default:fatoms));
-      emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" ph subject x)
-        ~body:(Printf.sprintf "%s(%s,%s)" pm subject x :: Option.value mp ~default:atoms);
-      emit_rule ctx ~head:(Printf.sprintf "%s(S,N)" pn)
-        ~body:[ Printf.sprintf "isa(S,%s)" (str subject_ot); Printf.sprintf "N = #count{ X : %s(S,X) }" pm ];
-      emit_rule ctx ~head:(Printf.sprintf "%s(S,X,K,H)" pc)
-        ~body:
-          [ Printf.sprintf "%s(S,X)" pm;
-            Printf.sprintf "K = #count{ Y : %s(S,Y), %s_n(S,Y,X) }" pm rp;
-            Printf.sprintf "H = #count{ Y : %s(S,Y), %s_n(S,Y,X) }" ph rp ];
-      emit_rule ctx ~head:(Printf.sprintf "%s_p(S,X)" reach)
-        ~body:[ Printf.sprintf "%s(S,X,K,H)" pc; Printf.sprintf "%s(S,N)" pn; still_open ]
+  end
 
 (* a chain of Lets over a Match in a closed body, as [body_branches] pushes it
    into the arms: [Some (lets, scrutinee, arms)], the Lets outermost first, when
@@ -8982,14 +8677,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : condition_expr) : string list =
   let outer = ctx.in_condition in
   ctx.in_condition <- true;
   Fun.protect ~finally:(fun () -> ctx.in_condition <- outer) @@ fun () ->
-  if doc_dynamic ctx.doc && leaf_reads_role ctx c then begin
-    let start = Buffer.length ctx.buf in
-    let atoms = cond_atoms_raw ctx ~subject ~subject_ot c in
-    let segment = Buffer.sub ctx.buf start (Buffer.length ctx.buf - start) in
-    register_pre ctx c (lazy (Some (pre_clone ctx segment atoms)));
-    atoms
-  end
-  else cond_atoms_raw ctx ~subject ~subject_ot c
+  cond_atoms_raw ctx ~subject ~subject_ot c
 
 and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
   match Ir_v0.Checks.unanchored_cond c with
@@ -9421,26 +9109,18 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          division in member 2, ref's ch. 5.10 laziness on the wire. The
          returned conjunction is the same list as before, so the composite's
          TRUTH VALUE is untouched; only what the unread members deposit is. *)
-      let self = c and saved = ctx.rule_guard and members = ref [] in
+      let saved = ctx.rule_guard in
       let atoms =
         List.fold_left
           (fun prefix c ->
             ctx.rule_guard <- guard_with ctx saved prefix;
-            let a, pre = with_pre ctx c (fun () -> cond_atoms ctx ~subject ~subject_ot c) in
-            members := (a, pre) :: !members;
-            prefix @ a)
+            prefix @ cond_atoms ctx ~subject ~subject_ot c)
           [] components
       in
       ctx.rule_guard <- saved;
-      (* in the pass before a creation: every member as it reads there *)
-      register_pre ctx self
-        (lazy
-          (let ms = List.rev !members in
-           if List.for_all (fun (_, pre) -> Lazy.force pre = None) ms then None
-           else Some (List.concat_map (fun (a, pre) -> Option.value (Lazy.force pre) ~default:a) ms)));
       atoms
   | Compound
-      { quantifier_kind = (None_of | At_least | At_most | Exactly) as quantifier_kind; cutoff; components; source_name }
+      { quantifier_kind = (None_of | At_least | At_most | Exactly) as quantifier_kind; cutoff; components; _ }
     ->
       period_under_count_quantifier quantifier_kind components;
       (* the counting quantifiers (ref eval_cond: hits over the member list —
@@ -9477,39 +9157,12 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          negative in the WF-045/046 stratification walk). *)
       if components = [] then
         fault "a counting composite without members is not translated (no corpus case)";
-      let self = c in
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "cq%d" ctx.fresh in
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       let n = List.length components in
       let saved = ctx.rule_guard in
       emit_rule ctx ~head:(Printf.sprintf "%s_h0(%s,0)" p subject) ~body:[ base ];
-      (* the pass before a creation ([pre_sensitive]): the same chain over each
-         member as it reads there, written only once a guard asks. [handles]
-         are the members' as they are translated *)
-      let handles = Array.make n (lazy None) and chain = Array.make (n + 1) (lazy ()) in
-      chain.(0) <- lazy (emit_rule ctx ~head:(Printf.sprintf "%s_ph0(%s,0)" p subject) ~body:[ base ]);
-      for j = 1 to n do
-        chain.(j) <-
-          lazy
-            (Lazy.force chain.(j - 1);
-             let m =
-               match Lazy.force handles.(j - 1) with
-               | None -> Printf.sprintf "%s_m%d(%s)" p j subject
-               | Some a ->
-                   emit_rule ctx ~head:(Printf.sprintf "%s_pm%d(%s)" p j subject) ~body:(base :: a);
-                   Printf.sprintf "%s_pm%d(%s)" p j subject
-             in
-             emit_rule ctx ~head:(Printf.sprintf "%s_ph%d(%s,H1)" p j subject)
-               ~body:[ Printf.sprintf "%s_ph%d(%s,H0)" p (j - 1) subject; m; "H1 = H0+1" ];
-             emit_rule ctx ~head:(Printf.sprintf "%s_ph%d(%s,H0)" p j subject)
-               ~body:[ Printf.sprintf "%s_ph%d(%s,H0)" p (j - 1) subject; Printf.sprintf "not %s" m ])
-      done;
-      let desc =
-        match source_name with
-        | Some b -> Printf.sprintf "the composite condition %S" b
-        | None -> "the composite condition"
-      in
       List.iteri
         (fun i c ->
           (* [i] members already read, [n - i] still unread. The guard is the
@@ -9549,29 +9202,8 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
               in
               Printf.sprintf "%s_h%d(%s,%s)" p i subject h :: cmp
           in
-          (* the member is read where the pass before a creation leaves the
-             prefix open too ([unbound_param_guard]); an `atLeast` prefix only,
-             the other counting quantifiers read their members negatively *)
-          (match unsettled with
-          | atom :: cmps when i >= 1 && quantifier_kind = At_least && doc_dynamic ctx.doc ->
-              ctx.pre_reach <-
-                ( atom,
-                  lazy
-                    (if List.for_all (fun j -> Lazy.force handles.(j) = None) (List.init i Fun.id) then None
-                     else begin
-                       Lazy.force chain.(i);
-                       let form = Printf.sprintf "%s_ph%d(%s,%s)" p i subject hv in
-                       emit_rule ctx ~head:(Printf.sprintf "%s_fu%d(%s)" p i subject) ~body:(unsettled);
-                       emit_rule ctx ~head:(Printf.sprintf "%s_pu%d(%s)" p i subject) ~body:(form :: cmps);
-                       Some
-                         { pe_form = form; pe_not_fix = Printf.sprintf "not %s_fu%d(%s)" p i subject;
-                           pe_holds = Printf.sprintf "%s_pu%d(%s)" p i subject; pe_desc = desc }
-                     end) )
-                :: ctx.pre_reach
-          | _ -> ());
           ctx.rule_guard <- saved @ unsettled;
-          let atoms, pre = with_pre ctx c (fun () -> cond_atoms ctx ~subject ~subject_ot c) in
-          handles.(i) <- pre;
+          let atoms = cond_atoms ctx ~subject ~subject_ot c in
           emit_rule ctx ~head:(Printf.sprintf "%s_m%d(%s)" p (i + 1) subject) ~body:(base :: atoms);
           emit_rule ctx ~head:(Printf.sprintf "%s_h%d(%s,H1)" p (i + 1) subject)
             ~body:
@@ -9582,14 +9214,6 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
             ~body:[ Printf.sprintf "%s_h%d(%s,H0)" p i subject; Printf.sprintf "not %s_m%d(%s)" p (i + 1) subject ])
         components;
       ctx.rule_guard <- saved;
-      register_pre ctx self
-        (lazy
-          (if quantifier_kind <> At_least || Array.for_all (fun h -> Lazy.force h = None) handles then None
-           else begin
-             Lazy.force chain.(n);
-             let hv = fresh ctx "H" in
-             Some [ Printf.sprintf "%s_ph%d(%s,%s)" p n subject hv; Printf.sprintf "%s >= %d" hv cutoff ]
-           end));
       let h = fresh ctx "H" in
       let compare =
         match quantifier_kind with
@@ -9604,7 +9228,6 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       { kv_quantifier; kv_threshold; kv_element_object_type; kv_filter; kv_test; kv_source_role;
         kv_source_path; kv_source; _ } ->
       period_under_count_quantifier kv_quantifier (List.filter_map Fun.id [ kv_filter; kv_test ]);
-      let self = c in
       (* RUNTIME-SEMANTICS ch. 3.9a: the QUANTIFIER FOLD — "⟨kwantor⟩ ⟨elementen⟩
          ⟨matrix⟩", over the five quantifiers WF-108 admits. Its contributors are
          EXACTLY the instance fold's (ch. 3.4a /
@@ -9655,19 +9278,12 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       let member f =
         with_member_reach ctx ~subject ~subject_ot ~join:(fun () -> join) ~part:(new_part ctx ro) f
       in
-      let fpre = ref (lazy None) and mpre = ref (lazy None) in
       let fatoms =
         match kv_filter with
         | None -> []
         | Some c ->
             member (fun () ->
-                let a, pre =
-                  with_pre ctx c (fun () ->
-                      hoist_element_aggregates ctx ~x ~el ~outside:[ subject ]
-                        (cond_atoms ctx ~subject:x ~subject_ot:el c))
-                in
-                fpre := pre;
-                a)
+                hoist_element_aggregates ctx ~x ~el ~outside:[ subject ] (cond_atoms ctx ~subject:x ~subject_ot:el c))
       in
       (* the filter is read for every member in range, the matrix only while
          the fold's outcome is still open ([emit_kv_reach]). The guard in the
@@ -9676,14 +9292,6 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          creation can add a member, the order the guard depends on is not
          normed, and the guard has a named twin ([unbound_param_guard]) *)
       let reach = ref None and matrix = ref None in
-      (* an `atLeast` prefix the pass before a creation can leave open: a
-         member's filter or matrix reads a created member positively
-         ([pre_sensitive], [emit_kv_reach]) *)
-      let pre_ext =
-        ro.ro_dynamic && kv_quantifier = At_least
-        && (Option.fold ~none:false ~some:(pre_sensitive ctx) kv_filter || pre_sensitive ctx test)
-      in
-      let pre () = if pre_ext then Some (fun () -> (Lazy.force !fpre, Lazy.force !mpre)) else None in
       let reached () =
         match !reach with
         | Some r -> r
@@ -9695,7 +9303,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
             (match !matrix with
             | Some atoms ->
                 emit_kv_reach ctx ~reach:r ~subject ~subject_ot ~x ~join ~fatoms ~atoms
-                  ~quantifier_kind:kv_quantifier ~cutoff ~ro ~pre:(pre ())
+                  ~quantifier_kind:kv_quantifier ~cutoff ~ro
             | None -> ());
             (if ro.ro_dynamic then
                let at suffix = Printf.sprintf "%s%s(%s,%s)" r suffix subject x in
@@ -9704,15 +9312,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
                  | Some b -> Printf.sprintf "the quantifier fold %S" b
                  | None -> Printf.sprintf "the quantifier fold over %s" el
                in
-               ctx.named <- (at "", (at "_o", at "_q", fold)) :: ctx.named;
-               if pre_ext then
-                 ctx.pre_reach <-
-                   ( at "",
-                     lazy
-                       (Some
-                          { pe_form = at "_p"; pe_not_fix = "not " ^ at ""; pe_holds = at "_p";
-                            pe_desc = fold }) )
-                   :: ctx.pre_reach);
+               ctx.named <- (at "", (at "_o", at "_q", fold)) :: ctx.named);
             r
       in
       let atoms =
@@ -9720,59 +9320,14 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
           ~join:(fun () -> join @ [ Printf.sprintf "%s(%s,%s)" (reached ()) subject x ])
           ~range:join ~part:(new_part ctx ro)
           (fun () ->
-            let a, pre =
-              with_pre ctx test (fun () ->
-                  hoist_element_aggregates ctx ~x ~el ~outside:[ subject ]
-                    (cond_atoms ctx ~subject:x ~subject_ot:el test))
-            in
-            mpre := pre;
-            a)
+            hoist_element_aggregates ctx ~x ~el ~outside:[ subject ] (cond_atoms ctx ~subject:x ~subject_ot:el test))
       in
       matrix := Some atoms;
       (match !reach with
       | None -> ()
       | Some r ->
           emit_kv_reach ctx ~reach:r ~subject ~subject_ot ~x ~join ~fatoms ~atoms ~quantifier_kind:kv_quantifier
-            ~cutoff ~ro ~pre:(pre ()));
-      (* the fold's own verdict in the pass before a creation: an `atLeast`
-         fold over the case links, with each one's filter and matrix as they
-         read there; an `all` fold whose matrix reads otherwise there *)
-      register_pre ctx self
-        (lazy
-          (match kv_quantifier with
-          | At_least ->
-              (* the forms of that pass are clones of the filter's and the
-                 matrix's own atoms ([pre_clone]), taken before the hoist, so
-                 an aggregate in them goes through it here, where they enter
-                 the element of a #count *)
-              let hoist = hoist_element_aggregates ctx ~x ~el ~outside:[ subject ] in
-              let f = hoist (Option.value (Lazy.force !fpre) ~default:fatoms)
-              and m = hoist (Option.value (Lazy.force !mpre) ~default:atoms) in
-              ctx.fresh <- ctx.fresh + 1;
-              let pp = Printf.sprintf "kvp%d" ctx.fresh in
-              let h = fresh ctx "H" in
-              emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" pp subject h)
-                ~body:
-                  [ Printf.sprintf "isa(%s,%s)" subject (str subject_ot);
-                    Printf.sprintf "%s = #count { %s : %s }" h x
-                      (String.concat ", " (join @ (Printf.sprintf "%s_q(%s,%s)" (use_ro ctx ro) subject x :: f) @ m)) ];
-              let hc = fresh ctx "H" in
-              Some [ Printf.sprintf "%s(%s,%s)" pp subject hc; Printf.sprintf "%s >= %d" hc cutoff ]
-          | All -> (
-              match Lazy.force !mpre with
-              | None -> None
-              | Some m ->
-                  ctx.fresh <- ctx.fresh + 1;
-                  let pp = Printf.sprintf "kvp%d" ctx.fresh in
-                  emit_rule ctx ~head:(Printf.sprintf "%s_s(%s)" pp x)
-                    ~body:(Printf.sprintf "isa(%s,%s)" x (str el) :: m);
-                  emit_rule ctx ~head:(Printf.sprintf "%s(%s)" pp subject)
-                    ~body:
-                      ((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: join)
-                       @ fatoms
-                       @ [ Printf.sprintf "not %s_s(%s)" pp x ]);
-                  Some [ Printf.sprintf "not %s(%s)" pp subject ])
-          | _ -> None));
+            ~cutoff ~ro);
       (match kv_quantifier with
       | At_least | At_most | Exactly ->
           (* the COUNTING quantifiers (ch. 3.9a): the verdict is a number,
@@ -15587,8 +15142,7 @@ let translate_guarded (doc : document) (case : Case.t) : string * guards =
       write_unbounded = false; write_value = None; in_condition = false; desugared_group = false; rule_name = "?"; binders = []; param_reach = (fun _ -> []); deposit_subject = None; let_needs = [];
       value_of = None;
       lets = []; let_serial = 0; demands = []; parts = []; part_serial = 0; named = []; hoisted = [];
-      before_arm = []; pre_scope = []; pre_reach = []; pre_let = [];
-      pre_asks = []; signs = []; sign_helpers = []; oc_strata;
+      before_arm = []; signs = []; sign_helpers = []; oc_strata;
       form_subject = None; anchored = []; member_reach = lazy []; calendar_rounding = false }
   in
   (* ch. 8.4: the shared session-start Parameterset coverage check —

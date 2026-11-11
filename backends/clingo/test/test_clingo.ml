@@ -11202,24 +11202,16 @@ let () =
   both_answer ~name:"two quantifier folds read k in opposite orders, p bound (disj-8-3-gebonden, control)" ~ir:disj
     ~case_text:(pf_case ~params:bound ~instances:h1w1 [ pf_cons ])
 
-(* FIXRONDE 5, lens point 1 (the maintainer decision on the order of created
-   members, as the main session applied it on 2026-09-23): ref runs a pass's
-   rules before its creations, so in the pass before a creation the member it
-   adds is not in the range yet. Nothing reads by that member, a Let barrier it
-   would raise is not there, and the guard is reached. That pass is the
-   degenerate order in which the member is absent, and the refusal there is
-   named: "barred in every allowed order" counts a read only through members
-   that are in the range in every pass, the case's own links. tr-cr-1: H1 with
-   W1 (bonus 4), one schuit of 8 created for each Werf, and bonus = Let k =
-   restpost in (som(bonus van werven die TEN MINSTE 1 schuiten [k > 0]) plus
-   p), restpost leeg: before the pass that creates the schuit W1 has none, k is
-   not read, and ref reads p. tr-w-1 puts the read of k in a part inside a Let
-   value, (Let j = (1 plus som(lengte van schuiten die k > 0)) in (j plus p)),
-   which the lens's prototype did not reach. tr-strat-1: a rule condition that
-   reads the range under `all` puts the rule above the creation (ch. 6.3), so
-   ref never runs the rule before the creation and plays, while the translator,
-   which does not know the strata, refuses in the named sentence (README
-   [L2]). *)
+(* A member a creation adds is in the range at the fixpoint, and ref reads
+   faults there (RUNTIME-SEMANTICS ch. 5.7): a parameter ref reads only in a
+   pass before the creation raises nothing, so clingo, which reads the
+   fixpoint, answers ref's rows. tr-cr-1: H1 with W1 (bonus 4), one schuit of 8
+   created for each Werf, and bonus = Let k = restpost in (som(bonus van werven
+   die TEN MINSTE 1 schuiten [k > 0]) plus p), restpost leeg: at the fixpoint
+   the created schuit reads k, whose barrier ends the Let before p. tr-w-1 puts
+   the read of k in a part inside a Let value, (Let j = (1 plus som(lengte van
+   schuiten die k > 0)) in (j plus p)). tr-strat-1: a rule condition that reads
+   the range under `all` puts the rule above the creation (ch. 6.3). *)
 let () =
   let n0 = pf_n0 in
   let haven = pf_ot ~ident:"Haven" ~plural:"Havens" [ ("bonus", n0); ("restpost", n0) ]
@@ -11290,9 +11282,8 @@ let () =
     @ if case_schuit then [ s1 ] else []
   in
   let hb = [ pf_empty ~label:"H1" ~attr:"bonus" (); pf_cons ] in
-  named_refusal ~by:{|the Let "k"|} ~ref_plays:true
-    ~name:"the pass before a creation: the barrier the created schuit raises is not there yet (tr-cr-1)"
-    ~ir:(doc ~creations:[ eight_ ] tr) ~param:"p" ~case_text:(pf_case ~instances:(h1 ()) hb);
+  both_answer ~name:"the barrier the created schuit raises at the fixpoint (tr-cr-1)"
+    ~ir:(doc ~creations:[ eight_ ] tr) ~case_text:(pf_case ~instances:(h1 ()) hb);
   both_answer ~name:"the same barrier raised by the case's own schuit (tr-case-1, control)" ~ir:(doc tr)
     ~case_text:(pf_case ~instances:(h1 ~case_schuit:true ()) hb);
   unbound_fires ~name:"the created schuit reads k, whose need is filled (tr-cr-1-ctl, control)"
@@ -11309,9 +11300,8 @@ let () =
     :: (if case_schuit then [ s1 ] else [])
   in
   let wb = [ pf_empty ~label:"W1" ~attr:"bonus" (); pf_cons ] in
-  named_refusal ~by:{|the Let "k"|} ~ref_plays:true
-    ~name:"the pass before a creation: the created schuit reads k inside the value of j (tr-w-1)"
-    ~ir:(doc ~creations:[ eight_ ] (trw ())) ~param:"p" ~case_text:(pf_case ~instances:(w1 ()) wb);
+  both_answer ~name:"the created schuit reads k inside the value of j (tr-w-1)"
+    ~ir:(doc ~creations:[ eight_ ] (trw ())) ~case_text:(pf_case ~instances:(w1 ()) wb);
   both_answer ~name:"the value of j reads k at the case's own schuit (tr-w-case, control)" ~ir:(doc (trw ()))
     ~case_text:(pf_case ~instances:(w1 ~case_schuit:true ()) wb);
   unbound_fires ~name:"inside the value of j, k's need is filled (tr-w-ctl, control)"
@@ -11321,12 +11311,8 @@ let () =
      restpost in som(bonus van werven die TEN MINSTE 1 [TEN MINSTE 1 schuiten
      [k > 0], ALLE [bonus > 4, bonus > p]]) and, for tr-pm2, [..., bonus > p]
      with W1 alone. tr-pm-1: the schuit is created for W1 only (bonus below
-     5), and W1's read of k bars W2's read of p, except in the pass before the
-     creation — the member below the level that orders W1 before W2.
-     tr-pm2-1: W1's own read of k at an earlier place bars its read of p,
-     except in that pass — the member below the level equated with the
-     guard's. Measured with each of those two presence conditions left out:
-     clingo answered where ref faults *)
+     5), and W1's read of k bars W2's read of p. tr-pm2-1: W1's own read of k
+     at an earlier place bars its read of p *)
   let bonus_w = pf_a ~ot:"Werf" "bonus" in
   let pm filter =
     pf_rule ~ot:"Haven" ~objective:"bonus"
@@ -11342,43 +11328,33 @@ let () =
       inst "W2" "Werf" {|"bonus": { "number": "5" }|} "" ]
     @ if case_schuit then [ s1 ] else []
   in
-  named_refusal ~by:{|the Let "k"|} ~ref_plays:true
-    ~name:"the pass before a creation: W1's created schuit bars W2's read of p (tr-pm-1)"
-    ~ir:(doc ~creations:[ under_five ] pm1) ~param:"p" ~case_text:(pf_case ~instances:(h2 ()) hb);
+  both_answer ~name:"W1's created schuit bars W2's read of p (tr-pm-1)"
+    ~ir:(doc ~creations:[ under_five ] pm1) ~case_text:(pf_case ~instances:(h2 ()) hb);
   both_answer ~name:"W1's own schuit bars W2's read of p (tr-pm-case, control)" ~ir:(doc pm1)
     ~case_text:(pf_case ~instances:(h2 ~case_schuit:true ()) hb);
-  named_refusal ~by:{|the Let "k"|} ~ref_plays:true
-    ~name:"the pass before a creation: W1's created schuit bars W1's own later read of p (tr-pm2-1)"
-    ~ir:(doc ~creations:[ eight_ ] pm2) ~param:"p" ~case_text:(pf_case ~instances:(h1 ()) hb);
+  both_answer ~name:"W1's created schuit bars W1's own later read of p (tr-pm2-1)"
+    ~ir:(doc ~creations:[ eight_ ] pm2) ~case_text:(pf_case ~instances:(h1 ()) hb);
   both_answer ~name:"W1's own schuit bars its later read of p (tr-pm2-case, control)" ~ir:(doc pm2)
     ~case_text:(pf_case ~instances:(h1 ~case_schuit:true ()) hb);
-  (* FIXRONDE 6 (decision of the main session on open point 14): a short
-     circuit the pass before a creation leaves open is named like the Let
-     barrier's. tr-pm2-ctl: the form of tr-pm2-1 with restpost 1, so no
-     barrier; W1's created schuit settles the composite at the fixpoint, and in
-     that pass W1 reads p. tr-kv-1: bonus = 99 indien TEN MINSTE 1 werven [TEN
-     MINSTE 1 [TEN MINSTE 1 schuiten [lengte > 5], ALLE [bonus > 4, bonus >
-     p]]], a schuit for each Werf with bonus below 5: the fold over the werven
-     closes at W1 through its created schuit, and in that pass W2 reads p.
-     r6-dmd-1: bonus = Let k = p in som(bonus van werven die TEN MINSTE 1 [TEN
-     MINSTE 1 schuiten [lengte > 5], bonus > k]): in that pass W1 reads k, and
-     so the value p. r6-prebar: [..., k > 0, bonus > p] with restpost leeg: in
-     that pass W1 reads k first and its barrier ends the Let before p, at the
-     fixpoint the fold settles it; no order reads p, and what clingo answers is
-     README [V3]'s need on a path that does not read it. r6-ebar: (som(bonus
+  (* a short circuit a created member settles, read at the fixpoint.
+     tr-pm2-ctl: the form of tr-pm2-1 with restpost 1, so no barrier; W1's
+     created schuit settles the composite. tr-kv-1: bonus = 99 indien TEN
+     MINSTE 1 werven [TEN MINSTE 1 [TEN MINSTE 1 schuiten [lengte > 5], ALLE
+     [bonus > 4, bonus > p]]], a schuit for each Werf with bonus below 5: the
+     fold over the werven closes at W1 through its created schuit. r6-dmd-1:
+     bonus = Let k = p in som(bonus van werven die TEN MINSTE 1 [TEN MINSTE 1
+     schuiten [lengte > 5], bonus > k]): no member reads k, and what clingo
+     answers is README [V3]'s need on a path that does not read it, as for
+     r6-prebar: [..., k > 0, bonus > p] with restpost leeg. r6-ebar: (som(bonus
      van werven die TEN MINSTE 3 [TEN MINSTE 1 schuiten [lengte > 5], k > 0,
-     bonus > 1]) plus p): at the fixpoint W1 reads k and its barrier ends the
-     Let before p, in that pass the composite is out of reach before k, so
-     the barrier is not there and p is read. r6-alle-fold: bonus = 99 indien
-     TEN MINSTE 1 [ALLE werven [TEN MINSTE 1 schuiten [lengte > 5]], p > 0]:
-     ch. 6.3 reads an `all` fold's matrix positively, and in that pass W1's
-     matrix is false. r6-pres: bonus = som(bonus van werven die TEN MINSTE 1
-     [TEN MINSTE 1 schuiten [lengte > 5], bonus > p]), W1 with its own schuit,
-     a werf created for each Haven and a schuit for each Werf: the created
-     werf is there in a pass before its own schuit, and reads p there *)
-  named_refusal ~by:"the composite condition" ~ref_plays:true
-    ~name:"the pass before a creation leaves W1's composite open, so W1 reads p (tr-pm2-ctl)"
-    ~ir:(doc ~creations:[ eight_ ] pm2) ~param:"p"
+     bonus > 1]) plus p): W1 reads k and its barrier ends the Let before p.
+     r6-alle-fold: bonus = 99 indien TEN MINSTE 1 [ALLE werven [TEN MINSTE 1
+     schuiten [lengte > 5]], p > 0]: W1's matrix holds. r6-pres: bonus =
+     som(bonus van werven die TEN MINSTE 1 [TEN MINSTE 1 schuiten [lengte > 5],
+     bonus > p]), W1 with its own schuit, a werf created for each Haven and a
+     schuit for each Werf: the created werf has its created schuit *)
+  both_answer ~name:"W1's created schuit settles W1's composite at the fixpoint (tr-pm2-ctl)"
+    ~ir:(doc ~creations:[ eight_ ] pm2)
     ~case_text:(pf_case ~instances:(h1 ~rp:"1" ()) [ pf_is ~label:"H1" ~attr:"bonus" "4"; pf_cons ]);
   let length_5 = kv ~cutoff:1 "atLeast" (gt length (lit "5")) in
   let werven_kv test =
@@ -11395,9 +11371,8 @@ let () =
       (lit "99")
   in
   let h99 = [ pf_is ~label:"H1" ~attr:"bonus" "99"; pf_cons ] in
-  named_refusal ~by:"the quantifier fold" ~ref_plays:true
-    ~name:"the pass before a creation: the fold over the werven does not close at W1, so W2 reads p (tr-kv-1)"
-    ~ir:(doc ~creations:[ under_five ] kv_rule) ~param:"p" ~case_text:(pf_case ~instances:(h2 ()) h99);
+  both_answer ~name:"the fold over the werven closes at W1 through its created schuit (tr-kv-1)"
+    ~ir:(doc ~creations:[ under_five ] kv_rule) ~case_text:(pf_case ~instances:(h2 ()) h99);
   both_answer ~name:"W1's own schuit closes the fold at W1 (tr-kv-case, control)" ~ir:(doc kv_rule)
     ~case_text:(pf_case ~instances:(h2 ~case_schuit:true ()) h99);
   both_answer ~name:"W1's own schuit beside the created one closes the fold in that pass too (r6-kv-both, control)"
@@ -11430,9 +11405,8 @@ let () =
                 pf_comp "all" [ gt bonus_w (lit "4"); gt bonus_w p ] ]))
       (lit "99")
   in
-  named_refusal ~by:"the quantifier fold" ~ref_plays:true
-    ~name:"a listed fold in the matrix over the schuiten, the pass before a creation (tr-kv-listed)"
-    ~ir:(doc ~creations:[ under_five ] kv_rule_listed) ~param:"p" ~case_text:(pf_case ~instances:(h2 ()) h99);
+  both_answer ~name:"a listed fold in the matrix over the schuiten, a created schuit (tr-kv-listed)"
+    ~ir:(doc ~creations:[ under_five ] kv_rule_listed) ~case_text:(pf_case ~instances:(h2 ()) h99);
   both_answer ~name:"a listed fold in the matrix over the schuiten, W1's own schuit beside the created one (tr-kv-listed-both, control)"
     ~ir:(doc ~creations:[ under_five ] kv_rule_listed) ~case_text:(pf_case ~instances:(h2 ~case_schuit:true ()) h99);
   let dmd =
@@ -11441,9 +11415,9 @@ let () =
          (summed ~el:"Werf" ~attr:"bonus" ~role_ref:werven (pf_comp ~cutoff:1 "atLeast" [ length_5; gt bonus_w k ])))
   in
   let h4 = [ pf_is ~label:"H1" ~attr:"bonus" "4"; pf_cons ] in
-  named_refusal ~by:{|the Let "k"|} ~ref_plays:true
-    ~name:"the pass before a creation reads k, whose value reads p (r6-dmd-1)" ~ir:(doc ~creations:[ eight_ ] dmd)
-    ~param:"p" ~case_text:(pf_case ~instances:(h1 ()) h4);
+  pinned_value ~entry:"V3" ~name:"the created schuit settles the composite before k, whose value reads p (r6-dmd-1)"
+    ~ir:(doc ~creations:[ eight_ ] dmd) ~case_text:(pf_case ~instances:(h1 ()) h4)
+    ~answers:[ "H1.bonus is underived (leeg), expected 4" ];
   let prebar =
     pf_rule ~ot:"Haven" ~objective:"bonus"
       (let_ "k" (pf_a ~ot:"Haven" "restpost")
@@ -11465,9 +11439,8 @@ let () =
                (pf_comp ~cutoff:3 "atLeast" [ length_5; gt k (lit "0"); gt bonus_w (lit "1") ]))
             p))
   in
-  named_refusal ~by:{|the Let "k"|} ~ref_plays:true
-    ~name:"the pass before a creation puts k out of reach, so its barrier is not there (r6-ebar)"
-    ~ir:(doc ~creations:[ eight_ ] ebar) ~param:"p" ~case_text:(pf_case ~instances:(h1 ()) hb);
+  both_answer ~name:"the created schuit keeps k within reach at the fixpoint (r6-ebar)"
+    ~ir:(doc ~creations:[ eight_ ] ebar) ~case_text:(pf_case ~instances:(h1 ()) hb);
   both_answer ~name:"W1's own schuit keeps k within reach in every pass (r6-ebar-case, control)" ~ir:(doc ebar)
     ~case_text:(pf_case ~instances:(h1 ~case_schuit:true ()) hb);
   let all_werven =
@@ -11481,9 +11454,8 @@ let () =
       ~precondition:(pf_comp ~cutoff:1 "atLeast" [ all_werven; gt p (lit "0") ])
       (lit "99")
   in
-  named_refusal ~by:"the composite condition" ~ref_plays:true
-    ~name:"the pass before a creation: the ALLE fold's matrix is false at W1, so p is read (r6-alle-fold)"
-    ~ir:(doc ~creations:[ eight_ ] all_rule) ~param:"p" ~case_text:(pf_case ~instances:(h1 ()) h99);
+  both_answer ~name:"the ALLE fold's matrix holds at W1 through its created schuit (r6-alle-fold)"
+    ~ir:(doc ~creations:[ eight_ ] all_rule) ~case_text:(pf_case ~instances:(h1 ()) h99);
   both_answer ~name:"the ALLE fold with W1's own schuit (r6-alle-fold-case, control)" ~ir:(doc all_rule)
     ~case_text:(pf_case ~instances:(h1 ~case_schuit:true ()) h99);
   let make_werf =
@@ -11498,9 +11470,8 @@ let () =
     pf_rule ~ot:"Haven" ~objective:"bonus"
       (summed ~el:"Werf" ~attr:"bonus" ~role_ref:werven (pf_comp ~cutoff:1 "atLeast" [ length_5; gt bonus_w p ]))
   in
-  named_refusal ~by:"the composite condition" ~ref_plays:true
-    ~name:"a created werf is there in a pass before its own schuit, and reads p there (r6-pres)"
-    ~ir:(doc ~creations:[ make_werf; eight_ ] pres) ~param:"p"
+  both_answer ~name:"a created werf with its own created schuit (r6-pres)"
+    ~ir:(doc ~creations:[ make_werf; eight_ ] pres)
     ~case_text:(pf_case ~instances:(h1 ~case_schuit:true ()) [ pf_is ~label:"H1" ~attr:"bonus" "7"; pf_cons ]);
   (* tr-strat-1: the rule sits above the creation *)
   let strat =
@@ -11508,11 +11479,8 @@ let () =
       (let_ "k" (pf_a ~ot:"Werf" "restpost")
          (plus (summed ~el:"Schuit" ~attr:"lengte" ~role_ref:schuiten (gt k (lit "0"))) p))
   in
-  pinned_loud ~entry:"L2"
-    ~name:"a rule above the creation reads k at the created schuit, and ref has no pass before it (tr-strat-1)"
-    ~ir:(doc ~creations:[ eight_ ] strat) ~case_text:(pf_case ~instances:(w1 ()) wb)
-    ~needle:
-      {|parameter "p" is unbound in this case, and whether the Let "k" reads it depends on the order of the members a creation adds|};
+  both_answer ~name:"a rule above the creation reads k at the created schuit (tr-strat-1)"
+    ~ir:(doc ~creations:[ eight_ ] strat) ~case_text:(pf_case ~instances:(w1 ()) wb);
   both_answer ~name:"the rule above the creation, with the case's own schuit (tr-strat-case, control)" ~ir:(doc strat)
     ~case_text:(pf_case ~instances:(w1 ~case_schuit:true ()) wb)
 
@@ -11524,20 +11492,15 @@ let () =
    ch. 5.7); clingo answers the fixpoint. t1: heffing = 5,00 indien TEN MINSTE 1
    [a > 0, p > 0], written before a = inkomen, and with the writer first.
 
-   FIXRONDE 6 (decision of the main session on open point 14): where the
-   writer is a creation, that pass is the pass before the creation, the
-   degenerate order in which the created member is absent, and the refusal is
-   named, as for a Let barrier there. tr-of-1: keur = 99 indien TEN MINSTE 1
-   [TEN MINSTE 1 schuiten [lengte > 5], p > 0], one schuit of 8 created for
-   each Werf. The controls: the schuit in the case, beside the created one or
-   alone, settles the fold in that pass too; a created schuit of 3 leaves it
-   false at the fixpoint as well, so ref's words; `none` reads its members
-   negatively, so ch. 6.3 puts the rule above the creation and ref has no such
-   pass. r6-of-alle: the fold reached through an `all` composite in the prefix,
-   TEN MINSTE 1 [ALLE [TEN MINSTE 1 schuiten [lengte > 5], TEN MINSTE 1
-   schuiten [lengte > 6]], p > 0]. r6-strat-sc: an `all` fold over the same range does that too, and the
-   translator, which does not know the strata, refuses in the named sentence
-   (README [L2]). *)
+   So it is where the writer is a creation. tr-of-1: keur = 99 indien TEN
+   MINSTE 1 [TEN MINSTE 1 schuiten [lengte > 5], p > 0], one schuit of 8
+   created for each Werf. The controls: the schuit in the case, beside the
+   created one or alone; a created schuit of 3 leaves the fold false at the
+   fixpoint, so ref's words; `none` reads its members negatively. r6-of-alle:
+   the fold reached through an `all` composite in the prefix, TEN MINSTE 1
+   [ALLE [TEN MINSTE 1 schuiten [lengte > 5], TEN MINSTE 1 schuiten [lengte >
+   6]], p > 0]. r6-strat-sc: an `all` fold over the same range puts the rule
+   above the creation (ch. 6.3). *)
 let () =
   let jutter = pf_ot [ ("inkomen", pf_n2); ("a", pf_n2); ("heffing", pf_n2) ] in
   let heffing =
@@ -11592,9 +11555,8 @@ let () =
   in
   let rows = [ pf_is ~label:"W1" ~attr:"keur" "99"; pf_cons ] in
   let empty_value = [ pf_empty ~label:"W1" ~attr:"keur" (); pf_cons ] in
-  named_refusal ~by:"the composite condition" ~ref_plays:true
-    ~name:"the pass before a creation: the fold is false there, so p is read (tr-of-1)" ~ir:(doc [ eight ])
-    ~param:"p" ~case_text:(pf_case ~instances:[ w1 "" ] rows);
+  both_answer ~name:"the created schuit settles the fold at the fixpoint (tr-of-1)" ~ir:(doc [ eight ])
+    ~case_text:(pf_case ~instances:[ w1 "" ] rows);
   both_answer ~name:"the case's own schuit settles the fold in the first pass (tr-of-case, control)" ~ir:(doc [])
     ~case_text:(pf_case ~instances:[ w1 {|"schuiten": [ "S1" ]|}; s1 ] rows);
   both_answer ~name:"the case's own schuit beside the created one settles the fold in that pass too (r6-of-both, control)"
@@ -11610,35 +11572,29 @@ let () =
       [ pf_comp "all" [ fold; kv ~cutoff:{|, "threshold": 1|} "atLeast" (pf_cmp "greater" length (lit "6")) ];
         p_gt_0 ]
   in
-  named_refusal ~by:"the composite condition" ~ref_plays:true
-    ~name:"the pass before a creation: the ALLE member of the prefix is false there, so p is read (r6-of-alle)"
-    ~ir:(doc ~precondition:or_all [ eight ]) ~param:"p" ~case_text:(pf_case ~instances:[ w1 "" ] rows);
+  both_answer ~name:"the ALLE member of the prefix holds at the fixpoint (r6-of-alle)"
+    ~ir:(doc ~precondition:or_all [ eight ]) ~case_text:(pf_case ~instances:[ w1 "" ] rows);
   both_answer ~name:"the ALLE member with the case's own schuit (r6-of-alle-case, control)"
     ~ir:(doc ~precondition:or_all []) ~case_text:(pf_case ~instances:[ w1 {|"schuiten": [ "S1" ]|}; s1 ] rows);
   let strat = pf_comp "all" [ kv "all" (pf_cmp "greater" length (lit "0")); of_ ] in
-  pinned_loud ~entry:"L2"
-    ~name:"an ALLE fold over the same range puts the rule above the creation, with no pass before it (r6-strat-sc)"
-    ~ir:(doc ~precondition:strat [ eight ]) ~case_text:(pf_case ~instances:[ w1 "" ] rows)
-    ~needle:
-      {|parameter "p" is unbound in this case, and whether the composite condition "c" reads it depends on the order of the members a creation adds|};
+  both_answer ~name:"an ALLE fold over the same range puts the rule above the creation (r6-strat-sc)"
+    ~ir:(doc ~precondition:strat [ eight ]) ~case_text:(pf_case ~instances:[ w1 "" ] rows);
   both_answer ~name:"the same rule with the case's own schuit (r6-strat-sc-case, control)" ~ir:(doc ~precondition:strat [])
     ~case_text:(pf_case ~instances:[ w1 {|"schuiten": [ "S1" ]|}; s1 ] rows)
 
-(* FIXRONDE 6: a member of the prefix that reads through a role is read in the
-   pass before a creation with the case's own links only ([pre_clone] in the
-   translator). r6-agg-comp: keur = 99 indien TEN MINSTE 1 [het aantal
+(* a member of the prefix that reads through a role, with a created member at
+   the fixpoint. r6-agg-comp: keur = 99 indien TEN MINSTE 1 [het aantal
    schuiten > 0, p > 0], one schuit of 8 created for each Werf. r6-nav: keur
    = 99 indien TEN MINSTE 1 [het bedrag van zijn rapport > 1, p > 0], a
    rapport with bedrag 5 created for each Werf. With the case's own schuit or
-   rapport, alone or beside the created one, no pass reads p.
+   rapport, alone or beside the created one, no member reads p.
 
-   README [S4]: a condition that holds on absence (ch. 6.1: a count against
-   zero, read positively) with a creation as writer stays silent. In an `all`
-   prefix, ALLE [het aantal schuiten = 0, p > 0], the member is true in the
-   pass before the creation and false at the fixpoint; in a taken arm, Let n =
-   het aantal schuiten in (als n > 0 dan 99 anders p), that pass takes the
-   other arm; and keur = p indien het aantal schuiten = 0 reads its value in
-   that pass. ref faults in that pass, clingo answers the fixpoint *)
+   A condition that holds on absence (ch. 6.1: a count against zero, read
+   positively) with a creation as writer: in an `all` prefix, ALLE [het aantal
+   schuiten = 0, p > 0], the member is false at the fixpoint; in a taken arm,
+   Let n = het aantal schuiten in (als n > 0 dan 99 anders p), the fixpoint
+   takes the first arm; and keur = p indien het aantal schuiten = 0 does not
+   hold. ref reads the fixpoint as clingo does *)
 let () =
   let n0 = pf_n0 in
   let lit v = pf_l ~typ:n0 v in
@@ -11688,22 +11644,20 @@ let () =
   let rows v = [ (match v with Some v -> pf_is ~label:"W1" ~attr:"keur" v | None -> pf_empty ~label:"W1" ~attr:"keur" ()); pf_cons ] in
   let tm1 one_member = pf_comp ~cutoff:1 "atLeast" [ one_member; p_gt_0 ] in
   let agg = tm1 (pf_cmp "greater" quantity (lit "0")) and nav = tm1 (pf_cmp "greater" amount (lit "1")) in
-  named_refusal ~by:"the composite condition" ~ref_plays:true
-    ~name:"the pass before a creation counts no schuit, so p is read (r6-agg-comp)"
-    ~ir:(doc ~creations:[ eight ] ~precondition:agg (lit "99")) ~param:"p"
+  both_answer ~name:"the created schuit is counted at the fixpoint (r6-agg-comp)"
+    ~ir:(doc ~creations:[ eight ] ~precondition:agg (lit "99"))
     ~case_text:(pf_case ~instances:[ w1 "" ] (rows (Some "99")));
   both_answer ~name:"the count with the case's own schuit (r6-agg-comp-case, control)" ~ir:(doc ~precondition:agg (lit "99"))
     ~case_text:(pf_case ~instances:with_schuit (rows (Some "99")));
   both_answer ~name:"the count with the case's own schuit beside the created one (r6-agg-both, control)"
     ~ir:(doc ~creations:[ eight ] ~precondition:agg (lit "99")) ~case_text:(pf_case ~instances:with_schuit (rows (Some "99")));
-  named_refusal ~by:"the composite condition" ~ref_plays:true
-    ~name:"the pass before a creation has no rapport to navigate to, so p is read (r6-nav)"
-    ~ir:(doc ~creations:[ five ] ~precondition:nav (lit "99")) ~param:"p"
+  both_answer ~name:"the created rapport is navigated to at the fixpoint (r6-nav)"
+    ~ir:(doc ~creations:[ five ] ~precondition:nav (lit "99"))
     ~case_text:(pf_case ~instances:[ w1 "" ] (rows (Some "99")));
   both_answer ~name:"the navigation to the case's own rapport (r6-nav-case, control)" ~ir:(doc ~precondition:nav (lit "99"))
     ~case_text:(pf_case ~instances:with_report (rows (Some "99")));
   let zero_value = pf_comp "all" [ pf_cmp "equal" quantity (lit "0"); p_gt_0 ] in
-  both_answer ~name:"a count against zero in an ALLE prefix holds in the pass before a creation (r6-alle-nul)"
+  both_answer ~name:"a count against zero in an ALLE prefix, a created schuit (r6-alle-nul)"
     ~ir:(doc ~creations:[ eight ] ~precondition:zero_value (lit "99"))
     ~case_text:(pf_case ~instances:[ w1 "" ] (rows None));
   both_answer ~name:"the count against zero with the case's own schuit (r6-alle-nul-case, control)"
@@ -11714,28 +11668,22 @@ let () =
     (* pf_let and pf_ite write the two-decimal type; this rule is whole *)
     replace ~tok:pf_n2 ~by:n0 branch_node
   in
-  both_answer ~name:"a count in a taken arm's condition is zero in the pass before a creation (r6-agg-ite)"
+  both_answer ~name:"a count in a taken arm's condition, a created schuit (r6-agg-ite)"
     ~ir:(doc ~creations:[ eight ] branch_node)
     ~case_text:(pf_case ~instances:[ w1 "" ] (rows (Some "99")));
   both_answer ~name:"the count in the arm's condition with the case's own schuit (r6-agg-ite-case, control)"
     ~ir:(doc branch_node) ~case_text:(pf_case ~instances:with_schuit (rows (Some "99")));
   let zero_rule = pf_cmp "equal" quantity (lit "0") in
-  both_answer ~name:"a rule's condition counts no schuit in the pass before a creation (r6-regelcond-nul)"
+  both_answer ~name:"a rule's condition counts a created schuit (r6-regelcond-nul)"
     ~ir:(doc ~creations:[ eight ] ~precondition:zero_rule (pf_p "p"))
     ~case_text:(pf_case ~instances:[ w1 "" ] (rows None));
   both_answer ~name:"the rule's condition with the case's own schuit (r6-regelcond-nul-case, control)"
     ~ir:(doc ~precondition:zero_rule (pf_p "p")) ~case_text:(pf_case ~instances:with_schuit (rows None))
 
-(* FIXRONDE 6, README [L2]'s other half: the read's own member is there in the
-   pass before a creation, as the Let barrier takes the guard's own member. A
-   member a creation adds is there before the members added to its own
-   ranges, but not always before the members that settle its short circuit
-   elsewhere. r6-rapport: a rapport is made for each Werf once it has a schuit
-   of more than 5, one schuit of 8 is made for each Werf, and keur(rapport) =
-   99 indien TEN MINSTE 1 [TEN MINSTE 1 schuiten van zijn werf [lengte > 5], p
-   > 0]. ref makes the rapport only after the schuit, so no pass reads p; the
-   translator, which does not know the order of ref's passes, refuses in the
-   named sentence *)
+(* r6-rapport: a rapport is made for each Werf once it has a schuit of more
+   than 5, one schuit of 8 is made for each Werf, and keur(rapport) = 99
+   indien TEN MINSTE 1 [TEN MINSTE 1 schuiten van zijn werf [lengte > 5], p >
+   0]. At the fixpoint the rapport's werf has its schuit, so p is not read *)
 let () =
   let n0 = pf_n0 in
   let lit v = pf_l ~typ:n0 v in
@@ -11788,27 +11736,21 @@ let () =
     pf_doc ~object_types:[ werf; schuit; report_line ] ~fact_types ~parameters:[ pf_decl ~typ:n0 "p" ]
       ~rule_defs:[ validate ] ~creations:[ eight; make_report ] ()
   in
-  pinned_loud ~entry:"L2"
-    ~name:"a rapport made only after its werf's schuit has no pass that reads p (r6-rapport)"
+  both_answer ~name:"a rapport made after its werf's schuit, read at the fixpoint (r6-rapport)"
     ~ir
     ~case_text:
       (pf_case
          ~instances:[ {|{ "label": "W1", "objectType": "Werf", "attributes": {}, "roles": {}, "characteristics": [] }|} ]
          [ pf_cons ])
-    ~needle:
-      {|parameter "p" is unbound in this case, and whether the composite condition "c" reads it depends on the order of the members a creation adds|}
 
-(* FIXRONDE 7, README [L2] for the forms ch. 6.1 reads strictly (the lens of
-   round 6, its probes P6a, P11 and P13). A form with irrevocable writes
-   stands strictly above what produces its reads (ch. 6.1), and ref checks a
-   consistency only at the fixpoint of its stratum, so ref has no pass before
-   the creation there and plays. The short circuit is tr-of-1's, TEN MINSTE 1
-   [TEN MINSTE 1 schuiten [lengte > 5], p > 0], with one schuit of 8 created
-   for each Werf: as the condition of a creation that makes a rapport for
-   each Werf, written before the schuit's (P6a); as a consistency assertion
-   (P11); and as the condition of a characteristic assignment (P13). The
-   translator counts the pass before the creation and refuses in the named
-   sentence *)
+(* the forms ch. 6.1 reads strictly: a form with irrevocable writes stands
+   strictly above what produces its reads (ch. 6.1), and ref checks a
+   consistency at the fixpoint of its stratum. The short circuit is tr-of-1's,
+   TEN MINSTE 1 [TEN MINSTE 1 schuiten [lengte > 5], p > 0], with one schuit
+   of 8 created for each Werf: as the condition of a creation that makes a
+   rapport for each Werf, written before the schuit's (P6a); as a consistency
+   assertion (P11); and as the condition of a characteristic assignment
+   (P13) *)
 let () =
   let n0 = pf_n0 in
   let lit v = pf_l ~typ:n0 v in
@@ -11849,33 +11791,29 @@ let () =
       ~instances:[ {|{ "label": "W1", "objectType": "Werf", "attributes": {}, "roles": {}, "characteristics": [] }|} ]
       rows
   in
-  let needle =
-    {|parameter "p" is unbound in this case, and whether the composite condition "c" reads it depends on the order of the members a creation adds|}
-  in
-  pinned_loud ~entry:"L2" ~name:"the condition of a creation stands strictly above the schuit's creation (P6a)"
+  both_answer ~name:"the condition of a creation stands strictly above the schuit's creation (P6a)"
     ~ir:
       (doc
          [ make ~ident:"maak rapport" ~created:"Rapport" ~attr:"bedrag" ~value_node:"5" ~precondition:of_
              ("keuring", "rapport");
            eight ])
-    ~case_text:(w1 [ pf_cons ]) ~needle;
+    ~case_text:(w1 [ pf_cons ]);
   let assertion =
     Printf.sprintf
       {|{ "node": "Consistency", "name": "keurcheck", "versions": [ { "subject": "Werf", "assertion": %s,
           "source": { "snippet": "keurcheck", "line": 1 }, "validity": { "node": "Validity" } } ] }|}
       of_
   in
-  pinned_loud ~entry:"L2" ~name:"a consistency assertion is checked at the fixpoint of its stratum (P11)"
-    ~ir:(doc ~consistencies:[ assertion ] [ eight ]) ~case_text:(w1 [ pf_cons ]) ~needle;
+  both_answer ~name:"a consistency assertion is checked at the fixpoint of its stratum (P11)"
+    ~ir:(doc ~consistencies:[ assertion ] [ eight ]) ~case_text:(w1 [ pf_cons ]);
   let boolean = {|{ "node": "Boolean" }|} in
   let goed =
     pf_rule ~ot:"Werf" ~objective:"goed" ~presentation:None ~precondition:of_
       (pf_l ~typ:boolean "waar")
   in
-  pinned_loud ~entry:"L2" ~name:"a characteristic assignment stands strictly above the schuit's creation (P13)"
+  both_answer ~name:"a characteristic assignment stands strictly above the schuit's creation (P13)"
     ~ir:(doc ~rule_defs:[ goed ] [ eight ])
     ~case_text:(w1 [ {|{ "kind": "characteristicPresent", "label": "W1", "characteristic": "goed" }|}; pf_cons ])
-    ~needle
 
 (* FIXRONDE 5, lens point 3 (README [N4]): each fold's range gets an order
    model of its own, also where two folds range over the same list, so an

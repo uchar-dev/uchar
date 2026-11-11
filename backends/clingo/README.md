@@ -33,31 +33,14 @@ spec bug.
   nothing, but for [N4] below. That holds for a
   quantifier fold's matrix, for a Let barrier in a part that runs
   member by member, and for the value of a Let whose binder is read at
-  such a place. For the Let barrier the pass before a creation is one
-  of the allowed orders: ref runs a pass's rules before its creations,
-  so the member a creation adds is absent in that pass, and so is a
-  barrier only that member raises. `Let k = restpost in (som(bonus van
+  such a place. The guard is read at the fixpoint, as ref reads faults
+  (RUNTIME-SEMANTICS ch. 5.7): a read ref reaches only in a pass before
+  a creation fires nothing, so `Let k = restpost in (som(bonus van
   werven die TEN MINSTE 1 schuiten [k > 0]) plus p)`, with one schuit
-  created for each Werf and restpost leeg, refuses in the named
-  sentence, where ref answers the fixpoint: its fault at p in the pass
-  before the creation is replaced (RUNTIME-SEMANTICS ch. 5.7). The
-  same holds for a short circuit that a created member settles at the
-  fixpoint (decision of the main session, 2026-09-23): an `atLeast`
-  composite's prefix or an `atLeast` fold's open prefix is open in that
-  pass, and the read behind it, or the value of a Let whose binder such
-  a read reads, gets the named refusal. The pass is followed through
-  the reads ch. 6.3 counts positive (an `atLeast` fold's range, filter
-  and matrix, an `all` fold's matrix, the members of an `all`, `the` or
-  `atLeast` composite, and a comparison, a navigated characteristic or a
-  role check that reads through a role, read there with the case's own
-  links only); the read's own members are taken to be there, as a
-  member a creation adds is there before the members added to its own
-  ranges. `keur = 99 indien TEN MINSTE 1 [TEN MINSTE 1 schuiten
-  [lengte > 5], p > 0]`, with one schuit of 8 created for each Werf,
-  refuses in the named sentence, where ref again answers the fixpoint.
-  So the named refusal also stands where ref plays on every order: two
-  creations of 8
-  and 3 for each Werf, each behind a condition that holds, and `TEN
+  created for each Werf and restpost leeg, answers as ref does: the
+  created schuit reads k, and its barrier ends the Let before p. The
+  named refusal stands where ref plays on every order: two creations
+  of 8 and 3 for each Werf, each behind a condition that holds, and `TEN
   MINSTE 1 [lengte > 5, lengte > p]` over the schuiten — ref runs them
   in document order, reads 8 and stops, and [3, 8] reads p [N1]; the
   same creations under `Let k = restpost in som(lengte van schuiten
@@ -75,30 +58,8 @@ spec bug.
   MINSTE 1 [lengte > 5, TEN MINSTE 1 van de schuiten van zijn werf
   [TEN MINSTE 1 [lengte < 5, lengte > p]]]]` over a created 8 and 3,
   where [8, 3] settles the outer fold at 8 and [3, 8] the inner one at
-  3 [N4]. Where the guard is not exact otherwise, it errs in one of
-  two directions:
-  - Loud, a refusal where ref plays. [L2] A Let barrier that only a
-    created member raises, or a
-    short circuit that only a created member settles, counts the pass
-    before the creation also where ref has no such pass for the read: in a
-    form that ch. 6.1/6.3 puts above that creation (a rule, the condition
-    of a creation or fact creation, a consistency assertion), or at a
-    member ref makes only after the members that settle its short circuit;
-    the translator knows neither the strata nor the order of ref's passes.
-    `Let k = restpost in (som(lengte van schuiten die k > 0) plus p)`
-    under the condition `ALLE schuiten [lengte > 0]`, with one schuit of 8
-    created for each Werf and restpost leeg: ref answers leeg, clingo
-    refuses in the named sentence; the same condition before `TEN MINSTE 1
-    [TEN MINSTE 1 schuiten [lengte > 5], p > 0]` likewise. Ch. 6.1 puts a
-    form with irrevocable writes strictly above what produces its reads,
-    and ref checks a consistency only at the fixpoint of its stratum, so
-    that same short circuit refuses in the named sentence where ref plays
-    also as the condition of a creation, as a consistency assertion and as
-    the condition of a characteristic assignment. And a rapport made for
-    each Werf once it has a schuit of more than 5, with `keur = 99 indien
-    TEN MINSTE 1 [TEN MINSTE 1 schuiten van zijn werf [lengte > 5], p >
-    0]`: ref makes the rapport after the schuit and never reads p, clingo
-    refuses in the named sentence.
+  3 [N4]. Where the guard is not exact otherwise, it errs in one
+  direction:
   - Silent, an answer where ref faults. [S1] The Let lowering keeps a
     value behind an enclosing need on a path that does not read it, and
     the guard follows the lowering: `Let k = restpost in Let bel = (als
@@ -540,9 +501,7 @@ Recorded limitations:
   `Let k = restpost in som(bonus van werven die TEN MINSTE 1 [TEN
   MINSTE 1 schuiten [lengte > 5], k > 0, bonus > p])`, W1 with bonus 4
   and a schuit of 8, restpost leeg, answers leeg where ref answers
-  4,00. With the schuit created, the pass before the creation reads k
-  first, and its barrier ends the Let there before p, so no pass reads
-  p and nothing is refused. The exact lowering, the need per path
+  4,00, also with the schuit created. The exact lowering, the need per path
   instead of on the whole body, changes the translation of every Let
   body.
 - [V4] A division by a numeric zero in a closed body (a Fold or MapList
