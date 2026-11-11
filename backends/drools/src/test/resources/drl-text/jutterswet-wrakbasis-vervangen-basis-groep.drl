@@ -1,0 +1,135 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Outcome;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// 
+function boolean toets_defaultsAStrandrechtUitkeringDefault000(Object $betwist) {
+    return ComputeHelpers.characteristic($betwist, Boolean.TRUE);
+}
+
+rule "defaults A:Strandrecht.uitkering: default 0.0.0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Strandrecht"), $betwist : (ComputeHelpers.holds(betwist)) )
+    eval( toets_defaultsAStrandrechtUitkeringDefault000($betwist) )
+then
+    // 
+    Object v = new java.math.BigDecimal("99");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Strandrecht.uitkering", 1, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults A:Strandrecht.uitkering: eens 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Strandrecht.uitkering" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 1 && chain < 2, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Strandrecht.uitkering", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults A:Strandrecht.uitkering: terugval 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Strandrecht"), $grondslag : grondslag )
+    not( $uitkomst_4 : Outcome( stack == "defaults A:Strandrecht.uitkering" && chain >= 1 && chain < 2, subject == $onderwerp ) )
+then
+    // zijn grondslag
+    Object v = $grondslag;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Strandrecht.uitkering", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults A:Strandrecht.uitkering: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Strandrecht.uitkering" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 1, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "uitkering");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Strandrecht.uitkering", ComputeHelpers.designate(passend, "defaults A:Strandrecht.uitkering")));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandrecht", "uitkering", false), passend, "defaults A:Strandrecht.uitkering"));
+        }
+    }
+end
+
+// 
+function boolean toets_defaultsAWrakrechtUitkeringDefault000(Object $betwist) {
+    return ComputeHelpers.characteristic($betwist, Boolean.TRUE);
+}
+
+rule "defaults A:Wrakrecht.uitkering: default 0.0.0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandrecht( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Wrakrecht"), $betwist : (ComputeHelpers.holds(betwist)) )
+    eval( toets_defaultsAWrakrechtUitkeringDefault000($betwist) )
+then
+    // 
+    Object v = new java.math.BigDecimal("99");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Wrakrecht.uitkering", 1, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults A:Wrakrecht.uitkering: eens 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Wrakrecht.uitkering" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 1 && chain < 2, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Wrakrecht.uitkering", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// zijn grondslag maal 2
+function Object afloop_defaultsAWrakrechtUitkeringDefault1(Object $grondslag) {
+    try {
+        return RegelSpraakRuntime.rsMaal($grondslag, new java.math.BigDecimal("2"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Wrakrecht.uitkering: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakrecht( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Wrakrecht"), $grondslag : grondslag )
+    not( $hoger_12 : Outcome( stack == "defaults A:Wrakrecht.uitkering" && chain == 0 && position < 1, subject == $onderwerp ) )
+then
+    Object v = afloop_defaultsAWrakrechtUitkeringDefault1($grondslag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Wrakrecht.uitkering", ComputeHelpers.designate(v, "defaults A:Wrakrecht.uitkering")));
+    } else if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Wrakrecht.uitkering", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults A:Wrakrecht.uitkering: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Wrakrecht.uitkering" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 1, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), "uitkering");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Wrakrecht.uitkering", ComputeHelpers.designate(passend, "defaults A:Wrakrecht.uitkering")));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("strandrecht", "uitkering", false), passend, "defaults A:Wrakrecht.uitkering"));
+        }
+    }
+end
+

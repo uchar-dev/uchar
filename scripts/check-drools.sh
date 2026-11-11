@@ -1613,7 +1613,9 @@ EXPECTED_CHANNEL=(
 # zero in the divisor deposits nothing (RUNTIME-SEMANTICS ch. 1.4 point 4; PLAYED 3).
 # 371 with jutterswet-wrakbasis-vervangen-basis-regel: a subtype's own base, a rule, replaces an inherited form-a base,
 # whose nested exception group stays above it (RUNTIME-SEMANTICS ch. 7.10; PLAYED 1).
-EXPECTED_PLAYED=371
+# 372 with jutterswet-wrakbasis-vervangen-basis-groep: the same with the subtype's own base written as a defaults group
+# (RUNTIME-SEMANTICS ch. 7.10; PLAYED 1).
+EXPECTED_PLAYED=372
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
