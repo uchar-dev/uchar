@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
+import dev.uchar.regelspraak.runtime.Breuk;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 
 import java.math.BigDecimal;
@@ -90,11 +91,14 @@ public record Period(LocalDate from, LocalDate to, Object value) {
         return Objects.hash(from, to, value instanceof BigDecimal d ? d.stripTrailingZeros() : value);
     }
 
-    /** Whether two values of segments are one value: numbers by value, constructor values and texts by their equality,
-     *  leeg only with leeg. */
+    /** Whether two values are one value: numbers as exact numbers, a decimal and a rational ({@link Breuk}) alike,
+     *  constructor values (ch. 9.3) and texts by their equality, leeg only with leeg. A segment of this class holds no
+     *  rational, so on its values this is the comparison of decimals the hash code agrees with. */
     public static boolean sameValue(Object a, Object b) {
-        if (a instanceof BigDecimal x) return b instanceof BigDecimal y && x.compareTo(y) == 0;
-        return Objects.equals(a, b);
+        if (a == null || b == null) return a == b;
+        if (a instanceof BigDecimal x && b instanceof BigDecimal y) return x.compareTo(y) == 0;
+        if (a instanceof Number && b instanceof Number) return Breuk.van(a).compareTo(Breuk.van(b)) == 0;
+        return a.equals(b);
     }
 
     @Override public String toString() {

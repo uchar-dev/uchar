@@ -398,25 +398,17 @@ public final class PeriodArithmetic {
         return null;
     }
 
-    /** {@code segments} with adjacent segments of one value joined into one, the value of the first kept; two values
-     *  are one where they are equal as exact numbers, as {@link Period#equals} compares them. */
+    /** {@code segments} with adjacent segments of one value ({@link Period#sameValue}) joined into one, the value of
+     *  the first kept. */
     static List<Exact> coalesced(List<Exact> segments) {
         List<Exact> out = new ArrayList<>();
         for (Exact s : segments) {
             Exact last = out.isEmpty() ? null : out.get(out.size() - 1);
-            if (last != null && last.to().equals(s.from()) && sameValue(last.value(), s.value()))
+            if (last != null && last.to().equals(s.from()) && Period.sameValue(last.value(), s.value()))
                 out.set(out.size() - 1, new Exact(last.from(), s.to(), last.value()));
             else out.add(s);
         }
         return List.copyOf(out);
-    }
-
-    /** Whether two values are one: numbers as exact numbers, a constructor value by its equality (RUNTIME-SEMANTICS
-     *  ch. 9.3), leeg only with leeg. */
-    static boolean sameValue(Object a, Object b) {
-        if (a == null || b == null) return a == b;
-        if (a instanceof Number && b instanceof Number) return Breuk.van(a).compareTo(Breuk.van(b)) == 0;
-        return a.equals(b);
     }
 
     /** {@code t} as exact segments: a timeline of working memory ({@link Period}), one an operator returned, or an

@@ -374,7 +374,7 @@ final class SessionReaders {
                 // where a fault of the stack stands and it wrote nothing, its outcomes are all there is to read
                 Object value = wrote == null ? null : valueOn(wrote, previous);
                 boolean comparable = wrote != null || !faulted;
-                if (comparable && !PeriodArithmetic.sameValue(decider == null ? null : decider.decision(), value))
+                if (comparable && !Period.sameValue(decider == null ? null : decider.decision(), value))
                     throw new IllegalStateException("the stack " + name + " wrote on " + FactNames.object(subject)
                             + " on " + previous + " " + value + ", and its outcomes give there " + settled);
                 DefaultsDecision.Conflict conflict = settled == null || settled.conflict() == null ? null
@@ -403,7 +403,7 @@ final class SessionReaders {
         }
         if (deciders.isEmpty()) return null;
         for (DefaultsDecision.Decider x : deciders)
-            if (!PeriodArithmetic.sameValue(x.decision(), deciders.get(0).decision()))
+            if (!Period.sameValue(x.decision(), deciders.get(0).decision()))
                 return new Settling(null, new DefaultsDecision.Conflict(at, key, deciders));
         return new Settling(deciders.get(0), null);
     }
@@ -438,7 +438,7 @@ final class SessionReaders {
             return new Settling(new DefaultsDecision.Decider(analysis.pointerOf(k.d()), decided), null);
         }
         boolean agrees = members.conflict() != null ? members.conflict().key().equals(conflictKey)
-                : conflictKey == null && PeriodArithmetic.sameValue(members.decider().decision(), decided);
+                : conflictKey == null && Period.sameValue(members.decider().decision(), decided);
         if (!agrees)
             throw new IllegalStateException(on + " in the session, and the members of default " + k.label() + " of " + name
                     + " give " + members + " on " + d);
@@ -494,7 +494,7 @@ final class SessionReaders {
     /** Whether two spans have one outcome: the same writers with the same values, the same conflict, the same input;
      *  numbers compared by value. */
     private static boolean sameOutcome(PeriodDecisions.Span a, PeriodDecisions.Span b) {
-        if (!PeriodArithmetic.sameValue(a.input(), b.input()) || !sameDecider(a.decider(), b.decider())) return false;
+        if (!Period.sameValue(a.input(), b.input()) || !sameDecider(a.decider(), b.decider())) return false;
         if (a.rules().size() != b.rules().size()) return false;
         for (int i = 0; i < a.rules().size(); i++) if (!sameDecider(a.rules().get(i), b.rules().get(i))) return false;
         if (a.conflict() == null || b.conflict() == null) return a.conflict() == b.conflict();
@@ -508,7 +508,7 @@ final class SessionReaders {
 
     private static boolean sameDecider(DefaultsDecision.Decider a, DefaultsDecision.Decider b) {
         if (a == null || b == null) return a == b;
-        return a.pointer().equals(b.pointer()) && PeriodArithmetic.sameValue(a.decision(), b.decision());
+        return a.pointer().equals(b.pointer()) && Period.sameValue(a.decision(), b.decision());
     }
 
     /** How a chain or a reconciliation came out: a default that decided, or a conflict. */

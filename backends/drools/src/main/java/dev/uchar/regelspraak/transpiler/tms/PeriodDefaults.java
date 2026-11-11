@@ -209,7 +209,7 @@ public final class PeriodDefaults {
                     }
                     if (!values.isEmpty()) {
                         boolean agree = true;
-                        for (Object v : values) agree &= PeriodArithmetic.sameValue(values.get(0), v);
+                        for (Object v : values) agree &= Period.sameValue(values.get(0), v);
                         if (agree) decided.add(new PeriodArithmetic.Exact(previous, c, values.get(0)));
                         else conflicted.computeIfAbsent(key, k -> new ArrayList<>()).add(new Period(previous, c, null));
                     }
