@@ -61,3 +61,60 @@ Out of scope: every simplification the review noted (cards `tms-session-readers-
 zones the review did not reach (`toolchain/service`, most of the gates, the second half of `checks.ml` and
 `eval.ml`); a spec change — where a candidate turns out to be a question about the norm, it goes to the Result as a
 question.
+
+Result (2026-11-11): 31 kandidaten (25 van de kaart, de vier B14-vermoedens apart geteld, plus R1); 22 gefixt met een
+getuige die op de stand vóór de fix rood was, 6 geschrapt, 2 normvragen (beantwoord, zie onder), C5 niet hier.
+Bouwers per zone (clingo/ref, Drools-loader, frontend, ref/F-logic, TMS) in eigen worktrees, de hoofdsessie voor de
+verifier en de gatescripts; A3/A4 bovenop kaart `tms-session-readers-out`.
+
+- A1 — fixed: `test_clingo.ml` "closed-body acc + x", "closed-body x > 5,00", "value-position k > 5,00". De guard
+  stond op de opgeschaalde term; twee zusters schaalden zonder guard. 42.949.673 geeft nu CLINGO-034, 200.000 het
+  goede getal.
+- A2 — fixed: `test_clingo.ml` "a constructor named Not"; `not` is het enige kale woord dat clingo reserveert.
+- A3 — fixed: `DepositInWrappedPlaceWitnessTest`; `deposits` daalt af in `Construct.argument`, `PayloadAccess.base`
+  en de grenzen van een `TimeWindow` (drie verloren EF-005-deposits en een onterechte DROOLS-130).
+- A4 — fixed: golden `let-bound-period-arithmetic-total`; dezelfde fout zat in ref's `period_arithmetic_target`
+  (die clingo aanroept), dus `ref/lib/eval.ml` is in dezelfde commit meegenomen: één regel, `let_bound_value`.
+- A5 — struck: een open grens bereikt `pro_rata` niet (de case eist `from` en `to`; een afgeleide open grens geeft
+  EF-023 vóór het schrijven).
+- A6 — struck: `pow_rounded` wordt alleen met een gebroken literal bereikt; een gehele exponent rekent via `pow_`.
+- R1 (naast A6) — fixed: `test_ref.ml` "ch2.2-pow-runtime-exponent-rounded" en drie zusters; een gebroken exponent
+  die geen literal is, rekent nu onder zijn afronding.
+- B1 — fixed: `LenientReaderWitnessTest`; de vijf optionele lezers weigeren een verkeerd JSON-type, een getal buiten
+  int is DROOLS-003; `Default.decision` hoorde bij dezelfde familie.
+- B2 — fixed: `ReferenceLayerRefusalWitnessTest.a_characteristic_check_on_an_undeclared_host_is_refused`.
+- B3 — fixed: `ReferenceLayerRefusalWitnessTest.a_cell_read_reads_an_attribute_reference` (ClassCastException bij
+  het laden, NullPointerException bij het afspelen).
+- B4 — fixed: `VocabularyWitnessTest.a_defaults_group_without_a_name_enters_no_designation`.
+- B5 — struck: `Namen.escapeRuleName` heeft geen aanroeper meer; `RuleNameWitnessTest` pint al dat de namen
+  verschillend blijven.
+- B6 — fixed: `DimensionTargetTest` (drie tests); een regel met een celdoel leest vanaf het type onder de cel.
+- B7 — fixed: `DimensionCellOverRoleTest.a_cell_fold_without_a_range_is_refused` (RGS-131 in plaats van een
+  ClassCastException).
+- B8 — struck: op het moment van de venstercontrole draagt een `Construct` geen argument en een `PayloadAccess`
+  alleen een attribuut of cel als basis.
+- B9 — fixed: `OrdinalPositionTest`, `BuiltinTypeTest.the_day_count_is_a_number_to_the_assignment_check`; RGS-393
+  voor een rangtelwoord zonder plaats; de dagentelling toetst haar soort. De terugval op `SOM` is onbereikbaar en
+  werpt nu een interne fout (geen getuige: geen bron bereikt hem).
+- B10 — fixed: `DependencyCycleTest.a_model_the_emitter_refuses_carries_the_refusal`; RGS-394 draagt de weigering
+  van de emitter in plaats van een stack trace bij `--ir`.
+- B11 — fixed: golden `jutterswet-let-keuze-in-laatste`; zeven `walk_expr`-aanroepen geven de body-positie door.
+- B12 — fixed: negatieve case `wf043-wholeperiod-navigated-nontemporal`.
+- B13 — vraag, beantwoord: weigeren (vervolgkaart `review-findings-2026-11-11`).
+- B14 — fixed, vier delen: `refuse_self_binding.flogic`, `refuse_cyclic_binding.flogic` (stack overflow),
+  `refuse_second_binding.flogic` (tweede binding viel stil weg; voorlopig besluit: weigeren, mandaat SUBTYPING §9.3
+  punt 7), de suite-check "every Default carries the id of its definition" met vier `name`-regels in
+  `jutterswet-wrakrecht-flogic`, en `refuse_sign.flogic` (alleen de tekst).
+- C1 — fixed: gate 3 zoekt de regel als sleutel van een rapportregel (rood aangetoond met een document dat `WF-050`
+  als kenmerknaam draagt).
+- C2 — fixed: gate 5 vindt goldens zonder case op elke diepte (de ankers).
+- C3 — fixed: gate 1 faalt op een fout van `git grep` (rood aangetoond met een ongeldige regex).
+- C4 — struck: dode tak zolang de vloer boven nul staat; geen fout.
+- C5 — niet hier: toolchain; staat in de vervolgkaart voor de toolchainsessie.
+
+Normbesluiten van de maintainer (2026-11-11), uit te voeren in `review-findings-2026-11-11`: verdeling rekent om
+(F1/F2); dubbele JSON-sleutel wordt geweigerd (B13); een herhaald label in een rol-lijst is één link (F6);
+EF-011/EF-014 voor de sessiestart (F5); leeg deeltal leest de deler niet (K-C); WF-126 dekt de initialisatie (V4);
+de IfThenElse-guardpositie gaat uit WF-127 (V5); een negatief grondtal met een gebroken exponent is altijd een fault.
+
+`EXPECTED_PLAYED` 365 → 367 (twee goldens). `make gates` groen bij de landing samen met `tms-session-readers-out`.
