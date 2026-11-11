@@ -10612,7 +10612,10 @@ let payload_gate ctx at (w : expr) =
 let wf023_precision ctx =
   let value_gate at dt w = precision_gate at ~share:false dt (precision ctx ~env:[] w) @ payload_gate ctx at w in
   let scalar ot a = not (attr_temporal ot a) in
-  let pro_rata = function Function_call { kind = Time_proportional_part; _ } -> true | _ -> false in
+  (* through a Let that binds it, as the executors write it ([let_bound_value]) *)
+  let pro_rata e =
+    match let_bound_value e with Function_call { kind = Time_proportional_part; _ } -> true | _ -> false
+  in
   List.concat_map
     (fun (r : resolved_rule) ->
       match (r.rr_presentation, r.objective, r.value_node) with
