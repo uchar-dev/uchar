@@ -18,10 +18,14 @@ Steps, each a commit or a small series, in this order:
    `body_literals`, the guard read in `unkeyed_form_read`). Byte-equal.
 3. A register filled where a guard is written (reason → code and parameters) in place of `viol_code`'s prefix match
    over sentences. Touches `scripts/check-exec-codes.sh` (protected).
-4. Refuse, with CLINGO-035 at translation, a guard whose body carries an order-dependent atom in a document with a
-   creation; the twins, the `_c`/`_o`/`_p` families, `pre_*`, `map_predicates`, `pre_clone` and the `_ph` chain go.
-   Measured corpus loss: 0 goldens, 0 red cases; the suite tests that pin the twins change — the maintainer decides
-   that before this step.
+4. The twins, in two halves (maintainer decision 2026-11-11, after a Fable advice in `werk/review-fable/clingo-twins/`):
+   - the pass before a creation (`pre_*`, `_ph`, `_p`, `pre_clone`, `map_predicates`) goes without a refusal in its
+     place: since RS ch. 5.7 reads faults at the fixpoint, ref plays those documents, and clingo must agree with ref
+     on the 14 suite frames it refused (measured with the machinery switched off: they answer ref's rows);
+   - a fault-where-reached in the matrix or Let barrier of a fold over members a creation adds is refused with
+     CLINGO-035 at translation, as Drools refuses the form (DROOLS-259); the order twins (`_c`/`_o`) go. The suite
+     tests that pinned the twins change accordingly, named in the Result.
+   The order of created members itself is a norm question outside this card (provisional decision: instance order).
 5. A gate-1 tripwire: `backends/clingo/lib` names no `Uchar_ref.Eval`, `Arith` or `Timeline.grid_*` (protected);
    then clingo's own validity (an ASP comparison on an `as_of` fact), fold order from the case links, the filter in
    ASP or refused, its own parameter-set check; then its own calendar grid and factors.
