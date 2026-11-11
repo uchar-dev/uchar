@@ -33,3 +33,17 @@ that package, this card.
 Out of scope: the about sixty mutable fields that serve as implicit parameters of the analysis; the near-copies
 `timelineInitialisationRule` / `writeRule` and `settledOn`/`chainOn` / `reconciled`/`descended`; any test; the walker
 `deposits` (card `review-candidates-triage`, A3).
+
+Result (2026-11-11): de lezers van een gevuurde sessie staan in `transpiler/tms/SessionReaders.java` (1184 regels;
+één klasse, want de twee blokken delen `requireFixpoint`); `TmsTranspiler` gaat van 10.310 naar 9.257 regels en
+houdt readOf, decisionsOf, periodDecisionsOf, setDerivedValues (2x), readingsOf en navigates als doorgeefluik. Gemeten
+aanroepers: alleen `DroolsBackend` en `SessionDump` in uchar; de toolchain roept ze alleen via `DroolsBackend` aan.
+De staart op de acht plaatsen is `conditionSideRules`; de drie readingRule-overloads zijn één `readingRule` plus
+`conditionReadingRule`; `rootChains` staat op één plaats; de vier `-1`-armen na `depositSite` zijn weg (op elk van
+die plaatsen is `depositSite` waar). `declaredVariables` blijft (één aanroeper, `Reads.readingRulePlan`).
+Niet gedaan, gemeten: de dubbel gebouwde alpha (één keer bouwen verschuift elke latere id: 32 van 1.900 dumps
+verschillen), de dubbel gebouwde FactPattern (`ChannelPlanWitnessTest` pint twee ids), en `refuseMixedDeposits`, de
+enige bron van DROOLS-290: weghalen is een gedragswijziging. Byte-gelijkheid: na elke commit de DRL-tekst en het plan
+van de PatternDSL van alle 475 golden en rode documenten, zonder en met lezingen, tegen de jar van de start: 1.900
+dumps, 0 verschillen. Suite 1.898 tests vóór en na; gate 12 en 17 groen; `make gates` groen bij de landing samen met
+`review-candidates-triage`.
