@@ -14210,6 +14210,23 @@ let () =
         ~case_data:(read (dir ^ d ^ "/case.json")) (fun _ -> ()))
     [ "subtype-rule"; "subtype-group" ]
 
+(* WV-dubbele-sleutel: the golden division-by-numeric-zero with the
+   datatype of loon writing "decimals" twice, 0 and 2. A reader that takes the
+   first pair and one that takes the last would read two documents; an object
+   carries each key once, and the shared loader refuses the document for the
+   verifier and for an executor alike, at the second key *)
+let () =
+  let file = corpus_file "ref/test/fixtures/duplicate-key/ir.json" in
+  List.iter
+    (fun (who, reader) ->
+      let ident = "WV-dubbele-sleutel-" ^ who in
+      match Ir_v0.Loader.load_file ~reader file with
+      | exception Ir_v0.Loader.Error (path, msg) ->
+          check (ident ^ " (got: " ^ path ^ ": " ^ msg ^ ")")
+            (path = "/model/objectTypes/0/attributes/2/datatype/decimals" && substring msg "occurs twice")
+      | _ -> check (ident ^ " (loaded)") false)
+    [ ("verifier", Ir_v0.Loader.Verifier); ("executor", Ir_v0.Loader.Executor) ]
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

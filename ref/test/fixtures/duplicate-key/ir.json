@@ -1,0 +1,675 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "waardering",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "factor",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "loon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opbrengst",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aandeel",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "deel",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "weging",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "portie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vindersloon",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "kaveldeel",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bonus",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "koopsom",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "partijen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "middenprijs",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "spanwijdte",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 1,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "rek",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 1,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "krimp",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 1,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "loon van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "loon",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het loon van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "waardering",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "de waardering van de Vondst"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "factor",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "de factor van de Vondst"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de waardering van de Vondst maal de factor van de Vondst"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vindersloon van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vindersloon",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het vindersloon van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "percentageOf",
+              "left": {
+                "node": "Literal",
+                "value": {
+                  "number": "20"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "%",
+                      "canonical": "%",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    }
+                  ]
+                },
+                "source": {
+                  "snippet": "20%"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "opbrengst",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "de opbrengst van de Vondst"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "20% van de opbrengst van de Vondst"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "deel van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "deel",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het deel van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "opbrengst",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de opbrengst van de Vondst"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "aandeel",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het aandeel van de Vondst"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "de opbrengst van de Vondst gedeeld door het aandeel van de Vondst"
+                }
+              },
+              "mode": "halfAwayFromZero",
+              "decimals": 0,
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "(de opbrengst van de Vondst gedeeld door het aandeel van de Vondst) rekenkundig afgerond op 0 decimalen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "portie van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "portie",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De portie van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "opbrengst",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de opbrengst van de Vondst"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "weging",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de weging van de Vondst"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "de opbrengst van de Vondst gedeeld door de weging van de Vondst"
+                }
+              },
+              "mode": "floor",
+              "decimals": 0,
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de opbrengst van de Vondst gedeeld door de weging van de Vondst naar beneden afgerond op 0 decimalen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "bonus van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "bonus",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De bonus van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "opbrengst",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de opbrengst van de Vondst"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "kaveldeel",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het kaveldeel van de Vondst"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "de opbrengst van de Vondst gedeeld door het kaveldeel van de Vondst"
+                }
+              },
+              "mode": "halfAwayFromZero",
+              "decimals": 0,
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "(de opbrengst van de Vondst gedeeld door het kaveldeel van de Vondst) rekenkundig afgerond op 0 decimalen"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "waardering",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "de waardering van de Vondst"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "100"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "100"
+                }
+              },
+              "source": {
+                "snippet": "de waardering van de Vondst is groter of gelijk aan 100"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "middenprijs van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "middenprijs",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De middenprijs van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "koopsom",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de koopsom van de Vondst"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "partijen",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de partijen van de Vondst"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "de koopsom van de Vondst gedeeld door de partijen van de Vondst"
+                }
+              },
+              "mode": "halfAwayFromZero",
+              "decimals": 2,
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "(de koopsom van de Vondst gedeeld door de partijen van de Vondst) rekenkundig afgerond op 2 decimalen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "krimp van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "krimp",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De krimp van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "times",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "spanwijdte",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de spanwijdte van de Vondst"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "rek",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de rek van de Vondst"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "de spanwijdte van de Vondst maal de rek van de Vondst"
+                }
+              },
+              "mode": "halfAwayFromZero",
+              "decimals": 1,
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 1,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "(de spanwijdte van de Vondst maal de rek van de Vondst) rekenkundig afgerond op 1 decimalen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

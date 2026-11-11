@@ -145,5 +145,7 @@
   (glob_files fixtures/empty-dividend/*.json)
   ; a subtype base replacing an inherited form-a base with nested exception groups
   (glob_files fixtures/inherited-nested-exceptions/subtype-rule/*.json)
-  (glob_files fixtures/inherited-nested-exceptions/subtype-group/*.json))
+  (glob_files fixtures/inherited-nested-exceptions/subtype-group/*.json)
+  ; a document that writes one key twice in one object
+  fixtures/duplicate-key/ir.json)
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

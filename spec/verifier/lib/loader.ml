@@ -2097,12 +2097,33 @@ let executor_refusals (j : json) =
   in
   walk "" j
 
+(* An object carries each key once (IR-SPEC, Conventions). The JSON reader
+   keeps every pair of an object, so a key written twice would reach a
+   reader that takes the first pair and one that takes the last with two
+   documents; every reader refuses it here, before anything is read. *)
+let refuse_duplicate_keys (j : json) =
+  let rec walk path = function
+    | `Assoc kvs ->
+        ignore
+          (List.fold_left
+             (fun seen (k, _) ->
+               if List.mem k seen then
+                 fail (path / k) ("the key \"" ^ k ^ "\" occurs twice in one object; an object carries each key once")
+               else k :: seen)
+             [] kvs);
+        List.iter (fun (k, x) -> walk (path / k) x) kvs
+    | `List xs -> List.iteri (fun i x -> walk (path / string_of_int i) x) xs
+    | _ -> ()
+  in
+  walk "" j
+
 (* The M1 root: {format, model, rules, diagnostics}. [model] is the
    declaration set as lists, [rules] the rule lists under their L5 keys;
    each carries one optional extension list. Since L4 the six named forms
    are read version by version into the v0-shaped records, and the one wire
    list of uniquenesses into the two in-memory lists. *)
 let document ?(reader = Executor) (j : json) : document =
+  refuse_duplicate_keys j;
   let path = "" in
   let kvs = obj path j in
   check_keys path kvs ~ext:[ "vocabularies" ] [ "format"; "model"; "rules"; "diagnostics" ];
