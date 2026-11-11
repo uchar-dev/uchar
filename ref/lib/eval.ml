@@ -1543,13 +1543,26 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
              true irrational, exactly *)
           numeric_builtin_operand env Square_root arg;
           Arith.sqrt_rounded ~err mode_kind decimal_places (eval_expr env world self ~err arg)
-      | Some (Binary { op = Power; left_side; right_side = Some (Literal { variant; typ; _ } as exponent); _ })
-        when match literal_value variant typ with Num (q, _) -> not (Z.equal (Q.den q) Z.one) | _ -> false ->
+      | Some (Binary { op = Power; left_side; right_side = Some exponent; _ } as power)
+        when match exponent with
+             | Literal { variant; typ; _ } -> (
+                 match literal_value variant typ with Num (q, _) -> not (Z.equal (Q.den q) Z.one) | _ -> false)
+             | _ -> true ->
           (* the mandatory rounding after a power (§6.7) with a fractional
-             exponent rounds the true power, exactly (ch. 2.2) *)
+             exponent rounds the true power, exactly (ch. 2.2). Fractional is
+             a property of the exponent's value: an exponent that is not a
+             literal is read first and decides here. A whole one is the exact
+             power, rounded; only that power has a value of its own, so only
+             there the observer of a reading is handed the power node, as a
+             whole literal exponent hands it through the [Binary] arm *)
           let l = eval_expr env world self ~err (req "Binary.left" left_side) in
           let r = eval_expr env world self ~err exponent in
-          Arith.pow_rounded ~err mode_kind decimal_places l r
+          (match r with
+          | Num (q, _) when not (Z.equal (Q.den q) Z.one) -> Arith.pow_rounded ~err mode_kind decimal_places l r
+          | _ ->
+              let exact () = Arith.pow_ ~err l r in
+              Arith.round_v mode_kind decimal_places
+                (match !observer with None -> exact () | Some o -> o.expr power exact))
       | _ ->
           Arith.round_v mode_kind decimal_places (eval_expr env world self ~err (req "Rounding.base" base_expr)))
   | Clamp { base_expr; minimum; maximum; _ } ->

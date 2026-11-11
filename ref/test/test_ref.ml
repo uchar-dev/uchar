@@ -1373,6 +1373,35 @@ let env_of doc : Eval.env =
   { doc = with_pointers doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None;
     locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
 
+(* ch. 2.2, through the evaluation: a power under its rounding is decided by
+   the value of its exponent, not by its form. An exponent read from an
+   attribute that holds 0,5 is a fractional exponent as the literal 0,5 is:
+   the true power rounded once; one that holds 3 is the exact power, rounded *)
+let () =
+  let num4 : Ir_v0.Ast.datatype = Number { whole_part = false; decimal_places = 4; sign_char = None; measure_unit = None } in
+  let doc = { empty_doc with object_types = [ ot "Macht" [ ("grondtal", Some num0); ("exponent", Some num4) ] [] ] } in
+  let env = env_of doc in
+  let w =
+    List.fold_left World.add_instance World.empty
+      [ inst "M1" "Macht" [ ("grondtal", n "10"); ("exponent", n "0.5") ];
+        inst "M2" "Macht" [ ("grondtal", n "-2"); ("exponent", n "3") ];
+        inst "M3" "Macht" [ ("grondtal", n "10") ] ]
+  in
+  let power : Ir_v0.Ast.expr =
+    Binary
+      { op = Power; left_side = Some (aref "grondtal" "Macht"); right_side = Some (aref "exponent" "Macht");
+        typ = Some num4; source_name = None }
+  in
+  let rounded : Ir_v0.Ast.expr =
+    Rounding { base_expr = Some power; mode_kind = Floor; decimal_places = 10; typ = None; source_name = None }
+  in
+  let eval label e = Eval.eval_expr env w (World.get w label) ~err:no_err e in
+  expect_num "ch2.2-pow-runtime-exponent-rounded" (eval "M1" rounded) "3.1622776601";
+  expect_num "ch2.2-pow-runtime-exponent-whole-rounded" (eval "M2" rounded) "-8";
+  expect_empty "ch2.2-pow-runtime-exponent-empty-rounded" (eval "M3" rounded);
+  expect_fault_msg "ch2.2-pow-runtime-exponent-unrounded" (fun () -> eval "M1" power)
+    "not exactly representable without an explicit rounding"
+
 (* ch. 1.2, "Text coercion", through the evaluation: the type of a part is
    the declaration of what it reads and of a composite part its precision
    bound (ch. 2.3); the worked example WV-1.2c-text *)
