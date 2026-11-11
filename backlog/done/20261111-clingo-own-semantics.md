@@ -67,3 +67,46 @@ Result, steps 1–4 (2026-11-11, landed while steps 5 and 6 continue):
   the matrix stays, a loud residual recorded as README [L3] with frame l3-3-8.
 - Corpus: 0 of 1,110 programs changed across step 4; gates 6, 8 and 17 green. ASP-TRANSLATION and the CONSTRUCTS row
   `ParameterRef` follow.
+
+Result, steps 5 and 6 (2026-11-11):
+- step 5, tripwire: gate 1 fails where `backends/clingo/lib` names `Uchar_ref.Eval` (or opens `Uchar_ref` whole),
+  `Uchar_ref.Arith`, ref's calendar in `Timeline` (`grid_*`, `calendar_*`, `attr_grid`, `param_grid`, `bucket`,
+  `whole_units`, `add_months`, `days_in_month`, `is_leap`, `is_open`), `Value.civil_from_days`/`days_from_civil`, or
+  aliases `Uchar_ref.Timeline`. Red on the start (56 hits), green at the end. What clingo still reads of
+  `Uchar_ref` is the case encoding (`Case`, `World`, `Timeline.t`/segments, `Value`); it shares the verifier's
+  declarations (`Ir_v0`), which is no executor semantics.
+- step 5, own semantics:
+  - validity: every version is translated; the program carries the evaluation date as `as_of/1` and each bounded
+    window as `valid/1`, and every rule of the version waits for it; EF-012 (a window without an evaluation date) is
+    a witness in the program. Fault in clingo found and fixed: a window on an allocation, a consistency or a
+    uniqueness was refused at translation while ref plays the form (suite frame "a consistency the evaluation date
+    excludes asserts nothing").
+  - fold order from the case's links (RS ch. 5.7a); the die/dat filter of the horizon fence in the program (the two
+    translation refusals go; the two suite frames now pin that ref and the program both fault EF-037 {bewaartarief,
+    V1}); the parameter-set check of RS ch. 8.4 in clingo's own code; the static questions (role, cell, target,
+    host, timeline read, quantifier-fold form, static type, the WF-126 grid, a creation's back link) answered by
+    clingo with the verifier's declarations.
+  - unit factors (`factors.ml`, RS ch. 2.6) and the calendar and grids (`calendar.ml`, ch. 3.2, 3.6, 3.8) are
+    clingo's own; 24 suite checks put the worked examples of ch. 2.6, 3.2 and 3.6 on them directly. A probe of
+    `Calendar` against ref's `Timeline` over every day of 1890–2110 on ten grids: 0 differences.
+  - fault in ref found and fixed (own commit): the session-start check of RS ch. 8.4 skipped defaults groups; witness
+    WV-8.4-sessiestart-defaults and the red case `jutterswet-penningvintage-defaults-zonder-tijdlijn` (EF-014 in ref
+    and clingo; Drools refuses the TemporalRead at load, DROOLS-023, listed in gate 8 with its reason).
+  - Provisional: refusals that fall before a program exists (a creation on a cycle, CLINGO-038) compare the window
+    with the date at translation in clingo's own code; the stack rules of a target do not wait for a window; `as_of/1`
+    only in programs where a form carries a bounded window; with several failing parameters the check reports the
+    first in document order, ref the last found (no corpus case has two).
+- step 6: one record `carrier = { witness; guard_body }` for the guard carrier of rule level (`rule_carrier`) and a
+  closed body; one `compared_builtins`/`compared_with_factors` for the IfThenElse condition; one `quotient_terms`,
+  `quotient_misfit_guard` and `division_misfit` for the three places a division chooses its guard; `rule_let` and
+  `closed_let` for the Let arms; `money_mult_rate`/`money_mult_fences` take the carrier. Oracle 0 differences over
+  3,227 files, suite count unchanged.
+- The oracle over the whole card: corpus programs changed only where clingo now carries its own semantics (the four
+  goldens with a window, jutterswet-keurlast's filter); no golden or red outcome changed.
+- fixed (found during step 6): a division in a closed body chose the write bound EF-006 on a remainder also inside a
+  value or in a condition, a norm code where the encoding meets its own limit (a fold `acc + x ÷ 3` over [1, 2]: ref
+  1.00, clingo EF-006); now CLINGO-031 inside a value and CLINGO-039 in a closed IfThenElse's condition, as at rule
+  level. Witnesses in the clingo suite. Provisional: a quotient in a closed body never counts as the written value,
+  so EF-006 and CLINGO-033 no longer come from a closed body.
+- Not done: the order of created members as a norm (provisional decision of 2026-11-11: instance order) is a spec
+  and ref question outside this card.
