@@ -51,8 +51,9 @@
 #      per-form EXCLUDE) where one does not. ZERO silent divergences is the hard
 #      rule: a value difference WITHOUT a fault (a ref non-match, a Drools FAIL or
 #      ERROR at fire) reddens the gate. Per-class counts land in the report;
-#   6. an empty fixture set, zero tests, a stale holdout, or a toka case dir the
-#      manifest does not cover is a FAILURE, never silently green; a missing JDK,
+#   6. an empty fixture set, zero tests, a stale holdout, a toka case dir the
+#      manifest does not cover, or a FAULT/EXCLUDE line without a fragment is a
+#      FAILURE, never silently green; a missing JDK,
 #      dune (the verifier, ref/clingo), clingo, or the Drools jar fails loudly.
 #
 # The reason-carrying holdout LIST mirrors gate 7's survivor list: the full casus
@@ -316,6 +317,9 @@ while IFS='|' read -r scen ref clingo cfrag drools dfrag; do
     if [ $cc -eq 0 ]; then clingo_pass=$((clingo_pass + 1))
     else REPLAY_FAIL+=("$scen: clingo pinned PASS but did not replay: $(printf '%s' "$cout" | head -1)"); fi
   elif [ "$clingo" = FAULT ]; then
+    # grep -F with an empty pattern matches every output, and '-' nearly every one: such a fragment would
+    # accept any non-zero exit, a value mismatch included, as the pinned loud fault
+    case "$cfrag" in ''|-) fail "manifest: $scen pins a clingo FAULT without a fragment ('$cfrag'); a FAULT line names a fragment of the refusal";; esac
     if [ $cc -ne 0 ] && printf '%s' "$cout" | grep -qF "$cfrag"; then
       clingo_fault=$((clingo_fault + 1)); printf '%s\n' "$cfrag" >>"$CFRAGS"
     else REPLAY_FAIL+=("$scen: clingo pinned loud FAULT '$cfrag' but got exit=$cc: $(printf '%s' "$cout" | head -1)"); fi
@@ -328,6 +332,7 @@ while IFS='|' read -r scen ref clingo cfrag drools dfrag; do
     if [ "$dtok" = PLAYED ]; then drools_play=$((drools_play + 1))
     else REPLAY_FAIL+=("$scen: Drools pinned PLAYED but got: $dout"); fi
   elif [ "$drools" = EXCLUDE ]; then
+    case "$dfrag" in ''|-) fail "manifest: $scen pins a Drools EXCLUDE without a fragment ('$dfrag'); an EXCLUDE line names a fragment of the refusal";; esac
     if [ "$dtok" = EXCLUDE ] && printf '%s' "$dout" | grep -qF "$dfrag"; then
       drools_excl=$((drools_excl + 1)); printf '%s\n' "$dfrag" >>"$DFRAGS"
     else REPLAY_FAIL+=("$scen: Drools pinned loud EXCLUDE '$dfrag' but got: $dout"); fi
