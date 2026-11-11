@@ -1211,12 +1211,16 @@ let open_total_guard ctx ~witness ~body ~bounds:(v, t) ~value ~attr =
         (body @ [ Printf.sprintf "%s != 0" value; open_bound ]))
     [ Printf.sprintf "%s = #inf" v; Printf.sprintf "%s = #sup" t ]
 
-(* a bare division's non-exact viol/2 with its code: the write boundary of
-   ch. 2.4 (EF-006); inside the write of the unbounded form it names that form,
-   since the spec mandates no rounding there, a limit of this encoding
-   (CLINGO-033) *)
-let non_exact_division ctx =
-  if ctx.write_unbounded then (unbounded_non_whole_division, guardc "CLINGO-033")
+(* a bare division's non-exact viol/2 reason with its code. A quotient
+   compared in a condition is never written (CLINGO-039); a quotient inside a
+   larger value may not fit where that value does (CLINGO-031); the quotient
+   that is the written value meets the write boundary of ch. 2.4 (EF-006), or,
+   written into the unbounded form, which the spec mandates no rounding for,
+   a limit of this encoding (CLINGO-033) *)
+let division_misfit ~in_condition ~nested ~unbounded =
+  if in_condition then (non_exact_division_in_condition, guardc "CLINGO-039")
+  else if nested then (nested_non_exact_division, guardc "CLINGO-031")
+  else if unbounded then (unbounded_non_whole_division, guardc "CLINGO-033")
   else (non_exact_division_bounded, guardc "EF-006")
 
 (* the sentences of the faults ref raises where it evaluates their node, in
@@ -3591,6 +3595,64 @@ let compared_with_factors ctx ~carrier (kl, kr) ~atoms lt rt =
     end
   in
   (times kl lt, times kr rt)
+
+(* the exact scaled quotient of a division, at rule level ([translate_division])
+   and in a closed body ([closed_division]) alike: tl·(sr·out_scale) / (tr·sl),
+   at the scale of the write or, rounded, at its decimals. A RUNTIME divisor
+   reduces only the two constant multipliers by their gcd and rides its own
+   term tr·kden, so the scale-(sr·out_scale) numerator can reach 10^8 at a
+   4-decimal divisor (the tutorial's n / 2.0000), fencing the dividend at 5. A
+   COMPILE-TIME-CONSTANT positive divisor (an atom-free integer term c) instead
+   folds the whole constant fraction (sr·out_scale)/(c·sl) by its FULL gcd
+   ([const_div_reduce]), so the divisor's scale never inflates the numerator —
+   the intermediate shrinks (10^8 → 5000 for n / 2.0000) and the fence loosens
+   accordingly. The fold is exact: dividing numerator and denominator constants
+   by a common factor preserves both the integer quotient (floor of one
+   rational) and its divisibility test (S18).
+
+   The fold shrinks the denominator to the GROUND constant kden_c, which the
+   rounding formulas feed UNGUARDED into 2*dent, numt+dent-1 and 2*numt+dent.
+   numt is fenced to 2^29, but nothing bounds kden_c, so a kden_c past 2^29
+   would let 2*dent or 2*numt+dent leave int31 and wrap silently. A ground guard
+   on the already-wrapped literal cannot fire, so when the fold leaves the
+   fence the quotient drops back to the two-factor form, whose divisor-term
+   fence fires the loud "arithmetic range exceeded" UNSAT.
+
+   The range fences of both operands ride [carrier] over the operands' atoms.
+   Returns the numerator and denominator terms, the out scale, and whether the
+   divisor is a runtime term (only such a divisor can be a numeric zero; a
+   constant one is fenced positive, also on the two-factor fallback). *)
+let quotient_terms ctx ~carrier ~rounding (bl, tl, sl) (br, tr, sr) =
+  let out_scale = match rounding with None -> max (max sl sr) ctx.write_scale | Some (_, d) -> pow10 d in
+  let const_div =
+    if br = [] then
+      match int_of_string_opt (String.trim tr) with Some c when c > 0 -> Some c | _ -> None
+    else None
+  in
+  let numt_of knum = if knum = 1 then Printf.sprintf "(%s)" tl else Printf.sprintf "((%s)*%d)" tl knum in
+  let two_factor () =
+    let g = gcd (sr * out_scale) sl in
+    let knum = sr * out_scale / g and kden = sl / g in
+    ( numt_of knum,
+      (if kden = 1 then Printf.sprintf "(%s)" tr else Printf.sprintf "((%s)*%d)" tr kden),
+      [ (tl, 536870912 / knum); (tr, 536870912 / kden) ] )
+  in
+  let numt, dent, range_bounds =
+    match const_div with
+    | Some c ->
+        let knum, kden_c = const_div_reduce ~sl ~sr ~out_scale ~c in
+        if kden_c > 536870912 then two_factor ()
+        else (numt_of knum, Printf.sprintf "(%d)" kden_c, [ (tl, 536870912 / knum) ])
+    | None -> two_factor ()
+  in
+  range_guard ctx ~subject:carrier.witness ~body:(carrier.guard_body @ bl @ br) range_bounds;
+  (numt, dent, out_scale, const_div = None)
+
+(* the viol/2 of a quotient that is not exact at its out scale, under
+   [carrier] and [atoms] (the operands' atoms and the divisor's nonzero test) *)
+let quotient_misfit_guard ctx ~carrier ~atoms ~numt ~dent (reason, code) =
+  emit_viol ctx ~code ~subject:carrier.witness reason
+    (carrier.guard_body @ atoms @ [ Printf.sprintf "%s \\ %s != 0" numt dent ])
 
 (* the split money × rate cent encoding (§5/S18(c)), shared verbatim by the
    rule-level Rounding{money×rate} and the closed-body money multiplication (one
@@ -7931,57 +7993,10 @@ and translate_division ?(root = true) ctx ~subject ~subject_ot ~left_side ~right
       (fun () -> expr_term ctx ~subject ~subject_ot right_side)
   in
   (* the numeric_ok ctx pair reads the wire `type`; both scales become gcd
-     operands and divisors below, where a 0 is the crash, not a fault *)
+     operands and divisors in [quotient_terms], where a 0 is the crash, not a
+     fault *)
   let sl = numeric_scale ~what:"a division dividend" sl in
   let sr = numeric_scale ~what:"a division divisor" sr in
-  let out_scale =
-    match rounding with
-    | None -> max (max sl sr) ctx.write_scale
-    | Some (_, d) -> pow10 d
-  in
-  (* the exact scaled quotient is  tl·(sr·out_scale) / (tr·sl).  A RUNTIME
-     divisor reduces only the two constant multipliers by their gcd and rides
-     its own term tr·kden, so the scale-(sr·out_scale) numerator can reach 10^8
-     at a 4-decimal divisor (the tutorial's n / 2.0000), fencing the dividend at
-     5.  A COMPILE-TIME-CONSTANT positive divisor (an atom-free integer term c)
-     instead folds the whole constant fraction (sr·out_scale)/(c·sl) by its FULL
-     gcd, so the divisor's scale never inflates the numerator — the intermediate
-     shrinks (10^8 → 5000 for n / 2.0000) and the fence loosens accordingly.
-     The fold is exact: dividing numerator and denominator constants by a common
-     factor preserves both the integer quotient (floor of one rational) and its
-     divisibility test, so every existing outcome — value, non-exact viol, zero
-     fence — is unchanged (S18). *)
-  let const_div =
-    if br = [] then
-      match int_of_string_opt (String.trim tr) with Some c when c > 0 -> Some c | _ -> None
-    else None
-  in
-  let numt, dent, range_bounds =
-    let numt_of knum = if knum = 1 then Printf.sprintf "(%s)" tl else Printf.sprintf "((%s)*%d)" tl knum in
-    let two_factor () =
-      let g = gcd (sr * out_scale) sl in
-      let knum = sr * out_scale / g and kden = sl / g in
-      ( numt_of knum,
-        (if kden = 1 then Printf.sprintf "(%s)" tr else Printf.sprintf "((%s)*%d)" tr kden),
-        [ (tl, 536870912 / knum); (tr, 536870912 / kden) ] )
-    in
-    match const_div with
-    | Some c ->
-        let knum, kden_c = const_div_reduce ~sl ~sr ~out_scale ~c in
-        (* the fold shrinks the denominator to the GROUND constant kden_c, which
-           the rounding formulas feed UNGUARDED into 2*dent, numt+dent-1 and
-           2*numt+dent. numt is fenced to 2^29 below, but nothing bounds kden_c,
-           so a kden_c past 2^29 lets 2*dent or 2*numt+dent leave int31 and wrap
-           silently — the very ref!=clingo split the fold otherwise closes. A
-           ground guard on the already-wrapped literal cannot fire, so when the
-           fold leaves the fence, drop back to the two-factor form: its
-           (tr,536870912/kden) range_guard fences the divisor term and fires the
-           loud "arithmetic range exceeded" UNSAT, exactly as every constant
-           divisor did before the fold existed. *)
-        if kden_c > 536870912 then two_factor ()
-        else (numt_of knum, Printf.sprintf "(%d)" kden_c, [ (tl, 536870912 / knum) ])
-    | None -> two_factor ()
-  in
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "q%d" ctx.fresh in
   (* an operand that reads the form subject of a member (an anchored read,
@@ -7991,7 +8006,8 @@ and translate_division ?(root = true) ctx ~subject ~subject_ot ~left_side ~right
   in
   let guard = ctx.rule_guard in
   let full = opening @ guard @ bl @ br in
-  range_guard ctx ~subject ~body:full range_bounds;
+  let carrier = { witness = subject; guard_body = opening @ guard } in
+  let numt, dent, out_scale, _ = quotient_terms ctx ~carrier ~rounding (bl, tl, sl) (br, tr, sr) in
   emit_rule ctx ~head:(Printf.sprintf "%s_ldef(%s)" p hkey) ~body:(opening @ bl);
   emit_rule ctx ~head:(Printf.sprintf "%s_rdef(%s)" p hkey) ~body:(opening @ br);
   emit_rule ctx ~head:(Printf.sprintf "%s(%s,0)" p hkey) ~body:(opening @ [ Printf.sprintf "not %s_ldef(%s)" p hkey ]);
@@ -8014,13 +8030,8 @@ and translate_division ?(root = true) ctx ~subject ~subject_ot ~left_side ~right
           @ [ Printf.sprintf "(%s) != 0" tr;
               Printf.sprintf "%s \\ %s == 0" numt dent;
               Printf.sprintf "V = %s/%s" numt dent ]);
-      let reason, code =
-        if ctx.in_condition then (non_exact_division_in_condition, guardc "CLINGO-039")
-        else if root then non_exact_division ctx
-        else (nested_non_exact_division, guardc "CLINGO-031")
-      in
-      emit_viol ctx ~code ~subject reason
-        (full @ [ Printf.sprintf "(%s) != 0" tr; Printf.sprintf "%s \\ %s != 0" numt dent ])
+      quotient_misfit_guard ctx ~carrier ~atoms:(bl @ br @ [ Printf.sprintf "(%s) != 0" tr ]) ~numt ~dent
+        (division_misfit ~in_condition:ctx.in_condition ~nested:(not root) ~unbounded:ctx.write_unbounded)
   | Some (mode_kind, _) ->
       let value =
         match mode_kind with
@@ -10842,16 +10853,14 @@ and coalesced_operand ctx ~carrier (e : expr) : string list * string * int =
         ~left_side ~right_side
   | _ -> closed_term ctx ~carrier e
 
-(* a closed-body division (§6.5/S18), the rule-level [translate_division]
-   carried into the body context. A COMPILE-TIME positive constant divisor folds
-   the whole constant fraction (sr·out_scale)/(c·sl) by its full gcd; a RUNTIME
-   divisor (a bound binder — a list element) keeps the two-factor form. The
+(* a closed-body division (§6.5/S18): the quotient of [quotient_terms], as at
+   rule level ([translate_division]), its fences on the [carrier]. The
    empty-operand edges the rule level carries (empty dividend → 0, empty divisor
    → the §9.5 channel) never arise here — a closed-body operand read is never
-   leeg (ch. 10.1) — so only the divisor-side fences, on the [carrier]. A
-   runtime divisor can be a numeric zero, and the
-   quotient is then leeg with a §9.5 deposit of EF-005 (RUNTIME-SEMANTICS
-   ch. 1.4 point 4). This encoding carries that leeg only where it coalesces:
+   leeg (ch. 10.1). A runtime divisor (a bound binder — a list element) can be a
+   numeric zero, and the quotient is then leeg with a §9.5 deposit of EF-005
+   (RUNTIME-SEMANTICS ch. 1.4 point 4). This encoding carries that leeg only
+   where it coalesces:
    [coalesced] says the quotient is an operand of plus, minus, times or
    percentage-of ([coalesced_operand]), so it stands for 0, which a term
    computes without a comparison (Z = 1/(|tr|+1) is 1 at a zero divisor and 0
@@ -10859,8 +10868,8 @@ and coalesced_operand ctx ~carrier (e : expr) : string list * string * int =
    evaluation reaches the body ([deposit_subject], [param_reach]). Anywhere else
    a leeg would have to propagate through the body, which a closed term cannot
    express, so a zero divisor there derives a viol/2 witness of this backend's
-   limit: loud, never a value ref does not give. [rounding] None is the exact bare division (value
-   guarded [numt \ dent == 0], a remainder derives a viol/2 and UNSAT — ref
+   limit: loud, never a value ref does not give. [rounding] None is the exact
+   bare division (value guarded [numt \ dent == 0], a remainder derives a viol/2 and UNSAT — ref
    stays exact-rational, then its bounded write refuses; the differential holds
    where it runs); [Some (Toward_zero, d)] is the abs-division truncation at d
    decimals, which gringo's integer `/` computes on both signs, needing no
@@ -10876,42 +10885,12 @@ and closed_division ctx ~carrier ~coalesced ~rounding ~left_side ~right_side :
   unit_free_ok ctx (Some right_side);
   let bl, tl, sl = closed_term ctx ~carrier left_side in
   let br, tr, sr = closed_term ctx ~carrier right_side in
-  (* both scales become gcd operands and divisors below — the
-     [translate_division] fence, on the closed-body sibling *)
+  (* both scales become gcd operands and divisors in [quotient_terms], where
+     a 0 is the crash, not a fault *)
   let sl = numeric_scale ~what:"a closed-body division dividend" sl in
   let sr = numeric_scale ~what:"a closed-body division divisor" sr in
-  let out_scale =
-    match rounding with None -> max (max sl sr) ctx.write_scale | Some (_, d) -> pow10 d
-  in
-  let const_div =
-    if br = [] then
-      match int_of_string_opt (String.trim tr) with Some c when c > 0 -> Some c | _ -> None
-    else None
-  in
-  let numt_of knum = if knum = 1 then Printf.sprintf "(%s)" tl else Printf.sprintf "((%s)*%d)" tl knum in
-  let two_factor () =
-    let g = gcd (sr * out_scale) sl in
-    let knum = sr * out_scale / g and kden = sl / g in
-    ( numt_of knum,
-      (if kden = 1 then Printf.sprintf "(%s)" tr else Printf.sprintf "((%s)*%d)" tr kden),
-      [ (tl, 536870912 / knum); (tr, 536870912 / kden) ] )
-  in
-  let numt, dent, range_bounds =
-    match const_div with
-    | Some c ->
-        let knum, kden_c = const_div_reduce ~sl ~sr ~out_scale ~c in
-        (* a folded denominator past the fence would feed 2·dent unguarded past
-           2^31 (S18); drop back to the two-factor form, whose divisor-term
-           range_guard fires the loud UNSAT — exactly the rule-level fallback *)
-        if kden_c > 536870912 then two_factor ()
-        else (numt_of knum, Printf.sprintf "(%d)" kden_c, [ (tl, 536870912 / knum) ])
-    | None -> two_factor ()
-  in
-  (* only a genuine runtime divisor (a bound binder) can be numeric zero; a
-     constant divisor is fenced positive, even on the two-factor fallback *)
-  let runtime = const_div = None in
+  let numt, dent, out_scale, runtime = quotient_terms ctx ~carrier ~rounding (bl, tl, sl) (br, tr, sr) in
   let gbody = carrier.guard_body @ bl @ br in
-  range_guard ctx ~subject:carrier.witness ~body:gbody range_bounds;
   let zero = Printf.sprintf "(%s) == 0" tr in
   let deposit_subject = if coalesced then ctx.deposit_subject else None in
   (match (runtime, deposit_subject) with
@@ -10934,9 +10913,9 @@ and closed_division ctx ~carrier ~coalesced ~rounding ~left_side ~right_side :
   in
   match rounding with
   | None ->
-      let reason, code = non_exact_division ctx in
-      emit_viol ctx ~code ~subject:carrier.witness reason
-        ((gbody @ value_guard) @ [ Printf.sprintf "%s \\ %s != 0" numt dent ]);
+      (* a closed body names the write boundary wherever its quotient stands *)
+      quotient_misfit_guard ctx ~carrier ~atoms:(bl @ br @ value_guard) ~numt ~dent
+        (division_misfit ~in_condition:false ~nested:false ~unbounded:ctx.write_unbounded);
       ( bl @ br @ value_guard @ [ Printf.sprintf "%s \\ %s == 0" numt dent ],
         Printf.sprintf "(%s/%s)" numt dent,
         out_scale )
@@ -11872,10 +11851,8 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
             (* the quotient as the whole value is the write, where the unbounded
                form held as a whole number names its own limit *)
             let reason, code =
-              if e != value then (nested_non_exact_division, guardc "CLINGO-031")
-              else if unbounded_datatype (attr_datatype ctx ~otype:target_ot ~attr:a) then
-                (unbounded_non_whole_division, guardc "CLINGO-033")
-              else (non_exact_division_bounded, guardc "EF-006")
+              division_misfit ~in_condition:false ~nested:(e != value)
+                ~unbounded:(unbounded_datatype (attr_datatype ctx ~otype:target_ot ~attr:a))
             in
             emit_viol ctx ~code ~subject reason ((base :: body) @ [ Printf.sprintf "(%s) \\ (%s) != 0" numt dent ]));
         (q, false, out)
