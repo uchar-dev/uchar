@@ -5665,13 +5665,13 @@ final class RuleChecker {
     }
 
     /** §8.1.4/§13.4.15.84 the &lt;geheelgetal&gt; digit-count N of "numeriek met exact N cijfers". The NUMBER token is
-     *  over-broad (it also matches a §13.2.4 decimaalgetal "9,5"), but the spec requires a §13.2.3 &lt;geheelgetal&gt;
-     *  (which DOES admit a leading minus); reject a decimal/rational count with an ERROR rather than silently coercing
-     *  it to 0 (an inert always-false predicate). 0 if absent. */
+     *  over-broad (it also matches a §13.2.4 decimaalgetal "9,5"), and the language admits a leading minus, but the IR
+     *  defines the test for N of at least 1 (RUNTIME-SEMANTICS ch. 1.2, WF-036): a decimal count and a count below 1 are
+     *  reported with an ERROR rather than written as a document the verifier rejects. 0 if absent. */
     private int countDigits(org.antlr.v4.runtime.tree.TerminalNode num) {
         if (num == null) return 0;
         String t = num.getText();
-        if (!t.matches("-?\\d+")) {
+        if (!t.matches("\\d+") || new java.math.BigInteger(t).signum() == 0) {
             model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-205", params("lexeme", t), 0));
             return 0;
         }

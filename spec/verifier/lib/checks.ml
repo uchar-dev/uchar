@@ -7409,7 +7409,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
       @ whole_period_check time_period [ left_side; right_side ]
       @ (match left_side with Some e -> walk_expr ctx ~binders ~subject ~body (sub "left") e | None -> [])
       @ (match right_side with Some e -> walk_expr ctx ~binders ~subject ~body (sub "right") e | None -> [])
-  | Predicate { variety; operand; day_kind; time_period; _ } ->
+  | Predicate { variety; operand; day_kind; time_period; digit_chars; _ } ->
       let ot = Option.bind operand (expr_type ctx ~binders) in
       (match variety, ot with
        | Exact_digits, Some d when d <> Text_type ->
@@ -7417,6 +7417,14 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
        | Day_kind_predicate, Some d when not (is_date d) ->
            [ v ~params:[("type", datatype_kind d)] "WF-036.day-kind-operand" at ("day-kind predicate operand is " ^ datatype_kind d ^ ", must be a date") ]
        | _ -> [])
+      (* a test for zero digits would ask whether a text is the empty text, and
+         a negative count matches nothing: RUNTIME-SEMANTICS ch. 1.2 defines the
+         test for N >= 1 only *)
+      @ (match variety with
+         | Exact_digits when digit_chars < 1 ->
+             [ v ~params:[("digits", string_of_int digit_chars)] "WF-036.exact-digits-count" at
+                 ("exactDigits counts " ^ string_of_int digit_chars ^ " digits, must be at least 1") ]
+         | _ -> [])
       @ (match variety, day_kind with
          | Day_kind_predicate, Some dk when not (mem_ci (day_kind_names ctx) dk) ->
              [ v ~params:[("dayKind", dk)] "WF-034.undeclared-day-kind" at ("reference to undeclared day kind '" ^ dk ^ "'") ]

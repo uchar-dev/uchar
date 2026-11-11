@@ -253,6 +253,16 @@ class TypingSentenceTest {
                 meldingen("Een Jutter is waardevol indien zijn telling een rustdag is."));
     }
 
+    @Test void an_exact_digit_count_below_one() {
+        // the IR defines the test for a count of at least 1 (WF-036), so the frontend reports the count instead of
+        // writing a document the verifier rejects
+        for (String n : List.of("0", "-3", "9,5"))
+            assertEquals(List.of("ERROR 0 ongeldig aantal cijfers '" + n + "' bij 'numeriek met exact … cijfers' "
+                            + "(verwacht een geheel getal van ten minste 1, §8.1.4)"),
+                    meldingen("Een Jutter is waardevol indien zijn naam numeriek is met exact " + n + " cijfers."), n);
+        assertEquals(List.of(), meldingen("Een Jutter is waardevol indien zijn naam numeriek is met exact 1 cijfers."));
+    }
+
     @Test void a_label_outside_the_domain() {
         assertEquals(error("enumeratiewaarde 'zwart' staat niet in het gedeclareerde domein"),
                 meldingen("De klasse van een Jutter moet gesteld worden op 'zwart'."));

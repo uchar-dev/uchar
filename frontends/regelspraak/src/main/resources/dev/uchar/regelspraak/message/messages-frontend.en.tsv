@@ -528,7 +528,7 @@ RGS-202.parameter-bound	the time-dependent parameter '{parameter}'
 RGS-202.time-dependent	the time-dependent attribute '{attribute}'
 RGS-203	numeral of a quantifier: counting quantifier with threshold {threshold} < 1
 RGS-204	numeral of a quantification must be a positive whole number (>= 1)
-RGS-205	invalid digit count '{lexeme}' at 'numeriek met exact … cijfers' (expects a whole number, §8.1.4)
+RGS-205	invalid digit count '{lexeme}' at 'numeriek met exact … cijfers' (expects a whole number of at least 1, §8.1.4)
 RGS-206	the check on 'volledige periode' (gedurende de/het gehele jaar/maand): wholePeriod qualifier on a non-time-dependent operand
 RGS-207	the check on 'volledige periode' (gedurende de/het gehele jaar/maand): wholePeriod qualifier on a non-time-dependent characteristic
 RGS-208	the check on 'volledige periode' (gedurende de/het gehele jaar/maand) can only be applied to a time-dependent subject (§8.2): {source}

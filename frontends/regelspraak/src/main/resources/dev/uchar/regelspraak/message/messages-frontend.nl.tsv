@@ -528,7 +528,7 @@ RGS-202.parameter-bound	de tijdsafhankelijke parameter '{parameter}'
 RGS-202.time-dependent	het tijdsafhankelijke attribuut '{attribute}'
 RGS-203	telwoord van een kwantificatie: telkwantor met drempel {threshold} < 1
 RGS-204	telwoord van een kwantificatie moet een positief geheel getal (>= 1) zijn
-RGS-205	ongeldig aantal cijfers '{lexeme}' bij 'numeriek met exact … cijfers' (verwacht een geheel getal, §8.1.4)
+RGS-205	ongeldig aantal cijfers '{lexeme}' bij 'numeriek met exact … cijfers' (verwacht een geheel getal van ten minste 1, §8.1.4)
 RGS-206	de check op volledige periode (gedurende de/het gehele jaar/maand): wholePeriod-kwalificatie op een operand die niet tijdsafhankelijk is
 RGS-207	de check op volledige periode (gedurende de/het gehele jaar/maand): wholePeriod-kwalificatie op een kenmerk dat niet tijdsafhankelijk is
 RGS-208	de check op volledige periode (gedurende de/het gehele jaar/maand) kan alleen op een tijdsafhankelijk onderwerp worden toegepast (§8.2): {source}
