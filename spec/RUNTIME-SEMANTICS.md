@@ -4492,7 +4492,7 @@ gemeente` end counts **1** for every geborgen vondst and **0** for the
 vondst of the non-coastal gemeente — the both-ends write, witnessed
 from the far end.
 
-**Recursive creation** (the dialect rule group, `IR-SPEC.md` ch. 3.9)
+**Recursive creation** (a creation form in a recursive rule group, `IR-SPEC.md` ch. 3.9 — core, WF-033 (b))
 deliberately breaks the acyclicity of ch. 5.2 in one controlled way: a
 creation whose output feeds its own condition advances **exactly one
 generation per instance**, and the chain runs to its fixpoint within
