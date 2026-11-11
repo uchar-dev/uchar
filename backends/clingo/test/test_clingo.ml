@@ -19166,6 +19166,46 @@ let () =
     ~case_text:
       (links_per_relation_case ~instances:[ jutter; vondst "V1" {|"berger": ["J1"]|} ] ~aangemeld:0 ~geborgen:1)
 
+(* A point read of a time-dependent parameter the case does not bind: its
+   timeline is its binding (ch. 3.4), so the read faults with EF-014 naming
+   the parameter (ch. 5.7b), where ref reads it: on a filled date. The anchor
+   jutterswet-aanmeldquotum without its parameter set; with only J3, whose
+   aanmelddatum is leeg, the read is not reached and nothing faults. *)
+let () =
+  let read f = In_channel.with_open_bin f In_channel.input_all in
+  let dir = "corpus/golden/anchor/jutterswet-aanmeldquotum/" in
+  let ir = read (dir ^ "ir.json") in
+  let case = Yojson.Safe.from_string (read (dir ^ "case.json")) in
+  let open Yojson.Safe.Util in
+  let without_parameters ~labels ~outcome =
+    let input = member "input" case in
+    let instances =
+      List.filter (fun i -> List.mem (to_string (member "label" i)) labels) (to_list (member "instances" input))
+    in
+    Yojson.Safe.to_string
+      (`Assoc
+         [ ("format", member "format" case); ("asOfDate", member "asOfDate" case);
+           ("input", `Assoc [ ("instances", `List instances); ("parameters", `Assoc []) ]);
+           outcome ])
+  in
+  faults_at_solving ~code:("EF-014", [ ("parameter", "penningbedrag") ])
+    ~name:"a point read of an unbound time-dependent parameter" ~ir
+    ~case_text:
+      (without_parameters ~labels:[ "J1"; "J2"; "J3" ]
+         ~outcome:
+           ( "expectedFault",
+             `Assoc [ ("code", `String "EF-014"); ("params", `Assoc [ ("parameter", `String "penningbedrag") ]) ] ))
+    ~needle:"is unbound in this case" ();
+  clingo_matches ~name:"a point read of an unbound time-dependent parameter on a leeg date is not reached" ~ir
+    ~case_text:
+      (without_parameters ~labels:[ "J3" ]
+         ~outcome:
+           ( "expected",
+             `List
+               (List.filter
+                  (fun e -> match member "label" e with `String "J3" -> true | `Null -> true | _ -> false)
+                  (to_list (member "expected" case))) ))
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

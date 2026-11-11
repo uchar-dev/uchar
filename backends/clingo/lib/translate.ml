@@ -6752,8 +6752,19 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           | Some { par_granularity = None; _ } ->
               fault "temporal read of parameter %S, which is not granular" p
           | Some pr ->
-              if Eval.SMap.find_opt (Ir_v0.Checks.norm p) ctx.case.param_tls = None then
-                fault "the temporal read of parameter %S needs its timeline in the case" p;
+              (* the timeline of a time-dependent parameter is its binding
+                 (ch. 3.4): without it the parameter is unbound, EF-014 where
+                 the read is reached on a filled date, as ref reads it; the
+                 param_tl join below then derives nothing *)
+              if Eval.SMap.find_opt (Ir_v0.Checks.norm p) ctx.case.param_tls = None then begin
+                let guard () =
+                  reach_guard ctx ~witness:subject ~reason:(unbound_param_reason p)
+                    ~order_reason:(unbound_param_order_reason p)
+                    (rule_reach ctx ~subject ~subject_ot e @ db)
+                in
+                guard ();
+                beside_hoisted_arms ctx e guard
+              end;
               ( db
                 @ [ Printf.sprintf "param_tl(%s,%s,%s,%s), %s <= %s, %s < %s" (str p) f t v f
                       dt dt t ],
