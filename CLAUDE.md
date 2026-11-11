@@ -323,12 +323,22 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
     case files replays with the side table stripped, the vocabularies exchanged and the designations rotated within
     each scope of WF-118 (IR-SPEC ch. 2.12). ORIGIN leg: every golden with an `origin` (ch. 2.13) replays with it
     stripped. NAME leg: every golden whose defaults carry a `name` (ch. 6.1) replays with every name and every
-    `statuteAnnotations` of a Default stripped. In those three legs the four executors must reproduce the untouched
-    outcome, with no survivor list. The four legs run as four processes; a Drools run on an untouched golden that
-    ends in no status line (`PLAYED`, `FAIL`, `EXCLUDE`, `ERROR`) fails by golden, leg and executor. Floors:
-    `EXPECTED_MIN_TWISTS`, `EXPECTED_MIN_VOCABULARY_GOLDENS`, `EXPECTED_MIN_VOCABULARY_STRIPPED`,
-    `EXPECTED_MIN_VOCABULARY_ROTATED`, `EXPECTED_MIN_ORIGIN_GOLDENS`, `EXPECTED_MIN_ORIGIN_STRIPPED`,
-    `EXPECTED_MIN_NAME_GOLDENS`, `EXPECTED_MIN_NAME_STRIPPED`, `EXPECTED_MIN_ANNOTATIONS_STRIPPED`.
+    `statuteAnnotations` of a Default stripped. PRESENTATION leg (IR-SPEC ch. 10): every golden with a presentation
+    field and case files replays once, on one copy with every field changed at once — `Dimension.preposition`, the
+    percentage tag and every non-recursive `RuleGroup` stripped, every `Characteristic.kind` rotated to another
+    kind, the `presentation` of every rule version exchanged (`equation` ↔ `calculation`, the tag kept); a
+    difference is assigned to a field by replaying the differing executor on a copy per field, and the report
+    names the fields that move it alone. In those four legs the four executors must reproduce the untouched
+    outcome, with no survivor list. The legs run as five processes, the presentation leg's calls through
+    `scripts/lib/parallel.sh`; a Drools run on an untouched golden that ends in no status line (`PLAYED`, `FAIL`,
+    `EXCLUDE`, `ERROR`) fails by golden, leg and executor. Floors: `EXPECTED_MIN_TWISTS`,
+    `EXPECTED_MIN_VOCABULARY_GOLDENS`, `EXPECTED_MIN_VOCABULARY_STRIPPED`, `EXPECTED_MIN_VOCABULARY_ROTATED`,
+    `EXPECTED_MIN_ORIGIN_GOLDENS`, `EXPECTED_MIN_ORIGIN_STRIPPED`, `EXPECTED_MIN_NAME_GOLDENS`,
+    `EXPECTED_MIN_NAME_STRIPPED`, `EXPECTED_MIN_ANNOTATIONS_STRIPPED`, `EXPECTED_MIN_PRESENTATION_GOLDENS`, and per
+    field of the presentation leg a golden count and a place count: `EXPECTED_MIN_KIND_GOLDENS`,
+    `EXPECTED_MIN_KIND_ROTATED`, `EXPECTED_MIN_RULE_PRESENTATION_GOLDENS`, `EXPECTED_MIN_RULE_PRESENTATION_EXCHANGED`,
+    `EXPECTED_MIN_PREPOSITION_GOLDENS`, `EXPECTED_MIN_PREPOSITION_STRIPPED`, `EXPECTED_MIN_PERCENTAGE_GOLDENS`,
+    `EXPECTED_MIN_PERCENTAGE_STRIPPED`, `EXPECTED_MIN_RULE_GROUP_GOLDENS`, `EXPECTED_MIN_RULE_GROUP_STRIPPED`.
 
 14. `scripts/check-flogic.sh` — the F-logic frontend (`frontends/flogic`, plain OCaml in the workspace dune build, no
     external toolchain) builds and its suite passes: it emits every test program, holds it verifier-clean, replays
