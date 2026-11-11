@@ -10203,9 +10203,13 @@ Drools replay at its fire cap.
   `decision`, no `consequence`; attribute: `consequence`, no
   `decision`); the initialisation default MUST be the lowest, MUST carry
   no written justification, and MUST NOT sit on characteristic
-  defaults. The target MUST have no other writer — no second defaults
-  group, no rule, no allocation, and no object-creation member assignment on
-  the same target: an unordered plain writer would silently defeat the
+  defaults. The target MUST have no other writer: no second defaults
+  group unless every group on the target carries the `unordered` marking
+  (below); no rule on the group's own level, that is no version declared on
+  the group's subject type that targets the same member (a version on
+  another type of the chain is the base of its own level in the fold of
+  `RUNTIME-SEMANTICS.md` ch. 7.10, WF-079); no allocation; and no
+  object-creation member assignment on the same target: an unordered plain writer would silently defeat the
   group's decisions, and a creation-time write would void the
   initialisation default's input-emptiness justification (the ch. 7.1
   single-writer lift). **Through a type chain the allocation and creation
