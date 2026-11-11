@@ -1605,7 +1605,9 @@ EXPECTED_CHANNEL=(
 # operand of a listed fold in a Let body, which the verifier admitted only from that card on (PLAYED 1 on both branches).
 # 367 with let-bound-period-arithmetic-total (same card): the own total over a timeline whose writer names its
 # period-arithmetic producer through a Let (PLAYED 2).
-EXPECTED_PLAYED=367
+# 368 with jutterswet-rangmaximering-maximum-in-centen: an ordered allocation whose caps are declared in ct and its pot
+# in EUR, the cap restated into the unit of the pot before the min and the floor (RUNTIME-SEMANTICS ch. 4.2; PLAYED 1).
+EXPECTED_PLAYED=368
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
