@@ -164,6 +164,12 @@ ENGLISH_EXCEPTIONS = {
     ("DROOLS-167", "a"): "(a) is the clause label of WF-110, not the article",
     ("DROOLS-257", "a"): "(a) is the clause label of WF-108, not the article",
 }
+# the three lists are reason-carrying: a line whose reason is blank admits its entry without saying why
+for lname, lst in (("DUTCH_EXCEPTIONS", DUTCH_EXCEPTIONS), ("ENGLISH_EXCEPTIONS", ENGLISH_EXCEPTIONS),
+                   ("SAME_IN_BOTH", SAME_IN_BOTH)):
+    for k, why in lst.items():
+        if not isinstance(why, str) or not why.strip():
+            fail("the line %s of %s carries no reason" % (k, lname))
 
 def english_words(t):
     """The English function words of a template outside its places and quotations; a letter after a digit is part of

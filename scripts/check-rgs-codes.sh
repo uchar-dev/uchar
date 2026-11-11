@@ -183,6 +183,12 @@ def dutch_words(template):
     return set(w for w in re.findall(r"[a-zà-ÿ]+", re.sub(r"'[^']*'", "", PLACE.sub("", u)).lower()) if w in DUTCH)
 
 def check_catalogues(root, reg, faults, floor_messages, floor_same):
+    # the three lists are reason-carrying: a line whose reason is blank admits its entry without saying why
+    for lname, lst in (("DUTCH_EXCEPTIONS", DUTCH_EXCEPTIONS), ("ENGLISH_EXCEPTIONS", ENGLISH_EXCEPTIONS),
+                       ("SAME_IN_BOTH", SAME_IN_BOTH)):
+        for k, why in lst.items():
+            if not isinstance(why, str) or not why.strip():
+                faults.append("the line %s of %s carries no reason" % (k, lname))
     d = os.path.join(root, "frontends/regelspraak/src/main/resources/dev/uchar/regelspraak/message")
     cats = {}
     for lang in ("nl", "en"):
