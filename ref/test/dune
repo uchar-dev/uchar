@@ -142,5 +142,8 @@
   ../../corpus/golden/anchor/jutterswet-penningvintage/ir.json
   (glob_files fixtures/session-start/*.json)
   ; an empty dividend over a divisor that would deposit
-  (glob_files fixtures/empty-dividend/*.json))
+  (glob_files fixtures/empty-dividend/*.json)
+  ; a subtype base replacing an inherited form-a base with nested exception groups
+  (glob_files fixtures/inherited-nested-exceptions/subtype-rule/*.json)
+  (glob_files fixtures/inherited-nested-exceptions/subtype-group/*.json))
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

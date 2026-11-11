@@ -14193,6 +14193,23 @@ let () =
         ~case_data:(read (dir ^ case_file ^ ".json")) (fun _ -> ()))
     [ "case1-leeg-deeltal"; "case2-gevuld-deeltal" ]
 
+(* WV-7.10-geneste-uitzonderingen-van-een-vervangen-basis: the golden
+   jutterswet-wrakbasis with the defaults group of Strandrecht one form-a
+   default, uitkering := zijn grondslag, carrying the nested exception
+   "betwist -> 99.00"; the subtype Wrakrecht writes its own base, grondslag
+   maal 2, as an ordinary rule and as a defaults group. The own base replaces
+   only the inherited base's own consequence: its exception groups stay, as
+   inherited exceptions above the own base (ch. 7.10), so with grondslag
+   10.00 a betwist Wrakrecht gets 99.00 and an undisputed one 20.00 *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/inherited-nested-exceptions/" in
+  List.iter
+    (fun d ->
+      plays ~ident:("WV-7.10-geneste-uitzonderingen-van-een-vervangen-basis-" ^ d) ~ir:(read (dir ^ d ^ "/ir.json"))
+        ~case_data:(read (dir ^ d ^ "/case.json")) (fun _ -> ()))
+    [ "subtype-rule"; "subtype-group" ]
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

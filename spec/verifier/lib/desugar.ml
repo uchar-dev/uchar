@@ -158,7 +158,10 @@ let document (doc : document) : document =
         group-default (exceptions, no own consequence) is not a base and
         rides at the bottom of this block;
      3. the base: the subtype's own if it has one, which REPLACES the
-        inherited base, else the inherited base;
+        inherited base, else the inherited base; a replaced base that
+        carries nested exception groups (a form-a default, ch. 7.9) loses
+        only its own consequence: its groups stay, as an inherited
+        group-default at the bottom of block 2;
      4. the initialisation and virtual input defaults, never replaced.
 
    The result is ONE stack per (concrete type, target), which is why a group
@@ -201,7 +204,19 @@ let compose_member ~own:((own : prioritized_defaults), own_origins)
   let own_exc, own_base, own_tail = split_stack own own_origins in
   let inh_exc, inh_base, inh_tail = split_stack inherited inh_origins in
   let base = match own_base with Some _ as b -> b | None -> inh_base in
-  let pairs = own_exc @ inh_exc @ Option.to_list base @ inh_tail @ own_tail in
+  (* the exception groups of a replaced form-a base are exceptions the
+     subtype inherits, and an inherited exception still outranks the
+     subtype's own base (ch. 7.10); a group-default carries no justification
+     of its own (ch. 7.9), and a form-a default's justification gates only
+     its own consequence, which is what the subtype replaces *)
+  let replaced_groups =
+    match (own_base, inh_base) with
+    | Some _, Some (({ default_exceptions = Some _; _ } as b), origin) ->
+        [ ( { b with default_decision = None; default_justification = None; default_consequence = None },
+            origin ) ]
+    | _ -> []
+  in
+  let pairs = own_exc @ inh_exc @ replaced_groups @ Option.to_list base @ inh_tail @ own_tail in
   ({ own with defaults = List.map fst pairs }, List.map snd pairs)
 
 exception Unlowered of string
