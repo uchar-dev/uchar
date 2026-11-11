@@ -1210,10 +1210,6 @@ short circuit's prefix) needs no key: its reader stands under the same guard
 for its own form subject, so the helper holds for the member where some form
 subject reaches it. Such a guard carries the member's reach, so that it binds
 the form subject (fix round A of that card).
-The forms a filter and a matrix take in the pass before a creation
-(`register_pre`, clones of their own atoms) pass through the hoist where
-they enter the element of the quantifier fold's `#count` in that pass
-(clingo suite, `tr-kv-listed`).
 The **self-denoting** source (WF-083, RS ch. 3.4a) is, since L2, a
 plain count source: the count carries its `sourceRole` and translates as
 every other count. *Until L2* the written role stood in the argument's
@@ -1614,11 +1610,9 @@ default's input (S10), or inside a condition or a value the reach of the
 unbound-parameter guard (S5) — with the path or the set from the subject
 to the instance. An unbound parameter of the period arithmetic,
 time-dependent or a scalar operand, faults (EF-014) under the same reach.
-Where an atom of that reach hangs on the order of the members a creation
-adds, the witness takes the two forms of the unbound-parameter guard: ref's
-words where every allowed order reaches the read, and a refusal in a sentence
-that names the unnormed order (CLINGO-035) where one allowed order does and
-another does not. Each operator applies its ch. 1.2
+Where that reach can hang on the order of the members a creation adds, which
+is not normed (RS ch. 3.9a/5.7a), the translation is refused (CLINGO-035), as
+for the unbound-parameter guard. Each operator applies its ch. 1.2
 empty rule per period: plus, min, maal and percentage van coalesce a leeg
 operand to 0 (`…_z`, `not …_d`), verminderd met only its right; a division
 writes 0 where the dividend is leeg, and where it is filled over a leeg
