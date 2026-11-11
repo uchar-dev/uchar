@@ -3764,7 +3764,7 @@ let write_produced env w (self : World.instance) ~form ~ot ~attr result =
    or its value where it is a scalar (ch. 5.12); the caller records the
    root's, the timeline the rule writes. *)
 let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.grid) ~attr ~target_unit ?(root = false)
-    (e : expr) : Timeline.t =
+    ?reach (e : expr) : Timeline.t =
   let whole (i : World.instance) a =
     match World.timeline i a with
     | Some tl -> tl
@@ -3796,8 +3796,26 @@ let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.g
       faulted @@ fun () ->
       (* a period where an operand is leeg coalesces it into its declared unit *)
       let units = (period_unit env l, period_unit env r) in
-      let a = period_timeline env w self ~err ~target ~attr ~target_unit:(fst units) l in
-      let b = period_timeline env w self ~err ~target ~attr ~target_unit:(snd units) r in
+      let a = period_timeline env w self ~err ~target ~attr ~target_unit:(fst units) ?reach l in
+      (* a divisor is read only in the periods where its dividend is filled
+         (ch. 1.4 point 4, ch. 3.4): where it is leeg the divisor neither
+         deposits nor faults, and where it is leeg on every day the divisor is
+         not evaluated at all, as in the scalar division *)
+      let reach_b =
+        match op with
+        | Divided_by | Divided_by_abs ->
+            let filled =
+              List.filter_map
+                (fun (s : Timeline.segment) -> if s.s_value = Value.Empty then None else Some (s.s_from, s.s_to))
+                a
+            in
+            Some (Timeline.intersect_periods filled (Option.value reach ~default:Timeline.all_time))
+        | _ -> reach
+      in
+      let b =
+        if reach_b = Some [] then []
+        else period_timeline env w self ~err ~target ~attr ~target_unit:(snd units) ?reach:reach_b r
+      in
       let scalar =
         match op with
         | Plus -> Arith.add ~units
@@ -3809,7 +3827,7 @@ let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.g
         | Percentage_of -> Arith.pct_of ~units
         | Power -> assert false
       in
-      seen (Timeline.cut_merge scalar a b)
+      seen (Timeline.cut_merge ?reach scalar a b)
   | Attribute_reference { attribute_ref = Some a; object_type = Some otn; navigation_bindings = None; anchor = None; _ }
     when Ir_v0.Checks.attr_temporal (object_type env otn) a ->
       if not (own_read env self otn) then
@@ -3845,7 +3863,7 @@ let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.g
       (* the base is not the value of the rule: it computes in the unit its
          declarations give it and is rounded there, and only the rounded value
          is restated to the target's (ch. 3.3, 3.4, 3.5) *)
-      let tl = faulted (fun () -> period_timeline env w self ~err ~target ~attr ~target_unit:(period_unit env b) b) in
+      let tl = faulted (fun () -> period_timeline env w self ~err ~target ~attr ~target_unit:(period_unit env b) ?reach b) in
       seen
         (Timeline.coalesce
            (List.map

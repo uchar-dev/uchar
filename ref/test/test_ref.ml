@@ -14335,6 +14335,23 @@ let () =
         ~case_data:(read (dir ^ case_file ^ ".json")) (fun _ -> ()))
     [ "case1-leeg-deeltal"; "case2-gevuld-deeltal" ]
 
+(* WV-3.4-empty-dividend-per-period: the rule of WV-1.4-leeg-deeltal without
+   its rounding, on day timelines: loon := bonus gedeeld door (opbrengst
+   gedeeld door aandeel), opbrengst 90, aandeel 0 in the first quarter of 2024
+   and 3 in the second. The dividend rule holds per period (ch. 1.4 point 4,
+   ch. 3.4): with bonus 60 in the second quarter only, the first reads no
+   divisor and the channel stays empty (case1); with bonus 60 in both, the
+   first reads 90 ÷ 0 and deposits EF-005 and EF-031 (case2); with bonus leeg
+   on every day the divisor is read on none (case3) *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/empty-dividend-per-period/" in
+  List.iter
+    (fun case_file ->
+      plays ~ident:("WV-3.4-empty-dividend-per-period-" ^ case_file) ~ir:(read (dir ^ "ir.json"))
+        ~case_data:(read (dir ^ case_file ^ ".json")) (fun _ -> ()))
+    [ "case1-nuldeler-in-leeg-kwartaal"; "case2-nuldeler-in-gevuld-kwartaal"; "case3-leeg-deeltal-altijd" ]
+
 (* WV-7.10-geneste-uitzonderingen-van-een-vervangen-basis: the golden
    jutterswet-wrakbasis with the defaults group of Strandrecht one form-a
    default, uitkering := zijn grondslag, carrying the nested exception

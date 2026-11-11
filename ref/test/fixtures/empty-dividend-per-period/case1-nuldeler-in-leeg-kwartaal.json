@@ -1,0 +1,80 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "opbrengst": {
+            "number": "90"
+          },
+          "bonus": {
+            "timeline": [
+              {
+                "from": "2024-04-01",
+                "to": "2024-07-01",
+                "value": {
+                  "number": "60"
+                }
+              }
+            ]
+          },
+          "aandeel": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2024-04-01",
+                "value": {
+                  "number": "0"
+                }
+              },
+              {
+                "from": "2024-04-01",
+                "to": "2024-07-01",
+                "value": {
+                  "number": "3"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "V1",
+      "attribute": "loon",
+      "timeline": [
+        {
+          "to": "2024-04-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-04-01",
+          "to": "2024-07-01",
+          "value": {
+            "number": "2"
+          }
+        },
+        {
+          "from": "2024-07-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
