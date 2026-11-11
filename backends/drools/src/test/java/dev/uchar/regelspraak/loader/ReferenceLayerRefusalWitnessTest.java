@@ -58,6 +58,8 @@ class ReferenceLayerRefusalWitnessTest {
     private static final String BOOTBERGING = "anchor/jutterswet-bootberging";
     /** Rule 2 totals the Jutter's own timeline, a {@code total} without a range over the subject type. */
     private static final String TEMPOTOTAAL = "jutterswet-tempototaal";
+    /** Rule 0's condition checks the characteristic gekeurd on the host Vondst. */
+    private static final String KEURHOUDER = "jutterswet-keurhouder";
 
     private static final String NUMERIEK =
             "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}";
@@ -327,6 +329,20 @@ class ReferenceLayerRefusalWitnessTest {
         IrLoader.DocumentError e = refuses(ir, "/rules/rules/1/versions/0/condition/left");
         assertTrue(e.getMessage().contains("'bemand' is a characteristic of 'Wachtpost', not an attribute — a"
                 + " characteristic endpoint is ill-formed in a value position"), e.getMessage());
+    }
+
+    // ---------------- the owner of a characteristic check and of a cell read (WF-034) ----------------
+
+    @Test void a_characteristic_check_on_an_undeclared_host_is_refused() throws Exception {
+        // Measured on ccf6de21c: the by-name lookup gave null for the unknown name, and the check loaded as one on the
+        // subject, where the verifier refuses the document (WF-034.host-undeclared).
+        ObjectNode ir = golden(KEURHOUDER);
+        ObjectNode check = (ObjectNode) IrPath.version(ir, "rules", 0, 0).get("condition");
+        assertEquals("Vondst", check.get("host").asText(), "de golden draagt een host");
+        check.put("host", "Zeehond");
+        IrLoader.DocumentError e = refuses(ir, "/rules/rules/0/versions/0/condition/host");
+        assertTrue(e.getMessage().contains("characteristic check's host 'Zeehond' is not a declared object type: the"
+                + " check resolves against no declaration"), e.getMessage());
     }
 
     // ---------------- fixtures ----------------

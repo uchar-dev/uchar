@@ -2227,8 +2227,15 @@ public final class IrLoader {
             // absent host is the subject (RUNTIME-SEMANTICS ch. 5.8b), the record's null
             case "CharacteristicCheck" -> {
                 String p = pathOf(n);
+                // WF-034, in the verifier's sentence: the by-name lookup gives null for an undeclared host, which the
+                // record reads as the subject
+                String hostName = text(n, "host");
+                ObjectType host = ot(hostName);
+                if (hostName != null && host == null)
+                    throw new DocumentError(p + "/host", "characteristic check's host '" + hostName
+                            + "' is not a declared object type: the check resolves against no declaration");
                 Condition.CharacteristicCheck k = new Condition.CharacteristicCheck(text(n, "characteristic"), null, bool(n, "negated"),
-                        ot(text(n, "host")), wholePeriod(nodeField(n, "wholePeriod")), source(n), anchorValue(n, p));
+                        host, wholePeriod(nodeField(n, "wholePeriod")), source(n), anchorValue(n, p));
                 RoleBindingRef nb = roleBinding(n, p, "navigation");
                 if (nb != null) navigationBindings.put(k, List.of(nb));
                 anchor(n, p, k);
