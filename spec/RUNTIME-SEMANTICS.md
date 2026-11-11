@@ -8938,7 +8938,11 @@ and no well-formedness rule demanding a boundary declaration):
    **group-default** (ch. 7.9: `exceptions`, no own consequence) is not a
    base and rides at the bottom of this block;
 3. the **base** — the subtype's own base if it has one, which *replaces*
-   the inherited base, otherwise the inherited base;
+   the inherited base, otherwise the inherited base. A replaced base that
+   is a form-a default (ch. 7.9) loses only its own justification and its
+   own consequence: its exception groups stay, as inherited exceptions —
+   an inherited group-default at the bottom of block 2, above the
+   subtype's own base;
 4. the **initialisation** default (ch. 7.3) and the **virtual input**
    default (ch. 7.8), which are never replaced and are not the base.
 
@@ -9205,6 +9209,24 @@ Swap the two levels — the rule on the ancestor, the group on the subtype —
 and rule 4 reads the mirror: a `Wrakrecht` answers from **its own** base
 while a `Strandrecht` answers **from the rule**, through the ordinary
 ch. 7.8 path, because nothing on *its* chain declares a group.
+
+**A replaced base that carries exception groups**, on the third model
+(the model of the golden `jutterswet-wrakbasis`) with its `Strandrecht`
+group rewritten, because the tables above give the inherited exception a
+chain position of its own. The group on `Strandrecht.uitkering` is one
+form-a default (ch. 7.9): `= de grondslag`, carrying the exception group
+`= 99,00 indien betwist`. The subtype's writer is `de uitkering van een Wrakrecht = de
+grondslag × 2`, as a bare rule or as a defaults group of one default, and
+`grondslag` is 10,00 throughout. The effective `Wrakrecht` stack is, highest
+first: the inherited exception group (as a group-default), the own base 20,
+and the initialisation and virtual input defaults:
+
+| instance | betwist | `uitkering` | what it proves |
+|---|---|---|---|
+| Strandrecht | no | **10,00** | the form-a default falls back to its own consequence |
+| Strandrecht | yes | **99,00** | its exception group decides |
+| Wrakrecht | no | **20,00** | the own base replaces the inherited base's own consequence |
+| Wrakrecht | yes | **99,00** | the inherited base's exception group stays and outranks the own base, as the same exception written as its own default of the chain does (row 4 of the first table) |
 
 Two further outcomes, on the first model, pin the extensional half:
 
