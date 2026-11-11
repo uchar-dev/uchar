@@ -18958,6 +18958,119 @@ let () =
       ("jutterswet-budgetgrens-op", "case1-een-keten.json");
       ("synth2-budgetgrens-onder", "case1.json") ]
 
+(* An allocation restates units (RUNTIME-SEMANTICS ch. 4 with ch. 2.4 and
+   2.6): the maximum compares by its exact factor into the pot's unit, and a
+   share and the rest are written restated into the unit of their target. The
+   frame is the golden jutterswet-rangmaximering, the full recurrence of
+   ch. 4.6 (500, 500, 433, 250, 91, rest 26), with units of one class (EUR and
+   ct) put on its attributes. Read as bare numbers, a maximum of 50000 ct let
+   the first recipient take the whole 1800 EUR, and a share in ct came out as
+   the number of euros. *)
+let unit_json abbreviation den =
+  Printf.sprintf
+    {|{ "node": "Unit", "abbreviation": "%s", "system": "Munt", "canonical": "EUR",
+        "factorToCanonical": { "num": 1, "den": %d } }|}
+    abbreviation den
+
+let rec json_walk f j =
+  match f j with
+  | `Assoc kvs -> `Assoc (List.map (fun (k, v) -> (k, json_walk f v)) kvs)
+  | `List l -> `List (List.map (json_walk f) l)
+  | x -> x
+
+(* the golden with the unit system Munt and [units] on its attributes, and
+   without its rounding where [unrounded] *)
+let allocation_with_units ?(unrounded = false) units =
+  let read path = In_channel.with_open_bin path In_channel.input_all in
+  let set_unit = function
+    | `Assoc kvs when List.assoc_opt "node" kvs = Some (`String "Attribute") -> (
+        match List.assoc_opt "name" kvs with
+        | Some (`String n) when List.mem_assoc n units ->
+            `Assoc
+              (List.map
+                 (function
+                   | "datatype", `Assoc d ->
+                       ("datatype", `Assoc (d @ [ ("unit", `List [ Yojson.Safe.from_string (List.assoc n units) ]) ]))
+                   | kv -> kv)
+                 kvs)
+        | _ -> `Assoc kvs)
+    | `Assoc kvs when List.mem_assoc "unitSystems" kvs ->
+        `Assoc
+          (List.map
+             (function
+               | "unitSystems", _ ->
+                   ( "unitSystems",
+                     Yojson.Safe.from_string
+                       (Printf.sprintf {|[ { "node": "UnitSystem", "name": "Munt", "units": [ %s, %s ] } ]|}
+                          (unit_json "EUR" 1) (unit_json "ct" 100)) )
+               | kv -> kv)
+             kvs)
+    | `Assoc kvs when unrounded && List.mem_assoc "roundingDecimals" kvs -> `Assoc (List.remove_assoc "roundingDecimals" kvs)
+    | j -> j
+  in
+  Yojson.Safe.to_string (json_walk set_unit (Yojson.Safe.from_string (read "corpus/golden/jutterswet-rangmaximering/ir.json")))
+
+(* the golden's case with the maxima in [cap] and every expected number times
+   [value_factor]; W1's maximum is 500,99 EUR where it is in ct, which a cap
+   floored with the share keeps at 500 *)
+let allocation_case_with_units ~cap_in_ct ~value_factor =
+  let read path = In_channel.with_open_bin path In_channel.input_all in
+  let times k = function
+    | `Assoc [ ("number", `String n) ] -> `Assoc [ ("number", `String (string_of_int (int_of_string n * k))) ]
+    | j -> j
+  in
+  let first_cap = ref true in
+  let rewrite = function
+    | `Assoc kvs when cap_in_ct && List.mem_assoc "penningmaximum" kvs ->
+        `Assoc
+          (List.map
+             (function
+               | "penningmaximum", v ->
+                   let v = if !first_cap then `Assoc [ ("number", `String "50099") ] else times 100 v in
+                   first_cap := false;
+                   ("penningmaximum", v)
+               | kv -> kv)
+             kvs)
+    | `Assoc kvs when List.assoc_opt "kind" kvs = Some (`String "attributeValue") ->
+        `Assoc (List.map (function "value", v -> ("value", times value_factor v) | kv -> kv) kvs)
+    | j -> j
+  in
+  Yojson.Safe.to_string (json_walk rewrite (Yojson.Safe.from_string (read "corpus/golden/jutterswet-rangmaximering/case.json")))
+
+let () =
+  let eur = unit_json "EUR" 1 and ct = unit_json "ct" 100 in
+  clingo_matches ~name:"allocation: a maximum in ct compares with a pot in EUR"
+    ~ir:
+      (allocation_with_units
+         [ ("penningbudget", eur); ("onuitgekeerd budget", eur); ("penningtoewijzing", eur); ("penningmaximum", ct) ])
+    ~case_text:(allocation_case_with_units ~cap_in_ct:true ~value_factor:1);
+  clingo_matches ~name:"allocation: a share and a rest in ct are restated from a pot in EUR"
+    ~ir:
+      (allocation_with_units
+         [ ("penningbudget", eur); ("penningmaximum", eur); ("penningtoewijzing", ct); ("onuitgekeerd budget", ct) ])
+    ~case_text:(allocation_case_with_units ~cap_in_ct:false ~value_factor:100);
+  (* a pot of 1800 ct shared into whole euros: 500 ct is 5 EUR, but 433 ct
+     does not fit, the evaluation fault of the assignment gate *)
+  faults_at_solving ~code:("EF-006", []) ~name:"allocation: a share restated into a coarser unit that does not fit"
+    ~ir:
+      (allocation_with_units
+         [ ("penningbudget", ct); ("onuitgekeerd budget", ct); ("penningmaximum", ct); ("penningtoewijzing", eur) ])
+    ~case_text:(allocation_case_with_units ~cap_in_ct:false ~value_factor:1)
+    ~needle:"a share does not fit the target scale" ();
+  (* the same pot with its shares in ct and its rest of 26 ct in whole euros *)
+  faults_at_solving ~code:("EF-006", []) ~name:"allocation: a rest restated into a coarser unit that does not fit"
+    ~ir:
+      (allocation_with_units
+         [ ("penningbudget", ct); ("onuitgekeerd budget", eur); ("penningmaximum", ct); ("penningtoewijzing", ct) ])
+    ~case_text:(allocation_case_with_units ~cap_in_ct:false ~value_factor:1)
+    ~needle:"the rest, restated into the unit of its target, does not fit" ();
+  faults_with ~name:"allocation: an unrounded restatement is refused"
+    ~ir:
+      (allocation_with_units ~unrounded:true
+         [ ("penningbudget", eur); ("onuitgekeerd budget", eur); ("penningtoewijzing", eur); ("penningmaximum", ct) ])
+    ~case_text:(allocation_case_with_units ~cap_in_ct:true ~value_factor:1)
+    ~needle:"restates a unit without a rounding"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

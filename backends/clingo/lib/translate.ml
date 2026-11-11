@@ -300,6 +300,10 @@ let allocation_share_misfit =
   "allocation: a share does not fit the target scale (an explicit rounding is mandated before \
    precision is lost)"
 
+(* the same for the rest, which only a restatement into the unit of its target
+   can make misfit (EF-006); the subject is the source *)
+let allocation_rest_misfit = "allocation: the rest, restated into the unit of its target, does not fit its scale"
+
 (* the limit of [closed_division]: a numeric-zero divisor in a closed body whose
    leeg quotient does not coalesce *)
 let closed_zero_division =
@@ -916,6 +920,7 @@ let viol_code witness =
   (* the sentence names none of place, value and decimals; the subject is a
      label, which is no parameter of EF-006 *)
   else if opens (allocation_share_misfit ^ "\"") then Some ("EF-006", [])
+  else if opens (allocation_rest_misfit ^ "\"") then Some ("EF-006", [])
   else if opens (pro_rata_misfit ^ "\"") then Some ("EF-006", [])
   else if opens (period_arithmetic_misfit ^ "\"") then Some ("EF-006", [])
   else if opens (nested_non_exact_division ^ "\"") then Some ("CLINGO-031", [])
@@ -13857,11 +13862,56 @@ let translate_allocation ctx i (v : resolved_allocation) =
   in
   stands dt da;
   Option.iter (stands bt) v.remainder_attribute;
+  (* --- the unit layer (ch. 2.4, 2.6) ------------------------------------
+     the shares and the rest are computed in the unit of the pot. The maximum
+     compares by its exact factor into that unit (ch. 2.6 rule 5), and a share
+     and the rest are written through the assignment gate, restated into the
+     unit of their target (rule 6). Each factor is 1 where the two units are
+     one quantity or a side carries no unit, which then adopts the other with
+     its value unchanged *)
+  let factor from into =
+    match (from, into) with
+    | Some a, Some b when not (Ir_v0.Units.identical a b) -> Uchar_ref.Arith.conv_factor a b
+    | _ -> Q.one
+  in
+  let pot_unit = attr_unit ctx ~otype:bt ~attr:ba in
+  let k_share = factor pot_unit (attr_unit ctx ~otype:dt ~attr:da) in
+  let k_cap =
+    match v.maximum_attribute with Some cap -> factor (attr_unit ctx ~otype:dt ~attr:cap) pot_unit | None -> Q.one
+  in
+  let k_rest =
+    match v.remainder_attribute with Some ra -> factor pot_unit (attr_unit ctx ~otype:bt ~attr:ra) | None -> Q.one
+  in
+  let restates = not (Q.equal k_share Q.one && Q.equal k_cap Q.one && Q.equal k_rest Q.one) in
+  (* a value at [from_dec] decimals times [k] at [to_dec] decimals is the value
+     times num/den, reduced *)
+  let ratio k ~from_dec ~to_dec =
+    let num = Z.mul (Q.num k) (Z.pow (Z.of_int 10) (max 0 (to_dec - from_dec)))
+    and den = Z.mul (Q.den k) (Z.pow (Z.of_int 10) (max 0 (from_dec - to_dec))) in
+    let g = Z.gcd num den in
+    let num = Z.div num g and den = Z.div den g in
+    if not (Z.fits_int num && Z.fits_int den && Z.leq num (Z.of_int max_int31) && Z.leq den (Z.of_int max_int31))
+    then
+      faultc
+        ~params:[ ("allocation", name) ]
+        "CLINGO-045" "the unit factor %s of allocation %S leaves clingo's integers" (Q.to_string k) name;
+    (Z.to_int num, Z.to_int den)
+  in
   (* --- the scale layer ------------------------------------------------ *)
   let pdec = attr_decimals ctx ~otype:bt ~attr:ba in
   let tdec = attr_decimals ctx ~otype:dt ~attr:da in
+  (* without a rounding the exact share decides the write, and its fit in a
+     target of another unit needs the restated exact quotient, which this
+     encoding does not compute *)
+  if v.rounding_decimals = None && restates then
+    faultc
+      ~params:[ ("allocation", name) ]
+      "CLINGO-045"
+      "allocation %S restates a unit without a rounding: the fit of its exact shares, the maximum or \
+       the rest in another unit is not translated"
+      name;
   (match v.rounding_decimals with
-  | Some d when d > tdec ->
+  | Some d when d > tdec && Q.equal k_share Q.one ->
       fault
         "allocation rounding at %d decimals is finer than its %d-decimal target (no corpus \
          case)"
@@ -13897,7 +13947,7 @@ let translate_allocation ctx i (v : resolved_allocation) =
   let cdec = Option.map (fun cap -> attr_decimals ctx ~otype:dt ~attr:cap) v.maximum_attribute in
   let rdec = Option.map (fun ra -> attr_decimals ctx ~otype:bt ~attr:ra) v.remainder_attribute in
   (match rdec with
-  | Some r when r < pdec || r < ddec ->
+  | Some r when (r < pdec || r < ddec) && Q.equal k_rest Q.one ->
       fault
         "an allocation remainder at %d decimals under a %d-decimal pot and %d-decimal \
          rounding is not exactly representable (no corpus case)"
@@ -13905,7 +13955,8 @@ let translate_allocation ctx i (v : resolved_allocation) =
   | _ -> ());
   let m_num = pow10 (max 0 (ddec - pdec)) in
   let m_den = pow10 (max 0 (pdec - ddec)) in
-  let m_val = pow10 (tdec - ddec) in
+  (* the share at [ddec] in the pot's unit, written at [tdec] in its target's *)
+  let t_num, t_den = ratio k_share ~from_dec:ddec ~to_dec:tdec in
   let scaled t m = if m = 1 then t else Printf.sprintf "%s*%d" t m in
   let divd t m = if m = 1 then t else Printf.sprintf "(%s*%d)" t m in
   (* the conditional gate (ch. 4.1): a source distributes only where its
@@ -13930,8 +13981,8 @@ let translate_allocation ctx i (v : resolved_allocation) =
   let pot_bound =
     46340
     / max
-        (pow10 (max 0 (tdec - pdec)))
-        (match rdec with Some r -> pow10 (r - pdec) | None -> 1)
+        (max (pow10 (max 0 (tdec - pdec))) (pow10 (max 0 (ddec - pdec))))
+        (match rdec with Some r -> pow10 (max 0 (r - pdec)) | None -> 1)
   in
   emit ctx
     "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",B) :- \
@@ -13948,27 +13999,63 @@ let translate_allocation ctx i (v : resolved_allocation) =
          %s, isa(B,%s), val(X,%s,W), |W| > %d."
         recip (str bt) (str ratio) (46340 / m_den)
   | None -> ());
-  (match (v.maximum_attribute, cdec) with
-  | Some cap, Some c when pow10 (max 0 (ddec - c)) > 1 ->
+  (* the maximum at [cdec] in its own unit, compared at [ddec] in the pot's *)
+  let cap_ratio = Option.map (fun c -> ratio k_cap ~from_dec:c ~to_dec:ddec) cdec in
+  (match (v.maximum_attribute, cap_ratio) with
+  | Some cap, Some (c_num, _) when c_num > 1 ->
       emit ctx
         "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",X) :- \
          %s, isa(B,%s), val(X,%s,C), |C| > %d."
-        recip (str bt) (str cap) (46340 / pow10 (ddec - c))
+        recip (str bt) (str cap) (46340 / c_num)
   | _ -> ());
   emit ctx "%shas_pot(B) :- isa(B,%s), val(B,%s,_)." p (str bt) (str ba);
   (* the target write and the remainder, shared across the methods; the
      remainder guard carries each method's Nothing case (ch. 4.4: zero
      recipients, or an absent/zero weight sum, write NO rest) *)
   let emit_write share_atom =
-    emit ctx "val(X,%s,%s) :- %s." (str da) (scaled "S" m_val) share_atom;
-    emit ctx "wval(X,%s,%s,%s) :- %s." (str da) (scaled "S" m_val) writer share_atom;
+    let written =
+      if t_den = 1 then scaled "S" t_num
+      else begin
+        (* restated into a coarser unit, a share fits its target only where the
+           division leaves nothing (ch. 2.4 point 1) *)
+        emit ctx "viol(\"%s\",X) :- %s, (%s) \\ %d != 0." allocation_share_misfit share_atom (scaled "S" t_num)
+          t_den;
+        Printf.sprintf "(%s)/%d" (scaled "S" t_num) t_den
+      end
+    in
+    if (not (Q.equal k_share Q.one)) && t_num > 1 then
+      emit ctx
+        "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",X) :- %s, |S| > %d."
+        share_atom (max_int31 / t_num);
+    emit ctx "val(X,%s,%s) :- %s." (str da) written share_atom;
+    emit ctx "wval(X,%s,%s,%s) :- %s." (str da) written writer share_atom;
     emit ctx "wdecides(X,%s) :- wval(X,%s,_,%s)." (str da) (str da) writer
   in
   let emit_rest ~guard ~sum =
     match (v.remainder_attribute, rdec) with
     | Some ra, Some r ->
-        let rest = Printf.sprintf "%s-%s" (scaled "A" (pow10 (r - pdec))) (scaled "T" (pow10 (r - ddec))) in
         let body = Printf.sprintf "%s, val(B,%s,A), %s, T = #sum { %s }" src (str ba) guard sum in
+        let rest =
+          if Q.equal k_rest Q.one then
+            Printf.sprintf "%s-%s" (scaled "A" (pow10 (r - pdec))) (scaled "T" (pow10 (r - ddec)))
+          else begin
+            (* the rest in the pot's unit at the finer of the pot's and the
+               rounding's scale, then restated into its target's *)
+            let l = max pdec ddec in
+            let in_pot = Printf.sprintf "(%s-%s)" (scaled "A" (pow10 (l - pdec))) (scaled "T" (pow10 (l - ddec))) in
+            let r_num, r_den = ratio k_rest ~from_dec:l ~to_dec:r in
+            if r_num > 1 then
+              emit ctx
+                "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",B) :- %s, |%s| > %d."
+                body in_pot (max_int31 / r_num);
+            if r_den = 1 then scaled in_pot r_num
+            else begin
+              emit ctx "viol(\"%s\",B) :- %s, (%s) \\ %d != 0." allocation_rest_misfit body (scaled in_pot r_num)
+                r_den;
+              Printf.sprintf "(%s)/%d" (scaled in_pot r_num) r_den
+            end
+          end
+        in
         emit ctx "val(B,%s,%s) :- %s." (str ra) rest body;
         emit ctx "wval(B,%s,%s,%s) :- %s." (str ra) rest writer body;
         emit ctx "wdecides(B,%s) :- wval(B,%s,_,%s)." (str ra) (str ra) writer
@@ -13981,10 +14068,11 @@ let translate_allocation ctx i (v : resolved_allocation) =
      rounding scale (an upscale is exact, a downscale is the floor). *)
   let emit_cap_atoms ~raw_pat =
     let cap = req "AllocationVersion.maximumAttribute" v.maximum_attribute in
-    let c = match cdec with Some c -> c | None -> assert false in
+    let c_num, c_den = match cap_ratio with Some r -> r | None -> assert false in
     let capd =
-      if ddec >= c then scaled "C" (pow10 (ddec - c))
-      else Printf.sprintf "C/%d" (pow10 (c - ddec))
+      if c_den = 1 then scaled "C" c_num
+      else if c_num = 1 then Printf.sprintf "C/%d" c_den
+      else Printf.sprintf "(C*%d)/%d" c_num c_den
     in
     emit ctx "%scapd(X,%s) :- %s, val(X,%s,C), C >= 0." p capd raw_pat (str cap);
     deposit ctx ~code:"EF-030" ~rule:(str name) ~subject:"X"
