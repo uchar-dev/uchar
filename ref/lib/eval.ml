@@ -1736,8 +1736,10 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
               match SMap.find_opt (norm p) env.param_tls with
               | Some tl -> Timeline.read tl d
               | None ->
-                  Value.fault
-                    "the temporal read of parameter %S needs its timeline in the case" p)
+                  (* the timeline of a time-dependent parameter is its binding
+                     (ch. 3.4), so an absent one is an unbound parameter *)
+                  Value.faultc ~params:[ ("parameter", p) ] "EF-014"
+                    "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)" p)
           | _ -> Value.faultc "REF-003" "unsupported temporal-read base shape")
       | v ->
           Value.fault "temporal-read date operand is %s, must be a day-precision date"

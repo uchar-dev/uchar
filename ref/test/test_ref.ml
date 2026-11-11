@@ -14069,6 +14069,21 @@ let () =
         ~case_data:(read (dir ^ d ^ "/case.json")) (fun _ -> ()))
     [ "absent"; "written-empty" ]
 
+(* WV-3.4-puntlezing-ongebonden-parameter: the anchor jutterswet-aanmeldquotum
+   with no parameters in the case. The point read of the time-dependent
+   parameter penningbedrag reads its timeline, which is its binding (ch. 3.4):
+   EF-014 with the parameter's name (ch. 5.7b) *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/point-read-unbound-parameter/" in
+  with_files ~ir:(read (dir ^ "ir.json")) ~case_data:(read (dir ^ "case.json")) (fun findings _ evaluate ->
+      check "WV-3.4-puntlezing-ongebonden-parameter: verifier-clean" (findings = []);
+      match evaluate () with
+      | exception Value.Fault { code; params; text } ->
+          check ("WV-3.4-puntlezing-ongebonden-parameter (got: " ^ text ^ ")")
+            (code = Some "EF-014" && params = [ ("parameter", "penningbedrag") ])
+      | _ -> check "WV-3.4-puntlezing-ongebonden-parameter (no fault at all)" false)
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

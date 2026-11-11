@@ -125,5 +125,7 @@
   (glob_files fixtures/rounded-sum-unit/*.json)
   ; a point read of an absent timeline and of an empty written one
   (glob_files fixtures/point-read-absent/absent/*.json)
-  (glob_files fixtures/point-read-absent/written-empty/*.json))
+  (glob_files fixtures/point-read-absent/written-empty/*.json)
+  ; a point read of a time-dependent parameter the case does not bind
+  (glob_files fixtures/point-read-unbound-parameter/*.json))
  (libraries uchar_ref uchar-ir-v0 zarith yojson))
