@@ -263,4 +263,26 @@ class DependencyCycleTest {
             """);
         assertTrue(faults(m).isEmpty(), () -> "onverwachte fouten: " + m.diagnostics);
     }
+
+    /** The cycle check judges the document the emitter writes. A model every check lets through and the emitter still
+     *  refuses has no such document: the refusal is the model's ERROR (RGS-394), in the emitter's sentence, so neither
+     *  {@code --ir} (where it ended in a stack trace) nor the editor route (where the model stood clean) passes it.
+     *  Here an undeclared attribute read in a variable leaves the variable without a type. */
+    @Test void a_model_the_emitter_refuses_carries_the_refusal() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Lichterbeurt (mv: Lichterbeurten)
+                het lichterloon Numeriek (geheel getal);
+
+            Regel lichterloon
+                geldig altijd
+                    Het lichterloon van een Lichterbeurt moet berekend worden als het grondloon maal 2.
+                    Daarbij geldt:
+                        het grondloon is het vrachttal van de Lichterbeurt maal 3.
+            """);
+        List<Diagnostic> faults = faults(m);
+        assertEquals(1, faults.size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
+        assertEquals("RGS-394", faults.get(0).code());
+        assertTrue(String.valueOf(faults.get(0).args().get("reason")).startsWith("IrEmitter: an unknown datatype"),
+                faults.get(0)::toString);
+    }
 }

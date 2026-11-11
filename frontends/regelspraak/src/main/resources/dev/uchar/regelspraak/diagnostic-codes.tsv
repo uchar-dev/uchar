@@ -381,3 +381,4 @@ RGS-390	unit-symbol-ambiguous	ERROR	abbreviations,symbol,unitSystem
 RGS-391	unit-symbol-is-an-abbreviation	ERROR	abbreviation,other,symbol,unitSystem
 RGS-392	unit-word-ambiguous	ERROR	abbreviations,unitSystem,word
 RGS-393	ordinal-position-not-a-position	ERROR	name,ordinal
+RGS-394	emitter-refuses-model	ERROR	reason

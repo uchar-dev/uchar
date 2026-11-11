@@ -733,3 +733,4 @@ RGS-390	de eenheid '{symbol}' is dubbelzinnig: in het eenheidstelsel '{unitSyste
 RGS-391	het symbool '{symbol}' van de eenheid '{abbreviation}' is de afkorting '{other}' in het eenheidstelsel '{unitSystem}', en een verwijzing leest een afkorting vóór een symbool: het symbool noemt zijn eenheid nooit
 RGS-392	de eenheid '{word}' is dubbelzinnig: in het eenheidstelsel '{unitSystem}' dragen de eenheden {abbreviations} het woord '{word}'; schrijf de afkorting van de bedoelde eenheid
 RGS-393	rangtelwoord '{ordinal}' bij '{name}' noemt geen plaats: het getal in 'als <N>e genoemde' is een positief geheel getal (§5.5.3)
+RGS-394	de controles van de frontend lieten dit model door, maar het heeft geen document in uchar-ir-v1: {reason}

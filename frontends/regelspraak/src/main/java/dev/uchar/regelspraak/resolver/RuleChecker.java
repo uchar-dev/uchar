@@ -332,8 +332,8 @@ final class RuleChecker {
      * (IR-SPEC ch. 5.3); where a read inside a cycle over a switch relation falls outside that scope, the refusal of the
      * cycle gets a second one beside it that names the read, the clause and the switch relation, as the verifier's
      * {@code WF-045.instance-read-outside} names the read: the author changes the read, not the forms. Runs last, on a model
-     * without an ERROR: a model the emitter refuses has no document to judge, and that refusal is reported where the
-     * document is written.
+     * without an ERROR. A model the emitter refuses although no check before refused it has no document to judge; its
+     * refusal is then the model's ERROR (RGS-394), in the emitter's sentence.
      */
     private void checkDependencyCycles(RegelSpraakDocumentContext doc) {
         if (!model.isOk()) return;
@@ -341,6 +341,9 @@ final class RuleChecker {
         try {
             ir = dev.uchar.regelspraak.emit.IrEmitter.emit(model);
         } catch (IllegalStateException | UnsupportedOperationException e) {
+            // every check above let the model through and the emitter refuses it all the same: that refusal is the
+            // model's ERROR, so no route shows it as clean, and there is no document whose cycles could be judged
+            error(0, "RGS-394", params("reason", e.getMessage()));
             return;
         }
         Map<String, Object[]> sites = formSites(doc);

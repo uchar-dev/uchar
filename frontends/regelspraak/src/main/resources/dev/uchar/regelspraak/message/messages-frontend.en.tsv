@@ -733,3 +733,4 @@ RGS-390	the unit '{symbol}' is ambiguous: in the unit system '{unitSystem}' the 
 RGS-391	the symbol '{symbol}' of the unit '{abbreviation}' is the abbreviation '{other}' in the unit system '{unitSystem}', and a reference reads an abbreviation before a symbol: the symbol never names its unit
 RGS-392	the unit '{word}' is ambiguous: in the unit system '{unitSystem}' the units {abbreviations} carry the word '{word}'; write the abbreviation of the unit that is meant
 RGS-393	the ordinal number '{ordinal}' on '{name}' names no position: the number in 'als <N>e genoemde' is a positive whole number (§5.5.3)
+RGS-394	the checks of the frontend let this model through, but it has no document in uchar-ir-v1: {reason}
