@@ -3075,7 +3075,12 @@ maand = (h + l − 7·m + 114) quot 31
 dag   = ((h + l − 7·m + 114) mod 31) + 1
 ```
 
-The result is the day-precision civil date (j, maand, dag). A leeg year
+The result is the day-precision civil date (j, maand, dag). Easter Sunday is
+defined from the year 1. For a year before 1 the formula does not follow the
+calendar: for 307 of the years from −5000 to 0 it gives a day the month does
+not have (the year −2 gives the 31st of February, while the year 0 gives
+0000-04-09 and the year −1 gives −0001-03-20). A year below 1 is therefore a fault of
+the range's kind, EF-007, never a computed day. A leeg year
 propagates; a non-whole or unit-carrying year value is a fault, never a
 silent truncation to whole, and a year whose Easter Sunday lies outside the
 representable range of a date is EF-007 (above), never a silent wrap-around.
@@ -3086,7 +3091,8 @@ year (a tracked delta).
 Worked examples (absolute, pinned; each a `ref/` test verbatim): jaar uit
 2026-11-03 = **2026**; maand uit 2026-11-03 = **11**; dag uit 2026-11-03 =
 **3**; eerste paasdag van 2024 = **2024-03-31**, van 2026 = **2026-04-05**, van
-2027 = **2027-03-28**, van 2038 = **2038-04-25**. Golden `jutterswet-paasvondst`
+2027 = **2027-03-28**, van 2038 = **2038-04-25**, van 1 = **0001-04-01**, van 0
+= **fault** (EF-007), van −1 = **fault** (EF-007). Golden `jutterswet-paasvondst`
 carries the class: a maand-uit disjunction, an eerste-paasdag∘jaar-uit date
 equality, a jaar-uit/dag-uit Gelijkstelling pair, and the leeg corner.
 Datum-tijd operands of the extractors are not defined. The hour, minute,
@@ -5211,7 +5217,7 @@ parameters, the clause that defines it and its witnesses.
 | EF-004 | an input value does not fit the declared decimals of its place | case input | `place`, `value`, `decimals` | ch. 2.4; ch. 5.8c; ch. 11.3 | `corpus/red/input-overprecision`, `corpus/red/input-overprecision-param`, `corpus/red/list-element-overprecision`, `corpus/red/struct-field-overprecision`, `corpus/red/jutterswet-cel-overprecisie` |
 | EF-005 | a filled dividend is divided by a numeric zero, or a numeric zero is raised to a negative power | §9.5 | `rule`, `label` | ch. 1.4 point 4; ch. 2.2 | `corpus/golden/division-by-numeric-zero`, `corpus/golden/division-abs-by-numeric-zero`, `corpus/golden/filled-count-unguarded-division`, `corpus/golden/at-most-reads-until-settled`, `corpus/golden/closed-runtime-division-by-zero`, `corpus/golden/fold-filter-divides-by-zero`, `corpus/golden/jutterswet-initialisatie-naast-regel`, `corpus/golden/jutterswet-lezer-van-initialisatie`, `corpus/golden/jutterswet-macht-van-nul` |
 | EF-006 | a written value does not fit the declared decimals of its target | fault | `place`, `value`, `decimals` | ch. 2.4; ch. 5.8c | `corpus/red/jutterswet-verdeling-past-niet`, `corpus/red/jutterswet-tijdsevenredig-past-niet` |
-| EF-007 | a date or datum-tijd step, a date construction or an Easter Sunday leaves the representable range of a date or the representable millisecond range | fault | — | ch. 3.8 | `corpus/red/day-kind-step-outside-range`, `corpus/red/date-time-step-outside-range`, `corpus/red/date-time-with-outside-range`, `corpus/red/date-time-step-wrap`, `corpus/red/date-step-outside-range`, `corpus/red/date-with-outside-date-range` |
+| EF-007 | a date or datum-tijd step, a date construction or an Easter Sunday leaves the representable range of a date or the representable millisecond range, or an Easter Sunday is asked for a year before 1 | fault | — | ch. 3.8 | `corpus/red/day-kind-step-outside-range`, `corpus/red/date-time-step-outside-range`, `corpus/red/date-time-with-outside-range`, `corpus/red/date-time-step-wrap`, `corpus/red/date-step-outside-range`, `corpus/red/date-with-outside-date-range` |
 | EF-008 | a duration count is out of range | fault | `count` | ch. 3.8 | `corpus/red/date-time-step-outside-range` |
 | EF-009 | a day-kind walk passes the reach fence without a day of the kind | fault | `from`, `reach` | ch. 3.8 | `corpus/red/day-kind-unsatisfiable-walk`, `corpus/red/day-kind-scope-outside-table` |
 | EF-010 | the bound day is read outside a day-kind evaluation | fault | — | ch. 3.8 | `corpus/red/context-value-de-dag-outside-day-kind`, `corpus/red/bound-day-behind-a-holding-condition` |
