@@ -6,10 +6,10 @@
 # that is the bottom arm of a dispatch (kind `fallback`) carries a code `REF-###` or `CLINGO-###` beside its text,
 # and the code is one line of the table of its component: ref/codes.tsv and backends/clingo/codes.tsv (columns code,
 # kind, key, params, functions; a header line). The compiler reads neither table, so this script holds sources and
-# tables together, in BOTH directions, on the COMMENT-LESS source of ref/lib and backends/clingo/lib (a code that only
-# a comment names is not raised, so it does not count):
-#   - every `"REF-###"` in ref/lib and every `"CLINGO-###"` in backends/clingo/lib is a line of its table, and every
-#     line is raised at least once (a code nobody raises is dead text);
+# tables together, in BOTH directions, on the COMMENT-LESS source of ref/lib, ref/bin, backends/clingo/lib and
+# backends/clingo/bin (a code that only a comment names is not raised, so it does not count):
+#   - every `"REF-###"` in ref and every `"CLINGO-###"` in backends/clingo is a line of its table, and every line is
+#     raised at least once (a code nobody raises is dead text);
 #   - every `"EF-###"` a source names is a row of the table of fault kinds, RUNTIME-SEMANTICS ch. 5.7b;
 #   - the parameters a `faultc`/`failc` site passes (`~params:[ ("name", …); … ]` before the code) are, for a REF or
 #     CLINGO code, exactly the parameters of its line, and for an EF code names of its row (an executor may emit
@@ -35,7 +35,9 @@ python3 -I - "$EXPECTED_MIN_REF_CODES" "$EXPECTED_MIN_CLINGO_CODES" <<'PYEOF'
 import glob, re, sys
 
 floors = {"REF": int(sys.argv[1]), "CLINGO": int(sys.argv[2])}
-components = {"REF": ("ref/lib", "ref/codes.tsv"), "CLINGO": ("backends/clingo/lib", "backends/clingo/codes.tsv")}
+# the runners under bin/ raise codes as well as the libraries: a code read from lib/ alone would escape the check
+components = {"REF": (("ref/lib", "ref/bin"), "ref/codes.tsv"),
+              "CLINGO": (("backends/clingo/lib", "backends/clingo/bin"), "backends/clingo/codes.tsv")}
 bad = []
 
 
@@ -95,7 +97,7 @@ if not table:
     err("spec/RUNTIME-SEMANTICS.md: no row of the table of fault kinds (ch. 5.7b) reads — the EF codes cannot be checked")
 
 registers = {}
-for comp, (srcdir, tsv) in components.items():
+for comp, (srcdirs, tsv) in components.items():
     try:
         rows = open(tsv, encoding="utf-8").read().split("\n")
     except OSError as e:
@@ -130,10 +132,13 @@ for comp, (srcdir, tsv) in components.items():
 SITE = re.compile(r'(?<![A-Za-z0-9_\'])(?:Value\.|Case\.)?(?:faultc|failc)\b')
 raised = {c: set() for c in components}
 n_scanned = 0
-for comp, (srcdir, tsv) in components.items():
-    files = sorted(glob.glob(srcdir + "/*.ml"))
-    if not files:
-        err("%s: no source file — an empty scan is never silently green" % srcdir)
+for comp, (srcdirs, tsv) in components.items():
+    files = []
+    for srcdir in srcdirs:
+        found = sorted(glob.glob(srcdir + "/*.ml"))
+        if not found:
+            err("%s: no source file — an empty scan is never silently green" % srcdir)
+        files += found
     for f in files:
         src = strip_comments(open(f, encoding="utf-8").read())
         n_scanned += 1
@@ -186,7 +191,7 @@ for comp, (srcdir, tsv) in components.items():
 for comp, reg in registers.items():
     for code in reg:
         if code not in raised[comp]:
-            err("%s is registered in %s but no place of %s raises it (a code nobody raises is dead text; remove it and renumber what follows while no gate pins it)" % (code, components[comp][1], components[comp][0]))
+            err("%s is registered in %s but no place of %s raises it (a code nobody raises is dead text; remove it and renumber what follows while no gate pins it)" % (code, components[comp][1], " or ".join(components[comp][0])))
 
 if n_scanned == 0:
     err("no source file was scanned")
