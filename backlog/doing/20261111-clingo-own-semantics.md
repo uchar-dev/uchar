@@ -42,3 +42,28 @@ May touch: `backends/clingo/`, its tests, corpus witnesses outside `corpus/golde
 main session lands them): `scripts/`.
 
 Out of scope: ref and Drools, except a fault in ref that step 5 exposes (its own commit, named in the Result).
+
+Result, steps 1–4 (2026-11-11, landed while steps 5 and 6 continue):
+- step 1: the byte oracle dumps every runner program of every golden and red case file (1,110 on the start) and
+  every suite program (1,060); it is a tool of this card and lives beside the repository
+  (`werk/clingo-own-semantics/oracle/oracle.py`), not a gate.
+- step 2: ref's document environment is built once instead of in 13 literal copies; rules go through
+  `emit_rule ~head ~body`, and `split_rule`, `body_literals` and the guard read from rule text are gone (403
+  places). Oracle: byte-equal but for one space less in the fallback rule of a sum (15 programs; the same rule).
+- step 3: a guard's code comes from a register filled where the guard is written (`emit_viol`, `guardc`), no longer
+  from `viol_code`'s prefix match over sentences; a probe beside both readings found 0 differences; oracle
+  byte-equal. `scripts/check-exec-codes.sh` checks the parameters of a `guardc` site too. Seven suite checks read the
+  register of a real translation instead of a hand-written witness.
+- step 4, first half: the pass before a creation (`pre_*`, `_ph`, `_p`, `pre_clone`, `map_predicates`) is gone, with
+  no refusal in its place. The suite frames tr-cr-1, tr-w-1, tr-pm-1, tr-pm2-1, tr-pm2-ctl, tr-kv-1, tr-kv-listed,
+  r6-ebar, r6-alle-fold, r6-pres, tr-of-1, r6-of-alle, r6-agg-comp, r6-nav and the six former [L2] frames
+  (tr-strat-1, r6-strat-sc, r6-rapport, P6a, P11, P13) went from a refusal to clingo ≡ ref; r6-dmd-1 now pins the
+  existing limit [V3] (clingo leeg where ref gives 4), which the refusal hid.
+- step 4, second half: a guard whose reach can hang on the order of created members is refused at translation with
+  CLINGO-035 (`refuse_order_dependent`); the order twins `_c`, `_o`, `_q`, `lbr_o` are gone. The frames cr-*, mx-*,
+  ms-2, ms-4, the eight stratum frames, [N1]–[N4] and the three EF-037 frames now pin that refusal. Provisional: a
+  range counts as grown only where a step runs through a fact type a creation links (`created_fact_types`); a Let
+  barrier counts as order-dependent only where it compares members of such a range — a barrier raised by a read in
+  the matrix stays, a loud residual recorded as README [L3] with frame l3-3-8.
+- Corpus: 0 of 1,110 programs changed across step 4; gates 6, 8 and 17 green. ASP-TRANSLATION and the CONSTRUCTS row
+  `ParameterRef` follow.
