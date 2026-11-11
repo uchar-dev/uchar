@@ -107,6 +107,23 @@ for zone in ref spec/verifier; do
     fi
 done
 
+# The OWN-SEMANTICS tripwire (card clingo-own-semantics). The differential of gate 6 compares
+# ref with clingo; where the clingo translator calls ref's evaluator to decide what a program
+# says, that comparison proves ref against ref. So backends/clingo/lib names no
+# Uchar_ref.Eval, and opens no Uchar_ref whole, which would let a bare Eval. name it unseen.
+# The unit factors (Uchar_ref.Arith) and the period walls (Timeline.grid_*, calendar_*)
+# are still read from ref; they join this list when clingo carries its own:
+#   'Uchar_ref\.Arith' 'Timeline\.(grid_|calendar_)'
+if [ -e backends/clingo/lib ]; then
+    if zone_grep -nE 'Uchar_ref\.Eval([^[:alnum:]_]|$)|^[[:space:]]*(open|include)!?[[:space:]]+Uchar_ref([^[:alnum:]_.]|$)' -- backends/clingo/lib; then
+        echo "FAIL: backends/clingo/lib names ref's evaluator — clingo computes its own semantics, so gate 6 compares two answers, not ref with itself" >&2
+        status=1
+    fi
+else
+    echo "FAIL: backends/clingo/lib is missing — the own-semantics tripwire has nothing to sweep (rename it AND this gate together)" >&2
+    status=1
+fi
+
 # toka/ is exempt from the self-containedness prose rules (it carries the
 # TOKA casus and names the toolchain by design) but MUST carry no machine-local
 # paths — the one rule that still applies inside the zone.
