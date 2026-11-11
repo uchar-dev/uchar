@@ -111,12 +111,17 @@ done
 # ref with clingo; where the clingo translator calls ref's evaluator to decide what a program
 # says, that comparison proves ref against ref. So backends/clingo/lib names no
 # Uchar_ref.Eval, and opens no Uchar_ref whole, which would let a bare Eval. name it unseen.
-# The unit factors (Uchar_ref.Arith) and the period walls (Timeline.grid_*, calendar_*)
-# are still read from ref; they join this list when clingo carries its own:
-#   'Uchar_ref\.Arith' 'Timeline\.(grid_|calendar_)'
+# Nor does it read ref's unit factors (Uchar_ref.Arith, aliased or not) or ref's calendar:
+# the period walls, buckets, whole units and measures of ref's Timeline, and the civil
+# date arithmetic of ref's Value. What it may read of Timeline is the case encoding
+# (segment, t, open_from, open_to); its own calendar is backends/clingo/lib/calendar.ml.
 if [ -e backends/clingo/lib ]; then
     if zone_grep -nE 'Uchar_ref\.Eval([^[:alnum:]_]|$)|^[[:space:]]*(open|include)!?[[:space:]]+Uchar_ref([^[:alnum:]_.]|$)' -- backends/clingo/lib; then
         echo "FAIL: backends/clingo/lib names ref's evaluator — clingo computes its own semantics, so gate 6 compares two answers, not ref with itself" >&2
+        status=1
+    fi
+    if zone_grep -nE 'Uchar_ref\.Arith|Timeline\.(grid_|calendar_|attr_grid|param_grid|bucket|whole_units|add_months|days_in_month|is_leap|is_open)|Value\.(civil_from_days|days_from_civil)|module [A-Z][A-Za-z0-9_]* = Uchar_ref\.Timeline' -- backends/clingo/lib; then
+        echo "FAIL: backends/clingo/lib reads ref's unit factors or ref's calendar — clingo lays its own (Factors, Calendar), so gate 6 compares two readings of ch. 2.6 and ch. 3.2, not ref with itself" >&2
         status=1
     fi
 else
