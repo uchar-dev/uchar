@@ -7653,22 +7653,6 @@ and rule_let : 'a. ctx -> subject:string -> subject_ot:string -> binder:string -
   ctx.demands <- saved_d;
   (va, r)
 
-(* gedeeld-door (§6.5, arith.div_gen) — three edges plus the value:
-   an empty dividend collapses to 0 before the divisor is read (also
-   under a zero or empty divisor); an empty divisor under a filled
-   dividend deposits the §9.5 channel fact (EF-031) and derives no value
-   (leeg as absence); a numeric zero divisor under a filled dividend does
-   the same with EF-005 (RUNTIME-SEMANTICS ch. 1.4 point 4: v1 routes it
-   into the channel). The value itself: the true quotient (L/sl)/(R/sr) at
-   out-scale m is L·(sr·m) / (R·sl). Bare division translates only
-   its EXACT outcomes — a remainder derives a viol/2 witness instead
-   of a truncated value (v0's §6.1.2 static guard demands an explicit
-   rounding before precision is lost; silent integer truncation would
-   diverge from ref's exact rationals). Rounded division computes the
-   mode's integer rounding of the true quotient, exact for
-   non-negative operands; the negative range is fenced by a viol/2
-   witness (richting-nul alone matches gringo's truncation on both
-   signs and needs no fence). *)
 (* --- the datum-tijd pair term as an EXPRESSION (RUNTIME-SEMANTICS ch. 3.8,
    the millisecond layer; the A4 pair-term encoding) ----------------------
    A datum-tijd-typed expression lowers to (atoms, D, MS): the atoms bind the
@@ -7989,6 +7973,24 @@ and date_construction ctx ~subject ~subject_ot ~time (args : expr list) =
         Some msv )
   | _ -> assert false (* the arity test above *)
 
+(* gedeeld-door (§6.5, arith.div_gen) — three edges plus the value:
+   an empty dividend collapses to 0 before the divisor is read (also
+   under a zero or empty divisor); an empty divisor under a filled
+   dividend deposits the §9.5 channel fact (EF-031) and derives no value
+   (leeg as absence); a numeric zero divisor under a filled dividend does
+   the same with EF-005 (RUNTIME-SEMANTICS ch. 1.4 point 4: v1 routes it
+   into the channel). The value itself: the true quotient (L/sl)/(R/sr) at
+   out-scale m is L·(sr·m) / (R·sl). Bare division translates only
+   its EXACT outcomes — a remainder derives a viol/2 witness instead
+   of a truncated value (v0's §6.1.2 static guard demands an explicit
+   rounding before precision is lost; silent integer truncation would
+   diverge from ref's exact rationals). Rounded division computes the
+   mode's integer rounding of the true quotient, exact for
+   non-negative operands; the negative range is fenced by a viol/2
+   witness (richting-nul alone matches gringo's truncation on both
+   signs and needs no fence). The scaled quotient and its fences are
+   [quotient_terms], shared with the closed body ([closed_division]); the
+   reason and code of a remainder are [division_misfit]'s. *)
 and translate_division ?(root = true) ctx ~subject ~subject_ot ~left_side ~right_side ~rounding =
   let left_side = req "Binary.left" left_side and right_side = req "Binary.right" right_side in
   numeric_ok ctx (Some left_side);
@@ -9230,9 +9232,9 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          With both scales 0 the harmonisation width m is 0 too, and the range
          guard below divides max_int31 by (m / s1) — 0/0. Measured with the
          fence removed: `Fatal error: exception Division_by_zero`, exit 2. The
-         two silent siblings, where the same 0/0 never forms because their
-         scaling helper skips the division at s = m, are [body_condition] and
-         [value_condition]. *)
+         silent sibling, where the same 0/0 never forms because its scaling
+         skips the division at s = m, is [compared_builtins] (under
+         [body_condition] and [value_condition]). *)
       let s1 = numeric_scale ~what:"an ordering comparison" s1 in
       let s2 = numeric_scale ~what:"an ordering comparison" s2 in
       let m = max s1 s2 in
