@@ -14300,6 +14300,25 @@ let () =
     [ ("vintage-without-evaluation-date", "EF-011", []);
       ("vintage-without-timeline", "EF-014", [ ("parameter", "penningbedrag") ]) ]
 
+(* WV-8.4-sessiestart-defaults: the same vintage read as the consequence of a
+   defaults group instead of a rule, in a session without a Jutter and with
+   no timeline for penningbedrag. The check covers every vintage read the
+   document carries, whether or not anything fires over it, so the session
+   faults EF-014 before any form is evaluated; it walked the rules and not
+   the defaults groups, and the session ended without a fault *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/session-start/vintage-in-defaults/" in
+  let ident = "WV-8.4-sessiestart-defaults" in
+  with_files ~ir:(read (dir ^ "ir.json")) ~case_data:(read (dir ^ "case-no-instance.json"))
+    (fun findings _ evaluate ->
+      check (ident ^ ": verifier-clean") (findings = []);
+      match evaluate () with
+      | exception Value.Fault { code = c; params = ps; text } ->
+          check (ident ^ " (got: " ^ Value.report ~code:c text ^ ")")
+            (c = Some "EF-014" && ps = [ ("parameter", "penningbedrag") ])
+      | _ -> check (ident ^ " (no fault at all)") false)
+
 (* WV-1.4-leeg-deeltal: the golden division-by-numeric-zero with one rule,
    loon := (bonus gedeeld door (opbrengst gedeeld door aandeel)) afgerond op 0
    decimalen, opbrengst 90 and aandeel 0. An empty dividend decides the

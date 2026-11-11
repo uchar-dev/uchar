@@ -5412,6 +5412,18 @@ let vintage_read_params (doc : document) : string list =
       opt r.value_node;
       copt r.rr_condition)
     doc.resolved_rules;
+  (* a defaults group's justifications and consequences, those of its
+     exception groups included: ch. 8.4 covers every vintage read the
+     document carries *)
+  let rec default (d : default) =
+    copt d.default_justification;
+    opt d.default_consequence;
+    Option.iter
+      (fun (g : exception_groups) ->
+        List.iter (fun (m : exception_group) -> List.iter default m.eg_defaults) g.egs_members)
+      d.default_exceptions
+  in
+  List.iter (fun (l : prioritized_defaults) -> List.iter default l.defaults) doc.prioritized_defaults;
   List.iter (fun (v : resolved_allocation) -> copt v.vd_condition) doc.allocations;
   List.iter (fun (c : resolved_consistency) -> copt c.assertion) doc.consistencies;
   List.iter (fun (d : resolved_day_kind) -> copt d.rd_condition) doc.resolved_day_kind_definitions;
