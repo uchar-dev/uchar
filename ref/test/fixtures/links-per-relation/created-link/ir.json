@@ -1,0 +1,205 @@
+{
+ "format": "uchar-ir-v1",
+ "model": {
+  "objectTypes": [
+   {
+    "node": "ObjectType",
+    "name": "Jutter",
+    "animate": true,
+    "plural": "Jutters",
+    "attributes": [
+     {
+      "node": "Attribute",
+      "name": "aangemeld",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "nonNegative"
+      }
+     },
+     {
+      "node": "Attribute",
+      "name": "geborgen",
+      "datatype": {
+       "node": "Number",
+       "whole": true,
+       "decimals": 0,
+       "sign": "nonNegative"
+      }
+     }
+    ],
+    "characteristics": []
+   },
+   {
+    "node": "ObjectType",
+    "name": "Vondst",
+    "animate": false,
+    "plural": "Vondsten",
+    "attributes": [],
+    "characteristics": []
+   }
+  ],
+  "factTypes": [
+   {
+    "node": "FactType",
+    "name": "vondstaanmelding",
+    "reciprocal": false,
+    "roles": [
+     {
+      "node": "Role",
+      "name": "aanmelder",
+      "objectType": "Jutter",
+      "many": false
+     },
+     {
+      "node": "Role",
+      "name": "vondst",
+      "objectType": "Vondst",
+      "many": true
+     }
+    ]
+   },
+   {
+    "node": "FactType",
+    "name": "vondstberging",
+    "reciprocal": false,
+    "roles": [
+     {
+      "node": "Role",
+      "name": "berger",
+      "objectType": "Jutter",
+      "many": false
+     },
+     {
+      "node": "Role",
+      "name": "vondst",
+      "objectType": "Vondst",
+      "many": true
+     }
+    ]
+   }
+  ],
+  "parameters": [],
+  "domains": [],
+  "unitSystems": [],
+  "dimensions": [],
+  "timelines": [],
+  "dayKinds": []
+ },
+ "rules": {
+  "rules": [
+   {
+    "node": "Rule",
+    "name": "aangemeld",
+    "versions": [
+     {
+      "validity": {
+       "node": "Validity"
+      },
+      "target": {
+       "node": "AttributeReference",
+       "attribute": "aangemeld",
+       "subjectType": "Jutter"
+      },
+      "value": {
+       "node": "Aggregation",
+       "kind": "count",
+       "arguments": [
+        {
+         "node": "AttributeReference",
+         "attribute": "vondst",
+         "subjectType": "Jutter"
+        }
+       ],
+       "elementType": "Vondst",
+       "sourceRole": {
+        "node": "RoleBinding",
+        "factType": "vondstaanmelding",
+        "role": "vondst"
+       },
+       "type": {
+        "node": "Number",
+        "whole": true,
+        "decimals": 0,
+        "sign": "nonNegative"
+       }
+      },
+      "initialisation": false,
+      "presentation": "calculation"
+     }
+    ]
+   },
+   {
+    "node": "Rule",
+    "name": "geborgen",
+    "versions": [
+     {
+      "validity": {
+       "node": "Validity"
+      },
+      "target": {
+       "node": "AttributeReference",
+       "attribute": "geborgen",
+       "subjectType": "Jutter"
+      },
+      "value": {
+       "node": "Aggregation",
+       "kind": "count",
+       "arguments": [
+        {
+         "node": "AttributeReference",
+         "attribute": "vondst",
+         "subjectType": "Jutter"
+        }
+       ],
+       "elementType": "Vondst",
+       "sourceRole": {
+        "node": "RoleBinding",
+        "factType": "vondstberging",
+        "role": "vondst"
+       },
+       "type": {
+        "node": "Number",
+        "whole": true,
+        "decimals": 0,
+        "sign": "nonNegative"
+       }
+      },
+      "initialisation": false,
+      "presentation": "calculation"
+     }
+    ]
+   }
+  ],
+  "dayKindDefinitions": [],
+  "objectCreations": [
+   {
+    "node": "ObjectCreation",
+    "name": "berg een vondst",
+    "versions": [
+     {
+      "createdType": "Vondst",
+      "subject": "Jutter",
+      "assignments": [],
+      "validity": {
+       "node": "Validity"
+      },
+      "connectingRole": {
+       "node": "RoleBinding",
+       "factType": "vondstberging",
+       "role": "vondst"
+      }
+     }
+    ]
+   }
+  ],
+  "allocations": [],
+  "consistencies": [],
+  "uniquenesses": [],
+  "factCreations": [],
+  "startPointDeterminations": [],
+  "ruleGroups": []
+ },
+ "diagnostics": []
+}

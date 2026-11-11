@@ -1,0 +1,45 @@
+{
+ "format": "uchar-case-v0",
+ "asOfDate": null,
+ "input": {
+  "instances": [
+   {
+    "label": "J1",
+    "objectType": "Jutter",
+    "attributes": {},
+    "roles": {},
+    "characteristics": []
+   },
+   {
+    "label": "V1",
+    "objectType": "Vondst",
+    "attributes": {},
+    "roles": {
+     "berger": [
+      "J1"
+     ]
+    },
+    "characteristics": []
+   }
+  ],
+  "parameters": {}
+ },
+ "expected": [
+  {
+   "kind": "attributeValue",
+   "label": "J1",
+   "attribute": "aangemeld",
+   "value": {
+    "number": "0"
+   }
+  },
+  {
+   "kind": "attributeValue",
+   "label": "J1",
+   "attribute": "geborgen",
+   "value": {
+    "number": "1"
+   }
+  }
+ ]
+}

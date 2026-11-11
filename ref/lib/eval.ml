@@ -817,25 +817,15 @@ let created_role env ~fact_type ~role =
           | false, false -> Value.fault "'%s' is not a role of '%s'" role fact_type)
       | _ -> Value.fault "created fact type '%s' does not have exactly two roles" fact_type)
 
-(* the storage keys a role's links may sit under, in read-preference
-   order: the case may key them by the role's plural or its name *)
-let role_keys (r : role_ref) = List.filter_map (fun k -> k) [ r.role_plural; r.role_identifier ]
-
-(* linked instances over [role] seen from [self]: the first non-empty
-   key wins — the same preference the creation writer (World.add_link)
-   uses, so created and case-supplied links are read identically *)
-let role_linked_instances world (self : World.instance) (role : role_ref) =
-  let labels =
-    List.fold_left
-      (fun acc k -> if acc = [] then World.left_side self k else acc)
-      [] (role_keys role)
-  in
-  List.map (World.get world) labels
+(* linked instances over [role] of [fact_type] seen from [self]: the links
+   of that relation only, whoever wrote them — the case or a creation *)
+let role_linked_instances world (self : World.instance) ~fact_type (role : role_ref) =
+  List.map (World.get world) (World.links self ~fact_type role)
 
 (* linked instances seen from [self] over the bound role: the relation a
    node reads is written on it, never derived (B12) *)
 let linked env world (self : World.instance) ~(binding : role_binding) =
-  role_linked_instances world self (bound_role env binding)
+  role_linked_instances world self ~fact_type:binding.rb_fact_type (bound_role env binding)
 
 (* ch. 3.4b / WF-102: the multi-step fold source. The folded set is the
    FLAT UNION over the path — walk step 1 from the subject, step 2 from
@@ -850,7 +840,7 @@ let linked env world (self : World.instance) ~(binding : role_binding) =
 let linked_path env world (self : World.instance) ~path =
   let step acc rb =
     let role = bound_role env rb in
-    List.concat_map (fun i -> role_linked_instances world i role) acc
+    List.concat_map (fun i -> role_linked_instances world i ~fact_type:rb.rb_fact_type role) acc
   in
   let reached = List.fold_left step [ self ] path in
   let seen = Hashtbl.create 16 in
@@ -913,8 +903,8 @@ let nav_target env world (self : World.instance) ~(bindings : role_binding list)
           Value.fault "the navigation reached %S, not the declared endpoint %S" cur.otype
             endpoint;
         Some cur
-    | (r : role_ref) :: rest -> (
-        match role_linked_instances world cur r with
+    | ((rb : role_binding), (r : role_ref)) :: rest -> (
+        match role_linked_instances world cur ~fact_type:rb.rb_fact_type r with
         | [] -> None
         | [ next ] -> walk next rest
         | _ ->
@@ -922,7 +912,7 @@ let nav_target env world (self : World.instance) ~(bindings : role_binding list)
               (Option.value r.role_identifier ~default:"?")
               cur.label)
   in
-  walk self roles
+  walk self (List.combine bindings roles)
 
 (* The object an attribute reference reads its member on (ch. 5.8): the
    subject itself, or the object its path reaches, None where a link on the
@@ -3048,7 +3038,7 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
       (* the reached type, taken from the DECLARATION: on the qualified form
          the time-dependence cross must fire whether or not a link is there *)
       let reached = Option.value role.role_object_type_name ~default:"" in
-      match role_linked_instances world self role with
+      match role_linked_instances world self ~fact_type:rb.rb_fact_type role with
       | [] -> (
           object_reached (Navigated_check c) None;
           match time_period with
@@ -3150,7 +3140,7 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
           "role check: the subject %S does not fill the role %S of %S, so no link of it can \
            hold the subject there"
           self.otype role fact_type;
-      let linked = role_linked_instances world self other in
+      let linked = role_linked_instances world self ~fact_type other in
       let linked =
         match counterpart_type with
         | None -> linked
@@ -4491,7 +4481,7 @@ let run_fact_creation env ~read world (fc : resolved_fact_creation) =
         if not fire then (w, false)
         else
           let hop insts rb =
-            List.concat_map (fun i -> role_linked_instances read i (bound_role env rb)) insts
+            List.concat_map (fun i -> role_linked_instances read i ~fact_type:rb.rb_fact_type (bound_role env rb)) insts
           in
           let mids =
             List.fold_left
@@ -4507,12 +4497,10 @@ let run_fact_creation env ~read world (fc : resolved_fact_creation) =
           List.fold_left
             (fun (w, ch) (t : World.instance) ->
               let w, c1 =
-                World.add_link w ~label:self.label ~keys:(role_keys objective_role)
-                  ~many:objective_role.role_many ~target:t.label
+                World.add_link w ~label:self.label ~fact_type:ftn ~role:objective_role ~target:t.label
               in
               let w, c2 =
-                World.add_link w ~label:t.label ~keys:(role_keys anchor_role)
-                  ~many:anchor_role.role_many ~target:self.label
+                World.add_link w ~label:t.label ~fact_type:ftn ~role:anchor_role ~target:self.label
               in
               (w, ch || c1 || c2))
             (w, false) targets)
@@ -4575,9 +4563,9 @@ let creation_pair env (oc : resolved_object_creation) =
    and the subject is linked over it in the input world *)
 let creation_blocked ~world0 pair (self : World.instance) =
   match pair with
-  | Some (_, new_role, _) when not new_role.role_many -> (
+  | Some (fact_type, new_role, _) when not new_role.role_many -> (
       match SMap.find_opt self.label world0.World.instances with
-      | Some i0 -> role_linked_instances world0 i0 new_role <> []
+      | Some i0 -> role_linked_instances world0 i0 ~fact_type new_role <> []
       | None -> false)
   | _ -> false
 
@@ -4703,14 +4691,10 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
             let w =
               match pair with
               | None -> w
-              | Some (_, new_role, subj_role) ->
+              | Some (fact_type, new_role, subj_role) ->
+                  let w, _ = World.add_link w ~label:self.label ~fact_type ~role:new_role ~target:label in
                   let w, _ =
-                    World.add_link w ~label:self.label ~keys:(role_keys new_role)
-                      ~many:new_role.role_many ~target:label
-                  in
-                  let w, _ =
-                    World.add_link w ~label ~keys:(role_keys subj_role)
-                      ~many:subj_role.role_many ~target:self.label
+                    World.add_link w ~label ~fact_type ~role:subj_role ~target:self.label
                   in
                   w
             in
@@ -5199,7 +5183,7 @@ let run_uniqueness env world (u : resolved_uniqueness) =
       match u.scope_role with
       | Some rb ->
           let role = bound_role env rb in
-          Some (fun i -> role_linked_instances world i role)
+          Some (fun i -> role_linked_instances world i ~fact_type:rb.rb_fact_type role)
       | None -> None
     in
     let keys = List.map (req "Source.keys entry") u.key_list in

@@ -403,7 +403,7 @@ let find_object_type (doc : document) name =
 let resolve_role_ft (doc : document) ~otype ~key =
   let hits =
     List.concat_map
-      (fun (_, (ft : fact_type_name)) ->
+      (fun (ftn, (ft : fact_type_name)) ->
         (* the declared filler type is an UPPER bound (ch. 2.6): an
            instance of S fills every role declared at a T with S ⊑ T *)
         let fills (r : role_ref) =
@@ -416,11 +416,11 @@ let resolve_role_ft (doc : document) ~otype ~key =
         in
         match ft.role_names with
         | [ a; b ] ->
-            (if fills a && matches b then [ (ft, b, a) ] else [])
-            @ if fills b && matches a then [ (ft, a, b) ] else []
+            (if fills a && matches b then [ (ftn, b, a) ] else [])
+            @ if fills b && matches a then [ (ftn, a, b) ] else []
         | [ r ] when ft.reciprocal ->
             (* reciprocal: the single role is its own opposite *)
-            if fills r && matches r then [ (ft, r, r) ] else []
+            if fills r && matches r then [ (ftn, r, r) ] else []
         | _ -> [])
       doc.fact_types
   in
@@ -442,9 +442,26 @@ let role_declared (doc : document) key =
         ft.role_names)
     doc.fact_types
 
+(* the role a key names: a role key as the case writes it on an instance of
+   [otype], or the key a loaded world stores a link under (World.link_key),
+   which names its fact type and role itself *)
 let resolve_role doc ~otype ~key =
-  let _, far, _ = resolve_role_ft doc ~otype ~key in
-  far
+  let stored =
+    List.concat_map
+      (fun (ftn, (ft : fact_type_name)) ->
+        List.filter
+          (fun (r : role_ref) ->
+            (r.role_identifier <> None || r.role_plural <> None)
+            && String.equal (World.link_key ~fact_type:ftn r) key)
+          ft.role_names)
+      doc.fact_types
+  in
+  match stored with
+  | [ r ] -> r
+  | _ :: _ -> fail "the link key %S names more than one role" key
+  | [] ->
+      let _, far, _ = resolve_role_ft doc ~otype ~key in
+      far
 
 (* The cells variant of an attribute input, or None for any other value form *)
 let cells_json j = match j with `Assoc [ ("cells", c) ] -> Some c | _ -> None
@@ -686,66 +703,58 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
    BOTH roles read it — a relation is symmetric, so the reader arriving
    from the side the case did not name reaches the same relation the
    naming side reaches, never a spuriously empty far side. The loader
-   therefore materialises the reverse leg of every supplied link, keyed
-   by the SISTER role (the role the supplying instance itself fills);
-   the reciprocal shape (§13.3.9.2, one role that is its own opposite)
-   is the special case in which sister and named role coincide, and the
-   pinned runtime's both-legs write is that case of the same law.
+   therefore materialises the reverse leg of every supplied link, under
+   the SISTER role (the role the supplying instance itself fills); the
+   reciprocal shape (§13.3.9.2, one role that is its own opposite) is the
+   special case in which sister and named role coincide, and the pinned
+   runtime's both-legs write is that case of the same law.
 
-   A separate pass over the finished input, reading the ORIGINAL links
+   [world] carries the links as the case keys them (a role's name or
+   plural); the result carries them under the key of their relation
+   (World.link_key), so two fact types whose roles share a name keep
+   their links apart. The supplied links are rekeyed first, then the
+   reverse legs are added in a separate pass over the ORIGINAL links
    only: the outcome cannot depend on the order instances appear in, and
    a materialised leg never breeds another. Idempotent — a case
    supplying both legs describes one relation, not two — and a
    conflicting reverse leg on a to-one sister role (WF-013) is a load
    error, never a silent overwrite. *)
 let materialise_relations (doc : document) (world : World.t) =
+  let rekeyed =
+    SMap.map
+      (fun (i : World.instance) ->
+        {
+          i with
+          left_side =
+            SMap.fold
+              (fun key targets acc ->
+                let fact_type, far, _ = resolve_role_ft doc ~otype:i.otype ~key in
+                SMap.add (World.link_key ~fact_type far) targets acc)
+              i.left_side SMap.empty;
+        })
+      world.instances
+  in
   SMap.fold
     (fun _ (i : World.instance) w ->
       SMap.fold
         (fun key targets w ->
-          let _, _, sister = resolve_role_ft doc ~otype:i.otype ~key in
-          (* the keys the sister role's links may sit under, in the same
-             ORDER Eval.role_keys and World.add_link use (plural first,
-             then name), so a materialised leg lands where every reader
-             looks. The PREDICATE is deliberately not identical: here
-             "the target already keys this role" is key PRESENCE
-             (SMap.mem), in add_link it is a NON-EMPTY value. They can
-             only diverge on a key that is present with an empty label
-             list, which no admissible case carries — load_instance
-             refuses it on a to-one role (exactly one label), and the
-             case schema's minItems of 1 refuses it on the rest (gate 4).
-             Were one to reach here anyway, both would still pick the
-             plural, the first key in the list; the readings differ only
-             if the SINGULAR key were the empty-but-present one. Stated
-             rather than assumed, and not worth a third predicate. *)
-          let sister_keys =
-            List.filter_map (fun k -> k) [ sister.role_plural; sister.role_identifier ]
-          in
+          let fact_type, _, sister = resolve_role_ft doc ~otype:i.otype ~key in
           List.fold_left
             (fun (w : World.t) t ->
               match SMap.find_opt t w.instances with
               | None -> w (* check_role_targets reports the unknown label *)
               | Some (ti : World.instance) ->
-                  let store_key =
-                    (* land the reverse leg where the target already keys
-                       the sister role, else under its first key *)
-                    match List.find_opt (fun k -> SMap.mem (norm k) ti.left_side) sister_keys with
-                    | Some k -> k
-                    | None -> ( match sister_keys with k :: _ -> k | [] -> key)
-                  in
-                  let existing =
-                    Option.value (SMap.find_opt (norm store_key) ti.left_side) ~default:[]
-                  in
+                  let existing = World.links ti ~fact_type sister in
                   if List.mem i.label existing then w
                   else if (not sister.role_many) && existing <> [] then
-                    (* [store_key] is the STORAGE spelling, which is the role's
-                       PLURAL where it declares one (the plural-then-name
-                       preference above) — so a to-one role can be reported
-                       under a plural key. That reads like a contradiction, so
-                       the declared name is spelled out whenever it differs. *)
+                    (* the role is spelled by its PLURAL where it declares
+                       one, so a to-one role can be reported under a plural.
+                       That reads like a contradiction, so the declared name
+                       is spelled out whenever it differs. *)
+                    let spelling = World.role_spelling sister in
                     let how =
                       match sister.role_identifier with
-                      | Some n when norm n <> norm store_key ->
+                      | Some n when norm n <> norm spelling ->
                           Printf.sprintf " (the storage spelling of the declared role %S)" n
                       | _ -> ""
                     in
@@ -754,18 +763,23 @@ let materialise_relations (doc : document) (world : World.t) =
                        %S -> %S conflicts"
                       key t
                       (String.concat ", " existing)
-                      store_key how i.label t
+                      spelling how i.label t
                   else
                     {
                       w with
                       instances =
                         SMap.add t
-                          { ti with left_side = SMap.add (norm store_key) (existing @ [ i.label ]) ti.left_side }
+                          {
+                            ti with
+                            left_side =
+                              SMap.add (World.link_key ~fact_type sister) (existing @ [ i.label ]) ti.left_side;
+                          }
                           w.instances;
                     })
             w targets)
         i.left_side w)
-    world.instances world
+    world.instances
+    { world with instances = rekeyed }
 
 let check_role_targets (doc : document) (world : World.t) =
   SMap.iter
@@ -824,13 +838,8 @@ let check_link_cycles (doc : document) (world : World.t) =
             | None -> invalid_arg ("Case.check_link_cycles: no role " ^ role ^ " of " ^ relation))
         | None -> invalid_arg ("Case.check_link_cycles: no fact type " ^ relation)
       in
-      (* the predecessor: the first key that holds links, as Eval reads them *)
-      let pred (i : World.instance) =
-        List.fold_left
-          (fun acc k -> if acc = [] then World.left_side i k else acc)
-          []
-          (List.filter_map (fun k -> k) [ reached.role_plural; reached.role_identifier ])
-      in
+      (* the predecessor: the link of the relation over the reached role *)
+      let pred (i : World.instance) = World.links i ~fact_type:declared reached in
       let state = Hashtbl.create 16 in
       let cycles = ref [] in
       let rec walk path label =
@@ -1125,8 +1134,10 @@ let load_file (doc : document) path : t =
       World.empty
       (List.mapi (fun n ij -> (n, ij)) (list_field ~at:"input" input "instances"))
   in
-  let world = materialise_relations doc world in
+  (* the targets are checked on the links as the case keys them; the reverse
+     legs materialised after are typed by construction *)
   check_role_targets doc world;
+  let world = materialise_relations doc world in
   check_link_cycles doc world;
   let params, param_tls =
     List.fold_left

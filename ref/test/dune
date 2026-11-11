@@ -112,5 +112,9 @@
   (glob_files fixtures/sum-per-period-fallback-order/*.json)
   ; a clip by a comparison of a text and of a date timeline against a leeg bound
   (glob_files fixtures/clip-comparison-static-type/text/*.json)
-  (glob_files fixtures/clip-comparison-static-type/date/*.json))
+  (glob_files fixtures/clip-comparison-static-type/date/*.json)
+  ; two fact types whose roles share a name, each link read over its own relation
+  (glob_files fixtures/links-per-relation/case-input/*.json)
+  (glob_files fixtures/links-per-relation/created-link/*.json)
+  (glob_files fixtures/links-per-relation/creation-blocked/*.json))
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

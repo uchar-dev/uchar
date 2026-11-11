@@ -1322,6 +1322,15 @@ let inst label otype attrs : World.instance =
     tls = World.SMap.empty; ctls = World.SMap.empty;
   }
 
+(* a link as a case keys it on an instance of [otype] (a role's name or
+   plural), added to [m] under the key of its relation, as the case reader
+   stores it *)
+let case_link (doc : Ir_v0.Ast.document) ~otype key labels m =
+  let fact_type, far, _ = Case.resolve_role_ft doc ~otype ~key in
+  World.SMap.add (World.link_key ~fact_type far) labels m
+
+let case_links doc ~otype l = List.fold_left (fun m (k, v) -> case_link doc ~otype k v m) World.SMap.empty l
+
 (* Every version record carries the wire pointer the loader sets on it
    (`/rules/<list>/<f>/versions/<v>`), and ref finds a form's stratum by that
    pointer. A hand-built document leaves the pointers empty; [env_of] fills
@@ -3818,7 +3827,7 @@ let () =
                            tls = World.SMap.add "bewaartarief" segs World.SMap.empty } in
   let jutter labels =
     { (inst "j1" "Jutter" []) with
-      left_side = World.SMap.add "vondsten" labels World.SMap.empty }
+      left_side = case_link doc ~otype:"Jutter" "vondsten" labels World.SMap.empty }
   in
   let world_of j members = List.fold_left World.add_instance (World.add_instance World.empty j) members in
   let v1 = tl_of [ seg "2024-01-01" "2025-01-01" (num_with_unit eur_per_mnd "10") ] "v1" in
@@ -5570,7 +5579,7 @@ let () =
          (World.add_instance
             (World.add_instance World.empty
                { (inst "j1" "Jutter" []) with
-                 left_side = World.SMap.add "vondsten" [ "v1"; "v2" ] World.SMap.empty })
+                 left_side = case_link doc ~otype:"Jutter" "vondsten" [ "v1"; "v2" ] World.SMap.empty })
             (inst "j2" "Jutter" []))
          (inst "v1" "Vondst" [ ("gewicht", n "2.50") ]))
       (inst "v2" "Vondst" [])
@@ -5648,10 +5657,9 @@ let () =
   in
   let deep = fold_node Minimum "inhoudsgewicht" "Kist" path3 None in
   let env = env_of doc in
-  let left_side l = List.fold_left (fun m (k, v) -> World.SMap.add k v m) World.SMap.empty l in
   let i label otn proportion l =
     { (inst label otn (match proportion with None -> [] | Some (a, g) -> [ (a, n g) ])) with
-      World.left_side = left_side l }
+      World.left_side = case_links doc ~otype:otn l }
   in
   let world_state insts = List.fold_left World.add_instance World.empty insts in
   let ev w label e = Eval.eval_expr env w (World.get w label) ~err:no_err e in
@@ -5830,10 +5838,9 @@ let () =
         source_path = Some [ rb "bemanning" "boot"; rb "bootvangst" "vondst" ]; anchor = None }
   in
   let env = env_of doc in
-  let left_side l = List.fold_left (fun m (k, v) -> World.SMap.add k v m) World.SMap.empty l in
   let i label otn proportion l =
     { (inst label otn (match proportion with None -> [] | Some g -> [ ("gewicht", n g) ])) with
-      World.left_side = left_side l }
+      World.left_side = case_links doc ~otype:otn l }
   in
   let w =
     List.fold_left World.add_instance World.empty
@@ -5938,9 +5945,8 @@ let () =
         right_side = Some (litv lex num2kg); time_period = None; source_name = None }
   in
   let env = env_of doc in
-  let left_side l = List.fold_left (fun m (k, v) -> World.SMap.add k v m) World.SMap.empty l in
   let jutter label vondsten =
-    { (inst label "Jutter" []) with World.left_side = left_side [ ("vondsten", vondsten) ] }
+    { (inst label "Jutter" []) with World.left_side = case_links doc ~otype:"Jutter" [ ("vondsten", vondsten) ] }
   in
   let world_state insts = List.fold_left World.add_instance World.empty insts in
   let w =
@@ -5995,10 +6001,10 @@ let () =
   let over_path = fold_node Filled_count [ set_source "gewicht" ] None trail in
   let boot label vondsten =
     { (inst label "Boot" []) with
-      World.left_side = left_side [ ("geborgen vondsten", vondsten) ] }
+      World.left_side = case_links doc ~otype:"Boot" [ ("geborgen vondsten", vondsten) ] }
   in
   let schipper label boten =
-    { (inst label "Jutter" []) with World.left_side = left_side [ ("gevoerde boten", boten) ] }
+    { (inst label "Jutter" []) with World.left_side = case_links doc ~otype:"Jutter" [ ("gevoerde boten", boten) ] }
   in
   let vondsten =
     [ inst "V1" "Vondst" [ ("gewicht", n "3.00") ]; inst "V2" "Vondst" [];
@@ -6202,8 +6208,7 @@ let () =
         branch_node "vondstaanmelding" "aangemelde vondst" ]
   in
   let env = env_of doc in
-  let left_side l = List.fold_left (fun m (k, v) -> World.SMap.add k v m) World.SMap.empty l in
-  let jutter label l = { (inst label "Jutter" []) with World.left_side = left_side l } in
+  let jutter label l = { (inst label "Jutter" []) with World.left_side = case_links doc ~otype:"Jutter" l } in
   let vondst label characteristics = { (inst label "Vondst" []) with World.chars = characteristics } in
   let world_state insts = List.fold_left World.add_instance World.empty insts in
   let ev w label e = Eval.eval_expr env w (World.get w label) ~err:no_err e in
@@ -7012,9 +7017,9 @@ let () =
       (World.add_instance
          (World.add_instance World.empty
             { (inst "j1" "Jutter" [ ("strandtegoed", n "10") ]) with
-              left_side = World.SMap.add "strandmaat" [ "j2" ] World.SMap.empty })
+              left_side = case_link doc ~otype:"Jutter" "strandmaat" [ "j2" ] World.SMap.empty })
          { (inst "j2" "Jutter" [ ("strandtegoed", n "25") ]) with
-           left_side = World.SMap.add "strandmaat" [ "j1" ] World.SMap.empty })
+           left_side = case_link doc ~otype:"Jutter" "strandmaat" [ "j1" ] World.SMap.empty })
       (inst "j3" "Jutter" [ ("strandtegoed", n "7") ])
   in
   let ev label e = Eval.eval_expr env w (World.get w label) ~err:no_err e in
@@ -7089,8 +7094,7 @@ let () =
     List.fold_left World.add_instance World.empty
       [ { (inst "j1" "Jutter" []) with
           left_side =
-            World.SMap.add "duinkavel" [ "k1"; "k2"; "k3" ]
-              (World.SMap.add "vaten" [ "t1"; "t2" ] World.SMap.empty) };
+            case_links doc ~otype:"Jutter" [ ("duinkavel", [ "k1"; "k2"; "k3" ]); ("vaten", [ "t1"; "t2" ]) ] };
         inst "j2" "Jutter" [];
         inst "k1" "Duinkavel" []; inst "k2" "Duinkavel" []; inst "k3" "Duinkavel" [];
         inst "t1" "Vat" []; inst "t2" "Vat" [] ]
@@ -7350,7 +7354,7 @@ let () =
       (World.add_instance
          (World.add_instance World.empty (inst "w1" "Wachtpost" []))
          { (inst "j1" "Jutter" []) with
-           left_side = World.SMap.add "toegewezen wachtpost" [ "w1" ] World.SMap.empty })
+           left_side = case_link doc ~otype:"Jutter" "toegewezen wachtpost" [ "w1" ] World.SMap.empty })
       (inst "j2" "Jutter" [])
   in
   let role_check negated : Ir_v0.Ast.condition_expr =
@@ -7397,11 +7401,11 @@ let () =
   let env = env_of doc_sj in
   let post label wachters =
     { (inst label "Wachtpost" []) with
-      left_side = World.SMap.add "wachtjutters" wachters World.SMap.empty }
+      left_side = case_link doc_sj ~otype:"Wachtpost" "wachtjutters" wachters World.SMap.empty }
   in
   let jutter_op label otype post =
     { (inst label otype []) with
-      left_side = World.SMap.add "toegewezen wachtpost" [ post ] World.SMap.empty }
+      left_side = case_link doc_sj ~otype "toegewezen wachtpost" [ post ] World.SMap.empty }
   in
   let world_state insts = List.fold_left World.add_instance World.empty insts in
   let distant ?counterpart_type role negated : Ir_v0.Ast.condition_expr =
@@ -7575,19 +7579,18 @@ let () =
             join_role = rb "seinvoering" "sein"; fc_pointer = "" } ];
     }
   in
-  let left_side l = List.fold_left (fun m (k, v) -> World.SMap.add k v m) World.SMap.empty l in
   let w =
     List.fold_left World.add_instance World.empty
       [ { (inst "v1" "Kustvak" []) with chars = [ "gehesen" ];
-          left_side = left_side [ ("posten", [ "p1" ]) ] };
+          left_side = case_links (doc_of None) ~otype:"Kustvak" [ ("posten", [ "p1" ]) ] };
         { (inst "p1" "Post" []) with
-          left_side = left_side [ ("kustvak", [ "v1" ]); ("seinen", [ "s1"; "s2" ]) ] };
+          left_side = case_links (doc_of None) ~otype:"Post" [ ("kustvak", [ "v1" ]); ("seinen", [ "s1"; "s2" ]) ] };
         { (inst "s1" "Sein" []) with chars = [ "gehesen" ] };
         inst "s2" "Sein" [] ]
   in
   let vakseinen holder =
     let final = Eval.evaluate (env_of (doc_of holder)) w in
-    List.length (Eval.role_linked_instances final (World.get final "v1") vaksein_role)
+    List.length (Eval.role_linked_instances final (World.get final "v1") ~fact_type:"vakbeseining" vaksein_role)
   in
   check "WV-5.8b-B-doelgastheer-filtert-de-doelen" (vakseinen (Some "Sein") = 1);
   check "WV-5.8b-B-ankergastheer-poort-de-anker" (vakseinen (Some "Kustvak") = 2);
@@ -7616,7 +7619,7 @@ let () =
   in
   let super_vakseinen host =
     let final = Eval.evaluate (env_of (super_doc host)) w in
-    List.length (Eval.role_linked_instances final (World.get final "v1") vaksein_role)
+    List.length (Eval.role_linked_instances final (World.get final "v1") ~fact_type:"vakbeseining" vaksein_role)
   in
   check "WV-5.8b-B-supertype-gastheer-leest-het-doel" (super_vakseinen (Some "Baken") = 1);
   (* --- the two named roles resolve as WF-028 resolves them ---
@@ -7743,7 +7746,7 @@ let () =
     in
     let s1 =
       { (inst "S1" "Schuit" []) with
-        left_side = (if link then World.SMap.add "werf" [ "W1" ] World.SMap.empty else World.SMap.empty) }
+        left_side = (if link then case_link doc ~otype:"Schuit" "werf" [ "W1" ] World.SMap.empty else World.SMap.empty) }
     in
     List.fold_left World.add_instance World.empty [ w1; s1 ]
   in
@@ -8277,7 +8280,7 @@ let () =
   let members_world m1 m2 =
     List.fold_left World.add_instance World.empty
       [ { (inst "v" "Vangst" []) with
-          left_side = World.SMap.add "deelvangsten" [ "d1"; "d2" ] World.SMap.empty };
+          left_side = case_link members_doc ~otype:"Vangst" "deelvangsten" [ "d1"; "d2" ] World.SMap.empty };
         inst "d1" "Deelvangst" [ ("merk", n m1); ("bedrag", n "1") ];
         inst "d2" "Deelvangst" [ ("merk", n m2); ("bedrag", n "1") ] ]
   in
@@ -8871,7 +8874,7 @@ let kv_world member_list =
       World.left_side =
         (match member_list with
         | [] -> World.SMap.empty
-        | _ -> World.SMap.add "bergers" (List.map fst member_list) World.SMap.empty) }
+        | _ -> case_link kv_doc ~otype:"Bergingsploeg" "bergers" (List.map fst member_list) World.SMap.empty) }
   in
   List.fold_left World.add_instance World.empty (p1 :: bergers)
 
@@ -9296,7 +9299,7 @@ let () =
     let w1 = with_timeline "havengeld" tl (inst "W1" "Werf" []) in
     let s1 =
       { (inst "S1" "Schuit" []) with
-        left_side = (if link then World.SMap.add "werf" [ "W1" ] World.SMap.empty else World.SMap.empty) }
+        left_side = (if link then case_link doc ~otype:"Schuit" "werf" [ "W1" ] World.SMap.empty else World.SMap.empty) }
     in
     let w = List.fold_left World.add_instance World.empty [ w1; s1 ] in
     Eval.eval_cond (env_of doc) w (World.get w "S1") ~err:no_err
@@ -9344,9 +9347,9 @@ let () =
     let w1 =
       { (inst "W1" "Werf" []) with
         left_side =
-          (if haven then World.SMap.add "thuishaven" [ "H1" ] World.SMap.empty else World.SMap.empty) }
+          (if haven then case_link chain_doc ~otype:"Werf" "thuishaven" [ "H1" ] World.SMap.empty else World.SMap.empty) }
     in
-    let s1 = { (inst "S1" "Schuit" []) with left_side = World.SMap.add "werf" [ "W1" ] World.SMap.empty } in
+    let s1 = { (inst "S1" "Schuit" []) with left_side = case_link chain_doc ~otype:"Schuit" "werf" [ "W1" ] World.SMap.empty } in
     let w = List.fold_left World.add_instance World.empty [ h1; w1; s1 ] in
     Eval.eval_cond (env_of chain_doc) w (World.get w "S1") ~err:no_err
       (test ?variety havengeld_thuishaven)
@@ -11848,7 +11851,10 @@ let () =
     (fun violations c env depth ->
       check "WV-6.4-n-verifier-clean" (violations = []);
       check "WV-6.4-n-back-link-under-the-owner-role"
-        (World.left_side (World.get c.world "V1") "vergunning" = [ "V2" ]);
+        (World.links (World.get c.world "V1") ~fact_type:"vorige vergunning"
+           { role_identifier = Some "vergunning"; role_object_type_name = Some "Vergunning"; role_plural = None;
+             role_many = false }
+        = [ "V2" ]);
       List.iter
         (fun (label, want) -> expect_depth ("WV-6.4-n-depth-" ^ label) depth label want)
         [ ("V1", 0); ("T1", 0); ("T2", 0); ("V2", 1); ("T3", 1) ];
@@ -13989,6 +13995,28 @@ let () =
       plays ~ident:("WV-1.2-knip-statisch-type-" ^ kind) ~ir:(read (dir ^ kind ^ "/ir.json"))
         ~case_data:(read (dir ^ kind ^ "/case.json")) (fun _ -> ()))
     [ "text"; "date" ]
+
+(* WV-5.7a-links-per-relatie: two fact types, vondstaanmelding and
+   vondstberging, relate Jutter and Vondst, and the role of the Vondst is
+   "vondst" in both. A link belongs to its relation (ch. 5.7a) and a count
+   reads the one relation its sourceRole names (ch. 3.4a):
+   - case-input: the case spells the links from the Vondsten (aanmelder,
+     berger), so their reverse legs on J1 carry one role name for two
+     relations; J1 counts 2 aanmeldingen and 3 bergingen;
+   - created-link: an object creation links J1 over vondstberging; J1, with no
+     aanmelding, counts 0 aanmeldingen and 1 berging;
+   - creation-blocked: the creation over vondstberging is 1:1 (its vondst
+     to-one); the input link of J1 over vondstaanmelding does not block it
+     (case1), the one over vondstberging does (case2) *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/links-per-relation/" in
+  List.iter
+    (fun (d, case_file) ->
+      plays ~ident:("WV-5.7a-links-per-relatie-" ^ d ^ "-" ^ case_file) ~ir:(read (dir ^ d ^ "/ir.json"))
+        ~case_data:(read (dir ^ d ^ "/" ^ case_file ^ ".json")) (fun _ -> ()))
+    [ ("case-input", "case"); ("created-link", "case"); ("creation-blocked", "case1-andere-relatie");
+      ("creation-blocked", "case2-eigen-relatie") ]
 
 let () =
   if !failures > 0 then begin

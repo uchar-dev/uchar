@@ -17,7 +17,7 @@ type instance = {
   otype : string; (* declared object-type name, as in the document *)
   attrs : Value.t SMap.t; (* keyed by norm name; absent = empty *)
   chars : SMap.key list; (* characteristics currently true (norm names) *)
-  left_side : string list SMap.t; (* norm role name -> linked labels *)
+  left_side : string list SMap.t; (* link key (fact type and role, [link_key]) -> linked labels *)
   tls : Timeline.t SMap.t;
       (* full case-supplied timelines of temporal attributes (norm name);
          disjoint from [attrs] — a temporal attribute carries either the
@@ -150,7 +150,26 @@ let cell_of name m = String.starts_with ~prefix:(norm name ^ "[") (norm m)
 
 let attr i name = Option.value (SMap.find_opt (norm name) i.attrs) ~default:Value.Empty
 let has_char i name = List.mem (norm name) i.chars
-let left_side i role_key = Option.value (SMap.find_opt (norm role_key) i.left_side) ~default:[]
+
+(* the key the links over one role of one fact type are stored under. A link
+   belongs to its fact type (ch. 5.7a), so two fact types whose roles carry
+   one name keep their links apart; a reader names the relation it reads
+   (ch. 3.4a) and sees that relation only *)
+let link_key ~fact_type (r : Ir_v0.Ast.role_ref) =
+  let role =
+    match (r.role_identifier, r.role_plural) with
+    | Some n, _ -> n
+    | None, Some m -> m
+    | None, None -> Value.fault "a role of %S without a name" fact_type
+  in
+  norm fact_type ^ "\x1f" ^ norm role
+
+(* the labels linked to [i] over [role] of [fact_type] *)
+let links i ~fact_type role = Option.value (SMap.find_opt (link_key ~fact_type role) i.left_side) ~default:[]
+
+(* the spelling of a role in a sentence: its plural where it declares one *)
+let role_spelling (r : Ir_v0.Ast.role_ref) =
+  match (r.role_plural, r.role_identifier) with Some m, _ -> m | None, Some n -> n | None, None -> "?"
 let timeline i name = SMap.find_opt (norm name) i.tls
 
 (* --- the write boundary (ch. 2.4) -------------------------------------- *)
@@ -447,25 +466,18 @@ let release_char_timeline w ~form ~label ~char =
   | _ -> (w, false)
 
 (* role links are naturally idempotent (ch. 5.5): linking an
-   already-present target is a no-op. [keys] is the read-preference
-   order (the role's plural, then its name — Eval.role_keys): the write
-   lands where a reader will look — an already-populated key first,
-   else the first key. A second distinct filler on a to-one role is a
-   fault, never a silent overwrite. *)
-let add_link w ~label ~keys ~many ~target =
+   already-present target is a no-op. A second distinct filler on a to-one
+   role is a fault, never a silent overwrite. *)
+let add_link w ~label ~fact_type ~(role : Ir_v0.Ast.role_ref) ~target =
   let i = get w label in
-  let key =
-    match List.find_opt (fun k -> left_side i k <> []) keys with
-    | Some k -> k
-    | None -> ( match keys with k :: _ -> k | [] -> Value.fault "role without a name")
-  in
-  let existing = left_side i key in
+  let existing = links i ~fact_type role in
+  let spelling = role_spelling role in
   if List.mem target existing then (w, false)
-  else if (not many) && existing <> [] then
-    Value.faultc ~params:[ ("role", key); ("label", label); ("filler", (String.concat ", " existing)) ] "EF-017" "to-one role %S on %S already links %s; a second filler is ill-typed (ch. 5.5)"
-      key label
+  else if (not role.role_many) && existing <> [] then
+    Value.faultc ~params:[ ("role", spelling); ("label", label); ("filler", (String.concat ", " existing)) ] "EF-017" "to-one role %S on %S already links %s; a second filler is ill-typed (ch. 5.5)"
+      spelling label
       (String.concat ", " existing)
-  else (update w { i with left_side = SMap.add (norm key) (existing @ [ target ]) i.left_side }, true)
+  else (update w { i with left_side = SMap.add (link_key ~fact_type role) (existing @ [ target ]) i.left_side }, true)
 
 (* a §9.5 deposit of the evaluation under way *)
 let insert_error w ~rule ~subject ~code = { w with evaluating = (rule, subject, code) :: w.evaluating }
