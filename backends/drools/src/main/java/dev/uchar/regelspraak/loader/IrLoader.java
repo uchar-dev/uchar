@@ -405,7 +405,7 @@ public final class IrLoader {
                 designations(n, p, RegelSpraakModel.Designatable.ruleGroup(text(n, "name")));
             }
             m.ruleGroups.add(new ResolvedRuleGroup(
-                    text(n, "name"), bool(n, "recursive"), stringList(n.get("members")), source(n), sourceLine(n)));
+                    text(n, "name"), bool(n, "recursive"), stringList(n, "members"), source(n), sourceLine(n)));
         });
         list(root, "", "diagnostics", (p, n) -> m.diagnostics.add(diagnostic(p, n)));
         // §6.1 (Phase 4) the prioritized-defaults extension, parsed AFTER the declarations so a default's
@@ -1087,7 +1087,7 @@ public final class IrLoader {
         if (domainKind.equals("Enumeration")) {
             if (!dt.get("values").isArray())
                 throw new DocumentError(dp + "/values", "expected an array, got " + shortQuote(dt.get("values")));
-            List<String> values = stringList(dt.get("values"));
+            List<String> values = stringList(dt, "values");
             valueDesignations(dt, dp, name, values);
             return new Datatype.Enumeration(name, values);
         }
@@ -1290,7 +1290,7 @@ public final class IrLoader {
     private Dimension dimension(String path, JsonNode n) {
         fields(n, path, "Dimension", List.of("node", "name", "labels"), List.of("plural", "preposition"));
         return new Dimension(name(n, path, "name"), text(n, "plural"),
-                text(n, "preposition"), stringList(n.get("labels")));
+                text(n, "preposition"), stringList(n, "labels"));
     }
 
     /** IR-SPEC ch. 2.8: a named timeline. Its granularity is the one field of the family that admits a null. Its
@@ -1361,7 +1361,7 @@ public final class IrLoader {
             }
             case "Text" -> new Datatype.Text();
             case "Boolean" -> new Datatype.BooleanType();
-            case "Enumeration" -> new Datatype.Enumeration(text(n, "domain"), stringList(n.get("values")));
+            case "Enumeration" -> new Datatype.Enumeration(text(n, "domain"), stringList(n, "values"));
             // repeated whole at a use site, with its domain's name (IR-SPEC ch. 2.4)
             case "SumType" -> new Datatype.SumType(textAt(n, path, "domain"), constructors(n, path));
             // the members of IR-SPEC ch. 2.4's datatype union that have no record here: a form this backend does not
@@ -1594,7 +1594,7 @@ public final class IrLoader {
             }
             case "DimensionCellRead" -> {
                 yield new Expr.DimensionCellRead((Expr.AttributeReference) expr(nodeField(n, "attribute")),
-                        stringList(n.get("labels")),
+                        stringList(n, "labels"),
                         source(n));
             }
             case "ParameterReference" -> {
@@ -1814,7 +1814,7 @@ public final class IrLoader {
             return head + " but no source operand: an instance fold ranges over a written source";
         if (arguments.size() != 1) return null;
         boolean count = aggregationKind.equals("count") || aggregationKind.equals("filledCount");
-        String operandKind = text(arguments.get(0), "node");
+        String operandKind = peekKind(arguments.get(0));
         if (operandKind == null || operandKind.isEmpty() || operandKind.equals("AttributeReference")) return null;
         if (operandKind.equals("ListLiteral"))
             return count ? head + " and a ListLiteral operand: a listed value is no source of instances" : null;
@@ -1839,7 +1839,7 @@ public final class IrLoader {
     static String unionSourceRefusal(Expr.FunctionKind fk, String elementType, JsonNode n) {
         JsonNode arguments = n.get("arguments");
         if (fk != Expr.FunctionKind.AANTAL || arguments == null || !arguments.isArray() || arguments.size() != 1
-                || !"InstanceSetUnion".equals(text(arguments.get(0), "node"))) return null;
+                || !"InstanceSetUnion".equals(peekKind(arguments.get(0)))) return null;
         List<String> fields = new ArrayList<>();
         if (elementType != null) fields.add("elementType");
         if (n.has("sourceRole")) fields.add("sourceRole");
@@ -2022,7 +2022,7 @@ public final class IrLoader {
         JsonNode args = n.get("arguments");
         if (args == null || !args.isArray() || args.size() != 1) return false;
         JsonNode a = args.get(0);
-        return "AttributeReference".equals(text(a, "node")) && !a.has("path");
+        return "AttributeReference".equals(peekKind(a)) && !a.has("path");
     }
 
     /** The set source of a single-argument fold that carries a range (IR-SPEC ch. 4.3): what its name reads on the
@@ -2205,7 +2205,7 @@ public final class IrLoader {
     private Expr.DimensionSelection dimensionSelection(JsonNode n) {
         if (n == null || n.isNull()) return null;
         fields(n, pathOf(n), "DimensionSelection", List.of("node", "dimension", "labels"), List.of("source"));
-        return new Expr.DimensionSelection(text(n, "dimension"), stringList(n.get("labels")), source(n));
+        return new Expr.DimensionSelection(text(n, "dimension"), stringList(n, "labels"), source(n));
     }
 
     // --- Conditie ----------------------------------------------------------
@@ -2581,7 +2581,7 @@ public final class IrLoader {
                 // IR-SPEC ch. 3.3: a member with labels writes one cell of a dimensioned attribute of the made object;
                 // the model carries the cell, and the build refuses it
                 tk.add(new ResolvedObjectCreation.MemberAssignment(text(t, "member"), expr(nodeField(t, "value")),
-                        bool(t, "characteristic"), t.has("labels") ? stringList(t.get("labels")) : null));
+                        bool(t, "characteristic"), t.has("labels") ? stringList(t, "labels") : null));
             });
             ResolvedObjectCreation oc = new ResolvedObjectCreation(v.name(), ot(textOrNull(k, p, "createdType")),
                     ot(textOrNull(k, p, "subject")), tk, condition(nodeField(k, "condition")), validity(k, p));
@@ -2885,24 +2885,52 @@ public final class IrLoader {
         return b == null ? 0 : b.line();
     }
 
-    private static String text(JsonNode n, String field) {
-        JsonNode v = n.get(field);
-        return v == null || v.isNull() ? null : v.asText();
+    /** The discriminator of {@code n}, looked at before {@link #nodeKind} reads it: null where {@code n} carries none or
+     *  one that is no string, which {@link #nodeKind} then refuses. */
+    private static String peekKind(JsonNode n) {
+        JsonNode v = n.get("node");
+        return v == null || !v.isTextual() ? null : v.asText();
     }
 
-    private static boolean bool(JsonNode n, String field) {
+    // The readers below take a field whose absence {@link #fields} has already judged: absent is none (null, false, 0,
+    // an empty list). A value of another JSON type is refused at the field's pointer, since asText, asBoolean and asInt
+    // would read "3" as 3, "true" as true and 4294967297 as 1.
+
+    /** A string field, or null where it is absent or null (the schema's string-or-null). */
+    private String text(JsonNode n, String field) {
         JsonNode v = n.get(field);
-        return v != null && v.asBoolean();
+        if (v == null || v.isNull()) return null;
+        if (!v.isTextual()) throw new DocumentError(pathOf(n) + "/" + field, "expected a string, got " + shortQuote(v));
+        return v.asText();
     }
 
-    private static int intOf(JsonNode n, String field) {
+    /** A boolean field, false where it is absent; the schema admits no null for a boolean. */
+    private boolean bool(JsonNode n, String field) {
         JsonNode v = n.get(field);
-        return v == null || v.isNull() ? 0 : v.asInt();
+        if (v == null) return false;
+        if (!v.isBoolean()) throw new DocumentError(pathOf(n) + "/" + field, "expected a boolean, got " + shortQuote(v));
+        return v.booleanValue();
     }
 
-    private static List<String> stringList(JsonNode n) {
+    /** An integer field, 0 where it is absent, read as {@link #whole} reads one: an integer beyond a Java int is a
+     *  form not carried, named {@code <node>.<field>}. */
+    private int intOf(JsonNode n, String field) {
+        return n.has(field) ? whole(n, pathOf(n), field, n.path("node").asText() + "." + field) : 0;
+    }
+
+    /** A list of strings, empty where the field is absent. A null entry, which the schema admits, keeps its reading
+     *  as the text "null". */
+    private List<String> stringList(JsonNode n, String field) {
         List<String> out = new ArrayList<>();
-        if (n != null && n.isArray()) n.forEach(e -> out.add(e.asText()));
+        JsonNode a = n.get(field);
+        if (a == null) return out;
+        String p = pathOf(n) + "/" + field;
+        if (!a.isArray()) throw new DocumentError(p, "expected an array, got " + shortQuote(a));
+        for (int i = 0; i < a.size(); i++) {
+            JsonNode e = a.get(i);
+            if (!e.isTextual() && !e.isNull()) throw new DocumentError(p + "/" + i, "expected a string, got " + shortQuote(e));
+            out.add(e.asText());
+        }
         return out;
     }
 
@@ -2920,11 +2948,12 @@ public final class IrLoader {
         return c;
     }
 
-    /** Each node of the list at {@code fieldName} of {@code parent}, in order; an absent list is empty, and an entry that is
-     *  not an object is refused at its own pointer (see {@link #nodeField}). */
+    /** Each node of the list at {@code fieldName} of {@code parent}, in order; an absent list is empty, a value that is not
+     *  an array is refused at the field's pointer, and an entry that is not an object at its own (see {@link #nodeField}). */
     private void elements(JsonNode parent, String fieldName, java.util.function.Consumer<JsonNode> f) {
         JsonNode a = parent.get(fieldName);
-        if (a == null || !a.isArray()) return;
+        if (a == null) return;
+        if (!a.isArray()) throw new DocumentError(pathOf(parent) + "/" + fieldName, "expected an array, got " + shortQuote(a));
         for (int i = 0; i < a.size(); i++) {
             JsonNode e = a.get(i);
             if (!e.isObject()) throw new DocumentError(pathOf(a) + "/" + i, "expected a JSON object, got " + shortQuote(e));
