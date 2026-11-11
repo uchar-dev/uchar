@@ -106,7 +106,7 @@ Datalog/ASP core.
 | Source | What we take |
 |---|---|
 | **LLVM (LangRef)** | The spec regime: one normative document per construct (syntax, well-formedness, semantics) separate from any implementation; isomorphic in-memory and textual forms with guaranteed round-trip; a verifier as a separate pass that enforces invariants mechanically; golden tests (FileCheck-style) on the IR form itself. |
-| **MLIR** | Progressive lowering via dialects: an upper dialect close to RegelSpraak semantics (roles, fact types, timelines, Dutch names) and a small neutral core IR that backends attach to, with the lowering specified and tested rather than living as transpiler-internal knowledge. |
+| **MLIR** | Progressive lowering via dialects: an upper dialect close to RegelSpraak semantics (roles, fact types, timelines, Dutch names) and a small neutral core IR that backends attach to, with the lowering specified and tested rather than living as transpiler-internal knowledge. **Amended (2026-11-11, maintainer):** uchar takes this lesson as the core/presentation split of §4: a presentation field is not lowered but tested by removing or exchanging it (gate 13, IR-SPEC ch. 10). |
 | **Catala** (INRIA, ICFP 2021) | The closest existing design in our domain: a language for tax law that desugars to a small, formally specified *default calculus* — exceptions and priority as first-class defeasible defaults, not a salience trick. Also: literate programming interweaving rule text and statute text (our `// Bron:` need), and multiple verified backends from one core. |
 | **Datalog with stratified negation / ASP-Core-2** | A semantic anchor: define the meaning of the core IR by translation into a logic with model-theoretic semantics. Stratification becomes an IR well-formedness condition instead of a Drools agenda trick, and a Clingo backend becomes nearly a pretty-printer. |
 | **LegalRuleML** (OASIS) | Not the XML vehicle, but the requirements list: defeasibility with override relations, multiple time axes, jurisdiction. Standing test: "can our IR express what LegalRuleML can?" |
@@ -142,6 +142,15 @@ language-neutral, and engine-neutral. This also settles two open questions
 from the review: the metamodel (node names, structure) becomes
 language-independent, while domain names (object types, attributes, roles)
 remain whatever the source declares — the core is agnostic about them.
+**Amended (2026-11-11, maintainer):** in the specification the split is
+core and presentation (IR-SPEC conventions, ch. 10), not dialect and core.
+Core is what IR-SPEC and RUNTIME-SEMANTICS give a meaning, whatever source
+language it comes from: the date library, the whole-period qualifier, the
+dimension forms and the recursive rule group come from RegelSpraak and are
+core, because every executor has to evaluate them. Presentation records how
+a source spelled something; no executor's answer depends on it, and gate 13
+shows that per field. Nothing lowers from a dialect to the core: a
+presentation field is dropped or ignored, not translated.
 
 **Adopt, don't invent, the defeasibility model.** Catala's default calculus
 (prioritised defaults with conflict detection) is formally worked out and
@@ -342,7 +351,9 @@ own parity zone, `toka/`, since 2026-08-27 (§9 (10)).
 Take the dialect/core split as an explicit design decision in the spec now,
 even if the mechanical separation lands later: mark per node whether it
 belongs to the RegelSpraak dialect or the neutral core, and specify the
-lowering between them as a testable step.
+lowering between them as a testable step. **Amended (2026-11-11,
+maintainer):** carried out as core and presentation (§4): IR-SPEC ch. 10
+lists every presentation field with its test in gate 13.
 
 Alongside the spec: `RUNTIME-SEMANTICS.md` capturing empty-value discipline
 (as an open design question with its cases), §6 arithmetic and rounding,
@@ -499,6 +510,10 @@ Only now: an OCaml backend plugin for the Catala compiler, attaching at the
 default-calculus level (all sugar gone, types known, exception trees
 normalised — parsing Catala ourselves would duplicate their desugaring),
 emitting our IR JSON. It lands on the *core* IR, not the RegelSpraak dialect.
+(2026-11-11: it writes `calculation` as the value of the presentation tag on
+every computing version, the value a producer without the
+equation/calculation distinction writes; the tag's presence is the rule kind
+and core, IR-SPEC ch. 3.1.)
 Start with Catala's tutorial example through the plugin, next to a Jutterswet
 fragment through the existing resolver, and diff both IR dumps: where two
 frontends express the same semantics as different IR, an IR design flaw is
@@ -680,8 +695,20 @@ inexpressibility beats feigned completeness — matching how the coverage
 manifest already treats them. (4) BEREKENING vs GELIJKSTELLING: absent a
 behavioural difference, one semantic node with a presentation tag for
 verbalisation; two nodes without a meaning difference are surface syntax
-sneaking into the core. (5) The §9.10 rule group stays in the RegelSpraak
-dialect, out of the core. (6) Metamodel names go language-neutral/English;
+sneaking into the core. **Amended (2026-11-11, maintainer):** the tag's
+presence is core: with `initialisation` it spells the rule kind in three
+states (tag: a computation; `initialisation` true: an initialisation;
+neither: a characteristic attribution), which every executor reads
+(IR-SPEC ch. 3.1, WF-022). Its value, `equation` or `calculation`, is
+presentation, and a producer without that distinction writes `calculation`
+(IR-SPEC ch. 3.1, ch. 10). A core field of its own for the rule kind is a
+candidate for the next wire epoch that comes for another reason; it gets no
+epoch of its own. (5) The §9.10 rule group stays in the RegelSpraak
+dialect, out of the core. **Amended (2026-11-11, maintainer):** the group
+as a name over its members stays presentation; the recursive marker and the
+membership of a creation form in a recursive group are core, because
+WF-045 admits a dependency cycle only through them (IR-SPEC ch. 3.9,
+ch. 5.3). (6) Metamodel names go language-neutral/English;
 declared domain names stay as-authored. (7) **Decided (2026-08-16):** the
 empty-value discipline is frozen to the documented mirror with its coalesce
 whitelist (`RUNTIME-SEMANTICS.md` ch. 1.2–1.4); empty-as-unknown is a
