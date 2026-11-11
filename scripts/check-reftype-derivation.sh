@@ -272,6 +272,21 @@ cd "$(git rev-parse --show-toplevel)" || exit 2
 # the right reading — not merely that it is the current one.
 SURVIVORS=''
 
+# mention() and the stale check at the end read only the first two fields of an entry, so the reason is checked here,
+# before the run: an entry without a third field, or with a blank one, fails.
+reasonless=$(printf '%s\n' "$SURVIVORS" | while IFS= read -r s; do
+    [ -n "$s" ] || continue
+    rest=${s#*|}
+    reason=${rest#*|}
+    if [ "$rest" = "$s" ] || [ "$reason" = "$rest" ] || [ -z "$(printf '%s' "$reason" | tr -d '[:space:]')" ]; then
+        echo "  $s"
+    fi
+done)
+if [ -n "$reasonless" ]; then
+    printf 'FAIL: survivor entry without a reason (each entry is <golden-dir>|<executor>|<reason>):\n%s\n' "$reasonless" >&2
+    exit 1
+fi
+
 # --- the DRL-text branch and ch. 5.10: the divergence class is EMPTY (measured 2026-09-07) ---
 # This gate measured the DRL-TEXT branch's relationship to RUNTIME-SEMANTICS ch. 5.10 when no other
 # gate held that branch (since card drl-teksttak-op-truth-maintenance gate 12 holds it line for line). Until 2026-09-07 that relationship was a divergence, and this file
