@@ -3054,9 +3054,11 @@ paasdag van 146140482 = **146140482-03-29**, van 4 294 969 320 = **fault**
 **Date-part extraction and the Easter builtin.** Year, month and day
 extraction ("het jaar / de maand / de dag uit") read the **civil components
 of the proleptic Gregorian calendar in zoneless civil time** — the same
-(y, m, d) triple the whole-unit definition above is built on — from a
-day-precision date, each as a **unitless whole number**: the year as written,
-the month **1..12**, the day of month 1..the month's length. A leeg date
+(y, m, d) triple the whole-unit definition above is built on — from a date
+of either precision (WF-038), each as a **unitless whole number**: of a
+datum-tijd they read the civil date of its instant, and its clock time
+changes none of the three. They are the year as written, the month
+**1..12** and the day of month 1..the month's length. A leeg date
 propagates (ch. 1.2: jaar/maand/dag uit leeg = leeg). "De eerste paasdag van"
 a **whole, unitless** year (WF-038) is Easter Sunday of that year by the
 Gauss/Anonymous algorithm, normative verbatim (`quot` and `mod` are integer
@@ -3092,12 +3094,13 @@ Worked examples (absolute, pinned; each a `ref/` test verbatim): jaar uit
 2026-11-03 = **2026**; maand uit 2026-11-03 = **11**; dag uit 2026-11-03 =
 **3**; eerste paasdag van 2024 = **2024-03-31**, van 2026 = **2026-04-05**, van
 2027 = **2027-03-28**, van 2038 = **2038-04-25**, van 1 = **0001-04-01**, van 0
-= **fault** (EF-007), van −1 = **fault** (EF-007). Golden `jutterswet-paasvondst`
+= **fault** (EF-007), van −1 = **fault** (EF-007); jaar uit
+2026-06-15T14:30:00 = **2026**, maand uit = **6**, dag uit = **15**, and dag
+uit 2026-06-15T23:59:59.999 = **15**. Golden `jutterswet-paasvondst`
 carries the class: a maand-uit disjunction, an eerste-paasdag∘jaar-uit date
 equality, a jaar-uit/dag-uit Gelijkstelling pair, and the leeg corner.
-Datum-tijd operands of the extractors are not defined. The hour, minute,
-second and millisecond of a datum-tijd have no builtin (`IR-SPEC.md`
-ch. 4.3).
+The hour, minute, second and millisecond of a datum-tijd have no builtin
+(`IR-SPEC.md` ch. 4.3).
 
 **Date construction.** "De datum met jaar: …, maand: … en dag: …" (`dateWith`)
 takes three parts, year, month and day, in that order; "de datumtijd met jaar:
