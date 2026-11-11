@@ -5887,7 +5887,7 @@ public final class TmsTranspiler {
 
     /** A date of three parts or a date-time of seven, through the runtime's {@code rsDatumMet} and
      *  {@code rsDatumtijdMet}: every part evaluated in order (RUNTIME-SEMANTICS ch. 5.11), any leeg part leeg (ch.
-     *  1.2). A part that is not a whole number within the range of a date part, or parts that name no day, fault: the
+     *  1.2). A part that is not a whole number, or parts that name no day, fault: the
      *  reference interpreter makes no such date, and the runtime would truncate the part or throw past the fire
      *  ({@link ComputeHelpers#dateWith}). */
     private Term dateConstruction(Expr.FunctionCall f, Reads reads, String spelling) {

@@ -421,14 +421,15 @@ public final class RegelSpraakRuntime {
      *  A year outside the years of the representable range of a date faults (EF-007), before the calendar is asked;
      *  parts that name no calendar day fault in the reference interpreter's sentence (uchar RUNTIME-SEMANTICS ch. 3.8,
      *  fault kind EF-032), never a roll-over or a clamp; and a day outside {@link #DAG_MIN}..{@link #DAG_MAX} faults
-     *  (EF-007). A part that is no whole number of an int is refused by its exact conversion rather than truncated.
+     *  (EF-007). A part that is no whole number is refused by its exact conversion rather than truncated.
      *  The single implementation (single-runtime principle). */
     public static java.time.LocalDate rsDatumMet(Object jaar, Object maand, Object dag) {
         if (jaar == null || maand == null || dag == null) return null;
         toetsJaar(toBd(jaar), DATUM_BUITEN_BEREIK);
-        int j = toBd(jaar).intValueExact(), m = toBd(maand).intValueExact(), d = toBd(dag).intValueExact();
+        int j = toBd(jaar).intValueExact();
+        BigInteger m = part(maand), d = part(dag);
         toetsKalenderdag("dateWith", j, m, d);
-        return binnenDatumbereik(java.time.LocalDate.of(j, m, d));
+        return binnenDatumbereik(java.time.LocalDate.of(j, m.intValue(), d.intValue()));
     }
 
     /** §13.4.17.36 "de datumtijd met jaar/…/milliseconde": a LocalDateTime from seven parts (the 7th, a
@@ -441,14 +442,15 @@ public final class RegelSpraakRuntime {
         if (jaar == null || maand == null || dag == null || uur == null || minuut == null || seconde == null || milli == null) return null;
         // the year first (ch. 3.8): one beyond an int lies outside the range, which its exact conversion would hide
         toetsJaar(toBd(jaar), DATUMTIJD_BUITEN_BEREIK);
-        int j = toBd(jaar).intValueExact(), m = toBd(maand).intValueExact(), d = toBd(dag).intValueExact();
-        int u = toBd(uur).intValueExact(), mi = toBd(minuut).intValueExact(), s = toBd(seconde).intValueExact(),
-                ms = toBd(milli).intValueExact();
+        int j = toBd(jaar).intValueExact();
+        BigInteger m = part(maand), d = part(dag), u = part(uur), mi = part(minuut), s = part(seconde),
+                ms = part(milli);
         toetsKalenderdag("dateTimeWith", j, m, d);
-        if (u < 0 || u > 23 || mi < 0 || mi > 59 || s < 0 || s > 59 || ms < 0 || ms > 999)
+        if (!within(u, 0, 23) || !within(mi, 0, 59) || !within(s, 0, 59) || !within(ms, 0, 999))
             throw new IllegalStateException(Msg.drools("EF-032.time", "function", "dateTimeWith", "hour", u,
                     "minute", mi, "second", s, "millisecond", ms).text());
-        java.time.LocalDateTime t = java.time.LocalDateTime.of(j, m, d, u, mi, s, ms * 1_000_000);
+        java.time.LocalDateTime t = java.time.LocalDateTime.of(j, m.intValue(), d.intValue(), u.intValue(),
+                mi.intValue(), s.intValue(), ms.intValue() * 1_000_000);
         milliseconden(t);
         return t;
     }
@@ -456,10 +458,20 @@ public final class RegelSpraakRuntime {
     /** Whether year {@code j}, month {@code m} and day {@code d} name a day of the proleptic Gregorian calendar
      *  (ch. 3.8): a month 1..12 and a day 1..the month's length, leap years included; if not, the fault of EF-032 in
      *  the reference interpreter's sentence, which names {@code function}. */
-    private static void toetsKalenderdag(String function, int j, int m, int d) {
-        if (m < 1 || m > 12 || d < 1 || d > java.time.Month.of(m).length(java.time.Year.isLeap(j)))
+    private static void toetsKalenderdag(String function, int j, BigInteger m, BigInteger d) {
+        if (!within(m, 1, 12) || !within(d, 1, java.time.Month.of(m.intValue()).length(java.time.Year.isLeap(j))))
             throw new IllegalStateException(Msg.drools("EF-032.day", "function", function, "year", j, "month", m,
                     "day", d).text());
+    }
+
+    /** A month, day or clock part of a date construction as the whole number it is, also beyond an int, so that a
+     *  part outside its range faults with EF-032 and its value (ch. 3.8) rather than in its conversion. */
+    private static BigInteger part(Object x) {
+        return toBd(x).toBigIntegerExact();
+    }
+
+    private static boolean within(BigInteger x, int lowest, int highest) {
+        return x.compareTo(BigInteger.valueOf(lowest)) >= 0 && x.compareTo(BigInteger.valueOf(highest)) <= 0;
     }
 
     /** The representable millisecond range of a datum-tijd value, [-2^62, 2^62 - 1] ms around 1970-01-01T00:00:00,

@@ -313,10 +313,10 @@ public final class ComputeHelpers {
     }
 
     /** A date of three parts ({@code rsDatumMet}), {@code spelling} the builtin's name for the sentence of a fault: any
-     *  leeg part leeg (RUNTIME-SEMANTICS ch. 1.2); a part that is not a whole number within the range of a date part
-     *  faults, since the reference interpreter makes no such date; parts that name no calendar day or no clock time
-     *  fault with EF-032 and an instant outside the millisecond range with EF-007 (ch. 3.8), in the runtime's sentence,
-     *  which is the reference interpreter's ({@link #dateFault}). */
+     *  leeg part leeg (RUNTIME-SEMANTICS ch. 1.2); a part that is not a whole number faults, since the reference
+     *  interpreter makes no such date; a year outside the representable range faults with EF-007, parts that name no
+     *  calendar day or no clock time, however far outside, with EF-032, and an instant outside the millisecond range
+     *  with EF-007 (ch. 3.8), in the runtime's sentence, which is the reference interpreter's ({@link #dateFault}). */
     public static Object dateWith(String spelling, Object year, Object month, Object day) {
         return dateConstruction(spelling, false, year, month, day);
     }
@@ -329,12 +329,10 @@ public final class ComputeHelpers {
 
     private static Object dateConstruction(String spelling, boolean time, Object... v) {
         for (Object part : v) if (part == null) return null;
-        for (int i = 0; i < v.length; i++) {
-            Breuk q = Breuk.van(v[i]);
-            // a whole year beyond an int lies beyond every representable day: the runtime's range test names it (EF-007)
-            if (!q.noemer().equals(BigInteger.ONE) || (i > 0 && q.teller().bitLength() > 31))
-                throw new ComputeFault(spelling + ": the part " + numberText(q) + " is no whole number within the range"
-                        + " of a date part");
+        for (Object part : v) {
+            Breuk q = Breuk.van(part);
+            if (!q.noemer().equals(BigInteger.ONE))
+                throw new ComputeFault(spelling + ": the part " + numberText(q) + " is no whole number");
         }
         try {
             return time ? RegelSpraakRuntime.rsDatumtijdMet(v[0], v[1], v[2], v[3], v[4], v[5], v[6])
