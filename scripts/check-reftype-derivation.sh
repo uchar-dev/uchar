@@ -283,17 +283,21 @@
 # golden (the rule presentation on 342 of 419), so a replay per field would multiply the leg's JVMs by
 # up to three. A difference on the combined copy is then assigned to a field: the executor that
 # differed runs again on the copies of that golden with one field changed each, and the report names
-# the fields whose own copy moves its answer, or says that only the combination does. The leg replays
-# its calls through scripts/lib/parallel.sh, one process per two cores, and judges them in corpus order.
-# A reader of a stripped field in ref or clingo makes gates 5 and 6 red on the untouched golden; a reader
-# in the Drools loader or transpilers, and a reader of an exchanged value in any executor, is caught
-# here. Measured 2026-11-11 (card core-and-presentation): every executor reproduces the untouched outcome
-# on every combined copy. Measured by mutation the same day, with one executor made to read one field
-# each — ref faulting on a possessive characteristic, clingo faulting on a calculation version, the
-# Drools loader refusing a dimension without a preposition, a percentage number without its tag, and a
-# document with a non-recursive rule group — the leg goes red on the goldens that carry each field, in
-# that executor, and names that field alone. No survivor list: no reading of a presentation field is a
-# legitimate one. A field that no golden carries fails its floor.
+# the fields whose own copy moves its outcome away from the untouched one, or says that only the
+# combination does; where ref or clingo give the combined copy's outcome on the untouched golden as well,
+# they miss the pinned outcome there too, and the report says so instead of naming a field. The leg
+# replays its calls through scripts/lib/parallel.sh, one process per two cores, and judges them in corpus
+# order. A reader of a stripped field in ref or clingo makes gates 5 and 6 red on the untouched golden; a
+# reader in the Drools loader or transpilers, and a reader of an exchanged value in any executor, is
+# caught here. Measured 2026-11-11 (card core-and-presentation): every executor reproduces the untouched
+# outcome on every combined copy (394 goldens). Measured by mutation the same day, five readers at once,
+# each in one executor: ref faulting on a possessive characteristic, clingo faulting on a calculation
+# version, the Drools loader refusing a dimension without a preposition, a percentage number without its
+# tag, and a non-recursive rule group. The leg went red and named the field: kind for ref on 191 goldens,
+# rule-presentation for clingo on 73, preposition on 10, percentage on 7 and rule-group on 1 for both
+# Drools branches (13 goldens for ref and 54 for clingo carried the read value untouched, and were
+# reported as missing the pinned outcome there too). No survivor list: no reading of a presentation field
+# is a legitimate one. A field that no golden carries fails its floor.
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
@@ -1427,34 +1431,46 @@ leg_name() {
 }
 
 # --- the presentation leg (see the script header) --------------------------------------------------
-# Whether an executor gives on a changed copy the answer it gives on the untouched golden, judged as the other
-# legs judge it: ref exits 0 on every case, clingo as clingo_same, a Drools branch prints its untouched line.
-same_answer() {   # <executor> <untouched ir.json> <copy> <file of case paths> <exec-model line> <DRL-text line>
-    case $1 in
-        ref)
-            while IFS= read -r sa_case; do
-                "$RUNNER_REF" "$3" "$sa_case" > /dev/null 2>&1 || return 1
-            done < "$4" ;;
-        clingo)
-            while IFS= read -r sa_case; do
-                clingo_same "$2" "$3" "$sa_case" || return 1
-            done < "$4" ;;
-        drools|drl)
-            sa_flag= sa_line=$5
-            [ "$1" = drl ] && sa_flag=--drl sa_line=$6
-            sa_copy=$3 sa_cases=$4
-            set --
-            while IFS= read -r sa_case; do set -- "$@" "$sa_case"; done < "$sa_cases"
-            [ "$(java $PARALLEL_JVM_FLAGS -jar "$JAR" $sa_flag "$sa_copy" "$@" 2>/dev/null | tail -1)" = "$sa_line" ] ;;
-    esac
+# The outcome of ref or clingo on one case: its report and its exit status, with the name of clingo's
+# temporary file made constant (clingo prints it in some info lines).
+outcome() {   # <ref|clingo> <ir.json> <case>
+    if [ "$1" = ref ]; then
+        { "$RUNNER_REF" "$2" "$3" 2>&1; echo "exit $?"; }
+    else
+        { "$RUNNER_CLINGO" "$2" "$3" 2>&1; echo "exit $?"; } | sed -E 's|[^ ]*uchar-clingo[0-9a-f]+[.]lp|uchar-clingo.lp|g'
+    fi
 }
-# A difference on the combined copy is assigned to a field by the copies with that field alone changed.
-fields_alone() {   # the arguments of same_answer without the copy, the copies' directory in its place
+# A difference on the combined copy is assigned to a field by the copies with that field alone changed: a
+# field moves the answer when the executor's outcome on its copy differs from the outcome on the untouched
+# golden (for ref and clingo the outcome of the case, for a Drools branch the status line). ref and clingo
+# are judged above against the pinned expectations, so the combined copy can fail where the untouched golden
+# fails too; then no field is assigned, and gates 5 and 6 are the ones that hold that case.
+fields_alone() {   # <executor> <untouched ir.json> <copies' directory> <file of case paths> <exec-model line> <DRL-text line>
     fa_moved=
-    for fa_field in kind rule-presentation preposition percentage rule-group; do
-        [ -f "$3/$fa_field.json" ] || continue
-        same_answer "$1" "$2" "$3/$fa_field.json" "$4" "$5" "$6" || fa_moved="$fa_moved $fa_field"
-    done
+    case $1 in
+        ref|clingo)
+            fa_case=$(cat "$4")
+            fa_base=$(outcome "$1" "$2" "$fa_case")
+            if [ "$(outcome "$1" "$3/combined.json" "$fa_case")" = "$fa_base" ]; then
+                echo "  $1 gives the same outcome on the untouched golden: it misses the pinned outcome there too (gates 5 and 6), so no field is assigned"
+                return
+            fi
+            for fa_field in kind rule-presentation preposition percentage rule-group; do
+                [ -f "$3/$fa_field.json" ] || continue
+                [ "$(outcome "$1" "$3/$fa_field.json" "$fa_case")" = "$fa_base" ] || fa_moved="$fa_moved $fa_field"
+            done ;;
+        drools|drl)
+            fa_flag= fa_line=$5
+            [ "$1" = drl ] && fa_flag=--drl fa_line=$6
+            fa_dir=$3 fa_cases=$4
+            set --
+            while IFS= read -r fa_case; do set -- "$@" "$fa_case"; done < "$fa_cases"
+            for fa_field in kind rule-presentation preposition percentage rule-group; do
+                [ -f "$fa_dir/$fa_field.json" ] || continue
+                [ "$(java $PARALLEL_JVM_FLAGS -jar "$JAR" $fa_flag "$fa_dir/$fa_field.json" "$@" 2>/dev/null | tail -1)" = "$fa_line" ] \
+                    || fa_moved="$fa_moved $fa_field"
+            done ;;
+    esac
     if [ -n "$fa_moved" ]; then
         echo "  the field(s) that move the answer on their own:$fa_moved"
     else
