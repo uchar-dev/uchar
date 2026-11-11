@@ -10479,8 +10479,13 @@ and body_condition ctx ~carrier (c : condition_expr) : string list * string * st
   match c with
   | Comparison { op; left_side; right_side; time_period = None; _ } ->
       let l = req "left" left_side and r = req "right" right_side in
-      let la, lt, ls = closed_term ctx ~carrier l in
-      let ra, rt, rs = closed_term ctx ~carrier r in
+      let outer = ctx.in_condition in
+      ctx.in_condition <- true;
+      let (la, lt, ls), (ra, rt, rs) =
+        Fun.protect ~finally:(fun () -> ctx.in_condition <- outer) (fun () ->
+            let left_term = closed_term ctx ~carrier l in
+            (left_term, closed_term ctx ~carrier r))
+      in
       (* no numeric_ok ctx stands in front of this arm at all, and a Construct is a
          first-class closed-body term (scale 0): mixed, it divided by zero;
          both-symbolic, it silently ordered constructor terms *)
@@ -10887,8 +10892,8 @@ and coalesced_operand ctx ~carrier (e : expr) : string list * string * int =
    express, so a zero divisor there derives a viol/2 witness of this backend's
    limit: loud, never a value ref does not give. [rounding] None is the exact
    bare division (value guarded [numt \ dent == 0], a remainder derives a viol/2 and UNSAT — ref
-   stays exact-rational, then its bounded write refuses; the differential holds
-   where it runs); [Some (Toward_zero, d)] is the abs-division truncation at d
+   stays exact-rational, and the value the quotient is part of may still fit,
+   so the witness is a limit of this encoding, CLINGO-031 or CLINGO-039); [Some (Toward_zero, d)] is the abs-division truncation at d
    decimals, which gringo's integer `/` computes on both signs, needing no
    exactness guard and no negative fence. The exactness test runs at the
    precision the fold/write will STORE ([ctx.write_scale] for the bare form, the
@@ -10930,9 +10935,12 @@ and closed_division ctx ~carrier ~coalesced ~rounding ~left_side ~right_side :
   in
   match rounding with
   | None ->
-      (* a closed body names the write boundary wherever its quotient stands *)
+      (* a closed-body quotient is never the written value: it is a step of
+         a fold's accumulator, an element a list source holds, or an operand
+         of a comparison, so it is nested in a value or compared in a
+         condition, the two limits of the rule level *)
       quotient_misfit_guard ctx ~carrier ~atoms:(bl @ br @ value_guard) ~numt ~dent
-        (division_misfit ~in_condition:false ~nested:false ~unbounded:ctx.write_unbounded);
+        (division_misfit ~in_condition:ctx.in_condition ~nested:true ~unbounded:ctx.write_unbounded);
       ( bl @ br @ value_guard @ [ Printf.sprintf "%s \\ %s == 0" numt dent ],
         Printf.sprintf "(%s/%s)" numt dent,
         out_scale )

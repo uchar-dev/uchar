@@ -16813,6 +16813,70 @@ let () =
     [ ("a member after the stop of the fold", {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"P1","objectType":"Ploeg","attributes":{},"roles":{"wachten":["W1","W2"]},"characteristics":[]},{"label":"W1","objectType":"Strandwacht","attributes":{"keurpunten":{"number":"70"},"keuringen":{"number":"10"}},"roles":{},"characteristics":[]},{"label":"W2","objectType":"Strandwacht","attributes":{"keurpunten":{"number":"13"},"keuringen":{"number":"2"}},"roles":{},"characteristics":["gekeurd"]}],"parameters":{}},"expected":[{"kind":"characteristicAbsent","label":"P1","characteristic":"inzetbaar"}]}|});
       ("a member the fold reaches", {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"P2","objectType":"Ploeg","attributes":{},"roles":{"wachten":["W3","W4"]},"characteristics":[]},{"label":"W3","objectType":"Strandwacht","attributes":{"keurpunten":{"number":"70"},"keuringen":{"number":"10"}},"roles":{},"characteristics":["gekeurd"]},{"label":"W4","objectType":"Strandwacht","attributes":{"keurpunten":{"number":"13"},"keuringen":{"number":"2"}},"roles":{},"characteristics":["gekeurd"]}],"parameters":{}},"expected":[{"kind":"characteristicPresent","label":"P2","characteristic":"inzetbaar"}]}|}) ]
 
+(* A NON-EXACT DIVISION IN A CLOSED BODY (RUNTIME-SEMANTICS ch. 2.1, 2.4, 10.2).
+   A quotient in a fold's lambda is never the value a write writes: it is a
+   step of the accumulator, or an operand of a comparison. This encoding
+   computes it at the scale of the write, so where it does not fit there, the
+   value it is part of may still fit (1/3 + 2/3 is 1,00; 1/3 rounded is 0,33),
+   and the fail-fast is the limit of the rule level, CLINGO-031 inside a value
+   and CLINGO-039 in a condition, never the write boundary EF-006, which ref
+   does not raise. *)
+let () =
+  let number2 = {|{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"}|} in
+  let whole = {|{"node":"Number","whole":true,"decimals":0,"sign":"nonNegative"}|} in
+  let acc = {|{"node":"BinderRef","name":"acc","source":{"snippet":"het opgetelde deel"}}|} in
+  let third =
+    Printf.sprintf
+      {|{"node":"Binary","op":"dividedBy","left":{"node":"BinderRef","name":"x","source":{"snippet":"het kindertal"}},"right":{"node":"Literal","value":{"number":"3"},"type":%s,"source":{"snippet":"3"}},"type":%s,"source":{"snippet":"het kindertal gedeeld door 3"}}|}
+      whole number2
+  in
+  let fold body =
+    Printf.sprintf
+      {|{"node":"Fold","type":%s,"list":{"node":"ParameterReference","parameter":"kindertallen","source":{"snippet":"de kindertallen"}},"function":{"node":"Lambda","parameters":[{"name":"acc","datatype":%s},{"name":"x","datatype":%s}],"body":%s,"source":{"snippet":"de derde delen opgeteld"}},"init":{"node":"Literal","value":{"number":"0.00"},"type":%s,"source":{"snippet":"0.00"}},"source":{"snippet":"de kindertallen gevouwen tot het derdetotaal"}}|}
+      number2 number2 whole body number2
+  in
+  let ir value =
+    Printf.sprintf
+      {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"derdetotaal","datatype":%s}],"characteristics":[]}],"factTypes":[],"parameters":[{"node":"Parameter","name":"kindertallen","datatype":{"node":"ListType","element":%s}}],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"derdetotaal van een jutter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"derdetotaal","subjectType":"Jutter","source":{"snippet":"Het derdetotaal van een Jutter"}},"value":%s,"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+      number2 whole value
+  in
+  let case_data elements expected =
+    Printf.sprintf
+      {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"J1","objectType":"Jutter","attributes":{},"roles":{},"characteristics":[]}],"parameters":{"kindertallen":{"list":[%s]}}},"expected":[{"kind":"attributeValue","label":"J1","attribute":"derdetotaal","value":{"number":"%s"}},{"kind":"consistent"}]}|}
+      (String.concat "," (List.map (Printf.sprintf {|{"number":"%d"}|}) elements))
+      expected
+  in
+  (* acc + x/3, the fold rounded to 2 decimals as WF-023 asks of a quotient *)
+  let summed =
+    ir
+      (Printf.sprintf
+         {|{"node":"Rounding","base":%s,"mode":"halfAwayFromZero","decimals":2,"type":%s,"source":{"snippet":"(de kindertallen gevouwen tot het derdetotaal) rekenkundig afgerond op 2 decimalen"}}|}
+         (fold
+            (Printf.sprintf
+               {|{"node":"Binary","op":"plus","left":%s,"right":%s,"type":%s,"source":{"snippet":"het opgetelde deel plus het derde deel"}}|}
+               acc third number2))
+         number2)
+  in
+  (* x/3 >= 1 as the condition of the lambda's IfThenElse *)
+  let counted =
+    ir
+      (fold
+         (Printf.sprintf
+            {|{"node":"IfThenElse","type":%s,"condition":{"node":"Comparison","op":"greaterOrEqual","left":%s,"right":{"node":"Literal","value":{"number":"1"},"type":%s,"source":{"snippet":"1"}},"source":{"snippet":"het kindertal gedeeld door 3 is ten minste 1"}},"then":{"node":"Binary","op":"plus","left":%s,"right":{"node":"Literal","value":{"number":"1.00"},"type":%s,"source":{"snippet":"1.00"}},"type":%s,"source":{"snippet":"het opgetelde deel plus 1.00"}},"else":%s,"source":{"snippet":"vanaf drie kinderen een deel erbij"}}|}
+            number2 third whole acc number2 number2 acc))
+  in
+  List.iter
+    (fun (name, ir, case_text, code, needle) ->
+      verifier_clean ~name ~ir;
+      ref_matches ~name ~ir ~case_text;
+      faults_at_solving ~code:(code, []) ~name ~ir ~case_text ~needle ())
+    [ ("acc + x/3 over [1, 2] in a closed body", summed, case_data [ 1; 2 ] "1.00", "CLINGO-031",
+        Translate.nested_non_exact_division);
+      ("acc + x/3 over [1] in a closed body, rounded", summed, case_data [ 1 ] "0.33", "CLINGO-031",
+        Translate.nested_non_exact_division);
+      ("x/3 >= 1 in a closed body's condition", counted, case_data [ 2; 3; 4 ] "2.00", "CLINGO-039",
+        Translate.non_exact_division_in_condition) ]
+
 (* A RANKING FOLD OVER A TIMELINE (card clingo-vouw-bodemzinnen, 2026-11-06).
    Minimum, maximum, eerste and laatste have no defined moment to rank a
    timeline at (RUNTIME-SEMANTICS ch. 3.4c, 3.6, 3.12 row 4: only the sum and
