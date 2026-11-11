@@ -149,6 +149,17 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   `characteristicPresent`). Each family's table lists its v0 values. (The
   wire has carried this spelling since landing L5, step M8; until then it
   kept the v0 values.)
+- A JSON object of a document carries each key once. JSON leaves the
+  meaning of a repeated key open, and readers differ on it (one keeps the
+  first pair, another the last), so an object that writes a key twice
+  makes the file no document: every reader, the verifier and every
+  executor alike, refuses it at load, naming the position of the second
+  occurrence as a JSON pointer, before any rule of the WF index is checked.
+  It is a load error, not a WF rule, so its witness is a reader test of the
+  loaders, not a negative case. Worked example: the golden
+  `division-by-numeric-zero` with the datatype of its attribute `loon`
+  writing `decimals` twice, 0 and 2, is refused at
+  `/model/objectTypes/0/attributes/2/datatype/decimals`.
 - Versioning: semantic-versioned from the first normative release; v0.x
   while the mirror-then-diverge phase runs.
 
