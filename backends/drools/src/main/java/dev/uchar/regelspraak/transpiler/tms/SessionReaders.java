@@ -212,9 +212,9 @@ final class SessionReaders {
      * evaluating anything again.
      *
      * <p>Where a stack decides the member on the object's concrete type ({@link TmsTranspiler#dayStackRules}), the
-     * {@link Outcome} of each default and of each reconciliation of exception groups carries the days it settled ({@link PeriodDefaults.Days}),
-     * and per day the reading follows them from the root down as {@link #decisionsOf} follows the outcomes of a stack on
-     * a target that holds one value: the first conflict in member order passes on unchanged; deciding members that
+     * {@link Outcome} of each default and of each reconciliation of exception groups carries the days it settled
+     * ({@link PeriodDefaults.Days}), and per day the reading follows them from the root down as {@link #decisionsOf}
+     * follows the outcomes of a stack on a target that holds one value: the first conflict in member order passes on unchanged; deciding members that
      * differ are a conflict; deciding members that agree decide, and the first of them in member order is named; at a
      * default with exception groups the day is its members' where one of them settled it, and the default's own, its
      * fall-back, where none did. Every day it decides agrees with the {@link Value} the stack wrote, unless a fault of
