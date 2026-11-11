@@ -196,10 +196,12 @@ roles), parameters, domains, datatypes, units, dimensions, timelines, and
 day kinds. It contains no rules and no expressions; the rule and expression
 layers reference model-layer declarations by name.
 
-Layer marks: every node in this chapter is `layer: core`, with exactly three
-inline exceptions — the `Characteristic.kind` presentation tag (ch. 2.2),
-the `Dimension.preposition` read-form tag (ch. 2.7) and the values of
-`Origin.form` (ch. 2.13), all three `layer: dialect(regelspraak)`.
+Layer marks: every node in this chapter is `layer: core`, with five
+presentation fields (`layer: presentation`, ch. 10) — the
+`Characteristic.kind` tag (ch. 2.2), the percentage tag on a `Number`
+(ch. 2.4), the `Dimension.preposition` read-form tag (ch. 2.7), and the
+two side tables: the vocabularies with their designations (ch. 2.12) and
+the origin (ch. 2.13).
 
 A **document** is the root container (decision V3 (b); landed at M1,
 2026-09-23). Its structure:
@@ -652,9 +654,9 @@ v0 values: `BIJVOEGLIJK` → `adjectival`, `BEZITTELIJK` → `possessive`,
 `kind` (v0 `KenmerkSoort`; untagged defaults to `nominal`) is a
 **presentation tag**: all three kinds denote the
 same boolean membership; the tag only selects the predicate surface form
-(§3.5, §8.1.8). This is the same pattern as the assignment presentation tag
-(PLAN §9, decision 4). Layer: the tag is `dialect(regelspraak)`; the
-boolean membership is core.
+(§3.5, §8.1.8). Layer: the tag is `layer: presentation`; the boolean
+membership is core. The schema requires the tag, so gate 13 tests it by
+exchanging its value, not by removing it (ch. 10).
 
 **TimelineFacet** — the time-dependence of one member or parameter:
 
@@ -1870,9 +1872,9 @@ on every consumer.
 | `preposition` | string? | present = suffix read form (`<attr> <prep> <label>`); absent = prefix form (`<label> <attr>`) |
 | `labels` | list of string | ordered; the order is normative |
 
-v0 name: `Dimensie`. The `preposition` is presentational
-(`dialect(regelspraak)`, `CONSTRUCTS.md` row 28); the ordered label set is
-core — an aggregation over a label interval ranges over this order.
+v0 name: `Dimensie`. The `preposition` is `layer: presentation`
+(`CONSTRUCTS.md` row 28; ch. 10); the ordered label set is core — an
+aggregation over a label interval ranges over this order.
 
 - **WF-014** A dimension's label set MUST be non-empty and duplicate-free.
   *v0 mirror note:* unchecked. **Delta (promotion).**
@@ -2315,7 +2317,7 @@ name every rule is written in and every reference resolves. A **vocabulary**
 is a named set of **designations**: the name of a declaration in that
 vocabulary — a term of a handbook, a field name of a data model — at most one
 per declaration. The vocabularies of a document and their designations are a
-**side table without semantics**, `layer: core`, and every field of it is an
+**side table without semantics**, `layer: presentation` (ch. 10), and every field of it is an
 **extension field** under the § Method's discipline: optional, never null,
 written whole or not at all, absent on a document that declares no
 vocabulary.
@@ -2460,8 +2462,8 @@ same words in a name of his own (the golden `jutterswet-wachtgeld` declares
 a rule `wachtgeld voor kustwachters`, written, beside defaults groups the
 frontend names `<base rule> voor <subtype>`).
 
-The origin is a **side table without semantics**, `layer: core` apart from
-the values of `form`, and the field is an **extension field** under the
+The origin is a **side table without semantics**, `layer: presentation`
+as a whole record (ch. 10), and the field is an **extension field** under the
 § Method's discipline: optional, never null, written whole or not at all. A
 declaration carries it in `origin`, on the nodes that carry `designations`
 (ch. 2.12) — an ObjectType, an Attribute, a Characteristic, a FactType, a
@@ -2473,7 +2475,7 @@ discriminant:
 
 | Field | Type | Meaning |
 |---|---|---|
-| `form` | string | the form that made the declaration, from the closed set below (WF-121 (a)); `layer: dialect(regelspraak)` |
+| `form` | string | the form that made the declaration, from the closed set below (WF-121 (a)) |
 | `from` | OriginSource | the declaration it comes from, by name (WF-121 (b) to (d)) |
 
 An **OriginSource** is a reference by name, as every reference of this
@@ -2495,7 +2497,7 @@ source names it, and no declaration of the document answers it; with the
 kind `namedForm` it would name a form that does not exist, or another form
 that happens to carry the table's name.
 
-The forms, each `layer: dialect(regelspraak)`:
+The forms, each named after a form of the RegelSpraak frontend:
 
 | `form` | The declarations it makes | `from` |
 |---|---|---|
