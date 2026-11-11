@@ -18820,6 +18820,16 @@ let () =
       ("closed-body x > 5,00", closed_comparison);
       ("value-position k > 5,00", value_comparison) ]
 
+(* A constructor name becomes an ASP functor; `not` is a keyword there, and a
+   program that spells it as a functor is a clingo syntax error, not an
+   answer. The translator refuses the name. *)
+let () =
+  let read path = In_channel.with_open_bin path In_channel.input_all in
+  faults_with ~name:"a constructor named Not"
+    ~ir:(replace ~tok:{|"Openstaand"|} ~by:{|"Not"|} (read "corpus/golden/jutterswet-meldtermijnen/ir.json"))
+    ~case_text:(read "corpus/golden/jutterswet-meldtermijnen/case1-eigen-termijnen.json")
+    ~needle:"normalises to \"not\", a keyword of ASP and no functor symbol"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

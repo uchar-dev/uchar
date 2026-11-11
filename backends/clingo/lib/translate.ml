@@ -3701,6 +3701,8 @@ let ctor_functor tag =
   in
   if not ok then
     fault "constructor name %S does not normalise to a valid ASP functor symbol (%S)" tag f;
+  (* the one bare word clingo's lexer reserves; as a functor it is a syntax error *)
+  if f = "not" then fault "constructor name %S normalises to %S, a keyword of ASP and no functor symbol" tag f;
   f
 
 (* the declared constructor list of a SumType annotation, and the declared
