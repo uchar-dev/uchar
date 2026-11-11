@@ -670,9 +670,9 @@ clingo leg:
   both sides instead. The write boundary writes the finest unit into a finest
   target.
 - **Proof obligations, fault-loud.** Each declared factor is the exact
-  rational the wire writes (`Arith.factor` reads `{num, den}` as that rational,
-  the reading `ref` uses, so no binary double stands between the declaration
-  and the scale; until L3 the factor was a JSON number that needed an exact
+  rational the wire writes (the backend's own `Factors.atom_factor` reads
+  `{num, den}` as that rational, RUNTIME-SEMANTICS ch. 2.6, so no binary
+  double stands between the declaration and the scale; until L3 the factor was a JSON number that needed an exact
   short-decimal reading, and a binary-double tail faulted); and every declared
   unit must restate into the finest by a positive INTEGER (a unit system with
   sibling factors like 2 and 3 admits no such finest and faults — never a
@@ -1481,6 +1481,16 @@ pair term instead (`jutterswet-hoogwaterpaar`).
 A timeline is data, not state: `tl/5` segments (instance, attribute,
 from, to, scaled value) and `ktl/4` condition segments, with civil
 day numbers as endpoints. Four readers and three producers translate.
+
+**The calendar is the backend's own** (RUNTIME-SEMANTICS ch. 3.2, 3.6,
+3.8). The walls of a grid, the calendar buckets of month and year, the
+periods a fixed start point lays (every wall computed from the start
+point), the whole units of a span, the length of a span in grid units
+or in a calendar unit, and the declared unit a grid counts in are
+computed at translation by the backend's `Calendar` module, written from
+those chapters; the reference interpreter's calendar is not consulted,
+so gate 6 compares two readings of them. Gate 1 holds `backends/clingo/lib`
+to that.
 
 **The open bound** (RUNTIME-SEMANTICS ch. 3.1). A segment's open `van` is
 the term `#inf` and its open `tot` the term `#sup`, in `tl/5`,
