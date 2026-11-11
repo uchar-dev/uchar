@@ -5773,8 +5773,7 @@ public final class TmsTranspiler {
             throw new Refusal(DroolsCode.SQUARE_ROOT_ARGUMENT_COUNT.reason("argumentCount", f.arguments().size(), "snippet", snippet(f.source())));
         reads.markFail();
         Term radicand = value(f.arguments().get(0), reads);
-        int depositFlag = depositSite(f) ? reads.depositFlag() : -1;
-        return new Term.SquareRoot(StaticFunction.EXACT_SQUARE_ROOT, radicand, depositFlag, source(f.source()));
+        return new Term.SquareRoot(StaticFunction.EXACT_SQUARE_ROOT, radicand, reads.depositFlag(), source(f.source()));
     }
 
     /** The one argument of {@code f}; a call with another number is refused (WF-037). */
