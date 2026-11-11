@@ -2887,16 +2887,16 @@ let grid_strip ctx ~what ~(gran : grain) (u : measure_unit option) : Ir_v0.Check
                  day family and the month family of the calendar, which is ill-formed (WF-009): the \
                  calendar integrates across the two (ch. 3.6); ref refuses the shape too"
                 what (Ir_v0.Units.name f)
-                (Uchar_ref.Arith.display_unit gu)
+                (Ir_v0.Units.render gu)
           | _ -> ());
-          if not (Q.equal (Uchar_ref.Arith.conv_factor gu (Ir_v0.Units.of_declared f)) Q.one) then
+          if not (Q.equal (Factors.conversion gu (Ir_v0.Units.of_declared f)) Q.one) then
             fault
               "the noemer strip of %s restates a %s value into a %s grid by a declared factor \
                other than 1, which this integer encoding does not carry (ref applies the exact \
                factor); only a denominator identical to the grid unit cancels here"
               what
-              (Uchar_ref.Arith.display_unit rate)
-              (Uchar_ref.Arith.display_unit gu);
+              (Ir_v0.Units.render rate)
+              (Ir_v0.Units.render gu);
           None
       | None, Some (_, tu) -> Some tu
       | None, None -> (
@@ -2908,8 +2908,8 @@ let grid_strip ctx ~what ~(gran : grain) (u : measure_unit option) : Ir_v0.Check
                  declarations connect no conversion between its denominator and the grid unit \
                  (ch. 3.6); ref refuses the shape too"
                 what
-                (Uchar_ref.Arith.display_unit rate)
-                (Uchar_ref.Arith.display_unit gu)))
+                (Ir_v0.Units.render rate)
+                (Ir_v0.Units.render gu)))
   | _ -> None
 
 let grid_strip_ok ctx ~what ~gran u =
@@ -2920,7 +2920,7 @@ let grid_strip_ok ctx ~what ~gran u =
         "the noemer strip of %s integrates a %s value by the calendar (ch. 3.6), which this fold site \
          does not translate (no corpus case)"
         what
-        (Uchar_ref.Arith.display_unit (Option.get u))
+        (Ir_v0.Units.render (Option.get u))
 
 (* ch. 3.6, the length of a span as data. [measure] gives the length of a span:
    in grid units, where a part of a period of the grid counts its days over the
@@ -3370,12 +3370,12 @@ let unit_free_ok ?per_period ctx e =
 let product_factor ?per_period ctx (l : expr) (r : expr) : int option =
   match (eff_unit ?per_period ctx l, eff_unit ?per_period ctx r) with
   | (Some a as ul), (Some b as ur) ->
-      let k = Uchar_ref.Arith.restatement (snd (Ir_v0.Units.times ul ur)) in
+      let k = Factors.product (snd (Ir_v0.Units.times ul ur)) in
       if not (Z.equal (Q.den k) Z.one) then
         fault
           "a product of %s and %s is not translated: the factor %s from the right operand into \
            the left unit is no whole number, and this integer encoding carries no fraction"
-          (Uchar_ref.Arith.display_unit a) (Uchar_ref.Arith.display_unit b) (Q.to_string k);
+          (Ir_v0.Units.render a) (Ir_v0.Units.render b) (Q.to_string k);
       Some (Z.to_int (Q.num k))
   | _ -> None
 
@@ -3414,7 +3414,7 @@ let units_identical_ok ~what (l : measure_unit option) (r : measure_unit option)
 let comparison_factors ctx (l : expr) (r : expr) : int * int =
   match (eff_unit ctx l, eff_unit ctx r) with
   | Some a, Some b when (not (Ir_v0.Units.identical a b)) && Normalise.restates_into a b ->
-      let k = Uchar_ref.Arith.conv_factor a b in
+      let k = Factors.conversion a b in
       (Z.to_int (Q.num k), Z.to_int (Q.den k))
   | ul, ur ->
       units_identical_ok ~what:"a comparison" ul ur;
@@ -3532,7 +3532,7 @@ let quotient_units_ok ?per_period ctx left_side right_side =
     match (ul, ur) with
     | None, Some _ -> provably_unitless ?per_period ctx left_side
     | Some _, None -> provably_unitless ?per_period ctx right_side
-    | Some _, Some _ -> Q.equal (Uchar_ref.Arith.restatement (snd (Ir_v0.Units.divide ul ur))) Q.one
+    | Some _, Some _ -> Q.equal (Factors.product (snd (Ir_v0.Units.divide ul ur))) Q.one
     | None, None -> false
   in
   if not admitted then begin
@@ -13883,7 +13883,7 @@ let translate_allocation ctx i (v : resolved_allocation) =
      its value unchanged *)
   let factor from into =
     match (from, into) with
-    | Some a, Some b when not (Ir_v0.Units.identical a b) -> Uchar_ref.Arith.conv_factor a b
+    | Some a, Some b when not (Ir_v0.Units.identical a b) -> Factors.conversion a b
     | _ -> Q.one
   in
   let pot_unit = attr_unit ctx ~otype:bt ~attr:ba in

@@ -45,7 +45,7 @@
 
    PROOF OBLIGATIONS, discharged in [finest_of_units] and fault-loud:
      1. every declared factor is the exact rational the wire writes
-        (Arith.factor reads {num, den} as that rational, the reading ref/ uses;
+        ([Factors.atom_factor] reads {num, den} as that rational;
         no binary double stands between the declaration and the scale);
      2. every unit of the table restates into the finest by a positive INTEGER
         (a table that admits no such finest — e.g. sibling factors 2 and 3 —
@@ -74,7 +74,6 @@
    no-drift proof). *)
 
 module Value = Uchar_ref.Value
-module Arith = Uchar_ref.Arith
 module Checks = Ir_v0.Checks
 open Ir_v0.Ast
 
@@ -91,7 +90,7 @@ let plain_units (s : unit_system) : measure_unit list =
   List.map (fun d -> Ir_v0.Units.of_declared d.ge_unit) s.unit_list
 
 (* proof obligation 3: a unit that NAMES the canonical it converts into, with a
-   complete WF-092 conversion pair (so [Arith.factor] reads it rather than
+   complete WF-092 conversion pair (so [Factors.atom_factor] reads it rather than
    faulting), for every factor, like convertibility itself. *)
 let unit_named (u : measure_unit) =
   List.for_all
@@ -118,7 +117,7 @@ let restates_into (tu : measure_unit) (u : measure_unit) =
    this as its escape from record equality — the fence keeps refusing every pair
    that would need a multiplication, which is what the encoding cannot hold. *)
 let same_quantity (a : measure_unit) (b : measure_unit) =
-  restates_into b a && Q.equal (Arith.conv_factor a b) Q.one
+  restates_into b a && Q.equal (Factors.conversion a b) Q.one
 
 (* FINEST-UNIT DERIVATION over one conversion table. Returns the finest base
    unit u_min of [units] and the total factor-to-finest lookup
@@ -133,11 +132,11 @@ let finest_of_units ~(where : string) (units : measure_unit list) : measure_unit
          maand=1 < jaar=12). factor(u) is recovered exactly (proof obligation 1). *)
       let finest =
         List.fold_left
-          (fun acc u -> if Q.lt (Arith.total_factor u) (Arith.total_factor acc) then u else acc)
+          (fun acc u -> if Q.lt (Factors.total u) (Factors.total acc) then u else acc)
           first rest
       in
-      let ffin = Arith.total_factor finest in
-      let to_finest (u : measure_unit) : Q.t = Q.div (Arith.total_factor u) ffin in
+      let ffin = Factors.total finest in
+      let to_finest (u : measure_unit) : Q.t = Q.div (Factors.total u) ffin in
       (* proof obligation 2: multiply-only INTO the finest, exact integer *)
       List.iter
         (fun u ->
@@ -303,7 +302,7 @@ let normalise_rule (doc : document) (r : resolved_rule) : resolved_rule =
           (* only when the target IS the finest can the restated (finer) value be
              written without a divide-down the encoding cannot hold; a coarser
              target keeps the existing loud refusal. *)
-          if Q.equal (Arith.total_factor tu) (Arith.total_factor finest) then
+          if Q.equal (Factors.total tu) (Factors.total finest) then
             { r with value_node = Some (norm_expr ~tu ~to_finest value_node) }
           else r
       | _ -> r)
