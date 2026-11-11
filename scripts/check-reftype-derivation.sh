@@ -275,7 +275,11 @@
 #   - preposition: every `Dimension.preposition` stripped;
 #   - percentage: every percentage tag (`presentation: "percentage"` on a Number) stripped;
 #   - rule-group: every `RuleGroup` with `recursive: false` taken out of `ruleGroups`; a recursive group
-#     stays, because membership of one admits a creation cycle (WF-045), which is core.
+#     stays, because membership of one admits a creation cycle (WF-045), which is core;
+#   - rule-annotations: every `statuteAnnotations` of a Rule stripped (those of a Default ride the name leg);
+#   - diagnostics: every entry of the root list `diagnostics` (required in the schema) keeps its place, its
+#     `message` gets the prefix "(exchanged) " and its `line` grows by one; the old message stays inside the
+#     new one, so every Unresolved snippet it accounted for it still accounts for (WF-113 (b)).
 # Every golden with at least one of these fields and with case files is replayed ONCE, against one
 # combined copy with every field changed at once, with the executors and the comparison of the origin
 # leg (ref and clingo per case against the pinned expectations; the two Drools branches print their own
@@ -1012,8 +1016,29 @@ def rule_group(doc):
     return len(groups) - len(kept)
 
 
+def rule_annotations(doc):
+    n = 0
+    for r in nodes(doc, "Rule"):
+        if r.pop("statuteAnnotations", None) is not None:
+            n += 1
+    return n
+
+
+def diagnostics(doc):
+    # Required at the root, so every entry keeps its place and changes its message and line; the message keeps
+    # the old text after a prefix, so every marker snippet it contained it still contains (WF-113 (b)) and the
+    # copy stays a document.
+    n = 0
+    for d in doc["diagnostics"]:
+        d["message"] = "(exchanged) " + d["message"]
+        d["line"] = RawNum(str(int(d["line"].raw) + 1))
+        n += 1
+    return n
+
+
 FIELDS = [("kind", kind), ("rule-presentation", rule_presentation), ("preposition", preposition),
-          ("percentage", percentage), ("rule-group", rule_group)]
+          ("percentage", percentage), ("rule-group", rule_group), ("rule-annotations", rule_annotations),
+          ("diagnostics", diagnostics)]
 
 source, target = sys.argv[1], sys.argv[2]
 
@@ -1150,6 +1175,11 @@ EXPECTED_MIN_PERCENTAGE_GOLDENS=7           # 2026-11-11: measured 7 goldens wit
 EXPECTED_MIN_PERCENTAGE_STRIPPED=13         # 2026-11-11: measured 13 percentage tags stripped
 EXPECTED_MIN_RULE_GROUP_GOLDENS=1           # 2026-11-11: measured 1 golden with a non-recursive rule group (jutterswet-vocabulaires)
 EXPECTED_MIN_RULE_GROUP_STRIPPED=1          # 2026-11-11: measured 1 non-recursive rule group stripped
+# Two provenance fields of IR-SPEC ch. 10, measured 2026-11-11 when they joined the leg.
+EXPECTED_MIN_RULE_ANNOTATIONS_GOLDENS=11    # 2026-11-11: measured 11 goldens with a rule that carries statuteAnnotations
+EXPECTED_MIN_RULE_ANNOTATIONS_STRIPPED=34   # 2026-11-11: measured 34 statuteAnnotations lists of rules stripped
+EXPECTED_MIN_DIAGNOSTICS_GOLDENS=3          # 2026-11-11: measured 3 goldens with a diagnostic
+EXPECTED_MIN_DIAGNOSTICS_EXCHANGED=5        # 2026-11-11: measured 5 diagnostics exchanged (message and line)
 
 status=0
 find corpus/golden -name ir.json 2>/dev/null | sort > "$LIST"
@@ -1455,7 +1485,7 @@ fields_alone() {   # <executor> <untouched ir.json> <copies' directory> <file of
                 echo "  $1 gives the same outcome on the untouched golden: it misses the pinned outcome there too (gates 5 and 6), so no field is assigned"
                 return
             fi
-            for fa_field in kind rule-presentation preposition percentage rule-group; do
+            for fa_field in kind rule-presentation preposition percentage rule-group rule-annotations diagnostics; do
                 [ -f "$3/$fa_field.json" ] || continue
                 [ "$(outcome "$1" "$3/$fa_field.json" "$fa_case")" = "$fa_base" ] || fa_moved="$fa_moved $fa_field"
             done ;;
@@ -1465,7 +1495,7 @@ fields_alone() {   # <executor> <untouched ir.json> <copies' directory> <file of
             fa_dir=$3 fa_cases=$4
             set --
             while IFS= read -r fa_case; do set -- "$@" "$fa_case"; done < "$fa_cases"
-            for fa_field in kind rule-presentation preposition percentage rule-group; do
+            for fa_field in kind rule-presentation preposition percentage rule-group rule-annotations diagnostics; do
                 [ -f "$fa_dir/$fa_field.json" ] || continue
                 [ "$(java $PARALLEL_JVM_FLAGS -jar "$JAR" $fa_flag "$fa_dir/$fa_field.json" "$@" 2>/dev/null | tail -1)" = "$fa_line" ] \
                     || fa_moved="$fa_moved $fa_field"
@@ -1517,8 +1547,10 @@ leg_presentation() {
     n_prep_goldens=0 n_prep=0
     n_pct_goldens=0 n_pct=0
     n_rg_goldens=0 n_rg=0
+    n_ra_goldens=0 n_ra=0
+    n_diag_goldens=0 n_diag=0
     n_preplays=0
-    while read -r i dir nk nrp nprep npct nrg; do
+    while read -r i dir nk nrp nprep npct nrg nra ndiag; do
         ident=${dir#corpus/golden/}
         ir=$dir/ir.json
         pdir="$WORK/presentation/$ident"
@@ -1528,6 +1560,8 @@ leg_presentation() {
         [ "$nprep" -eq 0 ] || { n_prep_goldens=$((n_prep_goldens + 1)); n_prep=$((n_prep + nprep)); }
         [ "$npct" -eq 0 ] || { n_pct_goldens=$((n_pct_goldens + 1)); n_pct=$((n_pct + npct)); }
         [ "$nrg" -eq 0 ] || { n_rg_goldens=$((n_rg_goldens + 1)); n_rg=$((n_rg + nrg)); }
+        [ "$nra" -eq 0 ] || { n_ra_goldens=$((n_ra_goldens + 1)); n_ra=$((n_ra + nra)); }
+        [ "$ndiag" -eq 0 ] || { n_diag_goldens=$((n_diag_goldens + 1)); n_diag=$((n_diag + ndiag)); }
         c=0
         while IFS= read -r case; do
             c=$((c + 1))
@@ -1567,9 +1601,10 @@ leg_presentation() {
             status=1
         fi
     done < "$WORK/presentation.list"
-    printf 'leg_status=%s n_pgoldens=%s n_kind_goldens=%s n_kind=%s n_rp_goldens=%s n_rp=%s n_prep_goldens=%s n_prep=%s n_pct_goldens=%s n_pct=%s n_rg_goldens=%s n_rg=%s n_preplays=%s\n' \
+    printf 'leg_status=%s n_pgoldens=%s n_kind_goldens=%s n_kind=%s n_rp_goldens=%s n_rp=%s n_prep_goldens=%s n_prep=%s n_pct_goldens=%s n_pct=%s n_rg_goldens=%s n_rg=%s n_ra_goldens=%s n_ra=%s n_diag_goldens=%s n_diag=%s n_preplays=%s\n' \
         "$status" "$n_pgoldens" "$n_kind_goldens" "$n_kind" "$n_rp_goldens" "$n_rp" "$n_prep_goldens" "$n_prep" \
-        "$n_pct_goldens" "$n_pct" "$n_rg_goldens" "$n_rg" "$n_preplays" > "$WORK/presentation.counts"
+        "$n_pct_goldens" "$n_pct" "$n_rg_goldens" "$n_rg" "$n_ra_goldens" "$n_ra" \
+        "$n_diag_goldens" "$n_diag" "$n_preplays" > "$WORK/presentation.counts"
 }
 
 # --- the five legs, side by side --------------------------------------------------------------------
@@ -1677,6 +1712,10 @@ presentation_floor "$n_pct_goldens" "$EXPECTED_MIN_PERCENTAGE_GOLDENS" EXPECTED_
 presentation_floor "$n_pct" "$EXPECTED_MIN_PERCENTAGE_STRIPPED" EXPECTED_MIN_PERCENTAGE_STRIPPED 'percentage tag(s) stripped'
 presentation_floor "$n_rg_goldens" "$EXPECTED_MIN_RULE_GROUP_GOLDENS" EXPECTED_MIN_RULE_GROUP_GOLDENS 'golden(s) with a non-recursive rule group'
 presentation_floor "$n_rg" "$EXPECTED_MIN_RULE_GROUP_STRIPPED" EXPECTED_MIN_RULE_GROUP_STRIPPED 'non-recursive rule group(s) stripped'
+presentation_floor "$n_ra_goldens" "$EXPECTED_MIN_RULE_ANNOTATIONS_GOLDENS" EXPECTED_MIN_RULE_ANNOTATIONS_GOLDENS 'golden(s) with an annotated rule'
+presentation_floor "$n_ra" "$EXPECTED_MIN_RULE_ANNOTATIONS_STRIPPED" EXPECTED_MIN_RULE_ANNOTATIONS_STRIPPED 'statuteAnnotations list(s) of rules stripped'
+presentation_floor "$n_diag_goldens" "$EXPECTED_MIN_DIAGNOSTICS_GOLDENS" EXPECTED_MIN_DIAGNOSTICS_GOLDENS 'golden(s) with a diagnostic'
+presentation_floor "$n_diag" "$EXPECTED_MIN_DIAGNOSTICS_EXCHANGED" EXPECTED_MIN_DIAGNOSTICS_EXCHANGED 'diagnostic(s) exchanged'
 
 # The survivor list, BOTH halves (the check-noop pattern): an entry whose golden is gone is stale,
 # and so is an entry that no longer diverges — it then admits an exception nothing needs any more,
@@ -1766,13 +1805,15 @@ if [ "$status" -eq 0 ]; then
     printf '  name leg: %s golden(s) with named or annotated defaults, floor %s; %s names stripped (floor %s), %s statuteAnnotations lists (floor %s); %s executor replays reproduce the untouched outcome\n' \
         "$n_ngoldens" "$EXPECTED_MIN_NAME_GOLDENS" "$n_n_stripped" "$EXPECTED_MIN_NAME_STRIPPED" \
         "$n_a_stripped" "$EXPECTED_MIN_ANNOTATIONS_STRIPPED" "$n_nreplays"
-    printf '  presentation leg: %s golden(s) on one combined copy each, floor %s; %s characteristic kinds rotated over %s goldens (floors %s, %s), %s rule presentation values exchanged over %s (floors %s, %s), %s prepositions stripped over %s (floors %s, %s), %s percentage tags stripped over %s (floors %s, %s), %s non-recursive rule groups stripped over %s (floors %s, %s); %s executor replays reproduce the untouched outcome\n' \
+    printf '  presentation leg: %s golden(s) on one combined copy each, floor %s; %s characteristic kinds rotated over %s goldens (floors %s, %s), %s rule presentation values exchanged over %s (floors %s, %s), %s prepositions stripped over %s (floors %s, %s), %s percentage tags stripped over %s (floors %s, %s), %s non-recursive rule groups stripped over %s (floors %s, %s), %s statuteAnnotations lists of rules stripped over %s (floors %s, %s), %s diagnostics exchanged over %s (floors %s, %s); %s executor replays reproduce the untouched outcome\n' \
         "$n_pgoldens" "$EXPECTED_MIN_PRESENTATION_GOLDENS" \
         "$n_kind" "$n_kind_goldens" "$EXPECTED_MIN_KIND_ROTATED" "$EXPECTED_MIN_KIND_GOLDENS" \
         "$n_rp" "$n_rp_goldens" "$EXPECTED_MIN_RULE_PRESENTATION_EXCHANGED" "$EXPECTED_MIN_RULE_PRESENTATION_GOLDENS" \
         "$n_prep" "$n_prep_goldens" "$EXPECTED_MIN_PREPOSITION_STRIPPED" "$EXPECTED_MIN_PREPOSITION_GOLDENS" \
         "$n_pct" "$n_pct_goldens" "$EXPECTED_MIN_PERCENTAGE_STRIPPED" "$EXPECTED_MIN_PERCENTAGE_GOLDENS" \
-        "$n_rg" "$n_rg_goldens" "$EXPECTED_MIN_RULE_GROUP_STRIPPED" "$EXPECTED_MIN_RULE_GROUP_GOLDENS" "$n_preplays"
+        "$n_rg" "$n_rg_goldens" "$EXPECTED_MIN_RULE_GROUP_STRIPPED" "$EXPECTED_MIN_RULE_GROUP_GOLDENS" \
+        "$n_ra" "$n_ra_goldens" "$EXPECTED_MIN_RULE_ANNOTATIONS_STRIPPED" "$EXPECTED_MIN_RULE_ANNOTATIONS_GOLDENS" \
+        "$n_diag" "$n_diag_goldens" "$EXPECTED_MIN_DIAGNOSTICS_EXCHANGED" "$EXPECTED_MIN_DIAGNOSTICS_GOLDENS" "$n_preplays"
     printf '  corpus-wide accounting: %s unit-bearing annotations = %s twistable + %s exempt (the annotation IS the source) + %s without a convertible sister + %s at a §2.10 fourth-class branch (v0 derives no result unit) + %s outside the twist table\n' \
         "$n_unit" "$((n_unit - n_exempt - n_without_sister - n_uncovered))" \
         "$n_exempt" "$n_without_sister" "$n_fourth" "$n_unknown"
