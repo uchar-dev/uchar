@@ -3533,6 +3533,13 @@ let quotient_units_ok ?per_period ctx left_side right_side =
     unit_free_ok ?per_period ctx (Some right_side)
   end
 
+(* where a guard stands: the term its viol/2 witness names and the literals
+   that ground it. In a closed body (a lambda, a fold's init and body, a
+   MapList body) it is the list id the body is keyed by under the atoms that
+   bind it; at rule level the subject under the rule's guard. The fences and
+   fail-fast guards a form writes at either level ride one *)
+type carrier = { witness : string; guard_body : string list }
+
 (* the viol/2 range fence on emitted arithmetic: fires when an operand
    could push the term past clingo's silently-wrapping integer range;
    [body] must ground the subject *)
@@ -3583,14 +3590,14 @@ let compared_with_factors ctx ~subject ~subject_ot (kl, kr) ((bl, _, _) as l) ((
   in
   (times kl l, times kr r)
 
-(* [compared_with_factors] in a closed body: the fences ride [guard_body] and
-   [witness], as every closed-body fence does; [atoms] bind both terms *)
-let closed_compared_with_factors ctx ~guard_body ~witness (l : expr) (r : expr) atoms lt rt =
+(* [compared_with_factors] in a closed body: the fences ride [carrier], as
+   every closed-body fence does; [atoms] bind both terms *)
+let closed_compared_with_factors ctx ~carrier (l : expr) (r : expr) atoms lt rt =
   let kl, kr = comparison_factors ctx l r in
   let times k t =
     if k = 1 then t
     else begin
-      range_guard ctx ~subject:witness ~body:(guard_body @ atoms) [ (t, max_int31 / k) ];
+      range_guard ctx ~subject:carrier.witness ~body:(carrier.guard_body @ atoms) [ (t, max_int31 / k) ];
       Printf.sprintf "(%s*%d)" t k
     end
   in
@@ -7447,7 +7454,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           let reach = rule_reach ctx ~subject ~subject_ot in
           ctx.param_reach <- (fun _ -> reach e);
           if ctx.deposit_subject = None then ctx.deposit_subject <- Some subject;
-          let r = closed_term ctx ~guard_body:[ Printf.sprintf "lpres(%s)" lterm ] ~witness:lterm init in
+          let r = closed_term ctx ~carrier:{ witness = lterm; guard_body = [ Printf.sprintf "lpres(%s)" lterm ] } init in
           ctx.param_reach <- saved_r;
           ctx.deposit_subject <- saved_s;
           r
@@ -7476,7 +7483,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (let reach = rule_reach ctx ~subject ~subject_ot in
        ctx.param_reach <- (fun _ -> reach e));
       if ctx.deposit_subject = None then ctx.deposit_subject <- Some subject;
-      let branches = body_branches ctx ~guard_body:rec_body ~witness:lterm body in
+      let branches = body_branches ctx ~carrier:{ witness = lterm; guard_body = rec_body } body in
       ctx.binders <- saved;
       ctx.param_reach <- saved_r;
       ctx.deposit_subject <- saved_s;
@@ -10212,7 +10219,7 @@ and list_source ctx ~subject ~subject_ot (e : expr) : string * int =
       (let reach = rule_reach ctx ~subject ~subject_ot in
        ctx.param_reach <- (fun _ -> reach e));
       if ctx.deposit_subject = None then ctx.deposit_subject <- Some subject;
-      let branches = body_branches ctx ~guard_body:base ~witness:mapid body in
+      let branches = body_branches ctx ~carrier:{ witness = mapid; guard_body = base } body in
       ctx.binders <- saved;
       ctx.param_reach <- saved_r;
       ctx.deposit_subject <- saved_s;
@@ -10252,17 +10259,17 @@ and list_source ctx ~subject ~subject_ot (e : expr) : string * int =
    complemented branch (S7 builtin complements, no NAF), a Match on a bound
    term into one branch per arm (functor unification in a builtin equality),
    an Invoke inlines the acyclic FunctionDef body, and any other closed term
-   is a single branch. The [guard_body] grounds the emitted range fences. *)
-and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * int) list =
+   is a single branch. The [carrier] grounds the emitted range fences. *)
+and body_branches ctx ~carrier (e : expr) : (string list * string * int) list =
   match let_into_arm ctx e with
-  | Some pushed -> body_branches ctx ~guard_body ~witness pushed
+  | Some pushed -> body_branches ctx ~carrier pushed
   | None ->
   match e with
   | If_then_else { condition; then_; else_; _ } ->
-      let catoms, pos, neg = body_condition ctx ~guard_body ~witness condition in
+      let catoms, pos, neg = body_condition ctx ~carrier condition in
       (* ch. 10.2 inside a closed body — the third route, and the same rule:
-         the arm's guard goes into [guard_body] too, not only into the branch's
-         own result guard. [guard_body] is what grounds the fences and the
+         the arm's guard goes into the [carrier] too, not only into the branch's
+         own result guard. The [carrier] is what grounds the fences and the
          viol/2 fail-fast guards [closed_term] emits, so leaving it untouched
          made a division by a zero element in the ELSE arm turn the program
          UNSAT on a list whose every element takes the THEN arm — measured on a
@@ -10274,17 +10281,17 @@ and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * 
          fires where its arm is taken and nowhere else. The [Match] arm below already threaded its pattern this
          way; this arm was the one that did not. *)
       let arm extra e =
-        let guard_body = guard_body @ catoms @ [ extra ] in
+        let carrier = { carrier with guard_body = carrier.guard_body @ catoms @ [ extra ] } in
         List.map
           (fun (g, t, s) -> (catoms @ (extra :: g), t, s))
-          (body_branches ctx ~guard_body ~witness e)
+          (body_branches ctx ~carrier e)
       in
       arm pos then_ @ arm neg else_
-  | Match { scrutinee; arms; _ } -> match_branches ctx ~guard_body ~witness scrutinee arms
+  | Match { scrutinee; arms; _ } -> match_branches ctx ~carrier scrutinee arms
   | Let { binder; body; _ } when not (reads_binder binder body) ->
       (* ch. 10.6 clause 3: an unread binder evaluates nothing, closed body or
          not — no inlined value, no fence *)
-      body_branches ctx ~guard_body ~witness body
+      body_branches ctx ~carrier body
   | Let _ when closed_let_chain ctx e <> None -> (
       (* ch. 10.6 call-by-need over a Match: a Let's value runs at the first
          read of its binder, and when a chain of Lets stands over a Match whose
@@ -10297,7 +10304,7 @@ and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * 
          folds it. Only for a chain with such a value, so a case that binds its
          parameters translates as before. *)
       match closed_let_chain ctx e with
-      | Some (lets, scrutinee, arms) -> match_branches ctx ~guard_body ~witness ~pending:lets scrutinee arms
+      | Some (lets, scrutinee, arms) -> match_branches ctx ~carrier ~pending:lets scrutinee arms
       | None -> assert false)
   | Let { binder; value; body; _ } ->
       (* a Let whose body still branches (an IfThenElse reducer, a Match under a
@@ -10307,10 +10314,10 @@ and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * 
          here — a closed body is leeg-free (ch. 10.1), so a value that binds at
          all binds on every branch. The arm above is the exception, where the
          value can fault. *)
-      let va, vt, vs = closed_term ctx ~guard_body ~witness value in
+      let va, vt, vs = closed_term ctx ~carrier value in
       let saved = ctx.binders in
       ctx.binders <- (norm binder, ([], vt, vs, binder_type ctx value)) :: ctx.binders;
-      let branches = body_branches ctx ~guard_body:(guard_body @ va) ~witness body in
+      let branches = body_branches ctx ~carrier:{ carrier with guard_body = carrier.guard_body @ va } body in
       ctx.binders <- saved;
       List.map (fun (g, t, s) -> (va @ g, t, s)) branches
   | Invoke { function_name; arguments; _ } ->
@@ -10328,7 +10335,7 @@ and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * 
       let argbinds =
         List.map2
           (fun (pn, pdt) arg ->
-            let a, t, s = closed_term ctx ~guard_body ~witness arg in
+            let a, t, s = closed_term ctx ~carrier arg in
             (a, (norm pn, ([], t, s, Some pdt))))
           fd.fd_parameters arguments
       in
@@ -10336,7 +10343,7 @@ and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * 
       let saved = ctx.binders in
       ctx.binders <- List.map snd argbinds @ ctx.binders;
       let branches =
-        body_branches ctx ~guard_body:(guard_body @ arg_atoms) ~witness fd.fd_body
+        body_branches ctx ~carrier:{ carrier with guard_body = carrier.guard_body @ arg_atoms } fd.fd_body
       in
       ctx.binders <- saved;
       List.map (fun (g, t, s) -> (arg_atoms @ g, t, s)) branches
@@ -10359,16 +10366,16 @@ and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * 
                 fault "a Construct payload branch scale %d does not match the declared payload scale %d"
                   s pscale;
               (g, Printf.sprintf "%s(%s)" f t, 0))
-            (body_branches ctx ~guard_body ~witness payload))
+            (body_branches ctx ~carrier payload))
   | _ ->
-      let a, t, s = closed_term ctx ~guard_body ~witness e in
+      let a, t, s = closed_term ctx ~carrier e in
       [ (a, t, s) ]
 
 (* the branches of a closed-body Match, one set per arm: the pattern joins the
    scrutinee's term, a unary arm binds its payload. [pending] is the chain of
    Lets standing over the Match ([closed_let_chain]), outermost first; each arm
    is translated inside it, so a value lands only in the arms that read it. *)
-and match_branches ctx ~guard_body ~witness ?pending scrutinee arms =
+and match_branches ctx ~carrier ?pending scrutinee arms =
   (* the enumeration variant of the keuzetype family is carried at rule
      level (translate_match, via the S2 symbolic operand) but not inside a
      closed body: a closed body has no subject to read the val atom from,
@@ -10405,7 +10412,7 @@ and match_branches ctx ~guard_body ~witness ?pending scrutinee arms =
       in
       let saved = ctx.binders in
       (match binding with Some b -> ctx.binders <- b :: ctx.binders | None -> ());
-      let arm_guard = guard_body @ [ pattern ] in
+      let arm_guard = carrier.guard_body @ [ pattern ] in
       let body =
         match pending with
         | None -> body
@@ -10416,7 +10423,7 @@ and match_branches ctx ~guard_body ~witness ?pending scrutinee arms =
               (fun (binder, value, typ, source_name) acc -> Let { typ; binder; value; body = acc; source_name })
               lets body
       in
-      let branches = body_branches ctx ~guard_body:arm_guard ~witness body in
+      let branches = body_branches ctx ~carrier:{ carrier with guard_body = arm_guard } body in
       ctx.binders <- saved;
       List.map (fun (g, t, s) -> (pattern :: g, t, s)) branches)
     arms
@@ -10425,25 +10432,25 @@ and match_branches ctx ~guard_body ~witness ?pending scrutinee arms =
    builtin, complement builtin). Closed bodies read only bound terms, so the
    comparison is a builtin over harmonised scales and the else-branch is its
    exact mirror — no NAF over derived atoms (the S7 closed-body point). *)
-and body_condition ctx ~guard_body ~witness (c : condition_expr) : string list * string * string =
+and body_condition ctx ~carrier (c : condition_expr) : string list * string * string =
   match c with
   | Comparison { op; left_side; right_side; time_period = None; _ } ->
       let l = req "left" left_side and r = req "right" right_side in
-      let la, lt, ls = closed_term ctx ~guard_body ~witness l in
-      let ra, rt, rs = closed_term ctx ~guard_body ~witness r in
+      let la, lt, ls = closed_term ctx ~carrier l in
+      let ra, rt, rs = closed_term ctx ~carrier r in
       (* no numeric_ok ctx stands in front of this arm at all, and a Construct is a
          first-class closed-body term (scale 0): mixed, it divided by zero;
          both-symbolic, it silently ordered constructor terms *)
       let ls = numeric_scale ~what:"a closed-body comparison" ls in
       let rs = numeric_scale ~what:"a closed-body comparison" rs in
       (* two convertible units restate by the factors of [comparison_factors] *)
-      let lt, rt = closed_compared_with_factors ctx ~guard_body ~witness l r (la @ ra) lt rt in
+      let lt, rt = closed_compared_with_factors ctx ~carrier l r (la @ ra) lt rt in
       let m = max ls rs in
       (* the fence reads the operand before the rescale, which can wrap *)
       let sc t s =
         if s = m then t
         else begin
-          range_guard ctx ~subject:witness ~body:(guard_body @ la @ ra) [ (t, max_int31 / (m / s)) ];
+          range_guard ctx ~subject:carrier.witness ~body:(carrier.guard_body @ la @ ra) [ (t, max_int31 / (m / s)) ];
           Printf.sprintf "(%s*%d)" t (m / s)
         end
       in
@@ -10460,9 +10467,8 @@ and body_condition ctx ~guard_body ~witness (c : condition_expr) : string list *
    binders (a lambda/function parameter or a match payload), literals,
    document parameters, additive combinations of those, and Constructs — the
    closed-body grammar (WF-067/069). Every emitted arithmetic step carries a
-   range fence grounded by [guard_body] and witnessed by [witness] (the
-   list-id), so the running accumulator cannot wrap silently past 2^31. *)
-and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int =
+   range fence that rides the [carrier] (witnessed by the list id), so the running accumulator cannot wrap silently past 2^31. *)
+and closed_term ctx ~carrier (e : expr) : string list * string * int =
   match e with
   | Binder_ref { ident; _ } -> (
       match List.assoc_opt (norm ident) ctx.binders with
@@ -10500,14 +10506,14 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
       | Some p ->
           let d = decimals_of_datatype p.par_datatype in
           let v = fresh ctx "P" in
-          unbound_param_guard ctx ~witness ~guard:(fun () -> guard_body @ ctx.param_reach e) name;
+          unbound_param_guard ctx ~witness:carrier.witness ~guard:(fun () -> carrier.guard_body @ ctx.param_reach e) name;
           ([ Printf.sprintf "param(%s,%s)" (str name) v ], v, pow10 d)
       | None -> fault "unknown parameter %S" name)
   | Binary { op = (Plus | Min) as op; left_side; right_side; _ } ->
       numeric_ok ctx left_side;
       numeric_ok ctx right_side;
-      let bl, tl, sl = coalesced_operand ctx ~guard_body ~witness (req "Binary.left" left_side) in
-      let br, tr, sr = coalesced_operand ctx ~guard_body ~witness (req "Binary.right" right_side) in
+      let bl, tl, sl = coalesced_operand ctx ~carrier (req "Binary.left" left_side) in
+      let br, tr, sr = coalesced_operand ctx ~carrier (req "Binary.right" right_side) in
       (* the numeric_ok ctx pair reads the wire `type` (and passes an unannotated
          binder); the scale is what the harmonisation actually divides by *)
       let sl = numeric_scale ~what:"a closed-body additive join" sl in
@@ -10516,11 +10522,11 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
       let sc t s = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
       let tl' = sc tl sl and tr' = sc tr sr in
       (* the fence reads the raw operand: the rescaled one can wrap inside it *)
-      range_guard ctx ~subject:witness
-        ~body:(guard_body @ bl @ br)
+      range_guard ctx ~subject:carrier.witness
+        ~body:(carrier.guard_body @ bl @ br)
         [ (tl, 1073741823 / (m / sl)); (tr, 1073741823 / (m / sr)) ];
       let term = Printf.sprintf "(%s%s%s)" tl' (if op = Plus then "+" else "-") tr' in
-      ctx.signs <- (term, Sum { l = tl; r = tr; minus = op = Min; subject = witness }) :: ctx.signs;
+      ctx.signs <- (term, Sum { l = tl; r = tr; minus = op = Min; subject = carrier.witness }) :: ctx.signs;
       (bl @ br, term, m)
   | Construct { typ; constructor_; argument = (None | Some (Literal _)) as argument; _ } ->
       ([], construct_ground_term ctx typ constructor_ argument, 0)
@@ -10537,7 +10543,7 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
       | None -> fault "nullary constructor %S built with an argument" constructor_
       | Some d ->
           let payload_scale = pow10 (decimals_of_datatype (Some d)) in
-          let atoms, term, scale = closed_term ctx ~guard_body ~witness arg in
+          let atoms, term, scale = closed_term ctx ~carrier arg in
           if scale <> payload_scale then
             fault
               "a Construct payload at scale %d does not match the declared payload scale %d \
@@ -10567,16 +10573,16 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
          function). Percentage-van is (l/100)·r with the /100 folded into the
          scale (sl·sr·100): no division anywhere, the rule-level fold carried into
          the body context (one encoding). The rule-level product encoding and its
-         46340 range fence, grounded by [guard_body] and keyed by [witness]. *)
+         46340 range fence, on the [carrier]. *)
       numeric_ok ctx left_side;
       numeric_ok ctx right_side;
       (match op with
       | Percentage_of -> pct_left_ok ctx left_side
       | _ -> unit_free_ok ctx left_side);
       unit_free_ok ctx right_side;
-      let bl, tl, sl = coalesced_operand ctx ~guard_body ~witness (req "Binary.left" left_side) in
-      let br, tr, sr = coalesced_operand ctx ~guard_body ~witness (req "Binary.right" right_side) in
-      range_guard ctx ~subject:witness ~body:(guard_body @ bl @ br) [ (tl, 46340); (tr, 46340) ];
+      let bl, tl, sl = coalesced_operand ctx ~carrier (req "Binary.left" left_side) in
+      let br, tr, sr = coalesced_operand ctx ~carrier (req "Binary.right" right_side) in
+      range_guard ctx ~subject:carrier.witness ~body:(carrier.guard_body @ bl @ br) [ (tl, 46340); (tr, 46340) ];
       let term = Printf.sprintf "(%s*%s)" tl tr in
       ctx.signs <- (term, Product (tl, tr)) :: ctx.signs;
       (bl @ br, term, sl * sr * (if op = Percentage_of then 100 else 1))
@@ -10584,7 +10590,7 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
     when money_mult_shape ctx base_expr ->
       (* the money × rate product Catala rounds to the cent (§5/S18(c)) inside a
          closed body — the split encoding, shared with the rule level *)
-      closed_money_mult ctx ~guard_body ~witness ~base_expr
+      closed_money_mult ctx ~carrier ~base_expr
   | Binary { op = Divided_by; left_side; right_side; _ } ->
       (* a closed-body bare division (§6.5): a compile-time positive constant
          divisor rides the gcd-reduced form (the tutorial's decimal of n /
@@ -10593,13 +10599,13 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
          edge gone because a closed-body binder is never leeg. Divisor-side
          range fence and non-exact viol both in body context. Here the
          quotient is no operand of a coalescing operator ([coalesced_operand]) *)
-      closed_division ctx ~guard_body ~witness ~coalesced:false ~rounding:None ~left_side ~right_side
+      closed_division ctx ~carrier ~coalesced:false ~rounding:None ~left_side ~right_side
   | Binary { op = Divided_by_abs; left_side; right_side; _ } ->
       (* the abs-division variant (ch. 2.2): the quotient truncated toward zero
          at 5 decimals — gringo's integer `/` IS that collapse on both signs, so
          the round_z-scale-5 form carried into the body context needs no
          exactness guard and no negative fence *)
-      closed_division ctx ~guard_body ~witness ~coalesced:false ~rounding:(Some (Toward_zero, 5))
+      closed_division ctx ~carrier ~coalesced:false ~rounding:(Some (Toward_zero, 5))
         ~left_side ~right_side
   | Binary { op = Power; left_side; right_side; _ } ->
       (* tot de macht in a closed body (ch. 2.2): a compile-time non-negative
@@ -10614,7 +10620,7 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
       unit_free_ok ctx left_side;
       unit_free_ok ctx right_side;
       let e = const_pow_exponent (req "Binary.right" right_side) in
-      let bl, tl, sl = closed_term ctx ~guard_body ~witness (req "Binary.left" left_side) in
+      let bl, tl, sl = closed_term ctx ~carrier (req "Binary.left" left_side) in
       (* the range test below divides by the base scale; [numeric_ok links] only
          read the wire `type` *)
       let sl = numeric_scale ~what:"a closed-body power base" sl in
@@ -10625,7 +10631,7 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
           else begin
             if acc_scale > 1_000_000_000 / sl then
               fault "the closed-body power's result scale %d^%d exceeds clingo's integer range" sl e;
-            range_guard ctx ~subject:witness ~body:(guard_body @ bl) [ (acc_term, 46340); (tl, 46340) ];
+            range_guard ctx ~subject:carrier.witness ~body:(carrier.guard_body @ bl) [ (acc_term, 46340); (tl, 46340) ];
             go (Printf.sprintf "(%s*%s)" acc_term tl) (acc_scale * sl) (k - 1)
           end
         in
@@ -10635,7 +10641,7 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
   | Let { binder; body; _ } when not (reads_binder binder body) ->
       (* ch. 10.6 clause 3: an unread binder evaluates nothing — the value is
          not inlined and its fences are not emitted *)
-      closed_term ctx ~guard_body ~witness body
+      closed_term ctx ~carrier body
   | Let { binder; value; body; _ } ->
       (* a Let INSIDE a closed body (ch. 10.6, the let_binder discipline carried
          into the body context): the value is itself a closed-body term, so it is
@@ -10646,10 +10652,10 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
          where a leeg value must break the reading positions); a closed-body
          binder is never leeg (ch. 10.1), so the read-place barrier is vacuous
          here and call-by-need coincides with call-by-value. *)
-      let va, vt, vs = closed_term ctx ~guard_body ~witness value in
+      let va, vt, vs = closed_term ctx ~carrier value in
       let saved = ctx.binders in
       ctx.binders <- (norm binder, ([], vt, vs, binder_type ctx value)) :: ctx.binders;
-      let ba, bt, bs = closed_term ctx ~guard_body:(guard_body @ va) ~witness body in
+      let ba, bt, bs = closed_term ctx ~carrier:{ carrier with guard_body = carrier.guard_body @ va } body in
       ctx.binders <- saved;
       (va @ ba, bt, bs)
   | Attribute_reference _ ->
@@ -10791,8 +10797,8 @@ and translate_money_mult ctx ~subject ~subject_ot ~base_expr : string list * str
    closed body carries no Let), and the A/C assignments are INLINE body atoms
    over fresh variables rather than a subject-keyed helper predicate, so the fold
    recurrence that consumes them binds the per-element index directly. The four
-   fences ride [witness] and [guard_body] — every fence moves to body context. *)
-and closed_money_mult ctx ~guard_body ~witness ~base_expr : string list * string * int =
+   fences ride the [carrier] — every fence moves to body context. *)
+and closed_money_mult ctx ~carrier ~base_expr : string list * string * int =
   let m, r =
     match base_expr with
     | Binary { op = Times; left_side; right_side; _ } -> (
@@ -10807,11 +10813,11 @@ and closed_money_mult ctx ~guard_body ~witness ~base_expr : string list * string
   numeric_ok ctx (Some r);
   unit_free_ok ctx (Some m);
   unit_free_ok ctx (Some r);
-  let ma, tm, sm = closed_term ctx ~guard_body ~witness m in
-  let ra, tr, sr = closed_term ctx ~guard_body ~witness r in
-  let tr, tr_sign = money_mult_rate ctx ~subject:witness ~body:(guard_body @ ma @ ra) ~sm ~tr ~sr in
-  let gbody = (guard_body @ ma @ ra) in
-  money_mult_fences ctx ~subject:witness ~gbody ~tm ~tr ~tr_sign;
+  let ma, tm, sm = closed_term ctx ~carrier m in
+  let ra, tr, sr = closed_term ctx ~carrier r in
+  let tr, tr_sign = money_mult_rate ctx ~subject:carrier.witness ~body:(carrier.guard_body @ ma @ ra) ~sm ~tr ~sr in
+  let gbody = (carrier.guard_body @ ma @ ra) in
+  money_mult_fences ctx ~subject:carrier.witness ~gbody ~tm ~tr ~tr_sign;
   let a = fresh ctx "A" and c = fresh ctx "C" in
   (ma @ ra @ money_mult_body ~a ~c ~tm ~tr ~tr_sign, c, 100)
 
@@ -10819,14 +10825,14 @@ and closed_money_mult ctx ~guard_body ~witness ~base_expr : string list * string
    minus, times, percentage-of: the ch. 1.2 coalesce table): a division there
    is translated as [coalesced], so its numeric-zero divisor gives 0 beside its
    §9.5 deposit; every other operand is an ordinary closed term *)
-and coalesced_operand ctx ~guard_body ~witness (e : expr) : string list * string * int =
+and coalesced_operand ctx ~carrier (e : expr) : string list * string * int =
   match e with
   | Binary { op = Divided_by; left_side; right_side; _ } ->
-      closed_division ctx ~guard_body ~witness ~coalesced:true ~rounding:None ~left_side ~right_side
+      closed_division ctx ~carrier ~coalesced:true ~rounding:None ~left_side ~right_side
   | Binary { op = Divided_by_abs; left_side; right_side; _ } ->
-      closed_division ctx ~guard_body ~witness ~coalesced:true ~rounding:(Some (Toward_zero, 5))
+      closed_division ctx ~carrier ~coalesced:true ~rounding:(Some (Toward_zero, 5))
         ~left_side ~right_side
-  | _ -> closed_term ctx ~guard_body ~witness e
+  | _ -> closed_term ctx ~carrier e
 
 (* a closed-body division (§6.5/S18), the rule-level [translate_division]
    carried into the body context. A COMPILE-TIME positive constant divisor folds
@@ -10834,8 +10840,8 @@ and coalesced_operand ctx ~guard_body ~witness (e : expr) : string list * string
    divisor (a bound binder — a list element) keeps the two-factor form. The
    empty-operand edges the rule level carries (empty dividend → 0, empty divisor
    → the §9.5 channel) never arise here — a closed-body operand read is never
-   leeg (ch. 10.1) — so only the divisor-side fences keyed by [witness] and
-   grounded by [guard_body]. A runtime divisor can be a numeric zero, and the
+   leeg (ch. 10.1) — so only the divisor-side fences, on the [carrier]. A
+   runtime divisor can be a numeric zero, and the
    quotient is then leeg with a §9.5 deposit of EF-005 (RUNTIME-SEMANTICS
    ch. 1.4 point 4). This encoding carries that leeg only where it coalesces:
    [coalesced] says the quotient is an operand of plus, minus, times or
@@ -10853,15 +10859,15 @@ and coalesced_operand ctx ~guard_body ~witness (e : expr) : string list * string
    exactness guard and no negative fence. The exactness test runs at the
    precision the fold/write will STORE ([ctx.write_scale] for the bare form, the
    collapse scale for abs), not merely at the operand scales. *)
-and closed_division ctx ~guard_body ~witness ~coalesced ~rounding ~left_side ~right_side :
+and closed_division ctx ~carrier ~coalesced ~rounding ~left_side ~right_side :
     string list * string * int =
   let left_side = req "Binary.left" left_side and right_side = req "Binary.right" right_side in
   numeric_ok ctx (Some left_side);
   numeric_ok ctx (Some right_side);
   unit_free_ok ctx (Some left_side);
   unit_free_ok ctx (Some right_side);
-  let bl, tl, sl = closed_term ctx ~guard_body ~witness left_side in
-  let br, tr, sr = closed_term ctx ~guard_body ~witness right_side in
+  let bl, tl, sl = closed_term ctx ~carrier left_side in
+  let br, tr, sr = closed_term ctx ~carrier right_side in
   (* both scales become gcd operands and divisors below — the
      [translate_division] fence, on the closed-body sibling *)
   let sl = numeric_scale ~what:"a closed-body division dividend" sl in
@@ -10896,8 +10902,8 @@ and closed_division ctx ~guard_body ~witness ~coalesced ~rounding ~left_side ~ri
   (* only a genuine runtime divisor (a bound binder) can be numeric zero; a
      constant divisor is fenced positive, even on the two-factor fallback *)
   let runtime = const_div = None in
-  let gbody = guard_body @ bl @ br in
-  range_guard ctx ~subject:witness ~body:gbody range_bounds;
+  let gbody = carrier.guard_body @ bl @ br in
+  range_guard ctx ~subject:carrier.witness ~body:gbody range_bounds;
   let zero = Printf.sprintf "(%s) == 0" tr in
   let deposit_subject = if coalesced then ctx.deposit_subject else None in
   (match (runtime, deposit_subject) with
@@ -10906,7 +10912,7 @@ and closed_division ctx ~guard_body ~witness ~coalesced ~rounding ~left_side ~ri
       deposit ctx ~code:"EF-005" ~rule:(str ctx.rule_name) ~subject
         (ctx.param_reach right_side @ gbody @ [ zero ])
   | true, None ->
-      emit_viol ctx ~subject:witness closed_zero_division (gbody @ [ zero ]));
+      emit_viol ctx ~subject:carrier.witness closed_zero_division (gbody @ [ zero ]));
   (* the coalesced quotient: numt and dent as they are where the divisor is not
      zero, 0 over 1 where it is *)
   let numt, dent, value_guard =
@@ -10921,7 +10927,7 @@ and closed_division ctx ~guard_body ~witness ~coalesced ~rounding ~left_side ~ri
   match rounding with
   | None ->
       let reason, code = non_exact_division ctx in
-      emit_viol ctx ~code ~subject:witness reason
+      emit_viol ctx ~code ~subject:carrier.witness reason
         ((gbody @ value_guard) @ [ Printf.sprintf "%s \\ %s != 0" numt dent ]);
       ( bl @ br @ value_guard @ [ Printf.sprintf "%s \\ %s == 0" numt dent ],
         Printf.sprintf "(%s/%s)" numt dent,
