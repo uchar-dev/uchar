@@ -1,0 +1,51 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.EmptyBarrier;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// de grens is de drempel van de Jutter
+function Object waarde_toeslaggrensVanEenJutter(Object $drempel) {
+    try {
+        return ComputeHelpers.fitTarget(let_toeslaggrensVanEenJutter($drempel), Integer.valueOf(0), "toeslaggrens", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de grens is de drempel van de Jutter
+function Object let_toeslaggrensVanEenJutter(Object $drempel) {
+    Object cel_1 = ComputeHelpers.binderCell();
+    try {
+        return ComputeHelpers.largest(ComputeHelpers.largest(null, (RegelSpraakRuntime.rsAggVergelijk(binder_toeslaggrensVanEenJutter($drempel, cel_1), new java.math.BigDecimal("3"), ">") ? (Object) binder_toeslaggrensVanEenJutter($drempel, cel_1) : (Object) new java.math.BigDecimal("0"))), new java.math.BigDecimal("1"));
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_1);
+    }
+}
+
+// de drempel van de Jutter
+function Object binder_toeslaggrensVanEenJutter(Object $drempel, Object cel_1) {
+    if (!ComputeHelpers.binderCellFilled(cel_1)) {
+        ComputeHelpers.fillBinderCell(cel_1, $drempel);
+    }
+    return ComputeHelpers.binderValue(cel_1);
+}
+
+rule "toeslaggrens van een jutter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $drempel : drempel )
+then
+    Object v = waarde_toeslaggrensVanEenJutter($drempel);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "toeslaggrens van een jutter", ComputeHelpers.designate(v, "toeslaggrens van een jutter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "toeslaggrens", false), v, "toeslaggrens van een jutter"));
+        }
+    }
+end
+
