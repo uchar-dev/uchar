@@ -5839,17 +5839,6 @@ let verifier_clean ~name ~ir =
   | [] -> check (name ^ ": verifier-clean") true
   | vs -> check (name ^ ": verifier-clean (" ^ String.concat "; " vs ^ ")") false
 
-(* de weigering moet DE weigering zijn: niet-leeg, en elke klacht draagt het
-   genoemde WF-nummer. Anders zou een document dat om een heel andere reden
-   ill-formed is deze getuige groen houden. *)
-let verifier_refuses ~name ~ir ~wf =
-  let vs = wf_ids ir in
-  let is v = String.length v >= String.length wf && String.sub v 0 (String.length wf) = wf in
-  check
-    (name ^ ": " ^ wf ^ " refuses the form at the door, and nothing else complains ("
-   ^ String.concat "; " vs ^ ")")
-    (vs <> [] && List.for_all is vs)
-
 let arm_attrs3 =
   attribute_ref "inkomen" arm_nn ^ ", " ^ attribute_ref "restpost" arm_nn ^ ", "
   ^ attribute_ref "heffing" arm_ob
@@ -6213,12 +6202,11 @@ let () =
     ~case_text:plays ~needle:"a closed-body term here"
 
 (* --- knoop 3: het AGGREGATIELICHAAM ---------------------------------------
-   Bestaat niet in welgevormd IR, en dat is de meting: de verifier loopt elke
-   expressiepositie binnen een `Function_call` — de leegwaarde en elk argument — op
-   REGELNIVEAU, en daar is een `IfThenElse` WF-069-ill-formed. Er valt dus niets
-   te dragen en niets te weigeren in deze backend; de weigering staat aan de
-   deur, bij gate 3, en wordt hier met dezelfde [Ir_v0.Checks.all] vastgelegd.
-   Twee documenten, omdat het twee posities zijn. *)
+   Een `IfThenElse` in de leegwaarde of een argument van een aggregatie binnen
+   een Let-body is welgevormd (WF-069: de body-positie reikt tot in de
+   operanden). Ref speelt hem; deze backend tilt de takknoop niet uit een
+   aggregatie en weigert luid, zoals bij het vouwlichaam hierboven. Twee
+   documenten, omdat het twee posities zijn. *)
 
 (* de aggregatie vouwt over een echt feittype, zodat de enige klacht over het
    document de WF-069 van de takknoop is en niet een gedegradeerde vouwbron *)
@@ -6239,6 +6227,19 @@ let with_vondsten ir =
                   "many": false },
                 { "node": "Role", "name": "vondst", "objectType": "Vondst",
                   "plural": "vondsten", "many": true } ] } ],|}
+
+(* J1 earns more than the threshold and has restpost 0: the branch takes its then arm, so the
+   division in the else arm, k by a zero restpost, is never read *)
+let agg_body_case =
+  Printf.sprintf
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+      { "label": "J1", "objectType": "Jutter",
+        "attributes": { "inkomen": { "number": "40" }, "restpost": { "number": "0" } },
+        "roles": {}, "characteristics": [] } ],
+    "parameters": { %s } },
+  %s }|}
+    arm_params12 (arm_val "0.00")
 
 let () =
   (* positie 1: de §5.8.2-leegwaarde, een zuivere waardepositie *)
@@ -6264,8 +6265,11 @@ let () =
                                          "role": "vondst" } }|}
                         (arm_on_k ~then_branch:(arm_lit "0.00")) arm_ob))))
   in
-  verifier_refuses ~name:"ch10.6 aggregation body between Let and branch (emptyFallback)"
-    ~ir:empty_fallback_form ~wf:"WF-069";
+  let name = "ch10.6 aggregation body between Let and branch (emptyFallback)" in
+  verifier_clean ~name ~ir:empty_fallback_form;
+  ref_matches ~name:(name ^ " [ref plays]") ~ir:empty_fallback_form ~case_text:agg_body_case;
+  faults_with ~name:(name ^ " refuses loudly") ~ir:empty_fallback_form ~case_text:agg_body_case
+    ~needle:"sum fallback other than 0 is not translated";
   (* positie 2: een gelijst waardefold-argument (§5.8.3) *)
   let argument_form =
     arm_doc ~attributes:arm_attrs3
@@ -6282,8 +6286,11 @@ let () =
                          "source": { "snippet": "het minimum van de twee" } }|}
                      (arm_on_k ~then_branch:(arm_lit "0.00")) (arm_par "basisheffing") arm_ob)))
   in
-  verifier_refuses ~name:"ch10.6 aggregation body between Let and branch (argument)"
-    ~ir:argument_form ~wf:"WF-069"
+  let name = "ch10.6 aggregation body between Let and branch (argument)" in
+  verifier_clean ~name ~ir:argument_form;
+  ref_matches ~name:(name ^ " [ref plays]") ~ir:argument_form ~case_text:agg_body_case;
+  faults_with ~name:(name ^ " refuses loudly") ~ir:argument_form ~case_text:agg_body_case
+    ~needle:"expression kind not translated"
 
 (* --- `first`/`last` over een SETBRON (kaart eerste-laatste-setvouw-kloof,
    2026-09-19) ------------------------------------------------------------
