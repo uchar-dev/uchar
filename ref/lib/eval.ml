@@ -3774,8 +3774,10 @@ let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.g
       refuse_finer ~what:(Printf.sprintf "the attribute %S" x) ~operand:(Timeline.attr_grid env.doc (object_type env el) x)
         ~target ~attr;
       let members = fold_members ?binding:source_role ?path:source_path env w self ~element:el in
-      let fallback = Option.map (eval_expr env w self ~err) empty_fallback in
       let timelines = faulted (fun () -> List.map (fun (i : World.instance) -> (i.label, whole i x)) members) in
+      (* the contributors are read before the emptyFallback (ch. 5.11), so a
+         fault of a member is the one reported *)
+      let fallback = Option.map (eval_expr env w self ~err) empty_fallback in
       (* the node of a fold over a set carries its contributors (ch. 5.12), here
          each member with the timeline it contributes; a member without one
          contributes nothing, as a leeg member of a value fold does *)

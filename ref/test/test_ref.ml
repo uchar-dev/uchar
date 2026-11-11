@@ -13960,6 +13960,21 @@ let () =
             (code = Some "EF-006" && List.assoc_opt "place" params = Some "Wc.penningtoewijzing")
       | _ -> check "WV-4.4-plaats-in-de-case (no fault at all)" false)
 
+(* WV-5.11-som-per-periode-leden-voor-leegwaarde: a sum per period over the
+   vondsten of J1 whose emptyFallback reads the parameter noodbedrag, which
+   the case does not bind (EF-014), while the member V1 carries only the
+   asOfDate-bucket scalar of its timeline (EF-037). The contributors come
+   before the emptyFallback (ch. 5.11), so the fault is the member's *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/sum-per-period-fallback-order/" in
+  with_files ~ir:(read (dir ^ "ir.json")) ~case_data:(read (dir ^ "case.json")) (fun findings _ evaluate ->
+      check "WV-5.11-som-per-periode-leden-voor-leegwaarde: verifier-clean" (findings = []);
+      match evaluate () with
+      | exception Value.Fault { code; text; _ } ->
+          check ("WV-5.11-som-per-periode-leden-voor-leegwaarde (got: " ^ text ^ ")") (code = Some "EF-037")
+      | _ -> check "WV-5.11-som-per-periode-leden-voor-leegwaarde (no fault at all)" false)
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;
