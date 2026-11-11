@@ -23,228 +23,53 @@
 # the reason-carrying list below, which fails when stale. A floor would pin a
 # difference whose two operands are each pinned harder.
 #
-# Survivors, each with the standing it pins:
-#   - jutterswet-vondstwaardering/case5-input-blijft.json: a
-#     non-deciding defaults group leaves the input standing (ch. 7.1).
-#   - jutterswet-waardering-v0vorm/case3-input-blijft.json: the v0
-#     initialisation leaves a filled input standing (ch. 5.4).
-#   - jutterswet-vondstnummer/case-consistent.json: a uniqueness that
-#     holds on the input — "consistent" is true of an empty channel.
-#   - jutterswet-nummerregister/case2.json: the ever-unique
-#     NON-collision (same-instance redeclaration) — the absence of a
-#     channel fact IS the assertion (RS ch. 5.9).
-#   - jutterswet-strandregister/case2.json: the same non-collision on
-#     the single form (shared tuple function, RS ch. 5.9).
-#   - jutterswet-strandregister/case4.json: the scope narrowing — the
-#     same ever-pair under two DIFFERENT parents stays consistent.
-#   - jutterswet-waardestelling/case2-flank-input-blijft.json: the
-#     false-condition flank on a standing target — no write, the input
-#     stands (ch. 7.8).
-#   - jutterswet-waardestelling/case3-leeg-valt-door.json: the leeg
-#     fall-through on a standing target — a computed leeg never
-#     displaces the input value (ch. 7.8; the pinned v0 delta).
-#   - jutterswet-waardering-v0vorm/case6-leeg-doorval-input.json: the
-#     same fall-through in the ch. 7.7 desugaring domain (fire-but-leeg
-#     beside an initialisation, input standing) — the corner that was a
-#     prose pin until ref carried the defaults reading natively.
-#   - jutterswet-hardheid/case3-stilte.json: the discretionary route
-#     stays silent without a decision (six finds, no strandvoogd act) —
-#     the silence IS the legislator's intent (the hardship pattern).
-#   - jutterswet-penningrecht-catala/case3-stilte.json: the Catala
-#     render of the same articles — silence without a ground is the
-#     meaning, exactly as the hand-written hardheid anchor pins it
-#   - jutterswet-penningrecht-catala/case4-hardheidsgrens.json: a
-#     hardship ground does not waive the halved threshold — four
-#     finds stay short (the anchor's case4 reason, same corner)
-#   - jutterswet-penningrecht/case3-stilte.json: the RegelSpraak render
-#     of the same articles (the toolchain's two flat kenmerktoekenning
-#     rules, not a defaults group) — silence without a ground is the meaning,
-#     exactly as the hardheid anchor and the Catala render pin it.
-#   - jutterswet-penningrecht/case4-hardheidsgrens.json: the same
-#     halved-threshold corner on the RegelSpraak side — a hardship
-#     ground leaves four finds short, nothing is attributed.
-#   - jutterswet-hardheid/case4-hardheidsgrens.json: a decision does
-#     not waive the halved threshold — four finds stay short, nothing
-#     is attributed; the absence is the assertion.
-#   - jutterswet-borgdeel/case5-input-blijft.json: the temporal
-#     standing (ch. 7.8, timeline arm) — a non-deciding pro-rata fold
-#     (empty result) leaves the input timeline standing whole.
-#   - jutterswet-staffelvergoeding/case3-afwezig.json: the leeg-list
-#     propagation of ch. 10.3 — with the staffelbedragen parameter absent
-#     (read leeg), the Fold propagates leeg and vergoeding stays empty; the
-#     expectation IS that absence. The sibling case2-leeg-lijst (supplied
-#     []) DOES decide — it writes 0.00 — and is deliberately not a survivor.
-#   - jutterswet-aanspraaktelling/case3-afwezig.json: the same
-#     leeg-propagation of ch. 10.4 — with the aanspraken list absent, the
-#     MapList/Fold and the FilterList/ListLength both propagate leeg, so
-#     erkende som and aantal erkend stay empty. Its case2-leeg-lijst
-#     (supplied []) writes 0.00/0 and is not a survivor.
-#   - jutterswet-nestuitzondering/case8-niets.json: the nested-group empty
-#     fall-through (ch. 7.9) — with no ground characteristic present, default 0's
-#     exception groups decide nothing and its own grondX consequence does not fire, the base
-#     group-default's exception groups decide nothing too, so nothing decides and heffing stays
-#     empty. The absence IS the assertion; the sibling cases all decide (a
-#     value or a conflict fact) and are not survivors.
-#   - jutterswet-nestkenmerk/case1-y-wint.json: the characteristic variant of
-#     the spurious-conflict test (ch. 7.9) — the sub-decision do-not-attribute
-#     (false, from ny) displaces default 0's own true, so vrijgesteld stays absent.
-#     The observable outcome (absent + consistent) coincides with a do-nothing
-#     run, yet the case pins the nested reading against a FLATTENING executor,
-#     which would manufacture a conflict here (case2-conflict and case3-terugval
-#     both decide observably and are not survivors).
-#   - synth3-standtarief/case4-leeg.json: a leeg scrutinee propagates through
-#     Match (ch. 9.2) — with stand absent tarief stays empty; the absence IS the
-#     assertion (case1/2/3 all decide and are not survivors).
-#   - synth3-vangstsom/case4-afwezig.json: the leeg-list propagation of ch. 10.3
-#     — the vangsten list absent, the Fold propagates leeg, totaal stays empty;
-#     the supplied [] sibling (case3) writes 0.00 and is not a survivor.
-#   - synth3-metingtal/case4-afwezig.json: the same leeg-list propagation through
-#     MapList + Fold (bovental and somverhoogd both empty); case3 (supplied [])
-#     decides 0/0.00 and is not a survivor.
-#   - synth3-keuringtal/case4-afwezig.json: the leeg-list propagation through
-#     FilterList + ListLength (all three counts empty); case3 (supplied []) writes
-#     0/0/0 and is not a survivor.
-#   - synth3-vondststaat/case3-afwezig.json: the record no-hole absence (ch. 11)
-#     — both scalar inputs absent, the StructLiteral build propagates leeg, the
-#     FieldAccess reads leeg, and the struct-equality characteristic is false
-#     against a leeg operand; the absence IS the assertion.
-#   - synth3-drempelheffing/case4-leeg-grondslag.json: the Let leeg-barrier
-#     (ch. 10.6, at the READ) — the body reads `g`, whose value `grondslag` is
-#     leeg, so the whole heffing chain is leeg regardless of the other
-#     bindings; the absence IS the assertion.
-#   - synth3-besluitschakel/case4-afwezig.json: a score absent leaves both
-#     disjoint Construct writers unjustified, so uitkomst is undecided and the
-#     downstream Match propagates leeg to bedrag; the absence IS the assertion.
-#   - synth3-letbeslag/case3-leeg-regime.json: a leeg Match scrutinee propagates
-#     (ch. 9.2) even while the Let binding stays gevuld — regime absent,
-#     beslag empty; the value cases decide and are not survivors.
-#   - synth3-letbeslag/case4-leeg-grondslag.json: the Let leeg-barrier
-#     again (ch. 10.6), here composed under a Match body — grondslag absent, so
-#     the read of `g` empties the Let before the Match ever dispatches.
-#   - jutterswet-samenloop/case6-geen-grond.json: the no-ground flank of the
-#     samenloop competition defaults (ch. 7.1) — with neither aanspraak ground
-#     present no default decides and vergoeding stays empty, whatever amounts the
-#     input carries; the absence IS the assertion. The five sibling cases all
-#     decide (the hoogste under samenloop, or the sole ground's bedrag) and
-#     are not survivors.
-#   - jutterswet-paasvondst/case5-leeg.json: the ch. 1.2d date-row leeg
-#     corner — a dateless Vondst makes every extractor leeg, and the
-#     both-leeg date gelijk-aan is onwaar (v0's Tabel-38 guard, NOT the
-#     numeric two-empties-equal cell), so nothing is written and no
-#     kenmerk attaches; the absence IS the assertion. The four sibling
-#     cases all decide and are not survivors.
-#   - jutterswet-bergingsdrempel/case3-onder-quotum.json: the frontend-authored
-#     ordered kenmerk defaults of an 'Afwijking van' block (§4; an 'Uitzondering
-#     op' until the card dialect-uitzondering-op-uitzondering, same wire) — 12
-#     wrecks and no noodweer ground leave BOTH defaults unjustified (below the 20
-#     quotum, the deviation inert without its ground), so bergingsbevoegd stays
-#     absent; the absence IS the assertion (the ordered analogue of the hardheid
-#     case3-stilte silence).
-#   - jutterswet-bergingsdrempel/case4-onder-noodweer.json: the same defaults group's
-#     floor — 5 wrecks under noodweer stay short of the deviation's lowered
-#     threshold 8, so nothing is attributed; the absence IS the assertion (the
-#     ordered analogue of hardheid case4-hardheidsgrens). The two deciding
-#     siblings (case1-quotum, case2-noodweer) are not survivors.
-#   - jutterswet-wachtgeld/case4-geen.json: the frontend-authored unordered
-#     'Uitzonderingen ongeordend' attribute group (§4, §9.5) — with no ground
-#     characteristic present no member fires, so wachtgeld stays empty; the
-#     absence IS the assertion (the group analogue of samenloop case6-geen-grond).
-#     The value/conflict siblings (case1/2/3) all decide and are not survivors.
-#   - ww-herleving-inkomen/case7-invoer-staat-tegen-blokkade.json: the input
-#     standing on a CHARACTERISTIC defaults target — case3's facts, so the
-#     blokkade default decides do-not-attribute (besluit false), plus the target
-#     `recht op uitkering` in the case input. The characteristic stays present: a
-#     false decision displaces the lower defaults and writes nothing, it never
-#     retracts (ch. 7.1, "not a retraction"; ch. 5.3). The presence IS the
-#     assertion — it refutes an executor that lets a false decision remove an
-#     input characteristic, which a do-nothing run cannot show. RUNTIME-SEMANTICS
-#     ch. 7.8 states it for a characteristic target — no decision removes what
-#     the virtual input default holds — and names this case as its worked
-#     example (the card kenmerkinvoer-en-invoer-boven-berekening chose its
-#     option 7-i, not 7-ii). The nine sibling cases all pin computed attributes
-#     and are not survivors.
-#   - jutterswet-nestkenmerk-rgs/case1-y-wint.json: the RegelSpraak twin of the
-#     anchor's case1-y-wint, byte-identical case, same reason — the sub-decision
-#     do-not-attribute (false, from ny) displaces the true below it, so
-#     vrijgesteld stays absent; the observable outcome coincides with a
-#     do-nothing run, yet the case pins the nested reading against a FLATTENING
-#     executor, which would manufacture a conflict here. The twin carries the
-#     unordered group as a group-default above the base (the dialect's shape)
-#     where the anchor nests it in the base; its other three cases decide
-#     observably and are not survivors.
-#   - jutterswet-opgave-boven-berekening/case11-bergloon-zelf-staat.json: the
-#     initialisation default at the bottom of the group the opgave marker
-#     generates (grammar/DIVERGENCES.md §7) on an input target — no opgave
-#     and no weight, so neither default above it decides, and its
-#     justification (the target empty in the input facts) fails on the input
-#     60.00, so the input stands (ch. 7.3, ch. 7.8); the standing IS the
-#     assertion. The eleven sibling cases each pin a computed or initialised
-#     value and are not survivors.
-#   - ww-herleving-inkomen-rgs/case7-invoer-staat-tegen-blokkade.json: the
-#     RegelSpraak twin of the anchor's case7, byte-identical case, same reason —
-#     on case3's facts the blokkade default decides do-not-attribute (besluit
-#     false) while the target `recht op uitkering` stands in the case input, and
-#     a false decision displaces the lower defaults and writes nothing, it never
-#     retracts (ch. 7.1, ch. 5.3; ch. 7.8 for a characteristic target). The
-#     presence IS the assertion. The twin carries the first exception level as a
-#     chain position above the base (the dialect's shape) where the anchor nests
-#     it in the base; its other nine cases pin computed attributes and are not
-#     survivors.
-#   - jutterswet-voorwaardelijke-initialisatie/case2-voorwaarde-onwaar.json and
-#     jutterswet-voorwaardelijke-initialisatie/case3-invoer-blijft.json: the two
-#     silent branches of an initialisation that carries a condition (ch. 5.4) —
-#     on an empty target whose condition fails nothing is written, and a target
-#     the case input fills keeps its input while the condition holds; the
-#     absence and the standing are the assertions. Its case1 and case4 write
-#     and are not survivors.
-#   - jutterswet-uniciteit-drie-bronnen/case2-zonder-botsing.json: a
-#     uniqueness over the union of three sources that holds on the input —
-#     D1 carries S1's key (7, 1) reversed, and the components compare by
-#     position (RS ch. 5.9), so "consistent" is true of the empty channel and
-#     the empty channel is the assertion: an executor that compares a key as
-#     a set reports a collision here. Its case1 collides and is not a
-#     survivor.
-SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
-corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
-corpus/golden/jutterswet-vondstnummer/case-consistent.json
-corpus/golden/anchor/jutterswet-nummerregister/case2.json
-corpus/golden/anchor/jutterswet-strandregister/case2.json
-corpus/golden/anchor/jutterswet-strandregister/case4.json
-corpus/golden/anchor/jutterswet-waardestelling/case2-flank-input-blijft.json
-corpus/golden/anchor/jutterswet-waardestelling/case3-leeg-valt-door.json
-corpus/golden/anchor/jutterswet-waardering-v0vorm/case6-leeg-doorval-input.json
-corpus/golden/anchor/jutterswet-hardheid/case3-stilte.json
-corpus/golden/anchor/jutterswet-hardheid/case4-hardheidsgrens.json
-corpus/golden/jutterswet-penningrecht-catala/case3-stilte.json
-corpus/golden/jutterswet-penningrecht-catala/case4-hardheidsgrens.json
-corpus/golden/jutterswet-penningrecht/case3-stilte.json
-corpus/golden/jutterswet-penningrecht/case4-hardheidsgrens.json
-corpus/golden/anchor/jutterswet-borgdeel/case5-input-blijft.json
-corpus/golden/anchor/jutterswet-staffelvergoeding/case3-afwezig.json
-corpus/golden/anchor/jutterswet-aanspraaktelling/case3-afwezig.json
-corpus/golden/anchor/jutterswet-nestuitzondering/case8-niets.json
-corpus/golden/anchor/jutterswet-nestkenmerk/case1-y-wint.json
-corpus/golden/synth3-standtarief/case4-leeg.json
-corpus/golden/synth3-vangstsom/case4-afwezig.json
-corpus/golden/synth3-metingtal/case4-afwezig.json
-corpus/golden/synth3-keuringtal/case4-afwezig.json
-corpus/golden/synth3-vondststaat/case3-afwezig.json
-corpus/golden/synth3-drempelheffing/case4-leeg-grondslag.json
-corpus/golden/synth3-besluitschakel/case4-afwezig.json
-corpus/golden/synth3-letbeslag/case3-leeg-regime.json
-corpus/golden/synth3-letbeslag/case4-leeg-grondslag.json
-corpus/golden/jutterswet-samenloop/case6-geen-grond.json
-corpus/golden/jutterswet-paasvondst/case5-leeg.json
-corpus/golden/jutterswet-bergingsdrempel/case3-onder-quotum.json
-corpus/golden/jutterswet-bergingsdrempel/case4-onder-noodweer.json
-corpus/golden/jutterswet-wachtgeld/case4-geen.json
-corpus/golden/anchor/ww-herleving-inkomen/case7-invoer-staat-tegen-blokkade.json
-corpus/golden/jutterswet-nestkenmerk-rgs/case1-y-wint.json
-corpus/golden/jutterswet-opgave-boven-berekening/case11-bergloon-zelf-staat.json
-corpus/golden/ww-herleving-inkomen-rgs/case7-invoer-staat-tegen-blokkade.json
-corpus/golden/jutterswet-voorwaardelijke-initialisatie/case2-voorwaarde-onwaar.json
-corpus/golden/jutterswet-voorwaardelijke-initialisatie/case3-invoer-blijft.json
-corpus/golden/jutterswet-uniciteit-drie-bronnen/case2-zonder-botsing.json'
+# The survivor list: one line per case, `<case path>|<the standing it pins>`. The reason after the bar is
+# checked before the run: a line without one, or with a blank one, fails.
+survivors=$(mktemp) || exit 2
+trap 'rm -f "$survivors"' EXIT
+cat > "$survivors" <<'EOF'
+corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json|a non-deciding defaults group leaves the input standing (ch. 7.1).
+corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json|the v0 initialisation leaves a filled input standing (ch. 5.4).
+corpus/golden/jutterswet-vondstnummer/case-consistent.json|a uniqueness that holds on the input — "consistent" is true of an empty channel.
+corpus/golden/anchor/jutterswet-nummerregister/case2.json|the ever-unique NON-collision (same-instance redeclaration) — the absence of a channel fact IS the assertion (RS ch. 5.9).
+corpus/golden/anchor/jutterswet-strandregister/case2.json|the same non-collision on the single form (shared tuple function, RS ch. 5.9).
+corpus/golden/anchor/jutterswet-strandregister/case4.json|the scope narrowing — the same ever-pair under two DIFFERENT parents stays consistent.
+corpus/golden/anchor/jutterswet-waardestelling/case2-flank-input-blijft.json|the false-condition flank on a standing target — no write, the input stands (ch. 7.8).
+corpus/golden/anchor/jutterswet-waardestelling/case3-leeg-valt-door.json|the leeg fall-through on a standing target — a computed leeg never displaces the input value (ch. 7.8; the pinned v0 delta).
+corpus/golden/anchor/jutterswet-waardering-v0vorm/case6-leeg-doorval-input.json|the same fall-through in the ch. 7.7 desugaring domain (fire-but-leeg beside an initialisation, input standing) — the corner that was a prose pin until ref carried the defaults reading natively.
+corpus/golden/anchor/jutterswet-hardheid/case3-stilte.json|the discretionary route stays silent without a decision (six finds, no strandvoogd act) — the silence IS the legislator's intent (the hardship pattern).
+corpus/golden/anchor/jutterswet-hardheid/case4-hardheidsgrens.json|a decision does not waive the halved threshold — four finds stay short, nothing is attributed; the absence is the assertion.
+corpus/golden/jutterswet-penningrecht-catala/case3-stilte.json|the Catala render of the same articles — silence without a ground is the meaning, exactly as the hand-written hardheid anchor pins it
+corpus/golden/jutterswet-penningrecht-catala/case4-hardheidsgrens.json|a hardship ground does not waive the halved threshold — four finds stay short (the anchor's case4 reason, same corner)
+corpus/golden/jutterswet-penningrecht/case3-stilte.json|the RegelSpraak render of the same articles (the toolchain's two flat kenmerktoekenning rules, not a defaults group) — silence without a ground is the meaning, exactly as the hardheid anchor and the Catala render pin it.
+corpus/golden/jutterswet-penningrecht/case4-hardheidsgrens.json|the same halved-threshold corner on the RegelSpraak side — a hardship ground leaves four finds short, nothing is attributed.
+corpus/golden/anchor/jutterswet-borgdeel/case5-input-blijft.json|the temporal standing (ch. 7.8, timeline arm) — a non-deciding pro-rata fold (empty result) leaves the input timeline standing whole.
+corpus/golden/anchor/jutterswet-staffelvergoeding/case3-afwezig.json|the leeg-list propagation of ch. 10.3 — with the staffelbedragen parameter absent (read leeg), the Fold propagates leeg and vergoeding stays empty; the expectation IS that absence. The sibling case2-leeg-lijst (supplied []) DOES decide — it writes 0.00 — and is deliberately not a survivor.
+corpus/golden/anchor/jutterswet-aanspraaktelling/case3-afwezig.json|the same leeg-propagation of ch. 10.4 — with the aanspraken list absent, the MapList/Fold and the FilterList/ListLength both propagate leeg, so erkende som and aantal erkend stay empty. Its case2-leeg-lijst (supplied []) writes 0.00/0 and is not a survivor.
+corpus/golden/anchor/jutterswet-nestuitzondering/case8-niets.json|the nested-group empty fall-through (ch. 7.9) — with no ground characteristic present, default 0's exception groups decide nothing and its own grondX consequence does not fire, the base group-default's exception groups decide nothing too, so nothing decides and heffing stays empty. The absence IS the assertion; the sibling cases all decide (a value or a conflict fact) and are not survivors.
+corpus/golden/anchor/jutterswet-nestkenmerk/case1-y-wint.json|the characteristic variant of the spurious-conflict test (ch. 7.9) — the sub-decision do-not-attribute (false, from ny) displaces default 0's own true, so vrijgesteld stays absent. The observable outcome (absent + consistent) coincides with a do-nothing run, yet the case pins the nested reading against a FLATTENING executor, which would manufacture a conflict here (case2-conflict and case3-terugval both decide observably and are not survivors).
+corpus/golden/synth3-standtarief/case4-leeg.json|a leeg scrutinee propagates through Match (ch. 9.2) — with stand absent tarief stays empty; the absence IS the assertion (case1/2/3 all decide and are not survivors).
+corpus/golden/synth3-vangstsom/case4-afwezig.json|the leeg-list propagation of ch. 10.3 — the vangsten list absent, the Fold propagates leeg, totaal stays empty; the supplied [] sibling (case3) writes 0.00 and is not a survivor.
+corpus/golden/synth3-metingtal/case4-afwezig.json|the same leeg-list propagation through MapList + Fold (bovental and somverhoogd both empty); case3 (supplied []) decides 0/0.00 and is not a survivor.
+corpus/golden/synth3-keuringtal/case4-afwezig.json|the leeg-list propagation through FilterList + ListLength (all three counts empty); case3 (supplied []) writes 0/0/0 and is not a survivor.
+corpus/golden/synth3-vondststaat/case3-afwezig.json|the record no-hole absence (ch. 11) — both scalar inputs absent, the StructLiteral build propagates leeg, the FieldAccess reads leeg, and the struct-equality characteristic is false against a leeg operand; the absence IS the assertion.
+corpus/golden/synth3-drempelheffing/case4-leeg-grondslag.json|the Let leeg-barrier (ch. 10.6, at the READ) — the body reads `g`, whose value `grondslag` is leeg, so the whole heffing chain is leeg regardless of the other bindings; the absence IS the assertion.
+corpus/golden/synth3-besluitschakel/case4-afwezig.json|a score absent leaves both disjoint Construct writers unjustified, so uitkomst is undecided and the downstream Match propagates leeg to bedrag; the absence IS the assertion.
+corpus/golden/synth3-letbeslag/case3-leeg-regime.json|a leeg Match scrutinee propagates (ch. 9.2) even while the Let binding stays gevuld — regime absent, beslag empty; the value cases decide and are not survivors.
+corpus/golden/synth3-letbeslag/case4-leeg-grondslag.json|the Let leeg-barrier again (ch. 10.6), here composed under a Match body — grondslag absent, so the read of `g` empties the Let before the Match ever dispatches.
+corpus/golden/jutterswet-samenloop/case6-geen-grond.json|the no-ground flank of the samenloop competition defaults (ch. 7.1) — with neither aanspraak ground present no default decides and vergoeding stays empty, whatever amounts the input carries; the absence IS the assertion. The five sibling cases all decide (the hoogste under samenloop, or the sole ground's bedrag) and are not survivors.
+corpus/golden/jutterswet-paasvondst/case5-leeg.json|the ch. 1.2d date-row leeg corner — a dateless Vondst makes every extractor leeg, and the both-leeg date gelijk-aan is onwaar (v0's Tabel-38 guard, NOT the numeric two-empties-equal cell), so nothing is written and no kenmerk attaches; the absence IS the assertion. The four sibling cases all decide and are not survivors.
+corpus/golden/jutterswet-bergingsdrempel/case3-onder-quotum.json|the frontend-authored ordered kenmerk defaults of an 'Afwijking van' block (§4; an 'Uitzondering op' until the card dialect-uitzondering-op-uitzondering, same wire) — 12 wrecks and no noodweer ground leave BOTH defaults unjustified (below the 20 quotum, the deviation inert without its ground), so bergingsbevoegd stays absent; the absence IS the assertion (the ordered analogue of the hardheid case3-stilte silence).
+corpus/golden/jutterswet-bergingsdrempel/case4-onder-noodweer.json|the same defaults group's floor — 5 wrecks under noodweer stay short of the deviation's lowered threshold 8, so nothing is attributed; the absence IS the assertion (the ordered analogue of hardheid case4-hardheidsgrens). The two deciding siblings (case1-quotum, case2-noodweer) are not survivors.
+corpus/golden/jutterswet-wachtgeld/case4-geen.json|the frontend-authored unordered 'Uitzonderingen ongeordend' attribute group (§4, §9.5) — with no ground characteristic present no member fires, so wachtgeld stays empty; the absence IS the assertion (the group analogue of samenloop case6-geen-grond). The value/conflict siblings (case1/2/3) all decide and are not survivors.
+corpus/golden/anchor/ww-herleving-inkomen/case7-invoer-staat-tegen-blokkade.json|the input standing on a CHARACTERISTIC defaults target — case3's facts, so the blokkade default decides do-not-attribute (besluit false), plus the target `recht op uitkering` in the case input. The characteristic stays present: a false decision displaces the lower defaults and writes nothing, it never retracts (ch. 7.1, "not a retraction"; ch. 5.3). The presence IS the assertion — it refutes an executor that lets a false decision remove an input characteristic, which a do-nothing run cannot show. RUNTIME-SEMANTICS ch. 7.8 states it for a characteristic target — no decision removes what the virtual input default holds — and names this case as its worked example (the card kenmerkinvoer-en-invoer-boven-berekening chose its option 7-i, not 7-ii). The nine sibling cases all pin computed attributes and are not survivors.
+corpus/golden/jutterswet-nestkenmerk-rgs/case1-y-wint.json|the RegelSpraak twin of the anchor's case1-y-wint, byte-identical case, same reason — the sub-decision do-not-attribute (false, from ny) displaces the true below it, so vrijgesteld stays absent; the observable outcome coincides with a do-nothing run, yet the case pins the nested reading against a FLATTENING executor, which would manufacture a conflict here. The twin carries the unordered group as a group-default above the base (the dialect's shape) where the anchor nests it in the base; its other three cases decide observably and are not survivors.
+corpus/golden/jutterswet-opgave-boven-berekening/case11-bergloon-zelf-staat.json|the initialisation default at the bottom of the group the opgave marker generates (grammar/DIVERGENCES.md §7) on an input target — no opgave and no weight, so neither default above it decides, and its justification (the target empty in the input facts) fails on the input 60.00, so the input stands (ch. 7.3, ch. 7.8); the standing IS the assertion. The eleven sibling cases each pin a computed or initialised value and are not survivors.
+corpus/golden/ww-herleving-inkomen-rgs/case7-invoer-staat-tegen-blokkade.json|the RegelSpraak twin of the anchor's case7, byte-identical case, same reason — on case3's facts the blokkade default decides do-not-attribute (besluit false) while the target `recht op uitkering` stands in the case input, and a false decision displaces the lower defaults and writes nothing, it never retracts (ch. 7.1, ch. 5.3; ch. 7.8 for a characteristic target). The presence IS the assertion. The twin carries the first exception level as a chain position above the base (the dialect's shape) where the anchor nests it in the base; its other nine cases pin computed attributes and are not survivors.
+corpus/golden/jutterswet-voorwaardelijke-initialisatie/case2-voorwaarde-onwaar.json|the first of the two silent branches of an initialisation that carries a condition (ch. 5.4) — on an empty target whose condition fails nothing is written; the absence is the assertion. The second is case3 (a target the case input fills keeps its input while the condition holds). Its case1 and case4 write and are not survivors.
+corpus/golden/jutterswet-voorwaardelijke-initialisatie/case3-invoer-blijft.json|the second of the two silent branches of an initialisation that carries a condition (ch. 5.4) — a target the case input fills keeps its input while the condition holds; the standing is the assertion. The first is case2 (on an empty target whose condition fails nothing is written). Its case1 and case4 write and are not survivors.
+corpus/golden/jutterswet-uniciteit-drie-bronnen/case2-zonder-botsing.json|a uniqueness over the union of three sources that holds on the input — D1 carries S1's key (7, 1) reversed, and the components compare by position (RS ch. 5.9), so "consistent" is true of the empty channel and the empty channel is the assertion: an executor that compares a key as a set reports a collision here. Its case1 collides and is not a survivor.
+EOF
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
@@ -266,19 +91,32 @@ if ! ensure_ocaml; then
 fi
 BIN=_build/default/ref/bin/runner.exe
 
-listed() {
-    for s in $SURVIVORS; do
-        [ "$s" = "$1" ] && return 0
-    done
-    return 1
-}
+list=$(mktemp) || exit 2
+listed_paths=$(mktemp) || exit 2
+trap 'rm -f "$list" "$survivors" "$listed_paths"' EXIT
 
 status=0
+while IFS= read -r s; do
+    [ -n "$s" ] || continue
+    path=${s%%|*}
+    reason=${s#*|}
+    if [ "$path" = "$s" ] || [ -z "$(printf '%s' "$reason" | tr -d '[:space:]')" ]; then
+        echo "FAIL: survivor entry without a reason (each entry is <case path>|<reason>): $s" >&2
+        status=1
+    fi
+    printf '%s\n' "$path" >> "$listed_paths"
+done < "$survivors"
+if [ "$status" -ne 0 ]; then
+    exit 1
+fi
+
+listed() {
+    grep -qxF "$1" "$listed_paths"
+}
+
 n_cases=0
 n_refuted=0
 n_survivors=0
-list=$(mktemp) || exit 2
-trap 'rm -f "$list"' EXIT
 find corpus/golden -name 'case*.json' 2>/dev/null | sort > "$list"
 while IFS= read -r case; do
     n_cases=$((n_cases + 1))
@@ -306,12 +144,12 @@ while IFS= read -r case; do
     fi
 done < "$list"
 
-for s in $SURVIVORS; do
+while IFS= read -r s; do
     if [ ! -f "$s" ]; then
         echo "FAIL: stale survivor entry — $s does not exist" >&2
         status=1
     fi
-done
+done < "$listed_paths"
 
 if [ "$n_cases" -eq 0 ]; then
     echo 'FAIL: no case files under corpus/golden — nothing refutes a do-nothing executor' >&2
