@@ -1601,7 +1601,9 @@ EXPECTED_CHANNEL=(
 # (DROOLS-161, retired).
 # 365 since the card meldplicht-drie-talen (2026-11-11): jutterswet-meldplicht, jutterswet-meldplicht-catala and
 # jutterswet-meldplicht-flogic, one characteristic rule authored in three source languages (PLAYED 1 each).
-EXPECTED_PLAYED=365
+# 366 since the card review-candidates-triage (2026-11-11): jutterswet-let-keuze-in-laatste, an IfThenElse as an
+# operand of a listed fold in a Let body, which the verifier admitted only from that card on (PLAYED 1 on both branches).
+EXPECTED_PLAYED=366
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
