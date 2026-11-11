@@ -18036,6 +18036,27 @@ let () =
       clingo_matches ~name:("writers per day beside the input: " ^ f) ~ir ~case_text)
     [ "een-schrijver"; "een-schrijver-gelijk"; "een-schrijver-gat"; "twee-schrijvers" ]
 
+(* RUNTIME-SEMANTICS ch. 1.4 point 4 and ch. 3.4: an empty dividend does not
+   read its divisor, per period as well. loon := bonus gedeeld door (opbrengst
+   gedeeld door aandeel) on day timelines, with aandeel 0 in a quarter where
+   bonus is leeg (case1), filled (case2) or leeg on every day (case3), and the
+   same under a rounding; ref's documents
+   (ref/test/fixtures/empty-dividend-per-period), its worked example
+   WV-3.4-empty-dividend-per-period, played in both executors *)
+let () =
+  let read f = In_channel.with_open_bin f In_channel.input_all in
+  let dir = "ref/test/fixtures/empty-dividend-per-period/" in
+  List.iter
+    (fun ir_file ->
+      List.iter
+        (fun f ->
+          let ir = read (dir ^ ir_file ^ ".json") and case_text = read (dir ^ f ^ ".json") in
+          let name = Printf.sprintf "an empty dividend per period: %s %s" ir_file f in
+          ref_matches ~name ~ir ~case_text;
+          clingo_matches ~name ~ir ~case_text)
+        [ "case1-nuldeler-in-leeg-kwartaal"; "case2-nuldeler-in-gevuld-kwartaal"; "case3-leeg-deeltal-altijd" ])
+    [ "ir"; "ir-rounded" ]
+
 (* RUNTIME-SEMANTICS ch. 3.11, "Leeg in a write": a writer that fires with a
    leeg value decides nothing on a scalar target, so its input stands beside a
    writer that does not fire and under a validity window, and beside a writer

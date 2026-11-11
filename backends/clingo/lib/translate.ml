@@ -11803,19 +11803,23 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
   in
   (* the value of [e] at the start X of a period, where it is not leeg: a
      predicate over (S, X, V) with V at the scale of the node, whether it is
-     defined on every period, and that scale *)
-  let rec node (e : expr) : string * bool * int =
+     defined on every period, and that scale. [reach] are the atoms over S and
+     X that hold where the node is read at all: a divisor only where its
+     dividend is filled (ch. 1.4 point 4, ch. 3.4), so its deposits and faults
+     carry them; its values may be derived elsewhere, where nothing reads them *)
+  let rec node ?(reach = []) (e : expr) : string * bool * int =
+    let reached = if reach = [] then [] else at_x :: reach in
     match e with
     | Binary { op = (Plus | Min | Reduced_by) as op; left_side = Some l; right_side = Some r; _ } ->
         units_identical_ok ~what:(what ^ ", an additive join") (period_unit l) (period_unit r);
-        let ((_, ltotal, sl) as ln) = node l and ((_, _, sr) as rn) = node r in
+        let ((_, ltotal, sl) as ln) = node ~reach l and ((_, _, sr) as rn) = node ~reach r in
         (* plus and min coalesce a leeg operand to 0; verminderd met only its right *)
         let ql = if op = Reduced_by then (let q, _, _ = ln in q) else filled ln in
         let qr = filled rn in
         let m = max sl sr in
         let q = fresh ctx (p ^ "_n") in
         let body = [ at_x; Printf.sprintf "%s(%s,X,VL)" ql subject; Printf.sprintf "%s(%s,X,VR)" qr subject ] in
-        range_guard ctx ~subject ~body:(base :: body) [ ("VL", 1073741823 / (m / sl)); ("VR", 1073741823 / (m / sr)) ];
+        range_guard ctx ~subject ~body:((base :: body) @ reach) [ ("VL", 1073741823 / (m / sl)); ("VR", 1073741823 / (m / sr)) ];
         emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject)
           ~body:
             (body
@@ -11828,19 +11832,21 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
         | Times -> mul_units_ok ~per_period:true ctx ~what (Some l) (Some r)
         | _ -> pct_left_ok ~per_period:true ctx (Some l));
         let k = match op with Times -> Option.value (product_factor ~per_period:true ctx l r) ~default:1 | _ -> 1 in
-        let ((_, _, sl) as ln) = node l and ((_, _, sr) as rn) = node r in
+        let ((_, _, sl) as ln) = node ~reach l and ((_, _, sr) as rn) = node ~reach r in
         let ql = filled ln and qr = filled rn in
         let scale = sl * sr * (if op = Percentage_of then 100 else 1) in
         if scale > 1_000_000_000 then fault "%s: a product at the scale %d exceeds clingo's integer range" what scale;
         let q = fresh ctx (p ^ "_m") in
         let body = [ at_x; Printf.sprintf "%s(%s,X,VL)" ql subject; Printf.sprintf "%s(%s,X,VR)" qr subject ] in
-        range_guard ctx ~subject ~body:(base :: body) [ ("VL", 46340); ("VR", 46340 / k) ];
+        range_guard ctx ~subject ~body:((base :: body) @ reach) [ ("VL", 46340); ("VR", 46340 / k) ];
         emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject)
           ~body:(body @ [ Printf.sprintf "V = VL*%s" (times "VR" k) ]);
         (q, true, scale)
     | Binary { op = (Divided_by | Divided_by_abs) as op; left_side = Some l; right_side = Some r; _ } ->
         quotient_units_ok ~per_period:true ctx l r;
-        let ql, _, sl = node l and qr0, _, sr = node r in
+        let ql, _, sl = node ~reach l in
+        let ldef = defined ql in
+        let qr0, _, sr = node ~reach:(reach @ [ Printf.sprintf "%s(%s,X)" ldef subject ]) r in
         (* the quotient at the scale of the write, the abs variant at five
            decimals truncated toward zero (ch. 2.2) *)
         let out = match op with Divided_by_abs -> pow10 5 | _ -> max (max sl sr) target_scale in
@@ -11848,7 +11854,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
         let knum = sr * out / g and kden = sl / g in
         let numt = times "VL" knum and dent = times "VR" kden in
         let q = fresh ctx (p ^ "_q") in
-        let ldef = defined ql and rdef = defined qr0 in
+        let rdef = defined qr0 in
         let dividend = Printf.sprintf "%s(%s,X,VL)" ql subject in
         let divisor = Printf.sprintf "%s(%s,X,VR)" qr0 subject in
         (* the dividend is tested first and coalesces: leeg ÷ anything is 0 *)
@@ -11857,11 +11863,11 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
         (* a filled dividend over a leeg or 0 divisor is leeg on its period, and
            the rule × subject takes one §9.5 fact per code (ch. 1.2, 5.6) *)
         deposit ctx ~code:"EF-031" ~rule:(str ctx.rule_name) ~subject
-          [ base; at_x; dividend; Printf.sprintf "not %s(%s,X)" rdef subject ];
+          ([ base; at_x; dividend; Printf.sprintf "not %s(%s,X)" rdef subject ] @ reach);
         deposit ctx ~code:"EF-005" ~rule:(str ctx.rule_name) ~subject
-          [ base; at_x; dividend; divisor; "VR == 0" ];
+          ([ base; at_x; dividend; divisor; "VR == 0" ] @ reach);
         let body = [ at_x; dividend; divisor; "VR != 0" ] in
-        range_guard ctx ~subject ~body:(base :: body) [ ("VL", 536870912 / knum); ("VR", 536870912 / kden) ];
+        range_guard ctx ~subject ~body:((base :: body) @ reach) [ ("VL", 536870912 / knum); ("VR", 536870912 / kden) ];
         (match op with
         | Divided_by_abs -> emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject)
                               ~body:(body @ [ Printf.sprintf "V = (%s)/(%s)" numt dent ])
@@ -11877,7 +11883,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
               division_misfit ~in_condition:false ~nested:(e != value)
                 ~unbounded:(unbounded_datatype (attr_datatype ctx ~otype:target_ot ~attr:a))
             in
-            emit_viol ctx ~code ~subject reason ((base :: body) @ [ Printf.sprintf "(%s) \\ (%s) != 0" numt dent ]));
+            emit_viol ctx ~code ~subject reason ((base :: body) @ reach @ [ Printf.sprintf "(%s) \\ (%s) != 0" numt dent ]));
         (q, false, out)
     | Attribute_reference
         { attribute_ref = Some b; object_type = Some otn; navigation_bindings = None; anchor = None; _ }
@@ -11889,7 +11895,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
             ot otn;
         refuse_finer ~what:(Printf.sprintf "the attribute %S" b)
           ~operand:(Calendar.of_attribute ctx.doc (object_type ctx otn) b) ~target ~attr:a;
-        bucket_scalar_guard ctx ~holder:subject ~reach:(fun () -> base :: cond) ~otype:ot ~attr:b
+        bucket_scalar_guard ctx ~holder:subject ~reach:(fun () -> (base :: cond) @ reached) ~otype:ot ~attr:b
           ~sentence:(read_whole_sentence ~reads:period_reads ~attr:b);
         read_cuts [ base ] ~holder:subject ~attr:b;
         let q = fresh ctx (p ^ "_r") in
@@ -11909,15 +11915,15 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
         let m = fresh ctx "M" in
         let join = base :: source_join ctx ~subject ~subject_ot:ot ~el ~source_role ~source_path ~x:m in
         (* a member's timeline is read where the subject's period arithmetic is *)
-        bucket_scalar_guard ctx ~holder:m ~reach:(fun () -> cond @ join) ~otype:el ~attr:x
+        bucket_scalar_guard ctx ~holder:m ~reach:(fun () -> cond @ join @ reached) ~otype:el ~attr:x
           ~sentence:(read_whole_sentence ~reads:period_reads ~attr:x);
         read_cuts join ~holder:m ~attr:x;
         let q = fresh ctx (p ^ "_s") in
         let reads = Printf.sprintf "tl(%s,%s,F,T,W), F <= X, X < T" m (str x) in
-        range_guard ctx ~subject ~body:(at_x :: join @ [ reads ]) [ ("W", 46340) ];
+        range_guard ctx ~subject ~body:((at_x :: join @ [ reads ]) @ reach) [ ("W", 46340) ];
         emit_viol ctx ~code:(guardc "CLINGO-034") ~subject
           "arithmetic range exceeded (clingo grounds in machine integers)"
-          [ at_x; Printf.sprintf "46340 < #count { %s : %s }" m (String.concat ", " (join @ [ reads ])) ];
+          ([ at_x; Printf.sprintf "46340 < #count { %s : %s }" m (String.concat ", " (join @ [ reads ])) ] @ reach);
         emit_rule ctx ~head:(Printf.sprintf "%s_any(%s,X)" q subject) ~body:(at_x :: join @ [ reads ]);
         emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject)
           ~body:
@@ -11961,38 +11967,40 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
         (match b with
         | Binary { op = Divided_by; left_side = Some l; right_side = Some r; _ } ->
             quotient_units_ok ~per_period:true ctx l r;
-            let ql, _, sl = node l and qr0, _, sr = node r in
+            let ql, _, sl = node ~reach l in
+            let ldef = defined ql in
+            let qr0, _, sr = node ~reach:(reach @ [ Printf.sprintf "%s(%s,X)" ldef subject ]) r in
             let g = gcd (sr * out) sl in
             let knum = sr * out / g and kden = sl / g in
             let numt = times "VL" knum and dent = times "VR" kden in
-            let ldef = defined ql and rdef = defined qr0 in
+            let rdef = defined qr0 in
             let dividend = Printf.sprintf "%s(%s,X,VL)" ql subject in
             let divisor = Printf.sprintf "%s(%s,X,VR)" qr0 subject in
             emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,0)" q subject)
               ~body:[ at_x; Printf.sprintf "not %s(%s,X)" ldef subject ];
             deposit ctx ~code:"EF-031" ~rule:(str ctx.rule_name) ~subject
-              [ base; at_x; dividend; Printf.sprintf "not %s(%s,X)" rdef subject ];
+              ([ base; at_x; dividend; Printf.sprintf "not %s(%s,X)" rdef subject ] @ reach);
             deposit ctx ~code:"EF-005" ~rule:(str ctx.rule_name) ~subject
-              [ base; at_x; dividend; divisor; "VR == 0" ];
+              ([ base; at_x; dividend; divisor; "VR == 0" ] @ reach);
             let body = [ at_x; dividend; divisor; "VR != 0" ] in
-            range_guard ctx ~subject ~body:(base :: body) [ ("VL", 536870912 / knum); ("VR", 536870912 / kden) ];
-            negative body "VL";
-            negative body "VR";
+            range_guard ctx ~subject ~body:((base :: body) @ reach) [ ("VL", 536870912 / knum); ("VR", 536870912 / kden) ];
+            negative (body @ reach) "VL";
+            negative (body @ reach) "VR";
             emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject)
               ~body:(body @ [ Printf.sprintf "V = %s" (rounded numt dent) ])
         | _ ->
-            let qb, _, sb = node b in
+            let qb, _, sb = node ~reach b in
             let body = [ at_x; Printf.sprintf "%s(%s,X,W)" qb subject ] in
             if sb <= out then begin
               if out mod sb <> 0 then fault "%s: a rounding to scale %d of a value at scale %d" what out sb;
-              range_guard ctx ~subject ~body:(base :: body) [ ("W", max_int31 / (out / sb)) ];
+              range_guard ctx ~subject ~body:((base :: body) @ reach) [ ("W", max_int31 / (out / sb)) ];
               emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject)
                 ~body:(body @ [ Printf.sprintf "V = %s" (times "W" (out / sb)) ])
             end
             else begin
               if sb mod out <> 0 then fault "%s: a rounding to scale %d of a value at scale %d" what out sb;
-              range_guard ctx ~subject ~body:(base :: body) [ ("W", 536870912) ];
-              negative body "W";
+              range_guard ctx ~subject ~body:((base :: body) @ reach) [ ("W", 536870912) ];
+              negative (body @ reach) "W";
               emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject)
                 ~body:(body @ [ Printf.sprintf "V = %s" (rounded "W" (string_of_int (sb / out))) ])
             end);
@@ -12015,7 +12023,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
               ~target ~attr:a;
             if not (Uchar_ref.World.SMap.mem (norm n) ctx.case.param_tls) then
               reach_guard ctx ~witness:subject ~reason:(unbound_param_reason n) ~code:(unbound_param_code n)
-                ~order_reason:(unbound_param_order_reason n) (base :: cond);
+                ~order_reason:(unbound_param_order_reason n) ((base :: cond) @ reached);
             emit_rule ctx ~head:(Printf.sprintf "%s_cut(%s,X)" p subject)
               ~body:[ base; Printf.sprintf "param_tl(%s,X,_,_)" (str n) ];
             emit_rule ctx ~head:(Printf.sprintf "%s_cut(%s,X)" p subject)
