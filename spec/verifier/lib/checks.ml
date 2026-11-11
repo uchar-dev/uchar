@@ -4330,8 +4330,8 @@ let fields_agree (a : (string * datatype) list) (b : (string * datatype) list) =
    enclosing copy disagree — the argument WF-073/074 make for their nested
    forms. And a sum-type PAYLOAD: WF-060 admits no struct payload in a
    declaration at all (measured — a hand-built one is refused there), so the
-   only place such a payload can sit is a drifted inline sum copy, which is
-   WF-061's already-recorded open flank, not this rule's. *)
+   only place such a payload can sit is a drifted inline sum copy, which
+   WF-061's agreement test refuses, not this rule. *)
 let rec struct_use_site ctx at (d : datatype) : violation list =
   match d with
   | Struct_type { domain_spec; field_list } -> (
@@ -11148,42 +11148,75 @@ let wf087 ctx =
       | _ -> [])
     ctx.doc.domain_specs
 
-(* WF-061: a SumType use site (an attribute or parameter datatype that is a
-   SumType) MUST name a declared domain whose declaration it agrees with —
-   same constructors, same payloads, same order (IR-SPEC ch. 2.4). The
-   nominal-comparison half of the rule (two sum-typed operands of one
-   comparison name the same domain) rides the expression walk, walk_cond. *)
+(* WF-061: a SumType use site MUST name a declared domain whose declaration it
+   agrees with — same constructors, same payloads, same order (IR-SPEC
+   ch. 2.4). The nominal-comparison half of the rule (two sum-typed operands
+   of one comparison name the same domain) rides the expression walk,
+   walk_cond.
+
+   A use site is every SumType in a datatype tree, as WF-072 has it for
+   structs: an attribute or parameter datatype, a `ListType` element inside
+   one, a `FunctionDef` parameter, and inside `domains` a payload of another
+   sum declaration (WF-060) or a field of a struct declaration (WF-071). The
+   executors read a constructor out of the inline copy where they meet it (the
+   case loader of a list element, a payload or a field), so a drifted copy at
+   any depth lets ref and clingo compute with a constructor the domain does
+   not declare.
+   A matched sum's own payloads and a matched struct's own fields are not
+   walked: the agreement test is an equality on the whole datatype, so a
+   drifted nested copy already makes the enclosing copy disagree. *)
+let rec sum_use_site ctx at (d : datatype) : violation list =
+  match d with
+  | Sum_type { domain_spec; constructor_list } -> (
+      match sum_decl ctx domain_spec with
+      | None ->
+          [ v ~params:[("domain", domain_spec)] "WF-061.use-site-undeclared" at
+              ("sum-type use site names domain '" ^ domain_spec
+             ^ "', which is not a declared sum type") ]
+      | Some decl ->
+          if constructors_agree decl constructor_list then []
+          else
+            [ v ~params:[("domain", domain_spec)] "WF-061.use-site-disagrees" at
+                ("sum-type use site disagrees with the declaration of domain '" ^ domain_spec
+               ^ "' (same constructors, payloads and order required)") ])
+  | List_type { element } -> sum_use_site ctx at element
+  | _ -> []
+
 let wf061 ctx =
-  let use_site at = function
-    | Sum_type { domain_spec; constructor_list } -> (
-        match sum_decl ctx domain_spec with
-        | None ->
-            [ v ~params:[("domain", domain_spec)] "WF-061.use-site-undeclared" at
-                ("sum-type use site names domain '" ^ domain_spec
-               ^ "', which is not a declared sum type") ]
-        | Some decl ->
-            if constructors_agree decl constructor_list then []
-            else
-              [ v ~params:[("domain", domain_spec)] "WF-061.use-site-disagrees" at
-                  ("sum-type use site disagrees with the declaration of domain '" ^ domain_spec
-                 ^ "' (same constructors, payloads and order required)") ])
-    | _ -> []
-  in
+  let site at = function Some d -> sum_use_site ctx at d | None -> [] in
   List.concat_map
     (fun (otname, (ot : object_type)) ->
       List.concat_map
-        (fun (an, dt) ->
-          match dt with
-          | Some st -> use_site ("/objecttypen/" ^ otname ^ "/attributen/" ^ an) st
-          | None -> [])
+        (fun (an, dt) -> site ("/objecttypen/" ^ otname ^ "/attributen/" ^ an) dt)
         ot.attributes)
     ctx.doc.object_types
   @ List.concat_map
-      (fun (pn, (p : parameter)) ->
-        match p.par_datatype with
-        | Some st -> use_site ("/parameters/" ^ pn) st
-        | None -> [])
+      (fun (pn, (p : parameter)) -> site ("/parameters/" ^ pn) p.par_datatype)
       ctx.doc.parameters
+  @ List.concat
+      (List.mapi
+         (fun i (fd : function_def) ->
+           List.concat
+             (List.mapi
+                (fun j (_, dt) -> sum_use_site ctx (Printf.sprintf "/functionDefs/%d/parameters/%d" i j) dt)
+                fd.fd_parameters))
+         ctx.doc.function_defs)
+  @ List.concat_map
+      (fun (name, dt) ->
+        match dt with
+        | Some (Sum_type { constructor_list; _ }) ->
+            List.concat
+              (List.mapi
+                 (fun j (_, payload) ->
+                   site (Printf.sprintf "/domeinen/%s/constructors/%d/payload" name j) payload)
+                 constructor_list)
+        | Some (Struct_type { field_list; _ }) ->
+            List.concat
+              (List.mapi
+                 (fun j (_, fdt) -> sum_use_site ctx (Printf.sprintf "/domeinen/%s/fields/%d" name j) fdt)
+                 field_list)
+        | _ -> [])
+      ctx.doc.domain_specs
 
 (* WF-088: the model-layer half of the enumeration use-site rule (the
    expression half rides walk_expr's type prologue, where WF-007 collects
