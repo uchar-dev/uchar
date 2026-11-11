@@ -1731,6 +1731,7 @@ let prioritized_defaults path j : prioritized_defaults =
         (list_ (path / "defaults") (f "defaults"));
     pd_unordered = (match ext_field path kvs "unordered" bool_ with Some b -> b | None -> false);
     pd_source = source_text path kvs;
+    pd_desugared = false;
     pd_validity = opt (path / "validity") validity_window (f "validity");
   }
 

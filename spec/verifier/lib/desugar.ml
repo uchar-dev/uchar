@@ -136,6 +136,7 @@ let document (doc : document) : document =
         defaults = comp_defaults @ init_defaults;
         pd_unordered = false;
         pd_source = Some "ch. 7.7 v0 desugaring";
+        pd_desugared = true;
         pd_validity = None;
       }
     in
@@ -356,6 +357,7 @@ let rule_member doc level key : (prioritized_defaults * string list * string lis
           defaults;
           pd_unordered = false;
           pd_source = Some "SUBTYPING §4.1 rules 1/4: an ordinary rule is the base of its level";
+          pd_desugared = false;
           pd_validity = None;
         },
         pointers,

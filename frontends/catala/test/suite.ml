@@ -661,7 +661,7 @@ let () =
             default_consequence = Some (lit (Lv_number "0") num0); default_initialisation = true;
             default_exceptions = None; default_source = Some "anders nul, tenzij al gevuld" } ];
       pd_unordered = false; pd_source = Some "het tarief";
-      pd_validity = Some { valid_from = None; valid_to = None } }
+      pd_desugared = false; pd_validity = Some { valid_from = None; valid_to = None } }
   in
   let trial : A.document =
     { object_types = [ ("Zaak", case_data) ]; domain_specs = []; parameters = []; unit_systems = [];

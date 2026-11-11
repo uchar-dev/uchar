@@ -19252,6 +19252,43 @@ let () =
         ~case_text:(read (dir ^ "case.json")) ~needle:"gives no comparison of dates a reading")
     [ "equal"; "notEqual"; "later" ]
 
+(* The source text is presentation (IR-SPEC ch. 10): a defaults group on the
+   wire whose snippet spells the text the ch. 7.7 desugaring writes on its own
+   groups is still a group of the wire, keyed and guarded as one. Before the
+   desugaring marked its groups in the AST (pd_desugared), clingo told them by
+   that snippet, and these three cases of jutterswet-deling-in-afwijking turned
+   into "the model carries 1 inconsistent fact(s)". *)
+let () =
+  let open Yojson.Safe.Util in
+  let corpus rel =
+    In_channel.with_open_text (if Sys.file_exists rel then rel else Filename.concat "../../../../.." rel)
+      In_channel.input_all
+  in
+  let golden = "corpus/golden/jutterswet-deling-in-afwijking/" in
+  let map_field k f = function
+    | `Assoc kv -> `Assoc (List.map (fun (k', v) -> if k' = k then (k', f v) else (k', v)) kv)
+    | j -> j
+  in
+  let with_snippet = function
+    | `Assoc kv ->
+        `Assoc
+          (List.filter (fun (k, _) -> k <> "source") kv
+          @ [ ("source", `Assoc [ ("snippet", `String "ch. 7.7 v0 desugaring") ]) ])
+    | j -> j
+  in
+  let doc = Yojson.Safe.from_string (corpus (golden ^ "ir.json")) in
+  let groups = doc |> member "rules" |> member "prioritizedDefaults" |> to_list in
+  check "the desugaring's snippet on a wire group: the golden has a defaults group" (groups <> []);
+  let ir =
+    Yojson.Safe.to_string
+      (map_field "rules" (map_field "prioritizedDefaults" (fun _ -> `List (List.map with_snippet groups))) doc)
+  in
+  List.iter
+    (fun c ->
+      clingo_matches ~name:("the desugaring's snippet on a wire group, " ^ c) ~ir
+        ~case_text:(corpus (golden ^ c)))
+    [ "case2-nul-valt-door.json"; "case3-leeg-valt-door.json"; "case9-onwaar-met-nul.json" ]
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

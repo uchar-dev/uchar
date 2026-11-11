@@ -930,7 +930,7 @@ let document (stmts : stmt list) : A.document * string option list list =
             !groups
             @ [ { A.pd_name = ident; pd_subject = subject; pd_characteristic = None;
                   pd_attribute = Some attr; defaults = members; pd_unordered = false;
-                  pd_source = None; pd_validity = no_validity } ]))
+                  pd_source = None; pd_desugared = false; pd_validity = no_validity } ]))
     !targets;
   let object_types =
     List.map

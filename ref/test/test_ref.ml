@@ -3112,7 +3112,7 @@ let () =
             default_exceptions =
               Some { egs_unordered = true; egs_members = [ sub "grondY" "10"; sub "grondZ" "20" ] };
             default_source = None } ];
-      pd_unordered = false; pd_source = None; pd_validity = None }
+      pd_unordered = false; pd_source = None; pd_desugared = false; pd_validity = None }
   in
   let doc =
     { empty_doc with
@@ -8398,7 +8398,7 @@ let () =
   let cluster subject_ref defaults : Ir_v0.Ast.prioritized_defaults =
     { pd_name = Some ("uitkering van een " ^ subject_ref); pd_subject = subject_ref;
       pd_characteristic = None; pd_attribute = Some "uitkering"; defaults; pd_unordered = false;
-      pd_source = None; pd_validity = None }
+      pd_source = None; pd_desugared = false; pd_validity = None }
   in
   let betwist : Ir_v0.Ast.condition_expr =
     Characteristic_check { characteristic = Some "betwist"; negation = false;
@@ -8486,7 +8486,7 @@ let () =
         [ { default_decision = None; default_justification = Some (kc k);
             default_consequence = Some (litv value_node amount); default_initialisation = false;
             default_exceptions = None; default_source = None } ];
-      pd_unordered = true; pd_source = None; pd_validity = None }
+      pd_unordered = true; pd_source = None; pd_desugared = false; pd_validity = None }
   in
   let doc =
     { empty_doc with
@@ -8524,7 +8524,7 @@ let () =
         [ { default_decision = None; default_justification = Some (kc k);
             default_consequence = Some (litv value_node amount); default_initialisation = false;
             default_exceptions = None; default_source = None } ];
-      pd_unordered = unordered; pd_source = None; pd_validity = None }
+      pd_unordered = unordered; pd_source = None; pd_desugared = false; pd_validity = None }
   in
   let types =
     [ ot "Strandrecht" [ ("uitkering", Some amount) ] [ "betwist"; "geborgen" ];
@@ -8592,7 +8592,7 @@ let () =
   let cluster subject_ref defaults : Ir_v0.Ast.prioritized_defaults =
     { pd_name = Some ("uitkering van een " ^ subject_ref); pd_subject = subject_ref;
       pd_characteristic = None; pd_attribute = Some "uitkering"; defaults; pd_unordered = false;
-      pd_source = None; pd_validity = None }
+      pd_source = None; pd_desugared = false; pd_validity = None }
   in
   let run doc otype chars =
     let i = { (inst "x" otype []) with World.chars = List.map Ir_v0.Checks.norm chars } in
@@ -8703,7 +8703,7 @@ let () =
     { pd_name = Some ("uitkering van een " ^ subject_ref); pd_subject = subject_ref;
       pd_characteristic = None; pd_attribute = Some "uitkering";
       defaults = [ d (kc k) exemption; d always base_expr ];
-      pd_unordered = false; pd_source = None; pd_validity = None }
+      pd_unordered = false; pd_source = None; pd_desugared = false; pd_validity = None }
   in
   let doc =
     { empty_doc with

@@ -796,6 +796,11 @@ type prioritized_defaults = {
       (* declared-unordered (ch. 7.2): multiple defaults groups on one target
          are admissible iff every one carries this marking *)
   pd_source : string option;
+  pd_desugared : bool;
+      (* made by the ch. 7.7 desugaring (Desugar.document), never read from
+         the wire: the source text is presentation (IR-SPEC ch. 10), so a
+         group on the wire whose snippet spells the desugaring's own text is
+         still a group of the wire *)
   pd_validity : validity_window option;
 }
 

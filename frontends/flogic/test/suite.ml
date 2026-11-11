@@ -327,7 +327,7 @@ let () =
                      time_period = None; source_name = Some "?S.hoogte > 10" });
             default_consequence = None; default_initialisation = false; default_exceptions = None;
             default_source = None } ];
-      pd_unordered = false; pd_source = None; pd_validity = Some { valid_from = None; valid_to = None } }
+      pd_unordered = false; pd_source = None; pd_desugared = false; pd_validity = Some { valid_from = None; valid_to = None } }
   in
   let rule_def ident variety objective value_node cond validity_window : A.resolved_rule =
     { rr_name = Some ident; rr_presentation = Some variety; objective = Some (aref objective); value_node = Some value_node;

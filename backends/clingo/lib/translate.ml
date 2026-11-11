@@ -13745,8 +13745,7 @@ let translate_defaults_group ctx gidx ~owner
     | None -> ())
   else begin
   let l0, _ = List.hd members in
-  (* Ir_v0.Desugar.document marks what it makes so *)
-  ctx.desugared_group <- l0.pd_source = Some "ch. 7.7 v0 desugaring";
+  ctx.desugared_group <- l0.pd_desugared;
   let subject = "S" in
   let base = Printf.sprintf "is_a(%s,%s)" subject (str owner) in
   let is_char, target_name =

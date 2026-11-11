@@ -1737,7 +1737,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
         pd_characteristic = (if is_bool then Some vname else None);
         pd_attribute = (if is_bool then None else Some vname);
         defaults = List.map build_default chain;
-        pd_unordered = unordered; pd_source = Some vname; pd_validity = Some valid }
+        pd_unordered = unordered; pd_source = Some vname; pd_desugared = false; pd_validity = Some valid }
     in
     (* besluit 6: a reentrant variable's own default must be a DEFAULTS GROUP
        (never a bare Berekening), so a caller override can ride above it as a
