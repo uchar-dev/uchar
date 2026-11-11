@@ -1,0 +1,3 @@
+Violates WF-126 (`spec/IR-SPEC.md` ch. 3.1): a timeline that the value of an initialisation version on a timeline target reads per period lies on a grid that does not fit the target's.
+
+The document of `wf126-value-grid`, with the version an initialisation instead of a computation: it initialises `maandrente`, declared for every month, as the dagrentevoet maal the afdrachtbedrag. An initialisation on a timeline target is read per day, its value period arithmetic over all time (RUNTIME-SEMANTICS ch. 3.11, 7.8), so the parameter `dagrentevoet`, declared for every day, cuts inside a month the target cannot carry. The arm this case pins: the initialisation version.

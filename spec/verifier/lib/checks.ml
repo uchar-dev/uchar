@@ -12691,7 +12691,8 @@ let wf125 ctx =
       ctx.doc.object_types
 
 (* WF-126 (IR-SPEC ch. 3.1): every timeline that the value or the condition of
-   a rule on a timeline attribute target reads per period lies on a grid that
+   a computing or initialisation rule version on a timeline attribute target
+   reads per period lies on a grid that
    fits the target's ([grid_fits]), so the target can carry each cut it makes
    (RegelSpraak typeringen §3; spec/proposals/IMPLICIT-TIME.md VB 8.1), and so
    does every timeline the consequence or the justification of a default on
@@ -12805,8 +12806,10 @@ let wf126 ctx =
   List.concat_map
     (fun (r : resolved_rule) ->
       match (r.rr_presentation, r.objective) with
-      | Some (Equation | Calculation), Some (Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ })
-        -> (
+      (* an initialisation on a timeline target is read per day as a computing
+         version is (RUNTIME-SEMANTICS ch. 3.11, 7.8) *)
+      | ( Some (Equation | Calculation | Initialisation),
+          Some (Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ }) ) -> (
           match object_type ctx otn with
           | None -> []
           | Some ot -> (
