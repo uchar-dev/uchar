@@ -1607,7 +1607,13 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
                        day kind, which is the ch. 3.8 count over (A, B]
                        (§6.10) *)
                     match day_kind_of_unit env u with
-                    | Some k -> `Day_kind k
+                    | Some k ->
+                        (* the precision test reads the static types, before
+                           any operand is evaluated: a leeg operand must not
+                           answer leeg where a filled one faults (ch. 3.8) *)
+                        if ta = Some Date_time_type || tb = Some Date_time_type then
+                          Arith.day_kind_duration_over_datetimes ();
+                        `Day_kind k
                     | None ->
                         Value.fault "%s"
                           (Ir_v0.Checks.duration_unknown_unit kind (Ir_v0.Units.render u))))

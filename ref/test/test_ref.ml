@@ -14084,6 +14084,22 @@ let () =
             (code = Some "EF-014" && params = [ ("parameter", "penningbedrag") ])
       | _ -> check "WV-3.4-puntlezing-ongebonden-parameter (no fault at all)" false)
 
+(* WV-3.8-dagsoortduur-datum-tijd: the golden jutterswet-bergingsklok with
+   meldingsdatum and opleverdatum declared as datum-tijd. "tijdsduur van A tot B
+   in hele <dagsoort>" over two datum-tijden has no meaning (ch. 3.8), and the
+   precision test runs before the empty rules: with both operands leeg and with
+   one leeg the form is refused by name, as with both filled *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/day-kind-duration-datetime/" in
+  List.iter
+    (fun case_file ->
+      let ident = "WV-3.8-dagsoortduur-datum-tijd-" ^ case_file in
+      with_files ~ir:(read (dir ^ "ir.json")) ~case_data:(read (dir ^ case_file ^ ".json")) (fun findings _ evaluate ->
+          check (ident ^ ": verifier-clean") (findings = []);
+          expect_fault_msg ident evaluate "duration in a day kind over datum-tijd operands is a recognised, unexecuted form"))
+    [ "case1-beide-leeg"; "case2-van-leeg" ]
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

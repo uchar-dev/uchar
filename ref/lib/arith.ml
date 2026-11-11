@@ -937,14 +937,14 @@ let date_plus_day_kind ?(minus = false) ~matches d dur =
    refusal that names the form, not the leeg rule of a form that is not
    carried; otherwise the same document answers leeg or faults depending on
    which operand the case fills. *)
+let day_kind_duration_over_datetimes () =
+  fault
+    "duration in a day kind over datum-tijd operands is a recognised, unexecuted form: \
+     counting whole days of a kind between two instants needs a rule for the partial days at \
+     both ends and ch. 3.8 fixes none"
+
 let duration_day_kind ?(absolute = false) ~matches ?(result_unit = Unitless) a b =
-  let datetime_flank () =
-    fault
-      "duration in a day kind over datum-tijd operands is a recognised, unexecuted form: \
-       counting whole days of a kind between two instants needs a rule for the partial days at \
-       both ends and ch. 3.8 fixes none"
-  in
-  (match (a, b) with Date_time _, _ | _, Date_time _ -> datetime_flank () | _ -> ());
+  (match (a, b) with Date_time _, _ | _, Date_time _ -> day_kind_duration_over_datetimes () | _ -> ());
   let day_of = function
     | Date z -> z
     | v -> fault "duration: expected two dates, got %s" (to_string v)

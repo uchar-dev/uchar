@@ -127,5 +127,7 @@
   (glob_files fixtures/point-read-absent/absent/*.json)
   (glob_files fixtures/point-read-absent/written-empty/*.json)
   ; a point read of a time-dependent parameter the case does not bind
-  (glob_files fixtures/point-read-unbound-parameter/*.json))
+  (glob_files fixtures/point-read-unbound-parameter/*.json)
+  ; a duration in a day kind over two datum-tijden, an operand leeg
+  (glob_files fixtures/day-kind-duration-datetime/*.json))
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

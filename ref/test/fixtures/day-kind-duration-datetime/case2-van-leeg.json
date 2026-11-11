@@ -1,0 +1,27 @@
+{
+ "format": "uchar-case-v0",
+ "asOfDate": null,
+ "input": {
+  "instances": [
+   {
+    "label": "P1",
+    "objectType": "Bergingsploeg",
+    "attributes": {
+     "opleverdatum": {
+      "dateTime": "2024-12-31T10:00:00"
+     }
+    },
+    "roles": {},
+    "characteristics": []
+   }
+  ],
+  "parameters": {}
+ },
+ "expected": [
+  {
+   "kind": "attributeEmpty",
+   "label": "P1",
+   "attribute": "bergingsspanne"
+  }
+ ]
+}

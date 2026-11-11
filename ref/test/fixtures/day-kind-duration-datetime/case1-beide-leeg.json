@@ -1,0 +1,23 @@
+{
+ "format": "uchar-case-v0",
+ "asOfDate": null,
+ "input": {
+  "instances": [
+   {
+    "label": "P1",
+    "objectType": "Bergingsploeg",
+    "attributes": {},
+    "roles": {},
+    "characteristics": []
+   }
+  ],
+  "parameters": {}
+ },
+ "expected": [
+  {
+   "kind": "attributeEmpty",
+   "label": "P1",
+   "attribute": "bergingsspanne"
+  }
+ ]
+}
