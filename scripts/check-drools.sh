@@ -1603,7 +1603,9 @@ EXPECTED_CHANNEL=(
 # jutterswet-meldplicht-flogic, one characteristic rule authored in three source languages (PLAYED 1 each).
 # 366 since the card review-candidates-triage (2026-11-11): jutterswet-let-keuze-in-laatste, an IfThenElse as an
 # operand of a listed fold in a Let body, which the verifier admitted only from that card on (PLAYED 1 on both branches).
-EXPECTED_PLAYED=366
+# 367 with let-bound-period-arithmetic-total (same card): the own total over a timeline whose writer names its
+# period-arithmetic producer through a Let (PLAYED 2).
+EXPECTED_PLAYED=367
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
