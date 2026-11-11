@@ -99,6 +99,9 @@ verifier en de gatescripts; A3/A4 bovenop kaart `tms-session-readers-out`.
 - B10 — fixed: `DependencyCycleTest.a_model_the_emitter_refuses_carries_the_refusal`; RGS-394 draagt de weigering
   van de emitter in plaats van een stack trace bij `--ir`.
 - B11 — fixed: golden `jutterswet-let-keuze-in-laatste`; zeven `walk_expr`-aanroepen geven de body-positie door.
+  Omgedraaide test: de clingo-suite legde twee vormen vast als "WF-069 refuses the form at the door" (een
+  takknoop in de leegwaarde en in een argument van een aggregatie in een Let-body); nu verifier-schoon, ref
+  speelt, clingo weigert luid, zoals bij het vouwlichaam. De hulp `verifier_refuses` had daarna geen aanroeper.
 - B12 — fixed: negatieve case `wf043-wholeperiod-navigated-nontemporal`.
 - B13 — vraag, beantwoord: weigeren (vervolgkaart `review-findings-2026-11-11`).
 - B14 — fixed, vier delen: `refuse_self_binding.flogic`, `refuse_cyclic_binding.flogic` (stack overflow),
