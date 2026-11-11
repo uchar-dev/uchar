@@ -1064,7 +1064,7 @@ final class RuleChecker {
     private void checkPaths() {
         Set<Object> reported = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
         for (ResolvedRule r : model.resolvedRules) {
-            ObjectType s = r.target() instanceof Expr.AttributeReference d ? d.objectType() : null;
+            ObjectType s = targetSubject(r);
             pathForm = s;
             navigation(r.value(), s, reported);
             navigation(r.condition(), s, reported);
@@ -1096,6 +1096,14 @@ final class RuleChecker {
 
     /** The subject of the form {@link #checkPaths} walks: an anchored node is written from it (IR-SPEC ch. 4.1a). */
     private ObjectType pathForm;
+
+    /** The type a rule's reads are written from, as the emitter takes it: that of the attribute reference its target
+     *  is, or the one under its cell; null where the target is neither. */
+    private static ObjectType targetSubject(ResolvedRule r) {
+        Expr.AttributeReference a = r.target() instanceof Expr.DimensionCellRead c ? c.attribute()
+                : r.target() instanceof Expr.AttributeReference d ? d : null;
+        return a == null ? null : a.objectType();
+    }
 
     /**
      * WF-034, producer side, for one shape of read: a name that took in a word before 'van'. The name of a read runs
@@ -3288,7 +3296,7 @@ final class RuleChecker {
     private void checkSetReads() {
         // each read from the subject the emitter writes it from: the target's type, the consistency's, the creation's
         for (ResolvedRule r : model.resolvedRules)
-            checkSetRead(r.value(), r.target() instanceof Expr.AttributeReference d ? d.objectType() : null, false);
+            checkSetRead(r.value(), targetSubject(r), false);
         for (var c : model.consistencies) checkSetRead(c.assertion(), c.subject());
         for (var oc : model.objectCreations)
             for (var t : oc.assignments()) checkSetRead(t.value(), oc.subject(), false);

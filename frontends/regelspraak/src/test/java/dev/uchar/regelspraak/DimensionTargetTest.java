@@ -206,4 +206,62 @@ class DimensionTargetTest {
                 "De bonus van een Jutter moet gesteld worden op zijn premie in voorjaar."));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
     }
+
+    /** A model with a to-one and a to-many role from the Jutter, for the reads a cell target's value makes over them. */
+    static final String ROLES = """
+        Dimensie het seizoen, bestaande uit de seizoenen (na het attribuut met voorzetsel in):
+            1. voorjaar
+            2. najaar
+
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            de premie Numeriek (geheel getal) gedimensioneerd met seizoen;
+
+        Objecttype de Vangst (mv: Vangsten)
+            het gewicht Numeriek (geheel getal);
+
+        Objecttype de Haven (mv: Havens)
+            het havengeld Numeriek (geheel getal);
+
+        Feittype vangstboeking
+            de boeker Jutter
+            de geboekte vangst (mv: geboekte vangsten) Vangst
+        Eén boeker heeft meerdere geboekte vangsten
+
+        Feittype thuishaven van jutter
+            de thuishaven Haven
+            de bewoner Jutter
+        Eén thuishaven heeft meerdere bewoners
+
+        Regel doel
+            geldig altijd
+                %s
+        """;
+
+    /** The subject of a rule with a cell target is the type of the attribute under the cell, as the emitter writes
+     *  it: a navigated read in its value binds from there. */
+    @Test void a_cell_target_reads_over_a_role() {
+        RegelSpraakModel m = Resolver.resolve(ROLES.formatted(
+                "De premie in voorjaar van een Jutter moet berekend worden als het havengeld van zijn thuishaven."));
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        assertTrue(compactIr(m).contains("\"path\":[{\"node\":\"RoleBinding\",\"factType\":\"thuishavenvanjutter\","
+                + "\"role\":\"thuishaven\"}]"), compactIr(m));
+    }
+
+    @Test void a_cell_target_folds_over_a_role() {
+        RegelSpraakModel m = Resolver.resolve(ROLES.formatted("De premie in voorjaar van een Jutter moet berekend "
+                + "worden als de som van het gewicht van alle geboekte vangsten van de Jutter."));
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        assertTrue(compactIr(m).contains("\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"vangstboeking\","
+                + "\"role\":\"geboektevangst\"}"), compactIr(m));
+    }
+
+    /** A set reading outside a fold under a cell target is refused in the sentence of the read the emitter writes
+     *  from the cell's subject: the to-many hop (RGS-165). */
+    @Test void a_set_reading_under_a_cell_target_names_its_to_many_hop() {
+        RegelSpraakModel m = Resolver.resolve(ROLES.formatted("De premie in voorjaar van een Jutter moet berekend "
+                + "worden als het gewicht van alle geboekte vangsten van de Jutter plus 1."));
+        List<Diagnostic> faults = m.errors();
+        assertEquals(1, faults.size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
+        assertEquals("RGS-165", faults.get(0).code(), faults.get(0).message());
+    }
 }
