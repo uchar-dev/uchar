@@ -850,9 +850,10 @@ public final class IrLoader {
     private PrioritizedDefaults prioritizedDefaults(JsonNode n) {
         fields(n, pathOf(n), "PrioritizedDefaults", List.of("node", "name", "subject", "defaults", "validity"),
                 List.of("characteristic", "attribute", "unordered", "source", "origin", "designations"));
-        if (text(n, "name") != null)
+        if (text(n, "name") != null) {
             origin(n, pathOf(n), RegelSpraakModel.Designatable.form(text(n, "name")));
             designations(n, pathOf(n), RegelSpraakModel.Designatable.form(text(n, "name")));
+        }
         String subject = text(n, "subject");
         String characteristic = text(n, "characteristic");
         String attribute = text(n, "attribute");

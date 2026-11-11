@@ -122,4 +122,18 @@ class VocabularyWitnessTest {
         RegelSpraakModel m = IrLoader.load(ir);
         assertFalse(m.designations.isEmpty());
     }
+
+    @Test void a_defaults_group_without_a_name_enters_no_designation() throws Exception {
+        // A nameless form (WF-107's) names no declaration, so its designations stay out of the side table, as they do
+        // for a nameless rule. Measured on ccf6de21c: a nameless defaults group entered them under a form named null.
+        JsonNode ir = JSON.readTree(Files.readString(CORPUS.resolve("golden/jutterswet-bergingsdrempel/ir.json")));
+        ObjectNode group = (ObjectNode) ir.get("rules").get("prioritizedDefaults").get(0);
+        String name = group.get("name").asText();
+        group.putArray("designations").addObject().put("vocabulary", "cgm").put("designation", "BERGINGSBEVOEGD");
+        assertEquals(Optional.of("BERGINGSBEVOEGD"), IrLoader.load(ir).designation("cgm", Designatable.form(name)));
+
+        group.putNull("name");
+        RegelSpraakModel m = IrLoader.load(ir);
+        assertFalse(m.designations.containsKey(Designatable.form(null)), m.designations.toString());
+    }
 }
