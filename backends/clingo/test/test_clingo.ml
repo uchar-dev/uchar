@@ -14264,12 +14264,12 @@ let () =
    table (spec/proposals/v1-naamtabel.json) lists each family with its places
    in the schema and its [v0, L5] pairs; the migration script and the Java
    table are held to it, and this block holds the OCaml table to it. It is
-   the only thing that does for the values no document carries: negative,
-   concatenation and exactDigits occur in no document of the repository and
-   in no other OCaml suite (measured at the L5 landing; dateWith and
-   dateTimeWith, then in the list, are in golden date-with-parts since
-   2026-10-22), so a misspelling of one of them loads nothing and fails
-   nothing elsewhere.
+   the only thing that does for the values no document carries: negative and
+   concatenation occur in no document of the repository and in no other
+   OCaml suite (measured at the L5 landing; dateWith and dateTimeWith, then
+   in the list, are in golden date-with-parts since 2026-10-22, and
+   exactDigits in golden jutterswet-registratienummer since 2026-11-11), so a
+   misspelling of one of them loads nothing and fails nothing elsewhere.
 
    Per family: the wire values of [values] are the L5 side of `table_rows`, and
    those of [refused] the L5 side of `geweigerd`; at every place the family

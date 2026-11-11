@@ -1,0 +1,14 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het registratienummer Tekst;
+    is geregistreerd kenmerk (bijvoeglijk);
+    is afwijkend kenmerk (bijvoeglijk);
+
+Regel volledig registratienummer
+    geldig altijd
+        Een Jutter is geregistreerd
+        indien zijn registratienummer numeriek is met exact 9 cijfers.
+
+Regel afwijkend registratienummer
+    geldig altijd
+        Een Jutter is afwijkend
+        indien zijn registratienummer niet numeriek is met exact 9 cijfers.

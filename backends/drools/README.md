@@ -507,8 +507,7 @@ and `percentageOf`, a power with a
 whole exponent, the exact restatement of units at every operand boundary (ch. 2.6), the exact-digit test,
 a cell of a dimensioned attribute over any number of dimensions and a sum, minimum or maximum over the cells of the
 product of its selections (ch. 5.8c) compute through the runtime's helpers from bound values, and a first, a last and a
-filled count over them, by position, through the branch's (`ComputeHelpers.firstCell`, `lastCell`, `filledCells`); the
-exact-digit test the reference interpreter declines (ch. 5.11), so only this backend computes it. The
+filled count over them, by position, through the branch's (`ComputeHelpers.firstCell`, `lastCell`, `filledCells`). The
 evaluation date is the fact `EvaluationDate`, put in working memory once per session from the global `evaluationDate` the case
 runner sets, with a null date in a time-free session. A version with a bounded validity gates on it with a pattern that
 admits the date (ch. 8.2) and beside it a rule inserts the fault where the session carries no date, as the reference

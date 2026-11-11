@@ -1618,7 +1618,10 @@ EXPECTED_CHANNEL=(
 # (RUNTIME-SEMANTICS ch. 7.10; PLAYED 1).
 # 373 with jutterswet-bakenmeester-let: the pro-rata write of jutterswet-bakenmeester bound by a Let whose body reads
 # only its binder, which the precision gate of WF-023 recognises through the Let (PLAYED 1).
-EXPECTED_PLAYED=373
+# 374 with jutterswet-registratienummer: the exact-digit test, "numeriek met exact 9 cijfers", true on nine digits with
+# leading zeros and false on eight, ten, a letter, a sign, a space and a leeg value, the negation complementing it
+# (PLAYED 8).
+EXPECTED_PLAYED=374
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

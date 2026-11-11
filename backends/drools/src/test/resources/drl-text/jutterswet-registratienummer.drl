@@ -1,0 +1,34 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+
+// zijn registratienummer numeriek is met exact 9 cijfers
+function boolean toets_volledigRegistratienummer(Object $registratienummer) {
+    return ComputeHelpers.exactDigits($registratienummer, Integer.valueOf(9), Boolean.TRUE);
+}
+
+rule "volledig registratienummer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $registratienummer : registratienummer )
+    eval( toets_volledigRegistratienummer($registratienummer) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "geregistreerd", true)));
+end
+
+// zijn registratienummer niet numeriek is met exact 9 cijfers
+function boolean toets_afwijkendRegistratienummer(Object $registratienummer) {
+    return ComputeHelpers.exactDigits($registratienummer, Integer.valueOf(9), Boolean.FALSE);
+}
+
+rule "afwijkend registratienummer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $registratienummer : registratienummer )
+    eval( toets_afwijkendRegistratienummer($registratienummer) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "afwijkend", true)));
+end
+

@@ -9948,6 +9948,12 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
              | Some (atoms, term) -> atoms @ [ Printf.sprintf "%d %s %s" today sym term ]
            in
            part ">=" v @ part (if to_inclusive then "<=" else "<") t)
+  | Predicate { variety = Exact_digits; _ } ->
+      (* the test reads the characters of a text, and ASP-Core-2 has no
+         string functions (the limit of CLINGO-042) *)
+      faultc "CLINGO-046"
+        "exactDigits is not translated: the test reads the characters of a text, and this encoding has \
+         no string functions"
   | _ -> faultc "CLINGO-011" "condition kind not translated (no corpus case exercises it)"
 
 (* the ground term of a Construct (ch. 9.1): a Literal payload scaled to the
