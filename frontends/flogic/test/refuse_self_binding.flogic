@@ -1,0 +1,5 @@
+// A value binding through its own variable: ?X stands for ?X + 1, which
+// has no value, and expanding it never ends. The slice has no recursion.
+Vogel[|hoogte => numeriek(niet_negatief, geheel)|].
+@!{'hoogte van een vogel'}
+?V[hoogte -> ?X] :- ?V : Vogel, ?X = ?X + 1.

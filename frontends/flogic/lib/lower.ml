@@ -66,7 +66,7 @@ let sign_of ~line = function
   | "negatief" -> A.Negative
   | "positief" -> A.Positive
   | other ->
-      refuse ~line "the sign %s: numeriek(...) takes onbepaald, niet_negatief, negative or positief"
+      refuse ~line "the sign %s: numeriek(...) takes onbepaald, niet_negatief, negatief or positief"
         other
 
 let characteristic_kind_of ~line = function
@@ -324,7 +324,9 @@ let find_hop m ~line ~subject role =
 
 (* --- expressions ---------------------------------------------------------- *)
 
-type ctx = { c_subject : string; c_var : string; c_binds : (string * expr) list }
+(* [c_open] is the path of bindings being expanded, innermost first: a
+   variable met again on it is bound through itself, which has no value *)
+type ctx = { c_subject : string; c_var : string; c_binds : (string * expr) list; c_open : string list }
 
 let rec low_expr m (ctx : ctx) ~line (e : expr) : A.expr =
   match e with
@@ -332,7 +334,13 @@ let rec low_expr m (ctx : ctx) ~line (e : expr) : A.expr =
       A.Literal { variant = A.Lv_number lex; typ = Some (literal_type lex); source_name = Some lex }
   | E_var v -> (
       match List.assoc_opt v ctx.c_binds with
-      | Some e' -> low_expr m ctx ~line e'
+      | Some e' ->
+          if List.mem v ctx.c_open then
+            refuse ~line
+              "the binding of ?%s refers to itself (%s): a value binding defines its variable, \
+               and a definition through itself has no value — the slice has no recursion"
+              v (String.concat " -> " (List.rev_map (fun x -> "?" ^ x) (v :: ctx.c_open)));
+          low_expr m { ctx with c_open = v :: ctx.c_open } ~line e'
       | None -> refuse ~line "the unbound variable ?%s" v)
   | E_path (v, [ attr ]) when v = ctx.c_var ->
       (* the read writes no type (B13); it must still resolve on the subject *)
@@ -562,7 +570,7 @@ and low_quantifier_fold m ctx ~line ~op ~q ~rhs ~source_name : A.condition_expr 
     (q.q_matrix :: q.q_filter);
   (* the member reaches the wire as ?V whatever letter the author chose,
      exactly as the aggregate's own rendering does *)
-  let ectx = { c_subject = el; c_var = "V"; c_binds = [] } in
+  let ectx = { c_subject = el; c_var = "V"; c_binds = []; c_open = [] } in
   let low g = low_cond m ectx (rename_goal q.q_var g) in
   let filter =
     match q.q_filter with
@@ -696,10 +704,24 @@ let low_rule m (r : rule) : definition =
                         per rule" v c
       | _ -> ())
     r.r_body;
+  (* In Flora-2 a second binding of one variable is a unification: a
+     condition that the two values are equal. The slice reads a binding as
+     its variable's one definition and has no reading for that condition. *)
   let binds =
-    List.filter_map (function G_bind (v, e, _) -> Some (v, e) | _ -> None) r.r_body
+    List.fold_left
+      (fun acc -> function
+        | G_bind (v, e, line) ->
+            if List.mem_assoc v acc then
+              refuse ~line
+                "?%s is bound twice in one rule body: the slice reads a value binding as its \
+                 variable's one definition, and a second one would be a condition that the two \
+                 values are equal, which the slice does not read"
+                v;
+            acc @ [ (v, e) ]
+        | _ -> acc)
+      [] r.r_body
   in
-  let ctx = { c_subject = subject; c_var = r.r_subj; c_binds = binds } in
+  let ctx = { c_subject = subject; c_var = r.r_subj; c_binds = binds; c_open = [] } in
   let conds =
     List.filter_map
       (function
@@ -754,7 +776,11 @@ let objective m ~subject ~attr ~characteristic ~source_name ~line =
     { attribute_ref = Some attr; object_type = Some subject; source_name = Some source_name;
       navigation_bindings = None; anchor = None }
 
-let document (stmts : stmt list) : A.document =
+(* The lowered document, and per defaults group the ids of its defaults'
+   definitions in the order of [defaults]: each names the block its Default
+   comes from (IR-SPEC ch. 6.1, Default.name). The shared AST keeps no
+   Default.name, so the ids travel beside it to the serialiser. *)
+let document (stmts : stmt list) : A.document * string option list list =
   let m = collect stmts in
   (* every class mentioned as a supertype, a role filler or a rule subject
      must be declared; the chain walk asserts it *)
@@ -815,7 +841,7 @@ let document (stmts : stmt list) : A.document =
                    class frame has no instance to read from — write an unconditional rule, \
                    ?X[%s -> ...] :- ?X : %s"
                   o.o_name attr (show_expr e) attr o.o_name);
-            let ctx = { c_subject = o.o_name; c_var = "self"; c_binds = [] } in
+            let ctx = { c_subject = o.o_name; c_var = "self"; c_binds = []; c_open = [] } in
             let (_ : A.datatype) = attr_type m ~line o.o_name attr in
             { d_name = Some id; d_target = (o.o_name, attr); d_var = "self"; d_characteristic = false;
               d_target_source = show_head ~var:"self" (H_attr (attr, e)); d_barred = true;
@@ -829,7 +855,7 @@ let document (stmts : stmt list) : A.document =
   List.iter
     (fun d -> if not (List.mem d.d_target !targets) then targets := !targets @ [ d.d_target ])
     (barred @ defs);
-  let resolved = ref [] and groups = ref [] in
+  let resolved = ref [] and groups = ref [] and default_names = ref [] in
   List.iter
     (fun ((subject, attr) as target) ->
       let here = List.filter (fun d -> d.d_target = target) (barred @ defs) in
@@ -892,7 +918,9 @@ let document (stmts : stmt list) : A.document =
               default_consequence = Some d.d_value; default_initialisation = false;
               default_exceptions = None; default_source = None }
           in
-          let members = List.map default_of excs @ (match base with None -> [] | Some b -> [ default_of b ]) in
+          let ordered = excs @ Option.to_list base in
+          let members = List.map default_of ordered in
+          default_names := !default_names @ [ List.map (fun d -> d.d_name) ordered ];
           let ident =
             match base with
             | Some b when b.d_name <> None -> b.d_name
@@ -932,16 +960,17 @@ let document (stmts : stmt list) : A.document =
                      role_names = List.map (fun (_, r, _) -> r) f.f_roles }))
       m.ftypes
   in
-  { A.object_types; domain_specs = []; parameters = []; unit_systems = []; fact_types;
-    dimensions = []; timelines = []; day_kinds = [];
-    resolved_rules = !resolved; resolved_day_kind_definitions = []; object_creations = [];
-    allocations = []; consistencies = []; uniquenesses = []; uniqueness_unions = [];
-    fact_creations = []; resolved_start_point_determinations = []; rule_groups = []; diagnostics = [];
-    prioritized_defaults = !groups; function_defs = []; presentation_annotations = [] }
+  ( { A.object_types; domain_specs = []; parameters = []; unit_systems = []; fact_types;
+      dimensions = []; timelines = []; day_kinds = [];
+      resolved_rules = !resolved; resolved_day_kind_definitions = []; object_creations = [];
+      allocations = []; consistencies = []; uniquenesses = []; uniqueness_unions = [];
+      fact_creations = []; resolved_start_point_determinations = []; rule_groups = []; diagnostics = [];
+      prioritized_defaults = !groups; function_defs = []; presentation_annotations = [] },
+    !default_names )
 
-let of_string (src : string) : A.document = document (Parse.parse src)
+let of_string (src : string) : A.document * string option list list = document (Parse.parse src)
 
-let of_file (path : string) : A.document =
+let of_file (path : string) : A.document * string option list list =
   let ic = open_in_bin path in
   let n = in_channel_length ic in
   let src = really_input_string ic n in

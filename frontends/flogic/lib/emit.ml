@@ -306,26 +306,31 @@ let rule (r : resolved_rule) : json =
              @ [ ("initialisation", b initialisation) ]
              @ presentation) ]) ]
 
-let default (d : default) : json =
+let default name (d : default) : json =
   if d.default_initialisation || d.default_exceptions <> None then
     failwith "Emit: default form not produced by the F-logic slice";
   `Assoc
     (fields
        ([ ("node", `String "Default") ]
+       @ optional "name" s name
        @ optional "decision" b d.default_decision
        @ optional "justification" condition_expr d.default_justification
        @ optional "consequence" expr d.default_consequence
        @ [ source d.default_source ]))
 
-let prioritized_defaults (pd : prioritized_defaults) : json =
+let prioritized_defaults ((pd : prioritized_defaults), names) : json =
   if pd.pd_unordered then failwith "Emit: the slice declares no unordered group";
+  if List.length names <> List.length pd.defaults then
+    failwith
+      (Printf.sprintf "Emit: the group %s has %d defaults but %d default names"
+         (Option.value pd.pd_name ~default:"<unnamed>") (List.length pd.defaults) (List.length names));
   `Assoc
     (fields
        ([ ("node", `String "PrioritizedDefaults"); ("name", so pd.pd_name);
           ("subject", `String pd.pd_subject) ]
        @ optional "characteristic" s pd.pd_characteristic
        @ optional "attribute" s pd.pd_attribute
-       @ [ ("defaults", `List (List.map default pd.defaults));
+       @ [ ("defaults", `List (List.map2 default names pd.defaults));
            source pd.pd_source; ("validity", opt validity_window pd.pd_validity) ]))
 
 (* The M1 container (decision V3 (b)): the declaration set under "model", the
@@ -337,7 +342,10 @@ let prioritized_defaults (pd : prioritized_defaults) : json =
    written as [] it would drop what it held without a word. Its serialiser
    has no Unresolved arm, so no written document holds a marker a diagnostic
    would have to account for (WF-113). *)
-let document (d : document) : json =
+(* [default_names], where given, holds per group the names of its defaults
+   in their order (Default.name, IR-SPEC ch. 6.1); without it no Default
+   carries a name. *)
+let document ?default_names (d : document) : json =
   let unfilled list = function
     | [] -> ()
     | _ -> failwith (Printf.sprintf "Emit: the document fills %s, which the slice never builds" list)
@@ -359,6 +367,15 @@ let document (d : document) : json =
   unfilled "startPointDeterminations" d.resolved_start_point_determinations;
   unfilled "ruleGroups" d.rule_groups;
   unfilled "diagnostics" d.diagnostics;
+  let groups =
+    match default_names with
+    | None -> List.map (fun (pd : prioritized_defaults) -> (pd, List.map (fun _ -> None) pd.defaults)) d.prioritized_defaults
+    | Some names when List.length names = List.length d.prioritized_defaults -> List.combine d.prioritized_defaults names
+    | Some names ->
+        failwith
+          (Printf.sprintf "Emit: %d defaults groups but default names for %d"
+             (List.length d.prioritized_defaults) (List.length names))
+  in
   `Assoc
     [ ("format", `String "uchar-ir-v1");
       ("model",
@@ -388,17 +405,18 @@ let document (d : document) : json =
            ("factCreations", `List []);
            ("startPointDeterminations", `List []);
            ("ruleGroups", `List []);
-           ("prioritizedDefaults", `List (List.map prioritized_defaults d.prioritized_defaults)) ]);
+           ("prioritizedDefaults", `List (List.map prioritized_defaults groups)) ]);
       ("diagnostics", `List []) ]
 
-let to_string (d : document) : string = Yojson.Safe.pretty_to_string (document d) ^ "\n"
+let to_string ?default_names (d : document) : string =
+  Yojson.Safe.pretty_to_string (document ?default_names d) ^ "\n"
 
 (* Serialise WHOLE, then write. Opening the file first would leave an empty
    or half-written document behind when a node this serialiser does not
    carry raises — and a truncated IR that a later reader picks up is worse
    than no file at all. *)
-let to_file (path : string) (d : document) : unit =
-  let text = to_string d in
+let to_file ?default_names (path : string) (d : document) : unit =
+  let text = to_string ?default_names d in
   let oc = open_out path in
   output_string oc text;
   close_out oc

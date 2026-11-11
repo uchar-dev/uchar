@@ -1,0 +1,7 @@
+// Two value bindings of one variable. In Flora-2 the second is a
+// unification, a condition that the two values are equal; the slice reads
+// a binding as its variable's one definition and has no reading for that.
+Vogel[|hoogte => numeriek(niet_negatief, geheel)|].
+Vogel[|lengte => numeriek(niet_negatief, geheel)|].
+@!{'hoogte van een vogel'}
+?V[hoogte -> ?X] :- ?V : Vogel, ?X = 10, ?X = ?V.lengte.

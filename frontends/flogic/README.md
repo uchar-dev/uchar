@@ -116,7 +116,9 @@ downstream: WF-107 requires a present, non-blank name on
 every named form and WF-020 keeps names unique across rules and defaults
 groups in one namespace. The frontend refuses first, with a source line;
 the verifier is the second net. Because Flora-2 has no per-item id, a
-named barred statement carries exactly its one definition.
+named barred statement carries exactly its one definition. In a defaults
+group every definition's id is the `name` of its `Default`, and the group
+takes the base's id, or the first exception's where the target has no base.
 
 `sign` is `onbepaald`, `niet_negatief`, `negatief` or `positief`; `scale`
 is `whole_part` or a decimal count. `variety` is `bijvoeglijk`, `bezittelijk` or
@@ -127,7 +129,11 @@ Value expressions: decimal literals, path reads `?X.a`, infix `+ - * /`,
 and the two aggregates over one role hop —
 `sum{?V | ?V = ?X.role.attribute}` and `count{?V | ?V = ?X.role}`. Rule
 bodies carry the subject binding `?X : C`, characteristic checks `?X : k`,
-comparisons (`> >= < <= = !=`) and value bindings `?V = Expr`.
+comparisons (`> >= < <= = !=`) and value bindings `?V = Expr`. A binding
+is its variable's one definition: a second binding of the same variable
+refuses (in Flora-2 it is a unification, a condition that the two values
+are equal, which the slice does not read), and so does a binding that
+reaches its own variable, directly or through other bindings.
 
 ## The quantifier fold: a count compared with a threshold
 
@@ -270,8 +276,9 @@ the reason and the citation.
    types (a reference is a role and belongs on a fact type), a role filled
    by an undeclared class, one member declared twice on one class, a ground
    instance fact, two unconditional definitions of one target, a definition
-   with no id, an id on a form that names nothing, and two definitions
-   sharing one id.
+   with no id, an id on a form that names nothing, two definitions
+   sharing one id, a variable bound twice in one rule body, and a binding
+   that reaches its own variable.
 8. **the quantifier fold's own edges**, each by name: a strict `>` or `<`
    against a counting comprehension (the `threshold` on the wire is the number
    the source wrote, so the message names the direct spelling), a threshold

@@ -9,8 +9,8 @@ let () =
   match Sys.argv with
   | [| _; src; out |] -> (
       try
-        let doc = Flogic_frontend_lib.Lower.of_file src in
-        Flogic_frontend_lib.Emit.to_file out doc
+        let doc, default_names = Flogic_frontend_lib.Lower.of_file src in
+        Flogic_frontend_lib.Emit.to_file ~default_names out doc
       with
       | Flogic_frontend_lib.Syntax.Refusal msg ->
           prerr_endline ("flogic: REFUSED " ^ src ^ ": " ^ msg);

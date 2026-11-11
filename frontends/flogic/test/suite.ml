@@ -91,6 +91,34 @@ let () =
     passing;
   if passing = [] then (incr failures; print_endline "  FAIL no passing programs");
 
+  (* Every definition carries an id, and the id names the block its Default
+     comes from (IR-SPEC ch. 6.1, Default.name): the exception's as well as
+     the base's, as the RegelSpraak frontend writes them. Per group: its
+     name, then its defaults' names, highest priority first. *)
+  (let src = "inheritance.flogic" in
+   Printf.printf "[default-names] %s\n%!" src;
+   let out = Filename.temp_file "flogic" ".ir.json" in
+   let code, o = run [ frontend; src; out ] in
+   check (src ^ " : emit for the default names") (code = 0) o;
+   if code = 0 then begin
+     let open Yojson.Safe.Util in
+     let doc = Yojson.Safe.from_file out in
+     let name j = match member "name" j with `String s -> s | _ -> "<no name>" in
+     let got =
+       doc |> member "rules" |> member "prioritizedDefaults" |> to_list
+       |> List.map (fun pd -> (name pd, List.map name (pd |> member "defaults" |> to_list)))
+     in
+     let want =
+       [ ("hoogte van een vogel", [ "hoogte van een gewonde vogel"; "hoogte van een vogel" ]);
+         ("hoogte van een pinguin", [ "hoogte van een pinguin" ]) ]
+     in
+     let show l =
+       String.concat "; " (List.map (fun (g, ds) -> g ^ ": " ^ String.concat ", " ds) l)
+     in
+     check (src ^ " : every Default carries the id of its definition") (got = want)
+       ("got " ^ show got)
+   end);
+
   (* One fixture per refusal on the F-logic list of the subtyping design
      (§9.3), plus the slice edges this frontend adds. *)
   let refusals =
@@ -142,7 +170,11 @@ let () =
       ("refuse_count_second_hop.flogic", "ONE role hop");
       ("refuse_count_foreign_variable.flogic", "speaks of ?S");
       ("refuse_characteristic_head_unknown.flogic", "declares no characteristic zeewaardig");
-      ("refuse_characteristic_second_definition.flogic", "?X : sterk is defined twice") ]
+      ("refuse_characteristic_second_definition.flogic", "?X : sterk is defined twice");
+      ("refuse_self_binding.flogic", "the binding of ?X refers to itself (?X -> ?X)");
+      ("refuse_cyclic_binding.flogic", "the binding of ?X refers to itself (?X -> ?Y -> ?X)");
+      ("refuse_second_binding.flogic", "?X is bound twice in one rule body");
+      ("refuse_sign.flogic", "takes onbepaald, niet_negatief, negatief or positief") ]
   in
   List.iter
     (fun (src, needle) ->

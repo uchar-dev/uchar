@@ -1,0 +1,5 @@
+// Two value bindings through each other: the same cycle as ?X = ?X + 1,
+// one variable further.
+Vogel[|hoogte => numeriek(niet_negatief, geheel)|].
+@!{'hoogte van een vogel'}
+?V[hoogte -> ?X] :- ?V : Vogel, ?X = ?Y + 1, ?Y = ?X.
