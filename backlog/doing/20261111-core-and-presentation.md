@@ -138,5 +138,6 @@ Date norms
 - fixed: year, month and day of a date-time in ref and clingo; golden `jutterswet-meldtijdstip-delen`.
 
 Tests changed because behaviour changed: the Drools tests of the removed forms and DROOLS-129, `TypingSentenceTest`,
-`StructureSentenceTest`, `ReaderSentenceBoundaryTest`, the builtin-kind count in the Drools tests, the clingo test
-that pinned the eleven test and Easter before year 1. `EXPECTED_PLAYED` 373 → 377.
+`StructureSentenceTest`, `ReaderSentenceBoundaryTest`, the builtin-kind count in the Drools tests, the ref test
+`WV-3.8-d-bereik-paasdag-onder` (the year-1 sentence), the record literals of the ref, Catala and F-logic suites (the
+new AST field). `EXPECTED_PLAYED` 373 → 377.
