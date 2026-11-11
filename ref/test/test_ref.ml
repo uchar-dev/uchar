@@ -11533,13 +11533,16 @@ let () =
    verlenging" holds for a Vergunning whose vorige vergunning has a leeg
    restant (a negative shifted edge), "einddag zonder restant" writes the
    basiseinddag on a Vergunning zonder verlenging, and einddag and restant
-   are R1's. A characteristic is never withdrawn (ch. 5.3): evaluated on V2
-   before the restant of V1 is computed, it would hold for V2 for good, and
-   two writers of the einddag of V2 would disagree. Measured 2026-10-22 with
-   the depth order switched off: EF-016, "einddag zonder restant" writes
-   2026-12-01 and "einddag" 2027-03-03. With it, in either order of the four
-   rules: V1 zonder verlenging, V2 not, einddag V2 03-03-2027, the answer of
-   the ASP backend as well. *)
+   are R1's. At the fixpoint the restant of V1 is gevuld, so the attribution
+   does not decide for V2, and an attribution that does not decide withdraws
+   what it set (ch. 5.3): V2 is not zonder verlenging, and "einddag zonder
+   restant" writes nothing on V2. Evaluated on V2 before the restant of V1
+   exists, the attribution would decide for a while and "einddag zonder
+   restant" would write 2026-12-01 beside the 2027-03-03 of "einddag"; the
+   depth order does not let that state arise, because V1 settles before V2
+   reads it. In both orders of the four rules: V1 zonder verlenging, V2 not,
+   einddag V1 01-06-2026, restant V1 92, einddag V2 03-03-2027, consistent,
+   the answer of the ASP backend as well. *)
 let wv64_kenmerk =
   {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Vergunning",
 "animate":false,"plural":"Vergunningen","attributes":[{"node":"Attribute","name":"stopdag",
