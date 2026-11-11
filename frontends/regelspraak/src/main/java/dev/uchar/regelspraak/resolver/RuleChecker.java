@@ -1546,7 +1546,7 @@ final class RuleChecker {
      *  document the emitter would write — the verifier's WF-053 sentence for a step written on the source, else the
      *  one for the fold without a range ({@link #withoutRange}). */
     private Typing.Coded foldError(Expr.FunctionCall f, ObjectType subject, dev.uchar.regelspraak.emit.IrEmitter.FoldRefusal w) {
-        Expr.AttributeReference source = (Expr.AttributeReference) f.arguments().get(0);
+        Expr.AttributeReference source = dev.uchar.regelspraak.emit.IrEmitter.foldSourceReference(f.arguments().get(0));
         return switch (w) {
             case WRITTEN_PATH, WRITTEN_STEP -> new Typing.Coded("RGS-127",
                     params("expression", f.source()));
