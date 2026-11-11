@@ -501,7 +501,7 @@ its own; it does not approximate it. Worked example (`ref/` tests
 | plus, min, maal | rational field operations | 9 × 1/3 = 3; 0,1 + 0,2 = 0,3 (exact decimals, no binary float) |
 | verminderd met | subtraction; differs from min only in ch. 1.2 empty-handling | 5 vm 3 = 2 |
 | gedeeld door | exact quotient; result may be non-terminating and stays exact until a collapse point | 10 ÷ 4 = 5/2 = 2,5; 2 ÷ 3 = 2/3 (exact) |
-| gedeeld door (abs-variant) | quotient truncated **toward zero at 5 decimals** — a defined collapse point, dialect operator | 10 ÷abs 3 = 3,33333; −10 ÷abs 3 = −3,33333 |
+| gedeeld door (abs-variant) | quotient truncated **toward zero at 5 decimals** — a defined collapse point, a core operator the source language spells | 10 ÷abs 3 = 3,33333; −10 ÷abs 3 = −3,33333 |
 | tot de macht (integer exponent) | exact integer power; negative exponent inverts first | 7¹⁹ = 11398895185373143 (exact); (1/3)⁻¹ = 3 |
 | tot de macht (fractional exponent) | the exact root where the power is rational; else the real power exists only under its mandatory rounding (§6.7), which rounds the true power once; without a rounding it is a fault. A negative base is a fault under every fractional exponent, with and without a rounding, also where the exponent's numerator is even or its denominator odd: no real power of a negative number is defined here | 4^0,5 = 2; 8^(2/3) = 4; 10^(1/3) afgerond op 10 naar beneden = 2,1544346900, naar boven = 2,1544346901; 10^(1/3) without a rounding: fault; (−32)^0,4: fault, without and with a rounding (not 4 by way of (−32)²); (−32)^(1/5) and (−32)^(−2/5): fault; (−2)^3 = −8 (a whole exponent, the row above) |
 | percentage van | `l/100 × r`, exactly | (1/3)% van 600 = 2 (exact, not 1,999…); 50% van 4,00 = 2 |
