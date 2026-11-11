@@ -31,6 +31,7 @@ cat > "$survivors" <<'EOF'
 corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json|a non-deciding defaults group leaves the input standing (ch. 7.1).
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json|the v0 initialisation leaves a filled input standing (ch. 5.4).
 corpus/golden/jutterswet-vondstnummer/case-consistent.json|a uniqueness that holds on the input — "consistent" is true of an empty channel.
+corpus/golden/jutterswet-saldotoezicht/case2-geen-negatief-saldo.json|a consistency that holds on the input — no saldo below 0, an empty channel, so "is inconsistent" makes no Dossier verscherpt; the absence is the assertion (RS ch. 5.6).
 corpus/golden/anchor/jutterswet-nummerregister/case2.json|the ever-unique NON-collision (same-instance redeclaration) — the absence of a channel fact IS the assertion (RS ch. 5.9).
 corpus/golden/anchor/jutterswet-strandregister/case2.json|the same non-collision on the single form (shared tuple function, RS ch. 5.9).
 corpus/golden/anchor/jutterswet-strandregister/case4.json|the scope narrowing — the same ever-pair under two DIFFERENT parents stays consistent.
