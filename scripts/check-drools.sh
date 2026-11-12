@@ -31,7 +31,9 @@
 # PLAYED status was silently added to channel 1 and the gate still said PASS: the differential shrank
 # by one, loud about the FORM and mute about the LOSS. "Not-carried forms never vanish silently" was
 # therefore true of the reasons and false of the players. The floor pins every NON-PLAYED golden by
-# name (PLAYED is the default) and fails in both directions, exactly as the two lists above do.
+# name (PLAYED is the default) and fails in both directions, exactly as the two lists above do. The
+# token of a player is `PLAYED n`, and n must be the number of the golden's case files: a player
+# replays every case file it has (maintainer decision 2026-11-12; until then the gate demanded n > 0).
 #
 # An empty played set is a FAILURE, never silently green. Report: played N, auto-excluded M,
 # value-divergence K (per reason), no-case L.
@@ -1737,13 +1739,15 @@ while IFS= read -r ir; do
       if reason=$(known_reason "$name"); then
         fail "stale exclusion: '$name' is in EXCLUDE_KNOWN ($reason) but now PLAYS+PASSES — remove it"
       fi
-      # PLAYED is a token, not a witness. A golden whose every case carries expectedFault replays
-      # NOTHING and still prints PLAYED (the runner skips red-path cases in a green zone), so it
-      # would be counted a full member of the differential square on zero replays. Gate 4's zone
-      # discipline keeps that shape out of corpus/golden, so the route is closed crosswise — but the
-      # token itself was hollow-able, and this floor is about what THIS gate can still be told.
+      # PLAYED is a token, not a witness. The runner skips a case that carries expectedFault, so a golden
+      # with such a case, or whose every case carries one, would still print PLAYED and be counted a full
+      # member of the differential square on fewer replays than it has case files. Gate 4's zone discipline
+      # keeps that shape out of corpus/golden, so the route is closed crosswise — but this gate demands of
+      # the token itself what it claims: the number it carries is the number of the golden's case files.
       n_played=${out#PLAYED }
-      [ "${n_played:-0}" -gt 0 ] || fail "'$name' reports PLAYED 0 — counted as a player but replayed no case at all"
+      n_cases=$(printf '%s\n' "$cases" | grep -c .)
+      [ "$n_played" = "$n_cases" ] \
+        || fail "'$name' reports '$out', but the golden has $n_cases case file(s) — a player replays every case file it has"
       played=$((played + 1)); SEEN+=("$name|PLAYED"); SEEN_LINE+=("$name|$out") ;;
     EXCLUDE)
       if known_reason "$name" >/dev/null; then
