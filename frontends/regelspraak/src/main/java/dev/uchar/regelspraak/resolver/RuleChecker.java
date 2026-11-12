@@ -4391,7 +4391,7 @@ final class RuleChecker {
         ResolvedAllocation.Method method = ResolvedAllocation.Method.COMPLEX;
         // why the allocation has none of the three methods of IR-SPEC ch. 3.2. Without a reason it stays the
         // emitter's WARNING (RGS-001): ANTLR's recovery left the method out and the syntax error speaks for it, or an
-        // attribute it names is undeclared, which the TOKA casus does and the verifier reports (WF-034)
+        // attribute it names is undeclared, which the parity casus does and the verifier reports (WF-034)
         Msg withoutMethod = null;
         String ratio = null;
         if (z != null && z.IN_GELIJKE_DELEN() != null) method = ResolvedAllocation.Method.GELIJKE_DELEN;
