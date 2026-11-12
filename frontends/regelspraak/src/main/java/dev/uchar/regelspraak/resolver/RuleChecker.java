@@ -1442,12 +1442,17 @@ final class RuleChecker {
      *  created relation's target is one: the wire reads that condition from the anchor, so the target is reached
      *  over the to-many role. */
     private Typing.Coded manyStepError(Expr.AttributeReference a, ObjectType subject) {
-        return manyStepError(a, subject, "RGS-120", "expression");
+        ManySteps m = manySteps(a, subject);
+        return m == null ? null : new Typing.Coded("RGS-120",
+                params("expression", a.source(), "hops", m.hops(), "roles", m.roles(), "sentences", m.sentences()));
     }
 
-    /** The refusal {@code code} of every to-many hop of {@code a}'s binding from {@code subject}, the read under the
-     *  parameter {@code sourceKey}; null where no hop is to-many. */
-    private Typing.Coded manyStepError(Expr.AttributeReference a, ObjectType subject, String code, String sourceKey) {
+    /** The to-many hops of a read's binding: their numbers and roles, and one WF-053 sentence per hop, in path
+     *  order (the template renders them joined). */
+    private record ManySteps(String hops, String roles, List<Msg> sentences) {}
+
+    /** The to-many hops of {@code a}'s binding from {@code subject}; null where no hop is to-many. */
+    private ManySteps manySteps(Expr.AttributeReference a, ObjectType subject) {
         List<RegelSpraakModel.RoleBindingRef> bindingPath =
                 dev.uchar.regelspraak.emit.IrEmitter.navigationBindings(model, subject, a);
         List<Msg> sentences = new ArrayList<>();
@@ -1458,11 +1463,7 @@ final class RuleChecker {
                 hops.add(String.valueOf(i));
                 roles.add(bindingPath.get(i).role());
             }
-        // one sentence per to-many hop, in path order; the template renders them joined
-        return sentences.isEmpty() ? null
-                : new Typing.Coded(code,
-                        params(sourceKey, a.source(), "hops", String.join(", ", hops), "roles", String.join(", ", roles),
-                                "sentences", sentences));
+        return sentences.isEmpty() ? null : new ManySteps(String.join(", ", hops), String.join(", ", roles), sentences);
     }
 
     /** WF-053's sentence for hop {@code i} over the to-many role {@code roleName} of a read that takes one value. */
@@ -3548,10 +3549,10 @@ final class RuleChecker {
         if (countSource != null && countSource.hasMember(a.attribute()))
             return new Typing.Coded("RGS-164",
                     params("source", a.source(), "attribute", a.attribute(), "elementType", countSource.name));
-        if (countSource == null) {
-            Typing.Coded manyStep = manyStepError(a, subject, "RGS-165", "source");
-            if (manyStep != null) return manyStep;
-        }
+        ManySteps m = countSource == null ? manySteps(a, subject) : null;
+        if (m != null)
+            return new Typing.Coded("RGS-165",
+                    params("source", a.source(), "hops", m.hops(), "roles", m.roles(), "sentences", m.sentences()));
         return countSource != null
                 ? new Typing.Coded("RGS-166", params("source", a.source()))
                 : new Typing.Coded("RGS-167", params("source", a.source()));
