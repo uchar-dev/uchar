@@ -3107,6 +3107,11 @@ final class RuleChecker {
             for (var fc : model.factCreations) read |= uses(fc.condition(), ref, check);
             for (var d : model.resolvedDayKindDefinitions) read |= uses(d.condition(), ref, check);
             for (var pd : model.prioritizedDefaults) read |= readsDefaults(pd.defaults(), ref, check);
+            for (var u : model.uniquenesses)
+                read |= inLine(o.type(), u.subject()) && u.keys().stream().anyMatch(k -> sameName(k, g));
+            for (var u : model.uniquenessUnions)
+                for (var s : u.sources())
+                    read |= inLine(o.type(), s.type()) && s.keys().stream().anyMatch(k -> sameName(k, g));
             if (read) return g;
         }
         return null;

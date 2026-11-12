@@ -1042,4 +1042,22 @@ class InputMarkingTest {
                 + "waar de markering een berekening van 'waarde' verlegt (dialect §7)", d.message());
         assertEquals(4, d.line());
     }
+
+    /** A uniqueness and a union of uniquenesses read their keys as members too: the withdrawal left a key
+     *  'opgegeven waarde' behind with a warning only, and the verifier refused the document under WF-030. */
+    @Test void without_computing_writer_a_uniqueness_over_a_generated_name_is_refused() {
+        for (String rule : List.of("De opgegeven waarde van alle Vondsten moeten uniek zijn.",
+                "De concatenatie van de taxatie en de opgegeven waarde van alle Vondsten moeten uniek zijn.",
+                "De taxatie van alle Vondsten verenigd met de opgegeven waarde van alle Vondsten moeten uniek zijn.")) {
+            RegelSpraakModel m = Resolver.resolve(VONDST + """
+
+                Regel uniek
+                    geldig altijd
+                        %s
+                """.formatted(rule));
+            Diagnostic d = onlyError(m);
+            assertEquals("RGS-152", d.code(), d.message());
+            assertTrue(d.message().contains("'opgegeven waarde'"), d.message());
+        }
+    }
 }
