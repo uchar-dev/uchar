@@ -2057,6 +2057,34 @@ final class ExpressionBuilder {
         return refusedClip(marked, Msg.frontend("RGS-092.day-count-condition-form"), adf);
     }
 
+    /** WF-056 and WF-058 at the rule: the bucket of a pro-rata part or a day count is the grid of its timeline
+     *  target, and a day count's target that declares a unit declares days per that bucket ("dg/mnd"). The refusal,
+     *  or null where {@code value} is no such fold or it fits {@code target}. */
+    static Typing.Coded clipBucket(Expr target, Expr value) {
+        if (!(value instanceof Expr.FunctionCall f) || f.granularity() == null
+                || (f.kind() != Expr.FunctionKind.TIJDSEVENREDIG_DEEL && f.kind() != Expr.FunctionKind.AANTAL_DAGEN_IN)
+                || !(target instanceof Expr.AttributeReference a) || a.objectType() == null) return null;
+        String bucket = f.granularity().name().toLowerCase(java.util.Locale.ROOT);
+        RegelSpraakModel.Granularity grid = a.objectType().granularityOf(a.attribute());
+        if (grid != null && grid != f.granularity())
+            return new Typing.Coded("RGS-403", params("fold", f.source().snippet(), "bucket", bucket,
+                    "target", a.attribute(), "targetGrid", grid.name().toLowerCase(java.util.Locale.ROOT)));
+        Datatype declared = a.objectType().attribute(a.attribute());
+        Unit unit = declared == null ? null : declared.unitOf();
+        if (f.kind() == Expr.FunctionKind.AANTAL_DAGEN_IN && unit != null && !daysPer(unit, f.granularity()))
+            return new Typing.Coded("RGS-404", params("bucket", bucket, "target", a.attribute(), "unit", unit.rendering()));
+        return null;
+    }
+
+    /** Whether {@code u} is a day over the time unit of {@code g}, by the calendar table: the unit of a day count. */
+    private static boolean daysPer(Unit u, RegelSpraakModel.Granularity g) {
+        List<Unit.Factor> positive = u.factors().stream().filter(x -> x.exponent() > 0).toList();
+        List<Unit.Factor> negative = u.negativeFactors();
+        return positive.size() == 1 && negative.size() == 1 && positive.get(0).exponent() == 1
+                && negative.get(0).exponent() == -1 && TimeCalculation.isDay(positive.get(0).abbreviation())
+                && TimeCalculation.hasNegativeFactorOfGrid(u, TimeCalculation.gridChronoUnit(g));
+    }
+
     /** The clip condition {@code written} of the fold {@code at} refused with an ERROR that says why: the temporal
      *  total, the pro-rata part and the day count each take only the conditions the verifier admits (WF-055, WF-056,
      *  WF-058). The marker carries no reason, because the ERROR is its diagnosis. */

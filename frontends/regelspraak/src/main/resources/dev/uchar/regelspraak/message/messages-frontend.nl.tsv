@@ -758,6 +758,8 @@ RGS-401.tie-weight-not-a-number	het gewicht '{attribute}' bij een even groot cri
 RGS-402	de voorwaarde '{condition}' heeft geen vorm die uchar-ir-v1 draagt: {reason}
 RGS-402.proportional	'gedurende de tijd dat' bij het tijdsevenredig deel leest één tijdsafhankelijk kenmerk van het onderwerp zelf, 'hij <kenmerk> is' (WF-056)
 RGS-402.total	'gedurende de tijd dat' bij het totaal leest een tijdsafhankelijk kenmerk van het onderwerp zelf ('hij <kenmerk> is'), een vergelijking met een eigen tijdsafhankelijk attribuut links ('zijn <attribuut> groter is dan …'), of 'aan alle volgende voorwaarden' over zulke kenmerken (WF-055)
+RGS-403	'{fold}' telt per {bucket}, en het doel '{target}' heeft een tijdlijn per {targetGrid}; de emmer van de functie is het raster van het doel (WF-056, WF-058)
+RGS-404	het aantal dagen telt dagen per {bucket}, en het doel '{target}' declareert de eenheid '{unit}'; een doel met een eenheid declareert dagen per {bucket}, zoals dg/mnd of dg/jr (WF-058)
 RGS-420	de zin leest als een berekening en niet als een attribuut, kenmerk of cel van het onderwerp; een regel schrijft een lid van zijn eigen universele onderwerp
 RGS-421	verdeling '{name}': '{written}' leest als een berekening en niet als een attribuut; een verdeling verdeelt een attribuut van de verdeler over een attribuut van de ontvangers (IR-SPEC ch. 3.2)
 RGS-422	{head}: het blok '{name}' — {other} heet al zo (bronregel {otherLine}); een drager noemt een blok bij zijn naam, en een vormnaam is uniek in het hele model, hoofdletters niet meegeteld (WF-020)

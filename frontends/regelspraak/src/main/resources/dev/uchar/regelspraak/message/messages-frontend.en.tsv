@@ -758,6 +758,8 @@ RGS-401.tie-weight-not-a-number	the weight '{attribute}' within an equal rank is
 RGS-402	the condition '{condition}' has no form uchar-ir-v1 carries: {reason}
 RGS-402.proportional	'gedurende de tijd dat' on the time-proportional part reads one time-dependent characteristic of the subject itself, 'hij <kenmerk> is' (WF-056)
 RGS-402.total	'gedurende de tijd dat' on the total reads a time-dependent characteristic of the subject itself ('hij <kenmerk> is'), a comparison with an own time-dependent attribute on the left ('zijn <attribuut> groter is dan …'), or 'aan alle volgende voorwaarden' over such characteristics (WF-055)
+RGS-403	'{fold}' counts per {bucket}, and the target '{target}' has a timeline per {targetGrid}; the bucket of the function is the grid of the target (WF-056, WF-058)
+RGS-404	the day count counts days per {bucket}, and the target '{target}' declares the unit '{unit}'; a target with a unit declares days per {bucket}, as dg/mnd or dg/jr (WF-058)
 RGS-420	the sentence reads as a computation and not as an attribute, characteristic or cell of the subject; a rule writes a member of its own universal subject
 RGS-421	allocation '{name}': '{written}' reads as a computation and not as an attribute; an allocation distributes an attribute of the distributor over an attribute of the recipients (IR-SPEC ch. 3.2)
 RGS-422	{head}: the block '{name}' — {other} already has that name (source line {otherLine}); a carrier names a block by its name, and a form name is unique in the whole model, case not counted (WF-020)

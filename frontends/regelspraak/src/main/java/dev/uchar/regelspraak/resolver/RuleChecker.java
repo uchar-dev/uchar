@@ -5152,6 +5152,11 @@ final class RuleChecker {
                     .frame("category", "category", category.name().toLowerCase()).at(Severity.ERROR, line));
             return;
         }
+        Typing.Coded bucket = ExpressionBuilder.clipBucket(targetExpr, peeledValue);   // WF-056, WF-058
+        if (bucket != null) {
+            model.diagnostics.add(bucket.frame("category", "category", category.name().toLowerCase()).at(Severity.ERROR, line));
+            return;
+        }
         if (targetType.isUnknown() || valueType.isUnknown()) return; // not enough resolved to judge
         Typing.Coded error = Typing.assignment(targetType, valueType, ExpressionBuilder.unitlessNumberLiteral(valueExpr));
         boolean outside = timelineTarget(targetExpr) && proRata(valueExpr);

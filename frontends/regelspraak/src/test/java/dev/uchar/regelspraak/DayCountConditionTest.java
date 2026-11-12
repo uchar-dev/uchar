@@ -204,6 +204,33 @@ class DayCountConditionTest {
                 "hij aan alle volgende voorwaarden voldoet: - hij borgplichtig is - hij aangesteld is");
     }
 
+    /** The bucket of a day count or a pro-rata part is the grid of its timeline target, and a day count's target
+     *  that declares a unit declares days per that bucket (WF-056, WF-058): each mismatch is an ERROR at the rule. */
+    @Test void the_bucket_is_the_grid_of_the_target() {
+        String model = """
+            Eenheidsysteem Munt
+                de euro (mv: euros) EUR €
+
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                is actief kenmerk (bijvoeglijk) voor elke dag;
+                het maandloon Numeriek (geheel getal) met eenheid € voor elke maand;
+                de dagteller Numeriek (geheel getal) voor elke dag;
+                de dagwaarde Numeriek (getal) met eenheid € voor elke dag;
+                de uitkomst Numeriek (getal) met eenheid €;
+
+            Regel r
+                geldig altijd
+            """;
+        java.util.function.Function<String, List<String>> codes = rule -> Resolver.resolve(model + rule + "\n")
+                .errors().stream().map(Diagnostic::code).toList();
+        assertEquals(List.of("RGS-403"), codes.apply(
+                "        De dagteller van een Jutter moet berekend worden als het aantal dagen in de maand dat hij actief is."));
+        assertEquals(List.of("RGS-403"), codes.apply(
+                "        De dagwaarde van een Jutter moet gesteld worden op het tijdsevenredig deel per maand van zijn maandloon gedurende de tijd dat hij actief is."));
+        assertEquals(List.of("RGS-404"), codes.apply(
+                "        De uitkomst van een Jutter moet berekend worden als het aantal dagen in de maand dat hij actief is."));
+    }
+
     // ---------------- the whole-period qualifier in the condition of a gedurende clip ----------------
 
     private static RegelSpraakModel clip(String value) {
