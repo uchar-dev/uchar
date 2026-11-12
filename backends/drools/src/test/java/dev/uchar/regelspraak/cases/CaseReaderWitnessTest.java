@@ -37,6 +37,8 @@ class CaseReaderWitnessTest {
     private static final String BAKENMEESTER = "jutterswet-bakenmeester";
     /** Jutters with a to-one haven, havens with their havenjutters, vondsten with their jutter. */
     private static final String HAVENKETEN = "jutterswet-havenketen";
+    /** Three consistency rules on Vondst, no defaults group. */
+    private static final String KEURSPELLING = "jutterswet-keurspelling";
 
     // ---------------- parameters ----------------
 
@@ -227,6 +229,24 @@ class CaseReaderWitnessTest {
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
                 () -> CaseRunner.runGolden(ir(PENNINGDREMPEL), List.of(written(c))));
         assertTrue(e.getMessage().contains("carries expected"), e.getMessage());
+    }
+
+    // ---------------- expectations ----------------
+
+    @Test void an_expectation_without_a_field_its_kind_reads_is_a_case_error() throws Exception {
+        ObjectNode c = caseFile(PENNINGDREMPEL, "case");
+        ((ObjectNode) c.get("expected").get(0)).remove("label");
+        caseError(PENNINGDREMPEL, c, "expected[0]: missing field \"label\"");
+    }
+
+    @Test void an_inconsistent_expectation_on_a_rule_no_form_carries_is_a_case_error() throws Exception {
+        // a misspelled consistency rule, and the target form of an attribute no defaults group writes: ref refuses both
+        // at load, where the comparison would report an inconsistency the session never deposited
+        for (String rule : new String[]{"geen wrakhout ter herkeuring", "Vondst.staat"}) {
+            ObjectNode c = caseFile(KEURSPELLING, "case1-hoofdletterspelling");
+            ((ArrayNode) c.get("expected")).addObject().put("kind", "inconsistent").put("rule", rule).put("label", "V1");
+            caseError(KEURSPELLING, c, "unknown rule \"" + rule + "\"");
+        }
     }
 
     // ---------------- role keys ----------------

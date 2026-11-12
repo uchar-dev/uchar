@@ -401,6 +401,11 @@ public final class TmsTranspiler {
     /** The reading rules of a build with readings, in the order their forms lowered. */
     private final List<ReadingRule> readingRules = new ArrayList<>();
 
+    /** The defaults groups of the document, in its order: the loader keeps them beside the model. */
+    public List<PrioritizedDefaults> prioritizedDefaults() {
+        return defaults;
+    }
+
     private TmsTranspiler(RegelSpraakModel model, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
                           Map<Object, List<RoleBindingRef>> navigationBindings, Set<Object> anchored,
                           Map<Object, RoleBindingRef> roleBindings,

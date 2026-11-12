@@ -1199,9 +1199,11 @@ public final class DroolsBackend {
      *                                  was not written back
      * @throws IllegalArgumentException {@code expectations} that are no array; a {@code label} that gives one label to
      *                                  two beans of the session; and a defect of the case that the replay refuses as
-     *                                  well, among them an expectation on a member with a label no bean of the session
-     *                                  carries, an expectation on a dimensioned attribute as a whole, and a cell
-     *                                  expectation whose labels name no cell (RUNTIME-SEMANTICS ch. 5.8c)
+     *                                  well, among them an expectation without a field its kind reads, an expectation
+     *                                  on a member with a label no bean of the session carries, an inconsistency
+     *                                  expectation on a rule no form of the document carries, an expectation on a
+     *                                  dimensioned attribute as a whole, and a cell expectation whose labels name no
+     *                                  cell (RUNTIME-SEMANTICS ch. 5.8c)
      * @throws CaseRunner.Excluded      an expectation of a form this backend does not compare, in the sentence of the
      *                                  replay, which the scenario report gives as a MARKER: among them a scalar read of
      *                                  an attribute on a timeline, a member without a bean

@@ -14,6 +14,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -136,12 +137,15 @@ class TemporalNameNormWitnessTest {
         for (String pin : new String[] { "Geen  Wrakhout ter keuring", "geen wrakhout ter keuring #2",
                                          "Geen wrakhout ter keuring  #17" })
             BothBranches.green(KEURSPELLING, inconsistent(pin), "pin '" + pin + "'");
-        // Not a version suffix to strip_version, so a different rule. ref refuses these three at LOAD ("inconsistent
-        // expectation references unknown rule"); this runner has no such check and reports the missing fact.
+        // Not a version suffix to strip_version, so a different rule that no form carries: a case error, as ref
+        // refuses these three at load ("inconsistent expectation references unknown rule").
         for (String pin : new String[] { "geen wrakhout ter keuring#2", "geen wrakhout ter keuring #2a",
                                          "geen wrakhout ter keuring #" })
-            BothBranches.red(KEURSPELLING, inconsistent(pin), "verwacht inconsistent (" + pin + " @ V1), niet gevonden onder",
-                    "pin '" + pin + "'");
+            for (boolean viaDrl : new boolean[] { false, true }) {
+                IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                        () -> CaseRunner.playCase(KEURSPELLING, inconsistent(pin), viaDrl), "pin '" + pin + "'");
+                assertTrue(e.getMessage().contains("unknown rule \"" + pin + "\""), e.getMessage());
+            }
     }
 
     @Test void the_version_strip_is_that_of_the_verifier() {

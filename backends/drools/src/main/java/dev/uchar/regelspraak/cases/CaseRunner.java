@@ -1017,12 +1017,14 @@ public final class CaseRunner {
                                                    Map<String, Object> perLabel, Map<String, ObjectType> types,
                                                    JsonNode expectations) {
         CaseRunner r = new CaseRunner(build.model(), build.kieBase(), build.beanLoader(), build.dayKindGlobals());
+        r.backendBuild = build;
         r.labelToBean.putAll(perLabel);
         r.labelType.putAll(types);
         List<ScenarioResult.ExpectationResult> out = new ArrayList<>();
         List<String> mis = new ArrayList<>();
         int position = 0;
         for (JsonNode v : expectations) {
+            expectationFields(v, "expected[" + position + "]");
             String m = r.compare(v, session);
             if (m != null) mis.add(m);
             position++;
@@ -1043,6 +1045,27 @@ public final class CaseRunner {
             throw new IllegalArgumentException(v.get("kind").asText() + " expectation on the unknown label '" + label
                     + "': no bean of the session carries it, so there is nothing to read");
         return ot;
+    }
+
+    /** The fields each kind of expectation reads by name, beside its {@code kind}; a missing {@code value} is the value
+     *  reader's refusal ({@link #typed}). */
+    private static final Map<String, List<String>> EXPECTATION_FIELDS = Map.of(
+            "attributeValue", List.of("label", "attribute"),
+            "attributeEmpty", List.of("label", "attribute"),
+            "characteristicPresent", List.of("label", "characteristic"),
+            "characteristicAbsent", List.of("label", "characteristic"),
+            "attributeTimeline", List.of("label", "attribute", "timeline"),
+            "cellValue", List.of("label", "attribute", "labels"),
+            "cellEmpty", List.of("label", "attribute", "labels"),
+            "consistent", List.of(),
+            "inconsistent", List.of());
+
+    /** Holds expectation {@code v}, at position {@code at}, to the fields its kind reads, as ref's case reader holds it
+     *  at load: a missing field is a defect of the case, named, where the comparison would read a null. A kind
+     *  {@code uchar-case-v0} does not have is {@link #compare}'s refusal. */
+    private static void expectationFields(JsonNode v, String at) {
+        String kind = member(v, at, "kind").asText();
+        for (String field : EXPECTATION_FIELDS.getOrDefault(kind, List.of())) member(v, at, field);
     }
 
     private String compare(JsonNode v, KieSession session) {
@@ -1255,6 +1278,12 @@ public final class CaseRunner {
         String code = v.hasNonNull("code") ? v.get("code").asText() : null;
         if (rule == null && label != null)
             throw new IllegalArgumentException("an inconsistent label pin requires a rule pin: " + v);
+        // a rule no form carries is a typo of the case, refused as ref refuses it at load, never a mismatch that
+        // reads as an inconsistency the session failed to deposit
+        if (rule != null && channelNames(model, backendBuild.execModelTranspiler().prioritizedDefaults()).stream()
+                .noneMatch(n -> sameRule(rule, n)))
+            throw new IllegalArgumentException("inconsistent expectation references unknown rule \"" + rule
+                    + "\": no form in the document carries that name");
         if (facts.isEmpty())
             return Msg.drools("PART.mismatch.consistent-found", "key", keyText(rule, label, code)).text();
         if (rule == null && code == null) return null;   // presence-only expectation, satisfied by any fact
@@ -1276,6 +1305,44 @@ public final class CaseRunner {
             facts.addAll(session.getObjects(inc::isInstance));
         } catch (ClassNotFoundException e) { /* no Inconsistency bean -> none */ }
         return facts;
+    }
+
+    /** Every name a §9.5 fact of a session of {@code model} with the defaults groups {@code defaults} can carry, as
+     *  ref's case reader collects them ({@code ref/lib/case.ml}, the {@code inconsistent} arm): the name of every form,
+     *  and per defaults group the target form it deposits a conflict under (RUNTIME-SEMANTICS ch. 7.2), with a path of
+     *  default indices for every default that carries exception groups (ch. 7.9). The name of a default never reaches
+     *  the channel. */
+    static List<String> channelNames(RegelSpraakModel model, List<PrioritizedDefaults> defaults) {
+        List<String> names = new ArrayList<>();
+        model.resolvedRules.forEach(r -> names.add(r.name()));
+        model.objectCreations.forEach(c -> names.add(c.name()));
+        model.allocations.forEach(a -> names.add(a.name()));
+        model.consistencies.forEach(c -> names.add(c.name()));
+        model.uniquenesses.forEach(u -> names.add(u.name()));
+        model.uniquenessUnions.forEach(u -> names.add(u.name()));
+        model.factCreations.forEach(c -> names.add(c.name()));
+        for (PrioritizedDefaults g : defaults) {
+            String targetForm = g.subject() + "." + g.target();
+            names.add(targetForm);
+            nestedKeys(targetForm, List.of(), g.defaults(), names);
+        }
+        names.removeIf(java.util.Objects::isNull);
+        return names;
+    }
+
+    /** The conflict keys of the exception groups under {@code defaults}, whose default indices from the root are
+     *  {@code prefix}: the indices of a default, never those of a member group. */
+    private static void nestedKeys(String targetForm, List<Integer> prefix,
+                                   List<dev.uchar.regelspraak.ir.Default> defaults, List<String> names) {
+        for (int i = 0; i < defaults.size(); i++) {
+            dev.uchar.regelspraak.ir.Default d = defaults.get(i);
+            if (d.exceptions() == null) continue;
+            List<Integer> path = new ArrayList<>(prefix);
+            path.add(i);
+            names.add(targetForm + "/" + String.join("/", path.stream().map(String::valueOf).toList()));
+            for (dev.uchar.regelspraak.ir.ExceptionGroup m : d.exceptions().members())
+                nestedKeys(targetForm, path, m.defaults(), names);
+        }
     }
 
     /** ref's rule-key identity on the §9.5 channel ({@code ref/lib/case.ml}, the {@code Inconsistent} arm):
