@@ -4391,6 +4391,10 @@ final class RuleChecker {
         }
 
         ResolvedAllocation.Method method = ResolvedAllocation.Method.COMPLEX;
+        // why the allocation has none of the three methods of IR-SPEC ch. 3.2. Without a reason it stays the
+        // emitter's WARNING (RGS-001): ANTLR's recovery left the method out and the syntax error speaks for it, or an
+        // attribute it names is undeclared, which the TOKA casus does and the verifier reports (WF-034)
+        Msg withoutMethod = null;
         String ratio = null;
         if (z != null && z.IN_GELIJKE_DELEN() != null) method = ResolvedAllocation.Method.GELIJKE_DELEN;
         else if (z != null && z.NAAR_RATO_VAN() != null) {
@@ -4421,6 +4425,10 @@ final class RuleChecker {
             // the tie WEIGHT stays getalachtig (it is summed). A non-orderable key keeps the verdeling COMPLEX.
             if (groupType != null && groupType.isOrderable() && tieOk)
                 method = ResolvedAllocation.Method.OP_VOLGORDE;
+            else if (groupType != null && !groupType.isOrderable())
+                withoutMethod = Msg.frontend("RGS-401.order-key-not-orderable", "attribute", groupAttr);
+            else if (groupType != null)
+                withoutMethod = Msg.frontend("RGS-401.tie-weight-not-a-number", "attribute", ratio);
         }
         // WF-025: an allocation computes with amounts, so its pot, share, rest, weight and maximum are numbers; one
         // ERROR per member of another type, and the assignment typing below, which would name the same member, is left
@@ -4445,6 +4453,11 @@ final class RuleChecker {
             boolean ratioTie = method == ResolvedAllocation.Method.NAAR_RATO
                     || (method == ResolvedAllocation.Method.OP_VOLGORDE && ratio != null);
             if (!ratioTie || maxType == null || !maxType.isNumberLike()) {
+                // a method refused above keeps its own reason
+                if (method == ResolvedAllocation.Method.COMPLEX) { }
+                else if (!ratioTie) withoutMethod = Msg.frontend("RGS-401.maximum-without-ratio");
+                else if (maxType != null)
+                    withoutMethod = Msg.frontend("RGS-401.maximum-not-a-number", "attribute", maxAttr);
                 method = ResolvedAllocation.Method.COMPLEX;
                 maxAttr = null;
             }
@@ -4467,6 +4480,9 @@ final class RuleChecker {
             if (n.type() != null && n.attribute() != null && n.type().granularityOf(n.attribute()) != null)
                 model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-378",
                         params("name", name, "attribute", n.attribute(), "objectType", n.type().name), v.getStart().getLine()));
+        if (method == ResolvedAllocation.Method.COMPLEX && withoutMethod != null)
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-401",
+                    params("name", name, "reason", withoutMethod), v.getStart().getLine()));
         RegelSpraakModel.RoleBindingRef join = allocationJoin(name, b, d, v.getStart().getLine());
         boolean joinResolves = join != null;
         if (method != ResolvedAllocation.Method.COMPLEX && joinResolves && !nonNumber) {

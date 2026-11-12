@@ -1429,6 +1429,44 @@ class IrEmitterTest {
         Report.assertAccountedFor(IrEmitter.emit(m));
     }
 
+    /** An allocation the frontend can give none of the three methods is an ERROR at the allocation, with its reason:
+     *  an ordering key that cannot be ordered (§9.7.2), or a maximum beside equal shares (§9.7.3). */
+    @Test void an_allocation_without_method_is_an_error_with_its_reason() {
+        String model = """
+            Objecttype de Berging (mv: Bergingen)
+                de opbrengst Numeriek (geheel getal);
+                de onverdeelde rest Numeriek (geheel getal);
+            Objecttype de Berger (mv: Bergers) (bezield)
+                het aandeel Numeriek (geheel getal);
+                het plafond Numeriek (geheel getal);
+                de naam Tekst;
+            Feittype bergingsdeelname
+                de berging Berging
+                de berger (mv: bergers) Berger
+            Eén berging heeft meerdere bergers
+            Regel verdeling
+                geldig altijd
+            """;
+        RegelSpraakModel byName = Resolver.resolve(model + """
+                    De opbrengst van een berging wordt verdeeld over de aandeel van alle bergers van de berging, waarbij wordt verdeeld:
+                    - op volgorde van afnemende naam,
+                    - bij een even groot criterium in gelijke delen.
+            """);
+        assertEquals(List.of("RGS-401"), byName.errors().stream().map(RegelSpraakModel.Diagnostic::code).toList(),
+                () -> "" + byName.diagnostics);
+        assertEquals(14, byName.errors().get(0).line());
+        assertTrue(byName.errors().get(0).message().contains("'naam'"), byName.errors().get(0).message());
+        RegelSpraakModel capped = Resolver.resolve(model + """
+                    De opbrengst van een berging wordt verdeeld over de aandeel van alle bergers van de berging, waarbij wordt verdeeld:
+                    - in gelijke delen,
+                    - met een maximum van het plafond.
+                    Als onverdeelde rest blijft de onverdeelde rest van de berging over.
+            """);
+        assertEquals(List.of("RGS-401"), capped.errors().stream().map(RegelSpraakModel.Diagnostic::code).toList(),
+                () -> "" + capped.diagnostics);
+        assertTrue(capped.errors().get(0).message().contains("naar rato"), capped.errors().get(0).message());
+    }
+
     @Test void the_bound_day_and_the_context_values_each_have_their_node() {
         // IR-SPEC ch. 4.1: the bound day of a day-kind definition is a node of its own without a name; the session
         // values are a ContextValue under their name. A day kind reads no session value (WF-031), so the evaluation

@@ -750,6 +750,11 @@ RGS-397	rij {row}: lege conditiecel onder '{condition}' — schrijf n.v.t. waar 
 RGS-398	de parameter '{parameter}' is tijdsafhankelijk; een casebestand levert hem als perioden ('is <waarde> van <datum> tot <datum>'), niet als vaste waarde
 RGS-399	het attribuut '{attribute}' van {label} is tijdsafhankelijk, en een verwachting zonder periode noemt geen dag; schrijf 'is altijd leeg', 'is altijd <waarde>' of een waarde met een periode ('van <datum> tot <datum>')
 RGS-400	het kenmerk '{characteristic}' van {label} is tijdsafhankelijk; een casebestand kent voor een kenmerk alleen een verwachting zonder periode, en die hoort bij een kenmerk zonder tijdlijn
+RGS-401	verdeling '{name}' heeft geen van de drie verdeelmethoden van IR-SPEC ch. 3.2 (in gelijke delen, naar rato, op volgorde): {reason}
+RGS-401.maximum-not-a-number	het maximum '{attribute}' is geen getal (§9.7.3)
+RGS-401.maximum-without-ratio	een maximale aanspraak kan alleen bij een verdeling naar rato, ook bij gelijke volgorde (§9.7.3)
+RGS-401.order-key-not-orderable	de volgorde van '{attribute}' is niet bepaald: de sleutel van 'op volgorde van' is een getal of een datum (§9.7.2)
+RGS-401.tie-weight-not-a-number	het gewicht '{attribute}' bij een even groot criterium is geen getal (§9.7.2)
 RGS-420	de zin leest als een berekening en niet als een attribuut, kenmerk of cel van het onderwerp; een regel schrijft een lid van zijn eigen universele onderwerp
 RGS-421	verdeling '{name}': '{written}' leest als een berekening en niet als een attribuut; een verdeling verdeelt een attribuut van de verdeler over een attribuut van de ontvangers (IR-SPEC ch. 3.2)
 RGS-422	{head}: het blok '{name}' — {other} heet al zo (bronregel {otherLine}); een drager noemt een blok bij zijn naam, en een vormnaam is uniek in het hele model, hoofdletters niet meegeteld (WF-020)

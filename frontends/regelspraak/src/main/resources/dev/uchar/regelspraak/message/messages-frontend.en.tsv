@@ -750,6 +750,11 @@ RGS-397	row {row}: empty condition cell under '{condition}' — write n.v.t. whe
 RGS-398	the parameter '{parameter}' is time-dependent; a case file supplies it as periods ('is <waarde> van <datum> tot <datum>'), not as a fixed value
 RGS-399	the attribute '{attribute}' of {label} is time-dependent, and an expectation without a period names no day; write 'is altijd leeg', 'is altijd <waarde>' or a value with a period ('van <datum> tot <datum>')
 RGS-400	the characteristic '{characteristic}' of {label} is time-dependent; a case file knows for a characteristic only an expectation without a period, which belongs to a characteristic without a timeline
+RGS-401	allocation '{name}' has none of the three allocation methods of IR-SPEC ch. 3.2 (in equal parts, in proportion, in order): {reason}
+RGS-401.maximum-not-a-number	the maximum '{attribute}' is not a number (§9.7.3)
+RGS-401.maximum-without-ratio	a maximum claim is only possible with an allocation in proportion, also within an equal rank (§9.7.3)
+RGS-401.order-key-not-orderable	the order of '{attribute}' is not determined: the key of 'op volgorde van' is a number or a date (§9.7.2)
+RGS-401.tie-weight-not-a-number	the weight '{attribute}' within an equal rank is not a number (§9.7.2)
 RGS-420	the sentence reads as a computation and not as an attribute, characteristic or cell of the subject; a rule writes a member of its own universal subject
 RGS-421	allocation '{name}': '{written}' reads as a computation and not as an attribute; an allocation distributes an attribute of the distributor over an attribute of the recipients (IR-SPEC ch. 3.2)
 RGS-422	{head}: the block '{name}' — {other} already has that name (source line {otherLine}); a carrier names a block by its name, and a form name is unique in the whole model, case not counted (WF-020)
