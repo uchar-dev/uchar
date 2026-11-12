@@ -1219,7 +1219,8 @@ public final class DroolsBackend {
         if (!expectations.isArray())
             throw new IllegalArgumentException(DroolsCode.COMPARE_EXPECTATIONS_NOT_ARRAY.reason("nodeType",
                     expectations.getNodeType()).text());
-        List<Fault> faults = fixpointOf(build, session, label).faults();
+        Fixpoint fp = fixpointOf(build, session, label);
+        List<Fault> faults = fp.faults();
         if (!faults.isEmpty())
             throw new IllegalStateException(DroolsCode.COMPARE_FIXPOINT_FAULTS.reason("count", faults.size(), "rule",
                     faults.get(0).rule(), "message", faults.get(0).message()).text());
@@ -1239,7 +1240,7 @@ public final class DroolsBackend {
                             name(earlierBean), "second", name(beanObject)).text());
                 types.put(l, k.getValue());
             }
-        return CaseRunner.comparison(build, session, perLabel, types, expectations);
+        return CaseRunner.comparison(build, perLabel, types, fp.inconsistencies(), expectations);
     }
 
     /** As {@link #fire(Build, KieSession)} on every branch under the cap {@code max(vloer, factor × R × N0)}, rounded

@@ -28,6 +28,7 @@ import dev.uchar.regelspraak.transpiler.tms.OpenSegmentFault;
 import dev.uchar.regelspraak.transpiler.tms.CharacteristicPeriodsFault;
 import dev.uchar.regelspraak.transpiler.tms.SecondFillingFault;
 import dev.uchar.regelspraak.transpiler.tms.ConstructorValue;
+import dev.uchar.regelspraak.transpiler.tms.Fixpoint;
 import dev.uchar.regelspraak.transpiler.tms.Period;
 import dev.uchar.regelspraak.transpiler.tms.WriteBoundaryFault;
 import dev.uchar.regelspraak.transpiler.tms.WritersConflict;
@@ -1011,11 +1012,12 @@ public final class CaseRunner {
     // ---------------- comparison ----------------
 
     /** The comparison behind {@link DroolsBackend#compare}, on a runner of {@code build} that knows the beans of
-     *  {@code session} by the labels of the caller: {@code perLabel} gives the bean of each label, {@code types} its object
-     *  type. The runner reads no case input, so a session the caller filled itself compares as one of the replay. */
-    static DroolsBackend.Comparison comparison(DroolsBackend.Build build, KieSession session,
+     *  a session by the labels of the caller: {@code perLabel} gives the bean of each label, {@code types} its object
+     *  type, {@code inconsistencies} the §9.5 facts of the session as {@link Fixpoint#inconsistencies} reads them. The
+     *  runner reads no case input, so a session the caller filled itself compares as one of the replay. */
+    static DroolsBackend.Comparison comparison(DroolsBackend.Build build,
                                                    Map<String, Object> perLabel, Map<String, ObjectType> types,
-                                                   JsonNode expectations) {
+                                                   List<Object> inconsistencies, JsonNode expectations) {
         CaseRunner r = new CaseRunner(build.model(), build.kieBase(), build.beanLoader(), build.dayKindGlobals());
         r.backendBuild = build;
         r.labelToBean.putAll(perLabel);
@@ -1025,10 +1027,10 @@ public final class CaseRunner {
         int position = 0;
         for (JsonNode v : expectations) {
             expectationFields(v, "expected[" + position + "]");
-            String m = r.compare(v, session);
+            String m = r.compare(v, inconsistencies);
             if (m != null) mis.add(m);
             position++;
-            out.add(new ScenarioResult.ExpectationResult(source(v), r.expected(v), r.actual(v, session), m == null,
+            out.add(new ScenarioResult.ExpectationResult(source(v), r.expected(v), r.actual(v, inconsistencies), m == null,
                     position));
         }
         return new DroolsBackend.Comparison(out, String.join("; ", mis));
@@ -1068,15 +1070,15 @@ public final class CaseRunner {
         for (String field : EXPECTATION_FIELDS.getOrDefault(kind, List.of())) member(v, at, field);
     }
 
-    private String compare(JsonNode v, KieSession session) {
+    private String compare(JsonNode v, List<Object> inconsistencies) {
         String kind = v.get("kind").asText();
         return switch (kind) {
             case "attributeValue" -> attribute(v, false);
             case "attributeEmpty" -> attribute(v, true);
             case "characteristicPresent" -> characteristic(v, true);
             case "characteristicAbsent" -> characteristic(v, false);
-            case "consistent" -> consistency(session, false, v);
-            case "inconsistent" -> consistency(session, true, v);
+            case "consistent" -> consistency(inconsistencies, false, v);
+            case "inconsistent" -> consistency(inconsistencies, true, v);
             case "attributeTimeline" -> timeline(v);
             case "cellValue" -> cell(v, false);
             case "cellEmpty" -> cell(v, true);
@@ -1268,8 +1270,7 @@ public final class CaseRunner {
      *  channel-fact-codes, RUNTIME-SEMANTICS ch. 5.6, 5.7b) must be among the codes of a fact that matches rule and
      *  label: ref keeps one fact per rule × subject with the codes deposited for it, this backend one fact per deposit
      *  with its own codes, so a code on any of the matching facts is a code of ref's one fact. */
-    private String consistency(KieSession session, boolean inconsistentExpected, JsonNode v) {
-        List<Object> facts = inconsistencies(session);
+    private String consistency(List<Object> facts, boolean inconsistentExpected, JsonNode v) {
         if (!inconsistentExpected)
             return facts.isEmpty() ? null : Msg.drools("PART.mismatch.inconsistent-found", "facts",
                     renderIncs(facts, false)).text();
@@ -1294,17 +1295,6 @@ public final class CaseRunner {
         }
         return Msg.drools("PART.mismatch.inconsistent-not-found", "key", keyText(rule, label, code), "facts",
                 renderIncs(facts, code != null)).text();
-    }
-
-    /** Every §9.5 Inconsistency fact the session holds, in the order of its working memory: {@link #consistency} looks
-     *  for a fact that matches and {@link #renderIncs} sorts what it shows, so no verdict and no line depends on it. */
-    private List<Object> inconsistencies(KieSession session) {
-        List<Object> facts = new ArrayList<>();
-        try {
-            Class<?> inc = Class.forName(FactModelGenerator.PACKAGE + ".Inconsistentie", true, cl);
-            facts.addAll(session.getObjects(inc::isInstance));
-        } catch (ClassNotFoundException e) { /* no Inconsistency bean -> none */ }
-        return facts;
     }
 
     /** Every name a §9.5 fact of a session of {@code model} with the defaults groups {@code defaults} can carry, as
@@ -1436,7 +1426,7 @@ public final class CaseRunner {
 
     /** The actual side after fire, read where the comparison reads it: a member through its declared name
      *  ({@link #attributeName}, {@link #characteristicName}), since a case may write it in another capitalisation. */
-    private String actual(JsonNode v, KieSession session) {
+    private String actual(JsonNode v, List<Object> inconsistencies) {
         String label = v.hasNonNull("label") ? v.get("label").asText() : null;
         Object bean = label == null ? null : labelToBean.get(label);
         ObjectType ot = label == null ? null : labelType.get(label);
@@ -1451,10 +1441,8 @@ public final class CaseRunner {
             case "cellValue", "cellEmpty" -> render(cellValue(v, bean, ot));
             case "characteristicPresent", "characteristicAbsent" -> presence(bean != null && Boolean.TRUE.equals(
                     invokeGetter(bean, Namen.getter(characteristicName(ot, v.get("characteristic").asText())))));
-            default -> {
-                List<Object> facts = inconsistencies(session);
-                yield facts.isEmpty() ? "consistent" : "inconsistent (" + renderIncs(facts, v.hasNonNull("code")) + ")";
-            }
+            default -> inconsistencies.isEmpty() ? "consistent"
+                    : "inconsistent (" + renderIncs(inconsistencies, v.hasNonNull("code")) + ")";
         };
     }
 

@@ -102,7 +102,10 @@ class EndStateWitnessTest {
                 long links = r.state().links().stream()
                         .filter(k -> k.first() == subject && k.second() == m.object()).count();
                 assertEquals(1, links, branch + ": the link of the made object to its subject");
+                assertTrue(r.state().links().stream().filter(k -> k.second() == m.object()).allMatch(EndState.Link::made),
+                        branch + ": a creation laid it " + r.state().links());
             }
+            assertEquals(List.of(), r.state().faults(), branch + ": an end state carries no fault");
             assertTrue(r.lines().contains("object «\"stel het penningbesluit vast\"»(\"J1\")#1 \"Penningbesluit\""),
                     branch + ": " + r.lines());
         }
@@ -165,6 +168,7 @@ class EndStateWitnessTest {
             Standing s = standing(RED.resolve("jutterswet-fout-aan-fixpunt"), "case1.json", branch);
             assertTrue(s.refusal().startsWith("the session has no end state: "), branch + ": " + s.refusal());
             assertEquals(1, s.fixpoint().faults().size(), branch + ": " + s.fixpoint().faults());
+            assertEquals(s.fixpoint().faults(), s.state().faults(), branch + ": the view carries the faults that stand");
             EndState.EndObject v3 = labelled(s.state(), "V3");
             assertEquals("Vondst", v3.type());
             // the input and what the rules before the faulted one derived stand; the date that names no day does not
@@ -198,6 +202,33 @@ class EndStateWitnessTest {
             assertTrue(rentedagen.derived(), branch + ": " + rentedagen);
             assertNull(rentedagen.given(), branch + ": " + rentedagen);
             assertTrue(member(a1, "rentedragend").derived(), branch.toString());
+        }
+    }
+
+    @Test void a_link_of_the_input_is_not_made() throws Exception {
+        for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
+            Read r = read("jutterswet-havenketen", "case1-vier-vondsten.json", branch);
+            assertFalse(r.state().links().isEmpty(), branch + ": the input links its objects");
+            assertTrue(r.state().links().stream().noneMatch(EndState.Link::made), branch + ": " + r.state().links());
+        }
+    }
+
+    /** The channel is the deposits of {@link Fixpoint#inconsistencies}, one fact per rule and subject in the order of
+     *  their first deposit there, with the codes of every deposit for the pair: the same in every session of one input,
+     *  where a scan of the working memory gives the subjects of one rule in an order that differs between sessions. */
+    @Test void the_channel_is_the_deposits_of_the_fixpoint_per_rule_and_subject() throws Exception {
+        for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
+            Read r = read("jutterswet-keurcriteria", "case2-over-de-drempels.json", branch);
+            List<String> expected = new java.util.ArrayList<>();
+            for (Object f : r.fixpoint().inconsistencies()) {
+                String pair = dev.uchar.regelspraak.runtime.RegelSpraakRuntime.get(f, "rule") + " @ "
+                        + System.identityHashCode(dev.uchar.regelspraak.runtime.RegelSpraakRuntime.get(f, "subject"));
+                if (!expected.contains(pair)) expected.add(pair);
+            }
+            List<String> channel = r.state().channel().stream()
+                    .map(f -> f.rule() + " @ " + System.identityHashCode(f.subject())).toList();
+            assertTrue(channel.size() > 2, branch + ": several deposits " + channel);
+            assertEquals(expected, channel, branch.toString());
         }
     }
 }

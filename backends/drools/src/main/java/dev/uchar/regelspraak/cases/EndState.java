@@ -6,6 +6,7 @@ import dev.uchar.regelspraak.model.Unit;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.core.Namen;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
 import dev.uchar.regelspraak.transpiler.tms.Fixpoint;
 import dev.uchar.regelspraak.transpiler.tms.RelationLink;
 
@@ -14,7 +15,6 @@ import org.kie.api.runtime.KieSession;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -38,14 +38,17 @@ import java.util.function.Function;
  * @param objects every object of the session: those of the input in the order of their labels, then the made objects in
  *                the order {@link Fixpoint#objects} gives them
  * @param links   every link, once, its objects in the order of the roles its fact type declares
- * @param channel the §9.5 facts, one per rule and subject, each with the EF codes of the kinds deposited for that pair
+ * @param channel the §9.5 facts, one per rule and subject, each with the EF codes of the kinds deposited for that pair,
+ *                in the order of {@link Fixpoint#inconsistencies}
+ * @param faults  the evaluation faults that stand, as {@link Fixpoint#faults} gives them: none in an end state
  */
-public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFact> channel) {
+public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFact> channel, List<Fault> faults) {
 
     public EndState {
         objects = List.copyOf(objects);
         links = List.copyOf(links);
         channel = List.copyOf(channel);
+        faults = List.copyOf(faults);
     }
 
     /**
@@ -90,8 +93,9 @@ public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFa
 
     /** A link of the fact type {@code factType}: {@code first} fills its first declared role {@code firstRole} and
      *  {@code second} its second, {@code secondRole}; of a reciprocal fact type, whose one role both fill, both role
-     *  names are that role's. */
-    public record Link(String factType, String firstRole, Object first, String secondRole, Object second) {
+     *  names are that role's. {@code made}: a creation laid it ({@link Fixpoint#links}); else the input stated it. */
+    public record Link(String factType, String firstRole, Object first, String secondRole, Object second,
+                       boolean made) {
         public Link {
             Objects.requireNonNull(factType, "factType");
             Objects.requireNonNull(first, "first");
@@ -160,7 +164,7 @@ public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFa
             objects.add(new EndObject(m.object(), null, ot.name, m.creation(), m.subject(),
                     members(m.object(), ot, displacements, derived, derivedCells, derivedCharacteristics)));
         }
-        return new EndState(objects, links(model, session, typeOf), channel(session));
+        return new EndState(objects, links(model, session, typeOf), channel(fp), fp.faults());
     }
 
     /** The members of {@code bean}, of type {@code ot}, that hold a value: the derived value where a rule derived one,
@@ -259,19 +263,22 @@ public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFa
                     RegelSpraakModel.FactType ft = factType(model, origin.source());
                     // the target fills the role the field is named after, the bean the other one
                     boolean targetSecond = ft.roles.size() < 2 || ft.roles.get(1).name().equalsIgnoreCase(origin.name());
-                    add(out, ft, targetSecond ? bean : target, targetSecond ? target : bean);
+                    add(out, ft, targetSecond ? bean : target, targetSecond ? target : bean, false);
                 }
         }
+        // a link of the input carries phase 0, one a creation laid a later phase (Fixpoint#links)
         for (Object f : session.getObjects(o -> o instanceof RelationLink)) {
             RelationLink k = (RelationLink) f;
-            add(out, factType(model, k.relation()), k.first(), k.second());
+            add(out, factType(model, k.relation()), k.first(), k.second(), k.phase() > 0);
         }
         return new ArrayList<>(out.values());
     }
 
-    private static void add(Map<Key, Link> out, RegelSpraakModel.FactType ft, Object first, Object second) {
+    private static void add(Map<Key, Link> out, RegelSpraakModel.FactType ft, Object first, Object second, boolean made) {
         String r0 = ft.roles.get(0).name(), r1 = ft.roles.size() < 2 ? r0 : ft.roles.get(1).name();
-        out.putIfAbsent(new Key(ft.name, first, second), new Link(ft.name, r0, first, r1, second));
+        Key key = new Key(ft.name, first, second);
+        Link earlier = out.get(key);
+        if (earlier == null || made && !earlier.made()) out.put(key, new Link(ft.name, r0, first, r1, second, made));
     }
 
     private static RegelSpraakModel.FactType factType(RegelSpraakModel model, String name) {
@@ -281,11 +288,12 @@ public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFa
                 + " declare");
     }
 
-    /** The §9.5 facts, one per rule and subject, with the codes of every deposit for that pair. */
-    private static List<ChannelFact> channel(KieSession session) {
+    /** The §9.5 facts, one per rule and subject, with the codes of every deposit for that pair, in the order of the
+     *  deposits of {@code fp}: the backend keeps one fact per deposit. */
+    private static List<ChannelFact> channel(Fixpoint fp) {
         Map<Key, TreeSet<String>> codes = new LinkedHashMap<>();
         Map<Key, ChannelFact> first = new LinkedHashMap<>();
-        for (Object f : session.getObjects(o -> o.getClass().getName().equals(FactModelGenerator.PACKAGE + ".Inconsistentie"))) {
+        for (Object f : fp.inconsistencies()) {
             String rule = (String) RegelSpraakRuntime.get(f, "rule");
             Object subject = RegelSpraakRuntime.get(f, "subject");
             Key k = new Key(String.valueOf(rule), subject, null);
@@ -296,7 +304,6 @@ public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFa
         }
         List<ChannelFact> out = new ArrayList<>();
         first.forEach((k, f) -> out.add(new ChannelFact(f.rule(), f.subject(), new ArrayList<>(codes.get(k)))));
-        out.sort(Comparator.comparing(ChannelFact::rule, Comparator.nullsFirst(Comparator.naturalOrder())));
         return out;
     }
 }
