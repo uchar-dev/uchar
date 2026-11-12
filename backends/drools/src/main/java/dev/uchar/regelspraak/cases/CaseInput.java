@@ -567,6 +567,8 @@ public final class CaseInput {
         ObjectType tI = labelType.get(i.get("label").asText());
         JsonNode roles = i.get("roles");
         if (roles == null) return;
+        // per role the key that named it first: a role under its name and its plural would be two lists of one relation
+        Map<String, String> keyPerRole = new LinkedHashMap<>();
         for (Map.Entry<String, JsonNode> written : roles.properties()) {
             // the key in its declared spelling, which the model's role searches compare; the link keeps the written one
             Map.Entry<String, JsonNode> e = Map.entry(declaredRoleKey(i.get("label").asText(), written.getKey()),
@@ -577,6 +579,12 @@ public final class CaseInput {
             if (far.isEmpty())
                 throw new IllegalArgumentException("role key \"" + written.getKey() + "\" does not resolve to a declared"
                         + " role opposite \"" + tI.name + "\"");
+            if (far.size() == 1) {
+                String previous = keyPerRole.putIfAbsent(Namen.norm(far.get(0).name()), written.getKey());
+                if (previous != null)
+                    throw new IllegalArgumentException("role keys \"" + previous + "\" and \"" + written.getKey() + "\" on \""
+                            + i.get("label").asText() + "\" both name the role \"" + far.get(0).name() + "\"; deliver one key");
+            }
             for (JsonNode labelNode : e.getValue()) {
                 RoleLink link = new RoleLink(i.get("label").asText(), written.getKey(), labelNode.asText());
                 Object target = labelToBean.get(labelNode.asText());

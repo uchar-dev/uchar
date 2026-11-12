@@ -185,6 +185,13 @@ class CaseReaderWitnessTest {
         caseError(HAVENKETEN, c, "declared filler type is \"Vondst\"");
     }
 
+    @Test void a_role_under_its_name_and_its_plural_is_a_case_error() throws Exception {
+        ObjectNode c = caseFile(HAVENKETEN, "case1-vier-vondsten");
+        roles(c, "H1").putArray("havenjutter").add("J1");
+        roles(c, "H1").putArray("havenjutters").add("J1");
+        caseError(HAVENKETEN, c, "both name the role \"havenjutter\"; deliver one key");
+    }
+
     @Test void a_parameter_the_case_does_not_bind_faults_where_a_rule_reads_it() {
         // case1 leaves aanvoertarief unbound, read in a value; case2 aanvoerdrempel, read in a condition
         Path red = Path.of("..", "..", "corpus", "red", "aanvoergeld-parameter-unbound");
