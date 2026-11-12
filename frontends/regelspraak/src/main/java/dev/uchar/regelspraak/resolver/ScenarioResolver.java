@@ -829,7 +829,8 @@ public final class ScenarioResolver {
      *  dimensions before or behind it ({@link ExpressionBuilder#cellReadings}). The choice among the readings is the
      *  one of {@code ExpressionBuilder.dimensionCell}: the longest attribute wins, a name that fits two cells is
      *  refused (RGS-365), and a name that gives no label of a dimension — a dimensioned attribute written without
-     *  labels among them — is refused once per such dimension (RGS-364). Null after an ERROR. */
+     *  labels among them — is refused once per such dimension (RGS-364) ({@link ExpressionBuilder#chooseCell}). Null
+     *  after an ERROR. */
     private Named member(ObjectType ot, String written, int line) {
         String attr = ot.attributeName(written);
         if (attr != null) {
@@ -844,25 +845,15 @@ public final class ScenarioResolver {
                     "RGS-236", params("objectType", ot.name, "attribute", written));
             return null;
         }
-        List<ExpressionBuilder.CellReading> complete = readings.stream().filter(ExpressionBuilder.CellReading::complete).toList();
-        if (!complete.isEmpty()) {
-            int longest = complete.stream().mapToInt(r -> r.attribute().length()).max().getAsInt();
-            List<ExpressionBuilder.CellReading> found = new ArrayList<>();
-            for (ExpressionBuilder.CellReading r : complete)
-                if (r.attribute().length() == longest && found.stream().noneMatch(c -> c.spelling().equals(r.spelling())))
-                    found.add(r);
-            if (found.size() > 1) {
-                error(line, "RGS-365", params("written", written,
-                        "cells", String.join("; ", found.stream().map(ExpressionBuilder.CellReading::spelling).toList())));
-                return null;
-            }
-            return new Named(found.get(0).attribute(), found.get(0).labels());
+        ExpressionBuilder.CellChoice choice = ExpressionBuilder.chooseCell(readings);
+        List<ExpressionBuilder.CellReading> found = choice.cells();
+        if (found.size() > 1) {
+            error(line, "RGS-365", params("written", written,
+                    "cells", String.join("; ", found.stream().map(ExpressionBuilder.CellReading::spelling).toList())));
+            return null;
         }
-        ExpressionBuilder.CellReading partial = readings.get(0);
-        for (ExpressionBuilder.CellReading r : readings)
-            if (r.attribute().length() > partial.attribute().length()
-                    || r.attribute().length() == partial.attribute().length() && r.missing().size() < partial.missing().size())
-                partial = r;
+        if (!found.isEmpty()) return new Named(found.get(0).attribute(), found.get(0).labels());
+        ExpressionBuilder.CellReading partial = choice.partial();
         for (RegelSpraakModel.Dimension d : partial.missing())
             error(line, "RGS-364", params("written", written, "attribute", partial.attribute(), "dimension", d.name()));
         return null;

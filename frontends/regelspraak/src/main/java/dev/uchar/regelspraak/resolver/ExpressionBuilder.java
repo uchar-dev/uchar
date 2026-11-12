@@ -4082,14 +4082,10 @@ final class ExpressionBuilder {
         if (ot == null || bareName == null) return null;
         List<CellReading> readings = cellReadings(model, ot, bareName);
         if (readings.isEmpty()) return null;
-        List<CellReading> complete = readings.stream().filter(CellReading::complete).toList();
+        CellChoice choice = chooseCell(readings);
         int line = source == null ? 0 : source.line();
-        if (!complete.isEmpty()) {
-            int longest = complete.stream().mapToInt(r -> r.attribute().length()).max().getAsInt();
-            List<CellReading> cells = new ArrayList<>();
-            for (CellReading r : complete)
-                if (r.attribute().length() == longest && cells.stream().noneMatch(c -> c.spelling().equals(r.spelling())))
-                    cells.add(r);
+        if (!choice.cells().isEmpty()) {
+            List<CellReading> cells = choice.cells();
             if (cells.size() > 1) {
                 model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-365",
                         params("written", source.snippet(), "cells",
@@ -4100,11 +4096,7 @@ final class ExpressionBuilder {
             return new Expr.DimensionCellRead(reference.apply(cell.attribute()), cell.labels(), source);
         }
         // §3.6 every use of a dimensioned attribute names a label of each of its dimensions
-        CellReading partial = readings.get(0);
-        for (CellReading r : readings)
-            if (r.attribute().length() > partial.attribute().length()
-                    || r.attribute().length() == partial.attribute().length() && r.missing().size() < partial.missing().size())
-                partial = r;
+        CellReading partial = choice.partial();
         for (RegelSpraakModel.Dimension d : partial.missing())
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-364",
                     params("written", source.snippet(), "attribute", partial.attribute(), "dimension", d.name()), line));
@@ -4124,6 +4116,31 @@ final class ExpressionBuilder {
 
         /** The cell as the verifier's dependency node and the executors' place spell it: {@code attr[l1, l2]}. */
         String spelling() { return attribute + "[" + String.join(", ", labels) + "]"; }
+    }
+
+    /** The choice among the non-empty {@link #cellReadings} of a written name, as a rule and a situation make it: of
+     *  the complete readings those of the longest attribute, one per cell, in {@code cells} — one is the cell, several
+     *  are refused (RGS-365), so a dimensioned name is not shadowed by a shorter one inside it; without a complete
+     *  reading, {@code cells} is empty and {@code partial} is the reading of the longest attribute that misses the
+     *  fewest dimensions, whose missing dimensions are refused (RGS-364). */
+    record CellChoice(List<CellReading> cells, CellReading partial) {}
+
+    static CellChoice chooseCell(List<CellReading> readings) {
+        List<CellReading> complete = readings.stream().filter(CellReading::complete).toList();
+        if (!complete.isEmpty()) {
+            int longest = complete.stream().mapToInt(r -> r.attribute().length()).max().getAsInt();
+            List<CellReading> cells = new ArrayList<>();
+            for (CellReading r : complete)
+                if (r.attribute().length() == longest && cells.stream().noneMatch(c -> c.spelling().equals(r.spelling())))
+                    cells.add(r);
+            return new CellChoice(List.copyOf(cells), null);
+        }
+        CellReading partial = readings.get(0);
+        for (CellReading r : readings)
+            if (r.attribute().length() > partial.attribute().length()
+                    || r.attribute().length() == partial.attribute().length() && r.missing().size() < partial.missing().size())
+                partial = r;
+        return new CellChoice(List.of(), partial);
     }
 
     /** §3.6 every reading of {@code written} as a cell of a dimensioned attribute of {@code ot} (own and inherited): the
