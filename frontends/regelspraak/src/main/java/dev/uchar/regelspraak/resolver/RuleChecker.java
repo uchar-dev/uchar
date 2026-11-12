@@ -5037,7 +5037,7 @@ final class RuleChecker {
                 withoutCharacteristic = negationAfterArticle(name, subject, kt.HEEFT() != null ? "heeft" : "is", characteristic);
         } else if (subject != null) {
             boolean has = kt.HEEFT() != null;
-            Condition c = characteristicCheckCondition(subject, written, null, has, source(kt));
+            Condition c = characteristicCheckCondition(subject, written, has, source(kt));
             if (c instanceof Condition.CharacteristicCheck k && k.negation()) {
                 characteristic = k.characteristic();
                 isNegated = true;
@@ -6561,7 +6561,7 @@ final class RuleChecker {
             }
             return k;
         }
-        return characteristicCheckCondition(elem, name, null, hasVerb, source);
+        return characteristicCheckCondition(elem, name, hasVerb, source);
     }
 
     /** The §8.2 whole-period qualifier of {@code c}, for the two condition forms that carry Expr operands
@@ -6620,8 +6620,7 @@ final class RuleChecker {
     }
     private boolean characteristicCheckTemporal(Condition.CharacteristicCheck k) {
         ObjectType subject = builder.subject();
-        ObjectType holder = k.navigation() == null ? subject
-                : (subject != null ? model.roleTargetTypeToSubject(subject, k.navigation()) : null);
+        ObjectType holder = k.navigation() == null ? subject : model.filler(k.navigation());
         return holder != null && holder.characteristicGranularityOf(k.characteristic()) != null;
     }
 
@@ -6829,7 +6828,7 @@ final class RuleChecker {
             // claims those; only a name that is a ROLE but not a kenmerk newly binds). §13.4.15.44 makes the "een"
             // optional ("hij is deelnemer"); "heeft (geen) <rol>" is the §8.1.7 possessive, which roleMembership
             // resolves to the near-side test or — when the subject owns a to-many filler — the far-side exists-join.
-            Condition kc = characteristicCheckCondition(subject, name, null, hasVerb, source);
+            Condition kc = characteristicCheckCondition(subject, name, hasVerb, source);
             if (kc != null) { checkNegationKind(subject, kc, hasVerb); return kc; }
             // a leftover "geen <name>" that is a role is the INVERSE rolcheck (the subject does not fill it);
             // otherwise the positive rolcheck.
@@ -6838,7 +6837,7 @@ final class RuleChecker {
                     : roleMembership(subject, name, source);
             if (role != null || !narrowing) return role;
             return hostedBelow(subject, name, hasVerb,
-                    t -> characteristicCheckCondition(t, name, null, hasVerb, source), source);
+                    t -> characteristicCheckCondition(t, name, hasVerb, source), source);
         }
         // EEN-form: the grammar conflates a kenmerknaam and a rolnaam after "een", so disambiguate by lookup,
         // kenmerk-first (Tabel 16). The verb selects which kenmerk SOORT the EEN-form may bind: "is een <k>" is
@@ -6936,15 +6935,15 @@ final class RuleChecker {
 
     /** Resolve {@code characteristic} on {@code type} into a {@link Condition.CharacteristicCheck}, honouring a leading "niet"
      *  or "geen" as NEGATION — but each only after the WHOLE name fails, so a declared "niet-…" kenmerk
-     *  still binds positively. {@code navigation} is the to-one navigation role (null for the subject's own).
+     *  still binds positively. The check is the subject's own; a navigated one gets its binding from its caller.
      *  {@code hasVerb} is true when the predicate verb is hebben (§8.1.8: see the "geen" branch).
      *  Null when neither the whole name nor a de-negated form is a declared kenmerk of {@code type}. */
-    private static Condition characteristicCheckCondition(ObjectType type, String characteristic, String navigation, boolean hasVerb, Source source) {
+    private static Condition characteristicCheckCondition(ObjectType type, String characteristic, boolean hasVerb, Source source) {
         // Match the written name VERBATIM first. A bijvoeglijk kenmerk may be declared WITH a leading article
         // as part of its name ("is de minimis kenmerk" -> stored "de minimis"): its grammar rule has no
         // separate bepaaldLidwoord? and naamWoordLower admits de/het, so the article is part of the stored
         // name — the false-invariant the first cut tripped on (a blind strip dropped it to a wrong/no match).
-        Condition c = bindCharacteristicCheck(type, characteristic, navigation, hasVerb, source);
+        Condition c = bindCharacteristicCheck(type, characteristic, hasVerb, source);
         if (c != null) return c;
         // Only if the verbatim name binds NOTHING, retry with a leading de/het/een stripped — recovering the
         // bezittelijk/noch-noch case where the article is the kenmerk's OWN (stored article-stripped) and the
@@ -6952,19 +6951,19 @@ final class RuleChecker {
         // Verbatim-first guarantees a kenmerk whose name really begins with an article binds itself, never a
         // shorter sibling.
         String stripped = stripArticle(characteristic);
-        return stripped.equals(characteristic) ? null : bindCharacteristicCheck(type, stripped, navigation, hasVerb, source);
+        return stripped.equals(characteristic) ? null : bindCharacteristicCheck(type, stripped, hasVerb, source);
     }
 
     /** Bind one candidate name to a declared kenmerk of {@code type}, honouring a leading "niet" or "geen"
      *  as NEGATION — but each only after the WHOLE name fails, so a kenmerk declared starting with niet/geen
      *  still binds positively (never silently inverted). Null when nothing binds. */
-    private static Condition bindCharacteristicCheck(ObjectType type, String name, String navigation, boolean hasVerb, Source source) {
+    private static Condition bindCharacteristicCheck(ObjectType type, String name, boolean hasVerb, Source source) {
         String g = CharacteristicMatcher.find(type, name);
-        if (g != null) return new Condition.CharacteristicCheck(g, navigation, false, source);
+        if (g != null) return new Condition.CharacteristicCheck(g, null, false, source);
         // §8.1.8.1 bijvoeglijk negation "is niet <k>" -> "== false" (verb-agnostic).
         if (name.regionMatches(true, 0, "niet ", 0, 5)) {
             g = CharacteristicMatcher.find(type, name.substring(5).trim());
-            if (g != null) return new Condition.CharacteristicCheck(g, navigation, true, source);
+            if (g != null) return new Condition.CharacteristicCheck(g, null, true, source);
         }
         // Negation with "geen" -> "== false": the §8.1.8.2 bezittelijk form "heeft geen <k>" AND the §8.1.8.3
         // noch-noch form "is geen <k>" (both lower to the same boolean negation, so the verb need not gate it;
@@ -6973,7 +6972,7 @@ final class RuleChecker {
         // reconstructed name. Verbatim-first above means a kenmerk literally named "geen …" still binds positively.
         if (name.regionMatches(true, 0, "geen ", 0, 5)) {
             g = CharacteristicMatcher.find(type, name.substring(5).trim());
-            if (g != null) return new Condition.CharacteristicCheck(g, navigation, true, source);
+            if (g != null) return new Condition.CharacteristicCheck(g, null, true, source);
         }
         return null;
     }
@@ -6987,34 +6986,26 @@ final class RuleChecker {
      *  the soort, exactly as the subject's own EEN-form ({@link #characteristicCheckPredicate}): "is een &lt;k&gt;" binds a
      *  §8.1.8.3 ZELFSTANDIG kenmerk of the navigated type, "heeft een &lt;k&gt;" a §8.1.8.2 BEZITTELIJK one — neither
      *  binds under the other verb, and a navigated role membership via "een" stays out of scope (null).
-     *  The navigation starts at {@code context}, the subject the check is read on: the node carries a role name only,
-     *  and that name binds from the context's subject, so a written onderwerp that is not it ("de standpost van de
-     *  Jutter" in a rule on Vondst) would read another object's role, or none, and is refused at its line. */
+     *  The check carries the binding of its hop, the role of that name from {@code context}, the subject the check is
+     *  read on; a written onderwerp that is not that subject ("de standpost van de Jutter" in a rule on Vondst) names
+     *  another starting point and is refused at its line (RGS-440), as is a name that binds no unique role from the
+     *  subject (RGS-441). */
     private Condition navigationCharacteristicCheck(ObjectType context, Expr lhs, String suffix, boolean hasVerb,
                                                     boolean withIndefiniteArticle, Source source) {
-        Condition c = navigationCharacteristicCheck(lhs, suffix, hasVerb, withIndefiniteArticle, source);
-        if (!(c instanceof Condition.CharacteristicCheck) || context.chain().contains(((Expr.AttributeReference) lhs).objectType()))
-            return c;
-        model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-440",
-                params("source", source, "written", ((Expr.AttributeReference) lhs).objectType().name, "subject", context.name),
-                writtenLine(source == null ? 0 : source.line())));
-        return new Condition.Unresolved(source, null);   // the ERROR above is this marker's diagnosis
-    }
-
-    private Condition navigationCharacteristicCheck(Expr lhs, String suffix, boolean hasVerb, boolean withIndefiniteArticle, Source source) {
         if (!(lhs instanceof Expr.AttributeReference a) || a.objectType() == null) return null;
-        ObjectType subject = a.objectType();                                       // the onderwerp the navigation is from
-        ObjectType targetName = model.roleTargetTypeToSubject(subject, a.attribute());
+        ObjectType written = a.objectType();                                       // the onderwerp the navigation is from
+        ObjectType targetName = model.roleTargetTypeToSubject(written, a.attribute());
         if (targetName == null) return null;
-        String roleName = model.connectingRoleViaName(subject, targetName, a.attribute());     // canonical role / reference field
+        String roleName = model.connectingRoleViaName(written, targetName, a.attribute());     // canonical role / reference field
         if (roleName == null) roleName = a.attribute();
-        if (model.toManyRole(subject, targetName, roleName)) return null;                     // to-many -> marker (needs exists/forall)
+        if (model.toManyRole(written, targetName, roleName)) return null;                     // to-many -> marker (needs exists/forall)
         // The greedy onderwerp parse can absorb a multi-word kenmerk's leading words — or a "niet" — into
         // the operand AFTER the navigated onderwerp. Reconstruct the full kenmerk = that absorbed tail + the
         // operator's bareName, so a multi-word kenmerk binds (and a §8.1.8.1 "niet <kenmerk>" de-negates in
         // characteristicCheckCondition). navigationTail recovers the absorbed tail past the role/type anchor.
         String tail = navigationTail(a);
         String characteristic = tail.isEmpty() ? suffix : tail + " " + suffix;
+        Condition c;
         if (withIndefiniteArticle) {
             // §8.1.8.2/.3 navigated EEN-form: the verb selects the soort (is -> ZELFSTANDIG, heeft -> BEZITTELIJK),
             // the mirror of the subject's own EEN-form; neither soort binds under the other verb, and a navigated
@@ -7029,12 +7020,30 @@ final class RuleChecker {
             }
             ObjectType.CharacteristicKind required = hasVerb
                     ? ObjectType.CharacteristicKind.BEZITTELIJK : ObjectType.CharacteristicKind.ZELFSTANDIG;
-            return g != null && targetName.characteristicKind(g) == required
-                    ? new Condition.CharacteristicCheck(g, roleName, negated, source) : null;
+            c = g != null && targetName.characteristicKind(g) == required
+                    ? new Condition.CharacteristicCheck(g, null, negated, source) : null;
+        } else {
+            c = characteristicCheckCondition(targetName, characteristic, hasVerb, source);
+            checkNegationKind(targetName, c, hasVerb);
         }
-        Condition kc = characteristicCheckCondition(targetName, characteristic, roleName, hasVerb, source);
-        checkNegationKind(targetName, kc, hasVerb);
-        return kc;
+        if (!(c instanceof Condition.CharacteristicCheck k)) return c;
+        int line = writtenLine(source == null ? 0 : source.line());
+        if (!context.chain().contains(written)) {
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-440",
+                    params("source", source, "written", written.name, "subject", context.name), line));
+            return new Condition.Unresolved(source, null);   // the ERROR above is this marker's diagnosis
+        }
+        // the hop is the role of that name from the subject the check is read on, bound here once
+        ObjectType reached = model.roleTargetTypeToSubject(context, roleName);
+        RegelSpraakModel.RoleBindingRef binding = reached == null ? null
+                : model.connectingRoleViaNameBinding(context, reached, roleName);
+        if (binding == null) {
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-441",
+                    params("source", source, "role", roleName, "subject", context.name), line));
+            return new Condition.Unresolved(source, null);   // the ERROR above is this marker's diagnosis
+        }
+        return new Condition.CharacteristicCheck(k.characteristic(), binding, k.negation(), k.owner(), k.period(),
+                k.source(), k.anchored());
     }
 
     /** The words the greedy operand parse absorbed AFTER the navigated "de &lt;rol&gt; van &lt;onderwerp&gt;"

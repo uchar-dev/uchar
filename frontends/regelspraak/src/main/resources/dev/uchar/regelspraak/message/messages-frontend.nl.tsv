@@ -777,3 +777,4 @@ RGS-426	verdeling '{name}' schrijft '{attribute}' van {objectType}, dat de verde
 RGS-427	'{characteristic}' is geen gedeclareerd kenmerk van {objectType}
 RGS-428	lezing '{expression}': '{attribute}' is geen attribuut en geen kenmerk van {objectType} (WF-034)
 RGS-440	kenmerkcontrole '{source}' volgt een rol vanaf {written}, maar zij wordt gelezen op {subject}: een genavigeerde kenmerkcontrole volgt één rol vanaf het onderwerp waarop zij gelezen wordt
+RGS-441	kenmerkcontrole '{source}' volgt de rol '{role}' vanaf {subject}, maar die naam wijst vanaf {subject} geen unieke rol aan

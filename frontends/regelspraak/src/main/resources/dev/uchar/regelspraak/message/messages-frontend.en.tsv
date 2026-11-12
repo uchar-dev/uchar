@@ -777,3 +777,4 @@ RGS-426	allocation '{name}' writes '{attribute}' of {objectType}, which the allo
 RGS-427	'{characteristic}' is not a declared characteristic of {objectType}
 RGS-428	read '{expression}': '{attribute}' is neither an attribute nor a characteristic of {objectType} (WF-034)
 RGS-440	characteristic check '{source}' follows a role from {written}, but it is read on {subject}: a navigated characteristic check follows one role from the subject it is read on
+RGS-441	characteristic check '{source}' follows the role '{role}' from {subject}, but from {subject} that name binds no unique role

@@ -1249,16 +1249,8 @@ public final class IrEmitter {
         if (k.anchored()) w.key("anchor").value("form");
         wholePeriod(k.period());
         sourceReference(k.source().snippet());
-        // the binding IS the hop: a navigated check without one would read the subject's own kenmerk
-        if (k.navigation() != null) {
-            RegelSpraakModel.RoleBindingRef nb = navigationBinding(k);
-            if (nb == null)
-                throw new IllegalStateException("IrEmitter: the characteristic check '" + k.source().snippet()
-                        + "' navigates via '" + k.navigation() + "', and from "
-                        + (currentSubject == null ? "no subject" : "'" + currentSubject.name + "'")
-                        + " that step binds no unique role");
-            w.key("navigation"); roleBinding(nb);
-        }
+        // the binding IS the hop, bound where the check was built
+        if (k.navigation() != null) { w.key("navigation"); roleBinding(k.navigation()); }
     }
 
     private void textCompositionPart(Expr.TextComposition.Part d) {
@@ -1998,15 +1990,6 @@ public final class IrEmitter {
             return b == null ? List.of() : List.of(b);
         }
         return List.of();                                                    // own attribute — not navigated
-    }
-
-    /** The {@code navigation} of a navigated §8.1.8 kenmerk check: the single reached role, found
-     *  exactly as {@code RuleChecker.navigationCharacteristicCheck} finds it (the target type via the written role, then
-     *  the by-name binding). Null when the check does not navigate or the hop is not uniquely derivable. */
-    private RegelSpraakModel.RoleBindingRef navigationBinding(Condition.CharacteristicCheck k) {
-        if (m == null || currentSubject == null || k.navigation() == null) return null;
-        ObjectType target = m.roleTargetTypeToSubject(currentSubject, k.navigation());
-        return target == null ? null : m.connectingRoleViaNameBinding(currentSubject, target, k.navigation());
     }
 
     /**

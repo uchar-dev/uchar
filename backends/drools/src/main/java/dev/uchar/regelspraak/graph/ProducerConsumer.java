@@ -286,20 +286,19 @@ public final class ProducerConsumer {
         }
     }
 
-    /** The answer of a resolver's model: the record names the role its hop walks, and the reached type is the
-     *  filler of the role of that name in a relation the subject takes part in, found as the emitter finds the
-     *  binding it writes for the hop. A navigated check whose role reaches no unique type fails loudly, as the
-     *  emitter refuses to write it. */
+    /** The answer of a resolver's model: the record carries the binding of its hop, the one the emitter writes, and
+     *  the reached type is the declared filler of the role it binds. A binding that names no declared role with a
+     *  declared filler fails loudly. */
     public static Navigation sourceNavigation(RegelSpraakModel model) {
         return new Navigation() {
             @Override public RegelSpraakModel.ObjectType reaches(Condition.CharacteristicCheck k,
                                                                 RegelSpraakModel.ObjectType subjectType) {
                 if (k.navigation() == null) return null;
-                RegelSpraakModel.ObjectType reaches = model.roleTargetTypeToSubject(subjectType, k.navigation());
+                RegelSpraakModel.ObjectType reaches = model.filler(k.navigation());
                 if (reaches == null)
                     throw new IllegalStateException("the characteristic check '" + k.characteristic() + "' navigates by the role '"
-                            + k.navigation() + "', which reaches no unique object type from "
-                            + (subjectType == null ? "an unknown subject" : "'" + subjectType.name + "'"));
+                            + k.navigation().role() + "' of '" + k.navigation().factType()
+                            + "', which names no declared role with a declared filler");
                 return reaches;
             }
 

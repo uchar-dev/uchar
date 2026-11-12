@@ -649,6 +649,16 @@ public final class RegelSpraakModel {
         return null;
     }
 
+    /** The declared filler of the role {@code rb} binds: the type of the object a step over it reaches; null where the
+     *  binding names no declared role with a declared filler. */
+    public ObjectType filler(RoleBindingRef rb) {
+        FactType ft = factTypes.get(rb.factType());
+        if (ft == null) return null;
+        for (Role r : ft.roles)
+            if (r.name().equals(rb.role())) return objectTypeByName(r.objectTypeName());
+        return null;
+    }
+
     /** Whether the role {@code rb} binds declares {@code elementType} ITSELF as its filler. */
     private boolean fillsExactly(RoleBindingRef rb, ObjectType elementType) {
         FactType ft = factTypes.get(rb.factType());

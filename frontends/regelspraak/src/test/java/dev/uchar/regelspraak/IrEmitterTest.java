@@ -1129,20 +1129,20 @@ class IrEmitterTest {
                 e::getMessage);
     }
 
-    @Test void a_characteristic_check_that_navigates_without_unique_binding_is_refused() {
-        // IR-SPEC ch. 4.5: the binding IS the hop; without it the check would test the subject's own kenmerk.
+    @Test void a_characteristic_check_writes_the_binding_it_was_built_with() {
+        // IR-SPEC ch. 4.5: the binding IS the hop. The resolver binds it where it builds the check, and the emitter
+        // writes that binding and derives none: a second fact type added after resolution changes nothing.
         RegelSpraakModel m = Resolver.resolve(WERKNEMER_AFDELING + """
             Regel rang
                 geldig altijd
                     De rang van een Werknemer moet gesteld worden op 1 indien zijn afdeling actief is.
             """);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
-        assertTrue(IrEmitter.emit(m).replaceAll("\\s+", "").contains(
-                "\"navigation\":{\"node\":\"RoleBinding\",\"factType\":\"aanstelling\",\"role\":\"afdeling\"}"),
-                "de ongemoeide kenmerkcheck draagt haar binding");
+        String binding = "\"navigation\":{\"node\":\"RoleBinding\",\"factType\":\"aanstelling\",\"role\":\"afdeling\"}";
+        assertTrue(IrEmitter.emit(m).replaceAll("\\s+", "").contains(binding), "de kenmerkcheck draagt haar binding");
         secondAfdelingRole(m);
-        IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
-        assertTrue(e.getMessage().contains("characteristic check"), e::getMessage);
+        assertTrue(IrEmitter.emit(m).replaceAll("\\s+", "").contains(binding),
+                "de emitter schrijft de binding van de bouw, ook naast een tweede rol 'afdeling'");
     }
 
     @Test void a_fact_creation_without_a_whole_symbolic_block_is_refused() {
