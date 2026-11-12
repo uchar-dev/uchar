@@ -7490,7 +7490,10 @@ which an evaluation fault stands (ch. 5.7) has no end state.
   form. A time-dependent attribute holds its timeline in the canonical form
   of ch. 3.1; the asOfDate-bucket scalar of the input (ch. 8.4) is the
   timeline of its one period, the period of the attribute's own grid that
-  holds the evaluation date, as a reading reads it (ch. 5.12). A
+  holds the evaluation date, as a reading reads it (ch. 5.12). Where the
+  session has no evaluation date, or the grid lays no bucket (a calendar
+  grid other than month and year, ch. 3.2), the scalar has no period and
+  stands as the case gave it, a value without a timeline. A
   dimensioned attribute holds a value per cell (ch. 5.8c). A member that is
   leeg, and a timeline that is leeg on every day, holds none;
 - per object, every characteristic that holds; a time-dependent
@@ -7585,6 +7588,25 @@ the case:
 ```
 attribute "H1" "havengeldtarief" [[2026-03-01 2026-04-01 10]] "EUR/m/mnd"
 attribute "S2" "kadetarief" [[2026-01-01 2026-02-01 7], [2026-02-01 2026-03-01 5]] "EUR/m/mnd"
+```
+
+**Worked example — the asOfDate scalar without a period** (absolute; the
+fixture `ref/test/fixtures/end-state-bucket`, verbatim in the `ref/` tests
+`WV-5.12a-scalar-zonder-peildatum` and `WV-5.12a-scalar-zonder-emmer`). A
+Jutter declares a wachtloon `voor elke maand` and a kwartaalloon `voor elk
+kwartaal`. A case without an evaluation date gives the wachtloon as the
+scalar 7; a case with the evaluation date 2026-03-15 gives the kwartaalloon
+as the scalar 9. Each end state holds the scalar as the case gave it, among
+its lines, the first
+
+```
+attribute "J1" "wachtloon" 7
+```
+
+and the second
+
+```
+attribute "J1" "kwartaalloon" 9
 ```
 
 **Worked example — a channel fact** (absolute; the
