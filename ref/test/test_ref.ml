@@ -14580,6 +14580,28 @@ let () =
     [ "attribute \"H1\" \"havengeldtarief\" [[2026-03-01 2026-04-01 10]] \"EUR/m/mnd\"";
       "attribute \"S2\" \"kadetarief\" [[2026-01-01 2026-02-01 7], [2026-02-01 2026-03-01 5]] \"EUR/m/mnd\"" ]
 
+(* WV-5.12a-scalar-zonder-peildatum and WV-5.12a-scalar-zonder-emmer: the
+   asOfDate-bucket scalar stands as the case gave it where the session has no
+   evaluation date, and where the attribute's grid, a calendar quarter, lays
+   no bucket *)
+let () =
+  let dir = "ref/test/fixtures/end-state-bucket/" in
+  List.iter
+    (fun (ident, case, expected) ->
+      let got = end_state_of (corpus_file (dir ^ "ir.json")) (corpus_file (dir ^ case)) in
+      check ident (got = expected);
+      if got <> expected then List.iter (Printf.printf "  got: %s\n") got)
+    [ ( "WV-5.12a-scalar-zonder-peildatum", "case-no-evaluation-date.json",
+        [ "attribute \"J1\" \"naam\" \"Jan\"";
+          "attribute \"J1\" \"roepnaam\" \"Jan\"";
+          "attribute \"J1\" \"wachtloon\" 7";
+          "object \"J1\" \"Jutter\"" ] );
+      ( "WV-5.12a-scalar-zonder-emmer", "case-quarter-grid.json",
+        [ "attribute \"J1\" \"kwartaalloon\" 9";
+          "attribute \"J1\" \"naam\" \"Jan\"";
+          "attribute \"J1\" \"roepnaam\" \"Jan\"";
+          "object \"J1\" \"Jutter\"" ] ) ]
+
 (* WV-5.12a-keurgemiddelde: a channel fact with its code; a characteristic
    that does not hold has no line *)
 let () =

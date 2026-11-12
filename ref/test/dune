@@ -152,5 +152,7 @@
   (glob_files fixtures/inherited-nested-exceptions/subtype-rule/*.json)
   (glob_files fixtures/inherited-nested-exceptions/subtype-group/*.json)
   ; a document that writes one key twice in one object
-  fixtures/duplicate-key/ir.json)
+  fixtures/duplicate-key/ir.json
+  ; the asOfDate-bucket scalar in the end state without an evaluation date and without a bucket
+  (glob_files fixtures/end-state-bucket/*.json))
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

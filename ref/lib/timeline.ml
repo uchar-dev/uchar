@@ -152,6 +152,15 @@ let grid_bucket (gr : grid) d =
       fault "a fixed start point of this form lays no %s grid of one unit (WF-115)"
         (Ir_v0.Spelling.encode Ir_v0.Spelling.granularity gr.g_gran)
 
+(* The bucket of [d] on grid [gr] where the grid lays one, None where it lays
+   none: a calendar grid of a granularity other than month and year (ch. 3.2).
+   Every other grid is [grid_bucket]'s, its faults included. *)
+let grid_bucket_opt (gr : grid) d =
+  match (gr.g_count, gr.g_start, gr.g_gran) with
+  | 1, Calendar, (Month | Year) -> Some (grid_bucket gr d)
+  | 1, Calendar, _ -> None
+  | _ -> Some (grid_bucket gr d)
+
 (* ch. 3.7: the time-proportional part. One segment per calendar bucket
    the condition's true periods touch, spanning the WHOLE bucket, value
    = base(bucket start) × true-days/bucket-days as an exact rational —

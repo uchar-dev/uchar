@@ -96,13 +96,17 @@ let object_lines (env : Eval.env) name (i : World.instance) =
         in
         match (World.timeline i a, env.as_of) with
         | Some tl, _ -> timeline tl
-        | None, Some d when Ir_v0.Checks.attr_temporal ot a && World.attr i a <> Value.Empty ->
+        | None, Some d when Ir_v0.Checks.attr_temporal ot a && World.attr i a <> Value.Empty -> (
             (* the asOfDate-bucket scalar of a time-dependent attribute is the
                timeline of its one period, the period of the attribute's own
-               grid that holds the evaluation date (ch. 5.12, 8.4) *)
+               grid that holds the evaluation date (ch. 5.12, 8.4); where the
+               grid lays no bucket it stands as the case gave it (ch. 5.12a) *)
             let day = match Value.date_of_iso d with Value.Date z -> z | _ -> assert false in
-            let from, up_to = Timeline.grid_bucket (Timeline.attr_grid doc ot a) day in
-            timeline [ { Timeline.s_from = from; s_to = up_to; s_value = World.attr i a } ]
+            match Timeline.grid_bucket_opt (Timeline.attr_grid doc ot a) day with
+            | Some (from, up_to) -> timeline [ { Timeline.s_from = from; s_to = up_to; s_value = World.attr i a } ]
+            | None -> scalar "" a)
+        (* without an evaluation date the scalar has no period, and stands as
+           the case gave it (ch. 5.12a) *)
         | None, _ -> scalar "" a)
   in
   let characteristic c =

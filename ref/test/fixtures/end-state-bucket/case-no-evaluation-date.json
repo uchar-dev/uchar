@@ -1,0 +1,33 @@
+{
+ "format": "uchar-case-v0",
+ "asOfDate": null,
+ "input": {
+  "instances": [
+   {
+    "label": "J1",
+    "objectType": "Jutter",
+    "attributes": {
+     "wachtloon": {
+      "number": "7"
+     },
+     "naam": {
+      "text": "Jan"
+     }
+    },
+    "roles": {},
+    "characteristics": []
+   }
+  ],
+  "parameters": {}
+ },
+ "expected": [
+  {
+   "kind": "attributeValue",
+   "label": "J1",
+   "attribute": "roepnaam",
+   "value": {
+    "text": "Jan"
+   }
+  }
+ ]
+}

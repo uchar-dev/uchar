@@ -1,0 +1,109 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "wachtloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "kwartaalloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "quarter",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "naam",
+            "datatype": {
+              "node": "Text"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "roepnaam",
+            "datatype": {
+              "node": "Text"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "roepnaam",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "roepnaam",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De roepnaam van een Jutter"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "naam",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "zijn naam"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
