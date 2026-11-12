@@ -382,7 +382,7 @@ public final class CaseRunner {
      *  cases whose pinned lists happen to match segment-for-segment, so a comparator that ignores waarde or
      *  order survives the whole gate set (lens 1 proved it by mutation) — its verdicts are asserted here. */
     static String playCase(Path irPath, JsonNode c) throws java.io.IOException {
-        return build(irPath).runCase("case", c);
+        return playCase(irPath, c, DroolsBackend.Branch.EXEC_MODEL);
     }
 
     /** The same comparator seam through EITHER transpiler branch, so one authored document can be replayed by
@@ -391,7 +391,7 @@ public final class CaseRunner {
      *  disk twice and read two {@link Result}s, which reports a whole golden's status where the row wants a
      *  single cell's verdict. Package-private, no production caller. */
     static String playCase(Path irPath, JsonNode c, boolean viaDrl) throws java.io.IOException {
-        return build(irPath, viaDrl ? DroolsBackend.Branch.DRL_TEXT : DroolsBackend.Branch.EXEC_MODEL).runCase("case", c);
+        return playCase(irPath, c, viaDrl ? DroolsBackend.Branch.DRL_TEXT : DroolsBackend.Branch.EXEC_MODEL);
     }
 
     /** The same comparator seam with the branch named by its value. Package-private, no production caller. */
