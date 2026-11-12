@@ -4391,7 +4391,7 @@ final class RuleChecker {
         ResolvedAllocation.Method method = ResolvedAllocation.Method.COMPLEX;
         // why the allocation has none of the three methods of IR-SPEC ch. 3.2. Without a reason it stays the
         // emitter's WARNING (RGS-001): ANTLR's recovery left the method out and the syntax error speaks for it, or an
-        // attribute it names is undeclared, which the parity casus does and the verifier reports (WF-034)
+        // attribute it names is undeclared, which has its own ERROR (RGS-425)
         Msg withoutMethod = null;
         String ratio = null;
         if (z != null && z.IN_GELIJKE_DELEN() != null) method = ResolvedAllocation.Method.GELIJKE_DELEN;
@@ -4425,10 +4425,22 @@ final class RuleChecker {
                 method = ResolvedAllocation.Method.OP_VOLGORDE;
             else if (groupType != null && !groupType.isOrderable())
                 withoutMethod = Msg.frontend("RGS-401.order-key-not-orderable", "attribute", groupAttr);
-            // a declared weight of another type has its own RGS-423 below; this reason is for one that has no type
-            else if (groupType != null && (ratioType == null || ratioType.isUnknown()))
+            // a declared weight of another type has its own RGS-423 below, an undeclared one its RGS-425; this
+            // reason is for one that has no type
+            else if (groupType != null && ratioType != null && ratioType.isUnknown())
                 withoutMethod = Msg.frontend("RGS-401.tie-weight-not-a-number", "attribute", ratio);
         }
+        // WF-034: every attribute an allocation names is declared on its holder, the amount and the rest on the
+        // distributor, the share, the weight, the maximum and the ordering key on the recipients
+        record Named(String role, ObjectType type, String attribute) {}
+        for (Named n : java.util.List.of(new Named("amount", b.objectType(), b.attribute()),
+                new Named("share", d.objectType(), d.attribute()), new Named("rest", b.objectType(), restAttr),
+                new Named("weight", d.objectType(), ratio), new Named("maximum", d.objectType(), maxAttr),
+                new Named("key", d.objectType(), groupAttr)))
+            if (n.type() != null && n.attribute() != null && n.type().attribute(n.attribute()) == null)
+                error(v.getStart().getLine(), "RGS-425", params("name", name,
+                        "role", Msg.frontend("PART.allocation-member." + n.role()), "attribute", n.attribute(),
+                        "objectType", n.type().name));
         // WF-025: an allocation computes with amounts, so its pot, share, rest, weight and maximum are numbers; one
         // ERROR per member of another type, and the assignment typing below, which would name the same member, is left
         boolean nonNumber = false;
@@ -4440,7 +4452,7 @@ final class RuleChecker {
             Datatype type = holder == null || attribute == null ? null : holder.attribute(attribute);
             if (type == null || type.isUnknown() || type.isNumberLike()) continue;
             nonNumber = true;
-            error(v.getStart().getLine(), "RGS-423", params("name", name, "role", Msg.frontend("RGS-423." + amount[0]),
+            error(v.getStart().getLine(), "RGS-423", params("name", name, "role", Msg.frontend("PART.allocation-member." + amount[0]),
                     "attribute", attribute, "type", type.name()));
         }
         // §9.7.3: a maximale aanspraak is valid ONLY for a naar-rato split ("niet mogelijk bij gelijke verdeling"
@@ -4472,10 +4484,10 @@ final class RuleChecker {
         // is defined: an allocation that names a time-dependent attribute is not well-formed (IR-SPEC WF-128), a share
         // for every month over a scalar amount as well
         // a type or a name that did not resolve, in a document under construction as well, is refused on its own
-        record Named(ObjectType type, String attribute) {}
-        java.util.List<Named> named = java.util.List.of(new Named(b.objectType(), b.attribute()),
-                new Named(d.objectType(), d.attribute()), new Named(b.objectType(), restAttr),
-                new Named(d.objectType(), ratio), new Named(d.objectType(), maxAttr), new Named(d.objectType(), groupAttr));
+        java.util.List<Named> named = java.util.List.of(new Named("amount", b.objectType(), b.attribute()),
+                new Named("share", d.objectType(), d.attribute()), new Named("rest", b.objectType(), restAttr),
+                new Named("weight", d.objectType(), ratio), new Named("maximum", d.objectType(), maxAttr),
+                new Named("key", d.objectType(), groupAttr));
         for (Named n : named)
             if (n.type() != null && n.attribute() != null && n.type().granularityOf(n.attribute()) != null)
                 model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-378",

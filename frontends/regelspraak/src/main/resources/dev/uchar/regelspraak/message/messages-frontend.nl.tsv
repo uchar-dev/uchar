@@ -14,6 +14,12 @@ FRAME.scenario	scenario: {sentence}
 FRAME.start-point	startpuntbepaling (regel '{rule}'): {sentence}
 FRAME.subselection-predicate	subselectie-predicaat: {sentence}
 FRAME.what	{what}: {sentence}
+PART.allocation-member.amount	het te verdelen bedrag
+PART.allocation-member.share	het aandeel
+PART.allocation-member.rest	de onverdeelde rest
+PART.allocation-member.weight	het gewicht
+PART.allocation-member.maximum	het maximum
+PART.allocation-member.key	de volgordesleutel
 PART.and	en
 PART.designation.attribute	het attribuut '{name}' van '{owner}'
 PART.designation.attribute.head	Het attribuut '{name}' van '{owner}'
@@ -765,9 +771,5 @@ RGS-420	de zin leest als een berekening en niet als een attribuut, kenmerk of ce
 RGS-421	verdeling '{name}': '{written}' leest als een berekening en niet als een attribuut; een verdeling verdeelt een attribuut van de verdeler over een attribuut van de ontvangers (IR-SPEC ch. 3.2)
 RGS-422	{head}: het blok '{name}' — {other} heet al zo (bronregel {otherLine}); een drager noemt een blok bij zijn naam, en een vormnaam is uniek in het hele model, hoofdletters niet meegeteld (WF-020)
 RGS-423	verdeling '{name}': {role} '{attribute}' is van het type {type}; een verdeling rekent met bedragen, dus bedrag, aandeel, rest, gewicht en maximum zijn Numeriek of Percentage (WF-025)
-RGS-423.amount	het te verdelen bedrag
-RGS-423.share	het aandeel
-RGS-423.rest	de onverdeelde rest
-RGS-423.weight	het gewicht
-RGS-423.maximum	het maximum
 RGS-424	'{expression}': de linkeroperand van het percentage is van het type {type}; het percentage van een waarde leest links een getal zonder eenheid of een percentage in '%' (WF-035)
+RGS-425	verdeling '{name}': {role} '{attribute}' is geen gedeclareerd attribuut van {objectType}; een verdeling noemt alleen gedeclareerde attributen (WF-034)

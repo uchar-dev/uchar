@@ -398,3 +398,4 @@ RGS-421	allocation-operand-not-an-attribute	ERROR	name,written
 RGS-422	block-name-not-unique	ERROR	head,name,other,otherLine
 RGS-423	allocation-member-not-a-number	ERROR	attribute,name,role,type
 RGS-424	percentage-left-operand-unit	ERROR	expression,type
+RGS-425	allocation-member-undeclared	ERROR	attribute,name,objectType,role

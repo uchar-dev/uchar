@@ -14,6 +14,12 @@ FRAME.scenario	scenario: {sentence}
 FRAME.start-point	start point determination (rule '{rule}'): {sentence}
 FRAME.subselection-predicate	subselection predicate: {sentence}
 FRAME.what	{what}: {sentence}
+PART.allocation-member.amount	the amount to distribute
+PART.allocation-member.share	the share
+PART.allocation-member.rest	the undistributed rest
+PART.allocation-member.weight	the weight
+PART.allocation-member.maximum	the maximum
+PART.allocation-member.key	the ordering key
 PART.and	and
 PART.designation.attribute	the attribute '{name}' of '{owner}'
 PART.designation.attribute.head	The attribute '{name}' of '{owner}'
@@ -765,9 +771,5 @@ RGS-420	the sentence reads as a computation and not as an attribute, characteris
 RGS-421	allocation '{name}': '{written}' reads as a computation and not as an attribute; an allocation distributes an attribute of the distributor over an attribute of the recipients (IR-SPEC ch. 3.2)
 RGS-422	{head}: the block '{name}' — {other} already has that name (source line {otherLine}); a carrier names a block by its name, and a form name is unique in the whole model, case not counted (WF-020)
 RGS-423	allocation '{name}': {role} '{attribute}' is of the type {type}; an allocation computes with amounts, so amount, share, rest, weight and maximum are Numeriek or Percentage (WF-025)
-RGS-423.amount	the amount to distribute
-RGS-423.share	the share
-RGS-423.rest	the undistributed rest
-RGS-423.weight	the weight
-RGS-423.maximum	the maximum
 RGS-424	'{expression}': the left operand of the percentage is of the type {type}; the percentage of a value reads on its left a number without a unit or a percentage in '%' (WF-035)
+RGS-425	allocation '{name}': {role} '{attribute}' is not a declared attribute of {objectType}; an allocation names declared attributes only (WF-034)

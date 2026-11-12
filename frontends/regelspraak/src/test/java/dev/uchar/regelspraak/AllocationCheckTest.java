@@ -111,6 +111,43 @@ class AllocationCheckTest {
                 .map(d -> d.code() + " " + d.params().get("attribute")).toList(), tie.diagnostics::toString);
     }
 
+    /** Every attribute an allocation names is a declared attribute of its holder (WF-034): the amount and the rest on
+     *  the distributor, the share, the weight, the maximum and the ordering key on the recipients. An undeclared one
+     *  went out silently (amount, share, weight: the verifier refused the document) or left the allocation without a
+     *  method behind a WARNING (maximum, key). One ERROR at the allocation, naming the attribute. */
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource(delimiter = '|', value = {
+            "De winst van een berging wordt verdeeld over de bergingsaandelen van alle bergers van de berging, waarbij wordt verdeeld in gelijke delen. | winst | Berging",
+            "De opbrengst van een berging wordt verdeeld over de bonussen van alle bergers van de berging, waarbij wordt verdeeld in gelijke delen. | bonussen | Berger",
+            "De opbrengst van een berging wordt verdeeld over de bergingsaandelen van alle bergers van de berging, waarbij wordt verdeeld naar rato van de inzet. | inzet | Berger",
+    })
+    void an_undeclared_member_is_refused(String sentence, String attribute, String holder) {
+        RegelSpraakModel m = Resolver.resolve(allocation(sentence));
+        assertEquals(List.of("RGS-425 22 " + attribute + " " + holder), m.errors().stream()
+                .map(d -> d.code() + " " + d.line() + " " + d.params().get("attribute") + " " + d.params().get("objectType"))
+                .toList(), m.diagnostics::toString);
+        assertTrue(m.errors().get(0).message().contains("'" + attribute + "'")
+                && m.errors().get(0).message().contains("WF-034"), m.errors().get(0).message());
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource(delimiter = '|', value = {
+            "- naar rato van het bergingsaandeel,;- met een maximum van het plafond.;Als onverdeelde rest blijft de opbrengst van de berging over. | plafond | Berger",
+            "- op volgorde van afnemende rang,;- bij een even groot criterium in gelijke delen. | rang | Berger",
+            "- in gelijke delen,;- afgerond op 0 decimalen naar beneden.;Als onverdeelde rest blijft het restant van de berging over. | restant | Berging",
+    })
+    void an_undeclared_member_of_a_bulleted_allocation_is_refused(String bullets, String attribute, String holder) {
+        RegelSpraakModel m = Resolver.resolve(MODEL + """
+
+            Regel verdeel de opbrengst
+                geldig altijd
+                    De opbrengst van een berging wordt verdeeld over de bergingsaandelen van alle bergers van de berging, waarbij wordt verdeeld:
+            """ + String.join("\n", java.util.Arrays.stream(bullets.split(";")).map(b -> "        " + b).toList()) + "\n");
+        assertEquals(List.of("RGS-425 22 " + attribute + " " + holder), m.errors().stream()
+                .map(d -> d.code() + " " + d.line() + " " + d.params().get("attribute") + " " + d.params().get("objectType"))
+                .toList(), m.diagnostics::toString);
+    }
+
     @Test void an_allocation_of_attributes_stays_clean() {
         RegelSpraakModel m = Resolver.resolve(allocation("De opbrengst van een berging wordt verdeeld over de "
                 + "bergingsaandelen van alle bergers van de berging, waarbij wordt verdeeld in gelijke delen."));
