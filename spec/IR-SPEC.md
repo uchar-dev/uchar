@@ -8233,7 +8233,12 @@ and it belongs to whoever measures it.
   and a sub-day unit demanding a
   millisecond-precision date operand; additive operands MUST have
   compatible units (both
-  unitless or both present and convertible — WF-010); a clamp's base and
+  unitless or both present and convertible — WF-010); the left operand of
+  `percentageOf` MUST be unitless or carry exactly the unit `%`, since
+  `l/100 × r` takes the unit of `r` (`RUNTIME-SEMANTICS.md` ch. 2.2, ch. 2.6
+  rule 7) and no clause says what a unit of `l`, a rate `%/<unit>`
+  included, does (key `WF-035.percentage-left-unit`, witness
+  `corpus/negative/wf035-percentage-left-unit`); a clamp's base and
   bounds MUST be numeric, and at least one bound MUST be present (that
   last clause is structural in v0's grammar, not a typing error —
   promoted into the rule).
