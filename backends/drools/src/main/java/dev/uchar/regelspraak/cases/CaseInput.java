@@ -155,7 +155,7 @@ public final class CaseInput {
     private final RegelSpraakModel model;
     private final ClassLoader cl;
     /** The case's evaluation date, read BEFORE the inputs are set: the asOfDate-bucket convention places a scalar input
-     *  on a temporal attribute in the bucket this date falls in ({@link #temporalInput}). */
+     *  on a temporal attribute in the bucket this date falls in ({@link #bucketInput}). */
     private final LocalDate evaluationDate;
     private final Map<String, Object> labelToBean = new LinkedHashMap<>();
     private final Map<String, ObjectType> labelType = new LinkedHashMap<>();
@@ -166,7 +166,7 @@ public final class CaseInput {
      *  often and from whichever side the case writes it: what {@link #inputData()} names as links ({@link Input#link}). */
     private final List<Input.Link> links = new ArrayList<>();
     /** Every scalar input on a temporal attribute of the case, the asOfDate-bucket convention that
-     *  {@link #temporalInput} lays on the bean as one segment: what {@link #inputData()} names as bucket scalars
+     *  {@link #bucketInput} lays on the bean as one segment: what {@link #inputData()} names as bucket scalars
      *  ({@link Input#bucketScalar}). */
     private final List<Input.Bucket> emmers = new ArrayList<>();
     /** Per bean and per getter of a to-one reference field, the link of the case that wrote the field, which a collision
@@ -292,11 +292,12 @@ public final class CaseInput {
                 throw new IllegalArgumentException(at + (granular
                         ? ": a scalar value on a granular parameter (it takes a timeline)"
                         : ": a timeline value on a non-granular parameter"));
-            if (!granular) CaseRunner.typed(w, declared.datatype(), at);
+            if (granular) CaseRunner.typedSegments(w.get("timeline"), declared.datatype(), at);
+            else CaseRunner.typed(w, declared.datatype(), at);
             CaseRunner.inputFits(w, declared.datatype(), at);
             Object value = granular
-                    ? Period.list(reader.timelineSegments(w.get("timeline"), e.getKey(), at, new CaseRunner.Grid(
-                            declared.granularity(), 1, declared.fixedStartPoint(), false), false))
+                    ? Period.list(reader.timelineSegments(w.get("timeline"), declared.datatype(), e.getKey(), at,
+                            new CaseRunner.Grid(declared.granularity(), 1, declared.fixedStartPoint(), false), false))
                     : reader.valueToArg(w, e.getKey());
             parameters.put(Namen.ident(declared.name(), false), value);
         }
@@ -341,15 +342,24 @@ public final class CaseInput {
                 continue;
             }
             if (cells) throw new IllegalArgumentException(site + ": a cells input on an attribute without dimensions");
-            CaseRunner.inputFits(e.getValue(), dt, site);
-            if (reader.temporal(ot, name)) {
+            JsonNode w = e.getValue();
+            if (CaseRunner.isTimeline(w)) {
+                if (!reader.temporal(ot, name))
+                    throw new IllegalArgumentException(site + ": a timeline value on a non-temporal attribute");
+                CaseRunner.typedSegments(w.get("timeline"), dt, site);
+                CaseRunner.inputFits(w, dt, site);
                 CaseRunner.call(bean, Namen.setter(name), List.class,
-                        temporalInput(e.getValue(), name, site, reader.grid(ot, name)));
-                if (!e.getValue().isNull() && !e.getValue().has("timeline"))
-                    emmers.add(new Input.Bucket(bean, name));
+                        reader.timelineSegments(w.get("timeline"), dt, name, site, reader.grid(ot, name), false));
                 continue;
             }
-            CaseRunner.call(bean, Namen.setter(name), CaseRunner.argType(dt), reader.valueToArg(e.getValue(), name));
+            CaseRunner.typed(w, dt, site);
+            CaseRunner.inputFits(w, dt, site);
+            if (reader.temporal(ot, name)) {
+                CaseRunner.call(bean, Namen.setter(name), List.class, bucketInput(w, name, reader.grid(ot, name)));
+                emmers.add(new Input.Bucket(bean, name));
+                continue;
+            }
+            CaseRunner.call(bean, Namen.setter(name), CaseRunner.argType(dt), reader.valueToArg(w, name));
         }
         JsonNode characteristics = i.get("characteristics");
         if (characteristics != null) for (JsonNode written : characteristics) {
@@ -390,8 +400,9 @@ public final class CaseInput {
      * (RUNTIME-SEMANTICS ch. 5.8c), as the map of its bean member holds them: each value under the key of its cell
      * ({@link FactModelGenerator#cellKey}), in the order of the input. Refused in this order, as the reference interpreter
      * refuses them: labels that name no cell of the attribute (EF-034), a cell the input names twice (EF-035), both
-     * before any value is read, and then per cell a value its declared decimals do not hold (EF-004, its place the cell,
-     * {@code J1.vondstgewicht[voorjaar]}) or of another variant than the datatype's.
+     * before any value is read, and then per cell a value of another variant than the datatype's ({@link
+     * CaseRunner#typed}) or one its declared decimals do not hold (EF-004, its place the cell,
+     * {@code J1.vondstgewicht[voorjaar]}).
      */
     private Map<List<String>, Object> cells(JsonNode cells, ObjectType ot, String attribute, Datatype dt, String label) {
         if (!cells.isArray())
@@ -420,14 +431,9 @@ public final class CaseInput {
         for (int k = 0; k < keys.size(); k++) {
             String place = label + "." + attribute + "[" + String.join(", ", written.get(k)) + "]";
             JsonNode value = cells.get(k).get("value");
+            CaseRunner.typed(value, dt, place);
             CaseRunner.inputFits(value, dt, place);
-            Object v = reader.valueToArg(value, attribute);
-            if (v == null) continue;   // an absent value is an empty cell
-            if (!CaseRunner.argType(dt).isInstance(v))
-                throw new IllegalArgumentException(place + ": the value variant "
-                        + (value.size() == 1 ? "\"" + value.fieldNames().next() + "\"" : value.toString())
-                        + " does not match the declared datatype");
-            out.put(keys.get(k), v);
+            out.put(keys.get(k), reader.valueToArg(value, attribute));
         }
         return out;
     }
@@ -891,29 +897,16 @@ public final class CaseInput {
 
     // ---------------- §13.3.6 temporal input (the List<Segment> bean members) ----------------
 
-    /** The {@code List<Segment>} a case value denotes for a temporal attribute at {@code gran} — the two input
-     *  forms {@code ref} carries (ref/lib/case.ml), mirrored so both executors read the SAME timeline:
-     *  <ul>
-     *    <li>a {@code {"timeline":[…]}} value: the written segments, validated exactly as ref validates them;</li>
-     *    <li>a SCALAR value: the asOfDate-bucket convention recorded in {@code corpus/golden/README.md} — the
-     *        scalar IS the value of the bucket the evaluation date falls in. ref keeps that scalar aside and
-     *        folds precisely this one-bucket timeline inside the ch. 3.6 collapse ({@code Eval}'s temporal
-     *        total: value × the bucket's length in units of its own grid, one); the bean model has no scalar slot
-     *        beside the {@code List<Segment>} field, so the bucket is materialised here and the subject's own total
-     *        ({@code ComputeHelpers.ownTotal}) folds the identical segment to the identical scalar.</li>
-     *  </ul>
-     *  Deliberate consequence of that materialisation: the bean now carries a shape ref REFUSES to serve —
-     *  ref has no point-in-time read at all (ch. 3.3: a temporal attribute in a scalar slot is refused, the
-     *  collapses are the only bridges), and its no-filter ch. 3.6 total even faults on a case-supplied FULL
-     *  timeline ("the asOfDate-bucket convention carries the total", eval.ml). The divergence surface is thus
-     *  not a wrong value but a read Drools would answer where ref faults; such a case can never become a
-     *  golden, because gate 5 replays every case through ref first — the executors agree wherever the corpus
-     *  looks, by construction. The caller records each scalar as a bucket scalar, which
+    /** The {@code List<Segment>} a scalar case value {@code w} denotes for the temporal attribute {@code attr} on the
+     *  grid {@code gran}: the asOfDate-bucket convention recorded in {@code corpus/golden/README.md}, by which the scalar
+     *  is the value of the period of the grid that holds the evaluation date (RUNTIME-SEMANTICS ch. 8.4). The reference
+     *  interpreter keeps that scalar aside and folds this one-period timeline inside the collapse of ch. 3.6; the bean
+     *  model has no scalar slot beside the {@code List<Segment>} field, so the period is laid here and the subject's own
+     *  total ({@code ComputeHelpers.ownTotal}) folds the same segment to the same scalar. The bean then holds a shape the
+     *  reference interpreter does not serve as a timeline, so the caller records the scalar as a bucket scalar, which
      *  {@link #inputData()} names to {@link DroolsBackend#insert}, and the analysis reads the two conventions apart and
-     *  faults where a form needs the one and finds the other (RUNTIME-SEMANTICS ch. 8.4). */
-    private List<Object> temporalInput(JsonNode w, String attr, String site, CaseRunner.Grid gran) {
-        if (w == null || w.isNull()) return null;   // an absent value is an absent timeline (leeg, ch. 3.1)
-        if (w.has("timeline")) return reader.timelineSegments(w.get("timeline"), attr, site, gran, false);
+     *  faults where a form needs the one and finds the other. */
+    private List<Object> bucketInput(JsonNode w, String attr, CaseRunner.Grid gran) {
         if (evaluationDate == null)
             throw new CaseRunner.Excluded(DroolsCode.SCALAR_TEMPORAL_NO_DATE.reason("attribute", attr));
         LocalDate[] bucket = CaseRunner.bucket(gran, evaluationDate);

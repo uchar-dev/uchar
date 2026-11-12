@@ -842,16 +842,15 @@ public final class CaseRunner {
      *  declared granularity grid, and the list ordered and non-overlapping as written. A segment that leaves out
      *  {@code from} or {@code to} has an open bound (RUNTIME-SEMANTICS ch. 3.1), a null bound of its {@code Segment}:
      *  it sits on no grid, only the first segment can begin open and only the last can end open, which the order check
-     *  holds. A malformed timeline is a
-     *  hard failure, never a silent acceptance: the case schema (gate 4) and ref (gate 5) reject it first, so
-     *  reaching it here means the corpus and this reader disagree. A grid that carries no case timeline is a
+     *  holds. A malformed timeline is a hard failure, never a silent acceptance, and so is a segment without a value or
+     *  with a value its datatype {@code dt} does not hold ({@link #typed}): the case format writes filled segments only
+     *  (RUNTIME-SEMANTICS ch. 3.1). A grid that carries no case timeline is a
      *  not-carried form, refused where ref's loader refuses it and in its sentence, at position {@code site}
      *  ({@code J1.m2} for an input, {@code expected J1.m2} for an expectation): a grid of several units and a
      *  variable start before any segment is read, the calendar's week and quarter grid at the first segment. Every day
      *  sits on the calendar's day grid. */
-    List<Object> timelineSegments(JsonNode segs, String field, String site, Grid gran, boolean emptyAllowed) {
-        if (segs == null || !segs.isArray())
-            throw new IllegalArgumentException("malformed timeline value on '" + field + "'");
+    List<Object> timelineSegments(JsonNode segs, Datatype dt, String field, String site, Grid gran, boolean emptyAllowed) {
+        typedSegments(segs, dt, site);
         if (segs.isEmpty() && !emptyAllowed)
             throw new IllegalArgumentException("the timeline value on '" + field + "' carries no segment");
         if (gran.count() != 1)
@@ -877,6 +876,22 @@ public final class CaseRunner {
             out.add(segment(van, to, segmentValue(sj.get("value"), field)));
         }
         return out;
+    }
+
+    /** Holds the segments {@code segs} of a timeline value at {@code site} to the case format: a list of objects, each
+     *  with a value of the datatype {@code dt} ({@link #typed}). The case format writes filled segments only
+     *  (RUNTIME-SEMANTICS ch. 3.1), so a segment without a value or with null is a defect of the case. An input holds
+     *  its segments here before the input-precision fence ({@link #inputFits}) reads their numbers. */
+    static void typedSegments(JsonNode segs, Datatype dt, String site) {
+        if (segs == null || !segs.isArray())
+            throw new IllegalArgumentException(site + ".timeline: expected a list, got " + segs);
+        for (int k = 0; k < segs.size(); k++) {
+            String at = site + ".timeline[" + k + "]";
+            JsonNode sj = segs.get(k);
+            if (!sj.isObject()) throw new IllegalArgumentException(at + ": expected an object, got " + sj);
+            if (!sj.has("value")) throw new IllegalArgumentException(at + ": missing field \"value\"");
+            typed(sj.get("value"), dt, at + ".value");
+        }
     }
 
     /** The bound {@code field} of the segment {@code seg} of a timeline value, null where the segment leaves it out:
@@ -1040,7 +1055,7 @@ public final class CaseRunner {
         Object actual = invokeGetter(labelToBean.get(label), Namen.getter(attr));
         if (emptyExpected)
             return actual == null ? null : Msg.drools("PART.mismatch.empty-expected", "actual", actual).text();
-        if (ot.attribute(attr) instanceof Datatype.SumType s) constructorFits(v.get("value"), s, "expected " + label + "." + attr);
+        typed(v.get("value"), ot.attribute(attr), "expected " + label + "." + attr);
         Object expected = valueToArg(v.get("value"), attr);
         return equalValue(v.get("value"), expected, actual) ? null
                 : Msg.drools("PART.mismatch.attribute", "attribute", attr, "expected", render(expected), "actual",
@@ -1063,6 +1078,7 @@ public final class CaseRunner {
         if (emptyExpected)
             return actual == null ? null : Msg.drools("PART.mismatch.cell-empty", "attribute", attr, "labels",
                     cellLabels(v).toString(), "actual", actual).text();
+        typed(v.get("value"), ot.attribute(attr), "expected " + label + "." + attr + cellLabels(v));
         Object expected = valueToArg(v.get("value"), attr);
         return equalValue(v.get("value"), expected, actual) ? null
                 : Msg.drools("PART.mismatch.cell", "attribute", attr, "labels", cellLabels(v).toString(), "expected",
@@ -1107,9 +1123,7 @@ public final class CaseRunner {
         if (!temporal(ot, attr))
             throw new IllegalArgumentException("attributeTimeline expectation on the non-temporal attribute '" + attr + "'");
         ownField(ot, attr, false, "reads");
-        if (ot.attribute(attr) instanceof Datatype.SumType s)
-            for (JsonNode segment : v.get("timeline")) constructorFits(segment.get("value"), s, "expected " + label + "." + attr);
-        List<TimelineSegment> expected = canonical(segments(timelineSegments(v.get("timeline"), attr,
+        List<TimelineSegment> expected = canonical(segments(timelineSegments(v.get("timeline"), ot.attribute(attr), attr,
                 "expected " + label + "." + attr, grid(ot, attr), true)));
         Object read = labelToBean.containsKey(label) ? invokeGetter(labelToBean.get(label), Namen.getter(attr)) : null;
         if (read == null)
@@ -1371,9 +1385,9 @@ public final class CaseRunner {
         return equal(expectation, actual);
     }
 
-    /** The Java value a uchar case value node denotes — the already-normalised scalar the bean setter /
-     *  global takes. An input form the v0 backend does not carry (a list/struct/constructor value, a
-     *  rational lexeme, a timeline) is a reason-carrying {@link Excluded}. */
+    /** The Java value a uchar case value node denotes, held to its datatype before ({@link #typed}): the scalar the bean
+     *  setter or the global takes. A rational lexeme, which this backend does not carry, is a reason-carrying
+     *  {@link Excluded}. */
     Object valueToArg(JsonNode w, String field) {
         if (w == null || w.isNull()) return null;
         if (w.has("number")) {
@@ -1390,8 +1404,8 @@ public final class CaseRunner {
         // declared constructor with the payload it declares is asked against the declaration (inputFits)
         if (w.has("constructor"))
             return new ConstructorValue(w.get("constructor").asText(), valueToArg(w.get("payload"), field));
-        if (w.has("timeline")) throw new Excluded(DroolsCode.TIMELINE_VALUE_SCALAR_POSITION.reason("field", field));
-        throw new Excluded(DroolsCode.VALUE_FORM_NOT_CARRIED.reason("field", field, "value", w));
+        throw new IllegalStateException("valueToArg: the value " + w + " on '" + field + "' is no form the datatype check"
+                + " lets through");
     }
 
     /* The uchar-case-v0 {@code date} lexeme, matched WHOLE: four-two-two digit fields, digits only, no sign
@@ -1504,7 +1518,10 @@ public final class CaseRunner {
         if ((declared.payload() == null) != (w.get("payload") == null || w.get("payload").isNull()))
             throw new IllegalArgumentException(place + ": the " + (declared.payload() == null ? "nullary" : "unary")
                     + " constructor \"" + tag + "\" " + (declared.payload() == null ? "carries a payload" : "carries no payload"));
-        if (declared.payload() != null) inputFits(w.get("payload"), declared.payload(), place);
+        if (declared.payload() != null) {
+            typed(w.get("payload"), declared.payload(), place + ".payload");
+            inputFits(w.get("payload"), declared.payload(), place);
+        }
     }
 
     /** The refusal of a case value its declaration cannot hold (RUNTIME-SEMANTICS ch. 5.7b, EF-004): a defect of the

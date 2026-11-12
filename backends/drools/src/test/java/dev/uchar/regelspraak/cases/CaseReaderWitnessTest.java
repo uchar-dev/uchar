@@ -59,6 +59,67 @@ class CaseReaderWitnessTest {
         }
     }
 
+    // ---------------- values against their datatype ----------------
+
+    @Test void an_input_value_the_datatype_does_not_hold_is_a_case_error() throws Exception {
+        String[][] rows = {
+                {"{\"text\": \"14\"}", "value variant \"text\" does not match the declared datatype"},
+                {"{\"boolean\": true}", "value variant \"boolean\" does not match the declared datatype"},
+                {"{\"number\": \"1E1\"}", "is not the uchar-case-v0 number lexeme"},
+                {"{\"number\": \"+14\"}", "is not the uchar-case-v0 number lexeme"},
+                {"{\"number\": \"14\", \"unit\": \"kg\"}", "expected one value variant"},
+                {"null", "expected an object, got null"},
+        };
+        for (String[] row : rows) {
+            ObjectNode c = caseFile(PENNINGDREMPEL, "case");
+            attributes(c, 0).set("aantal aangemelde vondsten", JSON.readTree(row[0]));
+            caseError(PENNINGDREMPEL, c, row[1]);
+        }
+    }
+
+    @Test void an_expected_value_the_datatype_does_not_hold_is_a_case_error() throws Exception {
+        String[][] rows = {
+                {"{\"value\": {\"number\": \"14\", \"text\": \"x\"}}", "expected one value variant"},
+                {"{}", "expected an object, got null"},
+                {"{\"value\": {\"text\": \"14\"}}", "value variant \"text\" does not match the declared datatype"},
+        };
+        for (String[] row : rows) {
+            ObjectNode c = caseFile(PENNINGDREMPEL, "case");
+            ObjectNode v = (ObjectNode) JSON.readTree(row[0]);
+            v.put("kind", "attributeValue").put("label", "J1").put("attribute", "aantal aangemelde vondsten");
+            c.putArray("expected").add(v);
+            caseError(PENNINGDREMPEL, c, row[1]);
+        }
+    }
+
+    @Test void an_enumeration_value_is_a_declared_label() throws Exception {
+        // keurstaat: Vondst.staat is an enumeration; an undeclared label and a text are refused, in the input and in
+        // an expectation alike
+        ObjectNode c = caseFile(KEURSTAAT, "case1-gaaf");
+        ObjectNode staat = attributes(c, 0);
+        String attribute = staat.fieldNames().next();
+        staat.set(attribute, JSON.createObjectNode().put("enumeration", "onzin"));
+        caseError(KEURSTAAT, c, "\"onzin\" is not a declared enumeration value");
+        staat.set(attribute, JSON.createObjectNode().put("text", "beschadigd"));
+        caseError(KEURSTAAT, c, "value variant \"text\" does not match the declared datatype");
+    }
+
+    @Test void a_segment_without_a_value_is_a_case_error() throws Exception {
+        // bakenmeester: B1.onderhoudstarief is the input on a timeline, B1.onderhoudsbijdrage the expected one
+        for (String segment : new String[]{"{\"from\": \"2025-01-01\", \"to\": \"2026-01-01\"}",
+                "{\"from\": \"2025-01-01\", \"to\": \"2026-01-01\", \"value\": null}"}) {
+            ObjectNode c = caseFile(BAKENMEESTER, "case1");
+            ObjectNode tarief = (ObjectNode) attributes(c, 0).get("onderhoudstarief");
+            ((ArrayNode) tarief.get("timeline")).set(0, JSON.readTree(segment));
+            caseError(BAKENMEESTER, c, "B1.onderhoudstarief.timeline[0]");
+        }
+        ObjectNode c = caseFile(BAKENMEESTER, "case1");
+        for (JsonNode v : c.get("expected"))
+            if (v.path("kind").asText().equals("attributeTimeline"))
+                ((ObjectNode) v.get("timeline").get(0)).remove("value");
+        caseError(BAKENMEESTER, c, "missing field \"value\"");
+    }
+
     @Test void a_parameter_the_case_does_not_bind_faults_where_a_rule_reads_it() {
         // case1 leaves aanvoertarief unbound, read in a value; case2 aanvoerdrempel, read in a condition
         Path red = Path.of("..", "..", "corpus", "red", "aanvoergeld-parameter-unbound");

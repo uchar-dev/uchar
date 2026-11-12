@@ -211,7 +211,7 @@ class DimensionCellWitnessTest {
                 List.of(empty("J1", "groeigewicht"))), "J1.jaargewicht: a cells input on an attribute without dimensions");
         assertDefect(ir, caseFile(List.of(instance("J1", "{\"vondstgewicht\":{\"cells\":[{\"labels\":[\"voorjaar\"],"
                         + "\"value\":{\"text\":\"drie\"}}]}}")), List.of(empty("J1", "groeigewicht"))),
-                "J1.vondstgewicht[voorjaar]: the value variant \"text\" does not match the declared datatype");
+                "J1.vondstgewicht[voorjaar]: value variant \"text\" does not match the declared datatype");
         assertDefect(ir, caseFile(List.of(jutter("J1", cell("3.00", "voorjaar"))), List.of(empty("J1", "vondstgewicht"))),
                 "attributeEmpty on the dimensioned attribute 'vondstgewicht' of J1");
         assertDefect(ir, caseFile(List.of(jutter("J1", cell("3.00", "voorjaar"))),
