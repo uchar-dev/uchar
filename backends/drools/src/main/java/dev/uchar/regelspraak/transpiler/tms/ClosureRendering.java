@@ -67,12 +67,18 @@ final class ClosureRendering {
                 ValueFunction l = valueFunction(d.left()), r = valueFunction(d.right());
                 Implementation f = implementation(d.function());
                 int depositFlag = d.depositFlag();
-                boolean lazy = d.emptyDividendDecides();
+                boolean lazy = d.emptyDividendDecides(), perPeriod = d.periodDivision();
                 yield w -> {
+                    Object flag = depositFlag < 0 ? null : w[depositFlag];
                     Object lv = l.of(w);
-                    // a leeg dividend gives the quotient before the divisor is read (RUNTIME-SEMANTICS ch. 1.4 point 4)
-                    Object rv = lazy && lv == null ? null : r.of(w);
-                    return f.of(new Object[]{lv, rv, depositFlag < 0 ? null : w[depositFlag]});
+                    // a leeg dividend gives the quotient before the divisor is read (RUNTIME-SEMANTICS ch. 1.4 point 4),
+                    // per period as well (ch. 3.4)
+                    Object rv;
+                    if (perPeriod) {
+                        PeriodArithmetic.dividend(lv, flag);
+                        rv = PeriodArithmetic.emptyOnEveryDay(lv) ? null : r.of(w);
+                    } else rv = lazy && lv == null ? null : r.of(w);
+                    return f.of(new Object[]{lv, rv, flag});
                 };
             }
             case Term.SquareRoot x -> {
@@ -352,6 +358,8 @@ final class ClosureRendering {
             case PERIOD_PERCENTAGE_OF -> x -> PeriodArithmetic.percentageOf(x[0], x[1]);
             case PERIOD_DIVIDED -> x -> PeriodArithmetic.divided(x[0], x[1], x[2]);
             case PERIOD_DIVIDED_ABS -> x -> PeriodArithmetic.dividedAbs(x[0], x[1], x[2]);
+            case PERIOD_DIVIDEND -> x -> PeriodArithmetic.dividend(x[0], x[1]);
+            case PERIOD_EMPTY_ON_EVERY_DAY -> x -> PeriodArithmetic.emptyOnEveryDay(x[0]);
             case PERIOD_PARAMETER -> x -> PeriodArithmetic.parameter(x[0], (String) x[1]);
             case PERIOD_SUM -> x -> PeriodArithmetic.sum(x[0], x[1]);
             case PERIOD_WRITTEN -> x -> PeriodArithmetic.written(x[0], (Integer) x[1], (String) x[2]);

@@ -69,10 +69,16 @@ end
 // zijn strandloon gedeeld door zijn stormtoeslag
 function Object waarde_loonverhoudingVanEenJutter(Object $tijdlijn_0, Object $onderwerp, Object $tijdlijn_2, Object sonde) {
     try {
-        return PeriodArithmetic.written(PeriodArithmetic.divided(ComputeHelpers.complete($tijdlijn_0, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"strandloon\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "strandloon", Boolean.TRUE), ComputeHelpers.complete($tijdlijn_2, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"stormtoeslag\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "stormtoeslag", Boolean.TRUE), sonde), null, "loonverhouding");
+        return PeriodArithmetic.written(deling_loonverhoudingVanEenJutter($tijdlijn_0, $onderwerp, $tijdlijn_2, sonde), null, "loonverhouding");
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
+}
+
+// zijn strandloon gedeeld door zijn stormtoeslag
+function Object deling_loonverhoudingVanEenJutter(Object $tijdlijn_0, Object $onderwerp, Object $tijdlijn_2, Object sonde) {
+    Object deeltal = PeriodArithmetic.dividend(ComputeHelpers.complete($tijdlijn_0, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"strandloon\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "strandloon", Boolean.TRUE), sonde);
+    return PeriodArithmetic.divided(deeltal, (PeriodArithmetic.emptyOnEveryDay(deeltal) ? null : ComputeHelpers.complete($tijdlijn_2, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"stormtoeslag\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "stormtoeslag", Boolean.TRUE)), sonde);
 }
 
 rule "loonverhouding van een jutter"
@@ -99,10 +105,16 @@ end
 // zijn strandloon gedeeld door (ABS) zijn stormtoeslag
 function Object waarde_afgekapteLoonverhoudingVanEenJutter(Object $tijdlijn_0, Object $onderwerp, Object $tijdlijn_2, Object sonde) {
     try {
-        return PeriodArithmetic.written(PeriodArithmetic.dividedAbs(ComputeHelpers.complete($tijdlijn_0, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"strandloon\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "strandloon", Boolean.TRUE), ComputeHelpers.complete($tijdlijn_2, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"stormtoeslag\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "stormtoeslag", Boolean.TRUE), sonde), Integer.valueOf(5), "afgekapte loonverhouding");
+        return PeriodArithmetic.written(deling_afgekapteLoonverhoudingVanEenJutter($tijdlijn_0, $onderwerp, $tijdlijn_2, sonde), Integer.valueOf(5), "afgekapte loonverhouding");
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
+}
+
+// zijn strandloon gedeeld door (ABS) zijn stormtoeslag
+function Object deling_afgekapteLoonverhoudingVanEenJutter(Object $tijdlijn_0, Object $onderwerp, Object $tijdlijn_2, Object sonde) {
+    Object deeltal = PeriodArithmetic.dividend(ComputeHelpers.complete($tijdlijn_0, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"strandloon\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "strandloon", Boolean.TRUE), sonde);
+    return PeriodArithmetic.dividedAbs(deeltal, (PeriodArithmetic.emptyOnEveryDay(deeltal) ? null : ComputeHelpers.complete($tijdlijn_2, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"stormtoeslag\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "stormtoeslag", Boolean.TRUE)), sonde);
 }
 
 rule "afgekapte loonverhouding van een jutter"
@@ -232,10 +244,16 @@ end
 // (zijn vondstwaarde gedeeld door zijn zoekduur) maal zijn zoekduur
 function Object waarde_teruggerekendeVondstwaardeVanEenJutter(Object $tijdlijn_0, Object $onderwerp, Object $tijdlijn_2, Object sonde) {
     try {
-        return PeriodArithmetic.written(PeriodArithmetic.times(PeriodArithmetic.divided(ComputeHelpers.complete($tijdlijn_0, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"vondstwaarde\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "vondstwaarde", Boolean.TRUE), ComputeHelpers.complete($tijdlijn_2, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"zoekduur\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "zoekduur", Boolean.TRUE), sonde), ComputeHelpers.complete($tijdlijn_2, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"zoekduur\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "zoekduur", Boolean.TRUE)), null, "teruggerekende vondstwaarde");
+        return PeriodArithmetic.written(PeriodArithmetic.times(deling_teruggerekendeVondstwaardeVanEenJutter($tijdlijn_0, $onderwerp, $tijdlijn_2, sonde), ComputeHelpers.complete($tijdlijn_2, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"zoekduur\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "zoekduur", Boolean.TRUE)), null, "teruggerekende vondstwaarde");
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
+}
+
+// zijn vondstwaarde gedeeld door zijn zoekduur
+function Object deling_teruggerekendeVondstwaardeVanEenJutter(Object $tijdlijn_0, Object $onderwerp, Object $tijdlijn_2, Object sonde) {
+    Object deeltal = PeriodArithmetic.dividend(ComputeHelpers.complete($tijdlijn_0, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"vondstwaarde\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "vondstwaarde", Boolean.TRUE), sonde);
+    return PeriodArithmetic.divided(deeltal, (PeriodArithmetic.emptyOnEveryDay(deeltal) ? null : ComputeHelpers.complete($tijdlijn_2, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"zoekduur\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "zoekduur", Boolean.TRUE)), sonde);
 }
 
 rule "teruggerekende vondstwaarde van een jutter"

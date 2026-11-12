@@ -1,0 +1,6 @@
+reading /rules/rules/0/versions/0 "V1" 0 Binary [[- - 0]]
+reading /rules/rules/0/versions/0 "V1" 1 AttributeReference []
+reading /rules/rules/0/versions/0 "V1" 2 Binary unreached
+reading /rules/rules/0/versions/0 "V1" 3 AttributeReference unreached
+reading /rules/rules/0/versions/0 "V1" 4 AttributeReference unreached
+reading /rules/rules/0/versions/0 "V1" HOLDS

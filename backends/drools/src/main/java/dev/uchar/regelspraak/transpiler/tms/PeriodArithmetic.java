@@ -83,12 +83,45 @@ public final class PeriodArithmetic {
      *  heard by {@code depositFlag} with its code; the probe keeps each code once, so the rule × subject carries one
      *  §9.5 fact however many periods divide so (ch. 5.6). */
     public static List<?> divided(Object a, Object b, Object depositFlag) {
-        return cutMerge(a, b, (x, y) -> ComputeHelpers.divided(x, y, depositFlag));
+        return cutMerge(a, b, reachAfter(a, depositFlag), (x, y) -> ComputeHelpers.divided(x, y, depositFlag),
+                (x, y) -> ComputeHelpers.divided(x, y, null));
     }
 
     /** As {@link #divided}, each quotient truncated toward zero at 5 decimals ({@link ComputeHelpers#dividedAbs}). */
     public static List<?> dividedAbs(Object a, Object b, Object depositFlag) {
-        return cutMerge(a, b, (x, y) -> ComputeHelpers.dividedAbs(x, y, depositFlag));
+        return cutMerge(a, b, reachAfter(a, depositFlag), (x, y) -> ComputeHelpers.dividedAbs(x, y, depositFlag),
+                (x, y) -> ComputeHelpers.dividedAbs(x, y, null));
+    }
+
+    /**
+     * The dividend {@code a} of a division per period, evaluated before its divisor, as it is: a divisor is read only in
+     * the periods where its dividend is filled (ch. 1.4 point 4, ch. 3.4), so the probe {@code depositFlag} keeps those
+     * periods, within those of an enclosing divisor, while the divisor is evaluated, and a division inside it deposits
+     * only there. {@link #divided} ends them. A probe of nothing hears no deposit, so it keeps no periods either.
+     */
+    public static Object dividend(Object a, Object depositFlag) {
+        if (depositFlag instanceof DepositFlag f) {
+            List<Exact> filled = new ArrayList<>();
+            for (Exact e : pieces(a)) if (e.value() != null) filled.add(e);
+            List<Exact> outer = f.reach();
+            f.enterDivisor(a, outer == null ? filled : Span.clip(filled, outer));
+        }
+        return a;
+    }
+
+    /** Whether the dividend {@code a} of a division per period is leeg on every day: then the division is 0 on every
+     *  day and its divisor is not evaluated (ch. 1.4 point 4), as under a leeg scalar dividend. */
+    public static boolean emptyOnEveryDay(Object a) {
+        for (Exact e : pieces(a)) if (e.value() != null) return false;
+        return true;
+    }
+
+    /** The periods in which the division of dividend {@code a} is read, once its divisor is evaluated: those of the
+     *  enclosing divisor, or all time (null). */
+    private static List<Exact> reachAfter(Object a, Object depositFlag) {
+        if (!(depositFlag instanceof DepositFlag f)) return null;
+        f.leaveDivisor(a);
+        return f.reach();
     }
 
     /**
@@ -346,12 +379,21 @@ public final class PeriodArithmetic {
     /** {@code op} per period of all time over the cut set of {@code a} and {@code b} with both open ends, on the values
      *  the two read there, leeg where a timeline has no segment (ch. 3.4): the operator applies its own leeg rule. */
     private static List<Exact> cutMerge(Object a, Object b, BinaryOperator<Object> op) {
+        return cutMerge(a, b, null, op, op);
+    }
+
+    /** As {@link #cutMerge(Object, Object, BinaryOperator)}, {@code op} in the periods of {@code reach} and
+     *  {@code unread} in the others, its bounds cuts as well; a null {@code reach} is all time. */
+    private static List<Exact> cutMerge(Object a, Object b, List<Exact> reach, BinaryOperator<Object> op,
+                                        BinaryOperator<Object> unread) {
         List<Exact> x = pieces(a), y = pieces(b);
         List<Exact> out = new ArrayList<>();
         LocalDate previous = null;
-        for (LocalDate c : Span.cuts(List.of(x, y))) {
-            if (previous != null)
-                out.add(new Exact(previous, c, op.apply(Span.read(x, previous), Span.read(y, previous))));
+        for (LocalDate c : Span.cuts(reach == null ? List.of(x, y) : List.of(x, y, reach))) {
+            if (previous != null) {
+                BinaryOperator<Object> f = reach == null || Span.covers(reach, previous) ? op : unread;
+                out.add(new Exact(previous, c, f.apply(Span.read(x, previous), Span.read(y, previous))));
+            }
             previous = c;
         }
         return Span.coalesced(out);

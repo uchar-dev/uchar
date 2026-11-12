@@ -1,5 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.TreeSet;
 
@@ -20,6 +22,12 @@ import java.util.TreeSet;
 final class DepositFlag {
     private boolean reported;
     private final TreeSet<String> codes = new TreeSet<>();
+    /** The divisors of the period arithmetic being evaluated, innermost on top: each with the dividend it divides and
+     *  the periods in which it is read, those where that dividend is filled within the enclosing divisor's
+     *  ({@link PeriodArithmetic#dividend}). */
+    private final Deque<Divisor> divisors = new ArrayDeque<>();
+
+    private record Divisor(Object dividend, List<PeriodArithmetic.Exact> reach) {}
 
     /** A place ran and deposits to {@code depositFlag}, the probe its slot holds, or nothing where it holds none, with
      *  {@code codes}, the EF codes (RUNTIME-SEMANTICS ch. 5.7b) of the kinds it deposits: none for a kind without a code,
@@ -38,5 +46,24 @@ final class DepositFlag {
     /** The codes the probe heard, ascending, each once. */
     List<String> codes() {
         return List.copyOf(codes);
+    }
+
+    /** The periods in which the divisor being evaluated is read; null outside every divisor, all time. */
+    List<PeriodArithmetic.Exact> reach() {
+        return divisors.isEmpty() ? null : divisors.peek().reach();
+    }
+
+    /** The divisor of {@code dividend} is evaluated next, read in {@code reach}. */
+    void enterDivisor(Object dividend, List<PeriodArithmetic.Exact> reach) {
+        divisors.push(new Divisor(dividend, reach));
+    }
+
+    /** The divisor of {@code dividend} is evaluated: its entry leaves, with any an evaluation that faulted inside it
+     *  left above it, matched by identity from the top, so that a dividend met twice leaves its innermost entry. */
+    void leaveDivisor(Object dividend) {
+        if (divisors.stream().noneMatch(d -> d.dividend() == dividend)) return;
+        while (divisors.pop().dividend() != dividend) {
+            // the entries above it belong to divisors whose evaluation did not return
+        }
     }
 }

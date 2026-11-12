@@ -1,0 +1,6 @@
+reading /rules/rules/0/versions/0 "V1" 0 Binary [[- 2024-01-01 0], [2024-04-01 2024-07-01 2], [2024-07-01 - 0]]
+reading /rules/rules/0/versions/0 "V1" 1 AttributeReference [[2024-01-01 2024-07-01 60]]
+reading /rules/rules/0/versions/0 "V1" 2 Binary [[- 2024-04-01 empty], [2024-04-01 2024-07-01 30], [2024-07-01 - empty]]
+reading /rules/rules/0/versions/0 "V1" 3 AttributeReference 90
+reading /rules/rules/0/versions/0 "V1" 4 AttributeReference [[2024-01-01 2024-04-01 0], [2024-04-01 2024-07-01 3]]
+reading /rules/rules/0/versions/0 "V1" HOLDS

@@ -90,10 +90,16 @@ end
 // (de verzuimrentevoet maal zijn rentedagen maal zijn afdrachtbedrag gedeeld door het rentejaar) rekenkundig afgerond op 3 decimalen
 function Object waarde_maandrente(Object $verzuimrentevoet, Object $tijdlijn_1, Object $onderwerp, Object $afdrachtbedrag, Object $rentejaar, Object sonde) {
     try {
-        return PeriodArithmetic.written(PeriodArithmetic.rounded(PeriodArithmetic.divided(PeriodArithmetic.times(PeriodArithmetic.times(PeriodArithmetic.parameter($verzuimrentevoet, "verzuimrentevoet"), ComputeHelpers.complete($tijdlijn_1, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"rentedagen\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "rentedagen", Boolean.TRUE)), PeriodArithmetic.scalar($afdrachtbedrag)), PeriodArithmetic.scalar($rentejaar), sonde), Integer.valueOf(3), java.math.RoundingMode.HALF_UP), Integer.valueOf(3), "maandrente");
+        return PeriodArithmetic.written(PeriodArithmetic.rounded(deling_maandrente($verzuimrentevoet, $tijdlijn_1, $onderwerp, $afdrachtbedrag, $rentejaar, sonde), Integer.valueOf(3), java.math.RoundingMode.HALF_UP), Integer.valueOf(3), "maandrente");
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
+}
+
+// de verzuimrentevoet maal zijn rentedagen maal zijn afdrachtbedrag gedeeld door het rentejaar
+function Object deling_maandrente(Object $verzuimrentevoet, Object $tijdlijn_1, Object $onderwerp, Object $afdrachtbedrag, Object $rentejaar, Object sonde) {
+    Object deeltal = PeriodArithmetic.dividend(PeriodArithmetic.times(PeriodArithmetic.times(PeriodArithmetic.parameter($verzuimrentevoet, "verzuimrentevoet"), ComputeHelpers.complete($tijdlijn_1, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"rentedagen\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "rentedagen", Boolean.TRUE)), PeriodArithmetic.scalar($afdrachtbedrag)), sonde);
+    return PeriodArithmetic.divided(deeltal, (PeriodArithmetic.emptyOnEveryDay(deeltal) ? null : PeriodArithmetic.scalar($rentejaar)), sonde);
 }
 
 rule "maandrente"

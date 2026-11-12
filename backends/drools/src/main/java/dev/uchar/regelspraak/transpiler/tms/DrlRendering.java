@@ -1028,7 +1028,8 @@ final class DrlRendering {
                 case Term.Call a -> call(a.function(), a.arguments().stream().map(x -> value(x, c)).toList());
                 case Term.Restate h -> call(StaticFunction.RESTATE_EXACT,
                         List.of(value(h.term(), c), constant(h.counter()), constant(h.denominator())));
-                case Term.Division d -> d.emptyDividendDecides() && !inert(d.right()) ? lazyDivision(d, c) : call(
+                case Term.Division d -> d.periodDivision() ? periodDivision(d, c)
+                        : d.emptyDividendDecides() && !inert(d.right()) ? lazyDivision(d, c) : call(
                         d.function(), List.of(value(d.left(), c), value(d.right(), c), depositFlag(d.depositFlag(), c)));
                 case Term.SquareRoot w -> call(w.function(), List.of(value(w.radicand(), c), depositFlag(w.depositFlag(), c)));
                 case Term.Fail f -> routeCall(Route.FAIL, List.of(constant(f.sentence())));
@@ -1216,6 +1217,23 @@ final class DrlRendering {
                     "    Object deeltal = " + left + ";\n    return deeltal == null ? (Object) "
                             + call(d.function(), List.of(empty, empty, flag)).text() + " : (Object) "
                             + call(d.function(), List.of(dividend, right, flag)).text() + ";\n");
+            return new Expr(name + "(" + c.pass() + ")", Object.class);
+        }
+
+        /** A division per period as a function that evaluates the dividend first, which the probe keeps the periods of
+         *  its divisor by, and the divisor only where the dividend is filled on some day (RUNTIME-SEMANTICS ch. 1.4
+         *  point 4, ch. 3.4). */
+        private Expr periodDivision(Term.Division d, Context c) {
+            int place = reserveer();
+            String name = name("deling", place);
+            Expr flag = depositFlag(d.depositFlag(), c), dividend = new Expr("deeltal", Object.class);
+            String left = call(StaticFunction.PERIOD_DIVIDEND, List.of(value(d.left(), c), flag)).text();
+            Expr right = value(d.right(), c);
+            String empty = call(StaticFunction.PERIOD_EMPTY_ON_EVERY_DAY, List.of(dividend)).text();
+            fill(place, d.source(), "Object " + name + "(" + c.declaration() + ")",
+                    "    Object deeltal = " + left + ";\n    return "
+                            + call(d.function(), List.of(dividend, new Expr("(" + empty + " ? null : " + right.text()
+                                    + ")", Object.class), flag)).text() + ";\n");
             return new Expr(name + "(" + c.pass() + ")", Object.class);
         }
 

@@ -108,6 +108,12 @@ public sealed interface Term {
         public boolean emptyDividendDecides() {
             return function == StaticFunction.DIVIDED || function == StaticFunction.DIVIDED_ABS;
         }
+
+        /** Whether this is the division of a timeline per period, whose divisor is read only in the periods where the
+         *  dividend is filled, and not at all where it is leeg on every day ({@code PeriodArithmetic#dividend}). */
+        public boolean periodDivision() {
+            return function == StaticFunction.PERIOD_DIVIDED || function == StaticFunction.PERIOD_DIVIDED_ABS;
+        }
     }
 
     /**

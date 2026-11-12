@@ -76,11 +76,16 @@ final class RecordingRendering {
                 yield ComputeHelpers.restateExact(value(h.term(), w), h.counter(), h.denominator());
             }
             case Term.Division d -> {
+                Object flag = d.depositFlag() < 0 ? null : w[d.depositFlag()];
                 Object lv = value(d.left(), w);
-                // a leeg dividend gives the quotient before the divisor is read, which stays unreached (ch. 1.4 point 4)
-                Object rv = d.emptyDividendDecides() && lv == null ? null : value(d.right(), w);
-                yield ClosureRendering.implementation(d.function()).of(new Object[]{lv, rv,
-                        d.depositFlag() < 0 ? null : w[d.depositFlag()]});
+                // a leeg dividend gives the quotient before the divisor is read, which stays unreached (ch. 1.4 point 4),
+                // per period as well (ch. 3.4)
+                Object rv;
+                if (d.periodDivision()) {
+                    PeriodArithmetic.dividend(lv, flag);
+                    rv = PeriodArithmetic.emptyOnEveryDay(lv) ? null : value(d.right(), w);
+                } else rv = d.emptyDividendDecides() && lv == null ? null : value(d.right(), w);
+                yield ClosureRendering.implementation(d.function()).of(new Object[]{lv, rv, flag});
             }
             case Term.SquareRoot x -> {
                 Object v = value(x.radicand(), w);

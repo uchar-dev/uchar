@@ -108,6 +108,11 @@ public enum StaticFunction {
     PERIOD_DIVIDED(PeriodArithmetic.class, "divided", true),
     /** As {@link #PERIOD_DIVIDED}, each quotient truncated toward zero at 5 decimals. */
     PERIOD_DIVIDED_ABS(PeriodArithmetic.class, "dividedAbs", true),
+    /** The dividend of a {@link #PERIOD_DIVIDED} or {@link #PERIOD_DIVIDED_ABS}, evaluated before its divisor, with the
+     *  probe of the rule's deposit, which keeps the periods its divisor is read in (ch. 1.4 point 4, ch. 3.4). */
+    PERIOD_DIVIDEND(PeriodArithmetic.class, "dividend", false),
+    /** Whether the dividend of a division per period is leeg on every day, so that its divisor is not evaluated. */
+    PERIOD_EMPTY_ON_EVERY_DAY(PeriodArithmetic.class, "emptyOnEveryDay", false),
     /** The timeline of a time-dependent parameter as an operand of the period arithmetic (ch. 3.4), the parameter's
      *  name a {@code String} constant: the fault of an unbound parameter where the case gives none (EF-014). */
     PERIOD_PARAMETER(PeriodArithmetic.class, "parameter", true),
