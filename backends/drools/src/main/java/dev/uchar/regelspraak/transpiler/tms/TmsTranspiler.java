@@ -341,8 +341,8 @@ public final class TmsTranspiler {
      *  evaluation date (RUNTIME-SEMANTICS ch. 8.1), read through the {@link EvaluationDate} fact: false until a lowered
      *  form needs the date, so a model whose forms are all always valid and read no context value declares none. */
     private boolean evaluationDateGlobal;
-    /** The name of that global, the one the case runner sets for every branch. */
-    static final String REKENDATUM = "rekendatum";
+    /** The name of that global, the one the case input sets for every branch. */
+    public static final String REKENDATUM = "rekendatum";
     /** The relations a form of the document creates, by normalised fact type name: the connecting relation of an
      *  object creation and the relation of a fact creation. Their links are {@link RelationLink} facts, and every form
      *  that reads such a relation joins over those ({@link #linkHop}, {@link #linkRange}). */

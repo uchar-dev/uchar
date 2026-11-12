@@ -5,14 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import dev.uchar.regelspraak.refusal.DroolsCode;
 
 import dev.uchar.regelspraak.engine.ScenarioResult;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.transpiler.core.Namen;
 import dev.uchar.regelspraak.transpiler.tms.Fixpoint;
-import dev.uchar.regelspraak.transpiler.tms.Period;
 
 import org.junit.jupiter.api.Test;
 import org.kie.api.runtime.KieSession;
@@ -542,7 +540,7 @@ class CaseInputWitnessTest {
                 new ScenarioResult.Trace(List.of()), List.of(), reason);
     }
 
-    /** Case {@code c} as a consumer plays it: read through {@link CaseInput}, its parameters and asOfDate as globals,
+    /** Case {@code c} as a consumer plays it: read through {@link CaseInput}, its globals set by it,
      *  put in, fired with a waarnemer, written back and compared. */
     private static ScenarioResult play(DroolsBackend.Build b, String name, JsonNode c) {
         CaseInput input = CaseInput.of(b, c);
@@ -552,10 +550,7 @@ class CaseInputWitnessTest {
         Thread.currentThread().setContextClassLoader(b.beanLoader());
         KieSession session = b.kieBase().newKieSession();
         try {
-            JsonNode params = c.get("input").get("parameters");
-            if (params != null) for (Map.Entry<String, JsonNode> e : params.properties())
-                setGlobal(session, Namen.ident(e.getKey(), false), parameterValue(e.getKey(), e.getValue()));
-            if (c.hasNonNull("asOfDate")) setGlobal(session, "rekendatum", LocalDate.parse(c.get("asOfDate").asText()));
+            input.setGlobals(session);
             DroolsBackend.insert(b, session, input.inputData());
             DroolsBackend.Observer observer = new DroolsBackend.Observer(label::get);
             DroolsBackend.Firing firing = DroolsBackend.fire(b, session, observer);
@@ -572,29 +567,5 @@ class CaseInputWitnessTest {
             session.dispose();
             Thread.currentThread().setContextClassLoader(previous);
         }
-    }
-
-    /** A parameter value as a consumer gives it: the forms the corpus carries, a time-dependent parameter's timeline
-     *  as the {@code List<Period>} the period arithmetic reads, an open bound the end of the date range, and the
-     *  replay's refusal of a rational number. */
-    private static Object parameterValue(String name, JsonNode w) {
-        if (w.has("timeline")) {
-            List<Period> timeline = new ArrayList<>();
-            for (JsonNode s : w.get("timeline"))
-                timeline.add(new Period(s.has("from") ? LocalDate.parse(s.get("from").asText()) : Period.OPEN_FROM,
-                        s.has("to") ? LocalDate.parse(s.get("to").asText()) : Period.OPEN_TO,
-                        new BigDecimal(s.get("value").get("number").asText())));
-            return List.copyOf(timeline);
-        }
-        if (w.has("number")) {
-            if (w.get("number").asText().contains("/"))
-                throw new CaseRunner.Excluded(DroolsCode.RATIONAL_VALUE, "rational value on '" + name + "' is not carried by the v0 backend");
-            return new BigDecimal(w.get("number").asText());
-        }
-        if (w.has("date")) return LocalDate.parse(w.get("date").asText());
-        if (w.has("boolean")) return w.get("boolean").asBoolean();
-        if (w.has("text")) return w.get("text").asText();
-        if (w.has("enumeration")) return w.get("enumeration").asText();
-        return fail("a parameter form this witness does not set: " + name + " " + w);
     }
 }

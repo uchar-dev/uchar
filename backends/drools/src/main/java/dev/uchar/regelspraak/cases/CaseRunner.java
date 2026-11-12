@@ -355,13 +355,12 @@ public final class CaseRunner {
 
     static AfterFire afterFire(Path irPath, JsonNode c) throws java.io.IOException {
         CaseRunner runner = build(irPath);
-        runner.evaluationDate = asOfDate(c);
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(runner.cl);
         KieSession session = runner.kieBase.newKieSession();
         try {
             CaseInput input = runner.readInput(c);
-            runner.setGlobals(session, c);
+            input.setGlobals(session);
             DroolsBackend.insert(runner.backendBuild, session, input.inputData());
             String noFixpoint = runner.fireToFixpoint(session);
             // The sister runCase path reports the cap as a case failure; this seam has no verdict to return, so
@@ -430,13 +429,12 @@ public final class CaseRunner {
     <T> T withSession(JsonNode c, SessionMeasurement<T> measurement) {
         labelToBean.clear();
         labelType.clear();
-        evaluationDate = asOfDate(c);
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         KieSession session = kieBase.newKieSession();
         try {
             CaseInput input = readInput(c);
-            setGlobals(session, c);
+            input.setGlobals(session);
             DroolsBackend.insert(backendBuild, session, input.inputData());
             return measurement.meet(backendBuild, session, java.util.Collections.unmodifiableMap(labelToBean));
         } finally {
@@ -552,13 +550,12 @@ public final class CaseRunner {
     private DroolsBackend.Firing fireRed(JsonNode c) {
         labelToBean.clear();
         labelType.clear();
-        evaluationDate = asOfDate(c);
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         KieSession session = kieBase.newKieSession();
         try {
             CaseInput input = readInput(c);
-            setGlobals(session, c);
+            input.setGlobals(session);
             DroolsBackend.insert(backendBuild, session, input.inputData());
             return fireToFixpointFiring(session, null, null);
         } finally {
@@ -634,8 +631,6 @@ public final class CaseRunner {
      *  report, the seam and the write-back. */
     private final Map<String, Object> labelToBean = new LinkedHashMap<>();
     private final Map<String, ObjectType> labelType = new LinkedHashMap<>();
-    /** The case's evaluation date, which {@link #setGlobals} sets as the global {@code rekendatum}. */
-    private LocalDate evaluationDate;
 
     private String runCase(String name, JsonNode c) {
         return runCase(name, c, null);
@@ -648,13 +643,12 @@ public final class CaseRunner {
     private String runCase(String name, JsonNode c, Observation w) {
         labelToBean.clear();
         labelType.clear();
-        evaluationDate = asOfDate(c);
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         KieSession session = kieBase.newKieSession();
         try {
             CaseInput input = readInput(c);
-            setGlobals(session, c);
+            input.setGlobals(session);
             DroolsBackend.insert(backendBuild, session, input.inputData());
             Handoff handoff = w == null ? null : w.handoff;
             String noFixpoint = fireToFixpointFiring(session, w == null ? null : w.fireObserver, handoff == null ? null
@@ -781,43 +775,64 @@ public final class CaseRunner {
         return null;
     }
 
-    /** Sets the global of every parameter the case gives, as the reference interpreter's case loader reads it: a
-     *  time-dependent parameter takes its timeline, read as an attribute's timeline on the parameter's grid, open bounds
-     *  included, and set as the {@code List<Period>} the period arithmetic reads whole (RUNTIME-SEMANTICS ch. 3.4, 8.3);
-     *  any other parameter takes its value. A timeline on a parameter that is not time-dependent and a scalar on one
-     *  that is are a defective case, refused in the loader's words. */
-    private void setGlobals(KieSession session, JsonNode c) {
-        JsonNode params = c.get("input").get("parameters");
-        if (params != null) for (Map.Entry<String, JsonNode> e : params.properties()) {
-            RegelSpraakModel.Parameter declared = Namen.byName(model.parameters, e.getKey());
-            String at = "parameter " + e.getKey();
-            boolean granular = declared != null && declared.granularity() != null;
-            if (e.getValue().has("timeline") != granular)
-                throw new IllegalArgumentException(at + (granular
-                        ? ": a scalar value on a granular parameter (it takes a timeline)"
-                        : ": a timeline value on a non-granular parameter"));
-            inputFits(e.getValue(), declared == null ? null : declared.datatype(), at);
-            Object value = granular ? Period.list(timelineSegments(e.getValue().get("timeline"), e.getKey(), at,
-                    new Grid(declared.granularity(), 1, declared.fixedStartPoint(), false), false))
-                    : valueToArg(e.getValue(), e.getKey());
-            setGlobalSafe(session, Namen.ident(e.getKey(), false), value);
-        }
-        if (evaluationDate != null) setGlobalSafe(session, "rekendatum", evaluationDate);
-        // §9.8 the DRL-text branch reaches its dagsoort predicates through globals (the exec branch closes over
-        // them); empty for the exec branch.
-        for (Map.Entry<String, java.util.function.Predicate<LocalDate>> e : dayKindGlobals.entrySet())
-            setGlobalSafe(session, e.getKey(), e.getValue());
-    }
-
     /** The case's {@code asOfDate}, or null when it carries none. */
     static LocalDate asOfDate(JsonNode c) {
         JsonNode asOf = c.get("asOfDate");
         return asOf == null || asOf.isNull() ? null : caseWireDate(asOf.asText(), "asOfDate");
     }
 
-    private static void setGlobalSafe(KieSession session, String name, Object value) {
-        try { session.setGlobal(name, value); }
-        catch (RuntimeException unknown) { /* global not declared: no rule reads it */ }
+    /** Whether {@code w} is the timeline variant of a case value: an object whose one key is {@code timeline}. */
+    static boolean isTimeline(JsonNode w) {
+        return w != null && w.isObject() && w.size() == 1 && w.has("timeline");
+    }
+
+    /** The {@code number} lexeme of {@code uchar-case-v0}, matched whole: the case schema's pattern. */
+    private static final java.util.regex.Pattern CASE_NUMBER =
+            java.util.regex.Pattern.compile("-?[0-9]+(\\.[0-9]+)?|-?[0-9]+/[1-9][0-9]*");
+
+    /**
+     * Holds the scalar case value {@code w} at position {@code at} to the declared datatype {@code dt} as the reference
+     * interpreter's case reader holds it (RUNTIME-SEMANTICS ch. 5.7 step 3): an object with one value variant, or a
+     * constructor value of a sum type; the variant that of the datatype; a number in the case's number lexeme; a
+     * boolean a JSON truth value; a text, date, dateTime or enumeration value a JSON string; an enumeration value a
+     * label its enumeration declares. A defect of the case, so a hard error, in that reader's words. The lexeme of a
+     * date or dateTime is held where it is read ({@link #valueToArg}), its precision by {@link #inputFits}.
+     */
+    static void typed(JsonNode w, Datatype dt, String at) {
+        if (w == null || !w.isObject()) throw new IllegalArgumentException(at + ": expected an object, got " + w);
+        if (w.has("constructor")) {
+            if (!(dt instanceof Datatype.SumType s))
+                throw new IllegalArgumentException(at + ": a constructor value against a "
+                        + (dt == null ? "declaration without a datatype" : "non-sum-type declaration"));
+            constructorFits(w, s, at);
+            return;
+        }
+        if (w.size() != 1) throw new IllegalArgumentException(at + ": expected one value variant, got " + w);
+        if (dt == null) throw new IllegalArgumentException(at + ": a value against a declaration without a datatype");
+        String variant = w.fieldNames().next();
+        JsonNode v = w.get(variant);
+        boolean fits = switch (variant) {
+            case "number" -> dt.isNumberLike();
+            case "date" -> dt instanceof Datatype.DateInDays;
+            case "dateTime" -> dt instanceof Datatype.DateTime;
+            case "boolean" -> dt.isBoolean();
+            case "text" -> dt.isText();
+            case "enumeration" -> dt instanceof Datatype.Enumeration;
+            default -> false;
+        };
+        if (!fits)
+            throw new IllegalArgumentException(at + ": value variant \"" + variant + "\" does not match the declared datatype");
+        if (variant.equals("boolean")) {
+            if (!v.isBoolean()) throw new IllegalArgumentException(at + ".boolean: expected true or false, got " + v);
+            return;
+        }
+        if (!v.isTextual()) throw new IllegalArgumentException(at + "." + variant + ": expected a string, got " + v);
+        if (variant.equals("number") && !CASE_NUMBER.matcher(v.asText()).matches())
+            throw new IllegalArgumentException(at + " \"" + v.asText() + "\" is not the uchar-case-v0 number lexeme"
+                    + " [-]digits[.digits] or [-]digits/digits, the denominator without a leading 0");
+        if (dt instanceof Datatype.Enumeration en
+                && en.values().stream().noneMatch(label -> Namen.norm(label).equals(Namen.norm(v.asText()))))
+            throw new IllegalArgumentException(at + ": \"" + v.asText() + "\" is not a declared enumeration value");
     }
 
     // ---------------- §13.3.6 temporal input (the List<Segment> bean members) ----------------

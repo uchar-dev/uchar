@@ -9,6 +9,12 @@ import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.core.Namen;
+import dev.uchar.regelspraak.transpiler.tms.Period;
+import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
+
+import org.kie.api.definition.KiePackage;
+import org.kie.api.definition.rule.Global;
+import org.kie.api.runtime.KieSession;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -16,12 +22,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Predicate;
 
 /**
  * The input step of one {@code uchar-case-v0} case on a build of the Drools backend: the beans its instances describe,
@@ -142,6 +151,7 @@ public final class CaseInput {
 
     /** The runner whose value readers the comparison shares: values, dates, timelines, declared member names. */
     private final CaseRunner reader;
+    private final DroolsBackend.Build build;
     private final RegelSpraakModel model;
     private final ClassLoader cl;
     /** The case's evaluation date, read BEFORE the inputs are set: the asOfDate-bucket convention places a scalar input
@@ -162,9 +172,13 @@ public final class CaseInput {
     /** Per bean and per getter of a to-one reference field, the link of the case that wrote the field, which a collision
      *  of the reverse leg names ({@link #mirrorReciprocalRoles}). */
     private final Map<Object, Map<String, RoleLink>> writers = new IdentityHashMap<>();
+    /** The parameters the case binds, each under the name of the global a build declares for its declaration
+     *  ({@link Namen#ident} of the declared name), with the value the session reads: what {@link #setGlobals} sets. */
+    private final Map<String, Object> parameters = new LinkedHashMap<>();
 
     private CaseInput(DroolsBackend.Build build, LocalDate evaluationDate) {
         this.reader = CaseRunner.reader(build);
+        this.build = build;
         this.model = build.model();
         this.cl = build.beanLoader();
         this.evaluationDate = evaluationDate;
@@ -196,6 +210,7 @@ public final class CaseInput {
             for (JsonNode i : instances) inputData.setRoles(i);
             inputData.mirrorReciprocalRoles();
             inputData.refuseLinkCycles(build, instances);
+            inputData.readParameters(input.get("parameters"));
             return inputData;
         } finally {
             Thread.currentThread().setContextClassLoader(previous);
@@ -237,6 +252,54 @@ public final class CaseInput {
                 inputData.list(perHolder.getKey(), l.role, members);
             }
         return inputData;
+    }
+
+    /**
+     * Sets on {@code session}, a fresh session of the build this case was read on, the globals of the case that the
+     * build declares: every parameter the case binds, under its declared name, the evaluation date as
+     * {@code rekendatum}, and on the DRL-text branch the day-kind predicates ({@link DroolsBackend.Build#dayKindGlobals}).
+     * A parameter no lowered rule reads is no global of the build and is not set. A parameter a rule reads and the case
+     * does not bind stays null, and its read faults EF-014 where the evaluation reaches it (RUNTIME-SEMANTICS ch. 5.7
+     * step 2).
+     */
+    public void setGlobals(KieSession session) {
+        Objects.requireNonNull(session, "session");
+        Set<String> declared = new HashSet<>();
+        for (KiePackage p : build.kieBase().getKiePackages())
+            for (Global g : p.getGlobalVariables()) declared.add(g.getName());
+        for (Map.Entry<String, Object> e : parameters.entrySet())
+            if (declared.contains(e.getKey())) session.setGlobal(e.getKey(), e.getValue());
+        if (evaluationDate != null && declared.contains(TmsTranspiler.REKENDATUM))
+            session.setGlobal(TmsTranspiler.REKENDATUM, evaluationDate);
+        for (Map.Entry<String, Predicate<LocalDate>> e : build.dayKindGlobals().entrySet())
+            session.setGlobal(e.getKey(), e.getValue());
+    }
+
+    /** Reads {@code input.parameters} as the reference interpreter's case reader reads it (RUNTIME-SEMANTICS ch. 5.7
+     *  step 3): every name a declared parameter under the name equality of {@link Namen#norm}, a time-dependent one
+     *  with a timeline on its grid, any other with a value of its datatype, each held to the input-precision fence. */
+    private void readParameters(JsonNode params) {
+        if (params == null) return;
+        if (!params.isObject())
+            throw new IllegalArgumentException("input.parameters: expected an object, got " + params);
+        for (Map.Entry<String, JsonNode> e : params.properties()) {
+            RegelSpraakModel.Parameter declared = Namen.byName(model.parameters, e.getKey());
+            if (declared == null) throw new IllegalArgumentException("parameter \"" + e.getKey() + "\" is not declared");
+            String at = "parameter " + e.getKey();
+            JsonNode w = e.getValue();
+            boolean granular = declared.granularity() != null;
+            if (CaseRunner.isTimeline(w) != granular)
+                throw new IllegalArgumentException(at + (granular
+                        ? ": a scalar value on a granular parameter (it takes a timeline)"
+                        : ": a timeline value on a non-granular parameter"));
+            if (!granular) CaseRunner.typed(w, declared.datatype(), at);
+            CaseRunner.inputFits(w, declared.datatype(), at);
+            Object value = granular
+                    ? Period.list(reader.timelineSegments(w.get("timeline"), e.getKey(), at, new CaseRunner.Grid(
+                            declared.granularity(), 1, declared.fixedStartPoint(), false), false))
+                    : reader.valueToArg(w, e.getKey());
+            parameters.put(Namen.ident(declared.name(), false), value);
+        }
     }
 
     private void beanFor(JsonNode i) {
