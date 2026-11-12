@@ -111,7 +111,9 @@ Within that claim, per item:
   >
   > Files in this repository. Copied verbatim from the source: the 47
   > definition fragments `toka/casus/toka-*.rgs`. Derived from them or own
-  > work: the IR dump `toka/casus/ir.json` and the 29 IR slices
+  > work: the fragment `toka/casus/own-declarations.rgs`, which declares the
+  > six members the fragments use and do not declare, as the IR slices
+  > declare them; the IR dump `toka/casus/ir.json` and the 29 IR slices
   > `toka/cases/scenario-*/ir.json` (the dump and 22 of the slices carry text
   > of the fragments in their source snippets); the 29 case files
   > `toka/cases/scenario-*/case.json`, with situations and expected values
@@ -266,8 +268,10 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
     and pass against it; every toolchain-pinned `toka/**/ir.json` re-emits through uchar's frontend byte-identically.
     This is a regression form: the zone migrates with every wire landing (the casus dump re-emitted by the frontend,
     the slices through the landing's migration script), so the comparison proves frontend ≡ the recorded state;
-    `toka/README.md` lists each landing under its deliberate divergences. `HOLDOUTS` (casus quirks and fragments
-    where uchar deliberately diverges from the toolchain) is reason-carrying and stale-failing; a manifest entry that
+    `toka/README.md` lists each landing under its deliberate divergences. `HOLDOUTS` (casus quirks, fragments
+    where uchar deliberately diverges from the toolchain, and the allocations after the first to one target) is
+    reason-carrying and stale-failing; the zone's own declarations (`toka/casus/own-declarations.rgs`) re-emit with
+    the fragments; a manifest entry that
     expects a fault or a refusal names its fragment. A well-formedness leg
     holds every replay slice verifier-clean (the workspace `_build` verifier), with `VERIFIER_HOLDOUTS`
     reason-carrying and stale-failing; the casus dump stays outside it (its scenarios write the same targets each in
@@ -278,7 +282,7 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
     backend (`backends/drools`, a shaded Maven runtime uber-jar, jar-only) loads every golden's `ir.json` off the
     wire — never the RegelSpraak source, which serves only as an internal test comparison — builds a KieBase through
     the exec-model branch, the lowering with truth maintenance (`transpiler/tms`), and replays every `case*.json`. A
-    played golden replays with exactly the expectations gates 5 and 6 verify: a played pass is ref ≡ clingo ≡ Drools.
+    played golden replays with exactly the expectations gates 5 and 6 verify: a played pass is ref ≡ clingo ≡ Drools. Its status line is `PLAYED n`, n the number of the golden's case files.
     What the lowering carries is in `backends/drools/README.md`. A form it does not carry is refused with a code
     `DROOLS-###` from one register (`backends/drools/.../refusal/DroolsCode.java`) at the head of its report
     (`EXCLUDE DROOLS-###: <sentence>`), grouped in the gate report. `EXPECTED_CHANNEL` lists every non-played golden
@@ -374,24 +378,30 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
     those case files, gates 5, 6 and 12 replay them. Floors: `EXPECTED_MIN_SCENARIO_GOLDENS`,
     `EXPECTED_MIN_SCENARIO_CASES`.
 
-17. `scripts/check-readings.sh` — the reading of a condition at the fixpoint (RUNTIME-SEMANTICS ch. 5.12, which
-    defines the canonical text, timeline targets, constructor values and displaced defaults included). The ref
-    trace (`runner --trace`, `ref/lib/reading.ml`: per form with a condition and object it runs on, the condition
-    evaluated on the fixpoint world through an observer, per node) and the backend's readings
-    (`DroolsBackendMain --readings`) are held equal per golden case file, on both branches; the two share no code
-    (gate 1). The trace reads every golden case file; per golden both branches end in `READINGS <n>`, n its case
-    files, or in the `EXCLUDE` line the plain replay prints; an `ERROR` fails unless `READINGS_ERROR_KNOWN` lists
-    it. Every line is compared verbatim — the object a role path reached (`on "<object>"`, `on none`) and a
-    `DISPLACED` default's node lines included — except the position of a contributor of a quantifier fold: member
-    and verdict, value or fault are compared verbatim, the position (`reached`/`unreached`) where both write one
-    (`unordered` where the session keeps no order), and where the backend writes `unordered` no contributor of the
-    trace may carry a fault (a tripwire, held on a listed case too). A difference fails unless `DEVIATIONS` names case
-    and branch; both lists are reason-carrying and stale-failing in both directions, and the comparison rule, the
-    tripwire, the object reader and the displaced counter pass rows of their own. Traces run on one process per
-    core. Floors: `EXPECTED_MIN_TRACED_CASES`, `EXPECTED_MIN_COMPARED_GOLDENS`, `EXPECTED_MIN_COMPARED_CASES`,
+17. `scripts/check-readings.sh` — the reading of a condition at the fixpoint and the end state of the session
+    (RUNTIME-SEMANTICS ch. 5.12 and 5.12a, which define the canonical text, timeline targets, constructor values and
+    displaced defaults included). The ref trace (`runner --trace`, `ref/lib/reading.ml`: per form with a condition
+    and object it runs on, the condition evaluated on the fixpoint world through an observer, per node;
+    `ref/lib/end_state.ml`: the end state, each line after `state `) and the backend's readings
+    (`DroolsBackendMain --readings`, the end state through the outcome reader `DroolsBackend.endStateOf`) are held
+    equal per golden case file, on both branches; the two share no code (gate 1). The trace reads every golden case
+    file; per golden both branches end in `READINGS <n>`, n its case files, or in the `EXCLUDE` line the plain replay
+    prints; an `ERROR` fails unless `READINGS_ERROR_KNOWN` lists it. Every reading line is compared verbatim — the
+    object a role path reached (`on "<object>"`, `on none`) and a `DISPLACED` default's node lines included — except
+    the position of a contributor of a quantifier fold: member and verdict, value or fault are compared verbatim, the
+    position (`reached`/`unreached`) where both write one (`unordered` where the session keeps no order), and where
+    the backend writes `unordered` no contributor of the trace may carry a fault (a tripwire, held on a listed case
+    too). A difference fails unless `DEVIATIONS` names case and branch. The end state — every object, of the input
+    and made by a creation, with its type; every attribute with a value, a timeline as its segments; every
+    characteristic that holds; every link; the §9.5 facts — is compared line for line, verbatim; a difference fails
+    unless `STATE_DEVIATIONS` names case and branch. The three lists are reason-carrying and stale-failing in both
+    directions, and the comparison rule, the tripwire, the object reader, the displaced counter, the end-state
+    comparison and its counter pass rows of their own. Traces run on one process per core. Floors:
+    `EXPECTED_MIN_TRACED_CASES`, `EXPECTED_MIN_COMPARED_GOLDENS`, `EXPECTED_MIN_COMPARED_CASES`,
     `EXPECTED_MIN_READINGS`, `EXPECTED_MIN_NODE_LINES`, `EXPECTED_MIN_UNREACHED`, `EXPECTED_MIN_CONTRIBUTOR_LINES`,
     `EXPECTED_MIN_TIMELINE_LINES`, `EXPECTED_MIN_UNREACHED_CONTRIBUTORS`, `EXPECTED_MIN_OBJECT_LINES`,
-    `EXPECTED_MIN_DISPLACED_NODE_LINES`.
+    `EXPECTED_MIN_DISPLACED_NODE_LINES`, `EXPECTED_MIN_STATE_OBJECTS`, `EXPECTED_MIN_STATE_MEMBERS`,
+    `EXPECTED_MIN_STATE_MADE`.
 
 **Counting floors (maintainer decision 2026-09-09).** Beside the non-empty checks and the name-carrying lists, every
 gate whose count could shrink unseen carries an `EXPECTED_MIN_<name>` constant in its own script, with its reason and
