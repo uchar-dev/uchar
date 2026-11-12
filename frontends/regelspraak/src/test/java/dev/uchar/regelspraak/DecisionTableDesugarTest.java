@@ -195,13 +195,13 @@ class DecisionTableDesugarTest {
     }
 
     @Test void characteristic_condition_false_negates_each_characteristic_shape() {
-        // bezittelijk "een"->"geen"; trailing-verb "X is"->"is niet X" (NOT a silently-positive "X is niet").
+        // bezittelijk "een"->"geen"; trailing-verb "X is"->"niet X is" (NOT a silently-positive "X is niet").
         List<String> headers = List.of("", "de belasting van een Klant moet gesteld worden op",
                 "indien hij een recht op duurzaamheidskorting heeft", "indien hij gepensioneerd is");
         List<List<String>> rows = List.of(List.of("1", "10", "onwaar", "onwaar"));
         String r = DecisionTableDesugar.desugar("X", "altijd", headers, rows).get(0);
         assertTrue(r.contains("hij geen recht op duurzaamheidskorting heeft"), r);
-        assertTrue(r.contains("hij is niet gepensioneerd"), r);
+        assertTrue(r.contains("hij niet gepensioneerd is"), r);
     }
 
     @Test void forbidden_conclusions_are_rejected_with_a_warning_not_mis_rendered() {
@@ -277,6 +277,47 @@ class DecisionTableDesugarTest {
         assertTrue(m.diagnostics.isEmpty(), () -> "geen diagnostic verwacht: " + m.diagnostics);
         assertEquals("atLeast1[zijn ongelijkheidsklasse gelijk is aan 1, zijn ongelijkheidsklasse gelijk is aan 2]",
                 BulletDepthTest.tree(m.resolvedRules.get(0).condition()));
+    }
+
+    /** A cell "onwaar" under a characteristic column that is a row's only condition stands right after "indien",
+     *  where only the subordinate order parses: "hij niet gekeurd is". */
+    @Test void false_characteristic_cell_as_the_only_condition_resolves() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Vondst (mv: Vondsten)
+                de bonus Numeriek (geheel getal);
+                is gekeurd kenmerk (bijvoeglijk);
+
+            Beslistabel bonus
+                geldig altijd
+            | | de bonus van een Vondst moet gesteld worden op | indien hij gekeurd is |
+            |---|---|---|
+            | 1 | 7 | waar |
+            | 2 | 1 | onwaar |
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "geen diagnostic verwacht: " + m.diagnostics);
+        assertEquals(2, m.resolvedRules.size());
+        assertTrue(m.resolvedRules.get(1).condition() instanceof dev.uchar.regelspraak.ir.Condition.CharacteristicCheck k
+                && k.negation(), () -> "rij 2 leest 'niet gekeurd': " + m.resolvedRules.get(1).condition());
+    }
+
+    /** A cell "waar" or "onwaar" under a comparison header ("… gelijk is aan") is the right operand, a Boolean
+     *  value, not a characteristic check. */
+    @Test void boolean_cell_under_a_comparison_is_the_operand() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Vondst (mv: Vondsten)
+                de vlag Boolean;
+                de vondstpremie Numeriek (geheel getal);
+
+            Beslistabel vondstpremie
+                geldig altijd
+            | | de vondstpremie van een Vondst moet gesteld worden op | indien zijn vlag gelijk is aan |
+            |---|---|---|
+            | 1 | 10 | waar |
+            | 2 | 3 | onwaar |
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "geen diagnostic verwacht: " + m.diagnostics);
+        assertEquals(2, m.resolvedRules.size());
+        assertEquals("zijn vlag gelijk is aan onwaar", m.resolvedRules.get(1).condition().source().snippet());
     }
 
     @Test void desugared_rows_resolve_through_the_existing_pipeline() {

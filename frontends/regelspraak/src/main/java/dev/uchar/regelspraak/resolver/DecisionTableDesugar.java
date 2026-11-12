@@ -82,9 +82,11 @@ public final class DecisionTableDesugar {
                     String cell = cellAt(row, dc).trim();
                     if (isNvt(cell)) continue;
                     String head = stripIf(headers.get(dc).trim());
-                    if (cell.equalsIgnoreCase("waar"))         // a kenmerk conditie that holds -> the kop IS the check
+                    // under a comparison header ("… gelijk is aan") "waar" and "onwaar" are the Boolean operand
+                    boolean characteristic = !COMPARISON_HEAD.matcher(head).find();
+                    if (characteristic && cell.equalsIgnoreCase("waar"))  // a kenmerk conditie that holds -> the kop IS the check
                         conditions.add(new Condition(head, List.of()));
-                    else if (cell.equalsIgnoreCase("onwaar"))  // a kenmerk conditie that must NOT hold -> negate the check
+                    else if (characteristic && cell.equalsIgnoreCase("onwaar"))  // must NOT hold -> negate the check
                         conditions.add(new Condition(negateCharacteristicHead(head), List.of()));
                     else {
                         // §5.7: "is gelijk aan" series uses "of" (a DISJUNCTION, ≤1 value matches); "is ongelijk aan"
@@ -149,16 +151,16 @@ public final class DecisionTableDesugar {
 
     /** Negate a kenmerk-check kop (an "onwaar" conditie cell): a §3.4 bezittelijk check "hij een recht … heeft" →
      *  "hij geen recht … heeft"; a §3.3 bijvoeglijk check with a leading verb "hij is X" → "hij is niet X" or a
-     *  trailing verb "hij X is" → "hij X is niet". A kop that matches none is returned with a leading "niet "
+     *  trailing verb "hij X is" → "hij niet X is". A kop that matches none is returned with a leading "niet "
      *  (a best-effort the resolver rejects → an honest skip of that row, not a silent mis-render). */
     private static String negateCharacteristicHead(String head) {
         if (head.contains(" een ")) return head.replaceFirst(" een ", " geen ");   // bezittelijk: "heeft een" -> "heeft geen"
-        // trailing-verb bijvoeglijk "<vnw> <kenmerk> is" -> the VERIFIED leading-verb negation "<vnw> is niet <kenmerk>"
-        // ("hij gepensioneerd is" -> "hij is niet gepensioneerd"). Appending "is niet" instead is parsed as POSITIVE
-        // (the trailing "niet" is dropped) — a silent mis-render, hence the rebuild.
+        // trailing-verb bijvoeglijk "<vnw> <kenmerk> is" -> "<vnw> niet <kenmerk> is": the subordinate order parses
+        // right after "indien" (a row's only condition) as well as in a bullet. Appending "is niet" instead is parsed
+        // as POSITIVE (the trailing "niet" is dropped), and the leading-verb order does not parse after "indien".
         java.util.regex.Matcher m = java.util.regex.Pattern
                 .compile("(?i)^(hij|zij|ze|het|die|er)\\s+(.+?)\\s+(is|zijn)$").matcher(head);
-        if (m.matches()) return m.group(1) + " " + m.group(3) + " niet " + m.group(2);
+        if (m.matches()) return m.group(1) + " niet " + m.group(2) + " " + m.group(3);
         if (head.contains(" is ")) return head.replaceFirst(" is ", " is niet ");  // leading-verb: "hij is X" -> "hij is niet X"
         return "niet " + head;   // best-effort -> the resolver rejects -> an HONEST skip of the row (not silent)
     }
@@ -279,6 +281,9 @@ public final class DecisionTableDesugar {
         String c = cell.replace(".", "").trim();
         return c.equalsIgnoreCase("nvt") || c.isEmpty();
     }
+    /** A condition header whose predicate takes the cell as its right operand ("… gelijk is aan", "… groter is dan"). */
+    private static final java.util.regex.Pattern COMPARISON_HEAD =
+            java.util.regex.Pattern.compile("(?i)\\s(aan|dan)$");
     /** A condition header whose predicate is the inequality ("… ongelijk is aan"). */
     private static final java.util.regex.Pattern NOT_EQUAL_HEAD =
             java.util.regex.Pattern.compile("(?i)(^|\\s)ongelijk(\\s+is)?\\s+aan$");
