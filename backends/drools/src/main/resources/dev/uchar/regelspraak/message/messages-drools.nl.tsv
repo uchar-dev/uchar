@@ -431,6 +431,7 @@ DROOLS-366	{description}: {end} is een {objectType} en vult de rol '{role}' van 
 DROOLS-367	{description} komt twee keer voor
 DROOLS-368	het tekstdeel '{snippet}' schrijft de eenheid van zijn getal, en {type} heeft geen eenheid (WF-129)
 DROOLS-369	het tekstdeel '{snippet}' schrijft de eenheid {unit}, en geen eenheidstelsel van het document declareert haar factor '{factor}' van het eenheidstelsel '{unitSystem}': een factor zonder declaratie heeft geen symbool om te schrijven
+EF-002	de rol "{role}" van "{label}" verwijst naar het onbekende label "{target}"
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-004	invoer {place} = {value} past niet in {decimals} decimalen: een casewaarde waarvan de declaratie de exacte waarde niet kan houden, wordt bij de invoer geweigerd (RUNTIME-SEMANTICS ch. 2.4, 5.7)

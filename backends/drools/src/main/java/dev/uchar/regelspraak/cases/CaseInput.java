@@ -74,9 +74,10 @@ import java.util.function.Predicate;
  * <ul>
  *   <li>a form this backend does not carry (a rational value, …): a {@link CaseRunner.Excluded}, in the sentence of the
  *       replay's report;</li>
- *   <li>a role link the bean model cannot hold (a label no instance carries, a role that reaches no to-one reference
- *       field, a field a declared member of the same name displaces): a {@link RoleRefusal}, a
- *       {@link CaseRunner.Excluded} as well;</li>
+ *   <li>a role link the bean model cannot hold (a role that reaches no to-one reference field, a field a declared
+ *       member of the same name displaces): a {@link RoleRefusal}, a {@link CaseRunner.Excluded} as well;</li>
+ *   <li>a role link that names a label no instance carries (EF-002): a {@link LinkTargetFault}, an
+ *       {@link IllegalArgumentException};</li>
  *   <li>a second, different target on a to-one reference field, one relation instance per to-one role (WF-013), which
  *       the reference interpreter refuses at load: a {@link RoleCollision}, an {@link IllegalArgumentException}, since the
  *       case is wrong;</li>
@@ -87,7 +88,7 @@ import java.util.function.Predicate;
  *       on an attribute without dimensions, …): an {@link IllegalArgumentException}, as the reference interpreter
  *       refuses it at load.</li>
  * </ul>
- * The two refusals of a role link name the link the case wrote ({@link RoleError}), so a consumer can point at the field
+ * The three refusals of a role link name the link the case wrote ({@link RoleError}), so a consumer can point at the field
  * of its own request that wrote it. While it reads, {@link #of} holds {@link DroolsBackend.Build#beanLoader()} as the
  * thread's context class loader, and gives the previous one back.
  */
@@ -125,9 +126,9 @@ public final class CaseInput {
         @Override public String target() { return target; }
     }
 
-    /** A role link this backend does not carry: a label no instance of the case carries, a role that reaches no to-one
-     *  reference field, or a field a declared member of the same name displaces. A {@link CaseRunner.Excluded}, which the
-     *  report gives as MARKER and the replay as EXCLUDE. */
+    /** A role link this backend does not carry: a role that reaches no to-one reference field, or a field a declared
+     *  member of the same name displaces. A {@link CaseRunner.Excluded}, which the report gives as MARKER and the replay
+     *  as EXCLUDE. */
     public static final class RoleRefusal extends CaseRunner.Excluded implements RoleError {
         private final String label, role, target;
 
@@ -143,6 +144,42 @@ public final class CaseInput {
         @Override public String role() { return role; }
 
         @Override public String target() { return target; }
+    }
+
+    /** A role link of the case input that names a label no instance of the case carries (EF-002, RUNTIME-SEMANTICS
+     *  ch. 5.7b): a fault kind of the case input, with the role key as the case writes it, the label of the instance whose
+     *  {@code roles} hold the link, and the label it names. */
+    public static final class LinkTargetFault extends IllegalArgumentException implements RoleError {
+        private static final long serialVersionUID = 1L;
+
+        private final String label, role, target;
+
+        LinkTargetFault(RoleLink link) {
+            super(dev.uchar.regelspraak.message.Msg.drools("EF-002", "role", link.role(), "label", link.label(), "target",
+                    link.target()).text());
+            this.label = link.label();
+            this.role = link.role();
+            this.target = link.target();
+        }
+
+        @Override public String label() { return label; }
+
+        @Override public String role() { return role; }
+
+        @Override public String target() { return target; }
+
+        public String code() {
+            return "EF-002";
+        }
+
+        /** The parameters of the kind (ch. 5.7b): the role key, the label of the instance and the label it names. */
+        public Map<String, String> params() {
+            Map<String, String> out = new LinkedHashMap<>();
+            out.put("role", role);
+            out.put("label", label);
+            out.put("target", target);
+            return out;
+        }
     }
 
     /** One link the case wrote: under the {@code roles} of instance {@code label}, the key {@code role}, naming
@@ -588,8 +625,7 @@ public final class CaseInput {
             for (JsonNode labelNode : e.getValue()) {
                 RoleLink link = new RoleLink(i.get("label").asText(), written.getKey(), labelNode.asText());
                 Object target = labelToBean.get(labelNode.asText());
-                if (target == null)
-                    throw new RoleRefusal(DroolsCode.ROLE_UNKNOWN_LABEL.reason("role", written.getKey(), "label", labelNode.asText()), link);
+                if (target == null) throw new LinkTargetFault(link);
                 ObjectType tL = beanObjectType(target);
                 ObjectType filler = far.size() == 1 ? model.objectTypeByName(far.get(0).objectTypeName()) : null;
                 if (filler != null && !tL.isA(filler))

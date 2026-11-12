@@ -602,6 +602,7 @@ public final class CaseRunner {
             else if (c instanceof CaseInput.LinkCycleFault l) kind = new FaultKind(l.code(), l.params());
             else if (c instanceof CaseInput.CellFault f) kind = new FaultKind(f.code(), f.params());
             else if (c instanceof CaseInput.NameFault f) kind = new FaultKind(f.code(), f.params());
+            else if (c instanceof CaseInput.LinkTargetFault f) kind = new FaultKind(f.code(), f.params());
             if (kind != null) {
                 String code = kind.code();
                 if (kinds.stream().noneMatch(k -> k.code().equals(code))) kinds.add(kind);

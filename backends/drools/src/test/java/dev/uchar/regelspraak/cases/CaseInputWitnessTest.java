@@ -144,10 +144,12 @@ class CaseInputWitnessTest {
 
     // ---------------- a link the bean model cannot hold ----------------
 
-    @Test void an_unknown_target_label_is_refused_with_the_link() throws Exception {
-        CaseInput.RoleError f = roleError(() -> CaseInput.of(build(KETENBAND), chain("Wachter", "rangnummer",
-                List.of("W1", "W2"), Map.of("W1", Map.of("opvolgers", List.of("W2", "W9"))))));
-        refusal(f, "W1", "opvolgers", "W9", "role 'opvolgers' names unknown label W9");
+    @Test void an_unknown_target_label_is_a_fault_of_the_case_input_with_the_link() throws Exception {
+        CaseInput.LinkTargetFault f = assertThrows(CaseInput.LinkTargetFault.class, () -> CaseInput.of(build(KETENBAND),
+                chain("Wachter", "rangnummer", List.of("W1", "W2"), Map.of("W1", Map.of("opvolgers", List.of("W2", "W9"))))));
+        assertEquals(List.of("W1", "opvolgers", "W9"), List.of(f.label(), f.role(), f.target()), f.getMessage());
+        assertEquals("EF-002", f.code());
+        assertEquals(Map.of("role", "opvolgers", "label", "W1", "target", "W9"), f.params());
     }
 
     @Test void a_role_link_to_another_type_than_its_filler_is_a_defect_of_the_case() throws Exception {

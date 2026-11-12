@@ -69,7 +69,7 @@ public enum DroolsCode {
     CASE_UNKNOWN_OBJECT_TYPE("DROOLS-045", Kind.RETIRED, "case-unknown-object-type", "objectType", null),
     CASE_UNDECLARED_ATTRIBUTE("DROOLS-046", Kind.RETIRED, "case-undeclared-attribute", "attribute,objectType", null),
     DIMENSIONED_ATTRIBUTE_INPUT("DROOLS-047", Kind.RETIRED, "dimensioned-attribute-input", "attribute", null),
-    ROLE_UNKNOWN_LABEL("DROOLS-048", Kind.CONTRACT, "role-unknown-label", "role,label", "EF-002"),
+    ROLE_UNKNOWN_LABEL("DROOLS-048", Kind.RETIRED, "role-unknown-label", "role,label", null),
     CASE_ROLE_NO_FIELD("DROOLS-049", Kind.LIMIT, "case-role-no-field", "role,fromType,toType,viaReason,directionReason", null),
     NAME_SHARING_ONE_ROLE("DROOLS-050", Kind.LIMIT, "name-sharing-one-role", "role,targetRole,objectType,cause", null),
     SCALAR_TEMPORAL_NO_DATE("DROOLS-051", Kind.CONTRACT, "scalar-temporal-no-date", "attribute", "EF-020"),

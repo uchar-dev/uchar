@@ -216,6 +216,16 @@ class CaseReaderWitnessTest {
         caseError(HAVENKETEN, c, "both name the role \"havenjutter\"; deliver one key");
     }
 
+    @Test void a_role_link_to_a_label_no_instance_carries_faults_with_ef_002() {
+        Path red = Path.of("..", "..", "corpus", "red", "unknown-role-target-label");
+        for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
+            CaseRunner.RedResult r = CaseRunner.runRed(red.resolve("ir.json"), red.resolve("case1.json"), branch);
+            assertEquals("FAULT", r.status(), branch + ": " + r.detail());
+            assertEquals("EF-002", r.code(), branch.toString());
+            assertEquals(List.of(Map.of("role", "liggers", "label", "H1", "target", "S9")), r.params(), branch.toString());
+        }
+    }
+
     @Test void a_parameter_the_case_does_not_bind_faults_where_a_rule_reads_it() {
         // case1 leaves aanvoertarief unbound, read in a value; case2 aanvoerdrempel, read in a condition
         Path red = Path.of("..", "..", "corpus", "red", "aanvoergeld-parameter-unbound");
