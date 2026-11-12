@@ -2464,7 +2464,12 @@ fold is the ordinary aggregation of ch. 1.2: a member without a timeline
 contributes **0**, the total of its absent timeline, and for `het totaal van`
 an empty set totals **0** in the unit the total carries by its declarations
 (ch. 2.10); `de som van` over the same shape folds alike inside and keeps the
-som's leeg rule outside, for the empty set. Every other aggregation over a
+som's leeg rule outside, for the empty set. That double fold is the reading of
+`de som van` on a scalar target: as an operand of a comparison in a condition
+per period (ch. 3.10) a sum over members of a time-dependent attribute is
+refused by name by every executor, as a comparison of two own timelines is,
+and not read as the double fold on every day or on none (witness
+`ref/test/fixtures/conditions-per-period/member-sum`; Drools DROOLS-309). Every other aggregation over a
 time-dependent member of a set — minimum, maximum, eerste, laatste, aantal,
 aantal gevulde — is **refused**: there is no defined moment of the timeline
 for it to rank or count (ch. 3.4c, 3.12), and reading the segment list
