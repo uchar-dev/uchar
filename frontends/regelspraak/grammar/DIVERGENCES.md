@@ -1369,7 +1369,8 @@ premie van een Jutter in voorjaar moet gesteld worden op 10", with the label
 after the subject, puts the label into the subject text and would write the
 whole attribute; it is refused with the cell named (attribute, dimension,
 label; RGS-308). A target that names a dimensioned attribute without a label
-writes the whole attribute, which the verifier refuses (WF-125). Witnesses:
+would write the whole attribute (WF-125 (b)); it is refused as a cell without
+those labels is, with RGS-364 once per dimension. Witnesses:
 `DimensionTargetTest`, `CellEdgesTest` (the dependency graph per cell, as the
 verifier's), and the golden `jutterswet-seizoenboeking`.
 

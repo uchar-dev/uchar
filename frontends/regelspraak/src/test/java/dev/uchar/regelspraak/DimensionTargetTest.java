@@ -264,4 +264,23 @@ class DimensionTargetTest {
         assertEquals(1, faults.size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
         assertEquals("RGS-165", faults.get(0).code(), faults.get(0).message());
     }
+
+    /** A target that names a dimensioned attribute without any label writes the whole attribute, which has a value per
+     *  cell and none of its own (IR-SPEC WF-125 (b)): refused as a cell that misses its labels is, once per dimension.
+     *  Before, the rule went to disk without a diagnostic and the verifier refused it (WF-125.whole-write). */
+    @Test void a_target_that_writes_the_whole_dimensioned_attribute_is_refused() {
+        String source = rule("De premie van een Jutter moet gesteld worden op 10.");
+        RegelSpraakModel m = Resolver.resolve(source);
+        DimensionCellTest.assertOneError(m, "RGS-364", java.util.Map.of("written", "De premie van een Jutter",
+                "attribute", "premie", "dimension", "seizoen"));
+        assertEquals(List.of(source.split("\n", -1)).indexOf("        De premie van een Jutter moet gesteld worden op 10.") + 1,
+                m.diagnostics.get(0).line());
+    }
+
+    @Test void a_whole_target_over_two_dimensions_is_refused_per_dimension() {
+        RegelSpraakModel m = Resolver.resolve(rule("De strandpremie van een Jutter moet berekend worden als zijn bonus."));
+        assertEquals(List.of("RGS-364 seizoen", "RGS-364 strand"),
+                m.diagnostics.stream().map(d -> d.code() + " " + d.args().get("dimension")).toList());
+        assertTrue(m.diagnostics.stream().allMatch(d -> d.severity() == RegelSpraakModel.Severity.ERROR), m.diagnostics::toString);
+    }
 }

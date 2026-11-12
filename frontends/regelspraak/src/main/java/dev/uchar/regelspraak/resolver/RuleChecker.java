@@ -919,7 +919,16 @@ final class RuleChecker {
                 refusedTargets.add(r);
                 model.diagnostics.add(error.frame("rule-target", "written", written)
                         .at(Severity.ERROR, line));
+                continue;
             }
+            // WF-125 (b): a target that names a dimensioned attribute without a label of each dimension writes the whole
+            // attribute, which has a value per cell and none of its own; refused as a cell that misses those labels is
+            if (r.kind() != ResolvedRule.Kind.KENMERKTOEKENNING && r.target() == a)
+                for (String dimension : a.objectType().dimensionsOf(a.attribute())) {
+                    refusedTargets.add(r);
+                    model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-364", params("written", written,
+                            "attribute", a.objectType().attributeName(a.attribute()), "dimension", dimension), line));
+                }
         }
     }
 
