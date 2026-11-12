@@ -471,7 +471,8 @@ let write_char_timeline_by w ~form ~label ~char periods =
   let i = get w label in
   let before = SMap.find_opt (norm char) i.ctls in
   if (not (Key.mem key w.char_writes)) && Option.value before ~default:[] <> [] then
-    (* EF-041 (ch. 5.7b, ch. 3.12): a form without a meaning *)
+    (* EF-041 (ch. 5.7b, ch. 3.12): the case gives the form no meaning, so it
+       is a fault of this session, not a form refused by name *)
     Value.faultc ~params:[ ("characteristic", char); ("label", label) ] "EF-041"
       "the case supplies true periods of the time-dependent characteristic %S of %S, which a rule writes \
        (ch. 3.12)"
