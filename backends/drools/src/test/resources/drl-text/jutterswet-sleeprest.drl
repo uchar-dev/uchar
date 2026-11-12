@@ -12,7 +12,7 @@ global java.math.BigDecimal bergingsfactor;
 // 50 min de bergingsfactor maal de sleepafstand van de Berging
 function Object waarde_resterendeSleepafstandVanEenBerging(Object $bergingsfactor, Object $sleepafstand) {
     try {
-        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMin(new java.math.BigDecimal("50"), RegelSpraakRuntime.rsMaal($bergingsfactor, $sleepafstand)), Integer.valueOf(2), "resterende sleepafstand", null);
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMin(new java.math.BigDecimal("50"), RegelSpraakRuntime.rsMaal(ComputeHelpers.required($bergingsfactor, "parameter \"bergingsfactor\" is unbound in this case (binding is fail-fast, ch. 5.7)"), $sleepafstand)), Integer.valueOf(2), "resterende sleepafstand", null);
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }

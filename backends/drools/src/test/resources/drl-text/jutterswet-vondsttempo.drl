@@ -91,7 +91,12 @@ end
 
 // zijn vondsttempo groter is dan de meldingsdrempel
 function boolean toets_ijverig(Object $vondsttempo, Object $meldingsdrempel) {
-    return RegelSpraakRuntime.rsAggVergelijk($vondsttempo, ComputeHelpers.restateExact($meldingsdrempel, new java.math.BigDecimal("1"), new java.math.BigDecimal("7")), ">");
+    try {
+        return RegelSpraakRuntime.rsAggVergelijk($vondsttempo, ComputeHelpers.restateExact(ComputeHelpers.required($meldingsdrempel, "parameter \"meldingsdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), new java.math.BigDecimal("1"), new java.math.BigDecimal("7")), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
 }
 
 rule "ijverig"
@@ -105,9 +110,50 @@ then
     insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "ijverig", true)));
 end
 
+// zijn vondsttempo groter is dan de meldingsdrempel
+function boolean toets_ijverigFoutInDeVoorwaarde(Object $vondsttempo, Object $meldingsdrempel) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk($vondsttempo, ComputeHelpers.restateExact(ComputeHelpers.required($meldingsdrempel, "parameter \"meldingsdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), new java.math.BigDecimal("1"), new java.math.BigDecimal("7")), ">");
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn vondsttempo groter is dan de meldingsdrempel
+function Object fout_ijverigFoutInDeVoorwaarde(Object $vondsttempo, Object $meldingsdrempel) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk($vondsttempo, ComputeHelpers.restateExact(ComputeHelpers.required($meldingsdrempel, "parameter \"meldingsdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), new java.math.BigDecimal("1"), new java.math.BigDecimal("7")), ">");
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "ijverig: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $parameter_1 : ParameterState( parameter == "meldingsdrempel", $meldingsdrempel : value )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "vondsttempo", false), subject == $onderwerp, $vondsttempo : value )
+    eval( toets_ijverigFoutInDeVoorwaarde($vondsttempo, $meldingsdrempel) )
+then
+    Object f = fout_ijverigFoutInDeVoorwaarde($vondsttempo, $meldingsdrempel);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("the condition of \"ijverig\" failed in the test and not in the consequence, over the same bound values");
+    }
+    insertLogical(new Fault($onderwerp, "ijverig", ComputeHelpers.designate(f, "ijverig")));
+end
+
 // zijn vondsttempo gelijk is aan de meldingsdrempel
 function boolean toets_drempelhoudend(Object $vondsttempo, Object $meldingsdrempel) {
-    return RegelSpraakRuntime.rsAggVergelijk($vondsttempo, ComputeHelpers.restateExact($meldingsdrempel, new java.math.BigDecimal("1"), new java.math.BigDecimal("7")), "==");
+    try {
+        return RegelSpraakRuntime.rsAggVergelijk($vondsttempo, ComputeHelpers.restateExact(ComputeHelpers.required($meldingsdrempel, "parameter \"meldingsdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), new java.math.BigDecimal("1"), new java.math.BigDecimal("7")), "==");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
 }
 
 rule "drempelhoudend"
@@ -119,6 +165,42 @@ when
     eval( toets_drempelhoudend($vondsttempo, $meldingsdrempel) )
 then
     insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "drempelhoudend", true)));
+end
+
+// zijn vondsttempo gelijk is aan de meldingsdrempel
+function boolean toets_drempelhoudendFoutInDeVoorwaarde(Object $vondsttempo, Object $meldingsdrempel) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk($vondsttempo, ComputeHelpers.restateExact(ComputeHelpers.required($meldingsdrempel, "parameter \"meldingsdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), new java.math.BigDecimal("1"), new java.math.BigDecimal("7")), "==");
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn vondsttempo gelijk is aan de meldingsdrempel
+function Object fout_drempelhoudendFoutInDeVoorwaarde(Object $vondsttempo, Object $meldingsdrempel) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk($vondsttempo, ComputeHelpers.restateExact(ComputeHelpers.required($meldingsdrempel, "parameter \"meldingsdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), new java.math.BigDecimal("1"), new java.math.BigDecimal("7")), "==");
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "drempelhoudend: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $parameter_1 : ParameterState( parameter == "meldingsdrempel", $meldingsdrempel : value )
+    $stand_0 : State( attribute == ElementKey.of("jutter", "vondsttempo", false), subject == $onderwerp, $vondsttempo : value )
+    eval( toets_drempelhoudendFoutInDeVoorwaarde($vondsttempo, $meldingsdrempel) )
+then
+    Object f = fout_drempelhoudendFoutInDeVoorwaarde($vondsttempo, $meldingsdrempel);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("the condition of \"drempelhoudend\" failed in the test and not in the consequence, over the same bound values");
+    }
+    insertLogical(new Fault($onderwerp, "drempelhoudend", ComputeHelpers.designate(f, "drempelhoudend")));
 end
 
 // zijn vondsttempo groter is dan 30 1/wk

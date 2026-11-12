@@ -82,7 +82,12 @@ end
 
 // de erkende meldingsdatum van de vinder van de Vondst eerder is dan de meldtermijngrens
 function boolean toets_tijdigeAanmelding(Object $vinderErkendeMeldingsdatum, Object $meldtermijngrens) {
-    return ComputeHelpers.dateCompare($vinderErkendeMeldingsdatum, $meldtermijngrens, dev.uchar.regelspraak.ir.Condition.Operator.EERDER);
+    try {
+        return ComputeHelpers.dateCompare($vinderErkendeMeldingsdatum, ComputeHelpers.required($meldtermijngrens, "parameter \"meldtermijngrens\" is unbound in this case (binding is fail-fast, ch. 5.7)"), dev.uchar.regelspraak.ir.Condition.Operator.EERDER);
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
 }
 
 rule "tijdige aanmelding"
@@ -94,6 +99,42 @@ when
     eval( toets_tijdigeAanmelding($vinderErkendeMeldingsdatum, $meldtermijngrens) )
 then
     insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "tijdig aangemeld", true)));
+end
+
+// de erkende meldingsdatum van de vinder van de Vondst eerder is dan de meldtermijngrens
+function boolean toets_tijdigeAanmeldingFoutInDeVoorwaarde(Object $vinderErkendeMeldingsdatum, Object $meldtermijngrens) {
+    try {
+        boolean uitkomst = ComputeHelpers.dateCompare($vinderErkendeMeldingsdatum, ComputeHelpers.required($meldtermijngrens, "parameter \"meldtermijngrens\" is unbound in this case (binding is fail-fast, ch. 5.7)"), dev.uchar.regelspraak.ir.Condition.Operator.EERDER);
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de erkende meldingsdatum van de vinder van de Vondst eerder is dan de meldtermijngrens
+function Object fout_tijdigeAanmeldingFoutInDeVoorwaarde(Object $vinderErkendeMeldingsdatum, Object $meldtermijngrens) {
+    try {
+        boolean uitkomst = ComputeHelpers.dateCompare($vinderErkendeMeldingsdatum, ComputeHelpers.required($meldtermijngrens, "parameter \"meldtermijngrens\" is unbound in this case (binding is fail-fast, ch. 5.7)"), dev.uchar.regelspraak.ir.Condition.Operator.EERDER);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "tijdige aanmelding: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $parameter_1 : ParameterState( parameter == "meldtermijngrens", $meldtermijngrens : value )
+    $padstand_0 : PathState( path == "Vondst:vinder" && member == ElementKey.of("jutter", "erkende meldingsdatum", false), subject == $onderwerp, $vinderErkendeMeldingsdatum : value )
+    eval( toets_tijdigeAanmeldingFoutInDeVoorwaarde($vinderErkendeMeldingsdatum, $meldtermijngrens) )
+then
+    Object f = fout_tijdigeAanmeldingFoutInDeVoorwaarde($vinderErkendeMeldingsdatum, $meldtermijngrens);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("the condition of \"tijdige aanmelding\" failed in the test and not in the consequence, over the same bound values");
+    }
+    insertLogical(new Fault($onderwerp, "tijdige aanmelding", ComputeHelpers.designate(f, "tijdige aanmelding")));
 end
 
 // zijn vinder erkend is
@@ -184,7 +225,7 @@ rule "defaults A:Jutter.erkende meldingsdatum: default 1"
     dialect "mvel"
 when
     $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter"), $meldingsdatum : meldingsdatum )
-    not( $hoger_22 : Decides( stack == "defaults A:Jutter.erkende meldingsdatum" && index < 1, subject == $onderwerp ) )
+    not( $hoger_26 : Decides( stack == "defaults A:Jutter.erkende meldingsdatum" && index < 1, subject == $onderwerp ) )
 then
     // de meldingsdatum van de Jutter
     Object v = $meldingsdatum;

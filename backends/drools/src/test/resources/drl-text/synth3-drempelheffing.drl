@@ -52,7 +52,7 @@ function Object let2_heffingVanEenJutter(Object $grondslag, Object $tarief, Obje
 // de grondslag maal het tarief
 function Object binder2_heffingVanEenJutter(Object $grondslag, Object $tarief, Object $drempel, Object $basisheffing, Object cel_1, Object cel_3) {
     if (!ComputeHelpers.binderCellFilled(cel_3)) {
-        ComputeHelpers.fillBinderCell(cel_3, RegelSpraakRuntime.rsMaal(binder1_heffingVanEenJutter($grondslag, $tarief, $drempel, $basisheffing, cel_1), $tarief));
+        ComputeHelpers.fillBinderCell(cel_3, RegelSpraakRuntime.rsMaal(binder1_heffingVanEenJutter($grondslag, $tarief, $drempel, $basisheffing, cel_1), ComputeHelpers.required($tarief, "parameter \"tarief\" is unbound in this case (binding is fail-fast, ch. 5.7)")));
     }
     return ComputeHelpers.binderValue(cel_3);
 }
@@ -61,7 +61,7 @@ function Object binder2_heffingVanEenJutter(Object $grondslag, Object $tarief, O
 function Object let3_heffingVanEenJutter(Object $grondslag, Object $tarief, Object $drempel, Object $basisheffing, Object cel_1, Object cel_3) {
     Object cel_4 = ComputeHelpers.binderCell();
     try {
-        return (RegelSpraakRuntime.rsAggVergelijk(binder1_heffingVanEenJutter($grondslag, $tarief, $drempel, $basisheffing, cel_1), $drempel, ">") ? (Object) RegelSpraakRuntime.rsPlus($basisheffing, binder3_heffingVanEenJutter($grondslag, $tarief, $drempel, $basisheffing, cel_1, cel_3, cel_4)) : (Object) $basisheffing);
+        return (RegelSpraakRuntime.rsAggVergelijk(binder1_heffingVanEenJutter($grondslag, $tarief, $drempel, $basisheffing, cel_1), ComputeHelpers.required($drempel, "parameter \"drempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">") ? (Object) RegelSpraakRuntime.rsPlus(ComputeHelpers.required($basisheffing, "parameter \"basisheffing\" is unbound in this case (binding is fail-fast, ch. 5.7)"), binder3_heffingVanEenJutter($grondslag, $tarief, $drempel, $basisheffing, cel_1, cel_3, cel_4)) : (Object) ComputeHelpers.required($basisheffing, "parameter \"basisheffing\" is unbound in this case (binding is fail-fast, ch. 5.7)"));
     } catch (EmptyBarrier barriere) {
         return ComputeHelpers.intercepted(barriere, cel_4);
     }

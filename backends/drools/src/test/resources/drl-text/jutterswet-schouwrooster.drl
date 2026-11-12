@@ -37,7 +37,12 @@ end
 
 // zijn schouwplicht kleiner is dan de schouwdrempel
 function boolean toets_kenmerktoekenningSchouwvrij(Object $schouwplicht, Object $schouwdrempel) {
-    return RegelSpraakRuntime.rsAggVergelijk($schouwplicht, $schouwdrempel, "<");
+    try {
+        return RegelSpraakRuntime.rsAggVergelijk($schouwplicht, ComputeHelpers.required($schouwdrempel, "parameter \"schouwdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), "<");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
 }
 
 rule "Kenmerktoekenning schouwvrij"
@@ -49,6 +54,42 @@ when
     eval( toets_kenmerktoekenningSchouwvrij($schouwplicht, $schouwdrempel) )
 then
     insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("strandmeester", "schouwvrij", true)));
+end
+
+// zijn schouwplicht kleiner is dan de schouwdrempel
+function boolean toets_kenmerktoekenningSchouwvrijFoutInDeVoorwaarde(Object $schouwplicht, Object $schouwdrempel) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk($schouwplicht, ComputeHelpers.required($schouwdrempel, "parameter \"schouwdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), "<");
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn schouwplicht kleiner is dan de schouwdrempel
+function Object fout_kenmerktoekenningSchouwvrijFoutInDeVoorwaarde(Object $schouwplicht, Object $schouwdrempel) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk($schouwplicht, ComputeHelpers.required($schouwdrempel, "parameter \"schouwdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), "<");
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "Kenmerktoekenning schouwvrij: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Strandmeester()
+    $parameter_1 : ParameterState( parameter == "schouwdrempel", $schouwdrempel : value )
+    $stand_0 : State( attribute == ElementKey.of("strandmeester", "schouwplicht", false), subject == $onderwerp, $schouwplicht : value )
+    eval( toets_kenmerktoekenningSchouwvrijFoutInDeVoorwaarde($schouwplicht, $schouwdrempel) )
+then
+    Object f = fout_kenmerktoekenningSchouwvrijFoutInDeVoorwaarde($schouwplicht, $schouwdrempel);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("the condition of \"Kenmerktoekenning schouwvrij\" failed in the test and not in the consequence, over the same bound values");
+    }
+    insertLogical(new Fault($onderwerp, "Kenmerktoekenning schouwvrij", ComputeHelpers.designate(f, "Kenmerktoekenning schouwvrij")));
 end
 
 rule "stand Strandmeester.schouwplicht: uit een afleiding"

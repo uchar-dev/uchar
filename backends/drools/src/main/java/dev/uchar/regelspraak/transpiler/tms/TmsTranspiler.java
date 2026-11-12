@@ -4861,7 +4861,7 @@ public final class TmsTranspiler {
         Term planned = switch (e) {
             case Expr.Literal l -> literal(l);
             case Expr.AttributeReference a -> new Term.SlotValue(attributeRead(a, reads), source(a.source()));
-            case Expr.ParameterRef p -> new Term.SlotValue(reads.parameter(p.parameter()), source(p.source()));
+            case Expr.ParameterRef p -> parameterValue(p, reads);
             case Expr.Binary b -> binary(b, reads);
             case Expr.TextComposition t -> textComposition(t, reads);
             case Expr.FunctionCall f -> function(f, reads);
@@ -5674,6 +5674,16 @@ public final class TmsTranspiler {
         Term conditionTerm = conditionTerm(k.condition(), reads);
         Term then = value(k.then(), reads), otherwise = value(k.otherwise(), reads);
         return new Term.Choice(conditionTerm, then, otherwise, source(k.source()));
+    }
+
+    /** The value of a scalar parameter, read off its standing ({@link Reads#parameter}), and the fault of an unbound
+     *  parameter where the case binds none (EF-014, RUNTIME-SEMANTICS ch. 5.7 step 2), as the reference interpreter
+     *  reads it: a case binds no parameter to leeg, so a null standing is an unbound one. */
+    private Term parameterValue(Expr.ParameterRef p, Reads reads) {
+        int slot = reads.parameter(p.parameter());
+        reads.markFail();
+        return new Term.Required(new Term.SlotValue(slot, null), ComputeFault.unboundParameter(p.parameter().name()),
+                source(p.source()));
     }
 
     /** A context value (RUNTIME-SEMANTICS ch. 8.2): evaluationDate, the session's evaluation date, and evaluationYear,
@@ -8469,7 +8479,7 @@ public final class TmsTranspiler {
         /** A parameter, bound off its {@link ParameterState}: no test or consequence names a global itself, since two
          *  globals in one constraint of the executable model read as the last one, and a source over a global is not
          *  kept apart from another parameter's in another rule ({@link ParameterState}). A parameter the case leaves
-         *  unset has a standing with a null value and reads leeg. */
+         *  unset has a standing with a null value, whose read faults EF-014. */
         int parameter(Parameter p) {
             if (atForm) return unscoped(() -> parameter(p));
             return parameterSlot(p, false);

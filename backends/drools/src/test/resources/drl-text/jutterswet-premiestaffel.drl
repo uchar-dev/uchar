@@ -157,7 +157,12 @@ end
 
 // de som van het gewicht van alle vondsten van de Jutter die zwaar zijn groter is dan de zwaartegrens
 function boolean toets_defaultsAJutterPremieDefault0(Object $aantal_vouw_33, Object $vouw_vouw_35, Object $zwaartegrens) {
-    return RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.foldValue($aantal_vouw_33, $vouw_vouw_35, null), $zwaartegrens, ">");
+    try {
+        return RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.foldValue($aantal_vouw_33, $vouw_vouw_35, null), ComputeHelpers.required($zwaartegrens, "parameter \"zwaartegrens\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
 }
 
 rule "defaults A:Jutter.premie: default 0"
@@ -182,18 +187,54 @@ then
     }
 end
 
+// de som van het gewicht van alle vondsten van de Jutter die zwaar zijn groter is dan de zwaartegrens
+function boolean toets_defaultsAJutterPremieDefault0FoutInDeVoorwaarde(Object $aantal_vouw_42, Object $vouw_vouw_44, Object $zwaartegrens) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.foldValue($aantal_vouw_42, $vouw_vouw_44, null), ComputeHelpers.required($zwaartegrens, "parameter \"zwaartegrens\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">");
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de som van het gewicht van alle vondsten van de Jutter die zwaar zijn groter is dan de zwaartegrens
+function Object fout_defaultsAJutterPremieDefault0FoutInDeVoorwaarde(Object $aantal_vouw_42, Object $vouw_vouw_44, Object $zwaartegrens) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.foldValue($aantal_vouw_42, $vouw_vouw_44, null), ComputeHelpers.required($zwaartegrens, "parameter \"zwaartegrens\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">");
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Jutter.premie: default 0: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter") )
+    $parameter_2 : ParameterState( parameter == "zwaartegrens", $zwaartegrens : value )
+    accumulate( $bijdrage_vouw_39 : Contribution( fold == "defaults A:Jutter.premie: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_43 : value ); $aantal_vouw_42 : count(), $vouw_vouw_44 : exactSum($bijdragewaarde_vouw_43) )
+    eval( toets_defaultsAJutterPremieDefault0FoutInDeVoorwaarde($aantal_vouw_42, $vouw_vouw_44, $zwaartegrens) )
+then
+    Object f = fout_defaultsAJutterPremieDefault0FoutInDeVoorwaarde($aantal_vouw_42, $vouw_vouw_44, $zwaartegrens);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("the condition of \"defaults A:Jutter.premie\" failed in the test and not in the consequence, over the same bound values");
+    }
+    insertLogical(new Fault($onderwerp, "defaults A:Jutter.premie", ComputeHelpers.designate(f, "defaults A:Jutter.premie")));
+end
+
 // het aantal vondsten van de Jutter groter is dan 2
-function boolean toets_defaultsAJutterPremieDefault1(Object $aantal_vouw_43) {
-    return RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.countOf($aantal_vouw_43), new java.math.BigDecimal("2"), ">");
+function boolean toets_defaultsAJutterPremieDefault1(Object $aantal_vouw_52) {
+    return RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.countOf($aantal_vouw_52), new java.math.BigDecimal("2"), ">");
 }
 
 rule "defaults A:Jutter.premie: default 1"
     dialect "mvel"
 when
     $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter") )
-    accumulate( $bijdrage_vouw_40 : Contribution( fold == "defaults A:Jutter.premie: vouw 1", subject == $onderwerp ); $aantal_vouw_43 : count() )
-    not( $hoger_44 : Decides( stack == "defaults A:Jutter.premie" && index < 1, subject == $onderwerp ) )
-    eval( toets_defaultsAJutterPremieDefault1($aantal_vouw_43) )
+    accumulate( $bijdrage_vouw_49 : Contribution( fold == "defaults A:Jutter.premie: vouw 1", subject == $onderwerp ); $aantal_vouw_52 : count() )
+    not( $hoger_53 : Decides( stack == "defaults A:Jutter.premie" && index < 1, subject == $onderwerp ) )
+    eval( toets_defaultsAJutterPremieDefault1($aantal_vouw_52) )
 then
     // 20
     Object v = new java.math.BigDecimal("20");
@@ -213,7 +254,7 @@ rule "defaults A:Jutter.premie: default 2"
     dialect "mvel"
 when
     $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter") )
-    not( $hoger_48 : Decides( stack == "defaults A:Jutter.premie" && index < 2, subject == $onderwerp ) )
+    not( $hoger_57 : Decides( stack == "defaults A:Jutter.premie" && index < 2, subject == $onderwerp ) )
 then
     // 10
     Object v = new java.math.BigDecimal("10");
@@ -230,21 +271,21 @@ then
 end
 
 // hij aan ten minste één van de volgende voorwaarden voldoet: - de minimale waarde van het gewicht van alle vondsten van de Jutter is kleiner dan 2 - de maximale waarde van het gewicht van alle vondsten van de Jutter is kleiner dan 5
-function boolean toets_defaultsKJutterIjverigDefault0(Object $aantal_vouw_56, Object $vouw_vouw_58, Object $aantal_vouw_63, Object $vouw_vouw_65) {
+function boolean toets_defaultsKJutterIjverigDefault0(Object $aantal_vouw_65, Object $vouw_vouw_67, Object $aantal_vouw_72, Object $vouw_vouw_74) {
     int raak = 0;
     Boolean vast;
     vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
     if (vast != null) {
         return vast;
     }
-    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.foldValue($aantal_vouw_56, $vouw_vouw_58, null), new java.math.BigDecimal("2"), "<")) {
+    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.foldValue($aantal_vouw_65, $vouw_vouw_67, null), new java.math.BigDecimal("2"), "<")) {
         raak++;
     }
     vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
     if (vast != null) {
         return vast;
     }
-    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.foldValue($aantal_vouw_63, $vouw_vouw_65, null), new java.math.BigDecimal("5"), "<")) {
+    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.foldValue($aantal_vouw_72, $vouw_vouw_74, null), new java.math.BigDecimal("5"), "<")) {
         raak++;
     }
     return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
@@ -254,9 +295,9 @@ rule "defaults K:Jutter.ijverig: default 0"
     dialect "mvel"
 when
     $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter") )
-    accumulate( $bijdrage_vouw_53 : Contribution( fold == "defaults K:Jutter.ijverig: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_57 : value ); $aantal_vouw_56 : count(), $vouw_vouw_58 : exactMin($bijdragewaarde_vouw_57) )
-    accumulate( $bijdrage_vouw_60 : Contribution( fold == "defaults K:Jutter.ijverig: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_64 : value ); $aantal_vouw_63 : count(), $vouw_vouw_65 : exactMax($bijdragewaarde_vouw_64) )
-    eval( toets_defaultsKJutterIjverigDefault0($aantal_vouw_56, $vouw_vouw_58, $aantal_vouw_63, $vouw_vouw_65) )
+    accumulate( $bijdrage_vouw_62 : Contribution( fold == "defaults K:Jutter.ijverig: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_66 : value ); $aantal_vouw_65 : count(), $vouw_vouw_67 : exactMin($bijdragewaarde_vouw_66) )
+    accumulate( $bijdrage_vouw_69 : Contribution( fold == "defaults K:Jutter.ijverig: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_73 : value ); $aantal_vouw_72 : count(), $vouw_vouw_74 : exactMax($bijdragewaarde_vouw_73) )
+    eval( toets_defaultsKJutterIjverigDefault0($aantal_vouw_65, $vouw_vouw_67, $aantal_vouw_72, $vouw_vouw_74) )
 then
     Object v = Boolean.FALSE;
     if (v != null) {
@@ -268,7 +309,7 @@ rule "defaults K:Jutter.ijverig: default 1"
     dialect "mvel"
 when
     $onderwerp : dev.uchar.regelspraak.facts.Jutter( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Jutter") )
-    not( $hoger_68 : Decides( stack == "defaults K:Jutter.ijverig" && index < 1, subject == $onderwerp ) )
+    not( $hoger_77 : Decides( stack == "defaults K:Jutter.ijverig" && index < 1, subject == $onderwerp ) )
 then
     Object v = Boolean.TRUE;
     if (v != null) {

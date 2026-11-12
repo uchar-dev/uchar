@@ -16,7 +16,12 @@ global java.time.LocalDate uitbetaaldag;
 
 // zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel
 function boolean toets_penningrechtBijDrempel(Object $aantalAangemeldeVondsten, Object $vondstdrempel) {
-    return RegelSpraakRuntime.rsAggVergelijk($aantalAangemeldeVondsten, $vondstdrempel, ">=");
+    try {
+        return RegelSpraakRuntime.rsAggVergelijk($aantalAangemeldeVondsten, ComputeHelpers.required($vondstdrempel, "parameter \"vondstdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">=");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
 }
 
 rule "penningrecht bij drempel"
@@ -29,6 +34,41 @@ then
     insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "penninggerechtigd", true)));
 end
 
+// zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel
+function boolean toets_penningrechtBijDrempelFoutInDeVoorwaarde(Object $aantalAangemeldeVondsten, Object $vondstdrempel) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk($aantalAangemeldeVondsten, ComputeHelpers.required($vondstdrempel, "parameter \"vondstdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">=");
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel
+function Object fout_penningrechtBijDrempelFoutInDeVoorwaarde(Object $aantalAangemeldeVondsten, Object $vondstdrempel) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk($aantalAangemeldeVondsten, ComputeHelpers.required($vondstdrempel, "parameter \"vondstdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">=");
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "penningrecht bij drempel: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $aantalAangemeldeVondsten : aantalAangemeldeVondsten )
+    $parameter_1 : ParameterState( parameter == "vondstdrempel", $vondstdrempel : value )
+    eval( toets_penningrechtBijDrempelFoutInDeVoorwaarde($aantalAangemeldeVondsten, $vondstdrempel) )
+then
+    Object f = fout_penningrechtBijDrempelFoutInDeVoorwaarde($aantalAangemeldeVondsten, $vondstdrempel);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("the condition of \"penningrecht bij drempel\" failed in the test and not in the consequence, over the same bound values");
+    }
+    insertLogical(new Fault($onderwerp, "penningrecht bij drempel", ComputeHelpers.designate(f, "penningrecht bij drempel")));
+end
+
 // hij penninggerechtigd is
 function boolean toets_uitkeringVanDePenning(Object $penninggerechtigd) {
     return ComputeHelpers.characteristic($penninggerechtigd, Boolean.TRUE);
@@ -37,7 +77,7 @@ function boolean toets_uitkeringVanDePenning(Object $penninggerechtigd) {
 // het penningbedrag
 function Object waarde_uitkeringVanDePenning(Object $penningbedrag) {
     try {
-        return ComputeHelpers.fitTarget($penningbedrag, Integer.valueOf(0), "uitkering", null);
+        return ComputeHelpers.fitTarget(ComputeHelpers.required($penningbedrag, "parameter \"penningbedrag\" is unbound in this case (binding is fail-fast, ch. 5.7)"), Integer.valueOf(0), "uitkering", null);
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
@@ -69,7 +109,7 @@ function boolean toets_afdrachtAanHetEilandfonds(Object $penninggerechtigd) {
 // het fondspercentage
 function Object waarde_afdrachtAanHetEilandfonds(Object $fondspercentage) {
     try {
-        return ComputeHelpers.fitTarget($fondspercentage, Integer.valueOf(0), "afdrachtpercentage", null);
+        return ComputeHelpers.fitTarget(ComputeHelpers.required($fondspercentage, "parameter \"fondspercentage\" is unbound in this case (binding is fail-fast, ch. 5.7)"), Integer.valueOf(0), "afdrachtpercentage", null);
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
@@ -98,6 +138,15 @@ function boolean toets_betaaldatumVanDePenning(Object $penninggerechtigd) {
     return ComputeHelpers.characteristic($penninggerechtigd, Boolean.TRUE);
 }
 
+// de uitbetaaldag
+function Object waarde_betaaldatumVanDePenning(Object $uitbetaaldag) {
+    try {
+        return ComputeHelpers.required($uitbetaaldag, "parameter \"uitbetaaldag\" is unbound in this case (binding is fail-fast, ch. 5.7)");
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
 rule "betaaldatum van de penning"
     dialect "mvel"
 when
@@ -106,10 +155,13 @@ when
     $stand_0 : CharacteristicState( characteristic == ElementKey.of("jutter", "penninggerechtigd", true), subject == $onderwerp, $penninggerechtigd : holds )
     eval( toets_betaaldatumVanDePenning($penninggerechtigd) )
 then
-    // de uitbetaaldag
-    Object v = $uitbetaaldag;
-    if (!ComputeHelpers.isEmpty(v)) {
-        insertLogical(new Value($onderwerp, ElementKey.of("jutter", "betaaldatum", false), v, "betaaldatum van de penning"));
+    Object v = waarde_betaaldatumVanDePenning($uitbetaaldag);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "betaaldatum van de penning", ComputeHelpers.designate(v, "betaaldatum van de penning")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "betaaldatum", false), v, "betaaldatum van de penning"));
+        }
     }
 end
 

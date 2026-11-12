@@ -1,81 +1,303 @@
 package dev.uchar.regelspraak.tms;
 
-import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
 import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
 import dev.uchar.regelspraak.transpiler.tms.Contribution;
 import dev.uchar.regelspraak.transpiler.tms.Fault;
 import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.ListPlace;
+import dev.uchar.regelspraak.transpiler.tms.MemberTest;
 import dev.uchar.regelspraak.transpiler.tms.ParameterState;
 import dev.uchar.regelspraak.transpiler.tms.Value;
 
 global java.math.BigDecimal keurgrens;
 
 // de ervaring van alle loodsen van de Loodspost groter is dan de keurgrens
-function boolean toets_bekwaamBijKeurgrens(Object $aantal_vouw_5, Object $vouw_vouw_7) {
-    return ComputeHelpers.quantifierVerdict($aantal_vouw_5, $vouw_vouw_7, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0));
+function boolean toets_bekwaamBijKeurgrens(Object $aantal_vouw_11, Object $vouw_vouw_13) {
+    try {
+        return ((Boolean) kwantorlezing_bekwaamBijKeurgrens($aantal_vouw_11, $vouw_vouw_13));
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// de ervaring van alle loodsen van de Loodspost groter is dan de keurgrens
+function Object kwantorlezing_bekwaamBijKeurgrens(Object $aantal_vouw_11, Object $vouw_vouw_13) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_11, $vouw_vouw_13, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0), null);
 }
 
 rule "bekwaam bij keurgrens"
     dialect "mvel"
 when
     $onderwerp : dev.uchar.regelspraak.facts.Loodspost()
-    accumulate( $bijdrage_vouw_2 : Contribution( fold == "bekwaam bij keurgrens: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_6 : value ); $aantal_vouw_5 : count(), $vouw_vouw_7 : exactSum($bijdragewaarde_vouw_6) )
-    eval( toets_bekwaamBijKeurgrens($aantal_vouw_5, $vouw_vouw_7) )
+    accumulate( $bijdrage_vouw_8 : Contribution( fold == "bekwaam bij keurgrens: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_12 : value ); $aantal_vouw_11 : count(), $vouw_vouw_13 : collectList($bijdragewaarde_vouw_12) )
+    eval( toets_bekwaamBijKeurgrens($aantal_vouw_11, $vouw_vouw_13) )
 then
     insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("loodspost", "bekwaam", true)));
 end
 
+// de ervaring van alle loodsen van de Loodspost groter is dan de keurgrens
+function boolean toets_bekwaamBijKeurgrensFoutInDeVoorwaarde(Object $aantal_vouw_18, Object $vouw_vouw_20) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing1_bekwaamBijKeurgrensFoutInDeVoorwaarde($aantal_vouw_18, $vouw_vouw_20));
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de ervaring van alle loodsen van de Loodspost groter is dan de keurgrens
+function Object kwantorlezing1_bekwaamBijKeurgrensFoutInDeVoorwaarde(Object $aantal_vouw_18, Object $vouw_vouw_20) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_18, $vouw_vouw_20, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0), null);
+}
+
+// de ervaring van alle loodsen van de Loodspost groter is dan de keurgrens
+function Object fout_bekwaamBijKeurgrensFoutInDeVoorwaarde(Object $aantal_vouw_18, Object $vouw_vouw_20) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing2_bekwaamBijKeurgrensFoutInDeVoorwaarde($aantal_vouw_18, $vouw_vouw_20));
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de ervaring van alle loodsen van de Loodspost groter is dan de keurgrens
+function Object kwantorlezing2_bekwaamBijKeurgrensFoutInDeVoorwaarde(Object $aantal_vouw_18, Object $vouw_vouw_20) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_18, $vouw_vouw_20, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0), null);
+}
+
+rule "bekwaam bij keurgrens: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Loodspost()
+    accumulate( $bijdrage_vouw_15 : Contribution( fold == "bekwaam bij keurgrens: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_19 : value ); $aantal_vouw_18 : count(), $vouw_vouw_20 : collectList($bijdragewaarde_vouw_19) )
+    eval( toets_bekwaamBijKeurgrensFoutInDeVoorwaarde($aantal_vouw_18, $vouw_vouw_20) )
+then
+    Object f = fout_bekwaamBijKeurgrensFoutInDeVoorwaarde($aantal_vouw_18, $vouw_vouw_20);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("the condition of \"bekwaam bij keurgrens\" failed in the test and not in the consequence, over the same bound values");
+    }
+    insertLogical(new Fault($onderwerp, "bekwaam bij keurgrens", ComputeHelpers.designate(f, "bekwaam bij keurgrens")));
+end
+
 // de ervaring van geen van de loodsen van de Loodspost groter is dan de keurgrens
-function boolean toets_onbekwaamBijKeurgrens(Object $aantal_vouw_14, Object $vouw_vouw_16) {
-    return ComputeHelpers.quantifierVerdict($aantal_vouw_14, $vouw_vouw_16, dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, Integer.valueOf(0));
+function boolean toets_onbekwaamBijKeurgrens(Object $aantal_vouw_33, Object $vouw_vouw_35) {
+    try {
+        return ((Boolean) kwantorlezing_onbekwaamBijKeurgrens($aantal_vouw_33, $vouw_vouw_35));
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// de ervaring van geen van de loodsen van de Loodspost groter is dan de keurgrens
+function Object kwantorlezing_onbekwaamBijKeurgrens(Object $aantal_vouw_33, Object $vouw_vouw_35) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_33, $vouw_vouw_35, dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, Integer.valueOf(0), null);
 }
 
 rule "onbekwaam bij keurgrens"
     dialect "mvel"
 when
     $onderwerp : dev.uchar.regelspraak.facts.Loodspost()
-    accumulate( $bijdrage_vouw_11 : Contribution( fold == "onbekwaam bij keurgrens: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_15 : value ); $aantal_vouw_14 : count(), $vouw_vouw_16 : exactSum($bijdragewaarde_vouw_15) )
-    eval( toets_onbekwaamBijKeurgrens($aantal_vouw_14, $vouw_vouw_16) )
+    accumulate( $bijdrage_vouw_30 : Contribution( fold == "onbekwaam bij keurgrens: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_34 : value ); $aantal_vouw_33 : count(), $vouw_vouw_35 : collectList($bijdragewaarde_vouw_34) )
+    eval( toets_onbekwaamBijKeurgrens($aantal_vouw_33, $vouw_vouw_35) )
 then
     insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("loodspost", "onbekwaam", true)));
 end
 
+// de ervaring van geen van de loodsen van de Loodspost groter is dan de keurgrens
+function boolean toets_onbekwaamBijKeurgrensFoutInDeVoorwaarde(Object $aantal_vouw_40, Object $vouw_vouw_42) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing1_onbekwaamBijKeurgrensFoutInDeVoorwaarde($aantal_vouw_40, $vouw_vouw_42));
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de ervaring van geen van de loodsen van de Loodspost groter is dan de keurgrens
+function Object kwantorlezing1_onbekwaamBijKeurgrensFoutInDeVoorwaarde(Object $aantal_vouw_40, Object $vouw_vouw_42) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_40, $vouw_vouw_42, dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, Integer.valueOf(0), null);
+}
+
+// de ervaring van geen van de loodsen van de Loodspost groter is dan de keurgrens
+function Object fout_onbekwaamBijKeurgrensFoutInDeVoorwaarde(Object $aantal_vouw_40, Object $vouw_vouw_42) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing2_onbekwaamBijKeurgrensFoutInDeVoorwaarde($aantal_vouw_40, $vouw_vouw_42));
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de ervaring van geen van de loodsen van de Loodspost groter is dan de keurgrens
+function Object kwantorlezing2_onbekwaamBijKeurgrensFoutInDeVoorwaarde(Object $aantal_vouw_40, Object $vouw_vouw_42) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_40, $vouw_vouw_42, dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, Integer.valueOf(0), null);
+}
+
+rule "onbekwaam bij keurgrens: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Loodspost()
+    accumulate( $bijdrage_vouw_37 : Contribution( fold == "onbekwaam bij keurgrens: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_41 : value ); $aantal_vouw_40 : count(), $vouw_vouw_42 : collectList($bijdragewaarde_vouw_41) )
+    eval( toets_onbekwaamBijKeurgrensFoutInDeVoorwaarde($aantal_vouw_40, $vouw_vouw_42) )
+then
+    Object f = fout_onbekwaamBijKeurgrensFoutInDeVoorwaarde($aantal_vouw_40, $vouw_vouw_42);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("the condition of \"onbekwaam bij keurgrens\" failed in the test and not in the consequence, over the same bound values");
+    }
+    insertLogical(new Fault($onderwerp, "onbekwaam bij keurgrens", ComputeHelpers.designate(f, "onbekwaam bij keurgrens")));
+end
+
 // de ervaring van ten minste 2 van de loodsen van de Loodspost groter is dan de keurgrens
-function boolean toets_merendeelsBijKeurgrens(Object $aantal_vouw_23, Object $vouw_vouw_25) {
-    return ComputeHelpers.quantifierVerdict($aantal_vouw_23, $vouw_vouw_25, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(2));
+function boolean toets_merendeelsBijKeurgrens(Object $aantal_vouw_55, Object $vouw_vouw_57) {
+    try {
+        return ((Boolean) kwantorlezing_merendeelsBijKeurgrens($aantal_vouw_55, $vouw_vouw_57));
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// de ervaring van ten minste 2 van de loodsen van de Loodspost groter is dan de keurgrens
+function Object kwantorlezing_merendeelsBijKeurgrens(Object $aantal_vouw_55, Object $vouw_vouw_57) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_55, $vouw_vouw_57, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(2), null);
 }
 
 rule "merendeels bij keurgrens"
     dialect "mvel"
 when
     $onderwerp : dev.uchar.regelspraak.facts.Loodspost()
-    accumulate( $bijdrage_vouw_20 : Contribution( fold == "merendeels bij keurgrens: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_24 : value ); $aantal_vouw_23 : count(), $vouw_vouw_25 : exactSum($bijdragewaarde_vouw_24) )
-    eval( toets_merendeelsBijKeurgrens($aantal_vouw_23, $vouw_vouw_25) )
+    accumulate( $bijdrage_vouw_52 : Contribution( fold == "merendeels bij keurgrens: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_56 : value ); $aantal_vouw_55 : count(), $vouw_vouw_57 : collectList($bijdragewaarde_vouw_56) )
+    eval( toets_merendeelsBijKeurgrens($aantal_vouw_55, $vouw_vouw_57) )
 then
     insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("loodspost", "merendeels", true)));
 end
 
+// de ervaring van ten minste 2 van de loodsen van de Loodspost groter is dan de keurgrens
+function boolean toets_merendeelsBijKeurgrensFoutInDeVoorwaarde(Object $aantal_vouw_62, Object $vouw_vouw_64) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing1_merendeelsBijKeurgrensFoutInDeVoorwaarde($aantal_vouw_62, $vouw_vouw_64));
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de ervaring van ten minste 2 van de loodsen van de Loodspost groter is dan de keurgrens
+function Object kwantorlezing1_merendeelsBijKeurgrensFoutInDeVoorwaarde(Object $aantal_vouw_62, Object $vouw_vouw_64) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_62, $vouw_vouw_64, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(2), null);
+}
+
+// de ervaring van ten minste 2 van de loodsen van de Loodspost groter is dan de keurgrens
+function Object fout_merendeelsBijKeurgrensFoutInDeVoorwaarde(Object $aantal_vouw_62, Object $vouw_vouw_64) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing2_merendeelsBijKeurgrensFoutInDeVoorwaarde($aantal_vouw_62, $vouw_vouw_64));
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de ervaring van ten minste 2 van de loodsen van de Loodspost groter is dan de keurgrens
+function Object kwantorlezing2_merendeelsBijKeurgrensFoutInDeVoorwaarde(Object $aantal_vouw_62, Object $vouw_vouw_64) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_62, $vouw_vouw_64, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(2), null);
+}
+
+rule "merendeels bij keurgrens: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Loodspost()
+    accumulate( $bijdrage_vouw_59 : Contribution( fold == "merendeels bij keurgrens: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_63 : value ); $aantal_vouw_62 : count(), $vouw_vouw_64 : collectList($bijdragewaarde_vouw_63) )
+    eval( toets_merendeelsBijKeurgrensFoutInDeVoorwaarde($aantal_vouw_62, $vouw_vouw_64) )
+then
+    Object f = fout_merendeelsBijKeurgrensFoutInDeVoorwaarde($aantal_vouw_62, $vouw_vouw_64);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("the condition of \"merendeels bij keurgrens\" failed in the test and not in the consequence, over the same bound values");
+    }
+    insertLogical(new Fault($onderwerp, "merendeels bij keurgrens", ComputeHelpers.designate(f, "merendeels bij keurgrens")));
+end
+
 // de keurgrens kleiner is dan de ervaring van alle loodsen van de Loodspost
-function boolean toets_gangbaarBijKeurgrens(Object $aantal_vouw_32, Object $vouw_vouw_34) {
-    return ComputeHelpers.quantifierVerdict($aantal_vouw_32, $vouw_vouw_34, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0));
+function boolean toets_gangbaarBijKeurgrens(Object $aantal_vouw_77, Object $vouw_vouw_79) {
+    try {
+        return ((Boolean) kwantorlezing_gangbaarBijKeurgrens($aantal_vouw_77, $vouw_vouw_79));
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+// de keurgrens kleiner is dan de ervaring van alle loodsen van de Loodspost
+function Object kwantorlezing_gangbaarBijKeurgrens(Object $aantal_vouw_77, Object $vouw_vouw_79) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_77, $vouw_vouw_79, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0), null);
 }
 
 rule "gangbaar bij keurgrens"
     dialect "mvel"
 when
     $onderwerp : dev.uchar.regelspraak.facts.Loodspost()
-    accumulate( $bijdrage_vouw_29 : Contribution( fold == "gangbaar bij keurgrens: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_33 : value ); $aantal_vouw_32 : count(), $vouw_vouw_34 : exactSum($bijdragewaarde_vouw_33) )
-    eval( toets_gangbaarBijKeurgrens($aantal_vouw_32, $vouw_vouw_34) )
+    accumulate( $bijdrage_vouw_74 : Contribution( fold == "gangbaar bij keurgrens: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_78 : value ); $aantal_vouw_77 : count(), $vouw_vouw_79 : collectList($bijdragewaarde_vouw_78) )
+    eval( toets_gangbaarBijKeurgrens($aantal_vouw_77, $vouw_vouw_79) )
 then
     insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("loodspost", "gangbaar", true)));
 end
 
-// het aantal loodsen van de Loodspost
-function Object waarde_loodstalVanEenLoodspost(Object $aantal_vouw_40) {
+// de keurgrens kleiner is dan de ervaring van alle loodsen van de Loodspost
+function boolean toets_gangbaarBijKeurgrensFoutInDeVoorwaarde(Object $aantal_vouw_84, Object $vouw_vouw_86) {
     try {
-        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_40), Integer.valueOf(0), "loodstal", null);
+        boolean uitkomst = ((Boolean) kwantorlezing1_gangbaarBijKeurgrensFoutInDeVoorwaarde($aantal_vouw_84, $vouw_vouw_86));
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de keurgrens kleiner is dan de ervaring van alle loodsen van de Loodspost
+function Object kwantorlezing1_gangbaarBijKeurgrensFoutInDeVoorwaarde(Object $aantal_vouw_84, Object $vouw_vouw_86) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_84, $vouw_vouw_86, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0), null);
+}
+
+// de keurgrens kleiner is dan de ervaring van alle loodsen van de Loodspost
+function Object fout_gangbaarBijKeurgrensFoutInDeVoorwaarde(Object $aantal_vouw_84, Object $vouw_vouw_86) {
+    try {
+        boolean uitkomst = ((Boolean) kwantorlezing2_gangbaarBijKeurgrensFoutInDeVoorwaarde($aantal_vouw_84, $vouw_vouw_86));
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// de keurgrens kleiner is dan de ervaring van alle loodsen van de Loodspost
+function Object kwantorlezing2_gangbaarBijKeurgrensFoutInDeVoorwaarde(Object $aantal_vouw_84, Object $vouw_vouw_86) {
+    return ComputeHelpers.quantifierRead($aantal_vouw_84, $vouw_vouw_86, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0), null);
+}
+
+rule "gangbaar bij keurgrens: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Loodspost()
+    accumulate( $bijdrage_vouw_81 : Contribution( fold == "gangbaar bij keurgrens: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_85 : value ); $aantal_vouw_84 : count(), $vouw_vouw_86 : collectList($bijdragewaarde_vouw_85) )
+    eval( toets_gangbaarBijKeurgrensFoutInDeVoorwaarde($aantal_vouw_84, $vouw_vouw_86) )
+then
+    Object f = fout_gangbaarBijKeurgrensFoutInDeVoorwaarde($aantal_vouw_84, $vouw_vouw_86);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("the condition of \"gangbaar bij keurgrens\" failed in the test and not in the consequence, over the same bound values");
+    }
+    insertLogical(new Fault($onderwerp, "gangbaar bij keurgrens", ComputeHelpers.designate(f, "gangbaar bij keurgrens")));
+end
+
+// het aantal loodsen van de Loodspost
+function Object waarde_loodstalVanEenLoodspost(Object $aantal_vouw_92) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.countOf($aantal_vouw_92), Integer.valueOf(0), "loodstal", null);
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
@@ -85,9 +307,9 @@ rule "loodstal van een loodspost"
     dialect "mvel"
 when
     $onderwerp : dev.uchar.regelspraak.facts.Loodspost()
-    accumulate( $bijdrage_vouw_37 : Contribution( fold == "loodstal van een loodspost: vouw 4", subject == $onderwerp ); $aantal_vouw_40 : count() )
+    accumulate( $bijdrage_vouw_89 : Contribution( fold == "loodstal van een loodspost: vouw 4", subject == $onderwerp ); $aantal_vouw_92 : count() )
 then
-    Object v = waarde_loodstalVanEenLoodspost($aantal_vouw_40);
+    Object v = waarde_loodstalVanEenLoodspost($aantal_vouw_92);
     if (ComputeHelpers.isEvaluationFault(v)) {
         insertLogical(new Fault($onderwerp, "loodstal van een loodspost", ComputeHelpers.designate(v, "loodstal van een loodspost")));
     } else {
@@ -97,9 +319,25 @@ then
     }
 end
 
+function boolean beta_bekwaamBijKeurgrensBijdrageAanVouw0(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
 // de ervaring van alle loodsen van de Loodspost groter is dan de keurgrens
-function boolean matrix_bekwaamBijKeurgrensBijdrageAanVouw0(Object $onderwerp, Object $ervaring, Object $keurgrens) {
-    return RegelSpraakRuntime.rsAggVergelijk($ervaring, $keurgrens, ">");
+function Object lidtoets_bekwaamBijKeurgrensBijdrageAanVouw0(Object $onderwerp, Object $ervaring, Object $keurgrens, Object $lijstplaatsen_plaats_4, Object $plaats_plaats_5) {
+    java.util.List plaats = plaats_bekwaamBijKeurgrensBijdrageAanVouw0($onderwerp, $lijstplaatsen_plaats_4, $plaats_plaats_5);
+    Boolean waar = null;
+    RuntimeException fout = null;
+    try {
+        waar = Boolean.valueOf(RegelSpraakRuntime.rsAggVergelijk($ervaring, ComputeHelpers.required($keurgrens, "parameter \"keurgrens\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">"));
+    } catch (RuntimeException e) {
+        fout = ComputeHelpers.caught(e);
+    }
+    return new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null));
+}
+
+function java.util.List plaats_bekwaamBijKeurgrensBijdrageAanVouw0(Object $onderwerp, Object $lijstplaatsen_plaats_4, Object $plaats_plaats_5) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER, "bekwaam bij keurgrens: vouw 0", $onderwerp, 0, java.util.Arrays.asList("post"), java.util.Arrays.asList($lijstplaatsen_plaats_4), java.util.Arrays.asList($plaats_plaats_5));
 }
 
 rule "bekwaam bij keurgrens: bijdrage aan vouw 0"
@@ -107,14 +345,31 @@ rule "bekwaam bij keurgrens: bijdrage aan vouw 0"
 when
     $vouwonderwerp : dev.uchar.regelspraak.facts.Loodspost()
     $onderwerp : dev.uchar.regelspraak.facts.Loods( post == $vouwonderwerp, $ervaring : ervaring )
+    accumulate( $lijstplaats_plaats_2 : ListPlace( field == "post", beta_bekwaamBijKeurgrensBijdrageAanVouw0(this, $onderwerp), $lijstplaatswaarde_plaats_3 : place ); $lijstplaatsen_plaats_4 : count(), $plaats_plaats_5 : exactMin($lijstplaatswaarde_plaats_3) )
     $parameter_2 : ParameterState( parameter == "keurgrens", $keurgrens : value )
 then
-    insertLogical(new Contribution("bekwaam bij keurgrens: vouw 0", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_bekwaamBijKeurgrensBijdrageAanVouw0($onderwerp, $ervaring, $keurgrens))));
+    insertLogical(new Contribution("bekwaam bij keurgrens: vouw 0", $vouwonderwerp, $onderwerp, lidtoets_bekwaamBijKeurgrensBijdrageAanVouw0($onderwerp, $ervaring, $keurgrens, $lijstplaatsen_plaats_4, $plaats_plaats_5)));
 end
 
+function boolean beta_onbekwaamBijKeurgrensBijdrageAanVouw1(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
 // de ervaring van geen van de loodsen van de Loodspost groter is dan de keurgrens
-function boolean matrix_onbekwaamBijKeurgrensBijdrageAanVouw1(Object $onderwerp, Object $ervaring, Object $keurgrens) {
-    return RegelSpraakRuntime.rsAggVergelijk($ervaring, $keurgrens, ">");
+function Object lidtoets_onbekwaamBijKeurgrensBijdrageAanVouw1(Object $onderwerp, Object $ervaring, Object $keurgrens, Object $lijstplaatsen_plaats_26, Object $plaats_plaats_27) {
+    java.util.List plaats = plaats_onbekwaamBijKeurgrensBijdrageAanVouw1($onderwerp, $lijstplaatsen_plaats_26, $plaats_plaats_27);
+    Boolean waar = null;
+    RuntimeException fout = null;
+    try {
+        waar = Boolean.valueOf(RegelSpraakRuntime.rsAggVergelijk($ervaring, ComputeHelpers.required($keurgrens, "parameter \"keurgrens\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">"));
+    } catch (RuntimeException e) {
+        fout = ComputeHelpers.caught(e);
+    }
+    return new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null));
+}
+
+function java.util.List plaats_onbekwaamBijKeurgrensBijdrageAanVouw1(Object $onderwerp, Object $lijstplaatsen_plaats_26, Object $plaats_plaats_27) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER, "onbekwaam bij keurgrens: vouw 1", $onderwerp, 0, java.util.Arrays.asList("post"), java.util.Arrays.asList($lijstplaatsen_plaats_26), java.util.Arrays.asList($plaats_plaats_27));
 }
 
 rule "onbekwaam bij keurgrens: bijdrage aan vouw 1"
@@ -122,14 +377,31 @@ rule "onbekwaam bij keurgrens: bijdrage aan vouw 1"
 when
     $vouwonderwerp : dev.uchar.regelspraak.facts.Loodspost()
     $onderwerp : dev.uchar.regelspraak.facts.Loods( post == $vouwonderwerp, $ervaring : ervaring )
+    accumulate( $lijstplaats_plaats_24 : ListPlace( field == "post", beta_onbekwaamBijKeurgrensBijdrageAanVouw1(this, $onderwerp), $lijstplaatswaarde_plaats_25 : place ); $lijstplaatsen_plaats_26 : count(), $plaats_plaats_27 : exactMin($lijstplaatswaarde_plaats_25) )
     $parameter_2 : ParameterState( parameter == "keurgrens", $keurgrens : value )
 then
-    insertLogical(new Contribution("onbekwaam bij keurgrens: vouw 1", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_onbekwaamBijKeurgrensBijdrageAanVouw1($onderwerp, $ervaring, $keurgrens))));
+    insertLogical(new Contribution("onbekwaam bij keurgrens: vouw 1", $vouwonderwerp, $onderwerp, lidtoets_onbekwaamBijKeurgrensBijdrageAanVouw1($onderwerp, $ervaring, $keurgrens, $lijstplaatsen_plaats_26, $plaats_plaats_27)));
 end
 
+function boolean beta_merendeelsBijKeurgrensBijdrageAanVouw2(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
 // de ervaring van ten minste 2 van de loodsen van de Loodspost groter is dan de keurgrens
-function boolean matrix_merendeelsBijKeurgrensBijdrageAanVouw2(Object $onderwerp, Object $ervaring, Object $keurgrens) {
-    return RegelSpraakRuntime.rsAggVergelijk($ervaring, $keurgrens, ">");
+function Object lidtoets_merendeelsBijKeurgrensBijdrageAanVouw2(Object $onderwerp, Object $ervaring, Object $keurgrens, Object $lijstplaatsen_plaats_48, Object $plaats_plaats_49) {
+    java.util.List plaats = plaats_merendeelsBijKeurgrensBijdrageAanVouw2($onderwerp, $lijstplaatsen_plaats_48, $plaats_plaats_49);
+    Boolean waar = null;
+    RuntimeException fout = null;
+    try {
+        waar = Boolean.valueOf(RegelSpraakRuntime.rsAggVergelijk($ervaring, ComputeHelpers.required($keurgrens, "parameter \"keurgrens\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">"));
+    } catch (RuntimeException e) {
+        fout = ComputeHelpers.caught(e);
+    }
+    return new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null));
+}
+
+function java.util.List plaats_merendeelsBijKeurgrensBijdrageAanVouw2(Object $onderwerp, Object $lijstplaatsen_plaats_48, Object $plaats_plaats_49) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER, "merendeels bij keurgrens: vouw 2", $onderwerp, 0, java.util.Arrays.asList("post"), java.util.Arrays.asList($lijstplaatsen_plaats_48), java.util.Arrays.asList($plaats_plaats_49));
 }
 
 rule "merendeels bij keurgrens: bijdrage aan vouw 2"
@@ -137,14 +409,31 @@ rule "merendeels bij keurgrens: bijdrage aan vouw 2"
 when
     $vouwonderwerp : dev.uchar.regelspraak.facts.Loodspost()
     $onderwerp : dev.uchar.regelspraak.facts.Loods( post == $vouwonderwerp, $ervaring : ervaring )
+    accumulate( $lijstplaats_plaats_46 : ListPlace( field == "post", beta_merendeelsBijKeurgrensBijdrageAanVouw2(this, $onderwerp), $lijstplaatswaarde_plaats_47 : place ); $lijstplaatsen_plaats_48 : count(), $plaats_plaats_49 : exactMin($lijstplaatswaarde_plaats_47) )
     $parameter_2 : ParameterState( parameter == "keurgrens", $keurgrens : value )
 then
-    insertLogical(new Contribution("merendeels bij keurgrens: vouw 2", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_merendeelsBijKeurgrensBijdrageAanVouw2($onderwerp, $ervaring, $keurgrens))));
+    insertLogical(new Contribution("merendeels bij keurgrens: vouw 2", $vouwonderwerp, $onderwerp, lidtoets_merendeelsBijKeurgrensBijdrageAanVouw2($onderwerp, $ervaring, $keurgrens, $lijstplaatsen_plaats_48, $plaats_plaats_49)));
 end
 
+function boolean beta_gangbaarBijKeurgrensBijdrageAanVouw3(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
 // de keurgrens kleiner is dan de ervaring van alle loodsen van de Loodspost
-function boolean matrix_gangbaarBijKeurgrensBijdrageAanVouw3(Object $onderwerp, Object $keurgrens, Object $ervaring) {
-    return RegelSpraakRuntime.rsAggVergelijk($keurgrens, $ervaring, "<");
+function Object lidtoets_gangbaarBijKeurgrensBijdrageAanVouw3(Object $onderwerp, Object $keurgrens, Object $ervaring, Object $lijstplaatsen_plaats_70, Object $plaats_plaats_71) {
+    java.util.List plaats = plaats_gangbaarBijKeurgrensBijdrageAanVouw3($onderwerp, $lijstplaatsen_plaats_70, $plaats_plaats_71);
+    Boolean waar = null;
+    RuntimeException fout = null;
+    try {
+        waar = Boolean.valueOf(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.required($keurgrens, "parameter \"keurgrens\" is unbound in this case (binding is fail-fast, ch. 5.7)"), $ervaring, "<"));
+    } catch (RuntimeException e) {
+        fout = ComputeHelpers.caught(e);
+    }
+    return new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null));
+}
+
+function java.util.List plaats_gangbaarBijKeurgrensBijdrageAanVouw3(Object $onderwerp, Object $lijstplaatsen_plaats_70, Object $plaats_plaats_71) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER, "gangbaar bij keurgrens: vouw 3", $onderwerp, 0, java.util.Arrays.asList("post"), java.util.Arrays.asList($lijstplaatsen_plaats_70), java.util.Arrays.asList($plaats_plaats_71));
 }
 
 rule "gangbaar bij keurgrens: bijdrage aan vouw 3"
@@ -152,9 +441,10 @@ rule "gangbaar bij keurgrens: bijdrage aan vouw 3"
 when
     $vouwonderwerp : dev.uchar.regelspraak.facts.Loodspost()
     $onderwerp : dev.uchar.regelspraak.facts.Loods( post == $vouwonderwerp, $ervaring : ervaring )
+    accumulate( $lijstplaats_plaats_68 : ListPlace( field == "post", beta_gangbaarBijKeurgrensBijdrageAanVouw3(this, $onderwerp), $lijstplaatswaarde_plaats_69 : place ); $lijstplaatsen_plaats_70 : count(), $plaats_plaats_71 : exactMin($lijstplaatswaarde_plaats_69) )
     $parameter_1 : ParameterState( parameter == "keurgrens", $keurgrens : value )
 then
-    insertLogical(new Contribution("gangbaar bij keurgrens: vouw 3", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_gangbaarBijKeurgrensBijdrageAanVouw3($onderwerp, $keurgrens, $ervaring))));
+    insertLogical(new Contribution("gangbaar bij keurgrens: vouw 3", $vouwonderwerp, $onderwerp, lidtoets_gangbaarBijKeurgrensBijdrageAanVouw3($onderwerp, $keurgrens, $ervaring, $lijstplaatsen_plaats_70, $plaats_plaats_71)));
 end
 
 rule "loodstal van een loodspost: bijdrage aan vouw 4"

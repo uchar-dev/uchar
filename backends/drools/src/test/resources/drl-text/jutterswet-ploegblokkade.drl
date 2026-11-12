@@ -21,7 +21,12 @@ function Object pad_vaartijd(Object o) {
 
 // de zeeweken van het logboek van het Wrakrecht groter of gelijk is aan de vaartijddrempel
 function boolean toets_vaartijd(Object $logboekZeeweken, Object $vaartijddrempel) {
-    return RegelSpraakRuntime.rsAggVergelijk($logboekZeeweken, $vaartijddrempel, ">=");
+    try {
+        return RegelSpraakRuntime.rsAggVergelijk($logboekZeeweken, ComputeHelpers.required($vaartijddrempel, "parameter \"vaartijddrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">=");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
 }
 
 rule "vaartijd"
@@ -34,10 +39,50 @@ then
     insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("wrakrecht", "vaartijd", true)));
 end
 
-// de maximale waarde van het loon van alle rechten van de ploeg van het Jutrecht die aan alle volgende voorwaarden voldoen: - hij is niet het Jutrecht zelf - hij heeft de vaartijd
-function Object waarde_hoogsteVaarloon(Object $aantal_vouw_9, Object $vouw_vouw_11) {
+function Object pad_vaartijdFoutInDeVoorwaarde(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("logboek"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "zeeweken");
+}
+
+// de zeeweken van het logboek van het Wrakrecht groter of gelijk is aan de vaartijddrempel
+function boolean toets_vaartijdFoutInDeVoorwaarde(Object $logboekZeeweken, Object $vaartijddrempel) {
     try {
-        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_9, $vouw_vouw_11, null), Integer.valueOf(2), "hoogste vaarloon", null);
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk($logboekZeeweken, ComputeHelpers.required($vaartijddrempel, "parameter \"vaartijddrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">=");
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// de zeeweken van het logboek van het Wrakrecht groter of gelijk is aan de vaartijddrempel
+function Object fout_vaartijdFoutInDeVoorwaarde(Object $logboekZeeweken, Object $vaartijddrempel) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk($logboekZeeweken, ComputeHelpers.required($vaartijddrempel, "parameter \"vaartijddrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">=");
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vaartijd: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Wrakrecht( $logboekZeeweken : (pad_vaartijdFoutInDeVoorwaarde(this)) )
+    $parameter_1 : ParameterState( parameter == "vaartijddrempel", $vaartijddrempel : value )
+    eval( toets_vaartijdFoutInDeVoorwaarde($logboekZeeweken, $vaartijddrempel) )
+then
+    Object f = fout_vaartijdFoutInDeVoorwaarde($logboekZeeweken, $vaartijddrempel);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("the condition of \"vaartijd\" failed in the test and not in the consequence, over the same bound values");
+    }
+    insertLogical(new Fault($onderwerp, "vaartijd", ComputeHelpers.designate(f, "vaartijd")));
+end
+
+// de maximale waarde van het loon van alle rechten van de ploeg van het Jutrecht die aan alle volgende voorwaarden voldoen: - hij is niet het Jutrecht zelf - hij heeft de vaartijd
+function Object waarde_hoogsteVaarloon(Object $aantal_vouw_11, Object $vouw_vouw_13) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_11, $vouw_vouw_13, null), Integer.valueOf(2), "hoogste vaarloon", null);
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
@@ -47,9 +92,9 @@ rule "hoogste vaarloon"
     dialect "mvel"
 when
     $onderwerp : dev.uchar.regelspraak.facts.Jutrecht()
-    accumulate( $bijdrage_vouw_6 : Contribution( fold == "hoogste vaarloon: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_10 : value ); $aantal_vouw_9 : count(), $vouw_vouw_11 : exactMax($bijdragewaarde_vouw_10) )
+    accumulate( $bijdrage_vouw_8 : Contribution( fold == "hoogste vaarloon: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_12 : value ); $aantal_vouw_11 : count(), $vouw_vouw_13 : exactMax($bijdragewaarde_vouw_12) )
 then
-    Object v = waarde_hoogsteVaarloon($aantal_vouw_9, $vouw_vouw_11);
+    Object v = waarde_hoogsteVaarloon($aantal_vouw_11, $vouw_vouw_13);
     if (ComputeHelpers.isEvaluationFault(v)) {
         insertLogical(new Fault($onderwerp, "hoogste vaarloon", ComputeHelpers.designate(v, "hoogste vaarloon")));
     } else {
@@ -60,9 +105,9 @@ then
 end
 
 // de maximale waarde van het loon van alle rechten van de ploeg van het Jutrecht die aan alle volgende voorwaarden voldoen: - hij is niet het Jutrecht zelf - hij heeft geen vaartijd
-function Object waarde_hoogsteRustloon(Object $aantal_vouw_19, Object $vouw_vouw_21) {
+function Object waarde_hoogsteRustloon(Object $aantal_vouw_21, Object $vouw_vouw_23) {
     try {
-        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_19, $vouw_vouw_21, null), Integer.valueOf(2), "hoogste rustloon", null);
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_21, $vouw_vouw_23, null), Integer.valueOf(2), "hoogste rustloon", null);
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
@@ -72,9 +117,9 @@ rule "hoogste rustloon"
     dialect "mvel"
 when
     $onderwerp : dev.uchar.regelspraak.facts.Jutrecht()
-    accumulate( $bijdrage_vouw_16 : Contribution( fold == "hoogste rustloon: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_20 : value ); $aantal_vouw_19 : count(), $vouw_vouw_21 : exactMax($bijdragewaarde_vouw_20) )
+    accumulate( $bijdrage_vouw_18 : Contribution( fold == "hoogste rustloon: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_22 : value ); $aantal_vouw_21 : count(), $vouw_vouw_23 : exactMax($bijdragewaarde_vouw_22) )
 then
-    Object v = waarde_hoogsteRustloon($aantal_vouw_19, $vouw_vouw_21);
+    Object v = waarde_hoogsteRustloon($aantal_vouw_21, $vouw_vouw_23);
     if (ComputeHelpers.isEvaluationFault(v)) {
         insertLogical(new Fault($onderwerp, "hoogste rustloon", ComputeHelpers.designate(v, "hoogste rustloon")));
     } else {
@@ -85,7 +130,7 @@ then
 end
 
 // hij aan alle volgende voorwaarden voldoet: - zijn grens is gevuld - (de maximale waarde van het loon van alle rechten van de ploeg van het Jutrecht die aan alle volgende voorwaarden voldoen: .. hij is niet het Jutrecht zelf .. het Strandrecht heeft de vaartijd) is groter dan zijn grens
-function boolean toets_blokkade(Object $grens, Object $aantal_vouw_29, Object $vouw_vouw_31) {
+function boolean toets_blokkade(Object $grens, Object $aantal_vouw_31, Object $vouw_vouw_33) {
     int raak = 0;
     Boolean vast;
     vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
@@ -99,7 +144,7 @@ function boolean toets_blokkade(Object $grens, Object $aantal_vouw_29, Object $v
     if (vast != null) {
         return vast;
     }
-    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.foldValue($aantal_vouw_29, $vouw_vouw_31, null), $grens, ">")) {
+    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.foldValue($aantal_vouw_31, $vouw_vouw_33, null), $grens, ">")) {
         raak++;
     }
     return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
@@ -109,8 +154,8 @@ rule "blokkade"
     dialect "mvel"
 when
     $onderwerp : dev.uchar.regelspraak.facts.Jutrecht( $grens : grens )
-    accumulate( $bijdrage_vouw_26 : Contribution( fold == "blokkade: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_30 : value ); $aantal_vouw_29 : count(), $vouw_vouw_31 : exactMax($bijdragewaarde_vouw_30) )
-    eval( toets_blokkade($grens, $aantal_vouw_29, $vouw_vouw_31) )
+    accumulate( $bijdrage_vouw_28 : Contribution( fold == "blokkade: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_32 : value ); $aantal_vouw_31 : count(), $vouw_vouw_33 : exactMax($bijdragewaarde_vouw_32) )
+    eval( toets_blokkade($grens, $aantal_vouw_31, $vouw_vouw_33) )
 then
     insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutrecht", "blokkade", true)));
 end
@@ -146,16 +191,16 @@ then
 end
 
 // ten minste één van de rechten van de ploeg van het Jutrecht de vaartijd heeft
-function boolean toets_ploegvarend(Object $aantal_vouw_45, Object $vouw_vouw_47) {
-    return ComputeHelpers.quantifierVerdict($aantal_vouw_45, $vouw_vouw_47, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(1));
+function boolean toets_ploegvarend(Object $aantal_vouw_47, Object $vouw_vouw_49) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_47, $vouw_vouw_49, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(1));
 }
 
 rule "ploegvarend"
     dialect "mvel"
 when
     $onderwerp : dev.uchar.regelspraak.facts.Jutrecht()
-    accumulate( $bijdrage_vouw_42 : Contribution( fold == "ploegvarend: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_46 : value ); $aantal_vouw_45 : count(), $vouw_vouw_47 : exactSum($bijdragewaarde_vouw_46) )
-    eval( toets_ploegvarend($aantal_vouw_45, $vouw_vouw_47) )
+    accumulate( $bijdrage_vouw_44 : Contribution( fold == "ploegvarend: vouw 3", subject == $onderwerp, $bijdragewaarde_vouw_48 : value ); $aantal_vouw_47 : count(), $vouw_vouw_49 : exactSum($bijdragewaarde_vouw_48) )
+    eval( toets_ploegvarend($aantal_vouw_47, $vouw_vouw_49) )
 then
     insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutrecht", "ploegvarend", true)));
 end

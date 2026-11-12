@@ -116,7 +116,7 @@ function Object creatie_premiepot(Object $aantal_vouw_21, Object $premiePerHaven
     int diepte = ComputeHelpers.creationDepth("premiepot", 0, "Haven", (java.util.List) $herkomsten_creatie_25, 100);
     Object i0 = null;
     try {
-        i0 = ComputeHelpers.collapse(ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal(ComputeHelpers.countOf($aantal_vouw_21), $premiePerHavenjutter), Integer.valueOf(0), "pot", "premiepot"));
+        i0 = ComputeHelpers.collapse(ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal(ComputeHelpers.countOf($aantal_vouw_21), ComputeHelpers.required($premiePerHavenjutter, "parameter \"premie per havenjutter\" is unbound in this case (binding is fail-fast, ch. 5.7)")), Integer.valueOf(0), "pot", "premiepot"));
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }

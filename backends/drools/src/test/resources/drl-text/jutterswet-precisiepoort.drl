@@ -122,7 +122,7 @@ end
 // (het heffingspercentage van zijn taxatie) naar beneden afgerond op 2 decimalen
 function Object waarde_heffing(Object $heffingspercentage, Object $taxatie) {
     try {
-        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsPercentageVan($heffingspercentage, $taxatie), Integer.valueOf(2), java.math.RoundingMode.FLOOR), Integer.valueOf(2), "heffing", null);
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsPercentageVan(ComputeHelpers.required($heffingspercentage, "parameter \"heffingspercentage\" is unbound in this case (binding is fail-fast, ch. 5.7)"), $taxatie), Integer.valueOf(2), java.math.RoundingMode.FLOOR), Integer.valueOf(2), "heffing", null);
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }

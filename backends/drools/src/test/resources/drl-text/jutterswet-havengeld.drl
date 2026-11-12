@@ -21,7 +21,7 @@ function Object pad_havengeld(Object o) {
 // (het percentage havengeld van het taxatiebedrag van de taxatie van de Vondst) naar beneden afgerond op 2 decimalen
 function Object waarde_havengeld(Object $percentageHavengeld, Object $taxatieTaxatiebedrag) {
     try {
-        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsPercentageVan($percentageHavengeld, $taxatieTaxatiebedrag), Integer.valueOf(2), java.math.RoundingMode.FLOOR), Integer.valueOf(2), "havengeld", null);
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsPercentageVan(ComputeHelpers.required($percentageHavengeld, "parameter \"percentage havengeld\" is unbound in this case (binding is fail-fast, ch. 5.7)"), $taxatieTaxatiebedrag), Integer.valueOf(2), java.math.RoundingMode.FLOOR), Integer.valueOf(2), "havengeld", null);
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
@@ -56,7 +56,7 @@ function Object pad2_kadegeld(Object o) {
 // (het percentage kadegeld van (het taxatiebedrag van de taxatie van de Vondst plus het herstelbedrag van de taxatie van de Vondst)) naar beneden afgerond op 2 decimalen
 function Object waarde_kadegeld(Object $percentageKadegeld, Object $taxatieTaxatiebedrag, Object $taxatieHerstelbedrag) {
     try {
-        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsPercentageVan($percentageKadegeld, RegelSpraakRuntime.rsPlus($taxatieTaxatiebedrag, $taxatieHerstelbedrag)), Integer.valueOf(2), java.math.RoundingMode.FLOOR), Integer.valueOf(2), "kadegeld", null);
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsPercentageVan(ComputeHelpers.required($percentageKadegeld, "parameter \"percentage kadegeld\" is unbound in this case (binding is fail-fast, ch. 5.7)"), RegelSpraakRuntime.rsPlus($taxatieTaxatiebedrag, $taxatieHerstelbedrag)), Integer.valueOf(2), java.math.RoundingMode.FLOOR), Integer.valueOf(2), "kadegeld", null);
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }
@@ -85,7 +85,12 @@ function Object pad_toeslag(Object o) {
 
 // het meerbedrag groter is dan 0
 function boolean toets_toeslag(Object $taxatieTaxatiebedrag, Object $drempel) {
-    return RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsVerminderd($taxatieTaxatiebedrag, $drempel), new java.math.BigDecimal("0"), ">");
+    try {
+        return RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsVerminderd($taxatieTaxatiebedrag, ComputeHelpers.required($drempel, "parameter \"drempel\" is unbound in this case (binding is fail-fast, ch. 5.7)")), new java.math.BigDecimal("0"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
 }
 
 // het meerbedrag is het taxatiebedrag van de taxatie van de Vondst verminderd met de drempel
@@ -101,7 +106,7 @@ function Object waarde_toeslag(Object $taxatieTaxatiebedrag, Object $drempel, Ob
 function Object let_toeslag(Object $taxatieTaxatiebedrag, Object $drempel, Object $percentageToeslag) {
     Object cel_2 = ComputeHelpers.binderCell();
     try {
-        return RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsPercentageVan($percentageToeslag, binder_toeslag($taxatieTaxatiebedrag, $drempel, $percentageToeslag, cel_2)), Integer.valueOf(2), java.math.RoundingMode.FLOOR);
+        return RegelSpraakRuntime.rsAfronding(RegelSpraakRuntime.rsPercentageVan(ComputeHelpers.required($percentageToeslag, "parameter \"percentage toeslag\" is unbound in this case (binding is fail-fast, ch. 5.7)"), binder_toeslag($taxatieTaxatiebedrag, $drempel, $percentageToeslag, cel_2)), Integer.valueOf(2), java.math.RoundingMode.FLOOR);
     } catch (EmptyBarrier barriere) {
         return ComputeHelpers.intercepted(barriere, cel_2);
     }
@@ -110,7 +115,7 @@ function Object let_toeslag(Object $taxatieTaxatiebedrag, Object $drempel, Objec
 // het taxatiebedrag van de taxatie van de Vondst verminderd met de drempel
 function Object binder_toeslag(Object $taxatieTaxatiebedrag, Object $drempel, Object $percentageToeslag, Object cel_2) {
     if (!ComputeHelpers.binderCellFilled(cel_2)) {
-        ComputeHelpers.fillBinderCell(cel_2, RegelSpraakRuntime.rsVerminderd($taxatieTaxatiebedrag, $drempel));
+        ComputeHelpers.fillBinderCell(cel_2, RegelSpraakRuntime.rsVerminderd($taxatieTaxatiebedrag, ComputeHelpers.required($drempel, "parameter \"drempel\" is unbound in this case (binding is fail-fast, ch. 5.7)")));
     }
     return ComputeHelpers.binderValue(cel_2);
 }
@@ -131,6 +136,46 @@ then
             insertLogical(new Value($onderwerp, ElementKey.of("vondst", "toeslag", false), v, "toeslag"));
         }
     }
+end
+
+function Object pad_toeslagFoutInDeVoorwaarde(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("taxatie"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "taxatiebedrag");
+}
+
+// het meerbedrag groter is dan 0
+function boolean toets_toeslagFoutInDeVoorwaarde(Object $taxatieTaxatiebedrag, Object $drempel) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsVerminderd($taxatieTaxatiebedrag, ComputeHelpers.required($drempel, "parameter \"drempel\" is unbound in this case (binding is fail-fast, ch. 5.7)")), new java.math.BigDecimal("0"), ">");
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// het meerbedrag groter is dan 0
+function Object fout_toeslagFoutInDeVoorwaarde(Object $taxatieTaxatiebedrag, Object $drempel) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsVerminderd($taxatieTaxatiebedrag, ComputeHelpers.required($drempel, "parameter \"drempel\" is unbound in this case (binding is fail-fast, ch. 5.7)")), new java.math.BigDecimal("0"), ">");
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "toeslag: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $taxatieTaxatiebedrag : (pad_toeslagFoutInDeVoorwaarde(this)) )
+    $parameter_1 : ParameterState( parameter == "drempel", $drempel : value )
+    eval( toets_toeslagFoutInDeVoorwaarde($taxatieTaxatiebedrag, $drempel) )
+then
+    Object f = fout_toeslagFoutInDeVoorwaarde($taxatieTaxatiebedrag, $drempel);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("the condition of \"toeslag\" failed in the test and not in the consequence, over the same bound values");
+    }
+    insertLogical(new Fault($onderwerp, "toeslag", ComputeHelpers.designate(f, "toeslag")));
 end
 
 rule "parameterstand percentageHavengeld"

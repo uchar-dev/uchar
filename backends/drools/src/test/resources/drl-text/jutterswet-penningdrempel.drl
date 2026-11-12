@@ -3,6 +3,7 @@ package dev.uchar.regelspraak.tms;
 import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
 import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
 import dev.uchar.regelspraak.transpiler.tms.ParameterState;
 
@@ -10,7 +11,12 @@ global java.math.BigDecimal vondstdrempel;
 
 // zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel
 function boolean toets_kenmerktoekenningJutterPenninggerechtigd(Object $aantalAangemeldeVondsten, Object $vondstdrempel) {
-    return RegelSpraakRuntime.rsAggVergelijk($aantalAangemeldeVondsten, $vondstdrempel, ">=");
+    try {
+        return RegelSpraakRuntime.rsAggVergelijk($aantalAangemeldeVondsten, ComputeHelpers.required($vondstdrempel, "parameter \"vondstdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">=");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
 }
 
 rule "Kenmerktoekenning jutter penninggerechtigd"
@@ -21,6 +27,41 @@ when
     eval( toets_kenmerktoekenningJutterPenninggerechtigd($aantalAangemeldeVondsten, $vondstdrempel) )
 then
     insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "penninggerechtigd", true)));
+end
+
+// zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel
+function boolean toets_kenmerktoekenningJutterPenninggerechtigdFoutInDeVoorwaarde(Object $aantalAangemeldeVondsten, Object $vondstdrempel) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk($aantalAangemeldeVondsten, ComputeHelpers.required($vondstdrempel, "parameter \"vondstdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">=");
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel
+function Object fout_kenmerktoekenningJutterPenninggerechtigdFoutInDeVoorwaarde(Object $aantalAangemeldeVondsten, Object $vondstdrempel) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk($aantalAangemeldeVondsten, ComputeHelpers.required($vondstdrempel, "parameter \"vondstdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">=");
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "Kenmerktoekenning jutter penninggerechtigd: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $aantalAangemeldeVondsten : aantalAangemeldeVondsten )
+    $parameter_1 : ParameterState( parameter == "vondstdrempel", $vondstdrempel : value )
+    eval( toets_kenmerktoekenningJutterPenninggerechtigdFoutInDeVoorwaarde($aantalAangemeldeVondsten, $vondstdrempel) )
+then
+    Object f = fout_kenmerktoekenningJutterPenninggerechtigdFoutInDeVoorwaarde($aantalAangemeldeVondsten, $vondstdrempel);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("the condition of \"Kenmerktoekenning jutter penninggerechtigd\" failed in the test and not in the consequence, over the same bound values");
+    }
+    insertLogical(new Fault($onderwerp, "Kenmerktoekenning jutter penninggerechtigd", ComputeHelpers.designate(f, "Kenmerktoekenning jutter penninggerechtigd")));
 end
 
 rule "parameterstand vondstdrempel"

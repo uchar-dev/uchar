@@ -59,7 +59,7 @@ function Object binder2_heffingVanEenJutter(Object $inkomen, Object $restpost, O
 function Object let3_heffingVanEenJutter(Object $inkomen, Object $restpost, Object $drempel, Object sonde, Object cel_1, Object cel_4) {
     Object cel_5 = ComputeHelpers.binderCell();
     try {
-        return (RegelSpraakRuntime.rsAggVergelijk(binder3_heffingVanEenJutter($inkomen, $restpost, $drempel, sonde, cel_1, cel_4, cel_5), $drempel, ">") ? (Object) new java.math.BigDecimal("0") : (Object) binder2_heffingVanEenJutter($inkomen, $restpost, $drempel, sonde, cel_1, cel_4));
+        return (RegelSpraakRuntime.rsAggVergelijk(binder3_heffingVanEenJutter($inkomen, $restpost, $drempel, sonde, cel_1, cel_4, cel_5), ComputeHelpers.required($drempel, "parameter \"drempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">") ? (Object) new java.math.BigDecimal("0") : (Object) binder2_heffingVanEenJutter($inkomen, $restpost, $drempel, sonde, cel_1, cel_4));
     } catch (EmptyBarrier barriere) {
         return ComputeHelpers.intercepted(barriere, cel_5);
     }

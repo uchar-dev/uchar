@@ -129,7 +129,7 @@ public sealed interface Term {
     record Fail(String sentence, String source) implements Term {}
 
     /** The value of {@code value}, and the evaluation fault {@code sentence} where it is leeg: the evaluation date in a
-     *  session without one (RUNTIME-SEMANTICS ch. 8.2). */
+     *  session without one (RUNTIME-SEMANTICS ch. 8.2), a parameter the case does not bind (ch. 5.7 step 2). */
     record Required(Term value, String sentence, String source) implements Term {}
 
     /** The texts of {@code parts}, in order, joined: a text composition or a concatenation (IR-SPEC ch. 4.2). */

@@ -50,8 +50,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * step is what the harness {@code FireTrace} shows, and the executable model of the corpus, which is equal as text.
  *
  * <ul>
- *   <li>{@code jutterswet-penningdrempel}: a characteristic attribution, which reads a parameter, and the standing of
- *       that parameter, read off its global.</li>
+ *   <li>{@code jutterswet-penningdrempel}: a characteristic attribution, which reads a parameter; beside it the rule of
+ *       the condition's fault, since the read of a parameter the case does not bind faults (EF-014); and the standing
+ *       of that parameter, read off its global.</li>
  *   <li>{@code jutterswet-ploegaandeel}: a computing rule whose value and condition divide, so its consequence has a
  *       probe; beside it the rule of the condition's fault, which evaluates the condition again, and the rule of the
  *       condition's deposit.</li>
@@ -89,14 +90,42 @@ class RulePlanWitnessTest {
                         + " vondsten VALUE]",
                 "  pattern ParameterState $parameter_1 alpha [parameter_0: [parameter GELIJK vondstdrempel]] join []"
                         + " bind [$vondstdrempel = [].value VALUE]",
-                "  test voorwaarde_1 CONDITION probe -1 slots [0, 1] size 2: RS_AGG_COMPARE(Read 0, Read 1,"
+                "  test voorwaarde_1 WITHOUT_FAULT probe -1 slots [0, 1] size 2: RS_AGG_COMPARE(Read 0, Required (Read"
+                        + " 1) 'parameter \"vondstdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)',"
                         + " Const >=)",
                 "    test 0 Call source 'zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel'",
                 "    test 0.0 SlotValue source 'zijn aantal aangemelde vondsten'",
-                "    test 0.1 SlotValue source 'de vondstdrempel'",
+                "    test 0.1 Required source 'de vondstdrempel'",
+                "    test 0.1.0 SlotValue",
                 "    test 0.2 Const String",
                 "  consequence Characteristic [subject=$onderwerp, characteristic=ElementKey[objectType=jutter,"
                         + " name=penninggerechtigd, characteristic=true], insertion=LOGICAL]",
+                "rule Kenmerktoekenning jutter penninggerechtigd: fout in de voorwaarde | form Kenmerktoekenning"
+                        + " jutter penninggerechtigd | group null",
+                "  readings [0 INPUT $aantalAangemeldeVondsten (eigen ElementKey[objectType=jutter,"
+                        + " name=aantal aangemelde vondsten, characteristic=false]), 1 PARAMETER $vondstdrempel (parameter"
+                        + " vondstdrempel)]",
+                "  subject Jutter $onderwerp alpha [] bind [$aantalAangemeldeVondsten = [].aantal aangemelde"
+                        + " vondsten VALUE]",
+                "  pattern ParameterState $parameter_1 alpha [parameter_2: [parameter GELIJK vondstdrempel]] join []"
+                        + " bind [$vondstdrempel = [].value VALUE]",
+                "  test voorwaarde_3 FAULT probe -1 slots [0, 1] size 2: RS_AGG_COMPARE(Read 0, Required (Read 1)"
+                        + " 'parameter \"vondstdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)',"
+                        + " Const >=)",
+                "    test 0 Call source 'zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel'",
+                "    test 0.0 SlotValue source 'zijn aantal aangemelde vondsten'",
+                "    test 0.1 Required source 'de vondstdrempel'",
+                "    test 0.1.0 SlotValue",
+                "    test 0.2 Const String",
+                "  consequence TestFault [subject=$onderwerp, test=RS_AGG_COMPARE(Read 0, Required (Read 1) 'parameter"
+                        + " \"vondstdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)', Const >=),"
+                        + " role=FAULT, slots=[0, 1], size=2, fault=FaultName[form=Kenmerktoekenning jutter"
+                        + " penninggerechtigd, rule=Kenmerktoekenning jutter penninggerechtigd], insertion=LOGICAL]",
+                "    test 0 Call source 'zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel'",
+                "    test 0.0 SlotValue source 'zijn aantal aangemelde vondsten'",
+                "    test 0.1 Required source 'de vondstdrempel'",
+                "    test 0.1.0 SlotValue",
+                "    test 0.2 Const String",
                 "rule parameterstand vondstdrempel | form null | group null",
                 "  readings []",
                 "  consequence InsertParameterState [parameter=vondstdrempel, global=vondstdrempel, insertion=LOGICAL]"),

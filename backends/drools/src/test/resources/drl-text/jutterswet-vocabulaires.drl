@@ -17,7 +17,7 @@ global java.math.BigDecimal premietarief;
 // zijn gewicht maal het premietarief
 function Object waarde_premieberekeningPremieVanEenVondst(Object $gewicht, Object $premietarief) {
     try {
-        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($gewicht, $premietarief), Integer.valueOf(2), "premie", null);
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($gewicht, ComputeHelpers.required($premietarief, "parameter \"premietarief\" is unbound in this case (binding is fail-fast, ch. 5.7)")), Integer.valueOf(2), "premie", null);
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }

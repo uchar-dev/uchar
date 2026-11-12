@@ -209,45 +209,44 @@ class CreationPlanWitnessTest {
                         + " uchar-objectcreatie",
                 "  readings [0 CHARACTERISTIC_STATE $penninggerechtigd (eigen ElementKey[objectType=jutter,"
                         + " name=penninggerechtigd, characteristic=true]), 1 PARAMETER $penningbedrag (parameter"
-                        + " penningbedrag), 2 CREATION_PHASE $fase (creatiefase), 3 ORIGIN $herkomsten_creatie_21"
+                        + " penningbedrag), 2 CREATION_PHASE $fase (creatiefase), 3 ORIGIN $herkomsten_creatie_23"
                         + " (herkomst)]",
-                "  subject Jutter $onderwerp alpha [geen-gekoppelde-instantie_32: [[] toegekend besluit"
-                        + " VALUE LEEG]] join [] beta [] bind []",
-                "  pattern ParameterState $parameter_1 alpha [parameter_18: [[] parameter VALUE GELIJK"
-                        + " penningbedrag]] join [] beta [] na [] bind [$penningbedrag = [] ParameterState.value"
-                        + " VALUE]",
-                "  pattern CreationPhase $creatiefase alpha [creatiestratum_19: [[] stratum VALUE AT_LEAST"
-                        + " 0]] join [] beta [] na [] bind [$fase = [] CreationPhase.number VALUE]",
-                "  pattern CharacteristicState $stand_0 alpha [stand_16: [[] characteristic VALUE GELIJK"
+                "  subject Jutter $onderwerp alpha [geen-gekoppelde-instantie_34: [[] toegekend besluit VALUE LEEG]]"
+                        + " join [] beta [] bind []",
+                "  pattern ParameterState $parameter_1 alpha [parameter_20: [[] parameter VALUE GELIJK penningbedrag]]"
+                        + " join [] beta [] na [] bind [$penningbedrag = [] ParameterState.value VALUE]",
+                "  pattern CreationPhase $creatiefase alpha [creatiestratum_21: [[] stratum VALUE AT_LEAST 0]] join []"
+                        + " beta [] na [] bind [$fase = [] CreationPhase.number VALUE]",
+                "  pattern CharacteristicState $stand_0 alpha [stand_18: [[] characteristic VALUE GELIJK"
                         + " ElementKey[objectType=jutter, name=penninggerechtigd, characteristic=true]]] join"
-                        + " [stand-onderwerp_17: subject = $onderwerp] beta [] na [] bind [$penninggerechtigd ="
-                        + " [] CharacteristicState.holds VALUE]",
-                "  accumulation CreationStamp $herkomst_creatie_20 alpha [] join [herkomst_22: object ="
-                        + " $onderwerp] beta [] na [] bind [] functions [LIST null -> $herkomsten_creatie_21]",
-                "  not inside [$gemaakt_creatie_23] outside [$onderwerp] [CreationStamp $gemaakt_creatie_23"
-                        + " alpha [gemaakt_25: [[] rule VALUE GELIJK stel het penningbesluit vast]] join"
-                        + " [gemaakt-onderwerp_26: subject = $onderwerp] beta [] na [] bind []]",
-                "  not inside [$nieuw_creatie_24] outside [$onderwerp, $fase] [CreationStamp $nieuw_creatie_24"
-                        + " alpha [] join [nieuw-object_27: object = $onderwerp] beta [nieuw-in-deze-fase_28:"
-                        + " IN_PHASE $fase] na [] bind []]",
-                "  test voorwaarde_29 CONDITION probe -1 slots [0] size 4: KENMERK(Read 0, Const"
-                        + " true)",
+                        + " [stand-onderwerp_19: subject = $onderwerp] beta [] na [] bind [$penninggerechtigd = []"
+                        + " CharacteristicState.holds VALUE]",
+                "  accumulation CreationStamp $herkomst_creatie_22 alpha [] join [herkomst_24: object = $onderwerp]"
+                        + " beta [] na [] bind [] functions [LIST null -> $herkomsten_creatie_23]",
+                "  not inside [$gemaakt_creatie_25] outside [$onderwerp] [CreationStamp $gemaakt_creatie_25 alpha"
+                        + " [gemaakt_27: [[] rule VALUE GELIJK stel het penningbesluit vast]] join"
+                        + " [gemaakt-onderwerp_28: subject = $onderwerp] beta [] na [] bind []]",
+                "  not inside [$nieuw_creatie_26] outside [$onderwerp, $fase] [CreationStamp $nieuw_creatie_26 alpha"
+                        + " [] join [nieuw-object_29: object = $onderwerp] beta [nieuw-in-deze-fase_30: IN_PHASE"
+                        + " $fase] na [] bind []]",
+                "  test voorwaarde_31 CONDITION probe -1 slots [0] size 4: KENMERK(Read 0, Const true)",
                 "    test 0 Call source 'hij penninggerechtigd is'",
                 "    test 0.0 SlotValue",
                 "    test 0.1 Const Boolean",
-                "  not inside [$eigen_fout] outside [$onderwerp] [Fault $eigen_fout alpha [eigen-fout_30:"
-                        + " [[] rule VALUE GELIJK stel het penningbesluit vast]] join [eigen-fout-onderwerp_31:"
-                        + " subject = $onderwerp] beta [] na [] bind []]",
+                "  not inside [$eigen_fout] outside [$onderwerp] [Fault $eigen_fout alpha [eigen-fout_32: [[] rule"
+                        + " VALUE GELIJK stel het penningbesluit vast]] join [eigen-fout-onderwerp_33: subject ="
+                        + " $onderwerp] beta [] na [] bind []]",
                 "  consequence Creation [subject=$onderwerp, creation=stel het penningbesluit vast,"
                         + " depth=CreationDepth[origin=3, stratum=0, type=Jutter, budget=100],"
                         + " fault=FaultName[form=stel het penningbesluit vast, rule=stel het penningbesluit vast],"
                         + " faultInsertion=STATED, phase=2, slots=[1, 2, 3], size=4]",
                 "    construction Penningbesluit settings [0 Penningbesluit.besluitbedrag]",
-                "    assignment 0 ElementKey[objectType=penningbesluit, name=besluitbedrag,"
-                        + " characteristic=false]: FIT_TARGET(Read 1, Const 0, Const besluitbedrag, Const stel het"
-                        + " penningbesluit vast)",
+                "    assignment 0 ElementKey[objectType=penningbesluit, name=besluitbedrag, characteristic=false]:"
+                        + " FIT_TARGET(Required (Read 1) 'parameter \"penningbedrag\" is unbound in this case (binding"
+                        + " is fail-fast, ch. 5.7)', Const 0, Const besluitbedrag, Const stel het penningbesluit vast)",
                 "      value 0 Call source 'het penningbedrag'",
-                "      value 0.0 SlotValue source 'het penningbedrag'",
+                "      value 0.0 Required source 'het penningbedrag'",
+                "      value 0.0.0 SlotValue",
                 "      value 0.1 Const Integer",
                 "      value 0.2 Const String",
                 "      value 0.3 Const String",

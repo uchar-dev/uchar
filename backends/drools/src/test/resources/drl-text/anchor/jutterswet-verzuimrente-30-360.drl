@@ -99,7 +99,7 @@ function Object waarde_maandrente(Object $verzuimrentevoet, Object $afdrachtbedr
 // de verzuimrentevoet maal zijn afdrachtbedrag maal zijn rentedagen gedeeld door het rentejaar
 function Object deling_maandrente(Object $verzuimrentevoet, Object $afdrachtbedrag, Object $tijdlijn_2, Object $onderwerp, Object $rentejaar, Object sonde) {
     Object deeltal = PeriodArithmetic.dividend(PeriodArithmetic.times(PeriodArithmetic.times(PeriodArithmetic.parameter($verzuimrentevoet, "verzuimrentevoet"), PeriodArithmetic.scalar($afdrachtbedrag)), ComputeHelpers.complete($tijdlijn_2, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"rentedagen\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "rentedagen", Boolean.TRUE)), sonde);
-    return PeriodArithmetic.divided(deeltal, (PeriodArithmetic.emptyOnEveryDay(deeltal) ? null : PeriodArithmetic.scalar($rentejaar)), sonde);
+    return PeriodArithmetic.divided(deeltal, (PeriodArithmetic.emptyOnEveryDay(deeltal) ? null : PeriodArithmetic.scalar(ComputeHelpers.required($rentejaar, "parameter \"rentejaar\" is unbound in this case (binding is fail-fast, ch. 5.7)"))), sonde);
 }
 
 rule "maandrente"

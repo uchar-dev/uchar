@@ -13,7 +13,12 @@ global java.math.BigDecimal aanvoertarief;
 
 // zijn aangevoerd gewicht groter of gelijk is aan de aanvoerdrempel
 function boolean toets_aanvoerplichtigBijDrempel(Object $aangevoerdGewicht, Object $aanvoerdrempel) {
-    return RegelSpraakRuntime.rsAggVergelijk($aangevoerdGewicht, $aanvoerdrempel, ">=");
+    try {
+        return RegelSpraakRuntime.rsAggVergelijk($aangevoerdGewicht, ComputeHelpers.required($aanvoerdrempel, "parameter \"aanvoerdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">=");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
 }
 
 rule "aanvoerplichtig bij drempel"
@@ -26,10 +31,45 @@ then
     insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "aanvoerplichtig", true)));
 end
 
+// zijn aangevoerd gewicht groter of gelijk is aan de aanvoerdrempel
+function boolean toets_aanvoerplichtigBijDrempelFoutInDeVoorwaarde(Object $aangevoerdGewicht, Object $aanvoerdrempel) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk($aangevoerdGewicht, ComputeHelpers.required($aanvoerdrempel, "parameter \"aanvoerdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">=");
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// zijn aangevoerd gewicht groter of gelijk is aan de aanvoerdrempel
+function Object fout_aanvoerplichtigBijDrempelFoutInDeVoorwaarde(Object $aangevoerdGewicht, Object $aanvoerdrempel) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk($aangevoerdGewicht, ComputeHelpers.required($aanvoerdrempel, "parameter \"aanvoerdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">=");
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "aanvoerplichtig bij drempel: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $aangevoerdGewicht : aangevoerdGewicht )
+    $parameter_1 : ParameterState( parameter == "aanvoerdrempel", $aanvoerdrempel : value )
+    eval( toets_aanvoerplichtigBijDrempelFoutInDeVoorwaarde($aangevoerdGewicht, $aanvoerdrempel) )
+then
+    Object f = fout_aanvoerplichtigBijDrempelFoutInDeVoorwaarde($aangevoerdGewicht, $aanvoerdrempel);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("the condition of \"aanvoerplichtig bij drempel\" failed in the test and not in the consequence, over the same bound values");
+    }
+    insertLogical(new Fault($onderwerp, "aanvoerplichtig bij drempel", ComputeHelpers.designate(f, "aanvoerplichtig bij drempel")));
+end
+
 // zijn aanvoerwaarde plus het aanvoertarief
 function Object waarde_aanvoergeldVanEenJutter(Object $aanvoerwaarde, Object $aanvoertarief) {
     try {
-        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($aanvoerwaarde, $aanvoertarief), Integer.valueOf(2), "aanvoergeld", null);
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($aanvoerwaarde, ComputeHelpers.required($aanvoertarief, "parameter \"aanvoertarief\" is unbound in this case (binding is fail-fast, ch. 5.7)")), Integer.valueOf(2), "aanvoergeld", null);
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }

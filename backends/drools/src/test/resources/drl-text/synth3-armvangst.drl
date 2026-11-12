@@ -60,7 +60,7 @@ function Object binder2_heffingVanEenJutter(Object $inkomen, Object $restpost, O
 function Object let3_heffingVanEenJutter(Object $inkomen, Object $restpost, Object $drempel, Object sonde, Object cel_1, Object cel_4) {
     Object cel_5 = ComputeHelpers.binderCell();
     try {
-        return (RegelSpraakRuntime.rsAggVergelijk(binder1_heffingVanEenJutter($inkomen, $restpost, $drempel, sonde, cel_1), $drempel, ">") ? (Object) new java.math.BigDecimal("0") : (Object) binder3_heffingVanEenJutter($inkomen, $restpost, $drempel, sonde, cel_1, cel_4, cel_5));
+        return (RegelSpraakRuntime.rsAggVergelijk(binder1_heffingVanEenJutter($inkomen, $restpost, $drempel, sonde, cel_1), ComputeHelpers.required($drempel, "parameter \"drempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">") ? (Object) new java.math.BigDecimal("0") : (Object) binder3_heffingVanEenJutter($inkomen, $restpost, $drempel, sonde, cel_1, cel_4, cel_5));
     } catch (EmptyBarrier barriere) {
         return ComputeHelpers.intercepted(barriere, cel_5);
     }
@@ -125,7 +125,7 @@ function Object binder1_wikkelheffingVanEenJutter(Object $inkomen, Object $restp
 function Object let2_wikkelheffingVanEenJutter(Object $inkomen, Object $restpost, Object $drempel, Object $basisheffing, Object sonde, Object cel_1) {
     Object cel_4 = ComputeHelpers.binderCell();
     try {
-        return RegelSpraakRuntime.rsPlus(let3_wikkelheffingVanEenJutter($inkomen, $restpost, $drempel, $basisheffing, sonde, cel_1, cel_4), $basisheffing);
+        return RegelSpraakRuntime.rsPlus(let3_wikkelheffingVanEenJutter($inkomen, $restpost, $drempel, $basisheffing, sonde, cel_1, cel_4), ComputeHelpers.required($basisheffing, "parameter \"basisheffing\" is unbound in this case (binding is fail-fast, ch. 5.7)"));
     } catch (EmptyBarrier barriere) {
         return ComputeHelpers.intercepted(barriere, cel_4);
     }
@@ -143,7 +143,7 @@ function Object binder2_wikkelheffingVanEenJutter(Object $inkomen, Object $restp
 function Object let3_wikkelheffingVanEenJutter(Object $inkomen, Object $restpost, Object $drempel, Object $basisheffing, Object sonde, Object cel_1, Object cel_4) {
     Object cel_5 = ComputeHelpers.binderCell();
     try {
-        return (RegelSpraakRuntime.rsAggVergelijk(binder1_wikkelheffingVanEenJutter($inkomen, $restpost, $drempel, $basisheffing, sonde, cel_1), $drempel, ">") ? (Object) new java.math.BigDecimal("0") : (Object) binder3_wikkelheffingVanEenJutter($inkomen, $restpost, $drempel, $basisheffing, sonde, cel_1, cel_4, cel_5));
+        return (RegelSpraakRuntime.rsAggVergelijk(binder1_wikkelheffingVanEenJutter($inkomen, $restpost, $drempel, $basisheffing, sonde, cel_1), ComputeHelpers.required($drempel, "parameter \"drempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">") ? (Object) new java.math.BigDecimal("0") : (Object) binder3_wikkelheffingVanEenJutter($inkomen, $restpost, $drempel, $basisheffing, sonde, cel_1, cel_4, cel_5));
     } catch (EmptyBarrier barriere) {
         return ComputeHelpers.intercepted(barriere, cel_5);
     }

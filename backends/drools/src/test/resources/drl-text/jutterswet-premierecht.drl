@@ -36,7 +36,7 @@ function boolean toets_premieVanEenRechtOpPremie(Object $toegekend) {
 // het vondstgewicht van het Recht op premie maal het premietarief
 function Object waarde_premieVanEenRechtOpPremie(Object $vondstgewicht, Object $premietarief) {
     try {
-        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($vondstgewicht, $premietarief), Integer.valueOf(0), "premie", null);
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal($vondstgewicht, ComputeHelpers.required($premietarief, "parameter \"premietarief\" is unbound in this case (binding is fail-fast, ch. 5.7)")), Integer.valueOf(0), "premie", null);
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }

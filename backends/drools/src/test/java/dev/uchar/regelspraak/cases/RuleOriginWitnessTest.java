@@ -74,6 +74,8 @@ class RuleOriginWitnessTest {
         String stack = "defaults A:Jutter.premie", g = "/rules/prioritizedDefaults/3";
         assertEquals(List.of(
                 stack + ": default 0 -> DEFAULT own " + g + "/defaults/0",
+                // the condition of the first default reads a parameter, whose read faults where the case binds none
+                stack + ": default 0: fout in de voorwaarde -> DEFAULT condition-fault " + g + "/defaults/0",
                 stack + ": default 1 -> DEFAULT own " + g + "/defaults/1",
                 stack + ": default 2 -> DEFAULT own " + g + "/defaults/2",
                 stack + ": bijdrage aan vouw 0 -> DEFAULT fold-contribution " + g + "/defaults/0 vouw " + g
