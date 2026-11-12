@@ -562,7 +562,8 @@ class TmsConditionPerPeriodWitnessTest {
     // ---------------- helpers ----------------
 
     /** The output of {@code --readings} on {@code ir} and {@code c} on both branches: {@code expected}, the readings in
-     *  their sorted order after the line of the case. */
+     *  their sorted order after the line of the case. The end state the output writes after the readings, each line
+     *  after {@code state }, is gate 17's and {@link EndStateWitnessTest}'s, and stays out of this comparison. */
     static void readings(Path ir, Path c, List<String> expected) {
         for (boolean drl : List.of(false, true)) {
             java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
@@ -571,7 +572,8 @@ class TmsConditionPerPeriodWitnessTest {
             arguments.addAll(List.of(ir.toString(), c.toString()));
             int code = DroolsBackendMain.run(arguments.toArray(String[]::new),
                     new java.io.PrintStream(out, true, java.nio.charset.StandardCharsets.UTF_8));
-            assertEquals(expected, out.toString(java.nio.charset.StandardCharsets.UTF_8).lines().toList(),
+            assertEquals(expected, out.toString(java.nio.charset.StandardCharsets.UTF_8).lines()
+                            .filter(l -> !l.startsWith("state ")).toList(),
                     (drl ? "DRL_TEXT" : "EXEC_MODEL") + ": de canonieke tekst");
             assertEquals(0, code);
         }

@@ -960,7 +960,9 @@ class ReadingsWitnessTest {
         bothBranches(ir, c, true, List.of(r1.toString(), r2.toString(), r3.toString()));
     }
 
-    /** The output of {@code --readings} on {@code ir} and the case {@code c}, on both branches, the expected lines. */
+    /** The output of {@code --readings} on {@code ir} and the case {@code c}, on both branches, the expected lines. The
+     *  end state the output writes after the readings, each line after {@code state }, is gate 17's and
+     *  {@link EndStateWitnessTest}'s, and stays out of this comparison. */
     private static void flag(Path ir, Path c, List<String> expected) {
         for (boolean drl : List.of(false, true)) {
             java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
@@ -969,7 +971,8 @@ class ReadingsWitnessTest {
             arguments.addAll(List.of(ir.toString(), c.toString()));
             int code = DroolsBackendMain.run(arguments.toArray(String[]::new),
                     new java.io.PrintStream(out, true, java.nio.charset.StandardCharsets.UTF_8));
-            assertEquals(expected, out.toString(java.nio.charset.StandardCharsets.UTF_8).lines().toList(),
+            assertEquals(expected, out.toString(java.nio.charset.StandardCharsets.UTF_8).lines()
+                            .filter(l -> !l.startsWith("state ")).toList(),
                     (drl ? "DRL_TEXT" : "EXEC_MODEL") + ": de canonieke tekst");
             assertEquals(0, code);
         }
