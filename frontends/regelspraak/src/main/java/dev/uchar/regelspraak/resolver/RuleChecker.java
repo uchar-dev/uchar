@@ -609,25 +609,25 @@ final class RuleChecker {
 
     /** The names of the rules written in an extension block: each 'Uitzondering op' or 'Afwijking van' block's own
      *  name and its carrier's, each member of an 'Uitzonderingen ongeordend' block, and the carrier such a block
-     *  names. Such a rule that is still in resolvedRules after the lift belongs to a tree or block the lowering
-     *  refused, with an ERROR of its own. */
+     *  names, under the name identity of IR-SPEC ch. 2.1. Such a rule that is still in resolvedRules after the lift
+     *  belongs to a tree or block the lowering refused, with an ERROR of its own. */
     private static java.util.Set<String> blockRuleNames(RegelSpraakDocumentContext doc) {
         java.util.Set<String> names = nodeNames(doc);
         for (UitzonderingRegelContext u : DefinitionResolver.allExceptions(doc))
-            names.add(src(u.uitzonderingBasisNaam()));
+            names.add(dev.uchar.regelspraak.emit.IrEmitter.norm(src(u.uitzonderingBasisNaam())));
         for (UitzonderingGroepContext g : DefinitionResolver.allExceptionGroups(doc))
-            if (g.OP() != null) names.add(src(g.uitzonderingBasisNaam()));
+            if (g.OP() != null) names.add(dev.uchar.regelspraak.emit.IrEmitter.norm(src(g.uitzonderingBasisNaam())));
         return names;
     }
 
     /** The names of the rules written as a node of a defaults tree: each 'Uitzondering op' and 'Afwijking van'
-     *  block's own name and each member of an 'Uitzonderingen ongeordend' block. A carrier among these is no base
-     *  rule: the carrier is looked up among the blocks first. */
+     *  block's own name and each member of an 'Uitzonderingen ongeordend' block, under the name identity of IR-SPEC
+     *  ch. 2.1. A carrier among these is no base rule: the carrier is looked up among the blocks first. */
     private static java.util.Set<String> nodeNames(RegelSpraakDocumentContext doc) {
         java.util.Set<String> names = new java.util.HashSet<>();
-        for (UitzonderingRegelContext u : DefinitionResolver.allExceptions(doc)) names.add(src(u.regelNaam()));
+        for (UitzonderingRegelContext u : DefinitionResolver.allExceptions(doc)) names.add(dev.uchar.regelspraak.emit.IrEmitter.norm(src(u.regelNaam())));
         for (UitzonderingGroepContext g : DefinitionResolver.allExceptionGroups(doc))
-            for (RegelContext member : g.regel()) names.add(src(member.regelNaam()));
+            for (RegelContext member : g.regel()) names.add(dev.uchar.regelspraak.emit.IrEmitter.norm(src(member.regelNaam())));
         return names;
     }
 
@@ -647,7 +647,7 @@ final class RuleChecker {
     private void checkFlatNegations(java.util.Set<String> blockNames) {
         java.util.Set<String> reported = new java.util.HashSet<>();
         for (ResolvedRule r : model.resolvedRules) {
-            if (!isNegated(r) || refusedTargets.contains(r) || blockNames.contains(withoutVersion(r.name()))) continue;
+            if (!isNegated(r) || refusedTargets.contains(r) || blockNames.contains(dev.uchar.regelspraak.emit.IrEmitter.norm(withoutVersion(r.name())))) continue;
             refusedTargets.add(r);
             if (!reported.add(withoutVersion(r.name()))) continue;
             Expr.AttributeReference targetName = (Expr.AttributeReference) r.target();
@@ -755,7 +755,7 @@ final class RuleChecker {
             Msg.Enumeration groupNames = enumeration(groups.stream().map(PrioritizedDefaults::name).toList());
             List<Object> others = new ArrayList<>();
             for (ResolvedRule r : model.resolvedRules) {
-                if (refusedTargets.contains(r) || blockNames.contains(withoutVersion(r.name()))) continue;
+                if (refusedTargets.contains(r) || blockNames.contains(dev.uchar.regelspraak.emit.IrEmitter.norm(withoutVersion(r.name())))) continue;
                 DefaultsTarget d = targetOf(r);
                 if (d != null && e.getKey().equals(targetKey(d.subjectType().name, d.characteristic(), d.name())))
                     others.add(Msg.frontend("PART.name-with-table", "name", r.name(), "table", rowTable(r.name())));
@@ -814,10 +814,10 @@ final class RuleChecker {
         for (RegelGroepContext g : doc.regelGroep())
             for (GroepLidContext member : g.groepLid()) {
                 if (member.regel() != null)
-                    memberGroup.putIfAbsent(src(member.regel().regelNaam()), new Membership(src(g.kaleNaam()), null));
+                    memberGroup.putIfAbsent(dev.uchar.regelspraak.emit.IrEmitter.norm(src(member.regel().regelNaam())), new Membership(src(g.kaleNaam()), null));
                 else if (member.beslistabel() != null)
                     for (String row : rowRules.getOrDefault(member.beslistabel(), List.of()))
-                        memberGroup.putIfAbsent(row, new Membership(src(g.kaleNaam()),
+                        memberGroup.putIfAbsent(dev.uchar.regelspraak.emit.IrEmitter.norm(row), new Membership(src(g.kaleNaam()),
                                 src(member.beslistabel().beslistabelNaam())));
             }
         java.util.Set<ParserRuleContext> refused =
@@ -837,7 +837,7 @@ final class RuleChecker {
                 String base = carrierOf(kind);
                 // Only where the lift would happen: a base that resolves to no rule gets the ordinary "no base
                 // rule" refusal of the lowering, which is the true one there.
-                Membership member = base == null || resolvedOf(base).isEmpty() ? null : memberGroup.get(base);
+                Membership member = base == null || resolvedOf(base).isEmpty() ? null : memberGroup.get(dev.uchar.regelspraak.emit.IrEmitter.norm(base));
                 if (member != null) {
                     // the lift takes the member out of the rule forms, and the verifier refuses the group that still
                     // names it (WF-033); the placement, where it holds too, stays in the context
@@ -854,7 +854,7 @@ final class RuleChecker {
                     model.diagnostics.add(new Diagnostic(Severity.ERROR,
                             "RGS-109", params("head", blockHead(block), "groupBefore", groupBefore, "carrier", base, "firstGroup", firstGroup,
                                     // a carrier that is itself a block is no base rule: the message names what was written
-                                    "carrierPart", base == null ? "" : Msg.frontend(nodeNames.contains(base) ? "RGS-109.and-carrier" : "RGS-109.and-base")),
+                                    "carrierPart", base == null ? "" : Msg.frontend(nodeNames.contains(dev.uchar.regelspraak.emit.IrEmitter.norm(base)) ? "RGS-109.and-carrier" : "RGS-109.and-base")),
                             block.getStart().getLine()));
                 }
             }
@@ -1788,7 +1788,7 @@ final class RuleChecker {
                     nodes.add(new Node(Block.MEMBER, g, src(member.regelNaam()), src(g.uitzonderingBasisNaam()), blockHead(g),
                             g.getStart().getLine()));
             } else if (kind instanceof UitzonderingGroepContext g)
-                for (RegelContext member : g.regel()) separateMembers.add(src(member.regelNaam()));
+                for (RegelContext member : g.regel()) separateMembers.add(dev.uchar.regelspraak.emit.IrEmitter.norm(src(member.regelNaam())));
         }
         if (nodes.isEmpty()) return;
 
@@ -1811,15 +1811,16 @@ final class RuleChecker {
         // 1. the carrier of each node: another node by name, else a base rule. A block refused at its head
         //    (geweigerd) says nothing more; a member block says its carrier once.
         Map<String, Node> perName = new java.util.HashMap<>();
-        for (Node k : nodes) perName.putIfAbsent(k.name, k);
+        for (Node k : nodes) perName.putIfAbsent(dev.uchar.regelspraak.emit.IrEmitter.norm(k.name), k);
         java.util.Set<ParserRuleContext> reported =
                 java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
         for (Node k : nodes) {
-            k.parent = perName.get(k.carrier);
+            k.parent = perName.get(dev.uchar.regelspraak.emit.IrEmitter.norm(k.carrier));
             if (k.parent != null) continue;
-            Typing.Coded reason = separateMembers.contains(k.carrier) ? looseMemberAsCarrier(k)
+            Typing.Coded reason = separateMembers.contains(dev.uchar.regelspraak.emit.IrEmitter.norm(k.carrier)) ? looseMemberAsCarrier(k)
                     : resolvedOf(k.carrier).isEmpty() ? unknownCarrier(k) : null;
-            if (reason == null) { k.root = k.carrier; continue; }
+            // the tree and its group carry the base rule's name as the rule spells it, whatever case the carrier has
+            if (reason == null) { k.root = withoutVersion(resolvedOf(k.carrier).get(0).name()); continue; }
             k.error = true;
             if (!refused.contains(k.block) && reported.add(k.block)) error(k.line, reason);
         }
@@ -2244,7 +2245,7 @@ final class RuleChecker {
             DefaultsTarget opT = new DefaultsTarget(t, own.characteristic(), own.name());
             for (ResolvedRule b : model.resolvedRules)
                 if (b.kind() != ResolvedRule.Kind.INITIALISATIE && !refusedTargets.contains(b)
-                        && !nodeNames.contains(withoutVersion(b.name())) && opT.equal(targetOf(b)))
+                        && !nodeNames.contains(dev.uchar.regelspraak.emit.IrEmitter.norm(withoutVersion(b.name()))) && opT.equal(targetOf(b)))
                     return new Base(withoutVersion(b.name()), t);
         }
         return null;
@@ -2530,12 +2531,16 @@ final class RuleChecker {
     private static final Condition ALTIJD =
             new Condition.Compound(Condition.Quantifier.ALLE, 0, List.of(), Source.synthetic("altijd"));
 
-    /** The resolved versions of the rule named {@code name} — matched exactly or by the "&lt;naam&gt; #k" version
-     *  suffix. Empty when no such rule resolved (it was a non-scalar construct, or the name is unknown). */
+    /** The resolved versions of the rule named {@code name} — matched by the name identity of IR-SPEC ch. 2.1, as is
+     *  or by the "&lt;naam&gt; #k" version suffix. Empty when no such rule resolved (it was a non-scalar construct, or the
+     *  name is unknown). */
     private List<ResolvedRule> resolvedOf(String name) {
+        String key = dev.uchar.regelspraak.emit.IrEmitter.norm(name);
         List<ResolvedRule> result = new ArrayList<>();
-        for (ResolvedRule r : model.resolvedRules)
-            if (r.name().equals(name) || r.name().startsWith(name + " #")) result.add(r);
+        for (ResolvedRule r : model.resolvedRules) {
+            String own = dev.uchar.regelspraak.emit.IrEmitter.norm(r.name());
+            if (own.equals(key) || own.startsWith(key + " #")) result.add(r);
+        }
         return result;
     }
 

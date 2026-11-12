@@ -51,6 +51,30 @@ class DefaultsExtensionTest {
                 () -> "diagnostiek noemt de onbekende basisregel niet: " + m.errors());
     }
 
+    /** A carrier names its base rule under the name identity of IR-SPEC ch. 2.1, case not counted: "Uitzondering op
+     *  Premie" above the rule 'premie' lifts both into one group, which carries the rule's own spelling. Before,
+     *  the carrier was matched with case and refused as unknown (RGS-313). */
+    @Test void a_carrier_names_its_base_rule_without_case() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Vondst (mv: Vondsten)
+                de premie Numeriek (getal met 2 decimalen);
+                is gemerkt kenmerk (bijvoeglijk);
+
+            Regel premie
+                geldig altijd
+                    De premie van een Vondst moet gesteld worden op 1,00.
+
+            Uitzondering op Premie: hoge premie
+                geldig altijd
+                    De premie van een Vondst moet gesteld worden op 2,00 indien hij gemerkt is.
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        assertEquals(1, m.prioritizedDefaults.size());
+        assertEquals("premie", m.prioritizedDefaults.get(0).name());
+        assertEquals(2, m.prioritizedDefaults.get(0).defaults().size());
+        assertTrue(m.resolvedRules.isEmpty(), () -> "beide regels horen in de groep: " + m.resolvedRules);
+    }
+
     @Test void exception_on_another_target_is_refused_loudly() {
         // The exception body must write the SAME target as the base rule (WF-050): a different kenmerk refuses.
         String src = OBJ_ORDERED.replace("het aantal geborgen wrakken",
