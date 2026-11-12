@@ -5434,22 +5434,23 @@ final class RuleChecker {
         // unparseable value all reach thresholdOf as < 1; flag it rather than let it collapse
         // the rule to always-true (minstens(0) is vacuously true). An over-size N is fine —
         // it is a faithfully unsatisfiable "false", so it is not an error.
-        checkThreshold(quantifier, k, (k != null ? k : whole).getStart().getLine());
+        checkThreshold(quantifier, k == null ? null : k.telwoord(), (k != null ? k : whole).getStart().getLine());
         if (components == null) return new Condition.Unresolved(source(whole), null);   // the bullet ERROR is the diagnosis
         return new Condition.Compound(quantifier, threshold, components, source(whole));
     }
 
     /** §13.4.14.4/.5 a counting quantifier's telwoord must be a positive whole number (>= 1): a 0 / negative / decimal /
-     *  unparseable value reaches {@link #thresholdOf} as &lt; 1 and would collapse a ten-minste/ten-hoogste/precies to
-     *  vacuously-true (minstens(0) always holds), so flag it. Shared by {@link #buildCompound} and the bullet tree's
-     *  {@link #conditionsOf}, which builds the nested compounds. */
-    private void checkThreshold(Condition.Quantifier quantifier, VoorwaardeKwantificatieContext k, int sourceLine) {
-        int threshold = thresholdOf(k);
+     *  unparseable value reaches {@link #numeralValue} as &lt; 1 and would collapse a ten-minste/ten-hoogste/precies to
+     *  vacuously-true (minstens(0) always holds), so flag it. Every counting quantifier the wire writes as a compound
+     *  passes here: a condition, a nested condition, consistency criteria, a nested criterion and a compound
+     *  subselection (WF-041 refuses each alike). */
+    private void checkThreshold(Condition.Quantifier quantifier, TelwoordContext telwoord, int sourceLine) {
+        int threshold = numeralValue(telwoord);
         if ((quantifier == Condition.Quantifier.TEN_MINSTE || quantifier == Condition.Quantifier.TEN_HOOGSTE
                 || quantifier == Condition.Quantifier.PRECIES) && threshold < 1)
             // a whole number reaches the wire as written and the verifier refuses it in WF-041's words; a decimal
             // or fraction reaches it as 0, a number the author did not write, so that refusal keeps its own words
-            if (wholeNumeral(k))
+            if (wholeNumeral(telwoord))
                 model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-203",
                         params("threshold", threshold), sourceLine));
             else
@@ -5457,9 +5458,9 @@ final class RuleChecker {
     }
 
     /** Whether the telwoord is written as a whole number that {@link #numeralValue} reads as such. */
-    private static boolean wholeNumeral(VoorwaardeKwantificatieContext k) {
-        if (k == null || k.telwoord() == null || k.telwoord().NUMBER() == null) return false;
-        try { Integer.parseInt(k.telwoord().NUMBER().getText()); return true; }
+    private static boolean wholeNumeral(TelwoordContext telwoord) {
+        if (telwoord == null || telwoord.NUMBER() == null) return false;
+        try { Integer.parseInt(telwoord.NUMBER().getText()); return true; }
         catch (NumberFormatException e) { return false; }
     }
 
@@ -5527,7 +5528,10 @@ final class RuleChecker {
         for (FlatBullet b : flat) {
             if (b.item() instanceof GenesteVoorwaardeContext g && g.genesteSamengesteldeVoorwaarde() != null) {
                 VoorwaardeKwantificatieContext k = g.genesteSamengesteldeVoorwaarde().voorwaardeKwantificatie();
-                checkThreshold(quantifierOf(k), k, (k != null ? k : g).getStart().getLine());
+                checkThreshold(quantifierOf(k), k == null ? null : k.telwoord(), (k != null ? k : g).getStart().getLine());
+            } else if (b.item() instanceof GenestCriteriumContext g && g.samengesteldCriterium() != null) {
+                ConsistentieKwantificatieContext k = g.samengesteldCriterium().consistentieKwantificatie();
+                checkThreshold(quantifierConsistency(k), k == null ? null : k.telwoord(), line(b));
             } else if (b.item() instanceof GenesteVoorwaardeContext g && g.elementaireVoorwaarde() != null)
                 buildElementary(g.elementaireVoorwaarde());
             else if (b.item() instanceof GenestCriteriumContext g && g.elementaireVoorwaarde() != null)
@@ -5621,7 +5625,7 @@ final class RuleChecker {
                     List<Condition> parts = conditionsOf(node.children());
                     Condition.Quantifier quantifier = quantifierOf(c.voorwaardeKwantificatie());
                     VoorwaardeKwantificatieContext k = c.voorwaardeKwantificatie();
-                    checkThreshold(quantifier, k, (k != null ? k : c).getStart().getLine());
+                    checkThreshold(quantifier, k == null ? null : k.telwoord(), (k != null ? k : c).getStart().getLine());
                     result.add(new Condition.Compound(quantifier, thresholdOf(k), parts, groupSource(c, node)));
                 } else if (g.elementaireVoorwaarde() != null) result.add(buildElementary(g.elementaireVoorwaarde()));
                 else result.add(new Condition.Unresolved(source(g), Msg.frontend("RGS-092.nested-bullet")));
@@ -5629,6 +5633,7 @@ final class RuleChecker {
                 if (g.samengesteldCriterium() != null) {
                     SamengesteldCriteriumContext c = g.samengesteldCriterium();
                     ConsistentieKwantificatieContext k = c.consistentieKwantificatie();
+                    checkThreshold(quantifierConsistency(k), k == null ? null : k.telwoord(), (k != null ? k : c).getStart().getLine());
                     result.add(new Condition.Compound(quantifierConsistency(k), k == null ? 0 : numeralValue(k.telwoord()),
                             conditionsOf(node.children()), groupSource(c, node)));
                 } else if (g.elementaireVoorwaarde() != null) result.add(buildElementary(g.elementaireVoorwaarde()));
@@ -5703,6 +5708,8 @@ final class RuleChecker {
             // leeftijd is kleiner dan …") — one non-bulleted voorwaarde, resolved by the same elementaire
             // machinery a bullet uses and wrapped as a 1-onderdeel compound so every quantifier lowers
             // through the existing Samengesteld path.
+            KwantificatieContext k = sp.kwantificatie();
+            checkThreshold(quantifierQuantification(k), k == null ? null : k.telwoord(), (k != null ? k : sp).getStart().getLine());
             if (sp.samengesteldeVoorwaardeOnderdeel() == null)
                 return new Condition.Compound(quantifierQuantification(sp.kwantificatie()),
                         sp.kwantificatie() == null ? 0 : numeralValue(sp.kwantificatie().telwoord()),
@@ -5748,6 +5755,7 @@ final class RuleChecker {
      *  bullet tree; an {@link Condition.Unresolved} after a bullet ERROR, which is then the rule's diagnosis. A criteria
      *  header ANTLR's recovery left without its bullet list has no criteria: the syntax error is reported. */
     private Condition buildCriteria(ConsistentieKwantificatieContext k, SamengesteldCriteriumOnderdeelContext component, Source source) {
+        if (k != null) checkThreshold(quantifierConsistency(k), k.telwoord(), k.getStart().getLine());
         List<Condition> components = bulletConditions(component, null);
         if (components == null) return new Condition.Unresolved(source, null);
         return new Condition.Compound(quantifierConsistency(k), k == null ? 0 : numeralValue(k.telwoord()), components, source);
