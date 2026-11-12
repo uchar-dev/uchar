@@ -377,6 +377,9 @@ class UnitConflictWitnessTest {
         if (ref == null) return null;
         ObjectNode decl = declarationFrom(copy, ref);
         decl.set("unit", JSON.readTree(FOREIGN));
+        // a percentage presentation names the unit '%' (IR-SPEC ch. 10); with a foreign unit it would make the copy
+        // malformed and the loader would refuse it before the unit fence this twist probes
+        decl.remove("presentation");
         return copy;
     }
 
