@@ -220,38 +220,12 @@ public final class Resolver {
             m.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-092", params("reason", reason, "expression", sourceText),
                     sourceText == null ? 0 : sourceText.line()));
         };
-        for (var r : m.resolvedRules) {
-            Expr.collectUnresolved(r.target(), report);
-            Expr.collectUnresolved(r.value(), report);
-            Condition.collectUnresolved(r.condition(), report);
-        }
-        for (var d : m.resolvedDayKindDefinitions) Condition.collectUnresolved(d.condition(), report);
-        for (var oc : m.objectCreations) {
-            for (var t : oc.assignments()) Expr.collectUnresolved(t.value(), report);
-            Condition.collectUnresolved(oc.condition(), report);
-        }
-        for (var v : m.allocations)  Condition.collectUnresolved(v.condition(), report);
-        for (var c : m.consistencies) Condition.collectUnresolved(c.assertion(), report);
-        for (var fc : m.factCreations) Condition.collectUnresolved(fc.condition(), report);
-        java.util.Set<Condition> seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
-        for (var pd : m.prioritizedDefaults) reportDefaults(pd.defaults(), report, seen);
-    }
-
-    /** The §7 defaults tree: each default's guard and consequence, and recursively the defaults of its
-     *  exception groups — a marker nested in an exception is as much on the wire as a top-level one. A
-     *  restrictive exception repeats its carrier's conjuncts, the very same nodes (grammar/DIVERGENCES.md §4,
-     *  form 2), so a guard is walked with {@link Condition#eachConjunctOnce} and each node reported once: one
-     *  marker in a base's condition is one WARNING, not one per exception above it. */
-    private static void reportDefaults(java.util.List<dev.uchar.regelspraak.ir.Default> defaults,
-                                     java.util.function.BiConsumer<dev.uchar.regelspraak.ir.Source, Object> report,
-                                     java.util.Set<Condition> seen) {
-        if (defaults == null) return;
-        for (var d : defaults) {
-            Condition.eachConjunctOnce(d.condition(), seen, c -> Condition.collectUnresolved(c, report));
-            Expr.collectUnresolved(d.consequence(), report);
-            if (d.exceptions() != null)
-                for (var group : d.exceptions().members()) reportDefaults(group.defaults(), report, seen);
-        }
+        // a marker nested in an exception is as much on the wire as a top-level one, and one in a base's condition is one
+        // WARNING, not one per exception above it
+        RuleChecker.eachWrittenPart(m, true, true, new RuleChecker.WrittenParts() {
+            public void condition(Condition c, RegelSpraakModel.ObjectType subject) { Condition.collectUnresolved(c, report); }
+            public void expression(Expr e, RegelSpraakModel.ObjectType subject) { Expr.collectUnresolved(e, report); }
+        });
     }
 
     /** Two mis-spellings of the uchar 'is een' head form that ANTLR can only report as "no viable

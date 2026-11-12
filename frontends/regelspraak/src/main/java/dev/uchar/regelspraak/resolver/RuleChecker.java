@@ -997,32 +997,10 @@ final class RuleChecker {
      *  {@code cond_has_window}. One ERROR per offending composite or fold, so {@link Resolver#irMode} writes
      *  nothing. */
     private void checkWindowPositions() {
-        for (ResolvedRule r : model.resolvedRules) {
-            windowPosition(r.condition()); windowPositionIn(r.target()); windowPositionIn(r.value());
-        }
-        for (var d : model.resolvedDayKindDefinitions) windowPosition(d.condition());
-        for (var oc : model.objectCreations) {
-            windowPosition(oc.condition());
-            for (var t : oc.assignments()) windowPositionIn(t.value());
-        }
-        for (var v : model.allocations) windowPosition(v.condition());
-        for (var c : model.consistencies) windowPosition(c.assertion());
-        for (var fc : model.factCreations) windowPosition(fc.condition());
-        java.util.Set<Condition> seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
-        for (var pd : model.prioritizedDefaults) windowPositionDefaults(pd.defaults(), seen);
-    }
-
-    /** The defaults tree's justifications and consequences. A restrictive exception repeats its carrier's conjuncts,
-     *  the very same nodes, so each justification is walked with {@link Condition#eachConjunctOnce}: a window under
-     *  a counting quantifier in a base's condition is one refusal, not one per exception above it. */
-    private void windowPositionDefaults(List<Default> defaults, java.util.Set<Condition> seen) {
-        if (defaults == null) return;
-        for (Default d : defaults) {
-            Condition.eachConjunctOnce(d.condition(), seen, this::windowPosition);
-            windowPositionIn(d.consequence());
-            if (d.exceptions() != null)
-                for (var group : d.exceptions().members()) windowPositionDefaults(group.defaults(), seen);
-        }
+        eachWrittenPart(model, true, true, new WrittenParts() {
+            public void condition(Condition c, ObjectType subject) { windowPosition(c); }
+            public void expression(Expr e, ObjectType subject) { windowPositionIn(e); }
+        });
     }
 
     private void windowPosition(Condition c) {
@@ -1098,35 +1076,11 @@ final class RuleChecker {
      */
     private void checkPaths() {
         Set<Object> reported = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
-        for (ResolvedRule r : model.resolvedRules) {
-            ObjectType s = targetSubject(r);
-            pathForm = s;
-            navigation(r.value(), s, reported);
-            navigation(r.condition(), s, reported);
-        }
+        eachWrittenPart(model, false, false, new WrittenParts() {
+            public void condition(Condition c, ObjectType subject) { pathForm = subject; navigation(c, subject, reported); }
+            public void expression(Expr e, ObjectType subject) { pathForm = subject; navigation(e, subject, reported); }
+        });
         pathForm = null;
-        for (var d : model.resolvedDayKindDefinitions) navigation(d.condition(), null, reported);
-        for (var oc : model.objectCreations) {
-            pathForm = oc.subject();
-            for (var t : oc.assignments()) navigation(t.value(), oc.subject(), reported);
-            navigation(oc.condition(), oc.subject(), reported);
-        }
-        for (var v : model.allocations) {
-            pathForm = v.sourceType();
-            if (v.method() != ResolvedAllocation.Method.COMPLEX) navigation(v.condition(), v.sourceType(), reported);
-        }
-        for (var c : model.consistencies) {
-            pathForm = c.subject();
-            navigation(c.assertion(), c.subject(), reported);
-        }
-        for (var fc : model.factCreations) {
-            pathForm = fc.anchor();
-            navigation(fc.condition(), fc.anchor(), reported);
-        }
-        for (var pd : model.prioritizedDefaults) {
-            pathForm = model.objectTypes.get(pd.subject());
-            navigationDefaults(pd.defaults(), pathForm, reported);
-        }
     }
 
     /** The subject of the form {@link #checkPaths} walks: an anchored node is written from it (IR-SPEC ch. 4.1a). */
@@ -1285,28 +1239,57 @@ final class RuleChecker {
      *  rule values and conditions, day-kind conditions, creation values and conditions, allocation and fact-creation
      *  conditions, consistency assertions and the defaults, window bounds and fold sources included. */
     private void everyWrittenExpr(java.util.function.Predicate<Expr> visitor) {
-        for (ResolvedRule r : model.resolvedRules) {
-            Expr.contains(r.value(), visitor);
-            Condition.containsOperand(r.condition(), visitor);
-        }
-        for (var d : model.resolvedDayKindDefinitions) Condition.containsOperand(d.condition(), visitor);
-        for (var oc : model.objectCreations) {
-            for (var t : oc.assignments()) Expr.contains(t.value(), visitor);
-            Condition.containsOperand(oc.condition(), visitor);
-        }
-        for (var v : model.allocations) Condition.containsOperand(v.condition(), visitor);
-        for (var c : model.consistencies) Condition.containsOperand(c.assertion(), visitor);
-        for (var fc : model.factCreations) Condition.containsOperand(fc.condition(), visitor);
-        for (var pd : model.prioritizedDefaults) writtenDefaults(pd.defaults(), visitor);
+        eachWrittenPart(model, false, true, new WrittenParts() {
+            public void condition(Condition c, ObjectType subject) { Condition.containsOperand(c, visitor); }
+            public void expression(Expr e, ObjectType subject) { Expr.contains(e, visitor); }
+        });
     }
 
-    private static void writtenDefaults(List<Default> defaults, java.util.function.Predicate<Expr> visitor) {
+    /** What {@link #eachWrittenPart} hands over: a condition or an expression of a written form, with the subject the
+     *  emitter writes it from (null for a day-kind definition, which has none). */
+    interface WrittenParts {
+        void condition(Condition c, ObjectType subject);
+        void expression(Expr e, ObjectType subject);
+    }
+
+    /**
+     * The one walk over the forms the emitter writes, after the lift, in its order: a rule's target (with
+     * {@code targets}), value and condition; a day-kind definition's condition; an object creation's values and
+     * condition; an allocation's condition (one the emitter leaves out as COMPLEX only with {@code complexAllocations});
+     * a consistency's assertion; a fact creation's condition; and every default's justification and consequence, nested
+     * exception groups included. A restrictive exception repeats its carrier's conjuncts, the very same nodes, so a
+     * justification is handed over one conjunct at a time with {@link Condition#eachConjunctOnce}: a shared conjunct is
+     * judged once, not once per exception above it. Every check over the written document walks this, so none misses a
+     * form another one reaches.
+     */
+    static void eachWrittenPart(RegelSpraakModel model, boolean targets, boolean complexAllocations, WrittenParts parts) {
+        for (ResolvedRule r : model.resolvedRules) {
+            ObjectType subject = targetSubject(r);
+            if (targets) parts.expression(r.target(), subject);
+            parts.expression(r.value(), subject);
+            parts.condition(r.condition(), subject);
+        }
+        for (var d : model.resolvedDayKindDefinitions) parts.condition(d.condition(), null);
+        for (var oc : model.objectCreations) {
+            for (var t : oc.assignments()) parts.expression(t.value(), oc.subject());
+            parts.condition(oc.condition(), oc.subject());
+        }
+        for (var v : model.allocations)
+            if (complexAllocations || v.method() != ResolvedAllocation.Method.COMPLEX)
+                parts.condition(v.condition(), v.sourceType());
+        for (var c : model.consistencies) parts.condition(c.assertion(), c.subject());
+        for (var fc : model.factCreations) parts.condition(fc.condition(), fc.anchor());
+        Set<Condition> seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        for (var pd : model.prioritizedDefaults) writtenDefaults(pd.defaults(), model.objectTypes.get(pd.subject()), seen, parts);
+    }
+
+    private static void writtenDefaults(List<Default> defaults, ObjectType subject, Set<Condition> seen, WrittenParts parts) {
         if (defaults == null) return;
         for (Default d : defaults) {
-            Condition.containsOperand(d.condition(), visitor);
-            Expr.contains(d.consequence(), visitor);
+            Condition.eachConjunctOnce(d.condition(), seen, c -> parts.condition(c, subject));
+            parts.expression(d.consequence(), subject);
             if (d.exceptions() != null)
-                for (ExceptionGroup g : d.exceptions().members()) writtenDefaults(g.defaults(), visitor);
+                for (ExceptionGroup g : d.exceptions().members()) writtenDefaults(g.defaults(), subject, seen, parts);
         }
     }
 
@@ -1331,16 +1314,6 @@ final class RuleChecker {
 
     /** A carrier's conjuncts repeat under its exceptions as the very same nodes, so {@code reported} keeps one
      *  refusal per node. */
-    private void navigationDefaults(List<Default> defaults, ObjectType subject, Set<Object> reported) {
-        if (defaults == null) return;
-        for (Default d : defaults) {
-            navigation(d.condition(), subject, reported);
-            navigation(d.consequence(), subject, reported);
-            if (d.exceptions() != null)
-                for (ExceptionGroup g : d.exceptions().members()) navigationDefaults(g.defaults(), subject, reported);
-        }
-    }
-
     private void navigation(Expr e, ObjectType subject, Set<Object> reported) {
         if (e == null) return;
         switch (e) {
@@ -3171,40 +3144,22 @@ final class RuleChecker {
                     && sameName(r.attribute(), g) && (r.objectType() == null || inLine(o.type(), r.objectType()));
             java.util.function.Predicate<Condition> check = c -> c instanceof Condition.CharacteristicCheck k
                     && dev.uchar.regelspraak.emit.IrEmitter.norm(k.characteristic()).equals(key);
-            boolean read = false;
-            for (ResolvedRule r : model.resolvedRules)
-                read |= uses(r.value(), ref, check) || uses(r.condition(), ref, check);
-            for (var c : model.consistencies) read |= uses(c.assertion(), ref, check);
+            boolean[] read = {false};
+            eachWrittenPart(model, false, true, new WrittenParts() {
+                public void condition(Condition c, ObjectType subject) { read[0] |= uses(c, ref, check); }
+                public void expression(Expr e, ObjectType subject) { read[0] |= uses(e, ref, check); }
+            });
             for (var v : model.allocations)
-                read |= uses(v.condition(), ref, check) || sameName(v.sourceAttribute(), g)
-                        || sameName(v.ratioAttribute(), g) || sameName(v.maximumAttribute(), g)
-                        || sameName(v.orderingAttribute(), g);
-            for (var oc : model.objectCreations) {
-                read |= uses(oc.condition(), ref, check);
-                for (var k : oc.assignments()) read |= uses(k.value(), ref, check);
-            }
-            for (var fc : model.factCreations) read |= uses(fc.condition(), ref, check);
-            for (var d : model.resolvedDayKindDefinitions) read |= uses(d.condition(), ref, check);
-            for (var pd : model.prioritizedDefaults) read |= readsDefaults(pd.defaults(), ref, check);
+                read[0] |= sameName(v.sourceAttribute(), g) || sameName(v.ratioAttribute(), g)
+                        || sameName(v.maximumAttribute(), g) || sameName(v.orderingAttribute(), g);
             for (var u : model.uniquenesses)
-                read |= inLine(o.type(), u.subject()) && u.keys().stream().anyMatch(k -> sameName(k, g));
+                read[0] |= inLine(o.type(), u.subject()) && u.keys().stream().anyMatch(k -> sameName(k, g));
             for (var u : model.uniquenessUnions)
                 for (var s : u.sources())
-                    read |= inLine(o.type(), s.type()) && s.keys().stream().anyMatch(k -> sameName(k, g));
-            if (read) return g;
+                    read[0] |= inLine(o.type(), s.type()) && s.keys().stream().anyMatch(k -> sameName(k, g));
+            if (read[0]) return g;
         }
         return null;
-    }
-
-    private static boolean readsDefaults(List<Default> defaults, java.util.function.Predicate<Expr> ref,
-                                         java.util.function.Predicate<Condition> check) {
-        if (defaults == null) return false;
-        for (Default d : defaults) {
-            if (uses(d.condition(), ref, check) || uses(d.consequence(), ref, check)) return true;
-            if (d.exceptions() != null)
-                for (var group : d.exceptions().members()) if (readsDefaults(group.defaults(), ref, check)) return true;
-        }
-        return false;
     }
 
     /** Whether a node of {@code c} satisfies {@code check}, or an expression in it holds a node satisfying
