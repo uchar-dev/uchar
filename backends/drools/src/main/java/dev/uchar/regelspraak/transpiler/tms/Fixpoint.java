@@ -54,8 +54,11 @@ public record Fixpoint(List<DerivedValue> values, List<DerivedCharacteristic> ch
      * one per dimension in their declared spelling, the key of the cell in the map the bean field holds; null for every
      * other attribute. A cell without an entry keeps its input. A time-dependent characteristic that a rule writes within
      * a window (ch. 3.10, 3.11) stands here under its name as well, its true periods as segments without a value.
+     * {@code exact} is the value as the session computed it: {@code value} itself, except a number of the unbounded
+     * form (ch. 2.4 point 3) that does not terminate, which the bean takes as a decimal and which stands here as the
+     * runtime's exact rational, also as the payload of a constructor value.
      */
-    public record DerivedValue(Object object, String attribute, List<String> labels, Object value) {
+    public record DerivedValue(Object object, String attribute, List<String> labels, Object value, Object exact) {
         public DerivedValue {
             Objects.requireNonNull(object, "object");
             Objects.requireNonNull(attribute, "attribute");

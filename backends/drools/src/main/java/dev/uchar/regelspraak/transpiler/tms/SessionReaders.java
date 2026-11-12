@@ -777,7 +777,8 @@ final class SessionReaders {
                 Object v = member.time() == null ? ComputeHelpers.collapse(earliest.value())
                         : Period.beans(perDay ? union(session, member, earliest.subject(), written)
                                 : (List<Period>) earliest.value(), segmentClass());
-                values.add(new Fixpoint.DerivedValue(earliest.subject(), member.name(), member.cell(), v));
+                values.add(new Fixpoint.DerivedValue(earliest.subject(), member.name(), member.cell(), v,
+                        member.time() == null ? earliest.value() : v));
                 // a cell is an entry of the map its attribute holds (RUNTIME-SEMANTICS ch. 5.8c)
                 if (member.cell() != null) {
                     String property = Namen.property(member.name());
