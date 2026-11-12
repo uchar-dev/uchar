@@ -746,6 +746,7 @@ RGS-395.version	version {version}: {kind}
 RGS-396	read '{expression}': {reason}; in a rule with 'Daarbij geldt' the value thus gets no type, and without a type it has no document in uchar-ir-v1 (WF-076)
 RGS-396.characteristic-as-value	'{characteristic}' is a characteristic of {objectType} and no attribute, and a characteristic is not well-formed at a value position (WF-080)
 RGS-396.undeclared-attribute	'{attribute}' is no declared attribute of {objectType} (WF-034)
+RGS-397	row {row}: empty condition cell under '{condition}' — write n.v.t. where the condition does not apply (§12)
 RGS-420	the sentence reads as a computation and not as an attribute, characteristic or cell of the subject; a rule writes a member of its own universal subject
 RGS-421	allocation '{name}': '{written}' reads as a computation and not as an attribute; an allocation distributes an attribute of the distributor over an attribute of the recipients (IR-SPEC ch. 3.2)
 RGS-422	{head}: the block '{name}' — {other} already has that name (source line {otherLine}); a carrier names a block by its name, and a form name is unique in the whole model, case not counted (WF-020)

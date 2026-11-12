@@ -320,6 +320,31 @@ class DecisionTableDesugarTest {
         assertEquals("zijn vlag gelijk is aan onwaar", m.resolvedRules.get(1).condition().source().snippet());
     }
 
+    /** An empty condition cell, or a row with fewer cells than the header, is an error at the table: §12 writes
+     *  "n.v.t." for a condition that does not apply, and an empty cell is no such mark. */
+    @Test void empty_condition_cell_and_short_row_are_errors() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Vondst (mv: Vondsten)
+                de soort Tekst;
+                de strook Tekst;
+                de vondstpremie Numeriek (geheel getal);
+
+            Beslistabel vondstpremie
+                geldig altijd
+            | | de vondstpremie van een Vondst moet gesteld worden op | indien zijn soort gelijk is aan | indien zijn strook gelijk is aan |
+            |---|---|---|---|
+            | 1 | 10 | "touw" | |
+            | 2 | 3 | n.v.t. | "noord" |
+            | 3 | 4 | "glas" |
+            """);
+        List<RegelSpraakModel.Diagnostic> errors = m.errors();
+        assertEquals(List.of("RGS-397", "RGS-397"), errors.stream().map(RegelSpraakModel.Diagnostic::code).toList(),
+                () -> "" + m.diagnostics);
+        assertEquals(List.of("1", "3"), errors.stream().map(d -> String.valueOf(d.args().get("row"))).toList());
+        assertTrue(errors.stream().allMatch(d -> d.line() == 6), () -> "" + errors);
+        assertEquals(1, m.resolvedRules.size(), () -> "alleen rij 2 levert een regel: " + m.resolvedRules);
+    }
+
     @Test void desugared_rows_resolve_through_the_existing_pipeline() {
         List<String> headers = List.of("",
                 "de korting van een Klant moet gesteld worden op",

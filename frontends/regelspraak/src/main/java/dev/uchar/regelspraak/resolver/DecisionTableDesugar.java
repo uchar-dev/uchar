@@ -57,20 +57,32 @@ public final class DecisionTableDesugar {
      */
     public static List<String> desugar(String name, String valid, List<String> headers, List<List<String>> rows,
                                         java.util.function.Consumer<String> warn) {
-        return desugarCoded(name, valid, headers, rows, w -> warn.accept(w.text()));
+        return desugarCoded(name, valid, headers, rows, w -> warn.accept(w.text()), w -> warn.accept(w.text()));
     }
 
-    /** As {@link #desugar(String, String, List, List, java.util.function.Consumer)}, the warnings with their templates. */
+    /** As {@link #desugar(String, String, List, List, java.util.function.Consumer)}, the warnings with their templates;
+     *  a row that is an error ({@code RGS-397}, an empty condition cell) goes to {@code error} and yields no rule. */
     public static List<String> desugarCoded(String name, String valid, List<String> headers, List<List<String>> rows,
-                                        java.util.function.Consumer<Typing.Coded> warn) {
+                                        java.util.function.Consumer<Typing.Coded> warn,
+                                        java.util.function.Consumer<Typing.Coded> error) {
         List<Integer> conclusionKol = new ArrayList<>(), conditionKol = new ArrayList<>();
         for (int c = 1; c < headers.size(); c++) {
             if (headers.get(c).trim().toLowerCase().startsWith("indien")) conditionKol.add(c);
             else conclusionKol.add(c);
         }
         List<String> result = new ArrayList<>();
+        rows:
         for (List<String> row : rows) {
             String nr = row.isEmpty() ? "" : row.get(0).trim();
+            // §12 writes "n.v.t." for a condition that does not apply; an empty cell, or a cell the row lacks, is
+            // no such mark, so the row is an error rather than a row whose condition silently disappears.
+            for (int dc : conditionKol) {
+                if (cellAt(row, dc).trim().isEmpty()) {
+                    error.accept(new Typing.Coded("RGS-397", params("table", name, "row", nr,
+                            "condition", headers.get(dc).trim())));
+                    continue rows;
+                }
+            }
             for (int ci = 0; ci < conclusionKol.size(); ci++) {
                 int cc = conclusionKol.get(ci);
                 String resultClause = resultPart(name, headers.get(cc).trim(), cellAt(row, cc).trim(), nr, warn);
@@ -278,8 +290,7 @@ public final class DecisionTableDesugar {
         return cond.regionMatches(true, 0, "indien ", 0, 7) ? cond.substring(7) : cond;
     }
     private static boolean isNvt(String cell) {
-        String c = cell.replace(".", "").trim();
-        return c.equalsIgnoreCase("nvt") || c.isEmpty();
+        return cell.replace(".", "").trim().equalsIgnoreCase("nvt");
     }
     /** A condition header whose predicate takes the cell as its right operand ("… gelijk is aan", "… groter is dan"). */
     private static final java.util.regex.Pattern COMPARISON_HEAD =

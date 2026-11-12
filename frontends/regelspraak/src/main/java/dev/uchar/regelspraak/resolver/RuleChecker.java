@@ -3693,7 +3693,9 @@ final class RuleChecker {
             List<String> tableAnnotations = statuteAnnotations(b);
             List<String> duplicates = new ArrayList<>();
             rowTableLine = line;
-            for (String ruleSrc : DecisionTableDesugar.desugarCoded(name, valid, headers, data, warn)) {
+            java.util.function.Consumer<Typing.Coded> error = msg -> model.diagnostics.add(
+                    msg.frame("decision-table", "name", name).at(Severity.ERROR, line));
+            for (String ruleSrc : DecisionTableDesugar.desugarCoded(name, valid, headers, data, warn, error)) {
                 RegelContext rc = parseRule(ruleSrc, line);
                 if (rc == null) continue;
                 String rowName = DefinitionResolver.src(rc.regelNaam());

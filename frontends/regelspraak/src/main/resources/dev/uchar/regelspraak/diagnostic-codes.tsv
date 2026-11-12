@@ -384,6 +384,7 @@ RGS-393	ordinal-position-not-a-position	ERROR	name,ordinal
 RGS-394	emitter-refuses-model	ERROR	reason
 RGS-395	rule-versions-of-different-kinds	ERROR	name,versions
 RGS-396	let-without-type	ERROR	expression,reason
+RGS-397	table-row-empty-condition-cell	ERROR	condition,row,table
 RGS-420	target-not-a-member	ERROR	written
 RGS-421	allocation-operand-not-an-attribute	ERROR	name,written
 RGS-422	block-name-not-unique	ERROR	head,name,other,otherLine
