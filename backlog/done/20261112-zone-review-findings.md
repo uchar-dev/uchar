@@ -118,3 +118,62 @@ Acceptance: every item fixed with its witness, cleaned, or struck with the reaso
 
 May touch: `frontends/regelspraak/`, `backends/`, `ref/`, corpus witnesses outside `corpus/golden/anchor`, this card.
 Protected (the main session lands them): `spec/`, `scripts/`.
+
+Result (2026-11-12):
+- Frontend, rule checker: fixed with a JUnit witness each (red at the start, green after): a target that reads as a
+  computation (RGS-420) and an allocation source or recipient that does (RGS-421) are errors at their place; threshold
+  0 in consistency criteria, a nested criterion and a compound subselection (RGS-203); a uniqueness, concatenation or
+  union over a withdrawn input-marked member (RGS-152); two blocks of one name are a name clash (RGS-422, WF-020) and
+  RGS-147 no longer names a card; carrier, block and group names match case-insensitively (IR-SPEC ch. 2.1);
+  RGS-205/214/175 on their source line; the marker sweep skips what RGS-396 refused; an allocation's condition reads
+  its source as subject; the left operand of a percentage with a unit (RGS-424, beside WF-035) and an allocation
+  member that is no number (RGS-423, beside WF-025), the latter no longer reported twice with RGS-401. Struck: an
+  allocation with fewer than two attributes after recovery (the parser always reports the syntax error); the cycle
+  check without emitting the document (`Dependencies` reads the wire; building the edges from the model is a second
+  implementation). Cleaned: one traversal of the written forms (`eachWrittenPart`, the cause of the uniqueness fault);
+  the operators once for both grammar registers; a condition typed on its built operands, without a second pass over
+  the parse tree; the small duplicates; names and javadoc.
+- Frontend, builder and emitter: fixed: a decision-table header reads "ongelijk" only at its end; a false cell under a
+  characteristic and a Boolean column under a comparison parse; an empty condition cell or short row is an error
+  (RGS-397); a scalar scenario value on a parameter with a timeline (RGS-398) and a scenario expectation without period
+  on a time-dependent attribute (RGS-399) or characteristic (RGS-400) are errors; "12 %/jr" is a scenario value; an
+  allocation without method is an error with its reason (RGS-401); the clip conditions the verifier refuses (RGS-402),
+  a bucket or target unit that does not fit (RGS-403/404) and a variable-start timeline without determination
+  (RGS-405, WF-016) are errors at their place; `toka/src/test/java/.../ModelTest.java` gained the start determination
+  WF-016 asks. Struck: two allocations to one target as a frontend error (the TOKA casus does it; next card). Cleaned:
+  one writer and one reader of the version suffix; one `norm`; `validity` and `writeValidity` one function; small
+  duplicates in `ExpressionBuilder`.
+- Drools `cases/`: fixed with `CaseReaderWitnessTest` (20 rows, all red at the start): parameters are read as ref reads
+  them and bound under the declared name (`CaseInput.setGlobals`; `setGlobalSafe` gone); an unbound parameter a rule
+  reads faults EF-014 (27 DRL pins and four plan pins follow; the NOFAULT entry of gate 8 and the sentence in RS
+  ch. 5.12 go); every value is held to its datatype and every case file and instance to ref's shape; a role key falls
+  back to the type pair only for a role opposite its own type; a scalar expectation on a time-dependent member, an
+  unknown expectation kind and a value of another datatype are case errors; a role link to an unknown label faults
+  EF-002 (DROOLS-039/041/043/044/048 retired); a later EXCLUDE no longer hides an earlier FAIL; an unreadable case file
+  is named; a golden with only `expectedFault` cases is an error; the code and parameters of a fault are public API.
+  Struck: the value kind on the mismatch line (cannot occur after the datatype check); moving `SessionDump`'s test
+  harness out of production code (the seam is on the production route). Cleaned: the session set-ups through
+  `withSession`, one FactType lookup, the `playCase` seams, English names for `emmers`, `documenthash`, `van`.
+- Executors and verifier: fixed: a scalar expectation on a time-dependent member is a case error without a code in
+  ref and clingo (RS ch. 5.7 step 3, ch. 8.4; witnesses `WV-5.7-case-reader-refuses-*`); a sum over members of a
+  time-dependent attribute in a comparison per period is refused by name in ref, clingo and Drools (DROOLS-309; RS
+  ch. 3.6; fixture `conditions-per-period/member-sum`); clingo refuses a time-dependent characteristic in a scalar
+  condition; WF-025 demands Number for amount, share, rest, weight and maximum (`WF-025.field-not-number`, negatives
+  `wf025-allocation-sum-type-amount`, `wf025-allocation-weight-not-number`); WF-035 refuses a unit left of
+  `percentageOf` (`WF-035.percentage-left-unit`, negative `wf035-percentage-left-unit`). Provisional: a percentage
+  attribute counts as a number under WF-025; a rate `%/<unit>` left of `percentageOf` is refused; clingo refuses the
+  time-dependent characteristic at translation, ref where the check is reached.
+- Golden `jutterswet-verdeling-voorwaarde-op-bron` (ref, clingo, both Drools branches): the condition of an allocation
+  reads the holder of its amount; `EXPECTED_PLAYED` 378 → 379. Gate 1 allows the runner's golden entry point in the case reader's witness.
+- Toolchain service (its own commits): unknown keys at the top, in an instance and in a relation, a duplicate JSON key,
+  a number with an exponent or more than 1000 written digits, a date parameter or segment bound outside the case
+  lexeme are 400s; numbers keep their written scale (`40.00`, not `4E+1`); a list of ids on a relation role writes a
+  link per id; the descriptor refuses an unknown key, a path used twice, `info`, `playground` and a path with `/`;
+  `serve` exits 3 for a form without norm; the detail flag is judged before the body. Cleaned: one HTTP contract for
+  the JDK and Quarkus adapters, one `ident`, one production path through `Processor`, dead code gone.
+- Next (maintainer decisions of 2026-11-12): the end state of ref and Drools compared in gate 17 with one outcome
+  reader in uchar for the service; the service reads parameters through `CaseInput`; the TOKA casus gets a declaration
+  fragment of its own and the frontend refuses undeclared allocation attributes, characteristic targets and two
+  allocations to one target; the 422 answer carries `code` and `params` instead of `kind`; a descriptor without
+  entrypoints starts with a warning; `RegelSpraakEngine` goes.
+- `make gates` green (17 gates, run 20261112-100026).

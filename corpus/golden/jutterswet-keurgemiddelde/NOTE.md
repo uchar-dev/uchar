@@ -64,8 +64,7 @@ square today, measured 2026-10-21: the ASP backend raises EF-011 and EF-019
 (the day-kind walk, EF-009, fired for every member of the range until the
 card `clingo-day-kind-walk-after-fold-stop`, whose golden
 `jutterswet-keurtermijn` carries that fault after the stop);
-and an unbound parameter (EF-014), which the ASP backend guards lazily, the
-Drools backend reads as leeg (gate 8, `aanvoergeld-parameter-unbound`
-`NOFAULT`). The fault arms of the table are pinned by the executors' own
+and an unbound parameter (EF-014), which the ASP backend guards lazily and
+the Drools backend faults where the read is reached. The fault arms of the table are pinned by the executors' own
 tests: `ref/` `WV-5.12-fout-in-een-kwantorvouw` and the Drools backend's
 `ReadingsWitnessTest`.
