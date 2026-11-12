@@ -16919,7 +16919,7 @@ let () =
       number_value monthly (read "uitkomst" "Jutter") value_node
   in
   let case_text =
-    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "J1", "objectType": "Jutter", "attributes": {"strandloon": {"timeline": [{"from": "2024-01-01", "to": "2024-07-01", "value": {"number": "100"}}]}, "stormtoeslag": {"timeline": [{"from": "2024-04-01", "to": "2024-10-01", "value": {"number": "30"}}]}}, "roles": {"vondsten": ["V1"]}, "characteristics": []}, {"label": "V1", "objectType": "Vondst", "attributes": {"opbrengst": {"timeline": [{"from": "2024-01-01", "to": "2024-02-01", "value": {"number": "50"}}]}}, "roles": {}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "attributeEmpty", "label": "J1", "attribute": "uitkomst"}]}|}
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "J1", "objectType": "Jutter", "attributes": {"strandloon": {"timeline": [{"from": "2024-01-01", "to": "2024-07-01", "value": {"number": "100"}}]}, "stormtoeslag": {"timeline": [{"from": "2024-04-01", "to": "2024-10-01", "value": {"number": "30"}}]}}, "roles": {"vondsten": ["V1"]}, "characteristics": []}, {"label": "V1", "objectType": "Vondst", "attributes": {"opbrengst": {"timeline": [{"from": "2024-01-01", "to": "2024-02-01", "value": {"number": "50"}}]}}, "roles": {}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "consistent"}]}|}
   in
   let forms =
     List.concat_map

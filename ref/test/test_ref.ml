@@ -6180,7 +6180,7 @@ let () =
       number_value monthly (read "uitkomst" "Jutter") value_node
   in
   let case_text =
-    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "J1", "objectType": "Jutter", "attributes": {"strandloon": {"timeline": [{"from": "2024-01-01", "to": "2024-07-01", "value": {"number": "100"}}]}, "stormtoeslag": {"timeline": [{"from": "2024-04-01", "to": "2024-10-01", "value": {"number": "30"}}]}}, "roles": {"vondsten": ["V1"]}, "characteristics": []}, {"label": "V1", "objectType": "Vondst", "attributes": {"opbrengst": {"timeline": [{"from": "2024-01-01", "to": "2024-02-01", "value": {"number": "50"}}]}}, "roles": {}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "attributeEmpty", "label": "J1", "attribute": "uitkomst"}]}|}
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "J1", "objectType": "Jutter", "attributes": {"strandloon": {"timeline": [{"from": "2024-01-01", "to": "2024-07-01", "value": {"number": "100"}}]}, "stormtoeslag": {"timeline": [{"from": "2024-04-01", "to": "2024-10-01", "value": {"number": "30"}}]}}, "roles": {"vondsten": ["V1"]}, "characteristics": []}, {"label": "V1", "objectType": "Vondst", "attributes": {"opbrengst": {"timeline": [{"from": "2024-01-01", "to": "2024-02-01", "value": {"number": "50"}}]}}, "roles": {}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "consistent"}]}|}
   in
   let forms =
     List.concat_map
@@ -12648,6 +12648,83 @@ let () =
   refused "WV-5.8c-verwachting-weigert-cel-op-scalair" ~attributes:""
     ~expected:(cell_empty ~attribute:"voorjaarsgewicht" [ "voorjaar" ]) ~code:None ~params:[]
     ~text:"expected[0]: \"voorjaarsgewicht\" is no dimensioned attribute: a cell expectation names a cell of one"
+
+(* The case reader at a time-dependent member (RUNTIME-SEMANTICS ch. 5.7
+   step 3, ch. 8.4), beside the rows of ch. 5.8c above: an attribute with a
+   timeline has a value per period and none of its own, a time-dependent
+   characteristic holds per period, so an attributeValue, attributeEmpty,
+   characteristicPresent or characteristicAbsent expectation on one is a case
+   error without a code. Measured before the reader held this: an
+   attributeEmpty on a time-dependent attribute and a characteristicAbsent on
+   a time-dependent characteristic, both written by the scenario layer, gave
+   `oracle: PASS` and `clingo: PASS`. The same expectations on the scalar
+   sisters, and an attributeTimeline on the time-dependent attribute, load. *)
+let () =
+  let jutter =
+    let ident, o =
+      ot "Jutter" [ ("vergoeding", Some num0); ("loon", Some num0) ] [ "actief"; "erkend" ]
+    in
+    ( ident,
+      { o with
+        attribute_granularity = [ ("vergoeding", Some Ir_v0.Ast.Month) ];
+        characteristic_granularity = [ ("actief", Some Ir_v0.Ast.Month) ] } )
+  in
+  let doc = { empty_doc with object_types = [ jutter ] } in
+  let load expected =
+    let f = Filename.temp_file "ref-time-dependent" ".json" in
+    let oc = open_out f in
+    Printf.fprintf oc
+      {|{ "format": "uchar-case-v0", "asOfDate": "2026-01-01",
+  "input": { "instances": [ { "label": "j1", "objectType": "Jutter", "attributes": {},
+    "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ %s ] }|}
+      expected;
+    close_out oc;
+    let r =
+      try Ok (Case.load_file doc f) with Case.Error { code; params; text } -> Error (code, params, text)
+    in
+    Sys.remove f;
+    r
+  in
+  let refused ident expected ~text =
+    match load expected with
+    | Error (c, p, t) -> check (ident ^ " (got: " ^ t ^ ")") (c = None && p = [] && t = text)
+    | Ok _ -> check (ident ^ " (loaded)") false
+  in
+  let accepted ident expected =
+    match load expected with
+    | Ok c ->
+        let got = Case.check c c.world in
+        check (ident ^ " (got: " ^ String.concat "; " got ^ ")") (got = [])
+    | Error (_, _, t) -> check (ident ^ " (refused: " ^ t ^ ")") false
+  in
+  let attribute_sentence =
+    "expected[0]: \"vergoeding\" is a time-dependent attribute, whose value is a timeline: an expectation on \
+     it is an attributeTimeline"
+  in
+  let characteristic_sentence =
+    "expected[0]: \"actief\" is a time-dependent characteristic, which holds per period: a \
+     characteristicPresent or characteristicAbsent expectation asks a scalar truth it does not have"
+  in
+  refused "WV-5.7-case-reader-refuses-attributeValue-on-time-dependent"
+    {|{ "kind": "attributeValue", "label": "j1", "attribute": "vergoeding", "value": { "number": "3" } }|}
+    ~text:attribute_sentence;
+  refused "WV-5.7-case-reader-refuses-attributeEmpty-on-time-dependent"
+    {|{ "kind": "attributeEmpty", "label": "j1", "attribute": "Vergoeding" }|}
+    ~text:
+      "expected[0]: \"Vergoeding\" is a time-dependent attribute, whose value is a timeline: an expectation on \
+       it is an attributeTimeline";
+  refused "WV-5.7-case-reader-refuses-characteristicPresent-on-time-dependent"
+    {|{ "kind": "characteristicPresent", "label": "j1", "characteristic": "actief" }|}
+    ~text:characteristic_sentence;
+  refused "WV-5.7-case-reader-refuses-characteristicAbsent-on-time-dependent"
+    {|{ "kind": "characteristicAbsent", "label": "j1", "characteristic": "actief" }|}
+    ~text:characteristic_sentence;
+  accepted "WV-5.7-case-reader-scalar-expectations-on-scalar-members"
+    {|{ "kind": "attributeEmpty", "label": "j1", "attribute": "loon" },
+      { "kind": "characteristicAbsent", "label": "j1", "characteristic": "erkend" }|};
+  accepted "WV-5.7-case-reader-timeline-expectation-on-time-dependent"
+    {|{ "kind": "attributeTimeline", "label": "j1", "attribute": "vergoeding", "timeline": [] }|}
 
 (* The worked examples of RUNTIME-SEMANTICS ch. 5.8c, verbatim: a cell read,
    on the subject and over a path of roles, the fold over one dimension and

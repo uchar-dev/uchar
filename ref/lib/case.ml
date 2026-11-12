@@ -894,6 +894,22 @@ let not_dimensioned ~at ot attr =
     fail "%s: %S is a dimensioned attribute, whose values are its cells: an expectation on it names a \
           cell" at attr
 
+(* A time-dependent member has a value per period and none of its own, so a
+   scalar expectation on it asks a value the document does not give it: the
+   case does not fit the declarations (RUNTIME-SEMANTICS ch. 5.7 step 3,
+   ch. 8.4). Reading it as the value on the evaluation date would extend the
+   asOfDate-bucket convention, which serves the temporal total only. The
+   predicate is key existence in the granularity maps, as for the input. *)
+let not_time_dependent_attribute ~at ot attr =
+  if Ir_v0.Checks.find_ci ot.attribute_granularity attr <> None then
+    fail "%s: %S is a time-dependent attribute, whose value is a timeline: an expectation on it is an \
+          attributeTimeline" at attr
+
+let not_time_dependent_characteristic ~at ot c =
+  if List.exists (fun (k, _) -> norm k = norm c) ot.characteristic_granularity then
+    fail "%s: %S is a time-dependent characteristic, which holds per period: a characteristicPresent or \
+          characteristicAbsent expectation asks a scalar truth it does not have" at c
+
 let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) : expectation =
   let kvs = obj ~at j in
   let get_instance () =
@@ -914,6 +930,7 @@ let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) 
         | Some d -> d
         | None -> fail "expected attribute %S is not declared on %S" attr i.otype
       in
+      not_time_dependent_attribute ~at ot attr;
       Attribute_value
         {
           label = i.label;
@@ -927,6 +944,7 @@ let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) 
       if not (Ir_v0.Checks.has_attr ot attr) then
         fail "expected attribute %S is not declared on %S" attr i.otype;
       not_dimensioned ~at ot attr;
+      not_time_dependent_attribute ~at ot attr;
       Attribute_empty { label = i.label; attr }
   | "attributeTimeline" ->
       let i = get_instance () in
@@ -998,6 +1016,7 @@ let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) 
       let ot = find_object_type doc i.otype in
       if not (Ir_v0.Checks.mem_ci (Ir_v0.Checks.some_names ot.characteristics) c) then
         fail "expected characteristic %S is not declared on %S" c i.otype;
+      not_time_dependent_characteristic ~at ot c;
       if kind = "characteristicPresent" then
         Char_present { label = i.label; char = c }
       else Char_absent { label = i.label; char = c }
