@@ -22,7 +22,9 @@ import java.util.List;
  *
  * <p>With {@code --readings} (card fixpoint-readings) it builds the document with readings, plays every case and prints
  * per case {@code case <file>} and the readings of the conditions at its fixpoint, one line per record and per node in
- * the canonical text of {@code SessionDump.readingLines}, each after {@code reading }, and as its last line
+ * the canonical text of {@code SessionDump.readingLines}, each after {@code reading }, then the end state of the session
+ * (RUNTIME-SEMANTICS ch. 5.12a) in the text of {@code SessionDump.endStateLines}, each after {@code state }, and as its
+ * last line
  * {@code READINGS <n>}, the cases it read, exit 0; a form it does not carry is the {@code EXCLUDE} line above, exit 2.
  * It compares no expectation: the text is what the trace of the reference interpreter is held to (card
  * ref-trace-and-readings-gate). {@code --readings --drl} reads the DRL-text branch.

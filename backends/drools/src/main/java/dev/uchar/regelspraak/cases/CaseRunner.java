@@ -205,7 +205,9 @@ public final class CaseRunner {
     /**
      * The readings of the cases {@code casePaths} on a build with readings of {@code irPath} on {@code branch}, in the
      * canonical text of {@link SessionDump#readingLines}, each line after {@code reading }: per case a line
-     * {@code case <file>} and the readings at its fixpoint, or {@code nofixpoint <sentence>} where the fire reached none.
+     * {@code case <file>} and the readings at its fixpoint, then its end state in the text of
+     * {@link SessionDump#endStateLines}, each line after {@code state }, or {@code nofixpoint <sentence>} where the
+     * fire reached none.
      * A red-path case is skipped, as the replay skips it. The entry of {@code DroolsBackendMain --readings}, the text the
      * trace of the reference interpreter is held to (card ref-trace-and-readings-gate). A form this backend does not
      * carry is refused as the replay refuses it, an {@link Excluded} or an {@link IrLoader.Refusal}.
@@ -227,7 +229,10 @@ public final class CaseRunner {
                 }
                 if (firing.noFixpoint() != null) return List.of("nofixpoint " + firing.noFixpoint());
                 DroolsBackend.refuseLimit(build, session);
-                return SessionDump.readingLines(build, session, labels).stream().map(l -> "reading " + l).toList();
+                List<String> lines = new ArrayList<>();
+                SessionDump.readingLines(build, session, labels).forEach(l -> lines.add("reading " + l));
+                SessionDump.endStateLines(build, session, labels).forEach(l -> lines.add("state " + l));
+                return lines;
             }));
         }
         return out;
@@ -1163,7 +1168,7 @@ public final class CaseRunner {
     record TimelineSegment(LocalDate from, LocalDate to, Object value) {}
 
     /** The {@code Segment} facts of a timeline, in their order, as the read-back compares them. */
-    private static List<TimelineSegment> segments(List<?> facts) {
+    static List<TimelineSegment> segments(List<?> facts) {
         List<TimelineSegment> out = new ArrayList<>();
         for (Object s : facts)
             out.add(new TimelineSegment((LocalDate) segField(s, "van"), (LocalDate) segField(s, "tot"),

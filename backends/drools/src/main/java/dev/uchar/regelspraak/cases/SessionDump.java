@@ -542,6 +542,88 @@ final class SessionDump {
         return lines;
     }
 
+    /**
+     * The end state of {@code session} ({@link DroolsBackend#endStateOf}) in the canonical text of RUNTIME-SEMANTICS
+     * ch. 5.12a, sorted, which {@code DroolsBackendMain --readings} prints per case after the readings: per object
+     * {@code object <object> "<type>"}; per attribute with a value {@code attribute <object> "<attribute>" <value>}, a
+     * cell with its labels {@code ["<label>", …]} before the value, a timeline in its canonical form (ch. 3.1) and left
+     * out where that is empty, and after a number or a timeline the unit of the declaration, quoted; per characteristic
+     * that holds {@code characteristic <object> "<characteristic>"}, a time-dependent one with its true periods
+     * {@code [[<from> <to> empty], …]}, adjacent periods joined; per link {@code link "<fact type>" "<role>" <object>
+     * "<role>" <object>}, in the order of the declared roles, of a reciprocal fact type the two names in code-unit
+     * order; and per §9.5 fact {@code channel "<rule>" <object> <codes>}, the EF codes ascending and comma-joined, or
+     * {@code -}. Objects and values are named and written as {@link #readingLines} writes them.
+     */
+    static List<String> endStateLines(DroolsBackend.Build build, KieSession session, Map<String, Object> labels) {
+        Naming n = naming(session, labels);
+        Map<Object, String> label = new IdentityHashMap<>();
+        labels.forEach((l, b) -> label.put(b, l));
+        EndState state = DroolsBackend.endStateOf(build, session, label::get);
+        List<String> lines = new ArrayList<>();
+        for (EndState.EndObject o : state.objects()) {
+            String self = n.nameOf(o.object());
+            lines.add("object " + self + " " + quote(o.type()));
+            for (EndState.Member m : o.members()) {
+                if (m.characteristic()) {
+                    lines.add("characteristic " + self + " " + quote(m.name())
+                            + (m.value() instanceof List<?> l ? " " + periods(l) : ""));
+                    continue;
+                }
+                String value;
+                if (m.value() instanceof List<?> l) {
+                    List<CaseRunner.TimelineSegment> tl = CaseRunner.canonical(CaseRunner.segments(l));
+                    if (tl.isEmpty()) continue;
+                    List<String> r = new ArrayList<>();
+                    for (CaseRunner.TimelineSegment s : tl) r.add(segment(open(s.from(), Period.OPEN_FROM),
+                            open(s.to(), Period.OPEN_TO), s.value()));
+                    value = "[" + String.join(", ", r) + "]";
+                } else value = canonical(m.value());
+                StringBuilder b = new StringBuilder("attribute ").append(self).append(' ').append(quote(m.name()));
+                if (m.cell() != null)
+                    b.append(" [").append(String.join(", ", m.cell().stream().map(SessionDump::quote).toList()))
+                            .append(']');
+                b.append(' ').append(value);
+                if (m.unit() != null) b.append(' ').append(quote(m.unit().rendering()));
+                lines.add(b.toString());
+            }
+        }
+        for (EndState.Link k : state.links()) {
+            String a = n.nameOf(k.first()), b = n.nameOf(k.second());
+            if (k.firstRole().equals(k.secondRole()) && a.compareTo(b) > 0) { String x = a; a = b; b = x; }
+            lines.add("link " + quote(k.factType()) + " " + quote(k.firstRole()) + " " + a + " " + quote(k.secondRole())
+                    + " " + b);
+        }
+        for (EndState.ChannelFact f : state.channel())
+            lines.add("channel " + quote(f.rule()) + " " + n.nameOf(f.subject()) + " "
+                    + (f.codes().isEmpty() ? "-" : String.join(",", f.codes())));
+        lines.sort(Comparator.naturalOrder());
+        return lines.stream().distinct().toList();
+    }
+
+    /** A bound of a segment, null where it is open, as the open bound of {@link Period}. */
+    private static java.time.LocalDate open(java.time.LocalDate bound, java.time.LocalDate open) {
+        return bound == null ? open : bound;
+    }
+
+    /** The true periods of a time-dependent characteristic, the bean model's segments without a value, as a timeline
+     *  of periods without a value, sorted and with adjacent periods joined. */
+    private static String periods(List<?> segments) {
+        List<java.time.LocalDate[]> ps = new ArrayList<>();
+        for (Object s : segments)
+            ps.add(new java.time.LocalDate[]{open((java.time.LocalDate) RegelSpraakRuntime.get(s, "van"), Period.OPEN_FROM),
+                    open((java.time.LocalDate) RegelSpraakRuntime.get(s, "tot"), Period.OPEN_TO)});
+        ps.sort(Comparator.comparing(p -> p[0]));
+        List<java.time.LocalDate[]> joined = new ArrayList<>();
+        for (java.time.LocalDate[] p : ps) {
+            java.time.LocalDate[] last = joined.isEmpty() ? null : joined.get(joined.size() - 1);
+            if (last != null && last[1].equals(p[0])) last[1] = p[1];
+            else joined.add(p.clone());
+        }
+        List<String> r = new ArrayList<>();
+        for (java.time.LocalDate[] p : joined) r.add(segment(p[0], p[1], null));
+        return "[" + String.join(", ", r) + "]";
+    }
+
     /** The EF code of the kind of the evaluation fault {@code f}, or {@code -} where it names none. */
     private static String code(RuntimeException f) {
         List<CaseRunner.FaultKind> kinds = CaseRunner.faultKinds(f);

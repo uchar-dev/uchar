@@ -691,6 +691,27 @@ public final class DroolsBackend {
     }
 
     /**
+     * The end state of {@code session} after a {@link #fire} that reached its fixpoint (RUNTIME-SEMANTICS ch. 5.12a),
+     * read without writing anything on a bean: every object, of the input and made by a creation, with its type and
+     * every member that holds a value, the derived value where a rule derived one and the input elsewhere; every link;
+     * and the §9.5 facts. {@code label} gives the case label of an input bean and null for an object a creation made;
+     * every bean of the session is the one or the other.
+     *
+     * @throws IllegalStateException the sessions {@link #fixpointOf} refuses, in its sentences; a session in which an
+     *                               evaluation fault stands, which has no end state; and a bean without a label that no
+     *                               creation made
+     */
+    public static EndState endStateOf(Build build, KieSession session, Function<Object, String> label) {
+        Objects.requireNonNull(label, "label");
+        Fixpoint fp = readFixpoint(build, session, label);
+        if (!fp.faults().isEmpty())
+            throw new IllegalStateException("the session has no end state: " + fp.faults().size()
+                    + " evaluation fault(s) stand, the first in '" + fp.faults().get(0).rule() + "': "
+                    + fp.faults().get(0).message());
+        return EndState.read(build, session, fp, label, beansClasses(build));
+    }
+
+    /**
      * Which default of each effective defaults stack decided in {@code session} after a {@link #fire} that reached its
      * fixpoint (RUNTIME-SEMANTICS ch. 7): one {@link DefaultsDecision} per object and effective stack of its concrete
      * type, the objects being the beans of the input and the objects the creations made ({@link Fixpoint#objects}).
