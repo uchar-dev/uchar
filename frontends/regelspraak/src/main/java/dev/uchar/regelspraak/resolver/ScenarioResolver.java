@@ -292,7 +292,7 @@ public final class ScenarioResolver {
         if (sc.scenarioPeildatum() == null) asOfDateGate(carries, asOfDate, name, line);
         // a named set the document lacks has its ERROR, and what it would have given cannot be said
         if (sc.scenarioParameterset() == null || set != null) parameterGate(carries, situation, set, name, line);
-        List<Expectation> expectations = resolveExpectations(sc.verwachting(), situation);
+        List<Expectation> expectations = resolveExpectations(sc.verwachting(), situation, carries);
         return new ResolvedScenario(name, scope, asOfDate, situation, expectations, line);
     }
 
@@ -311,30 +311,40 @@ public final class ScenarioResolver {
 
     // ---------------- the forms of the model, and the scope ----------------
 
-    /** One named form of the model, with what the gates read of it. */
-    private record Form(String name, Validity validity, List<Expr> exprs, List<Condition> conditions) {}
+    /** One named form of the model, with what the gates read of it; {@code group} is the defaults group a form of
+     *  that kind is, null for every other kind. */
+    private record Form(String name, Validity validity, List<Expr> exprs, List<Condition> conditions,
+                        PrioritizedDefaults group) {}
 
-    /** Every named form of the model the emitted IR can carry or drop: rules, object and fact creations, allocations,
-     *  consistencies, uniquenesses and defaults groups, each under its base name (a version suffix taken off). */
     private List<Form> forms() {
+        return forms(model, model.prioritizedDefaults);
+    }
+
+    /** Every named form of {@code model} the emitted IR can carry or drop: rules, object and fact creations,
+     *  allocations, consistencies, uniquenesses and the defaults groups {@code defaults}, each under its base name (a
+     *  version suffix taken off). */
+    private static List<Form> forms(RegelSpraakModel model, List<PrioritizedDefaults> defaults) {
         List<Form> result = new ArrayList<>();
         for (var r : model.resolvedRules)
-            result.add(new Form(formName(r.name()), r.validity(), list(r.target(), r.value()), list(r.condition())));
+            result.add(new Form(formName(r.name()), r.validity(), list(r.target(), r.value()), list(r.condition()), null));
         for (var oc : model.objectCreations) {
             List<Expr> exprs = new ArrayList<>();
             for (var t : oc.assignments()) exprs.add(t.value());
-            result.add(new Form(formName(oc.name()), oc.validity(), exprs, list(oc.condition())));
+            result.add(new Form(formName(oc.name()), oc.validity(), exprs, list(oc.condition()), null));
         }
-        for (var v : model.allocations) result.add(new Form(formName(v.name()), v.validity(), List.of(), list(v.condition())));
-        for (var c : model.consistencies) result.add(new Form(formName(c.name()), c.validity(), List.of(), list(c.assertion())));
-        for (var u : model.uniquenesses) result.add(new Form(formName(u.name()), null, List.of(), List.of()));
-        for (var u : model.uniquenessUnions) result.add(new Form(formName(u.name()), null, List.of(), List.of()));
-        for (var f : model.factCreations) result.add(new Form(formName(f.name()), f.validity(), List.of(), list(f.condition())));
-        for (var pd : model.prioritizedDefaults) {
+        for (var v : model.allocations)
+            result.add(new Form(formName(v.name()), v.validity(), List.of(), list(v.condition()), null));
+        for (var c : model.consistencies)
+            result.add(new Form(formName(c.name()), c.validity(), List.of(), list(c.assertion()), null));
+        for (var u : model.uniquenesses) result.add(new Form(formName(u.name()), null, List.of(), List.of(), null));
+        for (var u : model.uniquenessUnions) result.add(new Form(formName(u.name()), null, List.of(), List.of(), null));
+        for (var f : model.factCreations)
+            result.add(new Form(formName(f.name()), f.validity(), List.of(), list(f.condition()), null));
+        for (var pd : defaults) {
             List<Expr> exprs = new ArrayList<>();
             List<Condition> conditions = new ArrayList<>();
             collectDefaults(pd.defaults(), exprs, conditions);
-            result.add(new Form(pd.name(), pd.validity(), exprs, conditions));
+            result.add(new Form(pd.name(), pd.validity(), exprs, conditions, pd));
         }
         return result;
     }
@@ -1265,7 +1275,8 @@ public final class ScenarioResolver {
 
     // ---------------- expectations ----------------
 
-    private List<Expectation> resolveExpectations(List<VerwachtingContext> bullets, Situation situation) {
+    private List<Expectation> resolveExpectations(List<VerwachtingContext> bullets, Situation situation,
+                                                  Predicate<String> carries) {
         List<Expectation> result = new ArrayList<>();
         Map<String, Expectation> timelines = new HashMap<>();          // label|attribuut -> its one entry
         Map<String, Boolean> alwaysEmpty = new HashMap<>();
@@ -1389,7 +1400,7 @@ public final class ScenarioResolver {
                 InconsistentieSleutelContext s = c.inconsistentieSleutel();
                 if (s != null) {
                     rule = textContent(s.tekstWaarde(), line, Msg.frontend("PART.what.inconsistency-rule"));
-                    if (rule != null && !knownInconsistencyRule(rule)) {
+                    if (rule != null && !knownInconsistencyRule(rule, carries)) {
                         error(line,
                                 "RGS-270", params("rule", rule));
                         rule = null;
@@ -1473,15 +1484,41 @@ public final class ScenarioResolver {
                 label, null, null, characteristic, null, null, null, line);
     }
 
-    /** A rule an inconsistency may name: a named form of the model, or a conflict channel — a target form
-     *  {@code <Objecttype>.<member>}, optionally with a default index path {@code /<n>[/<n>…]}. */
-    private boolean knownInconsistencyRule(String rule) {
-        String n = norm(rule);
-        for (Form v : forms()) if (norm(v.name()).equals(n)) return true;
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("([^./]+)\\.([^/]+)(/[0-9]+)*").matcher(rule.trim());
-        if (!m.matches()) return false;
-        ObjectType ot = model.objectTypeByName(m.group(1).trim());
-        return ot != null && ot.hasMember(m.group(2).trim());
+    /** A rule an inconsistency may name, as the case readers take it (RUNTIME-SEMANTICS ch. 5.6): a form the
+     *  scenario's document carries ({@code carries}), version suffix or not, other than a defaults group, or a conflict
+     *  channel of a defaults group it carries — the group's target form {@code <Objecttype>.<member>}, or that with the
+     *  index path {@code /<n>[/<n>…]} of a default that holds exception groups. A defaults group deposits a conflict
+     *  under its channel, never under its own name, and a member no carried group writes has no channel. */
+    private boolean knownInconsistencyRule(String rule, Predicate<String> carries) {
+        String n = norm(formName(rule));
+        for (Form v : forms()) {
+            if (v.name() == null || !carries.test(v.name())) continue;
+            if (v.group() == null) {
+                if (norm(v.name()).equals(n)) return true;
+                continue;
+            }
+            List<String> channels = new ArrayList<>();
+            String target = v.group().subject() + "." + v.group().target();
+            channels.add(target);
+            channelPaths(target, List.of(), v.group().defaults(), channels);
+            for (String c : channels) if (norm(c).equals(n)) return true;
+        }
+        return false;
+    }
+
+    /** The channels of the defaults {@code defaults} under {@code prefix}: per default that holds exception groups the
+     *  target form with its index path, and the channels of the defaults of each of its groups under that path. */
+    private static void channelPaths(String target, List<Integer> prefix, List<Default> defaults, List<String> channels) {
+        for (int i = 0; i < defaults.size(); i++) {
+            Default d = defaults.get(i);
+            if (d.exceptions() == null) continue;
+            List<Integer> path = new ArrayList<>(prefix);
+            path.add(i);
+            StringBuilder key = new StringBuilder(target);
+            for (int k : path) key.append('/').append(k);
+            channels.add(key.toString());
+            for (ExceptionGroup g : d.exceptions().members()) channelPaths(target, path, g.defaults(), channels);
+        }
     }
 
     // ---------------- values ----------------

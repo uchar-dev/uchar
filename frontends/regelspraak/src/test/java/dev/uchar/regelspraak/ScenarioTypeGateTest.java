@@ -331,8 +331,63 @@ class ScenarioTypeGateTest {
                 "de regel 'Jutter.zeeziek' van de inconsistentie bestaat niet in het document");
         error(scenario("- de gegevens zijn inconsistent volgens \"geen wrakgoed\" voor K\n"), "volgens",
                 "het label 'K' in de verwachting is nergens in de situatie gedeclareerd");
-        assertTrue(resolve(scenario("- de gegevens zijn inconsistent volgens \"geen wrakgoed\" voor J\n"
-                + "- de gegevens zijn inconsistent volgens \"Jutter.vondstklasse/0\"\n")).isOk());
+        assertTrue(resolve(scenario("- de gegevens zijn inconsistent volgens \"geen wrakgoed\" voor J\n")).isOk());
+        // vondstklasse is written by no defaults group, so it has no conflict channel
+        error(scenario("- de gegevens zijn inconsistent volgens \"Jutter.vondstklasse/0\"\n"), "volgens",
+                "de regel 'Jutter.vondstklasse/0' van de inconsistentie bestaat niet in het document");
+    }
+
+    private static final String DEFAULTS = """
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            is nx kenmerk (bijvoeglijk);
+            is ny kenmerk (bijvoeglijk);
+            is vrijgesteld kenmerk (bijvoeglijk);
+            het loon Numeriek (geheel getal);
+
+        Regel loongrens
+            geldig altijd
+                Het loon van een Jutter moet kleiner zijn dan 100.
+
+        Regel vrijstelling van een jutter
+            geldig altijd
+                Een Jutter is vrijgesteld
+                indien hij nx is.
+
+        Uitzonderingen ongeordend op vrijstelling van een jutter:
+        Regel vrijstelling vervalt bij ny
+            geldig altijd
+                Een Jutter is niet vrijgesteld
+                indien hij ny is.
+
+        """;
+
+    /** A scenario on {@link #DEFAULTS}, with {@code header} after its name, that expects an inconsistency under
+     *  {@code rule}. */
+    private static String inconsistent(String header, String rule) {
+        return DEFAULTS + "Scenario s\n" + header + "Gegeven is de volgende situatie:\neen Jutter M\n- is nx\n"
+                + "Met als verwacht resultaat:\n- de gegevens zijn inconsistent volgens \"" + rule + "\" voor M\n";
+    }
+
+    /** An inconsistency names what the case readers take (RUNTIME-SEMANTICS ch. 5.6): a form the scenario's document
+     *  carries, or a channel of a defaults group it carries — its target form, or that with the index path of a default
+     *  that holds exception groups. A member no defaults group writes, a form the scope leaves out, the defaults group's
+     *  own name and a path of a default without exception groups are refused on the line of the expectation. */
+    @Test void an_inconsistency_names_a_carried_form_or_a_channel_of_a_carried_defaults_group() {
+        for (String rule : List.of("Jutter.vrijgesteld", "Jutter.vrijgesteld/0", "loongrens")) {
+            ScenarioBundle b = ScenarioResolver.resolve(inconsistent("", rule));
+            assertTrue(b.isOk(), () -> rule + ": " + b.model().errors());
+        }
+        for (String rule : List.of("Jutter.loon", "Jutter.vrijgesteld/1", "vrijstelling van een jutter")) {
+            String s = inconsistent("", rule);
+            ScenarioBundle b = ScenarioResolver.resolve(s);
+            errorOnLine(b, s, "volgens", "de regel '" + rule + "' van de inconsistentie bestaat niet in het document");
+        }
+        String scoped = inconsistent("toetst de regel vrijstelling van een jutter\n", "loongrens");
+        errorOnLine(ScenarioResolver.resolve(scoped), scoped, "volgens",
+                "de regel 'loongrens' van de inconsistentie bestaat niet in het document");
+        ScenarioBundle channel = ScenarioResolver.resolve(
+                inconsistent("toetst de regel vrijstelling van een jutter\n", "Jutter.vrijgesteld/0"));
+        assertTrue(channel.isOk(), () -> channel.model().errors().toString());
     }
 
     // ---------------- every refusal has a witness ----------------
