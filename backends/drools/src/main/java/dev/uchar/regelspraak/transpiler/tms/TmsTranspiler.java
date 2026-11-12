@@ -1579,7 +1579,8 @@ public final class TmsTranspiler {
             case Condition.TimeWindow w -> true;
             case Condition.CharacteristicCheck k -> k.period() != null || k.navigation() == null
                     && !navigationBindings.containsKey(k) && temporal(subject, k.characteristic(), true);
-            case Condition.Comparison v -> v.period() != null || temporalOperand(v.left()) || temporalOperand(v.right());
+            case Condition.Comparison v -> v.period() != null || temporalOperand(v.left()) || temporalOperand(v.right())
+                    || temporalMemberSum(v.left()) || temporalMemberSum(v.right());
             case Condition.Predicate p -> p.period() != null || temporalOperand(p.operand());
             case Condition.Compound s -> s.components().stream().anyMatch(x -> readsTimeline(x, subject));
             case Condition.QuantifierFold q -> qualified(q.filter()) || qualified(q.test());
@@ -1591,6 +1592,16 @@ public final class TmsTranspiler {
     private static boolean temporalOperand(Expr e) {
         return e instanceof Expr.AttributeReference a && temporal(a.objectType(), a.attribute(), false)
                 || e instanceof Expr.ParameterRef p && p.parameter() != null && p.parameter().granularity() != null;
+    }
+
+    /** Whether {@code e} is a sum over the members of a set of an attribute on a timeline: per period a timeline
+     *  (ch. 3.5), on a scalar target the double fold of ch. 3.6. A comparison per period compares one own timeline
+     *  with a scalar bound, and this operand is neither, so a comparison that names it is read per period and refused
+     *  there by name ({@link #periodComparison}), never answered by the double fold on every day or on none. */
+    private static boolean temporalMemberSum(Expr e) {
+        return e instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.SOM && f.elementObjectType() != null
+                && f.arguments().size() == 1 && f.arguments().get(0) instanceof Expr.AttributeReference a
+                && temporal(f.elementObjectType(), a.attribute(), false);
     }
 
     /** Whether {@code c}, null for none, holds a whole-period qualifier, also in a member or a fold below it. */
@@ -1624,7 +1635,7 @@ public final class TmsTranspiler {
      *
      * <p>Refused by name ({@link DroolsCode#PERIOD_CONDITION_FORM}), as the reference interpreter refuses them: a
      * navigated or hosted check, a check of a characteristic that holds one value under a qualifier, a comparison of two
-     * timelines or of none of the subject's own, a comparison of dates or of values that are no number, a leeg or gevuld
+     * timelines or of none of the subject's own, a comparison with a sum over the members of a set on a timeline, a comparison of dates or of values that are no number, a leeg or gevuld
      * test, and a quantifier fold.
      */
     private Term periodCondition(Condition c, Member target, Reads reads) {
@@ -1696,7 +1707,8 @@ public final class TmsTranspiler {
      *  restated into the timeline's unit (ch. 2.6), the operator reversed where the timeline stands on the right. */
     private Term periodComparison(Condition.Comparison v, Member target, Reads reads, Msg description) {
         boolean left = ownTimeline(v.left(), reads), right = ownTimeline(v.right(), reads);
-        if (left == right) throw periodConditionForm(v, target);
+        if (left == right || temporalMemberSum(v.left()) || temporalMemberSum(v.right()))
+            throw periodConditionForm(v, target);
         Expr.AttributeReference tested = (Expr.AttributeReference) (left ? v.left() : v.right());
         Expr boundExpr = left ? v.right() : v.left();
         Condition.Operator op = left ? v.op() : Operators.reverse(v.op());

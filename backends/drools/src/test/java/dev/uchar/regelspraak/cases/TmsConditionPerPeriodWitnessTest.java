@@ -438,6 +438,23 @@ class TmsConditionPerPeriodWitnessTest {
                         + " van het tijdsafhankelijke doel 'premie'", "DROOLS-310");
     }
 
+    /** "De som van de opbrengst van alle vondsten van de Jutter" as an operand of a comparison in a condition per period,
+     *  compared with 100 € ({@code ir.json}) and as the bound of the own timeline eigen opbrengst
+     *  ({@code ir-bound.json}), the documents of {@code ref/test/fixtures/conditions-per-period/member-sum}: refused as a
+     *  comparison of two timelines is, as the reference interpreter and the ASP backend refuse it (RUNTIME-SEMANTICS
+     *  ch. 3.6). Measured before the refusal: both branches gave toeslag 5 € on all time and no toeslag on any day. */
+    @Test void a_sum_over_member_timelines_in_a_comparison_per_period_is_refused_by_name_on_both_branches()
+            throws Exception {
+        Path dir = Path.of("..", "..", "ref", "test", "fixtures", "conditions-per-period", "member-sum");
+        JsonNode c = new com.fasterxml.jackson.databind.ObjectMapper().readTree(Files.readString(dir.resolve("case.json")));
+        refused(dir.resolve("ir.json"), c, "regel: toeslag — een voorwaarde per periode op het tijdsafhankelijke doel"
+                + " 'toeslag' van Jutter in een vorm die deze tak niet per periode leest ('de som van de opbrengst van alle"
+                + " vondsten van de Jutter groter is dan 100 €')", "DROOLS-309");
+        refused(dir.resolve("ir-bound.json"), c, "regel: toeslag — een voorwaarde per periode op het tijdsafhankelijke"
+                + " doel 'toeslag' van Jutter in een vorm die deze tak niet per periode leest ('zijn eigen opbrengst groter"
+                + " is dan de som van de opbrengst van alle vondsten van de Jutter')", "DROOLS-309");
+    }
+
     // ---------------- E: the readings ----------------
 
     /** The readings of A on J1, J2 and J3, line by line the reference interpreter's trace of the same document and case. */
