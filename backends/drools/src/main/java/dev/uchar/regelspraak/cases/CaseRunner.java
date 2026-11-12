@@ -1094,10 +1094,11 @@ public final class CaseRunner {
         if (dimensioned(ot, attr))
             throw new IllegalArgumentException(v.get("kind").asText() + " on the dimensioned attribute '" + attr + "' of "
                     + label + ", whose values are its cells: an expectation on it names a cell");
-        // a temporal attribute's bean member is the List<Segment> timeline itself: the scalar comparison below
-        // would compare a list against a scalar. Its read-back form is the attributeTimeline expectation.
+        // a CASE defect as well: a time-dependent attribute has a value per period and none of its own (RUNTIME-SEMANTICS
+        // ch. 5.7 step 3), and its read-back form is the attributeTimeline expectation
         if (temporal(ot, attr))
-            throw new Excluded(DroolsCode.SCALAR_READBACK_TEMPORAL_ATTRIBUTE.reason("attribute", attr));
+            throw new IllegalArgumentException(v.get("kind").asText() + " on the time-dependent attribute '" + attr
+                    + "' of " + label + ", whose value is a timeline: an expectation on it is an attributeTimeline");
         Object actual = invokeGetter(labelToBean.get(label), Namen.getter(attr));
         if (emptyExpected)
             return actual == null ? null : Msg.drools("PART.mismatch.empty-expected", "actual", actual).text();
@@ -1242,6 +1243,12 @@ public final class CaseRunner {
     private String characteristic(JsonNode v, boolean presentExpected) {
         ObjectType ot = typeOfLabel(v, v.get("label").asText());
         String characteristic = characteristicName(ot, v.get("characteristic").asText());
+        // a CASE defect: a time-dependent characteristic holds per period and has no standing of its own
+        // (RUNTIME-SEMANTICS ch. 5.7 step 3, 8.4)
+        if (Namen.containsName(ot.characteristicGranularityMembers(), characteristic))
+            throw new IllegalArgumentException(v.get("kind").asText() + " on the time-dependent characteristic '"
+                    + characteristic + "' of " + v.get("label").asText() + ", which holds per period and has no"
+                    + " standing of its own");
         ownField(ot, characteristic, true, "reads");
         Object read = invokeGetter(labelToBean.get(v.get("label").asText()), Namen.getter(characteristic));
         boolean present = Boolean.TRUE.equals(read);

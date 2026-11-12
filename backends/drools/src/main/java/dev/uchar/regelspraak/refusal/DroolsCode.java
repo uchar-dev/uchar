@@ -62,7 +62,7 @@ public enum DroolsCode {
     TIMELINE_VALUE_NON_NUMERIC("DROOLS-038", Kind.LIMIT, "timeline-value-non-numeric", "attribute", null),
     EXPECTATION_KIND_UNKNOWN("DROOLS-039", Kind.RETIRED, "expectation-kind-unknown", "kind", null),
     DIMENSIONED_ATTRIBUTE_READBACK("DROOLS-040", Kind.RETIRED, "dimensioned-attribute-readback", "attribute", null),
-    SCALAR_READBACK_TEMPORAL_ATTRIBUTE("DROOLS-041", Kind.LIMIT, "scalar-readback-temporal-attribute", "attribute", null),
+    SCALAR_READBACK_TEMPORAL_ATTRIBUTE("DROOLS-041", Kind.RETIRED, "scalar-readback-temporal-attribute", "attribute", null),
     RATIONAL_VALUE("DROOLS-042", Kind.REFUSAL, "rational-value", "field", null),
     TIMELINE_VALUE_SCALAR_POSITION("DROOLS-043", Kind.RETIRED, "timeline-value-scalar-position", "field", null),
     VALUE_FORM_NOT_CARRIED("DROOLS-044", Kind.RETIRED, "value-form-not-carried", "field,value", null),

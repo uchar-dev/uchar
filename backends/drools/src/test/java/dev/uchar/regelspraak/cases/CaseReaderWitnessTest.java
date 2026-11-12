@@ -175,6 +175,24 @@ class CaseReaderWitnessTest {
         caseError(PENNINGDREMPEL, c, "unknown expectation kind \"characteristicPresnt\"");
     }
 
+    @Test void a_scalar_expectation_on_a_time_dependent_member_is_a_case_error() throws Exception {
+        // bakenmeester: onderhoudsbijdrage is an attribute on a timeline, dienstdoend a characteristic on one
+        String[][] rows = {
+                {"{\"kind\": \"attributeEmpty\", \"attribute\": \"onderhoudsbijdrage\"}", "time-dependent attribute"},
+                {"{\"kind\": \"attributeValue\", \"attribute\": \"onderhoudsbijdrage\", \"value\": {\"number\": \"24\"}}",
+                        "time-dependent attribute"},
+                {"{\"kind\": \"characteristicPresent\", \"characteristic\": \"dienstdoend\"}", "time-dependent characteristic"},
+                {"{\"kind\": \"characteristicAbsent\", \"characteristic\": \"dienstdoend\"}", "time-dependent characteristic"},
+        };
+        for (String[] row : rows) {
+            ObjectNode c = caseFile(BAKENMEESTER, "case1");
+            ObjectNode v = (ObjectNode) JSON.readTree(row[0]);
+            v.put("label", "B1");
+            c.putArray("expected").add(v);
+            caseError(BAKENMEESTER, c, row[1]);
+        }
+    }
+
     // ---------------- role keys ----------------
 
     @Test void a_role_key_of_a_relation_the_instance_does_not_fill_is_a_case_error() throws Exception {

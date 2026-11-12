@@ -275,26 +275,22 @@ class ComparisonWitnessTest {
         }
     }
 
-    /** What the backend does not compare, the entry refuses with the exclusion of the replay, which the report gives as
-     *  a MARKER with the same sentence: a scalar read of an attribute on a timeline. */
-    @Test void what_the_entry_does_not_compare_it_refuses_like_the_report(@TempDir Path tmp) throws Exception {
+    /** A scalar expectation on a time-dependent attribute is a defect of the case (RUNTIME-SEMANTICS ch. 5.7 step 3):
+     *  the entry refuses it as one, and the report gives the case as FAIL with that sentence. */
+    @Test void a_scalar_expectation_on_a_time_dependent_attribute_is_a_defect_of_the_case(@TempDir Path tmp)
+            throws Exception {
         JsonNode c = read(BORGDEEL.resolve("case1.json"));
-        Map<String, String> sentences = Map.of(
-                "{\"kind\": \"attributeValue\", \"label\": \"J1\", \"attribute\": \"borgdeel\", \"value\": {\"number\": \"12\"}}",
-                "scalar read-back of temporal attribute 'borgdeel' is not carried by the v0 backend — the bean holds a"
-                        + " List<Segment>; use an attributeTimeline expectation");
-        for (Map.Entry<String, String> z : sentences.entrySet()) {
-            JsonNode v = TmsDocuments.JSON.readTree("[" + z.getKey() + "]");
-            CaseRunner.Excluded e = refusal(CaseRunner.Excluded.class, BORGDEEL, c, caselabels(), v,
-                    FIRED_AND_WRITTEN_BACK);
-            assertEquals(z.getValue(), e.getMessage());
-            ObjectNode withExpectation = c.deepCopy();
-            withExpectation.set("expected", v);
-            ScenarioResult r = report(BORGDEEL, Files.writeString(tmp.resolve("case-" + z.getValue().length()
-                    + ".json"), withExpectation.toString()));
-            assertEquals(ScenarioResult.Status.MARKER, r.status());
-            assertEquals(z.getValue(), r.diagnostic());
-        }
+        JsonNode v = TmsDocuments.JSON.readTree("[{\"kind\": \"attributeValue\", \"label\": \"J1\", \"attribute\": \"borgdeel\","
+                + " \"value\": {\"number\": \"12\"}}]");
+        IllegalArgumentException e = refusal(IllegalArgumentException.class, BORGDEEL, c, caselabels(), v,
+                FIRED_AND_WRITTEN_BACK);
+        assertEquals("attributeValue on the time-dependent attribute 'borgdeel' of J1, whose value is a timeline: an"
+                + " expectation on it is an attributeTimeline", e.getMessage());
+        ObjectNode withExpectation = c.deepCopy();
+        withExpectation.set("expected", v);
+        ScenarioResult r = report(BORGDEEL, Files.writeString(tmp.resolve("case-scalar.json"), withExpectation.toString()));
+        assertEquals(ScenarioResult.Status.FAIL, r.status());
+        assertEquals("ERROR IllegalArgumentException: " + e.getMessage(), diagnostic(r));
     }
 
     /** A kind uchar-case-v0 does not have is a defect of the case: the entry refuses it as one, and the report gives the
