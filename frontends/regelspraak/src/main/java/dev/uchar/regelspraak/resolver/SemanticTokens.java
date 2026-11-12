@@ -522,20 +522,20 @@ public final class SemanticTokens {
             if (u.eenheidAfkorting().size() > 1) symbols.merge(src(u.eenheidAfkorting(1)), 1, Integer::sum);
             // a word and a plural of one unit that are one spelling count once
             java.util.Set<String> spellings = new java.util.HashSet<>();
-            if (u.eenheidWoord() != null) spellings.add(RegelSpraakModel.normaliseTimeUnit(src(u.eenheidWoord())));
+            if (unitWord(u) != null) spellings.add(RegelSpraakModel.normaliseTimeUnit(src(unitWord(u))));
             if (u.meervoudsvorm() != null) spellings.add(RegelSpraakModel.normaliseTimeUnit(src(u.meervoudsvorm())));
             for (String w : spellings) words.merge(w, 1, Integer::sum);
         }
         for (EenheidDefinitieContext u : c.eenheidDefinitie()) {
             List<String> abbreviations = u.eenheidAfkorting().stream().map(DefinitionResolver::src).toList();
-            String primary = !abbreviations.isEmpty() ? abbreviations.get(0)
-                    : u.eenheidWoord() != null ? src(u.eenheidWoord()) : null;
+            EenheidWoordContext word = unitWord(u);
+            String primary = !abbreviations.isEmpty() ? abbreviations.get(0) : word != null ? src(word) : null;
             if (primary == null) continue;
             Decl decl = Decl.of(Kind.UNIT, system, primary);
-            if (u.eenheidWoord() != null) claim(u.eenheidWoord(), Kind.UNIT, true, decl);
+            if (word != null) claim(word, Kind.UNIT, true, decl);
             else claim(u.eenheidAfkorting(0), Kind.UNIT, true, decl);
             claim(u.meervoudsvorm(), Kind.UNIT, false, decl);
-            for (int i = u.eenheidWoord() != null ? 0 : 1; i < u.eenheidAfkorting().size(); i++)
+            for (int i = word != null ? 0 : 1; i < u.eenheidAfkorting().size(); i++)
                 claim(u.eenheidAfkorting(i), Kind.UNIT, false, decl);
             for (int i = 0; i < abbreviations.size(); i++) {
                 String a = abbreviations.get(i);
@@ -544,8 +544,8 @@ public final class SemanticTokens {
                 unitSpellings.putIfAbsent(a, decl);
             }
             // a word or plural two units of the system carry names neither (RGS-392), as a shared symbol names none
-            if (u.eenheidWoord() != null) {
-                String w = RegelSpraakModel.normaliseTimeUnit(src(u.eenheidWoord()));
+            if (word != null) {
+                String w = RegelSpraakModel.normaliseTimeUnit(src(word));
                 if (words.get(w) == 1) unitSpellings.putIfAbsent(w, decl);
             }
             if (u.meervoudsvorm() != null) {
@@ -558,6 +558,12 @@ public final class SemanticTokens {
                 EenheidAfkortingContext a = u.omrekenSpecificatie().eenheidAfkorting();
                 claim(a, Kind.UNIT, false, own.get(src(a)));
             }
+    }
+
+    /** The word of a unit line, or null where it has none: ANTLR's recovery leaves a word context without a token on a
+     *  line that starts at its plural ("de (mv: dagen) dg"), and the abbreviation then declares the unit. */
+    private EenheidWoordContext unitWord(EenheidDefinitieContext u) {
+        return range(u.eenheidWoord()) != null ? u.eenheidWoord() : null;
     }
 
     private void factType(FeitTypeDefinitionContext c) {
@@ -1486,8 +1492,11 @@ public final class SemanticTokens {
         return new Location(files.get(f).name(), line - firstLine[f] + 1, offset - lineStart[line - 1]);
     }
 
+    /** Where {@code d} is declared. On ANTLR's recovery a declaration can lose the token that declares it while a name
+     *  still points at it; the name is then written without a target. On a parse without errors it fails loudly. */
     private Location declarationLocation(Decl d) {
         Integer at = declarations.get(d);
+        if (at == null && recovered) return null;
         if (at == null) throw new IllegalStateException("semantic tokens: no declaration of " + d);
         return location(pieces.get(at).start());
     }

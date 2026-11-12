@@ -86,6 +86,13 @@ class SemanticTokensRecoveryTest {
             Objecttype de Jutter (mv: Jutters) (bezield)
                 de kwartaaltoelage Numeriek (geheel getal) voor elk kwartaal startend op dag 31
             """),
+            Map.entry("a_unit_without_its_word", """
+            Eenheidsysteem Rentetijd
+                de (mv: dagen) dg
+                het jaar (mv: jaren) jr
+
+            Parameter het rentejaar : Numeriek (geheel getal) met eenheid dg/jr;
+            """),
             Map.entry("a_start_point_rule_without_its_subject", """
             Tijdlijn de bergingsperiode heeft tijdvakken van een maand met variabel startpunt;
 
@@ -106,6 +113,21 @@ class SemanticTokensRecoveryTest {
                     () -> e.getKey() + ": the syntax error is in the output: " + d.diagnostics());
             SemanticTokensCheck.check(files, d);
         }
+    }
+
+    /** A unit line the recovery reads without its word: its abbreviation declares the unit, and the plural and a use
+     *  point at it. */
+    @Test void a_unit_line_without_its_word_is_declared_by_its_abbreviation() {
+        List<SemanticTokens.SourceFile> files = List.of(
+                new SemanticTokens.SourceFile("unit.rgs", BROKEN.get("a_unit_without_its_word")));
+        SemanticTokens.Document d = Resolver.tokens(files);
+        List<SemanticTokens.Span> spans = d.files().get(0).spans();
+        SemanticTokens.Span declared = spans.stream().filter(s -> s.text().equals("dg") && s.declaration()).findFirst()
+                .orElseThrow(() -> new AssertionError("no declaring span 'dg': " + spans));
+        for (String name : List.of("dagen", "dg"))
+            assertTrue(spans.stream().anyMatch(s -> s.text().equals(name) && !s.declaration() && s.declaredAt() != null
+                            && s.declaredAt().line() == declared.line() && s.declaredAt().column() == declared.column()),
+                    () -> "'" + name + "' points at the declaration of dg: " + spans);
     }
 
     /** Floors, measured at the build (card semantic-tokens, 2026-10-22): the cut sources read, and how many of them
