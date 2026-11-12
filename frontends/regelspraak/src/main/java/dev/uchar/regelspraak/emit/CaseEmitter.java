@@ -48,8 +48,8 @@ public final class CaseEmitter {
     public static RegelSpraakModel withScope(RegelSpraakModel m, Scope scope) {
         if (scope == null) return m;
         Set<String> names = new HashSet<>();
-        for (String v : scope.forms()) names.add(norm(v));
-        Predicate<String> carries = name -> names.contains(norm(RegelSpraakModel.formName(name)));
+        for (String v : scope.forms()) names.add(IrEmitter.norm(v));
+        Predicate<String> carries = name -> names.contains(IrEmitter.norm(RegelSpraakModel.formName(name)));
         RegelSpraakModel k = m.copy();
         k.resolvedRules.removeIf(r -> !carries.test(r.name()));
         k.objectCreations.removeIf(x -> !carries.test(x.name()));
@@ -254,7 +254,4 @@ public final class CaseEmitter {
         else throw new IllegalStateException("CaseEmitter: a value without a variant");
         w.endObject();
     }
-
-    /** A name as the scenario layer compares names: trimmed, its whitespace one space, lowercased. */
-    public static String norm(String s) { return s == null ? "" : s.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT); }
 }

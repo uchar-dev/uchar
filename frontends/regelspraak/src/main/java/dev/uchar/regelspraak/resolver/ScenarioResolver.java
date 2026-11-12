@@ -39,7 +39,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import static dev.uchar.regelspraak.model.RegelSpraakModel.formName;
-import static dev.uchar.regelspraak.emit.CaseEmitter.norm;
+import static dev.uchar.regelspraak.emit.IrEmitter.norm;
 import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
 
 /**
@@ -194,7 +194,7 @@ public final class ScenarioResolver {
 
     /** The normalised names of the forms a scope carries; for no scope, every named form of the model. */
     private List<String> carried(Scope scope) {
-        if (scope != null) return scope.forms().stream().map(dev.uchar.regelspraak.emit.CaseEmitter::norm).toList();
+        if (scope != null) return scope.forms().stream().map(dev.uchar.regelspraak.emit.IrEmitter::norm).toList();
         List<String> all = new ArrayList<>();
         for (Form v : forms()) all.add(norm(v.name()));
         return all;
