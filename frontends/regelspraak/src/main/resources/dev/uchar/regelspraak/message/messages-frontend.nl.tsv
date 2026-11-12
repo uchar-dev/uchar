@@ -746,3 +746,4 @@ RGS-395.version	versie {version}: {kind}
 RGS-396	lezing '{expression}': {reason}; in een regel met 'Daarbij geldt' krijgt de waarde zo geen type, en zonder type heeft zij geen document in uchar-ir-v1 (WF-076)
 RGS-396.characteristic-as-value	'{characteristic}' is een kenmerk van {objectType} en geen attribuut, en een kenmerk is niet welgevormd op een plaats voor een waarde (WF-080)
 RGS-396.undeclared-attribute	'{attribute}' is geen gedeclareerd attribuut van {objectType} (WF-034)
+RGS-420	de zin leest als een berekening en niet als een attribuut, kenmerk of cel van het onderwerp; een regel schrijft een lid van zijn eigen universele onderwerp

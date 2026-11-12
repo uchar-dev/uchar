@@ -890,7 +890,16 @@ final class RuleChecker {
             // a cell target is judged on the attribute reference under it, as the verifier judges it (WF-022)
             Expr.AttributeReference a = r.target() instanceof Expr.DimensionCellRead c ? c.attribute()
                     : r.target() instanceof Expr.AttributeReference x ? x : null;
-            if (a == null) continue;
+            if (a == null) {
+                // "Het kortingspercentage van de opbrengst van een berging moet …" reads as a percentage of an
+                // attribute: a computation, which the wire has no target for
+                Source at = r.target() == null ? null : r.target().source();
+                String written = at == null ? r.name() : at.snippet();
+                refusedTargets.add(r);
+                model.diagnostics.add(new Typing.Coded("RGS-420", params("written", written))
+                        .frame("rule-target", "written", written).at(Severity.ERROR, at == null ? 0 : at.line()));
+                continue;
+            }
             int line = a.source() == null ? 0 : a.source().line();
             String written = a.source() == null ? a.attribute() : a.source().snippet();
             // a name that is both an attribute and a characteristic of the subject decides no member, and so no rule

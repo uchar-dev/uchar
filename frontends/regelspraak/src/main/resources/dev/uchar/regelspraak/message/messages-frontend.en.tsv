@@ -746,3 +746,4 @@ RGS-395.version	version {version}: {kind}
 RGS-396	read '{expression}': {reason}; in a rule with 'Daarbij geldt' the value thus gets no type, and without a type it has no document in uchar-ir-v1 (WF-076)
 RGS-396.characteristic-as-value	'{characteristic}' is a characteristic of {objectType} and no attribute, and a characteristic is not well-formed at a value position (WF-080)
 RGS-396.undeclared-attribute	'{attribute}' is no declared attribute of {objectType} (WF-034)
+RGS-420	the sentence reads as a computation and not as an attribute, characteristic or cell of the subject; a rule writes a member of its own universal subject

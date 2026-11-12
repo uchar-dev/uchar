@@ -83,6 +83,29 @@ class RuleTargetTest {
         assertFalse(m.isOk(), "een ERROR houdt het document van de schijf");
     }
 
+    /** A target that reads as a computation — the percentage function over an attribute — is no member of the
+     *  subject: it is refused at the target, where it reached the emitter's net (RGS-394) on line 0 before. */
+    @Test void a_target_that_reads_as_a_computation_is_refused_at_the_target() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Eenheidsysteem Munt
+                de euro (mv: euros) EUR €
+
+            Objecttype de Berging (mv: Bergingen)
+                de opbrengst Numeriek (geheel getal) met eenheid €;
+
+            Parameter het kortingspercentage : Percentage (geheel getal)
+
+            Regel korting
+                geldig altijd
+                    Het kortingspercentage van de opbrengst van een berging moet berekend worden als 5 €.
+            """);
+        Diagnostic d = onlyError(m);
+        assertEquals("RGS-420", d.code(), d.message());
+        assertEquals(11, d.line(), d.message());
+        assertTrue(d.message().startsWith("regeldoel 'Het kortingspercentage van de opbrengst van een berging'"),
+                d.message());
+    }
+
     @ParameterizedTest
     @CsvSource(delimiter = '|', value = {
             "De vakpremie van een Strandvak moet gesteld worden op 10.",
