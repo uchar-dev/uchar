@@ -4481,6 +4481,20 @@ final class RuleChecker {
             if (groupType != null && groupType.isOrderable() && tieOk)
                 method = ResolvedAllocation.Method.OP_VOLGORDE;
         }
+        // WF-025: an allocation computes with amounts, so its pot, share, rest, weight and maximum are numbers; one
+        // ERROR per member of another type, and the assignment typing below, which would name the same member, is left
+        boolean nonNumber = false;
+        Object[][] amounts = {{"amount", b.objectType(), b.attribute()}, {"share", d.objectType(), d.attribute()},
+                {"rest", b.objectType(), restAttr}, {"weight", d.objectType(), ratio}, {"maximum", d.objectType(), maxAttr}};
+        for (Object[] amount : amounts) {
+            ObjectType holder = (ObjectType) amount[1];
+            String attribute = (String) amount[2];
+            Datatype type = holder == null || attribute == null ? null : holder.attribute(attribute);
+            if (type == null || type.isUnknown() || type.isNumberLike()) continue;
+            nonNumber = true;
+            error(v.getStart().getLine(), "RGS-423", params("name", name, "role", Msg.frontend("RGS-423." + amount[0]),
+                    "attribute", attribute, "type", type.name()));
+        }
         // §9.7.3: a maximale aanspraak is valid ONLY for a naar-rato split ("niet mogelijk bij gelijke verdeling"
         // — a gelijke verdeling met maximum is voor meerdere uitleg vatbaar), i.e. top-level naar rato OR an
         // op-volgorde with a naar-rato tie, and only when it names a getalachtig recipient attribute (else the
@@ -4514,7 +4528,7 @@ final class RuleChecker {
                         params("name", name, "attribute", n.attribute(), "objectType", n.type().name), v.getStart().getLine()));
         RegelSpraakModel.RoleBindingRef join = allocationJoin(name, b, d, v.getStart().getLine());
         boolean joinResolves = join != null;
-        if (method != ResolvedAllocation.Method.COMPLEX && joinResolves) {
+        if (method != ResolvedAllocation.Method.COMPLEX && joinResolves && !nonNumber) {
             Datatype weightType = (method == ResolvedAllocation.Method.NAAR_RATO
                     || method == ResolvedAllocation.Method.OP_VOLGORDE) && ratio != null
                     ? d.objectType().attribute(ratio) : null;   // op-volgorde naar-rato tie weighs like NAAR_RATO

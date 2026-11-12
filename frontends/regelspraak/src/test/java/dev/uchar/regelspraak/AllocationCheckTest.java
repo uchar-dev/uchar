@@ -21,9 +21,12 @@ class AllocationCheckTest {
 
         Objecttype de Berging (mv: Bergingen)
             de opbrengst Numeriek (geheel getal) met eenheid €;
+            de omschrijving Tekst;
 
         Objecttype de Berger (mv: Bergers) (bezield)
             het bergingsaandeel (mv: bergingsaandelen) Numeriek (geheel getal) met eenheid €;
+            de notitie (mv: notities) Tekst;
+            de naam Tekst;
 
         Parameter het kortingspercentage : Percentage (geheel getal)
 
@@ -50,7 +53,7 @@ class AllocationCheckTest {
         List<Diagnostic> errors = m.errors();
         assertEquals(1, errors.size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
         assertEquals("RGS-421", errors.get(0).code(), errors.get(0).message());
-        assertEquals(19, errors.get(0).line(), errors.get(0).message());
+        assertEquals(22, errors.get(0).line(), errors.get(0).message());
         assertTrue(errors.get(0).message().contains("'Het kortingspercentage van de opbrengst van een berging'"),
                 errors.get(0).message());
     }
@@ -66,6 +69,21 @@ class AllocationCheckTest {
         var read = (dev.uchar.regelspraak.ir.Expr.AttributeReference) c.left();
         assertEquals("opbrengst", read.attribute());
         assertEquals("Berging", read.objectType().name);
+    }
+
+    /** An allocation computes with amounts (WF-025): a Text pot distributed over a Text share, and a Text weight,
+     *  were written without a word, the first with no type check at all. One ERROR per member. */
+    @Test void a_member_that_is_no_number_is_refused() {
+        RegelSpraakModel m = Resolver.resolve(allocation("De omschrijving van een berging wordt verdeeld over de "
+                + "notities van alle bergers van de berging, waarbij wordt verdeeld in gelijke delen."));
+        assertEquals(List.of("RGS-423 22 omschrijving", "RGS-423 22 notitie"), m.errors().stream()
+                .map(d -> d.code() + " " + d.line() + " " + d.params().get("attribute")).toList(), m.diagnostics::toString);
+        RegelSpraakModel w = Resolver.resolve(allocation("De opbrengst van een berging wordt verdeeld over de "
+                + "bergingsaandelen van alle bergers van de berging, waarbij wordt verdeeld naar rato van de naam."));
+        assertEquals(List.of("RGS-423 naam"), w.errors().stream().map(d -> d.code() + " " + d.params().get("attribute"))
+                .toList(), w.diagnostics::toString);
+        assertTrue(w.errors().get(0).message().contains("het gewicht 'naam' is van het type Tekst"),
+                w.errors().get(0).message());
     }
 
     @Test void an_allocation_of_attributes_stays_clean() {
