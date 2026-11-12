@@ -193,4 +193,51 @@ class AllocationCheckTest {
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         assertEquals(1, m.allocations.size());
     }
+
+    /** A distributor and recipients with a weight in kg, and {@code %s} for the type of the maximum and of the rest. */
+    private static final String CAPPED = """
+        Eenheidsysteem Munt
+            de euro (mv: euros) EUR €
+
+        Eenheidsysteem Gewicht
+            het kilogram (mv: kilogrammen) kg
+
+        Objecttype de Berging (mv: Bergingen)
+            de opbrengst Numeriek (geheel getal) met eenheid €;
+            de onverdeelde rest %s;
+
+        Objecttype de Berger (mv: Bergers) (bezield)
+            het bergingsaandeel (mv: bergingsaandelen) Numeriek (geheel getal) met eenheid €;
+            het geborgen gewicht Numeriek (getal met 2 decimalen) met eenheid kg;
+            het bergingsmaximum %s;
+
+        Feittype bergingsdeelname
+            de berging Berging
+            de berger (mv: bergers) Berger
+        Eén berging heeft meerdere bergers
+
+        Regel verdeel de opbrengst
+            geldig altijd
+                De opbrengst van een berging wordt verdeeld over de bergingsaandelen van alle bergers van de berging, waarbij wordt verdeeld:
+                - naar rato van het geborgen gewicht,
+                - met een maximum van het bergingsmaximum,
+                - afgerond op 0 decimalen naar beneden.
+                Als onverdeelde rest blijft de onverdeelde rest van de berging over.
+        """;
+
+    private static List<String> cappedErrors(String rest, String maximum) {
+        RegelSpraakModel m = Resolver.resolve(CAPPED.formatted(rest, maximum));
+        return m.errors().stream().map(d -> d.code() + " " + d.line() + " " + d.params().get("attribute") + " "
+                + d.params().get("unit")).toList();
+    }
+
+    /** WF-025: amount, rest and maximum reduce to the unit of the share. A maximum in % or in kg beside a share in €
+     *  passed the frontend and the verifier, and every executor faulted on it without a code. */
+    @Test void a_maximum_or_rest_whose_unit_is_not_the_share_unit_is_refused() {
+        String euro = "Numeriek (geheel getal) met eenheid €";
+        assertEquals(List.of(), cappedErrors(euro, euro));
+        assertEquals(List.of("RGS-435 23 bergingsmaximum %"), cappedErrors(euro, "Percentage (geheel getal)"));
+        assertEquals(List.of("RGS-435 23 bergingsmaximum kg"), cappedErrors(euro, "Numeriek (geheel getal) met eenheid kg"));
+        assertEquals(List.of("RGS-435 23 onverdeelde rest geen"), cappedErrors("Numeriek (geheel getal)", euro));
+    }
 }

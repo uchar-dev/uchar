@@ -4571,6 +4571,7 @@ final class RuleChecker {
                     params("name", name, "reason", withoutMethod), v.getStart().getLine()));
         RegelSpraakModel.RoleBindingRef join = allocationJoin(name, b, d, v.getStart().getLine());
         boolean joinResolves = join != null;
+        boolean amountJudged = false;   // the share's assignment typing below judges the amount's unit
         if (method != ResolvedAllocation.Method.COMPLEX && joinResolves && !nonNumber) {
             Datatype weightType = (method == ResolvedAllocation.Method.NAAR_RATO
                     || method == ResolvedAllocation.Method.OP_VOLGORDE) && ratio != null
@@ -4579,12 +4580,25 @@ final class RuleChecker {
                     || method == ResolvedAllocation.Method.OP_VOLGORDE     // both lower once the join resolves
                     || (weightType != null && weightType.isNumberLike());   // mirror the transpiler's lowering gate
             if (lowers) {
+                amountJudged = true;
                 Typing.Coded error = Typing.allocationAssignment(d.objectType().attribute(d.attribute()),
                         d.objectType().granularityOf(d.attribute()) != null, b.objectType().attribute(b.attribute()), roundDec);
                 if (error != null)
                     model.diagnostics.add(error.frame("allocation").at(Severity.ERROR, v.getStart().getLine()));
             }
         }
+        // WF-025: the amount, the rest and the maximum are quantities of what the share receives, so each unit reduces to
+        // the share's; the weight is a ratio, and its unit is free. A member of another type has its RGS-423 above.
+        Datatype shareType = d.objectType() == null ? null : d.objectType().attribute(d.attribute());
+        if (shareType != null && shareType.isNumberLike())
+            for (Named n : java.util.List.of(new Named("amount", b.objectType(), amountJudged ? null : b.attribute()),
+                    new Named("rest", b.objectType(), restAttr), new Named("maximum", d.objectType(), maxAttr))) {
+                Datatype type = n.type() == null || n.attribute() == null ? null : n.type().attribute(n.attribute());
+                if (type == null || !type.isNumberLike() || Typing.reducible(type.unitOf(), shareType.unitOf())) continue;
+                error(v.getStart().getLine(), "RGS-435", params("name", name,
+                        "role", Msg.frontend("PART.allocation-member." + n.role()), "attribute", n.attribute(),
+                        "unit", Typing.unitSpelling(type), "share", d.attribute(), "shareUnit", Typing.unitSpelling(shareType)));
+            }
         // WF-026: at most one allocation writes a target, along a type chain as well: an allocation over a supertype
         // writes the instances of its subtypes, and no defaults stack absorbs an allocation (RUNTIME-SEMANTICS ch. 7.10)
         for (ResolvedAllocation other : model.allocations)

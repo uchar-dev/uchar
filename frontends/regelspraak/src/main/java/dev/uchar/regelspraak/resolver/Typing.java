@@ -512,6 +512,11 @@ public final class Typing {
         return null;
     }
 
+    /** Whether a quantity in {@code unit} reduces to {@code target}: both without a unit, or two convertible units. */
+    static boolean reducible(Unit unit, Unit target) {
+        return unit == null ? target == null : target != null && unit.convertibleTo(target);
+    }
+
     /** {@code c} under the sentence of the construct {@code where} names; an empty {@code where} adds none. */
     private static Coded framed(Coded c, String where) {
         return where.isEmpty() ? c : c.frame("operation", "operation", where);
@@ -618,7 +623,7 @@ public final class Typing {
 
     /** A unit in the verifier's WF-023 sentence: an author needs to read which unit the value took and which the
      *  target has, also where one of them has none. */
-    private static String unitSpelling(Datatype t) {
+    static String unitSpelling(Datatype t) {
         return t.unitOf() == null ? "geen" : t.unitOf().rendering();
     }
 
