@@ -389,6 +389,7 @@ RGS-398	parameter-without-period-on-timeline	ERROR	parameter
 RGS-399	expectation-without-period-on-timeline	ERROR	attribute,label
 RGS-400	expectation-on-time-dependent-characteristic	ERROR	characteristic,label
 RGS-401	allocation-method-refused	ERROR	name,reason
+RGS-402	clip-condition-refused	ERROR	condition,reason
 RGS-420	target-not-a-member	ERROR	written
 RGS-421	allocation-operand-not-an-attribute	ERROR	name,written
 RGS-422	block-name-not-unique	ERROR	head,name,other,otherLine

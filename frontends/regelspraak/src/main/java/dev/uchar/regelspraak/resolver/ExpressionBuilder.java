@@ -1502,6 +1502,11 @@ final class ExpressionBuilder {
             Condition during = duringCharacteristicCheckFilter(f, kind, arguments);
             if (during != null) {
                 filter = during;
+            } else if (kind == Expr.FunctionKind.TOTAAL || kind == Expr.FunctionKind.TIJDSEVENREDIG_DEEL) {
+                // the clip of the temporal total or the pro-rata part: every other condition the verifier refuses
+                // (WF-055, WF-056), so the source is refused here, at its place
+                filter = refusedClip(dimSource, Msg.frontend(kind == Expr.FunctionKind.TOTAAL ? "RGS-402.total"
+                        : "RGS-402.proportional"), f);
             } else {
                 model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
                         "RGS-070", params("expression", dimSource), f.getStart().getLine()));
@@ -1939,9 +1944,11 @@ final class ExpressionBuilder {
      *  single-period temporal kenmerk of the subject. BOTH membership verbs bind: a bijvoeglijk/zelfstandig kenmerk
      *  reads "is <k>", a bezittelijk one "heeft (een) <k>" (§3.5) — the verb is not the discriminator; the
      *  granularity check below is (a role/possession "heeft een <rol>" names no temporal kenmerk, so it still returns
-     *  null). Everything else (a navigated/compound/comparison/multi-period condition, a non-temporal or navigated/
-     *  scalar operand) returns null and stays an Unresolved marker — so a SCALAR (parameter) base, whose §5.1.2
-     *  value-timeline the model cannot carry, never lowers as a silently-constant proration. */
+     *  null). The total also takes a comparison of an own temporal attribute and an ALLE compound of such checks
+     *  (WF-055); the pro-rata part takes the one check (WF-056). Everything else (a navigated/multi-period condition,
+     *  another compound or comparison, a non-temporal or scalar operand) returns null and the caller refuses the clip
+     *  — so a SCALAR (parameter) base, whose §5.1.2 value-timeline the model cannot carry, never lowers as a
+     *  silently-constant proration. */
     private Condition duringCharacteristicCheckFilter(FunctieAanroepContext f, Expr.FunctionKind kind, List<Expr> arguments) {
         if ((kind != Expr.FunctionKind.TOTAAL && kind != Expr.FunctionKind.TIJDSEVENREDIG_DEEL)
                 || arguments.size() != 1 || currentSubject == null) return null;
@@ -1975,15 +1982,9 @@ final class ExpressionBuilder {
         // §8.4 example never silently drops its non-temporal predicate.
         if (cnd.toplevelElementaireVoorwaarde() != null) {
             ToplevelElementaireVoorwaardeContext c = cnd.toplevelElementaireVoorwaarde();
-            // §7.1 a NAVIGATED temporal kenmerk ("zijn reis een recht op X heeft") FIRST — it inspects the onderwerp,
-            // so when the navigated type shares the subject's type (a self-relation) the navigation is not shadowed by
-            // the subject's own same-named kenmerk; temporalCharacteristicCheckFromOperator (own) only sees the operator's bareName.
-            Condition nav = duringNavigationCharacteristicCheck(c, source(cnd));
-            if (nav != null) return nav;
-            // If the onderwerp IS a navigation that the navigated path could NOT structure (a to-many role, a negated
-            // or non-temporal kenmerk), MARKER — never fall through to temporalCharacteristicCheckFromOperator, which inspects only
-            // the operator's bareName and would silently bind the SUBJECT's own same-named kenmerk (a self-relation
-            // shadow, a silently-wrong clip).
+            // A navigated onderwerp ("zijn reis een recht op X heeft") is no clip the wire carries (WF-055, WF-056 take
+            // an own characteristic), and it never falls through to temporalCharacteristicCheckFromOperator, which
+            // inspects only the operator's bareName and would bind the SUBJECT's own same-named kenmerk.
             if (c.expressie() != null && build(c.expressie()) instanceof Expr.AttributeReference a && a.navigationRole() != null)
                 return null;
             // the same shadow where the onderwerp names another object without a navigation the builder reads
@@ -1993,9 +1994,10 @@ final class ExpressionBuilder {
                 return null;
             Condition.CharacteristicCheck k = temporalCharacteristicCheckFromOperator(c.toplevelOperator(), null, source(cnd));  // §8.3.1 toplevel = vragende only
             if (k != null) return k;
-            return duringComparison(c, source(cnd));   // §7.1 a temporal-attribute COMPARISON condition (EUR71)
+            // the pro-rata part takes one own characteristic (WF-056); the total also a comparison (WF-055)
+            return kind == Expr.FunctionKind.TOTAAL ? duringComparison(c, source(cnd)) : null;
         }
-        if (cnd.toplevelSamengesteldeVoorwaarde() != null)
+        if (cnd.toplevelSamengesteldeVoorwaarde() != null && kind == Expr.FunctionKind.TOTAAL)
             return duringCompound(cnd.toplevelSamengesteldeVoorwaarde(), source(cnd));
         return null;
     }
@@ -2003,8 +2005,8 @@ final class ExpressionBuilder {
     /** §7.1 structure a "gedurende de tijd dat &lt;temporeel attribuut&gt; &lt;vergelijking&gt; &lt;scalar&gt;"
      *  enkelvoudige condition (the EUR71 shape, e.g. "gedurende de tijd dat het inkomen groter is dan 1000") into a
      *  {@link Condition.Comparison} the transpiler clips the value timeline by (its boolean timeline). Built only
-     *  when ONE operand is a single-period temporal attribute of the subject (the condition varies over time) and the
-     *  form is a verb-split comparison; else null (the caller markers). The transpiler validates numeric type / units. */
+     *  when the LEFT operand is a single-period temporal attribute of the subject, the shape WF-055 admits, and the
+     *  form is a verb-split comparison; else null (the caller refuses the clip). */
     private Condition duringComparison(ToplevelElementaireVoorwaardeContext c, Source source) {
         if (c.expressie() == null || c.toplevelOperator() == null
                 || c.toplevelOperator().vergelijkingsTekenGesplitst() == null || c.toplevelOperator().expressie() == null)
@@ -2013,7 +2015,7 @@ final class ExpressionBuilder {
         if (c.toplevelOperator().gehelePeriodevergelijking() != null) return null;
         Expr lhs = build(c.expressie());
         Expr rhs = build(c.toplevelOperator().expressie());
-        if (!isTemporalSubjectAttr(lhs) && !isTemporalSubjectAttr(rhs)) return null;   // a static single condition is no gedurende
+        if (!isTemporalSubjectAttr(lhs)) return null;   // a static condition, or the timeline on the right, is no clip
         Condition.Operator op = RuleChecker.toOperator(RuleChecker.cmpOf(c.toplevelOperator().vergelijkingsTekenGesplitst()));
         return comparison(op, lhs, rhs, null, source);
     }
@@ -2025,35 +2027,13 @@ final class ExpressionBuilder {
                 && currentSubject.timelineCountOf(a.attribute()) == null;
     }
 
-    /** §7.1 structure a "gedurende de tijd dat &lt;zijn rol&gt; (een/het) &lt;temporeel kenmerk&gt; heeft/is"
-     *  NAVIGATED temporal-kenmerk condition (e.g. "gedurende de tijd dat zijn reis een recht op korting heeft") into a
-     *  navigated {@link Condition.CharacteristicCheck} the transpiler clips by the to-one role's kenmerk timeline. The onderwerp is
-     *  a to-one role navigation; the kenmerk must be a SINGLE-PERIOD temporal kenmerk of the navigated type. A negated
-     *  form, a to-many role, or a non-temporal kenmerk -> null (the caller markers). */
-    private Condition duringNavigationCharacteristicCheck(ToplevelElementaireVoorwaardeContext c, Source source) {
-        ToplevelOperatorContext top = c.toplevelOperator();
-        if (c.expressie() == null || top == null || top.kaleNaam() == null) return null;
-        boolean membership = top.IS() != null || top.ZIJN() != null || top.HEEFT() != null || top.HEBBEN() != null;
-        if (!membership) return null;                                                   // not an is/heeft kenmerkcheck
-        if (top.gehelePeriodevergelijking() != null) return null;                       // no qualifier on a clip member (WF-097)
-        if (!(build(c.expressie()) instanceof Expr.AttributeReference a) || a.navigationRole() == null || a.objectType() == null)
-            return null;                                                                // not a to-one role navigation
-        ObjectType target = model.roleTargetTypeToSubject(a.objectType(), a.attribute());
-        if (target == null || model.toManyRole(a.objectType(), target, a.navigationRole())) return null;   // to-many -> marker
-        String characteristic = CharacteristicMatcher.find(target, stripArticle(src(top.kaleNaam())));
-        if (characteristic == null) return null;                                               // not a kenmerk of the navigated type
-        if (target.characteristicGranularityOf(characteristic) == null || target.characteristicTimelineCountOf(characteristic) != null)
-            return null;                                                                // must be a single-period temporal kenmerk
-        return new Condition.CharacteristicCheck(characteristic, a.navigationRole(), false, source);
-    }
-
     /** §13.4.17.57 the condition after "dat" in "het aantal dagen in &lt;de maand|het jaar&gt; dat &lt;conditie&gt;", a
      *  direct child of the call. A day count counts the days on which the subject has one own single-period
      *  time-dependent characteristic (RUNTIME-SEMANTICS ch. 3.8; WF-058 refuses every other condition, a negated check
-     *  and a compound among them), so that check is the one condition it lowers. Every other condition stays on the
-     *  wire as a marker whose reason the survivor sweep reports: a count without its condition counts the days of no
+     *  and a compound among them), so that check is the one condition it lowers. Every other condition is refused
+     *  with an ERROR that says why ({@link #refusedClip}): a count without its condition counts the days of no
      *  condition, and a characteristic of another object read as the subject's own counts the wrong days. A membership
-     *  name that binds no characteristic of the subject is named, as the sweep names one in a rule condition. */
+     *  name that binds no characteristic of the subject is named. */
     private Condition dayCountCondition(AantalDagenFuncContext adf) {
         ToplevelElementaireVoorwaardeContext c = adf.toplevelElementaireVoorwaarde();
         ParserRuleContext written = c != null ? c
@@ -2067,14 +2047,23 @@ final class ExpressionBuilder {
             Condition.CharacteristicCheck k = temporalCharacteristicCheckFromOperator(op, null, source(adf));
             if (k != null && !k.negation()) return k;
             if (boundCharacteristic(src(op.kaleNaam())) == null)
-                return new Condition.Unresolved(marked, Msg.frontend("RGS-092.day-count-name-unbound",
-                        "name", src(op.kaleNaam()), "subject", currentSubject.name));
+                return refusedClip(marked, Msg.frontend("RGS-092.day-count-name-unbound",
+                        "name", src(op.kaleNaam()), "subject", currentSubject.name), adf);
         }
         if (adf.toplevelSamengesteldeVoorwaarde() != null) {
             Condition compound = dayCountCompound(adf.toplevelSamengesteldeVoorwaarde(), source(adf.toplevelSamengesteldeVoorwaarde()));
             if (compound != null) return compound;
         }
-        return new Condition.Unresolved(marked, Msg.frontend("RGS-092.day-count-condition-form"));
+        return refusedClip(marked, Msg.frontend("RGS-092.day-count-condition-form"), adf);
+    }
+
+    /** The clip condition {@code written} of the fold {@code at} refused with an ERROR that says why: the temporal
+     *  total, the pro-rata part and the day count each take only the conditions the verifier admits (WF-055, WF-056,
+     *  WF-058). The marker carries no reason, because the ERROR is its diagnosis. */
+    private Condition refusedClip(Source written, Object reason, ParserRuleContext at) {
+        model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-402",
+                params("condition", written.snippet(), "reason", reason), at.getStart().getLine()));
+        return new Condition.Unresolved(written, null);
     }
 
     /** IMPLICIT-TIME 7b: "het aantal dagen in de maand dat er aan alle volgende voorwaarden wordt voldaan: - hij is
@@ -2173,91 +2162,28 @@ final class ExpressionBuilder {
         return characteristic == null ? null : new BoundCharacteristic(characteristic, negation);
     }
 
-    /** §8.4.2 a COMPOUND tijdsafhankelijke conditie on a temporal totaal: an ALLE (intersect the true-period sets)
-     *  or "ten minste 1" (union them) of bullets. Each bullet is a single-period temporal-kenmerk membership of the
-     *  subject; an ALLE compound may ALSO mix in a NON-temporal comparison bullet (the spec's own §8.4 example,
-     *  "zijn geboortedatum is eerder dan 1-1-2002") — built as a {@link Condition.Comparison} — which the transpiler
-     *  lowers to a value-side static guard wrapping the clipped totaal ("de samengestelde conditie is als geheel wel
-     *  tijdsafhankelijk"). A "ten minste 1" (OR) compound likewise admits a non-temporal comparison bullet — but its
-     *  TRUE case WIDENS the clip to the full value span (the transpiler branches on the kwantor; the WRITE producers
-     *  still marker an OR-mixed). Either compound must still carry at least one temporal kenmerk (the actual clip). Any
-     *  OTHER kwantor (geen van de / ten hoogste / precies / ten minste &gt;1), a nested compound bullet, or a
-     *  non-comparison non-temporal bullet returns null — the compound stays an Unresolved marker, never a dropped
-     *  predicate. */
+    /** §8.4.2 a COMPOUND tijdsafhankelijke conditie on a temporal totaal: an ALLE of bullets that are each a
+     *  single-period temporal-kenmerk membership of the subject, the flat composite WF-055 admits (the intersection of
+     *  the members' true periods, RUNTIME-SEMANTICS ch. 3.6). Any other kwantor, a nested compound bullet or another
+     *  bullet returns null, and the caller refuses the clip. */
     private Condition duringCompound(ToplevelSamengesteldeVoorwaardeContext sv, Source source) {
         VoorwaardeKwantificatieContext q = sv.voorwaardeKwantificatie();
-        if (q == null || sv.samengesteldeVoorwaardeOnderdeel() == null) return null;
+        if (q == null || q.ALLE() == null || sv.samengesteldeVoorwaardeOnderdeel() == null) return null;
         // "zijn ploeg aan alle volgende voorwaarden voldoet": the bullets' "hij" is then that other object
         if (sv.voorwaardeSubject() != null && sv.voorwaardeSubject().onderwerp() != null
                 && !denotesSubject(sv.voorwaardeSubject().onderwerp())) return null;
-        Condition.Quantifier quantifier;
-        if (q.ALLE() != null) quantifier = Condition.Quantifier.ALLE;
-        else if (q.TEN_MINSTE() != null && q.telwoord() != null && numeralValue(q.telwoord()) == 1)
-            quantifier = Condition.Quantifier.TEN_MINSTE;                       // "ten minste 1" = OR (union)
-        else return null;                                               // de / geen van de / ten hoogste / precies / ten minste >1
         List<Condition> parts = new ArrayList<>();
-        int temporal = 0;
         for (GenesteVoorwaardeContext g : sv.samengesteldeVoorwaardeOnderdeel().genesteVoorwaarde()) {
-            if (g.elementaireVoorwaarde() == null) return null;         // a nested compound bullet -> marker
+            if (g.elementaireVoorwaarde() == null) return null;         // a nested compound bullet
             ElementaireVoorwaardeContext ev = g.elementaireVoorwaarde();
             // a membership bullet reads the subject's own characteristic only where its onderwerp denotes the subject
-            boolean membership = (ev.toplevelOperator() != null && ev.toplevelOperator().kaleNaam() != null)
-                    || (ev.nonToplevelOperator() != null && ev.nonToplevelOperator().kaleNaam() != null);
-            if (membership && !denotesSubject(ev.expressie())) return null;
+            if (!denotesSubject(ev.expressie())) return null;
             Condition.CharacteristicCheck k = temporalCharacteristicCheckFromOperator(ev.toplevelOperator(), ev.nonToplevelOperator(), source(ev));
-            if (k != null) { parts.add(k); temporal++; continue; }
-            // §8.4 a non-temporal member (a COMPARISON) lowers to a static value-side guard. In an ALLE compound it
-            // AND-gates the clipped totaal; in a "ten minste 1" (OR) compound a TRUE static member instead WIDENS the
-            // result to the full value span (the transpiler branches on the kwantor). The WRITE producers still marker
-            // an OR-mixed (conditieTijdreeks returns null) — only the totaal handles it.
-            Condition.Comparison v = nonTemporalComparison(ev);
-            if (v == null) return null;                                 // a non-comparison non-temporal bullet -> marker
-            parts.add(v);
+            if (k == null) return null;
+            parts.add(k);
         }
-        if (parts.size() < 2 || temporal == 0) return null;           // a single bullet is the elementaire path; a pure-static gedurende is not a clip
-        return new Condition.Compound(quantifier, 1, parts, source);
-    }
-
-    /** §8.4 a NON-temporal COMPARISON bullet of a mixed ALLE gedurende ("zijn geboortedatum is eerder dan 1-1-2002")
-     *  built as a {@link Condition.Comparison} (reusing RuleChecker's shared comparison-operator mapping), or null
-     *  when the bullet is not a plain comparison (a predicate / kenmerk / role membership — deferred) OR when an
-     *  operand is itself a TEMPORAL attribute (§8.4 admits the static member precisely because it "heeft geen
-     *  verschillende waarden op verschillende momenten"; a comparison on a List&lt;Segment&gt; read is time-varying and
-     *  would lower to a List-vs-scalar term that fails the whole DRL build — reject so the compound markers). */
-    private Condition.Comparison nonTemporalComparison(ElementaireVoorwaardeContext ev) {
-        // a clip member carries no whole-period qualifier (WF-097): the guard without it says something else
-        if ((ev.toplevelOperator() != null && ev.toplevelOperator().gehelePeriodevergelijking() != null)
-                || (ev.nonToplevelOperator() != null && ev.nonToplevelOperator().gehelePeriodevergelijking() != null))
-            return null;
-        Expr left = ev.expressie() != null ? build(ev.expressie()) : null;
-        if (left == null) return null;
-        Condition.Comparison v = null;
-        if (ev.toplevelOperator() != null && ev.toplevelOperator().vergelijkingsTekenGesplitst() != null
-                && ev.toplevelOperator().expressie() != null)
-            v = comparison(RuleChecker.toOperator(RuleChecker.cmpOf(ev.toplevelOperator().vergelijkingsTekenGesplitst())),
-                    left, build(ev.toplevelOperator().expressie()), source(ev));
-        else if (ev.nonToplevelOperator() != null && ev.nonToplevelOperator().vergelijkingsTeken() != null
-                && ev.nonToplevelOperator().expressie() != null)
-            v = comparison(RuleChecker.toOperator(RuleChecker.cmpOf(ev.nonToplevelOperator().vergelijkingsTeken())),
-                    left, build(ev.nonToplevelOperator().expressie()), source(ev));
-        if (v == null || temporalAttributeOperand(v.left()) || temporalAttributeOperand(v.right())) return null;
-        return v;
-    }
-
-    /** Whether an operand READS a TEMPORAL (tijdlijn) attribute ANYWHERE — its runtime value is a {@code List<Segment>},
-     *  not a scalar, so it cannot be a §8.4 static comparison member. Recurses through arithmetic wrappers (a temporal
-     *  read nested in "X plus 1" or an afronding/begrenzing is just as time-varying), so the whole comparison markers
-     *  rather than leaking a List into a scalar guard term (which would break the DRL build). */
-    private static boolean temporalAttributeOperand(Expr e) {
-        if (e instanceof Expr.AttributeReference a)
-            return a.objectType() != null && a.objectType().granularityOf(a.attribute()) != null;
-        if (e instanceof Expr.Binary b) return temporalAttributeOperand(b.left()) || temporalAttributeOperand(b.right());
-        if (e instanceof Expr.Rounding roundedExpr) return temporalAttributeOperand(roundedExpr.base());
-        if (e instanceof Expr.Clamp bg) return temporalAttributeOperand(bg.base())
-                || (bg.minimum() != null && temporalAttributeOperand(bg.minimum()))
-                || (bg.maximum() != null && temporalAttributeOperand(bg.maximum()));
-        if (e instanceof Expr.DimensionCellRead dc) return temporalAttributeOperand(dc.attribute());
-        return false;
+        if (parts.size() < 2) return null;                              // a single bullet is the elementaire path
+        return new Condition.Compound(Condition.Quantifier.ALLE, 1, parts, source);
     }
 
     /** The integer value of a §13.4.14 telwoord (a digit literal or een/twee/drie/vier), or -1 if unrecognised. */

@@ -16,10 +16,11 @@ import static org.junit.jupiter.api.Assertions.*;
  * The condition of a day count ("het aantal dagen in de maand dat …", §13.4.17.57) and of the two gedurende clips
  * (the temporal total and the pro-rata part, "gedurende de tijd dat …"). A day count counts the days of one own
  * time-dependent characteristic of the subject, held positively (RUNTIME-SEMANTICS ch. 3.8, WF-058); a clip member
- * carries no whole-period qualifier (WF-097). The frontend lowers exactly those conditions. Any other condition stays
- * on the wire as a marker with a WARNING that names why, so the IR never says something else than the source: no
- * count without a condition, no count of the subject's own characteristic where the source names another object's,
- * and no clip that drops a qualifier the source writes.
+ * carries no whole-period qualifier (WF-097); the clips take the shapes WF-055 and WF-056 admit. The frontend lowers
+ * exactly those conditions. Any other condition is an ERROR (RGS-402) that names why, so the IR never says something
+ * else than the source and the frontend writes no document the verifier refuses: no count without a condition, no
+ * count of the subject's own characteristic where the source names another object's, no clip that drops a qualifier
+ * the source writes, and no clip over another object or with a static member.
  */
 class DayCountConditionTest {
 
@@ -61,22 +62,16 @@ class DayCountConditionTest {
         return m.diagnostics.stream().filter(d -> d.severity() == Severity.WARNING).toList();
     }
 
-    /** The one WARNING of {@code m}: the sweep's report of the marker, with {@code reasonKey} as its reason; the
-     *  document carries the marker as the filter of the count and stays emittable and accounted for (WF-113). */
-    private static Msg markedWith(RegelSpraakModel m, String reasonKey, String snippet) {
-        assertTrue(m.diagnostics.stream().noneMatch(Diagnostic::isError), () -> m.diagnostics.toString());
-        List<Diagnostic> w = warnings(m);
-        assertEquals(1, w.size(), w::toString);
-        Diagnostic d = w.get(0);
-        assertEquals("RGS-092", d.code(), d::toString);
+    /** The one diagnostic of {@code m}: the ERROR RGS-402 that refuses the condition {@code snippet}, with
+     *  {@code reasonKey} as its reason. */
+    private static Msg refusedWith(RegelSpraakModel m, String reasonKey, String snippet) {
+        assertEquals(1, m.diagnostics.size(), m.diagnostics::toString);
+        Diagnostic d = m.diagnostics.get(0);
+        assertTrue(d.isError(), d::toString);
+        assertEquals("RGS-402", d.code(), d::toString);
         Msg reason = (Msg) d.args().get("reason");
         assertEquals(reasonKey, reason.key(), d::toString);
         assertTrue(d.message().contains("'" + snippet + "'"), d::message);
-        String ir = IrEmitter.emit(m);
-        String c = ir.replaceAll("\\s+", "");
-        assertTrue(c.contains("\"kind\":\"dayCount\",\"arguments\":[],\"filter\":{\"node\":\"Unresolved\",\"source\":{\"snippet\":\""
-                + snippet.replaceAll("\\s+", "") + "\"}}"), c);
-        Report.assertAccountedFor(ir);
         return reason;
     }
 
@@ -89,36 +84,36 @@ class DayCountConditionTest {
     }
 
     @Test void a_name_that_binds_no_characteristic_is_named() {
-        Msg reason = markedWith(dayCount("hij borgvrij is"), "RGS-092.day-count-name-unbound", "hij borgvrij is");
+        Msg reason = refusedWith(dayCount("hij borgvrij is"), "RGS-092.day-count-name-unbound", "hij borgvrij is");
         assertEquals("borgvrij", String.valueOf(reason.args().get("name")));
         assertEquals("Jutter", String.valueOf(reason.args().get("subject")));
     }
 
     @Test void a_predicate_is_no_characteristic() {
-        markedWith(dayCount("zijn heffing gevuld is"), "RGS-092.day-count-condition-form", "zijn heffing gevuld is");
+        refusedWith(dayCount("zijn heffing gevuld is"), "RGS-092.day-count-condition-form", "zijn heffing gevuld is");
     }
 
     @Test void a_comparison_is_no_characteristic() {
-        markedWith(dayCount("zijn heffing groter is dan 3"), "RGS-092.day-count-condition-form",
+        refusedWith(dayCount("zijn heffing groter is dan 3"), "RGS-092.day-count-condition-form",
                 "zijn heffing groter is dan 3");
     }
 
     @Test void a_characteristic_that_is_not_time_dependent_is_refused_by_its_form() {
-        markedWith(dayCount("hij vrijgesteld is"), "RGS-092.day-count-condition-form", "hij vrijgesteld is");
+        refusedWith(dayCount("hij vrijgesteld is"), "RGS-092.day-count-condition-form", "hij vrijgesteld is");
     }
 
     @Test void a_negated_characteristic_is_refused_by_its_form() {
-        markedWith(dayCount("hij niet borgplichtig is"), "RGS-092.day-count-condition-form", "hij niet borgplichtig is");
+        refusedWith(dayCount("hij niet borgplichtig is"), "RGS-092.day-count-condition-form", "hij niet borgplichtig is");
     }
 
     @Test void a_characteristic_of_another_object_is_not_read_as_the_subjects_own() {
-        markedWith(dayCount("zijn vaartocht borgplichtig is"), "RGS-092.day-count-condition-form",
+        refusedWith(dayCount("zijn vaartocht borgplichtig is"), "RGS-092.day-count-condition-form",
                 "zijn vaartocht borgplichtig is");
     }
 
     /** "zijn ploeg" builds no navigation of its own here; the onderwerp still names another object. */
     @Test void a_characteristic_of_an_object_over_a_role_by_type_is_not_read_as_the_subjects_own() {
-        markedWith(dayCount("zijn ploeg borgplichtig is"), "RGS-092.day-count-condition-form",
+        refusedWith(dayCount("zijn ploeg borgplichtig is"), "RGS-092.day-count-condition-form",
                 "zijn ploeg borgplichtig is");
     }
 
@@ -131,7 +126,7 @@ class DayCountConditionTest {
     }
 
     @Test void a_whole_period_qualifier_is_refused_by_its_form() {
-        markedWith(dayCount("hij gedurende de gehele maand borgplichtig is"), "RGS-092.day-count-condition-form",
+        refusedWith(dayCount("hij gedurende de gehele maand borgplichtig is"), "RGS-092.day-count-condition-form",
                 "hij gedurende de gehele maand borgplichtig is");
     }
 
@@ -193,8 +188,8 @@ class DayCountConditionTest {
                     - hij is aangesteld
                     - de dag is geen schrikkeldag.
             """);
-        assertEquals(1, warnings(m).size(), m.diagnostics::toString);
-        assertEquals("RGS-092.day-count-condition-form", ((Msg) warnings(m).get(0).args().get("reason")).key());
+        refusedWith(m, "RGS-092.day-count-condition-form",
+                "er aan alle volgende voorwaarden wordt voldaan: - hij is borgplichtig - hij is aangesteld - de dag is geen schrikkeldag");
     }
 
     @Test void a_compound_condition_is_refused_by_its_form() {
@@ -205,12 +200,8 @@ class DayCountConditionTest {
                     - hij borgplichtig is
                     - hij aangesteld is.
             """);
-        assertEquals(1, warnings(m).size(), m.diagnostics::toString);
-        Msg reason = (Msg) warnings(m).get(0).args().get("reason");
-        assertEquals("RGS-092.day-count-condition-form", reason.key(), m.diagnostics::toString);
-        String c = IrEmitter.emit(m).replaceAll("\\s+", "");
-        assertTrue(c.contains("\"kind\":\"dayCount\",\"arguments\":[],\"filter\":{\"node\":\"Unresolved\","), c);
-        Report.assertAccountedFor(IrEmitter.emit(m));
+        refusedWith(m, "RGS-092.day-count-condition-form",
+                "hij aan alle volgende voorwaarden voldoet: - hij borgplichtig is - hij aangesteld is");
     }
 
     // ---------------- the whole-period qualifier in the condition of a gedurende clip ----------------
@@ -247,21 +238,18 @@ class DayCountConditionTest {
             """ + value);
     }
 
-    /** The clip keeps the marker the gedurende route writes for a condition it does not lower: the RGS-070 WARNING
-     *  and an Unresolved filter that quotes the condition. */
-    private static void clipMarked(RegelSpraakModel m, String condition) {
-        assertTrue(m.diagnostics.stream().noneMatch(Diagnostic::isError), () -> m.diagnostics.toString());
-        List<Diagnostic> w = warnings(m);
-        assertEquals(1, w.size(), w::toString);
-        assertEquals("RGS-070", w.get(0).code(), w::toString);
-        String c = IrEmitter.emit(m).replaceAll("\\s+", "");
-        assertTrue(c.contains("\"filter\":{\"node\":\"Unresolved\",\"source\":{\"snippet\":\""
-                + condition.replaceAll("\\s+", "") + "\"}}"), c);
-        Report.assertAccountedFor(IrEmitter.emit(m));
+    /** A clip condition the wire does not carry is refused: one ERROR RGS-402 that quotes the condition, with the
+     *  shapes of the total's clip (WF-055) or the pro-rata part's (WF-056) as its reason. */
+    private static void clipRefused(RegelSpraakModel m, String condition) {
+        assertEquals(1, m.diagnostics.size(), m.diagnostics::toString);
+        Diagnostic d = m.diagnostics.get(0);
+        assertTrue(d.isError(), d::toString);
+        assertEquals("RGS-402", d.code(), d::toString);
+        assertTrue(d.message().contains("'" + condition + "'"), d::message);
     }
 
     @Test void a_total_keeps_no_clip_whose_qualifier_it_drops() {
-        clipMarked(clip("""
+        clipRefused(clip("""
             Regel wachtsom van een jutter
                 geldig altijd
                     De wachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij gedurende het gehele jaar wachtplichtig is).
@@ -269,7 +257,7 @@ class DayCountConditionTest {
     }
 
     @Test void a_pro_rata_part_keeps_no_clip_whose_qualifier_it_drops() {
-        clipMarked(clip("""
+        clipRefused(clip("""
             Regel wachtbijdrage van een jutter
                 geldig altijd
                     De wachtbijdrage van een Jutter moet gesteld worden op het tijdsevenredig deel per maand van zijn wachttarief gedurende de tijd dat hij gedurende de gehele maand wachtplichtig is.
@@ -277,7 +265,7 @@ class DayCountConditionTest {
     }
 
     @Test void a_comparison_clip_keeps_no_qualifier_it_drops() {
-        clipMarked(clip("""
+        clipRefused(clip("""
             Regel wachtsom van een jutter
                 geldig altijd
                     De wachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand gedurende het gehele jaar groter is dan 10).
@@ -285,7 +273,7 @@ class DayCountConditionTest {
     }
 
     @Test void a_compound_clip_keeps_no_member_whose_qualifier_it_drops() {
-        clipMarked(clip("""
+        clipRefused(clip("""
             Regel wachtsom van een jutter
                 geldig altijd
                     De wachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij aan alle volgende voorwaarden voldoet:
@@ -295,7 +283,7 @@ class DayCountConditionTest {
     }
 
     @Test void a_navigated_clip_keeps_no_qualifier_it_drops() {
-        clipMarked(clip("""
+        clipRefused(clip("""
             Regel wachtsom van een jutter
                 geldig altijd
                     De wachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn vaartocht gedurende het gehele jaar gestremd is).
@@ -303,7 +291,7 @@ class DayCountConditionTest {
     }
 
     @Test void a_static_member_of_a_compound_clip_keeps_no_qualifier_it_drops() {
-        clipMarked(clip("""
+        clipRefused(clip("""
             Regel wachtsom van een jutter
                 geldig altijd
                     De wachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij aan alle volgende voorwaarden voldoet:
@@ -315,7 +303,7 @@ class DayCountConditionTest {
     // ---------------- the onderwerp of a membership in the condition of a gedurende clip ----------------
 
     @Test void a_clip_does_not_read_another_objects_characteristic_as_the_subjects_own() {
-        clipMarked(clip("""
+        clipRefused(clip("""
             Regel wachtsom van een jutter
                 geldig altijd
                     De wachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn ploeg bemand is).
@@ -323,7 +311,7 @@ class DayCountConditionTest {
     }
 
     @Test void a_compound_clip_does_not_read_another_objects_characteristic_in_a_bullet() {
-        clipMarked(clip("""
+        clipRefused(clip("""
             Regel wachtsom van een jutter
                 geldig altijd
                     De wachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij aan alle volgende voorwaarden voldoet:
@@ -333,7 +321,7 @@ class DayCountConditionTest {
     }
 
     @Test void a_compound_clip_over_another_object_is_not_the_subjects() {
-        clipMarked(clip("""
+        clipRefused(clip("""
             Regel wachtsom van een jutter
                 geldig altijd
                     De wachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn ploeg aan alle volgende voorwaarden voldoet:
@@ -342,21 +330,67 @@ class DayCountConditionTest {
             """), "gedurende de tijd dat zijn ploeg aan alle volgende voorwaarden voldoet: - hij bemand is - hij bemand is");
     }
 
-    @Test void the_same_clips_without_qualifier_stay_lowered() {
-        RegelSpraakModel m = clip("""
+    /** Without a qualifier, a clip over another object's characteristic and a compound clip with a static member are
+     *  still no shapes WF-055 admits: the total's clip reads the subject's own characteristics only. */
+    @Test void a_navigated_clip_and_a_static_member_are_refused() {
+        clipRefused(clip("""
             Regel wachtsom van een jutter
                 geldig altijd
                     De wachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn vaartocht gestremd is) rekenkundig afgerond op 0 decimalen.
-
+            """), "gedurende de tijd dat zijn vaartocht gestremd is");
+        clipRefused(clip("""
             Regel stilwachtsom van een jutter
                 geldig altijd
                     De stilwachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij aan alle volgende voorwaarden voldoet:
                     - hij wachtplichtig is
                     - zijn leeftijd is groter dan 18) rekenkundig afgerond op 0 decimalen.
+            """), "gedurende de tijd dat hij aan alle volgende voorwaarden voldoet: - hij wachtplichtig is - zijn leeftijd is groter dan 18");
+    }
+
+    /** The comparison a total's clip takes reads the subject's own timeline on the left (WF-055); a timeline on the
+     *  right, an at-least compound and a comparison or compound on the pro-rata part are refused at their place. */
+    @Test void the_clip_shapes_the_verifier_refuses_are_refused() {
+        clipRefused(clip("""
+            Regel wachtsom van een jutter
+                geldig altijd
+                    De wachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn leeftijd kleiner is dan zijn wachtvergoeding per maand).
+            """), "gedurende de tijd dat zijn leeftijd kleiner is dan zijn wachtvergoeding per maand");
+        clipRefused(clip("""
+            Regel wachtsom van een jutter
+                geldig altijd
+                    De wachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat er aan ten minste één van de volgende voorwaarden wordt voldaan:
+                    - hij is wachtplichtig
+                    - hij is aangesteld).
+            """), "gedurende de tijd dat er aan ten minste één van de volgende voorwaarden wordt voldaan: - hij is wachtplichtig - hij is aangesteld");
+        clipRefused(clip("""
+            Regel wachtbijdrage van een jutter
+                geldig altijd
+                    De wachtbijdrage van een Jutter moet gesteld worden op het tijdsevenredig deel per maand van zijn wachttarief gedurende de tijd dat zijn wachtvergoeding per maand groter is dan 10.
+            """), "gedurende de tijd dat zijn wachtvergoeding per maand groter is dan 10");
+        clipRefused(clip("""
+            Regel wachtbijdrage van een jutter
+                geldig altijd
+                    De wachtbijdrage van een Jutter moet gesteld worden op het tijdsevenredig deel per maand van zijn wachttarief gedurende de tijd dat er aan alle volgende voorwaarden wordt voldaan:
+                    - hij is wachtplichtig
+                    - hij is aangesteld.
+            """), "gedurende de tijd dat er aan alle volgende voorwaarden wordt voldaan: - hij is wachtplichtig - hij is aangesteld");
+    }
+
+    @Test void the_admitted_clips_stay_lowered() {
+        RegelSpraakModel m = clip("""
+            Regel wachtsom van een jutter
+                geldig altijd
+                    De wachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan 10) rekenkundig afgerond op 0 decimalen.
+
+            Regel stilwachtsom van een jutter
+                geldig altijd
+                    De stilwachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij aan alle volgende voorwaarden voldoet:
+                    - hij wachtplichtig is
+                    - hij niet aangesteld is) rekenkundig afgerond op 0 decimalen.
             """);
         assertTrue(m.diagnostics.isEmpty(), m.diagnostics::toString);
         String c = IrEmitter.emit(m).replaceAll("\\s+", "");
-        assertTrue(c.contains("\"filter\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"gestremd\","), c);
+        assertTrue(c.contains("\"filter\":{\"node\":\"Comparison\","), c);
         assertTrue(c.contains("\"filter\":{\"node\":\"Compound\",\"quantifier\":\"all\","), c);
     }
 

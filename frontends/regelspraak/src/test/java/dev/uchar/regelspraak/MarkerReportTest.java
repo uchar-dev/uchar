@@ -85,8 +85,10 @@ class MarkerReportTest {
                 + "element en regelonderwerp; RGS-358, een tussenliggend element of 'zelf' na een andere naam): geen "
                 + "document");
         CLASSIFICATION.put("ExpressionBuilder.java#buildFold", "WARNING: aggregatie_over_een_ongedeclareerd_lid, "
-                + "dimensieselectie_of_gedurende_op_een_aggregatie; ERROR (WF-037, aantal gevulde; RGS-366 tot en met "
+                + "dimensieselectie_op_een_aggregatie; ERROR (WF-037, aantal gevulde; RGS-366 tot en met "
                 + "RGS-368, de selecties van een dimensievouw): geen document");
+        CLASSIFICATION.put("ExpressionBuilder.java#refusedClip", "ERROR (RGS-402, een voorwaarde van het totaal, het "
+                + "tijdsevenredig deel of de dagentelling die de verifier weigert): geen document");
         CLASSIFICATION.put("ExpressionBuilder.java#dimensionCell", "ERROR (RGS-364, een cel zonder label van een "
                 + "dimensie; RGS-365, een naam die op twee cellen past): geen document");
         CLASSIFICATION.put("ExpressionBuilder.java#checkFoldSource", "WARNING: vouwbron_geneste_verzamelingsstap, "
@@ -143,12 +145,12 @@ class MarkerReportTest {
             """, "'die/dat'-subselectie op een aggregatie-operand");
     }
 
-    @Test void dimension_selection_or_during_on_an_aggregation() {
+    @Test void dimension_selection_on_an_aggregation() {
         written(MODEL + """
 
             Regel vangsttotaal
                 geldig altijd
-                    Het vangsttotaal van een Jutter moet berekend worden als het totaal van de maandvangst van de Jutter gedurende de tijd dat de strandmaat van de Jutter bevoegd is.
+                    Het vangsttotaal van een Jutter moet berekend worden als de som van het totaalgewicht van alle strandmaten van de Jutter over alle seizoenen.
             """, "een dimensieselectie / 'gedurende de tijd dat' op een aggregatie");
     }
 

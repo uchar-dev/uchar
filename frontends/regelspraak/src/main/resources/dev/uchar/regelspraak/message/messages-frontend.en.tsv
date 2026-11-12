@@ -755,6 +755,9 @@ RGS-401.maximum-not-a-number	the maximum '{attribute}' is not a number (§9.7.3)
 RGS-401.maximum-without-ratio	a maximum claim is only possible with an allocation in proportion, also within an equal rank (§9.7.3)
 RGS-401.order-key-not-orderable	the order of '{attribute}' is not determined: the key of 'op volgorde van' is a number or a date (§9.7.2)
 RGS-401.tie-weight-not-a-number	the weight '{attribute}' within an equal rank is not a number (§9.7.2)
+RGS-402	the condition '{condition}' has no form uchar-ir-v1 carries: {reason}
+RGS-402.proportional	'gedurende de tijd dat' on the time-proportional part reads one time-dependent characteristic of the subject itself, 'hij <kenmerk> is' (WF-056)
+RGS-402.total	'gedurende de tijd dat' on the total reads a time-dependent characteristic of the subject itself ('hij <kenmerk> is'), a comparison with an own time-dependent attribute on the left ('zijn <attribuut> groter is dan …'), or 'aan alle volgende voorwaarden' over such characteristics (WF-055)
 RGS-420	the sentence reads as a computation and not as an attribute, characteristic or cell of the subject; a rule writes a member of its own universal subject
 RGS-421	allocation '{name}': '{written}' reads as a computation and not as an attribute; an allocation distributes an attribute of the distributor over an attribute of the recipients (IR-SPEC ch. 3.2)
 RGS-422	{head}: the block '{name}' — {other} already has that name (source line {otherLine}); a carrier names a block by its name, and a form name is unique in the whole model, case not counted (WF-020)

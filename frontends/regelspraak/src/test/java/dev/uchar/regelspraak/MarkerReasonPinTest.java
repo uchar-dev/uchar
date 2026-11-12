@@ -88,7 +88,7 @@ class MarkerReasonPinTest {
                     "meldPredicaat werpt de Tabel-57-ERROR op; die is de diagnose van deze marker"),
             new Site("ExpressionBuilder.java", "buildFold", 4,
                     "alle vier de markers staan direct onder hun eigen melding — de aggregatie over een "
-                    + "ongedeclareerd lid, de niet-omgezette dimensieselectie / 'gedurende de tijd dat', "
+                    + "ongedeclareerd lid, de niet-omgezette dimensieselectie, "
                     + "(2026-09-20) de WF-037-ERROR op een niet-set bron onder 'het aantal gevulde "
                     + "waarden van', en (2026-11-02) de RGS-366-, RGS-367- of RGS-368-ERROR die "
                     + "resolveDimensionSelections opwerpt (een dimensie zonder selectie, een dimensie twee keer, "
@@ -120,7 +120,11 @@ class MarkerReasonPinTest {
                     + "de diagnose van deze marker"),
             new Site("ExpressionBuilder.java", "identityFilter", 1,
                     "de RGS-358-ERROR die de regel erboven opwerpt ('die niet de … zelf zijn' na een andere naam dan "
-                    + "die van het type van het regelonderwerp; 2026-10-23) IS de diagnose van deze marker"));
+                    + "die van het type van het regelonderwerp; 2026-10-23) IS de diagnose van deze marker"),
+            new Site("ExpressionBuilder.java", "refusedClip", 1,
+                    "de RGS-402-ERROR die de regel erboven opwerpt (een voorwaarde van het totaal, het tijdsevenredig "
+                    + "deel of de dagentelling die de verifier weigert, WF-055, WF-056, WF-058) IS de diagnose van "
+                    + "deze marker"));
 
     /** A marker construction: the two record constructors and the two {@code unresolvedMarker(…)} helpers. */
     private static final Pattern BUILD =

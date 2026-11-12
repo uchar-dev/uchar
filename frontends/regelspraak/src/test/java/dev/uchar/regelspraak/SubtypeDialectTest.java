@@ -31,16 +31,6 @@ class SubtypeDialectTest {
         return IrEmitter.emit(m).replaceAll("\\s+", "");
     }
 
-    /** The {@code rules} list of a compacted emission — the part a declaration SPLIT (one flat
-     *  type versus a subtype and its parent) leaves untouched, so two documents that mean the same rule
-     *  compare equal here even though their objecttypen sections differ. */
-    private static String rulePart(String compact) {
-        int van = compact.indexOf("\"rules\":[");
-        int until = compact.indexOf("\"dayKindDefinitions\":");
-        assertTrue(van >= 0 && until > van, () -> "geen rules-lijst in de emissie:\n" + compact);
-        return compact.substring(van, until);
-    }
-
     /** The single error text, asserting exactly one error was raised (so a test pins the intended refusal, not
      *  some unrelated diagnostic). */
     private static String onlyError(RegelSpraakModel m) {
@@ -622,15 +612,11 @@ class SubtypeDialectTest {
     }
 
     @Test void an_inherited_time_sequence_does_not_escape_the_static_guard() {
-        // Plek 4, the escape: §8.4 admits a NON-temporal comparison bullet beside the temporal ones
-        // precisely because it "heeft geen verschillende waarden op verschillende momenten".
-        // `toeslag per maand` is inherited and IS a timeline, so the bullet reads a List<Segment>;
-        // judged non-temporal it slipped past the guard into a scalar comparison term. The escape is
-        // real IN THE RESOLVER and stops there: WF-055 narrows composite gedurende members to
-        // characteristic checks, so the base's Compound filter is refused on the wire too — with a
-        // different reason than the honest marker the repair produces. Both are refusals; this test
-        // pins that the guard itself no longer lets a timeline through. The operand and the first
-        // bullet are the subtype's OWN, so nothing but that guard is under test.
+        // Plek 4, the escape: `toeslag per maand` is inherited and IS a timeline, so the bullet reads a
+        // List<Segment>; judged non-temporal it once slipped into a scalar comparison term. WF-055 narrows
+        // composite gedurende members to characteristic checks, and the frontend refuses every other member
+        // (RGS-402), so the subtype subject and its flat equivalent are refused alike. The operand and the
+        // first bullet are the subtype's OWN, so nothing but the inherited member is under test.
         String src = """
             Objecttype de Jutter (mv: Jutters) (bezield)
                 de toeslag per maand Numeriek (geheel getal) voor elke maand;
@@ -662,14 +648,11 @@ class SubtypeDialectTest {
                     - zijn toeslag per maand groter is dan 10).
             """;
         RegelSpraakModel m = Resolver.resolve(src);
-        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
-        String c = emitCompact(m);
-        assertFalse(c.contains("\"filter\":{\"node\":\"Compound\""),
-                () -> "een tijdreekslezing hoort niet als statische vergelijking in de samengestelde "
-                        + "gedurende-conditie te belanden:\n" + c);
-        assertTrue(c.contains("\"filter\":{\"node\":\"Unresolved\""),
-                () -> "de niet-lowerbare samengestelde conditie hoort een eerlijke marker te zijn:\n" + c);
-        assertEquals(rulePart(emitCompact(Resolver.resolve(flat))), rulePart(c),
+        RegelSpraakModel f = Resolver.resolve(flat);
+        assertEquals(List.of("RGS-402"), m.errors().stream().map(RegelSpraakModel.Diagnostic::code).toList(),
+                () -> "de samengestelde conditie met een tijdreekslezing hoort geweigerd te worden: " + m.diagnostics);
+        assertEquals(f.errors().stream().map(RegelSpraakModel.Diagnostic::message).toList(),
+                m.errors().stream().map(RegelSpraakModel.Diagnostic::message).toList(),
                 "een subtype-subject met geërfde tijdlijnleden hoort exact als het vlakke equivalent te "
                         + "worden behandeld");
     }
@@ -820,10 +803,10 @@ class SubtypeDialectTest {
                         + "van een marker te worden:\n" + c);
     }
 
-    @Test void a_navigated_inherited_timeline_characteristic_clamps_the_time_proportional_part() {
-        // Plek 4, duringNavigationCharacteristicCheck. Same navigated shape, now on the CONDITION side: the
-        // kenmerk must be a single-period timeline kenmerk of the navigated type, read on its own
-        // maps. An inherited one answered "not temporal" and the clip fell away.
+    @Test void a_navigated_clip_of_the_time_proportional_part_is_refused() {
+        // Plek 4, the navigated shape on the CONDITION side: the pro-rata part takes a check of an own
+        // characteristic only (WF-056), so a characteristic of the navigated type — inherited or not — is
+        // refused at its place (RGS-402) rather than written for the verifier to refuse.
         String src = """
             Objecttype de Reis (mv: Reizen)
                 is gestremd kenmerk (bijvoeglijk) voor elke maand;
@@ -845,13 +828,8 @@ class SubtypeDialectTest {
                     De reisbijdrage van een Jutter moet gesteld worden op het tijdsevenredig deel per maand van zijn jaartarief gedurende de tijd dat zijn vaartocht gestremd is.
             """;
         RegelSpraakModel m = Resolver.resolve(src);
-        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
-        String c = emitCompact(m);
-        assertTrue(c.contains("\"filter\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"gestremd\","),
-                () -> "de genavigeerde klem hoort te binden op het geërfde tijdlijnkenmerk:\n" + c);
-        assertTrue(c.contains("\"navigation\":{\"node\":\"RoleBinding\",\"factType\":\"reisdeelname\","
-                        + "\"role\":\"vaartocht\"}"),
-                () -> "de kenmerkcheck navigeert via haar binding:\n" + c);
+        assertEquals(List.of("RGS-402"), m.errors().stream().map(RegelSpraakModel.Diagnostic::code).toList(),
+                () -> "de genavigeerde klem hoort geweigerd te worden: " + m.diagnostics);
     }
 
     @Test void a_set_read_over_an_inherited_timeline_stays_the_time_fold() {
