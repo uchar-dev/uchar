@@ -69,8 +69,16 @@ public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFa
      * declared spelling, and every other member null there. A characteristic is listed where it holds, with
      * {@code Boolean.TRUE}, and a time-dependent one where it has true periods, with those periods as {@code Segment}s
      * without a value. {@code unit} is the unit of an attribute's declaration, null where it declares none.
+     *
+     * <p>{@code derived}: a rule, a default or an allocation derived the value. {@code given}: what the bean field holds
+     * without the write-back of the derived values, in the same form as {@code value}: the input of an object of the
+     * input, the value its creation assigned to a made object; null where the field holds none, a timeline without
+     * segments included. For a characteristic it is {@code Boolean.TRUE} where the input or the creation set it, and
+     * for a time-dependent one its true periods. Where nothing derived the member, {@code value} is what the field
+     * holds, so a member that holds only a {@code given} and no {@code value} does not occur.
      */
-    public record Member(boolean characteristic, String name, List<String> cell, Object value, Unit unit) {
+    public record Member(boolean characteristic, String name, List<String> cell, Object value, Unit unit,
+                         boolean derived, Object given) {
         public Member {
             Objects.requireNonNull(name, "name");
             Objects.requireNonNull(value, "value");
@@ -154,7 +162,8 @@ public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFa
     }
 
     /** The members of {@code bean}, of type {@code ot}, that hold a value: the derived value where a rule derived one,
-     *  the bean field's input elsewhere. A member without a bean field of its own has no value here. */
+     *  the bean field's input elsewhere, each with what its bean field holds. A member without a bean field of its own
+     *  has no value here. */
     private static List<Member> members(Object bean, ObjectType ot, List<FactModelGenerator.Displacement> displacements,
                                         Map<Object, Map<String, Object>> derived,
                                         Map<Object, Map<String, Map<List<String>, Object>>> derivedCells,
@@ -172,6 +181,7 @@ public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFa
                 Unit unit = a.getValue() == null ? null : a.getValue().unitOf();
                 String key = Namen.norm(name);
                 if (!ot.dimensionsOf(name).isEmpty()) {
+                    Map<List<String>, Object> given = new HashMap<>();
                     Map<List<String>, Object> cells = new LinkedHashMap<>();
                     Object field = CaseRunner.invokeGetter(bean, Namen.getter(name));
                     if (field != null)
@@ -179,30 +189,41 @@ public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFa
                             @SuppressWarnings("unchecked")
                             List<String> labels = (List<String>) c.getKey();
                             cells.put(labels, c.getValue());
+                            given.put(labels, c.getValue());
                         }
-                    cells.putAll(myCells.getOrDefault(key, Map.of()));
+                    Map<List<String>, Object> derivedHere = myCells.getOrDefault(key, Map.of());
+                    cells.putAll(derivedHere);
                     cells.forEach((labels, v) -> {
-                        if (v != null) out.add(new Member(false, name, labels, v, unit));
+                        if (v != null) out.add(new Member(false, name, labels, v, unit, derivedHere.containsKey(labels),
+                                given.get(labels)));
                     });
                     continue;
                 }
-                Object v = mine.containsKey(key) ? mine.get(key) : CaseRunner.invokeGetter(bean, Namen.getter(name));
-                if (v != null) out.add(new Member(false, name, null, v, unit));
+                Object field = CaseRunner.invokeGetter(bean, Namen.getter(name));
+                Object v = mine.containsKey(key) ? mine.get(key) : field;
+                if (v != null) out.add(new Member(false, name, null, v, unit, mine.containsKey(key), given(field)));
             }
             for (String name : t.characteristics) {
                 if (FactModelGenerator.displacedMember(displacements, ot, name, true) != null) continue;
                 String key = Namen.norm(name);
                 if (t.characteristicGranularity.containsKey(name)) {
-                    Object v = mine.containsKey(key) ? mine.get(key) : CaseRunner.invokeGetter(bean, Namen.getter(name));
-                    if (v != null && !((Collection<?>) v).isEmpty()) out.add(new Member(true, name, null, v, null));
+                    Object field = CaseRunner.invokeGetter(bean, Namen.getter(name));
+                    Object v = mine.containsKey(key) ? mine.get(key) : field;
+                    if (v != null && !((Collection<?>) v).isEmpty())
+                        out.add(new Member(true, name, null, v, null, mine.containsKey(key), given(field)));
                     continue;
                 }
-                if (myCharacteristics.contains(key)
-                        || Boolean.TRUE.equals(CaseRunner.invokeGetter(bean, Namen.getter(name))))
-                    out.add(new Member(true, name, null, Boolean.TRUE, null));
+                Object given = Boolean.TRUE.equals(CaseRunner.invokeGetter(bean, Namen.getter(name))) ? Boolean.TRUE : null;
+                if (myCharacteristics.contains(key) || given != null)
+                    out.add(new Member(true, name, null, Boolean.TRUE, null, myCharacteristics.contains(key), given));
             }
         }
         return out;
+    }
+
+    /** {@code field} as {@link Member#given} takes it: a timeline without segments holds nothing. */
+    private static Object given(Object field) {
+        return field instanceof Collection<?> c && c.isEmpty() ? null : field;
     }
 
     /** One link of a relation, compared by its fact type and its two objects by identity. */
