@@ -1712,6 +1712,12 @@ let characteristic_temporal ctx ~otype ~characteristic =
     (fun (k, _) -> Ir_v0.Checks.norm k = Ir_v0.Checks.norm characteristic)
     (object_type ctx otype).characteristic_granularity
 
+(* ref's refusal of a time-dependent characteristic in a scalar condition
+   (ch. 3.3), word for word *)
+let scalar_characteristic_refused ctx ~otype k =
+  if characteristic_temporal ctx ~otype ~characteristic:k then
+    fault "temporal characteristic %S in a scalar condition is refused (ch. 3.3)" k
+
 (* ch. 3.10's v0 mirror note carries TWO bounds on the window and this is the
    second: v0's backends "refuse the condition under counting quantifiers".
    The Drools backend plays the window under `all`, also inside a quantifier
@@ -9364,6 +9370,13 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
   | Characteristic_check { characteristic; navigation_binding = None; negation; holder; _ } -> (
       let hosting = owner_hosts ctx.doc ~otype:subject_ot ~subj:(Some subject_ot) ~characteristic holder in
       let k = req "characteristic" characteristic in
+      (* a time-dependent characteristic holds per period, and a scalar
+         condition has no day to read it on (ch. 3.3): has/2 carries only the
+         flat list, so the check would read false where ref refuses. Refused
+         here, statically, on the type the declaration is read on *)
+      scalar_characteristic_refused ctx
+        ~otype:(match hosting with Hosted -> subject_ot | Narrowing e -> e)
+        k;
       match hosting with
       | Hosted -> [ (if negation then "not " else "") ^ Printf.sprintf "has(%s,%s)" subject (str k) ]
       | Narrowing e ->
@@ -9396,6 +9409,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
         fault
           "the navigated check reaches the to-many role %S in a scalar condition"
           (Option.value role.role_identifier ~default:"?");
+      scalar_characteristic_refused ctx ~otype:(Option.value role.role_object_type_name ~default:"") k;
       let n = fresh ctx "N" in
       [ Printf.sprintf "role(%s,%s,%s)" subject (role_term ~fact_type:rb.rb_fact_type role) n;
         (if negation then "not " else "") ^ Printf.sprintf "has(%s,%s)" n (str k) ]

@@ -16943,6 +16943,64 @@ let () =
             (code = Some "CLINGO-040" && params = [ ("fold", fold); ("attribute", attribute) ]))
     forms
 
+(* A TIME-DEPENDENT CHARACTERISTIC IN A SCALAR CONDITION (RUNTIME-SEMANTICS
+   ch. 3.3): it holds per period, and a scalar condition has no day to read it
+   on, so ref and Drools refuse it by name; this encoding reads has/2, which
+   carries only the flat list, and answered as if it were false. Three
+   positions: the filter of a count into a scalar target, the test of a
+   quantifier fold in the condition of a timeline target (not read per period,
+   since the fold carries no qualifier), and a navigated check over a to-one
+   role. Measured before the refusal: the count gave 0 and the quantifier fold
+   no dagwaarde, `clingo: PASS`, where ref faulted. *)
+let () =
+  let number_value = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}|} in
+  let daily = {|"timeline": {"node": "TimelineFacet", "granularity": "day", "count": 1}|} in
+  let drijvend = {|{"node": "CharacteristicCheck", "characteristic": "drijvend", "negated": false, "source": {"snippet": "drijvend"}}|} in
+  let doc ~target ~value ~condition =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters", "attributes": [{"node": "Attribute", "name": "teller", "datatype": %s}, {"node": "Attribute", "name": "loon", "datatype": %s, %s}, {"node": "Attribute", "name": "dagwaarde", "datatype": %s, %s}], "characteristics": [{"node": "Characteristic", "name": "actief", "kind": "adjectival", %s}]}, {"node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten", "attributes": [{"node": "Attribute", "name": "punten", "datatype": %s}], "characteristics": [{"node": "Characteristic", "name": "drijvend", "kind": "adjectival", %s}]}], "factTypes": [{"node": "FactType", "name": "aanmelding", "reciprocal": false, "roles": [{"node": "Role", "name": "aanmeldende jutter", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "vondst", "objectType": "Vondst", "plural": "vondsten", "many": true}]}], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [{"node": "Rule", "name": "r", "versions": [{"validity": {"node": "Validity"}, "target": {"node": "AttributeReference", "attribute": "%s", "subjectType": "%s", "source": {"snippet": "de %s"}}, "value": %s%s, "initialisation": false, "presentation": "calculation"}]}], "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": []}, "diagnostics": []}|}
+      number_value number_value daily number_value daily daily number_value daily (fst target) (snd target) (fst target)
+      value
+      (match condition with None -> "" | Some c -> ", \"condition\": " ^ c)
+  in
+  let count_filtered =
+    Printf.sprintf
+      {|{"node": "Aggregation", "kind": "count", "arguments": [{"node": "AttributeReference", "attribute": "vondsten", "subjectType": "Jutter", "source": {"snippet": "vondsten"}}], "elementType": "Vondst", "filter": %s, "sourceRole": {"node": "RoleBinding", "factType": "aanmelding", "role": "vondst"}, "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative"}, "source": {"snippet": "het aantal vondsten die drijvend zijn"}}|}
+      drijvend
+  in
+  let loon = {|{"node": "AttributeReference", "attribute": "loon", "subjectType": "Jutter", "source": {"snippet": "zijn loon"}}|} in
+  let all_drijvend =
+    Printf.sprintf
+      {|{"node": "QuantifierFold", "quantifier": "all", "elementType": "Vondst", "test": %s, "source": {"snippet": "alle vondsten drijvend zijn"}, "sourceRole": {"node": "RoleBinding", "factType": "aanmelding", "role": "vondst"}}|}
+      drijvend
+  in
+  let navigated =
+    {|{"node": "CharacteristicCheck", "characteristic": "actief", "negated": false, "source": {"snippet": "zijn aanmeldende jutter actief is"}, "navigation": {"node": "RoleBinding", "factType": "aanmelding", "role": "aanmeldende jutter"}}|}
+  and one = {|{"node": "Literal", "value": {"number": "1"}, "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}, "source": {"snippet": "1"}}|} in
+  let forms =
+    [ ("the filter of a count, a scalar target", doc ~target:("teller", "Jutter") ~value:count_filtered ~condition:None);
+      ( "the test of a quantifier fold, a timeline target",
+        doc ~target:("dagwaarde", "Jutter") ~value:loon ~condition:(Some all_drijvend) );
+      ( "a navigated check over a to-one role, a scalar target",
+        doc ~target:("punten", "Vondst") ~value:one ~condition:(Some navigated) ) ]
+  in
+  let case_text =
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "J1", "objectType": "Jutter", "attributes": {"loon": {"timeline": [{"from": "2024-01-01", "to": "2024-04-01", "value": {"number": "10"}}]}}, "roles": {}, "characteristics": [], "characteristicTimelines": {"actief": [{"from": "2024-01-01", "to": "2024-02-01"}]}}, {"label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {"aanmeldende jutter": ["J1"]}, "characteristics": [], "characteristicTimelines": {"drijvend": [{"from": "2024-02-01", "to": "2024-03-01"}]}}], "parameters": {}}, "expected": [{"kind": "consistent"}]}|}
+  in
+  List.iter
+    (fun (variant, ir) ->
+      let k = if Uchar_ref.Case.contains ~needle:"navigated" variant then "actief" else "drijvend" in
+      let needle = Printf.sprintf "temporal characteristic %S in a scalar condition is refused (ch. 3.3)" k in
+      let name = "ch3.3 a time-dependent characteristic in a scalar condition, " ^ variant in
+      verifier_clean ~name ~ir;
+      (let doc, case = load_pair ~ir ~case_text in
+       match ref_report doc case with
+       | _ -> check (name ^ ": ref refuses (it evaluated)") false
+       | exception Uchar_ref.Value.Fault { text; _ } ->
+           check (name ^ ": ref refuses (" ^ text ^ ")") (Uchar_ref.Case.contains ~needle text));
+      faults_with ~name ~ir ~case_text ~needle)
+    forms
+
 (* THE MODEL AS CLINGO PRINTS IT. clingo 5.8.2 aborts (SIGABRT) while it
    writes a model as JSON (--outf=2) when a shown atom, JSON-escaped, is
    1024 + 1023k characters long, whatever the nesting of its terms: a("x…x")
