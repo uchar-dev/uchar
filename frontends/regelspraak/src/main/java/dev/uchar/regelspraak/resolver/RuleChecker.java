@@ -4116,7 +4116,7 @@ final class RuleChecker {
 
     /** §13.4.8 consistentieregel (single-criterion form): "&lt;expressie&gt; moet
      *  &lt;operator&gt;". The assertion is built with the same operator machinery as a
-     *  voorwaarde (conditionFromToplevel), so the operand types and operator legality are the
+     *  voorwaarde (conditionFromOperator), so the operand types and operator legality are the
      *  §5 ones; the subject is the object type the asserted expression is about. Compound
      *  criteria and uniciteit have since been lifted as well — the former into a
      *  {@link Condition.Compound} assertion on the same
@@ -4133,7 +4133,7 @@ final class RuleChecker {
             // the check from the wire. The set reading keeps its fence until the §13.4.8 consistentieregel
             // gets a quantified form of its own. (The BULLET criteria need no such guard: a samengestelde
             // consistentieregel sets no rule subject, so the fold's range never binds.)
-            Condition assertion = checkWholePeriod(conditionFromToplevelBare(lhs, e.toplevelOperator(), source(e)),
+            Condition assertion = checkWholePeriod(conditionFromOperatorBare(lhs, Operator.of(e.toplevelOperator()), source(e)),
                     wholePeriod(e.toplevelOperator().gehelePeriodevergelijking()), source(e));
             ObjectType subject = lhs instanceof Expr.AttributeReference a ? a.objectType() : null;
             if (subject != null && transpilable(assertion)) {
@@ -5356,7 +5356,7 @@ final class RuleChecker {
             // §8.3.1: after 'indien'/'dat'/'gedurende de tijd dat' the grammar admits ONLY the verb-trailing
             // (vragende) toplevelOperator — the verb-leading register is reserved for samengestelde bullets.
             if (c.expressie() != null && c.toplevelOperator() != null)
-                return conditionFromToplevel(builder.build(c.expressie()), c.expressie(), c.toplevelOperator(), source(c));
+                return conditionFromOperator(builder.build(c.expressie()), c.expressie(), Operator.of(c.toplevelOperator()), source(c));
             // §8.1.9 / §13.4.15.18: "indien regelversie <X> is gevuurd|inconsistent" as the whole voorwaarde.
             if (c.consistentieVoorwaarde() != null) return buildRuleStatusCheck(c.consistentieVoorwaarde());
         }
@@ -5871,9 +5871,9 @@ final class RuleChecker {
      *  {@link Condition}; shared by the samengestelde voorwaarde and the samengestelde consistentieregel. */
     private Condition buildElementary(ElementaireVoorwaardeContext c) {
         if (c.expressie() != null && c.nonToplevelOperator() != null)
-            return conditionFromNonToplevel(builder.build(c.expressie()), c.expressie(), c.nonToplevelOperator(), source(c));
+            return conditionFromOperator(builder.build(c.expressie()), c.expressie(), Operator.of(c.nonToplevelOperator()), source(c));
         if (c.expressie() != null && c.toplevelOperator() != null)
-            return conditionFromToplevel(builder.build(c.expressie()), c.expressie(), c.toplevelOperator(), source(c));
+            return conditionFromOperator(builder.build(c.expressie()), c.expressie(), Operator.of(c.toplevelOperator()), source(c));
         // §13.4.15.69 / §8.4.3: the "het is de periode <periodevergelijkingEnkelvoudig>" bullet form.
         if (c.periodevergelijkingElementair() != null)
             return buildTimeWindow(c.periodevergelijkingElementair().periodevergelijkingEnkelvoudig());
@@ -5955,71 +5955,85 @@ final class RuleChecker {
     private static final Msg REASON_ELEVEN_TEST = Msg.frontend("RGS-092.eleven-test");
     private static final Msg REASON_NO_CHARACTERISTIC_NO_ROLE = Msg.frontend("RGS-092.no-characteristic-no-role");
 
-    /** {@code lhsCtx} is the parse subtree the left operand was built from: the §5.6 die/dat
-     *  subselectie lives there, and {@link #quantifierFold} needs the tree, not the Expr. */
-    private Condition conditionFromToplevel(Expr lhs, ExpressieContext lhsCtx, ToplevelOperatorContext op, Source source) {
-        Condition plain = conditionFromToplevelBare(lhs, op, source);
-        // as in conditionFromNonToplevel: the "niet een <k>" alt passes its NIET to the fold explicitly
-        if (plain instanceof Condition.Unresolved && op.gehelePeriodevergelijking() == null
-                && (op.NIET() == null || op.EEN() != null)) {
-            Condition fold = quantifierCharacteristicCheck(lhs, lhsCtx, op.kaleNaam(), op.EEN() != null,
-                    op.HEEFT() != null || op.HEBBEN() != null, op.NIET() != null, source);
-            if (fold != null) return fold;
+    /** A condition operator in either grammar register: the verb-leading one of a bullet ("is leeg", "is groter dan
+     *  …", "is niet een &lt;k&gt;") and the verb-trailing one of the question order ("leeg is", "groter is dan …",
+     *  "niet een &lt;k&gt; is"). The two registers write the same operators, so the condition and its type check read
+     *  these parts and no register. {@code compares} is whether a comparison sign is written, {@code comparison} what it
+     *  reads as. */
+    private record Operator(IdentiteitsToetsContext identity, GehelePeriodevergelijkingContext period, boolean compares,
+                            Typing.CmpOp comparison, ExpressieContext right, boolean empty, boolean filled,
+                            boolean elevenTest, boolean exactDigits, TerminalNode digits, boolean not, boolean een,
+                            KaleNaamContext name, boolean possessive) {
+        static Operator of(ToplevelOperatorContext op) {
+            return op == null ? null : new Operator(op.identiteitsToets(), op.gehelePeriodevergelijking(),
+                    op.vergelijkingsTekenGesplitst() != null,
+                    op.vergelijkingsTekenGesplitst() == null ? null : cmpOf(op.vergelijkingsTekenGesplitst()),
+                    op.expressie(), op.LEEG() != null, op.GEVULD() != null, op.AAN_DE_ELFPROEF() != null,
+                    op.NUMERIEK_IS_MET_EXACT() != null || op.NUMERIEK_ZIJN_MET_EXACT() != null, op.NUMBER(),
+                    op.NIET() != null, op.EEN() != null, op.kaleNaam(), op.HEEFT() != null || op.HEBBEN() != null);
         }
-        return quantifierFold(checkWholePeriod(plain, wholePeriod(op.gehelePeriodevergelijking()), source),
-                lhsCtx, op.expressie(), source);
+
+        static Operator of(NonToplevelOperatorContext op) {
+            return op == null ? null : new Operator(op.identiteitsToets(), op.gehelePeriodevergelijking(),
+                    op.vergelijkingsTeken() != null, op.vergelijkingsTeken() == null ? null : cmpOf(op.vergelijkingsTeken()),
+                    op.expressie(), op.LEEG() != null, op.GEVULD() != null, op.AAN_DE_ELFPROEF() != null,
+                    op.NUMERIEK_MET_EXACT() != null, op.NUMBER(), op.NIET() != null, op.EEN() != null, op.kaleNaam(),
+                    op.HEEFT() != null || op.HEBBEN() != null);
+        }
     }
 
-    private Condition conditionFromToplevelBare(Expr lhs, ToplevelOperatorContext op, Source source) {
-        if (op.identiteitsToets() != null) return identityCheck(lhs, op.identiteitsToets(), source);
-        Condition.WholePeriod period = wholePeriod(op.gehelePeriodevergelijking());   // §8.2 whole-period check
+    /** {@code lhsCtx} is the parse subtree the left operand was built from: the §5.6 die/dat
+     *  subselectie lives there, and {@link #quantifierFold} needs the tree, not the Expr. */
+    private Condition conditionFromOperator(Expr lhs, ExpressieContext lhsCtx, Operator op, Source source) {
+        Condition plain = conditionFromOperatorBare(lhs, op, source);
+        // The §8.1.8.3 "niet een <k>" branch of conditionFromOperatorBare resolves the POSITIVE form and flips it, so a
+        // null binding there arrives as an Unresolved whose negation is not in the parse tree any more: the fold gets
+        // the NIET passed explicitly, or it would emit the POSITIVE membership — silently inverted. The other NIET forms
+        // (elfproef, numeriek) carry no name, so no fold reads them.
+        if (plain instanceof Condition.Unresolved && op.period() == null && (!op.not() || op.een())) {
+            Condition fold = quantifierCharacteristicCheck(lhs, lhsCtx, op.name(), op.een(), op.possessive(), op.not(),
+                    source);
+            if (fold != null) return fold;
+        }
+        return quantifierFold(checkWholePeriod(plain, wholePeriod(op.period()), source), lhsCtx, op.right(), source);
+    }
+
+    private Condition conditionFromOperatorBare(Expr lhs, Operator op, Source source) {
+        if (op.identity() != null) return identityCheck(lhs, op.identity(), source);
+        Condition.WholePeriod period = wholePeriod(op.period());   // §8.2 whole-period check
         // A dangling absorbed "niet" silently INVERTS a comparison / leeg-gevuld (the bare-attr resolution dropped the
         // negator) -> marker it. The kenmerkcheck DE-negates it (bindCharacteristicCheck) and elfproef/numeriek RECOVER it
         // (elfOperand), so only the comparison + leeg/gevuld operators are guarded here.
-        if (absorbedNegator(lhs) && (op.vergelijkingsTekenGesplitst() != null || op.LEEG() != null || op.GEVULD() != null))
+        if (absorbedNegator(lhs) && (op.compares() || op.empty() || op.filled()))
             return new Condition.Unresolved(source, REASON_NOT_ABSORBED);
-        if (op.vergelijkingsTekenGesplitst() != null && op.expressie() != null)
-            return ExpressionBuilder.comparison(toOperator(cmpOf(op.vergelijkingsTekenGesplitst())),
-                    lhs, builder.build(op.expressie()), period, source);
-        if (op.LEEG() != null)   return new Condition.Predicate(Condition.PredicateKind.LEEG, lhs, period, source);
-        if (op.GEVULD() != null) return new Condition.Predicate(Condition.PredicateKind.GEVULD, lhs, period, source);
-        if (op.AAN_DE_ELFPROEF() != null) return new Condition.Unresolved(source, REASON_ELEVEN_TEST);
-        if (op.NUMERIEK_IS_MET_EXACT() != null || op.NUMERIEK_ZIJN_MET_EXACT() != null) {
-            ElfOperand e = elfOperand(op.NIET() != null, lhs);
+        if (op.compares() && op.right() != null)
+            return ExpressionBuilder.comparison(toOperator(op.comparison()), lhs, builder.build(op.right()), period, source);
+        if (op.empty())  return new Condition.Predicate(Condition.PredicateKind.LEEG, lhs, period, source);
+        if (op.filled()) return new Condition.Predicate(Condition.PredicateKind.GEVULD, lhs, period, source);
+        if (op.elevenTest()) return new Condition.Unresolved(source, REASON_ELEVEN_TEST);
+        if (op.exactDigits()) {
+            ElfOperand e = elfOperand(op.not(), lhs);
             return new Condition.Predicate(Condition.PredicateKind.NUMERIEK_MET_EXACT, e.operand(), e.negation(),
-                    countDigits(op.NUMBER()), period, source);
+                    countDigits(op.digits()), period, source);
         }
-        // §8.1.8.3 "niet een <k> is": the NIET EEN alt of the question order, read as the stellende one is
-        // (conditionFromNonToplevelBare): the positive EEN-form, flipped
-        if (op.NIET() != null && op.EEN() != null) {
-            Condition pos = characteristicCheckPredicate(lhs, op.kaleNaam(), true, false, period, source);
+        // §8.1.8.3 "is niet een <k>" / "niet een <k> is": the explicit NIET EEN form (no AAN_DE_ELFPROEF /
+        // NUMERIEK_MET_EXACT keyword follows) is the NEGATED zelfstandig kenmerkcheck — bind the positive EEN-form
+        // (is -> ZELFSTANDIG), then flip.
+        if (op.not() && op.een()) {
+            Condition pos = characteristicCheckPredicate(lhs, op.name(), true, false, period, source);
+            // Tabel 16 sanctions "is niet een <k>" only for a KENMERK; a rolcheck negates as "is/heeft geen <rol>"
+            // (§8.1.7). Lower it the same way (inverse rolcheck), but surface the unsanctioned writing as a WARNING.
             if (pos instanceof Condition.RoleMembership || pos instanceof Condition.FarRoleMembership)
                 model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-214", params("source", source),
                         writtenLine(source.line())));
             return negate(pos, source);
         }
-        Condition characteristic = characteristicCheckPredicate(lhs, op.kaleNaam(), op.EEN() != null,
-                op.HEEFT() != null || op.HEBBEN() != null, period, source); // EEN? bareName (is|heeft): §8.1.8
+        Condition characteristic = characteristicCheckPredicate(lhs, op.name(), op.een(), op.possessive(), period,
+                source); // (is|heeft) een? bareName: §8.1.8
         // else objecttype/navigation membership — the caller may still read the whole sentence as a
         // quantifier fold (quantifierCharacteristicCheck), which is exactly why this marker carries its reason instead
         // of raising it here: reported at construction it would flag every sentence that folds cleanly.
         return characteristic != null ? characteristic : new Condition.Unresolved(source, REASON_NO_CHARACTERISTIC_NO_ROLE);
-    }
-
-    private Condition conditionFromNonToplevel(Expr lhs, ExpressieContext lhsCtx, NonToplevelOperatorContext op, Source source) {
-        Condition plain = conditionFromNonToplevelBare(lhs, op, source);
-        // The §8.1.8.3 "is niet een <k>" branch below resolves the POSITIVE form and flips it, so a null binding
-        // there arrives as an Unresolved whose negation is not in the parse tree any more: the fold gets the NIET
-        // passed explicitly, or it would emit the POSITIVE membership — silently inverted. The other NIET forms
-        // (elfproef, numeriek) carry no name, so no fold reads them.
-        if (plain instanceof Condition.Unresolved && op.gehelePeriodevergelijking() == null
-                && (op.NIET() == null || op.EEN() != null)) {
-            Condition fold = quantifierCharacteristicCheck(lhs, lhsCtx, op.kaleNaam(), op.EEN() != null,
-                    op.HEEFT() != null || op.HEBBEN() != null, op.NIET() != null, source);
-            if (fold != null) return fold;
-        }
-        return quantifierFold(checkWholePeriod(plain, wholePeriod(op.gehelePeriodevergelijking()), source),
-                lhsCtx, op.expressie(), source);
     }
 
     /** §8.2: the "gedurende de/het gehele &lt;periode&gt;" check is only defined when the predicate's
@@ -6538,42 +6552,6 @@ final class RuleChecker {
         return new Condition.Unresolved(source, null);   // the ERROR above is this marker's diagnosis
     }
 
-    private Condition conditionFromNonToplevelBare(Expr lhs, NonToplevelOperatorContext op, Source source) {
-        if (op.identiteitsToets() != null) return identityCheck(lhs, op.identiteitsToets(), source);
-        Condition.WholePeriod period = wholePeriod(op.gehelePeriodevergelijking());   // §8.2 whole-period check
-        // A dangling absorbed "niet" silently INVERTS a comparison / leeg-gevuld -> marker it. The kenmerkcheck
-        // DE-negates it and elfproef/numeriek RECOVER it (elfOperand), so only those two operators are guarded here.
-        if (absorbedNegator(lhs) && (op.vergelijkingsTeken() != null || op.LEEG() != null || op.GEVULD() != null))
-            return new Condition.Unresolved(source, REASON_NOT_ABSORBED);
-        if (op.vergelijkingsTeken() != null && op.expressie() != null)
-            return ExpressionBuilder.comparison(toOperator(cmpOf(op.vergelijkingsTeken())),
-                    lhs, builder.build(op.expressie()), period, source);
-        if (op.LEEG() != null)   return new Condition.Predicate(Condition.PredicateKind.LEEG, lhs, period, source);
-        if (op.GEVULD() != null) return new Condition.Predicate(Condition.PredicateKind.GEVULD, lhs, period, source);
-        if (op.AAN_DE_ELFPROEF() != null) return new Condition.Unresolved(source, REASON_ELEVEN_TEST);
-        if (op.NUMERIEK_MET_EXACT() != null) {
-            ElfOperand e = elfOperand(op.NIET() != null, lhs);
-            return new Condition.Predicate(Condition.PredicateKind.NUMERIEK_MET_EXACT, e.operand(), e.negation(),
-                    countDigits(op.NUMBER()), period, source);
-        }
-        // §8.1.8.3 "is niet een <k>": the explicit NIET EEN form (no AAN_DE_ELFPROEF / NUMERIEK_MET_EXACT keyword
-        // follows) is the NEGATED zelfstandig kenmerkcheck — bind the positive EEN-form (is -> ZELFSTANDIG), then flip.
-        if (op.NIET() != null && op.EEN() != null) {
-            Condition pos = characteristicCheckPredicate(lhs, op.kaleNaam(), true, false, period, source);
-            // Tabel 16 sanctions "is niet een <k>" only for a KENMERK; a rolcheck negates as "is/heeft geen <rol>"
-            // (§8.1.7). Lower it the same way (inverse rolcheck), but surface the unsanctioned writing as a WARNING.
-            if (pos instanceof Condition.RoleMembership || pos instanceof Condition.FarRoleMembership)
-                model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-214", params("source", source),
-                        writtenLine(source.line())));
-            return negate(pos, source);
-        }
-        Condition characteristic = characteristicCheckPredicate(lhs, op.kaleNaam(), op.EEN() != null,
-                op.HEEFT() != null || op.HEBBEN() != null, period, source); // (is|heeft) een? bareName: §8.1.8
-        // else objecttype/navigation membership — reason-carrying, not reported here: see the sister in
-        // conditionFromToplevelBare, whose caller may still fold this very marker into a QuantifierFold.
-        return characteristic != null ? characteristic : new Condition.Unresolved(source, REASON_NO_CHARACTERISTIC_NO_ROLE);
-    }
-
     /** §8.1.7/§8.1.8: "&lt;subject&gt; is/heeft (een)? &lt;naam&gt;" -> a {@link Condition.CharacteristicCheck} (the
      *  §8.1.8 kenmerkcheck) or a {@link Condition.RoleMembership} (the §8.1.7 rolcheck), when the operand
      *  denotes the rule subject (or a to-one navigation from it). WITHOUT "een" the name is the subject's
@@ -7069,28 +7047,19 @@ final class RuleChecker {
      *  transpiles, which would otherwise let an ill-typed comparison through silently. */
     private void checkConsistencyCriterion(EnkelvoudigeConsistentieRegelContext c) {
         if (c.expressie() == null || c.toplevelOperator() == null) return;
-        Datatype lhs = infer(c.expressie());
-        ToplevelOperatorContext op = c.toplevelOperator();
-        int line = c.getStart().getLine();
-        if (op.vergelijkingsTekenGesplitst() != null && op.expressie() != null)
-            reportCompare(cmpOf(op.vergelijkingsTekenGesplitst()), lhs, infer(op.expressie()),
-                    bareNumberLiteral(c.expressie()), bareNumberLiteral(op.expressie()), line,
-                    enumLabelOf(c.expressie()), enumLabelOf(op.expressie()));
-        else if (op.AAN_DE_ELFPROEF() != null)
-            reportPredicate(Typing.UnaryPred.ELFPROEF, lhs, line);
-        else if (op.NUMERIEK_IS_MET_EXACT() != null || op.NUMERIEK_ZIJN_MET_EXACT() != null)
-            reportPredicate(Typing.UnaryPred.NUMERIEK_MET_EXACT, lhs, line);
+        checkOperator(infer(c.expressie()), Operator.of(c.toplevelOperator()), c.getStart().getLine(),
+                bareNumberLiteral(c.expressie()), enumLabelOf(c.expressie()));
     }
 
     // §8.3.1/§13.4.15: a TOPLEVEL voorwaarde (after 'indien'/'dat'/'gedurende de tijd dat') takes ONLY the
     // verb-trailing (vragende) toplevelOperator — the grammar does not admit the verb-leading register here
     // (that is reserved for samengestelde bullets, checkElemCondition, which keeps both families). So only the
-    // toplevelOperator needs checking; an ill-typed predicate is still caught by checkToplevelOp.
+    // toplevelOperator needs checking; an ill-typed predicate is still caught by checkOperator.
     private void checkTopCondition(ToplevelElementaireVoorwaardeContext c) {
         if (c.expressie() == null) return;
         Datatype lhs = infer(c.expressie());
         int line = c.getStart().getLine();
-        checkToplevelOp(lhs, c.toplevelOperator(), line, bareNumberLiteral(c.expressie()), enumLabelOf(c.expressie()));
+        checkOperator(lhs, Operator.of(c.toplevelOperator()), line, bareNumberLiteral(c.expressie()), enumLabelOf(c.expressie()));
     }
 
     private void checkElemCondition(ElementaireVoorwaardeContext c) {
@@ -7099,31 +7068,19 @@ final class RuleChecker {
         int line = c.getStart().getLine();
         boolean lhsLit = bareNumberLiteral(c.expressie());
         String lhsEnum = enumLabelOf(c.expressie());
-        checkNonToplevelOp(lhs, c.nonToplevelOperator(), line, lhsLit, lhsEnum);
-        checkToplevelOp(lhs, c.toplevelOperator(), line, lhsLit, lhsEnum);
+        checkOperator(lhs, Operator.of(c.nonToplevelOperator()), line, lhsLit, lhsEnum);
+        checkOperator(lhs, Operator.of(c.toplevelOperator()), line, lhsLit, lhsEnum);
     }
 
-    /** Type-check a verb-split / trailing operator (vergelijking, elfproef, numeriek-met-exact). */
-    private void checkToplevelOp(Datatype lhs, ToplevelOperatorContext op, int line, boolean lhsLit, String lhsEnum) {
+    /** Type-check an operator of either register (vergelijking, elfproef, numeriek-met-exact). */
+    private void checkOperator(Datatype lhs, Operator op, int line, boolean lhsLit, String lhsEnum) {
         if (op == null) return;
-        if (op.vergelijkingsTekenGesplitst() != null && op.expressie() != null)
-            reportCompare(cmpOf(op.vergelijkingsTekenGesplitst()), lhs, infer(op.expressie()), lhsLit, bareNumberLiteral(op.expressie()), line,
-                    lhsEnum, enumLabelOf(op.expressie()));
-        else if (op.AAN_DE_ELFPROEF() != null)
+        if (op.compares() && op.right() != null)
+            reportCompare(op.comparison(), lhs, infer(op.right()), lhsLit, bareNumberLiteral(op.right()), line,
+                    lhsEnum, enumLabelOf(op.right()));
+        else if (op.elevenTest())
             reportPredicate(Typing.UnaryPred.ELFPROEF, lhs, line);
-        else if (op.NUMERIEK_IS_MET_EXACT() != null || op.NUMERIEK_ZIJN_MET_EXACT() != null)
-            reportPredicate(Typing.UnaryPred.NUMERIEK_MET_EXACT, lhs, line);
-    }
-
-    /** Type-check a verb-leading operator (vergelijking, elfproef, numeriek-met-exact). */
-    private void checkNonToplevelOp(Datatype lhs, NonToplevelOperatorContext op, int line, boolean lhsLit, String lhsEnum) {
-        if (op == null) return;
-        if (op.vergelijkingsTeken() != null && op.expressie() != null)
-            reportCompare(cmpOf(op.vergelijkingsTeken()), lhs, infer(op.expressie()), lhsLit, bareNumberLiteral(op.expressie()), line,
-                    lhsEnum, enumLabelOf(op.expressie()));
-        else if (op.AAN_DE_ELFPROEF() != null)
-            reportPredicate(Typing.UnaryPred.ELFPROEF, lhs, line);
-        else if (op.NUMERIEK_MET_EXACT() != null)
+        else if (op.exactDigits())
             reportPredicate(Typing.UnaryPred.NUMERIEK_MET_EXACT, lhs, line);
     }
 
