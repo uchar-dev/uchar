@@ -502,10 +502,11 @@ class VariablePartLoweringTest {
     }
 
     /** A name that resolves to nothing is a marker with a WARNING, and stays on the wire as one; under a Let it leaves
-     *  the value without a type as well, and is refused at the name. */
+     *  the value without a type as well, and is refused at the name. The refusal speaks alone: the sweep's WARNING
+     *  beside it said the name stays on the wire as a marker, where the ERROR keeps the document off disk. */
     @Test void an_unresolved_name_in_a_variable_is_refused_at_the_name() {
         RegelSpraakModel m = Resolver.resolve(lichterloon("het grondloon maal 2", "zijn vrachttal maal 3"));
-        assertEquals(java.util.List.of("RGS-092 WARNING 9", "RGS-396 ERROR 9"),
+        assertEquals(java.util.List.of("RGS-396 ERROR 9"),
                 m.diagnostics.stream().map(d -> d.code() + " " + d.severity() + " " + d.line()).sorted().toList());
         assertEquals("lezing 'zijn vrachttal': de naam 'zijn vrachttal' is geen gedeclareerde parameter, geen variabele "
                 + "uit een 'Daarbij geldt:'-deel en geen attribuut van het onderwerp (§11/§13.3.8); in een regel met "

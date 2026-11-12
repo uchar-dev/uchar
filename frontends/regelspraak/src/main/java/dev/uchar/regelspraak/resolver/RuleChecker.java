@@ -122,6 +122,12 @@ final class RuleChecker {
     /** The pieces of the names {@link #check} generated after more than one declaration, by element. */
     Map<Designatable, List<Designations.NamePart>> nameParts() { return nameParts; }
 
+    /** The source records of the markers {@link #checkUntypedLets} refused with an ERROR of their own (RGS-396), by
+     *  identity: the marker sweep says nothing more about them. */
+    private final Set<Source> refusedMarkers = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+
+    Set<Source> refusedMarkers() { return refusedMarkers; }
+
     void check(RegelSpraakDocumentContext doc) {
         domainReferences(doc);
         // before any rule resolves: a rule may read the members the opgave marker generates (dialect §7)
@@ -1158,7 +1164,8 @@ final class RuleChecker {
      * at a position where the wire has no spelling for a value without a type. Three reads have no type, and neither
      * has the value they stand in: an own read of a name its subject does not declare, an own read of a characteristic
      * as a value, and a name that resolved to nothing (a marker, whose WARNING says it stays on the wire). Inside a Let
-     * whose type is unknown — in a variable or in the value that reads one — such a read is refused where it stands;
+     * whose type is unknown — in a variable or in the value that reads one — such a read is refused where it stands, and
+     * the marker sweep is silent about a marker refused here, whose WARNING would say it stays on the wire;
      * the first in WF-034's words, the second in WF-080's. Outside a Let the first two stay the verifier's
      * (grammar/DIVERGENCES.md, "An undeclared attribute read") and the third a marker on the wire. A read whose name took in a role or a type name is {@link #memberError}'s, one that took in a word
      * before 'van' {@link #checkSwallowedNames}'s; a marker without a reason has its diagnosis from the route that
@@ -1178,9 +1185,11 @@ final class RuleChecker {
                     Source source = y instanceof Expr.AttributeReference a ? a.source()
                             : y instanceof Expr.Unresolved u ? u.source() : null;
                     // a marker with a blank snippet stands where the parse recovered, whose syntax error speaks for it
-                    if (reason != null && source != null && !source.snippet().isBlank() && reported.add(y))
+                    if (reason != null && source != null && !source.snippet().isBlank() && reported.add(y)) {
                         model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-396",
                                 params("expression", source.snippet(), "reason", reason), source.line()));
+                        if (y instanceof Expr.Unresolved) refusedMarkers.add(source);
+                    }
                     return false;
                 });
             return false;

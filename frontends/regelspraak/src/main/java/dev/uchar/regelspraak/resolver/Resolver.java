@@ -190,7 +190,7 @@ public final class Resolver {
         designations.compose(checker.nameParts());
         designations.check();
         AbsenceMarkers.lower(model);
-        reportUnresolved(model);
+        reportUnresolved(model, checker.refusedMarkers());
         return model;
     }
 
@@ -211,11 +211,12 @@ public final class Resolver {
      * that blocks the document, or a WARNING with a more specific text); repeating it here would be
      * noise, so the sweep stays quiet. Such a WARNING must quote the marker's {@code sourceText} verbatim, as the
      * sweep's own text does: that quotation is how a written document accounts for its marker (WF-113 (b)). The roots are the model's IR-carrying collections, i.e. what
-     * {@code IrEmitter} serialises: a marker unreachable from those never reaches a consumer either.
+     * {@code IrEmitter} serialises: a marker unreachable from those never reaches a consumer either. A marker in
+     * {@code refused} has an ERROR of its own that keeps the document off disk, so it does not stay on the wire either.
      */
-    private static void reportUnresolved(RegelSpraakModel m) {
+    private static void reportUnresolved(RegelSpraakModel m, java.util.Set<dev.uchar.regelspraak.ir.Source> refused) {
         java.util.function.BiConsumer<dev.uchar.regelspraak.ir.Source, Object> report = (sourceText, reason) -> {
-            if (reason == null) return;
+            if (reason == null || refused.contains(sourceText)) return;
             m.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-092", params("reason", reason, "expression", sourceText),
                     sourceText == null ? 0 : sourceText.line()));
         };
