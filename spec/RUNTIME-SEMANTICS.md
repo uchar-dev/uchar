@@ -4031,7 +4031,9 @@ Worked examples (`ref/` tests verbatim):
 
 The decisions this chapter leaves open. A form listed here as without a
 meaning is refused by name by every executor; where it has a fault kind, the
-kind is `declined` (ch. 5.7b): EF-021, EF-022, EF-023. What each executor
+kind is `declined` (ch. 5.7b): EF-021, EF-022, EF-023. Where whether a form
+has a meaning depends on the case, the kind is `fault`: EF-041 (row 7) and
+EF-042 (row 9). What each executor
 carries of this chapter, and what it refuses by name beyond this list, is
 recorded in `spec/CONSTRUCTS.md` rows 11 and 29, in `spec/ASP-TRANSLATION.md`
 and in the READMEs of the backends.
