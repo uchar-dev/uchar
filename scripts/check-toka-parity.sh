@@ -60,7 +60,9 @@
 # raises exactly these resolver ERRORs, so `--ir` writes nothing for the whole set.
 # The resolvable casus dump is therefore emitted from every fragment EXCEPT these,
 # each present-asserted so the list fails when stale (and CasusTest pins the same
-# two as its tolerated diagnostics, failing if either stops erroring):
+# seven as its tolerated diagnostics, failing if any stops erroring). Every .rgs
+# beside the dump is re-emitted, the zone's own declarations
+# (toka/casus/own-declarations.rgs, toka/README.md) included:
 #   toka-23 — the §4.1 datum+datum casus-quirk (bevestigingsinterval, a Datum-tijd
 #             parameter added to a Datum-tijd, forbidden by Tabel 2).
 #   toka-45 — dimensionally inconsistent AS WRITTEN: a unitless Bedrag minus a
@@ -68,6 +70,11 @@
 #             the product (unitloos × km = km) and the min then fails the unit rule
 #             — uchar-v1 diverges from the toolchain here. The .rgs itself STAYS in
 #             original form; only its parity coverage moved to this holdout list.
+#   toka-33 to toka-37 — a second writer of one target (WF-026, RGS-426): each
+#             scenario of the casus distributes the train miles of the contingent
+#             in its own way, so the six allocations of toka-32 to toka-37 all
+#             write 'treinmiles' of Natuurlijk persoon. The dump keeps the first,
+#             toka-32; the slices of the other five replay them one by one.
 set -u
 cd "$(dirname "$0")/.."
 
@@ -92,13 +99,18 @@ TOKA=toka
 # single file of it. The casus-dump count is deliberately NOT floored — it is 1, and the existing
 # "-gt 0" is already that floor.
 EXPECTED_MIN_TESTS=28       # 2026-10-22: measured 28 (the zone's own JUnit suite; 27 until the semantic-token witness of the casus)
-EXPECTED_MIN_FRAGMENTS=45   # 2026-09-10: measured 45 (.rgs fragments re-emitted byte-identical)
+EXPECTED_MIN_FRAGMENTS=41   # 2026-11-12: measured 41 (.rgs fragments re-emitted byte-identical: 40 of the casus and the zone's own declarations; 45 until toka-33 to toka-37 became holdouts)
 EXPECTED_MIN_CASES=29       # 2026-09-10: measured 29 (manifest-pinned replay cases)
 EXPECTED_MIN_CLEAN=28       # 2026-09-25: measured 28 (verifier-clean replay slices; the verifier holdouts not counted)
 
 HOLDOUTS=(
   'toka-23-regel-bevestigingstijdstip-vlucht.rgs'   # §4.1 datum+datum casus-quirk
   'toka-45-regel-belasting-op-basis-van-afstand.rgs' # dimensioneel inconsistent (16Y): unitless Bedrag min km-product
+  'toka-33-regel-verdeling-treinmiles-op-basis-van.rgs' # second allocation to 'treinmiles' (WF-026)
+  'toka-34-regel-verdeling-treinmiles-op-basis-van.rgs' # second allocation to 'treinmiles' (WF-026)
+  'toka-35-regel-verdeling-treinmiles-op-basis-van.rgs' # second allocation to 'treinmiles' (WF-026)
+  'toka-36-regel-verdeling-treinmiles-op-basis-van.rgs' # second allocation to 'treinmiles' (WF-026)
+  'toka-37-regel-verdeling-treinmiles-op-basis-van.rgs' # second allocation to 'treinmiles' (WF-026)
 )
 is_holdout() { local base=$1 h; for h in "${HOLDOUTS[@]}"; do [ "$base" = "$h" ] && return 0; done; return 1; }
 
@@ -113,14 +125,11 @@ is_holdout() { local base=$1 h; for h in "${HOLDOUTS[@]}"; do [ "$base" = "$h" ]
 #             unitless bound unitless for the verifier to adopt; every executor replays the slice.
 # The casus dump (toka/casus/ir.json) is outside the leg altogether. As one document it is
 # overdetermined by nature: its scenarios each write the same targets in their own way, legitimate per
-# scenario and not as one program (the competing writes of WF-026 and WF-079). It also declares less
-# than the slices, which carry the scenario test model: every name-carrying WF-034 in it, and its one
-# WF-022, names an attribute or a characteristic the slices declare and the casus uses without
-# declaring. Measured 2026-09-25: 15 reports, one per pointer and sentence (WF-026 drops its repeats
-# since the card verifier-allocatie-keten; 18 lines before). 14 since 2026-10-06: the WF-045 cycle
-# through the contingent's object creation and fact creation was the fact creation's population
-# proxy (RUNTIME-SEMANTICS ch. 6.1), which went that day. Its role is the parity object of
-# obligation 2, not a well-formed program.
+# scenario and not as one program. The competing allocations are held out above (WF-026); the two
+# start-point rules of toka-43 and toka-44 stay (WF-079, which the frontend does not refuse). With the
+# zone's own declarations it declares what the slices declare. Measured 2026-11-12: 2 reports, the
+# WF-079 and the WF-099 at the rule toka-24 carries. Its role is the parity object of obligation 2,
+# not a well-formed program.
 VERIFIER_HOLDOUTS=(
   'toka-24 WF-099 /rules/rules/0/versions/0/value/base/minimum'
 )
