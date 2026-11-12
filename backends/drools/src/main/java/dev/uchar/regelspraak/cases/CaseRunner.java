@@ -62,7 +62,9 @@ import java.util.Map;
  * construct (does not lower it), the bean contract is violated, or a case carries an input/expectation
  * form this v0 backend does not carry — each with a reason the differential gate lists. A golden that
  * loads, lowers wholly, and whose cases all match the pinned expectations is PLAYED: because those pinned
- * values are the SAME expectations ref and clingo verify, a played pass IS the differential square.
+ * values are the SAME expectations ref and clingo verify, a played pass IS the differential square. Every case of a
+ * golden plays, also after one this backend does not carry, and a case that diverges makes the golden FAIL whatever
+ * another case excludes.
  */
 public final class CaseRunner {
 
@@ -173,14 +175,21 @@ public final class CaseRunner {
         try {
             CaseRunner runner = build(irPath, branch);
             List<String> failures = new ArrayList<>();
+            // the first case this backend does not carry; every case plays, so that it hides no FAIL of another
+            Excluded excluded = null;
             int played = 0;
             for (Path cp : casePaths) {
                 JsonNode c = readCase(cp);
                 if (c.has("expectedFault")) continue;   // red-path case in a green zone — not this gate's business
                 played++;
-                String fail = runner.runCase(cp.getFileName().toString(), c);
-                if (fail != null) failures.add(fail);
+                try {
+                    String fail = runner.runCase(cp.getFileName().toString(), c);
+                    if (fail != null) failures.add(fail);
+                } catch (Excluded e) {
+                    if (excluded == null) excluded = e;
+                }
             }
+            if (failures.isEmpty() && excluded != null) return Result.excluded(excluded.code(), excluded.getMessage());
             return Result.played(played, failures);
         } catch (Excluded e) {
             return Result.excluded(e.code(), e.getMessage());

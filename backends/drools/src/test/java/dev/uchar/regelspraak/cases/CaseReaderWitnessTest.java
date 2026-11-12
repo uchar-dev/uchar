@@ -193,6 +193,26 @@ class CaseReaderWitnessTest {
         }
     }
 
+    // ---------------- the verdict of a golden ----------------
+
+    @Test void a_case_this_backend_does_not_carry_hides_no_fail_of_another_case() throws Exception {
+        // case 1 expects J1 not penninggerechtigd, which it is; case 2 pins a rational value, which this backend does not
+        // carry. In either order the golden FAILs on case 1.
+        ObjectNode wrong = caseFile(PENNINGDREMPEL, "case");
+        ((ObjectNode) wrong.get("expected").get(0)).put("kind", "characteristicAbsent");
+        ObjectNode rational = caseFile(PENNINGDREMPEL, "case");
+        ((ArrayNode) rational.get("expected")).addObject().put("kind", "attributeValue").put("label", "J1")
+                .put("attribute", "aantal aangemelde vondsten").set("value", number("28/2"));
+        Path w = written(wrong), r = written(rational);
+        for (List<Path> order : List.of(List.of(w, r), List.of(r, w))) {
+            CaseRunner.Result result = CaseRunner.runGolden(ir(PENNINGDREMPEL), order);
+            assertEquals("FAIL", result.status(), result.reason());
+            assertEquals(1, result.caseFailures().size(), result.caseFailures().toString());
+        }
+        CaseRunner.Result alone = CaseRunner.runGolden(ir(PENNINGDREMPEL), List.of(r));
+        assertEquals("EXCLUDE", alone.status());
+    }
+
     // ---------------- role keys ----------------
 
     @Test void a_role_key_of_a_relation_the_instance_does_not_fill_is_a_case_error() throws Exception {
