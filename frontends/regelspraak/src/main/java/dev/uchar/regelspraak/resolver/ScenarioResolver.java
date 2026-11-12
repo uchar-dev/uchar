@@ -914,6 +914,8 @@ public final class ScenarioResolver {
         ScenarioValue w = readAndType(pw.situatieWaarde(), p.datatype(), null, line,
                 Msg.frontend("PART.what.declared-parameter", "name", p.name()));
         if (pw.periode() == null) {
+            // the row stays in the block, so a period row after it still meets the refusal of a mixed block
+            if (p.granularity() != null) error(line, "RGS-398", params("parameter", p.name()));
             if (timelines.containsKey(norm(p.name()))) {
                 error(line,
                         "RGS-251", params("parameter", p.name()));
@@ -950,8 +952,8 @@ public final class ScenarioResolver {
     private record SetResult(String name, Map<String, SetParameter> parameters, Set<String> incomplete) {}
 
     /** The rows of one parameter of a set: its jaargangen, or for a parameter with a timeline the segments of that
-     *  timeline; exactly one of the two is non-null. A timeline parameter given one row without a period has one
-     *  jaargang, its value on every date. */
+     *  timeline; exactly one of the two is non-null. A row without a period for a parameter with a timeline is
+     *  refused, as in a situation: a case file carries such a parameter as periods. */
     private record SetParameter(String parameter, List<Vintage> vintages, List<Segment> timeline, int line) {}
 
     /** One jaargang, {@code van} inclusive and {@code until} exclusive, the period of a situation's segment; both
@@ -1008,6 +1010,10 @@ public final class ScenarioResolver {
         } else if ((sp.timeline() != null) != segment) {
             error(line,
                     "RGS-255", params("what", what, "combination", Msg.frontend(segment ? "PART.combination-fixed-periods" : "PART.combination-periods-fixed")));
+            return false;
+        }
+        if (!segment && p.granularity() != null) {
+            error(line, "RGS-398", params("parameter", p.name()));
             return false;
         }
         if (w == null) return false;

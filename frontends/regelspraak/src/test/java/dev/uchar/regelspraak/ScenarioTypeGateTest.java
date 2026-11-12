@@ -260,6 +260,13 @@ class ScenarioTypeGateTest {
                 "is 4 van", "de periode voor 'borgdagen' van J spreekt de verwachting tegen dat het attribuut altijd leeg is");
     }
 
+    /** A value without a period for a parameter with a timeline becomes a scalar the executors refuse. */
+    @Test void a_parameter_with_a_timeline_gets_periods() {
+        String fragment = "de parameter 'penningbedrag' is tijdsafhankelijk; een casebestand levert hem als perioden";
+        error("Situatie s:\nde parameter het penningbedrag is 250\n", "penningbedrag is 250", fragment);
+        error("Parameterset p:\nde parameter het penningbedrag is 250\n", "penningbedrag is 250", fragment);
+    }
+
     // ---------------- the header and the two gates ----------------
 
     @Test void an_as_of_date_is_a_day() {
