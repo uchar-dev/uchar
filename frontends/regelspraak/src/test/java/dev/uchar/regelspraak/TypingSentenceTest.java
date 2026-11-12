@@ -255,9 +255,9 @@ class TypingSentenceTest {
 
     @Test void an_exact_digit_count_below_one() {
         // the IR defines the test for a count of at least 1 (WF-036), so the frontend reports the count instead of
-        // writing a document the verifier rejects
+        // writing a document the verifier rejects, at the line of the condition
         for (String n : List.of("0", "-3", "9,5"))
-            assertEquals(List.of("ERROR 0 ongeldig aantal cijfers '" + n + "' bij 'numeriek met exact … cijfers' "
+            assertEquals(List.of("ERROR 30 ongeldig aantal cijfers '" + n + "' bij 'numeriek met exact … cijfers' "
                             + "(verwacht een geheel getal van ten minste 1, §8.1.4)"),
                     meldingen("Een Jutter is waardevol indien zijn naam numeriek is met exact " + n + " cijfers."), n);
         assertEquals(List.of(), meldingen("Een Jutter is waardevol indien zijn naam numeriek is met exact 1 cijfers."));
