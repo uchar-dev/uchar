@@ -897,7 +897,9 @@ final class RuleChecker {
             // a cell target is judged on the attribute reference under it, as the verifier judges it (WF-022)
             Expr.AttributeReference a = r.target() instanceof Expr.DimensionCellRead c ? c.attribute()
                     : r.target() instanceof Expr.AttributeReference x ? x : null;
-            if (a == null) {
+            // a marker as the target ("De strandpremie in voorjaar van een Jutter" without a label of every dimension)
+            // has the diagnosis of the route that built it
+            if (a == null && !(r.target() instanceof Expr.Unresolved)) {
                 // "Het kortingspercentage van de opbrengst van een berging moet …" reads as a percentage of an
                 // attribute: a computation, which the wire has no target for
                 Source at = r.target() == null ? null : r.target().source();
@@ -907,6 +909,7 @@ final class RuleChecker {
                         .frame("rule-target", "written", written).at(Severity.ERROR, at == null ? 0 : at.line()));
                 continue;
             }
+            if (a == null) continue;
             int line = a.source() == null ? 0 : a.source().line();
             String written = a.source() == null ? a.attribute() : a.source().snippet();
             // a name that is both an attribute and a characteristic of the subject decides no member, and so no rule
