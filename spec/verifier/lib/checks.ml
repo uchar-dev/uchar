@@ -2826,6 +2826,37 @@ let datatype_kind = function
   | Enumeration _ -> "enumeration" | Sum_type _ -> "sumtype" | List_type _ -> "list"
   | Struct_type _ -> "struct"
 
+(* The amount, the share, the rest, the weight and the maximum of an
+   allocation are numbers, a percentage being a number on the wire (IR-SPEC
+   ch. 2.4): the equations of RUNTIME-SEMANTICS ch. 4 compute
+   with them (ch. 4.2), and an executor has no reading of a text, an
+   enumeration or a sum type there (a payload access under a test, ch. 9.5,
+   has no place in an allocation). One report per field, at the field; an attribute the type does
+   not declare is WF-034's. *)
+let wf025_numbers ctx =
+  let fields (r : resolved_allocation) =
+    let number ty a ~field =
+      match (ty, a) with
+      | Some t, Some a -> (
+          match Option.bind (object_type ctx t) (fun ot -> attr_of ot a) with
+          | Some (Some (Number _ | Percentage _)) | Some None | None -> []
+          | Some (Some d) ->
+              [ v ~params:[ ("field", field); ("attribute", a); ("objectType", t); ("kind", datatype_kind d) ]
+                  "WF-025.field-not-number" (r.vd_pointer ^ "/" ^ field)
+                  (Printf.sprintf
+                     "the field %s of the allocation names '%s' of '%s', of kind %s: the amount, share, rest, \
+                      weight and maximum of an allocation are numbers"
+                     field a t (datatype_kind d)) ])
+      | _ -> []
+    in
+    number r.source_type r.source_attribute ~field:"sourceAttribute"
+    @ number r.objective_type_name r.target_attribute ~field:"targetAttribute"
+    @ number r.source_type r.remainder_attribute ~field:"remainderAttribute"
+    @ number r.objective_type_name r.ratio_attribute ~field:"ratioAttribute"
+    @ number r.objective_type_name r.maximum_attribute ~field:"maximumAttribute"
+  in
+  List.concat_map fields ctx.doc.allocations
+
 (* WF-129 (IR-SPEC ch. 4.2): a part of a text composition that writes the
    unit of its number has a unit to write — its type is a number with a unit
    or a percentage (RUNTIME-SEMANTICS ch. 1.2). A part whose type nothing
@@ -13065,7 +13096,7 @@ let all (doc : document) : violation list =
       wf007_model ctx; wf007_presentation ctx; wf009 ctx; wf092 ctx; wf011 ctx; wf012 ctx;
       wf013 ctx; wf014 ctx;
       wf015 ctx; wf016 ctx; wf115 ctx; wf017 ctx; wf018 ctx; wf107 ctx; wf020 ctx; wf101 ctx; wf021 ctx;
-      wf022 ctx; wf023 ctx; wf023_precision ctx; wf025 ctx; wf026 ctx; wf128 ctx; wf027 ctx; wf028 ctx;
+      wf022 ctx; wf023 ctx; wf023_precision ctx; wf025 ctx; wf025_numbers ctx; wf026 ctx; wf128 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx;
       wf034_allocations ctx; wf034_allocation_names ctx; wf034_allocation_types ctx;
       wf034_allocation_name_resolution ctx; wf034_object_creation_subject ctx;

@@ -1,0 +1,3 @@
+WF-025.field-not-number
+field=ratioAttribute
+kind=text
