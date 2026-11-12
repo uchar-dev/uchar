@@ -386,3 +386,4 @@ RGS-395	rule-versions-of-different-kinds	ERROR	name,versions
 RGS-396	let-without-type	ERROR	expression,reason
 RGS-420	target-not-a-member	ERROR	written
 RGS-421	allocation-operand-not-an-attribute	ERROR	name,written
+RGS-422	block-name-not-unique	ERROR	head,name,other,otherLine

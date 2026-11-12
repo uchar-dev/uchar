@@ -1792,6 +1792,22 @@ final class RuleChecker {
         }
         if (nodes.isEmpty()) return;
 
+        // 0. a block is named as a carrier by its name, so a second head of that name makes it two forms of one name
+        //    (WF-020): refused once, at the later head, and neither block is lifted
+        List<Head> heads = authoredHeads(doc);
+        for (Node k : nodes) {
+            if (!(k.block instanceof UitzonderingRegelContext u)) continue;
+            String key = dev.uchar.regelspraak.emit.IrEmitter.norm(k.name);
+            Head other = heads.stream().filter(h -> h.context() != u
+                    && dev.uchar.regelspraak.emit.IrEmitter.norm(h.name()).equals(key)).findFirst().orElse(null);
+            if (other == null) continue;
+            k.error = true;
+            if (other.context() instanceof UitzonderingRegelContext && other.line() > k.line) continue;
+            if (!refused.contains(k.block))
+                error(k.line, "RGS-422", params("head", k.head, "name", k.name, "other", other.form(),
+                        "otherLine", other.line()));
+        }
+
         // 1. the carrier of each node: another node by name, else a base rule. A block refused at its head
         //    (geweigerd) says nothing more; a member block says its carrier once.
         Map<String, Node> perName = new java.util.HashMap<>();
@@ -3003,6 +3019,27 @@ final class RuleChecker {
                 result.putIfAbsent(dev.uchar.regelspraak.emit.IrEmitter.norm(row),
                         new Object[] {Msg.frontend("PART.form-table-row", "row", row, "table", src(e.getKey().beslistabelNaam())),
                                 String.valueOf(e.getKey().getStart().getLine())});
+        return result;
+    }
+
+    /** A head an author wrote a form name in: a 'Regel', an 'Uitzondering op' or 'Afwijking van' block, or a row of a
+     *  decision table (its context the table); how a message names it and its line. */
+    private record Head(String name, Msg form, int line, ParserRuleContext context) {}
+
+    /** Every head of {@link #formSites}, each one kept, in written order. */
+    private List<Head> authoredHeads(RegelSpraakDocumentContext doc) {
+        List<Head> result = new ArrayList<>();
+        for (RegelContext r : DefinitionResolver.allRules(doc))
+            result.add(new Head(src(r.regelNaam()), Msg.frontend("PART.form-rule", "name", src(r.regelNaam())),
+                    r.getStart().getLine(), r));
+        for (UitzonderingRegelContext u : DefinitionResolver.allExceptions(doc))
+            result.add(new Head(src(u.regelNaam()), Msg.frontend("PART.form-rule", "name", src(u.regelNaam())),
+                    u.getStart().getLine(), u));
+        for (var e : rowRules.entrySet())
+            for (String row : e.getValue())
+                result.add(new Head(row, Msg.frontend("PART.form-table-row", "row", row, "table",
+                        src(e.getKey().beslistabelNaam())), e.getKey().getStart().getLine(), e.getKey()));
+        result.sort(java.util.Comparator.comparingInt(Head::line));
         return result;
     }
 

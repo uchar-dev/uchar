@@ -456,7 +456,7 @@ RGS-143	Uitzonderingen ongeordend: group member '{member}' yielded no characteri
 RGS-144	Uitzonderingen ongeordend: group member '{member}' is not a characteristic assignment or an equation (§4)
 RGS-145	Uitzonderingen ongeordend: group member '{member}' writes a different target ({target}) than an earlier member ({sharedTarget}) — an unordered group concerns one shared target (§4, §9.5)
 RGS-146	{head}: the // Bron:-annotation '{annotation}' above the head belongs to no rule — an annotation belongs to the rule directly below it, and the head is no rule — and therefore does not reach the wire. Put it above the member or the members for which it holds ({reference})
-RGS-147	Uitzondering op: the {role} '{name}' has more than one rule version — multiple versions on one defaults group are not yet supported in this card (§4)
+RGS-147	Uitzondering op: the {role} '{name}' has more than one rule version — this frontend does not support multiple versions on one defaults group (§4)
 RGS-148	characteristic '{characteristic}' of {objectType}: {marking} stands only on a member — case input on a characteristic is already against every decision of a defaults group (RUNTIME-SEMANTICS ch. 7.8), and an input 'not present' above a computed assignment asks for an input with three values, which the case does not know for a characteristic (dialect §7)
 RGS-149	{head}: '(mag opgegeven worden)' stands only on a 'Numeriek' member without a unit or with one unit, or on a 'Datum' in days, and '{attribute}' is {datatype} — a defaults group on a member of another datatype or with a compound unit has not yet been measured in all three executors (dialect §7)
 RGS-151	{head}: '(mag opgegeven worden)' does not stand on a dimensioned member, and '{attribute}' is dimensioned with {dimensions} — a defaults group on a dimensioned member does not yet play in all three executors (dialect §7)
@@ -748,3 +748,4 @@ RGS-396.characteristic-as-value	'{characteristic}' is a characteristic of {objec
 RGS-396.undeclared-attribute	'{attribute}' is no declared attribute of {objectType} (WF-034)
 RGS-420	the sentence reads as a computation and not as an attribute, characteristic or cell of the subject; a rule writes a member of its own universal subject
 RGS-421	allocation '{name}': '{written}' reads as a computation and not as an attribute; an allocation distributes an attribute of the distributor over an attribute of the recipients (IR-SPEC ch. 3.2)
+RGS-422	{head}: the block '{name}' — {other} already has that name (source line {otherLine}); a carrier names a block by its name, and a form name is unique in the whole model, case not counted (WF-020)

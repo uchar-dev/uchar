@@ -195,6 +195,32 @@ class DuplicateFormNameTest {
         assertTrue(nameErrors(m).isEmpty(), () -> m.diagnostics.toString());
     }
 
+    /** Two 'Uitzondering op' blocks of one name are two forms of one name, and a carrier that names one of them names
+     *  both. Before, each got RGS-147, "meer dan één regelversie … in deze kaart", a reason that does not hold: one
+     *  ERROR now, at the second block, naming the first. */
+    @Test void two_exception_blocks_of_one_name_are_a_name_clash() {
+        String source = MODEL + """
+            Regel premie
+                geldig altijd
+                    De premie van een Jutter moet gesteld worden op 1.
+
+            Uitzondering op premie: hoge premie
+                geldig altijd
+                    De premie van een Jutter moet gesteld worden op 2 indien hij actief is.
+
+            Uitzondering op premie: Hoge  premie
+                geldig altijd
+                    De premie van een Jutter moet gesteld worden op 3 indien hij ervaren is.
+            """;
+        RegelSpraakModel m = Resolver.resolve(source);
+        List<Diagnostic> errors = m.errors();
+        assertEquals(1, errors.size(), () -> "verwacht één fout, kreeg: " + m.diagnostics);
+        assertEquals("RGS-422", errors.get(0).code(), errors.get(0).message());
+        assertEquals(16, errors.get(0).line(), errors.get(0).message());
+        assertTrue(errors.get(0).message().contains("regel 'hoge premie' heet al zo (bronregel 12)"),
+                errors.get(0).message());
+    }
+
     @Test void two_names_stay_clean() {
         RegelSpraakModel m = Resolver.resolve(MODEL + """
             Regel actief

@@ -456,7 +456,7 @@ RGS-143	Uitzonderingen ongeordend: groepslid '{member}' leverde geen kenmerktoek
 RGS-144	Uitzonderingen ongeordend: groepslid '{member}' is geen kenmerktoekenning of gelijkstelling (§4)
 RGS-145	Uitzonderingen ongeordend: groepslid '{member}' schrijft een ander doel ({target}) dan een eerder lid ({sharedTarget}) — een ongeordende groep betreft één gedeeld doel (§4, §9.5)
 RGS-146	{head}: de // Bron:-annotatie '{annotation}' boven de kop hoort bij geen regel — een annotatie hoort bij de regel direct eronder, en de kop is geen regel — en komt daarom niet op de wire. Zet haar boven het lid of de leden waarvoor zij geldt ({reference})
-RGS-147	Uitzondering op: de {role} '{name}' heeft meer dan één regelversie — meerdere versies op één defaults-groep worden in deze kaart nog niet ondersteund (§4)
+RGS-147	Uitzondering op: de {role} '{name}' heeft meer dan één regelversie — meerdere versies op één defaults-groep ondersteunt deze frontend niet (§4)
 RGS-148	kenmerk '{characteristic}' van {objectType}: {marking} staat alleen op een attribuut — casusinvoer op een kenmerk staat al tegen elk besluit van een defaults-groep (RUNTIME-SEMANTICS ch. 7.8), en een opgave 'niet aanwezig' boven een berekende toekenning vraagt een opgave met drie waarden, die de casus voor een kenmerk niet kent (dialect §7)
 RGS-149	{head}: '(mag opgegeven worden)' staat alleen op een Numeriek attribuut zonder eenheid of met één eenheid, of op een Datum in dagen, en '{attribute}' is {datatype} — een defaults-groep op een attribuut van een ander datatype of met een samengestelde eenheid is nog niet in alle drie de uitvoerders gemeten (dialect §7)
 RGS-151	{head}: '(mag opgegeven worden)' staat niet op een gedimensioneerd attribuut, en '{attribute}' is gedimensioneerd met {dimensions} — een defaults-groep op een gedimensioneerd attribuut speelt nog niet in alle drie de uitvoerders (dialect §7)
@@ -748,3 +748,4 @@ RGS-396.characteristic-as-value	'{characteristic}' is een kenmerk van {objectTyp
 RGS-396.undeclared-attribute	'{attribute}' is geen gedeclareerd attribuut van {objectType} (WF-034)
 RGS-420	de zin leest als een berekening en niet als een attribuut, kenmerk of cel van het onderwerp; een regel schrijft een lid van zijn eigen universele onderwerp
 RGS-421	verdeling '{name}': '{written}' leest als een berekening en niet als een attribuut; een verdeling verdeelt een attribuut van de verdeler over een attribuut van de ontvangers (IR-SPEC ch. 3.2)
+RGS-422	{head}: het blok '{name}' — {other} heet al zo (bronregel {otherLine}); een drager noemt een blok bij zijn naam, en een vormnaam is uniek in het hele model, hoofdletters niet meegeteld (WF-020)
