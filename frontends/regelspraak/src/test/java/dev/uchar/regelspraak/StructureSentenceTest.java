@@ -440,7 +440,7 @@ class StructureSentenceTest {
                 new String[]{"Schuit", "Een Haven is veilig\nindien de romplengte van alle liggers van de Haven groter "
                         + "is dan " + schuit + "."});
         for (String[] form : forms) {
-            String source = HAVENS + WINTERBERGING + "Regel p\n    geldig altijd\n" + form[1].indent(8);
+            String source = HAVENS + WINTERBERGING + SAFE + "Regel p\n    geldig altijd\n" + form[1].indent(8);
             assertEquals(List.of(swallowed(form[0])), faults(source), () -> "positie:\n" + form[1]);
         }
         // an exception is lifted into the defaults, and its condition is walked there
@@ -455,6 +455,13 @@ class StructureSentenceTest {
                     indien het maximum van de romplengte van de Schuit groter is dan 2.
             """));
     }
+
+    /** The characteristic the last position assigns. */
+    private static final String SAFE = """
+        Extensie van objecttype de Haven
+            is veilig kenmerk (bijvoeglijk);
+
+        """;
 
     private static final String WINTERBERGING = """
         Feittype winterberging

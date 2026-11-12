@@ -773,3 +773,4 @@ RGS-422	{head}: the block '{name}' — {other} already has that name (source lin
 RGS-423	allocation '{name}': {role} '{attribute}' is of the type {type}; an allocation computes with amounts, so amount, share, rest, weight and maximum are Numeriek or Percentage (WF-025)
 RGS-424	'{expression}': the left operand of the percentage is of the type {type}; the percentage of a value reads on its left a number without a unit or a percentage in '%' (WF-035)
 RGS-425	allocation '{name}': {role} '{attribute}' is not a declared attribute of {objectType}; an allocation names declared attributes only (WF-034)
+RGS-427	'{characteristic}' is not a declared characteristic of {objectType}

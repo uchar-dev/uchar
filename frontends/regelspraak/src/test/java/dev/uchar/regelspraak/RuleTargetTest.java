@@ -20,8 +20,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * went out as a target {@code 'vakpremie van het strandvak'} on Jutter — the name swallowed the navigation — with
  * {@code diagnostics: []}; the verifier gave WF-022 and WF-034. The same for an undeclared attribute, and for a
  * characteristic whose subject is a navigation ("Het strandvak van een Jutter is gemarkeerd": no object type at
- * all). An undeclared characteristic on a resolved subject is left alone here: that is the ground the dialect card
- * for negated decisions ("is niet X") covers.
+ * all), and for a characteristic the resolved subject does not declare. A negated one ("is niet X") is refused where
+ * the name is read (dialect §4).
  *
  * <p><b>A window bullet as the LAST bullet of a compound subselection.</b> The parser ends the subselection at
  * "het is de periode" — read as a characteristic of that name, a marker — and takes the bound as a window on the
@@ -104,6 +104,23 @@ class RuleTargetTest {
         assertEquals(11, d.line(), d.message());
         assertTrue(d.message().startsWith("regeldoel 'Het kortingspercentage van de opbrengst van een berging'"),
                 d.message());
+    }
+
+    /** A characteristic the subject does not declare, assigned positively, went out with {@code diagnostics: []}
+     *  and the verifier refused the document (WF-022). One ERROR at the target, naming the characteristic. */
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "Een Jutter is gemarkeerd.           | gemarkeerd",
+            "Een Vondst is in bewaring.          | in bewaring",
+            "Een Jutter heeft het vaandel.       | vaandel"
+    })
+    void an_undeclared_characteristic_of_the_subject_is_refused(String result, String characteristic) {
+        RegelSpraakModel m = Resolver.resolve(rule(result));
+        Diagnostic d = onlyError(m);
+        assertEquals("RGS-427", d.code(), d.message());
+        assertEquals(23, d.line(), d.message());
+        assertEquals(characteristic, d.params().get("characteristic"), d.message());
+        assertTrue(d.message().contains("'" + characteristic + "'") && d.message().contains("WF-022"), d.message());
     }
 
     @ParameterizedTest

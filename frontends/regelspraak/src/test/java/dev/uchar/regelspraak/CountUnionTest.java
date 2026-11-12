@@ -345,6 +345,9 @@ class CountUnionTest {
      *  `jutterswet-unievoorwaarde` rather than left to a reading. */
     static final String IN_CONDITION = """
 
+        Extensie van objecttype de Jutter
+            is ruim voorzien kenmerk (bijvoeglijk);
+
         Regel ruim voorzien
             geldig altijd
                 Een Jutter is ruim voorzien indien het aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter groter is dan 2.

@@ -882,10 +882,9 @@ final class RuleChecker {
      *  attribute named 'vakpremie van het strandvak' on Jutter: the name swallows the navigation, the type
      *  stays unknown, and the verifier refuses the document under WF-022 and WF-034. The same holds for an
      *  undeclared attribute, and for a characteristic whose subject is a navigation, which resolves to no object
-     *  type at all. Each is an ERROR, naming the form. An undeclared
-     *  characteristic on a resolved subject is not judged here: a negated one ("is niet X" with X undeclared) is
-     *  refused where the name is read ({@link #characteristic}, dialect §4), and a positive one still reaches the
-     *  verifier's WF-022 — no card has taken that one yet. */
+     *  type at all. Each is an ERROR, naming the form. So is a positive assignment of a characteristic the subject
+     *  does not declare; a negated one ("is niet X" with X undeclared) is refused where the name is read
+     *  ({@link #characteristic}, dialect §4). */
     private void refuseRuleTargets() {
         for (ResolvedRule r : model.resolvedRules) {
             // a cell target is judged on the attribute reference under it, as the verifier judges it (WF-022)
@@ -926,6 +925,11 @@ final class RuleChecker {
                 // "Het kadegeld van zijn thuishaven moet …": the target reads another instance's attribute, which
                 // ended in the emitter's exception, since the target fixes the rule's subject
                 error = new Typing.Coded("RGS-111", params("written", written, "subjectSource", a.subjectSource()));
+            else if (r.kind() == ResolvedRule.Kind.KENMERKTOEKENNING && !refusedTargets.contains(r)
+                    && a.objectType().characteristicName(a.attribute()) == null
+                    && a.objectType().attribute(a.attribute()) == null)
+                error = new Typing.Coded("RGS-427", params("written", written, "characteristic", a.attribute(),
+                        "objectType", a.objectType().name));
             else if (r.kind() != ResolvedRule.Kind.KENMERKTOEKENNING && a.objectType().attribute(a.attribute()) == null)
                 error = a.attribute().matches("(?i).*\\svan\\s.*")
                         ? new Typing.Coded("RGS-112",

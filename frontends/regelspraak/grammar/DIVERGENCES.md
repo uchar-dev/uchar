@@ -1337,9 +1337,10 @@ strandvak" on Jutter — the name swallows the navigation — which the verifier
 refuses under WF-022 and WF-034. That sentence, an undeclared attribute target
 and a characteristic whose subject is a navigation, which resolves to no object
 type at all, are each an ERROR naming the form (`RuleChecker.checkRuleTargets`;
-fix round 2, 2026-09-23). An undeclared characteristic on a resolved
-subject is not fenced here: that is the ground of the dialect card for negated
-decisions ("is niet X"). No source in any zone writes the refused forms. A
+fix round 2, 2026-09-23), and so is a positive assignment of a characteristic
+the resolved subject does not declare (RGS-427); a negated one ("is niet X") is
+refused where the name is read (dialect §4). No source in any zone writes the
+refused forms. A
 refused target inside an extension block speaks alone: the defaults lowering
 skips its family, whose checks would otherwise judge a target the author did
 not write and add a second refusal ("is geen kenmerktoekenning of
