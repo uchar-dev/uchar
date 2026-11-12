@@ -293,5 +293,8 @@ class DependencyCycleTest {
         assertEquals("RGS-394", faults.get(0).code());
         assertTrue(String.valueOf(faults.get(0).args().get("reason")).startsWith("IrEmitter: an unknown datatype"),
                 faults.get(0)::toString);
+        // at the line of the node the emitter refused (the sum under 'Daarbij geldt'), and naming its form
+        assertEquals(16, faults.get(0).line(), faults.get(0)::toString);
+        assertTrue(faults.get(0).message().contains("(vorm 'havengeld')"), faults.get(0)::toString);
     }
 }

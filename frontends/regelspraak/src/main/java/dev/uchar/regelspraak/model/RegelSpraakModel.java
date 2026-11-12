@@ -82,6 +82,13 @@ public final class RegelSpraakModel {
      *  {@link #generatedFrom}. */
     public final Map<Designatable, GeneratedFrom> generated = new LinkedHashMap<>();
     public final List<Diagnostic> diagnostics = new ArrayList<>();
+    /** The {@code uchar-ir-v1} document the resolver emitted when it finished this model, the one its dependency
+     *  checks judged and {@code --ir} writes; null for a model with an ERROR and for one the resolver did not build,
+     *  a {@link #copy()} included. A change to the model after the build is not in it. */
+    private String document;
+
+    public String document() { return document; }
+    public void document(String document) { this.document = document; }
 
     /** The constructor of the value of an attribute with absence markers, and the markers in their order: the sum type
      *  such an attribute lowers to (RUNTIME-SEMANTICS ch. 9.5). */

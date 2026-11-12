@@ -192,6 +192,7 @@ public final class Resolver {
         designations.check();
         AbsenceMarkers.lower(model);
         reportUnresolved(model, checker.refusedMarkers());
+        model.document(checker.document(doc));   // last: the one emission, of the finished model
         return model;
     }
 
@@ -390,8 +391,9 @@ public final class Resolver {
         // the WARNINGs the emitter itself appends, for what the wire cannot carry, are shown the same way
         dev.uchar.regelspraak.emit.IrEmitter.unwrittenAllocations(m)
                 .forEach(d -> System.err.println("  " + d));
-        java.nio.file.Files.writeString(out, dev.uchar.regelspraak.emit.IrEmitter.emit(m),
-                java.nio.charset.StandardCharsets.UTF_8);
+        if (m.document() == null)
+            throw new IllegalStateException("Resolver: a model without an ERROR has its document from the build");
+        java.nio.file.Files.writeString(out, m.document(), java.nio.charset.StandardCharsets.UTF_8);
         System.out.printf("ir: objecttypen=%d feittypen=%d resolvedRegels=%d geschreven naar %s%n",
                 m.objectTypes.size(), m.factTypes.size(), m.resolvedRules.size(), out);
         return 0;

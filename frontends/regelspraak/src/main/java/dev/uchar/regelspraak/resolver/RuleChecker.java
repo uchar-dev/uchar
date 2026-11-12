@@ -165,7 +165,6 @@ final class RuleChecker {
         checkUntypedLets();         // a "Daarbij geldt" value an undeclared read leaves without a type
         checkUndeclaredReads();     // WF-034, an own read of a name its subject does not declare
         checkFormNames(doc);         // WF-020, over the named forms as the emitter writes them
-        checkDependencyCycles(doc);   // WF-045, WF-046 and WF-051, over the document the emitter writes
         generatedElements();    // last: only the elements that are still in the model get an origin
     }
 
@@ -342,21 +341,36 @@ final class RuleChecker {
      * of the predecessor over a switch relation close is instance-ordered and admitted, as the verifier admits it
      * (IR-SPEC ch. 5.3); where a read inside a cycle over a switch relation falls outside that scope, the refusal of the
      * cycle gets a second one beside it that names the read, the clause and the switch relation, as the verifier's
-     * {@code WF-045.instance-read-outside} names the read: the author changes the read, not the forms. Runs last, on a model
-     * without an ERROR. A model the emitter refuses although no check before refused it has no document to judge; its
-     * refusal is then the model's ERROR (RGS-394), in the emitter's sentence.
+     * {@code WF-045.instance-read-outside} names the read: the author changes the read, not the forms.
+     *
+     * <p>Judged is the one document the model has: emitted here, once, when the model is finished — the opgave
+     * lowering and the marker sweep included — so what is judged is what {@code --ir} writes. The document, or null
+     * when the model carries an ERROR, this check's own included. A model the emitter refuses although no check before
+     * refused it has no document to judge; its refusal is then the model's ERROR (RGS-394), in the emitter's sentence,
+     * at the line of the node it refused or at the head of its form.
      */
-    private void checkDependencyCycles(RegelSpraakDocumentContext doc) {
-        if (!model.isOk()) return;
+    String document(RegelSpraakDocumentContext doc) {
+        if (!model.isOk()) return null;
         String ir;
         try {
             ir = dev.uchar.regelspraak.emit.IrEmitter.emit(model);
         } catch (IllegalStateException | UnsupportedOperationException e) {
             // every check above let the model through and the emitter refuses it all the same: that refusal is the
             // model's ERROR, so no route shows it as clean, and there is no document whose cycles could be judged
-            error(0, "RGS-394", params("reason", e.getMessage()));
-            return;
+            var refusal = e instanceof dev.uchar.regelspraak.emit.IrEmitter.Refusal r ? r : null;
+            String form = refusal == null ? null : refusal.form();
+            int line = refusal == null ? 0 : refusal.line();
+            Object[] site = line > 0 || form == null ? null : formSites(doc).get(dev.uchar.regelspraak.emit.IrEmitter.norm(form));
+            if (site != null) line = Integer.parseInt((String) site[1]);
+            error(line, "RGS-394", params("form", Msg.frontendIf(form != null, "RGS-394.form", "name", form),
+                    "reason", e.getMessage()));
+            return null;
         }
+        checkDependencyCycles(doc, ir);
+        return model.isOk() ? ir : null;
+    }
+
+    private void checkDependencyCycles(RegelSpraakDocumentContext doc, String ir) {
         Map<String, Object[]> sites = formSites(doc);
         Set<String> reported = new java.util.HashSet<>();
         Dependencies.Findings found = Dependencies.find(ir);

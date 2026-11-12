@@ -97,6 +97,50 @@ public final class IrEmitter {
                 .toList();
     }
 
+    /** A refusal of this emitter, with the place it arose: the line of the innermost node being written that has one
+     *  (0 for none) and the name of the form being written (null outside a form). The message is the refusal's own,
+     *  so a reader of the message alone reads what it read before; the resolver puts the refusal at that line, or at
+     *  the head of that form. */
+    public static final class Refusal extends IllegalStateException {
+        private final int line;
+        private final String form;
+
+        private Refusal(String message, int line, String form, Throwable cause) {
+            super(message, cause);
+            this.line = line;
+            this.form = form;
+        }
+
+        public int line() { return line; }
+        public String form() { return form; }
+
+        /** {@code e} with the place it arose: the line and form it carries already, else {@code line} and {@code form}. */
+        static Refusal of(IllegalStateException e, int line, String form) {
+            if (!(e instanceof Refusal r)) return new Refusal(e.getMessage(), line, form, e);
+            if ((r.line > 0 || line <= 0) && (r.form != null || form == null)) return r;
+            return new Refusal(r.getMessage(), r.line > 0 ? r.line : line, r.form != null ? r.form : form, r.getCause());
+        }
+    }
+
+    /** {@code body}, the writing of the form {@code name}: a refusal inside it names the form. */
+    private static void form(String name, Runnable body) {
+        try {
+            body.run();
+        } catch (IllegalStateException e) {
+            throw Refusal.of(e, 0, name);
+        }
+    }
+
+    /** {@code body}, the writing of a node from {@code source}: a refusal inside it that no inner node placed stands at
+     *  this node's line. */
+    private static void node(Source source, Runnable body) {
+        try {
+            body.run();
+        } catch (IllegalStateException e) {
+            throw Refusal.of(e, source == null ? 0 : source.line(), null);
+        }
+    }
+
     /** Serialise the resolved model to the IR JSON text (two-space indented, trailing newline). */
     public static String emit(RegelSpraakModel m) {
         // WF-113 (a): an ERROR means the producer refused the document, so a model that carries one has no
@@ -261,7 +305,7 @@ public final class IrEmitter {
         // (vormen); the model's lists keep their v0 names
         w.key("rules").beginArray();
         for (Form<ResolvedRule> v : forms("rules", m.resolvedRules, ResolvedRule::name,
-                IrEmitter::annotations)) rule(v);
+                IrEmitter::annotations)) form(v.name(), () -> rule(v));
         w.endArray();
 
         w.key("dayKindDefinitions").beginArray();
@@ -270,7 +314,7 @@ public final class IrEmitter {
 
         w.key("objectCreations").beginArray();
         for (Form<ResolvedObjectCreation> v : forms("objectCreations", m.objectCreations, ResolvedObjectCreation::name,
-                null)) objectCreation(v);
+                null)) form(v.name(), () -> objectCreation(v));
         w.endArray();
 
         // an allocation without one of the three methods has no spelling: it is left out, and
@@ -279,26 +323,26 @@ public final class IrEmitter {
         List<ResolvedAllocation> allocations = m.allocations.stream()
                 .filter(v -> v.method() != ResolvedAllocation.Method.COMPLEX).toList();
         for (Form<ResolvedAllocation> v : forms("allocations", allocations, ResolvedAllocation::name, null))
-            allocation(v);
+            form(v.name(), () -> allocation(v));
         w.endArray();
 
         w.key("consistencies").beginArray();
         for (Form<ResolvedConsistency> v : forms("consistencies", m.consistencies, ResolvedConsistency::name, null))
-            consistency(v);
+            form(v.name(), () -> consistency(v));
         w.endArray();
 
         // IR-SPEC ch. 3.6: one list of uniquenesses, the single-source forms first and then the unions, each in model
         // order; the model keeps the two in two lists
         w.key("uniquenesses").beginArray();
         for (Form<ResolvedUniqueness> v : forms("uniquenesses", m.uniquenesses, ResolvedUniqueness::name, null))
-            uniqueness(v);
+            form(v.name(), () -> uniqueness(v));
         for (Form<ResolvedUniquenessUnion> v : forms("uniquenesses", m.uniquenessUnions, ResolvedUniquenessUnion::name,
-                null)) uniquenessUnion(v);
+                null)) form(v.name(), () -> uniquenessUnion(v));
         w.endArray();
 
         w.key("factCreations").beginArray();
         for (Form<ResolvedFactCreation> v : forms("factCreations", m.factCreations, ResolvedFactCreation::name, null))
-            factCreation(v);
+            form(v.name(), () -> factCreation(v));
         w.endArray();
 
         w.key("startPointDeterminations").beginArray();
@@ -306,7 +350,7 @@ public final class IrEmitter {
         w.endArray();
 
         w.key("ruleGroups").beginArray();
-        for (ResolvedRuleGroup g : m.ruleGroups) ruleGroup(g);
+        for (ResolvedRuleGroup g : m.ruleGroups) form(g.name(), () -> ruleGroup(g));
         w.endArray();
 
         // §4 (PRIORITIZED-DEFAULTS-EVOLUTIE) the defaults extension: an OPTIONAL list, emitted ONLY when the
@@ -315,7 +359,7 @@ public final class IrEmitter {
         // produces none, so the key is absent there — the mirror byte-identity of every flat golden holds.
         if (!m.prioritizedDefaults.isEmpty()) {
             w.key("prioritizedDefaults").beginArray();
-            for (PrioritizedDefaults p : m.prioritizedDefaults) prioritizedDefaults(p);
+            for (PrioritizedDefaults p : m.prioritizedDefaults) form(p.name(), () -> prioritizedDefaults(p));
             w.endArray();
         }
 
@@ -937,6 +981,10 @@ public final class IrEmitter {
 
     private void expr(Expr e) {
         if (e == null) { w.valueNull(); return; }
+        node(e.source(), () -> exprNode(e));
+    }
+
+    private void exprNode(Expr e) {
         w.beginObject();
         switch (e) {
             // IR-SPEC ch. 4.1: the value is the variant its type names (the value union of uchar-case-v0); the
@@ -1263,6 +1311,10 @@ public final class IrEmitter {
 
     private void condition(Condition c) {
         if (c == null) { w.valueNull(); return; }
+        node(c.source(), () -> conditionNode(c));
+    }
+
+    private void conditionNode(Condition c) {
         w.beginObject();
         switch (c) {
             case Condition.Comparison v -> {
