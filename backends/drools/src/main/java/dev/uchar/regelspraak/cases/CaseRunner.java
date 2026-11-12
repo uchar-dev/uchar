@@ -367,22 +367,13 @@ public final class CaseRunner {
 
     static AfterFire afterFire(Path irPath, JsonNode c) throws java.io.IOException {
         CaseRunner runner = build(irPath);
-        ClassLoader previous = Thread.currentThread().getContextClassLoader();
-        Thread.currentThread().setContextClassLoader(runner.cl);
-        KieSession session = runner.kieBase.newKieSession();
-        try {
-            CaseInput input = runner.readInput(c);
-            input.setGlobals(session);
-            DroolsBackend.insert(runner.backendBuild, session, input.inputData());
-            String noFixpoint = runner.fireToFixpoint(session);
+        return runner.withSession(c, (build, session, labels) -> {
+            String noFixpoint = runner.fireToFixpoint(session, null, null).noFixpoint();
             // The sister runCase path reports the cap as a case failure; this seam has no verdict to return, so
             // a run that never reached a fixpoint must not hand back a half-fired fact base as if it had settled.
             if (noFixpoint != null) throw new IllegalStateException(noFixpoint);
-            return new AfterFire(new LinkedHashMap<>(runner.labelToBean), new ArrayList<>(session.getObjects()));
-        } finally {
-            session.dispose();
-            Thread.currentThread().setContextClassLoader(previous);
-        }
+            return new AfterFire(new LinkedHashMap<>(labels), new ArrayList<>(session.getObjects()));
+        });
     }
 
     /** The comparator seam of {@code backends/drools/src/test}: one authored in-memory case through the FULL
@@ -425,19 +416,18 @@ public final class CaseRunner {
         return build(irPath, branch, readings);
     }
 
-    /** What a measuring harness does with one session that {@link #withSession} set up: fire it and measure it as it
+    /** What a caller does with one session that {@link #withSession} set up: fire it and read or measure it as it
      *  chooses. {@code labels} maps each case label to its input bean. */
     @FunctionalInterface
     interface SessionMeasurement<T> {
         T meet(DroolsBackend.Build backendBuild, KieSession session, Map<String, Object> labels);
     }
 
-    /** Sets up case {@code c} as {@link #runCase} does, in a fresh session with the bean loader as the thread's context
-     *  class loader, and hands that session, not yet fired, to {@code measurement}; the session is disposed afterwards. The
-     *  seam of the measuring harnesses of card tms-omschakeling, the scale test (point 9) and the measurement over the
-     *  corpus (point 7), which fire through {@link DroolsBackend#fire} as a consumer does and time the fire and the
-     *  write-back apart, where the replay's own fire times neither. Package-private, no production caller, and no gate
-     *  runs it. */
+    /** Sets up case {@code c} in a fresh session with the bean loader as the thread's context class loader: its input
+     *  read through {@link CaseInput}, its globals set and its beans put in. Hands that session, not yet fired, to
+     *  {@code measurement}, and disposes of it afterwards. Every replay, red path, report and reading of this class sets
+     *  up its session here, and so do the measuring harnesses of the test tree, which fire through
+     *  {@link DroolsBackend#fire} as a consumer does and time the fire and the write-back apart. */
     <T> T withSession(JsonNode c, SessionMeasurement<T> measurement) {
         labelToBean.clear();
         labelType.clear();
@@ -560,20 +550,7 @@ public final class CaseRunner {
      *  and null when the run completes cleanly (a NOFAULT — the backend produced a model where ref/clingo reject). A
      *  fault raised at fire propagates as an exception the caller renders. */
     private DroolsBackend.Firing fireRed(JsonNode c) {
-        labelToBean.clear();
-        labelType.clear();
-        ClassLoader previous = Thread.currentThread().getContextClassLoader();
-        Thread.currentThread().setContextClassLoader(cl);
-        KieSession session = kieBase.newKieSession();
-        try {
-            CaseInput input = readInput(c);
-            input.setGlobals(session);
-            DroolsBackend.insert(backendBuild, session, input.inputData());
-            return fireToFixpointFiring(session, null, null);
-        } finally {
-            session.dispose();
-            Thread.currentThread().setContextClassLoader(previous);
-        }
+        return withSession(c, (build, session, labels) -> fireToFixpoint(session, null, null));
     }
 
     /** A fault kind (RUNTIME-SEMANTICS ch. 5.7b): its EF code and its parameters, as a red case pins them. */
@@ -655,55 +632,33 @@ public final class CaseRunner {
      *  {@link Observation} the replay also reports the firings and every expectation's verdict ({@link #report}); the
      *  verdict itself does not depend on it. */
     private String runCase(String name, JsonNode c, Observation w) {
-        labelToBean.clear();
-        labelType.clear();
-        ClassLoader previous = Thread.currentThread().getContextClassLoader();
-        Thread.currentThread().setContextClassLoader(cl);
-        KieSession session = kieBase.newKieSession();
-        try {
-            CaseInput input = readInput(c);
-            input.setGlobals(session);
-            DroolsBackend.insert(backendBuild, session, input.inputData());
+        return withSession(c, (build, session, labels) -> {
             Handoff handoff = w == null ? null : w.handoff;
-            String noFixpoint = fireToFixpointFiring(session, w == null ? null : w.fireObserver, handoff == null ? null
-                    : firing -> handoff.take(name, backendBuild, session,
-                            java.util.Collections.unmodifiableMap(new LinkedHashMap<>(labelToBean)), firing))
+            String noFixpoint = fireToFixpoint(session, w == null ? null : w.fireObserver, handoff == null ? null
+                    : firing -> handoff.take(name, build, session,
+                            java.util.Collections.unmodifiableMap(new LinkedHashMap<>(labels)), firing))
                     .noFixpoint();
             if (noFixpoint != null) return name + ": " + noFixpoint;
-            DroolsBackend.Comparison comparison =
-                    DroolsBackend.compare(backendBuild, session, this::beanLabel, c.get("expected"));
+            DroolsBackend.Comparison comparison = DroolsBackend.compare(build, session, this::beanLabel, c.get("expected"));
             if (w != null) w.expectations.addAll(comparison.expectations());
             return comparison.pass() ? null : name + ": " + comparison.diagnostic();
-        } finally {
-            session.dispose();
-            Thread.currentThread().setContextClassLoader(previous);
-        }
+        });
     }
 
     /** Fires {@code session} through the backend's entry ({@link DroolsBackend#fire}), under the cap a consumer gets, and
-     *  returns null at a fixpoint. A run without one returns the sentence of {@code fire}, which names the cap and what
-     *  it was computed from, or that of the creation budget. A consequence that throws leaves the fire as
+     *  returns the {@link DroolsBackend.Firing}, whose {@code noFixpoint()} is null at a fixpoint and else the sentence
+     *  of {@code fire}, which names the cap and what it was computed from, or that of the creation budget, beside its
+     *  code. {@code observer}, where it is not null, records what the session fires ({@link DroolsBackend.Observer});
+     *  {@code afterFire}, where it is not null, gets the firing right after the fire and before the write-back
+     *  ({@link Handoff}). A consequence that throws leaves the fire as
      *  {@link DroolsBackend#designate} names it; every replay, red path and report of this class fires here, on either
      *  branch. At a fixpoint the derivations go onto the beans before anything reads them, or the evaluation faults
      *  that stand there are thrown ({@link DroolsBackend#setDerivedValues}); without a fixpoint nothing is written
      *  back, since the replay reports the sentence and reads no bean. With the property
      *  {@value SessionDump#PROPERTY} a seam writes the dump of the session ({@link SessionDump}) right after the fire,
      *  before the write-back, also where the fire throws, on either branch. */
-    private String fireToFixpoint(KieSession session) {
-        return fireToFixpoint(session, null);
-    }
-
-    /** As above, with {@code observer} recording what the session fires ({@link DroolsBackend.Observer}); null
-     *  records nothing. */
-    private String fireToFixpoint(KieSession session, DroolsBackend.Observer observer) {
-        return fireToFixpointFiring(session, observer, null).noFixpoint();
-    }
-
-    /** As {@link #fireToFixpoint(KieSession, DroolsBackend.Observer)}, returning the {@link DroolsBackend.Firing} itself,
-     *  so that the red path reads the code of a run without a fixpoint beside its sentence; {@code afterFire}, where it is
-     *  not null, gets the firing right after the fire and before the write-back ({@link Handoff}). */
-    private DroolsBackend.Firing fireToFixpointFiring(KieSession session, DroolsBackend.Observer observer,
-                                                      java.util.function.Consumer<DroolsBackend.Firing> afterFire) {
+    private DroolsBackend.Firing fireToFixpoint(KieSession session, DroolsBackend.Observer observer,
+                                                java.util.function.Consumer<DroolsBackend.Firing> afterFire) {
         SessionDump trace = documenthash == null ? null : SessionDump.op(session, labelToBean);
         DroolsBackend.Firing firing;
         try {
