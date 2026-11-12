@@ -5037,7 +5037,7 @@ final class RuleChecker {
                 withoutCharacteristic = negationAfterArticle(name, subject, kt.HEEFT() != null ? "heeft" : "is", characteristic);
         } else if (subject != null) {
             boolean has = kt.HEEFT() != null;
-            Condition c = characteristicCheckCondition(subject, written, has, source(kt));
+            Condition c = characteristicCheckCondition(subject, written, source(kt));
             if (c instanceof Condition.CharacteristicCheck k && k.negation()) {
                 characteristic = k.characteristic();
                 isNegated = true;
@@ -6095,7 +6095,7 @@ final class RuleChecker {
         typeOperator(lhs, op, right, source.line());
         Condition.WholePeriod period = wholePeriod(op.period());   // §8.2 whole-period check
         // A dangling absorbed "niet" silently INVERTS a comparison / leeg-gevuld (the bare-attr resolution dropped the
-        // negator) -> marker it. The kenmerkcheck DE-negates it (bindCharacteristicCheck) and elfproef/numeriek RECOVER it
+        // negator) -> marker it. The kenmerkcheck DE-negates it (CharacteristicMatcher.bind) and elfproef/numeriek RECOVER it
         // (elfOperand), so only the comparison + leeg/gevuld operators are guarded here.
         if (absorbedNegator(lhs) && (op.compares() || op.empty() || op.filled()))
             return new Condition.Unresolved(source, REASON_NOT_ABSORBED);
@@ -6561,7 +6561,7 @@ final class RuleChecker {
             }
             return k;
         }
-        return characteristicCheckCondition(elem, name, hasVerb, source);
+        return characteristicCheckCondition(elem, name, source);
     }
 
     /** The §8.2 whole-period qualifier of {@code c}, for the two condition forms that carry Expr operands
@@ -6711,7 +6711,7 @@ final class RuleChecker {
 
     /** §8.1.8 / Tabel 16: the kenmerkcheck NEGATION verb is keyed to the kenmerk SOORT — a bijvoeglijk and a
      *  zelfstandig kenmerk negate with "is"/"zijn" ("is niet &lt;k&gt;", "is geen &lt;k&gt;", "is niet een &lt;k&gt;"),
-     *  a bezittelijk one with "heeft"/"hebben" ("heeft (geen) &lt;k&gt;"). The de-negation in {@link #bindCharacteristicCheck} is
+     *  a bezittelijk one with "heeft"/"hebben" ("heeft (geen) &lt;k&gt;"). The de-negation in {@link CharacteristicMatcher#bind} is
      *  verb-AGNOSTIC (the "== false" lowering is identical either way), so a cross-soort writing ("heeft geen
      *  &lt;bijvoeglijk&gt;", "is geen &lt;bezittelijk&gt;") slips through with the right meaning but the wrong register.
      *  Surface it as a WARNING — a writing-form lint, never a wrong gate (the lowering is unchanged). Only a de-negated
@@ -6828,7 +6828,7 @@ final class RuleChecker {
             // claims those; only a name that is a ROLE but not a kenmerk newly binds). §13.4.15.44 makes the "een"
             // optional ("hij is deelnemer"); "heeft (geen) <rol>" is the §8.1.7 possessive, which roleMembership
             // resolves to the near-side test or — when the subject owns a to-many filler — the far-side exists-join.
-            Condition kc = characteristicCheckCondition(subject, name, hasVerb, source);
+            Condition kc = characteristicCheckCondition(subject, name, source);
             if (kc != null) { checkNegationKind(subject, kc, hasVerb); return kc; }
             // a leftover "geen <name>" that is a role is the INVERSE rolcheck (the subject does not fill it);
             // otherwise the positive rolcheck.
@@ -6837,7 +6837,7 @@ final class RuleChecker {
                     : roleMembership(subject, name, source);
             if (role != null || !narrowing) return role;
             return hostedBelow(subject, name, hasVerb,
-                    t -> characteristicCheckCondition(t, name, hasVerb, source), source);
+                    t -> characteristicCheckCondition(t, name, source), source);
         }
         // EEN-form: the grammar conflates a kenmerknaam and a rolnaam after "een", so disambiguate by lookup,
         // kenmerk-first (Tabel 16). The verb selects which kenmerk SOORT the EEN-form may bind: "is een <k>" is
@@ -6975,48 +6975,12 @@ final class RuleChecker {
         return ot != null && filler != null && ot.isA(filler);
     }
 
-    /** Resolve {@code characteristic} on {@code type} into a {@link Condition.CharacteristicCheck}, honouring a leading "niet"
-     *  or "geen" as NEGATION — but each only after the WHOLE name fails, so a declared "niet-…" kenmerk
-     *  still binds positively. The check is the subject's own; a navigated one gets its binding from its caller.
-     *  {@code hasVerb} is true when the predicate verb is hebben (§8.1.8: see the "geen" branch).
-     *  Null when neither the whole name nor a de-negated form is a declared kenmerk of {@code type}. */
-    private static Condition characteristicCheckCondition(ObjectType type, String characteristic, boolean hasVerb, Source source) {
-        // Match the written name VERBATIM first. A bijvoeglijk kenmerk may be declared WITH a leading article
-        // as part of its name ("is de minimis kenmerk" -> stored "de minimis"): its grammar rule has no
-        // separate bepaaldLidwoord? and naamWoordLower admits de/het, so the article is part of the stored
-        // name — the false-invariant the first cut tripped on (a blind strip dropped it to a wrong/no match).
-        Condition c = bindCharacteristicCheck(type, characteristic, hasVerb, source);
-        if (c != null) return c;
-        // Only if the verbatim name binds NOTHING, retry with a leading de/het/een stripped — recovering the
-        // bezittelijk/noch-noch case where the article is the kenmerk's OWN (stored article-stripped) and the
-        // greedy onderwerp parse left it on the reconstructed name ("het recht op duurzaamheidskorting").
-        // Verbatim-first guarantees a kenmerk whose name really begins with an article binds itself, never a
-        // shorter sibling.
-        String stripped = stripArticle(characteristic);
-        return stripped.equals(characteristic) ? null : bindCharacteristicCheck(type, stripped, hasVerb, source);
-    }
-
-    /** Bind one candidate name to a declared kenmerk of {@code type}, honouring a leading "niet" or "geen"
-     *  as NEGATION — but each only after the WHOLE name fails, so a kenmerk declared starting with niet/geen
-     *  still binds positively (never silently inverted). Null when nothing binds. */
-    private static Condition bindCharacteristicCheck(ObjectType type, String name, boolean hasVerb, Source source) {
-        String g = CharacteristicMatcher.find(type, name);
-        if (g != null) return new Condition.CharacteristicCheck(g, null, false, source);
-        // §8.1.8.1 bijvoeglijk negation "is niet <k>" -> "== false" (verb-agnostic).
-        if (name.regionMatches(true, 0, "niet ", 0, 5)) {
-            g = CharacteristicMatcher.find(type, name.substring(5).trim());
-            if (g != null) return new Condition.CharacteristicCheck(g, null, true, source);
-        }
-        // Negation with "geen" -> "== false": the §8.1.8.2 bezittelijk form "heeft geen <k>" AND the §8.1.8.3
-        // noch-noch form "is geen <k>" (both lower to the same boolean negation, so the verb need not gate it;
-        // a soort distinction governs only positive writing-form validation, not the negated lowering). "geen"
-        // carries no token (only GEEN_VAN_DE), so it lexes as LOWER_ID and rides inside the bareName into this
-        // reconstructed name. Verbatim-first above means a kenmerk literally named "geen …" still binds positively.
-        if (name.regionMatches(true, 0, "geen ", 0, 5)) {
-            g = CharacteristicMatcher.find(type, name.substring(5).trim());
-            if (g != null) return new Condition.CharacteristicCheck(g, null, true, source);
-        }
-        return null;
+    /** The check of the kenmerk of {@code type} that {@code characteristic} binds, negated by a leading "niet" or "geen"
+     *  ({@link CharacteristicMatcher#bind}); the subject's own check, which a navigated one gets its binding on from its
+     *  caller. Null when no kenmerk of {@code type} binds. */
+    private static Condition characteristicCheckCondition(ObjectType type, String characteristic, Source source) {
+        CharacteristicMatcher.Bound b = CharacteristicMatcher.bind(type, characteristic);
+        return b == null ? null : new Condition.CharacteristicCheck(b.characteristic(), null, b.negation(), source);
     }
 
     /** §8.1.8 navigated: "de &lt;rol&gt; van X is &lt;kenmerk&gt;" — the kenmerk is on the object the rol
@@ -7065,7 +7029,7 @@ final class RuleChecker {
             c = g != null && targetName.characteristicKind(g) == required
                     ? new Condition.CharacteristicCheck(g, null, negated, source) : null;
         } else {
-            c = characteristicCheckCondition(targetName, characteristic, hasVerb, source);
+            c = characteristicCheckCondition(targetName, characteristic, source);
             checkNegationKind(targetName, c, hasVerb);
         }
         if (!(c instanceof Condition.CharacteristicCheck k)) return c;

@@ -2041,7 +2041,7 @@ final class ExpressionBuilder {
         if (op != null && op.kaleNaam() != null && denotesSubject(c.expressie())) {
             Condition.CharacteristicCheck k = temporalCharacteristicCheckFromOperator(op, null, source(adf));
             if (k != null && !k.negation()) return k;
-            if (boundCharacteristic(src(op.kaleNaam())) == null)
+            if (CharacteristicMatcher.bind(currentSubject, src(op.kaleNaam())) == null)
                 return refusedClip(marked, Msg.frontend("RGS-092.day-count-name-unbound",
                         "name", src(op.kaleNaam()), "subject", currentSubject.name), adf);
         }
@@ -2143,7 +2143,7 @@ final class ExpressionBuilder {
         } else return null;
         if (kn == null || (!isVerb && !hasVerb)) return null;         // an "is/heeft <kenmerk>" membership (§3.5)
         if (period != null) return null;
-        BoundCharacteristic b = boundCharacteristic(src(kn));
+        CharacteristicMatcher.Bound b = CharacteristicMatcher.bind(currentSubject, src(kn));
         if (b == null || currentSubject.characteristicGranularityOf(b.characteristic()) == null
                 || currentSubject.characteristicTimelineCountOf(b.characteristic()) != null) return null;
         return new Condition.CharacteristicCheck(b.characteristic(), null, b.negation(), source);
@@ -2156,33 +2156,6 @@ final class ExpressionBuilder {
         if (onderwerp == null || currentSubject == null) return false;
         String written = stripArticle(src(onderwerp)).trim();
         return written.equalsIgnoreCase("hij") || written.equalsIgnoreCase(currentSubject.name);
-    }
-
-    /** The characteristic of the subject a written membership name binds, and whether a leading "geen"/"niet" negates
-     *  it; null when the name binds none. */
-    private record BoundCharacteristic(String characteristic, boolean negation) {}
-
-    private BoundCharacteristic boundCharacteristic(String written) {
-        // §8.1.8.1/.2 a "geen"/"niet" before the kenmerk negates the membership ("hij geen recht ... heeft" / "hij
-        // niet rechthebbend is"); the negator lexes into the bareName (no GEEN/NIET token here), so try the
-        // verbatim name first (a kenmerk literally beginning with geen/niet still binds positively), then a stripped
-        // form. A negated gedurende clips the value timeline to the kenmerk's FALSE periods (the complement).
-        boolean negation = false;
-        String characteristic = CharacteristicMatcher.find(currentSubject, written);
-        if (characteristic == null && (written.regionMatches(true, 0, "geen ", 0, 5)
-                || written.regionMatches(true, 0, "niet ", 0, 5))) {
-            characteristic = CharacteristicMatcher.find(currentSubject, written.substring(5).trim());
-            negation = characteristic != null;
-        }
-        if (characteristic == null) {
-            // §8.1.8.2 the CANONICAL bezittelijk form is "heeft HET <k>" (the §3.5 example "heeft het recht op
-            // duurzaamheidskorting"): the article is absorbed into the bareName (only "een" is a separate token), so
-            // a verbatim match misses it. Retry article-stripped — verbatim-first above keeps a kenmerk literally
-            // named "het …" binding itself.
-            String withoutArticle = written.replaceFirst("^(?i)(de|het|een)\\s+", "").trim();
-            if (!withoutArticle.equals(written)) characteristic = CharacteristicMatcher.find(currentSubject, withoutArticle);
-        }
-        return characteristic == null ? null : new BoundCharacteristic(characteristic, negation);
     }
 
     /** §8.4.2 a COMPOUND tijdsafhankelijke conditie on a temporal totaal: an ALLE of bullets that are each a
@@ -4058,7 +4031,7 @@ final class ExpressionBuilder {
         // FULL bron so navigationCharacteristicCheck/navigationTail recover the negator onto the kenmerk and the §8.1.8 navigated
         // negation de-negates (instead of markering). Verbatim-first above means a role literally ending in
         // niet/geen still binds (it resolved there); only an unresolvable role reaches this split.
-        for (String neg : new String[]{" niet", " geen"}) {   // SPACE-bounded (mirror bindCharacteristicCheck) — never split a glued "<rol>geen"
+        for (String neg : new String[]{" niet", " geen"}) {   // SPACE-bounded (mirror CharacteristicMatcher.bind) — never split a glued "<rol>geen"
             if (attr.regionMatches(true, attr.length() - neg.length(), neg, 0, neg.length())) {
                 String plain = attr.substring(0, attr.length() - neg.length()).trim();
                 if (plain.isEmpty()) continue;

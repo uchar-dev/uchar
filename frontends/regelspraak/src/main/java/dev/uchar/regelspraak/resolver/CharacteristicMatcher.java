@@ -36,6 +36,32 @@ import java.util.List;
 final class CharacteristicMatcher {
     private CharacteristicMatcher() {}
 
+    /** A declared kenmerk a written name binds, and whether a leading "niet" or "geen" negates it (§8.1.8). */
+    record Bound(String characteristic, boolean negation) {}
+
+    /** The kenmerk of {@code ot} that a written membership name {@code written} binds, with its negation; null when
+     *  none does. The whole written name first, so a kenmerk declared with a leading "niet", "geen" or article binds
+     *  itself and is never silently inverted or shortened; then the name without a leading "niet " or "geen ", negated
+     *  (the negator carries no token of its own and lexes into the name); then, where the name opens with an article
+     *  (de, het, een) that is no part of a kenmerk ("heeft het recht op …", §8.1.8.2), the same two steps without it. */
+    static Bound bind(ObjectType ot, String written) {
+        Bound b = bindNegated(ot, written);
+        if (b != null) return b;
+        String withoutArticle = written.replaceFirst("^(?i)(de|het|een)\\s+", "").trim();
+        return withoutArticle.equals(written) ? null : bindNegated(ot, withoutArticle);
+    }
+
+    private static Bound bindNegated(ObjectType ot, String name) {
+        String k = find(ot, name);
+        if (k != null) return new Bound(k, false);
+        for (String negator : List.of("niet ", "geen "))
+            if (name.regionMatches(true, 0, negator, 0, negator.length())) {
+                k = find(ot, name.substring(negator.length()).trim());
+                if (k != null) return new Bound(k, true);
+            }
+        return null;
+    }
+
     /** The declared kenmerk of {@code ot} that the written predicaat name {@code written} denotes,
      *  or null when none does (an unknown name, an attribute, a role, or an ambiguous inflection) —
      *  left to the marker path.
