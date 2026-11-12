@@ -5935,6 +5935,25 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
                  [ v ~params:[("type", datatype_kind d)] "WF-038.easter-sunday-operand" at ("easterSunday operand is " ^ datatype_kind d
                                   ^ ", must be a whole unitless number") ]
              | None -> [])
+         | (Date_with | Date_time_with), parts ->
+             (* a part of a date construction is a whole unitless number
+                (RUNTIME-SEMANTICS ch. 3.8). A unit is a property of the
+                declaration and refused here, as for the Easter year; whether
+                a value is whole is a property of the value, so a part of a
+                type with decimals stays the fault EF-046 at evaluation *)
+             List.concat
+               (List.mapi
+                  (fun i a ->
+                    match ty a with
+                    | Some d when is_number_like d && unit_of d <> None ->
+                        let unit = unit_spelling (unit_of d) in
+                        [ v ~params:[ ("function", Spelling.encode Spelling.builtin_kind f.kind); ("unit", unit) ]
+                            "WF-038.date-part-unit"
+                            (sub ("arguments/" ^ string_of_int i))
+                            (Printf.sprintf "a part of %s carries the unit '%s', must be a whole unitless number"
+                               (Spelling.encode Spelling.builtin_kind f.kind) unit) ]
+                    | _ -> [])
+                  parts)
          | (Year_of | Month_of | Day_of), [ a ] -> (
              (* the day-precision extractors read civil components (ch. 3.8
                 of RUNTIME-SEMANTICS): the operand must be a date — either
