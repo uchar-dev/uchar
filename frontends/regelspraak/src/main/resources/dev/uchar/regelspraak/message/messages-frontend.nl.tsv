@@ -776,3 +776,4 @@ RGS-425	verdeling '{name}': {role} '{attribute}' is geen gedeclareerd attribuut 
 RGS-426	verdeling '{name}' schrijft '{attribute}' van {objectType}, dat de verdeling '{other}' al schrijft; ten hoogste één verdeling schrijft een doel, ook langs een typeketen (WF-026)
 RGS-427	'{characteristic}' is geen gedeclareerd kenmerk van {objectType}
 RGS-428	lezing '{expression}': '{attribute}' is geen attribuut en geen kenmerk van {objectType} (WF-034)
+RGS-440	kenmerkcontrole '{source}' volgt een rol vanaf {written}, maar zij wordt gelezen op {subject}: een genavigeerde kenmerkcontrole volgt één rol vanaf het onderwerp waarop zij gelezen wordt

@@ -6806,7 +6806,7 @@ final class RuleChecker {
         // not the subject itself -> a navigated kenmerk ("zijn reis is duurzaam", or the EEN-form "zijn reis is
         // een belaste reis"). The EEN-form binds only a ZELFSTANDIG kenmerk of the navigated type (the soort guard,
         // §8.1.8.3); a navigated role membership stays out of scope (a marker).
-        if (head == null) return navigationCharacteristicCheck(lhs, suffix, hasVerb, withIndefiniteArticle, source);
+        if (head == null) return navigationCharacteristicCheck(subject, lhs, suffix, hasVerb, withIndefiniteArticle, source);
         // The greedy onderwerp parse absorbs a multi-word kenmerk's leading words into the operand
         // ("de Meting bereikbaar per" + operator "trein"), so the kenmerk is that absorbed kop plus
         // the operator's bareName; for "hij"/a bare subject the kop is empty and the name is the bareName.
@@ -6975,7 +6975,21 @@ final class RuleChecker {
      *  the to-many test and the emitted reference field are the canonical one. With {@code withIndefiniteArticle} the verb selects
      *  the soort, exactly as the subject's own EEN-form ({@link #characteristicCheckPredicate}): "is een &lt;k&gt;" binds a
      *  §8.1.8.3 ZELFSTANDIG kenmerk of the navigated type, "heeft een &lt;k&gt;" a §8.1.8.2 BEZITTELIJK one — neither
-     *  binds under the other verb, and a navigated role membership via "een" stays out of scope (null). */
+     *  binds under the other verb, and a navigated role membership via "een" stays out of scope (null).
+     *  The navigation starts at {@code context}, the subject the check is read on: the node carries a role name only,
+     *  and that name binds from the context's subject, so a written onderwerp that is not it ("de standpost van de
+     *  Jutter" in a rule on Vondst) would read another object's role, or none, and is refused at its line. */
+    private Condition navigationCharacteristicCheck(ObjectType context, Expr lhs, String suffix, boolean hasVerb,
+                                                    boolean withIndefiniteArticle, Source source) {
+        Condition c = navigationCharacteristicCheck(lhs, suffix, hasVerb, withIndefiniteArticle, source);
+        if (!(c instanceof Condition.CharacteristicCheck) || context.chain().contains(((Expr.AttributeReference) lhs).objectType()))
+            return c;
+        model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-440",
+                params("source", source, "written", ((Expr.AttributeReference) lhs).objectType().name, "subject", context.name),
+                writtenLine(source == null ? 0 : source.line())));
+        return new Condition.Unresolved(source, null);   // the ERROR above is this marker's diagnosis
+    }
+
     private Condition navigationCharacteristicCheck(Expr lhs, String suffix, boolean hasVerb, boolean withIndefiniteArticle, Source source) {
         if (!(lhs instanceof Expr.AttributeReference a) || a.objectType() == null) return null;
         ObjectType subject = a.objectType();                                       // the onderwerp the navigation is from

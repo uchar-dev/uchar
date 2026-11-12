@@ -72,6 +72,9 @@ class MarkerReasonPinTest {
                     + "regelonderwerp, een tussenliggend element, 'zelf' na een andere naam), en de RGS-358-ERROR over "
                     + "een rolcheck van het regelonderwerp in een deelselectie (2026-10-23), zijn de diagnose van deze "
                     + "markers"),
+            new Site("RuleChecker.java", "navigationCharacteristicCheck", 1,
+                    "de RGS-440-ERROR die de regel erboven opwerpt (een genavigeerde kenmerkcontrole vanaf een ander "
+                    + "onderwerp dan het onderwerp waarop zij gelezen wordt) IS de diagnose van deze marker"),
             new Site("RuleChecker.java", "quantifierCharacteristicCheck", 1,
                     "de RGS-350- of RGS-358-ERROR die refusesQuantifiedRange opwerpt (een kwantor over het "
                     + "regelonderwerp in een deelselectie; 2026-10-23) IS de diagnose van deze marker"),

@@ -66,6 +66,8 @@ class MarkerReportTest {
                 + "geen document");
         CLASSIFICATION.put("RuleChecker.java#identityCheck", "ERROR (RGS-358, een identiteitstoets die het IR niet "
                 + "kan schrijven): geen document");
+        CLASSIFICATION.put("RuleChecker.java#navigationCharacteristicCheck", "ERROR (RGS-440, een genavigeerde "
+                + "kenmerkcontrole vanaf een ander onderwerp dan het onderwerp waarop zij gelezen wordt): geen document");
         CLASSIFICATION.put("RuleChecker.java#quantifierCharacteristicCheck", "ERROR (RGS-350 of RGS-358, een kwantor "
                 + "over het regelonderwerp in een deelselectie): geen document");
         CLASSIFICATION.put("RuleChecker.java#characteristicCheckPredicateBare", "ERROR (RGS-350 of RGS-358, een "
