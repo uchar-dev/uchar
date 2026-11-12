@@ -513,6 +513,23 @@ class VariablePartLoweringTest {
                 + "(WF-076)", m.errors().get(0).message());
     }
 
+    /** A characteristic read as a value has no type either (WF-080): under a Let it is refused at the read, where
+     *  before only the emitter's catch refused the model, at line 0 (RGS-394). */
+    @Test void a_characteristic_read_as_a_value_in_a_variable_is_refused_at_the_read() {
+        RegelSpraakModel m = Resolver.resolve(lichterloon("het grondloon maal 2",
+                "het spoedtal van de Lichterbeurt maal de beladen van de Lichterbeurt")
+                .replace("    het spoedtal Numeriek (geheel getal);\n",
+                        "    het spoedtal Numeriek (geheel getal);\n    is beladen kenmerk (bijvoeglijk);\n"));
+        assertEquals(1, m.diagnostics.size(), () -> "verwachtte precies één diagnose, kreeg: " + m.diagnostics);
+        RegelSpraakModel.Diagnostic d = m.diagnostics.get(0);
+        assertEquals("RGS-396", d.code(), d::toString);
+        assertEquals(10, d.line(), d::toString);
+        assertEquals("lezing 'de beladen van de Lichterbeurt': 'beladen' is een kenmerk van Lichterbeurt en geen "
+                + "attribuut, en een kenmerk is niet welgevormd op een plaats voor een waarde (WF-080); in een regel met "
+                + "'Daarbij geldt' krijgt de waarde zo geen type, en zonder type heeft zij geen document in uchar-ir-v1 "
+                + "(WF-076)", d.message());
+    }
+
     /** A variable read only in the condition is substituted there, and no Let is written: the read stays the
      *  verifier's, as it does in a rule without a variable (grammar/DIVERGENCES.md, "An undeclared attribute read"). */
     @Test void an_undeclared_read_in_a_variable_of_the_condition_stays_the_verifiers() {

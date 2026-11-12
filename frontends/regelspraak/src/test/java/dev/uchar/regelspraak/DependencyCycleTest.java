@@ -267,19 +267,26 @@ class DependencyCycleTest {
     /** The cycle check judges the document the emitter writes. A model every check lets through and the emitter still
      *  refuses has no such document: the refusal is the model's ERROR (RGS-394), in the emitter's sentence, so neither
      *  {@code --ir} (where it ended in a stack trace) nor the editor route (where the model stood clean) passes it.
-     *  Here an own read of a characteristic as a value leaves a variable without a type. */
+     *  Here a sum over an attribute the element type does not declare, a marker whose WARNING its own route raised,
+     *  leaves a variable without a type. */
     @Test void a_model_the_emitter_refuses_carries_the_refusal() {
         RegelSpraakModel m = Resolver.resolve("""
-            Objecttype de Lichterbeurt (mv: Lichterbeurten)
-                het lichterloon Numeriek (geheel getal);
-                het spoedtal Numeriek (geheel getal);
-                is beladen kenmerk (bijvoeglijk);
+            Objecttype de Haven (mv: Havens)
+                het havengeld Numeriek (geheel getal);
 
-            Regel lichterloon
+            Objecttype de Schuit (mv: Schuiten)
+                de lengte Numeriek (geheel getal);
+
+            Feittype ligging
+                de thuishaven Haven
+                de ligger (mv: liggers) Schuit
+            Eén thuishaven heeft meerdere liggers
+
+            Regel havengeld
                 geldig altijd
-                    Het lichterloon van een Lichterbeurt moet berekend worden als het grondloon maal 2.
+                    Het havengeld van een Haven moet berekend worden als het totaal maal 2.
                     Daarbij geldt:
-                        het grondloon is het spoedtal van de Lichterbeurt maal de beladen van de Lichterbeurt.
+                        het totaal is de som van de breedtes van alle liggers van de Haven.
             """);
         List<Diagnostic> faults = faults(m);
         assertEquals(1, faults.size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);

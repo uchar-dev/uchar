@@ -1145,12 +1145,12 @@ final class RuleChecker {
 
     /**
      * A rule with a "Daarbij geldt" part writes its value under a Let, and a Let carries the type of its body (WF-076)
-     * at a position where the wire has no spelling for a value without a type. Two reads have no type, and neither has
-     * the value they stand in: an own read of a name its subject does not declare, and a name that resolved to nothing
-     * (a marker, whose WARNING says it stays on the wire). Inside a Let whose type is unknown — in a variable or in
-     * the value that reads one — such a read is refused where it stands; the first in WF-034's words. Outside a Let
-     * the first stays the verifier's (grammar/DIVERGENCES.md, "An undeclared attribute read") and the second a marker
-     * on the wire. A read whose name took in a role or a type name is {@link #memberError}'s, one that took in a word
+     * at a position where the wire has no spelling for a value without a type. Three reads have no type, and neither
+     * has the value they stand in: an own read of a name its subject does not declare, an own read of a characteristic
+     * as a value, and a name that resolved to nothing (a marker, whose WARNING says it stays on the wire). Inside a Let
+     * whose type is unknown — in a variable or in the value that reads one — such a read is refused where it stands;
+     * the first in WF-034's words, the second in WF-080's. Outside a Let the first two stay the verifier's
+     * (grammar/DIVERGENCES.md, "An undeclared attribute read") and the third a marker on the wire. A read whose name took in a role or a type name is {@link #memberError}'s, one that took in a word
      * before 'van' {@link #checkSwallowedNames}'s; a marker without a reason has its diagnosis from the route that
      * built it; a Let left without a type for another reason stays the emitter's refusal.
      */
@@ -1161,6 +1161,9 @@ final class RuleChecker {
                 Expr.contains(l, y -> {
                     Object reason = y instanceof Expr.AttributeReference a && undeclaredOwnRead(a)
                             ? Msg.frontend("RGS-396.undeclared-attribute", "attribute", a.attribute(), "objectType", a.objectType().name)
+                            : y instanceof Expr.AttributeReference a && characteristicOwnRead(a)
+                            ? Msg.frontend("RGS-396.characteristic-as-value", "characteristic", a.attribute(),
+                                    "objectType", a.objectType().name)
                             : y instanceof Expr.Unresolved u ? u.reason() : null;
                     Source source = y instanceof Expr.AttributeReference a ? a.source()
                             : y instanceof Expr.Unresolved u ? u.source() : null;
@@ -1179,6 +1182,14 @@ final class RuleChecker {
         return !a.set() && a.objectType() != null && a.attribute() != null && !a.objectType().hasMember(a.attribute())
                 && a.navigationRole() == null && (a.navigationPath() == null || a.navigationPath().isEmpty())
                 && !VAN.matcher(a.attribute()).find();
+    }
+
+    /** A read on its own subject, through no role, of a name that type declares as a characteristic and not as an
+     *  attribute: a characteristic has no value to read (WF-080). */
+    private static boolean characteristicOwnRead(Expr.AttributeReference a) {
+        return !a.set() && a.objectType() != null && a.attribute() != null && a.objectType().attribute(a.attribute()) == null
+                && a.objectType().characteristicName(a.attribute()) != null
+                && a.navigationRole() == null && (a.navigationPath() == null || a.navigationPath().isEmpty());
     }
 
     /** A constant the wire has no node for: the bound day of a day-kind definition is a BoundDay and the two session

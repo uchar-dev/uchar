@@ -744,4 +744,5 @@ RGS-395	regel '{name}': de versies zijn niet van één soort ({versions}); de ve
 RGS-395.no-form	geen vorm
 RGS-395.version	versie {version}: {kind}
 RGS-396	lezing '{expression}': {reason}; in een regel met 'Daarbij geldt' krijgt de waarde zo geen type, en zonder type heeft zij geen document in uchar-ir-v1 (WF-076)
+RGS-396.characteristic-as-value	'{characteristic}' is een kenmerk van {objectType} en geen attribuut, en een kenmerk is niet welgevormd op een plaats voor een waarde (WF-080)
 RGS-396.undeclared-attribute	'{attribute}' is geen gedeclareerd attribuut van {objectType} (WF-034)

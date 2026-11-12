@@ -4075,7 +4075,8 @@ declares, and an own read of a characteristic as a value. Inside a rule with
 a `Daarbij geldt` part an own read of an undeclared name of the first kind is
 refused all the same (RGS-396, `VariablePartLoweringTest`): it has no type, and
 neither has the Let the rule's value is written under, which the wire carries
-with its body's type (WF-076); so is a name that resolved to nothing there. The
+with its body's type (WF-076); so are an own read of a characteristic as a value
+and a name that resolved to nothing there. The
 casus of the parity zone reads undeclared names of the first kind, which only its replay
 slices declare, and an ERROR would stop its emission; a WARNING would change
 its pinned document. When the parity zone leaves the repository, the refusal
