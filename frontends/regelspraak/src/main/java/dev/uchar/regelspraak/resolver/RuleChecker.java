@@ -3613,7 +3613,6 @@ final class RuleChecker {
             checkSetRead(condition, builder.subject());
             resultClause(name, versionName, rsr.resultaatDeel(), rsr.voorwaardeDeel(), condition, validity);
             if (before != null) kinds.put(i + 1, grownFormList(before));
-            conditions(rsr);   // exhaustive condition type-check (§5), unchanged
             builder.narrowingHosts(true);
         }
         checkVersionKinds(name, kinds, line);
@@ -4864,8 +4863,8 @@ final class RuleChecker {
         } finally {
             targetRole = null;
             builder.setSubject(anchor);                       // restore: the anker is the iterated subject
-            // This second build is SPECULATIVE — the anker build and the separate conditions() type-check own
-            // the diagnostics; drop any this pass appended so a flawed guard is never reported twice.
+            // This second build is SPECULATIVE — the anker build owns the diagnostics, its type checks included;
+            // drop any this pass appended so a flawed guard is never reported twice.
             model.diagnostics.subList(diagSnapshot, model.diagnostics.size()).clear();
         }
         if (targetV instanceof Condition.CharacteristicCheck k && k.navigation() == null && k.owner() == null)
@@ -5315,19 +5314,8 @@ final class RuleChecker {
         model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-198", params("label", label), line));
     }
 
-    /** The enum label when the WHOLE expressie is a single quoted enumeratiewaarde, else null. An
-     *  ENUM_LITERAL is one lexer token, so getText() preserves its interior spaces — no need for the
-     *  costlier src() stream reconstruction that runs on every comparison operand. */
-    private static String enumLabelOf(ExpressieContext e) {
-        return e == null ? null : Literals.enumLabel(e.getText().trim());
-    }
-
     // ---- §13.4.13/.14/.15 condition IR (structure for the transpiler "when" side) ----
-    // Built alongside (not instead of) the exhaustive type-check walk below, so it
-    // adds structure without changing any diagnostic. The kenmerk/objecttype membership
-    // tests and period comparisons this comment once listed as unstructured have since
-    // gained their own nodes (Condition.CharacteristicCheck, RoleMembership/FarRoleMembership,
-    // Periode); what is still unstructured becomes Unresolved.
+    // Each operator is type-checked as it is built (typeOperator); what is still unstructured becomes Unresolved.
     private Condition buildCondition(VoorwaardeDeelContext v) {
         if (v.toplevelSamengesteldeVoorwaarde() != null) return buildCompound(
                 v.toplevelSamengesteldeVoorwaarde().voorwaardeKwantificatie(),
@@ -5981,6 +5969,8 @@ final class RuleChecker {
 
     private Condition conditionFromOperatorBare(Expr lhs, Operator op, Source source) {
         if (op.identity() != null) return identityCheck(lhs, op.identity(), source);
+        Expr right = op.compares() && op.right() != null ? builder.build(op.right()) : null;
+        typeOperator(lhs, op, right, source.line());
         Condition.WholePeriod period = wholePeriod(op.period());   // §8.2 whole-period check
         // A dangling absorbed "niet" silently INVERTS a comparison / leeg-gevuld (the bare-attr resolution dropped the
         // negator) -> marker it. The kenmerkcheck DE-negates it (bindCharacteristicCheck) and elfproef/numeriek RECOVER it
@@ -5988,7 +5978,7 @@ final class RuleChecker {
         if (absorbedNegator(lhs) && (op.compares() || op.empty() || op.filled()))
             return new Condition.Unresolved(source, REASON_NOT_ABSORBED);
         if (op.compares() && op.right() != null)
-            return ExpressionBuilder.comparison(toOperator(op.comparison()), lhs, builder.build(op.right()), period, source);
+            return ExpressionBuilder.comparison(toOperator(op.comparison()), lhs, right, period, source);
         if (op.empty())  return new Condition.Predicate(Condition.PredicateKind.LEEG, lhs, period, source);
         if (op.filled()) return new Condition.Predicate(Condition.PredicateKind.GEVULD, lhs, period, source);
         if (op.elevenTest()) return new Condition.Unresolved(source, REASON_ELEVEN_TEST);
@@ -7009,60 +6999,20 @@ final class RuleChecker {
     }
 
     // ---- §5 condition type-checking (comparisons + predicates) ----
-    private void conditions(ParseTree t) {
-        if (t == null) return;
-        // a subselection is read per element: its conditions are typed with the subject its filter was built with
-        if (t instanceof PredicaatContext p) {
-            builder.inFilterScope(p, () -> { for (int i = 0; i < p.getChildCount(); i++) conditions(p.getChild(i)); });
-            return;
-        }
-        if (t instanceof ToplevelElementaireVoorwaardeContext c) checkTopCondition(c);
-        else if (t instanceof ElementaireVoorwaardeContext c) checkElemCondition(c);
-        else if (t instanceof EnkelvoudigeConsistentieRegelContext c) checkConsistencyCriterion(c);
-        for (int i = 0; i < t.getChildCount(); i++) conditions(t.getChild(i));
-    }
 
-    /** A §13.4.8 single criterion ("&lt;expressie&gt; moet &lt;operator&gt;") is the same
-     *  predicate over the same onderwerpexpressie as the matching §5 voorwaarde (§8.3.1),
-     *  so its operands get the identical typeringen check — the lifted criterion
-     *  transpiles, which would otherwise let an ill-typed comparison through silently. */
-    private void checkConsistencyCriterion(EnkelvoudigeConsistentieRegelContext c) {
-        if (c.expressie() == null || c.toplevelOperator() == null) return;
-        checkOperator(infer(c.expressie()), Operator.of(c.toplevelOperator()), c.getStart().getLine(),
-                bareNumberLiteral(c.expressie()), enumLabelOf(c.expressie()));
-    }
-
-    // §8.3.1/§13.4.15: a TOPLEVEL voorwaarde (after 'indien'/'dat'/'gedurende de tijd dat') takes ONLY the
-    // verb-trailing (vragende) toplevelOperator — the grammar does not admit the verb-leading register here
-    // (that is reserved for samengestelde bullets, checkElemCondition, which keeps both families). So only the
-    // toplevelOperator needs checking; an ill-typed predicate is still caught by checkOperator.
-    private void checkTopCondition(ToplevelElementaireVoorwaardeContext c) {
-        if (c.expressie() == null) return;
-        Datatype lhs = infer(c.expressie());
-        int line = c.getStart().getLine();
-        checkOperator(lhs, Operator.of(c.toplevelOperator()), line, bareNumberLiteral(c.expressie()), enumLabelOf(c.expressie()));
-    }
-
-    private void checkElemCondition(ElementaireVoorwaardeContext c) {
-        if (c.expressie() == null) return;
-        Datatype lhs = infer(c.expressie());
-        int line = c.getStart().getLine();
-        boolean lhsLit = bareNumberLiteral(c.expressie());
-        String lhsEnum = enumLabelOf(c.expressie());
-        checkOperator(lhs, Operator.of(c.nonToplevelOperator()), line, lhsLit, lhsEnum);
-        checkOperator(lhs, Operator.of(c.toplevelOperator()), line, lhsLit, lhsEnum);
-    }
-
-    /** Type-check an operator of either register (vergelijking, elfproef, numeriek-met-exact). */
-    private void checkOperator(Datatype lhs, Operator op, int line, boolean lhsLit, String lhsEnum) {
-        if (op == null) return;
-        if (op.compares() && op.right() != null)
-            reportCompare(op.comparison(), lhs, infer(op.right()), lhsLit, bareNumberLiteral(op.right()), line,
-                    lhsEnum, enumLabelOf(op.right()));
+    /** Type-check the operator {@code op} as built, over its built operands and before a comparison offers each
+     *  operand the other's datatype as its enumeratiewaarde context: every operator a condition, a nested condition, a
+     *  subselection or a consistency criterion writes passes {@link #conditionFromOperatorBare}, once per build that
+     *  keeps its diagnostics. */
+    private void typeOperator(Expr lhs, Operator op, Expr right, int line) {
+        if (right != null)
+            reportCompare(op.comparison(), lhs.type(), right.type(), ExpressionBuilder.unitlessNumberLiteral(lhs),
+                    ExpressionBuilder.unitlessNumberLiteral(right), line, ExpressionBuilder.valueEnumLabel(lhs),
+                    ExpressionBuilder.valueEnumLabel(right));
         else if (op.elevenTest())
-            reportPredicate(Typing.UnaryPred.ELFPROEF, lhs, line);
+            reportPredicate(Typing.UnaryPred.ELFPROEF, lhs.type(), line);
         else if (op.exactDigits())
-            reportPredicate(Typing.UnaryPred.NUMERIEK_MET_EXACT, lhs, line);
+            reportPredicate(Typing.UnaryPred.NUMERIEK_MET_EXACT, lhs.type(), line);
     }
 
     private void reportCompare(Typing.CmpOp op, Datatype l, Datatype r, boolean lLit, boolean rLit, int line,
@@ -7084,12 +7034,6 @@ final class RuleChecker {
         else if (lLit && r.isNumber() && r.unitOf() != null) l = withUnit(l, r.unitOf());
         var res = Typing.compare(op, l, r, lLit, rLit);   // Onbekend operands -> ok, so no false positive
         if (!res.ok()) model.diagnostics.add(res.failure().frame("condition").at(Severity.ERROR, line));
-    }
-
-    /** A bare numeric literal ("0", "18", "3,5") with NO trailing eenheid — getText collapses whitespace, so a
-     *  unit-qualified literal ("18 jr") becomes "18jr" and is correctly excluded. Side-effect-free (no re-bouw). */
-    private static boolean bareNumberLiteral(ExpressieContext e) {
-        return e != null && e.getText().matches("-?\\d+([.,]\\d+)?");
     }
 
     /** Re-state a numeriek datatype with {@code unit} (for promoting a dimensionless literal to a sibling's unit). */
@@ -7125,19 +7069,5 @@ final class RuleChecker {
         if (ee)  return of ? Typing.CmpOp.EERDER_OF_GELIJK  : Typing.CmpOp.EERDER;
         if (ge)  return Typing.CmpOp.GELIJK;
         return null;
-    }
-
-    // ---- expression datatype, via the resolved IR ----
-    // The condition checks need an operand's datatype; that is the type the
-    // ExpressionBuilder computes for the resolved Expr, so inference and IR can never
-    // diverge — they are the same code path.
-    /** The type check builds an operand the rule's own resolution already built, so a diagnostic this build repeats
-     *  verbatim is that build's and is reported once; one only this build raises is kept, never swallowed. */
-    private Datatype infer(ExpressieContext e) {
-        int before = model.diagnostics.size();
-        Datatype type = builder.build(e).type();
-        for (int i = model.diagnostics.size() - 1; i >= before; i--)
-            if (model.diagnostics.subList(0, before).contains(model.diagnostics.get(i))) model.diagnostics.remove(i);
-        return type;
     }
 }
