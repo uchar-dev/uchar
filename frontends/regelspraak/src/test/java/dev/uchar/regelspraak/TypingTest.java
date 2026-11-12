@@ -57,8 +57,20 @@ class TypingTest {
         assertFalse(Typing.compare(CmpOp.ONGELIJK, dateTime(), date()).ok());
         assertTrue(Typing.compare(CmpOp.GELIJK, date(), date()).ok());
         assertTrue(Typing.compare(CmpOp.GELIJK, dateTime(), dateTime()).ok());
-        // the ordering comparisons stay precision-free (Tabellen 45-52 state no restriction)
-        assertTrue(Typing.compare(CmpOp.EERDER, date(), dateTime()).ok());
+    }
+    /** A day and a millisecond share no order (WF-036): the frontend passed "zijn meldingsdatum later is dan zijn
+     *  meldtijdstip" and the verifier refused the document. */
+    @Test void ordering_mixed_time_precision_error() {
+        for (CmpOp op : new CmpOp[] {CmpOp.EERDER, CmpOp.EERDER_OF_GELIJK, CmpOp.LATER, CmpOp.LATER_OF_GELIJK}) {
+            var r = Typing.compare(op, date(), dateTime());
+            assertFalse(r.ok(), op::toString);
+            assertEquals("RGS-430", r.failure().code());
+            assertEquals("vergelijking: een datumordening tussen twee datumprecisies (dag en milliseconde), die geen "
+                    + "ordening delen (WF-036)", r.error());
+            assertFalse(Typing.compare(op, dateTime(), date()).ok(), op::toString);
+            assertTrue(Typing.compare(op, date(), date()).ok(), op::toString);
+            assertTrue(Typing.compare(op, dateTime(), dateTime()).ok(), op::toString);
+        }
     }
     @Test void assignment_mixed_time_precision_error() {
         assertNotNull(Typing.assignment(date(), dateTime()));

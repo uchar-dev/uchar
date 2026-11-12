@@ -774,12 +774,13 @@ RGS-425	verdeling '{name}': {role} '{attribute}' is geen gedeclareerd attribuut 
 RGS-426	verdeling '{name}' schrijft '{attribute}' van {objectType}, dat de verdeling '{other}' al schrijft; ten hoogste één verdeling schrijft een doel, ook langs een typeketen (WF-026)
 RGS-427	'{characteristic}' is geen gedeclareerd kenmerk van {objectType}
 RGS-428	lezing '{expression}': '{attribute}' is geen attribuut en geen kenmerk van {objectType} (WF-034)
+RGS-430	een datumordening tussen twee datumprecisies (dag en milliseconde), die geen ordening delen (WF-036)
 RGS-431	{owner}: '{name}' staat twee keer in de declaratie (bronregel {earlierLine}: '{earlierName}'); een naam komt in zijn lijst één keer voor, hoofdletters niet meegeteld
 RGS-431.attribute	objecttype '{owner}': het attribuut '{name}' is in deze declaratie al gedeclareerd als '{earlierName}' (bronregel {earlierLine}); een attribuutnaam komt in een objecttype één keer voor, hoofdletters niet meegeteld (WF-002)
 RGS-431.characteristic	objecttype '{owner}': het kenmerk '{name}' is in deze declaratie al gedeclareerd als '{earlierName}' (bronregel {earlierLine}); een kenmerknaam komt in een objecttype één keer voor, hoofdletters niet meegeteld (WF-002)
+RGS-431.label	dimensie '{owner}': het label '{name}' staat er al als '{earlierName}' (bronregel {earlierLine}); een label komt in een dimensie één keer voor, hoofdletters niet meegeteld (WF-014)
 RGS-431.role	feittype '{owner}': de rol '{name}' is al gedeclareerd als '{earlierName}' (bronregel {earlierLine}); een rolnaam komt in een feittype één keer voor, hoofdletters niet meegeteld (WF-012)
 RGS-431.value	domein '{owner}': de waarde '{name}' staat er al als '{earlierName}' (bronregel {earlierLine}); een waarde komt in een enumeratie één keer voor, hoofdletters niet meegeteld (WF-006)
-RGS-431.label	dimensie '{owner}': het label '{name}' staat er al als '{earlierName}' (bronregel {earlierLine}); een label komt in een dimensie één keer voor, hoofdletters niet meegeteld (WF-014)
 RGS-432	feittype '{factType}': het deel '{segment}' van de kardinaliteitsregel noemt geen van de rollen {roles}, dus 'meerdere' hoort bij geen rol en de relatie zou als één-op-één gelden; een deel begint met de naam van zijn rol (§13.3.9.1)
 RGS-440	kenmerkcontrole '{source}' volgt een rol vanaf {written}, maar zij wordt gelezen op {subject}: een genavigeerde kenmerkcontrole volgt één rol vanaf het onderwerp waarop zij gelezen wordt
 RGS-441	kenmerkcontrole '{source}' volgt de rol '{role}' vanaf {subject}, maar die naam wijst vanaf {subject} geen unieke rol aan

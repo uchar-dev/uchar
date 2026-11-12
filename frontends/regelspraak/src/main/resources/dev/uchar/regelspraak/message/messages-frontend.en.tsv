@@ -774,12 +774,13 @@ RGS-425	allocation '{name}': {role} '{attribute}' is not a declared attribute of
 RGS-426	allocation '{name}' writes '{attribute}' of {objectType}, which the allocation '{other}' writes already; at most one allocation writes a target, along a type chain as well (WF-026)
 RGS-427	'{characteristic}' is not a declared characteristic of {objectType}
 RGS-428	read '{expression}': '{attribute}' is neither an attribute nor a characteristic of {objectType} (WF-034)
+RGS-430	a date ordering across two date precisions (day and millisecond), which share no order (WF-036)
 RGS-431	{owner}: '{name}' appears twice in the declaration (source line {earlierLine}: '{earlierName}'); a name appears once in its list, case not counted
 RGS-431.attribute	object type '{owner}': the attribute '{name}' is already declared in this declaration as '{earlierName}' (source line {earlierLine}); an attribute name appears once in an object type, case not counted (WF-002)
 RGS-431.characteristic	object type '{owner}': the characteristic '{name}' is already declared in this declaration as '{earlierName}' (source line {earlierLine}); a characteristic name appears once in an object type, case not counted (WF-002)
+RGS-431.label	dimension '{owner}': the label '{name}' is already there as '{earlierName}' (source line {earlierLine}); a label appears once in a dimension, case not counted (WF-014)
 RGS-431.role	fact type '{owner}': the role '{name}' is already declared as '{earlierName}' (source line {earlierLine}); a role name appears once in a fact type, case not counted (WF-012)
 RGS-431.value	domain '{owner}': the value '{name}' is already there as '{earlierName}' (source line {earlierLine}); a value appears once in an enumeration, case not counted (WF-006)
-RGS-431.label	dimension '{owner}': the label '{name}' is already there as '{earlierName}' (source line {earlierLine}); a label appears once in a dimension, case not counted (WF-014)
 RGS-432	fact type '{factType}': the part '{segment}' of the cardinality line names none of the roles {roles}, so 'meerdere' belongs to no role and the relation would hold as one-to-one; a part begins with the name of its role (§13.3.9.1)
 RGS-440	characteristic check '{source}' follows a role from {written}, but it is read on {subject}: a navigated characteristic check follows one role from the subject it is read on
 RGS-441	characteristic check '{source}' follows the role '{role}' from {subject}, but from {subject} that name binds no unique role

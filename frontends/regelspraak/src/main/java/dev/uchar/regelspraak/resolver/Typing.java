@@ -197,13 +197,14 @@ public final class Typing {
                         new VerifierSentence("RGS-326", params()));
                 yield u != null ? Result.error(u) : Result.ok(new Datatype.BooleanType());
             }
-            // The ordering comparisons deliberately do NOT require equal tijd-precisie: Tabellen 45-52 list
-            // only "Datum-tijd" operands with no precision restriction (unlike tijdsduur/eerste/laatste,
-            // whose prose demands "dezelfde tijd-precisie") — the asymmetry is the spec's, kept as-is.
+            // A day and a millisecond share no order: the verifier refuses the pair (WF-036), so the frontend does,
+            // as it refuses the equality and the assignment of the two precisions.
             case EERDER, EERDER_OF_GELIJK, LATER, LATER_OF_GELIJK -> {
                 if (!l.isDate() || !r.isDate())
                     yield Result.error(perSide("RGS-327", "vergelijking", l, r,
                             Datatype::isDate).frame("comparison"));
+                if (otherPrecision(l, r))
+                    yield Result.error(new Coded("RGS-430", params()).frame("comparison"));
                 yield Result.ok(new Datatype.BooleanType());
             }
             case GELIJK, ONGELIJK -> {
@@ -464,7 +465,7 @@ public final class Typing {
         return a.getClass().equals(b.getClass());
     }
 
-    /** Mixed tijd-precisie (Datum-in-dagen vs Datum-en-tijd) in gelijk/ongelijk/toekenning — a CHOSEN
+    /** Mixed tijd-precisie (Datum-in-dagen vs Datum-en-tijd) in gelijk/ongelijk/toekenning and the orderings — a CHOSEN
      *  strictness, not a table fact: Tabel 36/61 rij 4 list only "Datum-tijd" with no precision split,
      *  but a mixed toekenning generates a type-broken setter (a LocalDateTime into a LocalDate property)
      *  and a mixed gelijk compares values that can never be equal — both silently-dead outcomes. The
