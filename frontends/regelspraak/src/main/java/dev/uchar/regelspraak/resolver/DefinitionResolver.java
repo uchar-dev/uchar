@@ -725,7 +725,17 @@ public final class DefinitionResolver {
      *  calendar's time units and a currency sign are units without a declaration, as in "5 dagen" and "5 €": a sign is no
      *  name of a value, so a slash before it reads as no division. Null where the value has no unit. */
     static Unit unitOf(RegelSpraakModel model, GetalWaardeContext g) {
-        if (g.perEenheid() == null) return unitOf(model, g.eenheidExpressie());
+        if (g.PERCENT_SIGN() != null) {
+            // "12 %/jr": the percentage unit times the inverse unit after the slash, the "%/jr" a declaration names
+            if (g.perEenheid() == null) return Datatype.Percentage.PERCENT;
+            Unit per = perUnitOf(model, g);
+            return per == null ? null : Unit.times(Datatype.Percentage.PERCENT, per);
+        }
+        return g.perEenheid() == null ? unitOf(model, g.eenheidExpressie()) : perUnitOf(model, g);
+    }
+
+    /** The unit of "2/dg": the powers after the slash with their exponents negated; null after an ERROR. */
+    private static Unit perUnitOf(RegelSpraakModel model, GetalWaardeContext g) {
         List<EenheidMachtContext> powers = g.perEenheid().eenheidMacht();
         List<EenheidOperatorContext> operators = g.perEenheid().eenheidOperator();
         // what the parser's recovery conjured has no name, and the syntax error is already reported

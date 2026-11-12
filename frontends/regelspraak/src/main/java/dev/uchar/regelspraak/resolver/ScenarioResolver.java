@@ -1580,8 +1580,13 @@ public final class ScenarioResolver {
         boolean wholeNumber = dec == 0;
         Datatype raw;
         Unit sourceUnit = null;
-        if (g.PERCENT_SIGN() != null) raw = new Datatype.Percentage(wholeNumber, dec);
-        else {
+        if (g.PERCENT_SIGN() != null && g.perEenheid() == null) raw = new Datatype.Percentage(wholeNumber, dec);
+        else if (g.PERCENT_SIGN() != null) {
+            // "12 %/jr": a rate restates into the declared one as a number with a unit does
+            sourceUnit = DefinitionResolver.unitOf(model, g);
+            if (sourceUnit == null) return null;
+            raw = new Datatype.Percentage(wholeNumber, dec, sourceUnit);
+        } else {
             sourceUnit = DefinitionResolver.unitOf(model, g);
             raw = new Datatype.Numeric(wholeNumber, dec, Datatype.Sign.ONBEPAALD, sourceUnit);
         }

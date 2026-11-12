@@ -4410,7 +4410,8 @@ Measured for the owner's decision of 2026-11-01:
 | `2/dg`, `1/dg`, `2,5/dg` | syntax error | 2, 1, 2,5 in the unit `1/dg` |
 | `2/foo` | syntax error | RGS-362, which names `foo` |
 | `2/dg^0`, `2/dg^1/2` | syntax error | RGS-361 |
-| `2/`, `2/0`, `1/2/3`, `2/%`, `2 %/dg`, `2 * 3`, `2·3` | syntax error | syntax error |
+| `2/`, `2/0`, `1/2/3`, `2/%`, `2 * 3`, `2·3` | syntax error | syntax error |
+| `12 %/jr` | syntax error | 12 in the unit `%/jr`, a percentage per unit as `Percentage … met eenheid %/jr` declares it |
 | `2·m`, `2*m` | syntax error | RGS-363, which says to write `2 m` |
 | `2/dg·m` | syntax error | RGS-361 |
 | `5 €·m`, `5 m*€` | syntax error | 5 in the unit `€·m` |
@@ -4421,6 +4422,10 @@ the older reading of a name no system declares, a bare unit; with a slash direct
 otherwise read as a division that does not happen. A currency sign is no name of a value, so `2/$` reads as no division
 and needs no declaration, as `2/€` and `5 €` do. In
 `met eenheid 2/dg` the same text is RGS-361: a declaration has no value to carry the 2.
+
+After a percent sign the same slash and unit make a percentage per unit: `12 %/jr` is a Percentage in the unit `%/jr`,
+so a scenario can give a value to an attribute or parameter declared `met eenheid %/jr`, and `1 %/mnd` restates into
+`%/jr` as `30 €/mnd` restates into `€/jr` (`ScenarioLoweringTest`).
 
 ## Semantic tokens — a kind and a position per piece of source text, beside the IR
 

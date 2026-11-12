@@ -1224,7 +1224,7 @@ aggregerenOverBereik        : DE dimensieNaamMeervoud IN LBRACE dimensieWaarde (
 // writes "de Rekendatum" / "het Rekenjaar" with an article; the article is optional.
 rekenConstante : ( DE | HET )? ( REKENDATUM | REKENJAAR ) ;
 
-getalWaarde   : NUMBER ( PERCENT_SIGN | eenheidExpressie | perEenheid )? ; // §13.2.17/.18
+getalWaarde   : NUMBER ( PERCENT_SIGN perEenheid? | eenheidExpressie | perEenheid )? ; // §13.2.17/.18; 12 %/jr: a rate as a percentage declares one
 // 2/dg: the value 2 in the unit 1/dg (grammar/DIVERGENCES.md, "A number over a unit"). No other rule reads a SLASH after
 // a number, and a fraction stays one NUMBER token, so 1/2 is a number and 1/2/dg is 1/2 in the unit 1/dg. 2·m reads here to
 // be refused by name.

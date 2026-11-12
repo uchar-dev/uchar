@@ -1036,7 +1036,12 @@ final class ExpressionBuilder {
             // a '%' or unit suffix belongs in the datatype's eenheid, never in the value string.
             // The NUMBER token is that lexeme; bron keeps the full source snippet ("5 €").
             String lexeme = g.NUMBER().getText();
-            if (g.PERCENT_SIGN() != null) return new Expr.Literal(lexeme, new Datatype.Percentage(wholeNumber, dec), source);
+            if (g.PERCENT_SIGN() != null) {
+                // a rate "12 %/jr" whose unit is no unit has its ERROR, and the document is not written
+                Unit e = DefinitionResolver.unitOf(model, g);
+                return new Expr.Literal(lexeme, e == null ? new Datatype.Percentage(wholeNumber, dec)
+                        : new Datatype.Percentage(wholeNumber, dec, e), source);
+            }
             if (g.eenheidExpressie() != null || g.perEenheid() != null) {
                 // §13.2.17: the literal-with-unit surface admits every factor list ("120 EUR/jr", "2/dg"). Resolve it
                 // through the SAME helper the attribute datatype uses, so a rate literal is not typed by its numerator

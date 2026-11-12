@@ -223,6 +223,33 @@ class ScenarioLoweringTest {
         assertTrue(after.model().errors().stream().anyMatch(e -> e.code().equals("RGS-263")), () -> after.model().errors().toString());
     }
 
+    /** A percentage per unit ({@code %/jr}) is written as the declaration writes it, and restated into the declared
+     *  rate as a number with a unit is: 1 %/mnd is 12 %/jr. */
+    @Test void a_percentage_per_unit_is_a_value() {
+        ScenarioBundle b = dev.uchar.regelspraak.resolver.ScenarioResolver.resolve("""
+            Eenheidsysteem Tijd
+                de maand mnd
+                het jaar jr = 12 mnd
+
+            Parameter de rentevoet : Percentage (getal met 2 decimalen) met eenheid %/jr
+
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                de groei Percentage (getal met 2 decimalen) met eenheid %/jr;
+
+            Scenario rente
+            Gegeven is de volgende situatie:
+            de parameter de rentevoet is 1 %/mnd
+            een Jutter J
+            - de groei is 12 %/jr
+            Met als verwacht resultaat:
+            - de groei van J is 12 %/jr
+            """);
+        String c = CaseEmitter.emit(only(b));
+        assertTrue(c.contains("\"rentevoet\": {\n        \"number\": \"12\"\n      }"), c);
+        assertTrue(c.contains("\"groei\": {\n            \"number\": \"12\"\n          }"), c);
+        assertTrue(c.contains("\"attribute\": \"groei\",\n      \"value\": {\n        \"number\": \"12\"\n      }"), c);
+    }
+
     @Test void the_file_name() {
         assertEquals("een-wrak-twee-jutters", CaseEmitter.slug("Één wrak, twee  jutters!"));
         assertEquals("y-wint", CaseEmitter.slug("y wint"));
