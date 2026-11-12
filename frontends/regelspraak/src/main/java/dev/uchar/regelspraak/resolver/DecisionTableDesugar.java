@@ -90,7 +90,8 @@ public final class DecisionTableDesugar {
                         // §5.7: "is gelijk aan" series uses "of" (a DISJUNCTION, ≤1 value matches); "is ongelijk aan"
                         // uses "en" (§12: a CONJUNCTION of !=, must differ from ALL), which flattens into
                         // the row's AND as separate conditions. Split respects double quotes (a value may contain , / of).
-                        boolean notEqual = head.toLowerCase().contains("ongelijk");
+                        // Only the predicate at the end decides: "ongelijk" may also stand in an attribute name.
+                        boolean notEqual = NOT_EQUAL_HEAD.matcher(head).find();
                         List<String> values = splitSequence(cell, notEqual);
                         if (notEqual && values.size() > 1)
                             for (String w : values) conditions.add(new Condition(head, List.of(w)));
@@ -278,5 +279,8 @@ public final class DecisionTableDesugar {
         String c = cell.replace(".", "").trim();
         return c.equalsIgnoreCase("nvt") || c.isEmpty();
     }
+    /** A condition header whose predicate is the inequality ("… ongelijk is aan"). */
+    private static final java.util.regex.Pattern NOT_EQUAL_HEAD =
+            java.util.regex.Pattern.compile("(?i)(^|\\s)ongelijk(\\s+is)?\\s+aan$");
     private static String cellAt(List<String> row, int i) { return i < row.size() ? row.get(i) : ""; }
 }

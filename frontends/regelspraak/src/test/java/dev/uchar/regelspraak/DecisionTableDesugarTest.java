@@ -260,6 +260,25 @@ class DecisionTableDesugarTest {
                 BulletDepthTest.tree(m.resolvedRules.get(0).condition()));
     }
 
+    /** "ongelijk" inside an attribute name is no inequality: only the end of the header ("… ongelijk is aan")
+     *  makes a cell an AND of ≠, so "1, 2" under "gelijk is aan" stays a disjunction. */
+    @Test void inequality_is_read_from_the_end_of_the_header_only() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Vondst (mv: Vondsten)
+                de ongelijkheidsklasse Numeriek (geheel getal);
+                de vondstpremie Numeriek (geheel getal);
+
+            Beslistabel vondstpremie
+                geldig altijd
+            | | de vondstpremie van een Vondst moet gesteld worden op | indien zijn ongelijkheidsklasse gelijk is aan |
+            |---|---|---|
+            | 1 | 10 | 1, 2 |
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "geen diagnostic verwacht: " + m.diagnostics);
+        assertEquals("atLeast1[zijn ongelijkheidsklasse gelijk is aan 1, zijn ongelijkheidsklasse gelijk is aan 2]",
+                BulletDepthTest.tree(m.resolvedRules.get(0).condition()));
+    }
+
     @Test void desugared_rows_resolve_through_the_existing_pipeline() {
         List<String> headers = List.of("",
                 "de korting van een Klant moet gesteld worden op",
