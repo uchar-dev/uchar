@@ -168,6 +168,10 @@ public final class Typing {
         // elfproef, §4.19 paasdag, min/max allWhole) must not falsely reject whole-number arithmetic.
         // An unbounded "getal" operand (geheel=false, dec=0) correctly yields a non-geheel result.
         // decimalen stays maxDec per Tabellen 4/7/10; §6.1.2 checks read decimalen(), never geheel().
+        // Two percentages give a percentage: on the wire a percentage is a number in '%' (IR-SPEC ch. 2.4), which the
+        // sum keeps, so it goes into a Percentage target and compares with one as its operands do.
+        if (l.isPercentage() && r.isPercentage())
+            return Result.ok(new Datatype.Percentage(wholeOf(l) && wholeOf(r), maxDec(l, r), l.unitOf()));
         return Result.ok(new Datatype.Numeric(wholeOf(l) && wholeOf(r), maxDec(l, r), Datatype.Sign.ONBEPAALD, l.unitOf()));
     }
 

@@ -164,6 +164,37 @@ class TypingTest {
     @Test void percentage_assignment_with_deviating_rate_is_a_unit_error() {
         assertNotNull(Typing.assignment(pct(), pctPerYear()));   // "%" vs "%/jr": a simple unit vs a rate
     }
+    /** A percentage plus or minus a percentage is a percentage: the frontend made it a number in '%' and refused it
+     *  in a Percentage target and beside a percentage in an equality, where the verifier and ref take it. */
+    @Test void percentage_plus_percentage_is_a_percentage() {
+        for (BinOp op : new BinOp[] {BinOp.PLUS, BinOp.MIN, BinOp.VERMINDERD_MET}) {
+            var r = Typing.compute(op, pct(), pct());
+            assertTrue(r.ok(), r::error);
+            assertTrue(r.type().isPercentage(), () -> op + " gaf " + r.type());
+            assertNull(Typing.assignment(pct(), r.type(), false), () -> op.toString());
+            assertTrue(Typing.compare(CmpOp.GELIJK, r.type(), pct()).ok(), () -> op.toString());
+        }
+        assertEquals("%/jr", Typing.compute(BinOp.PLUS, pctPerYear(), pctPerYear()).type().unitOf().rendering());
+    }
+    @Test void a_rule_assigns_the_sum_of_two_percentages_to_a_percentage() {
+        var m = dev.uchar.regelspraak.resolver.Resolver.resolve("""
+            Objecttype de Vondst (mv: Vondsten)
+                het basistarief Percentage (geheel getal);
+                de toeslag Percentage (geheel getal);
+                het tarief Percentage (geheel getal);
+                is verhoogd kenmerk (bijvoeglijk);
+
+            Regel tarief
+                geldig altijd
+                    Het tarief van een Vondst moet berekend worden als zijn basistarief plus zijn toeslag.
+
+            Regel verhoogd
+                geldig altijd
+                    Een Vondst is verhoogd
+                    indien zijn basistarief plus zijn toeslag gelijk is aan zijn tarief.
+            """);
+        assertTrue(m.diagnostics.isEmpty(), m.diagnostics::toString);
+    }
     @Test void percentage_plus_unitless_number_is_a_unit_error() {
         // matrix-aligned (Tabel 32/34 list Percentage with Percentage, never with a unitless plain Numeriek):
         // now that a Percentage carries "%", mixing it with a unitless number flags the §4 unit rule.
