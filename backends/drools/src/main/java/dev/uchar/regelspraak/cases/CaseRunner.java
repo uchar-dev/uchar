@@ -583,8 +583,8 @@ public final class CaseRunner {
         }
     }
 
-    /** A fault kind (RUNTIME-SEMANTICS ch. 5.7b) of a red-path fault with its parameters. */
-    record FaultKind(String code, Map<String, String> params) {}
+    /** A fault kind (RUNTIME-SEMANTICS ch. 5.7b): its EF code and its parameters, as a red case pins them. */
+    public record FaultKind(String code, Map<String, String> params) {}
 
     /** The fault kinds of the red-path fault {@code t}, in the order of its report, each code once; empty where it names
      *  no kind. Classified here, at the catch, by exception type: the backend's own fault exceptions name theirs
@@ -593,8 +593,9 @@ public final class CaseRunner {
      *  same fault unnamed. The production runtime's {@link Breuk.DelingDoorNul} names no kind: a division by a numeric
      *  zero is the §9.5 deposit EF-005 since v1 (RUNTIME-SEMANTICS ch. 1.4 point 4), which this branch makes before the
      *  runtime is called ({@code ComputeHelpers.divided}), so the runtime's fault reaches no fault rule from a
-     *  division of the IR. */
-    static List<FaultKind> faultKinds(Throwable t) {
+     *  division of the IR. Public: a consumer that reports a fault of a session or of the case input names its kind and
+     *  parameters through here, as the red path does. */
+    public static List<FaultKind> faultKinds(Throwable t) {
         List<FaultKind> kinds = new ArrayList<>();
         addKind(kinds, t);
         return kinds;
@@ -1515,7 +1516,7 @@ public final class CaseRunner {
     /** The refusal of a case date lexeme that names no calendar day (RUNTIME-SEMANTICS ch. 5.7b, EF-003). A document
      *  defect, so a hard error and never an {@link Excluded}, as before; a type of its own only so that the red path
      *  can name its kind ({@link #faultKinds}). */
-    static final class CaseDateFault extends IllegalArgumentException {
+    public static final class CaseDateFault extends IllegalArgumentException {
         private static final long serialVersionUID = 1L;
 
         private final String field;
@@ -1527,12 +1528,12 @@ public final class CaseRunner {
             this.lexeme = lexeme;
         }
 
-        String code() {
+        public String code() {
             return "EF-003";
         }
 
         /** The parameters of the kind (ch. 5.7b): the field of the case input and the lexeme it holds. */
-        java.util.Map<String, String> params() {
+        public java.util.Map<String, String> params() {
             return java.util.Map.of("field", field, "lexeme", lexeme);
         }
     }

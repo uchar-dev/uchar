@@ -857,7 +857,7 @@ public final class CaseInput {
      *  wrote itself never collides, since it writes only an empty field and its partner then reads back. */
     /** A cycle in the links of the switch relation of an instance-ordered part (RUNTIME-SEMANTICS ch. 6.2): the fault
      *  kind EF-033 of the case input, with the declared name of the fact type and the labels of the cycle. */
-    static final class LinkCycleFault extends IllegalArgumentException {
+    public static final class LinkCycleFault extends IllegalArgumentException {
         private static final long serialVersionUID = 1L;
 
         private final String factType;
@@ -869,12 +869,12 @@ public final class CaseInput {
             this.cycle = cycle;
         }
 
-        String code() {
+        public String code() {
             return "EF-033";
         }
 
         /** The parameters of the kind (ch. 5.7b): the fact type and the labels of the cycle, joined by ", ". */
-        Map<String, String> params() {
+        public Map<String, String> params() {
             Map<String, String> out = new LinkedHashMap<>();
             out.put("factType", factType);
             out.put("cycle", cycle);
