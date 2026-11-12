@@ -3116,8 +3116,8 @@ takes three parts, year, month and day, in that order; "de datumtijd met jaar:
 (`dateTimeWith`) takes seven, the hour, minute, second and millisecond after
 them. Every part is evaluated, in argument order (ch. 5.11), before a leeg part
 makes the result **leeg** (ch. 1.2). Each part is a **whole, unitless** number:
-a non-whole or unit-carrying part is a fault, never a truncation (EF-046), as for the
-Easter year. The result is the civil date (year, month, day) of the proleptic
+a part whose declaration carries a unit is ill-formed (`IR-SPEC.md` WF-038), as
+the Easter year is, and a non-whole part is a fault, never a truncation (EF-046). The result is the civil date (year, month, day) of the proleptic
 Gregorian calendar in zoneless civil time — the triple the part extractors
 above read — when the parts name one: the month 1..12 and the day 1..the
 month's length (28, 29 in a leap year, 30 or 31); for `dateTimeWith` also the
@@ -5355,7 +5355,7 @@ parameters, the clause that defines it and its witnesses.
 | EF-043 | the subject's own temporal total without a clip is read in a session without an evaluation date | fault | `attribute` | ch. 3.6; ch. 8.4 | `corpus/red/own-total-without-evaluation-date` |
 | EF-044 | a power with a fractional exponent has a negative base | §9.5 | `rule`, `label` | ch. 1.2; ch. 2.2 | `corpus/golden/fractional-power-negative-base` |
 | EF-045 | a square root or a power with a fractional exponent has an irrational value and no rounding follows | fault | — | ch. 2.2 | `corpus/red/irrational-power-without-rounding` |
-| EF-046 | a part of a date construction is no whole unitless number | fault | — | ch. 3.8 | `corpus/red/date-part-not-whole` |
+| EF-046 | a part of a date construction is no whole number | fault | — | ch. 3.8 | `corpus/red/date-part-not-whole` |
 
 The four declined kinds are static properties of the document. Each ends
 as a WF rule (its witness moves to `corpus/negative`) or as a specified
