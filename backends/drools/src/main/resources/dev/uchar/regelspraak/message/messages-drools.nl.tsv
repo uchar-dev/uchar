@@ -495,7 +495,7 @@ PART.desc.period-condition	de voorwaarde per periode ('{snippet}')
 PART.desc.pro-rata-part	een tijdsevenredig deel ('{snippet}')
 PART.desc.day-count	een dagentelling ('{snippet}')
 PART.desc.unique-key	een uniciteitssleutel '{key}' van {type} op een tijdlijn
-PART.characteristic-periods-supplied	de case levert ware perioden van het tijdsafhankelijke kenmerk "{characteristic}" van "{label}", dat een regel schrijft: niet uitgevoerd (geen corpuscase)
+PART.characteristic-periods-supplied	de case levert ware perioden van het tijdsafhankelijke kenmerk "{characteristic}" van "{label}", dat een regel schrijft (ch. 3.12)
 PART.allocation-role.pot	de pot
 PART.allocation-role.share	het aandeel
 PART.allocation-role.remainder	het restant

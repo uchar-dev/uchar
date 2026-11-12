@@ -248,7 +248,8 @@ let sqrt_ ~err = function
         match root_exact q 2 with
         | Some r -> Num (r, Unitless)
         | None ->
-            fault
+            (* EF-045 (ch. 5.7b, ch. 2.2) *)
+            faultc "EF-045"
               "irrational square root of %s reached without an explicit rounding \
                (§13.4.17.13 mandates one)"
               (Q.to_string q))
@@ -325,8 +326,9 @@ let inverted_zero ~err =
    (ch. 2.2): (−32)^(2/5) would read as 4 through (−32)², and (−32)^(1/5) as
    −2 through an odd root, but neither is the real power of a negative
    number, which does not exist *)
+(* EF-044 (ch. 5.7b, ch. 2.2) *)
 let negative_base_fault lq rq =
-  fault "fractional power %s^%s of a negative base has no real value (ch. 2.2)" (Q.to_string lq) (Q.to_string rq)
+  faultc "EF-044" "fractional power %s^%s of a negative base has no real value (ch. 2.2)" (Q.to_string lq) (Q.to_string rq)
 
 (* tot de macht: exact integer power (negative exponent inverts first);
    a fractional exponent must denote an exact root, else it faults: the real
@@ -354,7 +356,8 @@ let pow_ ~err l r =
         (match root_exact base b with
         | Some r -> Num (r, Unitless)
         | None ->
-            fault
+            (* EF-045 (ch. 5.7b, ch. 2.2) *)
+            faultc "EF-045"
               "fractional power %s^%s is not exactly representable without an explicit rounding \
                (§6.7 mandates one)"
               (Q.to_string lq) (Q.to_string rq))
@@ -657,7 +660,7 @@ let date_construction ~time parts =
           | exception Z.Overflow ->
               (* a year beyond the machine integer lies beyond every representable day *)
               if i = 0 then range () else fault "%s: the part %s is out of range" name (Q.to_string q))
-      | v -> fault "%s: a part must be a whole unitless number, got %s" name (to_string v)
+      | v -> faultc "EF-046" "%s: a part must be a whole unitless number, got %s" name (to_string v)
     in
     match List.mapi part parts with
     | y :: m :: d :: clock ->

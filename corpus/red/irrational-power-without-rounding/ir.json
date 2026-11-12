@@ -1,0 +1,113 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wortelmaat",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "wortelmaat",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "wortelmaat",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De wortelmaat van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "power",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "gewicht",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn gewicht"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "0.5"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 1,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "0,5"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 1,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn gewicht tot de macht 0,5"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

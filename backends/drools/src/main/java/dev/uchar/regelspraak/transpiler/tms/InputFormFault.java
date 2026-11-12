@@ -24,7 +24,9 @@ import java.util.function.Function;
  * {@link #bucketScalar}): its parameters are the attribute and the label of the object whose input it is, the latter
  * only where the sentence names that object itself and not the subject of the rule along a path. An ever-unique key
  * whose component on a timeline the case gives as that scalar is the fault kind EF-020 ({@link #temporalKeyScalar}):
- * its parameters are the key component and the label of the object. The other faults of this class have no code.
+ * its parameters are the key component and the label of the object. The subject's own temporal total without a clip,
+ * which reads the asOfDate-bucket scalar, finding a full timeline is the fault kind EF-042 ({@link #fullTimeline}): its
+ * parameters are the attribute and the label of the subject.
  */
 public final class InputFormFault extends RuntimeException {
 
@@ -40,11 +42,6 @@ public final class InputFormFault extends RuntimeException {
     private final String objectName;
     private final String after;
     private final String rule;
-
-    /** The fault without a code whose sentence is {@code before}, the object {@code object}, then {@code after}. */
-    InputFormFault(String before, Object object, String after) {
-        this(null, null, null, false, before, object, FactNames.object(object), after, null);
-    }
 
     private InputFormFault(String code, String memberParameter, String attribute, boolean owner, String before,
                            Object object, String objectName, String after, String rule) {
@@ -74,6 +71,14 @@ public final class InputFormFault extends RuntimeException {
      *  {@code before}, the object, {@code after}: ever-uniqueness reads every value the timeline ever carries. */
     static InputFormFault temporalKeyScalar(String key, String before, Object object, String after) {
         return new InputFormFault("EF-020", "key", key, true, before, object, FactNames.object(object), after, null);
+    }
+
+    /** The fault EF-042 of the subject's own temporal total of {@code attribute} without a clip, which reads the
+     *  asOfDate-bucket scalar, where the case gives the subject {@code object} a full timeline (RUNTIME-SEMANTICS ch. 3.6,
+     *  8.4, 5.7b), in the sentence {@code before}, the object, {@code after}. */
+    static InputFormFault fullTimeline(String attribute, String before, Object object, String after) {
+        return new InputFormFault("EF-042", "attribute", attribute, true, before, object, FactNames.object(object), after,
+                null);
     }
 
     private static String sentence(String before, String objectName, String after) {
@@ -109,16 +114,15 @@ public final class InputFormFault extends RuntimeException {
     }
 
     /** The fault kind (RUNTIME-SEMANTICS ch. 5.7b): EF-037 for the asOfDate-bucket scalar read whole, EF-020 for it as
-     *  the component of an ever-unique key, null for the others. */
+     *  the component of an ever-unique key, EF-042 for a full timeline under the subject's own total. */
     public String code() {
         return code;
     }
 
     /** The parameters of the kind (ch. 5.7b): the attribute, or the key component of EF-020, and the object whose
-     *  input it is where the sentence names that object itself. Empty for a fault without a code. */
+     *  input it is where the sentence names that object itself. */
     public Map<String, String> params() {
         Map<String, String> p = new LinkedHashMap<>();
-        if (code == null) return p;
         p.put(memberParameter, attribute);
         if (owner) p.put("label", objectName);
         return p;

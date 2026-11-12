@@ -1020,10 +1020,10 @@ let refuse_attr_timeline ctx ~otype ~attr =
         isa ctx i.otype otype
         && Uchar_ref.World.timeline i attr <> None
       then
-        fault
-          "the temporal total of %S over a case-supplied full timeline is not exercised by any \
-           corpus case; the asOfDate-bucket convention carries the total"
-          attr)
+        faultc ~params:[ ("attribute", attr); ("label", i.label) ] "EF-042"
+          "the temporal total of %S reads the asOfDate-bucket scalar, and %S supplies a full timeline \
+           (ch. 3.6, ch. 8.4)"
+          attr i.label)
     ctx.case.world.instances
 
 (* ref's sentence for the whole-period qualifier over [attr], whose timeline [label] gives as the asOfDate-bucket scalar *)
@@ -2870,7 +2870,7 @@ let lexeme_decimals lex =
 let as_of_bucket_units ctx ~otype ~attr =
   match ctx.case.as_of with
   | None ->
-      fault
+      faultc ~params:[ ("attribute", attr) ] "EF-043"
         "the temporal total of %S needs the evaluation date: the case carries the asOfDate bucket's \
          value"
         attr
@@ -7910,7 +7910,11 @@ and date_construction ctx ~subject ~subject_ot ~time (args : expr list) =
       (fun a ->
         (match static_type ctx a with
         | Some (Number { whole_part = true; measure_unit = None; _ }) -> ()
-        | _ -> fault "%s: a part is not statically a whole unitless number" name);
+        | _ ->
+            (* ref faults with EF-046 on a part whose value is no whole number;
+               this integer encoding carries no fraction, so it refuses every
+               part whose type admits one *)
+            faultc "CLINGO-048" "%s: a part is not statically a whole unitless number" name);
         let b, t, s = expr_term ctx ~subject ~subject_ot a in
         if s <> 1 then fault "%s: a part must be an unscaled whole term" name;
         (b, Printf.sprintf "(%s)" t))
@@ -12454,9 +12458,9 @@ let translate_characteristic_timeline ctx (r : resolved_rule) ~ot ~k =
     (fun _ (i : Uchar_ref.World.instance) ->
       match Uchar_ref.World.SMap.find_opt (norm k) i.ctls with
       | Some (_ :: _) when Ir_v0.Checks.populations_overlap ctx.doc i.otype ot ->
-          fault
-            "the case supplies true periods of the time-dependent characteristic %S of %S, which a rule writes: \
-             not translated (no corpus case)"
+          faultc ~params:[ ("characteristic", k); ("label", i.label) ] "EF-041"
+            "the case supplies true periods of the time-dependent characteristic %S of %S, which a rule writes \
+             (ch. 3.12)"
             k i.label
       | _ -> ())
     ctx.case.world.instances;

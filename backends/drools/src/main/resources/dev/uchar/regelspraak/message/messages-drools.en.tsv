@@ -495,7 +495,7 @@ PART.desc.period-condition	the condition read per period ('{snippet}')
 PART.desc.pro-rata-part	a pro rata part ('{snippet}')
 PART.desc.day-count	a day count ('{snippet}')
 PART.desc.unique-key	a uniqueness key '{key}' of {type} on a timeline
-PART.characteristic-periods-supplied	the case supplies true periods of the time-dependent characteristic "{characteristic}" of "{label}", which a rule writes: not executed (no corpus case)
+PART.characteristic-periods-supplied	the case supplies true periods of the time-dependent characteristic "{characteristic}" of "{label}", which a rule writes (ch. 3.12)
 PART.allocation-role.pot	the pot
 PART.allocation-role.share	the share
 PART.allocation-role.remainder	the remainder

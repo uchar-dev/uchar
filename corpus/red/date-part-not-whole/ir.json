@@ -1,0 +1,126 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vervalmaand",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 1,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vervaldag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "vervaldag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vervaldag",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De vervaldag van een Vondst"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "dateWith",
+              "arguments": [
+                {
+                  "node": "Literal",
+                  "value": {
+                    "number": "2025"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "2025"
+                  }
+                },
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vervalmaand",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn vervalmaand"
+                  }
+                },
+                {
+                  "node": "Literal",
+                  "value": {
+                    "number": "1"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "1"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de datum met jaar: 2025, maand: zijn vervalmaand en dag: 1"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

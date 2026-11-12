@@ -10,8 +10,7 @@ import java.util.function.Function;
  * The evaluation fault of the true periods a rule writes into a time-dependent characteristic (RUNTIME-SEMANTICS
  * ch. 3.10, "A time-dependent characteristic within a window"; ch. 3.11; {@link PeriodCondition#characteristicPeriods}):
  * periods with an open bound, which no reader of the characteristic's buckets can walk (EF-023), and true periods the
- * case supplies for a characteristic a rule writes, which this branch does not execute, as the reference interpreter
- * does not (no fault kind of ch. 5.7b).
+ * case supplies for a characteristic a rule writes, a form ch. 3.12 leaves without a meaning (EF-041).
  *
  * <p>The object is named by its case label where the write-back is given one ({@link #named}), as the reference
  * interpreter names an instance, and by type and identity where none is known. Like a {@link ComputeFault} it never
@@ -73,15 +72,17 @@ public final class CharacteristicPeriodsFault extends RuntimeException {
         return rule;
     }
 
-    /** The fault kind (RUNTIME-SEMANTICS ch. 5.7b): EF-023 for periods with an open bound, none for supplied ones. */
+    /** The fault kind (RUNTIME-SEMANTICS ch. 5.7b): EF-023 for periods with an open bound, EF-041 for supplied ones. */
     public String code() {
-        return kind == Kind.OPEN_BOUND ? "EF-023" : null;
+        return kind == Kind.OPEN_BOUND ? "EF-023" : "EF-041";
     }
 
-    /** The parameters of the kind (ch. 5.7b): the characteristic. */
+    /** The parameters of the kind (ch. 5.7b): the characteristic, and for supplied periods the object whose input they
+     *  are. */
     public Map<String, String> params() {
         Map<String, String> p = new LinkedHashMap<>();
         p.put("characteristic", characteristic);
+        if (kind == Kind.SUPPLIED) p.put("label", objectName);
         return p;
     }
 }

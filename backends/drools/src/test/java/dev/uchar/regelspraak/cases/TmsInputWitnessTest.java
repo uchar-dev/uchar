@@ -219,7 +219,7 @@ class TmsInputWitnessTest {
             Fixpoint complete = read(b, new Input().bean(j3));
             assertEquals(1, complete.faults().size(), () -> "one fault over a full timeline: " + complete.faults());
             assertTrue(complete.faults().get(0).message().startsWith("fout in de regel \"topsom\": the temporal total of"
-                    + " \"bedrag\" over a case-supplied full timeline is not exercised by any corpus case"),
+                    + " \"bedrag\" reads the asOfDate-bucket scalar, and "),
                     complete.faults().get(0).message());
         });
     }

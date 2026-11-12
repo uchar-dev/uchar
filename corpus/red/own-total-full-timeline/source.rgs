@@ -1,0 +1,7 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het wachtloon Numeriek (geheel getal) voor elke maand;
+    het jaarloon Numeriek (geheel getal);
+
+Regel jaarloon van een jutter
+    geldig altijd
+        Het jaarloon van een Jutter moet berekend worden als het totaal van zijn wachtloon.

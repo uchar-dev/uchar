@@ -1,0 +1,7 @@
+Objecttype de Vondst (mv: Vondsten)
+    de vervalmaand Numeriek (getal met 1 decimalen);
+    de vervaldag Datum in dagen;
+
+Regel vervaldag
+    geldig altijd
+        De vervaldag van een Vondst moet gesteld worden op de datum met jaar: 2025, maand: zijn vervalmaand en dag: 1.

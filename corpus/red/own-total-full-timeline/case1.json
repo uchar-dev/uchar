@@ -1,0 +1,35 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2024-06-15",
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "wachtloon": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2025-01-01",
+                "value": {
+                  "number": "7"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-042",
+    "params": {
+      "attribute": "wachtloon",
+      "label": "J1"
+    }
+  }
+}

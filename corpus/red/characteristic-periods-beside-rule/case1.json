@@ -1,0 +1,38 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "A1",
+        "objectType": "Afdracht",
+        "attributes": {
+          "vervaldatum": {
+            "date": "2025-11-15"
+          },
+          "betaaldatum": {
+            "date": "2026-03-12"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "rentedragend": [
+            {
+              "from": "2025-01-01",
+              "to": "2025-02-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-041",
+    "params": {
+      "characteristic": "rentedragend",
+      "label": "A1"
+    }
+  }
+}

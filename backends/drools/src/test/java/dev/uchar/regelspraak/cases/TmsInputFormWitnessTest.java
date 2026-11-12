@@ -266,8 +266,8 @@ class TmsInputFormWitnessTest {
 
     @Test void the_own_total_without_clip_fails_on_a_full_timeline_where_the_rule_reaches_it() throws Exception {
         inEveryOrder(MODEL_C, RULES_C, List.of(), caseC(true), "InputFormFault: fout in de regel \"topsom\": the"
-                + " temporal total of \"bedrag\" over a case-supplied full timeline is not exercised by any corpus case;"
-                + " the asOfDate-bucket convention carries the total, and \"J1\" supplies a full timeline");
+                + " temporal total of \"bedrag\" reads the asOfDate-bucket scalar, and \"J1\" supplies a full timeline"
+                + " (ch. 3.6, ch. 8.4)");
     }
 
     @Test void the_own_total_without_clip_takes_the_bucket_scalar() throws Exception {

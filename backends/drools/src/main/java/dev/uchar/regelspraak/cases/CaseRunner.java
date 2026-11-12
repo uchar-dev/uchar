@@ -594,9 +594,8 @@ public final class CaseRunner {
             else if (c instanceof InputPrecisionFault d) kind = new FaultKind(d.code(), d.params());
             else if (c instanceof WriteBoundaryFault w) kind = new FaultKind(w.code(), w.params());
             else if (c instanceof OpenSegmentFault o) kind = new FaultKind(o.code(), o.params());
-            else if (c instanceof InputFormFault i && i.code() != null) kind = new FaultKind(i.code(), i.params());
-            else if (c instanceof CharacteristicPeriodsFault k && k.code() != null)
-                kind = new FaultKind(k.code(), k.params());
+            else if (c instanceof InputFormFault i) kind = new FaultKind(i.code(), i.params());
+            else if (c instanceof CharacteristicPeriodsFault k) kind = new FaultKind(k.code(), k.params());
             else if (c instanceof SecondFillingFault s) kind = new FaultKind(s.code(), s.params());
             else if (c instanceof CaseInput.LinkCycleFault l) kind = new FaultKind(l.code(), l.params());
             else if (c instanceof CaseInput.CellFault f) kind = new FaultKind(f.code(), f.params());

@@ -1,0 +1,8 @@
+Objecttype de Afdracht (mv: Afdrachten)
+    de vervaldatum Datum in dagen;
+    de betaaldatum Datum in dagen;
+    is rentedragend kenmerk (bijvoeglijk) voor elke dag;
+
+Regel rentedragend
+    geldig altijd
+        Een Afdracht is rentedragend van zijn vervaldatum tot zijn betaaldatum.

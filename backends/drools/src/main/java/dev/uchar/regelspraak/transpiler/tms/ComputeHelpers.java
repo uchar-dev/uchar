@@ -194,7 +194,8 @@ public final class ComputeHelpers {
     private static Breuk powerRadicand(Object base, int numerator, int denominator) {
         Breuk b = Breuk.van(base);
         if (b == null) return null;
-        if (b.signum() < 0) throw irrationalPower(base, numerator, denominator);
+        if (b.signum() < 0)
+            throw new ComputeFault(ComputeFault.negativeBase(numberText(b) + "^" + numerator + "/" + denominator));
         int e = Math.abs(numerator);
         Breuk p = Breuk.van(b.teller().pow(e), b.noemer().pow(e));
         return numerator < 0 ? Breuk.van(p.noemer(), p.teller()) : p;
@@ -780,23 +781,21 @@ public final class ComputeHelpers {
      * {@code fixed} (null: the calendar's grid), that holds the evaluation date ({@link BucketScalar}), by the calendar
      * where {@code calendar} names the time unit of the rate's denominator ({@link PeriodArithmetic#weighed}), and 0
      * where the attribute has no input, the total of a timeline that is leeg on every day (spec/proposals/IMPLICIT-TIME.md
-     * 12c). A full timeline faults, in the reference interpreter's words and naming {@code subject}, and so does a
-     * session without an evaluation date, where the total has no bucket to take: the reference interpreter tests the
-     * full timeline first, then the date ({@code rekendatum}), then the value.
+     * 12c). A full timeline faults with EF-042, naming {@code subject}, and a session without an evaluation date, where
+     * the total has no bucket to take, with EF-043: the reference interpreter tests the full timeline first, then the
+     * date ({@code rekendatum}), then the value.
      */
     public static Object ownTotal(Object input, Object subject, Object evaluationDate, String name,
                                      String granularity, String fixed, String calendar) {
         if (input instanceof BucketScalar e) return PeriodArithmetic.weighed(e.timeline(), granularity, fixed, calendar);
         // a timeline a form writes is refused while the model is built, so a full timeline here is the case's
         if (input != null)
-            throw new InputFormFault("the temporal total of \"" + name + "\" over a case-supplied full timeline"
-                    + " is not exercised by any corpus case; the asOfDate-bucket convention carries the total, and ",
-                    subject, " supplies a full timeline");
+            throw InputFormFault.fullTimeline(name, "the temporal total of \"" + name + "\" reads the asOfDate-bucket"
+                    + " scalar, and ", subject, " supplies a full timeline (ch. 3.6, ch. 8.4)");
         // the case runner places a bucket scalar only where the case carries a date, so a session without one reaches
         // this with no input at all
         if (evaluationDate == null)
-            throw new ComputeFault("the temporal total of \"" + name + "\" needs the evaluation date: the case"
-                    + " carries the asOfDate bucket's value");
+            throw new ComputeFault(ComputeFault.ownTotalWithoutDate(name));
         return BigDecimal.ZERO;
     }
 

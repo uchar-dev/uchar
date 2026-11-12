@@ -1,0 +1,7 @@
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (geheel getal);
+    de wortelmaat Numeriek (getal met 2 decimalen);
+
+Regel wortelmaat
+    geldig altijd
+        De wortelmaat van een Vondst moet berekend worden als zijn gewicht tot de macht 0,5 naar beneden afgerond op 2 decimalen.

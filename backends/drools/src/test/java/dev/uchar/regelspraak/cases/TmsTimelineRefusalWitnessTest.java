@@ -70,8 +70,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * Tijd alone declares mnd: the control {@link #a_rate_over_a_declared_grid_unit_plays}, which the reference
  * interpreter and the ASP runner answer as well.
  * <li><b>The total without a clip over a timeline a rule derives</b>: the reference interpreter refuses it, "the
- * temporal total of "maanddeel" over a case-supplied full timeline is not exercised by any corpus case; the
- * asOfDate-bucket convention carries the total", and the ASP runner leaves the total leeg.
+ * temporal total of "maanddeel" reads the asOfDate-bucket scalar, and … supplies a full timeline (ch. 3.6, ch. 8.4)"
+ * (EF-042), and the ASP runner leaves the total leeg.
  * <li><b>A timeline on a variable start point</b>, laid per object by a StartPointDetermination: the case reader
  * lays no timeline on such a grid, so the case carries none, and the reference interpreter and the ASP runner answer
  * the total over no timeline, 0. The rule is refused; the determination itself refuses nothing

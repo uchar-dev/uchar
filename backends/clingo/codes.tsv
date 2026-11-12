@@ -46,3 +46,4 @@ CLINGO-044	refusal	creation-cycle-without-recursive-group	creation	refuse_unboun
 CLINGO-045	limit	allocation-unit-restatement-not-carried	allocation	translate_allocation
 CLINGO-046	refusal	exact-digits-no-string-functions		cond_atoms_raw
 CLINGO-047	refusal	inconsistency-channel-read		cond_atoms_raw
+CLINGO-048	limit	date-part-not-statically-whole		date_construction

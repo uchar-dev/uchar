@@ -2366,14 +2366,17 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
           read_whole base tl;
           Timeline.grand_total ~grid_unit:grid ~place:(self.label, a) ~zero_unit periods (Option.value tl ~default:[]))
       | None -> (
+      (* EF-042 and EF-043 (ch. 5.7b, ch. 3.6, ch. 8.4): the own total reads
+         the asOfDate-bucket scalar, so a full timeline and a session without
+         an evaluation date both fault *)
       if World.timeline self a <> None then
-        Value.fault
-          "the temporal total of %S over a case-supplied full timeline is not exercised by any \
-           corpus case; the asOfDate-bucket convention carries the total"
-          a;
+        Value.faultc ~params:[ ("attribute", a); ("label", self.label) ] "EF-042"
+          "the temporal total of %S reads the asOfDate-bucket scalar, and %S supplies a full timeline \
+           (ch. 3.6, ch. 8.4)"
+          a self.label;
       match env.as_of with
       | None ->
-          Value.fault
+          Value.faultc ~params:[ ("attribute", a) ] "EF-043"
             "the temporal total of %S needs the evaluation date: the case carries the asOfDate \
              bucket's value"
             a

@@ -63,6 +63,51 @@ class FaultKindWitnessTest {
         }
     }
 
+    /** The faults at the fixpoint whose kinds RUNTIME-SEMANTICS ch. 5.7b names since the red case of each landed:
+     *  supplied periods of a characteristic a rule writes (EF-041), the subject's own total over a full timeline
+     *  (EF-042) and without an evaluation date (EF-043), a fractional power of a negative base (EF-044), an irrational
+     *  power without a rounding (EF-045) and a part of a date construction that is no whole number (EF-046). Each names
+     *  its code and the parameters its red case pins, on both branches.
+     *
+     *  <p>Red before: the backend named no kind for any of them, so a consumer reading {@link CaseRunner#faultKinds}
+     *  got an empty list. */
+    @Test void every_fault_at_the_fixpoint_names_its_kind() throws Exception {
+        for (String red : List.of("characteristic-periods-beside-rule", "own-total-full-timeline",
+                "own-total-without-evaluation-date", "fractional-power-negative-base",
+                "irrational-power-without-rounding", "date-part-not-whole")) {
+            JsonNode pin = caseFile(red, "case1").get("expectedFault");
+            Map<String, String> params = new java.util.LinkedHashMap<>();
+            pin.get("params").fields().forEachRemaining(e -> params.put(e.getKey(), e.getValue().asText()));
+            for (DroolsBackend.Branch branch : DroolsBackend.Branch.values())
+                assertEquals(List.of(new CaseRunner.FaultKind(pin.get("code").asText(), params)),
+                        fixpointFaultKinds(red, "case1", branch), red + " on " + branch);
+        }
+    }
+
+    /** The kinds of what the write-back throws at the fixpoint of the red case {@code red}/{@code name} on
+     *  {@code branch}, read through the public entries as a consumer reads them. */
+    private static List<CaseRunner.FaultKind> fixpointFaultKinds(String red, String name, DroolsBackend.Branch branch)
+            throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(RED.resolve(red).resolve("ir.json"), branch);
+        CaseInput input = CaseInput.of(b, caseFile(red, name));
+        ClassLoader previous = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(b.beanLoader());
+        KieSession session = b.kieBase().newKieSession();
+        try {
+            input.setGlobals(session);
+            DroolsBackend.insert(b, session, input.inputData());
+            assertNull(DroolsBackend.fire(b, session).noFixpoint());
+            // the write-back names an object by its case label, as the red run of gate 8 does
+            Map<Object, String> labels = new java.util.IdentityHashMap<>();
+            input.beans().forEach((label, bean) -> labels.put(bean, label));
+            return CaseRunner.faultKinds(assertThrows(RuntimeException.class,
+                    () -> DroolsBackend.setDerivedValues(b, session, labels::get)));
+        } finally {
+            session.dispose();
+            Thread.currentThread().setContextClassLoader(previous);
+        }
+    }
+
     private static CaseInput read(String red, String name) throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(RED.resolve(red).resolve("ir.json"), DroolsBackend.Branch.EXEC_MODEL);
         return CaseInput.of(b, caseFile(red, name));

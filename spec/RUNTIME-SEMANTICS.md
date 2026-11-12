@@ -521,9 +521,9 @@ its own; it does not approximate it. Worked example (`ref/` tests
 | gedeeld door | exact quotient; result may be non-terminating and stays exact until a collapse point | 10 ÷ 4 = 5/2 = 2,5; 2 ÷ 3 = 2/3 (exact) |
 | gedeeld door (abs-variant) | quotient truncated **toward zero at 5 decimals** — a defined collapse point, a core operator the source language spells | 10 ÷abs 3 = 3,33333; −10 ÷abs 3 = −3,33333 |
 | tot de macht (integer exponent) | exact integer power; negative exponent inverts first | 7¹⁹ = 11398895185373143 (exact); (1/3)⁻¹ = 3 |
-| tot de macht (fractional exponent) | the exact root where the power is rational; else the real power exists only under its mandatory rounding (§6.7), which rounds the true power once; without a rounding it is a fault. A negative base is a fault under every fractional exponent, with and without a rounding, also where the exponent's numerator is even or its denominator odd: no real power of a negative number is defined here | 4^0,5 = 2; 8^(2/3) = 4; 10^(1/3) afgerond op 10 naar beneden = 2,1544346900, naar boven = 2,1544346901; 10^(1/3) without a rounding: fault; (−32)^0,4: fault, without and with a rounding (not 4 by way of (−32)²); (−32)^(1/5) and (−32)^(−2/5): fault; (−2)^3 = −8 (a whole exponent, the row above) |
+| tot de macht (fractional exponent) | the exact root where the power is rational; else the real power exists only under its mandatory rounding (§6.7), which rounds the true power once; without a rounding it is a fault (EF-045). A negative base is a fault (EF-044) under every fractional exponent, with and without a rounding, also where the exponent's numerator is even or its denominator odd: no real power of a negative number is defined here | 4^0,5 = 2; 8^(2/3) = 4; 10^(1/3) afgerond op 10 naar beneden = 2,1544346900, naar boven = 2,1544346901; 10^(1/3) without a rounding: fault; (−32)^0,4: fault, without and with a rounding (not 4 by way of (−32)²); (−32)^(1/5) and (−32)^(−2/5): fault; (−2)^3 = −8 (a whole exponent, the row above) |
 | percentage van | `l/100 × r`, exactly | (1/3)% van 600 = 2 (exact, not 1,999…); 50% van 4,00 = 2 |
-| wortel | principal square root; mandatory explicit rounding follows (§13.4.17.13), which rounds the true root once | √9 = 3; √2 afgerond op 2 (rekenkundig) = 1,41; √(1/9) afgerond op 20 naar beneden = 0,33333333333333333333 |
+| wortel | principal square root; mandatory explicit rounding follows (§13.4.17.13), which rounds the true root once; an irrational root without it is the fault EF-045 | √9 = 3; √2 afgerond op 2 (rekenkundig) = 1,41; √(1/9) afgerond op 20 naar beneden = 0,33333333333333333333 |
 | absolute waarde | magnitude; type (unit, precision, sign) passes through | \|−3/7\| = 3/7 |
 | datum ± duur (plus/min over a date and a duration) | **calendar arithmetic, not field arithmetic** — ch. 3.8: the count truncates toward zero, months/quarters/years clamp to the month end; the date stands on the left of plus and min (duration ± date is ill-formed) | 2024-01-31 + 2 weken = 2024-02-14; 2024-01-31 + 1 maand = 2024-02-29 |
 | tijdsduur van A tot B (in hele *eenheid*) | whole declared units between two dates, signed; the packed-month rule of ch. 3.8; the absolute variant drops the sign | tijdsduur van 29-02-2004 tot 28-02-2026 in jaren = 21 |
@@ -2352,9 +2352,9 @@ count 0 together; counting a part by its days is a tracked delta.
   totals it whole. For the own total without a clip, a case supplies the
   subject's timeline as the asOfDate-bucket scalar, the value of the period
   of its grid that holds the evaluation date, and the total counts that one
-  period; a full timeline there is refused, and a session without an
-  evaluation date has no such period, so the total faults (the two input
-  conventions, below and ch. 8.4; ch. 3.12). The evaluation date is tested
+  period; a full timeline there is the fault EF-042, and a session without
+  an evaluation date has no such period, so the total faults with EF-043
+  (the two input conventions, below and ch. 8.4; ch. 3.12). The evaluation date is tested
   before the absence of the timeline: without an evaluation date the own
   total faults also where the case leaves the subject's timeline absent,
   and the absent timeline totals 0 only in a session that has one. The same
@@ -3111,7 +3111,7 @@ takes three parts, year, month and day, in that order; "de datumtijd met jaar:
 (`dateTimeWith`) takes seven, the hour, minute, second and millisecond after
 them. Every part is evaluated, in argument order (ch. 5.11), before a leeg part
 makes the result **leeg** (ch. 1.2). Each part is a **whole, unitless** number:
-a non-whole or unit-carrying part is a fault, never a truncation, as for the
+a non-whole or unit-carrying part is a fault, never a truncation (EF-046), as for the
 Easter year. The result is the civil date (year, month, day) of the proleptic
 Gregorian calendar in zoneless civil time — the triple the part extractors
 above read — when the parts name one: the month 1..12 and the day 1..the
@@ -4039,9 +4039,9 @@ and in the READMEs of the backends.
 | 4 | **Operators and folds over timelines without a reading** | ch. 3.4, 3.4c, 3.5, 3.6 | The power over a timeline is refused; minimum, maximum, eerste and laatste over timelines are refused (v0: "the minimum of a timeline" is ambiguous between a fold per period over contributors and a fold over the periods of one timeline); a ranking or counting fold over a time-dependent member of a set — minimum, maximum, eerste, laatste, aantal, aantal gevulde (EF-021) — is refused, for want of a moment. Open: these readings. `spec/proposals/IMPLICIT-TIME.md` point 9 reads minimum, maximum, eerste and laatste per period over the operands, with no form over the time of one timeline, which also gives a fold over the members of a set a moment per period; this chapter does not state that rule. |
 | 5 | **Conditions over timelines without a reading** | ch. 3.9, 3.10 | Under the whole-period qualifier: a comparison over a timeline reached over a path, between two timelines or without a timeline, and every comparison of dates, an ordering, an equality and an inequality alike. On a rule with a timeline target: a condition form outside the list of ch. 3.10 — a navigated or hosted check, a comparison of two timelines, a leeg or gevuld test, a quantifier fold. Open: their readings; the reading per day of ch. 3.3 is the candidate for the second group. |
 | 6 | **Day kinds outside the bound day** | ch. 3.8 | No meaning: a §9.8 test on a date other than the bound day (EF-022); the day-kind predicate as the condition of a rule (§8.1.5); the duration in whole days of a kind between two datum-tijden. Open: a source for what a test on another date means inside a definition about an arbitrary day; a classifier read inside the fixpoint of the rules; a rule for the part of a day at each end of an interval between instants. |
-| 7 | **A time-dependent characteristic outside a window** | ch. 3.3, 3.10, 3.11 | The write of a characteristic is defined within a window. No meaning: periods with an open bound (EF-023), so an unconditional characteristic and a negated check outside a window. Not defined: a write without a window, two rules on one characteristic, a case-supplied timeline of a characteristic a rule writes, a navigated characteristic in the condition of the write, and a time-dependent characteristic as the operand of the point read (the case format). A defaults group on a time-dependent characteristic is ill-formed (`IR-SPEC.md` WF-086). Open: each of these. |
+| 7 | **A time-dependent characteristic outside a window** | ch. 3.3, 3.10, 3.11 | The write of a characteristic is defined within a window. No meaning: periods with an open bound (EF-023), so an unconditional characteristic and a negated check outside a window. Not defined: a write without a window, two rules on one characteristic, a case-supplied timeline of a characteristic a rule writes (the fault EF-041), a navigated characteristic in the condition of the write, and a time-dependent characteristic as the operand of the point read (the case format). A defaults group on a time-dependent characteristic is ill-formed (`IR-SPEC.md` WF-086). Open: each of these. |
 | 8 | **The period window and the axis of versions** | ch. 3.10 | (a) A rule version's validity window on a temporal write mixes the selection of versions with the timeline axis; it belongs to the single-axis decision of ch. 8 (PLAN §9, decision 2), and no golden carries a validity window on a temporal rule; a defaults group's validity on a timeline target gates by the evaluation date in the same way (ch. 7.11, `WV-7.11-versie`). (b) A window in the `filter` of an `all` quantifier fold in a session without an evaluation date never matches, so the member is filtered out and the fold is vacuously waar; WF-112 is not widened to it (`corpus/golden/jutterswet-wachtvenster`, `bevoegd` in `case3-tijdvrij`). (c) A clip that cuts a bucket has no corpus carrier, because the case format pins every expected timeline to the declared grid; the alternative, a WF rule that demands bounds on the grid for a clip, is not taken. Open: (a), the reading of (b), and a case format that releases expected timelines from the grid. |
-| 9 | **The subject's own total of a case-supplied timeline** | ch. 3.6, 8.4 | It reads the asOfDate bucket, one period of the grid that holds the evaluation date, while a timeline a rule writes is totalled whole, so the meaning of "het totaal van zijn X" depends on who wrote X. Open: whether the own total of a case timeline reads the whole timeline, as every other timeline is read over all time, which changes the case convention of ch. 8.4. |
+| 9 | **The subject's own total of a case-supplied timeline** | ch. 3.6, 8.4 | It reads the asOfDate bucket (a full timeline there is EF-042), one period of the grid that holds the evaluation date, while a timeline a rule writes is totalled whole, so the meaning of "het totaal van zijn X" depends on who wrote X. Open: whether the own total of a case timeline reads the whole timeline, as every other timeline is read over all time, which changes the case convention of ch. 8.4. |
 | 10 | **The producers of an initialisation and of a member value on a timeline target** | ch. 3.11, 7.8 | An initialisation and the member value of a creation on a timeline target are read per day in the stack of ch. 7.8, their value period arithmetic over all time; an allocation that names a time-dependent attribute is not well-formed (`IR-SPEC.md` WF-128). The time-proportional part and the day count as the value of an initialisation or of a member value are refused by name. Open: their reading there. |
 
 ---
@@ -5274,8 +5274,10 @@ parameters, the clause that defines it and its witnesses.
   and the ASP backend), `factType` and `cycle` (EF-033), and `attribute`
   and `label` (EF-036, and EF-037, where it names `label`
   only for the object whose input it is: an attribute read over a path names
-  `attribute` alone), `label` (EF-039) and `label` and `name` (EF-040, since
-  2026-11-06, as ref and the ASP backend), and no other.
+  `attribute` alone), `label` (EF-039), `label` and `name` (EF-040, since
+  2026-11-06, as ref and the ASP backend), `characteristic` and `label`
+  (EF-041), `attribute` and `label` (EF-042) and `attribute` (EF-043), and no
+  other.
   Gate 8 holds each executor's emitted keys to this column: a key outside the
   column of its code fails with the code, the executor and the key.
 - **Witnesses.** A code enters the table together with its witness: a red
@@ -5342,6 +5344,12 @@ parameters, the clause that defines it and its witnesses.
 | EF-038 | a recipient of a proportional allocation has a negative weight | §9.5 | `rule`, `label` | ch. 4.2; ch. 4.4 | `corpus/golden/jutterswet-lege-pot-en-negatief-gewicht` |
 | EF-039 | an instance label occurs twice in the case input | case input | `label` | ch. 5.7 step 3 | `corpus/red/duplicate-instance-label` |
 | EF-040 | the case input names an object type, an attribute, a characteristic or a role the document does not declare | case input | `label`, `name` | ch. 5.7 step 3; IR-SPEC ch. 2.1 | `corpus/red/undeclared-input-name` |
+| EF-041 | the case input gives true periods of a time-dependent characteristic that a rule writes | fault | `characteristic`, `label` | ch. 3.11; ch. 3.12 | `corpus/red/characteristic-periods-beside-rule` |
+| EF-042 | the subject's own temporal total without a clip finds a full timeline in the case input | fault | `attribute`, `label` | ch. 3.6; ch. 8.4 | `corpus/red/own-total-full-timeline` |
+| EF-043 | the subject's own temporal total without a clip is read in a session without an evaluation date | fault | `attribute` | ch. 3.6; ch. 8.4 | `corpus/red/own-total-without-evaluation-date` |
+| EF-044 | a power with a fractional exponent has a negative base | fault | — | ch. 2.2 | `corpus/red/fractional-power-negative-base` |
+| EF-045 | a square root or a power with a fractional exponent has an irrational value and no rounding follows | fault | — | ch. 2.2 | `corpus/red/irrational-power-without-rounding` |
+| EF-046 | a part of a date construction is no whole unitless number | fault | — | ch. 3.8 | `corpus/red/date-part-not-whole` |
 
 The four declined kinds are static properties of the document. Each ends
 as a WF rule (its witness moves to `corpus/negative`) or as a specified

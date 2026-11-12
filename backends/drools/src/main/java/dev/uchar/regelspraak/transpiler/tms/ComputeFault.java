@@ -60,6 +60,35 @@ public final class ComputeFault extends RuntimeException {
     private static final java.util.regex.Pattern UNBOUND_PARAMETER =
             java.util.regex.Pattern.compile("parameter \"(.*)\" is unbound in this case \\(binding is fail-fast, ch\\. 5\\.7\\)");
 
+    /** RUNTIME-SEMANTICS ch. 3.6: the subject's own temporal total of {@code attribute} without a clip, which reads the
+     *  asOfDate-bucket scalar, in a session without an evaluation date (EF-043), in the reference interpreter's words. */
+    static String ownTotalWithoutDate(String attribute) {
+        return "the temporal total of \"" + attribute + "\" needs the evaluation date: the case carries the asOfDate"
+                + " bucket's value";
+    }
+
+    private static final java.util.regex.Pattern OWN_TOTAL_WITHOUT_DATE = java.util.regex.Pattern.compile(
+            "the temporal total of \"(.*)\" needs the evaluation date: the case carries the asOfDate bucket's value");
+
+    /** RUNTIME-SEMANTICS ch. 2.2: a fractional power of a negative base (EF-044), in the reference interpreter's words;
+     *  {@code power} is the base and the exponent as that executor writes them. */
+    static String negativeBase(String power) {
+        return "fractional power " + power + " of a negative base has no real value (ch. 2.2)";
+    }
+
+    private static final java.util.regex.Pattern NEGATIVE_BASE = java.util.regex.Pattern.compile(
+            "fractional power \\S+ of a negative base has no real value \\(ch\\. 2\\.2\\)");
+
+    /** RUNTIME-SEMANTICS ch. 2.2: a square root and a fractional power whose value is irrational, without the rounding
+     *  that alone gives them a value (EF-045), in the reference interpreter's words. */
+    private static final java.util.regex.Pattern IRRATIONAL = java.util.regex.Pattern.compile(
+            "(?:irrational square root of \\S+ reached|fractional power \\S+ is not exactly representable) without an"
+                    + " explicit rounding \\(§[0-9.]+ mandates one\\)");
+
+    /** RUNTIME-SEMANTICS ch. 3.8: a part of a date construction that is no whole number (EF-046). */
+    private static final java.util.regex.Pattern PART_NOT_WHOLE = java.util.regex.Pattern.compile(
+            "(?:dateWith|dateTimeWith): the part \\S+ is no whole number");
+
     /** A segment of a timeline of the unbounded form whose value does not terminate: a limit of this branch, whose
      *  segment holds a decimal, where the reference interpreter writes the exact value (ch. 2.4 point 3, 3.4). No fault
      *  kind of ch. 5.7b: the refusal DROOLS-312 ({@link #limit}), which the write-back gives where it stands at the
@@ -118,8 +147,8 @@ public final class ComputeFault extends RuntimeException {
 
     /** The fault kind of this fault (RUNTIME-SEMANTICS ch. 5.7b), read off its sentence: the sentences are this
      *  class's constants and the runtime's, the reference interpreter's words, and a plan term carries a sentence
-     *  rather than a code, so the kind is named here, beside the text and never inside it. Null for a sentence of a
-     *  kind no red case witnesses yet (an irrational square root, a part of a dateWith that is no whole number). */
+     *  rather than a code, so the kind is named here, beside the text and never inside it. Null for a limit of this
+     *  branch ({@link #limit}), which is no fault kind. */
     public String code() {
         if (sentence.equals(EVALUATION_DATE_WITHOUT_DATE) || sentence.equals(RegelSpraakRuntime.REKENJAAR_ZONDER_REKENDATUM))
             return "EF-011";
@@ -133,6 +162,10 @@ public final class ComputeFault extends RuntimeException {
         if (sentence.startsWith(ComputeHelpers.DAY_KIND_WALK)) return "EF-009";
         if (namesNoMoment(sentence)) return "EF-032";
         if (UNBOUND_PARAMETER.matcher(sentence).matches()) return "EF-014";
+        if (OWN_TOTAL_WITHOUT_DATE.matcher(sentence).matches()) return "EF-043";
+        if (NEGATIVE_BASE.matcher(sentence).matches()) return "EF-044";
+        if (IRRATIONAL.matcher(sentence).matches()) return "EF-045";
+        if (PART_NOT_WHOLE.matcher(sentence).matches()) return "EF-046";
         return null;
     }
 
@@ -174,6 +207,8 @@ public final class ComputeFault extends RuntimeException {
         }
         var unbound = UNBOUND_PARAMETER.matcher(sentence);
         if (unbound.matches()) p.put("parameter", unbound.group(1));
+        var total = OWN_TOTAL_WITHOUT_DATE.matcher(sentence);
+        if (total.matches()) p.put("attribute", total.group(1));
         var clock = NO_CLOCK_TIME.matcher(sentence);
         if (clock.matches()) {
             p.put("hour", clock.group(1));
