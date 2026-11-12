@@ -6,6 +6,7 @@ import dev.uchar.regelspraak.ir.ExceptionGroup;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.Validity;
 import dev.uchar.regelspraak.ir.PrioritizedDefaults;
+import dev.uchar.regelspraak.ir.ResolvedRuleGroup;
 import dev.uchar.regelspraak.ir.ResolvedScenario;
 import dev.uchar.regelspraak.ir.ResolvedScenario.*;
 import dev.uchar.regelspraak.message.Msg;
@@ -394,7 +395,7 @@ public final class ScenarioResolver {
         }
         ScopeRegelgroepContext s = (ScopeRegelgroepContext) scope;
         String group = src(s.enkeleRegelReferentie());
-        var g = model.ruleGroups.stream().filter(rg -> norm(rg.name()).equals(norm(group))).findFirst().orElse(null);
+        ResolvedRuleGroup g = ruleGroup(model, group);
         if (g == null) {
             error(s.getStart().getLine(),
                     "RGS-227", params("group", group));
@@ -405,10 +406,53 @@ public final class ScenarioResolver {
         return scoped(List.copyOf(forms));
     }
 
+    /** What a scope of rule names and rule groups carries ({@link #scopeForms}): its forms, the names that carry no
+     *  form, and the group names no rule group of the model has, each in the order the scope names them. */
+    public record ScopeForms(List<String> forms, List<String> withoutForm, List<String> unknownGroups) {}
+
+    /**
+     * The forms a scope carries, read as a scenario's scope ({@code toetst de regel …}, {@code toetst de regels …},
+     * {@code toetst de regelgroep …}) is read, so a consumer that scopes a model by names builds the document a
+     * scenario with those names lowers to. A rule name carries the forms of that name, or else the rows of the decision
+     * table of that name ({@link RegelSpraakModel.OriginForm#BESLISTABELRIJ}); a rule group carries the forms of its
+     * members; every defaults group comes with the groups of its stack ({@link #withStack}). Names and groups compare
+     * case-insensitively, whitespace collapsed ({@link dev.uchar.regelspraak.emit.IrEmitter#norm}).
+     *
+     * @param model      a resolved model, or one uchar's IR loader rebuilt
+     * @param defaults   the defaults groups of {@code model}: its {@code prioritizedDefaults}, or what a loader carries
+     *                   beside the model
+     * @param ruleNames  the rule names of the scope
+     * @param ruleGroups the rule groups of the scope
+     */
+    public static ScopeForms scopeForms(RegelSpraakModel model, List<PrioritizedDefaults> defaults,
+                                        List<String> ruleNames, List<String> ruleGroups) {
+        List<String> names = new ArrayList<>(ruleNames);
+        List<String> unknownGroups = new ArrayList<>();
+        for (String group : ruleGroups) {
+            ResolvedRuleGroup g = ruleGroup(model, group);
+            if (g == null) { if (!unknownGroups.contains(group)) unknownGroups.add(group); }
+            else names.addAll(g.members());
+        }
+        LinkedHashSet<String> forms = new LinkedHashSet<>();
+        List<String> withoutForm = new ArrayList<>();
+        for (String name : names) {
+            List<String> carried = formsOf(model, defaults, name);
+            if (carried.isEmpty() && !withoutForm.contains(name)) withoutForm.add(name);
+            forms.addAll(carried);
+        }
+        return new ScopeForms(withStack(model, defaults, List.copyOf(forms)), List.copyOf(withoutForm),
+                List.copyOf(unknownGroups));
+    }
+
+    /** The rule group of {@code model} named {@code name}, compared case-insensitively; null if none. */
+    private static ResolvedRuleGroup ruleGroup(RegelSpraakModel model, String name) {
+        return model.ruleGroups.stream().filter(rg -> norm(rg.name()).equals(norm(name))).findFirst().orElse(null);
+    }
+
     /** A scope over {@code named} and the defaults groups the stack of each concrete type needs beside them
      *  ({@link #withStack}), with the source lines of the blocks whose every form it leaves out. */
     private Scope scoped(List<String> named) {
-        List<String> forms = withStack(named);
+        List<String> forms = withStack(model, model.prioritizedDefaults, named);
         Set<String> carried = new java.util.HashSet<>();
         for (String v : forms) carried.add(norm(v));
         List<LineRange> omitted = new ArrayList<>();
@@ -424,16 +468,17 @@ public final class ScenarioResolver {
      *  stack of every concrete type is the one of the whole document. Read off the groups — their subject, their
      *  target and whether a default at their top holds content of its own — not off their names. A subtype's own base
      *  is a tree of its own, which goes only where a scope names it. */
-    private List<String> withStack(List<String> forms) {
+    private static List<String> withStack(RegelSpraakModel model, List<PrioritizedDefaults> defaults,
+                                          List<String> forms) {
         LinkedHashSet<String> result = new LinkedHashSet<>(forms);
         for (String name : forms)
-            for (PrioritizedDefaults g : model.prioritizedDefaults) {
+            for (PrioritizedDefaults g : defaults) {
                 if (g.name() == null || !norm(g.name()).equals(norm(name))) continue;
-                PrioritizedDefaults base = withoutBase(g) ? baseOf(g) : g;
+                PrioritizedDefaults base = withoutBase(g) ? baseOf(model, defaults, g) : g;
                 if (base == null) continue;
                 result.add(base.name());
-                for (PrioritizedDefaults h : model.prioritizedDefaults)
-                    if (h != base && withoutBase(h) && baseOf(h) == base) result.add(h.name());
+                for (PrioritizedDefaults h : defaults)
+                    if (h != base && withoutBase(h) && baseOf(model, defaults, h) == base) result.add(h.name());
             }
         return List.copyOf(result);
     }
@@ -446,12 +491,13 @@ public final class ScenarioResolver {
 
     /** The group whose base the instances of {@code g}'s subject take: on the nearest strict supertype that has one,
      *  the group with a base on the same target (WF-105 holds a member name to one type of a line). Null if none. */
-    private PrioritizedDefaults baseOf(PrioritizedDefaults g) {
+    private static PrioritizedDefaults baseOf(RegelSpraakModel model, List<PrioritizedDefaults> defaults,
+                                              PrioritizedDefaults g) {
         ObjectType subject = model.objectTypeByName(g.subject());
         if (subject == null) return null;
         List<ObjectType> chain = subject.chain();
         for (ObjectType t : chain.subList(1, chain.size()))
-            for (PrioritizedDefaults b : model.prioritizedDefaults)
+            for (PrioritizedDefaults b : defaults)
                 if (!withoutBase(b) && b.isCharacteristic() == g.isCharacteristic() && norm(b.target()).equals(norm(g.target()))
                         && model.objectTypeByName(b.subject()) == t)
                     return b;
@@ -537,25 +583,38 @@ public final class ScenarioResolver {
         if (c instanceof Condition.QuantifierFold k) { linesOf(k.filter(), visitor, result); linesOf(k.test(), visitor, result); }
     }
 
-    /** The model forms a scope name carries: the named form itself, or every row of the decision table it names. */
+    /** The model forms a scope name carries ({@link #formsOf(RegelSpraakModel, List, String)}), with the ERROR of a
+     *  name that carries none; a decision table the document declares without a row carries none in silence. */
     private List<String> formsOf(String name, int line) {
         String n = norm(name);
-        List<String> result = new ArrayList<>();
-        for (Form v : forms()) if (norm(v.name()).equals(n) && !result.contains(v.name())) result.add(v.name());
-        if (!result.isEmpty()) return result;
-        if (tableNames().contains(n)) {
-            for (Form v : forms())
-                if (norm(v.name()).matches(java.util.regex.Pattern.quote(n) + " [0-9]+") && !result.contains(v.name()))
-                    result.add(v.name());
-            return result;
-        }
-        if (model.ruleGroups.stream().anyMatch(g -> norm(g.name()).equals(n)))
+        List<String> result = formsOf(model, model.prioritizedDefaults, name);
+        if (!result.isEmpty() || tableNames().contains(n)) return result;
+        if (ruleGroup(model, name) != null)
             error(line,
                     "RGS-228", params("name", name));
         else if (exceptionNames().contains(n))
             error(line,
                     "RGS-229", params("name", name));
         else error(line, "RGS-230", params("name", name));
+        return result;
+    }
+
+    /** The forms of {@code model} a scope name carries: the forms of that name, or else every row of the decision
+     *  table of that name, as the model records a row ({@link RegelSpraakModel#generatedFrom}). A form whose name only
+     *  looks like a row ({@code <name> <n>}) is no row. Empty when it carries none. */
+    private static List<String> formsOf(RegelSpraakModel model, List<PrioritizedDefaults> defaults, String name) {
+        String n = norm(name);
+        List<String> result = new ArrayList<>();
+        List<Form> forms = forms(model, defaults);
+        for (Form v : forms) if (v.name() != null && norm(v.name()).equals(n) && !result.contains(v.name())) result.add(v.name());
+        if (!result.isEmpty()) return result;
+        for (Form v : forms) {
+            if (v.name() == null || result.contains(v.name())) continue;
+            var origin = model.generatedFrom(RegelSpraakModel.Designatable.form(v.name()));
+            if (origin.isPresent() && origin.get().form() == RegelSpraakModel.OriginForm.BESLISTABELRIJ
+                    && norm(origin.get().source().name()).equals(n))
+                result.add(v.name());
+        }
         return result;
     }
 
