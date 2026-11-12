@@ -695,7 +695,8 @@ public final class DroolsBackend {
      * read without writing anything on a bean: every object, of the input and made by a creation, with its type and
      * every member that holds a value, the derived value where a rule derived one and the input elsewhere; every link;
      * and the §9.5 facts. {@code label} gives the case label of an input bean and null for an object a creation made;
-     * every bean of the session is the one or the other.
+     * every bean of the session is the one or the other. It is {@link #standingOf} with the refusal of a session in
+     * which an evaluation fault stands.
      *
      * @throws IllegalStateException the sessions {@link #fixpointOf} refuses, in its sentences; a session in which an
      *                               evaluation fault stands, which has no end state; and a bean without a label that no
@@ -709,6 +710,23 @@ public final class DroolsBackend {
                     + " evaluation fault(s) stand, the first in '" + fp.faults().get(0).rule() + "': "
                     + fp.faults().get(0).message());
         return EndState.read(build, session, fp, label, beansClasses(build));
+    }
+
+    /**
+     * What {@code session} holds at its fixpoint, read as {@link #endStateOf} reads it, also where evaluation faults
+     * stand, a limit of this branch among them. Where none stands it is the end state. Where one does, the session has
+     * no end state (RUNTIME-SEMANTICS ch. 5.12a), and what it derives beside its faults is not normed (ch. 5.7): this
+     * backend withdraws the value of the form that faulted, so its target is leeg or holds its input, and a reader of
+     * the target can differ from another executor. This is then no end state and no outcome, only a view of the
+     * Drools session for diagnosis; the faults that stand, the outcome of such a session, are those of
+     * {@link #fixpointOf}.
+     *
+     * @throws IllegalStateException the sessions {@link #fixpointOf} refuses, in its sentences, and a bean without a
+     *                               label that no creation made
+     */
+    public static EndState standingOf(Build build, KieSession session, Function<Object, String> label) {
+        Objects.requireNonNull(label, "label");
+        return EndState.read(build, session, readFixpoint(build, session, label), label, beansClasses(build));
     }
 
     /**

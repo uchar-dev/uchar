@@ -2,6 +2,7 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import dev.uchar.regelspraak.runtime.Breuk;
+import dev.uchar.regelspraak.transpiler.tms.ComputeFault;
 import dev.uchar.regelspraak.transpiler.tms.Fixpoint;
 
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -25,11 +27,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * value of the unbounded form that does not terminate stands exact, where {@link Fixpoint} gives the decimal the bean
  * takes. Gate 17 holds the text of the end state to the reference interpreter's over the corpus; this holds the reader's
  * records, which the text does not show: the beans, the exact rational, and per member whether something derived it
- * and what its bean field holds.
+ * and what its bean field holds. And the diagnostic view {@link DroolsBackend#standingOf}, which reads a session in
+ * which a fault or a limit stands, where {@code endStateOf} refuses it.
  */
 class EndStateWitnessTest {
 
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
+    private static final Path RED = Path.of("..", "..", "corpus", "red");
 
     private record Read(EndState state, Fixpoint fixpoint, Map<String, Object> labels, List<String> lines) {}
 
@@ -44,6 +48,24 @@ class EndStateWitnessTest {
             return new Read(DroolsBackend.endStateOf(build, session, label::get),
                     DroolsBackend.fixpointOf(build, session, label::get), Map.copyOf(labels),
                     SessionDump.endStateLines(build, session, labels));
+        });
+    }
+
+    /** What {@link DroolsBackend#standingOf} reads of a session in which a fault stands, beside the faults, and the
+     *  sentence with which {@link DroolsBackend#endStateOf} refuses the same session. */
+    private record Standing(EndState state, Fixpoint fixpoint, Map<String, Object> labels, String refusal) {}
+
+    private static Standing standing(Path dir, String caseFile, DroolsBackend.Branch branch) throws Exception {
+        JsonNode c = TmsDocuments.JSON.readTree(dir.resolve(caseFile).toFile());
+        return CaseRunner.forMeasurement(dir.resolve("ir.json"), branch).withSession(c, (build, session, labels) -> {
+            DroolsBackend.Firing firing = DroolsBackend.fire(build, session);
+            if (firing.noFixpoint() != null) throw new IllegalStateException("no fixpoint: " + firing.noFixpoint());
+            Map<Object, String> label = new IdentityHashMap<>();
+            labels.forEach((l, b) -> label.put(b, l));
+            String refusal = assertThrows(IllegalStateException.class,
+                    () -> DroolsBackend.endStateOf(build, session, label::get)).getMessage();
+            return new Standing(DroolsBackend.standingOf(build, session, label::get),
+                    DroolsBackend.fixpointOf(build, session, label::get), Map.copyOf(labels), refusal);
         });
     }
 
@@ -135,6 +157,47 @@ class EndStateWitnessTest {
             EndState.Member terug = member(labelled(r.state(), "J2"), "terug");
             assertTrue(terug.derived(), branch + ": " + terug);
             assertNull(terug.given(), branch + ": " + terug);
+        }
+    }
+
+    @Test void the_standing_view_reads_a_session_in_which_a_fault_stands() throws Exception {
+        for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
+            Standing s = standing(RED.resolve("jutterswet-fout-aan-fixpunt"), "case1.json", branch);
+            assertTrue(s.refusal().startsWith("the session has no end state: "), branch + ": " + s.refusal());
+            assertEquals(1, s.fixpoint().faults().size(), branch + ": " + s.fixpoint().faults());
+            EndState.EndObject v3 = labelled(s.state(), "V3");
+            assertEquals("Vondst", v3.type());
+            // the input and what the rules before the faulted one derived stand; the date that names no day does not
+            EndState.Member gemeld = member(v3, "gemeld");
+            assertFalse(gemeld.derived(), branch + ": " + gemeld);
+            assertEquals(Boolean.TRUE, gemeld.given(), branch + ": " + gemeld);
+            EndState.Member erkend = member(v3, "erkend");
+            assertTrue(erkend.derived(), branch + ": " + erkend);
+            assertNull(erkend.given(), branch + ": " + erkend);
+            EndState.Member bergtermijn = member(v3, "bergtermijn");
+            assertTrue(bergtermijn.derived(), branch + ": " + bergtermijn);
+            assertEquals(0, new BigDecimal("31").compareTo((BigDecimal) bergtermijn.value()), branch + ": " + bergtermijn);
+            assertFalse(has(v3, "vervaldag"), branch + ": the faulted form's target is leeg " + v3.members());
+            assertEquals(0, new BigDecimal("4").compareTo((BigDecimal) member(v3, "vervalmaand").value()), branch.toString());
+        }
+    }
+
+    @Test void the_standing_view_reads_a_session_in_which_a_limit_stands() throws Exception {
+        for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
+            Standing s = standing(GOLDEN.resolve("anchor/jutterswet-verzuimrente-30-360"), "case1-voorbeeld.json", branch);
+            assertTrue(s.refusal().startsWith("the session has no end state: "), branch + ": " + s.refusal());
+            assertTrue(s.fixpoint().faults().stream().anyMatch(f -> f.fault() instanceof ComputeFault c
+                            && c.limit() != null && c.limit().code().id().equals("DROOLS-312")),
+                    branch + ": a limit DROOLS-312 stands " + s.fixpoint().faults());
+            EndState.EndObject a1 = labelled(s.state(), "A1");
+            assertEquals("Afdracht", a1.type());
+            EndState.Member betaaldatum = member(a1, "betaaldatum");
+            assertFalse(betaaldatum.derived(), branch + ": " + betaaldatum);
+            assertSame(betaaldatum.given(), betaaldatum.value(), branch + ": " + betaaldatum);
+            EndState.Member rentedagen = member(a1, "rentedagen");
+            assertTrue(rentedagen.derived(), branch + ": " + rentedagen);
+            assertNull(rentedagen.given(), branch + ": " + rentedagen);
+            assertTrue(member(a1, "rentedragend").derived(), branch.toString());
         }
     }
 }

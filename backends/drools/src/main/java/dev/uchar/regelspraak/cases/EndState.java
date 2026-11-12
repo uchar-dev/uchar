@@ -32,6 +32,8 @@ import java.util.function.Function;
  * ({@link DroolsBackend#endStateOf}): every object, of the input and made by a creation, with its type and every member
  * of it that holds a value; every link; and the §9.5 facts. Where {@link Fixpoint} gives what the rules derived, this
  * gives what stands: the input of a member where nothing derived it, the derived value where something did.
+ * {@link DroolsBackend#standingOf} gives the same record for a session in which an evaluation fault stands, which has
+ * no end state: there it is a view of the session for diagnosis, and nothing norms it (ch. 5.7).
  *
  * @param objects every object of the session: those of the input in the order of their labels, then the made objects in
  *                the order {@link Fixpoint#objects} gives them
@@ -105,7 +107,7 @@ public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFa
         }
     }
 
-    /** The reader behind {@link DroolsBackend#endStateOf}: {@code fp} is the fixpoint of {@code session}, {@code label}
+    /** The reader behind {@link DroolsBackend#endStateOf} and {@link DroolsBackend#standingOf}: {@code fp} is the fixpoint of {@code session}, {@code label}
      *  the case label of an input bean and null for any other, {@code classes} the bean class of every object type. */
     static EndState read(DroolsBackend.Build build, KieSession session, Fixpoint fp, Function<Object, String> label,
                          Map<Class<?>, ObjectType> classes) {
