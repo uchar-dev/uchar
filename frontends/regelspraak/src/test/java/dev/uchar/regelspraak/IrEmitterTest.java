@@ -1392,10 +1392,10 @@ class IrEmitterTest {
         assertFalse(c.contains("uniciteitUnies"), () -> "de tweede lijst bestaat op de wire niet meer:\n" + c);
     }
 
-    @Test void an_allocation_without_method_is_omitted_and_reported() {
-        // IR-SPEC ch. 3.2 gives an allocation one of three methods. An allocation the frontend could not give one
-        // (its placeholder) has no spelling: it is left out, and a WARNING that names it is appended to the
-        // diagnostics, line 0 because the model keeps no line for it (WF-113 (a)). The other allocations stand.
+    @Test void an_allocation_without_method_is_refused() {
+        // IR-SPEC ch. 3.2 gives an allocation one of three methods. The resolver refuses an allocation it could give
+        // none with an ERROR, so the model's placeholder reaches the emitter only in a model built by hand, and the
+        // emitter refuses it there: a document that left the allocation out would read as one without it.
         RegelSpraakModel m = Resolver.resolve("""
             Objecttype de Berging (mv: Bergingen)
                 de opbrengst Numeriek (geheel getal);
@@ -1419,14 +1419,10 @@ class IrEmitterTest {
                 dev.uchar.regelspraak.ir.ResolvedAllocation.Method.COMPLEX, v.ratioAttribute(),
                 v.maximumAttribute(), v.roundingDecimals(), v.remainderAttribute(), v.orderingAttribute(), v.descending(),
                 v.condition(), v.validity()));
-        String c = IrEmitter.emit(m).replaceAll("\\s+", "");
-        assertTrue(c.contains("\"allocations\":[],"), () -> "de verdeling zonder methode hoort weg te blijven:\n" + c);
-        assertFalse(c.contains("COMPLEX"), () -> "de plaatshouder heeft geen spelling:\n" + c);
-        assertTrue(c.contains("\"diagnostics\":[{\"node\":\"Diagnostic\",\"severity\":\"warning\",\"message\":"
-                        + "\"verdeling'verdeling'wordtnietgeschreven:"), () -> "de WARNING noemt de verdeling:\n" + c);
-        assertTrue(c.endsWith("\"line\":0}]}"), () -> "regel 0, als laatste diagnose:\n" + c);
-        assertEquals(1, IrEmitter.unwrittenAllocations(m).size());
-        Report.assertAccountedFor(IrEmitter.emit(m));
+        IrEmitter.Refusal refused = assertThrows(IrEmitter.Refusal.class, () -> IrEmitter.emit(m));
+        assertEquals("IrEmitter: the allocation 'verdeling' has none of the three methods of IR-SPEC ch. 3.2",
+                refused.getMessage());
+        assertEquals("verdeling", refused.form());
     }
 
     /** An allocation the frontend can give none of the three methods is an ERROR at the allocation, with its reason:

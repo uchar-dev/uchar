@@ -1536,9 +1536,7 @@ public final class RegelSpraakModel {
             lists.add(l);
         };
         collect.accept(objectCreations.stream().map(dev.uchar.regelspraak.ir.ResolvedObjectCreation::name).toList());
-        collect.accept(allocations.stream()
-                .filter(v -> v.method() != dev.uchar.regelspraak.ir.ResolvedAllocation.Method.COMPLEX)
-                .map(dev.uchar.regelspraak.ir.ResolvedAllocation::name).toList());
+        collect.accept(allocations.stream().map(dev.uchar.regelspraak.ir.ResolvedAllocation::name).toList());
         collect.accept(consistencies.stream().map(dev.uchar.regelspraak.ir.ResolvedConsistency::name).toList());
         List<String> unique = new ArrayList<>(uniquenesses.stream().map(dev.uchar.regelspraak.ir.ResolvedUniqueness::name).toList());
         unique.addAll(uniquenessUnions.stream().map(dev.uchar.regelspraak.ir.ResolvedUniquenessUnion::name).toList());

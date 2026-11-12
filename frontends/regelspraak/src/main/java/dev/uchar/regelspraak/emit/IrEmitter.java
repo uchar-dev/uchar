@@ -63,9 +63,7 @@ import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
  * version writes its kind as {@code initialisation} and {@code presentation}; a fold is an {@code Aggregation} and
  * every other function a {@code BuiltinCall}; a literal writes the typed value its type names; the bound day of a
  * day-kind definition is a {@code BoundDay} and a session value a {@code ContextValue}. No filtering: it is the
- * uchar-programme mirror artifact (mirror first, diverge later), with one exception the wire forces — an allocation
- * whose method the frontend could not decide has no spelling, so it is left out and a WARNING names it
- * ({@link #unwrittenAllocations}). The key order of every node is the order this emitter wrote it in before the
+ * uchar-programme mirror artifact (mirror first, diverge later). The key order of every node is the order this emitter wrote it in before the
  * L5 renaming, with the keys renamed in place and a field left out where the model is empty, so a re-emission is
  * byte-identical to a migrated document. That is the {@code properties} order of the schema
  * ({@code spec/schema/uchar-ir-v1.schema.json}), as {@code spec/schema/README.md} records.
@@ -84,18 +82,6 @@ import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
  * faithful serialisation.
  */
 public final class IrEmitter {
-
-    /** The allocations the wire cannot carry, as WARNING diagnostics: one whose method the frontend could not decide
-     *  (the model's placeholder for it). IR-SPEC ch. 3.2 gives an allocation one of three methods and nothing else,
-     *  so it is left out of the document and this names it, which is the producer's account of what stayed unresolved
-     *  (WF-113). The model has no source line for an allocation, so the line is 0: a frontend warning without a
-     *  token. {@link #emit} appends these after the model's own diagnostics; {@code Resolver --ir} prints them. */
-    public static List<Diagnostic> unwrittenAllocations(RegelSpraakModel m) {
-        return m.allocations.stream().filter(v -> v.method() == ResolvedAllocation.Method.COMPLEX)
-                .map(v -> new Diagnostic(RegelSpraakModel.Severity.WARNING,
-                        "RGS-001", params("name", v.name()), 0))
-                .toList();
-    }
 
     /** A refusal of this emitter, with the place it arose: the line of the innermost node being written that has one
      *  (0 for none) and the name of the form being written (null outside a form). The message is the refusal's own,
@@ -317,12 +303,8 @@ public final class IrEmitter {
                 null)) form(v.name(), () -> objectCreation(v));
         w.endArray();
 
-        // an allocation without one of the three methods has no spelling: it is left out, and
-        // unwrittenAllocations names it in the diagnostics below
         w.key("allocations").beginArray();
-        List<ResolvedAllocation> allocations = m.allocations.stream()
-                .filter(v -> v.method() != ResolvedAllocation.Method.COMPLEX).toList();
-        for (Form<ResolvedAllocation> v : forms("allocations", allocations, ResolvedAllocation::name, null))
+        for (Form<ResolvedAllocation> v : forms("allocations", m.allocations, ResolvedAllocation::name, null))
             form(v.name(), () -> allocation(v));
         w.endArray();
 
@@ -367,7 +349,6 @@ public final class IrEmitter {
 
         w.key("diagnostics").beginArray();
         for (Diagnostic d : m.diagnostics) diagnostic(d);
-        for (Diagnostic d : unwrittenAllocations(m)) diagnostic(d);
         w.endArray();
 
         w.endObject();
@@ -1699,11 +1680,13 @@ public final class IrEmitter {
         w.endObject();
     }
 
-    /** An optional field left out when the model holds none; the method is one of the three (the model's
-     *  placeholder never reaches here, see {@link #unwrittenAllocations}). */
+    /** An optional field left out when the model holds none; the method is one of the three of IR-SPEC ch. 3.2. The
+     *  model's placeholder for none has no spelling, and the resolver refuses an allocation that keeps it with an
+     *  ERROR, so the refusal below guards a model built by hand. */
     private void allocationVersion(ResolvedAllocation v) {
-        if (v.method() == null)
-            throw new IllegalStateException("IrEmitter: the allocation '" + v.name() + "' has no method");
+        if (v.method() == null || v.method() == ResolvedAllocation.Method.COMPLEX)
+            throw new IllegalStateException("IrEmitter: the allocation '" + v.name() + "' has none of the three "
+                    + "methods of IR-SPEC ch. 3.2");
         // IR-SPEC ch. 3.2: the recipient join is the binding; a verdeling without it has no join to execute. The
         // resolver binds it (the written role, else the one relation) and refuses what binds nothing, so the
         // refusal below guards a model built by hand

@@ -436,8 +436,7 @@ final class RuleChecker {
         };
         forms.accept("rules", model.resolvedRules.stream().map(ResolvedRule::name).toList());
         forms.accept("objectCreations", model.objectCreations.stream().map(o -> o.name()).toList());
-        forms.accept("allocations", model.allocations.stream()
-                .filter(v -> v.method() != ResolvedAllocation.Method.COMPLEX).map(v -> v.name()).toList());
+        forms.accept("allocations", model.allocations.stream().map(v -> v.name()).toList());
         forms.accept("consistencies", model.consistencies.stream().map(c -> c.name()).toList());
         forms.accept("uniquenesses", java.util.stream.Stream.concat(model.uniquenesses.stream().map(u -> u.name()),
                 model.uniquenessUnions.stream().map(u -> u.name())).toList());
@@ -1010,7 +1009,7 @@ final class RuleChecker {
      *  {@code cond_has_window}. One ERROR per offending composite or fold, so {@link Resolver#irMode} writes
      *  nothing. */
     private void checkWindowPositions() {
-        eachWrittenPart(model, true, true, new WrittenParts() {
+        eachWrittenPart(model, true, new WrittenParts() {
             public void condition(Condition c, ObjectType subject) { windowPosition(c); }
             public void expression(Expr e, ObjectType subject) { windowPositionIn(e); }
         });
@@ -1089,7 +1088,7 @@ final class RuleChecker {
      */
     private void checkPaths() {
         Set<Object> reported = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
-        eachWrittenPart(model, false, false, new WrittenParts() {
+        eachWrittenPart(model, false, new WrittenParts() {
             public void condition(Condition c, ObjectType subject) { pathForm = subject; navigation(c, subject, reported); }
             public void expression(Expr e, ObjectType subject) { pathForm = subject; navigation(e, subject, reported); }
         });
@@ -1303,7 +1302,7 @@ final class RuleChecker {
      *  rule values and conditions, day-kind conditions, creation values and conditions, allocation and fact-creation
      *  conditions, consistency assertions and the defaults, window bounds and fold sources included. */
     private void everyWrittenExpr(java.util.function.Predicate<Expr> visitor) {
-        eachWrittenPart(model, false, true, new WrittenParts() {
+        eachWrittenPart(model, false, new WrittenParts() {
             public void condition(Condition c, ObjectType subject) { Condition.containsOperand(c, visitor); }
             public void expression(Expr e, ObjectType subject) { Expr.contains(e, visitor); }
         });
@@ -1319,14 +1318,14 @@ final class RuleChecker {
     /**
      * The one walk over the forms the emitter writes, after the lift, in its order: a rule's target (with
      * {@code targets}), value and condition; a day-kind definition's condition; an object creation's values and
-     * condition; an allocation's condition (one the emitter leaves out as COMPLEX only with {@code complexAllocations});
+     * condition; an allocation's condition;
      * a consistency's assertion; a fact creation's condition; and every default's justification and consequence, nested
      * exception groups included. A restrictive exception repeats its carrier's conjuncts, the very same nodes, so a
      * justification is handed over one conjunct at a time with {@link Condition#eachConjunctOnce}: a shared conjunct is
      * judged once, not once per exception above it. Every check over the written document walks this, so none misses a
      * form another one reaches.
      */
-    static void eachWrittenPart(RegelSpraakModel model, boolean targets, boolean complexAllocations, WrittenParts parts) {
+    static void eachWrittenPart(RegelSpraakModel model, boolean targets, WrittenParts parts) {
         for (ResolvedRule r : model.resolvedRules) {
             ObjectType subject = targetSubject(r);
             if (targets) parts.expression(r.target(), subject);
@@ -1338,9 +1337,7 @@ final class RuleChecker {
             for (var t : oc.assignments()) parts.expression(t.value(), oc.subject());
             parts.condition(oc.condition(), oc.subject());
         }
-        for (var v : model.allocations)
-            if (complexAllocations || v.method() != ResolvedAllocation.Method.COMPLEX)
-                parts.condition(v.condition(), v.sourceType());
+        for (var v : model.allocations) parts.condition(v.condition(), v.sourceType());
         for (var c : model.consistencies) parts.condition(c.assertion(), c.subject());
         for (var fc : model.factCreations) parts.condition(fc.condition(), fc.anchor());
         Set<Condition> seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
@@ -3215,7 +3212,7 @@ final class RuleChecker {
             java.util.function.Predicate<Condition> check = c -> c instanceof Condition.CharacteristicCheck k
                     && dev.uchar.regelspraak.emit.IrEmitter.norm(k.characteristic()).equals(key);
             boolean[] read = {false};
-            eachWrittenPart(model, false, true, new WrittenParts() {
+            eachWrittenPart(model, false, new WrittenParts() {
                 public void condition(Condition c, ObjectType subject) { read[0] |= uses(c, ref, check); }
                 public void expression(Expr e, ObjectType subject) { read[0] |= uses(e, ref, check); }
             });
@@ -4466,9 +4463,9 @@ final class RuleChecker {
         }
 
         ResolvedAllocation.Method method = ResolvedAllocation.Method.COMPLEX;
-        // why the allocation has none of the three methods of IR-SPEC ch. 3.2. Without a reason it stays the
-        // emitter's WARNING (RGS-001): ANTLR's recovery left the method out and the syntax error speaks for it, or an
-        // attribute it names is undeclared, which has its own ERROR (RGS-425)
+        // why the allocation has none of the three methods of IR-SPEC ch. 3.2. Without a reason another ERROR speaks
+        // for it: ANTLR's recovery left the method out and the syntax error is reported, an attribute it names is
+        // undeclared (RGS-425), or one is not a number (RGS-423)
         Msg withoutMethod = null;
         String ratio = null;
         if (z != null && z.IN_GELIJKE_DELEN() != null) method = ResolvedAllocation.Method.GELIJKE_DELEN;

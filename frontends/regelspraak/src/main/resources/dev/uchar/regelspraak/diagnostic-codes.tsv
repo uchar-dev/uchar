@@ -1,5 +1,4 @@
 code	slug	severity	params
-RGS-001	allocation-without-method	WARNING	name
 RGS-002	objecttype-multiple-supertypes	ERROR	names,objectType
 RGS-003	objecttype-own-supertype	ERROR	objectType
 RGS-004	supertype-undeclared	ERROR	objectType,rationale,supertype

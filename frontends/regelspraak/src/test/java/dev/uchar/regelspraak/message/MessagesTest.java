@@ -31,7 +31,7 @@ class MessagesTest {
 
     @Test void the_frontend_renders_dutch_unless_told_otherwise() {
         assertEquals(Locale.forLanguageTag("nl"), Messages.defaultLocale(Component.FRONTEND));
-        assertTrue(Messages.render(Component.FRONTEND, "RGS-001", ARGS).startsWith("verdeling 'vondst' wordt niet geschreven"));
+        assertTrue(Messages.render(Component.FRONTEND, "RGS-184", ARGS).startsWith("verdeling met afronding/maximum zonder herkenbare onverdeelde rest") && Messages.render(Component.FRONTEND, "RGS-184", ARGS).endsWith("(regel 'vondst')"));
     }
 
     @Test void the_drools_backend_renders_english_unless_told_otherwise() {
@@ -41,23 +41,23 @@ class MessagesTest {
     @Test void the_system_property_sets_the_default_language_of_every_component() {
         System.setProperty(Messages.PROPERTY, "en");
         assertEquals(Locale.forLanguageTag("en"), Messages.defaultLocale(Component.FRONTEND));
-        assertTrue(Messages.render(Component.FRONTEND, "RGS-001", ARGS).startsWith("allocation 'vondst' is not written"));
+        assertTrue(Messages.render(Component.FRONTEND, "RGS-184", ARGS).startsWith("allocation with rounding/maximum without a recognizable undivided remainder"));
         System.setProperty(Messages.PROPERTY, "nl");
         assertEquals(Locale.forLanguageTag("nl"), Messages.defaultLocale(Component.DROOLS));
     }
 
     @Test void an_explicit_locale_wins_over_the_property() {
         System.setProperty(Messages.PROPERTY, "nl");
-        assertTrue(Messages.render(Component.FRONTEND, Locale.ENGLISH, "RGS-001", ARGS).startsWith("allocation 'vondst' is not written"));
+        assertTrue(Messages.render(Component.FRONTEND, Locale.ENGLISH, "RGS-184", ARGS).startsWith("allocation with rounding/maximum without a recognizable undivided remainder"));
     }
 
     @Test void a_language_without_a_catalogue_is_a_fault_with_the_key() {
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> Messages.render(Component.FRONTEND, Locale.FRENCH, "RGS-001", ARGS));
-        assertTrue(e.getMessage().contains("RGS-001") && e.getMessage().contains("fr"), e.getMessage());
+                () -> Messages.render(Component.FRONTEND, Locale.FRENCH, "RGS-184", ARGS));
+        assertTrue(e.getMessage().contains("RGS-184") && e.getMessage().contains("fr"), e.getMessage());
         System.setProperty(Messages.PROPERTY, "fr");
-        e = assertThrows(IllegalArgumentException.class, () -> Messages.render(Component.FRONTEND, "RGS-001", ARGS));
-        assertTrue(e.getMessage().contains("RGS-001"), e.getMessage());
+        e = assertThrows(IllegalArgumentException.class, () -> Messages.render(Component.FRONTEND, "RGS-184", ARGS));
+        assertTrue(e.getMessage().contains("RGS-184"), e.getMessage());
     }
 
     @Test void a_key_without_an_entry_is_a_fault_with_the_key() {
@@ -68,13 +68,13 @@ class MessagesTest {
 
     @Test void a_place_without_a_parameter_is_a_fault_with_the_key() {
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> Messages.render(Component.FRONTEND, "RGS-001", Map.of()));
-        assertTrue(e.getMessage().contains("RGS-001") && e.getMessage().contains("{name}"), e.getMessage());
+                () -> Messages.render(Component.FRONTEND, "RGS-184", Map.of()));
+        assertTrue(e.getMessage().contains("RGS-184") && e.getMessage().contains("{name}"), e.getMessage());
     }
 
     @Test void a_parameter_the_sentence_does_not_print_is_no_fault() {
-        assertEquals(Messages.render(Component.FRONTEND, "RGS-001", ARGS),
-                Messages.render(Component.FRONTEND, "RGS-001", Map.of("name", "vondst", "unused", "x")));
+        assertEquals(Messages.render(Component.FRONTEND, "RGS-184", ARGS),
+                Messages.render(Component.FRONTEND, "RGS-184", Map.of("name", "vondst", "unused", "x")));
     }
 
     @Test void a_sentence_part_renders_in_the_language_of_the_sentence_around_it() {

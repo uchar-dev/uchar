@@ -197,7 +197,6 @@ PART.day-kind-read.role-membership	role membership
 PART.day-kind-read.rule-version-state	rule-version state
 PART.day-kind-read.identity-check	identity check
 PART.day-kind-read.instance-quantification	instance quantification
-RGS-001	allocation '{name}' is not written: the frontend determined none of the three allocation methods (in equal parts, in proportion, in order) for it, and an allocation without a method has no spelling in uchar-ir-v1
 RGS-002	object type '{objectType}' declares more than one supertype ({names}) — WF-106: an object type declares at most one direct supertype. The two known cases with two direct parents (RechtOpUitkeringWazo, RechtUitkeringZw) are refused here and not flattened: choose one parent, or lift the shared part to a common supertype
 RGS-003	object type '{objectType}' is its own supertype — WF-104: the supertype graph is acyclic, self-reference included (a chain without a root lets member resolution stop nowhere)
 RGS-004	object type '{objectType}': supertype '{supertype}' is not declared anywhere as an object type{rationale}
@@ -265,7 +264,7 @@ RGS-049	the designation '{text}' of {element} names the vocabulary '{vocabulary}
 RGS-050	{element} carries two designations in the vocabulary '{vocabulary}', '{earlierText}' and '{text}'; a declaration has at most one designation per vocabulary (WF-117)
 RGS-051	the annotation '({key}:{text}' at {element} is not closed on its line; a designation stands between parentheses on one line
 RGS-051.vocabulary	vocabulary '{name}'
-RGS-052	the rule '{name}' carries a designation, but on the wire it becomes no named form (a rule, creation, allocation, consistency, uniqueness or defaults group): a 'dagsoort'-definition and a start-point determination have no name, and an allocation without a method is not written; without a form the designation has no place
+RGS-052	the rule '{name}' carries a designation, but on the wire it becomes no named form (a rule, creation, allocation, consistency, uniqueness or defaults group): a 'dagsoort'-definition and a start-point determination have no name; without a form the designation has no place
 RGS-053	{element} carries no designation in the default vocabulary '{vocabulary}', which names every declaration (WF-119); the frontend composes the designation of this declaration from those of {sources}{outcome}
 RGS-053.none-of-many	, and none of them carries one
 RGS-053.none-of-one	, and that one carries none

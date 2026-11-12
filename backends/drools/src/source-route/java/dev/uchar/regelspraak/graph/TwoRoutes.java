@@ -35,9 +35,6 @@ final class TwoRoutes {
     static Twin read(String text) {
         RegelSpraakModel m = Resolver.resolve(text);
         assertTrue(m.isOk(), () -> "de bron resolvet niet: " + m.diagnostics);
-        // an allocation the wire has no spelling for stays out of the IR, so the two routes would read two models
-        assertTrue(IrEmitter.unwrittenAllocations(m).isEmpty(),
-                () -> "de wire laat een verdeling weg: " + IrEmitter.unwrittenAllocations(m));
         IrLoader.Loaded w;
         try {
             w = IrLoader.loadAll(JSON.readTree(IrEmitter.emit(m)));

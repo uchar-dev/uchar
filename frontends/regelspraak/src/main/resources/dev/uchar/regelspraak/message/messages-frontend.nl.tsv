@@ -197,7 +197,6 @@ PART.day-kind-read.role-membership	rolcheck
 PART.day-kind-read.rule-version-state	toestand van een regelversie
 PART.day-kind-read.identity-check	identiteitstoets
 PART.day-kind-read.instance-quantification	kwantificatie over instanties
-RGS-001	verdeling '{name}' wordt niet geschreven: de frontend bepaalde voor haar geen van de drie verdeelmethoden (in gelijke delen, naar rato, op volgorde), en een verdeling zonder methode heeft geen spelling in uchar-ir-v1
 RGS-002	objecttype '{objectType}' declareert meer dan één supertype ({names}) — WF-106: een objecttype declareert hoogstens één direct supertype. De twee bekende gevallen met twee directe ouders (RechtOpUitkeringWazo, RechtUitkeringZw) worden hier geweigerd en niet platgeslagen: kies één ouder, of til het gedeelde deel naar een gemeenschappelijk supertype
 RGS-003	objecttype '{objectType}' is zijn eigen supertype — WF-104: de supertypegraaf is acyclisch, zelfverwijzing inbegrepen (een keten zonder wortel laat ledenresolutie nergens stoppen)
 RGS-004	objecttype '{objectType}': supertype '{supertype}' is nergens als objecttype gedeclareerd{rationale}
@@ -265,7 +264,7 @@ RGS-049	de benaming '{text}' van {element} noemt het vocabulaire '{vocabulary}',
 RGS-050	{element} draagt twee benamingen in het vocabulaire '{vocabulary}', '{earlierText}' en '{text}'; een declaratie heeft hooguit één benaming per vocabulaire (WF-117)
 RGS-051	de annotatie '({key}:{text}' bij {element} is niet op haar regel gesloten; een benaming staat tussen haakjes op één regel
 RGS-051.vocabulary	vocabulaire '{name}'
-RGS-052	de regel '{name}' draagt een benaming, maar wordt op de wire geen benoemde vorm (een regel, creatie, verdeling, consistentie, uniciteit of defaultsgroep): een dagsoortdefinitie en een startpuntbepaling hebben geen naam, en een verdeling zonder methode wordt niet geschreven; zonder vorm heeft de benaming geen plaats
+RGS-052	de regel '{name}' draagt een benaming, maar wordt op de wire geen benoemde vorm (een regel, creatie, verdeling, consistentie, uniciteit of defaultsgroep): een dagsoortdefinitie en een startpuntbepaling hebben geen naam; zonder vorm heeft de benaming geen plaats
 RGS-053	{element} draagt geen benaming in het standaardvocabulaire '{vocabulary}', dat elke declaratie noemt (WF-119); de frontend stelt de benaming van deze declaratie samen uit die van {sources}{outcome}
 RGS-053.none-of-many	, en geen daarvan draagt er een
 RGS-053.none-of-one	, en dat draagt er geen

@@ -202,8 +202,8 @@ public final class Spelling {
             .row(ResolvedAllocation.Method.NAAR_RATO, "proportional")
             .row(ResolvedAllocation.Method.OP_VOLGORDE, "ordered")
             .unwritten(ResolvedAllocation.Method.COMPLEX,
-                    "the frontend decided none of the three methods, so the allocation has no document (IR-SPEC "
-                            + "ch. 3.2) and a warning names it");
+                    "the frontend decided none of the three methods (IR-SPEC ch. 3.2), and the resolver refuses "
+                            + "such an allocation with an ERROR");
 
     public static final Family<Condition.Operator> COMPARISON_OP = new Family<Condition.Operator>("Comparison.op",
             "Comparison.op")

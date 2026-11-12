@@ -18,7 +18,7 @@ import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
  * (after the §9.7.3 cap / §9.7.4 floor) to the next group. It lowers via the registered
  * {@code rsVerdeelOpVolgorde} helper that computes the whole allocation in one shot. Only the truly
  * unhandled forms — an unresolvable join, a non-numeric ordering/weight key, or a maximum on a
- * gelijke-delen tie — stay {@link Method#COMPLEX} (a marked placeholder).
+ * gelijke-delen tie — stay {@link Method#COMPLEX}, a placeholder the resolver refuses with an ERROR.
  *
  * <p>The §9.7.3 "met een maximum van", §9.7.4 "afgerond op N decimalen naar beneden" and §9.7.5
  * "onverdeelde rest" modifiers (the {@code meervoudigCriterium} bullet form) ride on every fireable

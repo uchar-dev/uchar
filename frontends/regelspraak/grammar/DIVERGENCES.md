@@ -2934,8 +2934,7 @@ every sentence on its line):
 - `de regel '<r>' draagt een benaming, maar wordt op de wire geen benoemde
   vorm (een regel, creatie, verdeling, consistentie, uniciteit of
   defaultsgroep): een dagsoortdefinitie en een startpuntbepaling hebben geen
-  naam, en een verdeling zonder methode wordt niet geschreven; zonder vorm
-  heeft de benaming geen plaats`
+  naam; zonder vorm heeft de benaming geen plaats`
 - `<Declaratie> draagt geen benaming in het standaardvocabulaire '<v>', dat
   elke declaratie noemt (WF-119)`, with `; de frontend schreef deze
   declaratie zelf, zonder plaats voor een annotatie` where the declaration is

@@ -142,23 +142,13 @@ public final class Resolver {
             ScenarioResolver.Read r = ScenarioResolver.read(text);
             RegelSpraakModel m = r.bundle().model();
             requireScenario(r.bundle());
-            RegelSpraakModel irModel = r.bundle().scenarios().isEmpty() ? m
-                    : dev.uchar.regelspraak.emit.CaseEmitter.withScope(m, r.bundle().scenarios().get(0).scope());
             return SemanticTokens.of(files, text, firstLines, r.tokens(), r.production(), r.test(), m,
-                    diagnostics(m, irModel), r.recovered());
+                    new java.util.ArrayList<>(m.diagnostics), r.recovered());
         }
         Parsed p = parse(text, IntStream.UNKNOWN_SOURCE_NAME);
         RegelSpraakModel m = build(p.doc(), p.tokens(), p.syntax());
-        return SemanticTokens.of(files, text, firstLines, p.tokens(), p.doc(), null, m, diagnostics(m, m),
-                !p.syntax().isEmpty());
-    }
-
-    /** The diagnostics a route prints for {@code model}: the model's, then the WARNINGs the emitter adds for what the
-     *  wire cannot carry of {@code irModel}, the model it writes. */
-    private static java.util.List<Diagnostic> diagnostics(RegelSpraakModel model, RegelSpraakModel irModel) {
-        java.util.List<Diagnostic> all = new java.util.ArrayList<>(model.diagnostics);
-        all.addAll(dev.uchar.regelspraak.emit.IrEmitter.unwrittenAllocations(irModel));
-        return all;
+        return SemanticTokens.of(files, text, firstLines, p.tokens(), p.doc(), null, m,
+                new java.util.ArrayList<>(m.diagnostics), !p.syntax().isEmpty());
     }
 
     /** A test document lowers its scenarios to case files, so one without a scenario is an ERROR. */
@@ -247,7 +237,7 @@ public final class Resolver {
         };
         // a marker nested in an exception is as much on the wire as a top-level one, and one in a base's condition is one
         // WARNING, not one per exception above it
-        RuleChecker.eachWrittenPart(m, true, true, new RuleChecker.WrittenParts() {
+        RuleChecker.eachWrittenPart(m, true, new RuleChecker.WrittenParts() {
             public void condition(Condition c, RegelSpraakModel.ObjectType subject) { Condition.collectUnresolved(c, report); }
             public void expression(Expr e, RegelSpraakModel.ObjectType subject) { Expr.collectUnresolved(e, report); }
         });
@@ -388,9 +378,6 @@ public final class Resolver {
         // be SEEN, also on a successful run, the one path an author actually uses. stderr, so the stdout
         // summary stays parseable.
         m.diagnostics.stream().filter(d -> !d.isError()).forEach(d -> System.err.println("  " + d));
-        // the WARNINGs the emitter itself appends, for what the wire cannot carry, are shown the same way
-        dev.uchar.regelspraak.emit.IrEmitter.unwrittenAllocations(m)
-                .forEach(d -> System.err.println("  " + d));
         if (m.document() == null)
             throw new IllegalStateException("Resolver: a model without an ERROR has its document from the build");
         java.nio.file.Files.writeString(out, m.document(), java.nio.charset.StandardCharsets.UTF_8);
@@ -437,8 +424,6 @@ public final class Resolver {
             return 1;
         }
         m.diagnostics.stream().filter(d -> !d.isError()).forEach(d -> System.err.println(message.apply(d)));
-        dev.uchar.regelspraak.emit.IrEmitter.unwrittenAllocations(irModel)
-                .forEach(d -> System.err.println("  " + d));
         // Everything is decided before anything is written: the IR document and every case file as text, and the
         // case files the map already holds that this run would not write — a case left there beside the new ones
         // would be replayed against an IR document it was not written for. Written file by file, a refusal
