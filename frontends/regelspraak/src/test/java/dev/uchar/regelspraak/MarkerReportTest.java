@@ -151,7 +151,7 @@ class MarkerReportTest {
             Regel vangsttotaal
                 geldig altijd
                     Het vangsttotaal van een Jutter moet berekend worden als de som van het totaalgewicht van alle strandmaten van de Jutter over alle seizoenen.
-            """, "een dimensieselectie / 'gedurende de tijd dat' op een aggregatie");
+            """, "een dimensieselectie op een aggregatie wordt nog niet omgezet");
     }
 
     @Test void fold_source_nested_set_step() {

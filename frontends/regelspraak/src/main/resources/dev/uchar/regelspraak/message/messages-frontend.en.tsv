@@ -297,7 +297,7 @@ RGS-066	sum fallback of a summation: sum fallback is {kind}, must be numeric
 RGS-067	filled count '{expression}': the filled count is an INSTANCE fold and MUST carry an element type: without one its argument is no fold source at all, and the count has no contributors whose values it could test for presence (ch. 4.3)
 RGS-068	'{attribute}' is not a declared member (or plural of one) of {objectType} — the aggregation remains unresolved (§13.4.17) — '{expression}'
 RGS-069	a 'die/dat'-subselection on an aggregation operand is not yet lowered; the aggregation is left out of account instead of taking all instances along (§5.6) — '{filter}'
-RGS-070	a dimension selection / 'gedurende de tijd dat' on an aggregation is not yet lowered; the aggregation is left out of account instead of ignoring the selection (§13.4.17.51-.58) — '{expression}'
+RGS-070	a dimension selection on an aggregation is not yet lowered; the aggregation is left out of account instead of ignoring the selection (§13.4.17.51-.54) — '{expression}'
 RGS-071	{fold}: value fold with fewer than two operands
 RGS-072	count '{expression}' is {reason}
 RGS-073	chain without sourcePath in a fold source: {reason} — a sourcePath runs from the rule subject to the elements and binds each step to exactly one role (IR-SPEC ch. 4.3/WF-102), so the aggregation remains unresolved (§13.4.17){exitClause} — '{expression}'

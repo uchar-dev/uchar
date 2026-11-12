@@ -297,7 +297,7 @@ RGS-066	leegwaarde-alternatief van een sommatie: het leegwaarde-alternatief heef
 RGS-067	gevulde telling '{expression}': de gevulde telling is een vouw over INSTANTIES en MOET een elementType dragen: zonder elementType is haar argument helemaal geen vouwbron, en heeft de telling geen bijdragers waarvan zij de waarden op aanwezigheid kan toetsen (ch. 4.3)
 RGS-068	'{attribute}' is geen (meervoud van een) gedeclareerd attribuut van {objectType} — de aggregatie blijft onopgelost (§13.4.17) — '{expression}'
 RGS-069	een 'die/dat'-subselectie op een aggregatie-operand wordt nog niet omgezet; de aggregatie blijft buiten beschouwing in plaats van alle instanties mee te nemen (§5.6) — '{filter}'
-RGS-070	een dimensieselectie / 'gedurende de tijd dat' op een aggregatie wordt nog niet omgezet; de aggregatie blijft buiten beschouwing in plaats van de selectie te negeren (§13.4.17.51-.58) — '{expression}'
+RGS-070	een dimensieselectie op een aggregatie wordt nog niet omgezet; de aggregatie blijft buiten beschouwing in plaats van de selectie te negeren (§13.4.17.51-.54) — '{expression}'
 RGS-071	{fold}: waardevouw met minder dan twee operanden
 RGS-072	telling '{expression}' is {reason}
 RGS-073	keten zonder sourcePath in een vouwbron: {reason} — een sourcePath loopt van het regelonderwerp naar de elementen en bindt elke stap aan precies één rol (IR-SPEC ch. 4.3/WF-102), dus de aggregatie blijft onopgelost (§13.4.17){exitClause} — '{expression}'

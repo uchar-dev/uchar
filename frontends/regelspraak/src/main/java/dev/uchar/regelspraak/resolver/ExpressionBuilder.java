@@ -1489,16 +1489,13 @@ final class ExpressionBuilder {
             return new Expr.FunctionCall(kind, arguments, aggregationElement(kind, arguments), emptyFallback, filter,
                     dimSel.selections(), functionType(kind, arguments), source);
         // §13.4.17.51-.58: a dimensieselectie that did NOT resolve, or a conditiebijexpressie ("gedurende
-        // de tijd dat …") — the temporal axis is not built yet (p5) — must not be SILENTLY DROPPED, which
-        // would aggregate the whole set as if unrestricted. Capture its source as an Unresolved filter so
-        // the transpiler markers the aggregation (a visible no-op), and surface a WARNING. (Reuses the
-        // aggregation-restriction marker path; an already-unresolved die-filter keeps its own marker.)
+        // de tijd dat …"), must not be SILENTLY DROPPED, which would aggregate the whole set as if unrestricted.
         Source dimSource = dimensionOrConditionSource(f);
         if (dimSource != null) {
-            // §7.1 a "gedurende de tijd dat <temporeel kenmerk>" restriction on a totaal over a single-period
-            // temporal own-attribute resolves to a temporal Condition.CharacteristicCheck the transpiler clips the value
-            // timeline by; anything else (a dimensieselectie, a navigated/compound/non-temporal condition) stays
-            // an Unresolved marker so the aggregation is a visible no-op, not a silently-unrestricted total.
+            // §7.1 a "gedurende de tijd dat …" clip of the total or the pro-rata part the wire carries is its filter;
+            // any other clip is refused at its place (RGS-402). A dimensieselectie that did not resolve stays an
+            // Unresolved marker with a WARNING, a visible no-op rather than a silently-unrestricted fold; an
+            // already-unresolved die-filter keeps its own marker.
             Condition during = duringCharacteristicCheckFilter(f, kind, arguments);
             if (during != null) {
                 filter = during;
