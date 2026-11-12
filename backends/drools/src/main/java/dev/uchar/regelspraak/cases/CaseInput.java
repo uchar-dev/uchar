@@ -626,7 +626,7 @@ public final class CaseInput {
                 RoleLink link = new RoleLink(i.get("label").asText(), written.getKey(), labelNode.asText());
                 Object target = labelToBean.get(labelNode.asText());
                 if (target == null) throw new LinkTargetFault(link);
-                ObjectType tL = beanObjectType(target);
+                ObjectType tL = labelType.get(labelNode.asText());
                 ObjectType filler = far.size() == 1 ? model.objectTypeByName(far.get(0).objectTypeName()) : null;
                 if (filler != null && !tL.isA(filler))
                     throw new IllegalArgumentException("role \"" + written.getKey() + "\" on \"" + link.label() + "\" links \""
@@ -717,9 +717,7 @@ public final class CaseInput {
     private boolean manyToManyLink(ObjectType tI, ObjectType tL, String key, Object bean, Object target) {
         RegelSpraakModel.RoleBindingRef rb = model.connectingRoleViaNameBinding(tI, tL, key);
         if (rb == null) return false;
-        RegelSpraakModel.FactType ft = null;
-        for (RegelSpraakModel.FactType f : model.factTypes.values())
-            if (Namen.norm(f.name).equals(Namen.norm(rb.factType()))) ft = f;
+        RegelSpraakModel.FactType ft = factType(model, rb.factType());
         if (ft == null || ft.reciprocal || ft.roles.size() != 2 || !ft.roles.get(0).many() || !ft.roles.get(1).many())
             return false;
         boolean targetFirst = Namen.norm(ft.roles.get(0).name()).equals(Namen.norm(rb.role()));
@@ -894,9 +892,7 @@ public final class CaseInput {
      */
     private void refuseLinkCycles(DroolsBackend.Build build, JsonNode instances) {
         for (RegelSpraakModel.RoleBindingRef walk : build.execModelTranspiler().instanceWalks()) {
-            RegelSpraakModel.FactType ft = null;
-            for (RegelSpraakModel.FactType f : model.factTypes.values())
-                if (Namen.norm(f.name).equals(Namen.norm(walk.factType()))) ft = f;
+            RegelSpraakModel.FactType ft = factType(model, walk.factType());
             if (ft == null || ft.roles.size() != 2)
                 throw new IllegalStateException("CaseInput: the switch relation " + walk.factType() + " has no two roles");
             RegelSpraakModel.Role toPredecessor = Namen.norm(ft.roles.get(0).name()).equals(Namen.norm(walk.role()))
@@ -975,6 +971,14 @@ public final class CaseInput {
         return type.isA(model.objectTypeByName(r.objectTypeName()));
     }
 
+    /** The fact type of {@code model} that {@code name} names under {@link Namen#norm}, or null. */
+    static RegelSpraakModel.FactType factType(RegelSpraakModel model, String name) {
+        RegelSpraakModel.FactType ft = null;
+        for (RegelSpraakModel.FactType f : model.factTypes.values())
+            if (Namen.norm(f.name).equals(Namen.norm(name))) ft = f;
+        return ft;
+    }
+
     /** The keys a case may write a role under: its name and its plural, normalised. */
     private static List<String> names(RegelSpraakModel.Role r) {
         List<String> out = new ArrayList<>();
@@ -984,12 +988,13 @@ public final class CaseInput {
     }
 
     private void mirrorReciprocalRoles() {
-        for (Object bean : labelToBean.values()) {
+        for (Map.Entry<String, Object> instance : labelToBean.entrySet()) {
+            Object bean = instance.getValue();
             // the reciprocal role of an instance of a SUBTYPE of its filler is its ancestor's (IR-SPEC ch. 2.6):
             // asked of the bean's own type alone, such a leg would go unmirrored and the partner read an empty
             // relation
             String role = null;
-            for (ObjectType t : beanObjectType(bean).chain())
+            for (ObjectType t : labelType.get(instance.getKey()).chain())
                 if ((role = FactModelGenerator.selfPairRole(model, t)) != null) break;
             if (role == null) continue;
             Object partner = CaseRunner.invokeGetter(bean, Namen.getter(role));
@@ -1009,12 +1014,6 @@ public final class CaseInput {
             throw new IllegalStateException("the field '" + role + "' of " + carrier.getClass().getSimpleName()
                     + " carries a target that no role of the case wrote");
         return link;
-    }
-
-    private ObjectType beanObjectType(Object bean) {
-        for (ObjectType ot : model.objectTypes.values())
-            if (Namen.ident(ot.name, true).equals(bean.getClass().getSimpleName())) return ot;
-        throw new IllegalStateException("no object type for bean " + bean.getClass());
     }
 
     // ---------------- §13.3.6 temporal input (the List<Segment> bean members) ----------------

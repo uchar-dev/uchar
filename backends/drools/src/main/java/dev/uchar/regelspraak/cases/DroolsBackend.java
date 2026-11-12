@@ -429,9 +429,7 @@ public final class DroolsBackend {
         for (Input.Link k : links) {
             Msg description = Msg.drools("PART.desc.insert-link", "first", name(k.first()), "second",
                     name(k.second()), "factType", k.factType());
-            RegelSpraakModel.FactType ft = null;
-            for (RegelSpraakModel.FactType f : build.model().factTypes.values())
-                if (Namen.norm(f.name).equals(Namen.norm(k.factType()))) ft = f;
+            RegelSpraakModel.FactType ft = CaseInput.factType(build.model(), k.factType());
             if (ft == null || ft.reciprocal || ft.roles.size() != 2 || !ft.roles.get(0).many() || !ft.roles.get(1).many())
                 throw new IllegalArgumentException(DroolsCode.LINK_NOT_MANY_TO_MANY.reason("description", description)
                         .text());
