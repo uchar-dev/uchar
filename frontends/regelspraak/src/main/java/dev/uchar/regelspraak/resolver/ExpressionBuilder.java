@@ -1956,9 +1956,7 @@ final class ExpressionBuilder {
         // The operand the operator ranges over must be a single-period TIMELINE: the subject's own temporal attribute
         // (totaal + tijdsevenredig), OR — for §7.3.2 tijdsevenredig only — a TEMPORAL PARAMETER (the spec's STANDAARD
         // BELASTINGVERMINDERING base, "kan jaarlijks wijzigen"), whose runtime value is itself a timeline (§5.1.2).
-        boolean okOperand = operand instanceof Expr.AttributeReference a && a.navigationRole() == null && !a.set()
-                && a.objectType() == currentSubject && currentSubject.granularityOf(a.attribute()) != null
-                && currentSubject.timelineCountOf(a.attribute()) == null;
+        boolean okOperand = isTemporalSubjectAttr(operand);
         if (!okOperand && kind == Expr.FunctionKind.TIJDSEVENREDIG_DEEL
                 && operand instanceof Expr.ParameterRef p && p.parameter().granularity() != null)
             okOperand = true;
@@ -2229,11 +2227,7 @@ final class ExpressionBuilder {
      *  survivor report would only repeat it. */
     private Condition aggregationFilter(FunctieAanroepContext f, ObjectType elem, List<Expr> arguments) {
         if (elem == null) return null;
-        java.util.List<ParseTree> operands = new ArrayList<>();
-        for (int i = 0; i < f.getChildCount(); i++) {
-            ParseTree ch = f.getChild(i);
-            if (ch instanceof ExpressieContext || ch instanceof PrimaireExpressieContext) operands.add(ch);
-        }
+        java.util.List<ParseTree> operands = operandsOf(f);
         if (operands.size() == 1) {
             PredicaatContext p = findSubselectionPredicate(operands.get(0));
             if (p == null) return null;
@@ -2241,9 +2235,7 @@ final class ExpressionBuilder {
             // §13.4.13.4 the COMPOUND subselectie "die aan alle volgende voorwaarden voldoen: …" — resolve its bullets
             // against the ELEMENT (via the RuleChecker callback) into a Condition.Compound on the source pattern.
             if (p.samengesteldPredicaat() != null) {
-                Frame frame = currentSubject == null ? null : new Frame(currentSubject, elem, source(p));
-                Condition c = compoundFilter != null
-                        ? inFilter(frame, p, elem, () -> compoundFilter.resolve(p.samengesteldPredicaat(), elem)) : null;
+                Condition c = compoundSubselection(p, elem);
                 return c != null ? c : new Condition.Unresolved(source(p), null);
             }
             Condition filter = identityFilter(p);
@@ -2305,6 +2297,24 @@ final class ExpressionBuilder {
         return null;
     }
 
+    /** The operands of a function call as written: its expression children, in order. */
+    private static java.util.List<ParseTree> operandsOf(FunctieAanroepContext f) {
+        java.util.List<ParseTree> operands = new ArrayList<>();
+        for (int i = 0; i < f.getChildCount(); i++) {
+            ParseTree ch = f.getChild(i);
+            if (ch instanceof ExpressieContext || ch instanceof PrimaireExpressieContext) operands.add(ch);
+        }
+        return operands;
+    }
+
+    /** §13.4.13.4 the COMPOUND subselectie "die aan alle volgende voorwaarden voldoen: …", its bullets resolved
+     *  against the ELEMENT through the RuleChecker callback; null when no callback is set or it resolves nothing. */
+    private Condition compoundSubselection(PredicaatContext p, ObjectType elem) {
+        if (compoundFilter == null) return null;
+        Frame frame = currentSubject == null ? null : new Frame(currentSubject, elem, source(p));
+        return inFilter(frame, p, elem, () -> compoundFilter.resolve(p.samengesteldPredicaat(), elem));
+    }
+
     /**
      * §5.6 / IR-SPEC ch. 4.5: the "die/dat &lt;predicaat&gt;" subselectie over the range of a §8.2
      * QUANTIFIER FOLD — the same field, the same reading and the same resolution as an aggregation's
@@ -2346,9 +2356,7 @@ final class ExpressionBuilder {
         if (p == null) return null;
         consumed.add(p);
         if (p.samengesteldPredicaat() != null) {
-            Frame frame = currentSubject == null ? null : new Frame(currentSubject, elem, source(p));
-            Condition c = compoundFilter != null
-                    ? inFilter(frame, p, elem, () -> compoundFilter.resolve(p.samengesteldPredicaat(), elem)) : null;
+            Condition c = compoundSubselection(p, elem);
             return c != null ? new Subselection(c, null)
                     : new Subselection(null, Msg.frontend("PART.subselection-no-compound", "element", elem.name));
         }
@@ -2375,11 +2383,8 @@ final class ExpressionBuilder {
      *  "&lt;attribuut&gt; van &lt;onderwerp&gt;" naming a countable element — used to confirm every operand
      *  of a §5.8.1 union shares one element before OR-ing their filters. */
     private ObjectType operandElement(ParseTree op) {
-        if (op instanceof PrimaireExpressieContext pe && pe.attribuutVanOnderwerp() != null
-                && pe.attribuutVanOnderwerp().attribuutMetLidwoord() != null
-                && pe.attribuutVanOnderwerp().attribuutMetLidwoord().kaleNaam() != null)
-            return countElement(src(pe.attribuutVanOnderwerp().attribuutMetLidwoord().kaleNaam()));
-        return null;
+        String word = writtenElementWord(op);
+        return word == null ? null : countElement(word);
     }
 
     /** Why the §5.7 union route did not open for the count being built — the Dutch context of
@@ -2404,11 +2409,7 @@ final class ExpressionBuilder {
      *  one over the same relation), so the error would be invisible in the answer. */
     private Expr buildInstanceUnion(FunctieAanroepContext f) {
         unionRefusal = null;
-        java.util.List<ParseTree> operands = new ArrayList<>();
-        for (int i = 0; i < f.getChildCount(); i++) {
-            ParseTree ch = f.getChild(i);
-            if (ch instanceof ExpressieContext || ch instanceof PrimaireExpressieContext) operands.add(ch);
-        }
+        java.util.List<ParseTree> operands = operandsOf(f);
         if (operands.size() < 2) return null;
         ObjectType shared = null;
         java.util.List<Expr.InstanceSetUnion.Branch> branches = new ArrayList<>();
