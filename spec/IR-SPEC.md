@@ -3079,7 +3079,15 @@ method value.
   `descending`) only for ordered, and the ordering key's type MUST be
   orderable; share-assignment typing per WF-023 applied to
   target ← source, the precision of the share included (WF-023's fourth
-  write position). *v0 mirror note:* v0 enforces the typing as an error
+  write position). The amount (`sourceAttribute`), the share
+  (`targetAttribute`), the rest (`remainderAttribute`), the weight
+  (`ratioAttribute`) and the maximum (`maximumAttribute`) MUST be declared
+  as a `Number`, a percentage included (ch. 2.4): the equations of
+  `RUNTIME-SEMANTICS.md` ch. 4.2 compute with them, and a `PayloadAccess`
+  under a test of its constructor (WF-127) has no place in an allocation (key `WF-025.field-not-number`,
+  one report per field; witnesses
+  `corpus/negative/wf025-allocation-sum-type-amount` and
+  `wf025-allocation-weight-not-number`). *v0 mirror note:* v0 enforces the typing as an error
   and demotes the rest to COMPLEX. **Delta (promotion)** for the demotion
   paths.
 - **WF-026** At most one allocation MAY write a given (type, attribute)
