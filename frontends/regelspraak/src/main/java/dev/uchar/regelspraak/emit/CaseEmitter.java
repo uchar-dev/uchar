@@ -49,7 +49,7 @@ public final class CaseEmitter {
         if (scope == null) return m;
         Set<String> names = new HashSet<>();
         for (String v : scope.forms()) names.add(norm(v));
-        Predicate<String> carries = name -> names.contains(norm(baseName(name)));
+        Predicate<String> carries = name -> names.contains(norm(RegelSpraakModel.formName(name)));
         RegelSpraakModel k = m.copy();
         k.resolvedRules.removeIf(r -> !carries.test(r.name()));
         k.objectCreations.removeIf(x -> !carries.test(x.name()));
@@ -253,13 +253,6 @@ public final class CaseEmitter {
         else if (v.enumValue() != null) w.key("enumeration").value(v.enumValue());
         else throw new IllegalStateException("CaseEmitter: a value without a variant");
         w.endObject();
-    }
-
-    /** A resolved form name without its §13.4.2.3 version suffix ({@code "<naam> #k"}): the name a scope names a
-     *  form by. The scenario resolver reads it here too. */
-    public static String baseName(String name) {
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(.*\\S) #[0-9]+").matcher(name);
-        return m.matches() ? m.group(1) : name;
     }
 
     /** A name as the scenario layer compares names: trimmed, its whitespace one space, lowercased. */

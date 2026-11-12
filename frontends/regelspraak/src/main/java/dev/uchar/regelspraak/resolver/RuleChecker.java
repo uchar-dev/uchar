@@ -634,7 +634,7 @@ final class RuleChecker {
 
     /** {@code ruleName} without the " #k" suffix a multi-version rule's versions carry. */
     private static String withoutVersion(String ruleName) {
-        return ruleName.replaceFirst(" #\\d+$", "");
+        return RegelSpraakModel.formName(ruleName);
     }
 
     /** Dialect §4, form 1 (maintainer decision 2, 2026-09-23): a negated kenmerktoekenning stands only in a rule that
@@ -2549,10 +2549,8 @@ final class RuleChecker {
     private List<ResolvedRule> resolvedOf(String name) {
         String key = dev.uchar.regelspraak.emit.IrEmitter.norm(name);
         List<ResolvedRule> result = new ArrayList<>();
-        for (ResolvedRule r : model.resolvedRules) {
-            String own = dev.uchar.regelspraak.emit.IrEmitter.norm(r.name());
-            if (own.equals(key) || own.startsWith(key + " #")) result.add(r);
-        }
+        for (ResolvedRule r : model.resolvedRules)
+            if (dev.uchar.regelspraak.emit.IrEmitter.norm(RegelSpraakModel.formName(r.name())).equals(key)) result.add(r);
         return result;
     }
 
@@ -3601,7 +3599,7 @@ final class RuleChecker {
             RegelSpraakRegelContext rsr = v.regelSpraakRegel();
             // Each §13.4.2.3 version is a distinct rule selected by Rekendatum (§4.2):
             // when a rule has several, give each a unique name.
-            String versionName = versions.size() > 1 ? name + " #" + (i + 1) : name;
+            String versionName = versions.size() > 1 ? RegelSpraakModel.versionName(name, i + 1) : name;
             builder.setSubject(ruleSubjectOf(rsr.resultaatDeel())); // so "zijn …" resolves against the rule subject
             builder.setVariables(rsr.variabeleDeel());          // §11 capture "Daarbij geldt:" vars in BOTH forms (clears per rule)
             // the guard of a fact creation binds two objects, so a check there names no subtype of either as its host

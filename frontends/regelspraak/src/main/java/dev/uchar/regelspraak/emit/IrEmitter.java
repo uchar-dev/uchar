@@ -1430,21 +1430,16 @@ public final class IrEmitter {
     /** One named form on the wire: the name it is written under and its versions, in version order. */
     private record Form<T>(String name, List<T> versions) {}
 
-    /** The in-memory spelling of one version of a form with several: the form's name, a space, '#' and the version
-     *  number (RuleChecker names each version so). */
-    private static final java.util.regex.Pattern VERSION = java.util.regex.Pattern.compile("([\\s\\S]*) #([0-9]+)");
-
-    /** The form name of an entry whose name carries a version suffix, or null when it carries none. */
+    /** The form name of an entry whose name carries a version suffix ({@link RegelSpraakModel#versionName}), or null
+     *  when it carries none. */
     private static String base(String name) {
-        if (name == null) return null;
-        java.util.regex.Matcher mt = VERSION.matcher(name);
-        return mt.matches() ? mt.group(1) : null;
+        return RegelSpraakModel.versionNumber(name) == null ? null : RegelSpraakModel.formName(name);
     }
 
     private static String versionNumber(String name) {
-        java.util.regex.Matcher mt = VERSION.matcher(name);
-        if (!mt.matches()) throw new IllegalStateException("IrEmitter: '" + name + "' carries no version suffix");
-        return mt.group(2);
+        String number = RegelSpraakModel.versionNumber(name);
+        if (number == null) throw new IllegalStateException("IrEmitter: '" + name + "' carries no version suffix");
+        return number;
     }
 
     /**

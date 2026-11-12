@@ -1421,14 +1421,27 @@ public final class RegelSpraakModel {
         return java.util.Optional.empty();
     }
 
+    /** The name of version {@code number} (counted from 1) of a form with several versions, as the model's lists
+     *  name one entry per version: {@code "<naam> #<i>"}. {@link #formName} reads it back. */
+    public static String versionName(String form, int number) {
+        return form + " #" + number;
+    }
+
     /** The version suffix a model entry of a form with several versions carries ({@code "<naam> #<i>"}). */
-    private static final java.util.regex.Pattern VERSION = java.util.regex.Pattern.compile("([\\s\\S]*) #[0-9]+");
+    private static final java.util.regex.Pattern VERSION = java.util.regex.Pattern.compile("([\\s\\S]+) #([0-9]+)");
 
     /** The form name of a model entry: its name without a version suffix. */
     public static String formName(String name) {
         if (name == null) return null;
         java.util.regex.Matcher m = VERSION.matcher(name);
         return m.matches() ? m.group(1) : name;
+    }
+
+    /** The version number a model entry's suffix carries, or null where its name carries none. */
+    public static String versionNumber(String name) {
+        if (name == null) return null;
+        java.util.regex.Matcher m = VERSION.matcher(name);
+        return m.matches() ? m.group(2) : null;
     }
 
     /** The vocabulary named {@code name}, compared case-insensitively (IR-SPEC ch. 2.1), or null. */

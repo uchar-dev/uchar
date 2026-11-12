@@ -38,7 +38,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import static dev.uchar.regelspraak.emit.CaseEmitter.baseName;
+import static dev.uchar.regelspraak.model.RegelSpraakModel.formName;
 import static dev.uchar.regelspraak.emit.CaseEmitter.norm;
 import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
 
@@ -319,17 +319,17 @@ public final class ScenarioResolver {
     private List<Form> forms() {
         List<Form> result = new ArrayList<>();
         for (var r : model.resolvedRules)
-            result.add(new Form(baseName(r.name()), r.validity(), list(r.target(), r.value()), list(r.condition())));
+            result.add(new Form(formName(r.name()), r.validity(), list(r.target(), r.value()), list(r.condition())));
         for (var oc : model.objectCreations) {
             List<Expr> exprs = new ArrayList<>();
             for (var t : oc.assignments()) exprs.add(t.value());
-            result.add(new Form(baseName(oc.name()), oc.validity(), exprs, list(oc.condition())));
+            result.add(new Form(formName(oc.name()), oc.validity(), exprs, list(oc.condition())));
         }
-        for (var v : model.allocations) result.add(new Form(baseName(v.name()), v.validity(), List.of(), list(v.condition())));
-        for (var c : model.consistencies) result.add(new Form(baseName(c.name()), c.validity(), List.of(), list(c.assertion())));
-        for (var u : model.uniquenesses) result.add(new Form(baseName(u.name()), null, List.of(), List.of()));
-        for (var u : model.uniquenessUnions) result.add(new Form(baseName(u.name()), null, List.of(), List.of()));
-        for (var f : model.factCreations) result.add(new Form(baseName(f.name()), f.validity(), List.of(), list(f.condition())));
+        for (var v : model.allocations) result.add(new Form(formName(v.name()), v.validity(), List.of(), list(v.condition())));
+        for (var c : model.consistencies) result.add(new Form(formName(c.name()), c.validity(), List.of(), list(c.assertion())));
+        for (var u : model.uniquenesses) result.add(new Form(formName(u.name()), null, List.of(), List.of()));
+        for (var u : model.uniquenessUnions) result.add(new Form(formName(u.name()), null, List.of(), List.of()));
+        for (var f : model.factCreations) result.add(new Form(formName(f.name()), f.validity(), List.of(), list(f.condition())));
         for (var pd : model.prioritizedDefaults) {
             List<Expr> exprs = new ArrayList<>();
             List<Condition> conditions = new ArrayList<>();

@@ -689,14 +689,7 @@ final class Dependencies {
             return result.toString();
         }
 
-        static String withoutVersion(String name) {
-            int i = name.lastIndexOf('#');
-            if (i >= 2 && name.charAt(i - 1) == ' ' && i + 1 < name.length()) {
-                for (int k = i + 1; k < name.length(); k++) if (name.charAt(k) < '0' || name.charAt(k) > '9') return name;
-                return name.substring(0, i - 1);
-            }
-            return name;
-        }
+        static String withoutVersion(String name) { return dev.uchar.regelspraak.model.RegelSpraakModel.formName(name); }
 
         static String attrNode(String ot, String a) { return "attr:" + norm(ot) + ":" + norm(a); }
         /** {@code n_cell}: a cell of a dimensioned attribute is a node of its own (IR-SPEC ch. 5.1), its labels in
@@ -1127,7 +1120,7 @@ final class Dependencies {
                 String name = text(form, "name");
                 List<Map<String, Object>> vs = list(form, "versions");
                 for (int v = 0; v < vs.size(); v++)
-                    result.add(new Version(name == null ? null : vs.size() >= 2 ? name + " #" + (v + 1) : name,
+                    result.add(new Version(name == null ? null : vs.size() >= 2 ? dev.uchar.regelspraak.model.RegelSpraakModel.versionName(name, v + 1) : name,
                             "/rules/" + list + "/" + f + "/versions/" + v, vs.get(v)));
             }
             return result;
