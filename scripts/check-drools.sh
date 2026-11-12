@@ -1628,7 +1628,10 @@ EXPECTED_CHANNEL=(
 # (RUNTIME-SEMANTICS ch. 3.8; PLAYED 4).
 # 377 with jutterswet-registratienummer-gehele-jaar: the exact-digit test read per day on a text timeline under the
 # whole-period qualifier, with its inner negation, the qualifier's negation and the month grid (ch. 3.9; PLAYED 6).
-EXPECTED_PLAYED=377
+# 378 with jutterswet-leeg-deeltal-per-periode: a division over timelines reads its divisor only in the periods where
+# the dividend is filled, so a division by zero in the divisor under a leeg dividend deposits nothing (RUNTIME-SEMANTICS
+# ch. 1.4 point 4, ch. 3.4; PLAYED 3).
+EXPECTED_PLAYED=378
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

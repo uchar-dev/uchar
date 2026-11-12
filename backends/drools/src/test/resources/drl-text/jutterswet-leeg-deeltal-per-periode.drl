@@ -1,0 +1,92 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// 
+function Object waarde_loonVanEenVondst(Object $tijdlijn_0, Object $onderwerp, Object $opbrengst, Object $tijdlijn_3, Object sonde) {
+    try {
+        return PeriodArithmetic.written(deling1_loonVanEenVondst($tijdlijn_0, $onderwerp, $opbrengst, $tijdlijn_3, sonde), null, "loon");
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// 
+function Object deling1_loonVanEenVondst(Object $tijdlijn_0, Object $onderwerp, Object $opbrengst, Object $tijdlijn_3, Object sonde) {
+    Object deeltal = PeriodArithmetic.dividend(ComputeHelpers.complete($tijdlijn_0, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"bonus\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "bonus", Boolean.TRUE), sonde);
+    return PeriodArithmetic.divided(deeltal, (PeriodArithmetic.emptyOnEveryDay(deeltal) ? null : deling2_loonVanEenVondst($tijdlijn_0, $onderwerp, $opbrengst, $tijdlijn_3, sonde)), sonde);
+}
+
+// 
+function Object deling2_loonVanEenVondst(Object $tijdlijn_0, Object $onderwerp, Object $opbrengst, Object $tijdlijn_3, Object sonde) {
+    Object deeltal = PeriodArithmetic.dividend(PeriodArithmetic.scalar($opbrengst), sonde);
+    return PeriodArithmetic.divided(deeltal, (PeriodArithmetic.emptyOnEveryDay(deeltal) ? null : ComputeHelpers.complete($tijdlijn_3, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"aandeel\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "aandeel", Boolean.TRUE)), sonde);
+}
+
+rule "loon van een vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $opbrengst : opbrengst )
+    $stand_0 : State( attribute == ElementKey.of("vondst", "bonus", false), subject == $onderwerp, $tijdlijn_0 : value )
+    $stand_3 : State( attribute == ElementKey.of("vondst", "aandeel", false), subject == $onderwerp, $tijdlijn_3 : value )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_loonVanEenVondst($tijdlijn_0, $onderwerp, $opbrengst, $tijdlijn_3, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "loon van een vondst", ComputeHelpers.designate(v, "loon van een vondst")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("loon van een vondst", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "loon", false), v, "loon van een vondst"));
+        }
+    }
+end
+
+rule "stand Vondst.bonus: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : (ComputeHelpers.periods(bonus)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("vondst", "bonus", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "bonus", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "bonus", false), $invoer));
+end
+
+rule "stand Vondst.bonus: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : (ComputeHelpers.periods(bonus)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("vondst", "bonus", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "bonus", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "bonus", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+rule "stand Vondst.aandeel: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : (ComputeHelpers.periods(aandeel)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("vondst", "aandeel", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "aandeel", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "aandeel", false), $invoer));
+end
+
+rule "stand Vondst.aandeel: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : (ComputeHelpers.periods(aandeel)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("vondst", "aandeel", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "aandeel", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "aandeel", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
