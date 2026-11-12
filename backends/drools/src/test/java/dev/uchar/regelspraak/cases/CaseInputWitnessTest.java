@@ -279,7 +279,7 @@ class CaseInputWitnessTest {
         DroolsBackend.Build b = build("jutterswet-penningjaar");
         CaseInput scalar = CaseInput.of(b, penningjaar("{ \"number\": \"14\" }"));
         Object j1 = scalar.beans().get("J1");
-        List<Input.Bucket> emmers = scalar.inputData().emmers();
+        List<Input.Bucket> emmers = scalar.inputData().buckets();
         assertEquals(1, emmers.size(), () -> "one bucket scalar: " + emmers);
         assertSame(j1, emmers.get(0).bean());
         assertEquals("aantal aangemelde vondsten", emmers.get(0).attribute());
@@ -289,7 +289,7 @@ class CaseInputWitnessTest {
         assertEquals(LocalDate.of(2027, 1, 1), RegelSpraakRuntime.get(tl.get(0), "tot"));
         CaseInput timeline = CaseInput.of(b, penningjaar(
                 "{ \"timeline\": [ { \"from\": \"2026-01-01\", \"to\": \"2027-01-01\", \"value\": { \"number\": \"14\" } } ] }"));
-        assertEquals(List.of(), timeline.inputData().emmers(), "a full timeline is no bucket scalar");
+        assertEquals(List.of(), timeline.inputData().buckets(), "a full timeline is no bucket scalar");
     }
 
     @Test void input_is_at_each_call_fresh_and_beans_is_not_to_be_changed() throws Exception {

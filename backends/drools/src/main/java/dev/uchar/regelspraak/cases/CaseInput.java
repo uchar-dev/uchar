@@ -205,7 +205,7 @@ public final class CaseInput {
     /** Every scalar input on a temporal attribute of the case, the asOfDate-bucket convention that
      *  {@link #bucketInput} lays on the bean as one segment: what {@link #inputData()} names as bucket scalars
      *  ({@link Input#bucketScalar}). */
-    private final List<Input.Bucket> emmers = new ArrayList<>();
+    private final List<Input.Bucket> bucketScalars = new ArrayList<>();
     /** Per bean and per getter of a to-one reference field, the link of the case that wrote the field, which a collision
      *  of the reverse leg names ({@link #mirrorReciprocalRoles}). */
     private final Map<Object, Map<String, RoleLink>> writers = new IdentityHashMap<>();
@@ -282,7 +282,7 @@ public final class CaseInput {
      */
     public Input inputData() {
         Input inputData = new Input().beans(labelToBean.values());
-        for (Input.Bucket e : emmers) inputData.bucketScalar(e.bean(), e.attribute());
+        for (Input.Bucket e : bucketScalars) inputData.bucketScalar(e.bean(), e.attribute());
         for (Input.Link k : links) inputData.link(k.factType(), k.first(), k.second());
         for (Map.Entry<Object, Map<String, ToManyList>> perHolder : lists.entrySet())
             for (ToManyList l : perHolder.getValue().values()) {
@@ -436,7 +436,7 @@ public final class CaseInput {
             CaseRunner.inputFits(w, dt, site);
             if (reader.temporal(ot, name)) {
                 CaseRunner.call(bean, Namen.setter(name), List.class, bucketInput(w, name, reader.grid(ot, name)));
-                emmers.add(new Input.Bucket(bean, name));
+                bucketScalars.add(new Input.Bucket(bean, name));
                 continue;
             }
             CaseRunner.call(bean, Namen.setter(name), CaseRunner.argType(dt), reader.valueToArg(w, name));
@@ -1039,15 +1039,15 @@ public final class CaseInput {
      *  never its period grid — the ch. 3.7 pro-rata's whole point), so no grid check applies; ref sorts the
      *  periods and rejects overlap, and this does the same. The segments carry a null waarde: the runtime builds
      *  its own true-period timelines that way (rsTijdOfUnie) and every consumer reads van/tot only (rsTijdKnip). */
-    private List<Object> characteristicTimeline(JsonNode periodes, String characteristic) {
-        if (periodes == null || !periodes.isArray())
+    private List<Object> characteristicTimeline(JsonNode periods, String characteristic) {
+        if (periods == null || !periods.isArray())
             throw new IllegalArgumentException("malformed characteristic timeline on '" + characteristic + "'");
         List<LocalDate[]> sorted = new ArrayList<>();
-        for (JsonNode pj : periodes) {
-            LocalDate van = CaseRunner.boundDate(pj, "from", characteristic), to = CaseRunner.boundDate(pj, "to", characteristic);
-            if (!van.isBefore(to))
+        for (JsonNode pj : periods) {
+            LocalDate from = CaseRunner.boundDate(pj, "from", characteristic), to = CaseRunner.boundDate(pj, "to", characteristic);
+            if (!from.isBefore(to))
                 throw new IllegalArgumentException("period 'to' on '" + characteristic + "' does not lie after 'from'");
-            sorted.add(new LocalDate[]{ van, to });
+            sorted.add(new LocalDate[]{ from, to });
         }
         sorted.sort((a, b) -> a[0].equals(b[0]) ? a[1].compareTo(b[1]) : a[0].compareTo(b[0]));
         List<Object> out = new ArrayList<>();

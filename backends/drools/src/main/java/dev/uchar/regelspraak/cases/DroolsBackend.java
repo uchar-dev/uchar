@@ -415,7 +415,7 @@ public final class DroolsBackend {
         String outsideSentence = targetOutsideInput("insert", build, beans, types, perClass);
         if (outsideSentence != null) throw new IllegalArgumentException(outsideSentence);
         List<Object> facts = new ArrayList<>(beans);
-        for (Input.Bucket e : input.emmers()) facts.add(bucketInput(types, e));
+        for (Input.Bucket e : input.buckets()) facts.add(bucketInput(types, e));
         facts.addAll(listPlaces(build, tms.listFields(), beans, types, input.lists()));
         facts.addAll(inputLinks(build, types, input.links()));
         for (Object fact : facts) session.insert(fact);

@@ -30,7 +30,7 @@ import java.util.Objects;
 public final class Input {
 
     private final List<Object> beans = new ArrayList<>();
-    private final List<Bucket> emmers = new ArrayList<>();
+    private final List<Bucket> buckets = new ArrayList<>();
     private final List<ToManyList> lists = new ArrayList<>();
     private final List<Link> links = new ArrayList<>();
 
@@ -60,7 +60,7 @@ public final class Input {
     /** States that the bean {@code bean} holds the input of attribute {@code attribute}, an attribute on a timeline
      *  named as the model declares it, as the asOfDate-bucket scalar (RUNTIME-SEMANTICS ch. 8.4). */
     public Input bucketScalar(Object bean, String attribute) {
-        emmers.add(new Bucket(Objects.requireNonNull(bean, "bean"), Objects.requireNonNull(attribute, "attribute")));
+        buckets.add(new Bucket(Objects.requireNonNull(bean, "bean"), Objects.requireNonNull(attribute, "attribute")));
         return this;
     }
 
@@ -89,8 +89,8 @@ public final class Input {
         return List.copyOf(beans);
     }
 
-    List<Bucket> emmers() {
-        return List.copyOf(emmers);
+    List<Bucket> buckets() {
+        return List.copyOf(buckets);
     }
 
     List<ToManyList> lists() {

@@ -109,7 +109,7 @@ public final class CaseRunner {
     private DroolsBackend.Build backendBuild;
     /** The hash of the document this runner built, which names the files of the seam in {@link #fireToFixpoint}; null
      *  without the property {@value SessionDump#PROPERTY}, and then the seam does nothing. */
-    private String documenthash;
+    private String documentHash;
 
     /** The members of the model without a bean field of their own ({@link FactModelGenerator#displacements}): a
      *  case that sets or reads one is refused by name, since the replay would reach the field of the declaration
@@ -466,7 +466,7 @@ public final class CaseRunner {
         DroolsBackend.Build b = DroolsBackend.build(irPath, branch, readings);
         CaseRunner runner = new CaseRunner(b.model(), b.kieBase(), b.beanLoader(), b.dayKindGlobals());
         runner.backendBuild = b;
-        if (SessionDump.SEAM_DIRECTORY != null) runner.documenthash = SessionDump.hash(irPath);
+        if (SessionDump.SEAM_DIRECTORY != null) runner.documentHash = SessionDump.hash(irPath);
         return runner;
     }
 
@@ -659,16 +659,16 @@ public final class CaseRunner {
      *  before the write-back, also where the fire throws, on either branch. */
     private DroolsBackend.Firing fireToFixpoint(KieSession session, DroolsBackend.Observer observer,
                                                 java.util.function.Consumer<DroolsBackend.Firing> afterFire) {
-        SessionDump trace = documenthash == null ? null : SessionDump.op(session, labelToBean);
+        SessionDump trace = documentHash == null ? null : SessionDump.op(session, labelToBean);
         DroolsBackend.Firing firing;
         try {
             firing = observer == null ? DroolsBackend.fire(backendBuild, session) : DroolsBackend.fire(backendBuild, session, observer);
         } catch (RuntimeException e) {
-            if (trace != null) trace.seam(documenthash, backendBuild, e, labelToBean);
+            if (trace != null) trace.seam(documentHash, backendBuild, e, labelToBean);
             if (e instanceof ConsequenceException c) throw DroolsBackend.designate(c);
             throw e;
         }
-        if (trace != null) trace.seam(documenthash, backendBuild, firing, labelToBean);
+        if (trace != null) trace.seam(documentHash, backendBuild, firing, labelToBean);
         if (afterFire != null) afterFire.accept(firing);
         if (firing.noFixpoint() == null) DroolsBackend.setDerivedValues(backendBuild, session, this::beanLabel);
         return firing;
@@ -876,18 +876,18 @@ public final class CaseRunner {
         LocalDate previousTo = null;
         boolean openEnd = false;
         for (JsonNode sj : segs) {
-            LocalDate van = openBound(sj, "from", field), to = openBound(sj, "to", field);
-            if (van != null && to != null && !van.isBefore(to))
+            LocalDate from = openBound(sj, "from", field), to = openBound(sj, "to", field);
+            if (from != null && to != null && !from.isBefore(to))
                 throw new IllegalArgumentException("segment 'to' on '" + field + "' does not lie after 'from'");
             if (gran.fixed() == null) calendarGridForInput(gran.gran(), site);
-            if (van != null && !onGrid(gran, van) || to != null && !onGrid(gran, to))
+            if (from != null && !onGrid(gran, from) || to != null && !onGrid(gran, to))
                 throw new IllegalArgumentException("a segment bound on '" + field + "' does not lie on the "
                         + gran.gran() + " grid" + (gran.fixed() == null ? "" : " from " + gran.fixed()));
-            if (openEnd || !out.isEmpty() && (van == null || previousTo.isAfter(van)))
+            if (openEnd || !out.isEmpty() && (from == null || previousTo.isAfter(from)))
                 throw new IllegalArgumentException("the timeline segments on '" + field + "' are unordered or overlap");
             previousTo = to;
             openEnd = to == null;
-            out.add(segment(van, to, segmentValue(sj.get("value"), field)));
+            out.add(segment(from, to, segmentValue(sj.get("value"), field)));
         }
         return out;
     }
@@ -924,7 +924,7 @@ public final class CaseRunner {
                 ot.fixedStartPointOf(attr), model.hasVariableStart(ot, attr));
     }
 
-    /** The period {@code [van, tot)} of the member's grid that contains {@code d} (ch. 3.2), as ref lays it: the
+    /** The period {@code [from, to)} of the member's grid that contains {@code d} (ch. 3.2), as ref lays it: the
      *  period a fixed start point lays, every wall computed from it; otherwise the calendar bucket — year buckets run
      *  1 Jan → 1 Jan, month buckets first-of-month → first-of-next. A grid that lays no such period is a loud
      *  not-carried, never a guessed grid, in the sentence of ref's grid function, which the ASP backend speaks as
@@ -941,8 +941,8 @@ public final class CaseRunner {
             case JAAR:
                 return new LocalDate[]{ LocalDate.of(d.getYear(), 1, 1), LocalDate.of(d.getYear() + 1, 1, 1) };
             case MAAND:
-                LocalDate van = d.withDayOfMonth(1);
-                return new LocalDate[]{ van, van.plusMonths(1) };
+                LocalDate from = d.withDayOfMonth(1);
+                return new LocalDate[]{ from, from.plusMonths(1) };
             default:
                 throw new Excluded(DroolsCode.BUCKET_GRANULARITY_UNSUPPORTED.reason());
         }
@@ -991,9 +991,9 @@ public final class CaseRunner {
 
     /** One {@code Segment} fact of the generated bean model, built reflectively ({@link Period#bean}) — the Segment
      *  class is a runtime objecttype, unknown at compile time. */
-    Object segment(LocalDate van, LocalDate to, Object value) {
+    Object segment(LocalDate from, LocalDate to, Object value) {
         try {
-            return Period.bean(Class.forName(FactModelGenerator.PACKAGE + ".Segment", true, cl), van, to, value);
+            return Period.bean(Class.forName(FactModelGenerator.PACKAGE + ".Segment", true, cl), from, to, value);
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException("the generated Segment fact class is missing", e);
         }
