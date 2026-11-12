@@ -1,0 +1,35 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn gewicht tot de macht 0,5 naar beneden afgerond op 2 decimalen
+function Object waarde_wortelmaat(Object $gewicht, Object sonde) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.roundedPower(ComputeHelpers.negativeBase($gewicht, new java.math.BigDecimal("0.5"), sonde), new java.math.BigDecimal("0.5"), Integer.valueOf(2), java.math.RoundingMode.FLOOR), Integer.valueOf(2), "wortelmaat", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "wortelmaat"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht )
+then
+    Object sonde = ComputeHelpers.depositFlag();
+    Object v = waarde_wortelmaat($gewicht, sonde);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "wortelmaat", ComputeHelpers.designate(v, "wortelmaat")));
+    } else {
+        if (ComputeHelpers.reported(sonde)) {
+            insertLogical(ComputeHelpers.inconsistency("wortelmaat", $onderwerp, ComputeHelpers.depositCodes(sonde)));
+        }
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "wortelmaat", false), v, "wortelmaat"));
+        }
+    }
+end
+

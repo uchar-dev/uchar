@@ -322,13 +322,21 @@ let inverted_zero ~err =
   err { code = Some "EF-005"; text = "division by numeric zero" };
   Empty
 
-(* a fractional exponent over a negative base is a fault whatever its value
-   (ch. 2.2): (−32)^(2/5) would read as 4 through (−32)², and (−32)^(1/5) as
-   −2 through an odd root, but neither is the real power of a negative
-   number, which does not exist *)
+(* a fractional exponent over a negative base is leeg with a §9.5 deposit
+   whatever its value, as a negative radicand is under the root (ch. 2.2,
+   1.2): (−32)^(2/5) would read as 4 through (−32)², and (−32)^(1/5) as −2
+   through an odd root, but neither is the real power of a negative number,
+   which does not exist *)
 (* EF-044 (ch. 5.7b, ch. 2.2) *)
-let negative_base_fault lq rq =
-  faultc "EF-044" "fractional power %s^%s of a negative base has no real value (ch. 2.2)" (Q.to_string lq) (Q.to_string rq)
+let negative_base ~err lq rq =
+  err
+    {
+      code = Some "EF-044";
+      text =
+        Printf.sprintf "fractional power %s^%s of a negative base has no real value (ch. 2.2)" (Q.to_string lq)
+          (Q.to_string rq);
+    };
+  Empty
 
 (* tot de macht: exact integer power (negative exponent inverts first);
    a fractional exponent must denote an exact root, else it faults: the real
@@ -348,7 +356,7 @@ let pow_ ~err l r =
         let e = to_int_exp (Q.num rq) in
         let p q n = Q.make (Z.pow (Q.num q) n) (Z.pow (Q.den q) n) in
         Num ((if e >= 0 then p lq e else Q.inv (p lq (-e))), Unitless)
-      else if Q.sign lq < 0 then negative_base_fault lq rq
+      else if Q.sign lq < 0 then negative_base ~err lq rq
       else
         let a = to_int_exp (Z.abs (Q.num rq)) and b = to_int_exp (Q.den rq) in
         let base = Q.make (Z.pow (Q.num lq) a) (Z.pow (Q.den lq) a) in
@@ -365,7 +373,7 @@ let pow_ ~err l r =
 (* a power with a fractional exponent under its rounding (§6.7, ch. 2.2):
    the true power rounded once — the base raised to the numerator, its root of
    the denominator rounded by [root_rounded]; a negative base has no real
-   power here, as in [pow_] *)
+   power here, leeg with its deposit as in [pow_] *)
 let pow_rounded ~err mode decimals l r =
   match (l, r) with
   | Empty, _ | _, Empty -> Empty
@@ -377,7 +385,7 @@ let pow_rounded ~err mode decimals l r =
         | exception Z.Overflow -> fault "exponent %s is out of range" (Z.to_string z)
       in
       if inverts_zero lq rq then inverted_zero ~err
-      else if Q.sign lq < 0 then negative_base_fault lq rq
+      else if Q.sign lq < 0 then negative_base ~err lq rq
       else
         let a = to_int_exp (Z.abs (Q.num rq)) and b = to_int_exp (Q.den rq) in
         let base = Q.make (Z.pow (Q.num lq) a) (Z.pow (Q.den lq) a) in

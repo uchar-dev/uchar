@@ -17,8 +17,17 @@
     ],
     "parameters": {}
   },
-  "expectedFault": {
-    "code": "EF-044",
-    "params": {}
-  }
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "wortelmaat"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "wortelmaat",
+      "label": "V1",
+      "code": "EF-044"
+    }
+  ]
 }

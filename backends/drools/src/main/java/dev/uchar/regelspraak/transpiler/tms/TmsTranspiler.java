@@ -5118,7 +5118,17 @@ public final class TmsTranspiler {
         }
         Term exponent = constant(e.isTerminerend() ? e.naarDecimal() : e);
         note(b.right(), exponent);
-        return new Term.Call(StaticFunction.EXACT_POWER, List.of(base, exponent), source(b.source()));
+        return new Term.Call(StaticFunction.EXACT_POWER, List.of(negativeBase(b, e, base, reads), exponent),
+                source(b.source()));
+    }
+
+    /** {@code base}, the base of the power {@code b} with the fractional exponent {@code e}, through
+     *  {@code ComputeHelpers.negativeBase}: a negative base is leeg with the deposit EF-044 where the evaluation reaches
+     *  it (RUNTIME-SEMANTICS ch. 2.2), as the reference interpreter deposits, so that the power meets no negative base.
+     *  The exponent rides along as a constant of its own, read by no node. */
+    private Term negativeBase(Expr.Binary b, Breuk e, Term base, Reads reads) {
+        return new Term.Division(StaticFunction.NEGATIVE_BASE, base, constant(e.isTerminerend() ? e.naarDecimal() : e),
+                reads.depositFlag(), source(b.source()));
     }
 
     /** {@code base}, the base of the power {@code b} with the exponent {@code e}, through {@code ComputeHelpers.invertedBase}
@@ -5288,8 +5298,8 @@ public final class TmsTranspiler {
                 Term exponent = constant(e.isTerminerend() ? e.naarDecimal() : e);
                 note(b.right(), exponent);
                 noteUnreached(b);
-                return new Term.Call(StaticFunction.ROUNDED_POWER, List.of(base, exponent, constant(decimals),
-                        constant(mode)), source(a.source()));
+                return new Term.Call(StaticFunction.ROUNDED_POWER, List.of(negativeBase(b, e, base, reads),
+                        exponent, constant(decimals), constant(mode)), source(a.source()));
             }
         }
         return new Term.Call(StaticFunction.RS_ROUNDING, List.of(value(a.base(), reads), constant(decimals),

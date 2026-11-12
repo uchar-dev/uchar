@@ -396,6 +396,7 @@ final class ClosureRendering {
             case DIVIDED -> x -> ComputeHelpers.divided(x[0], x[1], x[2]);
             case DIVIDED_ABS -> x -> ComputeHelpers.dividedAbs(x[0], x[1], x[2]);
             case INVERTED_BASE -> x -> ComputeHelpers.invertedBase(x[0], x[1], x[2]);
+            case NEGATIVE_BASE -> x -> ComputeHelpers.negativeBase(x[0], x[1], x[2]);
             case RADICAND -> x -> ComputeHelpers.radicand(x[0], x[1]);
             case ROUNDED_SQUARE_ROOT -> x -> ComputeHelpers.roundedSquareRoot(x[0], (Integer) x[1], (RoundingMode) x[2]);
             case EXACT_POWER -> x -> ComputeHelpers.exactPower(x[0], x[1]);

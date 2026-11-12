@@ -220,6 +220,10 @@ public enum StaticFunction {
      *  as it is. The function of a {@link Term.Division}, in front of {@link #RS_POWER}, {@link #EXACT_POWER} or
      *  {@link #ROUNDED_POWER}. */
     INVERTED_BASE(ComputeHelpers.class, "invertedBase", false),
+    /** The base of a power with a fractional exponent, the exponent a constant: a negative base leeg with the deposit
+     *  EF-044 to the probe (ch. 2.2), any other base as it is. The function of a {@link Term.Division}, in front of
+     *  {@link #EXACT_POWER} or {@link #ROUNDED_POWER}. */
+    NEGATIVE_BASE(ComputeHelpers.class, "negativeBase", false),
     /** The radicand of a square root under the rounding §13.4.17.13 mandates, a negative one leeg with the §6.6 deposit
      *  to the probe. The function of a {@link Term.SquareRoot}, which {@link #ROUNDED_SQUARE_ROOT} takes. */
     RADICAND(ComputeHelpers.class, "radicand", false),

@@ -94,6 +94,21 @@ public final class ComputeHelpers {
         return base;
     }
 
+    private static final List<String> NEGATIVE_BASE = List.of("EF-044");
+
+    /** The base of a power with a fractional exponent: a negative base leeg with the deposit EF-044 to
+     *  {@code depositFlag}, since a negative number has no fractional power (RUNTIME-SEMANTICS ch. 2.2), as a negative
+     *  radicand is leeg under the root (ch. 1.2); any other base as it is, a leeg one leeg. The function of a
+     *  {@code Term.Division} in front of the power, whose right operand is the exponent. */
+    public static Object negativeBase(Object base, Object exponent, Object depositFlag) {
+        Breuk b = Breuk.van(base);
+        if (b != null && b.signum() < 0) {
+            DepositFlag.report(depositFlag, NEGATIVE_BASE);
+            return null;
+        }
+        return base;
+    }
+
     /** Whether {@code v} is a number equal to zero; leeg is not. */
     private static boolean isNumericZero(Object v) {
         Breuk q = Breuk.van(v);
@@ -189,13 +204,15 @@ public final class ComputeHelpers {
     }
 
     /** {@code base} to the whole power {@code numerator}, of which a fractional exponent takes its root: leeg for a leeg
-     *  base, and a fault for a negative base, also where the power to the numerator is positive, as (−32)^(2/5) is:
-     *  RUNTIME-SEMANTICS ch. 2.2 gives a negative base no fractional power at all. */
+     *  base. A negative base has no fractional power at all, also where the power to the numerator is positive, as
+     *  (−32)^(2/5) is (RUNTIME-SEMANTICS ch. 2.2): {@link #negativeBase} in front of the power makes it leeg, so one
+     *  arriving here is a defect of the lowering. */
     private static Breuk powerRadicand(Object base, int numerator, int denominator) {
         Breuk b = Breuk.van(base);
         if (b == null) return null;
         if (b.signum() < 0)
-            throw new ComputeFault(ComputeFault.negativeBase(numberText(b) + "^" + numerator + "/" + denominator));
+            throw new IllegalStateException("the negative base " + numberText(b) + " of the power ^" + numerator + "/"
+                    + denominator + " reached the power: the lowering puts negativeBase in front of it");
         int e = Math.abs(numerator);
         Breuk p = Breuk.van(b.teller().pow(e), b.noemer().pow(e));
         return numerator < 0 ? Breuk.van(p.noemer(), p.teller()) : p;

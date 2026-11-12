@@ -317,20 +317,21 @@ let () =
   expect_num "WV-2.2-u" (Arith.sqrt_rounded ~err:no_err Floor 20 (n "1/9")) "0.33333333333333333333";
   expect_num "WV-2.2-v"
     (Arith.sqrt_rounded ~err:no_err Floor 40 (n "2")) "1.4142135623730950488016887242096980785696";
-  (* a negative base with a fractional exponent is a fault, also where the
-     exponent's numerator is even and the rational power would be real
+  (* a negative base with a fractional exponent is leeg with one §9.5 deposit
+     of the kind EF-044, as a negative radicand is under the root, also where
+     the exponent's numerator is even and the rational power would be real
      through the square of the base, and under the rounding; a whole exponent
      stays the exact power (ch. 2.2) *)
-  expect_fault_msg "WV-2.2-negatief-grondtal-even-teller" (fun () -> Arith.pow_ ~err:no_err (n "-32") (n "0.4"))
-    "of a negative base";
-  expect_fault_msg "WV-2.2-negatief-grondtal-oneven-wortel" (fun () -> Arith.pow_ ~err:no_err (n "-32") (n "1/5"))
-    "of a negative base";
-  expect_fault_msg "WV-2.2-negatief-grondtal-negatieve-exponent"
-    (fun () -> Arith.pow_ ~err:no_err (n "-32") (n "-2/5"))
-    "of a negative base";
-  expect_fault_msg "WV-2.2-negatief-grondtal-afgerond"
-    (fun () -> Arith.pow_rounded ~err:no_err Floor 2 (n "-32") (n "0.4"))
-    "of a negative base";
+  let negative_base name f =
+    let codes = ref [] in
+    let r = f (fun (d : Value.deposit) -> codes := d.code :: !codes) in
+    expect_empty name r;
+    check (name ^ " (§9.5 EF-044)") (!codes = [ Some "EF-044" ])
+  in
+  negative_base "WV-2.2-negatief-grondtal-even-teller" (fun err -> Arith.pow_ ~err (n "-32") (n "0.4"));
+  negative_base "WV-2.2-negatief-grondtal-oneven-wortel" (fun err -> Arith.pow_ ~err (n "-32") (n "1/5"));
+  negative_base "WV-2.2-negatief-grondtal-negatieve-exponent" (fun err -> Arith.pow_ ~err (n "-32") (n "-2/5"));
+  negative_base "WV-2.2-negatief-grondtal-afgerond" (fun err -> Arith.pow_rounded ~err Floor 2 (n "-32") (n "0.4"));
   expect_num "WV-2.2-negatief-grondtal-gehele-exponent" (Arith.pow_ ~err:no_err (n "-2") (n "3")) "-8";
   (* division by numeric zero: leeg plus one §9.5 deposit of the kind EF-005
      (ch. 1.4 point 4; the v0 mirror faults) *)

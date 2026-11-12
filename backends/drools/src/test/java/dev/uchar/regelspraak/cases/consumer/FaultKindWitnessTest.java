@@ -65,16 +65,15 @@ class FaultKindWitnessTest {
 
     /** The faults at the fixpoint whose kinds RUNTIME-SEMANTICS ch. 5.7b names since the red case of each landed:
      *  supplied periods of a characteristic a rule writes (EF-041), the subject's own total over a full timeline
-     *  (EF-042) and without an evaluation date (EF-043), a fractional power of a negative base (EF-044), an irrational
-     *  power without a rounding (EF-045) and a part of a date construction that is no whole number (EF-046). Each names
-     *  its code and the parameters its red case pins, on both branches.
+     *  (EF-042) and without an evaluation date (EF-043), an irrational power without a rounding (EF-045) and a part of
+     *  a date construction that is no whole number (EF-046). Each names its code and the parameters its red case pins,
+     *  on both branches.
      *
      *  <p>Red before: the backend named no kind for any of them, so a consumer reading {@link CaseRunner#faultKinds}
      *  got an empty list. */
     @Test void every_fault_at_the_fixpoint_names_its_kind() throws Exception {
         for (String red : List.of("characteristic-periods-beside-rule", "own-total-full-timeline",
-                "own-total-without-evaluation-date", "fractional-power-negative-base",
-                "irrational-power-without-rounding", "date-part-not-whole")) {
+                "own-total-without-evaluation-date", "irrational-power-without-rounding", "date-part-not-whole")) {
             JsonNode pin = caseFile(red, "case1").get("expectedFault");
             Map<String, String> params = new java.util.LinkedHashMap<>();
             pin.get("params").fields().forEachRemaining(e -> params.put(e.getKey(), e.getValue().asText()));

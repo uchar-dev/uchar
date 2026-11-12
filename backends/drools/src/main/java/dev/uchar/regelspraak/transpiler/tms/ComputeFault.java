@@ -70,15 +70,6 @@ public final class ComputeFault extends RuntimeException {
     private static final java.util.regex.Pattern OWN_TOTAL_WITHOUT_DATE = java.util.regex.Pattern.compile(
             "the temporal total of \"(.*)\" needs the evaluation date: the case carries the asOfDate bucket's value");
 
-    /** RUNTIME-SEMANTICS ch. 2.2: a fractional power of a negative base (EF-044), in the reference interpreter's words;
-     *  {@code power} is the base and the exponent as that executor writes them. */
-    static String negativeBase(String power) {
-        return "fractional power " + power + " of a negative base has no real value (ch. 2.2)";
-    }
-
-    private static final java.util.regex.Pattern NEGATIVE_BASE = java.util.regex.Pattern.compile(
-            "fractional power \\S+ of a negative base has no real value \\(ch\\. 2\\.2\\)");
-
     /** RUNTIME-SEMANTICS ch. 2.2: a square root and a fractional power whose value is irrational, without the rounding
      *  that alone gives them a value (EF-045), in the reference interpreter's words. */
     private static final java.util.regex.Pattern IRRATIONAL = java.util.regex.Pattern.compile(
@@ -163,7 +154,6 @@ public final class ComputeFault extends RuntimeException {
         if (namesNoMoment(sentence)) return "EF-032";
         if (UNBOUND_PARAMETER.matcher(sentence).matches()) return "EF-014";
         if (OWN_TOTAL_WITHOUT_DATE.matcher(sentence).matches()) return "EF-043";
-        if (NEGATIVE_BASE.matcher(sentence).matches()) return "EF-044";
         if (IRRATIONAL.matcher(sentence).matches()) return "EF-045";
         if (PART_NOT_WHOLE.matcher(sentence).matches()) return "EF-046";
         return null;
