@@ -4886,7 +4886,13 @@ not a calendar — is refused, naming its position and the lexeme (EF-003).
 The cells of a dimensioned attribute are refused where their labels name no
 cell of the attribute (EF-034) and where the input names one cell twice
 (EF-035), and a scalar or a timeline on a dimensioned attribute is a case
-error (ch. 5.8c).
+error (ch. 5.8c). An `attributeValue` or `attributeEmpty` expectation on a
+time-dependent attribute, and a `characteristicPresent` or
+`characteristicAbsent` expectation on a time-dependent characteristic, is a
+case error without a code: the member has a value per period and none of its
+own, so the case does not fit the document's declarations, and a timeline is
+expected with `attributeTimeline` (witnesses
+`WV-5.7-case-reader-refuses-…` in `ref/test/`).
 
 **Divergence by two writers of one target.** Two rules that write one
 attribute and whose conditions both hold on one instance demand, by
@@ -8312,7 +8318,11 @@ a defective case, and until that decision it was accepted and answered
 from an empty period set — 0 where the golden pinned 30, in both
 executors, without a word. The case schema cannot enforce this (it
 validates the case document alone and never sees the declarations), so
-each reader holds it itself.
+each reader holds it itself. The same holds for what a case expects: a
+`characteristicPresent` or `characteristicAbsent` expectation on a
+time-dependent characteristic, like a scalar expectation on a time-dependent
+attribute, is refused at load as a case error without a code (ch. 5.7
+step 3), and is not read as the truth on the evaluation date.
 
 Point reads at a *non*-evaluation-date index (the art. 1 shape,
 ch. 3.3) are deliberately **outside** this check: their index is
