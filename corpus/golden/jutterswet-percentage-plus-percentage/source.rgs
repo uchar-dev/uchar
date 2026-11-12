@@ -1,0 +1,8 @@
+Objecttype de Vondst (mv: Vondsten)
+    het basistarief Percentage (geheel getal);
+    de toeslag Percentage (geheel getal);
+    het tarief Percentage (geheel getal);
+
+Regel tarief
+    geldig altijd
+        Het tarief van een Vondst moet berekend worden als zijn basistarief plus zijn toeslag.

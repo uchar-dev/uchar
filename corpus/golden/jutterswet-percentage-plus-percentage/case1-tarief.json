@@ -1,0 +1,1 @@
+{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"V1","objectType":"Vondst","attributes":{"basistarief":{"number":"10"},"toeslag":{"number":"5"}},"roles":{},"characteristics":[]}],"parameters":{}},"expected":[{"kind":"attributeValue","label":"V1","attribute":"tarief","value":{"number":"15"}},{"kind":"consistent"}]}

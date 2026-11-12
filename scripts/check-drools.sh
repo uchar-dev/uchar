@@ -1637,7 +1637,9 @@ EXPECTED_CHANNEL=(
 # subject (IR-SPEC ch. 3.2; PLAYED 1).
 # 380 with fractional-power-negative-base: a negative base under a fractional exponent is leeg with an EF-044 deposit,
 # as a negative radicand is under the root (RUNTIME-SEMANTICS ch. 2.2; PLAYED 2), a red case until 2026-11-12.
-EXPECTED_PLAYED=380
+# 381 with jutterswet-percentage-plus-percentage: the sum of two percentages is a percentage (RUNTIME-SEMANTICS ch. 2.6;
+# PLAYED 1).
+EXPECTED_PLAYED=381
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
