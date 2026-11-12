@@ -289,7 +289,7 @@ public final class ScenarioResolver {
         if (set != null) situation = withParameterSet(situation, set, asOfDate, sc.scenarioPeildatum() != null, name, setLine);
         Predicate<String> carries = carries(scope);
         // a written peildatum that was refused has its own ERROR, and the gate would call it missing
-        if (sc.scenarioPeildatum() == null) asOfDateGate(carries, asOfDate, name, line);
+        if (sc.scenarioPeildatum() == null) asOfDateGate(carries, asOfDate, situation, name, line);
         // a named set the document lacks has its ERROR, and what it would have given cannot be said
         if (sc.scenarioParameterset() == null || set != null) parameterGate(carries, situation, set, name, line);
         List<Expectation> expectations = resolveExpectations(sc.verwachting(), situation, carries);
@@ -584,8 +584,12 @@ public final class ScenarioResolver {
 
     // ---------------- the two gates ----------------
 
-    /** A carried form that reads the evaluation date, or holds only within a validity window, needs a peildatum. */
-    private void asOfDateGate(Predicate<String> carries, LocalDate asOfDate, String scenario, int line) {
+    /** A carried form that reads the evaluation date, or holds only within a validity window, needs a peildatum; so
+     *  does a value without a period on a time-dependent attribute, which a case file carries as the scalar of the
+     *  period the evaluation date falls in (RUNTIME-SEMANTICS ch. 8.4). A day-kind definition reads neither: it holds
+     *  always and depends on the day alone. */
+    private void asOfDateGate(Predicate<String> carries, LocalDate asOfDate, Situation situation, String scenario,
+                              int line) {
         if (asOfDate != null) return;
         for (Form v : forms()) {
             if (!carries.test(v.name())) continue;
@@ -597,9 +601,13 @@ public final class ScenarioResolver {
                     error(line, "RGS-231", params("rule", v.name(), "scenario", scenario));
                 else
                     error(line, "RGS-232", params("rule", v.name(), "scenario", scenario));
-                return;
+                break;
             }
         }
+        for (Instance i : situation.instances())
+            for (AttributeValue a : i.attributes())
+                if (a.value() != null && i.objectType() != null && i.objectType().granularityOf(a.attribute()) != null)
+                    error(a.line(), "RGS-450", params("attribute", a.attribute(), "label", i.label(), "scenario", scenario));
     }
 
     /** Every parameter a carried form reads must have a value in the merged situation or in the chosen set. */
@@ -621,6 +629,17 @@ public final class ScenarioResolver {
                 if (!assigned.contains(norm(p)) && reported.add(norm(p)))
                     error(line,
                             "RGS-233", params("rule", v.name(), "parameter", p, "where", where));
+        }
+        // a day-kind definition is no form a scope names: every document carries it
+        for (var d : model.resolvedDayKindDefinitions) {
+            LinkedHashSet<String> read = new LinkedHashSet<>();
+            Condition.containsOperand(d.condition(), x -> {
+                if (x instanceof Expr.ParameterRef pr) read.add(pr.parameter().name());
+                return false;
+            });
+            for (String p : read)
+                if (!assigned.contains(norm(p)) && reported.add(norm(p)))
+                    error(line, "RGS-451", params("dayKind", d.name(), "parameter", p, "where", where));
         }
     }
 

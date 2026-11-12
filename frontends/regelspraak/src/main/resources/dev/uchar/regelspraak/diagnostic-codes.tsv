@@ -403,3 +403,5 @@ RGS-427	target-characteristic-undeclared	ERROR	characteristic,objectType,written
 RGS-428	undeclared-own-read	ERROR	attribute,expression,objectType
 RGS-440	navigated-characteristic-check-off-subject	ERROR	source,subject,written
 RGS-441	navigated-characteristic-check-unbound	ERROR	role,source,subject
+RGS-450	scalar-input-on-timeline-without-as-of-date	ERROR	attribute,label,scenario
+RGS-451	day-kind-reads-parameter-without-value	ERROR	dayKind,parameter,where

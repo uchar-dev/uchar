@@ -317,6 +317,53 @@ class ScenarioTypeGateTest {
         assertTrue(resolve(gescoped).isOk(), () -> resolve(gescoped).model().errors().toString());
     }
 
+    /** A value without a period on a time-dependent attribute is the value of the period the peildatum falls in
+     *  (RUNTIME-SEMANTICS ch. 8.4), so without a peildatum it is refused on its own line. */
+    @Test void a_value_without_a_period_on_a_time_dependent_attribute_needs_a_peildatum() {
+        String situation = "Situatie borg:\neen Jutter J\n- het vondstgewicht is 12,00 kg\n- de borgdagen is 3\n";
+        String expected = "gebaseerd op de situatie borg\nMet als verwacht resultaat:\n- J is bergingsbevoegd\n";
+        error(situation + "Scenario zonder dag\ntoetst de regel bevoegdheid bij gewicht\n" + expected, "de borgdagen is 3",
+                "het attribuut 'borgdagen' van J is tijdsafhankelijk; een waarde zonder periode is de waarde van de "
+                        + "periode waarin de peildatum valt, maar het scenario 'zonder dag' heeft geen peildatum");
+        String dated = situation + "Scenario met dag\ntoetst de regel bevoegdheid bij gewicht\nmet peildatum 01-06-2025\n"
+                + expected;
+        assertTrue(resolve(dated).isOk(), () -> resolve(dated).model().errors().toString());
+    }
+
+    /** A day-kind definition is in every document a scenario lowers to, so a parameter it reads needs a value, also
+     *  where no carried rule reads that parameter. */
+    @Test void the_parameter_gate_reads_a_day_kind_definition() {
+        String model = """
+            Dagsoort de havendag (mv: havendagen);
+
+            Parameter de openingsdatum : Datum in dagen
+
+            Objecttype de Havenmeester (mv: Havenmeesters) (bezield)
+                de aanvraagdatum Datum in dagen;
+                de streefdatum Datum in dagen;
+                de doorlooptijd Numeriek (geheel getal) met eenheid havendagen;
+
+            Regel Dagsoortdefinitie havendag
+                geldig altijd
+                    Een dag is een havendag
+                    indien de dag later is dan de openingsdatum.
+
+            Regel streefdatum van een havenmeester
+                geldig altijd
+                    De streefdatum van een Havenmeester moet berekend worden als zijn aanvraagdatum plus zijn doorlooptijd.
+
+            """;
+        String scenario = "Scenario zonder openingsdatum\nGegeven is de volgende situatie:\neen Havenmeester H1\n"
+                + "- de aanvraagdatum is 10-02-2026\n- de doorlooptijd is 2 havendagen\n%s"
+                + "Met als verwacht resultaat:\n- de streefdatum van H1 is 13-02-2026\n";
+        String without = model + scenario.formatted("");
+        errorOnLine(ScenarioResolver.resolve(without), without, "Scenario zonder openingsdatum",
+                "de dagsoortdefinitie van 'havendag' leest de parameter 'openingsdatum', die in de situatie van het "
+                        + "scenario 'zonder openingsdatum' geen waarde heeft");
+        ScenarioBundle with = ScenarioResolver.resolve(model + scenario.formatted("de parameter de openingsdatum is 01-01-2026\n"));
+        assertTrue(with.isOk(), () -> with.model().errors().toString());
+    }
+
     @Test void the_parameter_gate() {
         String s = "Situatie zonder drempel:\neen Jutter J\nScenario x\nmet peildatum 01-06-2025\n"
                 + "gebaseerd op de situatie zonder drempel\nMet als verwacht resultaat:\n- de gegevens zijn consistent\n";
