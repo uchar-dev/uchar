@@ -392,6 +392,7 @@ RGS-401	allocation-method-refused	ERROR	name,reason
 RGS-402	clip-condition-refused	ERROR	condition,reason
 RGS-403	clip-bucket-differs	ERROR	bucket,fold,target,targetGrid
 RGS-404	day-count-target-unit	ERROR	bucket,target,unit
+RGS-405	timeline-without-start-point	ERROR	timeline
 RGS-420	target-not-a-member	ERROR	written
 RGS-421	allocation-operand-not-an-attribute	ERROR	name,written
 RGS-422	block-name-not-unique	ERROR	head,name,other,otherLine

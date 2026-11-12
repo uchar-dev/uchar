@@ -187,11 +187,35 @@ public final class Resolver {
         designations.parse(doc);
         RuleChecker checker = new RuleChecker(model, tokens, definitions.repetitions());
         checker.check(doc);
+        anchoredTimelines(doc, model);
         designations.compose(checker.nameParts());
         designations.check();
         AbsenceMarkers.lower(model);
         reportUnresolved(model, checker.refusedMarkers());
         return model;
+    }
+
+    /** WF-016: a timeline declared with a variable start is anchored by a start point determination, or its periods
+     *  have no start; refused at its declaration. A determination that is written but refused has its own ERROR, so
+     *  the written ones count. */
+    private static void anchoredTimelines(RegelSpraakDocumentContext doc, RegelSpraakModel model) {
+        java.util.Set<String> determined = new java.util.HashSet<>();
+        determinedTimelines(doc, determined);
+        for (RegelSpraak.DefinitieContext d : doc.definitie()) {
+            RegelSpraak.TijdlijnDefinitieContext t = d.tijdlijnDefinitie();
+            if (t == null || t.tijdlijnNaam() == null
+                    || !DefinitionResolver.src(t).toLowerCase().contains("met variabel startpunt")) continue;
+            String written = DefinitionResolver.src(t.tijdlijnNaam());
+            if (!determined.contains(RegelSpraakModel.normaliseTimelineName(written)))
+                model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-405", params("timeline", written),
+                        t.getStart().getLine()));
+        }
+    }
+
+    private static void determinedTimelines(org.antlr.v4.runtime.tree.ParseTree t, java.util.Set<String> into) {
+        if (t instanceof RegelSpraak.StartpuntBepalingContext sb && sb.tijdlijnNaam() != null)
+            into.add(RegelSpraakModel.normaliseTimelineName(DefinitionResolver.src(sb.tijdlijnNaam())));
+        for (int i = 0; i < t.getChildCount(); i++) determinedTimelines(t.getChild(i), into);
     }
 
     /**

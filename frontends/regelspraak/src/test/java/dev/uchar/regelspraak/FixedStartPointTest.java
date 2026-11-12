@@ -243,4 +243,18 @@ class FixedStartPointTest {
                 "Tijdlijn het penningjaar heeft tijdvakken van een jaar met variabel startpunt;\n" + determination);
         assertTrue(variable.errors().isEmpty(), () -> "onverwachte fout: " + variable.errors());
     }
+
+    /** WF-016: a timeline declared with a variable start is anchored by a start point determination; without one its
+     *  periods have no start, and the frontend refuses it at the declaration instead of writing what the verifier
+     *  refuses. */
+    @Test void a_variable_start_timeline_without_a_determination_is_refused() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Tijdlijn het penningjaar heeft tijdvakken van een jaar met variabel startpunt;
+
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                de penning Numeriek (geheel getal) voor elke penningjaar;
+            """);
+        assertEquals(List.of("ERROR RGS-405 1"),
+                m.diagnostics.stream().map(d -> d.severity() + " " + d.code() + " " + d.line()).toList());
+    }
 }

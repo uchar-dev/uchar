@@ -84,12 +84,17 @@ class ModelTest {
     @Test void named_timeline_reference_takes_the_granularity_of_its_definition() {
         // §13.3.6.9: "voor elke <tijdlijn>" adopts the granularity of the named Tijdlijn definition, even
         // though the reference drops the leading lidwoord ("elke periode …" vs "Tijdlijn de periode …") and
-        // the name wraps across lines. The definition is registered in pass 1 so declaration order is free.
+        // the name wraps across lines. The definition is registered in pass 1 so declaration order is free. A
+        // variable start is anchored by a start point determination (WF-016).
         String src = """
             Domein Bedrag is van het type Numeriek (geheel getal)
             Tijdlijn de periode van een kwartaal vanaf de geboortedatum heeft tijdvakken van een kwartaal met variabel startpunt;
             Objecttype de Persoon (mv: Personen)
+                de geboortedatum Datum in dagen;
                 de belasting Bedrag voor elke periode van een kwartaal vanaf de geboortedatum;
+            Regel startpunt
+                geldig altijd
+                    Het startpunt van de periode van een kwartaal vanaf de geboortedatum voor een Persoon wordt bepaald door zijn geboortedatum.
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "" + m.errors());
