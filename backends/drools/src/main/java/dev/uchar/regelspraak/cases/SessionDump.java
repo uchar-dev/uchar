@@ -552,6 +552,13 @@ final class SessionDump {
             java.time.format.DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss");
 
     /** {@code v} as the canonical text writes a value ({@link #readingLines}); a value of any other kind is refused. */
+    /** A segment from {@code from} to {@code to} with {@code value}, an open bound as "-", as the reference
+     *  interpreter's trace writes it (RUNTIME-SEMANTICS ch. 3.1, 5.12). */
+    private static String segment(java.time.LocalDate from, java.time.LocalDate to, Object value) {
+        return "[" + (from.equals(Period.OPEN_FROM) ? "-" : from.toString()) + " "
+                + (to.equals(Period.OPEN_TO) ? "-" : to.toString()) + " " + canonical(value) + "]";
+    }
+
     private static String canonical(Object v) {
         if (v == null) return "empty";
         if (v instanceof Boolean b) return b.toString();
@@ -567,13 +574,10 @@ final class SessionDump {
         if (v instanceof dev.uchar.regelspraak.transpiler.tms.ConstructorValue c)
             return quote(c.constructor()) + (c.payload() == null ? "" : "(" + canonical(c.payload()) + ")");
         // an open bound as "-", as the reference interpreter's trace writes it (RUNTIME-SEMANTICS ch. 3.1, 5.12)
-        if (v instanceof Period p)
-            return "[" + (p.from().equals(Period.OPEN_FROM) ? "-" : p.from().toString()) + " "
-                    + (p.to().equals(Period.OPEN_TO) ? "-" : p.to().toString()) + " " + canonical(p.value()) + "]";
+        if (v instanceof Period p) return segment(p.from(), p.to(), p.value());
         // a segment of the timeline an operator of the period arithmetic computes, its value exact (ch. 3.4)
         if (v instanceof dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic.Exact p)
-            return "[" + (p.from().equals(Period.OPEN_FROM) ? "-" : p.from().toString()) + " "
-                    + (p.to().equals(Period.OPEN_TO) ? "-" : p.to().toString()) + " " + canonical(p.value()) + "]";
+            return segment(p.from(), p.to(), p.value());
         if (v instanceof List<?> l) {
             List<String> r = new ArrayList<>();
             for (Object x : l) r.add(canonical(x));
