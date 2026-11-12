@@ -86,6 +86,31 @@ class AllocationCheckTest {
                 w.errors().get(0).message());
     }
 
+    /** A maximum or a tie weight that is declared but no number is one fault, reported once as RGS-423, not again as
+     *  the reason the allocation has no method (RGS-401). */
+    @Test void a_maximum_or_tie_weight_that_is_no_number_is_reported_once() {
+        RegelSpraakModel capped = Resolver.resolve(MODEL + """
+
+            Regel verdeel de opbrengst
+                geldig altijd
+                    De opbrengst van een berging wordt verdeeld over de bergingsaandelen van alle bergers van de berging, waarbij wordt verdeeld:
+                    - naar rato van het bergingsaandeel,
+                    - met een maximum van de notitie.
+            """);
+        assertEquals(List.of("RGS-423 notitie"), capped.errors().stream()
+                .map(d -> d.code() + " " + d.params().get("attribute")).toList(), capped.diagnostics::toString);
+        RegelSpraakModel tie = Resolver.resolve(MODEL + """
+
+            Regel verdeel de opbrengst
+                geldig altijd
+                    De opbrengst van een berging wordt verdeeld over de bergingsaandelen van alle bergers van de berging, waarbij wordt verdeeld:
+                    - op volgorde van afnemende bergingsaandeel,
+                    - bij een even groot criterium naar rato van de naam.
+            """);
+        assertEquals(List.of("RGS-423 naam"), tie.errors().stream()
+                .map(d -> d.code() + " " + d.params().get("attribute")).toList(), tie.diagnostics::toString);
+    }
+
     @Test void an_allocation_of_attributes_stays_clean() {
         RegelSpraakModel m = Resolver.resolve(allocation("De opbrengst van een berging wordt verdeeld over de "
                 + "bergingsaandelen van alle bergers van de berging, waarbij wordt verdeeld in gelijke delen."));

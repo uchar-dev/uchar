@@ -4425,7 +4425,8 @@ final class RuleChecker {
                 method = ResolvedAllocation.Method.OP_VOLGORDE;
             else if (groupType != null && !groupType.isOrderable())
                 withoutMethod = Msg.frontend("RGS-401.order-key-not-orderable", "attribute", groupAttr);
-            else if (groupType != null)
+            // a declared weight of another type has its own RGS-423 below; this reason is for one that has no type
+            else if (groupType != null && (ratioType == null || ratioType.isUnknown()))
                 withoutMethod = Msg.frontend("RGS-401.tie-weight-not-a-number", "attribute", ratio);
         }
         // WF-025: an allocation computes with amounts, so its pot, share, rest, weight and maximum are numbers; one
@@ -4454,7 +4455,8 @@ final class RuleChecker {
                 // a method refused above keeps its own reason
                 if (method == ResolvedAllocation.Method.COMPLEX) { }
                 else if (!ratioTie) withoutMethod = Msg.frontend("RGS-401.maximum-without-ratio");
-                else if (maxType != null)
+                // a declared maximum of another type has its own RGS-423 above
+                else if (maxType != null && maxType.isUnknown())
                     withoutMethod = Msg.frontend("RGS-401.maximum-not-a-number", "attribute", maxAttr);
                 method = ResolvedAllocation.Method.COMPLEX;
                 maxAttr = null;
