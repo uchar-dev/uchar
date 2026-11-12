@@ -155,6 +155,7 @@ final class RuleChecker {
         checkPaths();   // a read or a fold the emitter could write only with a binding none supplies
         checkSwallowedNames();      // a read whose name took in a word before 'van' and a declared attribute
         checkConstants();           // a constant the wire has no node for ("hij" as a value)
+        checkUntypedLets();         // a "Daarbij geldt" value an undeclared read leaves without a type
         checkFormNames(doc);         // WF-020, over the named forms as the emitter writes them
         checkDependencyCycles(doc);   // WF-045, WF-046 and WF-051, over the document the emitter writes
         generatedElements();    // last: only the elements that are still in the model get an origin
@@ -1140,6 +1141,44 @@ final class RuleChecker {
             }
             return false;
         });
+    }
+
+    /**
+     * A rule with a "Daarbij geldt" part writes its value under a Let, and a Let carries the type of its body (WF-076)
+     * at a position where the wire has no spelling for a value without a type. Two reads have no type, and neither has
+     * the value they stand in: an own read of a name its subject does not declare, and a name that resolved to nothing
+     * (a marker, whose WARNING says it stays on the wire). Inside a Let whose type is unknown — in a variable or in
+     * the value that reads one — such a read is refused where it stands; the first in WF-034's words. Outside a Let
+     * the first stays the verifier's (grammar/DIVERGENCES.md, "An undeclared attribute read") and the second a marker
+     * on the wire. A read whose name took in a role or a type name is {@link #memberError}'s, one that took in a word
+     * before 'van' {@link #checkSwallowedNames}'s; a marker without a reason has its diagnosis from the route that
+     * built it; a Let left without a type for another reason stays the emitter's refusal.
+     */
+    private void checkUntypedLets() {
+        Set<Object> reported = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        everyWrittenExpr(x -> {
+            if (x instanceof Expr.Let l && dev.uchar.regelspraak.emit.IrEmitter.letType(l) instanceof Datatype.Unknown)
+                Expr.contains(l, y -> {
+                    Object reason = y instanceof Expr.AttributeReference a && undeclaredOwnRead(a)
+                            ? Msg.frontend("RGS-396.undeclared-attribute", "attribute", a.attribute(), "objectType", a.objectType().name)
+                            : y instanceof Expr.Unresolved u ? u.reason() : null;
+                    Source source = y instanceof Expr.AttributeReference a ? a.source()
+                            : y instanceof Expr.Unresolved u ? u.source() : null;
+                    // a marker with a blank snippet stands where the parse recovered, whose syntax error speaks for it
+                    if (reason != null && source != null && !source.snippet().isBlank() && reported.add(y))
+                        model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-396",
+                                params("expression", source.snippet(), "reason", reason), source.line()));
+                    return false;
+                });
+            return false;
+        });
+    }
+
+    /** A read on its own subject, through no role, of a name that type does not declare and that took in no 'van'. */
+    private static boolean undeclaredOwnRead(Expr.AttributeReference a) {
+        return !a.set() && a.objectType() != null && a.attribute() != null && !a.objectType().hasMember(a.attribute())
+                && a.navigationRole() == null && (a.navigationPath() == null || a.navigationPath().isEmpty())
+                && !VAN.matcher(a.attribute()).find();
     }
 
     /** A constant the wire has no node for: the bound day of a day-kind definition is a BoundDay and the two session

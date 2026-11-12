@@ -853,8 +853,8 @@ public final class IrEmitter {
 
     /** The type a Let writes: the type of its body (WF-076). A variable bound to a builtin whose type the spec fixes and
      *  read as the whole body ("de getelde dagen" bound to a day count) takes that type, which the resolver leaves without
-     *  a claim; every other Let writes the resolver's type. */
-    private static Datatype letType(Expr.Let l) {
+     *  a claim; every other Let writes the resolver's type. The resolver asks it too, to refuse a Let it cannot type. */
+    public static Datatype letType(Expr.Let l) {
         if (l.type() instanceof Datatype.Unknown && l.body() instanceof Expr.BinderRef b && b.name().equals(l.binder())) {
             Datatype bound = switch (l.value()) {
                 case Expr.FunctionCall f -> functionType(f);

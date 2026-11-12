@@ -453,4 +453,80 @@ class VariablePartLoweringTest {
         assertTrue(c.contains("\"emptyFallback\":{\"node\":\"Binary\",\"op\":\"plus\",\"left\":{\"node\":\"AttributeReference\",\"attribute\":\"bonusgrond\""),
                 () -> "de leegwaarde draagt de gesubstitueerde definitie:\n" + c);
     }
+
+    // ---------------- an undeclared read under a Let ----------------
+
+    /** A rule with a "Daarbij geldt" part whose value reads {@code value} and whose variable 'grondloon' reads
+     *  {@code variable}; the Lichterbeurt declares no 'vrachttal'. */
+    private static String lichterloon(String value, String variable) {
+        return """
+            Objecttype de Lichterbeurt (mv: Lichterbeurten)
+                het lichterloon Numeriek (geheel getal);
+                het spoedtal Numeriek (geheel getal);
+
+            Regel lichterloon
+                geldig altijd
+                    Het lichterloon van een Lichterbeurt moet berekend worden als %s.
+                    Daarbij geldt:
+                        het grondloon is %s.
+            """.formatted(value, variable);
+    }
+
+    /** The one diagnostic of {@code src}: RGS-396 on the read of 'vrachttal' at {@code line}. */
+    private static void undeclaredReadRefused(String src, int line) {
+        RegelSpraakModel m = Resolver.resolve(src);
+        assertEquals(1, m.diagnostics.size(), () -> "verwachtte precies één diagnose, kreeg: " + m.diagnostics);
+        RegelSpraakModel.Diagnostic d = m.diagnostics.get(0);
+        assertEquals(RegelSpraakModel.Severity.ERROR, d.severity(), d::toString);
+        assertEquals("RGS-396", d.code(), d::toString);
+        assertEquals("lezing 'het vrachttal van de Lichterbeurt': 'vrachttal' is geen gedeclareerd attribuut van "
+                + "Lichterbeurt (WF-034); in een regel met 'Daarbij geldt' krijgt de waarde zo geen type, en zonder type "
+                + "heeft zij geen document in uchar-ir-v1 (WF-076)", d.message());
+        assertEquals(line, d.line(), d::toString);
+    }
+
+    /** A Let carries its body's type (WF-076), and the wire has no spelling for a Let without one. An own read of an
+     *  undeclared name in a variable leaves the variable, and so the value that reads it, without a type: refused at
+     *  the read. Before, the emitter's catch refused the model at line 0 (RGS-394). */
+    @Test void an_undeclared_read_in_a_variable_is_refused_at_the_read() {
+        undeclaredReadRefused(lichterloon("het grondloon maal 2", "het vrachttal van de Lichterbeurt maal 3"), 9);
+    }
+
+    @Test void a_variable_that_is_an_undeclared_read_is_refused_at_the_read() {
+        undeclaredReadRefused(lichterloon("het grondloon, met een minimum van 1", "het vrachttal van de Lichterbeurt"), 9);
+    }
+
+    @Test void an_undeclared_read_in_the_value_under_a_variable_is_refused_at_the_read() {
+        undeclaredReadRefused(lichterloon("het grondloon maal het vrachttal van de Lichterbeurt",
+                "het spoedtal van de Lichterbeurt maal 3"), 7);
+    }
+
+    /** A name that resolves to nothing is a marker with a WARNING, and stays on the wire as one; under a Let it leaves
+     *  the value without a type as well, and is refused at the name. */
+    @Test void an_unresolved_name_in_a_variable_is_refused_at_the_name() {
+        RegelSpraakModel m = Resolver.resolve(lichterloon("het grondloon maal 2", "zijn vrachttal maal 3"));
+        assertEquals(java.util.List.of("RGS-092 WARNING 9", "RGS-396 ERROR 9"),
+                m.diagnostics.stream().map(d -> d.code() + " " + d.severity() + " " + d.line()).sorted().toList());
+        assertEquals("lezing 'zijn vrachttal': de naam 'zijn vrachttal' is geen gedeclareerde parameter, geen variabele "
+                + "uit een 'Daarbij geldt:'-deel en geen attribuut van het onderwerp (§11/§13.3.8); in een regel met "
+                + "'Daarbij geldt' krijgt de waarde zo geen type, en zonder type heeft zij geen document in uchar-ir-v1 "
+                + "(WF-076)", m.errors().get(0).message());
+    }
+
+    /** A variable read only in the condition is substituted there, and no Let is written: the read stays the
+     *  verifier's, as it does in a rule without a variable (grammar/DIVERGENCES.md, "An undeclared attribute read"). */
+    @Test void an_undeclared_read_in_a_variable_of_the_condition_stays_the_verifiers() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Lichterbeurt (mv: Lichterbeurten)
+                het lichterloon Numeriek (geheel getal);
+
+            Regel lichterloon
+                geldig altijd
+                    Het lichterloon van een Lichterbeurt moet gesteld worden op 4
+                    indien het grondloon groter is dan 2.
+                    Daarbij geldt:
+                        het grondloon is het vrachttal van de Lichterbeurt maal 3.
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+    }
 }

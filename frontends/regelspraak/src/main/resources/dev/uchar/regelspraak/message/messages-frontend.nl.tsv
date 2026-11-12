@@ -743,3 +743,5 @@ RGS-394	de controles van de frontend lieten dit model door, maar het heeft geen 
 RGS-395	regel '{name}': de versies zijn niet van één soort ({versions}); de versies van een regel zijn versies van één vorm, en een vorm heeft één soort (IR-SPEC ch. 3)
 RGS-395.no-form	geen vorm
 RGS-395.version	versie {version}: {kind}
+RGS-396	lezing '{expression}': {reason}; in een regel met 'Daarbij geldt' krijgt de waarde zo geen type, en zonder type heeft zij geen document in uchar-ir-v1 (WF-076)
+RGS-396.undeclared-attribute	'{attribute}' is geen gedeclareerd attribuut van {objectType} (WF-034)

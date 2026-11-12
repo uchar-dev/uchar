@@ -4071,8 +4071,12 @@ Vondst", "de datum van aanmelding van de Vondst", "de premie van de visser van
 de Vondst" where 'visser' names no role. So do an own read through a role the
 subject itself plays ("de rang van de aanmelder" on the Jutter who is the
 aanmelder), an own read of a member that only a subtype of the subject
-declares, and an own read of a characteristic as a value. The casus of the
-parity zone reads undeclared names of the first kind, which only its replay
+declares, and an own read of a characteristic as a value. Inside a rule with
+a `Daarbij geldt` part an own read of an undeclared name of the first kind is
+refused all the same (RGS-396, `VariablePartLoweringTest`): it has no type, and
+neither has the Let the rule's value is written under, which the wire carries
+with its body's type (WF-076); so is a name that resolved to nothing there. The
+casus of the parity zone reads undeclared names of the first kind, which only its replay
 slices declare, and an ERROR would stop its emission; a WARNING would change
 its pinned document. When the parity zone leaves the repository, the refusal
 can cover every undeclared read. A fold source whose element lacks the member,

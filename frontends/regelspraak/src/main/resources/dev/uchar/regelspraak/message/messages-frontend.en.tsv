@@ -743,3 +743,5 @@ RGS-394	the checks of the frontend let this model through, but it has no documen
 RGS-395	rule '{name}': the versions are not of one kind ({versions}); the versions of a rule are versions of one form, and a form has one kind (IR-SPEC ch. 3)
 RGS-395.no-form	no form
 RGS-395.version	version {version}: {kind}
+RGS-396	read '{expression}': {reason}; in a rule with 'Daarbij geldt' the value thus gets no type, and without a type it has no document in uchar-ir-v1 (WF-076)
+RGS-396.undeclared-attribute	'{attribute}' is no declared attribute of {objectType} (WF-034)

@@ -383,3 +383,4 @@ RGS-392	unit-word-ambiguous	ERROR	abbreviations,unitSystem,word
 RGS-393	ordinal-position-not-a-position	ERROR	name,ordinal
 RGS-394	emitter-refuses-model	ERROR	reason
 RGS-395	rule-versions-of-different-kinds	ERROR	name,versions
+RGS-396	let-without-type	ERROR	expression,reason
