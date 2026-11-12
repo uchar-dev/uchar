@@ -536,6 +536,11 @@ public final class DefinitionResolver {
             // §13.3.6 a temporal attribute carries a tijdlijn ("voor elk jaar") — record its granularity so
             // the Phase-7 value model can later lower the periods; absent for an ordinary single-value attribute.
             Granularity g = granularityOf(a.tijdlijn());
+            // WF-125: a cell holds one value and no timeline, so an attribute is dimensioned or time-dependent
+            if (g != null && !a.dimensieNaam().isEmpty())
+                error("RGS-433", params("objectType", ot.name, "name", name,
+                        "dimensions", String.join(", ", a.dimensieNaam().stream().map(DefinitionResolver::src).toList())),
+                        a.getStart().getLine());
             if (g != null) {
                 ot.attributeGranularity.put(name, g);
                 int count = countOf(a.tijdlijn());   // §13.3.6.7 the "5" in "voor elke 5 maanden"; 1 otherwise

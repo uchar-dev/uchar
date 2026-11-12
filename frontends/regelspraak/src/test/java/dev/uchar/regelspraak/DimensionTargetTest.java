@@ -299,4 +299,28 @@ class DimensionTargetTest {
         assertEquals(List.of("RGS-364 seizoen", "RGS-364 strand"),
                 m.diagnostics.stream().map(d -> d.code() + " " + d.args().get("dimension")).toList());
     }
+
+    /** IR-SPEC WF-125 (d): a cell holds one value and no timeline. An attribute declared dimensioned and time-dependent
+     *  went to the wire without a diagnostic and the verifier refused it (WF-125.timeline); the frontend refuses it at
+     *  the declaration. */
+    @Test void a_dimensioned_attribute_on_a_timeline_is_refused_at_its_declaration() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Dimensie het seizoen, bestaande uit de seizoenen (na het attribuut met voorzetsel in):
+                1. voorjaar
+                2. najaar
+
+            Objecttype de Vondst (mv: Vondsten)
+                het gewicht Numeriek (getal met 2 decimalen) gedimensioneerd met seizoen voor elke maand;
+                de schatting Numeriek (getal met 2 decimalen);
+
+            Regel schatting
+                geldig altijd
+                    De schatting van een Vondst moet berekend worden als 1.
+            """);
+        assertEquals(List.of("RGS-433 6"), m.errors().stream().map(d -> d.code() + " " + d.line()).toList(),
+                m.diagnostics::toString);
+        assertEquals("objecttype 'Vondst': het attribuut 'gewicht' is gedimensioneerd met seizoen en heeft een tijdlijn; "
+                + "een cel houdt één waarde en geen tijdlijn, dus de twee gaan niet samen (WF-125)",
+                m.errors().get(0).message());
+    }
 }

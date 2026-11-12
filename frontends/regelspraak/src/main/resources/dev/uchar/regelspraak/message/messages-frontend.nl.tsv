@@ -782,6 +782,7 @@ RGS-431.label	dimensie '{owner}': het label '{name}' staat er al als '{earlierNa
 RGS-431.role	feittype '{owner}': de rol '{name}' is al gedeclareerd als '{earlierName}' (bronregel {earlierLine}); een rolnaam komt in een feittype één keer voor, hoofdletters niet meegeteld (WF-012)
 RGS-431.value	domein '{owner}': de waarde '{name}' staat er al als '{earlierName}' (bronregel {earlierLine}); een waarde komt in een enumeratie één keer voor, hoofdletters niet meegeteld (WF-006)
 RGS-432	feittype '{factType}': het deel '{segment}' van de kardinaliteitsregel noemt geen van de rollen {roles}, dus 'meerdere' hoort bij geen rol en de relatie zou als één-op-één gelden; een deel begint met de naam van zijn rol (§13.3.9.1)
+RGS-433	objecttype '{objectType}': het attribuut '{name}' is gedimensioneerd met {dimensions} en heeft een tijdlijn; een cel houdt één waarde en geen tijdlijn, dus de twee gaan niet samen (WF-125)
 RGS-440	kenmerkcontrole '{source}' volgt een rol vanaf {written}, maar zij wordt gelezen op {subject}: een genavigeerde kenmerkcontrole volgt één rol vanaf het onderwerp waarop zij gelezen wordt
 RGS-441	kenmerkcontrole '{source}' volgt de rol '{role}' vanaf {subject}, maar die naam wijst vanaf {subject} geen unieke rol aan
 RGS-450	het attribuut '{attribute}' van {label} is tijdsafhankelijk; een waarde zonder periode is de waarde van de periode waarin de peildatum valt, maar het scenario '{scenario}' heeft geen peildatum (voeg 'met peildatum <datum>' toe of geef de waarde een periode: 'van <datum> tot <datum>')
