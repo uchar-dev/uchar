@@ -3947,17 +3947,36 @@ final class RuleChecker {
         return null;
     }
 
-    /** A domain-typed attribute/parameter must reference a declared domain (§13.3.4). */
+    /** A domain-typed attribute/parameter must reference a declared domain (§13.3.4), at the line of the declaration
+     *  the model keeps: the first of a member declared again in an extension. */
     private void domainReferences(RegelSpraakDocumentContext doc) {
+        Map<String, Integer> lines = new java.util.HashMap<>();   // "type|attribute" and "|parameter" -> line
+        for (DefinitieContext d : doc.definitie()) {
+            if (d.parameterDefinition() != null)
+                lines.putIfAbsent("|" + src(d.parameterDefinition().parameterNaam()), d.getStart().getLine());
+            ObjectTypeNaamContext typeName = d.objectTypeDefinition() != null ? d.objectTypeDefinition().objectTypeNaam()
+                    : d.objectTypeExtensie() != null ? d.objectTypeExtensie().objectTypeNaam() : null;
+            if (typeName == null) continue;
+            List<ObjectTypeMemberContext> members = d.objectTypeDefinition() != null
+                    ? d.objectTypeDefinition().objectTypeMember() : d.objectTypeExtensie().objectTypeMember();
+            for (ObjectTypeMemberContext m : members)
+                if (m.attribuutSpecificatie() != null)
+                    lines.putIfAbsent(src(typeName) + "|" + src(m.attribuutSpecificatie().lowerNaam()),
+                            m.getStart().getLine());
+        }
         // OWN declarations on purpose: this ITERATES rather than resolves. Its subject is the
         // declaration itself, and a chain-closed view would report one inherited attribute once per
         // descendant — the same duplicate the verifier's declaration-walking checks avoid.
-        model.objectTypes.values().forEach(ot -> ot.attributes.forEach((name, dt) -> reportUnknownDomain(dt, name)));
-        model.parameters.values().forEach(p -> reportUnknownDomain(p.datatype(), p.name()));
+        model.objectTypes.forEach((typeName, ot) -> ot.attributes.forEach((name, dt) ->
+                reportUnknownDomain(dt, name, lines.get(typeName + "|" + name))));
+        model.parameters.values().forEach(p -> reportUnknownDomain(p.datatype(), p.name(), lines.get("|" + p.name())));
     }
-    private void reportUnknownDomain(Datatype dt, String where) {
+    private void reportUnknownDomain(Datatype dt, String where, Integer line) {
         if (dt instanceof Datatype.Unknown o && o.reason().startsWith("domein ")) {
-            model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-175", params("reason", o.reason(), "user", where), 0));
+            if (line == null)
+                throw new IllegalStateException("RuleChecker: '" + where + "' reads " + o.reason()
+                        + " and has no declaration in the document");
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-175", params("reason", o.reason(), "user", where), line));
         }
     }
 
@@ -5888,7 +5907,8 @@ final class RuleChecker {
         if (num == null) return 0;
         String t = num.getText();
         if (!t.matches("\\d+") || new java.math.BigInteger(t).signum() == 0) {
-            model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-205", params("lexeme", t), 0));
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-205", params("lexeme", t),
+                    writtenLine(num.getSymbol().getLine())));
             return 0;
         }
         return Integer.parseInt(t);
@@ -5965,7 +5985,8 @@ final class RuleChecker {
         if (op.NIET() != null && op.EEN() != null) {
             Condition pos = characteristicCheckPredicate(lhs, op.kaleNaam(), true, false, period, source);
             if (pos instanceof Condition.RoleMembership || pos instanceof Condition.FarRoleMembership)
-                model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-214", params("source", source), 0));
+                model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-214", params("source", source),
+                        writtenLine(source.line())));
             return negate(pos, source);
         }
         Condition characteristic = characteristicCheckPredicate(lhs, op.kaleNaam(), op.EEN() != null,
@@ -6533,7 +6554,8 @@ final class RuleChecker {
             // Tabel 16 sanctions "is niet een <k>" only for a KENMERK; a rolcheck negates as "is/heeft geen <rol>"
             // (§8.1.7). Lower it the same way (inverse rolcheck), but surface the unsanctioned writing as a WARNING.
             if (pos instanceof Condition.RoleMembership || pos instanceof Condition.FarRoleMembership)
-                model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-214", params("source", source), 0));
+                model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-214", params("source", source),
+                        writtenLine(source.line())));
             return negate(pos, source);
         }
         Condition characteristic = characteristicCheckPredicate(lhs, op.kaleNaam(), op.EEN() != null,
@@ -6618,8 +6640,13 @@ final class RuleChecker {
     private void checkNegationKind(ObjectType holder, Condition kc, boolean hasVerb) {
         // a condition's warning stands at the line of the sentence that writes the check; it stood at 0, which points
         // an author at nothing in a document with many rules
-        checkNegationKind(holder, kc, hasVerb, rowTableLine > 0 ? rowTableLine
-                : kc == null || kc.source() == null ? 0 : kc.source().line());
+        checkNegationKind(holder, kc, hasVerb, writtenLine(kc == null || kc.source() == null ? 0 : kc.source().line()));
+    }
+
+    /** The line a diagnostic about a sentence written on {@code line} stands at: that line, or the table's line in a
+     *  row of a decision table, which is parsed in a stream of its own. */
+    private int writtenLine(int line) {
+        return rowTableLine > 0 ? rowTableLine : line;
     }
 
     /** As above, at {@code line}. A negated RESULT (dialect §4) passes its sentence's line, so its warning stands at
