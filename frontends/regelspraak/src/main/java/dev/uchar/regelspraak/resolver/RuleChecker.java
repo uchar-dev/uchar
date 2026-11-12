@@ -40,15 +40,13 @@ import java.util.Set;
 import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
 
 /**
- * Type-checks rules against the typeringen matrix (Phase: rule checking). It
- * infers an expression's datatype where the references resolve against the model
- * — literals, parameters, arithmetic, and attribute-of-subject references whose
- * subject is a plain object type — and applies {@link Typing}. References it
- * cannot resolve yield {@link Datatype.Unknown}, which {@link Typing} treats
- * as "no claim", so the checker never raises a false positive on a construct it
- * does not fully resolve. Deep van-chains and aggregations have since joined the
- * resolved side (a navigationPath on the reference, a typed {@link Expr.FunctionCall}). The result
- * type rules are the spec's; the coverage is honest about its limits.
+ * The rule half of resolution (Phase: rule checking): it resolves the rules of a document into the forms of the model
+ * — rule versions, decision-table rows, allocations, creations, consistencies, uniquenesses, start points — lowers the
+ * dialect's extension blocks into defaults groups and the opgave marker into its generated members and forms, and
+ * refuses with an ERROR, at the place of the form, what the emitter could not write or the verifier would refuse. The
+ * type checks infer an operand's datatype where its references resolve and apply {@link Typing}; an operand that does
+ * not resolve is {@link Datatype.Unknown}, which {@link Typing} treats as no claim, so a check raises no false positive
+ * on a construct the checker does not fully resolve.
  */
 final class RuleChecker {
     private final RegelSpraakModel model;
@@ -68,7 +66,8 @@ final class RuleChecker {
     /** The line of the decision table whose rows are being resolved, 0 outside them: a row is parsed in a stream of its
      *  own, so a warning about a condition in a row stands at the table. */
     private int rowTableLine;
-    /** The rules whose target {@link #checkRuleTargets} refused. The defaults lowering skips their families: its
+    /** The rules whose target {@link #refuseRuleTargets} and {@link #refuseFlatNegations} refused, each of which
+     *  records its refusals here. The defaults lowering skips their families: its
      *  own checks would judge a target the author did not write (a navigation swallowed into a name) and add a
      *  second, misleading refusal beside the true one. */
     private final java.util.Set<ResolvedRule> refusedTargets =
@@ -150,7 +149,7 @@ final class RuleChecker {
         // covers the lifted rules too — and covers them once.
         checkSetReads();
         checkPartSelections(doc);
-        checkRuleTargets();    // WF-022, before the lift: the lowering reads these targets as they are
+        refuseRuleTargets();    // WF-022, before the lift: the lowering reads these targets as they are
         defaults(doc);        // §4 lift the base+exception families and unordered groups into PrioritizedDefaults nodes
         // §7 after the lift, so a tree or an unordered set of the dialect's blocks moves to 'berekende X' whole
         inputLowering(doc);
@@ -604,7 +603,7 @@ final class RuleChecker {
         treeDefaults(doc, refused);
         groupDefaults(doc, refused);
         java.util.Set<String> blockNames = blockRuleNames(doc);
-        checkFlatNegations(blockNames);   // before the single-writer check: a refused negation is no second writer
+        refuseFlatNegations(blockNames);   // before the single-writer check: a refused negation is no second writer
         checkOnlyWriter(blockNames);
         checkNeverDeriving();
     }
@@ -646,7 +645,7 @@ final class RuleChecker {
      *  disk as a characteristic named "niet …" with no diagnostic, for the verifier to refuse under WF-022. A rule
      *  written in an extension block that stayed un-lifted was refused by that block's own check, which speaks
      *  alone. One ERROR per rule, not per version. */
-    private void checkFlatNegations(java.util.Set<String> blockNames) {
+    private void refuseFlatNegations(java.util.Set<String> blockNames) {
         java.util.Set<String> reported = new java.util.HashSet<>();
         for (ResolvedRule r : model.resolvedRules) {
             if (!isNegated(r) || refusedTargets.contains(r) || blockNames.contains(dev.uchar.regelspraak.emit.IrEmitter.norm(withoutVersion(r.name())))) continue;
@@ -887,7 +886,7 @@ final class RuleChecker {
      *  characteristic on a resolved subject is not judged here: a negated one ("is niet X" with X undeclared) is
      *  refused where the name is read ({@link #characteristic}, dialect §4), and a positive one still reaches the
      *  verifier's WF-022 — no card has taken that one yet. */
-    private void checkRuleTargets() {
+    private void refuseRuleTargets() {
         for (ResolvedRule r : model.resolvedRules) {
             // a cell target is judged on the attribute reference under it, as the verifier judges it (WF-022)
             Expr.AttributeReference a = r.target() instanceof Expr.DimensionCellRead c ? c.attribute()
@@ -1154,7 +1153,7 @@ final class RuleChecker {
      * the attribute of a cell read or as the argument of a fold that selects in its dimensions. Any other reference —
      * "zijn premie" in a value or a condition, a fold source without a selection — is refused as a cell without the
      * labels of its dimensions is (RGS-364, once per dimension), at the line of the read. The walk reaches every written
-     * read after the lift, so the defaults are covered; a rule target is {@link #checkRuleTargets}'s.
+     * read after the lift, so the defaults are covered; a rule target is {@link #refuseRuleTargets}'s.
      */
     private void checkBareDimensionedReads() {
         Set<Object> owned = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
@@ -1932,7 +1931,7 @@ final class RuleChecker {
      *  refused, the block's other members are not judged. */
     private boolean checkChildren(Node carrier, String carrierName, List<Node> children, ResolvedRule base,
                                  DefaultsTarget targetName, java.util.Set<String> nodeNames) {
-        boolean goed = true;
+        boolean sound = true;
         // a subtype's own blocks under the base stand above the supertype's in the composition of ch. 7.10, so
         // only children for the carrier's own type can leave their priority open
         List<Node> own = children.stream().filter(k -> subjectOf(k) == null
@@ -1949,19 +1948,19 @@ final class RuleChecker {
                     "RGS-134", params("head", blockHead(block), "carrier", carrierName, "siblings", ordered.isEmpty()
                             ? Msg.frontend("RGS-134.other-block")
                             : Msg.frontend("RGS-134.ordered", "names", enumeration(ordered.stream().map(k -> k.name).toList()))));
-            goed = false;
+            sound = false;
         }
         for (Node k : children) {
-            if (k.category == Block.MEMBER && refusedBlocks.contains(k.block)) { goed = false; continue; }
+            if (k.category == Block.MEMBER && refusedBlocks.contains(k.block)) { sound = false; continue; }
             if (!checkNode(k, carrier, carrierName, base, targetName, nodeNames)) {
                 if (k.category == Block.MEMBER) refusedBlocks.add(k.block);
-                goed = false;
+                sound = false;
                 continue;
             }
             // below a subtype's own block the carrier's target is the subtype's
-            if (!checkChildren(k, k.name, k.children, base, targetOf(k.resolvedRule), nodeNames)) goed = false;
+            if (!checkChildren(k, k.name, k.children, base, targetOf(k.resolvedRule), nodeNames)) sound = false;
         }
-        return goed;
+        return sound;
     }
 
     /** A refusal at a block: its line and its sentence. */
@@ -3762,13 +3761,13 @@ final class RuleChecker {
     /** A markdown separator row ("| --- | :--: | --- |"): every non-empty cell is dashes/colons and at least one is a
      *  dash run. Such rows are layout, not data, and are dropped before desugaring. */
     private static boolean isSeparationRow(List<String> cells) {
-        boolean streep = false;
+        boolean dash = false;
         for (String c : cells) {
             if (c.isEmpty()) continue;
             if (!c.matches("[:\\-\\s]+")) return false;
-            if (c.indexOf('-') >= 0) streep = true;
+            if (c.indexOf('-') >= 0) dash = true;
         }
-        return streep;
+        return dash;
     }
 
     /** Parse a synthetic regel source (from {@link DecisionTableDesugar}) into a {@link RegelContext}. A syntax error
@@ -4159,6 +4158,11 @@ final class RuleChecker {
                 cr.getStart().getLine()));
     }
 
+    /** The count of temporal (attributeGranularity) components in a uniqueness key list. */
+    private static long countTemporal(ObjectType type, java.util.List<String> keys) {
+        return keys.stream().filter(k -> type.granularityOf(k) != null).count();
+    }
+
     /** §8.1.6 uniciteitscontrole — either "de &lt;attribuut&gt; van alle &lt;Type&gt; moeten uniek zijn"
      *  or a §5.7 concatenatie "de concatenatie van &lt;attribuut&gt; en … van alle &lt;Type&gt; …". Resolves
      *  the object type (by name, declared meervoudsvorm, or regular plural) and the key attribute(s)
@@ -4170,15 +4174,10 @@ final class RuleChecker {
      *  disagree on key arity or datatype, and a key with more than one temporal component; the transpiler
      *  then never silently drops or mis-checks. Returns true for a scope refused with an ERROR, which is then
      *  the rule's one message. */
-    /** The count of temporal (attributeGranularity) components in a uniqueness key list. */
-    private static long countTemporal(ObjectType type, java.util.List<String> keys) {
-        return keys.stream().filter(k -> type.granularityOf(k) != null).count();
-    }
-
     private boolean uniqueness(String name, UniciteitsControleContext u, Validity validity) {
         // §8.1.6 parent-scoped "de X van alle Y van <parent>": unique within each parent, not globally.
         if (u.vereniging().isEmpty() && u.alleAttribuutVanOnderwerp() != null) {
-            Clamp scoped = parentScoped(name, u.alleAttribuutVanOnderwerp(), source(u), validity);
+            ScopedUniqueness scoped = parentScoped(name, u.alleAttribuutVanOnderwerp(), source(u), validity);
             // the ERROR names the defect; a WARNING that the rule was not lowered would be a second message for it
             if (scoped == REFUSED) return true;
             if (scoped != null) {
@@ -4252,17 +4251,17 @@ final class RuleChecker {
     }
 
     /** The scoped reading of a uniqueness: its record, or none where {@link #parentScoped} refused the scope. */
-    private record Clamp(dev.uchar.regelspraak.ir.ResolvedUniqueness uniqueness) {}
+    private record ScopedUniqueness(dev.uchar.regelspraak.ir.ResolvedUniqueness uniqueness) {}
 
     /** A scope refused with an ERROR. */
-    private static final Clamp REFUSED = new Clamp(null);
+    private static final ScopedUniqueness REFUSED = new ScopedUniqueness(null);
 
     /** §8.1.6 parent-scoped uniqueness "de X van alle Y van &lt;parent&gt;" — unique within each parent.
      *  Resolves the element Y, its key attribute X, and the reference field on a Y that points at its
      *  scope owner &lt;parent&gt; (so the count is restricted per-parent). Null when it is not the scoped
      *  shape — then the global single-source path applies — or when the scope does not resolve;
      *  {@link #REFUSED} when it refused the scope with an ERROR. */
-    private Clamp parentScoped(String name, AlleAttribuutVanOnderwerpContext a, Source source, Validity g) {
+    private ScopedUniqueness parentScoped(String name, AlleAttribuutVanOnderwerpContext a, Source source, Validity g) {
         if (!a.onderwerpKeten().isEmpty()) return null;
         java.util.List<KaleNaamDeelContext> parts = a.kaleNaam(1).kaleNaamDeel();
         if (parts.size() != 2) return null;                          // element + exactly one parent navigation
@@ -4301,7 +4300,7 @@ final class RuleChecker {
                     source.line()));
             return REFUSED;
         }
-        return new Clamp(new dev.uchar.regelspraak.ir.ResolvedUniqueness(
+        return new ScopedUniqueness(new dev.uchar.regelspraak.ir.ResolvedUniqueness(
                 name, elem, java.util.List.of(attr), scopeBinding.role(), source, g, scopeBinding));
     }
 
@@ -4883,7 +4882,7 @@ final class RuleChecker {
      *  niet/geen binds itself; only a name that binds nothing is read as niet/geen plus the rest. A negated rule
      *  writes the de-negated characteristic with {@link #NEGATED} as its value. The defaults lowering turns that into
      *  besluit false ({@link #defaultOf}); a plain rule that still carries it after the lift is refused
-     *  ({@link #checkFlatNegations}), so the marker never reaches the wire. Refused here: a negation whose rest
+     *  ({@link #refuseFlatNegations}), so the marker never reaches the wire. Refused here: a negation whose rest
      *  names no characteristic of the subject; 'is niet een X' on an X that is not zelfstandig — the condition side
      *  binds only a zelfstandig kenmerk under that form (Tabel 16); and a niet/geen written after 'een', which the
      *  condition side reads as part of the name and not as a negation. A positive name keeps its written spelling
@@ -4899,7 +4898,7 @@ final class RuleChecker {
         Typing.Coded withoutCharacteristic = null;   // the refusal of a negation that names no declared characteristic
         if (kt.NIET() != null) {
             // 'is niet een X': the grammar carries the negation, so X itself must bind. An unresolved subject is
-            // refused by checkRuleTargets, and the negation stays recorded for whatever reads the rule before that.
+            // refused by refuseRuleTargets, and the negation stays recorded for whatever reads the rule before that.
             isNegated = true;
             String g = subject == null ? null : CharacteristicMatcher.find(subject, written);
             if (g == null && subject != null) g = CharacteristicMatcher.find(subject, characteristic);
@@ -4947,7 +4946,7 @@ final class RuleChecker {
 
     /** The value a negated kenmerktoekenning carries between its resolution and the defaults lowering (dialect §4,
      *  form 1). WF-022 admits only the constant true on a characteristic target, so a rule carrying this value never
-     *  reaches the wire: the lowering turns it into besluit false, and {@link #checkFlatNegations} refuses a plain
+     *  reaches the wire: the lowering turns it into besluit false, and {@link #refuseFlatNegations} refuses a plain
      *  rule that still carries it. */
     private static final Expr NEGATED = new Expr.Literal("onwaar", new Datatype.BooleanType(), Source.synthetic("onwaar"));
 
