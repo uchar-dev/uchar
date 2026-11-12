@@ -1,0 +1,2 @@
+WF-035.percentage-left-unit
+unit=EUR

@@ -2330,6 +2330,7 @@ let wf025 ctx =
       | _ -> [])
     ctx.doc.allocations
 
+
 (* The single-writer fences (WF-026 here, WF-050 and WF-079 below) key on
    the DECLARED object-type name, and under subtyping they MUST keep doing
    so — this is a constraint on the verifier, not an oversight (IR-SPEC
@@ -5574,6 +5575,18 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
              if not (units_compatible_adopting left_side right_side (unit_of l) (unit_of r)) then
                [ v "WF-035.additive-unit-mismatch" at "additive operands have incompatible units" ]
              else []
+         (* l/100 × r takes the unit of r (RUNTIME-SEMANTICS ch. 2.2, ch. 2.6
+            rule 7); a left operand with a unit of its own, a rate %/jr
+            included, has no clause that says what that unit does *)
+         | Percentage_of, Some l, _ when is_number_like l -> (
+             match unit_of l with
+             | Some u when not (Units.is_pure_percentage u) ->
+                 [ v ~params:[ ("unit", Units.render u) ] "WF-035.percentage-left-unit" (sub "left")
+                     (Printf.sprintf
+                        "the left operand of a percentage carries the unit %s: it is unitless or carries \
+                         exactly %%, since the percentage takes its unit from the right operand"
+                        (Units.render u)) ]
+             | _ -> [])
          | _ -> [])
       (* the WF-035 date±duration clause (RUNTIME-SEMANTICS ch. 3.8): the
          date stands on the LEFT of plus and min — v0's typing opens its
