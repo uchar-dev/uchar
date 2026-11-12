@@ -571,12 +571,22 @@ public final class CaseInput {
             // the key in its declared spelling, which the model's role searches compare; the link keeps the written one
             Map.Entry<String, JsonNode> e = Map.entry(declaredRoleKey(i.get("label").asText(), written.getKey()),
                     written.getValue());
+            // the role the key names opposite this instance's type, as the reference interpreter resolves it: a key that
+            // names a role of a relation this type does not fill is a defect of the case, never a link by the type pair
+            List<RegelSpraakModel.Role> far = rolesOpposite(tI, written.getKey());
+            if (far.isEmpty())
+                throw new IllegalArgumentException("role key \"" + written.getKey() + "\" does not resolve to a declared"
+                        + " role opposite \"" + tI.name + "\"");
             for (JsonNode labelNode : e.getValue()) {
                 RoleLink link = new RoleLink(i.get("label").asText(), written.getKey(), labelNode.asText());
                 Object target = labelToBean.get(labelNode.asText());
                 if (target == null)
                     throw new RoleRefusal(DroolsCode.ROLE_UNKNOWN_LABEL.reason("role", written.getKey(), "label", labelNode.asText()), link);
                 ObjectType tL = beanObjectType(target);
+                ObjectType filler = far.size() == 1 ? model.objectTypeByName(far.get(0).objectTypeName()) : null;
+                if (filler != null && !tL.isA(filler))
+                    throw new IllegalArgumentException("role \"" + written.getKey() + "\" on \"" + link.label() + "\" links \""
+                            + link.target() + "\" of type \"" + tL.name + "\"; declared filler type is \"" + filler.name + "\"");
                 // a relation both of whose roles are to-many has no reference field on either bean: its link is a fact
                 // of its own, the same one from whichever side the case writes it (ch. 5.7a)
                 if (manyToManyLink(tI, tL, e.getKey(), bean, target)) continue;
@@ -894,6 +904,31 @@ public final class CaseInput {
                 for (String declared : Arrays.asList(r.name(), r.plural()))
                     if (declared != null && Namen.norm(declared).equals(Namen.norm(key))) return declared;
         throw NameFault.undeclared("role", label, key, null);
+    }
+
+    /** The roles the role key {@code key} on an instance of {@code type} names, as the reference interpreter's case reader
+     *  resolves it: of a fact type of two roles the role the key names by its name or plural, where {@code type} fills
+     *  the other one (the declared filler an upper bound, IR-SPEC ch. 2.6); of a reciprocal fact type its one role, where
+     *  {@code type} fills it and the key names it. More than one is an ambiguity, none a key no role opposite
+     *  {@code type} answers to. */
+    private List<RegelSpraakModel.Role> rolesOpposite(ObjectType type, String key) {
+        List<RegelSpraakModel.Role> out = new ArrayList<>();
+        for (RegelSpraakModel.FactType ft : model.factTypes.values()) {
+            if (ft.roles.size() == 2) {
+                RegelSpraakModel.Role a = ft.roles.get(0), b = ft.roles.get(1);
+                if (fills(type, a) && names(b).contains(Namen.norm(key))) out.add(b);
+                if (fills(type, b) && names(a).contains(Namen.norm(key))) out.add(a);
+            } else if (ft.roles.size() == 1 && ft.reciprocal) {
+                RegelSpraakModel.Role r = ft.roles.get(0);
+                if (fills(type, r) && names(r).contains(Namen.norm(key))) out.add(r);
+            }
+        }
+        return out;
+    }
+
+    /** Whether an instance of {@code type} fills the role {@code r}. */
+    private boolean fills(ObjectType type, RegelSpraakModel.Role r) {
+        return type.isA(model.objectTypeByName(r.objectTypeName()));
     }
 
     /** The keys a case may write a role under: its name and its plural, normalised. */

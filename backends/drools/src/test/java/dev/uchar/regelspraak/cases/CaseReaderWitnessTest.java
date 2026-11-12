@@ -35,6 +35,8 @@ class CaseReaderWitnessTest {
     private static final String KEURSTAAT = "jutterswet-keurstaat";
     /** B1.onderhoudstarief, an input on a year timeline; B1.onderhoudsbijdrage, an expected timeline. */
     private static final String BAKENMEESTER = "jutterswet-bakenmeester";
+    /** Jutters with a to-one haven, havens with their havenjutters, vondsten with their jutter. */
+    private static final String HAVENKETEN = "jutterswet-havenketen";
 
     // ---------------- parameters ----------------
 
@@ -167,6 +169,22 @@ class CaseReaderWitnessTest {
         caseError(PENNINGDREMPEL, c, "requires a rule pin");
     }
 
+    // ---------------- role keys ----------------
+
+    @Test void a_role_key_of_a_relation_the_instance_does_not_fill_is_a_case_error() throws Exception {
+        // havenketen: J1 (Jutter) names H1 (Haven) under "bewaakte havens", a role whose opposite no Jutter fills; the
+        // type pair Jutter-Haven would land the link on J1.haven
+        ObjectNode c = caseFile(HAVENKETEN, "case1-vier-vondsten");
+        roles(c, "J1").removeAll().putArray("bewaakte havens").add("H1");
+        caseError(HAVENKETEN, c, "role key \"bewaakte havens\" does not resolve to a declared role opposite \"Jutter\"");
+    }
+
+    @Test void a_role_link_to_an_instance_of_another_type_than_its_filler_is_a_case_error() throws Exception {
+        ObjectNode c = caseFile(HAVENKETEN, "case1-vier-vondsten");
+        roles(c, "J1").removeAll().putArray("vondst").add("H1");
+        caseError(HAVENKETEN, c, "declared filler type is \"Vondst\"");
+    }
+
     @Test void a_parameter_the_case_does_not_bind_faults_where_a_rule_reads_it() {
         // case1 leaves aanvoertarief unbound, read in a value; case2 aanvoerdrempel, read in a condition
         Path red = Path.of("..", "..", "corpus", "red", "aanvoergeld-parameter-unbound");
@@ -196,6 +214,13 @@ class CaseReaderWitnessTest {
     /** The attributes of the instance at {@code index} of the input of case {@code c}. */
     private static ObjectNode attributes(ObjectNode c, int index) {
         return (ObjectNode) c.get("input").get("instances").get(index).get("attributes");
+    }
+
+    /** The roles of the instance {@code label} of the input of case {@code c}. */
+    private static ObjectNode roles(ObjectNode c, String label) {
+        for (JsonNode i : c.get("input").get("instances"))
+            if (i.get("label").asText().equals(label)) return (ObjectNode) i.get("roles");
+        throw new AssertionError("no instance " + label);
     }
 
     private static ObjectNode parameters(ObjectNode c) {

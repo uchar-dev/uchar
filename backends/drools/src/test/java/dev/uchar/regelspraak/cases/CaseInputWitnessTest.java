@@ -150,9 +150,10 @@ class CaseInputWitnessTest {
         refusal(f, "W1", "opvolgers", "W9", "role 'opvolgers' names unknown label W9");
     }
 
-    @Test void a_role_without_to_a_reference_field_is_refused_with_the_link() throws Exception {
-        // ketenband with a second relation, between a Post as 'buur' and a Wachter: the key 'buur' names a declared
-        // role, but none of the self-typed pair, neither by name nor by the pair, which carries two roles
+    @Test void a_role_link_to_another_type_than_its_filler_is_a_defect_of_the_case() throws Exception {
+        // ketenband with a second relation, between a Post as 'buur' and a Wachter: the key 'buur' names the role
+        // opposite a Wachter, whose filler is a Post, and the link names a Wachter; the reference interpreter's case
+        // reader refuses that at load, before any bean field is asked
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(KETENBAND)));
         IrPath.modelList(ir, "objectTypes").addObject().put("node", "ObjectType").put("name", "Post")
                 .put("animate", false).put("plural", "Posten").putArray("attributes");
@@ -163,11 +164,10 @@ class CaseInputWitnessTest {
                 .put("objectType", "Post").put("many", false)).add(JSON.createObjectNode().put("node", "Role")
                 .put("name", "bewaker").put("objectType", "Wachter").put("many", false));
         DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-        CaseInput.RoleError f = roleError(() -> CaseInput.of(b, chain("Wachter", "rangnummer",
-                List.of("W1", "W2"), Map.of("W1", Map.of("buur", List.of("W2"))))));
-        refusal(f, "W1", "buur", "W2", "role 'buur' (Wachter -> Wachter) reaches no to-one reference field: the"
-                + " written role name resolves to no unique role, and neither direction of the type pair derives a"
-                + " to-one role");
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> CaseInput.of(b, chain("Wachter",
+                "rangnummer", List.of("W1", "W2"), Map.of("W1", Map.of("buur", List.of("W2"))))));
+        assertEquals("role \"buur\" on \"W1\" links \"W2\" of type \"Wachter\"; declared filler type is \"Post\"",
+                e.getMessage());
     }
 
     @Test void a_key_that_names_no_declared_role_is_a_defect_of_the_case() throws Exception {
