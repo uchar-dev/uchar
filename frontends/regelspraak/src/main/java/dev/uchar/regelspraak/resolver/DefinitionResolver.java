@@ -300,9 +300,10 @@ public final class DefinitionResolver {
      * replaced a member of the same name, a second domain, parameter, unit system, fact type or dimension replaced the
      * first, and the IR carried one declaration, so the verifier never saw the second. Which one the model kept depended
      * on which stood last in the source or in the files put together, and two day kinds of one name stopped the emitter.
-     * A second declaration is refused at its own line, naming the line of the first, in the verifier's sentence. An
-     * extension adds members to a declared type and is no declaration of the name (refuseRedeclarations); timelines are
-     * WF-015's. A definition the parser recovered inside is left alone: its syntax error is the one to act on.
+     * A second declaration is refused at its own line, naming the line of the first, in the verifier's sentence; for a
+     * timeline also where both declare one periodicity (WF-015). An extension adds members to a declared type and is no
+     * declaration of the name (refuseRedeclarations). A definition the parser recovered inside is left alone: its
+     * syntax error is the one to act on.
      */
     private void refuseDuplicateNames(RegelSpraakDocumentContext doc) {
         java.util.Map<String, String[]> earlier = new java.util.HashMap<>();   // namespace + name identity -> {name, line}
@@ -331,10 +332,16 @@ public final class DefinitionResolver {
             } else if (d.dagsoortDefinition() != null) {
                 ctx = d.dagsoortDefinition();
                 category = new String[] {"dagsoort", "dayKinds", name(d.dagsoortDefinition().lowerNaam())};
+            } else if (d.tijdlijnDefinitie() != null) {
+                ctx = d.tijdlijnDefinitie();
+                category = new String[] {"tijdlijn", "timelines", src(d.tijdlijnDefinitie().tijdlijnNaam())};
             }
             if (category == null || recovered(ctx)) continue;
             int line = ctx.getStart().getLine();
-            String[] first = earlier.putIfAbsent(category[1] + "\u0000" + dev.uchar.regelspraak.emit.IrEmitter.norm(category[2]),
+            // a timeline's name identity drops its article, as a 'voor elke <tijdlijn>' reference reads it (WF-015)
+            String identity = d.tijdlijnDefinitie() != null ? normaliseTimelineName(category[2])
+                    : dev.uchar.regelspraak.emit.IrEmitter.norm(category[2]);
+            String[] first = earlier.putIfAbsent(category[1] + "\u0000" + identity,
                     new String[] {category[2], String.valueOf(line)});
             if (first == null) continue;
             error(
@@ -382,7 +389,8 @@ public final class DefinitionResolver {
             if (!d.extension() || recovered(d.definition())) continue;
             Member b = existing(d);
             if (b == null || recovered(b.definition())) continue;
-            if (b != d) judgeRepetition(d, b);
+            if (b != d && b.definition() == d.definition()) repetitions.put(d.ctx(), false);   // refuseRepeatedNames
+            else if (b != d) judgeRepetition(d, b);
             else if (d.attribute()) refuseRoleRedeclaration(d);
         }
     }
@@ -495,15 +503,16 @@ public final class DefinitionResolver {
             Member member = new Member(ot, attribute, attribute ? name(m.attribuutSpecificatie().lowerNaam())
                     : characteristicName(m.kenmerkSpecificatie()), extension, m, definition);
             repetition = members.stream().anyMatch(l -> l.same(member) && (extension || l.extension()));
+            boolean inDeclaration = members.stream().anyMatch(l -> l.same(member) && l.definition() == definition);
             members.add(member);
-            // an extension's repeat is judged once every declaration is read; the model keeps the declaration the
-            // type already carries, so the rest of the document reads that one
-            if (repetition && extension) return;
+            // an extension's repeat is judged once every declaration is read, a repeat within one declaration by
+            // refuseRepeatedNames; the model keeps the declaration the type already carries, so the rest of the
+            // document reads that one
+            if ((repetition && extension) || inDeclaration) return;
         }
         if (m.attribuutSpecificatie() != null) {
             AttribuutSpecificatieContext a = m.attribuutSpecificatie();
             String name = name(a.lowerNaam());
-            reportCapitalCollision(ot, name, ot.attributes.keySet(), a.getStart().getLine());
             ot.attributes.put(name, withUnit(datatypeOf(a.datatype(), a.domeinNaam()), a, name));
             if (a.meervoudsvorm() != null) ot.attributePlural.put(name, src(a.meervoudsvorm())); // §3.3, for §8.1.6
             // the absence markers (grammar/DIVERGENCES.md, "Afwezigheidsmarkeringen"), in their canonical order
@@ -533,7 +542,6 @@ public final class DefinitionResolver {
             }
         } else if (m.kenmerkSpecificatie() != null) {
             String name = characteristicName(m.kenmerkSpecificatie());
-            reportCapitalCollision(ot, name, ot.characteristics, m.getStart().getLine());
             // a head after an extension that declared the characteristic: the name stands once
             if (!repetition || !ot.characteristics.contains(name)) ot.characteristics.add(name);
             ot.characteristicKinds.put(name, characteristicKindOf(m.kenmerkSpecificatie()));   // §3.5 drives the §8.1.8 predicate form
@@ -550,18 +558,24 @@ public final class DefinitionResolver {
         // koptekst carries no model information
     }
 
-    /** §13.2.30: a naam is NOT hoofdletter-onderscheidend, so two members of one object type OF
-     *  THE SAME KIND that differ ONLY in case are the same name declared twice — ambiguous (a
-     *  third casing would bind whichever was declared first, see {@link ObjectType#attribute}).
-     *  Warn at registration. Scoped to one kind: an attribute and a kenmerk MAY legitimately
-     *  share a name — a
-     *  kenmerk carries no datatype and never enters {@link ObjectType#attribute}, so there is no
-     *  cross-kind ambiguity. An exact-case redeclaration is left to the collection. */
-    private void reportCapitalCollision(ObjectType ot, String name, java.util.Collection<String> existing, int line) {
-        if (existing.contains(name)) return; // exact duplicate of the same kind: not a case botsing
-        if (existing.stream().anyMatch(k -> k.equalsIgnoreCase(name)))
-            model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
-                    "RGS-011", params("name", name, "objectType", ot.name), line));
+    /** WF-002, WF-006, WF-012, WF-014: within one declaration a name stands once, case not counted (§13.2.30) — the
+     *  attributes and the characteristics of an object type, the roles of a fact type, the values of an enumeration
+     *  and the labels of a dimension. A repeat replaced the earlier entry without a word or stood beside it, and only
+     *  the verifier refused the document. An ERROR at the repeat's line that names the earlier one; {@code variant}
+     *  names the list in the sentence, {@code owner} the declaration. An attribute and a characteristic may share a
+     *  name: they are two lists. */
+    private <T extends ParserRuleContext> void refuseRepeatedNames(String variant, String owner, List<T> entries,
+                                                                  java.util.function.Function<T, String> nameOf) {
+        java.util.Map<String, T> first = new java.util.HashMap<>();
+        for (T entry : entries) {
+            String name = nameOf.apply(entry);
+            if (name == null || name.isEmpty()) continue;
+            T earlier = first.putIfAbsent(dev.uchar.regelspraak.emit.IrEmitter.norm(name), entry);
+            if (earlier == null) continue;
+            model.diagnostics.add(new Typing.Coded("RGS-431", params("owner", owner, "name", name,
+                            "earlierName", nameOf.apply(earlier), "earlierLine", earlier.getStart().getLine()))
+                    .variant("." + variant).at(RegelSpraakModel.Severity.ERROR, entry.getStart().getLine()));
+        }
     }
 
     private String characteristicName(KenmerkSpecificatieContext k) {
@@ -592,6 +606,8 @@ public final class DefinitionResolver {
     }
 
     private Datatype enumeration(String domain, EnumeratieSpecificatieContext ctx) {
+        if (!recovered(ctx))
+            refuseRepeatedNames("value", domain, ctx.enumeratieWaarde(), w -> unquote(w.ENUM_LITERAL().getText()));
         List<String> values = ctx.enumeratieWaarde().stream()
                 .map(w -> unquote(w.ENUM_LITERAL().getText())).toList();
         return new Datatype.Enumeration(domain, values);
@@ -1044,15 +1060,7 @@ public final class DefinitionResolver {
         int count = definitionCount(ctx);
         String fixed = gran == null ? null : fixedStartPoint(gran, count, ctx.vastStartpuntDatum(),
                 ctx.vastStartpuntMaand(), ctx.vastStartpuntKwartaal(), ctx.vastStartpuntJaar());
-        // §13.3.6.10: a "voor elke <tijdlijn>" reference adopts the FIRST timeline of that (normalised) name via
-        // findFirst. Warn only when an earlier same-name timeline declares a DIFFERENT periodicity (granularity
-        // or count) — then the reference silently disagrees; an identical redeclaration is harmless.
-        String normalised = normaliseTimelineName(name);
-        if (model.timelines.stream().anyMatch(tl -> normaliseTimelineName(tl.name()).equals(normalised)
-                && (tl.granularity() != gran || tl.count() != count)))
-            model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
-                    "RGS-019", params("name", name),
-                    ctx.tijdlijnNaam().getStart().getLine()));
+        // a second timeline of one name is refused by refuseDuplicateNames
         model.timelines.add(new Timeline(name, variable, gran, count, fixed));
     }
 
@@ -1273,6 +1281,8 @@ public final class DefinitionResolver {
 
     // ---------------- §13.3.7 dimensions ----------------
     private void dimension(DimensieDefinitionContext ctx) {
+        if (!recovered(ctx))
+            refuseRepeatedNames("label", src(ctx.dimensieNaam()), ctx.labelWaardeSpecificatie(), l -> src(l.dimensieWaarde()));
         List<String> values = ctx.labelWaardeSpecificatie().stream()
                 .map(l -> src(l.dimensieWaarde())).toList();
         // §3.6/§13.3.7.2: "na het attribuut met voorzetsel <vz>" gives the suffix-read preposition; the
@@ -1291,6 +1301,7 @@ public final class DefinitionResolver {
         boolean recovered = recovered(ctx);
         java.util.Set<ParserRuleContext> onPreviousLine = recovered ? java.util.Set.of()
                 : reportMembersOnPreviousLine(ctx, ctx.rolSpecificatie(), RolSpecificatieContext.class, "feittype '" + ft.name + "'");
+        if (!recovered) refuseRepeatedNames("role", ft.name, ctx.rolSpecificatie(), rs -> src(rs.rolNaam()));
         for (RolSpecificatieContext rs : ctx.rolSpecificatie()) {
             String roleName = src(rs.rolNaam());
             String plural = rs.meervoudsvorm() != null ? src(rs.meervoudsvorm()) : null; // declared "(mv: …)"
@@ -1409,10 +1420,15 @@ public final class DefinitionResolver {
         return -1;
     }
 
-    /** The two checks on the members of one head: the line check, and the readability of every name it did not
-     *  refuse — a refused member is a misreading, so its name is not the one the author declared. */
+    /** The checks on the members of one head: one name per list, the line check, and the readability of every name
+     *  the line check did not refuse — a refused member is a misreading, so its name is not the one the author
+     *  declared. */
     private void membersAfterHead(ObjectType ot, ParserRuleContext definition, List<ObjectTypeMemberContext> members) {
         if (recovered(definition)) return;
+        refuseRepeatedNames("attribute", ot.name, members.stream().filter(m -> m.attribuutSpecificatie() != null).toList(),
+                m -> name(m.attribuutSpecificatie().lowerNaam()));
+        refuseRepeatedNames("characteristic", ot.name, members.stream().filter(m -> m.kenmerkSpecificatie() != null).toList(),
+                m -> characteristicName(m.kenmerkSpecificatie()));
         String carrier = "objecttype '" + ot.name + "'";
         java.util.Set<ParserRuleContext> refused = reportMembersOnPreviousLine(definition, members, ObjectTypeMemberContext.class, carrier);
         for (ObjectTypeMemberContext m : members) {

@@ -211,7 +211,6 @@ RGS-009.attribute-phrase	het attribuut
 RGS-009.characteristic-phrase	het kenmerk
 RGS-009.not-literal	'{declaration}' is niet letterlijk '{earlier}'
 RGS-010	objecttype '{objectType}': de extensie declareert '{name}' met het objecttype '{fillerType}' (bronregel {sourceLine}), en dat is de rol '{role}' van feittype '{factType}' (bronregel {roleLine}) — een extensie voegt attributen en kenmerken toe en geen rollen: een rol staat in haar feittype
-RGS-011	lid '{name}' van objecttype '{objectType}' verschilt alleen in hoofdletters van een eerder lid; namen zijn niet hoofdletter-onderscheidend (§13.2.30), dus de verwijzing is dubbelzinnig
 RGS-012	attribuut '{name}' met eenheid '{unit}': {reason}
 RGS-012.has-unit	het getal draagt al de eenheid '{existing}'
 RGS-012.no-unit	een {type} draagt geen eenheid
@@ -223,7 +222,6 @@ RGS-016	eenheidstelsel '{unitSystem}', {writtenAs}al gedeclareerd voor de eenhei
 RGS-016.written-as	als '{earlierAbbreviation}' 
 RGS-017	onleesbare omrekenfactor '{value}' bij eenheid '{unit}'
 RGS-018	parameter '{name}': het tijdlijnfacet van parameter '{name}' heeft aantal {count} > 1: de tijdlijn van een parameter is één periode zolang rasters van meer perioden open zijn (RUNTIME-SEMANTICS ch. 3.12)
-RGS-019	tijdlijn '{name}' is meermaals met verschillende periodiciteit gedefinieerd; een 'voor elke <naam>' verwijzing neemt die van de eerste (§13.3.6.10)
 RGS-020	tijdlijn: het vaste startpunt '{value}' ({section}) noemt geen dag van de maand
 RGS-021	tijdlijn: het vaste startpunt '{value}' ({section}) noemt geen reeks kwartaalmaanden: die is 1, 4, 7 en 10, 2, 5, 8 en 11 of 3, 6, 9 en 12
 RGS-022	tijdlijn: het vaste startpunt '{value}' ({section}) noemt geen maand
@@ -776,6 +774,12 @@ RGS-425	verdeling '{name}': {role} '{attribute}' is geen gedeclareerd attribuut 
 RGS-426	verdeling '{name}' schrijft '{attribute}' van {objectType}, dat de verdeling '{other}' al schrijft; ten hoogste één verdeling schrijft een doel, ook langs een typeketen (WF-026)
 RGS-427	'{characteristic}' is geen gedeclareerd kenmerk van {objectType}
 RGS-428	lezing '{expression}': '{attribute}' is geen attribuut en geen kenmerk van {objectType} (WF-034)
+RGS-431	{owner}: '{name}' staat twee keer in de declaratie (bronregel {earlierLine}: '{earlierName}'); een naam komt in zijn lijst één keer voor, hoofdletters niet meegeteld
+RGS-431.attribute	objecttype '{owner}': het attribuut '{name}' is in deze declaratie al gedeclareerd als '{earlierName}' (bronregel {earlierLine}); een attribuutnaam komt in een objecttype één keer voor, hoofdletters niet meegeteld (WF-002)
+RGS-431.characteristic	objecttype '{owner}': het kenmerk '{name}' is in deze declaratie al gedeclareerd als '{earlierName}' (bronregel {earlierLine}); een kenmerknaam komt in een objecttype één keer voor, hoofdletters niet meegeteld (WF-002)
+RGS-431.role	feittype '{owner}': de rol '{name}' is al gedeclareerd als '{earlierName}' (bronregel {earlierLine}); een rolnaam komt in een feittype één keer voor, hoofdletters niet meegeteld (WF-012)
+RGS-431.value	domein '{owner}': de waarde '{name}' staat er al als '{earlierName}' (bronregel {earlierLine}); een waarde komt in een enumeratie één keer voor, hoofdletters niet meegeteld (WF-006)
+RGS-431.label	dimensie '{owner}': het label '{name}' staat er al als '{earlierName}' (bronregel {earlierLine}); een label komt in een dimensie één keer voor, hoofdletters niet meegeteld (WF-014)
 RGS-440	kenmerkcontrole '{source}' volgt een rol vanaf {written}, maar zij wordt gelezen op {subject}: een genavigeerde kenmerkcontrole volgt één rol vanaf het onderwerp waarop zij gelezen wordt
 RGS-441	kenmerkcontrole '{source}' volgt de rol '{role}' vanaf {subject}, maar die naam wijst vanaf {subject} geen unieke rol aan
 RGS-450	het attribuut '{attribute}' van {label} is tijdsafhankelijk; een waarde zonder periode is de waarde van de periode waarin de peildatum valt, maar het scenario '{scenario}' heeft geen peildatum (voeg 'met peildatum <datum>' toe of geef de waarde een periode: 'van <datum> tot <datum>')

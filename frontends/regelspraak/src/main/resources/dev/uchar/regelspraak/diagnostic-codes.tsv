@@ -8,7 +8,6 @@ RGS-007	member-redeclares-inherited-name	ERROR	ancestor,ancestorLine,category,na
 RGS-008	duplicate-declared-name	ERROR	earlierLine,earlierName,kind,name,namespace
 RGS-009	extension-repeats-member	ERROR	earlierLine,kind,kindPhrase,name,objectType,reason,sourceLine
 RGS-010	extension-declares-role	ERROR	factType,fillerType,name,objectType,role,roleLine,sourceLine
-RGS-011	member-differs-only-in-case	WARNING	name,objectType
 RGS-012	attribute-unit-not-applicable	ERROR	name,reason,unit
 RGS-013	numeric-datatype-without-specification	WARNING	-
 RGS-014	zero-decimal-number-specification	WARNING	-
@@ -16,7 +15,6 @@ RGS-015	conversion-factor-out-of-range	ERROR	den,factor,num,unit,unitSystem
 RGS-016	unit-declared-twice-in-system	ERROR	abbreviation,earlierAbbreviation,earlierUnit,unitSystem,writtenAs
 RGS-017	unreadable-conversion-factor	WARNING	unit,value
 RGS-018	parameter-timeline-count	ERROR	count,name
-RGS-019	timeline-redeclared-periodicity	WARNING	name
 RGS-020	fixed-start-point-no-day	ERROR	section,value
 RGS-021	fixed-start-point-quarter-months	ERROR	section,value
 RGS-022	fixed-start-point-year-no-month	ERROR	section,value
@@ -401,6 +399,7 @@ RGS-425	allocation-member-undeclared	ERROR	attribute,name,objectType,role
 RGS-426	allocation-target-written-twice	ERROR	attribute,name,objectType,other
 RGS-427	target-characteristic-undeclared	ERROR	characteristic,objectType,written
 RGS-428	undeclared-own-read	ERROR	attribute,expression,objectType
+RGS-431	name-repeated-in-declaration	ERROR	earlierLine,earlierName,name,owner
 RGS-440	navigated-characteristic-check-off-subject	ERROR	source,subject,written
 RGS-441	navigated-characteristic-check-unbound	ERROR	role,source,subject
 RGS-450	scalar-input-on-timeline-without-as-of-date	ERROR	attribute,label,scenario

@@ -211,7 +211,6 @@ RGS-009.attribute-phrase	the attribute
 RGS-009.characteristic-phrase	the characteristic
 RGS-009.not-literal	'{declaration}' is not literally '{earlier}'
 RGS-010	object type '{objectType}': the extension declares '{name}' with the object type '{fillerType}' (source line {sourceLine}), and that is the role '{role}' of fact type '{factType}' (source line {roleLine}) — an extension adds attributes and characteristics and no roles: a role stands in its fact type
-RGS-011	member '{name}' of object type '{objectType}' differs only in case from an earlier member; names are not case-distinguishing (§13.2.30), so the reference is ambiguous
 RGS-012	member '{name}' with unit '{unit}': {reason}
 RGS-012.has-unit	the number already carries the unit '{existing}'
 RGS-012.no-unit	a {type} carries no unit
@@ -223,7 +222,6 @@ RGS-016	unit system '{unitSystem}', {writtenAs}already declared for the unit '{e
 RGS-016.written-as	as '{earlierAbbreviation}' 
 RGS-017	unreadable conversion factor '{value}' for unit '{unit}'
 RGS-018	parameter '{name}': the timeline facet of parameter '{name}' has count {count} > 1: a parameter's timeline is one period while multi-period grids are open (RUNTIME-SEMANTICS ch. 3.12)
-RGS-019	timeline '{name}' is defined several times with different periodicity; a 'voor elke <naam>' reference takes that of the first (§13.3.6.10)
 RGS-020	timeline: the fixed start point '{value}' ({section}) names no day of the month
 RGS-021	timeline: the fixed start point '{value}' ({section}) names no series of quarter months: it is 1, 4, 7 and 10, 2, 5, 8 and 11, or 3, 6, 9 and 12
 RGS-022	timeline: the fixed start point '{value}' ({section}) names no month
@@ -776,6 +774,12 @@ RGS-425	allocation '{name}': {role} '{attribute}' is not a declared attribute of
 RGS-426	allocation '{name}' writes '{attribute}' of {objectType}, which the allocation '{other}' writes already; at most one allocation writes a target, along a type chain as well (WF-026)
 RGS-427	'{characteristic}' is not a declared characteristic of {objectType}
 RGS-428	read '{expression}': '{attribute}' is neither an attribute nor a characteristic of {objectType} (WF-034)
+RGS-431	{owner}: '{name}' appears twice in the declaration (source line {earlierLine}: '{earlierName}'); a name appears once in its list, case not counted
+RGS-431.attribute	object type '{owner}': the attribute '{name}' is already declared in this declaration as '{earlierName}' (source line {earlierLine}); an attribute name appears once in an object type, case not counted (WF-002)
+RGS-431.characteristic	object type '{owner}': the characteristic '{name}' is already declared in this declaration as '{earlierName}' (source line {earlierLine}); a characteristic name appears once in an object type, case not counted (WF-002)
+RGS-431.role	fact type '{owner}': the role '{name}' is already declared as '{earlierName}' (source line {earlierLine}); a role name appears once in a fact type, case not counted (WF-012)
+RGS-431.value	domain '{owner}': the value '{name}' is already there as '{earlierName}' (source line {earlierLine}); a value appears once in an enumeration, case not counted (WF-006)
+RGS-431.label	dimension '{owner}': the label '{name}' is already there as '{earlierName}' (source line {earlierLine}); a label appears once in a dimension, case not counted (WF-014)
 RGS-440	characteristic check '{source}' follows a role from {written}, but it is read on {subject}: a navigated characteristic check follows one role from the subject it is read on
 RGS-441	characteristic check '{source}' follows the role '{role}' from {subject}, but from {subject} that name binds no unique role
 RGS-450	the attribute '{attribute}' of {label} is time-dependent; a value without a period is the value of the period the as-of date falls in, but the scenario '{scenario}' has no as-of date (add 'met peildatum <datum>' or give the value a period: 'van <datum> tot <datum>')
