@@ -109,8 +109,7 @@ class TmsCharacteristicWindowWitnessTest {
                     "parameters": {} },
                   "expected": [ { "kind": "consistent" } ] }""");
         assertEquals("CharacteristicPeriodsFault: fout in de regel \"rentedragend\": de case levert ware perioden van het"
-                + " tijdsafhankelijke kenmerk \"rentedragend\" van \"A1\", dat een regel schrijft: niet uitgevoerd (geen"
-                + " corpuscase)",
+                + " tijdsafhankelijke kenmerk \"rentedragend\" van \"A1\", dat een regel schrijft (ch. 3.12)",
                 TmsFaultWitnessTest.playBoth(dir.resolve("ir.json"), c));
     }
 
