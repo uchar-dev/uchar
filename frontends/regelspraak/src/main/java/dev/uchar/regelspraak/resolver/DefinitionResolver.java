@@ -646,7 +646,7 @@ public final class DefinitionResolver {
     private Datatype datatypeOf(DatatypeContext dt, DomeinNaamContext dom) {
         if (dt != null) return datatype(dt);
         if (dom != null) {
-            Datatype resolved = model.domains.get(src(dom));
+            Datatype resolved = model.domainByName(src(dom));   // case-insensitive, as WF-003 resolves
             return resolved != null ? resolved : new Datatype.Unknown("domein " + src(dom));
         }
         return new Datatype.Unknown("geen datatype");
@@ -904,11 +904,17 @@ public final class DefinitionResolver {
                             "unitSystem", system.name), rules.getOrDefault(entry.getKey(), 0)));
             entry.setValue(r.withSymbol(null));
         }
-        // a conversion names its target as a reference does: by its abbreviation, else by the symbol of one unit of the
-        // system; a symbol two or more units carry names none of them (RGS-390), and the conversion is dropped
+        // a conversion names its target as a reference does: by its abbreviation under the name identity (WF-009), else
+        // by the symbol of one unit of the system; a symbol two or more units carry names none of them (RGS-390), and
+        // the conversion is dropped
         for (var entry : raw.entrySet()) {
             String to = entry.getValue().conversionTarget();
             if (to == null || raw.containsKey(to)) continue;
+            String[] abbreviation = written.get(dev.uchar.regelspraak.emit.IrEmitter.norm(to));
+            if (abbreviation != null && raw.containsKey(abbreviation[1])) {
+                entry.setValue(entry.getValue().withTarget(abbreviation[1]));
+                continue;
+            }
             List<String> carriers = raw.values().stream().filter(x -> to.equals(x.symbol())).map(RawUnit::abbreviation).toList();
             if (carriers.size() == 1) entry.setValue(entry.getValue().withTarget(carriers.get(0)));
             else if (carriers.size() > 1) {

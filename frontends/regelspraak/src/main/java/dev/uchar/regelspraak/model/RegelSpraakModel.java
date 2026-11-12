@@ -1340,6 +1340,16 @@ public final class RegelSpraakModel {
      *  for the suffix form ("na het attribuut met voorzetsel <vz>": a cell reads "&lt;attribuut&gt; &lt;vz&gt;
      *  &lt;label&gt;"), or null for the prefix form ("voor het attribuut zonder voorzetsel": "&lt;label&gt;
      *  &lt;attribuut&gt;"). */
+    /** The domain named {@code name} case-insensitively (WF-003), or null. */
+    public Datatype domainByName(String name) {
+        if (name == null) return null;
+        Datatype exact = domains.get(name);
+        if (exact != null) return exact;
+        for (var e : domains.entrySet())
+            if (e.getKey().equalsIgnoreCase(name)) return e.getValue();
+        return null;
+    }
+
     public record Dimension(String name, String pluralName, String preposition, List<String> values) {}
 
     /** The §13.3.7 dimension named {@code name} (singular) case-insensitively, or null. */
