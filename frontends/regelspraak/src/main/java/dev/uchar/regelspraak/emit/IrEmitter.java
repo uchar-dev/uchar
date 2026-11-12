@@ -354,7 +354,7 @@ public final class IrEmitter {
         w.endArray();
         if (p.unordered()) w.key("unordered").value(true);         // only on a declared-unordered group member
         sourceReference(p.source());
-        w.key("validity"); writeValidity(p.validity());
+        w.key("validity"); validity(p.validity());
         originAndDesignations(RegelSpraakModel.Designatable.form(p.name()));
         w.endObject();
         currentSubject = previousSubject;
@@ -1509,9 +1509,15 @@ public final class IrEmitter {
         return r.statuteAnnotations().stream().filter(x -> !x.isEmpty()).toList();
     }
 
-    /** IR-SPEC ch. 3.10: every version writes its validity; always is a Validity with neither bound. */
+    /** IR-SPEC ch. 3.10: every version writes its validity; always (also an absent one) is a Validity with neither
+     *  bound. */
     private void validity(Validity g) {
-        writeValidity(g == null ? Validity.ALTIJD : g);
+        if (g == null) g = Validity.ALTIJD;
+        w.beginObject();
+        w.key("node").value("Validity");
+        if (g.from() != null) w.key("from").value(g.from().toString());
+        if (g.until() != null) w.key("to").value(g.until().toString());
+        w.endObject();
     }
 
     /** IR-SPEC ch. 3.1: the rule and its versions. The extension field statuteAnnotations (WF-082) stands on the
@@ -1587,7 +1593,7 @@ public final class IrEmitter {
         w.key("node").value("DayKindDefinition");
         w.key("dayKind").value(d.name());
         w.key("condition"); condition(d.condition());
-        w.key("validity"); writeValidity(d.validity());
+        w.key("validity"); validity(d.validity());
         w.endObject();
     }
 
@@ -2309,15 +2315,6 @@ public final class IrEmitter {
     }
 
     /** IR-SPEC ch. 3.10: an absent bound is open on that side, and a validity with neither bound is always. */
-    private void writeValidity(Validity g) {
-        if (g == null) { w.valueNull(); return; }
-        w.beginObject();
-        w.key("node").value("Validity");
-        if (g.from() != null) w.key("from").value(g.from().toString());
-        if (g.until() != null) w.key("to").value(g.until().toString());
-        w.endObject();
-    }
-
     // --- shared helpers ----------------------------------------------------
 
     private static String nameOf(ObjectType ot) { return ot == null ? null : ot.name; }
