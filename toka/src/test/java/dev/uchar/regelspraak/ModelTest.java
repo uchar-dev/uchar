@@ -105,10 +105,9 @@ class ModelTest {
                 () -> "de benoemde-tijdlijn referentie nam de granulariteit niet over: " + p.attributeGranularity);
     }
 
-    @Test void doubly_defined_timeline_gives_a_warning() {
-        // §13.3.6.10: two timelines sharing a name but declaring different granularity -> a "voor elke <naam>"
-        // reference silently takes the first (findFirst). Warn at registration so the ambiguity is visible; a
-        // single timeline stays clean.
+    @Test void doubly_defined_timeline_is_refused() {
+        // IR-SPEC WF-001, WF-015: a timeline name is declared once; two timelines sharing a name are an ERROR at the
+        // second, whatever periodicity each declares.
         String src = """
             Tijdlijn de periode heeft tijdvakken van een maand startend op dag 1 van de maand;
             Tijdlijn de periode heeft tijdvakken van een jaar startend op dag 1 van maand 1;
@@ -116,14 +115,12 @@ class ModelTest {
                 het bedrag Numeriek (geheel getal) voor elke periode;
             """;
         RegelSpraakModel m = Resolver.resolve(src);
-        assertTrue(m.diagnostics.stream().anyMatch(d -> d.severity() == RegelSpraakModel.Severity.WARNING
-                        && d.message().contains("meermaals")),
-                () -> "verwachtte een dubbel-tijdlijn waarschuwing, kreeg: " + m.diagnostics);
+        assertEquals(java.util.List.of("RGS-008 2"), m.errors().stream().map(d -> d.code() + " " + d.line()).toList(),
+                () -> "verwachtte een fout op de tweede tijdlijn, kreeg: " + m.diagnostics);
     }
 
-    @Test void identical_timeline_redefinition_does_not_warn() {
-        // The duplicate-name warning fires only on a periodicity MISMATCH (granularity or count); a
-        // byte-identical redeclaration is harmless (findFirst takes an identical one) and stays silent.
+    @Test void identical_timeline_redefinition_is_refused() {
+        // IR-SPEC WF-001: "even an agreeing re-declaration is ill-formed".
         String src = """
             Tijdlijn de periode heeft tijdvakken van een maand startend op dag 1 van de maand;
             Tijdlijn de periode heeft tijdvakken van een maand startend op dag 1 van de maand;
@@ -131,8 +128,8 @@ class ModelTest {
                 het bedrag Numeriek (geheel getal) voor elke periode;
             """;
         RegelSpraakModel m = Resolver.resolve(src);
-        assertTrue(m.diagnostics.stream().noneMatch(d -> d.message().contains("meermaals")),
-                () -> "een identieke herdefinitie mag niet waarschuwen: " + m.diagnostics);
+        assertEquals(java.util.List.of("RGS-008 2"), m.errors().stream().map(d -> d.code() + " " + d.line()).toList(),
+                () -> "ook een gelijke tweede tijdlijn is een fout: " + m.diagnostics);
     }
 
     @Test void multi_period_timeline_fixes_its_period_count() {
