@@ -1459,9 +1459,10 @@ final class RuleChecker {
                 windowBoundMember(p.until(), subject, reported);
             }
             case Condition.CharacteristicCheck ignored -> { }
-            case Condition.RoleMembership r -> roleCheckBinding(r, r.role(), r.otherToFiller(), r.source(), subject, reported);
+            case Condition.RoleMembership r ->
+                    roleCheckBinding(r, r.role(), r.otherToFiller(), r.source(), r.bindings().size(), subject, reported);
             case Condition.FarRoleMembership r ->
-                    roleCheckBinding(r, r.backref(), r.filler(), r.source(), subject, reported);
+                    roleCheckBinding(r, r.backref(), r.filler(), r.source(), r.bindings().size(), subject, reported);
             case Condition.RuleStatusCheck ignored -> { }
             // the identity check walks no binding: it compares two objects the context binds
             case Condition.IdentityCheck ignored -> { }
@@ -1469,15 +1470,14 @@ final class RuleChecker {
         }
     }
 
-    /** A role check whose binding is not one relation: the emitter writes a role check as its fact type and role, and
-     *  refused it with an exception where the written role names none from the subject or several ("de Haven heeft
+    /** A written role check whose binding is not one relation: the wire writes a role check as its fact type and role,
+     *  and the check found {@code n} relations from its subject where it was built, none or several ("de Haven heeft
      *  een ligger" where the Haven plays the written role in two fact types). The refusal is the loader's sentence for
      *  the check without its binding. A day kind has no subject, and the day-kind check refuses the role check there
      *  already. */
-    private void roleCheckBinding(Condition c, String roleName, ObjectType other, Source source, ObjectType subject,
-                                 Set<Object> reported) {
+    private void roleCheckBinding(Condition c, String roleName, ObjectType other, Source source, int n,
+                                 ObjectType subject, Set<Object> reported) {
         if (subject == null) return;
-        int n = dev.uchar.regelspraak.emit.IrEmitter.roleCheckBindings(model, subject, c);
         if (n == 1 || !reported.add(c)) return;
         Msg against = Msg.frontend("PART.against", "subject", subject.name, "other", other == null ? "?" : other.name);
         if (n == 0)
@@ -6703,9 +6703,9 @@ final class RuleChecker {
             return new Condition.CharacteristicCheck(k.characteristic(), k.navigation(), !k.negation(), k.owner(), k.period(), k.source(),
                     k.anchored());
         if (c instanceof Condition.RoleMembership r)
-            return new Condition.RoleMembership(r.role(), r.otherToFiller(), r.source(), !r.negation());
+            return new Condition.RoleMembership(r.role(), r.otherToFiller(), r.source(), !r.negation(), r.bindings());
         if (c instanceof Condition.FarRoleMembership vr)
-            return new Condition.FarRoleMembership(vr.filler(), vr.backref(), !vr.negation(), vr.source());
+            return new Condition.FarRoleMembership(vr.filler(), vr.backref(), !vr.negation(), vr.source(), vr.bindings());
         return new Condition.Unresolved(source, Msg.frontend("RGS-092.negation-form"));
     }
 
@@ -6918,7 +6918,8 @@ final class RuleChecker {
      *  carrying that filler and its back-reference field, which the transpiler lowers to an exists-join. */
     private Condition roleMembership(ObjectType subject, String name, Source source, boolean negation) {
         ObjectType other = model.roleSiblingType(subject, name);
-        if (other != null) return new Condition.RoleMembership(name, other, source, negation);
+        if (other != null)
+            return new Condition.RoleMembership(name, other, source, negation, roleCheckBindings(subject, name, other, false));
         ObjectType filler = model.roleTargetTypeToSubject(subject, name);
         if (filler != null && model.toManyRole(subject, filler, name)) {
             // The backref is the subject-side role of the SAME feittype as the named role — found by the written
@@ -6928,9 +6929,50 @@ final class RuleChecker {
             // Fall back to the by-pair lookup for the single-feittype case (both give the same role there).
             String backref = model.connectingRoleViaElementName(subject, name);
             if (backref == null) backref = model.connectingRole(filler, subject);
-            if (backref != null) return new Condition.FarRoleMembership(filler, backref, negation, source);
+            if (backref != null)
+                return new Condition.FarRoleMembership(filler, backref, negation, source,
+                        roleCheckBindings(subject, backref, filler, true));
         }
         return null;
+    }
+
+    /** The relations a role check can name from {@code subject}, each as the fact type and the role the subject plays:
+     *  a role {@code name} denotes (its declared name or plural) that the subject fills, opposite a role {@code other}
+     *  fills. On the far side ({@code far}) the subject plays the role {@code name} names and {@code other} is the
+     *  filler, and a reciprocal relation of one role counts with that role on both ends; on the near side a reciprocal
+     *  relation has no other end. The wire writes the check where exactly one is found (IR-SPEC ch. 4.5). */
+    private List<RegelSpraakModel.RoleBindingRef> roleCheckBindings(ObjectType subject, String name, ObjectType other,
+                                                                    boolean far) {
+        List<RegelSpraakModel.RoleBindingRef> result = new ArrayList<>();
+        if (subject == null || name == null || other == null) return result;
+        for (FactType ft : model.factTypes.values()) {
+            if (ft.reciprocal && ft.roles.size() == 1) {
+                Role role = ft.roles.get(0);
+                if (far && denotes(role, name) && fills(subject, role) && fills(other, role))
+                    result.add(new RegelSpraakModel.RoleBindingRef(ft.name, role.name()));
+                continue;
+            }
+            if ((ft.reciprocal && !far) || ft.roles.size() != 2) continue;
+            for (int i = 0; i < 2; i++) {
+                Role own = ft.roles.get(i), opposite = ft.roles.get(1 - i);
+                if (denotes(own, name) && fills(subject, own) && fills(other, opposite))
+                    result.add(new RegelSpraakModel.RoleBindingRef(ft.name, own.name()));
+            }
+        }
+        return result;
+    }
+
+    /** Whether {@code name} denotes {@code r}: its declared name or its declared plural, under the name identity. */
+    private static boolean denotes(Role r, String name) {
+        String n = dev.uchar.regelspraak.emit.IrEmitter.norm(name);
+        return (r.name() != null && dev.uchar.regelspraak.emit.IrEmitter.norm(r.name()).equals(n))
+                || (r.plural() != null && dev.uchar.regelspraak.emit.IrEmitter.norm(r.plural()).equals(n));
+    }
+
+    /** Whether {@code ot} fills {@code r}: its declared filler type or a subtype of it (IR-SPEC ch. 2.6). */
+    private boolean fills(ObjectType ot, Role r) {
+        ObjectType filler = model.objectTypeByName(r.objectTypeName());
+        return ot != null && filler != null && ot.isA(filler);
     }
 
     /** Resolve {@code characteristic} on {@code type} into a {@link Condition.CharacteristicCheck}, honouring a leading "niet"

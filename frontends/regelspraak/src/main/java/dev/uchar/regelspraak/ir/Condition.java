@@ -87,19 +87,22 @@ public sealed interface Condition {
      *  ({@code groep != null}); {@code otherToFiller} is that other end's object type, from which the
      *  transpiler looks up the reference field. {@code negation} marks the §8.1.7/§8.1.8.3 "is geen &lt;rol&gt;"
      *  negation — the subject does NOT fill the role — which lowers to the inverse null-test ({@code groep == null}).
-     *  When the reference lives on the other side (the §8.1.7 "heeft" form) it is a {@link FarRoleMembership}. */
-    record RoleMembership(String role, ObjectType otherToFiller, Source source, boolean negation) implements Condition {
-        /** Positive rolcheck — the subject fills the role. */
-        RoleMembership(String role, ObjectType otherToFiller, Source source) { this(role, otherToFiller, source, false); }
-    }
+     *  When the reference lives on the other side (the §8.1.7 "heeft" form) it is a {@link FarRoleMembership}.
+     *  {@code bindings} are the relations the check can name from the subject it is read on, each the fact type and
+     *  the role the subject plays, found where the check is built: exactly one is its binding (IR-SPEC ch. 4.5), and
+     *  none or several is why it has none. */
+    record RoleMembership(String role, ObjectType otherToFiller, Source source, boolean negation,
+                          List<dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef> bindings) implements Condition {}
 
     /** §8.1.7 FAR-side rolcheck ("de groep heeft een deelnemer"): the subject sits on the "één" side, so the
      *  reference lives on the OTHER object — a to-many {@code filler} whose {@code backref} field points back to
      *  the subject. True when at least one such filler exists, so it lowers to an EXISTS-join (a separate
      *  when-clause {@code exists <filler>( <backref> == $subject )}), NOT an in-pattern constraint — which is why
      *  it can only be peeled when it is a rule's TOP-LEVEL condition; nested in an AND/OR or a comparison it
-     *  stays a marker. {@code negation} is the "heeft geen" form ({@code not <filler>(...)}). */
-    record FarRoleMembership(ObjectType filler, String backref, boolean negation, Source source) implements Condition {}
+     *  stays a marker. {@code negation} is the "heeft geen" form ({@code not <filler>(...)}). {@code bindings} as
+     *  {@link RoleMembership#bindings}. */
+    record FarRoleMembership(ObjectType filler, String backref, boolean negation, Source source,
+                             List<dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef> bindings) implements Condition {}
 
     /** §8.4.3 / §13.4.15.68-.69 periodevergelijking as a CONDITION: the rule applies during the period
      *  bounded by the datum-expressies — "vanaf X" / "van X tot [en met] Y" / "tot [en met] X". Standalone it is

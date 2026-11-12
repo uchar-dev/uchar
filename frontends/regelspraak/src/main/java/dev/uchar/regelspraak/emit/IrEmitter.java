@@ -1318,8 +1318,10 @@ public final class IrEmitter {
             // IR-SPEC ch. 4.5: one node for both sides of the role check, naming the fact type, the role the
             // subject plays in it and, where the check narrows it, the type of the other end; where the
             // reference sits is the consumer's storage question, not the wire's
-            case Condition.RoleMembership r -> roleMembership(nearMembership(r), r.negation(), r.source());
-            case Condition.FarRoleMembership r -> roleMembership(farMembership(r), r.negation(), r.source());
+            case Condition.RoleMembership r ->
+                    roleMembership(membership(r.bindings(), r.otherToFiller(), r.source()), r.negation(), r.source());
+            case Condition.FarRoleMembership r ->
+                    roleMembership(membership(r.bindings(), r.filler(), r.source()), r.negation(), r.source());
             case Condition.TimeWindow p -> {
                 w.key("node").value("TimeWindow");
                 // an absent bound is an open side
@@ -2039,85 +2041,22 @@ public final class IrEmitter {
      *  narrows to (null: no narrowing). */
     private record Membership(RegelSpraakModel.RoleBindingRef binding, String counterpart) {}
 
-    /** The role check with the subject on the near side ("hij is een wachtjutter"): the fact type in which
-     *  the subject plays the written role and {@code otherToFiller} fills the other. The written name denotes
-     *  the role by declared name or declared plural; a check the resolver bound in any other way has no
-     *  binding to write, and is refused. */
-    private Membership nearMembership(Condition.RoleMembership r) {
-        List<Membership> k = nearCandidates(m, currentSubject, r);
-        if (k.size() != 1)
-            throw new IllegalStateException("IrEmitter: the role check '" + r.source().snippet() + "' binds " + k.size()
-                    + " roles '" + r.role() + "' that " + (currentSubject == null ? "the subject" : currentSubject.name)
-                    + " fills opposite " + nameOf(r.otherToFiller()) + " (declared name or plural); the wire "
-                    + "requires exactly one");
-        return k.get(0);
-    }
-
-    /** The role check with the subject on the far side ("de wachtpost heeft een wachtjutter"): the fact type
-     *  in which the subject plays the role {@code backref} names and {@code filler} fills the other. */
-    private Membership farMembership(Condition.FarRoleMembership r) {
-        List<Membership> k = farCandidates(m, currentSubject, r);
-        if (k.size() != 1)
-            throw new IllegalStateException("IrEmitter: the role check '" + r.source().snippet() + "' binds " + k.size()
-                    + " roles '" + r.backref() + "' that " + (currentSubject == null ? "the subject" : currentSubject.name)
-                    + " plays opposite " + nameOf(r.filler()) + "; the wire requires exactly one");
-        return k.get(0);
-    }
-
-    /** How many bindings a role check has from {@code subject}: the emitter writes it where exactly one, and the
-     *  resolver asks the same of every role check the emitter will write, so a model it built never reaches the two
-     *  refusals above: it refuses such a model itself, with an ERROR. 1 for any other condition. */
-    public static int roleCheckBindings(RegelSpraakModel m, ObjectType subject, Condition c) {
-        return switch (c) {
-            case Condition.RoleMembership r -> nearCandidates(m, subject, r).size();
-            case Condition.FarRoleMembership r -> farCandidates(m, subject, r).size();
-            default -> 1;
-        };
-    }
-
-    private static List<Membership> nearCandidates(RegelSpraakModel m, ObjectType subject,
-                                                      Condition.RoleMembership r) {
-        List<Membership> result = new java.util.ArrayList<>();
-        if (m != null && subject != null && r.role() != null && r.otherToFiller() != null)
-            for (FactType ft : m.factTypes.values()) {
-                if (ft.reciprocal || ft.roles.size() != 2) continue;
-                for (int i = 0; i < 2; i++) {
-                    Role own = ft.roles.get(i), other = ft.roles.get(1 - i);
-                    if (denotes(own, r.role()) && fills(m, subject, own) && fills(m, r.otherToFiller(), other))
-                        result.add(membership(m, ft, own, other, r.otherToFiller()));
-                }
-            }
-        return result;
-    }
-
-    private static List<Membership> farCandidates(RegelSpraakModel m, ObjectType subject,
-                                                    Condition.FarRoleMembership r) {
-        List<Membership> result = new java.util.ArrayList<>();
-        if (m != null && subject != null && r.backref() != null && r.filler() != null)
-            for (FactType ft : m.factTypes.values()) {
-                if (ft.reciprocal && ft.roles.size() == 1) {
-                    Role role = ft.roles.get(0);
-                    if (denotes(role, r.backref()) && fills(m, subject, role) && fills(m, r.filler(), role))
-                        result.add(membership(m, ft, role, role, r.filler()));
-                    continue;
-                }
-                if (ft.roles.size() != 2) continue;
-                for (int i = 0; i < 2; i++) {
-                    Role own = ft.roles.get(i), other = ft.roles.get(1 - i);
-                    if (denotes(own, r.backref()) && fills(m, subject, own) && fills(m, r.filler(), other))
-                        result.add(membership(m, ft, own, other, r.filler()));
-                }
-            }
-        return result;
-    }
-
-    /** The check's other end narrows only where it names a STRICT subtype of the other role's declared filler;
-     *  naming the declared type itself is no narrowing, and the field then stays absent. */
-    private static Membership membership(RegelSpraakModel m, FactType ft, Role own, Role other,
-                                            ObjectType counterpart) {
+    /** The role check as the wire writes it, from the one binding the resolver found where it built the check, the
+     *  role the subject plays; {@code counterpart} is the type the check names at the other end, the filler of the
+     *  other role (of the one role of a reciprocal relation). A check with none or several has no binding to write,
+     *  and is refused. */
+    private Membership membership(List<RegelSpraakModel.RoleBindingRef> bindings, ObjectType counterpart, Source source) {
+        if (bindings.size() != 1)
+            throw new IllegalStateException("IrEmitter: the role check '" + source.snippet() + "' binds "
+                    + bindings.size() + " relations from its subject; the wire requires exactly one");
+        RegelSpraakModel.RoleBindingRef rb = bindings.get(0);
+        FactType ft = m.factTypes.get(rb.factType());
+        Role own = ft.roles.stream().filter(r -> r.name().equals(rb.role())).findFirst().orElseThrow();
+        Role other = ft.roles.size() == 1 ? own : ft.roles.get(ft.roles.get(0) == own ? 1 : 0);
+        // the other end narrows only where the check names a STRICT subtype of the other role's declared filler;
+        // naming the declared type itself is no narrowing, and the field then stays absent
         ObjectType declared = m.objectTypeByName(other.objectTypeName());
-        return new Membership(new RegelSpraakModel.RoleBindingRef(ft.name, own.name()),
-                counterpart == declared ? null : counterpart.name);
+        return new Membership(rb, counterpart == declared ? null : counterpart.name);
     }
 
     private void roleMembership(Membership l, boolean negation, Source source) {
@@ -2127,12 +2066,6 @@ public final class IrEmitter {
         if (l.counterpart() != null) w.key("counterpartType").value(l.counterpart());
         w.key("negated").value(negation);
         sourceReference(source.snippet());
-    }
-
-    /** Whether {@code ot} fills {@code r}: its declared filler type or a subtype of it (IR-SPEC ch. 2.6). */
-    private static boolean fills(RegelSpraakModel m, ObjectType ot, Role r) {
-        ObjectType filler = m.objectTypeByName(r.objectTypeName());
-        return ot != null && filler != null && ot.isA(filler);
     }
 
     /** The declared role a binding names, under the verifier's name identity; null when it names none or

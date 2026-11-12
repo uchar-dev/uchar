@@ -2308,9 +2308,10 @@ public final class IrLoader {
                                 + counterpart + "\" is no subtype of \"" + filler.name + "\", the filler the role \""
                                 + otherSide.name() + "\" declares");
                 }
+                RoleBindingRef binding = new RoleBindingRef(factType, role);
                 Condition.RoleMembership r = new Condition.RoleMembership(role, other, source(n),
-                        truth(n, p, "negated"));
-                roleBindings.put(r, new RoleBindingRef(factType, r.role()));
+                        truth(n, p, "negated"), List.of(binding));
+                roleBindings.put(r, binding);
                 sites.put(r, p);
                 yield r;
             }

@@ -1101,7 +1101,8 @@ class IrEmitterTest {
                 () -> "de gedeclareerde vuller vernauwt niets:\n" + without);
         Condition.FarRoleMembership v = (Condition.FarRoleMembership) r.condition();
         m.resolvedRules.set(0, new ResolvedRule(r.name(), r.kind(), r.target(), r.value(),
-                new Condition.FarRoleMembership(m.objectTypes.get("Strandjutter"), v.backref(), v.negation(), v.source()),
+                new Condition.FarRoleMembership(m.objectTypes.get("Strandjutter"), v.backref(), v.negation(), v.source(),
+                        v.bindings()),
                 r.validity()));
         String with = IrEmitter.emit(m).replaceAll("\\s+", "");
         assertTrue(with.contains("{\"node\":\"RoleMembership\",\"factType\":\"wachtindeling\","
