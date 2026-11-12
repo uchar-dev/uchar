@@ -54,7 +54,7 @@ rule**. Worked examples are exact expected values.
 | maal | both coalesce | 5 × leeg = 0; leeg × leeg = 0 |
 | percentage van | both coalesce | leeg% van 600 = 0; 10% van leeg = 0 |
 | gedeeld door (both variants) | **left coalesces; empty divisor propagates as error-empty** | leeg ÷ 5 = 0; leeg ÷ leeg = 0 (left tested first, §6.5); 5 ÷ leeg = leeg **+ §9.5 inconsistency** |
-| tot de macht | empty base propagates; the runtime-exponent variant propagates on either operand | leeg² = leeg; 4^leeg = leeg |
+| tot de macht | empty base propagates; the runtime-exponent variant propagates on either operand; a negative base under a fractional exponent also yields empty **+ §9.5 inconsistency** (EF-044, ch. 2.2) | leeg² = leeg; 4^leeg = leeg; (−4)^0,5 = leeg + inconsistency |
 | wortel | propagates (a negative radicand also yields empty **+ §9.5 inconsistency**) | √leeg = leeg; √−4 = leeg + inconsistency |
 | absolute waarde | propagates | \|leeg\| = leeg |
 | afronding | propagates | afgerond(leeg, 2) = leeg |
@@ -461,7 +461,12 @@ on the table, kept as the decision's rationale:
    before the divisor is read (ch. 1.2): the divisor is not evaluated, so
    it deposits nothing and faults on nothing. The kind kept its code; its
    witnesses moved from the red corpus to golden `inconsistent`
-   expectations. Worked examples: ch. 2.2.
+   expectations. Worked examples: ch. 2.2. **The same on 2026-11-12** for a
+   negative base under a fractional exponent: x^0,5 and √x are one
+   function, so the power is leeg with a §9.5 fact of kind **EF-044**, as
+   the negative radicand is, where it had been a fault that ended the
+   session; the kind kept its code, its witness moved from the red corpus
+   to the golden `fractional-power-negative-base`.
 
 ---
 
@@ -521,7 +526,7 @@ its own; it does not approximate it. Worked example (`ref/` tests
 | gedeeld door | exact quotient; result may be non-terminating and stays exact until a collapse point | 10 ÷ 4 = 5/2 = 2,5; 2 ÷ 3 = 2/3 (exact) |
 | gedeeld door (abs-variant) | quotient truncated **toward zero at 5 decimals** — a defined collapse point, a core operator the source language spells | 10 ÷abs 3 = 3,33333; −10 ÷abs 3 = −3,33333 |
 | tot de macht (integer exponent) | exact integer power; negative exponent inverts first | 7¹⁹ = 11398895185373143 (exact); (1/3)⁻¹ = 3 |
-| tot de macht (fractional exponent) | the exact root where the power is rational; else the real power exists only under its mandatory rounding (§6.7), which rounds the true power once; without a rounding it is a fault (EF-045). A negative base is a fault (EF-044) under every fractional exponent, with and without a rounding, also where the exponent's numerator is even or its denominator odd: no real power of a negative number is defined here | 4^0,5 = 2; 8^(2/3) = 4; 10^(1/3) afgerond op 10 naar beneden = 2,1544346900, naar boven = 2,1544346901; 10^(1/3) without a rounding: fault; (−32)^0,4: fault, without and with a rounding (not 4 by way of (−32)²); (−32)^(1/5) and (−32)^(−2/5): fault; (−2)^3 = −8 (a whole exponent, the row above) |
+| tot de macht (fractional exponent) | the exact root where the power is rational; else the real power exists only under its mandatory rounding (§6.7), which rounds the true power once; without a rounding it is a fault (EF-045). A negative base is leeg with a §9.5 deposit of kind EF-044 under every fractional exponent, with and without a rounding, as a negative radicand is under the root (ch. 1.2), also where the exponent's numerator is even or its denominator odd: no real power of a negative number is defined here | 4^0,5 = 2; 8^(2/3) = 4; 10^(1/3) afgerond op 10 naar beneden = 2,1544346900, naar boven = 2,1544346901; 10^(1/3) without a rounding: fault; (−32)^0,4: leeg with a deposit, without and with a rounding (not 4 by way of (−32)²); (−32)^(1/5) and (−32)^(−2/5): leeg with a deposit; (−2)^3 = −8 (a whole exponent, the row above) |
 | percentage van | `l/100 × r`, exactly | (1/3)% van 600 = 2 (exact, not 1,999…); 50% van 4,00 = 2 |
 | wortel | principal square root; mandatory explicit rounding follows (§13.4.17.13), which rounds the true root once; an irrational root without it is the fault EF-045 | √9 = 3; √2 afgerond op 2 (rekenkundig) = 1,41; √(1/9) afgerond op 20 naar beneden = 0,33333333333333333333 |
 | absolute waarde | magnitude; type (unit, precision, sign) passes through | \|−3/7\| = 3/7 |
@@ -4800,7 +4805,8 @@ surfaces beside the result. Operational clauses, mirrored:
   spellings of one declared label collide), the allocation degrades of
   ch. 4.3/4.4, division by empty (dividend filled), division by a
   numeric zero (dividend filled; ch. 1.4 point 4), a negative
-  radicand, an empty variable-start anchor (ch. 3.2).
+  radicand, a negative base under a fractional exponent (ch. 2.2), an
+  empty variable-start anchor (ch. 3.2).
   Worked example (golden `jutterswet-keurspelling` case 4, verbatim in
   gates 5–6, and `WV-5.6-enum-sleutel` in `ref/test/`): under
   "De staten van alle Vondsten moeten uniek zijn." over the domain
@@ -5347,7 +5353,7 @@ parameters, the clause that defines it and its witnesses.
 | EF-041 | the case input gives true periods of a time-dependent characteristic that a rule writes | fault | `characteristic`, `label` | ch. 3.11; ch. 3.12 | `corpus/red/characteristic-periods-beside-rule` |
 | EF-042 | the subject's own temporal total without a clip finds a full timeline in the case input | fault | `attribute`, `label` | ch. 3.6; ch. 8.4 | `corpus/red/own-total-full-timeline` |
 | EF-043 | the subject's own temporal total without a clip is read in a session without an evaluation date | fault | `attribute` | ch. 3.6; ch. 8.4 | `corpus/red/own-total-without-evaluation-date` |
-| EF-044 | a power with a fractional exponent has a negative base | fault | — | ch. 2.2 | `corpus/red/fractional-power-negative-base` |
+| EF-044 | a power with a fractional exponent has a negative base | §9.5 | `rule`, `label` | ch. 1.2; ch. 2.2 | `corpus/golden/fractional-power-negative-base` |
 | EF-045 | a square root or a power with a fractional exponent has an irrational value and no rounding follows | fault | — | ch. 2.2 | `corpus/red/irrational-power-without-rounding` |
 | EF-046 | a part of a date construction is no whole unitless number | fault | — | ch. 3.8 | `corpus/red/date-part-not-whole` |
 
