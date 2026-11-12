@@ -213,6 +213,13 @@ class CaseReaderWitnessTest {
         assertEquals("EXCLUDE", alone.status());
     }
 
+    @Test void a_case_file_that_cannot_be_read_is_named() {
+        Path missing = CORPUS.resolve(PENNINGDREMPEL).resolve("case-that-is-not-there.json");
+        RuntimeException e = assertThrows(RuntimeException.class,
+                () -> CaseRunner.runGolden(ir(PENNINGDREMPEL), List.of(missing)));
+        assertTrue(e.getMessage().startsWith("could not read " + missing), e.getMessage());
+    }
+
     // ---------------- role keys ----------------
 
     @Test void a_role_key_of_a_relation_the_instance_does_not_fill_is_a_case_error() throws Exception {

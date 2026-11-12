@@ -172,25 +172,9 @@ public final class CaseRunner {
     }
 
     private static Result replay(Path irPath, List<Path> casePaths, DroolsBackend.Branch branch) {
+        CaseRunner runner;
         try {
-            CaseRunner runner = build(irPath, branch);
-            List<String> failures = new ArrayList<>();
-            // the first case this backend does not carry; every case plays, so that it hides no FAIL of another
-            Excluded excluded = null;
-            int played = 0;
-            for (Path cp : casePaths) {
-                JsonNode c = readCase(cp);
-                if (c.has("expectedFault")) continue;   // red-path case in a green zone — not this gate's business
-                played++;
-                try {
-                    String fail = runner.runCase(cp.getFileName().toString(), c);
-                    if (fail != null) failures.add(fail);
-                } catch (Excluded e) {
-                    if (excluded == null) excluded = e;
-                }
-            }
-            if (failures.isEmpty() && excluded != null) return Result.excluded(excluded.code(), excluded.getMessage());
-            return Result.played(played, failures);
+            runner = build(irPath, branch);
         } catch (Excluded e) {
             return Result.excluded(e.code(), e.getMessage());
         } catch (IrLoader.Refusal e) {
@@ -198,6 +182,28 @@ public final class CaseRunner {
         } catch (java.io.IOException e) {
             throw new RuntimeException("could not read " + irPath + ": " + e.getMessage(), e);
         }
+        List<String> failures = new ArrayList<>();
+        // the first case this backend does not carry; every case plays, so that it hides no FAIL of another
+        Excluded excluded = null;
+        int played = 0;
+        for (Path cp : casePaths) {
+            JsonNode c;
+            try {
+                c = readCase(cp);
+            } catch (java.io.IOException e) {
+                throw new RuntimeException("could not read " + cp + ": " + e.getMessage(), e);
+            }
+            if (c.has("expectedFault")) continue;   // red-path case in a green zone — not this gate's business
+            played++;
+            try {
+                String fail = runner.runCase(cp.getFileName().toString(), c);
+                if (fail != null) failures.add(fail);
+            } catch (Excluded e) {
+                if (excluded == null) excluded = e;
+            }
+        }
+        if (failures.isEmpty() && excluded != null) return Result.excluded(excluded.code(), excluded.getMessage());
+        return Result.played(played, failures);
     }
 
     /**
