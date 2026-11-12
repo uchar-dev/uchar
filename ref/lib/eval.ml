@@ -3816,7 +3816,7 @@ let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.g
         if reach_b = Some [] then []
         else period_timeline env w self ~err ~target ~attr ~target_unit:(snd units) ?reach:reach_b r
       in
-      let scalar =
+      let scalar ~err =
         match op with
         | Plus -> Arith.add ~units
         | Min -> Arith.sub_min ~units
@@ -3827,7 +3827,9 @@ let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.g
         | Percentage_of -> Arith.pct_of ~units
         | Power -> assert false
       in
-      seen (Timeline.cut_merge ?reach scalar a b)
+      (* only a division deposits; outside its reach it deposits nothing *)
+      let reach = Option.map (fun ps -> (ps, scalar ~err:(fun _ -> ()))) reach in
+      seen (Timeline.cut_merge ?reach (scalar ~err) a b)
   | Attribute_reference { attribute_ref = Some a; object_type = Some otn; navigation_bindings = None; anchor = None; _ }
     when Ir_v0.Checks.attr_temporal (object_type env otn) a ->
       if not (own_read env self otn) then

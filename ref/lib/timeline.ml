@@ -470,19 +470,24 @@ let with_open_ends cs = List.sort_uniq compare (open_from :: open_to :: cs)
    of all time: empty operands coalesce to 0 there, before the first cut and
    after the last one too, so a scalar operand (one open segment) is read on
    every day and the result is a division of all time *)
-(* [reach], where given, are the periods in which the operator is read at all:
-   a divisor is read only where its dividend is filled (ch. 1.4 point 4,
-   ch. 3.4), so outside them [op] is not applied, and deposits nothing, and
-   the period is leeg. Its bounds are cuts, so no period straddles one. *)
+(* [reach], where given, is the periods in which the operator reads its
+   operands, with [unread], the operator applied elsewhere: a divisor is read
+   only where its dividend is filled (ch. 1.4 point 4, ch. 3.4), so outside
+   those periods its division deposits nothing, and the value it computes
+   there is read by nothing. Its bounds are cuts, so no period straddles one. *)
 let cut_merge ?reach op (a : t) (b : t) : t =
-  let bounds = match reach with None -> [] | Some ps -> List.concat_map (fun (v, t) -> [ v; t ]) ps in
+  let bounds = match reach with None -> [] | Some (ps, _) -> List.concat_map (fun (v, t) -> [ v; t ]) ps in
   let cs = with_open_ends (cuts [ a; b ] @ bounds) in
-  let read_in c1 = match reach with None -> true | Some ps -> List.exists (fun (v, t) -> v <= c1 && c1 < t) ps in
+  let op_at c1 =
+    match reach with
+    | Some (ps, unread) when not (List.exists (fun (v, t) -> v <= c1 && c1 < t) ps) -> unread
+    | _ -> op
+  in
   let rec pairs = function c1 :: (c2 :: _ as rest) -> (c1, c2) :: pairs rest | _ -> [] in
   List.map
     (fun (c1, c2) ->
-      let value = if read_in c1 then op (read a c1) (read b c1) else Value.Empty in
-      { s_from = c1; s_to = c2; s_value = value })
+      let va = read a c1 and vb = read b c1 in
+      { s_from = c1; s_to = c2; s_value = op_at c1 va vb })
     (pairs cs)
   |> coalesce
 
