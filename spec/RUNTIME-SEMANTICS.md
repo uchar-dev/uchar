@@ -7446,9 +7446,7 @@ day-kind walk of a member after the stop. The other kinds stay outside
 it: no golden carries such a fault after the stop. The ASP backend raises
 the faults of an evaluation date the case does not carry (EF-011) and of an
 `Unresolved` node (EF-019) where the evaluation reaches their node, as ref
-does (card `early-faults-and-sum-reading`, 2026-11-04), and the Drools
-backend reads a parameter the case does not bind (EF-014) as leeg, so its
-reading would carry a verdict where ref's carries the fault. Those arms are
+does (card `early-faults-and-sum-reading`, 2026-11-04). Those arms are
 pinned by the executors' own tests above. And a verdict of a
 contributor the session did not reach may rest on a deposit the reading
 dropped, as W2 in case 1 and W3 in case 3 of the second example do: a
