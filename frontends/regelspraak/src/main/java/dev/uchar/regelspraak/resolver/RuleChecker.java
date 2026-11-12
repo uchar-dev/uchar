@@ -161,6 +161,7 @@ final class RuleChecker {
         checkPaths();   // a read or a fold the emitter could write only with a binding none supplies
         checkSwallowedNames();      // a read whose name took in a word before 'van' and a declared attribute
         checkConstants();           // a constant the wire has no node for ("hij" as a value)
+        checkPercentageOperands();  // WF-035, a left operand of '% van' with a unit
         checkBareDimensionedReads(); // WF-125 (a), a dimensioned attribute read outside a cell
         checkUntypedLets();         // a "Daarbij geldt" value an undeclared read leaves without a type
         checkFormNames(doc);         // WF-020, over the named forms as the emitter writes them
@@ -1251,6 +1252,30 @@ final class RuleChecker {
                         c.source() == null ? 0 : c.source().line()));
             return false;
         });
+    }
+
+    /** WF-035: the percentage of a value reads on its left a number without a unit or a percentage in '%' ("12 € % van
+     *  de prijs" has no reading: the core algebra gives €², the unit law of the percentage €; a rate such as '%/jr'
+     *  neither). Refused at the form, once per form. A form typed unknown is left alone: the parentheses form without a
+     *  Percentage on its left is RGS-063's, which speaks for it. */
+    private void checkPercentageOperands() {
+        Set<Object> reported = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        everyWrittenExpr(x -> {
+            if (x instanceof Expr.Binary b && b.op() == Expr.BinOp.PERCENTAGE_VAN && !b.type().isUnknown()
+                    && unitOnTheLeft(b.left().type()) && reported.add(b))
+                model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-424",
+                        params("expression", b.source().snippet(), "type", b.left().type().name()),
+                        writtenLine(b.source().line())));
+            return false;
+        });
+    }
+
+    /** Whether {@code t} carries a unit the left operand of a percentage has no reading for: on a number or a
+     *  percentage, any unit other than '%'. */
+    private static boolean unitOnTheLeft(Datatype t) {
+        dev.uchar.regelspraak.model.Unit unit = t instanceof Datatype.Numeric n ? n.unit()
+                : t instanceof Datatype.Percentage p ? p.unit() : null;
+        return unit != null && !unit.equals(Datatype.Percentage.PERCENT);
     }
 
     /** Every expression the emitter writes, after the lift, handed to {@code visitor} (which returns false to walk on):

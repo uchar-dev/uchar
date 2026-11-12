@@ -749,3 +749,4 @@ RGS-396.undeclared-attribute	'{attribute}' is no declared attribute of {objectTy
 RGS-420	the sentence reads as a computation and not as an attribute, characteristic or cell of the subject; a rule writes a member of its own universal subject
 RGS-421	allocation '{name}': '{written}' reads as a computation and not as an attribute; an allocation distributes an attribute of the distributor over an attribute of the recipients (IR-SPEC ch. 3.2)
 RGS-422	{head}: the block '{name}' — {other} already has that name (source line {otherLine}); a carrier names a block by its name, and a form name is unique in the whole model, case not counted (WF-020)
+RGS-424	'{expression}': the left operand of the percentage is of the type {type}; the percentage of a value reads on its left a number without a unit or a percentage in '%' (WF-035)

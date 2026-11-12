@@ -749,3 +749,4 @@ RGS-396.undeclared-attribute	'{attribute}' is geen gedeclareerd attribuut van {o
 RGS-420	de zin leest als een berekening en niet als een attribuut, kenmerk of cel van het onderwerp; een regel schrijft een lid van zijn eigen universele onderwerp
 RGS-421	verdeling '{name}': '{written}' leest als een berekening en niet als een attribuut; een verdeling verdeelt een attribuut van de verdeler over een attribuut van de ontvangers (IR-SPEC ch. 3.2)
 RGS-422	{head}: het blok '{name}' — {other} heet al zo (bronregel {otherLine}); een drager noemt een blok bij zijn naam, en een vormnaam is uniek in het hele model, hoofdletters niet meegeteld (WF-020)
+RGS-424	'{expression}': de linkeroperand van het percentage is van het type {type}; het percentage van een waarde leest links een getal zonder eenheid of een percentage in '%' (WF-035)
