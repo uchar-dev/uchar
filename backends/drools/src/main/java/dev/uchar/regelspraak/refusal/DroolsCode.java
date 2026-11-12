@@ -60,7 +60,7 @@ public enum DroolsCode {
     DAY_GRID_CALENDAR_BUCKETING("DROOLS-036", Kind.RETIRED, "day-grid-calendar-bucketing", "site", null),
     CALENDAR_GRID_UNSUPPORTED("DROOLS-037", Kind.LIMIT, "calendar-grid-unsupported", "site,granularity,granularity", null),
     TIMELINE_VALUE_NON_NUMERIC("DROOLS-038", Kind.LIMIT, "timeline-value-non-numeric", "attribute", null),
-    EXPECTATION_KIND_UNKNOWN("DROOLS-039", Kind.CONTRACT, "expectation-kind-unknown", "kind", null),
+    EXPECTATION_KIND_UNKNOWN("DROOLS-039", Kind.RETIRED, "expectation-kind-unknown", "kind", null),
     DIMENSIONED_ATTRIBUTE_READBACK("DROOLS-040", Kind.RETIRED, "dimensioned-attribute-readback", "attribute", null),
     SCALAR_READBACK_TEMPORAL_ATTRIBUTE("DROOLS-041", Kind.LIMIT, "scalar-readback-temporal-attribute", "attribute", null),
     RATIONAL_VALUE("DROOLS-042", Kind.REFUSAL, "rational-value", "field", null),

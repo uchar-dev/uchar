@@ -169,6 +169,12 @@ class CaseReaderWitnessTest {
         caseError(PENNINGDREMPEL, c, "requires a rule pin");
     }
 
+    @Test void an_unknown_expectation_kind_is_a_case_error() throws Exception {
+        ObjectNode c = caseFile(PENNINGDREMPEL, "case");
+        ((ObjectNode) c.get("expected").get(0)).put("kind", "characteristicPresnt");
+        caseError(PENNINGDREMPEL, c, "unknown expectation kind \"characteristicPresnt\"");
+    }
+
     // ---------------- role keys ----------------
 
     @Test void a_role_key_of_a_relation_the_instance_does_not_fill_is_a_case_error() throws Exception {

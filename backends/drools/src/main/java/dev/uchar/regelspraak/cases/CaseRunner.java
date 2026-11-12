@@ -1080,7 +1080,7 @@ public final class CaseRunner {
             case "attributeTimeline" -> timeline(v);
             case "cellValue" -> cell(v, false);
             case "cellEmpty" -> cell(v, true);
-            default -> throw new Excluded(DroolsCode.EXPECTATION_KIND_UNKNOWN.reason("kind", kind));
+            default -> throw new IllegalArgumentException("unknown expectation kind \"" + kind + "\"");
         };
     }
 

@@ -276,16 +276,13 @@ class ComparisonWitnessTest {
     }
 
     /** What the backend does not compare, the entry refuses with the exclusion of the replay, which the report gives as
-     *  a MARKER with the same sentence: a scalar read of an attribute on a timeline, and a kind uchar-case-v0 does not
-     *  have. */
+     *  a MARKER with the same sentence: a scalar read of an attribute on a timeline. */
     @Test void what_the_entry_does_not_compare_it_refuses_like_the_report(@TempDir Path tmp) throws Exception {
         JsonNode c = read(BORGDEEL.resolve("case1.json"));
         Map<String, String> sentences = Map.of(
                 "{\"kind\": \"attributeValue\", \"label\": \"J1\", \"attribute\": \"borgdeel\", \"value\": {\"number\": \"12\"}}",
                 "scalar read-back of temporal attribute 'borgdeel' is not carried by the v0 backend — the bean holds a"
-                        + " List<Segment>; use an attributeTimeline expectation",
-                "{\"kind\": \"attributeRange\", \"label\": \"J1\", \"attribute\": \"borgdeel\"}",
-                "unknown expectation kind: attributeRange");
+                        + " List<Segment>; use an attributeTimeline expectation");
         for (Map.Entry<String, String> z : sentences.entrySet()) {
             JsonNode v = TmsDocuments.JSON.readTree("[" + z.getKey() + "]");
             CaseRunner.Excluded e = refusal(CaseRunner.Excluded.class, BORGDEEL, c, caselabels(), v,
@@ -298,5 +295,20 @@ class ComparisonWitnessTest {
             assertEquals(ScenarioResult.Status.MARKER, r.status());
             assertEquals(z.getValue(), r.diagnostic());
         }
+    }
+
+    /** A kind uchar-case-v0 does not have is a defect of the case: the entry refuses it as one, and the report gives the
+     *  case as FAIL with that sentence, as it gives every case it cannot play. */
+    @Test void a_kind_the_case_format_does_not_have_is_a_defect_of_the_case(@TempDir Path tmp) throws Exception {
+        JsonNode c = read(BORGDEEL.resolve("case1.json"));
+        JsonNode v = TmsDocuments.JSON.readTree("[{\"kind\": \"attributeRange\", \"label\": \"J1\", \"attribute\": \"borgdeel\"}]");
+        IllegalArgumentException e = refusal(IllegalArgumentException.class, BORGDEEL, c, caselabels(), v,
+                FIRED_AND_WRITTEN_BACK);
+        assertEquals("unknown expectation kind \"attributeRange\"", e.getMessage());
+        ObjectNode withExpectation = c.deepCopy();
+        withExpectation.set("expected", v);
+        ScenarioResult r = report(BORGDEEL, Files.writeString(tmp.resolve("case-kind.json"), withExpectation.toString()));
+        assertEquals(ScenarioResult.Status.FAIL, r.status());
+        assertEquals("ERROR IllegalArgumentException: " + e.getMessage(), diagnostic(r));
     }
 }
