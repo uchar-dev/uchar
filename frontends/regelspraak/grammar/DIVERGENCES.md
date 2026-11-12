@@ -1370,7 +1370,8 @@ after the subject, puts the label into the subject text and would write the
 whole attribute; it is refused with the cell named (attribute, dimension,
 label; RGS-308). A target that names a dimensioned attribute without a label
 would write the whole attribute (WF-125 (b)); it is refused as a cell without
-those labels is, with RGS-364 once per dimension. Witnesses:
+those labels is, with RGS-364 once per dimension, and so is a read of it outside
+a cell and outside a fold that selects in its dimensions (WF-125 (a)). Witnesses:
 `DimensionTargetTest`, `CellEdgesTest` (the dependency graph per cell, as the
 verifier's), and the golden `jutterswet-seizoenboeking`.
 

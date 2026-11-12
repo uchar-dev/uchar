@@ -155,6 +155,7 @@ final class RuleChecker {
         checkPaths();   // a read or a fold the emitter could write only with a binding none supplies
         checkSwallowedNames();      // a read whose name took in a word before 'van' and a declared attribute
         checkConstants();           // a constant the wire has no node for ("hij" as a value)
+        checkBareDimensionedReads(); // WF-125 (a), a dimensioned attribute read outside a cell
         checkUntypedLets();         // a "Daarbij geldt" value an undeclared read leaves without a type
         checkFormNames(doc);         // WF-020, over the named forms as the emitter writes them
         checkDependencyCycles(doc);   // WF-045, WF-046 and WF-051, over the document the emitter writes
@@ -1173,6 +1174,32 @@ final class RuleChecker {
                                 params("expression", source.snippet(), "reason", reason), source.line()));
                     return false;
                 });
+            return false;
+        });
+    }
+
+    /**
+     * WF-125 (a): a dimensioned attribute has a value per cell and none of its own, so a reference to it stands only as
+     * the attribute of a cell read or as the argument of a fold that selects in its dimensions. Any other reference —
+     * "zijn premie" in a value or a condition, a fold source without a selection — is refused as a cell without the
+     * labels of its dimensions is (RGS-364, once per dimension), at the line of the read. The walk reaches every written
+     * read after the lift, so the defaults are covered; a rule target is {@link #checkRuleTargets}'s.
+     */
+    private void checkBareDimensionedReads() {
+        Set<Object> owned = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        Set<Object> reported = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        everyWrittenExpr(x -> {
+            // a parent is visited before its children, so the reference a cell or a dimension fold owns is known first
+            if (x instanceof Expr.DimensionCellRead c) owned.add(c.attribute());
+            if (x instanceof Expr.FunctionCall f && f.dimensionSelections() != null) owned.addAll(f.arguments());
+            if (x instanceof Expr.AttributeReference a && !owned.contains(a) && a.objectType() != null
+                    && a.attribute() != null && a.objectType().attributeName(a.attribute()) != null && reported.add(a)) {
+                String written = a.source() == null ? a.attribute() : a.source().snippet();
+                for (String dimension : a.objectType().dimensionsOf(a.attribute()))
+                    model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-364", params("written", written,
+                            "attribute", a.objectType().attributeName(a.attribute()), "dimension", dimension),
+                            a.source() == null ? 0 : a.source().line()));
+            }
             return false;
         });
     }

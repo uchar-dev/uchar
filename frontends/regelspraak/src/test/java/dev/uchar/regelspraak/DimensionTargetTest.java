@@ -283,4 +283,20 @@ class DimensionTargetTest {
                 m.diagnostics.stream().map(d -> d.code() + " " + d.args().get("dimension")).toList());
         assertTrue(m.diagnostics.stream().allMatch(d -> d.severity() == RegelSpraakModel.Severity.ERROR), m.diagnostics::toString);
     }
+
+    /** A read of a dimensioned attribute outside a cell and outside a dimension fold reads a value the attribute does
+     *  not have (IR-SPEC WF-125 (a)): refused at the read as a cell without its labels is, once per dimension. Before,
+     *  the document went to disk without a diagnostic and the verifier refused it (WF-125.bare-read). */
+    @Test void a_read_of_the_whole_dimensioned_attribute_is_refused() {
+        RegelSpraakModel m = Resolver.resolve(rule("De bonus van een Jutter moet berekend worden als zijn premie maal 2."));
+        DimensionCellTest.assertOneError(m, "RGS-364", java.util.Map.of("written", "zijn premie",
+                "attribute", "premie", "dimension", "seizoen"));
+    }
+
+    @Test void a_whole_read_in_a_condition_is_refused_per_dimension() {
+        RegelSpraakModel m = Resolver.resolve(rule("De bonus van een Jutter moet gesteld worden op 2\n"
+                + "        indien zijn strandpremie groter is dan 3."));
+        assertEquals(List.of("RGS-364 seizoen", "RGS-364 strand"),
+                m.diagnostics.stream().map(d -> d.code() + " " + d.args().get("dimension")).toList());
+    }
 }
