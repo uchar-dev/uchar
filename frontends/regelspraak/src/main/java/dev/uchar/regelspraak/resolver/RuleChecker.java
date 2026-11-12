@@ -4515,6 +4515,18 @@ final class RuleChecker {
                     model.diagnostics.add(error.frame("allocation").at(Severity.ERROR, v.getStart().getLine()));
             }
         }
+        // WF-026: at most one allocation writes a target, along a type chain as well: an allocation over a supertype
+        // writes the instances of its subtypes, and no defaults stack absorbs an allocation (RUNTIME-SEMANTICS ch. 7.10)
+        for (ResolvedAllocation other : model.allocations)
+            if (d.objectType() != null && !sameName(withoutVersion(other.name()), withoutVersion(name))
+                    && sameName(other.targetAttribute(), d.attribute()) && inLine(d.objectType(), other.targetType())) {
+                ObjectType lower = other.targetType().isA(d.objectType()) ? other.targetType() : d.objectType();
+                String attribute = lower.attributeName(d.attribute());
+                error(v.getStart().getLine(), "RGS-426", params("name", withoutVersion(name),
+                        "other", withoutVersion(other.name()), "attribute", attribute == null ? d.attribute() : attribute,
+                        "objectType", lower.name));
+                break;
+            }
         model.allocations.add(new ResolvedAllocation(name, b.objectType(), b.attribute(),
                 d.objectType(), d.attribute(), method, ratio, maxAttr, roundDec, restAttr,
                 groupAttr, descending, condition, validity, join));

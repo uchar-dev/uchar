@@ -399,4 +399,5 @@ RGS-422	block-name-not-unique	ERROR	head,name,other,otherLine
 RGS-423	allocation-member-not-a-number	ERROR	attribute,name,role,type
 RGS-424	percentage-left-operand-unit	ERROR	expression,type
 RGS-425	allocation-member-undeclared	ERROR	attribute,name,objectType,role
+RGS-426	allocation-target-written-twice	ERROR	attribute,name,objectType,other
 RGS-427	target-characteristic-undeclared	ERROR	characteristic,objectType,written

@@ -148,6 +148,45 @@ class AllocationCheckTest {
                 .toList(), m.diagnostics::toString);
     }
 
+    /** At most one allocation writes a target (WF-026), also through a type chain: an allocation over Berger and one
+     *  over its subtype Hoofdberger both write the Hoofdberger's share. Both went out, and the verifier refused the
+     *  document. One ERROR at the second allocation, naming the first. */
+    @Test void two_allocations_to_one_target_are_refused() {
+        String second = """
+
+            Regel verdeel de opbrengst opnieuw
+                geldig altijd
+                    De opbrengst van een berging wordt verdeeld over de bergingsaandelen van alle bergers van de berging, waarbij wordt verdeeld in gelijke delen.
+            """;
+        RegelSpraakModel m = Resolver.resolve(allocation("De opbrengst van een berging wordt verdeeld over de "
+                + "bergingsaandelen van alle bergers van de berging, waarbij wordt verdeeld in gelijke delen.") + second);
+        assertEquals(List.of("RGS-426 26 verdeel de opbrengst opnieuw verdeel de opbrengst bergingsaandeel"),
+                m.errors().stream().map(d -> d.code() + " " + d.line() + " " + d.params().get("name") + " "
+                        + d.params().get("other") + " " + d.params().get("attribute")).toList(), m.diagnostics::toString);
+        assertTrue(m.errors().get(0).message().contains("WF-026"), m.errors().get(0).message());
+
+        RegelSpraakModel chain = Resolver.resolve(MODEL + """
+            Objecttype de Hoofdberger is een Berger (mv: Hoofdbergers) (bezield)
+                de rang Numeriek (niet-negatief geheel getal);
+
+            Feittype hoofdbergingsdeelname
+                de hoofdberging Berging
+                de hoofdberger (mv: hoofdbergers) Hoofdberger
+            Eén hoofdberging heeft meerdere hoofdbergers
+
+            Regel verdeel de opbrengst
+                geldig altijd
+                    De opbrengst van een berging wordt verdeeld over de bergingsaandelen van alle bergers van de berging, waarbij wordt verdeeld in gelijke delen.
+
+            Regel verdeel de opbrengst over hoofdbergers
+                geldig altijd
+                    De opbrengst van een berging wordt verdeeld over de bergingsaandelen van alle hoofdbergers van de berging, waarbij wordt verdeeld in gelijke delen.
+            """);
+        assertEquals(List.of("RGS-426 verdeel de opbrengst over hoofdbergers verdeel de opbrengst"),
+                chain.errors().stream().map(d -> d.code() + " " + d.params().get("name") + " " + d.params().get("other"))
+                        .toList(), chain.diagnostics::toString);
+    }
+
     @Test void an_allocation_of_attributes_stays_clean() {
         RegelSpraakModel m = Resolver.resolve(allocation("De opbrengst van een berging wordt verdeeld over de "
                 + "bergingsaandelen van alle bergers van de berging, waarbij wordt verdeeld in gelijke delen."));

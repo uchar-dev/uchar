@@ -773,4 +773,5 @@ RGS-422	{head}: het blok '{name}' — {other} heet al zo (bronregel {otherLine})
 RGS-423	verdeling '{name}': {role} '{attribute}' is van het type {type}; een verdeling rekent met bedragen, dus bedrag, aandeel, rest, gewicht en maximum zijn Numeriek of Percentage (WF-025)
 RGS-424	'{expression}': de linkeroperand van het percentage is van het type {type}; het percentage van een waarde leest links een getal zonder eenheid of een percentage in '%' (WF-035)
 RGS-425	verdeling '{name}': {role} '{attribute}' is geen gedeclareerd attribuut van {objectType}; een verdeling noemt alleen gedeclareerde attributen (WF-034)
+RGS-426	verdeling '{name}' schrijft '{attribute}' van {objectType}, dat de verdeling '{other}' al schrijft; ten hoogste één verdeling schrijft een doel, ook langs een typeketen (WF-026)
 RGS-427	'{characteristic}' is geen gedeclareerd kenmerk van {objectType}
