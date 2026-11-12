@@ -3364,8 +3364,8 @@ ends at the first header keyword. The expectations, one bullet each:
 
 | bullet | case expectation |
 |---|---|
-| `- de\|het <attribuut> van <LABEL> is <waarde>` | `attributeValue` |
-| `- de\|het <attribuut> van <LABEL> is leeg` | `attributeEmpty` |
+| `- de\|het <attribuut> van <LABEL> is <waarde>` | `attributeValue` (an attribute without a timeline) |
+| `- de\|het <attribuut> van <LABEL> is leeg` | `attributeEmpty` (an attribute without a timeline) |
 | `- de\|het <attribuut> van <LABEL> is <waarde> van <datum> tot <datum>` | one segment of an `attributeTimeline` |
 | `- de\|het <attribuut> van <LABEL> is <waarde> tot <datum>` | one segment of an `attributeTimeline`, open at its start (no `from`) |
 | `- de\|het <attribuut> van <LABEL> is <waarde> vanaf <datum>` | one segment of an `attributeTimeline`, open at its end (no `to`) |
@@ -3373,13 +3373,16 @@ ends at the first header keyword. The expectations, one bullet each:
 | `- de\|het <attribuut> van <LABEL> is altijd leeg` | `attributeTimeline` with no segment |
 | `- de\|het <cel> van <LABEL> is <waarde>` | `cellValue` |
 | `- de\|het <cel> van <LABEL> is leeg` | `cellEmpty` |
-| `- <LABEL> is\|heeft [een\|de\|het] <kenmerk>` | `characteristicPresent` |
-| `- <LABEL> is\|heeft niet\|geen <kenmerk>` | `characteristicAbsent` |
+| `- <LABEL> is\|heeft [een\|de\|het] <kenmerk>` | `characteristicPresent` (a characteristic without a timeline) |
+| `- <LABEL> is\|heeft niet\|geen <kenmerk>` | `characteristicAbsent` (a characteristic without a timeline) |
 | `- de gegevens zijn consistent` | `consistent` |
 | `- de gegevens zijn inconsistent [volgens "<regel>" [voor <LABEL>]]` | `inconsistent` with its optional `rule` and `label` |
 
 The segment bullets of one label and attribute are one `attributeTimeline`,
-at the place of the first. The values are the literal forms of the language:
+at the place of the first. An expectation without a period on a time-dependent attribute names no day of its
+timeline and is refused (RGS-399, pointing to `is altijd leeg`, `is altijd <waarde>` or a period); so is an
+expectation on a time-dependent characteristic (RGS-400), for which the case format has no expectation over periods.
+A parameter with a timeline takes its value with a period, in a situation and in a parameter set (RGS-398). The values are the literal forms of the language:
 a number with the unit its declaration demands (`1,5 t`, `25 %`, `3/4
 vadem`), a date `dd-mm-jjjj`, a date-time `dd-mm-jjjj hh:mm:ss.mmm`,
 `waar`/`onwaar`, an enumeration value `'strandgoed'`, a text `"Aukje"`, and for an attribute
