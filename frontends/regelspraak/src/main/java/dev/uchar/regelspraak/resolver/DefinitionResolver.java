@@ -1338,9 +1338,9 @@ public final class DefinitionResolver {
         }
         // §13.3.9.1 cardinaliteit: the line "<q1> <rol1> … <q2> <rol2>" marks each role one or
         // meerdere. A wederkerig role is enkelvoudig (§3.11), so only a normal feittype's roles
-        // take a 'meerdere' mark; an unmatched/absent line leaves a role single (fail-open).
+        // take a 'meerdere' mark; an absent line leaves a role single.
         if (!ft.reciprocal && ctx.feitTypeCardinaliteit() != null)
-            roles = markCardinality(roles, ctx.feitTypeCardinaliteit());
+            roles = markCardinality(ft.name, roles, ctx.feitTypeCardinaliteit(), recovered);
         ft.roles.addAll(roles);
         model.factTypes.put(ft.name, ft);
     }
@@ -1369,8 +1369,10 @@ public final class DefinitionResolver {
      *  longest LEADING sub-phrase of the deel (not word-by-word). This binds a multi-word role
      *  name whole ("deelnemer met recht op korting") and never marks a role that a trailing
      *  relatiebeschrijving merely names ("… behoren de groep toe aan …" leaves the groep role untouched)
-     *  — the two failure modes word-by-word matching had. */
-    private List<Role> markCardinality(List<Role> roles, FeitTypeCardinaliteitContext card) {
+     *  — the two failure modes word-by-word matching had. A 'meerdere' segment that binds no role is an ERROR
+     *  (RGS-432): the role it means would go to the wire single, a one-to-many relation as one-to-one. */
+    private List<Role> markCardinality(String factType, List<Role> roles, FeitTypeCardinaliteitContext card,
+                                       boolean recovered) {
         List<Role> result = new ArrayList<>(roles);
         // Collect the (meervoudig, head-words) segments in order — there are exactly two for a
         // non-wederkerig feittype (the grammar fixes it), one per role.
@@ -1407,6 +1409,10 @@ public final class DefinitionResolver {
         }
         for (int s = 0; s < segments.size(); s++) {
             int j = segRole[s];
+            if (j < 0 && plural.get(s) && !recovered)
+                error("RGS-432", params("factType", factType, "segment", String.join(" ", segments.get(s)),
+                        "roles", RegelSpraakModel.quotedList(result.stream().map(Role::name).toList())),
+                        card.getStart().getLine());
             if (j >= 0 && result.get(j).many() != plural.get(s))
                 result.set(j, new Role(result.get(j).name(), result.get(j).objectTypeName(), result.get(j).plural(), plural.get(s)));
         }

@@ -400,6 +400,7 @@ RGS-426	allocation-target-written-twice	ERROR	attribute,name,objectType,other
 RGS-427	target-characteristic-undeclared	ERROR	characteristic,objectType,written
 RGS-428	undeclared-own-read	ERROR	attribute,expression,objectType
 RGS-431	name-repeated-in-declaration	ERROR	earlierLine,earlierName,name,owner
+RGS-432	cardinality-many-binds-no-role	ERROR	factType,roles,segment
 RGS-440	navigated-characteristic-check-off-subject	ERROR	source,subject,written
 RGS-441	navigated-characteristic-check-unbound	ERROR	role,source,subject
 RGS-450	scalar-input-on-timeline-without-as-of-date	ERROR	attribute,label,scenario

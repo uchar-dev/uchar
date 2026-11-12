@@ -780,6 +780,7 @@ RGS-431.characteristic	object type '{owner}': the characteristic '{name}' is alr
 RGS-431.role	fact type '{owner}': the role '{name}' is already declared as '{earlierName}' (source line {earlierLine}); a role name appears once in a fact type, case not counted (WF-012)
 RGS-431.value	domain '{owner}': the value '{name}' is already there as '{earlierName}' (source line {earlierLine}); a value appears once in an enumeration, case not counted (WF-006)
 RGS-431.label	dimension '{owner}': the label '{name}' is already there as '{earlierName}' (source line {earlierLine}); a label appears once in a dimension, case not counted (WF-014)
+RGS-432	fact type '{factType}': the part '{segment}' of the cardinality line names none of the roles {roles}, so 'meerdere' belongs to no role and the relation would hold as one-to-one; a part begins with the name of its role (§13.3.9.1)
 RGS-440	characteristic check '{source}' follows a role from {written}, but it is read on {subject}: a navigated characteristic check follows one role from the subject it is read on
 RGS-441	characteristic check '{source}' follows the role '{role}' from {subject}, but from {subject} that name binds no unique role
 RGS-450	the attribute '{attribute}' of {label} is time-dependent; a value without a period is the value of the period the as-of date falls in, but the scenario '{scenario}' has no as-of date (add 'met peildatum <datum>' or give the value a period: 'van <datum> tot <datum>')
