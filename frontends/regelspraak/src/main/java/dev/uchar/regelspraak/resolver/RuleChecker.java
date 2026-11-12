@@ -4300,21 +4300,28 @@ final class RuleChecker {
      *  (grammar/DIVERGENCES.md, "§13.4.1 A navigated read binds its written role"): the role the recipient phrase
      *  names ("alle hoofdbergers van de berging") where it names one relation between the two types, else the one
      *  relation between them. Where neither binds, the emitter has no join to write, and the refusal is an ERROR in
-     *  the loader's sentence for the document without it. Null as well where a type did not resolve: that
-     *  allocation is refused or markered on its own. */
+     *  the loader's sentence for the document without it; so is a recipient phrase that names no role and no declared
+     *  type. Null as well where the distributor did not resolve. */
     private RegelSpraakModel.RoleBindingRef allocationJoin(String name, Expr.AttributeReference source, Expr.AttributeReference targetName,
                                                           int line) {
         ObjectType distributor = source.objectType(), recipient = targetName.objectType();
-        if (distributor == null || recipient == null) return null;
         String written = targetName.subjectSource() == null ? "" : targetName.subjectSource().trim()
                 .replaceFirst("^(?i)(alle|de|het|een|elke)\\s+", "");
+        String head = RegelSpraakModel.nameCandidates(written).stream().findFirst().orElse(written);
+        if (distributor != null && recipient == null) {
+            // the recipient phrase names neither a role nor a declared type ("alle hoofdbergers" without the subtype
+            // Hoofdberger): no type to join, and nothing else refuses the allocation
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-185", params("name", name, "reason",
+                    Msg.frontend("RGS-185.recipient-unresolved", "written", head, "subject", distributor.name)), line));
+            return null;
+        }
+        if (distributor == null || recipient == null) return null;
         for (String candidate : RegelSpraakModel.nameCandidates(written)) {
             RegelSpraakModel.RoleBindingRef rb = model.connectingRoleViaNameBinding(distributor, recipient, candidate);
             if (rb != null) return rb;
         }
         RegelSpraakModel.RoleBindingRef rb = model.connectingRoleBinding(distributor, recipient);
         if (rb != null) return rb;
-        String head = RegelSpraakModel.nameCandidates(written).stream().findFirst().orElse(written);
         model.diagnostics.add(new Diagnostic(Severity.ERROR,
                 "RGS-185", params("name", name, "reason", pairReason(distributor, recipient, head)), line));
         return null;

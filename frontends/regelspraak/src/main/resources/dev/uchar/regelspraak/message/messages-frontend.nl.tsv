@@ -495,6 +495,7 @@ RGS-182	uniciteit '{name}' binnen '{scopeParent}': de relatie die de begrenzing 
 RGS-183	uniciteit '{name}' binnen '{scopeParent}': de afbakeningsrol '{role}' heeft meer vullers — een afbakeningsouder is één instantie
 RGS-184	verdeling met afronding/maximum zonder herkenbare onverdeelde rest (§9.7.3/§9.7.4): het restant wordt niet vastgelegd (regel '{name}')
 RGS-185	verdeling '{name}' zonder verbindende rol ({reason}): missing field 'connectingRole'
+RGS-185.recipient-unresolved	'{written}' noemt vanaf {subject} geen rol en geen gedeclareerd objecttype, dus de ontvangers hebben geen type
 RGS-186	objectcreatie '{name}': een {objectType} maakt een {objectType}, en de zin noemt geen rol die het nieuwe object bindt; dan komt de koppeling uit het typenpaar, en die afleiding koppelt bij een zelfgetypeerd paar niets (RUNTIME-SEMANTICS ch. 5.5). Noem de rol: 'Een {objectType} heeft een <rol> met …', met als <rol> {roles}
 RGS-187	kenmerkwaardetoekenning '{characteristic}': de toegekende waarde moet een booleaanse expressie zijn
 RGS-188	kenmerkwaardetoekenning '{characteristic}' vereist waar of onwaar (§13.4.6.4), niet '{value}'

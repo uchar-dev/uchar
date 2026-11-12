@@ -351,6 +351,21 @@ class NavigationChoiceTest {
                 faults(BERGINGEN.formatted("Bergers")));
     }
 
+    /** A recipient phrase that names no role and no declared type ("alle hoofdbergers" where the subtype Hoofdberger is
+     *  not declared) leaves the recipients without a type and the allocation without a join; refused at the
+     *  allocation, where before only the emitter's catch refused the model, at line 0 (RGS-394). */
+    @Test void an_allocation_whose_recipients_name_no_type_is_refused() {
+        String source = BERGINGEN.formatted("schatbergers");
+        RegelSpraakModel m = Resolver.resolve(source);
+        assertEquals(List.of("verdeling 'verdeel de opbrengst van een berging' zonder verbindende rol ('schatbergers' "
+                        + "noemt vanaf Berging geen rol en geen gedeclareerd objecttype, dus de ontvangers hebben geen "
+                        + "type): missing field 'connectingRole'"),
+                m.errors().stream().map(RegelSpraakModel.Diagnostic::message).toList());
+        assertEquals("RGS-185", m.errors().get(0).code());
+        assertEquals(List.of(source.split("\n", -1)).indexOf(source.lines()
+                .filter(l -> l.contains("wordt verdeeld over")).findFirst().orElseThrow()) + 1, m.errors().get(0).line());
+    }
+
     // ---------------- a parent-scoped uniqueness's scope ----------------
 
     /** A second relation whose Haven role carries the name of the first's. */
