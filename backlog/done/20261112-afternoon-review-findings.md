@@ -93,3 +93,45 @@ the toolchain; the toolchain pins the landing.
 
 May touch: `ref/`, `backends/`, `frontends/regelspraak/`, corpus witnesses outside `corpus/golden/anchor`, this card.
 Protected (the main session lands them): `spec/`, `scripts/`, `CLAUDE.md`.
+
+Result (2026-11-12):
+- Declarations and typing: duplicate names within a declaration list are one case-insensitive ERROR (RGS-431;
+  attributes, characteristics, roles, enumeration values, dimension labels), two timelines of one name RGS-008 (also
+  identical ones); RGS-011 and RGS-019 are gone. An extension in other letters extends the type of its head. A
+  "meerdere" segment that names no role is an ERROR (RGS-432). A percentage plus or minus a percentage is a
+  Percentage (golden `jutterswet-percentage-plus-percentage`, `EXPECTED_PLAYED` 381). Earlier/later between a date in
+  days and a date-time is an ERROR (RGS-430); a domain and a conversion target are looked up case-insensitively; a
+  dimensioned attribute on a timeline (RGS-433), a time-dependent value in a scalar position (RGS-434) and an amount,
+  rest or maximum of an allocation whose unit does not reduce to the share's (RGS-435) are ERRORs. `DefinitionResolver`
+  uses `timelineByName`.
+- Phases: a characteristic check navigating from another subject than the rule's is an ERROR (RGS-440), no longer a
+  silent wrong binding; one emission at the end of `Resolver.build`, after `AbsenceMarkers.lower`, and RGS-394 carries
+  the line of its node and the form; RGS-001 was dead (53 models without a method in the suite each had an ERROR
+  already) and is gone with `complexAllocations`; a characteristic check and a role membership carry the binding the
+  resolver built (RGS-441 for a name without a unique role; the emitter and the graph's source route derive nothing
+  for them); one `CharacteristicMatcher.bind`. Struck: binding the range of a fold call and the path of an attribute
+  reference where they are built — `RuleChecker.opSubtype` moves the base rule's conjuncts to the subtype's subject,
+  so their binding would have to be recomputed there; a subtype rule that reached RGS-394 now writes the base's
+  binding, the reading the author wrote on the supertype.
+- Scenarios and tokens: a unit line without its word after recovery no longer crashes the tokens; a token after
+  `zijn` names the subject's member before a parameter of its name; a scenario names only inconsistency rules the case
+  readers know (RGS-270); the parameter gate reads day-kind definitions (RGS-451) and a value without period on a
+  time-dependent attribute without a peildatum is RGS-450; `ScenarioResolver.scopeForms` is public API (a table row
+  recognised by its origin, group names case-insensitive); one cell choice (`ExpressionBuilder.chooseCell`). The
+  fuzzer that leaves one token out finds 0 crashes over the production and scenario goldens. Struck: `haar` (the
+  grammar has no such token); start-point determinations and day kinds in the gates (already seen or refused).
+- Executors: a date part with a unit is refused statically (`WF-038.date-part-unit`, negative); WF-025 holds amount,
+  rest and maximum to the share's unit (`WF-025.unit-not-share`, two negatives); ch. 5.12a writes the asOfDate scalar
+  as the case gave it where the session has no evaluation date or the grid lays no bucket (ref broke on a quarter
+  grid); ch. 3.12's opening names the fault kinds that depend on the case; the Drools case reader refuses an
+  inconsistency expectation with an unknown rule and an expectation without `label` as case errors (the latter was a
+  NullPointerException); `EndState.channel` comes from `Fixpoint.inconsistencies`, `compare` passes them on (two scans
+  and a swallowed `ClassNotFoundException` gone), `EndState` carries `faults` and `Link.made`. A negative base under a
+  fractional exponent is leeg with a §9.5 deposit EF-044, as a negative radicand under the root (maintainer
+  decision); the red case `fractional-power-negative-base` is a golden (`EXPECTED_PLAYED` 380, clingo CLINGO-041).
+  `UnitConflictWitnessTest`'s twist drops a percentage presentation, so it reaches the unit fence on a percentage.
+- Service (toolchain, own commits): a date-time keeps its seconds in the answer and the schema states the case
+  lexeme; the violation schema names `{field, kind, error}`; a parameter set reads its values as the defaults do (its
+  decoder and `parameterNames` gone, 335 → 179 lines); `scenario` without a Scenario block exits 1, on an unreadable
+  source 2, `graph` into a missing directory 2. The items after the pin follow at the toolchain pin.
+- `make gates` green.
