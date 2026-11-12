@@ -10,6 +10,26 @@
         "attributes": [
           {
             "node": "Attribute",
+            "name": "treinmiles",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "maximaal aantal te ontvangen treinmiles",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
             "name": "identificatienummer",
             "datatype": {
               "node": "Number",
@@ -126,6 +146,11 @@
         "characteristics": [
           {
             "node": "Characteristic",
+            "name": "passagier jonger dan 18 jaar",
+            "kind": "nominal"
+          },
+          {
+            "node": "Characteristic",
             "name": "minderjarig",
             "kind": "adjectival"
           },
@@ -157,6 +182,22 @@
         "animate": false,
         "plural": "Vluchten",
         "attributes": [
+          {
+            "node": "Attribute",
+            "name": "daadwerkelijke datum-tijd van vertrek",
+            "datatype": {
+              "node": "Date",
+              "precision": "millisecond"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "datum van vertrek",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
           {
             "node": "Attribute",
             "name": "luchthaven van vertrek",
@@ -402,6 +443,11 @@
           }
         ],
         "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "in het hoogseizoen",
+            "kind": "adjectival"
+          },
           {
             "node": "Characteristic",
             "name": "bereikbaar per trein",
@@ -2171,7 +2217,9 @@
                   "threshold": 0,
                   "parts": [
                     {
-                      "node": "Unresolved",
+                      "node": "CharacteristicCheck",
+                      "characteristic": "passagier jonger dan 18 jaar",
+                      "negated": false,
                       "source": {
                         "snippet": "hij is een passagier jonger dan 18 jaar"
                       }
@@ -2384,7 +2432,10 @@
                   "snippet": "de STANDAARDTERMIJN VOOR RESERVERING"
                 }
               },
-              "type": null,
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
               "source": {
                 "snippet": "de datum van vertrek van de reis min de STANDAARDTERMIJN VOOR RESERVERING"
               }
@@ -3146,79 +3197,6 @@
             }
           }
         ]
-      },
-      {
-        "node": "Allocation",
-        "name": "verdeling treinmiles op basis van woonregio factor",
-        "versions": [
-          {
-            "sourceType": "Contingent treinmiles",
-            "sourceAttribute": "totaal aantal treinmiles",
-            "targetType": "Natuurlijk persoon",
-            "targetAttribute": "treinmiles",
-            "method": "proportional",
-            "ratioAttribute": "woonregio factor",
-            "descending": false,
-            "validity": {
-              "node": "Validity"
-            },
-            "connectingRole": {
-              "node": "RoleBinding",
-              "factType": "verdeling contingent treinmiles over passagiers",
-              "role": "passagier met recht op treinmiles"
-            }
-          }
-        ]
-      },
-      {
-        "node": "Allocation",
-        "name": "Verdeling treinmiles op basis van leeftijd en woonregio factor",
-        "versions": [
-          {
-            "sourceType": "Contingent treinmiles",
-            "sourceAttribute": "totaal aantal treinmiles",
-            "targetType": "Natuurlijk persoon",
-            "targetAttribute": "treinmiles",
-            "method": "ordered",
-            "ratioAttribute": "woonregio factor",
-            "remainderAttribute": "restant na verdeling",
-            "orderingAttribute": "leeftijd",
-            "descending": false,
-            "validity": {
-              "node": "Validity"
-            },
-            "connectingRole": {
-              "node": "RoleBinding",
-              "factType": "verdeling contingent treinmiles over passagiers",
-              "role": "passagier met recht op treinmiles"
-            }
-          }
-        ]
-      },
-      {
-        "node": "Allocation",
-        "name": "verdeling treinmiles op basis van woonregio factor met afronding",
-        "versions": [
-          {
-            "sourceType": "Contingent treinmiles",
-            "sourceAttribute": "totaal aantal treinmiles",
-            "targetType": "Natuurlijk persoon",
-            "targetAttribute": "treinmiles",
-            "method": "proportional",
-            "ratioAttribute": "woonregio factor",
-            "roundingDecimals": 0,
-            "remainderAttribute": "restant na verdeling",
-            "descending": false,
-            "validity": {
-              "node": "Validity"
-            },
-            "connectingRole": {
-              "node": "RoleBinding",
-              "factType": "verdeling contingent treinmiles over passagiers",
-              "role": "passagier met recht op treinmiles"
-            }
-          }
-        ]
       }
     ],
     "consistencies": [
@@ -3256,7 +3234,7 @@
             },
             "source": {
               "snippet": "De luchthaven van vertrek van een vlucht moet ongelijk zijn aan de luchthaven van bestemming van de vlucht",
-              "line": 197
+              "line": 209
             }
           }
         ]
@@ -3307,31 +3285,13 @@
       "node": "Diagnostic",
       "severity": "warning",
       "message": "begrenzing minimum en basis hebben onverenigbare eenheden",
-      "line": 162
+      "line": 174
     },
     {
       "node": "Diagnostic",
       "severity": "warning",
       "message": "beslistabel 'Belasting op basis van reisduur' heeft geen tabelinhoud (alleen een kop) \u2014 wordt niet naar IR/DRL omgezet",
-      "line": 317
-    },
-    {
-      "node": "Diagnostic",
-      "severity": "warning",
-      "message": "onopgelost: de geschreven naam bindt geen kenmerk en geen rol van het onderwerp (\u00a78.1.7/\u00a78.1.8), dus er is geen lidmaatschap om te toetsen \u2014 'hij is een passagier jonger dan 18 jaar' blijft als marker op de wire staan",
-      "line": 287
-    },
-    {
-      "node": "Diagnostic",
-      "severity": "warning",
-      "message": "verdeling 'verdeling treinmiles op basis van woonregio factor en met maximum waarde' wordt niet geschreven: de frontend bepaalde voor haar geen van de drie verdeelmethoden (in gelijke delen, naar rato, op volgorde), en een verdeling zonder methode heeft geen spelling in uchar-ir-v1",
-      "line": 0
-    },
-    {
-      "node": "Diagnostic",
-      "severity": "warning",
-      "message": "verdeling 'Verdeling treinmiles op basis van leeftijd, woonregio factor, met maximum waarde en afronding' wordt niet geschreven: de frontend bepaalde voor haar geen van de drie verdeelmethoden (in gelijke delen, naar rato, op volgorde), en een verdeling zonder methode heeft geen spelling in uchar-ir-v1",
-      "line": 0
+      "line": 283
     }
   ]
 }

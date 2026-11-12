@@ -56,14 +56,25 @@ class CasusTest {
         // the unit refusal is WF-035's (RGS-324), in the Dutch of the frontend's default catalogue
         var afstandQuirk = (java.util.function.Predicate<String>) msg ->
                 msg.contains("min:") && msg.contains("de operanden van een optelling hebben onverenigbare eenheden");
+        //   toka-33 to toka-37: each scenario of the casus distributes the train miles of the contingent in its own
+        //            way, so the six allocations write one target, which WF-026 refuses (RGS-426) at every allocation
+        //            after the first, toka-32. The five are held out of the dump; their slices replay them one by one.
+        var secondAllocation = (java.util.function.Predicate<RegelSpraakModel.Diagnostic>) d -> d.code().equals("RGS-426");
         var unexpected = m.errors().stream()
-                .filter(d -> !dateQuirk.test(d.message()) && !afstandQuirk.test(d.message()))
+                .filter(d -> !dateQuirk.test(d.message()) && !afstandQuirk.test(d.message()) && !secondAllocation.test(d))
                 .toList();
         assertTrue(unexpected.isEmpty(), () -> "false positives op de TOKA casus: " + unexpected);
         assertTrue(m.errors().stream().anyMatch(d -> dateQuirk.test(d.message())),
                 () -> "verwachtte de bekende §4.1 datum+datum casus-quirk (toka-23 bevestigingsinterval): " + m.errors());
         assertTrue(m.errors().stream().anyMatch(d -> afstandQuirk.test(d.message())),
                 () -> "verwachtte de dimensioneel-inconsistente afstand-quirk (toka-45, besluit 16Y): " + m.errors());
+        assertEquals(java.util.List.of("verdeling treinmiles op basis van woonregio factor",
+                        "Verdeling treinmiles op basis van leeftijd en woonregio factor",
+                        "verdeling treinmiles op basis van woonregio factor en met maximum waarde",
+                        "verdeling treinmiles op basis van woonregio factor met afronding",
+                        "Verdeling treinmiles op basis van leeftijd, woonregio factor, met maximum waarde en afronding"),
+                m.errors().stream().filter(secondAllocation).map(d -> d.params().get("name")).toList(),
+                () -> "verwachtte de vijf verdelingen na de eerste naar hetzelfde doel (WF-026): " + m.errors());
 
         // the casus' GegevensSpraak, faithfully modelled
         assertEquals(3, m.objectTypes.size(), "Natuurlijk persoon, Vlucht, Contingent treinmiles");

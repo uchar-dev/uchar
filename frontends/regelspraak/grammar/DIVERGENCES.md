@@ -4081,11 +4081,10 @@ a `Daarbij geldt` part an own read of an undeclared name of the first kind is
 refused all the same (RGS-396, `VariablePartLoweringTest`): it has no type, and
 neither has the Let the rule's value is written under, which the wire carries
 with its body's type (WF-076); so are an own read of a characteristic as a value
-and a name that resolved to nothing there. The
-casus of the parity zone reads undeclared names of the first kind, which only its replay
-slices declare, and an ERROR would stop its emission; a WARNING would change
-its pinned document. When the parity zone leaves the repository, the refusal
-can cover every undeclared read. A fold source whose element lacks the member,
+and a name that resolved to nothing there. No
+golden and no fragment of the parity zone writes an undeclared read of the first
+kind outside such a rule: the parity zone declares the members its casus reads
+in a fragment of its own. A fold source whose element lacks the member,
 or whose name took in a role, is no such read: it is a marker with a
 WARNING, and ref and the ASP backend refuse it loudly.
 

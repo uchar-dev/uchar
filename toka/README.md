@@ -27,7 +27,9 @@ The same text stands in the root `README.md` and in `CLAUDE.md`.
 >
 > Files in this repository. Copied verbatim from the source: the 47
 > definition fragments `toka/casus/toka-*.rgs`. Derived from them or own
-> work: the IR dump `toka/casus/ir.json` and the 29 IR slices
+> work: the fragment `toka/casus/own-declarations.rgs`, which declares the
+> six members the fragments use and do not declare, as the IR slices
+> declare them; the IR dump `toka/casus/ir.json` and the 29 IR slices
 > `toka/cases/scenario-*/ir.json` (the dump and 22 of the slices carry text
 > of the fragments in their source snippets); the 29 case files
 > `toka/cases/scenario-*/case.json`, with situations and expected values
@@ -43,6 +45,10 @@ The same text stands in the root `README.md` and in `CLAUDE.md`.
   RegelSpraak v2.3.0 specification. The TOKA data is explicitly fictitious
   ("volledig verzonnen", per the spec's own disclaimer) and relates to no real
   case.
+- `casus/own-declarations.rgs` — own work, not part of the casus: two
+  `Extensie van objecttype` blocks that declare the six members the fragments
+  use and do not declare, as the replay slices declare them (see Own
+  declarations).
 - `casus/ir.json` — the pinned parity dump: the faithful v0 IR emitted **once
   with the original toolchain** at the frontend pin, minus the recorded
   divergences below. Gate 11 (`scripts/check-toka-parity.sh`) re-emits it
@@ -61,26 +67,48 @@ The same text stands in the root `README.md` and in `CLAUDE.md`.
   the frontend end-to-end on the TOKA shapes. RuleCheckTest stayed behind:
   it imports the Drools transpiler, which is out of this zone's scope — it
   returns with a Drools-backend card. Beside them stands one own test,
-  SemanticTokensCasusTest (2026-10-22, after the card `semantic-tokens`): the
-  semantic tokens of the 47 fragments read as one document — full coverage,
-  the text of every span, every reference linked to a declaration of its
-  kind, and the spans `unresolved` pinned per name the fragments declare
-  nowhere (six names, 24 spans), with floors. The frontend's own corpus
+  SemanticTokensCasusTest: the semantic tokens of the 47 fragments and the
+  own declarations read as one document — full coverage, the text of every
+  span, every reference linked to a declaration of its kind, and no span
+  `unresolved`, with floors. The frontend's own corpus
   witness cannot read the fragments, because gate 1 keeps `frontends/` free
   of TOKA material.
 
-## The holdout
+## Own declarations
 
-The full casus raises exactly **two** resolver ERRORs, both pinned by
+The fragments use six members of `Natuurlijk persoon` and `Vlucht` that no
+fragment declares: the attributes `treinmiles` (the target of the allocations
+`toka-32` to `toka-37`), `maximaal aantal te ontvangen treinmiles` (their
+maximum in `toka-35` and `toka-37`), `daadwerkelijke datum-tijd van vertrek`
+(read in `toka-22`) and `datum van vertrek` (read in `toka-43` and `toka-44`),
+and the characteristics `in het hoogseizoen` (assigned in `toka-26`) and
+`passagier jonger dan 18 jaar` (read in `toka-41` and `toka-45`). Every replay
+slice declares all six, with the types of the toolchain's scenario test
+model. `casus/own-declarations.rgs` declares them in the same way, so the
+frontend, which refuses an undeclared attribute of an allocation and an
+undeclared characteristic as a target with an ERROR, reads the casus with all
+its fragments, and the model of the dump equals the model of the slices (up
+to the `origin` of the start-point anchor, see Well-formedness). The fragment
+sorts before the casus fragments, so its members stand first, as in the
+slices. It is own work: gate 11 re-emits it with the fragments, and it is not
+counted among the 47.
+
+## The holdouts
+
+The full casus raises exactly **seven** resolver ERRORs, all pinned by
 `CasusTest` as the tolerated diagnostics: the §4.1 datum+datum casus-quirk in
 `toka-23` (the `bevestigingsinterval`, a Datum-tijd parameter added to a
-Datum-tijd, which typeringen §4.1 forbids), and the dimensional inconsistency
+Datum-tijd, which typeringen §4.1 forbids), the dimensional inconsistency
 in `toka-45` (decision 16Y, 2026-08-29: the identity unit typing types the
 product, so the written subtraction fails the §4 unit rule — uchar-v1
-deliberately diverges from the toolchain here). Because `--ir` writes nothing
-for a model with any error, the pinned dump is emitted from every fragment
-**except** those two; the gate holds both out by name and fails if either
-holdout ever goes stale.
+deliberately diverges from the toolchain here), and a second writer of one
+target in each of `toka-33` to `toka-37`: each scenario distributes the train
+miles of the contingent in its own way, so the six allocations of `toka-32` to
+`toka-37` write the same `treinmiles`, which WF-026 refuses (RGS-426) at every
+allocation after the first. Because `--ir` writes nothing for a model with any
+error, the pinned dump is emitted from every fragment **except** those seven;
+the gate holds them out by name and fails if a holdout ever goes stale. The
+replay slices of `toka-33` to `toka-37` carry their allocation one by one.
 
 ## Well-formedness
 
@@ -121,23 +149,12 @@ purpose.
   stale in either direction: when the slice turns clean, or when it draws any
   other report.
 - **The casus dump is not a well-formed program, and is not meant to be.**
-  As one document it draws 14 reports, one per pointer and sentence: since
-  the card `verifier-allocatie-keten` (the same day) WF-026 no longer
-  repeats one sentence at one pointer, which made 18 lines before. Its
+  As one document it draws 2 reports, one per pointer and sentence. Its
   scenarios each write the same targets in their own way, legitimate per
-  scenario and not as one program (3 × WF-026, 1 × WF-079). Until
-  2026-10-06 a dependency cycle through the object creation of the
-  contingent and the fact creation of the passengers with a right to train
-  miles made a fifteenth (1 × WF-045). It did not exist: the fact creation
-  wrote the population of Natuurlijk persoon as a proxy, and the creation
-  counts the passengers of the flight; the proxy went that day
-  (RUNTIME-SEMANTICS ch. 6.1, golden `jutterswet-premiepot`). It also uses
-  four attributes and one characteristic that it does not declare and the
-  slices, cut in the scoping of the toolchain's own scenario tests, do (8
-  × WF-034: seven references to those attributes and the one derived
-  position their absence leaves untyped; 1 × WF-022, a rule writing that
-  characteristic). The last report, WF-099, sits at the very rule
-  `toka-24` carries. Its role is the parity object of the byte-identical
+  scenario and not as one program: the competing allocations are held out
+  (see The holdouts), and the two start-point determinations of `toka-43`
+  and `toka-44` stay (1 × WF-079). The other report, WF-099, sits at the very
+  rule `toka-24` carries. Its role is the parity object of the byte-identical
   re-emission, so gate 11 keeps it out of the well-formedness leg.
 
 ## Deliberate divergences from the toolchain emission
@@ -346,6 +363,21 @@ stays honest about where it no longer proves toolchain agreement.
   `-46-woonregio-factor-*`). No executor computes with a snippet, so the replays
   print what they printed before. The original toolchain still writes the period, so
   for these snippets the comparison proves "frontend == the recorded state".
+- **2026-11-12 — the zone declares what its casus uses, and a second allocation
+  to one target is held out.** Maintainer decision of that date, executed by the
+  card `20261112-end-state-and-service-reads.md` in `backlog/`. The frontend
+  refuses an undeclared attribute of an allocation (WF-034), an undeclared
+  characteristic as a target (WF-022) and a second allocation to one target
+  (WF-026) with an ERROR. `casus/own-declarations.rgs` declares the six members
+  (see Own declarations), and `toka-33` to `toka-37` joined the holdouts. The
+  dump was re-emitted from 41 fragments: the model gained the six members, the
+  allocations went from four to one (`toka-32`), the marker for `passagier
+  jonger dan 18 jaar` and its WARNING became a characteristic check, the
+  subtraction of `toka-44` got its type, and the lines in the source records
+  and diagnostics moved with the fragment before them. The verifier's reports
+  on the dump went from 14 to 2. No slice moved. The original toolchain
+  declares nothing of its own here, so for these nodes the comparison proves
+  "frontend == the recorded state".
 - The precedent runs the other way: `toka-45` (decision 16Y, 2026-08-29) is held
   **out** of the re-emission rather than re-pinned, because uchar's unit typing
   rejects the fragment as written. Divergence by holdout and divergence by

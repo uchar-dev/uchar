@@ -184,7 +184,9 @@ to one body of literature.
 >
 > Files in this repository. Copied verbatim from the source: the 47
 > definition fragments `toka/casus/toka-*.rgs`. Derived from them or own
-> work: the IR dump `toka/casus/ir.json` and the 29 IR slices
+> work: the fragment `toka/casus/own-declarations.rgs`, which declares the
+> six members the fragments use and do not declare, as the IR slices
+> declare them; the IR dump `toka/casus/ir.json` and the 29 IR slices
 > `toka/cases/scenario-*/ir.json` (the dump and 22 of the slices carry text
 > of the fragments in their source snippets); the 29 case files
 > `toka/cases/scenario-*/case.json`, with situations and expected values
