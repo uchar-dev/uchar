@@ -7,7 +7,6 @@ import dev.uchar.regelspraak.engine.ScenarioResult;
 import dev.uchar.regelspraak.message.Msg;
 import dev.uchar.regelspraak.refusal.DroolsCode;
 import dev.uchar.regelspraak.refusal.Reason;
-import dev.uchar.regelspraak.refusal.Reason;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.core.FixedStartPoint;
 import dev.uchar.regelspraak.model.Datatype;
@@ -83,14 +82,8 @@ public final class CaseRunner {
             this.code = reason.code();
             this.reason = reason;
         }
-        /** A sentence that no catalogue holds, for a place that builds an exclusion of its own (the witness tests). */
-        Excluded(DroolsCode code, String sentence) {
-            super(sentence);
-            this.code = code;
-            this.reason = null;
-        }
-        /** The sentence in {@code locale}; the one it was built with where no catalogue holds it. */
-        public String message(java.util.Locale locale) { return reason == null ? getMessage() : reason.text(locale); }
+        /** The sentence in {@code locale}. */
+        public String message(java.util.Locale locale) { return reason.text(locale); }
         /** The register code of the refusal, rendered at the head of the report beside the sentence. */
         public DroolsCode code() { return code; }
     }
