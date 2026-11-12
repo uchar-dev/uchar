@@ -269,11 +269,15 @@ class QuantifierFoldTest {
         // Step 1 of the lowering hangs the written quantifier on the AttributeReference so ALLE and GEEN are
         // distinguishable downstream. It is resolver input only: the reference node has no such wire
         // field, and a legitimate fold (a set read, which the wire spells as a fold with a range) must
-        // not start writing one.
+        // not start writing one. The sum of a gewicht for every month is a timeline, so its target has one too
+        // (RUNTIME-SEMANTICS ch. 3.3).
         RegelSpraakModel m = resolve("""
-            Regel maatgevend gewicht
+            Extensie van objecttype de Jutter
+                het maandgewicht Numeriek (getal met 2 decimalen) met eenheid kg voor elke maand;
+
+            Regel maandgewicht
                 geldig altijd
-                    Het maatgevend gewicht van een Jutter moet gesteld worden op de som van het gewicht van alle vondsten van de Jutter.
+                    Het maandgewicht van een Jutter moet gesteld worden op de som van het gewicht van alle vondsten van de Jutter.
             """);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         String c = emitCompact(m);

@@ -5263,6 +5263,7 @@ final class RuleChecker {
         if (error == null) error = Typing.precisionGate(targetType, outside, valueExpr, model);
         if (error == null && timelineTarget(targetExpr))
             error = gridFit((Expr.AttributeReference) targetExpr, valueExpr, condition);
+        if (error == null && !timelineTarget(targetExpr)) error = timelineInScalar(targetExpr, valueExpr);
         if (error == null) passedGates.add(new PassedGate(targetType, outside, valueExpr, report));
         else model.diagnostics.add(report.apply(error));
     }
@@ -5321,6 +5322,40 @@ final class RuleChecker {
                 return new Typing.Coded("RGS-374", Diagnostic.params("operand", e.getKey(),
                         "operandGrid", e.getValue().name().toLowerCase(), "target", target.attribute(),
                         "targetGrid", grid.name().toLowerCase()));
+        return null;
+    }
+
+    /** RUNTIME-SEMANTICS ch. 3.3 "Scalar contexts": a value written into a target without a timeline reads no
+     *  time-dependent attribute or parameter, because the evaluation date never indexes a timeline to a value; the ways
+     *  from a timeline to a scalar are the temporal total and the point read, which are nodes of their own and stay
+     *  admitted. Before, "Het loon van een Jutter moet berekend worden als het tarief" with a parameter for every year
+     *  passed the frontend and the verifier, and every executor faulted or refused it. Null where the value reads
+     *  none. */
+    private static Typing.Coded timelineInScalar(Expr target, Expr value) {
+        String read = timelineRead(value);
+        if (read == null) return null;
+        Expr.AttributeReference written = markedAttribute(target);
+        return new Typing.Coded("RGS-434", Diagnostic.params("operand", read,
+                "target", written != null ? written.attribute() : target.source().snippet()));
+    }
+
+    /** The name of the first time-dependent attribute or parameter {@code e} reads as a value, through its operators
+     *  and the bindings of a 'Daarbij geldt' part; null where it reads none. A sum over the instances of a
+     *  time-dependent attribute is a timeline as well. */
+    private static String timelineRead(Expr e) {
+        if (e instanceof Expr.Binary b) {
+            String left = timelineRead(b.left());
+            return left != null ? left : timelineRead(b.right());
+        }
+        if (e instanceof Expr.Let l) {
+            String bound = timelineRead(l.value());
+            return bound != null ? bound : timelineRead(l.body());
+        }
+        if (e instanceof Expr.ParameterRef p && p.parameter().granularity() != null) return p.parameter().name();
+        if (e instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.SOM && f.arguments().size() == 1)
+            e = f.arguments().get(0);
+        if (e instanceof Expr.AttributeReference a && a.objectType() != null
+                && a.objectType().granularityOf(a.attribute()) != null) return a.attribute();
         return null;
     }
 

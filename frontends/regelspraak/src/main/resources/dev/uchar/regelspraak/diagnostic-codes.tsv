@@ -403,6 +403,7 @@ RGS-430	date-ordering-across-precisions	ERROR	-
 RGS-431	name-repeated-in-declaration	ERROR	earlierLine,earlierName,name,owner
 RGS-432	cardinality-many-binds-no-role	ERROR	factType,roles,segment
 RGS-433	dimensioned-attribute-with-timeline	ERROR	dimensions,name,objectType
+RGS-434	timeline-in-scalar-position	ERROR	operand,target
 RGS-440	navigated-characteristic-check-off-subject	ERROR	source,subject,written
 RGS-441	navigated-characteristic-check-unbound	ERROR	role,source,subject
 RGS-450	scalar-input-on-timeline-without-as-of-date	ERROR	attribute,label,scenario
