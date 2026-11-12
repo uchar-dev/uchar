@@ -1,0 +1,33 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Recipient;
+
+rule "verdeel de opbrengst van een berging: ontvanger"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Berging()
+    $onderwerp : dev.uchar.regelspraak.facts.Berger( berging == $vouwonderwerp )
+then
+    insertLogical(new Recipient("verdeel de opbrengst van een berging", $vouwonderwerp, $onderwerp, null, null, null));
+end
+
+// zijn opbrengst groter is dan 10 €
+function boolean toets_verdeelDeOpbrengstVanEenBerging(Object $opbrengst) {
+    return RegelSpraakRuntime.rsAggVergelijk($opbrengst, new java.math.BigDecimal("10"), ">");
+}
+
+rule "verdeel de opbrengst van een berging"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Berging( $opbrengst : opbrengst )
+    accumulate( $ontvanger_verdeling_1 : Recipient( allocation == "verdeel de opbrengst van een berging", source == $onderwerp ); $ontvangers_verdeling_2 : collectList($ontvanger_verdeling_1) )
+    eval( toets_verdeelDeOpbrengstVanEenBerging($opbrengst) )
+then
+    for (Object feit : ComputeHelpers.payout("verdeel de opbrengst van een berging", $onderwerp, dev.uchar.regelspraak.ir.ResolvedAllocation.Method.GELIJKE_DELEN, $opbrengst, $ontvangers_verdeling_2, false, false, false, null, ElementKey.of("berger", "bergingsaandeel", false), null, "verdeel de opbrengst van een berging", Integer.valueOf(0), null, "verdeel de opbrengst van een berging")) {
+        insertLogical(feit);
+    }
+end
+
