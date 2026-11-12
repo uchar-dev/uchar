@@ -202,6 +202,9 @@ public final class CaseRunner {
                 if (excluded == null) excluded = e;
             }
         }
+        if (played == 0)
+            throw new IllegalArgumentException("no case of " + irPath + " carries expected: every case file given carries"
+                    + " expectedFault, which the red path plays");
         if (failures.isEmpty() && excluded != null) return Result.excluded(excluded.code(), excluded.getMessage());
         return Result.played(played, failures);
     }

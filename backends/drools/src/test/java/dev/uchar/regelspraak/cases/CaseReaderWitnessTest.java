@@ -220,6 +220,15 @@ class CaseReaderWitnessTest {
         assertTrue(e.getMessage().startsWith("could not read " + missing), e.getMessage());
     }
 
+    @Test void a_golden_whose_case_files_all_carry_an_expected_fault_has_nothing_to_play() throws Exception {
+        ObjectNode c = caseFile(PENNINGDREMPEL, "case");
+        c.remove("expected");
+        c.putObject("expectedFault").put("code", "EF-014").putObject("params");
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> CaseRunner.runGolden(ir(PENNINGDREMPEL), List.of(written(c))));
+        assertTrue(e.getMessage().contains("carries expected"), e.getMessage());
+    }
+
     // ---------------- role keys ----------------
 
     @Test void a_role_key_of_a_relation_the_instance_does_not_fill_is_a_case_error() throws Exception {
