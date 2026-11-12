@@ -7453,6 +7453,147 @@ dropped, as W2 in case 1 and W3 in case 3 of the second example do: a
 consumer that reads the table reads a verdict the session would have
 accompanied by a channel fact, had it read the contributor.
 
+### 5.12a The end state of a session
+
+The **end state** of a session is what its fixpoint world holds (ch. 5.7):
+its objects, the value of each of their members, its links and the facts of
+its §9.5 channel. Like the reading (ch. 5.12) it is no rule of evaluation
+and changes nothing the session computes: it records, once, at the end, the
+outcome that ch. 1–11 define. A consumer that answers with the outcome of a
+session reads it; every expectation a case can pin (ch. 5.7) is a statement
+about it, and it holds the values no expectation pins as well. A session in
+which an evaluation fault stands (ch. 5.7) has no end state.
+
+**What it holds.**
+
+- every object of the session: each object of the input and each object a
+  creation made (ch. 5.5), with its object type by its declared name;
+- per object, every attribute of its type and of the types above it
+  (ch. 2.2) that holds a value at the fixpoint, whichever gave it: the
+  input, a member assignment of the creation that made the object, or a
+  form. A time-dependent attribute holds its timeline in the canonical form
+  of ch. 3.1; the asOfDate-bucket scalar of the input (ch. 8.4) is the
+  timeline of its one period, the period of the attribute's own grid that
+  holds the evaluation date, as a reading reads it (ch. 5.12). A
+  dimensioned attribute holds a value per cell (ch. 5.8c). A member that is
+  leeg, and a timeline that is leeg on every day, holds none;
+- per object, every characteristic that holds; a time-dependent
+  characteristic where it has true periods, with those periods;
+- every link (ch. 5.7a), once: the links of the case, the reverse legs the
+  loader adds to them, and the links a creation laid;
+- every fact of the channel (ch. 5.6): its rule, its subject, and the EF
+  codes (ch. 5.7b) of the kinds deposited for that pair.
+
+**The canonical text.** The end state of a case is written one line per
+fact, all lines sorted in code-unit order, in the canonical value text and
+with the object names of the readings (ch. 5.12): an object of the input by
+its case label, quoted, and an object a creation made as
+`«"<creation>"»(<subject>)#<k>`. Every declared name — of an object type,
+an attribute, a characteristic, a label, a fact type, a role, a rule —
+stands quoted and escaped, as the document declares it:
+
+```
+object <object> "<object type>"
+attribute <object> "<attribute>" <value> ["<unit>"]
+attribute <object> "<attribute>" ["<label>", …] <value> ["<unit>"]
+characteristic <object> "<characteristic>"
+characteristic <object> "<characteristic>" [[<from> <to> empty], …]
+link "<fact type>" "<role>" <object> "<role>" <object>
+channel "<rule>" <object> <codes>
+```
+
+- `attribute`: the value as a reading writes a value — a number as its
+  exact decimal, or `t/n` where it does not terminate; a date, a text, an
+  enumeration value and a constructor value as ch. 5.12 writes them; a
+  timeline as `[[<from> <to> <value>], …]` — and after a number and after
+  a timeline the unit of the attribute's declaration, quoted, where it
+  declares one, a number the world holds in another unit restated into it.
+  A cell has the labels that name it before its value, one per dimension,
+  in the declared order of the dimensions.
+- `characteristic`: a time-dependent one with its true periods, as
+  periods without a value, adjacent periods joined.
+- `link`: the two objects each after the name of the role it fills, in the
+  order in which the fact type declares its roles; of a reciprocal fact
+  type, whose one role both fill, in the code-unit order of their names.
+- `channel`: the rule as the deposit names it, the subject, and the codes
+  ascending, joined by `,`, or `-` where no deposit named one.
+
+The text does not hold the order of the links of one object over one role
+(ch. 5.7a): the lines are sorted (*provisional decision of the builder of
+card `end-state-and-service-reads`, 2026-11-12*). `runner --trace` prints
+this text for a golden case after its readings, each line after `state `;
+`DroolsBackendMain --readings` prints it per case file of a golden, on both
+branches, and gate 17 holds the two equal line by line.
+
+**Worked example** (absolute; the `jutterswet-penningbesluit` golden, case
+1, verbatim in the `ref/` test `WV-5.12a-penningbesluit`). The creation
+"stel het penningbesluit vast" makes a Penningbesluit for each
+penninggerechtigde Jutter and links it to him over the fact type
+`penningtoekenning`; its member assignment gives the besluitbedrag, and a
+rule on the Penningbesluit the besluitjaar. The case has two Jutters, J1
+with 14 and J2 with 12 aangemelde vondsten:
+
+```
+attribute "J1" "aantal aangemelde vondsten" 14
+attribute "J1" "aantal penningbesluiten" 1
+attribute "J1" "penningjaar" 2025
+attribute "J1" "uitkering" 250 "EUR"
+attribute "J1" "uitkeringsjaar" 2025
+attribute "J2" "aantal aangemelde vondsten" 12
+attribute "J2" "aantal penningbesluiten" 1
+attribute "J2" "penningjaar" 2024
+attribute "J2" "uitkering" 250 "EUR"
+attribute "J2" "uitkeringsjaar" 2024
+attribute «"stel het penningbesluit vast"»("J1")#1 "besluitbedrag" 250 "EUR"
+attribute «"stel het penningbesluit vast"»("J1")#1 "besluitjaar" 2025
+attribute «"stel het penningbesluit vast"»("J2")#1 "besluitbedrag" 250 "EUR"
+attribute «"stel het penningbesluit vast"»("J2")#1 "besluitjaar" 2024
+characteristic "J1" "penninggerechtigd"
+characteristic "J2" "penninggerechtigd"
+link "penningtoekenning" "begunstigde" "J1" "toegekend besluit" «"stel het penningbesluit vast"»("J1")#1
+link "penningtoekenning" "begunstigde" "J2" "toegekend besluit" «"stel het penningbesluit vast"»("J2")#1
+object "J1" "Jutter"
+object "J2" "Jutter"
+object «"stel het penningbesluit vast"»("J1")#1 "Penningbesluit"
+object «"stel het penningbesluit vast"»("J2")#1 "Penningbesluit"
+```
+
+**Worked example — a timeline and the asOfDate bucket** (absolute; the
+`jutterswet-kadetarief` golden, verbatim in the `ref/` test
+`WV-5.12a-kadetarief`). The case gives the havengeldtarief of the Haven H1
+as the asOfDate-bucket scalar 10, with the evaluation date 2026-03-15, and
+the kadetarief of the Schuit S2 as a timeline of 7 in January and 5 in
+February 2026; the havengeldtarief rides a monthly grid. Among the lines of
+the case:
+
+```
+attribute "H1" "havengeldtarief" [[2026-03-01 2026-04-01 10]] "EUR/m/mnd"
+attribute "S2" "kadetarief" [[2026-01-01 2026-02-01 7], [2026-02-01 2026-03-01 5]] "EUR/m/mnd"
+```
+
+**Worked example — a channel fact** (absolute; the
+`jutterswet-keurgemiddelde` golden of ch. 5.12, case 4, verbatim in the
+`ref/` test `WV-5.12a-keurgemiddelde`). The session reaches W2's division
+by its 0 keuringen and deposits a fact of kind EF-005 on P1 for the rule
+"inzetbaar bij keurgemiddelde"; the characteristic `inzetbaar` does not
+hold on P1, so it has no line:
+
+```
+attribute "P1" "wachttal" 2
+attribute "W1" "keuringen" 10
+attribute "W1" "keurpunten" 70
+attribute "W2" "keuringen" 0
+attribute "W2" "keurpunten" 30
+channel "inzetbaar bij keurgemiddelde" "P1" EF-005
+characteristic "W1" "gekeurd"
+characteristic "W2" "gekeurd"
+link "ploegindeling" "ploeg" "P1" "wacht" "W1"
+link "ploegindeling" "ploeg" "P1" "wacht" "W2"
+object "P1" "Ploeg"
+object "W1" "Strandwacht"
+object "W2" "Strandwacht"
+```
+
 ---
 
 ## 6. Stratification
