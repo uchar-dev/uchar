@@ -429,32 +429,27 @@ final class RuleChecker {
                 model.uniquenessUnions.stream().map(u -> u.name())).toList());
         forms.accept("factCreations", model.factCreations.stream().map(f -> f.name()).toList());
         forms.accept("prioritizedDefaults", model.prioritizedDefaults.stream().map(g -> g.name()).toList());
-        // the authored heads, in document order: a 'Regel' head is {name, line}, a table row {name, line, table}
-        List<String[]> heads = new ArrayList<>();
-        for (RegelContext r : DefinitionResolver.allRules(doc))
-            heads.add(new String[] {src(r.regelNaam()), String.valueOf(r.getStart().getLine()), null});
-        for (var e : rowRules.entrySet())
-            for (String row : e.getValue())
-                heads.add(new String[] {row, String.valueOf(e.getKey().getStart().getLine()),
-                        src(e.getKey().beslistabelNaam())});
-        heads.sort(java.util.Comparator.comparingInt(k -> Integer.parseInt(k[1])));
+        // the 'Regel' heads and the table rows, in document order: a block's name names no form on the wire
+        List<Head> heads = authoredHeads(doc).stream().filter(h -> !(h.context() instanceof UitzonderingRegelContext))
+                .sorted(java.util.Comparator.comparingInt(Head::line)).toList();
         for (var e : lists.entrySet()) {
             if (e.getValue().size() < 2) continue;
-            List<String[]> carriers = heads.stream()
-                    .filter(k -> dev.uchar.regelspraak.emit.IrEmitter.norm(k[0]).equals(e.getKey())).toList();
+            List<Head> carriers = heads.stream()
+                    .filter(k -> dev.uchar.regelspraak.emit.IrEmitter.norm(k.name()).equals(e.getKey())).toList();
             if (carriers.size() < 2) continue;
-            String[] first = carriers.get(0);
+            Head first = carriers.get(0);
             List<String> arrays = e.getValue().stream().distinct()
                     .sorted(java.util.Comparator.comparingInt(FORM_LISTS::indexOf)).toList();
             Msg verifier = arrays.size() == 1
-                    ? Msg.frontend("RGS-098.duplicate-name", "name", first[0], "array", arrays.get(0))
-                    : Msg.frontend("RGS-098.name-collision", "name", first[0], "other", carriers.get(1)[0],
+                    ? Msg.frontend("RGS-098.duplicate-name", "name", first.name(), "array", arrays.get(0))
+                    : Msg.frontend("RGS-098.name-collision", "name", first.name(), "other", carriers.get(1).name(),
                             "array", arrays.get(1));
-            for (String[] following : carriers.subList(1, carriers.size()))
-                error(Integer.parseInt(following[1]),
-                        "RGS-098", params("name", following[0], "table", following[2], "earlierLine", first[1], "earlierTable", first[2], "sentence", verifier,
-                                "inTable", Msg.frontendIf(following[2] != null, "RGS-098.in-table", "table", following[2]),
-                                "earlierRow", Msg.frontendIf(first[2] != null, "RGS-098.earlier-row", "earlierTable", first[2])));
+            for (Head following : carriers.subList(1, carriers.size()))
+                error(following.line(),
+                        "RGS-098", params("name", following.name(), "table", tableOf(following),
+                                "earlierLine", String.valueOf(first.line()), "earlierTable", tableOf(first), "sentence", verifier,
+                                "inTable", Msg.frontendIf(tableOf(following) != null, "RGS-098.in-table", "table", tableOf(following)),
+                                "earlierRow", Msg.frontendIf(tableOf(first) != null, "RGS-098.earlier-row", "earlierTable", tableOf(first))));
         }
     }
 
@@ -1448,6 +1443,12 @@ final class RuleChecker {
      *  created relation's target is one: the wire reads that condition from the anchor, so the target is reached
      *  over the to-many role. */
     private Typing.Coded manyStepError(Expr.AttributeReference a, ObjectType subject) {
+        return manyStepError(a, subject, "RGS-120", "expression");
+    }
+
+    /** The refusal {@code code} of every to-many hop of {@code a}'s binding from {@code subject}, the read under the
+     *  parameter {@code sourceKey}; null where no hop is to-many. */
+    private Typing.Coded manyStepError(Expr.AttributeReference a, ObjectType subject, String code, String sourceKey) {
         List<RegelSpraakModel.RoleBindingRef> bindingPath =
                 dev.uchar.regelspraak.emit.IrEmitter.navigationBindings(model, subject, a);
         List<Msg> sentences = new ArrayList<>();
@@ -1460,8 +1461,8 @@ final class RuleChecker {
             }
         // one sentence per to-many hop, in path order; the template renders them joined
         return sentences.isEmpty() ? null
-                : new Typing.Coded("RGS-120",
-                        params("expression", a.source(), "hops", String.join(", ", hops), "roles", String.join(", ", roles),
+                : new Typing.Coded(code,
+                        params(sourceKey, a.source(), "hops", String.join(", ", hops), "roles", String.join(", ", roles),
                                 "sentences", sentences));
     }
 
@@ -1804,7 +1805,8 @@ final class RuleChecker {
 
         // 0. a block is named as a carrier by its name, so a second head of that name makes it two forms of one name
         //    (WF-020): refused once, at the later head, and neither block is lifted
-        List<Head> heads = authoredHeads(doc);
+        List<Head> heads = new ArrayList<>(authoredHeads(doc));
+        heads.sort(java.util.Comparator.comparingInt(Head::line));
         for (Node k : nodes) {
             if (!(k.block instanceof UitzonderingRegelContext u)) continue;
             String key = dev.uchar.regelspraak.emit.IrEmitter.norm(k.name);
@@ -3019,21 +3021,9 @@ final class RuleChecker {
      *  each with how a message names it and the line it was written on. */
     private Map<String, Object[]> formSites(RegelSpraakDocumentContext doc) {
         Map<String, Object[]> result = new java.util.HashMap<>();
-        for (RegelContext r : DefinitionResolver.allRules(doc)) {
-            String name = src(r.regelNaam());
-            result.putIfAbsent(dev.uchar.regelspraak.emit.IrEmitter.norm(name),
-                    new Object[] {Msg.frontend("PART.form-rule", "name", name), String.valueOf(r.getStart().getLine())});
-        }
-        for (UitzonderingRegelContext u : DefinitionResolver.allExceptions(doc)) {
-            String name = src(u.regelNaam());
-            result.putIfAbsent(dev.uchar.regelspraak.emit.IrEmitter.norm(name),
-                    new Object[] {Msg.frontend("PART.form-rule", "name", name), String.valueOf(u.getStart().getLine())});
-        }
-        for (var e : rowRules.entrySet())
-            for (String row : e.getValue())
-                result.putIfAbsent(dev.uchar.regelspraak.emit.IrEmitter.norm(row),
-                        new Object[] {Msg.frontend("PART.form-table-row", "row", row, "table", src(e.getKey().beslistabelNaam())),
-                                String.valueOf(e.getKey().getStart().getLine())});
+        for (Head h : authoredHeads(doc))
+            result.putIfAbsent(dev.uchar.regelspraak.emit.IrEmitter.norm(h.name()),
+                    new Object[] {h.form(), String.valueOf(h.line())});
         return result;
     }
 
@@ -3041,7 +3031,8 @@ final class RuleChecker {
      *  decision table (its context the table); how a message names it and its line. */
     private record Head(String name, Msg form, int line, ParserRuleContext context) {}
 
-    /** Every head of {@link #formSites}, each one kept, in written order. */
+    /** Every head of {@link #formSites}, each one kept: the 'Regel' heads, the block heads and the rows, each kind in
+     *  written order. */
     private List<Head> authoredHeads(RegelSpraakDocumentContext doc) {
         List<Head> result = new ArrayList<>();
         for (RegelContext r : DefinitionResolver.allRules(doc))
@@ -3054,8 +3045,12 @@ final class RuleChecker {
             for (String row : e.getValue())
                 result.add(new Head(row, Msg.frontend("PART.form-table-row", "row", row, "table",
                         src(e.getKey().beslistabelNaam())), e.getKey().getStart().getLine(), e.getKey()));
-        result.sort(java.util.Comparator.comparingInt(Head::line));
         return result;
+    }
+
+    /** The table a head is a row of, or null for another head. */
+    private static String tableOf(Head h) {
+        return h.context() instanceof BeslistabelContext b ? src(b.beslistabelNaam()) : null;
     }
 
     /** A generated form name another form already carries (WF-020): an authored one, or the one another marker
@@ -3555,21 +3550,8 @@ final class RuleChecker {
             return new Typing.Coded("RGS-164",
                     params("source", a.source(), "attribute", a.attribute(), "elementType", countSource.name));
         if (countSource == null) {
-            List<RegelSpraakModel.RoleBindingRef> bindingPath =
-                    dev.uchar.regelspraak.emit.IrEmitter.navigationBindings(model, subject, a);
-            List<Msg> sentences = new ArrayList<>();
-            List<String> hops = new ArrayList<>(), roles = new ArrayList<>();
-            for (int i = 0; i < bindingPath.size(); i++)
-                if (toMany(bindingPath.get(i))) {
-                    sentences.add(manyStepSentence(i, bindingPath.get(i).role()));
-                    hops.add(String.valueOf(i));
-                    roles.add(bindingPath.get(i).role());
-                }
-            // one sentence per to-many hop, in path order; the template renders them joined
-            if (!sentences.isEmpty())
-                return new Typing.Coded("RGS-165",
-                        params("source", a.source(), "hops", String.join(", ", hops), "roles", String.join(", ", roles),
-                                "sentences", sentences));
+            Typing.Coded manyStep = manyStepError(a, subject, "RGS-165", "source");
+            if (manyStep != null) return manyStep;
         }
         return countSource != null
                 ? new Typing.Coded("RGS-166", params("source", a.source()))
@@ -4910,7 +4892,7 @@ final class RuleChecker {
     private void characteristic(String name, KenmerkToekenningContext kt, Condition condition, Validity validity) {
         ObjectType subject = builder.chainObjectType(kt.onderwerpKeten());
         String written = src(kt.kaleNaam());
-        String characteristic = written.replaceFirst("^(?i)(de|het|een)\\s+", "");
+        String characteristic = stripArticle(written);
         int table = tableLine(name);
         int lineage = table >= 0 ? table : kt.getStart().getLine();   // a table row's lines count in its own stream
         boolean isNegated = false;
