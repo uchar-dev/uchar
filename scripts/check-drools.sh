@@ -1631,7 +1631,9 @@ EXPECTED_CHANNEL=(
 # 378 with jutterswet-leeg-deeltal-per-periode: a division over timelines reads its divisor only in the periods where
 # the dividend is filled, so a division by zero in the divisor under a leeg dividend deposits nothing (RUNTIME-SEMANTICS
 # ch. 1.4 point 4, ch. 3.4; PLAYED 3).
-EXPECTED_PLAYED=378
+# 379 with jutterswet-verdeling-voorwaarde-op-bron: the condition of an allocation reads the holder of its amount as
+# subject (IR-SPEC ch. 3.2; PLAYED 1).
+EXPECTED_PLAYED=379
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

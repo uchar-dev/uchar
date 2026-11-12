@@ -1,0 +1,32 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B1",
+        "objectType": "Berging",
+        "attributes": { "opbrengst": { "number": "20" } },
+        "roles": { "bergers": ["X1", "X2"] },
+        "characteristics": []
+      },
+      {
+        "label": "B2",
+        "objectType": "Berging",
+        "attributes": { "opbrengst": { "number": "5" } },
+        "roles": { "bergers": ["Y1"] },
+        "characteristics": []
+      },
+      { "label": "X1", "objectType": "Berger", "attributes": {}, "roles": {}, "characteristics": [] },
+      { "label": "X2", "objectType": "Berger", "attributes": {}, "roles": {}, "characteristics": [] },
+      { "label": "Y1", "objectType": "Berger", "attributes": {}, "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "X1", "attribute": "bergingsaandeel", "value": { "number": "10" } },
+    { "kind": "attributeValue", "label": "X2", "attribute": "bergingsaandeel", "value": { "number": "10" } },
+    { "kind": "attributeEmpty", "label": "Y1", "attribute": "bergingsaandeel" },
+    { "kind": "consistent" }
+  ]
+}
