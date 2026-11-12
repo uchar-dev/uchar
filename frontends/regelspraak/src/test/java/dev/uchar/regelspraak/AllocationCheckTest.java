@@ -55,6 +55,19 @@ class AllocationCheckTest {
                 errors.get(0).message());
     }
 
+    /** "zijn" in the condition of an allocation reads the source instance the allocation runs on: before, the rule
+     *  had no subject there, the read stayed a marker with a warning, and ref faulted on it (EF-019). */
+    @Test void a_condition_reads_the_source_as_its_subject() {
+        RegelSpraakModel m = Resolver.resolve(allocation("De opbrengst van een berging wordt verdeeld over de "
+                + "bergingsaandelen van alle bergers van de berging, waarbij wordt verdeeld in gelijke delen\n"
+                + "        indien zijn opbrengst groter is dan 10 €."));
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        var c = (dev.uchar.regelspraak.ir.Condition.Comparison) m.allocations.get(0).condition();
+        var read = (dev.uchar.regelspraak.ir.Expr.AttributeReference) c.left();
+        assertEquals("opbrengst", read.attribute());
+        assertEquals("Berging", read.objectType().name);
+    }
+
     @Test void an_allocation_of_attributes_stays_clean() {
         RegelSpraakModel m = Resolver.resolve(allocation("De opbrengst van een berging wordt verdeeld over de "
                 + "bergingsaandelen van alle bergers van de berging, waarbij wordt verdeeld in gelijke delen."));

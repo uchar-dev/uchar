@@ -5083,13 +5083,16 @@ final class RuleChecker {
         model.resolvedRules.add(new ResolvedRule(name, ResolvedRule.Kind.GELIJKSTELLING, targetName, anchor, condition, validity, currentSourceAnnotations));
     }
 
-    /** The object type a rule is about — the object type of its assignment target. */
+    /** The object type a rule is about — the object type of its assignment target, or of an allocation's source. */
     private ObjectType ruleSubjectOf(ResultaatDeelContext rd) {
         AttribuutVanOnderwerpContext targetName = null;
         if (rd == null) return null;
         if (rd.gelijkstelling() != null) targetName = rd.gelijkstelling().attribuutVanOnderwerp();
         else if (rd.initialisatie() != null) targetName = rd.initialisatie().attribuutVanOnderwerp();
         else if (rd.kenmerkToekenning() != null) return builder.chainObjectType(rd.kenmerkToekenning().onderwerpKeten());
+        // an allocation runs per source instance, the pot (RUNTIME-SEMANTICS ch. 4.1): "indien zijn opbrengst …" reads it
+        else if (rd.verdeling() != null && !rd.verdeling().attribuutVanOnderwerp().isEmpty())
+            targetName = rd.verdeling().attribuutVanOnderwerp(0);
         else if (rd.objectCreatie() != null) return builder.chainObjectType(rd.objectCreatie().onderwerpKeten());
         else if (rd.feitCreatie() != null) return builder.resolveSubject(rd.feitCreatie().onderwerp(0)); // the anker — so its voorwaarde (incl. a kenmerk) resolves
         else if (rd.startpuntBepaling() != null) // §13.4.12 — so "zijn <attribuut>" in the anchor + voorwaarde resolves
