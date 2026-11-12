@@ -1,0 +1,4 @@
+WF-025.unit-not-share
+field=sourceAttribute
+unit=%
+shareUnit=EUR

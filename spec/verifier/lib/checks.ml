@@ -2858,6 +2858,44 @@ let wf025_numbers ctx =
   in
   List.concat_map fields ctx.doc.allocations
 
+(* The amount, the rest and the maximum of an allocation are amounts of what
+   the share holds: the equations of RUNTIME-SEMANTICS ch. 4.2 subtract shares
+   from the amount and cap a share at its maximum, so each reduces to the unit
+   of the share (ch. 2.6 rule 1). The weight only divides out of the ratio and
+   may carry any unit. Without this arm a maximum in '%' or in kg beside a share
+   in EUR was verifier-clean and failed in every executor without a code. A
+   field that is no number is [wf025_numbers]'s report. *)
+let wf025_units ctx =
+  let declared ty a =
+    match (ty, a) with
+    | Some t, Some a -> (
+        match Option.bind (object_type ctx t) (fun ot -> attr_of ot a) with
+        | Some (Some d) when is_number_like d -> Some (a, d)
+        | _ -> None)
+    | _ -> None
+  in
+  let fields (r : resolved_allocation) =
+    match declared r.objective_type_name r.target_attribute with
+    | None -> []
+    | Some (share, share_type) ->
+        let reduces ty a ~field =
+          match declared ty a with
+          | Some (a, d) when not (units_compatible (unit_of d) (unit_of share_type)) ->
+              let unit = unit_spelling (unit_of d) and share_unit = unit_spelling (unit_of share_type) in
+              [ v ~params:[ ("field", field); ("attribute", a); ("unit", unit); ("shareUnit", share_unit) ]
+                  "WF-025.unit-not-share" (r.vd_pointer ^ "/" ^ field)
+                  (Printf.sprintf
+                     "the field %s of the allocation names '%s' in unit '%s', which does not reduce to the \
+                      unit '%s' of the share '%s': the amount, the rest and the maximum are amounts of the share"
+                     field a unit share_unit share) ]
+          | _ -> []
+        in
+        reduces r.source_type r.source_attribute ~field:"sourceAttribute"
+        @ reduces r.source_type r.remainder_attribute ~field:"remainderAttribute"
+        @ reduces r.objective_type_name r.maximum_attribute ~field:"maximumAttribute"
+  in
+  List.concat_map fields ctx.doc.allocations
+
 (* WF-129 (IR-SPEC ch. 4.2): a part of a text composition that writes the
    unit of its number has a unit to write — its type is a number with a unit
    or a percentage (RUNTIME-SEMANTICS ch. 1.2). A part whose type nothing
@@ -13109,7 +13147,7 @@ let all (doc : document) : violation list =
       wf007_model ctx; wf007_presentation ctx; wf009 ctx; wf092 ctx; wf011 ctx; wf012 ctx;
       wf013 ctx; wf014 ctx;
       wf015 ctx; wf016 ctx; wf115 ctx; wf017 ctx; wf018 ctx; wf107 ctx; wf020 ctx; wf101 ctx; wf021 ctx;
-      wf022 ctx; wf023 ctx; wf023_precision ctx; wf025 ctx; wf025_numbers ctx; wf026 ctx; wf128 ctx; wf027 ctx; wf028 ctx;
+      wf022 ctx; wf023 ctx; wf023_precision ctx; wf025 ctx; wf025_numbers ctx; wf025_units ctx; wf026 ctx; wf128 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx;
       wf034_allocations ctx; wf034_allocation_names ctx; wf034_allocation_types ctx;
       wf034_allocation_name_resolution ctx; wf034_object_creation_subject ctx;
