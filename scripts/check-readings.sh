@@ -1,12 +1,20 @@
 #!/usr/bin/env bash
 # Gate 17 — the reading of a condition at the fixpoint (RUNTIME-SEMANTICS ch. 5.12; card
-# ref-trace-and-readings-gate, 2026-10-21).
+# ref-trace-and-readings-gate, 2026-10-21), and the end state of the session (ch. 5.12a; maintainer decision
+# 2026-11-12).
 #
 # Two executors read the same clause: the reference interpreter's trace (`runner --trace`,
 # ref/lib/reading.ml) and the readings of the Drools backend (`DroolsBackendMain --readings`, card
 # fixpoint-readings), each per golden case file, per form with a condition and object it runs on: the
 # evaluation of the condition on the fixpoint world, recorded per node, in the canonical text of ch. 5.12.
 # This gate holds them equal, on both branches of the backend. The two share no code (gate 1).
+#
+# Beside the readings both write, per case file, the end state of the session in the canonical text of
+# ch. 5.12a, each line after `state `: every object, of the input and made by a creation, with its type;
+# every attribute with a value, a timeline as its segments; every characteristic that holds; every link;
+# and the facts of the §9.5 channel. The gate holds those lines equal as well, so every value at the
+# fixpoint is compared, also where no expectation of the case pins it, and the backend's reader of the
+# expectations takes no part in the comparison.
 #
 # Checks:
 #   1. ref builds, and `runner --trace` reads every golden case file, also of a golden the backend does
@@ -21,9 +29,12 @@
 #      the comparison rule below; a case that differs fails unless DEVIATIONS lists it for that branch,
 #      and a listed case that agrees, or that is not compared, fails as stale. On every case file, listed
 #      or not, the tripwire below;
-#   4. the comparison rule and the tripwire pass their own rows (a comparator that finds nothing is a
-#      silent green);
-#   5. the counting floors below.
+#   4. per case file of a golden both branches read, the end-state lines of ref and of each branch are
+#      equal, line for line (sorted, verbatim); a case that differs fails unless STATE_DEVIATIONS lists it
+#      for that branch, and a listed case that agrees, or that is not compared, fails as stale;
+#   5. the comparison rule, the tripwire and the end-state comparison pass their own rows (a comparator
+#      that finds nothing is a silent green);
+#   6. the counting floors below.
 #
 # THE OBJECT OF A READ (card reading-read-objects, 2026-10-27). A node that reads a member over a path of
 # roles writes, after its value and its unit, `on` and the object the path reached, or `on none` where a
@@ -82,6 +93,11 @@ DEVIATIONS=(
 # reading now, and the four are compared as `EXCLUDE`, like every golden the replay excludes.
 READINGS_ERROR_KNOWN=(
 )
+# A golden case file whose end state differs between ref and the backend, per branch:
+# '<golden>/<case file>|<branch>|<reason>', branch `exec` or `drl`. Empty since the comparison began
+# (2026-11-12): on every case file both branches read, the two executors end in the same state.
+STATE_DEVIATIONS=(
+)
 
 # --- monotone floors (maintainer decision 2026-09-09) --------------------------------------------------
 # Lower bounds, never equalities: they catch SHRINK — a comparison that quietly reads half — while growth
@@ -100,6 +116,9 @@ EXPECTED_MIN_TIMELINE_LINES=850      # 2026-11-04: measured 850 (node lines with
 EXPECTED_MIN_UNREACHED_CONTRIBUTORS=106 # 2026-10-21: measured 106 (contributors of ref not reached, each with its verdict)
 EXPECTED_MIN_OBJECT_LINES=746        # 2026-10-27: measured 746 (node lines with the object of a read over a path, `on`; 113 `on none`)
 EXPECTED_MIN_DISPLACED_NODE_LINES=484 # 2026-10-27: measured 484 (node lines of a reading whose status is DISPLACED; 207 such readings)
+EXPECTED_MIN_STATE_OBJECTS=3015     # 2026-11-12: measured 3015 (end-state lines `object` of the case files compared)
+EXPECTED_MIN_STATE_MEMBERS=8337     # 2026-11-12: measured 8337 (end-state lines `attribute` and `characteristic`; beside them 1538 `link`, 157 `channel`)
+EXPECTED_MIN_STATE_MADE=479         # 2026-11-12: measured 479 (end-state lines `object` of an object a creation made)
 
 # --- tools ---------------------------------------------------------------------------------------------
 if ! command -v dune >/dev/null 2>&1 && command -v opam >/dev/null 2>&1; then
@@ -220,18 +239,21 @@ elapsed=$(( $(date +%s) - start ))
 
 printf '%s\n' "${DEVIATIONS[@]+"${DEVIATIONS[@]}"}" > "$work/deviations"
 printf '%s\n' "${READINGS_ERROR_KNOWN[@]+"${READINGS_ERROR_KNOWN[@]}"}" > "$work/errors-known"
+printf '%s\n' "${STATE_DEVIATIONS[@]+"${STATE_DEVIATIONS[@]}"}" > "$work/state-deviations"
 
 # --- 3, 4 and 5: the comparison --------------------------------------------------------------------------
 python3 -I - "$work" "$EXPECTED_MIN_COMPARED_GOLDENS" "$EXPECTED_MIN_COMPARED_CASES" "$EXPECTED_MIN_READINGS" \
   "$EXPECTED_MIN_NODE_LINES" "$EXPECTED_MIN_UNREACHED" "$EXPECTED_MIN_CONTRIBUTOR_LINES" \
   "$EXPECTED_MIN_TIMELINE_LINES" "$EXPECTED_MIN_UNREACHED_CONTRIBUTORS" "$EXPECTED_MIN_OBJECT_LINES" \
-  "$EXPECTED_MIN_DISPLACED_NODE_LINES" "$n_traced" "$elapsed" "$nocase" <<'PY'
+  "$EXPECTED_MIN_DISPLACED_NODE_LINES" "$EXPECTED_MIN_STATE_OBJECTS" "$EXPECTED_MIN_STATE_MEMBERS" \
+  "$EXPECTED_MIN_STATE_MADE" "$n_traced" "$elapsed" "$nocase" <<'PY'
 import os, sys
 
 work = sys.argv[1]
 floors = dict(zip(['goldens', 'cases', 'readings', 'nodes', 'unreached', 'contributors', 'timelines',
-                   'unreached_contributors', 'objects', 'displaced_nodes'], map(int, sys.argv[2:12])))
-n_traced, elapsed, nocase = int(sys.argv[12]), sys.argv[13], sys.argv[14].split()
+                   'unreached_contributors', 'objects', 'displaced_nodes', 'state_objects', 'state_members',
+                   'state_made'], map(int, sys.argv[2:15])))
+n_traced, elapsed, nocase = int(sys.argv[15]), sys.argv[16], sys.argv[17].split()
 problems = []
 
 # --- the canonical text, read back (RUNTIME-SEMANTICS ch. 5.12) ---
@@ -442,21 +464,71 @@ tripwire_rows = [
 for name, ref, drools, trips in tripwire_rows:
     if bool(unordered_faults(ref, drools)) != trips:
         problems.append('the tripwire fails its row "%s": it says %s' % (name, 'trip' if trips else 'pass'))
+
+# --- the end state (RUNTIME-SEMANTICS ch. 5.12a): every line verbatim, in no particular order ---
+def state_differences(ref_lines, drools_lines):
+    """(lines only ref has, lines only the backend has), each line counted as often as it stands"""
+    r, d = list(ref_lines), list(drools_lines)
+    only_r = []
+    for l in r:
+        if l in d:
+            d.remove(l)
+        else:
+            only_r.append(l)
+    return only_r, d
+
+def state_counts(lines):
+    """(objects, members, made objects) of an end state: its `object` lines, its `attribute` and
+    `characteristic` lines, and its `object` lines that name an object a creation made"""
+    objects = [l for l in lines if l.startswith('object ')]
+    members = [l for l in lines if l.startswith('attribute ') or l.startswith('characteristic ')]
+    return len(objects), len(members), sum(1 for l in objects if l.startswith('object «'))
+
+M = '«"bouw een sloep"»("W1")#1'
+state_rows = [
+    ('equal states agree', ['object "W1" "Werf"', 'attribute "W1" "keur" 1'], ['attribute "W1" "keur" 1', 'object "W1" "Werf"'], True),
+    ('a value apart differs', ['attribute "W1" "keur" 1'], ['attribute "W1" "keur" 2'], False),
+    ('a unit apart differs', ['attribute "W1" "loon" 10 "EUR"'], ['attribute "W1" "loon" 10'], False),
+    ('a member on one side differs', ['object "W1" "Werf"', 'characteristic "W1" "vlaggerechtigd"'], ['object "W1" "Werf"'], False),
+    ('a made object on one side differs', ['object "W1" "Werf"', 'object ' + M + ' "Schuit"'], ['object "W1" "Werf"'], False),
+    ('a link apart differs', ['link "ligplaats" "werf" "W1" "schuit" ' + M], ['link "ligplaats" "werf" "W1" "schuit" "S1"'], False),
+    ('a channel code apart differs', ['channel "r" "V1" EF-005'], ['channel "r" "V1" EF-005,EF-025'], False),
+    ('a timeline apart differs', ['attribute "J1" "kustloon" [[2025-07-01 2025-08-01 40]]'], ['attribute "J1" "kustloon" 40'], False),
+    ('a line twice against once differs', ['object "W1" "Werf"', 'object "W1" "Werf"'], ['object "W1" "Werf"'], False),
+    ('two empty states agree', [], [], True),
+]
+for name, ref, drools, agree in state_rows:
+    o_r, o_d = state_differences(ref, drools)
+    if (not o_r and not o_d) != agree:
+        problems.append('the end-state comparison fails its row "%s": it says %s' % (name, 'agree' if agree else 'differ'))
+for name, lines, expected in [
+        ('objects, members and made objects',
+         ['object "W1" "Werf"', 'object ' + M + ' "Schuit"', 'attribute "W1" "keur" 1', 'attribute ' + M + ' "lengte" 2',
+          'characteristic "W1" "vlaggerechtigd"', 'link "ligplaats" "werf" "W1" "schuit" ' + M, 'channel "r" "W1" -'],
+         (2, 3, 1)),
+        ('a text value that spells object is no object', ['attribute "W1" "naam" "object «x»"'], (0, 1, 0))]:
+    if state_counts(lines) != expected:
+        problems.append('the end-state counter fails its row "%s": it counts %r' % (name, state_counts(lines)))
 if problems:
     print('\n'.join('check-readings: FAIL — ' + p for p in problems), file=sys.stderr)
     sys.exit(1)
 
 # --- the lists ---
-deviations = {}
-for l in open(os.path.join(work, 'deviations'), encoding='utf-8'):
-    l = l.rstrip('\n')
-    if not l:
-        continue
-    parts = l.split('|', 2)
-    if len(parts) != 3 or parts[1] not in ('exec', 'drl') or not parts[2].strip():
-        problems.append('malformed DEVIATIONS entry %r — each is "<golden>/<case file>|exec or drl|<reason>"' % l)
-        continue
-    deviations[(parts[0], parts[1])] = parts[2]
+def case_list(file, list_name):
+    """a list of '<golden>/<case file>|exec or drl|<reason>' entries, by (case, branch)"""
+    out = {}
+    for l in open(os.path.join(work, file), encoding='utf-8'):
+        l = l.rstrip('\n')
+        if not l:
+            continue
+        parts = l.split('|', 2)
+        if len(parts) != 3 or parts[1] not in ('exec', 'drl') or not parts[2].strip():
+            problems.append('malformed %s entry %r — each is "<golden>/<case file>|exec or drl|<reason>"' % (list_name, l))
+            continue
+        out[(parts[0], parts[1])] = parts[2]
+    return out
+deviations = case_list('deviations', 'DEVIATIONS')
+state_deviations = case_list('state-deviations', 'STATE_DEVIATIONS')
 errors_known = {}
 for l in open(os.path.join(work, 'errors-known'), encoding='utf-8'):
     l = l.rstrip('\n')
@@ -468,29 +540,34 @@ for l in open(os.path.join(work, 'errors-known'), encoding='utf-8'):
     errors_known[name] = why
 
 def blocks(path):
-    """case file -> its reading lines, from the output of `--readings` or of the trace"""
-    out, current = {}, None
+    """(case file -> its reading lines, case file -> its end-state lines), from the output of `--readings`
+    or of the trace"""
+    out, states, current = {}, {}, None
     for line in open(path, encoding='utf-8'):
         line = line.rstrip('\n')
         if line.startswith('case '):
             current = line[5:]
             if current in out:
                 raise ValueError('the case %s twice in %s' % (current, path))
-            out[current] = []
-        elif line.startswith('reading '):
+            out[current], states[current] = [], []
+        elif line.startswith('reading ') or line.startswith('state '):
             if current is None:
-                raise ValueError('a reading before the first case in %s' % path)
-            out[current].append(line[8:])
+                raise ValueError('a line before the first case in %s' % path)
+            if line.startswith('reading '):
+                out[current].append(line[8:])
+            else:
+                states[current].append(line[6:])
         elif line.startswith('READINGS '):
             pass
         else:
             raise ValueError('a line the canonical text does not write, in %s: %r' % (path, line))
-    return out
+    return out, states
 
 counts = dict.fromkeys(floors, 0)
 unlinked = 0  # the node lines with `on none`, reported beside the floor of the object lines
 displaced_read = 0  # the displaced readings with a node line, reported beside the floor of their node lines
-excluded, seen_errors, seen_deviations, manifest_names = {}, set(), set(), set()
+excluded, seen_errors, seen_deviations, seen_state_deviations, manifest_names = {}, set(), set(), set(), set()
+links = channel_facts = 0  # the end-state lines of the links and the §9.5 facts, reported beside the floors
 for row in open(os.path.join(work, 'manifest'), encoding='utf-8'):
     name, file, status = row.rstrip('\n').split('\t')
     manifest_names.add(name)
@@ -505,15 +582,34 @@ for row in open(os.path.join(work, 'manifest'), encoding='utf-8'):
         reason = status[len('EXCLUDE '):].split(':')[0]
         excluded[reason] = excluded.get(reason, 0) + 1
         continue
-    ref = blocks(os.path.join(work, 'ref', file))
+    ref, ref_state = blocks(os.path.join(work, 'ref', file))
     counts['goldens'] += 1
     for branch in ('exec', 'drl'):
-        drools = blocks(os.path.join(work, branch, file))
+        drools, drools_state = blocks(os.path.join(work, branch, file))
         if set(drools) != set(ref):
             problems.append('%s (%s): the trace reads the cases %s, the backend %s' % (name, branch, sorted(ref), sorted(drools)))
             continue
         for case in sorted(drools):
             key = (name + '/' + case, branch)
+            s_r, s_d = state_differences(ref_state[case], drools_state[case])
+            if s_r or s_d:
+                if key in state_deviations:
+                    seen_state_deviations.add(key)
+                else:
+                    problems.append('%s/%s (%s): the end states differ:\n%s' % (
+                        name, case, branch, '\n'.join(['      ref     ' + l for l in s_r[:6]] + ['      backend ' + l for l in s_d[:6]]
+                                                      + (['      … %d and %d lines' % (len(s_r), len(s_d))] if len(s_r) > 6 or len(s_d) > 6 else []))))
+            else:
+                if key in state_deviations:
+                    problems.append('stale STATE_DEVIATIONS entry: %s (%s) agrees now — remove it' % key)
+                    seen_state_deviations.add(key)
+                if branch == 'exec':
+                    o, m, c = state_counts(drools_state[case])
+                    counts['state_objects'] += o
+                    counts['state_members'] += m
+                    counts['state_made'] += c
+                    links += sum(1 for l in drools_state[case] if l.startswith('link '))
+                    channel_facts += sum(1 for l in drools_state[case] if l.startswith('channel '))
             tripped = unordered_faults(ref[case], drools[case])
             if tripped:
                 problems.append('%s/%s (%s): the backend writes no order for a fold at which ref has a contributor with a '
@@ -561,6 +657,9 @@ for row in open(os.path.join(work, 'manifest'), encoding='utf-8'):
 for key in deviations:
     if key not in seen_deviations:
         problems.append('stale DEVIATIONS entry: %s (%s) is not compared — remove it' % key)
+for key in state_deviations:
+    if key not in seen_state_deviations:
+        problems.append('stale STATE_DEVIATIONS entry: %s (%s) is not compared — remove it' % key)
 for name in errors_known:
     if name not in manifest_names:
         problems.append('stale READINGS_ERROR_KNOWN entry: %s is no golden with case files — remove it' % name)
@@ -571,7 +670,8 @@ names = {'goldens': 'EXPECTED_MIN_COMPARED_GOLDENS', 'cases': 'EXPECTED_MIN_COMP
          'nodes': 'EXPECTED_MIN_NODE_LINES', 'unreached': 'EXPECTED_MIN_UNREACHED',
          'contributors': 'EXPECTED_MIN_CONTRIBUTOR_LINES', 'timelines': 'EXPECTED_MIN_TIMELINE_LINES',
          'unreached_contributors': 'EXPECTED_MIN_UNREACHED_CONTRIBUTORS', 'objects': 'EXPECTED_MIN_OBJECT_LINES',
-         'displaced_nodes': 'EXPECTED_MIN_DISPLACED_NODE_LINES'}
+         'displaced_nodes': 'EXPECTED_MIN_DISPLACED_NODE_LINES', 'state_objects': 'EXPECTED_MIN_STATE_OBJECTS',
+         'state_members': 'EXPECTED_MIN_STATE_MEMBERS', 'state_made': 'EXPECTED_MIN_STATE_MADE'}
 for k, floor in floors.items():
     if counts[k] < floor:
         problems.append('%d %s compared, but %s pins at least %d — the comparison shrank (a deliberate removal lowers the floor in the same commit)' % (counts[k], k.replace('_', ' '), names[k], floor))
@@ -582,6 +682,8 @@ print('  counted: ref traced %d golden case files; compared per branch: %d golde
           n_traced, counts['goldens'], counts['cases'], counts['readings'], counts['nodes'], counts['unreached'],
           counts['contributors'], counts['timelines'], counts['objects'], unlinked, counts['displaced_nodes'],
           displaced_read, counts['unreached_contributors']))
+print('  end state, compared per branch: %d objects (%d made by a creation), %d members, %d links, %d channel facts' % (
+          counts['state_objects'], counts['state_made'], counts['state_members'], links, channel_facts))
 for k in sorted(excluded):
     print('  excluded by the backend: %3d golden(s) %s' % (excluded[k], k))
 for name in sorted(seen_errors):
@@ -593,9 +695,11 @@ if problems:
     sys.exit(1)
 print('check-readings: PASS (ref traced %d golden case files; on both branches %d goldens and %d case files compared, '
       '%d readings, %d node lines of which %d unreached, %d with contributors, %d with a timeline, %d with the object '
-      'of a read and %d of a displaced reading, %d contributors of ref not reached, all at or above their floors; '
-      'deviations %d; %d comparison rows, %d tripwire rows; %s s)' % (
+      'of a read and %d of a displaced reading, %d contributors of ref not reached; end states of %d objects (%d made) '
+      'and %d members; all at or above their floors; deviations %d, end-state deviations %d; %d comparison rows, '
+      '%d tripwire rows, %d end-state rows; %s s)' % (
           n_traced, counts['goldens'], counts['cases'], counts['readings'], counts['nodes'], counts['unreached'],
           counts['contributors'], counts['timelines'], counts['objects'], counts['displaced_nodes'],
-          counts['unreached_contributors'], len(deviations), len(rows), len(tripwire_rows), elapsed))
+          counts['unreached_contributors'], counts['state_objects'], counts['state_made'], counts['state_members'],
+          len(deviations), len(state_deviations), len(rows), len(tripwire_rows), len(state_rows), elapsed))
 PY
