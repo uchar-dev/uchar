@@ -1068,10 +1068,9 @@ public final class DefinitionResolver {
         if (t.meervoudigePeriode() != null)
             return fixedStartPoint(g, count, t.meervoudigePeriode().vastStartpuntDatum(), null, null, null);
         if (t.ELKE() != null && t.tijdlijnNaam() != null) {
-            String ref = normaliseTimelineName(src(t.tijdlijnNaam()));
             // the timeline first, then its start point: a timeline on the calendar grid has none (null)
-            return model.timelines.stream().filter(tl -> normaliseTimelineName(tl.name()).equals(ref))
-                    .findFirst().map(Timeline::fixedStartPoint).orElse(null);
+            Timeline tl = model.timelineByName(src(t.tijdlijnNaam()));
+            return tl == null ? null : tl.fixedStartPoint();
         }
         return null;
     }
@@ -1190,10 +1189,8 @@ public final class DefinitionResolver {
         // would lose its timeline without a word and be written as a single value. "voor elke 2 maanden" without
         // its start date is such a name, since the multi-period form (§13.3.6.7) does not parse without one.
         if (t.ELKE() != null && t.tijdlijnNaam() != null) {
-            String ref = normaliseTimelineName(src(t.tijdlijnNaam()));
-            Granularity g = model.timelines.stream()
-                    .filter(tl -> normaliseTimelineName(tl.name()).equals(ref))
-                    .map(Timeline::granularity).findFirst().orElse(null);
+            Timeline tl = model.timelineByName(src(t.tijdlijnNaam()));
+            Granularity g = tl == null ? null : tl.granularity();
             if (g == null) {
                 String written = src(t.tijdlijnNaam()).trim().replaceAll("\\s+", " ");
                 boolean multiplePeriod = MULTIPLE_PERIOD.matcher(written).matches();
@@ -1237,10 +1234,8 @@ public final class DefinitionResolver {
         if (t == null) return 1;
         if (t.meervoudigePeriode() != null) return pluralCount(t.meervoudigePeriode().tijdseenhedenMeervoud());
         if (t.ELKE() != null && t.tijdlijnNaam() != null) {
-            String ref = normaliseTimelineName(src(t.tijdlijnNaam()));
-            return model.timelines.stream()
-                    .filter(tl -> normaliseTimelineName(tl.name()).equals(ref))
-                    .map(Timeline::count).findFirst().orElse(1);
+            Timeline tl = model.timelineByName(src(t.tijdlijnNaam()));
+            return tl == null ? 1 : tl.count();
         }
         return 1;
     }
