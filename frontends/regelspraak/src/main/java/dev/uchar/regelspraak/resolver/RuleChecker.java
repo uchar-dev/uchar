@@ -2731,7 +2731,7 @@ final class RuleChecker {
                 typeName = d.objectTypeExtensie().objectTypeNaam();
                 members = d.objectTypeExtensie().objectTypeMember();
             } else continue;
-            ObjectType t = model.objectTypes.get(src(typeName));
+            ObjectType t = model.objectTypeByName(src(typeName));
             if (t == null) continue;
             for (ObjectTypeMemberContext member : members) {
                 if (Boolean.FALSE.equals(repetitions.get(member))) continue;

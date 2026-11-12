@@ -263,4 +263,51 @@ class ExtensionRedeclarationTest {
                 + "2) hogerop in de keten" + WF105, faults.get(0).message());
         assertEquals(8, faults.get(0).line());
     }
+
+    // -------------------------------------------------------------------- the type named in other letters
+
+    private static final String PRICE = """
+
+        Regel prijs
+            geldig altijd
+                De prijs van een Vondst moet berekend worden als zijn waarde.
+        """;
+
+    /** WF-001 resolves a name case-insensitively: an extension that names its type in other letters extends that type.
+     *  Before, it made a second object type 'VONDST' beside 'Vondst', which the verifier refused, and a rule over the
+     *  extension's member was refused as an undeclared attribute of Vondst. */
+    @Test void an_extension_naming_the_type_in_other_letters_extends_it() {
+        RegelSpraakModel m = clean(VONDST + """
+
+            Extensie van objecttype de VONDST
+                de prijs Numeriek (geheel getal);
+            """ + PRICE);
+        assertEquals(List.of("Vondst"), List.copyOf(m.objectTypes.keySet()));
+        assertTrue(m.objectTypes.get("Vondst").attributes.containsKey("prijs"));
+    }
+
+    /** The head gives the type its spelling, also where it stands after the extension. */
+    @Test void a_head_after_the_extension_gives_the_type_its_spelling() {
+        RegelSpraakModel m = clean("""
+            Extensie van objecttype de VONDST
+                de prijs Numeriek (geheel getal);
+
+            """ + VONDST + PRICE);
+        assertEquals(List.of("Vondst"), List.copyOf(m.objectTypes.keySet()));
+        assertTrue(m.objectTypes.get("Vondst").attributes.containsKey("prijs"));
+    }
+
+    /** The designations of a member the extension declares reach the side table of the type it extends. */
+    @Test void a_designation_in_an_extension_in_other_letters_is_read() {
+        RegelSpraakModel m = clean("""
+            Vocabulaire handboek
+
+            """ + VONDST + """
+
+            Extensie van objecttype de VONDST
+                de prijs (handboek: vondstprijs) Numeriek (geheel getal);
+            """ + PRICE);
+        String ir = IrEmitter.emit(m);
+        assertEquals(1, ir.split("\"designation\": \"vondstprijs\"", -1).length - 1, ir);
+    }
 }

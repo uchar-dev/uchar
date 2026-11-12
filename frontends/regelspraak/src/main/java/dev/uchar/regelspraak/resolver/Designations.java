@@ -150,7 +150,7 @@ final class Designations {
     }
 
     private void extension(ObjectTypeExtensieContext ctx) {
-        ObjectType ot = model.objectTypes.get(DefinitionResolver.src(ctx.objectTypeNaam()));
+        ObjectType ot = model.objectTypeByName(DefinitionResolver.src(ctx.objectTypeNaam()));
         if (ot == null) return;
         for (ObjectTypeMemberContext m : ctx.objectTypeMember()) member(ot, m);
     }

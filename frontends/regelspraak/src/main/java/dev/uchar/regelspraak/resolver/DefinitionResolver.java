@@ -313,6 +313,7 @@ public final class DefinitionResolver {
             if (d.objectTypeDefinition() != null) {
                 ctx = d.objectTypeDefinition();
                 category = new String[] {"objecttype", "objectTypes", src(d.objectTypeDefinition().objectTypeNaam())};
+                headSpelling.putIfAbsent(dev.uchar.regelspraak.emit.IrEmitter.norm(category[2]), category[2]);
             } else if (d.domeinDefinition() != null) {
                 ctx = d.domeinDefinition();
                 category = new String[] {"domein", "domains", src(d.domeinDefinition().domeinNaam())};
@@ -348,6 +349,9 @@ public final class DefinitionResolver {
                     "RGS-008", params("kind", category[0], "namespace", category[1], "name", category[2], "earlierName", first[0], "earlierLine", first[1]), line);
         }
     }
+
+    /** The name of each object type as its first head writes it, under the name identity. */
+    private final java.util.Map<String, String> headSpelling = new java.util.HashMap<>();
 
     private void error(String code, java.util.Map<String, Object> params, int line) {
         model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, code, params, line));
@@ -489,8 +493,11 @@ public final class DefinitionResolver {
     }
 
     private void extension(ObjectTypeExtensieContext ctx) {
-        // an extensie adds members to an existing (or new) object type and replaces none (refuseRedeclarations)
-        ObjectType ot = model.objectTypes.computeIfAbsent(src(ctx.objectTypeNaam()), ObjectType::new);
+        // an extensie adds members to an existing (or new) object type and replaces none (refuseRedeclarations); it
+        // names the type case-insensitively (WF-001), so a head of that name gives the type its spelling, also where
+        // the head stands after the extension
+        ObjectType ot = model.objectTypes.computeIfAbsent(headSpelling.getOrDefault(
+                dev.uchar.regelspraak.emit.IrEmitter.norm(src(ctx.objectTypeNaam())), src(ctx.objectTypeNaam())), ObjectType::new);
         for (ObjectTypeMemberContext m : ctx.objectTypeMember()) member(ot, m, ctx, true);
         membersAfterHead(ot, ctx, ctx.objectTypeMember());
     }
