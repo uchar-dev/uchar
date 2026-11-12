@@ -1008,6 +1008,26 @@ class InputMarkingTest {
         Report.assertAccountedFor(IrEmitter.emit(m));
     }
 
+    /** On a time-dependent attribute the two generated members carry its timeline; withdrawn, they take it along.
+     *  Before, the granularity entry of 'opgegeven strandloon' stayed behind without its member, and only the
+     *  emitter's catch refused the model, at line 0 (RGS-394). */
+    @Test void without_computing_writer_a_time_dependent_marking_withdraws_its_timeline_entries() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                het strandloon Numeriek (geheel getal) voor elke maand (mag opgegeven worden);
+            """);
+        Diagnostic d = onlyDiagnostic(m);
+        assertEquals(Severity.WARNING, d.severity());
+        assertEquals("RGS-153", d.code());
+        assertEquals(2, d.line());
+        ObjectType j = m.objectTypes.get("Jutter");
+        assertEquals(List.of("strandloon"), List.copyOf(j.attributes.keySet()));
+        for (var table : List.of(j.attributeGranularity, j.attributeTimelineCount, j.attributeTimelineName,
+                j.attributeFixedStartPoint))
+            assertTrue(table.keySet().stream().allMatch("strandloon"::equals), table::toString);
+        Report.assertAccountedFor(IrEmitter.emit(m));
+    }
+
     @Test void without_computing_writer_a_reader_of_a_generated_name_is_refused() {
         RegelSpraakModel m = Resolver.resolve(VONDST.replace("(mv: Vondsten)\n",
                 "(mv: Vondsten)\n    de korting Numeriek (getal met 2 decimalen);\n") + """

@@ -2706,6 +2706,14 @@ final class RuleChecker {
                 // nothing to put the opgave above: X is input already
                 o.type().attributes.remove(o.supplied());
                 o.type().attributes.remove(o.computed());
+                // the timeline entries inputDeclarations copied onto the two members go with them: an entry without
+                // its member has no spelling on the wire
+                for (String g : List.of(o.supplied(), o.computed())) {
+                    o.type().attributeGranularity.remove(g);
+                    o.type().attributeTimelineCount.remove(g);
+                    o.type().attributeTimelineName.remove(g);
+                    o.type().attributeFixedStartPoint.remove(g);
+                }
                 o.type().characteristics.remove(o.deviating());
                 o.type().characteristicKinds.remove(o.deviating());
                 String read = readGenerated(o, List.of(o.supplied(), o.computed(), o.deviating()));
