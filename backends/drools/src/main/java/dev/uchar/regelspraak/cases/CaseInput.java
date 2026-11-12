@@ -824,35 +824,6 @@ public final class CaseInput {
         }
     }
 
-    /** §13.3.9.2 mirrored: ONE reciprocal entry holds in BOTH directions, so every self-pair leg the case wrote
-     *  gets its reverse materialised — exactly what {@code Case.materialise_relations} does in ref, and what
-     *  RUNTIME-SEMANTICS ch. 4.1 requires ("the pinned runtime writes both to-one legs so navigation never reads
-     *  a spuriously empty side"). Both goldens pin it: a partner that declares no roles of its own still reads its
-     *  side, and the reverse read {@code Jutter( maat == $subject )} an aggregation lowers to needs the leg
-     *  present. Run as a SEPARATE PASS over the finished links, like ref's, so the outcome cannot depend on the
-     *  order instances appear in: a conflict must be seen wherever the colliding leg was written. Idempotent
-     *  (a case supplying both legs means one relation), and a CONFLICTING leg on the to-one role is hard — ref
-     *  refuses that case at load (WF-013), so overwriting it here would file a broken case under a green replay.
-     *
-     *  <p>Scoped to the WEDERKERIG shape, and that scope is a DIVISION OF LABOUR: RUNTIME-SEMANTICS ch. 5.7a
-     *  (maintainer decision 2026-09-10) makes EVERY supplied link establish its relation in both directions, and
-     *  ref's {@code Case.materialise_relations} mirrors on the SISTER role accordingly. Three shapes, three
-     *  answers:
-     *  <ul>
-     *    <li><b>1:N</b> — the relation has exactly ONE reference field and it necessarily serves both
-     *        directions, so there is no second write to make. {@link #setRoles} lands the case's write on that
-     *        field through the sister role's NAME, and the three spellings of one relation give one fact base
-     *        ({@code SisterRoleInputWitnessTest}, over the {@code jutterswet-ketenband} golden).</li>
-     *    <li><b>1:1</b> — each direction owns its own field, so ch. 5.7a needs a SECOND write on the target
-     *        bean. {@link #setRoles} makes it, right after the forward write, on the sister role and under the
-     *        same name-sharing gate: a case writing {@code W1{opvolger:[W2]}} over a to-one/to-one self-pair
-     *        reads W1 as W2's voorganger here, as it does in ref ({@code OpslagDirectionWitnessTest}).</li>
-     *    <li><b>wederkerig</b> (§13.3.9.2, one role that is its own opposite) — THIS pass, and deliberately
-     *        a separate one: its order-independence argument above is the reason, and the 1:1 arm skips
-     *        the shape (it fires only when the sister role is a DIFFERENT role) so the two never collide.</li>
-     *  </ul>
-     *  A collision names the link whose leg the pass mirrored, the one that wrote the bean's own field: a leg the pass
-     *  wrote itself never collides, since it writes only an empty field and its partner then reads back. */
     /** A cycle in the links of the switch relation of an instance-ordered part (RUNTIME-SEMANTICS ch. 6.2): the fault
      *  kind EF-033 of the case input, with the declared name of the fact type and the labels of the cycle. */
     public static final class LinkCycleFault extends IllegalArgumentException {
@@ -987,6 +958,35 @@ public final class CaseInput {
         return out;
     }
 
+    /** §13.3.9.2 mirrored: ONE reciprocal entry holds in BOTH directions, so every self-pair leg the case wrote
+     *  gets its reverse materialised — exactly what {@code Case.materialise_relations} does in ref, and what
+     *  RUNTIME-SEMANTICS ch. 4.1 requires ("the pinned runtime writes both to-one legs so navigation never reads
+     *  a spuriously empty side"). Both goldens pin it: a partner that declares no roles of its own still reads its
+     *  side, and the reverse read {@code Jutter( maat == $subject )} an aggregation lowers to needs the leg
+     *  present. Run as a SEPARATE PASS over the finished links, like ref's, so the outcome cannot depend on the
+     *  order instances appear in: a conflict must be seen wherever the colliding leg was written. Idempotent
+     *  (a case supplying both legs means one relation), and a CONFLICTING leg on the to-one role is hard — ref
+     *  refuses that case at load (WF-013), so overwriting it here would file a broken case under a green replay.
+     *
+     *  <p>Scoped to the WEDERKERIG shape, and that scope is a DIVISION OF LABOUR: RUNTIME-SEMANTICS ch. 5.7a
+     *  (maintainer decision 2026-09-10) makes EVERY supplied link establish its relation in both directions, and
+     *  ref's {@code Case.materialise_relations} mirrors on the SISTER role accordingly. Three shapes, three
+     *  answers:
+     *  <ul>
+     *    <li><b>1:N</b> — the relation has exactly ONE reference field and it necessarily serves both
+     *        directions, so there is no second write to make. {@link #setRoles} lands the case's write on that
+     *        field through the sister role's NAME, and the three spellings of one relation give one fact base
+     *        ({@code SisterRoleInputWitnessTest}, over the {@code jutterswet-ketenband} golden).</li>
+     *    <li><b>1:1</b> — each direction owns its own field, so ch. 5.7a needs a SECOND write on the target
+     *        bean. {@link #setRoles} makes it, right after the forward write, on the sister role and under the
+     *        same name-sharing gate: a case writing {@code W1{opvolger:[W2]}} over a to-one/to-one self-pair
+     *        reads W1 as W2's voorganger here, as it does in ref ({@code OpslagDirectionWitnessTest}).</li>
+     *    <li><b>wederkerig</b> (§13.3.9.2, one role that is its own opposite) — THIS pass, and deliberately
+     *        a separate one: its order-independence argument above is the reason, and the 1:1 arm skips
+     *        the shape (it fires only when the sister role is a DIFFERENT role) so the two never collide.</li>
+     *  </ul>
+     *  A collision names the link whose leg the pass mirrored, the one that wrote the bean's own field: a leg the pass
+     *  wrote itself never collides, since it writes only an empty field and its partner then reads back. */
     private void mirrorReciprocalRoles() {
         for (Map.Entry<String, Object> instance : labelToBean.entrySet()) {
             Object bean = instance.getValue();

@@ -46,7 +46,7 @@ public final class DroolsRedMain {
 
     public static void main(String[] args) {
         if (args.length != 2) {
-            System.err.println("usage: DroolsRoodMain <ir.json> <case.json>");
+            System.err.println("usage: DroolsRedMain <ir.json> <case.json>");
             System.exit(3);
         }
         Path ir = Path.of(args[0]);

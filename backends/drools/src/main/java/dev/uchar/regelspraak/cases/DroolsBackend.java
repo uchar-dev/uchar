@@ -1022,7 +1022,7 @@ public final class DroolsBackend {
     }
 
     /**
-     * What one session fired, as {@link #fire(Build, KieSession, Waarnemer)} records it: per firing of a rule that
+     * What one session fired, as {@link #fire(Build, KieSession, Observer)} records it: per firing of a rule that
      * belongs to a form of the document ({@link TmsTranspiler#formOf}) the exact name of that form, version suffix
      * included, and per form without its version suffix ({@link RegelSpraakModel#formName}) how often its rules fired
      * and the labels of the input beans their matches bound. The rows are per form, not per rule: the rules of the
