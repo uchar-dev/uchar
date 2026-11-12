@@ -73,6 +73,8 @@ PART.form-kind.uniquenesses	uniciteitsregel
 PART.form-kind.object-creations	objectcreatie
 PART.form-kind.fact-creations	feitcreatie
 PART.form-kind.prioritized-defaults	defaults-groep
+PART.form-kind.start-point-determinations	startpuntbepaling
+PART.form-kind.day-kind-definitions	dagsoortdefinitie
 PART.unresolved-name	de naam '{name}' is geen gedeclareerde parameter, geen variabele uit een 'Daarbij geldt:'-deel en geen attribuut van het onderwerp (§11/§13.3.8)
 PART.union-populations	de selecties tellen over verschillende populaties ('{first}' en '{second}'); één telling antwoordt een aantal over ÉÉN gedeclareerd type, en of twee selecties dan een instantie kunnen delen is een vraag over de subtypelattice die de deduplicatie zou moeten beantwoorden (WF-110 (d))
 PART.union-selection-path	selectie {n} ('{source}') is {path}
@@ -738,3 +740,6 @@ RGS-391	het symbool '{symbol}' van de eenheid '{abbreviation}' is de afkorting '
 RGS-392	de eenheid '{word}' is dubbelzinnig: in het eenheidstelsel '{unitSystem}' dragen de eenheden {abbreviations} het woord '{word}'; schrijf de afkorting van de bedoelde eenheid
 RGS-393	rangtelwoord '{ordinal}' bij '{name}' noemt geen plaats: het getal in 'als <N>e genoemde' is een positief geheel getal (§5.5.3)
 RGS-394	de controles van de frontend lieten dit model door, maar het heeft geen document in uchar-ir-v1: {reason}
+RGS-395	regel '{name}': de versies zijn niet van één soort ({versions}); de versies van een regel zijn versies van één vorm, en een vorm heeft één soort (IR-SPEC ch. 3)
+RGS-395.no-form	geen vorm
+RGS-395.version	versie {version}: {kind}

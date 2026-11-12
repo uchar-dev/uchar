@@ -73,6 +73,8 @@ PART.form-kind.uniquenesses	uniqueness rule
 PART.form-kind.object-creations	object creation
 PART.form-kind.fact-creations	fact creation
 PART.form-kind.prioritized-defaults	defaults group
+PART.form-kind.start-point-determinations	start-point determination
+PART.form-kind.day-kind-definitions	day-kind definition
 PART.unresolved-name	the name '{name}' is no declared parameter, no variable from a 'Daarbij geldt:' part and no attribute of the subject (§11/§13.3.8)
 PART.union-populations	the selections count over different populations ('{first}' and '{second}'); one count answers a number over ONE declared type, and whether two selections can then share an instance is a question about the subtype lattice that the deduplication would have to answer (WF-110 (d))
 PART.union-selection-path	selection {n} ('{source}') is {path}
@@ -738,3 +740,6 @@ RGS-391	the symbol '{symbol}' of the unit '{abbreviation}' is the abbreviation '
 RGS-392	the unit '{word}' is ambiguous: in the unit system '{unitSystem}' the units {abbreviations} carry the word '{word}'; write the abbreviation of the unit that is meant
 RGS-393	the ordinal number '{ordinal}' on '{name}' names no position: the number in 'als <N>e genoemde' is a positive whole number (§5.5.3)
 RGS-394	the checks of the frontend let this model through, but it has no document in uchar-ir-v1: {reason}
+RGS-395	rule '{name}': the versions are not of one kind ({versions}); the versions of a rule are versions of one form, and a form has one kind (IR-SPEC ch. 3)
+RGS-395.no-form	no form
+RGS-395.version	version {version}: {kind}

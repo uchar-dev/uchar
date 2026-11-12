@@ -309,7 +309,9 @@ final class RuleChecker {
             "uniquenesses", Msg.frontend("PART.form-kind.uniquenesses"),
             "objectCreations", Msg.frontend("PART.form-kind.object-creations"),
             "factCreations", Msg.frontend("PART.form-kind.fact-creations"),
-            "prioritizedDefaults", Msg.frontend("PART.form-kind.prioritized-defaults"));
+            "prioritizedDefaults", Msg.frontend("PART.form-kind.prioritized-defaults"),
+            "startPointDeterminations", Msg.frontend("PART.form-kind.start-point-determinations"),
+            "dayKindDefinitions", Msg.frontend("PART.form-kind.day-kind-definitions"));
 
     /**
      * WF-045, WF-046 and WF-051, the verifier's three cycle rules, over the document the emitter writes, in the verifier's own
@@ -3482,10 +3484,13 @@ final class RuleChecker {
         List<Validity> validities = new ArrayList<>();
         for (RegelVersieContext v : versions) validities.add(validityOf(v.versie()));
         if (versions.size() > 1) reportOverlap(name, versions, validities, line);
+        // the list each version landed in, null where it landed in none; a version with a malformed validity has none
+        Map<Integer, String> kinds = new LinkedHashMap<>();
         for (int i = 0; i < versions.size(); i++) {
             Validity validity = validities.get(i);
             if (validity == null) continue; // malformed validity bound — already reported
             RegelVersieContext v = versions.get(i);
+            Map<String, Integer> before = versions.size() > 1 ? formListSizes() : null;
             RegelSpraakRegelContext rsr = v.regelSpraakRegel();
             // Each §13.4.2.3 version is a distinct rule selected by Rekendatum (§4.2):
             // when a rule has several, give each a unique name.
@@ -3501,9 +3506,49 @@ final class RuleChecker {
             // as well as the ones that do. The naloop then walks the VALUES alone, so nothing is said twice.
             checkSetRead(condition, builder.subject());
             resultClause(name, versionName, rsr.resultaatDeel(), rsr.voorwaardeDeel(), condition, validity);
+            if (before != null) kinds.put(i + 1, grownFormList(before));
             conditions(rsr);   // exhaustive condition type-check (§5), unchanged
             builder.narrowingHosts(true);
         }
+        checkVersionKinds(name, kinds, line);
+    }
+
+    /** The versions of a rule are the versions of one form, which stands in one list of the wire. A version in another
+     *  list than the rest, or in none (its WARNING says why), left the others numbered as versions of a form that has
+     *  fewer, a suffix no reader can place: refused at the rule, every version named with its kind. A rule none of
+     *  whose versions landed anywhere writes nothing and is left to the diagnostics of its versions. */
+    private void checkVersionKinds(String name, Map<Integer, String> kinds, int line) {
+        java.util.Set<String> distinct = new java.util.HashSet<>(kinds.values());
+        if (distinct.size() < 2) return;
+        List<Msg> versions = new ArrayList<>();
+        for (var e : kinds.entrySet())
+            versions.add(Msg.frontend("RGS-395.version", "version", e.getKey(),
+                    "kind", e.getValue() == null ? Msg.frontend("RGS-395.no-form") : FORM_KIND.get(e.getValue())));
+        model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-395",
+                params("name", name, "versions", new Msg.Joined(versions, ", ")), line));
+    }
+
+    /** The size of every list of the model a version of a rule can land in, by the name of its list on the wire. */
+    private Map<String, Integer> formListSizes() {
+        Map<String, Integer> sizes = new LinkedHashMap<>();
+        sizes.put("rules", model.resolvedRules.size());
+        sizes.put("objectCreations", model.objectCreations.size());
+        sizes.put("allocations", model.allocations.size());
+        sizes.put("consistencies", model.consistencies.size());
+        sizes.put("uniquenesses", model.uniquenesses.size());
+        sizes.put("factCreations", model.factCreations.size());
+        sizes.put("startPointDeterminations", model.resolvedStartPointDeterminations.size());
+        sizes.put("dayKindDefinitions", model.resolvedDayKindDefinitions.size());
+        return sizes;
+    }
+
+    /** The list that grew since {@code before}, or null where none did. A start-point determination adds its anchor's
+     *  write to the rules as well, and is a start-point determination. */
+    private String grownFormList(Map<String, Integer> before) {
+        Map<String, Integer> after = formListSizes();
+        if (after.get("startPointDeterminations") > before.get("startPointDeterminations")) return "startPointDeterminations";
+        for (var e : after.entrySet()) if (e.getValue() > before.get(e.getKey())) return e.getKey();
+        return null;
     }
 
     /** §12 Beslistabel (Ch.12 decision tables): desugar the captured inline pipe-table body — one ordinary regel

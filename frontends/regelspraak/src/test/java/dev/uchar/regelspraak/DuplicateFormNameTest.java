@@ -208,4 +208,67 @@ class DuplicateFormNameTest {
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> m.diagnostics.toString());
     }
+
+    // ---------------- the versions of one rule ----------------
+
+    private static final String WACHTERS = """
+        Objecttype de Wachter (mv: Wachters) (bezield)
+            de rang Numeriek (geheel getal);
+
+        Feittype opvolging
+            de voorganger Wachter
+            de opvolger (mv: opvolgers) Wachter
+        Eén voorganger heeft één opvolger
+
+        Regelgroep estafette is recursief
+        Regel werf de opvolger
+            geldig vanaf 2025 t/m 2025
+                Een Wachter heeft een opvolger met rang gelijk aan de rang van de Wachter plus 1
+                indien de rang van de Wachter kleiner is dan 3.
+            geldig vanaf 2026
+                %s
+        """;
+
+    /** The versions of a rule are the versions of one form, which stands in one list of the wire. A version of
+     *  another kind than the first stood in another list, alone under its version suffix, and only the emitter's catch
+     *  refused the model, at line 0 (RGS-394); now refused at the rule. */
+    @Test void a_version_of_another_kind_than_the_first_is_refused() {
+        RegelSpraakModel m = Resolver.resolve(WACHTERS.formatted("De rang van een Wachter moet gesteld worden op 4."));
+        List<Diagnostic> faults = m.errors();
+        assertEquals(1, faults.size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
+        assertEquals("RGS-395", faults.get(0).code());
+        assertEquals("regel 'werf de opvolger': de versies zijn niet van één soort (versie 1: objectcreatie, versie 2: "
+                + "regel); de versies van een regel zijn versies van één vorm, en een vorm heeft één soort (IR-SPEC ch. 3)",
+                faults.get(0).message());
+        assertEquals(10, faults.get(0).line());
+    }
+
+    /** A version that lands in no list (a day kind without a condition, whose WARNING says so) left the other version
+     *  alone under its suffix, refused by the same catch; now refused at the rule as well. */
+    @Test void a_version_that_yields_no_form_beside_one_that_does_is_refused() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Dagsoort de feestdag (mv: feestdagen)
+
+            Objecttype de Wachter (mv: Wachters) (bezield)
+                de rang Numeriek (geheel getal);
+
+            Regel rang
+                geldig vanaf 2025 t/m 2025
+                    De rang van een Wachter moet gesteld worden op 2.
+                geldig vanaf 2026
+                    Een dag is een feestdag.
+            """);
+        assertEquals(List.of("WARNING RGS-176 10", "ERROR RGS-395 6"),
+                m.diagnostics.stream().map(d -> d.severity() + " " + d.code() + " " + d.line()).toList());
+        assertEquals("regel 'rang': de versies zijn niet van één soort (versie 1: regel, versie 2: geen vorm); de versies "
+                + "van een regel zijn versies van één vorm, en een vorm heeft één soort (IR-SPEC ch. 3)",
+                m.errors().get(0).message());
+    }
+
+    @Test void versions_of_one_kind_pass() {
+        RegelSpraakModel m = Resolver.resolve(WACHTERS.formatted(
+                "Een Wachter heeft een opvolger met rang gelijk aan de rang van de Wachter plus 2\n"
+                + "        indien de rang van de Wachter kleiner is dan 3."));
+        assertTrue(m.errors().isEmpty(), () -> m.diagnostics.toString());
+    }
 }
