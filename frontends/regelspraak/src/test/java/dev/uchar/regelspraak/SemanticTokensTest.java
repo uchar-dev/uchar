@@ -219,6 +219,29 @@ class SemanticTokensTest {
         assertNull(kroon.declaredAt(), "kr names neither of the two units that carry it");
     }
 
+    /** "zijn tarief" reads the subject's attribute, as the resolution does ({@code ExpressionBuilder.subjectPossessive}),
+     *  also where a parameter carries the name; "het tarief" in the same rule stays the parameter. */
+    @Test void a_name_after_zijn_names_the_member_before_a_parameter_of_its_name() {
+        String source = """
+                Parameter het tarief : Numeriek (getal met 2 decimalen)
+
+                Objecttype de Jutter (mv: Jutters)
+                    het tarief Numeriek (getal met 2 decimalen);
+                    het loon Numeriek (getal met 2 decimalen);
+
+                Regel loon
+                    geldig altijd
+                        Het loon van een Jutter moet berekend worden als zijn tarief plus het tarief.
+                """;
+        SemanticTokens.Document d = Resolver.tokens(List.of(new SemanticTokens.SourceFile("tarief.rgs", source)));
+        List<Span> uses = d.files().get(0).spans().stream().filter(x -> x.text().equals("tarief") && x.line() == 9).toList();
+        assertEquals(2, uses.size(), () -> "two uses of tarief: " + uses);
+        assertEquals(Kind.ATTRIBUTE, uses.get(0).kind(), "zijn tarief");
+        assertEquals(4, uses.get(0).declaredAt().line(), "zijn tarief points at the attribute");
+        assertEquals(Kind.PARAMETER, uses.get(1).kind(), "het tarief");
+        assertEquals(1, uses.get(1).declaredAt().line(), "het tarief points at the parameter");
+    }
+
     /** A currency sign is one span, with the kind of a unit where it names one: R$ points at its unit, and $, which two
      *  units carry, at none. */
     @Test void a_currency_sign_is_one_span_and_a_shared_one_points_at_no_declaration() {

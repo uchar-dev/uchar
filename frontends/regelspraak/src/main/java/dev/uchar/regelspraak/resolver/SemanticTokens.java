@@ -871,11 +871,13 @@ public final class SemanticTokens {
                 if (claim[j] != null || !inName(pieces.get(j).type())) break;
                 run.add(j);
             }
-            boolean afterStep = afterLink(first, i), afterSubject = afterSubjectWord(first, i);
+            boolean afterStep = afterLink(first, i), afterSubject = afterSubjectWord(first, i),
+                    afterPossessive = afterPossessive(first, i);
             for (int k = run.size() - 1; k >= 0; k--) {
                 boolean step = navigationStep(run.get(k), last);
                 Match m = match(i, run.get(k), scope, step && afterStep ? MIDDLE_ORDER : step ? STEP_ORDER
-                        : afterStep ? HEAD_ORDER : afterSubject ? SUBJECT_ORDER : PLACE_ORDER);
+                        : afterStep ? HEAD_ORDER : afterPossessive ? POSSESSIVE_ORDER
+                        : afterSubject ? SUBJECT_ORDER : PLACE_ORDER);
                 if (m == null) continue;
                 matches.add(m);
                 end = run.get(k);
@@ -1017,6 +1019,14 @@ public final class SemanticTokens {
         return i >= from && SUBJECT_WORDS.contains(pieces.get(i).type());
     }
 
+    /** Whether piece {@code at} follows 'zijn' directly: the possessive, which names a member of the subject or a role
+     *  ("ZIJN leeftijd", "ZIJN partner"). */
+    private boolean afterPossessive(int from, int at) {
+        int i = at - 1;
+        while (i >= from && pieces.get(i).hidden()) i--;
+        return i >= from && pieces.get(i).type() == RegelSpraakLexer.ZIJN;
+    }
+
     private static final java.util.Set<Integer> SUBJECT_WORDS = java.util.Set.of(RegelSpraakLexer.EEN,
             RegelSpraakLexer.ALLE, RegelSpraakLexer.AL, RegelSpraakLexer.GEEN_VAN_DE, RegelSpraakLexer.EEN_TELWOORD,
             RegelSpraakLexer.TWEE_TELWOORD, RegelSpraakLexer.DRIE_TELWOORD, RegelSpraakLexer.VIER_TELWOORD);
@@ -1026,7 +1036,8 @@ public final class SemanticTokens {
      *  step of a navigation ("DE LEEFTIJD van de Jutter") names a member before anything else; a step inside one
      *  ("van DE MAST van de post") names a role; the onderwerp a navigation ends in ("van DE JUTTER") and a subject
      *  ("EEN Jutter", "alle vondsten") name a type before a role, and never a member first; elsewhere a variable of the
-     *  rule shadows a parameter and both go before the members and types of the model. */
+     *  rule shadows a parameter and both go before the members and types of the model, except after 'zijn', which reads
+     *  a member of the subject or a role first ({@code ExpressionBuilder.subjectPossessive}). */
     private static final List<Kind> STEP_ORDER = List.of(Kind.ATTRIBUTE, Kind.CHARACTERISTIC, Kind.ROLE, Kind.PARAMETER,
             Kind.VARIABLE, Kind.OBJECT_TYPE, Kind.DIMENSION_LABEL, Kind.DAY_KIND, Kind.DIMENSION, Kind.TIMELINE, Kind.UNIT);
     private static final List<Kind> MIDDLE_ORDER = List.of(Kind.ROLE, Kind.OBJECT_TYPE, Kind.ATTRIBUTE,
@@ -1037,6 +1048,9 @@ public final class SemanticTokens {
             Kind.UNIT);
     private static final List<Kind> SUBJECT_ORDER = List.of(Kind.OBJECT_TYPE, Kind.ROLE, Kind.CHARACTERISTIC,
             Kind.DAY_KIND, Kind.VARIABLE, Kind.PARAMETER, Kind.ATTRIBUTE, Kind.DIMENSION_LABEL, Kind.DIMENSION,
+            Kind.TIMELINE, Kind.UNIT);
+    private static final List<Kind> POSSESSIVE_ORDER = List.of(Kind.ATTRIBUTE, Kind.CHARACTERISTIC, Kind.ROLE,
+            Kind.VARIABLE, Kind.PARAMETER, Kind.OBJECT_TYPE, Kind.DAY_KIND, Kind.DIMENSION_LABEL, Kind.DIMENSION,
             Kind.TIMELINE, Kind.UNIT);
     private static final List<Kind> PLACE_ORDER = List.of(Kind.VARIABLE, Kind.PARAMETER, Kind.ATTRIBUTE,
             Kind.CHARACTERISTIC, Kind.OBJECT_TYPE, Kind.ROLE, Kind.DAY_KIND, Kind.DIMENSION_LABEL, Kind.DIMENSION,
