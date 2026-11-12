@@ -4308,6 +4308,12 @@ final class RuleChecker {
         if (v.attribuutVanOnderwerp().size() < 2) return;
         Expr source = builder.buildAttribute(v.attribuutVanOnderwerp(0));
         Expr targetName = builder.buildAttribute(v.attribuutVanOnderwerp(1));
+        // "Het kortingspercentage van de opbrengst van een berging wordt verdeeld over …" reads as a computation, and
+        // the wire names an attribute on either side (IR-SPEC ch. 3.2)
+        for (int i = 0; i < 2; i++)
+            if (!((i == 0 ? source : targetName) instanceof Expr.AttributeReference))
+                model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-421",
+                        params("name", name, "written", src(v.attribuutVanOnderwerp(i))), v.getStart().getLine()));
         if (!(source instanceof Expr.AttributeReference b) || !(targetName instanceof Expr.AttributeReference d)) return;
 
         // The bare "in gelijke delen" / "naar rato van" names the method directly. The bulleted
