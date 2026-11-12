@@ -14527,6 +14527,77 @@ let () =
           check (ident ^ "-rood (got: " ^ Value.report ~code:c text ^ ")") (c = Some "EF-011" && ps = [])
       | _ -> check (ident ^ "-rood (no fault at all)") false)
 
+(* The end state of a session (RUNTIME-SEMANTICS ch. 5.12a): the lines of a
+   golden case, as `runner --trace` prints them after "state ". *)
+let end_state_of irf casef =
+  let d = Ir_v0.Loader.load_file irf in
+  let c = Case.load_file d casef in
+  let env =
+    { Eval.doc = d; params = c.params; param_tls = c.param_tls; as_of = c.as_of;
+      locals = World.SMap.empty; btypes = World.SMap.empty; subj = None; form = None }
+  in
+  End_state.lines env ~world:(Eval.evaluate env c.world)
+
+let end_state_example ident golden case expected ~whole =
+  let golden = "corpus/golden/" ^ golden ^ "/" in
+  let got = end_state_of (corpus_file (golden ^ "ir.json")) (corpus_file (golden ^ case)) in
+  let ok = if whole then got = expected else List.for_all (fun l -> List.mem l got) expected in
+  check ident ok;
+  if not ok then List.iter (Printf.printf "  got: %s\n") got
+
+(* WV-5.12a-penningbesluit: the chapter's first worked example verbatim, a
+   made object with its member assignment, a rule's value on it and its link *)
+let () =
+  let m j = "«\"stel het penningbesluit vast\"»(\"" ^ j ^ "\")#1" in
+  end_state_example "WV-5.12a-penningbesluit" "jutterswet-penningbesluit" "case1-twee-besluiten.json" ~whole:true
+    [ "attribute \"J1\" \"aantal aangemelde vondsten\" 14";
+      "attribute \"J1\" \"aantal penningbesluiten\" 1";
+      "attribute \"J1\" \"penningjaar\" 2025";
+      "attribute \"J1\" \"uitkering\" 250 \"EUR\"";
+      "attribute \"J1\" \"uitkeringsjaar\" 2025";
+      "attribute \"J2\" \"aantal aangemelde vondsten\" 12";
+      "attribute \"J2\" \"aantal penningbesluiten\" 1";
+      "attribute \"J2\" \"penningjaar\" 2024";
+      "attribute \"J2\" \"uitkering\" 250 \"EUR\"";
+      "attribute \"J2\" \"uitkeringsjaar\" 2024";
+      "attribute " ^ m "J1" ^ " \"besluitbedrag\" 250 \"EUR\"";
+      "attribute " ^ m "J1" ^ " \"besluitjaar\" 2025";
+      "attribute " ^ m "J2" ^ " \"besluitbedrag\" 250 \"EUR\"";
+      "attribute " ^ m "J2" ^ " \"besluitjaar\" 2024";
+      "characteristic \"J1\" \"penninggerechtigd\"";
+      "characteristic \"J2\" \"penninggerechtigd\"";
+      "link \"penningtoekenning\" \"begunstigde\" \"J1\" \"toegekend besluit\" " ^ m "J1";
+      "link \"penningtoekenning\" \"begunstigde\" \"J2\" \"toegekend besluit\" " ^ m "J2";
+      "object \"J1\" \"Jutter\"";
+      "object \"J2\" \"Jutter\"";
+      "object " ^ m "J1" ^ " \"Penningbesluit\"";
+      "object " ^ m "J2" ^ " \"Penningbesluit\"" ]
+
+(* WV-5.12a-kadetarief: the asOfDate-bucket scalar is the timeline of its one
+   period, a case timeline its canonical form *)
+let () =
+  end_state_example "WV-5.12a-kadetarief" "jutterswet-kadetarief" "case.json" ~whole:false
+    [ "attribute \"H1\" \"havengeldtarief\" [[2026-03-01 2026-04-01 10]] \"EUR/m/mnd\"";
+      "attribute \"S2\" \"kadetarief\" [[2026-01-01 2026-02-01 7], [2026-02-01 2026-03-01 5]] \"EUR/m/mnd\"" ]
+
+(* WV-5.12a-keurgemiddelde: a channel fact with its code; a characteristic
+   that does not hold has no line *)
+let () =
+  end_state_example "WV-5.12a-keurgemiddelde" "jutterswet-keurgemiddelde" "case4-de-deling-bereikt.json" ~whole:true
+    [ "attribute \"P1\" \"wachttal\" 2";
+      "attribute \"W1\" \"keuringen\" 10";
+      "attribute \"W1\" \"keurpunten\" 70";
+      "attribute \"W2\" \"keuringen\" 0";
+      "attribute \"W2\" \"keurpunten\" 30";
+      "channel \"inzetbaar bij keurgemiddelde\" \"P1\" EF-005";
+      "characteristic \"W1\" \"gekeurd\"";
+      "characteristic \"W2\" \"gekeurd\"";
+      "link \"ploegindeling\" \"ploeg\" \"P1\" \"wacht\" \"W1\"";
+      "link \"ploegindeling\" \"ploeg\" \"P1\" \"wacht\" \"W2\"";
+      "object \"P1\" \"Ploeg\"";
+      "object \"W1\" \"Strandwacht\"";
+      "object \"W2\" \"Strandwacht\"" ]
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;
