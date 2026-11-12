@@ -175,7 +175,7 @@ public final class CaseRunner {
             List<String> failures = new ArrayList<>();
             int played = 0;
             for (Path cp : casePaths) {
-                JsonNode c = JSON.readTree(Files.readString(cp));
+                JsonNode c = readCase(cp);
                 if (c.has("expectedFault")) continue;   // red-path case in a green zone — not this gate's business
                 played++;
                 String fail = runner.runCase(cp.getFileName().toString(), c);
@@ -284,6 +284,7 @@ public final class CaseRunner {
             Observation w = new Observation(new DroolsBackend.Observer(runner::beanLabel), handoff);
             String failure;
             try {
+                caseFile(cases.get(i));
                 failure = runner.runCase(name, cases.get(i), w);
             } catch (Excluded e) {
                 out.add(marker(paths.get(i), e.getMessage()));
@@ -778,7 +779,52 @@ public final class CaseRunner {
     /** The case's {@code asOfDate}, or null when it carries none. */
     static LocalDate asOfDate(JsonNode c) {
         JsonNode asOf = c.get("asOfDate");
-        return asOf == null || asOf.isNull() ? null : caseWireDate(asOf.asText(), "asOfDate");
+        if (asOf == null || asOf.isNull()) return null;
+        if (!asOf.isTextual()) throw new IllegalArgumentException("asOfDate: expected a string or null, got " + asOf);
+        return caseWireDate(asOf.asText(), "asOfDate");
+    }
+
+    /**
+     * Holds the case file {@code c} to what the case format demands of a file beside what {@link CaseInput#of} reads,
+     * as the reference interpreter's case reader holds it: the format {@code uchar-case-v0}; the members
+     * {@code asOfDate} (a date or null), {@code input.instances} and {@code input.parameters}; per instance its
+     * {@code attributes}, {@code roles} and {@code characteristics}; and exactly one of {@code expected}, a list of at
+     * least one expectation, and {@code expectedFault}. The replay and the report, which compare a case with its
+     * expectations, hold every case file to it; a consumer that writes a case of its own for {@link CaseInput} leaves
+     * out what it has no use for, and the red path and the readings read a case for its input alone.
+     */
+    static void caseFile(JsonNode c) {
+        if (!c.isObject()) throw new IllegalArgumentException("<root>: expected an object, got " + c);
+        String format = member(c, "<root>", "format").asText();
+        if (!format.equals("uchar-case-v0")) throw new IllegalArgumentException("unsupported case format \"" + format + "\"");
+        member(c, "<root>", "asOfDate");
+        JsonNode input = member(c, "<root>", "input");
+        member(input, "input", "parameters");
+        JsonNode instances = member(input, "input", "instances");
+        for (JsonNode i : instances) {
+            String label = i.path("label").asText();
+            for (String section : new String[]{"attributes", "roles", "characteristics"}) member(i, label, section);
+        }
+        boolean expected = c.has("expected"), fault = c.has("expectedFault");
+        if (expected && fault) throw new IllegalArgumentException("a case carries exactly one of expected / expectedFault");
+        if (!expected && !fault) throw new IllegalArgumentException("<root>: missing field \"expected\"");
+        if (expected && (!c.get("expected").isArray() || c.get("expected").isEmpty()))
+            throw new IllegalArgumentException("expected: a list of at least one expectation, got " + c.get("expected"));
+    }
+
+    /** The member {@code name} of the object {@code o} at position {@code at}, refused where it is missing. */
+    private static JsonNode member(JsonNode o, String at, String name) {
+        if (!o.isObject()) throw new IllegalArgumentException(at + ": expected an object, got " + o);
+        JsonNode m = o.get(name);
+        if (m == null) throw new IllegalArgumentException(at + ": missing field \"" + name + "\"");
+        return m;
+    }
+
+    /** The case file {@code path}, read and held to the case format ({@link #caseFile}). */
+    private static JsonNode readCase(Path path) throws java.io.IOException {
+        JsonNode c = JSON.readTree(Files.readString(path));
+        caseFile(c);
+        return c;
     }
 
     /** Whether {@code w} is the timeline variant of a case value: an object whose one key is {@code timeline}. */
@@ -1223,6 +1269,8 @@ public final class CaseRunner {
         String rule = v.has("rule") && !v.get("rule").isNull() ? v.get("rule").asText() : null;
         String label = v.has("label") && !v.get("label").isNull() ? v.get("label").asText() : null;
         String code = v.hasNonNull("code") ? v.get("code").asText() : null;
+        if (rule == null && label != null)
+            throw new IllegalArgumentException("an inconsistent label pin requires a rule pin: " + v);
         if (facts.isEmpty())
             return Msg.drools("PART.mismatch.consistent-found", "key", keyText(rule, label, code)).text();
         if (rule == null && code == null) return null;   // presence-only expectation, satisfied by any fact

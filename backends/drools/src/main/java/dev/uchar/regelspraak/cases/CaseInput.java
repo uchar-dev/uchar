@@ -197,10 +197,13 @@ public final class CaseInput {
         Objects.requireNonNull(c, "c");
         LocalDate evaluationDate = CaseRunner.asOfDate(c);
         JsonNode input = c.get("input");
+        if (input != null && !input.isObject())
+            throw new IllegalArgumentException("input: expected an object, got " + input);
         JsonNode instances = input == null ? null : input.get("instances");
         if (instances == null || !instances.isArray())
             throw new IllegalArgumentException("CaseInput.of: the case carries no array input.instances, the part of"
                     + " a uchar-case-v0 case that describes the input");
+        for (int n = 0; n < instances.size(); n++) shape(instances.get(n), "input.instances[" + n + "]");
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(build.beanLoader());
         try {
@@ -300,6 +303,46 @@ public final class CaseInput {
                             new CaseRunner.Grid(declared.granularity(), 1, declared.fixedStartPoint(), false), false))
                     : reader.valueToArg(w, e.getKey());
             parameters.put(Namen.ident(declared.name(), false), value);
+        }
+    }
+
+    /**
+     * Holds the instance {@code i} at position {@code at} to the shape of the case format, as the reference
+     * interpreter's case reader does, before any part of it is read: an object; a label that is a non-empty string
+     * outside the namespace {@code "::"} of the instances a creation makes, which a case label could otherwise hide;
+     * an object type that is a string; and of the sections it carries, {@code attributes}, {@code roles} and
+     * {@code characteristicTimelines} objects, {@code characteristics} a list of strings and every role a list of labels.
+     * Which sections a case file must carry the replay checks ({@link CaseRunner#caseFile}).
+     */
+    private static void shape(JsonNode i, String at) {
+        if (!i.isObject()) throw new IllegalArgumentException(at + ": expected an object, got " + i);
+        JsonNode labelNode = i.get("label");
+        if (labelNode == null || !labelNode.isTextual() || labelNode.asText().isEmpty())
+            throw new IllegalArgumentException(at + ".label: expected a non-empty string, got " + labelNode);
+        String label = labelNode.asText();
+        if (label.contains("::"))
+            throw new IllegalArgumentException("label \"" + label + "\": \"::\" is reserved for created instances");
+        if (i.get("objectType") == null || !i.get("objectType").isTextual())
+            throw new IllegalArgumentException(label + ".objectType: expected a string, got " + i.get("objectType"));
+        for (String section : new String[]{"attributes", "roles", "characteristicTimelines"})
+            if (i.has(section) && !i.get(section).isObject())
+                throw new IllegalArgumentException(label + "." + section + ": expected an object, got " + i.get(section));
+        JsonNode characteristics = i.get("characteristics");
+        if (characteristics != null) {
+            if (!characteristics.isArray())
+                throw new IllegalArgumentException(label + ".characteristics: expected a list, got " + characteristics);
+            for (int k = 0; k < characteristics.size(); k++)
+                if (!characteristics.get(k).isTextual())
+                    throw new IllegalArgumentException(label + ".characteristics[" + k + "]: expected a string, got "
+                            + characteristics.get(k));
+        }
+        if (i.has("roles")) for (Map.Entry<String, JsonNode> role : i.get("roles").properties()) {
+            String place = label + ".roles." + role.getKey();
+            if (!role.getValue().isArray())
+                throw new IllegalArgumentException(place + ": expected a list, got " + role.getValue());
+            for (int k = 0; k < role.getValue().size(); k++)
+                if (!role.getValue().get(k).isTextual())
+                    throw new IllegalArgumentException(place + "[" + k + "]: expected a string, got " + role.getValue().get(k));
         }
     }
 

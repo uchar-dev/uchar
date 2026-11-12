@@ -120,6 +120,53 @@ class CaseReaderWitnessTest {
         caseError(BAKENMEESTER, c, "missing field \"value\"");
     }
 
+    // ---------------- the shape of a case file ----------------
+
+    @Test void a_case_file_without_a_section_the_format_demands_is_a_case_error() throws Exception {
+        String[][] rows = {
+                {"format", "uchar-case-v9", "unsupported case format"},
+                {"format", null, "missing field \"format\""},
+                {"asOfDate", null, "missing field \"asOfDate\""},
+                {"input.parameters", null, "missing field \"parameters\""},
+                {"instance.attributes", null, "missing field \"attributes\""},
+                {"instance.roles", null, "missing field \"roles\""},
+                {"instance.characteristics", null, "missing field \"characteristics\""},
+                {"expected", "[]", "a list of at least one expectation"},
+        };
+        for (String[] row : rows) {
+            ObjectNode c = caseFile(PENNINGDREMPEL, "case");
+            ObjectNode holder = row[0].startsWith("input.") ? (ObjectNode) c.get("input")
+                    : row[0].startsWith("instance.") ? (ObjectNode) c.get("input").get("instances").get(0) : c;
+            String field = row[0].substring(row[0].indexOf('.') + 1);
+            if (row[1] == null) holder.remove(field);
+            else if (row[1].startsWith("[")) holder.set(field, JSON.readTree(row[1]));
+            else holder.put(field, row[1]);
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                    () -> CaseRunner.runGolden(ir(PENNINGDREMPEL), List.of(written(c))), row[0]);
+            assertTrue(e.getMessage().contains(row[2]), row[0] + ": " + e.getMessage());
+        }
+    }
+
+    @Test void an_instance_of_another_shape_is_a_case_error() throws Exception {
+        String[][] rows = {
+                {"label", "\"J::1\"", "\"::\" is reserved for created instances"},
+                {"characteristics", "{\"x\": \"penninggerechtigd\"}", "characteristics: expected a list"},
+                {"roles", "{\"haven\": \"H1\"}", "roles.haven: expected a list"},
+        };
+        for (String[] row : rows) {
+            ObjectNode c = caseFile(PENNINGDREMPEL, "case");
+            ((ObjectNode) c.get("input").get("instances").get(0)).set(row[0], JSON.readTree(row[1]));
+            if (row[0].equals("label")) c.putArray("expected").addObject().put("kind", "consistent");
+            caseError(PENNINGDREMPEL, c, row[2]);
+        }
+    }
+
+    @Test void an_inconsistent_expectation_that_pins_a_label_pins_a_rule() throws Exception {
+        ObjectNode c = caseFile(PENNINGDREMPEL, "case");
+        c.putArray("expected").addObject().put("kind", "inconsistent").put("label", "J1");
+        caseError(PENNINGDREMPEL, c, "requires a rule pin");
+    }
+
     @Test void a_parameter_the_case_does_not_bind_faults_where_a_rule_reads_it() {
         // case1 leaves aanvoertarief unbound, read in a value; case2 aanvoerdrempel, read in a condition
         Path red = Path.of("..", "..", "corpus", "red", "aanvoergeld-parameter-unbound");
@@ -157,6 +204,14 @@ class CaseReaderWitnessTest {
 
     private static ObjectNode number(String lexeme) {
         return JSON.createObjectNode().put("number", lexeme);
+    }
+
+    /** Case {@code c} written to a file of its own, as the replay reads a case file. */
+    private static Path written(JsonNode c) throws Exception {
+        Path f = Files.createTempFile("case", ".json");
+        f.toFile().deleteOnExit();
+        Files.writeString(f, JSON.writeValueAsString(c));
+        return f;
     }
 
     /** The verdict of case {@code c} on {@code golden} through the replay, null on a match. */
