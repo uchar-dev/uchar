@@ -1276,6 +1276,7 @@ public final class ScenarioResolver {
                 String written = withoutArticle(src(a.verwachtingNaam()));
                 Named named = expectedMember(label, written, situation, line);
                 if (named == null) continue;
+                if (named.labels() == null && withoutPeriodOnTimeline(label, named.attribute(), situation, line)) continue;
                 result.add(named.labels() == null
                         ? new Expectation(ExpectationKind.ATTRIBUTE_EMPTY, label, named.attribute(), null, null, null, null, null, line)
                         : new Expectation(ExpectationKind.CELL_EMPTY, label, named.attribute(), named.labels(), null, null, null, null, line));
@@ -1320,6 +1321,7 @@ public final class ScenarioResolver {
                     continue;
                 }
                 if (a.verwachtePeriode() == null) {
+                    if (withoutPeriodOnTimeline(label, attr, situation, line)) continue;
                     if (w != null)
                         result.add(new Expectation(ExpectationKind.ATTRIBUTE_VALUE, label, attr, null, null, w, null, null, line));
                     continue;
@@ -1435,6 +1437,14 @@ public final class ScenarioResolver {
         return false;
     }
 
+    /** Whether {@code attr} of {@code label} is time-dependent, with its ERROR: an expectation without a period
+     *  names no day of a timeline, and the case format's scalar expectation would read it as one value. */
+    private boolean withoutPeriodOnTimeline(String label, String attr, Situation situation, int line) {
+        if (situation.instance(label).objectType().granularityOf(attr) == null) return false;
+        error(line, "RGS-399", params("attribute", attr, "label", label));
+        return true;
+    }
+
     private Expectation expectCharacteristic(String label, String written, boolean has, Situation situation, int line) {
         // "geen <kenmerk>" and "niet <kenmerk>" are the absent form: the grammar keeps the word inside the bareName
         String klein = written.toLowerCase(java.util.Locale.ROOT);
@@ -1454,6 +1464,11 @@ public final class ScenarioResolver {
             return null;
         }
         if (!verbFits(i.objectType(), characteristic, has, line)) return null;
+        // the case format has no expectation over the periods of a characteristic, and a scalar one names no day
+        if (i.objectType().characteristicGranularityOf(characteristic) != null) {
+            error(line, "RGS-400", params("characteristic", characteristic, "label", label));
+            return null;
+        }
         return new Expectation(absent ? ExpectationKind.CHARACTERISTIC_ABSENT : ExpectationKind.CHARACTERISTIC_PRESENT,
                 label, null, null, characteristic, null, null, null, line);
     }

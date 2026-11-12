@@ -260,6 +260,18 @@ class ScenarioTypeGateTest {
                 "is 4 van", "de periode voor 'borgdagen' van J spreekt de verwachting tegen dat het attribuut altijd leeg is");
     }
 
+    /** An expectation without a period on a time-dependent member names no day of its timeline; the case format's
+     *  scalar expectations read as if the member had one value, so the scenario layer refuses them. */
+    @Test void a_scalar_expectation_on_a_time_dependent_member() {
+        String advice = "het attribuut 'borgdagen' van J is tijdsafhankelijk, en een verwachting zonder periode noemt "
+                + "geen dag";
+        error(scenario("- de borgdagen van J is leeg\n"), "is leeg", advice);
+        error(scenario("- de borgdagen van J is 4\n"), "is 4", advice);
+        String characteristic = "het kenmerk 'borgplichtig' van J is tijdsafhankelijk";
+        error(scenario("- J is borgplichtig\n"), "J is borgplichtig", characteristic);
+        error(scenario("- J is niet borgplichtig\n"), "J is niet borgplichtig", characteristic);
+    }
+
     /** A value without a period for a parameter with a timeline becomes a scalar the executors refuse. */
     @Test void a_parameter_with_a_timeline_gets_periods() {
         String fragment = "de parameter 'penningbedrag' is tijdsafhankelijk; een casebestand levert hem als perioden";
