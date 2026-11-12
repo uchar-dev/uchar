@@ -163,6 +163,7 @@ final class RuleChecker {
         checkPercentageOperands();  // WF-035, a left operand of '% van' with a unit
         checkBareDimensionedReads(); // WF-125 (a), a dimensioned attribute read outside a cell
         checkUntypedLets();         // a "Daarbij geldt" value an undeclared read leaves without a type
+        checkUndeclaredReads();     // WF-034, an own read of a name its subject does not declare
         checkFormNames(doc);         // WF-020, over the named forms as the emitter writes them
         checkDependencyCycles(doc);   // WF-045, WF-046 and WF-051, over the document the emitter writes
         generatedElements();    // last: only the elements that are still in the model get an origin
@@ -1098,9 +1099,7 @@ final class RuleChecker {
      * read of an attribute 'maximum van de romplengte' of Schuit, which the verifier refuses. Refused here, in the verifier's sentence, where the name the emitter writes is no
      * member of the type it is read on and its part behind a 'van' is a declared attribute of that type. A name whose
      * part behind a 'van' is a role is {@link #memberError}'s, in the walk of {@link #checkPaths}. An own read
-     * of an undeclared name with neither in it is left to the verifier: the casus of the parity zone reads such names,
-     * which only its replay slices declare, and an ERROR would stop its emission (grammar/DIVERGENCES.md, "An
-     * undeclared attribute read"). A set reading is the set fence's to refuse; the walk reaches every other written
+     * of an undeclared name with neither in it is {@link #checkUndeclaredReads}'s. A set reading is the set fence's to refuse; the walk reaches every other written
      * read, window bounds and fold sources included, after the lift, so the defaults are covered.
      */
     private void checkSwallowedNames() {
@@ -1108,8 +1107,10 @@ final class RuleChecker {
         everyWrittenExpr(x -> {
             if (x instanceof Expr.AttributeReference a && !a.set() && reported.add(a)) {
                 Typing.Coded error = swallowedNameError(a);
-                if (error != null)
+                if (error != null) {
+                    refusedReads.add(a);
                     model.diagnostics.add(error.at(Severity.ERROR, a.source() == null ? 0 : a.source().line()));
+                }
             }
             return false;
         });
@@ -1122,8 +1123,9 @@ final class RuleChecker {
      * as a value, and a name that resolved to nothing (a marker, whose WARNING says it stays on the wire). Inside a Let
      * whose type is unknown — in a variable or in the value that reads one — such a read is refused where it stands, and
      * the marker sweep is silent about a marker refused here, whose WARNING would say it stays on the wire;
-     * the first in WF-034's words, the second in WF-080's. Outside a Let the first two stay the verifier's
-     * (grammar/DIVERGENCES.md, "An undeclared attribute read") and the third a marker on the wire. A read whose name took in a role or a type name is {@link #memberError}'s, one that took in a word
+     * the first in WF-034's words, the second in WF-080's. Outside a Let the first is {@link #checkUndeclaredReads}'s,
+     * the second stays the verifier's (grammar/DIVERGENCES.md, "An undeclared attribute read") and the third a marker
+     * on the wire. A read whose name took in a role or a type name is {@link #memberError}'s, one that took in a word
      * before 'van' {@link #checkSwallowedNames}'s; a marker without a reason has its diagnosis from the route that
      * built it; a Let left without a type for another reason stays the emitter's refusal.
      */
@@ -1145,6 +1147,7 @@ final class RuleChecker {
                         model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-396",
                                 params("expression", source.snippet(), "reason", reason), source.line()));
                         if (y instanceof Expr.Unresolved) refusedMarkers.add(source);
+                        else refusedReads.add(y);
                     }
                     return false;
                 });
@@ -1176,6 +1179,55 @@ final class RuleChecker {
             }
             return false;
         });
+    }
+
+    /** The reads an ERROR of this checker refused already, so that {@link #checkUndeclaredReads} refuses each read once. */
+    private final Set<Object> refusedReads = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+
+    /**
+     * WF-034, producer side: an own read — through no role — of a name its subject declares neither as an attribute nor
+     * as a characteristic, in a value, a condition, a window bound or any other written position: "de rang van de
+     * Vondst", "de datum van aanmelding van de Vondst" where 'aanmelding' names no role and no type. Refused where it
+     * stands (grammar/DIVERGENCES.md, "An undeclared attribute read"), unless a check before this one refused the read
+     * already: a name that took in a word before 'van' ({@link #checkSwallowedNames}), a role or type name behind one of
+     * its 'van's ({@link #memberError}), or the read inside a "Daarbij geldt" value ({@link #checkUntypedLets}). A set
+     * reading is the set fence's; a read that names no type is {@link #memberError}'s.
+     */
+    private void checkUndeclaredReads() {
+        Set<Object> foldSources = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        everyWrittenExpr(x -> {
+            // a parent is visited before its children; a fold's source is read through its range, and the fold checks
+            // refuse a range that binds no relation; the operands of a count are sources too, and a listed count is
+            // the count's refusal (RGS-077)
+            if (x instanceof Expr.FunctionCall f && f.dimensionSelections() == null
+                    && (f.arguments().size() == 1 || f.kind() == Expr.FunctionKind.AANTAL)
+                    && dev.uchar.regelspraak.ir.Spelling.AGGREGATION_KIND.rows().containsKey(f.kind()))
+                for (Expr argument : f.arguments()) {
+                    Expr.AttributeReference source = dev.uchar.regelspraak.emit.IrEmitter.foldSourceReference(argument);
+                    if (source != null) foldSources.add(source);
+                }
+            if (x instanceof Expr.AttributeReference a && !a.set() && a.objectType() != null && a.attribute() != null
+                    && !a.objectType().hasMember(a.attribute()) && a.navigationRole() == null
+                    && (a.navigationPath() == null || a.navigationPath().isEmpty()) && !foldSources.contains(a)
+                    && !withdrawn(a) && refusedReads.add(a))
+                model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-428",
+                        params("expression", a.source() == null ? a.attribute() : a.source().snippet(),
+                                "attribute", a.attribute(), "objectType", a.objectType().name),
+                        a.source() == null ? 0 : a.source().line()));
+            return false;
+        });
+    }
+
+    /** The members a withdrawn '(mag opgegeven worden)' marking named, by the type it stood on, whose readers RGS-152
+     *  refused already (normalised names). */
+    private final Map<ObjectType, Set<String>> withdrawnNames = new java.util.IdentityHashMap<>();
+
+    /** Whether {@code a} reads a member of a withdrawn marking ({@link #withdrawnNames}). */
+    private boolean withdrawn(Expr.AttributeReference a) {
+        for (var e : withdrawnNames.entrySet())
+            if (inLine(e.getKey(), a.objectType())
+                    && e.getValue().contains(dev.uchar.regelspraak.emit.IrEmitter.norm(a.attribute()))) return true;
+        return false;
     }
 
     /** A read on its own subject, through no role, of a name that type does not declare and that took in no 'van'. */
@@ -1321,8 +1373,10 @@ final class RuleChecker {
                 Typing.Coded error = dev.uchar.regelspraak.emit.IrEmitter.unboundRead(model, from, a)
                         ? unboundReadError(a, from) : manyStepError(a, from);
                 if (error == null) error = memberError(a, from, false);
-                if (error != null) model.diagnostics.add(error.at(Severity.ERROR, a.source().line()));
-                else reportDoubleReading(a);
+                if (error != null) {
+                    refusedReads.add(a);
+                    model.diagnostics.add(error.at(Severity.ERROR, a.source().line()));
+                } else reportDoubleReading(a);
             }
             case Expr.FunctionCall f -> {
                 ObjectType from = f.anchored() ? pathForm : subject;
@@ -1480,8 +1534,10 @@ final class RuleChecker {
     private void windowBoundMember(Expr limit, ObjectType subject, Set<Object> reported) {
         if (!(limit instanceof Expr.AttributeReference a) || a.set() || !reported.add(a)) return;
         Typing.Coded error = memberError(a, subject, true);
-        if (error != null) model.diagnostics.add(error.at(Severity.ERROR, a.source().line()));
-        else reportDoubleReading(a);
+        if (error != null) {
+            refusedReads.add(a);
+            model.diagnostics.add(error.at(Severity.ERROR, a.source().line()));
+        } else reportDoubleReading(a);
     }
 
     /** A declared attribute with 'van' in its name wins over the navigation the same words spell — "de premie van de
@@ -1525,8 +1581,8 @@ final class RuleChecker {
      * chain the resolver did not lay although its member stands at the end of it, or a step that names a role or a type
      * but binds no single relation, in WF-034's sentence for the document it would write. A read that names no type at
      * all is refused in WF-034's sentence for the reference without a subject type. An own read with no role or type
-     * name in it — "de datum van aanmelding van de Vondst", where 'aanmelding' names neither — stays the verifier's,
-     * because the casus of the parity zone reads such names, which only its replay slices declare. With
+     * name in it — "de datum van aanmelding van de Vondst", where 'aanmelding' names neither — is
+     * {@link #checkUndeclaredReads}'s. With
      * {@code onlyOwn} only an own read is judged: a window bound that navigates is the window check's refusal.
      */
     private Typing.Coded memberError(Expr.AttributeReference a, ObjectType subject, boolean onlyOwn) {
@@ -2840,9 +2896,12 @@ final class RuleChecker {
                 o.type().characteristics.remove(o.deviating());
                 o.type().characteristicKinds.remove(o.deviating());
                 String read = readGenerated(o, List.of(o.supplied(), o.computed(), o.deviating()));
-                if (read != null)
+                if (read != null) {
                     error(o.line(),
                             "RGS-152", params("head", o.head(), "attribute", o.attribute(), "read", read));
+                    withdrawnNames.put(o.type(), java.util.stream.Stream.of(o.supplied(), o.computed(), o.deviating())
+                            .map(dev.uchar.regelspraak.emit.IrEmitter::norm).collect(java.util.stream.Collectors.toSet()));
+                }
                 else
                     model.diagnostics.add(new Diagnostic(Severity.WARNING,
                             "RGS-153", params("head", o.head(), "attribute", o.attribute()), o.line()));

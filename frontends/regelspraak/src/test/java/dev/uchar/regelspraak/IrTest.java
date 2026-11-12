@@ -375,8 +375,8 @@ class IrTest {
         assertTrue(value.type().isNumber());
     }
 
-    @Test void unresolved_reference_stays_unknown_no_false_error() {
-        // A deep van-chain the resolver cannot bind must not produce a type error.
+    @Test void unresolved_reference_stays_unknown_and_is_refused_as_undeclared() {
+        // A deep van-chain the resolver cannot bind produces no type error; it is the read of an undeclared name.
         String src = """
             Objecttype de Reis
                 de prijs Numeriek (getal met 2 decimalen);
@@ -385,7 +385,8 @@ class IrTest {
                     De prijs van een Reis moet gesteld worden op de korting van de aanbieding van de reis.
             """;
         RegelSpraakModel m = Resolver.resolve(src);
-        assertTrue(m.errors().isEmpty(), () -> "valse fout op onopgeloste referentie: " + m.errors());
+        assertEquals(List.of("RGS-428"), m.errors().stream().map(RegelSpraakModel.Diagnostic::code).toList(),
+                () -> "alleen de ongedeclareerde lezing: " + m.errors());
         // value is an attribuut-ref whose datatype stayed Onbekend (subject not resolved)
         Expr value = m.resolvedRules.get(0).value();
         assertTrue(value.type().isUnknown());

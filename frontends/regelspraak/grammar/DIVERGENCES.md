@@ -4019,7 +4019,7 @@ ALEF, and a share that does not fit stays the evaluation fault of ch. 2.4.
 
 ---
 
-## An undeclared attribute read — refused where the read names a role or a type
+## An undeclared attribute read — refused where it stands
 
 The name of a read runs over every inner `van`, so a phrase the language has no
 function for, "het maximum van de romplengte van de Schuit", reads an attribute
@@ -4027,8 +4027,9 @@ function for, "het maximum van de romplengte van de Schuit", reads an attribute
 lay, "de toeslag van de jutter van de Vondst", reads an attribute `toeslag van
 de jutter` of the Vondst. The verifier refuses such a read (WF-034: `'toeslag
 van de jutter' is neither an attribute nor a characteristic of 'Vondst'`). The
-resolver refuses it in three shapes, each in the verifier's sentence for the
-document after a Dutch part in the author's words:
+resolver refuses every such read where it stands, in four shapes, the first
+three in the verifier's sentence for the document after a Dutch part in the
+author's words:
 
 1. The part behind one of its `van`s is a declared attribute of the type it is
    read on, or the written plural of one: the name took in a word before `van`
@@ -4070,30 +4071,35 @@ readings and says the declaration wins (maintainer decision 2026-10-01,
 `DoubleReadingTest`; no golden and no fragment of the parity zone reads such a
 name).
 
-What stays with the verifier is an own read — one that reaches no role — of an
-undeclared name with no role or type name behind a `van`: "de rang van de
-Vondst", "de datum van aanmelding van de Vondst", "de premie van de visser van
-de Vondst" where 'visser' names no role. So do an own read through a role the
-subject itself plays ("de rang van de aanmelder" on the Jutter who is the
-aanmelder), an own read of a member that only a subtype of the subject
-declares, and an own read of a characteristic as a value. Inside a rule with
-a `Daarbij geldt` part an own read of an undeclared name of the first kind is
-refused all the same (RGS-396, `VariablePartLoweringTest`): it has no type, and
-neither has the Let the rule's value is written under, which the wire carries
-with its body's type (WF-076); so are an own read of a characteristic as a value
-and a name that resolved to nothing there. No
-golden and no fragment of the parity zone writes an undeclared read of the first
-kind outside such a rule: the parity zone declares the members its casus reads
-in a fragment of its own. A fold source whose element lacks the member,
-or whose name took in a role, is no such read: it is a marker with a
-WARNING, and ref and the ASP backend refuse it loudly.
+4. An own read — one that reaches no role — of a name its subject declares
+   neither as an attribute nor as a characteristic, with no role or type name
+   behind a `van`: "de rang van de Vondst", "de datum van aanmelding van de
+   Vondst", "de premie van de visser van de Vondst" where 'visser' names no
+   role, an own read through a role the subject itself plays ("de rang van de
+   aanmelder" on the Jutter who is the aanmelder), and an own read of a member
+   that only a subtype of the subject declares. RGS-428 names the name and the
+   type (`lezing 'de rang van de Vondst': 'rang' is geen attribuut en geen
+   kenmerk van Vondst (WF-034)`; `UnboundReadTest`, in a value, a condition and
+   the justification of a default). Inside a rule with a `Daarbij geldt` part
+   such a read is RGS-396's (`VariablePartLoweringTest`): the Let the rule's
+   value is written under has no type either (WF-076), and the refusal says
+   so.
+
+What stays with the verifier is an own read of a characteristic as a value
+(WF-080), outside a `Daarbij geldt` part, where RGS-396 refuses it. A name
+that resolves to nothing at all — "zijn rang", "de rang" without a `van` — is
+no attribute read: it stays a marker on the wire with its WARNING (WF-044).
+A fold source whose element lacks the member, or whose name took in a role,
+is no such read either: it is a marker with a WARNING, and ref and the ASP
+backend refuse it loudly; an operand of a listed count is RGS-077's.
 
 Measured on 2026-10-01 over 168 generated documents — the member on a subtype
 of the filler, nowhere, on another object type, and a role name that is no
 role, in the four positions, one and two roles far, in three spellings, beside
-the reads that bind: of the 96 the verifier refuses, 92 are refused here, and
-the 4 that write the wrong role name one role far in full stay the verifier's.
-The 72 that bind, the declared attribute with `van` in its name and the member
+the reads that bind: of the 96 the verifier refuses, 92 are refused in the
+first three shapes; the 4 that write the wrong role name one role far in full
+are own reads of an undeclared name, which the fourth shape refuses (read off
+the shape, not re-measured). The 72 that bind, the declared attribute with `van` in its name and the member
 inherited from a supertype of the filler among them, play in ref and the ASP
 backend. Every rgs golden and the sources of the parity zone re-emit
 byte-identically (gates 10 and 11). Negatief witnesses:

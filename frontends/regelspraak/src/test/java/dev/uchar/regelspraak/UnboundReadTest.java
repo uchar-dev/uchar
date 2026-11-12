@@ -336,12 +336,23 @@ class UnboundReadTest {
         assertNull(a.navigationRole());
     }
 
-    // ---- what stays with the verifier: an own read of an undeclared name with no role in it
+    // ---- an own read of an undeclared name with no role in it
 
-    @Test void an_own_read_without_a_role_in_the_name_stays_with_the_verifier() {
-        // the parity zone reads names like these, which only its replay slices declare
-        for (String attributeRead : List.of("de datum van aanmelding van de Vondst", "de rang van de Vondst",
-                "de premie van de visser van de Vondst"))
-            assertEquals(List.of(), faults(value(attributeRead)), attributeRead);
+    /** An own read of a name the Vondst declares neither as an attribute nor as a characteristic, with no role or type
+     *  name behind a 'van', is refused where it stands, in a value, a condition and the justification of a default,
+     *  naming the name and the type (WF-034).
+     *
+     *  <p>Red before: the read went to disk with {@code diagnostics: []}, and only the verifier refused the document
+     *  ({@code 'rang' is neither an attribute nor a characteristic of 'Vondst'}). */
+    @Test void an_own_read_without_a_role_in_the_name_is_refused() {
+        for (String[] read : List.of(new String[]{"de datum van aanmelding van de Vondst", "datum van aanmelding"},
+                new String[]{"de rang van de Vondst", "rang"},
+                new String[]{"de premie van de visser van de Vondst", "premie van de visser"})) {
+            List<String> refused = List.of("lezing '" + read[0] + "': '" + read[1]
+                    + "' is geen attribuut en geen kenmerk van Vondst (WF-034)");
+            assertEquals(refused, faults(value(read[0])), read[0]);
+            assertEquals(refused, faults(condition(read[0])), read[0]);
+            assertEquals(refused, faults(justification(read[0])), read[0]);
+        }
     }
 }

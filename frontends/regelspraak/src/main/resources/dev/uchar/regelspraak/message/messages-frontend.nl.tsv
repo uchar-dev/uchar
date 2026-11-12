@@ -775,3 +775,4 @@ RGS-424	'{expression}': de linkeroperand van het percentage is van het type {typ
 RGS-425	verdeling '{name}': {role} '{attribute}' is geen gedeclareerd attribuut van {objectType}; een verdeling noemt alleen gedeclareerde attributen (WF-034)
 RGS-426	verdeling '{name}' schrijft '{attribute}' van {objectType}, dat de verdeling '{other}' al schrijft; ten hoogste één verdeling schrijft een doel, ook langs een typeketen (WF-026)
 RGS-427	'{characteristic}' is geen gedeclareerd kenmerk van {objectType}
+RGS-428	lezing '{expression}': '{attribute}' is geen attribuut en geen kenmerk van {objectType} (WF-034)

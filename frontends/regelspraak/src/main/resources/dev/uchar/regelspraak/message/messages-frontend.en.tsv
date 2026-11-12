@@ -775,3 +775,4 @@ RGS-424	'{expression}': the left operand of the percentage is of the type {type}
 RGS-425	allocation '{name}': {role} '{attribute}' is not a declared attribute of {objectType}; an allocation names declared attributes only (WF-034)
 RGS-426	allocation '{name}' writes '{attribute}' of {objectType}, which the allocation '{other}' writes already; at most one allocation writes a target, along a type chain as well (WF-026)
 RGS-427	'{characteristic}' is not a declared characteristic of {objectType}
+RGS-428	read '{expression}': '{attribute}' is neither an attribute nor a characteristic of {objectType} (WF-034)

@@ -531,9 +531,9 @@ class VariablePartLoweringTest {
                 + "(WF-076)", d.message());
     }
 
-    /** A variable read only in the condition is substituted there, and no Let is written: the read stays the
-     *  verifier's, as it does in a rule without a variable (grammar/DIVERGENCES.md, "An undeclared attribute read"). */
-    @Test void an_undeclared_read_in_a_variable_of_the_condition_stays_the_verifiers() {
+    /** A variable read only in the condition is substituted there, and no Let is written: the read is refused where
+     *  it stands, as it is in a rule without a variable (grammar/DIVERGENCES.md, "An undeclared attribute read"). */
+    @Test void an_undeclared_read_in_a_variable_of_the_condition_is_refused() {
         RegelSpraakModel m = Resolver.resolve("""
             Objecttype de Lichterbeurt (mv: Lichterbeurten)
                 het lichterloon Numeriek (geheel getal);
@@ -545,6 +545,10 @@ class VariablePartLoweringTest {
                     Daarbij geldt:
                         het grondloon is het vrachttal van de Lichterbeurt maal 3.
             """);
-        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        assertEquals(1, m.diagnostics.size(), () -> "verwachtte precies één diagnose, kreeg: " + m.diagnostics);
+        RegelSpraakModel.Diagnostic d = m.diagnostics.get(0);
+        assertEquals("RGS-428", d.code(), d::toString);
+        assertEquals("lezing 'het vrachttal van de Lichterbeurt': 'vrachttal' is geen attribuut en geen kenmerk van "
+                + "Lichterbeurt (WF-034)", d.message());
     }
 }
