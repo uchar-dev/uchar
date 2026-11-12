@@ -388,13 +388,33 @@ let rec contains_time_window (c : condition_expr) =
   | Rule_status_check _ | Identity_check _ | Condition_unresolved _ ->
       false
 
+(* Whether [e] is a sum over the members of a set of a time-dependent
+   attribute: per period it is a timeline (ch. 3.5), on a scalar target the
+   double fold of ch. 3.6. A comparison per period reads one own attribute
+   against a scalar bound, and this operand is neither, so such a comparison is
+   read per period and refused there by name, never answered by the double fold
+   on every day or on none. *)
+let temporal_member_sum (doc : document) (e : expr) =
+  match e with
+  | Function_call
+      { kind = Sum_function;
+        call_arguments = [ Attribute_reference { attribute_ref = Some a; _ } ];
+        element_object_type = Some et;
+        source_role;
+        source_path;
+        _ } ->
+      (source_role <> None || source_path <> None)
+      && (match Ir_v0.Checks.effective_ot doc et with Some d -> Ir_v0.Checks.attr_temporal d a | None -> false)
+  | _ -> false
+
 (* Whether a condition on a rule of the timeline target of type [ot] is read
    per period (RUNTIME-SEMANTICS ch. 3.10, the clip generalised;
    spec/proposals/IMPLICIT-TIME.md point 3): it reads a timeline — a
    time-dependent characteristic or attribute as an operand, a time-dependent
-   parameter, or a whole-period qualifier, which on such a rule is a truth per
-   bucket (point 4). A condition that reads none holds on every day or on none,
-   and stays the gate of ch. 3.3. The question is asked of the syntax and the
+   parameter, a sum over members of a time-dependent attribute as the operand
+   of a comparison, or a whole-period qualifier, which on such a rule is a
+   truth per bucket (point 4). A condition that reads none holds on every day
+   or on none, and stays the gate of ch. 3.3. The question is asked of the syntax and the
    declarations alone, so the ASP backend asks it through this function too. *)
 let rec reads_timeline (doc : document) ~(ot : string) (c : condition_expr) =
   let decl name =
@@ -414,6 +434,7 @@ let rec reads_timeline (doc : document) ~(ot : string) (c : condition_expr) =
   | Characteristic_check { time_period; _ } -> time_period <> None
   | Comparison { left_side; right_side; time_period; _ } ->
       time_period <> None || temporal_operand left_side || temporal_operand right_side
+      || List.exists (temporal_member_sum doc) (Option.to_list left_side @ Option.to_list right_side)
   | Predicate { operand; time_period; _ } -> time_period <> None || temporal_operand operand
   | Compound { components; _ } -> List.exists (reads_timeline doc ~ot) components
   | Quantifier_fold { kv_filter; kv_test; _ } ->
@@ -3593,8 +3614,8 @@ let rec cond_periods env w (self : World.instance) ~err ~(target : Timeline.grid
         in
         let tested_attr, tested_left =
           match (temporal_side le, temporal_side re) with
-          | Some a, None -> (a, true)
-          | None, Some a -> (a, false)
+          | Some a, None when not (temporal_member_sum env.doc re) -> (a, true)
+          | None, Some a when not (temporal_member_sum env.doc le) -> (a, false)
           | _ ->
               Value.fault
                 "a comparison in a condition per period compares one time-dependent attribute of the subject \

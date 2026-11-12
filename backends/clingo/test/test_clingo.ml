@@ -17993,6 +17993,17 @@ let () =
   (let ir, case_text = pair "totaal-onder-voorwaarde" in
    ref_matches ~name:"condition per period: the total of a timeline written under it" ~ir ~case_text;
    clingo_matches ~name:"condition per period: the total of a timeline written under it" ~ir ~case_text);
+  (* a sum over the members of a time-dependent attribute as an operand of a
+     comparison per period, against a scalar bound and as the bound of an own
+     timeline: refused by name, as in ref (WV-3.6-member-sum-per-period) *)
+  List.iter
+    (fun f ->
+      faults_with ~name:("condition per period: a sum over member timelines, " ^ f)
+        ~ir:(read (dir ^ "member-sum/" ^ f ^ ".json")) ~case_text:(read (dir ^ "member-sum/case.json"))
+        ~needle:
+          "a comparison in a condition per period compares one time-dependent attribute of the subject with a \
+           scalar bound; this one does not")
+    [ "ir"; "ir-bound" ];
   (* a time-dependent characteristic within a window, the day count with 0 in a
      month without a true day and its day-kind test, the window as a member and
      as the condition of the period arithmetic: ref's WV-3.10-kenmerk-venster,

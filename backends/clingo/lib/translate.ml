@@ -763,9 +763,28 @@ let rec contains_time_window (c : condition_expr) =
   | Condition_unresolved _ ->
       false
 
+(* Whether [e] is a sum over the members of a set of a time-dependent
+   attribute: per period a timeline (ch. 3.5), on a scalar target the double
+   fold of ch. 3.6. As the operand of a comparison it makes the comparison read
+   per period, where it is refused by name, never answered by the double fold
+   on every day or on none. *)
+let temporal_member_sum (doc : document) (e : expr) =
+  match e with
+  | Function_call
+      { kind = Sum_function;
+        call_arguments = [ Attribute_reference { attribute_ref = Some a; _ } ];
+        element_object_type = Some et;
+        source_role;
+        source_path;
+        _ } ->
+      (source_role <> None || source_path <> None)
+      && (match Ir_v0.Checks.effective_ot doc et with Some d -> Ir_v0.Checks.attr_temporal d a | None -> false)
+  | _ -> false
+
 (* Whether a condition on a rule of the timeline target of type [ot] reads a
    timeline (RUNTIME-SEMANTICS ch. 3.10): a time-dependent characteristic or
-   attribute or a granular parameter as an operand, or a whole-period
+   attribute or a granular parameter as an operand, a sum over members of a
+   time-dependent attribute as the operand of a comparison, or a whole-period
    qualifier, which on such a rule is a truth per bucket; under a quantifier
    fold only a qualifier counts, since the fold's operands are its members'.
    A condition that reads none holds on every day or on none *)
@@ -796,6 +815,7 @@ let rec reads_timeline (doc : document) ~(ot : string) (c : condition_expr) =
   | Characteristic_check { time_period; _ } -> time_period <> None
   | Comparison { left_side; right_side; time_period; _ } ->
       time_period <> None || temporal_operand left_side || temporal_operand right_side
+      || List.exists (temporal_member_sum doc) (Option.to_list left_side @ Option.to_list right_side)
   | Predicate { operand; time_period; _ } -> time_period <> None || temporal_operand operand
   | Compound { components; _ } -> List.exists (reads_timeline doc ~ot) components
   | Quantifier_fold { kv_filter; kv_test; _ } -> List.exists qualified (Option.to_list kv_filter @ Option.to_list kv_test)
@@ -11296,8 +11316,8 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
           in
           let b, bound_e, op =
             match (temporal_side le, temporal_side re) with
-            | Some b, None -> (b, re, op)
-            | None, Some b -> (b, le, reversed op)
+            | Some b, None when not (temporal_member_sum ctx.doc re) -> (b, re, op)
+            | None, Some b when not (temporal_member_sum ctx.doc le) -> (b, le, reversed op)
             | _ ->
                 fault
                   "a comparison in a condition per period compares one time-dependent attribute of the subject \

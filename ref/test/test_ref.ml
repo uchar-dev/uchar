@@ -13324,7 +13324,25 @@ let () =
      rule writes under a condition per period reads it whole: 25 in each of the
      six months aangesteld, 150 *)
   plays ~ident:"WV-3.6-totaal-onder-voorwaarde" ~ir:(read (dir ^ "totaal-onder-voorwaarde/ir.json"))
-    ~case_data:(read (dir ^ "totaal-onder-voorwaarde/case.json")) (fun _ -> ())
+    ~case_data:(read (dir ^ "totaal-onder-voorwaarde/case.json")) (fun _ -> ());
+  (* WV-3.6-member-sum-per-period: "de som van de opbrengst van alle vondsten
+     van de Jutter" as an operand of a comparison in a condition per period,
+     compared with 100 € (ir) and as the bound of the own timeline eigen
+     opbrengst (ir-bound), is refused by name, as a comparison of two own
+     timelines is: the double fold of the sum is its reading on a scalar
+     target only. Measured before the refusal, in ref and the ASP backend
+     alike: toeslag 5 € on all time (ir), and no toeslag on any day
+     (ir-bound) *)
+  List.iter
+    (fun f ->
+      let ident = "WV-3.6-member-sum-per-period " ^ f in
+      with_files ~ir:(read (dir ^ "member-sum/" ^ f ^ ".json")) ~case_data:(read (dir ^ "member-sum/case.json"))
+        (fun findings _ evaluate ->
+          check (ident ^ ": verifier-clean") (findings = []);
+          expect_fault_msg ident evaluate
+            "a comparison in a condition per period compares one time-dependent attribute of the subject with a \
+             scalar bound; this one does not"))
+    [ "ir"; "ir-bound" ]
 
 (* --- a time-dependent characteristic within a window, the day count over all
    time and its day-kind test (RUNTIME-SEMANTICS ch. 3.8, 3.10, 3.11; the worked

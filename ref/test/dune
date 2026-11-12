@@ -81,6 +81,8 @@
   (glob_files fixtures/conditions-per-period/afdracht-fijner/*.json)
   (glob_files fixtures/conditions-per-period/twee-schrijvers-gelijk/*.json)
   (glob_files fixtures/conditions-per-period/totaal-onder-voorwaarde/*.json)
+  ; a sum over members of a time-dependent attribute in a comparison per period
+  (glob_files fixtures/conditions-per-period/member-sum/*.json)
   ; a percentage of a value with a unit, and a sum per period of a rate as an operand
   (glob_files fixtures/period-units/percentage-per-period/*.json)
   (glob_files fixtures/period-units/percentage-scalar/*.json)
