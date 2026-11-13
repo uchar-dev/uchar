@@ -1,4 +1,4 @@
-# The findings of the reviews of 2026-11-13
+# Binding where built, uchar's parse in public, Catala's empty values, explanations of allocations
 
 Goal: the faults found in the rest of the expression builder and emitter, the Catala frontend, the toolchain's
 `Verbaliser` and the playground are fixed with a witness, and the measured simplifications are made without losing a
