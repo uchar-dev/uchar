@@ -1,0 +1,16 @@
+Scenario vondsten van de meester
+Gegeven is de volgende situatie:
+een Jutter M
+een Jutter L
+- de meester is M
+een Vondst V1
+- de waarde is 7
+- is zwaar
+- de vinder is M
+een Vondst V2
+- de waarde is 3
+- de vinder is L
+Met als verwacht resultaat:
+- het cijfer van L is 7
+- L is rijk
+- L is ervaren

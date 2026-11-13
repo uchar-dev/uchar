@@ -1,0 +1,79 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "M",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "L",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "meester": [
+            "M"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "number": "7"
+          }
+        },
+        "roles": {
+          "vinder": [
+            "M"
+          ]
+        },
+        "characteristics": [
+          "zwaar"
+        ]
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "number": "3"
+          }
+        },
+        "roles": {
+          "vinder": [
+            "L"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "L",
+      "attribute": "cijfer",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "L",
+      "characteristic": "rijk"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "L",
+      "characteristic": "ervaren"
+    }
+  ]
+}

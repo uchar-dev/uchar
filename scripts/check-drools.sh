@@ -1639,7 +1639,8 @@ EXPECTED_CHANNEL=(
 # as a negative radicand is under the root (RUNTIME-SEMANTICS ch. 2.2; PLAYED 2), a red case until 2026-11-12.
 # 381 with jutterswet-percentage-plus-percentage: the sum of two percentages is a percentage (RUNTIME-SEMANTICS ch. 2.6;
 # PLAYED 1).
-EXPECTED_PLAYED=381
+# 382 with jutterswet-vondsten-van-de-meester: a one-step range with a role as anchor runs through that role (PLAYED 1).
+EXPECTED_PLAYED=382
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

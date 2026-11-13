@@ -1,0 +1,32 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het cijfer Numeriek (geheel getal);
+    is rijk kenmerk (bijvoeglijk);
+    is ervaren kenmerk (bijvoeglijk);
+
+Objecttype de Vondst (mv: Vondsten)
+    de waarde Numeriek (geheel getal);
+    is zwaar kenmerk (bijvoeglijk);
+
+Feittype vinderschap
+    de vinder Jutter
+    de vondst (mv: vondsten) Vondst
+Eén vinder heeft meerdere vondsten
+
+Feittype leerschap
+    de meester Jutter
+    de leerling (mv: leerlingen) Jutter
+Eén meester heeft meerdere leerlingen
+
+Regel cijfer
+    geldig altijd
+        Het cijfer van een Jutter moet berekend worden als de som van de waarde van alle vondsten van zijn meester.
+
+Regel rijk
+    geldig altijd
+        Een Jutter is rijk
+        indien alle vondsten van zijn meester zwaar zijn.
+
+Regel ervaren
+    geldig altijd
+        Een Jutter is ervaren
+        indien de waarde van alle vondsten van de meester groter is dan 5.
