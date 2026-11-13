@@ -1770,6 +1770,15 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
        highest default. The attribute-target chain own default is covered; a
        characteristic context target and a root-unordered own default are
        recorded flanks. *)
+    (* a boolean passed as a subscope-input value is declared as a boolean
+       attribute ([value_read_bools]); a definition of it would be written as a
+       characteristic attribution on that attribute, which WF-022 refuses *)
+    if is_bool && is_value_bool v then
+      refuse
+        "boolean variable %S is computed and passed as a subscope-input value: a boolean passed as \
+         a value is declared as a boolean attribute, and the plugin writes a boolean definition only \
+         as a characteristic attribution — only an input boolean is passed as a value; refused"
+        vname;
     if is_reentrant_top v && is_bool then
       refuse
         "context (reentrant) characteristic %S: a caller boolean override is a recorded besluit-6 \

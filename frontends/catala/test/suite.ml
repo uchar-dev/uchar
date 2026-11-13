@@ -445,6 +445,10 @@ let () =
          value position has no image and would emit a dangling AttributeReference the
          verifier admits but ref/clingo split on *)
       ("refuse_subscope_bool_value.catala_en", "value position");
+      (* a computed boolean passed as a subscope-input value: declared as a
+         boolean attribute, it has no rule that writes it (the plugin exited 0
+         on a document WF-022 refuses) *)
+      ("refuse_subscope_bool_computed.catala_en", "is computed and passed as a subscope-input value");
       ("refuse_empty_arith.catala_en", "operand");
       (* the empty-value rule on the other routes Catala reads hard: a copy, a
          subscope argument, a condition and a caller's read of a subscope output
