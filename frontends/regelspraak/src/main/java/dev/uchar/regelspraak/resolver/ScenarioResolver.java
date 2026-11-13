@@ -109,35 +109,19 @@ public final class ScenarioResolver {
         return false;
     }
 
+    /** The test document {@code source} as the scenario route reads it: parsed under {@code testDocument}, a second
+     *  time where its dimensions declare a label with the word 'en' ({@link Resolver#parse(String, String, boolean)}). */
     static Read read(String source) {
-        Read first = read(source, List.of());
-        List<List<String>> labels = Resolver.labelsWithEn(first.test());
-        return labels.isEmpty() ? first : read(source, labels);
-    }
-
-    /** {@link #read} with the declared labels that contain the word 'en' ({@link Resolver#labelsWithEn}): a test
-     *  document whose dimensions declare one is read a second time with each 'en' inside such a label a name word
-     *  ({@link Resolver#labelWords}), as the production route reads it. */
-    private static Read read(String source, List<List<String>> labels) {
-        RegelSpraakLexer lexer = new RegelSpraakLexer(CharStreams.fromString(source));
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-        Resolver.labelWords(tokens, labels);
-        RegelSpraak parser = new RegelSpraak(tokens);
-        List<Diagnostic> syntax = new ArrayList<>();
-        BaseErrorListener listener = new BaseErrorListener() {
-            @Override public void syntaxError(Recognizer<?, ?> r, Object sym, int line, int col,
-                                              String msg, RecognitionException e) {
-                syntax.add(new Diagnostic(Severity.ERROR, "RGS-216", params("message", msg), line));
-            }
-        };
-        lexer.removeErrorListeners(); lexer.addErrorListener(listener);
-        parser.removeErrorListeners(); parser.addErrorListener(listener);
-
-        TestDocumentContext test = parser.testDocument();
+        Resolver.Parse p = Resolver.parse(source, IntStream.UNKNOWN_SOURCE_NAME, true);
+        TestDocumentContext test = (TestDocumentContext) p.document();
         RegelSpraakDocumentContext production = productionDocument(test);
-        RegelSpraakModel model = Resolver.build(production, tokens, syntax);
+        List<Diagnostic> syntax = new ArrayList<>();
+        for (Resolver.SyntaxError e : p.errors())
+            syntax.add(new Diagnostic(Severity.ERROR, "RGS-216", params("message", e.message()), e.line()));
+        RegelSpraakModel model = Resolver.build(production, p.tokens(), syntax);
         ScenarioResolver r = new ScenarioResolver(model, test);
-        return new Read(test, tokens, production, !syntax.isEmpty(), new ScenarioBundle(model, r.resolveScenarios()));
+        return new Read(test, p.tokens(), production, !p.errors().isEmpty(),
+                new ScenarioBundle(model, r.resolveScenarios()));
     }
 
     /** The non-scenario blocks of {@code test} as a {@code regelSpraakDocument} of their own, in document order. The

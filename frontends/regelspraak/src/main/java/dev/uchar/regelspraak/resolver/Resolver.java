@@ -29,21 +29,61 @@ public final class Resolver {
      *  {@link dev.uchar.regelspraak.ir.Source} anchors back to {@code fileName} (uitleg can then
      *  cite the file/regel); otherwise identical. */
     public static RegelSpraakModel resolve(String source, String fileName) {
-        Parsed p = parse(source, fileName);
-        return build(p.doc(), p.tokens(), p.syntax());
+        Parse p = parse(source, fileName, false);
+        return build((RegelSpraakDocumentContext) p.document(), p.tokens(), syntax(p));
     }
 
-    /** A parsed document: the tree, the token stream it was parsed from, and the syntax diagnostics the parse raised. */
-    private record Parsed(RegelSpraakDocumentContext doc, CommonTokenStream tokens, java.util.List<Diagnostic> syntax) {}
+    /** The syntax errors of a production document as diagnostics of the resolver. */
+    private static java.util.List<Diagnostic> syntax(Parse p) {
+        java.util.List<Diagnostic> out = new java.util.ArrayList<>();
+        for (SyntaxError e : p.errors())
+            out.add(new Diagnostic(Severity.ERROR, "RGS-091", params("message", e.message()), e.line()));
+        return out;
+    }
+
+    /**
+     * One syntax error of a {@link Parse}, lexer or parser: its {@code line} (from 1) and {@code column} (the character
+     * position in that line, from 0), ANTLR's {@code message}, the text of the offending {@code token} (null for an
+     * error of the lexer, which has no token), and the {@code expected} tokens at the failure point, each by its
+     * literal name in the grammar ({@code 'Regel'}) or else its symbolic name ({@code LOWER_ID}). The expected set is
+     * the recognition exception's own where the parser raised one, else the parser's expected set where it stood; an
+     * error of the lexer has none, so its list is empty.
+     */
+    public record SyntaxError(int line, int column, String message, String token, java.util.List<String> expected) {
+        public SyntaxError { expected = java.util.List.copyOf(expected); }
+    }
+
+    /**
+     * A parsed source as the resolver reads it: the tree of its start rule, the token stream it was parsed from (the
+     * line comments on the HIDDEN channel), and its syntax errors in the order raised. A source that opens a block of
+     * the scenario layer ({@code Situatie}, {@code Parameterset}, {@code Scenario}) is a test document and is parsed
+     * under {@code testDocument} ({@link RegelSpraak.TestDocumentContext}), every other one under
+     * {@code regelSpraakDocument} ({@link RegelSpraakDocumentContext}). A document whose dimensions declare a label
+     * with the word 'en' is the second parse, in which every 'en' inside such a label is a name word ({@link #labelWords}).
+     * A parse with a syntax error still has a tree: ANTLR's recovered one.
+     */
+    public record Parse(ParserRuleContext document, CommonTokenStream tokens, java.util.List<SyntaxError> errors) {
+        public Parse { errors = java.util.List.copyOf(errors); }
+
+        /** Whether the source is a test document, parsed under {@code testDocument}. */
+        public boolean testDocument() { return document instanceof RegelSpraak.TestDocumentContext; }
+    }
+
+    /** The parse of {@code source} that {@link #resolve(String)} and {@link ScenarioResolver#resolve} read: its tree,
+     *  tokens and syntax errors ({@link Parse}). A syntax error, of the lexer as of the parser, is an entry of
+     *  {@link Parse#errors}, never an exception. */
+    public static Parse parse(String source) {
+        return parse(source, IntStream.UNKNOWN_SOURCE_NAME, ScenarioResolver.opensScenarioBlock(source));
+    }
 
     /** A document whose dimensions declare a label with the word 'en' ("eb en vloed") is parsed a second time, with
      *  every 'en' inside such a label a name word ({@link #labelWords}), so that a name can carry the label (§3.6,
      *  "zijn getijgewicht bij eb en vloed"); the first parse, which reads the declarations, is the only one of every
-     *  other document. */
-    private static Parsed parse(String source, String fileName) {
-        Parsed first = parse(source, fileName, java.util.List.of());
-        java.util.List<java.util.List<String>> labels = labelsWithEn(first.doc());
-        return labels.isEmpty() ? first : parse(source, fileName, labels);
+     *  other document. {@code test}: under {@code testDocument}, else {@code regelSpraakDocument}. */
+    static Parse parse(String source, String fileName, boolean test) {
+        Parse first = parse(source, fileName, test, java.util.List.of());
+        java.util.List<java.util.List<String>> labels = labelsWithEn(first.document());
+        return labels.isEmpty() ? first : parse(source, fileName, test, labels);
     }
 
     /** The labels {@code tree} declares in its dimensions that contain the word 'en', each as its words in lower
@@ -98,24 +138,40 @@ public final class Resolver {
         return false;
     }
 
-    private static Parsed parse(String source, String fileName, java.util.List<java.util.List<String>> labels) {
+    private static Parse parse(String source, String fileName, boolean test,
+                               java.util.List<java.util.List<String>> labels) {
         RegelSpraakLexer lexer = new RegelSpraakLexer(CharStreams.fromString(source, fileName));
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         labelWords(tokens, labels);
         RegelSpraak parser = new RegelSpraak(tokens);
 
-        var syntax = new java.util.ArrayList<Diagnostic>();
+        var errors = new java.util.ArrayList<SyntaxError>();
         BaseErrorListener listener = new BaseErrorListener() {
             @Override public void syntaxError(Recognizer<?, ?> r, Object sym, int line, int col,
                                               String msg, RecognitionException e) {
-                syntax.add(new Diagnostic(Severity.ERROR, "RGS-091", params("message", msg), line));
+                errors.add(new SyntaxError(line, col, msg, sym instanceof Token t ? t.getText() : null,
+                        expectedTokens(r, e)));
             }
         };
         lexer.removeErrorListeners(); lexer.addErrorListener(listener);
         parser.removeErrorListeners(); parser.addErrorListener(listener);
 
-        RegelSpraakDocumentContext doc = parser.regelSpraakDocument();
-        return new Parsed(doc, tokens, syntax);
+        ParserRuleContext doc = test ? parser.testDocument() : parser.regelSpraakDocument();
+        return new Parse(doc, tokens, errors);
+    }
+
+    /** The expected tokens of a syntax error ({@link SyntaxError#expected}). Only a parser has a follow set: a
+     *  lexer's recognition exception carries the lexer's state, which {@code getExpectedTokens} cannot read. */
+    private static java.util.List<String> expectedTokens(Recognizer<?, ?> r, RecognitionException e) {
+        if (!(r instanceof Parser p)) return java.util.List.of();
+        org.antlr.v4.runtime.misc.IntervalSet expected = e != null ? e.getExpectedTokens() : p.getExpectedTokens();
+        java.util.List<String> out = new java.util.ArrayList<>();
+        Vocabulary vocabulary = p.getVocabulary();
+        for (int type : expected.toArray()) {
+            String literal = vocabulary.getLiteralName(type), symbolic = vocabulary.getSymbolicName(type);
+            out.add(literal != null ? literal : symbolic != null ? symbolic : "<" + type + ">");
+        }
+        return out;
     }
 
     /** The semantic tokens of one or more source files (grammar/DIVERGENCES.md, "Semantic tokens"): the files are
@@ -145,10 +201,11 @@ public final class Resolver {
             return SemanticTokens.of(files, text, firstLines, r.tokens(), r.production(), r.test(), m,
                     new java.util.ArrayList<>(m.diagnostics), r.recovered());
         }
-        Parsed p = parse(text, IntStream.UNKNOWN_SOURCE_NAME);
-        RegelSpraakModel m = build(p.doc(), p.tokens(), p.syntax());
-        return SemanticTokens.of(files, text, firstLines, p.tokens(), p.doc(), null, m,
-                new java.util.ArrayList<>(m.diagnostics), !p.syntax().isEmpty());
+        Parse p = parse(text, IntStream.UNKNOWN_SOURCE_NAME, false);
+        RegelSpraakDocumentContext doc = (RegelSpraakDocumentContext) p.document();
+        RegelSpraakModel m = build(doc, p.tokens(), syntax(p));
+        return SemanticTokens.of(files, text, firstLines, p.tokens(), doc, null, m,
+                new java.util.ArrayList<>(m.diagnostics), !p.errors().isEmpty());
     }
 
     /** A test document lowers its scenarios to case files, so one without a scenario is an ERROR. */
