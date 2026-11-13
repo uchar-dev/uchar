@@ -141,4 +141,50 @@ class RepeatedNameTest {
                 + d.params().get("name") + " " + d.params().get("earlierLine")).toList(), m.diagnostics::toString);
         assertEquals("timelines", m.errors().get(0).params().get("namespace"));
     }
+
+    private static final String TWO_GROUPS = """
+        Vocabulaire handboek
+
+        Objecttype de Vondst (mv: Vondsten)
+            de waarde Numeriek (geheel getal);
+            de premie Numeriek (geheel getal);
+
+        Regelgroep %s
+        Regel waarde
+            geldig altijd
+                De waarde van een Vondst moet berekend worden als 1.
+
+        Regelgroep %s
+        Regel premie
+            geldig altijd
+                De premie van een Vondst moet berekend worden als 2.
+        """;
+
+    /** IR-SPEC WF-001: the rule groups are a namespace of their own. Measured on the frontend before this check: two
+     *  groups of one name reached the wire without a diagnostic, and a scope 'toetst de regelgroep g' took the first;
+     *  with designations the two groups shared one key, which yielded a WF-117 and a WF-118 refusal and no WF-001. */
+    @Test void a_rule_group_declared_twice_is_refused() {
+        for (String[] heads : List.of(new String[] {"g", "g"}, new String[] {"g", "G"},
+                new String[] {"g (handboek: eerste groep)", "g (handboek: tweede groep)"},
+                new String[] {"g (handboek: groep)", "G (handboek: groep)"})) {
+            String second = heads[1].split(" ")[0];
+            RegelSpraakModel m = Resolver.resolve(TWO_GROUPS.formatted(heads[0], heads[1]));
+            assertEquals(List.of("RGS-008 12 " + second + " 7"), m.errors().stream().map(RepeatedNameTest::row).toList(),
+                    m.diagnostics::toString);
+            assertEquals("ruleGroups", m.errors().get(0).params().get("namespace"));
+        }
+    }
+
+    /** A rule group and a rule are two namespaces (WF-118 scopes them each on its own), so they may share a name. */
+    @Test void a_rule_group_and_a_rule_may_share_a_name() {
+        assertEquals(List.of(), errors("""
+            Objecttype de Vondst (mv: Vondsten)
+                de waarde Numeriek (geheel getal);
+
+            Regelgroep waarde
+            Regel waarde
+                geldig altijd
+                    De waarde van een Vondst moet berekend worden als 1.
+            """));
+    }
 }

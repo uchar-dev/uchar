@@ -1589,7 +1589,10 @@ public final class RegelSpraakModel {
         collect.accept(prioritizedDefaults.stream().map(dev.uchar.regelspraak.ir.PrioritizedDefaults::name).toList());
         for (java.util.Set<String> l : lists)
             for (String n : l) if (n != null) result.add(Designatable.form(n));
-        for (var g : ruleGroups) if (g.name() != null) result.add(Designatable.ruleGroup(g.name()));
+        // once per name, like a form: a second group of one name is refused (WF-001) and carries no designation
+        for (var g : ruleGroups)
+            if (g.name() != null && result.stream().noneMatch(b -> same(b, Designatable.ruleGroup(g.name()))))
+                result.add(Designatable.ruleGroup(g.name()));
         return result;
     }
 

@@ -348,6 +348,18 @@ public final class DefinitionResolver {
             error(
                     "RGS-008", params("kind", category[0], "namespace", category[1], "name", category[2], "earlierName", first[0], "earlierLine", first[1]), line);
         }
+        // the rule groups are a namespace of their own: a scope 'toetst de regelgroep' and a designation reach a
+        // group by its name, so a second group of one name would leave them to take the first
+        for (RegelGroepContext g : doc.regelGroep()) {
+            if (recovered(g)) continue;
+            String name = src(g.kaleNaam());
+            int line = g.getStart().getLine();
+            String[] first = earlier.putIfAbsent("ruleGroups\u0000" + dev.uchar.regelspraak.emit.IrEmitter.norm(name),
+                    new String[] {name, String.valueOf(line)});
+            if (first == null) continue;
+            error(
+                    "RGS-008", params("kind", "regelgroep", "namespace", "ruleGroups", "name", name, "earlierName", first[0], "earlierLine", first[1]), line);
+        }
     }
 
     /** The name of each object type as its first head writes it, under the name identity. */

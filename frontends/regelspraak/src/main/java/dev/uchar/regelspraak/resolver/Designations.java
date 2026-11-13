@@ -89,8 +89,12 @@ final class Designations {
         }
         for (RegelContext r : DefinitionResolver.allRules(doc))
             annotations(Designatable.form(DefinitionResolver.src(r.regelNaam())), r.benaming(), r);
+        // a second group of one name is refused by its own sentence (WF-001, DefinitionResolver); its annotations
+        // would land on the first group's key and be refused again as that group's
+        java.util.Set<String> groups = new java.util.HashSet<>();
         for (RegelGroepContext g : doc.regelGroep())
-            annotations(Designatable.ruleGroup(DefinitionResolver.src(g.kaleNaam())), g.benaming(), g);
+            if (groups.add(dev.uchar.regelspraak.emit.IrEmitter.norm(DefinitionResolver.src(g.kaleNaam()))))
+                annotations(Designatable.ruleGroup(DefinitionResolver.src(g.kaleNaam())), g.benaming(), g);
         for (BeslistabelContext b : DefinitionResolver.allDecisionTables(doc))
             if (!b.benaming().isEmpty())
                 error(
