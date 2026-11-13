@@ -245,7 +245,7 @@ final class AbsenceMarkers {
                 Condition filter = cond(f.filter());
                 yield same && empty == f.emptyFallback() && filter == f.filter() ? f
                         : new Expr.FunctionCall(f.kind(), args, f.elementObjectType(), empty, filter, f.dimensionSelections(),
-                                f.type(), f.source(), f.granularity(), f.anchored());
+                                f.type(), f.source(), f.granularity(), f.anchored(), f.sourceRole(), f.sourcePath());
             }
             case Expr.Rounding a -> {
                 Expr b = read(a.base());

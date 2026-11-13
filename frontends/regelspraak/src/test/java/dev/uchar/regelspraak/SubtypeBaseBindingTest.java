@@ -69,4 +69,35 @@ class SubtypeBaseBindingTest {
         assertEquals(2, count(ir, walk), () -> "de basis en haar herhaling op de Strandjutter lezen via thuishaven:\n" + ir);
         assertFalse(ir.contains("\"factType\":\"strandhaven\",\"role\":\"haven\""), ir);
     }
+
+    @Test void a_base_conjunct_keeps_the_range_of_its_fold() {
+        String ir = emitCompact("""
+            Objecttype de Vondst (mv: Vondsten)
+                de waarde Numeriek (geheel getal);
+
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                het loon Numeriek (geheel getal);
+
+            Objecttype de Strandjutter is een Jutter (mv: Strandjutters)
+                het cijfer Numeriek (geheel getal);
+
+            Feittype vinderschap
+                de vinder Jutter
+                de buit (mv: buiten) Vondst
+            Eén vinder heeft meerdere buiten
+
+            Feittype strandvondst
+                de strandvinder Strandjutter
+                de strandbuit (mv: strandbuiten) Vondst
+            Eén strandvinder heeft meerdere strandbuiten
+
+            Regel loon
+                geldig altijd
+                    Het loon van een Jutter moet gesteld worden op 10
+                    indien de som van de waarde van alle Vondsten van de Jutter groter is dan 5.
+            """ + EXCEPTION);
+        String range = "\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"vinderschap\",\"role\":\"buit\"}";
+        assertEquals(2, count(ir, range), () -> "de basis en haar herhaling op de Strandjutter vouwen over vinderschap:\n" + ir);
+        assertFalse(ir.contains("\"factType\":\"strandvondst\""), ir);
+    }
 }

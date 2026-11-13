@@ -336,7 +336,8 @@ final class ExpressionBuilder {
                 if (f.anchored()) return f;
                 if (dev.uchar.regelspraak.emit.IrEmitter.isFoldSource(f))
                     return new Expr.FunctionCall(f.kind(), f.arguments(), f.elementObjectType(), f.emptyFallback(), f.filter(),
-                            f.dimensionSelections(), f.type(), f.source(), f.granularity(), true);
+                            f.dimensionSelections(), f.type(), f.source(), f.granularity(), true, f.sourceRole(),
+                            f.sourcePath());
                 // a fold over a dimension or of another shape, and the operators over the subject's own timeline, read
                 // the subject without a node the anchor can stand on
                 if (f.dimensionSelections() != null || f.elementObjectType() != null || f.filter() != null
@@ -355,7 +356,8 @@ final class ExpressionBuilder {
                 Expr fallback = again.apply(f.emptyFallback());
                 return !changed && fallback == f.emptyFallback() ? f
                         : new Expr.FunctionCall(f.kind(), List.copyOf(arguments), f.elementObjectType(), fallback, f.filter(),
-                                f.dimensionSelections(), f.type(), f.source(), f.granularity());
+                                f.dimensionSelections(), f.type(), f.source(), f.granularity(), f.anchored(), f.sourceRole(),
+                                f.sourcePath());
             }
             case Expr.Binary b -> {
                 Expr l = again.apply(b.left()), r = again.apply(b.right());
@@ -1541,7 +1543,8 @@ final class ExpressionBuilder {
         if (valueFold != null && elem == null && arguments.size() < 2)
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
                     "RGS-071", params("fold", valueFold), f.getStart().getLine()));
-        Expr function = new Expr.FunctionCall(kind, arguments, elem, emptyFallback, filter, null, type, source, operatorGran);
+        Expr function = ranged(new Expr.FunctionCall(kind, arguments, elem, emptyFallback, filter, null, type, source,
+                operatorGran));
         // A count whose written source walks further than the one relation it counts, where the emitter would still
         // write a range: by the head's name or by the type pair of subject and element (IrEmitter.foldRange), the
         // other steps dropped without a word ("het aantal havenjutters van de haven van de jutter van de Vondst" went
@@ -3559,6 +3562,23 @@ final class ExpressionBuilder {
         return bound(new Expr.AttributeReference(attr, ot, subjectSource, navRole, dt, source, isSetSubject(subjectType),
                 navigationPath, rangePath(subjectType), writtenQuantifier(subjectType),
                 writtenThreshold(subjectType)));
+    }
+
+    /** {@code f} with its range bound from the subject it is built on (IR-SPEC ch. 4.3), the range the wire writes for it
+     *  wherever the node goes: for an instance fold over one source that denotes instances, the multi-step range the
+     *  walk bound off the written chain ({@code sourcePath}), else the one relation {@link dev.uchar.regelspraak.emit.IrEmitter#rangeRole} finds
+     *  ({@code sourceRole}). A source that denotes no instances, the subject's own total, has no range, and a range
+     *  that binds nothing is left out, which {@code RuleChecker.checkPaths} refuses. */
+    private Expr.FunctionCall ranged(Expr.FunctionCall f) {
+        if (currentSubject == null || !dev.uchar.regelspraak.emit.IrEmitter.isFoldSource(f)) return f;
+        Expr.AttributeReference arg = dev.uchar.regelspraak.emit.IrEmitter.foldSourceReference(f.arguments().get(0));
+        if (!arg.set() && !(arg.type() instanceof Datatype.Unknown)) return f;
+        List<RegelSpraakModel.RoleBindingRef> steps = arg.set() && arg.rangePath() != null ? arg.rangePath() : List.of();
+        RegelSpraakModel.RoleBindingRef role = steps.isEmpty()
+                ? dev.uchar.regelspraak.emit.IrEmitter.rangeRole(model, currentSubject, f.elementObjectType(), arg) : null;
+        if (steps.isEmpty() && role == null) return f;
+        return new Expr.FunctionCall(f.kind(), f.arguments(), f.elementObjectType(), f.emptyFallback(), f.filter(),
+                f.dimensionSelections(), f.type(), f.source(), f.granularity(), f.anchored(), role, steps);
     }
 
     /** {@code a} with its walk bound from the subject it is built on ({@link #navigationBindings}), the walk the wire

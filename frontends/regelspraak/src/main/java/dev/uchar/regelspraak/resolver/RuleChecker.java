@@ -2166,7 +2166,7 @@ final class RuleChecker {
                 boolean same = empty == f.emptyFallback() && filter == f.filter() && element == f.elementObjectType();
                 for (int i = 0; i < args.size(); i++) same &= args.get(i) == f.arguments().get(i);
                 yield same ? f : new Expr.FunctionCall(f.kind(), args, element, empty, filter, f.dimensionSelections(),
-                        f.type(), f.source(), f.granularity(), f.anchored());
+                        f.type(), f.source(), f.granularity(), f.anchored(), f.sourceRole(), f.sourcePath());
             }
             case Expr.Rounding a -> {
                 Expr b = opSubtype(a.base(), sup, sub);

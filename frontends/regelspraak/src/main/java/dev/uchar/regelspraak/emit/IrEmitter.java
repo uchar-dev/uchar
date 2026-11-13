@@ -1808,9 +1808,8 @@ public final class IrEmitter {
      * <p>A source that denotes instances — a set reading, or the count source that names a role (the
      * record types it unknown, since a role has no datatype) — is read through the range, so the range is
      * written for it or the model is refused: without one the reader takes the argument for the subject's
-     * own attribute and folds something the sentence did not name. The derivation is the resolver's own:
-     * the multi-step range it bound off the written chain; else, for a set reading, the type pair and then
-     * the written name; for the count source, the written name and then the type pair. The source itself
+     * own attribute and folds something the sentence did not name. The range is the one the resolver bound
+     * where it built the fold ({@code sourcePath} or {@code sourceRole}). The source itself
      * carries no step: a written chain has no place beside a range, and the one written step that may
      * stand is the count source naming the fold subject itself ("de vondsten van de aanmelder", read on
      * the aanmelder), which reads nothing beyond the subject.
@@ -1836,11 +1835,9 @@ public final class IrEmitter {
         });
         // the total over the subject's own timeline has no range
         if (!(arg.type() instanceof Datatype.Unknown) && !arg.set()) return new FoldRange(null, List.of(), null);
-        List<RegelSpraakModel.RoleBindingRef> steps = arg.set() && arg.rangePath() != null ? arg.rangePath() : List.of();
-        if (!steps.isEmpty())
-            return new FoldRange(null, steps, countSourceName(f, arg, steps.get(steps.size() - 1)));
-        RegelSpraakModel.RoleBindingRef rb = rangeRole(m, currentSubject, f, arg);
-        return new FoldRange(rb, List.of(), countSourceName(f, arg, rb));
+        if (!f.sourcePath().isEmpty())
+            return new FoldRange(null, f.sourcePath(), countSourceName(f, arg, f.sourcePath().get(f.sourcePath().size() - 1)));
+        return new FoldRange(f.sourceRole(), List.of(), countSourceName(f, arg, f.sourceRole()));
     }
 
     /** Why the wire has no spelling for a fold over one source, as {@link #foldRefusalOf} finds it. */
@@ -1877,8 +1874,7 @@ public final class IrEmitter {
             return f.kind() == Expr.FunctionKind.TOTAAL ? null : FoldRefusal.OWN_ATTRIBUTE;
         }
         if (m == null || subject == null) return FoldRefusal.NO_SUBJECT;
-        if (arg.set() && arg.rangePath() != null && !arg.rangePath().isEmpty()) return null;
-        return rangeRole(m, subject, f, arg) == null ? FoldRefusal.NO_RELATION : null;
+        return f.sourceRole() == null && f.sourcePath().isEmpty() ? FoldRefusal.NO_RELATION : null;
     }
 
     /** The one-step range of an instance fold whose source {@code arg} denotes instances: for the count source the

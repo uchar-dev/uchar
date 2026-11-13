@@ -149,13 +149,30 @@ public sealed interface Expr {
      *  value space rather than over object instances. Null for an ordinary instance aggregation; never empty. */
     record FunctionCall(FunctionKind kind, List<Expr> arguments, ObjectType elementObjectType,
                    Expr emptyFallback, Condition filter, List<DimensionSelection> dimensionSelections,
-                   Datatype type, Source source, Granularity granularity, boolean anchored) implements Expr {
+                   Datatype type, Source source, Granularity granularity, boolean anchored,
+                   dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef sourceRole,
+                   List<dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef> sourcePath) implements Expr {
+        /** {@code sourceRole} and {@code sourcePath}: the range of an instance fold over one source (IR-SPEC ch. 4.3,
+         *  the wire's two spellings of it, never both), bound where the fold is built, from the subject it is built on;
+         *  it travels with the node, so a fold moved to another subject (a base conjunct repeated on a subtype) keeps
+         *  the range it was written with. Null and empty for every other call, and for a fold whose range did not
+         *  bind (which the resolver refuses). */
         public FunctionCall {
             if (dimensionSelections != null) {
                 if (dimensionSelections.isEmpty())
                     throw new IllegalArgumentException("a fold over a dimension selection carries at least one selection");
                 dimensionSelections = List.copyOf(dimensionSelections);
             }
+            sourcePath = sourcePath == null ? List.of() : List.copyOf(sourcePath);
+            if (sourceRole != null && !sourcePath.isEmpty())
+                throw new IllegalArgumentException("a fold carries its range as sourceRole or as sourcePath, never both");
+        }
+        /** A call without a range. */
+        public FunctionCall(FunctionKind kind, List<Expr> arguments, ObjectType elementObjectType,
+                       Expr emptyFallback, Condition filter, List<DimensionSelection> dimensionSelections,
+                       Datatype type, Source source, Granularity granularity, boolean anchored) {
+            this(kind, arguments, elementObjectType, emptyFallback, filter, dimensionSelections, type, source, granularity,
+                    anchored, null, List.of());
         }
         /** {@code granularity} is the §13.4.17.57 aantal-dagen-in operator's stated bucket unit ("in <de maand|
          *  het jaar>"); null for every other functie. The transpiler requires it to MATCH the doel's tijdlijn
