@@ -81,6 +81,13 @@ public final class RegelSpraakModel {
      *  after its base rule). Keyed as {@link #designatable()} spells the element; read it through
      *  {@link #generatedFrom}. */
     public final Map<Designatable, GeneratedFrom> generated = new LinkedHashMap<>();
+    /** Where the source declares an element of {@link #designatable()}: its line and the comment written directly
+     *  above it ({@link Declaration}), in the order of {@link #designatable()}. The frontend fills it from the token
+     *  stream of its parse; an element the frontend made itself has no entry, nor has one the source declares in more
+     *  than one place (two rule groups of one name), and a model read from the wire has none, since the IR carries no
+     *  comment. A side table without semantics, like {@link #designations}: neither the emitter nor a transpiler
+     *  reads it. Read it through {@link #declaration}. */
+    public final Map<Designatable, Declaration> declarations = new LinkedHashMap<>();
     public final List<Diagnostic> diagnostics = new ArrayList<>();
     /** The {@code uchar-ir-v1} document the resolver emitted when it finished this model, the one its dependency
      *  checks judged and {@code --ir} writes; null for a model with an ERROR and for one the resolver did not build,
@@ -1436,6 +1443,23 @@ public final class RegelSpraakModel {
             java.util.Objects.requireNonNull(source, "source");
             java.util.Objects.requireNonNull(form, "form");
         }
+    }
+
+    /** Where the source declares an element: the {@code line} of the declaration's first token (in the text the
+     *  frontend read; for a chain of files, the line in the chain), and the {@code comment} directly above it — the line
+     *  comments to the left of that first token on the lines right above its own, up to the first line that holds no
+     *  comment alone, each without its {@code //} and stripped, in source order; empty without one. */
+    public record Declaration(int line, List<String> comment) {
+        public Declaration { comment = List.copyOf(comment); }
+    }
+
+    /** The declaration of {@code element} ({@link #declarations}), matched on its kind and case-insensitively on its
+     *  owner and name, the name identity of IR-SPEC ch. 2.1; empty for an element without an entry. */
+    public java.util.Optional<Declaration> declaration(Designatable element) {
+        if (element == null) return java.util.Optional.empty();
+        for (var e : declarations.entrySet())
+            if (same(e.getKey(), element)) return java.util.Optional.of(e.getValue());
+        return java.util.Optional.empty();
     }
 
     /** The origin of {@code element} when the frontend made it ({@link #generated}), matched on its kind and

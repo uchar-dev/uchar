@@ -230,13 +230,14 @@ public final class Resolver {
         // the vocabulary side table (grammar/DIVERGENCES.md, "Vocabulaires en benamingen"): read after the
         // declarations; composed for the generated elements once the rule check has recorded where they come from,
         // and judged with the composed designations once it has written every form
-        Designations designations = new Designations(model, definitions.repetitions().keySet());
+        Designations designations = new Designations(model, definitions.repetitions().keySet(), tokens);
         designations.parse(doc);
         RuleChecker checker = new RuleChecker(model, tokens, definitions.repetitions());
         checker.check(doc);
         anchoredTimelines(doc, model);
         designations.compose(checker.nameParts());
         designations.check();
+        designations.declare();
         AbsenceMarkers.lower(model);
         reportUnresolved(model, checker.refusedMarkers());
         model.document(checker.document(doc));   // last: the one emission, of the finished model

@@ -11,7 +11,10 @@ import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Vocabulary;
 import dev.uchar.regelspraak.parser.RegelSpraak.*;
+import dev.uchar.regelspraak.parser.RegelSpraakLexer;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -33,10 +36,16 @@ import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
 final class Designations {
 
     private final RegelSpraakModel model;
-    /** The source line of every declaration pass 1 visited, annotated or not: the line pass 2 refuses at. A
-     *  designatable declaration that is not here was written by the frontend itself (a row of a decision table, a
-     *  member a marker generates), where no annotation can stand. */
-    private final Map<Designatable, Integer> rules = new LinkedHashMap<>();
+    /** The first declaration of every element pass 1 visited, annotated or not: its line is the line pass 2 refuses
+     *  at, and with its comment it is the element's entry in {@link RegelSpraakModel#declarations}. A designatable
+     *  declaration that is not here was written by the frontend itself (a row of a decision table, a member a marker
+     *  generates), where no annotation can stand. */
+    private final Map<Designatable, RegelSpraakModel.Declaration> rules = new LinkedHashMap<>();
+    /** The elements pass 1 visited more than once: an element of a namespace no rule keeps unique (the rule groups,
+     *  IR-SPEC ch. 3.9), or a refused repeat, which carries an ERROR of its own. */
+    private final java.util.Set<Designatable> declaredAgain = new java.util.HashSet<>();
+    /** The token stream the document was parsed from: its HIDDEN channel holds the comments above a declaration. */
+    private final CommonTokenStream tokens;
     /** The line of each vocabulary declaration, by its name as declared. */
     private final Map<String, Integer> vocabularyLines = new LinkedHashMap<>();
     /** Every element whose designations {@link #compose} composes, with the parts of its name it composes them from:
@@ -53,9 +62,10 @@ final class Designations {
      *  sentence. */
     private final java.util.Set<ObjectTypeMemberContext> repetitions;
 
-    Designations(RegelSpraakModel model, java.util.Set<ObjectTypeMemberContext> repetitions) {
+    Designations(RegelSpraakModel model, java.util.Set<ObjectTypeMemberContext> repetitions, CommonTokenStream tokens) {
         this.model = model;
         this.repetitions = repetitions;
+        this.tokens = tokens;
     }
 
     // --- pass 1: the declarations and their annotations -----------------------------------------
@@ -186,7 +196,8 @@ final class Designations {
     /** The annotations of one declaration: each refused by name where the verifier would refuse the document, the
      *  others added to the model's side table in written order (the emitter sorts them by vocabulary). */
     private void annotations(Designatable element, List<BenamingContext> list, ParserRuleContext declaration) {
-        rules.putIfAbsent(element, declaration.getStart().getLine());
+        if (rules.containsKey(element)) declaredAgain.add(element);
+        else rules.put(element, new RegelSpraakModel.Declaration(declaration.getStart().getLine(), comment(declaration)));
         for (BenamingContext b : list) {
             String vocabulary = key(b);
             int line = b.getStart().getLine();
@@ -332,9 +343,15 @@ final class Designations {
      *  what it is named; null where the frontend wrote the element, and every part of it, without a source line. */
     private Integer line(Designatable element) {
         List<NamePart> parts = composedFrom.get(element);
-        if (parts == null) return rules.get(element);
-        for (Designatable d : parts(parts)) if (rules.containsKey(d)) return rules.get(d);
+        if (parts == null) return rules.containsKey(element) ? declaredLine(element) : null;
+        for (Designatable d : parts(parts)) if (rules.containsKey(d)) return declaredLine(d);
         return null;
+    }
+
+    /** The line of the first declaration of {@code element}, 0 where pass 1 visited none. */
+    private int declaredLine(Designatable element) {
+        RegelSpraakModel.Declaration d = rules.get(element);
+        return d == null ? 0 : d.line();
     }
 
     // --- pass 2: the finished model ----------------------------------------------------------------
@@ -346,7 +363,7 @@ final class Designations {
         for (Designatable b : model.designations.keySet())
             if (b.kind() == Designatable.Kind.VORM && all.stream().noneMatch(x -> x.equals(b)))
                 error(
-                        "RGS-052", params("name", b.name()), rules.getOrDefault(b, 0));
+                        "RGS-052", params("name", b.name()), declaredLine(b));
         for (Vocabulary v : model.vocabularies) {
             if (v.isDefault()) complete(v, all);
             unique(v, all);
@@ -382,7 +399,7 @@ final class Designations {
             model.designation(v.name(), b).filter(t -> t.equals(b.name())).ifPresent(t ->
                     model.diagnostics.add(new Diagnostic(Severity.WARNING,
                             "RGS-056", params("text", t, "element", description(b), "vocabulary", v.name()),
-                            rules.getOrDefault(b, 0))));
+                            declaredLine(b))));
     }
 
     /** WF-118: within one scope the effective names in a vocabulary are unique, case-insensitively; a collision of two
@@ -429,6 +446,51 @@ final class Designations {
                                 "compound", compound(v, a), "otherCompound", compound(v, b)),
                         line(place));
             }
+    }
+
+    // --- the declarations of the finished model --------------------------------------------------
+
+    /** Writes {@link RegelSpraakModel#declarations}: per element of the finished model that the source declares in
+     *  exactly one place, that declaration, in the order of {@link RegelSpraakModel#designatable()}. Runs after the
+     *  rule check, when the model holds every named form; a rule that becomes no named form (a day kind, a start point,
+     *  an allocation without a method) is no element and gets no entry. */
+    void declare() {
+        for (Designatable b : model.designatable())
+            if (rules.containsKey(b) && !declaredAgain.contains(b)) model.declarations.putIfAbsent(b, rules.get(b));
+    }
+
+    /**
+     * The comment directly above {@code declaration}: the line comments to the left of its first token, on the lines
+     * right above its own, up to the first line that is empty or holds more than a comment, each without its
+     * {@code //} and stripped, in source order. A comment behind the token before them, on that token's line, ends the
+     * run: its line is no comment line.
+     */
+    private List<String> comment(ParserRuleContext declaration) {
+        Token start = declaration.getStart();
+        int index = start.getTokenIndex();
+        if (index < 0 || index >= tokens.size() || tokens.get(index) != start)
+            throw new IllegalStateException("the declaration on line " + start.getLine()
+                    + " is not in the token stream of its parse");
+        List<Token> hidden = tokens.getHiddenTokensToLeft(index);
+        if (hidden == null) return List.of();
+        int first = hidden.get(0).getTokenIndex();
+        int previousLine = first == 0 ? 0 : endLine(tokens.get(first - 1));
+        java.util.LinkedList<String> out = new java.util.LinkedList<>();
+        int expected = start.getLine() - 1;
+        for (int i = hidden.size() - 1; i >= 0; i--) {
+            Token t = hidden.get(i);
+            if (t.getType() != RegelSpraakLexer.LINE_COMMENT || t.getLine() != expected || t.getLine() <= previousLine)
+                break;
+            out.addFirst(t.getText().substring(2).strip());
+            expected--;
+        }
+        return out;
+    }
+
+    /** The line of the last character of {@code t}. */
+    private static int endLine(Token t) {
+        String text = t.getText();
+        return t.getLine() + (text == null ? 0 : (int) text.chars().filter(c -> c == '\n').count());
     }
 
     // --- sentences -------------------------------------------------------------------------------
