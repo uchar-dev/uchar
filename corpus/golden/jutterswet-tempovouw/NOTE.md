@@ -59,7 +59,7 @@ expectations, hand-computed first and only then replayed.
 
 ## What the executors say
 
-Measured on the checked-in `ir.json` + `case.json`:
+Measured on the checked-in `ir.json` + `case1-drie-vondsten-over-drie-maanden.json`:
 
 ```
 verifier                : PASS
@@ -83,3 +83,12 @@ reference interpreter simply replays such a document, and the red corpus
 demands an observable fault in both executors; the boundary is pinned in the
 ASP backend's own suite instead. This golden sits far below it: 5 whole
 member-months in total.
+
+## The scenario
+
+`scenario.rgs` writes the situation and the three expectations above in
+RegelSpraak; read with `source.rgs` as one test document it regenerates
+`case1-drie-vondsten-over-drie-maanden.json` and `ir.json` byte for byte
+(gate 16). Each member's `bewaartarief` timeline is written as its periods,
+one bullet per segment (`- het bewaartarief is 7 €/mnd van 01-01-2026 tot
+01-02-2026`), and `V3` stands without a bullet, so it brings no timeline.

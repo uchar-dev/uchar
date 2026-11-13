@@ -70,7 +70,7 @@ class TemporalNameNormWitnessTest {
         Path p = Files.createTempFile("tempovouw-hoofdletters", ".json");
         p.toFile().deleteOnExit();
         Files.writeString(p, ir.toString());
-        BothBranches.green(p, JSON.readTree(Files.readString(TEMPOVOUW.resolve("case.json"))),
+        BothBranches.green(p, JSON.readTree(Files.readString(TEMPOVOUW.resolve("case1-drie-vondsten-over-drie-maanden.json"))),
                 "BEWAARTARIEF is de gedeclareerde bewaartarief, 48 / 0");
     }
 
@@ -104,7 +104,7 @@ class TemporalNameNormWitnessTest {
 
     @Test void attribute_timeline_input_with_deviating_spelling_plays() throws Exception {
         // The attribute twin of the row above (setBewaarTarief, measured beside it).
-        ObjectNode c = (ObjectNode) JSON.readTree(Files.readString(TEMPOVOUW.resolve("case.json")));
+        ObjectNode c = (ObjectNode) JSON.readTree(Files.readString(TEMPOVOUW.resolve("case1-drie-vondsten-over-drie-maanden.json")));
         int n = 0;
         for (JsonNode i : c.get("input").get("instances")) {
             ObjectNode a = (ObjectNode) i.get("attributes");

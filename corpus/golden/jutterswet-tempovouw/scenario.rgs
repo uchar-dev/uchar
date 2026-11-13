@@ -1,0 +1,16 @@
+Scenario drie vondsten over drie maanden
+met peildatum 15-03-2026
+Gegeven is de volgende situatie:
+een Jutter J1
+- de vondsten zijn V1, V2 en V3
+een Jutter J2
+een Vondst V1
+- het bewaartarief is 12 €/mnd van 01-01-2026 tot 01-04-2026
+een Vondst V2
+- het bewaartarief is 7 €/mnd van 01-01-2026 tot 01-02-2026
+- het bewaartarief is 5 €/mnd van 01-02-2026 tot 01-03-2026
+een Vondst V3
+Met als verwacht resultaat:
+- de bewaarlast van J1 is 48 €
+- de bewaarlast van J2 is 0 €
+- de gegevens zijn consistent
