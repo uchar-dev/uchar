@@ -2554,6 +2554,22 @@ let file_to_document (input : string) : I.document =
                 !defaults_groups)
       then refuse "a context override on %s.%s found no callee defaults group (besluit 6)" ot var)
     !overrides;
+  (* the highest default sits on the callee type's defaults group, which every
+     instance of that type reads: with two or more subscope instances of the
+     type, an override meant for one instance would decide for the others *)
+  List.iter
+    (fun (ot, var, _) ->
+      let instances =
+        List.length
+          (List.filter (fun (oc : I.resolved_object_creation) -> oc.created_type = Some ot) !creations)
+      in
+      if instances > 1 then
+        refuse
+          "a caller override of the context variable %S of %S, which %d subscope declarations call: \
+           the override lowers to a highest default on the defaults group of %S, which every \
+           instance reads, so the overrides cannot be told apart per instance; refused"
+          var ot instances ot)
+    !overrides;
   let defaults_groups =
     List.map
       (fun (g : I.prioritized_defaults) ->

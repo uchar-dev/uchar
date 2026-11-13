@@ -381,6 +381,12 @@ let () =
       ("refuse_context.catala_en", "characteristic");
       ("refuse_context_branching.catala_en", "branching tree");
       ("refuse_context_owndefault.catala_en", "root-level unordered own default");
+      (* a callee called by two subscope declarations: the highest default of an
+         override sits on the callee type's defaults group, which both
+         instances read — with an override on each call, and with one on one
+         call only *)
+      ("refuse_context_two_instances.catala_en", "cannot be told apart per instance");
+      ("refuse_context_one_of_two.catala_en", "cannot be told apart per instance");
       (* PHASE5C-TUTORIAL §3 subscope flanks — declared subscopes lower
          (subscope.catala_en), and the per-element PURE-FUNCTION call now lowers
          too (subscope_per_element.catala_en, besluit 1-A), but these shapes stay
