@@ -68,16 +68,21 @@
    gives Reading A, never Reading B — a recorded flank, not a refusal
    (PHASE5-CATALA decision 6, with the measurement).
 
-   The empty-operand rule. Catala reads every variable hard (error_empty:
-   an empty value is a fatal NoValueProvided), while the IR's arithmetic
-   and comparisons coalesce an empty operand (ch. 1.2, empty = 0). So a
-   variable read as an arithmetic/comparison operand is admitted only when
-   the variable is always filled: (i) it is an input — RECORDED ASSUMPTION:
-   the case dossier fulfils Catala's input contract, i.e. every input is
-   supplied — or (ii) it has an unconditional definition (a base default
-   that always decides, filled by construction). Otherwise the read is
-   refused loudly; picking coalesce-vs-hard is a deviation decision
-   deferred beyond the skeleton. *)
+   The empty-value rule. Catala reads every variable hard (error_empty:
+   reading an empty value is a fatal NoValueProvided, "no applicable rule to
+   define this variable"), while the IR carries an empty value on: its
+   arithmetic and comparisons coalesce an empty operand (ch. 1.2, empty = 0),
+   a copy is empty, a characteristic that is not attributed reads as not
+   held. So every read of a variable — an operand, a copy, a subscope
+   argument, a condition, a caller's read of a subscope output — is admitted
+   only when the variable is always filled: (i) it is an input — RECORDED
+   ASSUMPTION: the case dossier fulfils Catala's input contract, i.e. every
+   input is supplied — or (ii) it has an unconditional definition (a base
+   default that always decides). Since every read inside that definition is
+   held to the same rule, an unconditional definition is filled by
+   construction. Otherwise the read is refused loudly: the IR has no image of
+   Catala's error. A variable that may stay empty and is never read stays
+   empty in the IR where Catala gives no value either. *)
 
 open Shared_ast
 module M = Catala_utils.Mark
@@ -511,6 +516,23 @@ let base_is_filled e =
           | Group_default [ [ Plain (j1, _) ]; [ Plain (j2, _) ] ] -> complementary_just j1 j2
           | Group_default _ -> false)
         defaults
+
+(* the variables of a scope that are always filled: inputs (the case dossier
+   fulfils Catala's input contract) or variables carrying an unconditional
+   default (a base default that always decides) — see the head comment's
+   empty-value rule. *)
+let filled_vars (sd : untyped Sc.scope_decl) : ScopeVar.Set.t =
+  let s = ref ScopeVar.Set.empty in
+  ScopeVar.Map.iter
+    (fun v (sv : Sc.scope_var_ty) ->
+      if M.remove sv.svar_io.Dio.io_input = Catala_runtime.OnlyInput then s := ScopeVar.Set.add v !s)
+    sd.scope_sig;
+  List.iter
+    (function
+      | Sc.ScopeVarDefinition { var; e; _ } -> if base_is_filled e then s := ScopeVar.Set.add (fst var) !s
+      | Sc.Assertion _ -> ())
+    sd.scope_decl_rules;
+  !s
 
 (* a whole-struct per-element-map definition (FUSION, PHASE5C-TUTORIAL §3a): the
    unconditional [map each x among source to (output of Callee with {…})] shape,
@@ -1241,6 +1263,7 @@ let ruled_vnames_of (sd : untyped Sc.scope_decl) : string list =
 let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (string * I.datatype) list)
     ~(ambiguous : string list) ~(top_default_vars : ScopeName.t -> ScopeVar.Set.t)
     ~(callee_multistate : ScopeName.t -> string list)
+    ~(callee_filled : ScopeName.t -> string -> bool)
     ~(per_element_call : ScopeName.t -> StructField.t -> per_element_meta)
     (name : ScopeName.t) (sd : untyped Sc.scope_decl) =
   let ot_name = ScopeName.base name in
@@ -1423,6 +1446,12 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
                 in the 5a fragment (read it as a condition instead)"
                fld_name callee_type
          | _ -> ());
+        if not (callee_filled scope fld_name) then
+          refuse
+            "subscope output %S of %S is read but is not always filled (no unconditional definition \
+             in the callee): Catala raises an error on an empty output, while the IR carries the \
+             empty value on — refused"
+            fld_name callee_type;
         let callee_role = subscope_callee_role v in
         let source_name = Printf.sprintf "de %s van de %s" fld_name (M.remove (ScopeVar.get_info v)) in
         Some
@@ -1468,6 +1497,12 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
                "non-boolean subscope output %S of %S read as a condition: only a boolean output (a \
                 callee characteristic) lowers to a navigated CharacteristicCheck"
                fld_name callee_type);
+        if not (callee_filled scope fld_name) then
+          refuse
+            "boolean subscope output %S of %S read as a condition is not always filled (no \
+             unconditional definition in the callee): Catala raises an error on an empty output, \
+             while the IR reads an unattributed characteristic as not held — refused"
+            fld_name callee_type;
         let callee_role = subscope_callee_role v in
         let source_name = Printf.sprintf "de %s is %s" (M.remove (ScopeVar.get_info v)) fld_name in
         Some
@@ -1476,26 +1511,9 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
                holder = None; time_period = None; source_name = Some source_name;
                navigation_binding = Some { I.rb_fact_type = subscope_fact_type v; rb_role = callee_role }; anchor = None })
   in
-  (* variables that are always filled: inputs (the case dossier fulfils
-     Catala's input contract) or variables carrying an unconditional default
-     (a base default that always decides). Only these are admitted as
-     arithmetic/comparison operands — see the head comment's empty-operand
-     rule. *)
-  let filled =
-    let s = ref ScopeVar.Set.empty in
-    ScopeVar.Map.iter
-      (fun v (sv : Sc.scope_var_ty) ->
-        if M.remove sv.svar_io.Dio.io_input = Catala_runtime.OnlyInput then
-          s := ScopeVar.Set.add v !s)
-      sd.scope_sig;
-    List.iter
-      (function
-        | Sc.ScopeVarDefinition { var; e; _ } ->
-            if base_is_filled e then s := ScopeVar.Set.add (fst var) !s
-        | Sc.Assertion _ -> ())
-      sd.scope_decl_rules;
-    !s
-  in
+  (* only a variable that is always filled is read — the head comment's
+     empty-value rule *)
+  let filled = filled_vars sd in
   let is_filled v = ScopeVar.Set.mem v filled in
   (* object type members, in declaration order *)
   let attributes = ref [] and characteristics = ref [] in
@@ -1576,6 +1594,10 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
       refuse
         "variable %S read as an arithmetic/comparison operand is not always filled (not an input, no unconditional definition): Catala reads it hard (error_empty = fatal on empty) while the IR coalesces an empty operand — refused (deviation deferred)"
         vname
+    else if not (is_filled v) then
+      refuse
+        "variable %S is read but is not always filled (not an input, no unconditional definition): Catala raises an error on reading it empty, while the IR carries the empty value on — refused"
+        vname
     else (vname, dt)
   in
   (* the shared characteristic-read check; [check_var] wraps it in a bare
@@ -1609,6 +1631,10 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
         "boolean variable %S is read both as a subscope-input value and as a condition: the value \
          read carries it as an attribute, a condition read needs a characteristic — mixed carriage \
          is not supported (read one way)"
+        vname
+    else if is_bool_dt dt && not (is_filled v) then
+      refuse
+        "boolean variable %S read as a condition is not always filled (not an input, no unconditional definition): Catala raises an error on reading it empty, while the IR reads an unattributed characteristic as not held — refused"
         vname
     else if is_bool_dt dt then vname
     else refuse "non-boolean variable %S used as a condition" vname
@@ -2444,6 +2470,23 @@ let file_to_document (input : string) : I.document =
   let callee_multistate sc =
     try ScopeName.Map.find sc multistate_map with Not_found -> []
   in
+  (* per scope, the names of its always-filled variables: a caller reads a
+     subscope output only when the callee fills it (the empty-value rule) *)
+  let filled_map =
+    List.fold_left
+      (fun acc (name, decl) ->
+        let sd : untyped Sc.scope_decl = M.remove decl in
+        let names =
+          ScopeVar.Set.fold (fun v a -> M.remove (ScopeVar.get_info v) :: a) (filled_vars sd) []
+        in
+        ScopeName.Map.add name names acc)
+      ScopeName.Map.empty scopes
+  in
+  let callee_filled sc field =
+    match ScopeName.Map.find_opt sc filled_map with
+    | Some names -> List.mem field names
+    | None -> refuse "subscope callee %S has no scope declaration" (ScopeName.base sc)
+  in
   (* the per-element functie-route (besluit 1-A, 2026-08-24; MULTI-OUTPUT +
      NESTED INVOKE 2026-08-25): a per-element (or fused) read of an output FIELD
      of a pure-function callee synthesises ONE FunctionDef per (callee, field),
@@ -2487,7 +2530,7 @@ let file_to_document (input : string) : I.document =
     (fun (name, decl) ->
       let ot_name, ot, rs, gs, cs, fts, ocs, ovs =
         translate_scope enums structs functions ~ambiguous ~top_default_vars ~callee_multistate
-          ~per_element_call name (M.remove decl)
+          ~callee_filled ~per_element_call name (M.remove decl)
       in
       object_types := (ot_name, ot) :: !object_types;
       rule_defs := !rule_defs @ rs;

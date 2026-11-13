@@ -1,0 +1,20 @@
+# A boolean that may stay empty, read as a condition — refused
+
+`hoog` is defined only when `pas_toe` holds. Catala raises "no applicable rule
+to define this variable" when the exception reads `hoog` and `pas_toe` is
+false, while the IR reads the characteristic as not held and the base
+decides. The plugin refuses the condition read of `hoog`. Own-authored,
+rights-free.
+
+```catala
+declaration scope Aanslag:
+  input pas_toe content boolean
+  input grens content integer
+  internal hoog content boolean
+  output heffing content integer
+
+scope Aanslag:
+  definition hoog under condition pas_toe consequence equals grens > 10
+  definition heffing equals 1
+  exception definition heffing under condition hoog consequence equals 2
+```

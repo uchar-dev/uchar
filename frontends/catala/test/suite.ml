@@ -436,6 +436,17 @@ let () =
          verifier admits but ref/clingo split on *)
       ("refuse_subscope_bool_value.catala_en", "value position");
       ("refuse_empty_arith.catala_en", "operand");
+      (* the empty-value rule on the other routes Catala reads hard: a copy, a
+         subscope argument, a condition and a caller's read of a subscope output
+         (value and condition) of a variable that may stay empty each raise
+         "no applicable rule" in Catala, while the IR carries the empty value on *)
+      ("refuse_empty_copy.catala_en", "variable \"tussen\" is read but is not always filled");
+      ("refuse_empty_subscope_arg.catala_en", "variable \"tussen\" is read but is not always filled");
+      ("refuse_empty_condition.catala_en", "boolean variable \"hoog\" read as a condition is not always filled");
+      ("refuse_empty_subscope_output.catala_en",
+       "subscope output \"uitkomst\" of \"Kamer\" is read but is not always filled");
+      ("refuse_empty_subscope_condition.catala_en",
+       "boolean subscope output \"hoog\" of \"Kamer\" read as a condition is not always filled");
       (* row-36 fences: a partial match (WF-063 totality) and a tuple payload
          (an n-ary constructor payload — single-payload constructors only)
          each refuse loudly *)

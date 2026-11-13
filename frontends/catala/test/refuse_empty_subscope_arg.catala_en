@@ -1,0 +1,27 @@
+# A subscope input bound to a variable that may stay empty — refused
+
+`tussen` is defined only when `pas_toe` holds and is passed to the subscope
+`kamer`. Catala raises "no applicable rule to define this variable" at the
+argument when `pas_toe` is false, while the callee reads its input as filled
+and the IR computes `grondslag + 10` as 10. The plugin refuses the read of
+`tussen`. Own-authored, rights-free.
+
+```catala
+declaration scope Kamer:
+  input grondslag content integer
+  output uitkomst content integer
+
+scope Kamer:
+  definition uitkomst equals grondslag + 10
+
+declaration scope Aanslag:
+  input pas_toe content boolean
+  internal tussen content integer
+  kamer scope Kamer
+  output heffing content integer
+
+scope Aanslag:
+  definition tussen under condition pas_toe consequence equals 5
+  definition kamer.grondslag equals tussen
+  definition heffing equals kamer.uitkomst
+```

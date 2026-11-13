@@ -1,0 +1,25 @@
+# A subscope output that may stay empty, read by the caller — refused
+
+The callee's output `uitkomst` is defined only when its `pas_toe` holds.
+Catala raises "no applicable rule to define this variable" for the output
+when `pas_toe` is false, while the IR leaves `uitkomst` empty and the caller's
+`kamer.uitkomst + 1` reads that empty operand as 0. The plugin refuses the
+caller's read of `uitkomst`. Own-authored, rights-free.
+
+```catala
+declaration scope Kamer:
+  input pas_toe content boolean
+  output uitkomst content integer
+
+scope Kamer:
+  definition uitkomst under condition pas_toe consequence equals 5
+
+declaration scope Aanslag:
+  input pas_toe content boolean
+  kamer scope Kamer
+  output heffing content integer
+
+scope Aanslag:
+  definition kamer.pas_toe equals pas_toe
+  definition heffing equals kamer.uitkomst + 1
+```

@@ -1,0 +1,20 @@
+# A copy of a variable that may stay empty — refused
+
+`tussen` is defined only when `pas_toe` holds. Catala reads a variable hard:
+when `pas_toe` is false, `kopie equals tussen` raises "no applicable rule to
+define this variable", while the IR leaves `kopie` empty and `kopie + 1`
+reads that empty operand as 0. The plugin refuses the read of `tussen`.
+Own-authored, rights-free.
+
+```catala
+declaration scope Aanslag:
+  input pas_toe content boolean
+  internal tussen content integer
+  internal kopie content integer
+  output heffing content integer
+
+scope Aanslag:
+  definition tussen under condition pas_toe consequence equals 5
+  definition kopie equals tussen
+  definition heffing equals kopie + 1
+```

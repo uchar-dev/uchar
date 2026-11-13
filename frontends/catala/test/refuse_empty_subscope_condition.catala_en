@@ -1,0 +1,29 @@
+# A boolean subscope output that may stay empty, read as a condition — refused
+
+The callee's boolean output `hoog` is defined only when its `pas_toe` holds.
+Catala raises "no applicable rule to define this variable" for the output
+when `pas_toe` is false, while the IR reads the callee characteristic as not
+held and the caller's base decides. The plugin refuses the caller's
+condition read of `hoog`. Own-authored, rights-free.
+
+```catala
+declaration scope Kamer:
+  input pas_toe content boolean
+  input grens content integer
+  output hoog content boolean
+
+scope Kamer:
+  definition hoog under condition pas_toe consequence equals grens > 10
+
+declaration scope Aanslag:
+  input pas_toe content boolean
+  input grens content integer
+  kamer scope Kamer
+  output heffing content integer
+
+scope Aanslag:
+  definition kamer.pas_toe equals pas_toe
+  definition kamer.grens equals grens
+  definition heffing equals 1
+  exception definition heffing under condition kamer.hoog consequence equals 2
+```
