@@ -878,8 +878,7 @@ public final class DroolsBackend {
      * <p>{@code walk} is the walk of the read (IR-SPEC ch. 4.1a). For a read of the model of a build it is
      * {@link TmsTranspiler#navigationBindings} of {@code build.execModelTranspiler()}, with {@code build.model()} as
      * {@code model}; the model the loader reads carries the walk beside the read, not on it. For a read of a model the
-     * frontend resolved it is the walk the emitter writes for it, {@code IrEmitter.navigationBindings(model,
-     * subjectType, read)}, with that model.
+     * frontend resolved it is the walk the resolver bound on the read, {@code read.path()}, which the emitter writes.
      *
      * @throws CaseRunner.Excluded a walk the branch does not read, before anything is read, in the sentence of the
      *                             branch: one that does not resolve from {@code subjectType} or whose last hop does not

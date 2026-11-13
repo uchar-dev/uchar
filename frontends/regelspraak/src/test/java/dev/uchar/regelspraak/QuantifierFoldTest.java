@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak;
 
+import dev.uchar.regelspraak.emit.IrEmitter;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
@@ -258,9 +259,9 @@ class QuantifierFoldTest {
         assertEquals(1, setReadErrors(m).size(),
                 () -> "een onbindbaar bereik hoort de weigering te houden: " + m.diagnostics);
         assertEquals(1, m.diagnostics.size(), () -> "en verder niets te melden: " + m.diagnostics);
-        // not lowered, so the set reading stays where it was written; without a binding it has no spelling
-        // either, and the emitter writes no document at all rather than a read of the Jutter's own gewicht
-        IllegalStateException e = assertThrows(IllegalStateException.class, () -> emitCompact(m),
+        // not lowered, so the set reading stays where it was written, and its ERROR keeps the document off the wire
+        // (WF-113 (a)) rather than a read of the Jutter's own gewicht
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m),
                 "een vouw zonder bereik hoort niet op de wire te belanden");
         assertTrue(e.getMessage().contains("het gewicht van alle vondsten van de Jutter"), e::getMessage);
     }

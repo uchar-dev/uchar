@@ -330,7 +330,7 @@ final class ExpressionBuilder {
                         && a.navigationPath().isEmpty() && !a.set();
                 return a.anchored() || elementRead ? a : new Expr.AttributeReference(a.attribute(), a.objectType(), a.subjectSource(),
                         a.navigationRole(), a.type(), a.source(), a.set(), a.navigationPath(), a.rangePath(), a.quantifier(),
-                        a.threshold(), true);
+                        a.threshold(), true, a.path());
             }
             case Expr.FunctionCall f -> {
                 if (f.anchored()) return f;
@@ -1240,10 +1240,11 @@ final class ExpressionBuilder {
     /** A member generated on the element type of a value fold over ONE set followed by to-one steps
      *  (grammar/DIVERGENCES.md, "A fold over a set and to-one steps after it"): its name, the element type it is
      *  declared on, the declared member the steps reach, the type that member is declared on and its datatype, the
-     *  declared role names element-outward, and the source anchors of the rule that sets it. {@link RuleChecker}
-     *  adds that rule once every authored rule has resolved. */
+     *  declared role names element-outward, the role binding of each of those steps from the element (empty where a
+     *  step binds no single role), and the source anchors of the rule that sets it. {@link RuleChecker} adds that rule
+     *  once every authored rule has resolved. */
     record HelperMember(String name, ObjectType element, String member, ObjectType target, Datatype type, List<String> roles,
-                   Source targetSource, Source valueSource) {}
+                   List<RegelSpraakModel.RoleBindingRef> steps, Source targetSource, Source valueSource) {}
 
     /** The generated members, keyed by the element type's name and the member's name under the name identity. */
     private final Map<String, HelperMember> helperMembers = new LinkedHashMap<>();
@@ -1349,7 +1350,9 @@ final class ExpressionBuilder {
         String suffix = " van " + sa.subjectSource();
         String attributeRead = read.endsWith(suffix) ? read.substring(0, read.length() - suffix.length()) : read;
         String article = attributeRead.regionMatches(true, 0, "het ", 0, 4) ? "Het" : "De";
-        HelperMember h = new HelperMember(name, element, member, target, type, List.copyOf(roles),
+        List<RegelSpraakModel.RoleBindingRef> steps = navigationBindings(model, element, new Expr.AttributeReference(member,
+                target, "de " + element.name, element.name, type, sa.source(), false, roles, List.of(), null, 0));
+        HelperMember h = new HelperMember(name, element, member, target, type, List.copyOf(roles), steps,
                 Source.of(f, article + " " + name + " van een " + element.name),
                 Source.of(f, attributeRead + " van de " + element.name));
         helperMembers.put(element.name + "\u0000" + keyName, h);
@@ -3547,15 +3550,62 @@ final class ExpressionBuilder {
             ObjectType holder = ot;
             String role = navRole;
             java.util.List<String> chain = navigationPath;
-            Expr cell = dimensionCell(attr, holder, source, a -> new Expr.AttributeReference(a, holder, subjectSource, role,
-                    holder.attribute(a), source, isSetSubject(subjectType), chain, rangePath(subjectType),
-                    writtenQuantifier(subjectType), writtenThreshold(subjectType)));
+            Expr cell = dimensionCell(attr, holder, source, a -> bound(new Expr.AttributeReference(a, holder, subjectSource,
+                    role, holder.attribute(a), source, isSetSubject(subjectType), chain, rangePath(subjectType),
+                    writtenQuantifier(subjectType), writtenThreshold(subjectType))));
             if (cell != null) return cell;
         }
         if (dt == null) dt = unknown();
-        return new Expr.AttributeReference(attr, ot, subjectSource, navRole, dt, source, isSetSubject(subjectType),
+        return bound(new Expr.AttributeReference(attr, ot, subjectSource, navRole, dt, source, isSetSubject(subjectType),
                 navigationPath, rangePath(subjectType), writtenQuantifier(subjectType),
-                writtenThreshold(subjectType));
+                writtenThreshold(subjectType)));
+    }
+
+    /** {@code a} with its walk bound from the subject it is built on ({@link #navigationBindings}), the walk the wire
+     *  writes for it wherever the node goes. The walk of a set read names its steps in the refusals of a set read
+     *  outside a fold source; in a fold source the relation is the fold's range, and the walk is not written. */
+    private Expr.AttributeReference bound(Expr.AttributeReference a) {
+        List<RegelSpraakModel.RoleBindingRef> path = navigationBindings(model, currentSubject, a);
+        return path.isEmpty() ? a : new Expr.AttributeReference(a.attribute(), a.objectType(), a.subjectSource(),
+                a.navigationRole(), a.type(), a.source(), a.set(), a.navigationPath(), a.rangePath(), a.quantifier(),
+                a.threshold(), a.anchored(), path);
+    }
+
+    /** The walk of the read {@code a} from {@code subject}: one RoleBinding per navigation hop, subject-outward, each
+     *  naming the reached (far) role. Three shapes: a declared CHAIN (one binding per step, whole-or-not — all hops
+     *  derivable, or none), a single by-NAME hop, and a by-PAIR read of an off-subject type. Empty when the read does
+     *  not navigate, no subject anchors the walk, or no hop set is uniquely derivable; {@code RuleChecker.checkPaths}
+     *  then decides whether the read without a walk is the subject's own or is refused. */
+    static List<RegelSpraakModel.RoleBindingRef> navigationBindings(RegelSpraakModel m, ObjectType subject,
+                                                                    Expr.AttributeReference a) {
+        if (m == null || subject == null || a.objectType() == null) return List.of();
+        if (a.navigationPath() != null && !a.navigationPath().isEmpty()) {        // §13.4.1 declared chain
+            List<ObjectType> reached = m.followChain(subject, a.navigationPath());
+            if (reached == null) return List.of();
+            List<RegelSpraakModel.RoleBindingRef> result = new java.util.ArrayList<>();
+            ObjectType cur = subject;
+            for (int i = 0; i < a.navigationPath().size(); i++) {
+                RegelSpraakModel.RoleBindingRef b =
+                        m.connectingRoleViaNameBinding(cur, reached.get(i), a.navigationPath().get(i));
+                if (b == null) return List.of();                             // whole or not over the chain
+                result.add(b);
+                cur = reached.get(i);
+            }
+            return result;
+        }
+        if (a.navigationRole() != null) {                                      // single-hop by-name
+            RegelSpraakModel.RoleBindingRef b =
+                    m.connectingRoleViaNameBinding(subject, a.objectType(), a.navigationRole());
+            return b == null ? List.of() : List.of(b);
+        }
+        if (a.objectType() != subject) {                                     // by-pair (off-subject type)
+            RegelSpraakModel.RoleBindingRef b = m.connectingRoleBinding(subject, a.objectType());
+            // the pair does not decide, and the written noun is a type name that is also a role name: the role it
+            // names decides, as a written role does (§13.4.1); a type name alone binds by the one relation only
+            if (b == null) b = m.namedRoleBinding(subject, a.objectType(), a.subjectSource());
+            return b == null ? List.of() : List.of(b);
+        }
+        return List.of();                                                    // own attribute — not navigated
     }
 
     /**
@@ -4114,7 +4164,7 @@ final class ExpressionBuilder {
         // navigationCharacteristicCheck and a navigated value read reaches the to-one getter (the symmetric mirror of the
         // working "de <rol> van <X>" form; without it the possessive role stayed Unresolved and markered).
         if (model.roleTargetTypeToSubject(currentSubject, attr) != null)
-            return new Expr.AttributeReference(attr, currentSubject, "zijn", model.navigationRoleName(attr), unknown(), source);
+            return bound(new Expr.AttributeReference(attr, currentSubject, "zijn", model.navigationRoleName(attr), unknown(), source));
         // §8.1.8.1 the greedy onderwerp can absorb a TRAILING "niet"/"geen" negator into the possessive role
         // ("zijn reis niet <kenmerk>" -> role "reis niet", unresolvable). Strip it to resolve the role, but keep the
         // FULL bron so navigationCharacteristicCheck/navigationTail recover the negator onto the kenmerk and the §8.1.8 navigated
@@ -4125,7 +4175,7 @@ final class ExpressionBuilder {
                 String plain = attr.substring(0, attr.length() - neg.length()).trim();
                 if (plain.isEmpty()) continue;
                 if (model.roleTargetTypeToSubject(currentSubject, plain) != null)
-                    return new Expr.AttributeReference(plain, currentSubject, "zijn", model.navigationRoleName(plain), unknown(), source);
+                    return bound(new Expr.AttributeReference(plain, currentSubject, "zijn", model.navigationRoleName(plain), unknown(), source));
                 // §8.1.3/§8.1.4 a possessive ATTRIBUTE with a greedily-absorbed trailing "niet" (the vragende negated
                 // elfproef / numeriek-met-exact "zijn <attr> niet aan de elfproef voldoet"): resolve the BARE
                 // attribuut so the read lowers, keeping the FULL bron so the predicate builder recovers the negation.
@@ -4144,7 +4194,7 @@ final class ExpressionBuilder {
         for (int n = words.length - 1; n >= 1; n--) {
             String prefix = String.join(" ", java.util.Arrays.copyOfRange(words, 0, n));
             if (model.roleTargetTypeToSubject(currentSubject, prefix) != null)
-                return new Expr.AttributeReference(prefix, currentSubject, "zijn", model.navigationRoleName(prefix), unknown(), source);
+                return bound(new Expr.AttributeReference(prefix, currentSubject, "zijn", model.navigationRoleName(prefix), unknown(), source));
         }
         return null;
     }

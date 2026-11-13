@@ -262,13 +262,11 @@ final class RuleChecker {
     }
 
     /** The pieces of the name '&lt;lid&gt; via &lt;rol 1&gt;, … en &lt;rol n&gt;' of {@code h}: the member the steps
-     *  reach, as declared ({@code lid}), and each role as the wire binds its step, read from the type the member stands
-     *  on ({@link dev.uchar.regelspraak.emit.IrEmitter#navigationBindings}, the derivation the emitter writes the
-     *  generated rule's read with); null where a step binds no role, which the read's ERROR explains
-     *  ({@link #checkPaths}; in a model without one, a fault of the frontend). */
+     *  reach, as declared ({@code lid}), and each role as the wire binds its step, the walk of the generated rule's
+     *  read ({@link ExpressionBuilder.HelperMember#steps}); null where a step binds no role, which the read's ERROR
+     *  explains ({@link #checkPaths}; in a model without one, a fault of the frontend). */
     private List<Designations.NamePart> helperNameParts(ExpressionBuilder.HelperMember h, Designatable member) {
-        List<RoleBindingRef> steps =
-                dev.uchar.regelspraak.emit.IrEmitter.navigationBindings(model, h.element(), helperValue(h));
+        List<RoleBindingRef> steps = h.steps();
         int n = h.roles().size();
         if (steps.size() != n) {
             if (model.isOk())
@@ -526,10 +524,10 @@ final class RuleChecker {
     }
 
     /** The read the generated rule of {@code h} sets its member from: the reached member through the steps, from the
-     *  type the member stands on. */
+     *  type the member stands on, with the walk the steps bound there. */
     private static Expr.AttributeReference helperValue(ExpressionBuilder.HelperMember h) {
         return new Expr.AttributeReference(h.member(), h.target(), "de " + h.element().name, h.element().name, h.type(),
-                h.valueSource(), false, h.roles(), List.of(), null, 0);
+                h.valueSource(), false, h.roles(), List.of(), null, 0, false, h.steps());
     }
 
     /** §9.10 build the {@link dev.uchar.regelspraak.ir.ResolvedRuleGroup} carriers (member RULE NAMES + the
@@ -1522,8 +1520,7 @@ final class RuleChecker {
 
     /** The to-many hops of {@code a}'s binding from {@code subject}; null where no hop is to-many. */
     private ManySteps manySteps(Expr.AttributeReference a, ObjectType subject) {
-        List<RegelSpraakModel.RoleBindingRef> bindingPath =
-                dev.uchar.regelspraak.emit.IrEmitter.navigationBindings(model, subject, a);
+        List<RegelSpraakModel.RoleBindingRef> bindingPath = a.path();
         List<Msg> sentences = new ArrayList<>();
         List<String> hops = new ArrayList<>(), roles = new ArrayList<>();
         for (int i = 0; i < bindingPath.size(); i++)
@@ -1602,8 +1599,7 @@ final class RuleChecker {
         ObjectType t = a.objectType();
         if (t == null) return onlyOwn ? null : withoutTypeError(a, subject, name);
         if (swallowedNameError(a) != null) return null;
-        List<RegelSpraakModel.RoleBindingRef> bindingPath =
-                dev.uchar.regelspraak.emit.IrEmitter.navigationBindings(model, subject, a);
+        List<RegelSpraakModel.RoleBindingRef> bindingPath = a.path();
         if (onlyOwn && !bindingPath.isEmpty()) return null;
         String roleName = bindingPath.isEmpty() ? null : bindingPath.get(bindingPath.size() - 1).role();
         ObjectType fillerType = bindingPath.isEmpty() ? null : roleFiller(bindingPath.get(bindingPath.size() - 1));
@@ -2101,9 +2097,9 @@ final class RuleChecker {
     /** {@code c} read on the subtype {@code sub} instead of on {@code sup}: every own read of {@code sup} names
      *  {@code sub}, as the same text written on {@code sub} resolves (IR-SPEC ch. 4.1a: an own read names the subject
      *  type, also for an inherited attribute). A restrictive block of a subtype repeats the conjuncts of its base, and
-     *  the base stands on the supertype. Navigated reads, role checks and characteristic checks name no subject type,
-     *  and the emitter derives their walk from the group's subject; what a fold or a quantifier reads per element is
-     *  the element's. A node in which nothing changes is returned itself, so a conjunct that reads no own attribute
+     *  the base stands on the supertype. Navigated reads, role checks and characteristic checks name no subject type
+     *  and keep the walk they were built with on the supertype, the reading the author wrote; what a fold or a
+     *  quantifier reads per element is the element's. A node in which nothing changes is returned itself, so a conjunct that reads no own attribute
      *  stays the node the base carries. */
     private static Condition opSubtype(Condition c, ObjectType sup, ObjectType sub) {
         if (c == null) return null;
@@ -2146,7 +2142,7 @@ final class RuleChecker {
         return switch (e) {
             case Expr.AttributeReference a -> !ownReadOf(a, sup) ? a
                     : new Expr.AttributeReference(a.attribute(), sub, a.subjectSource(), a.navigationRole(), a.type(), a.source(),
-                            a.set(), a.navigationPath(), a.rangePath(), a.quantifier(), a.threshold(), a.anchored());
+                            a.set(), a.navigationPath(), a.rangePath(), a.quantifier(), a.threshold(), a.anchored(), a.path());
             case Expr.Binary b -> {
                 Expr l = opSubtype(b.left(), sup, sub), r = opSubtype(b.right(), sup, sub);
                 yield l == b.left() && r == b.right() ? b : new Expr.Binary(b.op(), l, r, b.type(), b.source());
@@ -3013,7 +3009,7 @@ final class RuleChecker {
     /** The target {@code d} with the attribute renamed; its subject, its source text and everything else stay. */
     private static Expr.AttributeReference toComputed(Expr.AttributeReference d, String name) {
         return new Expr.AttributeReference(name, d.objectType(), d.subjectSource(), d.navigationRole(), d.type(), d.source(),
-                d.set(), d.navigationPath(), d.rangePath(), d.quantifier(), d.threshold());
+                d.set(), d.navigationPath(), d.rangePath(), d.quantifier(), d.threshold(), d.anchored(), d.path());
     }
 
     /** A read of the subject's own generated attribute, spelled as the frontend spells the hand-written read. */
@@ -5593,7 +5589,7 @@ final class RuleChecker {
         if (e instanceof Expr.AttributeReference a) {
             if (a.navigationRole() != null || !a.navigationPath().isEmpty() || a.set()
                     || subject != null && a.objectType() != subject) {
-                if (dev.uchar.regelspraak.emit.IrEmitter.navigationBindings(model, subject, a).isEmpty())
+                if (a.path().isEmpty())
                     return periodBoundaryWithoutReader(a, side, subject);
                 return Msg.frontend("RGS-202.navigated-read", "attribute", a.attribute());
             }

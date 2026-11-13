@@ -184,7 +184,7 @@ final class AbsenceMarkers {
 
     private static Expr.AttributeReference typed(Expr.AttributeReference a, Datatype.SumType sum) {
         return new Expr.AttributeReference(a.attribute(), a.objectType(), a.subjectSource(), a.navigationRole(), sum,
-                a.source(), a.set(), a.navigationPath(), a.rangePath(), a.quantifier(), a.threshold(), a.anchored());
+                a.source(), a.set(), a.navigationPath(), a.rangePath(), a.quantifier(), a.threshold(), a.anchored(), a.path());
     }
 
     /** Whether {@code e} is a reference to an attribute with markers, or to a cell of one. */

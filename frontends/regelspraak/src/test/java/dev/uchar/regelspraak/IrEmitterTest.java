@@ -1110,11 +1110,10 @@ class IrEmitterTest {
                 () -> "een strikt subtype van de gedeclareerde vuller vernauwt de link:\n" + with);
     }
 
-    @Test void a_read_that_navigates_without_unique_binding_is_refused() {
-        // IR-SPEC ch. 4.1a: a read without bindings is the subject's own, so a read the resolver took to another
-        // type but whose relation it cannot name has no spelling — written without its binding, it would read
-        // the subject's own attribute. The pair is made ambiguous by a second fact type added after resolution,
-        // so the read itself is the resolver's.
+    @Test void a_read_writes_the_walk_it_was_built_with() {
+        // IR-SPEC ch. 4.1a: the walk of a read is bound where the read is built, from the subject it is read on, and
+        // the emitter writes that walk and derives none: a second fact type added after resolution, which makes the
+        // pair ambiguous, changes nothing.
         RegelSpraakModel m = Resolver.resolve(WERKNEMER_AFDELING + """
             Regel rang
                 geldig altijd
@@ -1125,9 +1124,9 @@ class IrEmitterTest {
                 "\"path\":[{\"node\":\"RoleBinding\",\"factType\":\"aanstelling\",\"role\":\"afdeling\"}]"),
                 "de ongemoeide lezing draagt haar binding");
         secondAfdelingRole(m);
-        IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
-        assertTrue(e.getMessage().contains("het niveau van zijn afdeling") && e.getMessage().contains("navigates"),
-                e::getMessage);
+        assertTrue(IrEmitter.emit(m).replaceAll("\\s+", "").contains(
+                "\"path\":[{\"node\":\"RoleBinding\",\"factType\":\"aanstelling\",\"role\":\"afdeling\"}]"),
+                "de lezing schrijft de binding waarmee zij gebouwd is");
     }
 
     @Test void a_characteristic_check_writes_the_binding_it_was_built_with() {

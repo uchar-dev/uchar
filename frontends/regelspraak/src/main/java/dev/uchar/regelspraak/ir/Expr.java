@@ -246,11 +246,29 @@ public sealed interface Expr {
                         String navigationRole, Datatype type, Source source, boolean set,
                         java.util.List<String> navigationPath,
                         java.util.List<dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef> rangePath,
-                        Condition.Quantifier quantifier, int threshold, boolean anchored)
+                        Condition.Quantifier quantifier, int threshold, boolean anchored,
+                        java.util.List<dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef> path)
             implements Expr {
+        /** {@code path}: the walk of the read (IR-SPEC ch. 4.1a, the wire's {@code path}), one role binding per hop
+         *  from the subject the read is built on outward, bound where the read is built; it travels with the node, so
+         *  a read moved to another subject (a base conjunct repeated on a subtype) keeps the walk it was written with.
+         *  Empty for an own read and for a read whose walk did not bind (which the resolver refuses). A set read in a
+         *  fold source carries it unwritten: its relation is the range of its fold. */
+        public AttributeReference {
+            path = path == null ? java.util.List.of() : java.util.List.copyOf(path);
+        }
         /** {@code anchored}: the form anchor of IR-SPEC ch. 4.1a (WF-122) — the read stands in a filter or a
          *  quantifier test and starts at the subject of the form ("de ingangsdag van de Vergunning zelf"), not at the
-         *  element; the wire writes {@code anchor: "form"}, and its walk is derived from that subject. */
+         *  element; the wire writes {@code anchor: "form"}, and its walk starts at that subject. A read built through
+         *  this constructor has no walk. */
+        public AttributeReference(String attribute, ObjectType objectType, String subjectSource,
+                            String navigationRole, Datatype type, Source source, boolean set,
+                            java.util.List<String> navigationPath,
+                            java.util.List<dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef> rangePath,
+                            Condition.Quantifier quantifier, int threshold, boolean anchored) {
+            this(attribute, objectType, subjectSource, navigationRole, type, source, set, navigationPath, rangePath,
+                    quantifier, threshold, anchored, java.util.List.of());
+        }
         public AttributeReference(String attribute, ObjectType objectType, String subjectSource,
                             String navigationRole, Datatype type, Source source, boolean set,
                             java.util.List<String> navigationPath,

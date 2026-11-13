@@ -133,8 +133,8 @@ consumer does.
    navigated read, and null where a link on it is absent; a walk the branch does not read is refused before anything
    is read, as a `CaseRunner.Excluded` in the branch's sentence (DROOLS-280, 281, 282). The walk of a read of
    `build.model()` is `build.execModelTranspiler().navigationBindings(read)`, since the model the loader reads carries
-   it beside the read and not on it; for a model the frontend resolved it is the walk its emitter writes,
-   `IrEmitter.navigationBindings(model, subjectType, read)` (witness `NavigatedReadOnBeansWitnessTest`).
+   it beside the read and not on it; for a model the frontend resolved it is the walk the resolver bound on the read,
+   `read.path()`, which its emitter writes (witness `NavigatedReadOnBeansWitnessTest`).
 
 **One write-back per session.** The beans hold the input alone until the write-back.
 `fixpointOf` reads what stands at the fixpoint without writing anything, as a `Fixpoint` (`transpiler/tms`): per object the

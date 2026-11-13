@@ -1220,22 +1220,17 @@ public final class IrEmitter {
         sourceReference(f.source().snippet());
     }
 
-    /** An AttributeReference (IR-SPEC ch. 4.1), its walk derived from {@link #currentSubject}. */
+    /** An AttributeReference (IR-SPEC ch. 4.1), with the walk the resolver bound where it built the read. */
     private void attributeReference(Expr.AttributeReference r) {
         w.key("node").value("AttributeReference");
         w.key("attribute").value(r == foldSource && foldSourceName != null ? foldSourceName : r.attribute());
         w.key("subjectType").value(nameOf(r.objectType()));
         if (r.anchored()) w.key("anchor").value("form");
         sourceReference(r.source().snippet());
-        if (r != foldSource) {
-            List<RegelSpraakModel.RoleBindingRef> nb = navigationBindings(r);
-            if (!nb.isEmpty()) {
-                w.key("path").beginArray();
-                for (RegelSpraakModel.RoleBindingRef b : nb) roleBinding(b);
-                w.endArray();
-            } else {
-                ownRead(r);
-            }
+        if (r != foldSource && !r.path().isEmpty()) {
+            w.key("path").beginArray();
+            for (RegelSpraakModel.RoleBindingRef b : r.path()) roleBinding(b);
+            w.endArray();
         }
     }
 
@@ -1950,71 +1945,13 @@ public final class IrEmitter {
         w.endObject();
     }
 
-    /** The {@code path} of a value/condition-position attribute read: one RoleBinding per
-     *  navigation hop, subject-outward, each naming the reached (far) role. Three shapes: a declared
-     *  CHAIN (one binding per step, whole-or-not — all hops derivable, or none), a single by-NAME hop,
-     *  and a by-PAIR read of an off-subject type. Empty when the read does not navigate, no subject
-     *  anchors the walk, or no hop set is uniquely derivable; {@link #ownRead} then decides whether
-     *  the bindingless read is the subject's own or has no spelling. */
-    private List<RegelSpraakModel.RoleBindingRef> navigationBindings(Expr.AttributeReference a) {
-        return navigationBindings(m, currentSubject, a);
-    }
-
-    /** As {@link #navigationBindings(Expr.AttributeReference)}, from {@code subject}: the resolver names the hops of a read
-     *  it refuses by the path this emitter would write for it. */
-    public static List<RegelSpraakModel.RoleBindingRef> navigationBindings(RegelSpraakModel m, ObjectType subject,
-                                                                         Expr.AttributeReference a) {
-        if (m == null || subject == null || a.objectType() == null) return List.of();
-        if (a.navigationPath() != null && !a.navigationPath().isEmpty()) {        // §13.4.1 declared chain
-            List<ObjectType> reached = m.followChain(subject, a.navigationPath());
-            if (reached == null) return List.of();
-            List<RegelSpraakModel.RoleBindingRef> result = new java.util.ArrayList<>();
-            ObjectType cur = subject;
-            for (int i = 0; i < a.navigationPath().size(); i++) {
-                RegelSpraakModel.RoleBindingRef b =
-                        m.connectingRoleViaNameBinding(cur, reached.get(i), a.navigationPath().get(i));
-                if (b == null) return List.of();                             // heel-of-niet over the chain
-                result.add(b);
-                cur = reached.get(i);
-            }
-            return result;
-        }
-        if (a.navigationRole() != null) {                                      // single-hop by-name
-            RegelSpraakModel.RoleBindingRef b =
-                    m.connectingRoleViaNameBinding(subject, a.objectType(), a.navigationRole());
-            return b == null ? List.of() : List.of(b);
-        }
-        if (a.objectType() != subject) {                                     // by-pair (off-subject type)
-            RegelSpraakModel.RoleBindingRef b = m.connectingRoleBinding(subject, a.objectType());
-            // the pair does not decide, and the written noun is a type name that is also a role name: the role it
-            // names decides, as a written role does (§13.4.1); a type name alone binds by the one relation only
-            if (b == null) b = m.namedRoleBinding(subject, a.objectType(), a.subjectSource());
-            return b == null ? List.of() : List.of(b);
-        }
-        return List.of();                                                    // own attribute — not navigated
-    }
-
-    /**
-     * IR-SPEC ch. 4.1a: a read without bindings is the subject's own. It must be one — the type it names is
-     * the subject's and nothing was written that walks away from the subject — or the model is refused,
-     * because a reader would take the read for the subject's own attribute. The one written step admitted
-     * is the zero-hop self-reference ("het strandtegoed van de aanmelder", read on the aanmelder): a single
-     * written role that reaches no far role from the subject and that the subject's type itself plays.
-     */
-    private void ownRead(Expr.AttributeReference a) {
-        if (!unboundRead(m, currentSubject, a)) return;
-        throw new IllegalStateException("IrEmitter: the read '" + a.source().snippet() + "' of "
-                + nameOf(a.objectType()) + " from " + (currentSubject == null ? "no subject" : currentSubject.name)
-                + " navigates, and the resolver found no unique binding for it");
-    }
-
-    /** Whether {@code a}, read from {@code subject} outside a fold source, is a read this emitter refuses: it
-     *  navigates — by a written role or chain, or by naming another type than the subject's — and no binding is
-     *  derivable ({@link #navigationBindings}), outside the zero-hop self-reference of {@link #ownRead}. The
-     *  resolver asks the same question of every read the emitter will write, so a model it built never reaches
-     *  this refusal: it refuses such a model itself, with an ERROR. */
+    /** Whether {@code a}, read from {@code subject} outside a fold source, has no spelling: it navigates — by a
+     *  written role or chain, or by naming another type than the subject's — and the resolver bound no walk for it
+     *  where it built it (IR-SPEC ch. 4.1a: a read without a walk is the subject's own). The one written step
+     *  admitted is the zero-hop self-reference ("het strandtegoed van de aanmelder", read on the aanmelder): a
+     *  single written role that reaches no far role from the subject and that the subject's type itself plays. */
     public static boolean unboundRead(RegelSpraakModel m, ObjectType subject, Expr.AttributeReference a) {
-        if (!navigationBindings(m, subject, a).isEmpty()) return false;
+        if (!a.path().isEmpty()) return false;
         boolean path = a.navigationPath() != null && !a.navigationPath().isEmpty();
         boolean written = a.navigationRole() != null || path;
         boolean foreignType = subject != null && a.objectType() != null && a.objectType() != subject;
