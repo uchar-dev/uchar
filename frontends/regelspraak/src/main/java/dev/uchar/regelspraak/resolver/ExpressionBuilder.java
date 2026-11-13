@@ -1589,12 +1589,13 @@ final class ExpressionBuilder {
      * ({@link #walkRange}): the step that binds no role and why, an anchor that is not the subject, or a
      * landing on another type than the element type.
      *
-     * <p>(b) An ANCHOR that is not the subject under a one-step range ("… van alle X van de Y"), the same
-     * loss along a third route: the fold source names one relation FROM THE RULE SUBJECT, so an anchor that is
-     * not the subject drops its step just as silently — and here the written element name may legitimately
-     * name the subject-side role, so (c) does not see it either. The anchor must therefore NAME the subject's own
-     * object type, literally. An anchor that resolves to no object type at all (a role name, "alle vondsten
-     * van de aanmelder") is left alone: resolving a role anchor is the wire question, not this refusal.
+     * <p>(b) An ANCHOR that is not the subject under a one-step range ("… van alle X van de Y", "… van zijn Y",
+     * "… van een Y"), the same loss along a third route: the fold source names one relation FROM THE RULE SUBJECT,
+     * so an anchor that is not the subject drops its step just as silently — and here the written element name may
+     * legitimately name the subject-side role, so (c) does not see it either. {@link #foreignAnchor} decides: the
+     * anchor names the subject's own object type, or a role the subject itself fills ("alle vondsten van de
+     * aanmelder", read on the Jutter who IS the aanmelder). A far role or a possessive is a step from the subject,
+     * which the walk of (a) binds as a path through it or refuses; any other name is refused here (RGS-075).
      *
      * <p>(c) A by-PAIR binding the written name contradicts. {@code connectingRoleBinding} searches on
      * TYPES only; with exactly one fact type joining subject and element it always wins, whatever role the
@@ -1631,30 +1632,15 @@ final class ExpressionBuilder {
         if (source.objectType() == null || currentSubject == null) return null;
         if (source.navigationRole() != null || !source.navigationPath().isEmpty()) return null;
         String written = primaryName(o);
-        // (b): the anchor the written chain hands the element to — the first hop past the element head,
-        // read with the same name candidates the element type's own binding was tried with.
-        int sp = written == null ? -1 : written.toLowerCase().indexOf(" van ");
-        if (sp > 0)
-            for (String candidate : RegelSpraakModel.nameCandidates(written.substring(sp + 5))) {
-                ObjectType anchor = model.objectTypeByName(candidate);
-                if (anchor == null) {
-                    // WF-102's anchor rule (2026-09-11): a role anchor is admissible only where it denotes
-                    // the SUBJECT, under ch. 4.1a's order. A far role — one reachable FROM the subject —
-                    // denotes another instance, so binding the fold to the subject's own relation would
-                    // fold the wrong set in silence; that is the shape refused here. A SELF-DENOTING name
-                    // (zero far hits, and the subject type fills a role of that name) is the subject, and
-                    // the chain simply starts there. A name that resolves to nothing at all keeps its
-                    // pre-existing silence: there is nothing to say about it.
-                    if (model.roleHitsToSubject(currentSubject, candidate) == 0) continue;
-                    model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
-                            "RGS-074", params("expression", src(o), "role", candidate, "subject", currentSubject.name, "source", source(f)), f.getStart().getLine()));
-                    return new Expr.Unresolved(type, source(f), null);
-                }
-                if (anchor == currentSubject) break;       // the chain starts at the subject, as the wire needs
-                model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
-                        "RGS-075", params("expression", src(o), "anchor", anchor.name, "subject", currentSubject.name, "source", source(f)), f.getStart().getLine()));
-                return new Expr.Unresolved(type, source(f), null);
-            }
+        // (b): the anchor of the one-step range. An anchor that is a role from the subject is a step, which the walk
+        // above bound or refused; every other anchor that does not name the subject is refused here.
+        ForeignAnchor foreign = foreignAnchor(o);
+        if (foreign != null) {
+            model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING, "RGS-075",
+                    params("expression", src(o), "anchor", foreign.name(), "subject", currentSubject.name, "source", source(f)),
+                    f.getStart().getLine()));
+            return new Expr.Unresolved(type, source(f), null);
+        }
         // (c): the written element name, under every form the element type's own binding was tried with, so a
         // phrase that bound its type by dropping a leading qualifier is judged by that same form.
         List<String> names = RegelSpraakModel.nameCandidates(written);
@@ -3616,7 +3602,29 @@ final class ExpressionBuilder {
             return RangeWalk.GEEN;
         java.util.List<String> segments = new java.util.ArrayList<>();
         if (!rangeSegments(subjectType, segments)) return RangeWalk.GEEN;
+        if (segments.size() == 2 && (nestedSetStep(subjectType) != null || !throughAnchor(segments, subjectType)))
+            return RangeWalk.GEEN;
         return walkSegments(segments, src(subjectType));
+    }
+
+    /** Whether the one-step range {@code segments}, written in the chain {@code o}, is anchored at one object that a role
+     *  from the rule subject reaches ({@link #foreignAnchor}), and is then the range of two steps through that role, as
+     *  "… van de &lt;rol&gt; van de &lt;Onderwerp&gt;" writes it: the anchor is cut to its name and the subject's name is
+     *  appended as the anchor of the walk. The caller has made sure the anchor is no set ("alle vondsten van alle
+     *  sloepen"), which names no object to start from. */
+    private boolean throughAnchor(java.util.List<String> segments, OnderwerpContext o) {
+        ForeignAnchor foreign = foreignAnchor(segments, possessiveAnchor(o));
+        if (foreign == null || !foreign.role()) return false;
+        segments.set(1, foreign.name());
+        segments.add(currentSubject.name);
+        return true;
+    }
+
+    /** Whether the innermost link of the chain of {@code o} is the possessive "zijn &lt;naam&gt;". */
+    private static boolean possessiveAnchor(OnderwerpContext o) {
+        OnderwerpContext last = o;
+        while (last.onderwerp() != null) last = last.onderwerp();
+        return last.onderwerpKeten() != null && last.onderwerpKeten().ZIJN() != null;
     }
 
     /** The written segments of {@code o}'s chain, outside-in, appended to {@code segments}; false where a link of the
@@ -3706,6 +3714,71 @@ final class ExpressionBuilder {
         return parts.size() == 1 ? Msg.frontend("PART.roles-one", "part", parts.get(0))
                 : Msg.frontend("PART.roles-several", "head", new Msg.Joined(parts.subList(0, parts.size() - 1), ", "),
                         "last", parts.get(parts.size() - 1));
+    }
+
+    /** The anchor of a one-step range that names another object than the rule subject: the name it is written with,
+     *  and whether that name is a role (a far role, or a possessive's noun) rather than an object type. */
+    record ForeignAnchor(String name, boolean role) {}
+
+    /**
+     * The one anchor test of a one-step range ("alle vondsten van &lt;anker&gt;"), for a value fold
+     * ({@link #walkRange}, {@link #checkFoldSource}), a quantifier over a comparison ({@link #foreignRangeAnchor}) and a
+     * quantifier over a characteristic check ({@link #quantifiedSubject}). A one-step range is one relation FROM the rule
+     * subject (IR-SPEC ch. 4.3, ch. 4.5), so an anchor that names another object would lose its step, and the fold would
+     * range over the subject's own relation. An anchor that is a role from the subject is that step, and the range
+     * runs through it ({@link #throughAnchor}); any other anchor is refused. {@code segments} are the written segments,
+     * the element first and the anchor last; {@code possessive} says the anchor is written "zijn &lt;naam&gt;", a step
+     * from the subject. Null where the range has another number of segments (a longer one is {@link #walkSegments}'s)
+     * or where the anchor names the subject ({@link #anchorsSubject}). The anchor's name runs on over the words of the
+     * predicate after it, so it is cut after the longest name it opens with.
+     */
+    private ForeignAnchor foreignAnchor(java.util.List<String> segments, boolean possessive) {
+        if (currentSubject == null || segments.size() != 2) return null;
+        String anchor = segments.get(1);
+        String name = openingName(anchor, subjectNames());
+        if (name == null) name = openingName(anchor, modelNames());
+        if (name != null) anchor = anchor.substring(0, name.length());
+        if (!possessive && anchorsSubject(anchor)) return null;
+        // ch. 4.1a's order: a role reachable from the subject is a step, also where the name is a type's name as well
+        if (possessive || model.roleHitsToSubject(currentSubject, anchor) > 0) return new ForeignAnchor(anchor, true);
+        for (String candidate : RegelSpraakModel.nameCandidates(anchor)) {
+            ObjectType type = model.objectTypeByName(candidate);
+            if (type != null) return new ForeignAnchor(type.name, false);
+        }
+        return new ForeignAnchor(anchor, false);
+    }
+
+    /** {@link #foreignAnchor} of the set onderwerp {@code o}: its segments, and whether its innermost link is a possessive. */
+    private ForeignAnchor foreignAnchor(OnderwerpContext o) {
+        java.util.List<String> segments = new java.util.ArrayList<>();
+        if (o == null || !rangeSegments(o, segments)) return null;
+        return foreignAnchor(segments, possessiveAnchor(o));
+    }
+
+    /** Why the one-step range of the set operand written in {@code e} does not start at the rule subject
+     *  ({@link #foreignAnchor}), for a quantifier over a comparison; null where it does, or where {@code e} writes no
+     *  set onderwerp. */
+    Msg foreignRangeAnchor(ParseTree e) {
+        OnderwerpContext o = e == null ? null : foldSourceSubject(e);
+        if (o == null) return null;
+        RangeWalk walk = walkRange(o);
+        if (walk.refusal() != null) return walk.refusal();
+        ForeignAnchor foreign = foreignAnchor(o);
+        return foreign == null ? null : Msg.frontend("PART.range-not-at-subject", "source", src(o),
+                "anchor", foreign.name(), "subject", currentSubject.name);
+    }
+
+    /** The names of the model an anchor may be written with: every object type's name and every role's name and
+     *  declared plural. */
+    private List<String> modelNames() {
+        List<String> names = new ArrayList<>();
+        for (ObjectType t : model.objectTypes.values()) names.add(t.name);
+        for (RegelSpraakModel.FactType ft : model.factTypes.values())
+            for (RegelSpraakModel.Role r : ft.roles) {
+                names.add(r.name());
+                if (r.plural() != null) names.add(r.plural());
+            }
+        return names;
     }
 
     /** Whether the written anchor segment denotes the RULE SUBJECT — literally by object-type name, or
@@ -3884,6 +3957,14 @@ final class ExpressionBuilder {
         // phrase).
         if (isSetSubject(a.onderwerp()) || hasStep(members) || hasStep(src(a.onderwerp())))
             return pathSubject(a, q, members);
+        java.util.List<String> segments = new java.util.ArrayList<>(List.of(stripArticle(members).trim()));
+        if (rangeSegments(a.onderwerp(), segments)) {
+            ForeignAnchor foreign = foreignAnchor(segments, possessiveAnchor(a.onderwerp()));
+            if (foreign != null && foreign.role()) return pathSubject(a, q, members);
+            if (foreign != null)
+                return QuantifiedSubject.refused(src(a), Msg.frontend("PART.range-not-at-subject", "source", src(a),
+                        "anchor", foreign.name(), "subject", currentSubject.name));
+        }
         ObjectType elem = model.resolveObjectType(members);
         if (elem == null) elem = typeViaPlural(members);
         return elem != null
@@ -3898,8 +3979,10 @@ final class ExpressionBuilder {
      * the segments of the member name, then those of the onderwerp, the anchor last. The anchor's name runs on over
      * the words of the predicate after it ("… van de Melding boven de drempel is" leaves the anchor "Melding boven de"),
      * so the anchor is cut after the longest name it may call the rule subject by ({@link #subjectNames}) and the rest
-     * goes back to the predicate as {@code anchorTail}. A walk that declines refuses the phrase with its own reason; a
-     * shape it does not decide, with the reason {@code PART.fold-multi-step}.
+     * goes back to the predicate as {@code anchorTail}. A member phrase of one relation anchored at a role from the
+     * rule subject ("alle vondsten van zijn meester") is the range through that role ({@link #throughAnchor}). A walk
+     * that declines refuses the phrase with its own reason; a shape it does not decide, with the reason
+     * {@code PART.fold-multi-step}.
      */
     private QuantifiedSubject pathSubject(AttribuutVanOnderwerpContext a, Condition.Quantifier q, String members) {
         java.util.List<String> segments = new java.util.ArrayList<>();
@@ -3911,6 +3994,12 @@ final class ExpressionBuilder {
         if (name != null) {
             tail = anchor.substring(name.length()).trim();
             segments.set(segments.size() - 1, anchor.substring(0, name.length()));
+        }
+        if (segments.size() == 2) {
+            if (isSetSubject(a.onderwerp()) || nestedSetStep(a.onderwerp()) != null
+                    || !throughAnchor(segments, a.onderwerp()))
+                return QuantifiedSubject.refused(src(a), Msg.frontend("PART.fold-multi-step"));
+            if (name == null) tail = anchor.substring(segments.get(1).length()).trim();
         }
         RangeWalk walk = walkSegments(segments, src(a));
         if (walk.refusal() != null) return QuantifiedSubject.refused(src(a), walk.refusal());

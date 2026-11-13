@@ -61,9 +61,9 @@ class MarkerReportTest {
     static {
         CLASSIFICATION.put("RuleChecker.java#checkWholePeriod", "ERROR (§8.2 over een statisch onderwerp): geen document");
         CLASSIFICATION.put("RuleChecker.java#quantifierFold",
-                "ERROR (RGS-349, de toets leest het regelonderwerp van het type van het element zonder 'zelf'; RGS-358, "
-                + "een kwantor over het regelonderwerp in een deelselectie, of de toets leest een omsluitend element): "
-                + "geen document");
+                "WARNING: quantifier_over_a_comparison_from_another_anchor; ERROR (RGS-349, de toets leest het "
+                + "regelonderwerp van het type van het element zonder 'zelf'; RGS-358, een kwantor over het "
+                + "regelonderwerp in een deelselectie, of de toets leest een omsluitend element): geen document");
         CLASSIFICATION.put("RuleChecker.java#identityCheck", "ERROR (RGS-358, een identiteitstoets die het IR niet "
                 + "kan schrijven): geen document");
         CLASSIFICATION.put("RuleChecker.java#navigationCharacteristicCheck", "ERROR (RGS-440, een genavigeerde "
@@ -95,7 +95,7 @@ class MarkerReportTest {
         CLASSIFICATION.put("ExpressionBuilder.java#dimensionCell", "ERROR (RGS-364, een cel zonder label van een "
                 + "dimensie; RGS-365, een naam die op twee cellen past): geen document");
         CLASSIFICATION.put("ExpressionBuilder.java#checkFoldSource", "WARNING: vouwbron_geneste_verzamelingsstap, "
-                + "vouwbron_tussenstap, vouwbron_rolanker, vouwbron_bindt_niet_op_de_geschreven_naam");
+                + "vouwbron_tussenstap, vouwbron_bindt_niet_op_de_geschreven_naam");
         CLASSIFICATION.put("ExpressionBuilder.java#aggregationFilter", "WARNING (van buildFunction): deelselectie_op_een_aggregatie_operand");
         CLASSIFICATION.put("ExpressionBuilder.java#checkOrdinal",
                 "WARNING: rangtelwoord_over_twee_bindingen; ERROR (RGS-393, een getal dat geen plaats noemt; positie "
@@ -166,9 +166,16 @@ class MarkerReportTest {
         written(NestedFoldSourceTest.MODEL_B + NestedFoldSourceTest.FOREIGN_ANCHOR_RULE, "tussenstap in een vouwbron");
     }
 
-    @Test void fold_source_role_anchor() {
-        written(NestedFoldSourceTest.ROLE_ANCHOR_MODEL + NestedFoldSourceTest.FAR_ROLE_ANCHOR_RULE,
-                "rolanker in een vouwbron");
+    @Test void quantifier_over_a_comparison_from_another_anchor() {
+        written(MODEL + """
+
+            Objecttype de Haven (mv: Havens)
+
+            Regel bevoegd
+                geldig altijd
+                    Een Jutter is bevoegd
+                    indien het gewicht van alle aangemelde vondsten van de Haven groter is dan 10.
+            """, "begint bij 'Haven' en niet bij het regelonderwerp Jutter");
     }
 
     @Test void fold_source_does_not_bind_on_the_written_name() {

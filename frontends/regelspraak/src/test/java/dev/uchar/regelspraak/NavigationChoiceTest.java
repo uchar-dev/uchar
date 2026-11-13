@@ -214,21 +214,19 @@ class NavigationChoiceTest {
         assertTrue(c.endsWith("\"diagnostics\":[]}"), () -> "zonder marker en zonder waarschuwing:\n" + c);
     }
 
-    /** A range of two steps from a possessive anchor has no spelling here, and the refusal names the step the author
-     *  wrote. Before: "(geen relatie verbindt Schuit met Schuit)", true of the one-step derivation the frontend tried
-     *  and of nothing in the sentence. */
-    @Test void a_range_from_a_possessive_anchor_names_the_written_step() {
-        assertEquals(List.of("vouw 'de som van de romplengten van alle liggers van zijn thuishaven' zonder bereik (de "
-                        + "geschreven bron 'alle liggers van zijn thuishaven' loopt via 'zijn thuishaven', een ander anker "
-                        + "dan het onderwerp, en een bereik vanaf zo'n anker schrijft deze frontend niet): een vouw met "
-                        + "één argument en een elementType draagt haar bereik (sourceRole of sourcePath) onder elke soort "
-                        + "behalve totaal: het bereik wordt geschreven, nooit afgeleid"),
-                faults(TYPES + THUISLIGGING + """
+    /** A range from a possessive anchor runs through the role the possessive names, as "alle liggers van de
+     *  thuishaven van de Schuit" writes it: the path from the subject over 'thuishaven' and then 'ligger'. */
+    @Test void a_range_from_a_possessive_anchor_runs_through_the_anchor() {
+        String c = emitCompact(TYPES + THUISLIGGING + """
 
-                    Regel ligprijs van een schuit
-                        geldig altijd
-                            De ligprijs van een Schuit moet berekend worden als de som van de romplengten van alle liggers van zijn thuishaven.
-                    """));
+            Regel ligprijs van een schuit
+                geldig altijd
+                    De ligprijs van een Schuit moet berekend worden als de som van de romplengten van alle liggers van zijn thuishaven.
+            """);
+        assertTrue(c.contains("\"sourcePath\":[{\"node\":\"RoleBinding\",\"factType\":\"thuisligging\",\"role\":"
+                + "\"thuishaven\"},{\"node\":\"RoleBinding\",\"factType\":\"thuisligging\",\"role\":\"ligger\"}]"),
+                () -> "het bereik loopt via de thuishaven:\n" + c);
+        assertTrue(c.endsWith("\"diagnostics\":[]}"), () -> "zonder marker en zonder waarschuwing:\n" + c);
     }
 
     /** A fold whose source the wire cannot spell, each refused in the reader's sentence for what the emitter would

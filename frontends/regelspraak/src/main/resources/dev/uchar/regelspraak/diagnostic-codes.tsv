@@ -69,7 +69,6 @@ RGS-070	aggregation-dimension-selection-unlowered	WARNING	expression
 RGS-071	value-fold-with-one-operand	ERROR	fold
 RGS-072	count-over-path-refused	ERROR	expression,reason
 RGS-073	fold-source-chain-without-source-path	WARNING	exit,exitClause,expression,reason
-RGS-074	fold-source-role-anchor-other-instance	WARNING	expression,role,source,subject
 RGS-075	fold-source-intermediate-step	WARNING	anchor,expression,source,subject
 RGS-076	fold-source-binding-not-written-name	WARNING	factType,objectType,role,source,subject,writtenName
 RGS-077	listed-count-refused	ERROR	expression,noUnion,operandCount,unionRefusal

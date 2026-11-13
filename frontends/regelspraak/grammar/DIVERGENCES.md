@@ -1424,11 +1424,16 @@ no range and is refused below. The WARNING of a written name the pair
 contradicts stands for a written name that names another role than the one
 relation carries ("alle geborgen vondsten" where only `aangemelde vondst` joins
 the types): the pair would fold another set than the sentence names, so the fold
-stays a marker. A source that writes a step beyond its element from an anchor
-other than the subject ("de som van de romplengten van alle liggers van zijn
-thuishaven" on a Schuit) has a range of two steps from another object, which
-this frontend does not spell; the refusal's Dutch part names that anchor. A
-quantifier fold ("ten minste twee van de liggers van de Haven") binds its range
+stays a marker. The anchor of a range of one written step decides where it
+starts (`ExpressionBuilder.foreignAnchor`, one test for the value fold and both
+quantifier folds): an anchor that names the rule subject, by its type's name or
+by a role the subject itself fills, starts it at the subject; an anchor that is a
+role from the subject, written with an article or as a possessive ("de som van
+de romplengten van alle liggers van zijn thuishaven" on a Schuit), is a step,
+and the range runs through it as "alle liggers van de thuishaven van de Schuit"
+writes it, a `sourcePath` of two steps; any other anchor ("alle vondsten van de
+Kade", "van een Kade", where no role reaches a Kade) is refused with a WARNING
+that names it, and the fold stays a marker. A quantifier fold ("ten minste twee van de liggers van de Haven") binds its range
 the same way, by the role its member phrase writes where the pair does not
 decide. A fold without a range is refused with an ERROR in the loader's sentence
 (`a single-argument fold with an elementType carries its range … : the range is
@@ -1830,9 +1835,9 @@ elements of the union, each once, however many intermediates reach it.
 **Refused, loudly.** A walk that does not bind keeps the marker with the
 WARNING that names where it stopped (the step that binds no role and why, an
 anchor that is not the rule subject, a landing on another type than the
-element type), and a member phrase whose path cannot be read at all — an
-anchor written as a possessive, "van zijn melder" — keeps the WARNING of a
-multi-step range. The matrix reads with the element as its subject, so an
+element type). A member phrase of one step whose anchor is a role from the rule
+subject, "van zijn melder" among them, is the walk through that role (the
+one-step anchor above). The matrix reads with the element as its subject, so an
 operand beside the quantified one that the frontend built from the rule
 subject ("… groter is dan de drempel van de Melding") would be written from
 the element: over one step the read reaches the subject back over the

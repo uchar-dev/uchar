@@ -138,16 +138,23 @@ class DimensionCellOverRoleTest {
     }
 
     /** A fold of one cell whose range the wire cannot spell is refused as the fold of a plain attribute is, on the
-     *  reference under the cell: here no relation joins the Haven to the Jutter, and a range from another anchor than
-     *  the subject is not written. */
+     *  reference under the cell: here no relation joins the Haven to the Jutter. */
     @Test void a_cell_fold_without_a_range_is_refused() {
-        for (String value : List.of("de som van het vondstgewicht in voorjaar van alle Jutters",
-                "de som van het vondstgewicht in voorjaar van alle leden van zijn havenploeg")) {
-            RegelSpraakModel m = Resolver.resolve(MODEL + "Regel r\n    geldig altijd\n        De havenuitkomst van een "
-                    + "Haven moet berekend worden als " + value + ".\n");
-            assertEquals(1, m.diagnostics.size(), () -> "verwachtte precies één diagnose, kreeg: " + m.diagnostics);
-            assertEquals("RGS-131", m.diagnostics.get(0).code(), m.diagnostics.get(0)::toString);
-        }
+        RegelSpraakModel m = Resolver.resolve(MODEL + "Regel r\n    geldig altijd\n        De havenuitkomst van een "
+                + "Haven moet berekend worden als de som van het vondstgewicht in voorjaar van alle Jutters.\n");
+        assertEquals(1, m.diagnostics.size(), () -> "verwachtte precies één diagnose, kreeg: " + m.diagnostics);
+        assertEquals("RGS-131", m.diagnostics.get(0).code(), m.diagnostics.get(0)::toString);
+    }
+
+    /** A fold of one cell whose range is anchored at a role from the subject runs through that role, as a fold of a
+     *  plain attribute does: the path over 'havenploeg' and then 'lid'. */
+    @Test void a_cell_fold_from_a_possessive_anchor_runs_through_the_anchor() {
+        RegelSpraakModel m = Resolver.resolve(MODEL + "Regel r\n    geldig altijd\n        De havenuitkomst van een "
+                + "Haven moet berekend worden als de som van het vondstgewicht in voorjaar van alle leden van zijn havenploeg.\n");
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        String ir = IrEmitter.emit(m).replaceAll("\\s+", "");
+        assertTrue(ir.contains("\"sourcePath\":[{\"node\":\"RoleBinding\",\"factType\":\"havenbemanning\",\"role\":"
+                + "\"havenploeg\"},{\"node\":\"RoleBinding\",\"factType\":\"ploeglidmaatschap\",\"role\":\"lid\"}]"), ir);
     }
 
     // ---------------- a label that contains "en" ----------------

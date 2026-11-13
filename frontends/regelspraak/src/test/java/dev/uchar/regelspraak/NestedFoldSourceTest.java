@@ -291,7 +291,6 @@ class NestedFoldSourceTest {
         return m.diagnostics.stream()
                 .filter(d -> d.message().startsWith(CHAIN_HEAD)
                         || d.message().startsWith("tussenstap in een vouwbron")
-                        || d.message().startsWith("rolanker in een vouwbron")
                         || d.message().startsWith("vouwbron bindt niet op de geschreven naam"))
                 .toList();
     }
@@ -655,15 +654,18 @@ class NestedFoldSourceTest {
     }
 
     /** The other half of the same decision: a role REACHABLE FROM the subject denotes ANOTHER instance, so
-     *  it is a hop and not an anchor. With only one written step there is no path to put it on, and binding
-     *  the fold to the subject's own relation would fold the wrong set in silence — so it is refused. */
+     *  it is a hop and not an anchor. The range runs through it, as "van de strandmaat van de Jutter" writes it:
+     *  the path from the subject over that role and then the written element role. Binding the fold to the
+     *  subject's own relation would fold the wrong set in silence. */
     @Test
-    void a_far_role_as_anchor_is_refused() {
-        List<Diagnostic> ds = foldSourceDiagnostics(ROLE_ANCHOR_MODEL + FAR_ROLE_ANCHOR_RULE);
-        assertEquals(1, ds.size(), () -> "verwacht één vouwbron-diagnose, kreeg " + ds);
-        assertTrue(ds.get(0).message().startsWith("rolanker in een vouwbron"),
-                () -> "verwacht de rolanker-melding, kreeg " + ds.get(0).message());
-        assertTrue(ds.get(0).message().contains("strandmaat"), "de melding noemt de rol");
+    void a_far_role_as_anchor_is_a_step_of_the_path() {
+        assertEquals(List.of(), foldSourceDiagnostics(ROLE_ANCHOR_MODEL + FAR_ROLE_ANCHOR_RULE));
+        String json = ir(ROLE_ANCHOR_MODEL + FAR_ROLE_ANCHOR_RULE).replaceAll("\\s*\n\\s*", "");
+        assertTrue(json.contains("\"sourcePath\": [{\"node\": \"RoleBinding\",\"factType\": \"vriendschap\","
+                        + "\"role\": \"strandmaat\"},{\"node\": \"RoleBinding\",\"factType\": \"vondstaanmelding\","
+                        + "\"role\": \"aangemelde vondst\"}]"),
+                () -> "het bereik loopt via de strandmaat:\n" + json);
+        assertFalse(json.contains("\"sourceRole\""), () -> "geen bereik vanaf het onderwerp zelf:\n" + json);
     }
 
     // ---------------- (c) the by-pair binding the written name contradicts ----------------

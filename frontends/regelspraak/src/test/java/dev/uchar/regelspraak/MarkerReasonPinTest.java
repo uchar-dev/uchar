@@ -58,11 +58,12 @@ class MarkerReasonPinTest {
     static final List<Site> SANCTIONED = List.of(
             new Site("RuleChecker.java", "checkWholePeriod", 1,
                     "de §8.2-ERROR die de regel erboven opwerpt IS de diagnose van deze marker"),
-            new Site("RuleChecker.java", "quantifierFold", 2,
-                    "de RGS-358-ERROR (een kwantor over een relatie van het regelonderwerp in een deelselectie) en de "
+            new Site("RuleChecker.java", "quantifierFold", 3,
+                    "de RGS-358-ERROR (een kwantor over een relatie van het regelonderwerp in een deelselectie), de "
                     + "RGS-349- of RGS-358-ERROR die matrixAtForm opwerpt (de toets leest het regelonderwerp van het "
                     + "type van het element zonder 'zelf', of het element van een omsluitende deelselectie; "
-                    + "2026-10-23) zijn de diagnose van deze markers"),
+                    + "2026-10-23) en de RGS-213-WARNING vlak boven de marker (een bereik van één stap met een ander "
+                    + "anker dan het regelonderwerp) zijn de diagnose van deze markers"),
             new Site("RuleChecker.java", "identityCheck", 1,
                     "de RGS-358-ERROR die de regel erboven opwerpt (een identiteitstoets buiten een deelselectie, "
                     + "over iets anders dan het element, of na een andere naam dan die van het type van het "
@@ -100,8 +101,8 @@ class MarkerReasonPinTest {
             new Site("ExpressionBuilder.java", "dimensionCell", 2,
                     "de RGS-365-ERROR (een naam die op twee cellen past) respectievelijk de RGS-364-ERROR (een cel "
                     + "zonder label van een dimensie) staat vlak boven de marker (2026-11-02)"),
-            new Site("ExpressionBuilder.java", "checkFoldSource", 4,
-                    "elk van de vier vouwbron-weigeringen zet haar eigen WARNING neer vlak voor de marker"),
+            new Site("ExpressionBuilder.java", "checkFoldSource", 3,
+                    "elk van de drie vouwbron-weigeringen zet haar eigen WARNING neer vlak voor de marker"),
             new Site("ExpressionBuilder.java", "aggregationFilter", 3,
                     "de enige aanroeper (bouwFunctie) toetst het resultaat op Onopgelost en waarschuwt; "
                     + "de sweep zou dat herhalen"),

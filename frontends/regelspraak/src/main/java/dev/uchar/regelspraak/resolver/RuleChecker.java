@@ -6262,6 +6262,13 @@ final class RuleChecker {
         if (elem == null) return c;
         // a written multi-step range resolved into rangePath, the fold's sourcePath; a one-step range is bound here
         List<RegelSpraakModel.RoleBindingRef> sourcePath = set.rangePath() == null ? List.of() : set.rangePath();
+        // a one-step range starts at the rule subject; one anchored at another object would fold the subject's own relation
+        Msg foreign = sourcePath.isEmpty()
+                ? builder.foreignRangeAnchor(c instanceof Condition.Comparison v && v.right() == set ? rhsCtx : lhsCtx) : null;
+        if (foreign != null) {
+            reportFoldRefusal(source.snippet(), foreign, source);   // names the marker's snippet (WF-113)
+            return new Condition.Unresolved(source, null);   // the WARNING above is this marker's diagnosis
+        }
         RegelSpraakModel.RoleBindingRef sourceRole = sourcePath.isEmpty()
                 ? model.foldSourceBinding(builder.subject(), elem, set.subjectSource()) : null;
         if (sourcePath.isEmpty() && sourceRole == null) return c;   // unresolvable range — never a silent misbinding
