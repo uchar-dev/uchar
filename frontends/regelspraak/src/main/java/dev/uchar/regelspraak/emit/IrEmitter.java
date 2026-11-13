@@ -174,9 +174,6 @@ public final class IrEmitter {
     /** The resolved model, kept for the role-binding derivations of the uchar extension
      *  fields (emitted only when uniquely derivable — absent otherwise, never null). */
     private RegelSpraakModel m;
-    /** The subject object type of the form being emitted; fold-source role bindings
-     *  resolve against it (null outside a subject-bearing form). */
-    private ObjectType currentSubject;
     /** The one AttributeReference currently being emitted as the single argument of an instance fold: its
      *  relation is the fold's range ({@code sourceRole} or {@code sourcePath}), so it never carries a
      *  {@code path} (IR-SPEC ch. 4.1a; the verifier rejects one in a fold slot, WF-053).
@@ -185,45 +182,37 @@ public final class IrEmitter {
     /** The name {@link #foldSource} is written with where it differs from the record's: see
      *  {@link #countSourceName}. Null: the record's own name. */
     private String foldSourceName;
-    /** The subject of the form while a filter or a quantifier test is emitted, which moves the subject to the
-     *  element (RUNTIME-SEMANTICS ch. 3.4a, 3.9a); null at the form's own level. An anchored node is written from it
-     *  (IR-SPEC ch. 4.1a, WF-122). */
-    private ObjectType formSubject;
+    /** How many filters and quantifier tests enclose the node being emitted: in one, the subject is the element
+     *  (RUNTIME-SEMANTICS ch. 3.4a, 3.9a), and an anchored node names the subject of the form (IR-SPEC ch. 4.1a). */
+    private int perElementDepth;
     /** Whether an anchored node is being emitted and no filter or test was entered since: the subject is the form's
      *  again there, so a second anchor would be the misplaced one WF-122 refuses. */
     private boolean inAnchored;
 
-    /** {@code body} with the subject moved to the element {@code element} of a filter or a quantifier test; the subject
-     *  before it is the form's subject where none was moved yet. */
-    private void perElement(ObjectType element, Runnable body) {
-        ObjectType previousSubject = currentSubject, previousForm = formSubject;
+    /** {@code body}, a filter or a quantifier test, whose subject is the element. */
+    private void perElement(Runnable body) {
         boolean previousAnchored = inAnchored;
-        if (formSubject == null) formSubject = currentSubject;
-        if (element != null) currentSubject = element;
+        perElementDepth++;
         inAnchored = false;
         try {
             body.run();
         } finally {
-            currentSubject = previousSubject;
-            formSubject = previousForm;
+            perElementDepth--;
             inAnchored = previousAnchored;
         }
     }
 
-    /** {@code body} for the anchored node {@code what}, written from the subject of the form (IR-SPEC ch. 4.1a): an
+    /** {@code body} for the anchored node {@code what}, which names the subject of the form (IR-SPEC ch. 4.1a): an
      *  anchor outside a filter or a test, or inside another anchored node, has no reading and is refused. */
     private void atForm(String what, Runnable body) {
-        if (formSubject == null || inAnchored)
+        if (perElementDepth == 0 || inAnchored)
             throw new IllegalStateException("IrEmitter: '" + what + "' carries the form anchor (IR-SPEC ch. 4.1a, WF-122) "
                     + (inAnchored ? "inside another anchored node" : "outside a filter or a quantifier test")
                     + "; there the subject is already the form's");
-        ObjectType previousSubject = currentSubject;
-        currentSubject = formSubject;
         inAnchored = true;
         try {
             body.run();
         } finally {
-            currentSubject = previousSubject;
             inAnchored = false;
         }
     }
@@ -365,9 +354,6 @@ public final class IrEmitter {
     // --- §4 prioritized defaults (extension) -------------------------------
 
     private void prioritizedDefaults(PrioritizedDefaults p) {
-        // the path of a default's own-attribute/characteristic read resolves against the group subject
-        ObjectType previousSubject = currentSubject;
-        currentSubject = m == null ? null : m.objectTypes.get(p.subject());
         w.beginObject();
         w.key("node").value("PrioritizedDefaults");
         w.key("name").value(p.name());
@@ -382,7 +368,6 @@ public final class IrEmitter {
         w.key("validity"); validity(p.validity());
         originAndDesignations(RegelSpraakModel.Designatable.form(p.name()));
         w.endObject();
-        currentSubject = previousSubject;
     }
 
     // `default` is a Java keyword, so the emit method for a Default node is spelled dflt.
@@ -1126,7 +1111,7 @@ public final class IrEmitter {
                                 + "' without its relation; the wire requires it (WF-110)");
                     w.key("sourceRole"); roleBinding(t.sourceRole());
                     w.key("filter");
-                    perElement(t.elementType(), () -> condition(t.filter()));
+                    perElement(() -> condition(t.filter()));
                     sourceReference(t.source().snippet());
                     w.endObject();
                 }
@@ -1143,7 +1128,7 @@ public final class IrEmitter {
         w.endObject();
     }
 
-    /** An Aggregation or a BuiltinCall (IR-SPEC ch. 4.3), written from {@link #currentSubject}. */
+    /** An Aggregation or a BuiltinCall (IR-SPEC ch. 4.3), with the range the resolver bound where it built the fold. */
     private void function(Expr.FunctionCall f) {
         boolean aggregation = kindFamily(f.kind()) == Spelling.AGGREGATION_KIND;
         if (aggregation && f.granularity() != null)
@@ -1156,19 +1141,10 @@ public final class IrEmitter {
             if (f.dimensionSelections() != null) throw facetRefusal(f, "a dimension selection", "an Aggregation");
         }
         // IR-SPEC ch. 4.3 (row 28): a dimension fold ranges over the labels of the subject's own
-        // dimensioned attribute, not over instances, so it has no element type and no range and its one
-        // argument is an ordinary read. The resolver records the subject as its element type; written, that
-        // type would demand a range the fold does not have. Any other element type would be a fold this
-        // reading does not describe.
+        // dimensioned attribute, or of the object a to-one path reaches, not over instances, so it has no element
+        // type and no range and its one argument is an ordinary read. The resolver records the type of the attribute
+        // as its element type; written, that type would demand a range the fold does not have.
         boolean dimensionFold = aggregation && f.dimensionSelections() != null;
-        // the attribute of the object a to-one path reaches folds over its cells as the subject's own does
-        boolean overPath = dimensionFold && f.arguments().size() == 1
-                && f.arguments().get(0) instanceof Expr.AttributeReference a && a.navigationRole() != null && !a.set()
-                && a.objectType() == f.elementObjectType();
-        if (dimensionFold && f.elementObjectType() != null && f.elementObjectType() != currentSubject && !overPath)
-            throw foldRefusal(f, "its dimension selection runs over an attribute of "
-                    + f.elementObjectType().name + ", and a dimension fold reads the own attribute of "
-                    + (currentSubject == null ? "the subject" : currentSubject.name));
         ObjectType element = dimensionFold ? null : f.elementObjectType();
         w.key("node").value(aggregation ? "Aggregation" : "BuiltinCall");
         w.key("kind").value(category(f));
@@ -1193,7 +1169,7 @@ public final class IrEmitter {
         if (f.filter() != null) {
             w.key("filter");
             // a dimension fold's filter reads the subject's labels: the subject does not move there
-            if (element != null) perElement(element, () -> condition(f.filter()));
+            if (element != null) perElement(() -> condition(f.filter()));
             else condition(f.filter());
         }
         if (f.emptyFallback() != null) { w.key("emptyFallback"); expr(f.emptyFallback()); }
@@ -1234,7 +1210,7 @@ public final class IrEmitter {
         }
     }
 
-    /** A CharacteristicCheck (IR-SPEC ch. 4.5), its navigation derived from {@link #currentSubject}. */
+    /** A CharacteristicCheck (IR-SPEC ch. 4.5), with the navigation the resolver bound where it built the check. */
     private void characteristicCheck(Condition.CharacteristicCheck k) {
         w.key("node").value("CharacteristicCheck");
         w.key("characteristic").value(k.characteristic());
@@ -1350,10 +1326,8 @@ public final class IrEmitter {
                     w.key("threshold").value(k.threshold());
                 w.key("elementType").value(nameOf(k.elementObjectType()));
                 // filter and test are evaluated PER CONTRIBUTOR with the element as subject, exactly as
-                // FunctionCall.filter is: an element-own read there is an own read, not a navigation from the
-                // outer subject, so emit both with the element as subject and they take the own-attribute
-                // branch and carry no spurious by-pair path. Restore the outer subject after.
-                perElement(k.elementObjectType(), () -> {
+                // FunctionCall.filter is
+                perElement(() -> {
                     // an absent filter is no subselection
                     if (k.filter() != null) { w.key("filter"); condition(k.filter()); }
                     w.key("test"); condition(k.test());
@@ -1579,7 +1553,6 @@ public final class IrEmitter {
             throw new IllegalStateException("IrEmitter: the target '" + d.attribute() + "' of rule '" + r.name()
                     + "' names on '" + d.objectType().name + "' both an attribute and a characteristic; which member a "
                     + "rule writes decides its kind, and this name decides nothing (WF-022)");
-        currentSubject = d.objectType();
         // the target fixes the subject, so a navigation written on it has no carrier
         if (d.navigationRole() != null || (d.navigationPath() != null && !d.navigationPath().isEmpty()))
             throw new IllegalStateException("IrEmitter: the target of rule '" + r.name() + "' ('"
@@ -1593,7 +1566,6 @@ public final class IrEmitter {
         if (r.kind() == ResolvedRule.Kind.GELIJKSTELLING || r.kind() == ResolvedRule.Kind.BEREKENING)
             w.key("presentation").value(Spelling.PRESENTATION.spelling(r.kind()));
         w.endObject();
-        currentSubject = null;
     }
 
     /** Whether {@code name} is an attribute of {@code ot}, own or inherited, under the name identity (WF-001). */
@@ -1635,7 +1607,6 @@ public final class IrEmitter {
     }
 
     private void objectCreationVersion(ResolvedObjectCreation oc) {
-        currentSubject = oc.subject();   // member values and the guard navigate from the creation subject
         w.beginObject();
         w.key("createdType").value(nameOf(oc.createdType()));
         w.key("subject").value(nameOf(oc.subject()));
@@ -1654,7 +1625,6 @@ public final class IrEmitter {
         w.key("validity"); validity(oc.validity());
         if (oc.connectingRole() != null) { w.key("connectingRole"); roleBinding(oc.connectingRole()); }
         w.endObject();
-        currentSubject = null;
     }
 
     /** IR-SPEC ch. 3.2: an allocation and its versions. */
@@ -1684,7 +1654,6 @@ public final class IrEmitter {
         if (rb == null)
             throw new IllegalStateException("IrEmitter: the allocation '" + v.name() + "' has no unique relation "
                     + "between " + nameOf(v.sourceType()) + " and " + nameOf(v.targetType()));
-        currentSubject = v.sourceType();
         w.beginObject();
         w.key("sourceType").value(nameOf(v.sourceType()));
         w.key("sourceAttribute").value(v.sourceAttribute());
@@ -1701,7 +1670,6 @@ public final class IrEmitter {
         w.key("validity"); validity(v.validity());
         w.key("connectingRole"); roleBinding(rb);
         w.endObject();
-        currentSubject = null;
     }
 
     /** IR-SPEC ch. 3.5: a consistency rule and its versions; the source record stands on the version, with the
@@ -1721,14 +1689,12 @@ public final class IrEmitter {
         if (c.assertion() == null)
             throw new IllegalStateException("IrEmitter: the consistency rule '" + c.name() + "' has no assertion; "
                     + "the wire requires one");
-        currentSubject = c.subject();
         w.beginObject();
         w.key("subject").value(nameOf(c.subject()));
         w.key("assertion"); condition(c.assertion());
         w.key("validity"); validity(c.validity());
         sourceReference(c.source().snippet(), c.line());
         w.endObject();
-        currentSubject = null;
     }
 
     /** IR-SPEC ch. 3.6: a uniqueness and its versions; a version is its list of sources, one for the single-type
@@ -1816,86 +1782,26 @@ public final class IrEmitter {
      *
      * <p>A source that denotes the subject's own attribute has no range. That is a fold under TOTAAL (the
      * total over the subject's own timeline); a fold of another kind over it has no spelling, and neither has a
-     * source of another type that denotes no instances, since written without a range it reads the subject.
+     * source of another type that denotes no instances, since written without a range it reads the subject. Those
+     * two depend on the subject the fold is read on, and the resolver refuses them
+     * ({@code ExpressionBuilder.foldRefusalOf}).
      */
     private FoldRange foldRange(Expr.FunctionCall f) {
         if (!isFoldSource(f)) return null;
         Expr.AttributeReference arg = foldSourceReference(f.arguments().get(0));
-        FoldRefusal refusal = foldRefusalOf(m, currentSubject, f);
-        if (refusal != null) throw foldRefusal(f, switch (refusal) {
-            case WRITTEN_PATH -> "its source carries a written path; the relation of a fold source is the range";
-            case WRITTEN_STEP -> "its source carries the written step '" + arg.navigationRole()
-                    + "', and only a count source that denotes the subject itself may carry one";
-            case FOREIGN_ATTRIBUTE -> "its source reads '" + arg.attribute() + "' on " + nameOf(arg.objectType())
-                    + ", and without a range a fold reads the own attribute of " + currentSubject.name;
-            case OWN_ATTRIBUTE -> "its source is the subject's own attribute and no instance source";
-            case NO_SUBJECT -> "there is no subject to determine its range from";
-            case NO_RELATION -> "no unique relation from " + currentSubject.name + " to "
-                    + f.elementObjectType().name + " carries its range";
-        });
+        if (arg.navigationPath() != null && !arg.navigationPath().isEmpty())
+            throw foldRefusal(f, "its source carries a written path; the relation of a fold source is the range");
+        boolean countSource = arg.type() instanceof Datatype.Unknown;
+        if (arg.navigationRole() != null && !countSource)
+            throw foldRefusal(f, "its source carries the written step '" + arg.navigationRole()
+                    + "', and only a count source that denotes the subject itself may carry one");
         // the total over the subject's own timeline has no range
-        if (!(arg.type() instanceof Datatype.Unknown) && !arg.set()) return new FoldRange(null, List.of(), null);
+        if (!countSource && !arg.set()) return new FoldRange(null, List.of(), null);
+        if (f.sourceRole() == null && f.sourcePath().isEmpty())
+            throw foldRefusal(f, "its source denotes instances, and the resolver bound no range for it");
         if (!f.sourcePath().isEmpty())
             return new FoldRange(null, f.sourcePath(), countSourceName(f, arg, f.sourcePath().get(f.sourcePath().size() - 1)));
         return new FoldRange(f.sourceRole(), List.of(), countSourceName(f, arg, f.sourceRole()));
-    }
-
-    /** Why the wire has no spelling for a fold over one source, as {@link #foldRefusalOf} finds it. */
-    public enum FoldRefusal {
-        /** the source carries a written chain, where a fold source's relation is the fold's range */
-        WRITTEN_PATH,
-        /** the source carries a written step and is no count source that names the subject itself */
-        WRITTEN_STEP,
-        /** the source reads another type than the subject's, and no range carries that step */
-        FOREIGN_ATTRIBUTE,
-        /** the source is the subject's own attribute under a kind other than total, and has no instances */
-        OWN_ATTRIBUTE,
-        /** there is no subject to derive the range from */
-        NO_SUBJECT,
-        /** no relation carries the range */
-        NO_RELATION
-    }
-
-    /** Why the fold {@code f}, written from {@code subject}, has no spelling on the wire; null where it has one and
-     *  where {@code f} is no fold over one source. {@link #foldRange} refuses each reason, and the resolver asks the
-     *  same of every fold it hands the emitter and refuses such a model itself, with an ERROR, so a model it built
-     *  never reaches the refusal here. */
-    public static FoldRefusal foldRefusalOf(RegelSpraakModel m, ObjectType subject, Expr.FunctionCall f) {
-        if (!isFoldSource(f)) return null;
-        Expr.AttributeReference arg = foldSourceReference(f.arguments().get(0));
-        boolean countSource = arg.type() instanceof Datatype.Unknown;
-        if (arg.navigationPath() != null && !arg.navigationPath().isEmpty()) return FoldRefusal.WRITTEN_PATH;
-        if (arg.navigationRole() != null && !(countSource && selfDenoting(m, subject, arg.navigationRole())))
-            return FoldRefusal.WRITTEN_STEP;
-        if (!countSource && !arg.set()) {
-            // written without a range the source is read on the subject, so a source of another type loses its step
-            if (subject != null && arg.objectType() != null && arg.objectType() != subject)
-                return FoldRefusal.FOREIGN_ATTRIBUTE;
-            return f.kind() == Expr.FunctionKind.TOTAAL ? null : FoldRefusal.OWN_ATTRIBUTE;
-        }
-        if (m == null || subject == null) return FoldRefusal.NO_SUBJECT;
-        return f.sourceRole() == null && f.sourcePath().isEmpty() ? FoldRefusal.NO_RELATION : null;
-    }
-
-    /** The one-step range of an instance fold whose source {@code arg} denotes instances: for the count source the
-     *  written name and then the type pair, for a set reading the type pair and then the written name. Null where
-     *  neither yields one relation. */
-    private static RegelSpraakModel.RoleBindingRef rangeRole(RegelSpraakModel m, ObjectType subject, Expr.FunctionCall f,
-                                                            Expr.AttributeReference arg) {
-        return rangeRole(m, subject, f.elementObjectType(), arg);
-    }
-
-    /** As above, over the element type of the fold: the resolver writes a fold's range from another subject with
-     *  this search, so the two cannot bind one written range differently. */
-    public static RegelSpraakModel.RoleBindingRef rangeRole(RegelSpraakModel m, ObjectType subject, ObjectType elementType,
-                                                           Expr.AttributeReference arg) {
-        if (arg.type() instanceof Datatype.Unknown) {
-            RegelSpraakModel.RoleBindingRef rb = m.elementRoleBinding(subject, arg.attribute());
-            return rb != null ? rb : m.connectingRoleBinding(subject, elementType);
-        }
-        // the by-pair-then-written-name search lives in the model: the §8.2 quantifier fold's range is
-        // derived at resolve time and must classify a written range exactly as this does
-        return m.foldSourceBinding(subject, elementType, arg.subjectSource());
     }
 
     /** Whether {@code f} is an instance fold over one source, whose single argument the wire reads through the
@@ -1939,34 +1845,6 @@ public final class IrEmitter {
         w.key("factType").value(rb.factType());
         w.key("role").value(rb.role());
         w.endObject();
-    }
-
-    /** Whether {@code a}, read from {@code subject} outside a fold source, has no spelling: it navigates — by a
-     *  written role or chain, or by naming another type than the subject's — and the resolver bound no walk for it
-     *  where it built it (IR-SPEC ch. 4.1a: a read without a walk is the subject's own). The one written step
-     *  admitted is the zero-hop self-reference ("het strandtegoed van de aanmelder", read on the aanmelder): a
-     *  single written role that reaches no far role from the subject and that the subject's type itself plays. */
-    public static boolean unboundRead(RegelSpraakModel m, ObjectType subject, Expr.AttributeReference a) {
-        if (!a.path().isEmpty()) return false;
-        boolean path = a.navigationPath() != null && !a.navigationPath().isEmpty();
-        boolean written = a.navigationRole() != null || path;
-        boolean foreignType = subject != null && a.objectType() != null && a.objectType() != subject;
-        if (!written && !foreignType) return false;
-        return path || a.navigationRole() == null || subject == null || a.objectType() != subject
-                || m.roleHitsToSubject(subject, a.navigationRole()) != 0
-                || !selfDenoting(m, subject, a.navigationRole());
-    }
-
-    /** Whether the type {@code subject} itself plays a role that {@code name} denotes (declared name or
-     *  declared plural, under the verifier's name identity) — the self-denotation of WF-053's ch. 4.1a
-     *  reading, on the declared filler type exactly. */
-    private static boolean selfDenoting(RegelSpraakModel m, ObjectType subject, String name) {
-        if (m == null || subject == null || name == null) return false;
-        for (FactType ft : m.factTypes.values())
-            for (Role r : ft.roles)
-                if (r.objectTypeName() != null && norm(r.objectTypeName()).equals(norm(subject.name))
-                        && denotes(r, name)) return true;
-        return false;
     }
 
     /** A role check as the wire carries it: the binding (the fact type and the role the subject plays) and,
@@ -2077,7 +1955,6 @@ public final class IrEmitter {
                     + "filler of the role '" + fc.targetRole() + "' in '" + fc.factType() + "'"
                     + (targetRoles.size() == 1 ? ", and that is '" + targetRoles.get(0).objectTypeName() + "'"
                             : ", and that role occurs " + targetRoles.size() + " times"));
-        currentSubject = fc.anchor();   // the §13.4.7 guard navigates from the anker
         w.beginObject();
         w.key("factType").value(fc.factType());
         w.key("anchorRole").value(fc.anchorRole());
@@ -2090,7 +1967,6 @@ public final class IrEmitter {
         if (fc.condition() != null) { w.key("condition"); condition(fc.condition()); }
         w.key("validity"); validity(fc.validity());
         w.endObject();
-        currentSubject = null;
     }
 
     private void startPointDetermination(ResolvedStartPointDetermination s) {

@@ -2179,9 +2179,9 @@ The name of a read runs over every inner `van`, so in "het aantal havenjutters v
 de haven van de jutter van de Vondst" the count received one name, `havenjutters van
 de haven van de jutter`, read on the Vondst. A count's range is one relation from
 the rule subject (`spec/IR-SPEC.md` ch. 4.3, WF-102 (c): a path is the range of a
-value fold's set source only), and the emitter takes it from the head of the name,
+value fold's set source only), and the resolver binds it from the head of the name,
 by the role it names, or from the type pair of subject and element
-(`IrEmitter.foldRange`), so without a refusal the other steps fall away
+(`ExpressionBuilder.rangeRole`), so without a refusal the other steps fall away
 without a word: measured 2026-10-02 on the frontend of `da03d480`, the count
 went out as a count over `JutterHeeftVondst.jutter` with `diagnostics: []`,
 verifier-clean, and ref and clingo answered 1 where the path reaches 2.

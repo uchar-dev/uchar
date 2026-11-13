@@ -1545,8 +1545,8 @@ final class ExpressionBuilder {
                     "RGS-071", params("fold", valueFold), f.getStart().getLine()));
         Expr function = ranged(new Expr.FunctionCall(kind, arguments, elem, emptyFallback, filter, null, type, source,
                 operatorGran));
-        // A count whose written source walks further than the one relation it counts, where the emitter would still
-        // write a range: by the head's name or by the type pair of subject and element (IrEmitter.foldRange), the
+        // A count whose written source walks further than the one relation it counts, where a range still binds: by the
+        // head's name or by the type pair of subject and element (rangeRole), the
         // other steps dropped without a word ("het aantal havenjutters van de haven van de jutter van de Vondst" went
         // out as a count over the jutter of the Vondst). A count's range is one relation from the subject (IR-SPEC
         // ch. 4.3, WF-102 (c)), so until a count over a path has a lowering it is refused, naming the path. Where the
@@ -1555,7 +1555,7 @@ final class ExpressionBuilder {
         if (kind == Expr.FunctionKind.AANTAL && elem != null && f instanceof AantalFuncContext cf
                 && cf.primaireExpressie().size() == 1 && arguments.get(0) instanceof Expr.AttributeReference sourceRead
                 && !sourceRead.set()
-                && dev.uchar.regelspraak.emit.IrEmitter.foldRefusalOf(model, currentSubject, (Expr.FunctionCall) function) == null) {
+                && foldRefusalOf(model, currentSubject, (Expr.FunctionCall) function) == null) {
             List<String> steps = countSourceSteps(cf.primaireExpressie(0));
             if (steps != null && steps.size() > 1) {
                 RegelSpraakModel.Diagnostic error = new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
@@ -1633,8 +1633,8 @@ final class ExpressionBuilder {
                     f.getStart().getLine()));
             return new Expr.Unresolved(type, source(f), null);
         }
-        // The emitter derives a sourceRole only for a navigation-free member fold over a resolved element type
-        // (IrEmitter.foldRange); outside that shape there is no by-pair guess to contradict.
+        // A sourceRole is bound by the pair only for a navigation-free member fold over a resolved element type
+        // (rangeRole); outside that shape there is no by-pair guess to contradict.
         if (source.objectType() == null || currentSubject == null) return null;
         if (source.navigationRole() != null || !source.navigationPath().isEmpty()) return null;
         String written = primaryName(o);
@@ -3566,7 +3566,7 @@ final class ExpressionBuilder {
 
     /** {@code f} with its range bound from the subject it is built on (IR-SPEC ch. 4.3), the range the wire writes for it
      *  wherever the node goes: for an instance fold over one source that denotes instances, the multi-step range the
-     *  walk bound off the written chain ({@code sourcePath}), else the one relation {@link dev.uchar.regelspraak.emit.IrEmitter#rangeRole} finds
+     *  walk bound off the written chain ({@code sourcePath}), else the one relation {@link #rangeRole} finds
      *  ({@code sourceRole}). A source that denotes no instances, the subject's own total, has no range, and a range
      *  that binds nothing is left out, which {@code RuleChecker.checkPaths} refuses. */
     private Expr.FunctionCall ranged(Expr.FunctionCall f) {
@@ -3575,7 +3575,7 @@ final class ExpressionBuilder {
         if (!arg.set() && !(arg.type() instanceof Datatype.Unknown)) return f;
         List<RegelSpraakModel.RoleBindingRef> steps = arg.set() && arg.rangePath() != null ? arg.rangePath() : List.of();
         RegelSpraakModel.RoleBindingRef role = steps.isEmpty()
-                ? dev.uchar.regelspraak.emit.IrEmitter.rangeRole(model, currentSubject, f.elementObjectType(), arg) : null;
+                ? rangeRole(model, currentSubject, f.elementObjectType(), arg) : null;
         if (steps.isEmpty() && role == null) return f;
         return new Expr.FunctionCall(f.kind(), f.arguments(), f.elementObjectType(), f.emptyFallback(), f.filter(),
                 f.dimensionSelections(), f.type(), f.source(), f.granularity(), f.anchored(), role, steps);
@@ -3589,6 +3589,89 @@ final class ExpressionBuilder {
         return path.isEmpty() ? a : new Expr.AttributeReference(a.attribute(), a.objectType(), a.subjectSource(),
                 a.navigationRole(), a.type(), a.source(), a.set(), a.navigationPath(), a.rangePath(), a.quantifier(),
                 a.threshold(), a.anchored(), path);
+    }
+
+    /** Why the wire has no spelling for a fold over one source, as {@link #foldRefusalOf} finds it. */
+    enum FoldRefusal {
+        /** the source carries a written chain, where a fold source's relation is the fold's range */
+        WRITTEN_PATH,
+        /** the source carries a written step and is no count source that names the subject itself */
+        WRITTEN_STEP,
+        /** the source reads another type than the subject's, and no range carries that step */
+        FOREIGN_ATTRIBUTE,
+        /** the source is the subject's own attribute under a kind other than total, and has no instances */
+        OWN_ATTRIBUTE,
+        /** there is no subject to derive the range from */
+        NO_SUBJECT,
+        /** no relation carries the range */
+        NO_RELATION
+    }
+
+    /** Why the fold {@code f}, written from {@code subject}, has no spelling on the wire; null where it has one and
+     *  where {@code f} is no fold over one source. {@code RuleChecker.checkPaths} refuses each reason with an ERROR,
+     *  for every fold the emitter writes, from the subject it is written from. */
+    static FoldRefusal foldRefusalOf(RegelSpraakModel m, ObjectType subject, Expr.FunctionCall f) {
+        if (!dev.uchar.regelspraak.emit.IrEmitter.isFoldSource(f)) return null;
+        Expr.AttributeReference arg = dev.uchar.regelspraak.emit.IrEmitter.foldSourceReference(f.arguments().get(0));
+        boolean countSource = arg.type() instanceof Datatype.Unknown;
+        if (arg.navigationPath() != null && !arg.navigationPath().isEmpty()) return FoldRefusal.WRITTEN_PATH;
+        if (arg.navigationRole() != null && !(countSource && selfDenoting(m, subject, arg.navigationRole())))
+            return FoldRefusal.WRITTEN_STEP;
+        if (!countSource && !arg.set()) {
+            // written without a range the source is read on the subject, so a source of another type loses its step
+            if (subject != null && arg.objectType() != null && arg.objectType() != subject)
+                return FoldRefusal.FOREIGN_ATTRIBUTE;
+            return f.kind() == Expr.FunctionKind.TOTAAL ? null : FoldRefusal.OWN_ATTRIBUTE;
+        }
+        if (m == null || subject == null) return FoldRefusal.NO_SUBJECT;
+        return f.sourceRole() == null && f.sourcePath().isEmpty() ? FoldRefusal.NO_RELATION : null;
+    }
+
+    /** The one-step range of an instance fold over {@code elementType} whose source {@code arg} denotes instances,
+     *  from {@code subject}: for the count source the written name and then the type pair, for a set reading the type
+     *  pair and then the written name. Null where neither yields one relation. */
+    static RegelSpraakModel.RoleBindingRef rangeRole(RegelSpraakModel m, ObjectType subject, ObjectType elementType,
+                                                           Expr.AttributeReference arg) {
+        if (arg.type() instanceof Datatype.Unknown) {
+            RegelSpraakModel.RoleBindingRef rb = m.elementRoleBinding(subject, arg.attribute());
+            return rb != null ? rb : m.connectingRoleBinding(subject, elementType);
+        }
+        // the by-pair-then-written-name search lives in the model: the §8.2 quantifier fold's range is
+        // derived at resolve time and must classify a written range exactly as this does
+        return m.foldSourceBinding(subject, elementType, arg.subjectSource());
+    }
+
+    /** Whether {@code a}, read from {@code subject} outside a fold source, has no spelling: it navigates — by a
+     *  written role or chain, or by naming another type than the subject's — and the resolver bound no walk for it
+     *  where it built it (IR-SPEC ch. 4.1a: a read without a walk is the subject's own). The one written step
+     *  admitted is the zero-hop self-reference ("het strandtegoed van de aanmelder", read on the aanmelder): a
+     *  single written role that reaches no far role from the subject and that the subject's type itself plays. */
+    static boolean unboundRead(RegelSpraakModel m, ObjectType subject, Expr.AttributeReference a) {
+        if (!a.path().isEmpty()) return false;
+        boolean path = a.navigationPath() != null && !a.navigationPath().isEmpty();
+        boolean written = a.navigationRole() != null || path;
+        boolean foreignType = subject != null && a.objectType() != null && a.objectType() != subject;
+        if (!written && !foreignType) return false;
+        return path || a.navigationRole() == null || subject == null || a.objectType() != subject
+                || m.roleHitsToSubject(subject, a.navigationRole()) != 0
+                || !selfDenoting(m, subject, a.navigationRole());
+    }
+
+    /** Whether the type {@code subject} itself plays a role that {@code name} denotes (declared name or
+     *  declared plural, under the verifier's name identity) — the self-denotation of WF-053's ch. 4.1a
+     *  reading, on the declared filler type exactly. */
+    private static boolean selfDenoting(RegelSpraakModel m, ObjectType subject, String name) {
+        if (m == null || subject == null || name == null) return false;
+        for (RegelSpraakModel.FactType ft : m.factTypes.values())
+            for (RegelSpraakModel.Role r : ft.roles)
+                if (r.objectTypeName() != null && norm(r.objectTypeName()).equals(norm(subject.name))
+                        && (r.name() != null && norm(r.name()).equals(norm(name)) || r.plural() != null && norm(r.plural()).equals(norm(name))))
+                    return true;
+        return false;
+    }
+
+    private static String norm(String s) {
+        return dev.uchar.regelspraak.emit.IrEmitter.norm(s);
     }
 
     /** The walk of the read {@code a} from {@code subject}: one RoleBinding per navigation hop, subject-outward, each

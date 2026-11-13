@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * The COUNT's element word and the range that follows from it — "het aantal &lt;X&gt; van &lt;onderwerp&gt;",
- * the count source that names a role, whose range the emitter derives in IrEmitter.foldRange: by the
+ * the count source that names a role, whose range the resolver binds in ExpressionBuilder.rangeRole: by the
  * WRITTEN name first, then by the TYPE PAIR.
  *
  * <p>Two things meet here and this suite pins both.

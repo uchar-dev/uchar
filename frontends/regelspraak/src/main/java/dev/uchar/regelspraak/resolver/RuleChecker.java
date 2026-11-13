@@ -1075,8 +1075,8 @@ final class RuleChecker {
      * whose source carries a written step, or reads the subject's own attribute under a kind that folds instances,
      * as well. This walk finds those positions first and refuses them with an ERROR, so a model this resolver built
      * never reaches the emitter's refusal. The two tests are the emitter's own
-     * ({@link dev.uchar.regelspraak.emit.IrEmitter#unboundRead},
-     * {@link dev.uchar.regelspraak.emit.IrEmitter#foldRefusalOf}); the walk follows the emitter's traversal — after
+     * ({@link ExpressionBuilder#unboundRead},
+     * {@link ExpressionBuilder#foldRefusalOf}); the walk follows the emitter's traversal — after
      * the lift, so the defaults are covered — and each position's subject is the one the emitter writes it from. A
      * read whose binding reaches a to-many role in a slot that takes one value is refused here too, in WF-053's
      * sentence for that hop: the emitter writes it, and the verifier refuses the document. A read that binds, but
@@ -1379,7 +1379,7 @@ final class RuleChecker {
             case Expr.AttributeReference a -> {
                 if (a.set() || !reported.add(a)) return;
                 ObjectType from = a.anchored() ? pathForm : subject;
-                Typing.Coded error = dev.uchar.regelspraak.emit.IrEmitter.unboundRead(model, from, a)
+                Typing.Coded error = ExpressionBuilder.unboundRead(model, from, a)
                         ? unboundReadError(a, from) : manyStepError(a, from);
                 if (error == null) error = memberError(a, from, false);
                 if (error != null) {
@@ -1390,7 +1390,7 @@ final class RuleChecker {
             case Expr.FunctionCall f -> {
                 ObjectType from = f.anchored() ? pathForm : subject;
                 boolean foldSource = dev.uchar.regelspraak.emit.IrEmitter.isFoldSource(f);
-                var refusal = dev.uchar.regelspraak.emit.IrEmitter.foldRefusalOf(model, from, f);
+                var refusal = ExpressionBuilder.foldRefusalOf(model, from, f);
                 if (refusal != null && reported.add(f))
                     model.diagnostics.add(foldError(f, from, refusal).at(Severity.ERROR, f.source().line()));
                 // a fold's source is read through its range, never as a read of its own
@@ -1723,7 +1723,7 @@ final class RuleChecker {
     /** The refusal of a fold the wire has no spelling for: what the fold carries, then the reader's sentence for the
      *  document the emitter would write — the verifier's WF-053 sentence for a step written on the source, else the
      *  one for the fold without a range ({@link #withoutRange}). */
-    private Typing.Coded foldError(Expr.FunctionCall f, ObjectType subject, dev.uchar.regelspraak.emit.IrEmitter.FoldRefusal w) {
+    private Typing.Coded foldError(Expr.FunctionCall f, ObjectType subject, ExpressionBuilder.FoldRefusal w) {
         Expr.AttributeReference source = dev.uchar.regelspraak.emit.IrEmitter.foldSourceReference(f.arguments().get(0));
         return switch (w) {
             case WRITTEN_PATH, WRITTEN_STEP -> new Typing.Coded("RGS-127",
