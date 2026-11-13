@@ -97,7 +97,7 @@ class TimelineDateFoldWitnessTest {
     @Test void the_numeric_originals_stay_playing() throws Exception {
         // NARROWNESS: the same two arms over numeric timelines, untouched.
         BothBranches.green(GOLDEN.resolve("jutterswet-tempototaal").resolve("ir.json"),
-                caseDocument(GOLDEN, "jutterswet-tempototaal", "case.json"), "own-subject timeline total over amounts");
+                caseDocument(GOLDEN, "jutterswet-tempototaal", "case1-totaal-en-som-naast-elkaar.json"), "own-subject timeline total over amounts");
         BothBranches.green(GOLDEN.resolve("jutterswet-erfwacht").resolve("ir.json"),
                 caseDocument(GOLDEN, "jutterswet-erfwacht", "case.json"), "gedurende clip over amounts");
     }

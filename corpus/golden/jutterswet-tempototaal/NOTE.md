@@ -79,7 +79,7 @@ the flank was reachable in valid source and pinned nowhere.
 
 This was a **caseless golden** (the "witness cabinet" section of
 `corpus/golden/README.md`) from its admission until **2026-09-05**, when
-`backends/clingo` learned the set fold and `case.json` landed. The
+`backends/clingo` learned the set fold and the case file landed. The
 subsections below are the measurement that made the caselessness true —
 recorded as it stood, in the past tense it now belongs to — and the
 closing one records what changed.
@@ -158,9 +158,9 @@ reason, and the golden stayed caseless.
 
 ### Closed 2026-09-05: the case arrived
 
-`backends/clingo` now carries both routes, and `case.json` sits beside
-this file. What had to land together, because either alone leaves the
-golden caseless:
+`backends/clingo` now carries both routes, and the case file
+(`case1-totaal-en-som-naast-elkaar.json`) sits beside this file. What had
+to land together, because either alone leaves the golden caseless:
 
 * **the set fold**, in one branch with `de som van` — the alias of the
   first table is an alias in the translator too, and the empty set is
@@ -215,6 +215,17 @@ temporal set attribute — a ranking fold has no defined moment to rank at.
 `V3` contributes to neither: an absent element value drops out of both
 folds. And note what the alias does *not* extend to: the empty-source rule
 still differs between the two operators, which is why `J2` pins both. Those
-four values plus `consistent` are what `case.json` pins: `backends/clingo`
-gained the set-fold `Totaal` on 2026-09-05 and the case landed with it, so
-all three executors now replay them.
+four values plus `consistent` are what
+`case1-totaal-en-som-naast-elkaar.json` pins: `backends/clingo` gained the
+set-fold `Totaal` on 2026-09-05 and the case landed with it, so all three
+executors now replay them.
+
+## The scenario
+
+`scenario.rgs` writes the situation and the seven expectations of the case
+file in RegelSpraak; read with `source.rgs` as one test document it regenerates
+`case1-totaal-en-som-naast-elkaar.json` and `ir.json` byte for byte (gate
+16). `J1`'s `bewaarvergoeding per maand` is time-dependent and is given
+without a period (`- de bewaarvergoeding per maand is 10 €/mnd`): the case
+file then carries one value, the asOfDate-bucket scalar the temporal route
+totals over the month of the peildatum.
