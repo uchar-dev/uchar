@@ -372,16 +372,19 @@ to re-normalise inside it.
   clingo quoting fence remains as the last-line backstop, and alone
   still covers case labels, which are case-side.)
 
-- **WF-001** Within each of the eight top-level namespaces (object types,
+- **WF-001** Within each of the nine top-level namespaces (object types,
   fact types, parameters, domains, unit systems, dimensions, timelines, day
-  kinds), declared names MUST be unique under case-insensitive comparison.
+  kinds, rule groups (`rules.ruleGroups`, ch. 3.9)), declared names MUST be
+  unique under case-insensitive comparison. A nameless rule group takes no
+  part (ch. 2), and a rule group and a rule form MAY share a name: they are
+  different namespaces (WF-118).
   *v0 mirror note:* v0 silently merges re-declared object types
   (member-wise), silently overwrites duplicate domains, parameters, fact
   types, dimensions and unit systems (last wins), and appends duplicate
-  timelines and day kinds (first wins on lookup). **Delta (promotion):** v1
-  makes every such collision ill-formed. *Migration:* a v0 dump containing
-  a collision fails verification; the source document must rename or merge
-  explicitly. Timelines: v0 warns only when a same-named timeline disagrees
+  timelines, day kinds and rule groups (first wins on lookup). **Delta
+  (promotion):** v1 makes every such collision ill-formed. *Migration:* a
+  v0 dump containing a collision fails verification; the source document
+  must rename or merge explicitly. Timelines: v0 warns only when a same-named timeline disagrees
   on granularity or count; under WF-001 even an agreeing re-declaration is
   ill-formed.
 - **WF-002** Within an object type, attribute names MUST be unique and
@@ -2753,9 +2756,10 @@ literal `{"boolean": true}` since L4.)
     'penningjaar'`). A second rule here would only re-refuse it.
   - `ruleGroups` — a **rule group**'s name is a label. WF-033 resolves a
     group's MEMBERS by name; the group's own name the verifier reads only
-    under WF-057, WF-118 and WF-121 (b), as the name of a declaration, and no
-    executor reads it, so a nameless group is inert rather than ambiguous,
-    and refusing it would be a rule without a failure.
+    under WF-001, WF-057, WF-118 and WF-121 (b), as the name of a
+    declaration, and no executor reads it, so a nameless group is inert
+    rather than ambiguous, and refusing it would be a rule without a
+    failure.
   - `regels` — the parse-stage `Regel` **shell index** (ch. 3.1's v0 wart),
     which no check and no executor read at all and which one frontend emitted
     empty by design; it left the wire at M1 (ch. 3). A nameless stub was
@@ -3555,7 +3559,8 @@ budget turning divergence into a fault in every executor.
 - **WF-033** Two clauses. (a) (presentation) Every member name of every
   group, recursive or not, MUST resolve to a rule form in the model. The
   group's own name is no member name: the verifier reads it only as a
-  declaration's name, under WF-057 (target-text-safe characters, the kind
+  declaration's name, under WF-001 (unique among the rule groups' names,
+  ci), WF-057 (target-text-safe characters, the kind
   "rule group name"), WF-118 (unique among the rule groups' effective
   names in each vocabulary) and WF-121 (b) (an origin's `from` of kind
   `ruleGroup`), and no executor reads it. (b) (core) A `recursive` group
@@ -10406,7 +10411,7 @@ reports; a key the verifier composes at run time is not counted.
 
 | ID | Statement (see ch. 2–4) | Verifier check | Golden | Negatief |
 |---|---|---|---|---|
-| WF-001 | top-level names unique per namespace (ci) | gate 3 | `jutterswet-vondsttelling` | `wf001-duplicate-parameter` + `wf001-duplicate-day-kind` and `wf001-duplicate-unit-system` (the two namespaces whose nodes L3 rewrote) |
+| WF-001 | top-level names unique per namespace (ci), the rule groups one of the nine | gate 3 | `jutterswet-vondsttelling` | `wf001-duplicate-parameter` + `wf001-duplicate-day-kind` and `wf001-duplicate-unit-system` (the two namespaces whose nodes L3 rewrote) + `wf001-duplicate-rule-group` |
 | WF-002 | member names unique per kind within an object type (ci) | gate 3 | `jutterswet-vondsttelling` | `wf002-duplicate-characteristic` + **OPEN** arms without a negative case: `WF-002.attribute-collision` |
 | WF-003 | every model-layer name reference resolves; since L2 (2026-09-24, B16) an unfindable domain is a declaration naming an undeclared domain — the unknown-type node left the datatype union | gate 3 (partial: enum domains, role fillers, named timelines; a reference v0 *dropped* is invisible in the dump) | `jutterswet-penningjaar` | `wf003-unresolved-domain` (rewritten at L2: an enumeration naming the undeclared domain `Bedragen`) + **OPEN** arms without a negative case: `WF-003.role-filler-undeclared`, `WF-003.undeclared-timeline` |
 | WF-004 | dimensioned attribute: non-empty, duplicate-free, resolving dimension list | gate 3 (the schema also refuses an empty list since M1: absent is the one spelling of a scalar attribute) | `jutterswet-vormenkabinet` (the dimensioned opbrengst) | `wf004-duplicate-dimension` + `wf004-empty-dimension-list` (a present, empty list: the negative zone is not schema-gated, so this witness holds the verifier's own arm in place) + **OPEN** arms without a negative case: `WF-004.undeclared-dimension` |
