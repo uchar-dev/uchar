@@ -1,0 +1,34 @@
+# Context overrides on a callee called twice — refused
+
+`Kamer` is called twice, as `k1` and `k2`, and each call overrides the context
+variable `drempel` with its own value. A caller override lowers to a highest
+default on the callee's defaults group for `drempel`, which every `Kamer`
+instance reads, so the two overrides cannot be told apart per instance
+(Catala: een = 97, twee = 95). The plugin refuses the override.
+Own-authored, rights-free.
+
+```catala
+declaration scope Kamer:
+  input grondslag content integer
+  context drempel content integer
+  output uitkomst content integer
+
+scope Kamer:
+  definition drempel equals 10
+  definition uitkomst equals grondslag - drempel
+
+declaration scope Aanslag:
+  input grondslag content integer
+  k1 scope Kamer
+  k2 scope Kamer
+  output een content integer
+  output twee content integer
+
+scope Aanslag:
+  definition k1.grondslag equals grondslag
+  definition k1.drempel equals 3
+  definition k2.grondslag equals grondslag
+  definition k2.drempel equals 5
+  definition een equals k1.uitkomst
+  definition twee equals k2.uitkomst
+```

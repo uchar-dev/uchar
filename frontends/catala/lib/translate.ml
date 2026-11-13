@@ -1888,9 +1888,11 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
              defaults (besluit 6 flank); refused"
             callee_var
     in
+    (* a context variable the call leaves alone arrives as an empty argument:
+       no override, so the callee's own default decides *)
     ScopeVar.Map.iter
       (fun k (_pos, argexpr) ->
-        if ScopeVar.Set.mem k ovr_set then
+        if ScopeVar.Set.mem k ovr_set && not (is_empty argexpr) then
           let callee_var = M.remove (ScopeVar.get_info k) in
           match parse_tree (strip argexpr) with
           | Some chain ->

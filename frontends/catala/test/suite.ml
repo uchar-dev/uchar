@@ -175,6 +175,10 @@ let () =
          (100 − 10 = 90), pinned against `catala interpret`. Through the full
          differential (ref AND clingo) *)
       ("context.catala_en", [ "cases/context_holds.json"; "cases/context_fails.json" ]);
+      (* a call that leaves the context variable alone: its argument is empty,
+         no highest default is generated, and the callee's own default decides
+         (100 − 10 = 90), pinned against `catala interpret` *)
+      ("context_no_override.catala_en", [ "cases/context_no_override.json" ]);
       (* PHASE5C-TUTORIAL §3 exit witness: the Catala book's tutorial_end_2_3
          through the plugin — structs, decimals, a branching exception tree with
          a total date-complementary base group, the money × computed-rate product

@@ -1,0 +1,33 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "A1",
+        "objectType": "Aanslag",
+        "attributes": {
+          "grondslag": {
+            "number": "100"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "A1",
+      "attribute": "een",
+      "value": {
+        "number": "90"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

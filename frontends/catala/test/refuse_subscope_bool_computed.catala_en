@@ -1,0 +1,29 @@
+# A computed boolean passed as a subscope input — refused
+
+`vlag` is computed by the caller and passed to the subscope's boolean input
+`hoog`. A boolean passed as a subscope-input value is declared as a boolean
+attribute of the caller, and a computed boolean has no rule that writes such
+an attribute: the plugin would write a characteristic attribution on it,
+which the verifier refuses (WF-022). The plugin refuses the definition of
+`vlag` instead. Own-authored, rights-free.
+
+```catala
+declaration scope Kamer:
+  input hoog content boolean
+  output uitkomst content integer
+
+scope Kamer:
+  definition uitkomst equals 1
+  exception definition uitkomst under condition hoog consequence equals 2
+
+declaration scope Aanslag:
+  input grens content integer
+  internal vlag content boolean
+  kamer scope Kamer
+  output heffing content integer
+
+scope Aanslag:
+  definition vlag equals grens > 10
+  definition kamer.hoog equals vlag
+  definition heffing equals kamer.uitkomst
+```

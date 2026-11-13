@@ -1,0 +1,26 @@
+# A subscope call that does not override a context variable
+
+`Kamer` declares the context variable `drempel` with its own default 10. The
+caller passes `grondslag` and leaves `drempel` alone, so the callee's own
+default decides: een = 100 − 10 = 90, as `catala interpret` gives.
+Own-authored, rights-free.
+
+```catala
+declaration scope Kamer:
+  input grondslag content integer
+  context drempel content integer
+  output uitkomst content integer
+
+scope Kamer:
+  definition drempel equals 10
+  definition uitkomst equals grondslag - drempel
+
+declaration scope Aanslag:
+  input grondslag content integer
+  k1 scope Kamer
+  output een content integer
+
+scope Aanslag:
+  definition k1.grondslag equals grondslag
+  definition een equals k1.uitkomst
+```
