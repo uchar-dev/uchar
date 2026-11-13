@@ -15,3 +15,14 @@ Acceptance: both goldens carry a scenario; gates 10, 16, 5, 6 and 12 green; `mak
 
 May touch: `corpus/golden/jutterswet-tempovouw`, `corpus/golden/jutterswet-tempototaal`, `frontends/regelspraak/`,
 this card. Protected (the main session lands them): `spec/`, `scripts/`.
+
+Result (2026-11-13):
+- `jutterswet-tempovouw` carries a scenario ("drie vondsten over drie maanden", each member's timeline one bullet per
+  segment) and `jutterswet-tempototaal` one ("totaal en som naast elkaar"); each regenerates its case and `ir.json`
+  byte-identically (gate 16: 46 scenario goldens). The scenario layer carried every form of both cases, so no case of
+  its own and no frontend change. The pinned `case.json` of each was renamed to the lowering's name
+  (`case1-<slug>.json`, the same content), as the scenario-layer card of 2026-09-26 foresaw; the two Drools witnesses
+  that read those files by name follow.
+- `bin/regelspraak scenario --explanation` runs both; on tempovouw the fold over the members' timelines names no member
+  yet (the toolchain card `explain-timelines`).
+- `make gates` green.
