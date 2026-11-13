@@ -123,11 +123,11 @@ class DeclarationCommentTest {
         assertEquals(new Declaration(7, List.of()), m.declaration(Designatable.form("halfstok van een sein")).orElseThrow());
     }
 
-    /** IR-SPEC keeps no namespace of rule group names (WF-001 names eight others; ch. 3.9: a group's name is a label),
-     *  so two groups may share a name; neither declaration is the element's, and the element has no entry. */
+    /** Rule groups are WF-001's ninth namespace: a second group of one name is refused (RGS-008), and the declarations
+     *  of the other elements of the source stay where they are. */
     @Test
-    void twoRuleGroupsOfOneNameHaveNoDeclaration() {
-        RegelSpraakModel m = clean(Resolver.resolve("""
+    void aSecondRuleGroupOfOneNameIsRefusedAndTheOtherDeclarationsStand() {
+        RegelSpraakModel m = Resolver.resolve("""
             Objecttype de Jutter (mv: Jutters) (bezield)
                 het vondstbedrag Numeriek (getal met 2 decimalen);
                 is premiewaardig kenmerk (bijvoeglijk);
@@ -144,9 +144,9 @@ class DeclarationCommentTest {
             Regel rijkdom
                 geldig altijd
                     Een Jutter is rijk indien zijn vondstbedrag groter is dan 100.
-            """));
-        assertEquals(2, m.designatable().stream().filter(b -> b.kind() == Designatable.Kind.REGELGROEP).count());
-        assertTrue(m.declaration(Designatable.ruleGroup("g")).isEmpty());
+            """);
+        assertEquals(List.of("RGS-008 13"), m.errors().stream().map(d -> d.code() + " " + d.line()).toList(),
+                m.diagnostics::toString);
         assertEquals(new Declaration(8, List.of()), m.declaration(Designatable.form("premiewaardigheid")).orElseThrow());
     }
 }
