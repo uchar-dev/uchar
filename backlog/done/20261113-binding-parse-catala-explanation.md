@@ -58,3 +58,37 @@ the toolchain; the toolchain pins the landing.
 
 May touch: `frontends/`, `backends/`, `ref/`, corpus witnesses outside `corpus/golden/anchor`, this card.
 Protected (the main session lands them): `spec/`, `scripts/`, `CLAUDE.md`.
+
+Result (2026-11-13):
+- Binding: a one-step range whose anchor is a role from the subject ("alle vondsten van zijn meester", "van de
+  meester") runs through that role (`sourcePath`), as the two-step spelling already did; an anchor that names a type
+  is refused with a warning and the fold stays a marker (RGS-075, RGS-213); RGS-074 goes, `grammar/DIVERGENCES.md`
+  follows (golden `jutterswet-vondsten-van-de-meester`: cijfer 7 over the meester's vondsten, not 3; `EXPECTED_PLAYED`
+  382). An attribute reference carries the walk it was built with (`path`) and a fold call its range
+  (`sourceRole`/`sourcePath`); `opSubtype`, copies and helper rules carry them along, so a base conjunct under an
+  "Uitzondering op" of a subtype no longer ends in RGS-394. The emitter keeps no subject (`currentSubject`,
+  `formSubject`, the derivation in `foldRange` gone; the derivations moved to `ExpressionBuilder`; `IrEmitter`
+  2355 → 2164 lines). A sign on a Percentage declaration is a warning (RGS-460). The 218 goldens with a `source.rgs`
+  stay byte-identical.
+- Public reading: `Resolver.parse` gives the tree, the tokens and every syntax error with line, column and expected
+  tokens, a lexer error included, with the second parse for a label with 'en' (`PublicParseTest`); the production and
+  scenario routes use it. The model records per designatable its line and the comment above it
+  (`model.declaration`; 0 differences against the playground's own reading over 4133 elements).
+- Rule group names: two rule groups of one name are ill-formed (maintainer decision); WF-001 has rule groups as its
+  ninth namespace, the verifier refuses them (`WF-001.namespace-collision`, negative `wf001-duplicate-rule-group`),
+  the frontend refuses the second `Regelgroep` with RGS-008 with and without designations; a group and a rule form
+  may share a name. No document of the corpus or the TOKA zone has two groups of one name.
+- Catala: every read of a variable that may stay empty is refused, on the five routes (a copy, a subscope argument, a
+  boolean read as a condition, a subscope output as a value and as a condition), as Catala raises "no applicable
+  rule" there; a subscope call that leaves a context variable alone adds no override; an override on a callee type
+  with two subscope declarations is refused (an instance guard would need a role check the serialiser does not write);
+  a computed boolean passed as a subscope input is refused (it reached the verifier as WF-022). The fixture
+  `refuse_per_element_creation` got complementary conditions so it reaches its own refusal. One serialiser for the IR
+  in the verifier library (`spec/verifier/lib/emit.ml`, `Emit.Make`) replaces the two `emit.ml` of the Catala and
+  F-logic frontends (1052 → 716 lines), byte-identical over 123 sources.
+- Toolchain (its own commits): the `Verbaliser` reads `EndState` (a derived value is no longer called the input
+  value), keeps the negation, digits and period of "numeriek met exact N cijfers", never rounds an operand (two values
+  of the corpus were rounded wrongly: 2,8 km as 3 km, 2,25 jaar as 2 jaar), counts the members with a value in a
+  value fold; an allocation, an object creation and a fact creation get a sentence of their own (Dutch). The
+  playground follows at the pin.
+- `make gates` green.
