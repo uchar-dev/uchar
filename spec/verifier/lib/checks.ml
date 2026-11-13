@@ -1279,7 +1279,7 @@ let wf001 ctx =
   (* [root] is the in-library path a report is translated from ([m1_root],
      [m1_named]); [label] is the namespace the message names: the wire list
      (`objectTypes`, `domains`, `parameters`, `unitSystems`, `factTypes`,
-     `dimensions`, `dayKinds`), while the in-library paths keep their v0
+     `dimensions`, `dayKinds`, `ruleGroups`), while the in-library paths keep their v0
      names, which [m1_root] and [m1_named] map onto the wire. *)
   let ns ?label root keys =
     let label = Option.value label ~default:root in
@@ -1295,6 +1295,8 @@ let wf001 ctx =
   @ ns ~label:"factTypes" "feittypen" (List.map fst ctx.doc.fact_types)
   @ ns ~label:"dimensions" "dimensies" (List.map fst ctx.doc.dimensions)
   @ ns ~label:"dayKinds" "dagsoorten" (day_kind_names ctx)
+  (* a nameless group takes no part: it is inert, and no reader reaches it by name *)
+  @ ns "ruleGroups" (List.filter_map (fun g -> g.rgr_name) ctx.doc.rule_groups)
 
 let wf002 ctx =
   List.concat_map

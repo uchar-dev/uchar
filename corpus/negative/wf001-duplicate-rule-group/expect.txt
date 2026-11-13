@@ -1,0 +1,4 @@
+WF-001.namespace-collision
+label=ruleGroups
+first=premieberekening
+second=Premieberekening
