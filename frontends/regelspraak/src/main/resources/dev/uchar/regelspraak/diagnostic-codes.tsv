@@ -408,3 +408,4 @@ RGS-440	navigated-characteristic-check-off-subject	ERROR	source,subject,written
 RGS-441	navigated-characteristic-check-unbound	ERROR	role,source,subject
 RGS-450	scalar-input-on-timeline-without-as-of-date	ERROR	attribute,label,scenario
 RGS-451	day-kind-reads-parameter-without-value	ERROR	dayKind,parameter,where
+RGS-460	percentage-sign-dropped	WARNING	datatype,sign

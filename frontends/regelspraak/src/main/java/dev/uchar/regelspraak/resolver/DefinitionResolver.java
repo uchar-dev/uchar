@@ -674,6 +674,14 @@ public final class DefinitionResolver {
         if (dt.percentageDatatype() != null) {
             var pd = dt.percentageDatatype();
             NumberInfo g = numberInfo(pd.getalSpecificatie());
+            // IR-SPEC ch. 2.4: the one sign a percentage has is unspecified, so a written sign has no place on the wire
+            if (g.sign != Datatype.Sign.ONBEPAALD) {
+                GetalSpecificatieContext gs = pd.getalSpecificatie();
+                var word = gs.NEGATIEF() != null ? gs.NEGATIEF() : gs.NIET_NEGATIEF() != null ? gs.NIET_NEGATIEF() : gs.POSITIEF();
+                RegelSpraakModel.Diagnostic dropped = new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
+                        "RGS-460", params("datatype", src(pd), "sign", word.getText()), pd.getStart().getLine());
+                if (!model.diagnostics.contains(dropped)) model.diagnostics.add(dropped);
+            }
             // §3.3.5: a Percentage is always "%", optionally specialized to a rate "%/<eenheid>"
             // (grammar: "met eenheid % ( / <eenheidAfkorting> )?"); a bare or absent clause is "%".
             Unit e = pd.SLASH() != null

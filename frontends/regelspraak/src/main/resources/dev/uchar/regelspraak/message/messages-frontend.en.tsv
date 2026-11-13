@@ -788,3 +788,4 @@ RGS-440	characteristic check '{source}' follows a role from {written}, but it is
 RGS-441	characteristic check '{source}' follows the role '{role}' from {subject}, but from {subject} that name binds no unique role
 RGS-450	the attribute '{attribute}' of {label} is time-dependent; a value without a period is the value of the period the as-of date falls in, but the scenario '{scenario}' has no as-of date (add 'met peildatum <datum>' or give the value a period: 'van <datum> tot <datum>')
 RGS-451	the day-kind definition of '{dayKind}' reads the parameter '{parameter}', which {where} has no value
+RGS-460	the sign '{sign}' in '{datatype}' is dropped: a percentage carries no sign (IR-SPEC ch. 2.4), so no executor checks that restriction

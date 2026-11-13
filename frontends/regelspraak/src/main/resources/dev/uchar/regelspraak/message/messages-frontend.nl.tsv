@@ -788,3 +788,4 @@ RGS-440	kenmerkcontrole '{source}' volgt een rol vanaf {written}, maar zij wordt
 RGS-441	kenmerkcontrole '{source}' volgt de rol '{role}' vanaf {subject}, maar die naam wijst vanaf {subject} geen unieke rol aan
 RGS-450	het attribuut '{attribute}' van {label} is tijdsafhankelijk; een waarde zonder periode is de waarde van de periode waarin de peildatum valt, maar het scenario '{scenario}' heeft geen peildatum (voeg 'met peildatum <datum>' toe of geef de waarde een periode: 'van <datum> tot <datum>')
 RGS-451	de dagsoortdefinitie van '{dayKind}' leest de parameter '{parameter}', die {where} geen waarde heeft
+RGS-460	het teken '{sign}' in '{datatype}' valt weg: een percentage draagt geen teken (IR-SPEC ch. 2.4), dus geen uitvoerder toetst die beperking
