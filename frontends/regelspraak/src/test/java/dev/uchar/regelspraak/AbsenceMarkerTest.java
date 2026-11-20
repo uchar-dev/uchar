@@ -3,6 +3,7 @@ package dev.uchar.regelspraak;
 import dev.uchar.regelspraak.emit.IrEmitter;
 import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.ir.PrioritizedDefaults;
 import dev.uchar.regelspraak.ir.ResolvedRule;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
@@ -364,8 +365,8 @@ class AbsenceMarkerTest {
         assertInstanceOf(Expr.Unresolved.class, written.argument());
     }
 
-    /** The markers stand on an attribute, in the place of the opgave marker and not beside it. */
-    @Test void a_marker_on_a_characteristic_or_beside_the_opgave_marker_is_a_syntax_error() {
+    /** The markers stand on an attribute, before the opgave marker and not after it. */
+    @Test void a_marker_on_a_characteristic_or_after_the_opgave_marker_is_a_syntax_error() {
         RegelSpraakModel k = Resolver.resolve("""
             Objecttype de Vondst (mv: Vondsten)
                 is drijfhout kenmerk (bijvoeglijk) (of onbekend);
@@ -373,9 +374,141 @@ class AbsenceMarkerTest {
         assertEquals("RGS-091", k.errors().get(0).code(), () -> "" + k.diagnostics);
         RegelSpraakModel o = Resolver.resolve("""
             Objecttype de Vondst (mv: Vondsten)
-                de taxatie Numeriek (getal met 2 decimalen) (of onbekend) (mag opgegeven worden);
+                de taxatie Numeriek (getal met 2 decimalen) (mag opgegeven worden) (of onbekend);
             """);
         assertEquals("RGS-091", o.errors().get(0).code(), () -> "" + o.diagnostics);
+    }
+
+    private static final String OPGAVE = """
+        Objecttype de Vondst (mv: Vondsten)
+            de claimdatum Datum in dagen;
+            de teruggavedatum Datum in dagen (of onbekend of niet van toepassing) (mag opgegeven worden);
+            de opslagkosten Numeriek (geheel getal) voor elke maand (of onbekend) (mag opgegeven worden);
+            het vindloon Numeriek (getal met 2 decimalen);
+            is drijfhout kenmerk (bijvoeglijk);
+
+        Regel teruggave op de claimdatum
+            geldig altijd
+                De teruggavedatum van een Vondst moet gesteld worden op zijn claimdatum.
+
+        Regel geen teruggave van drijfhout
+            geldig altijd
+                De teruggavedatum van een Vondst moet gesteld worden op niet van toepassing
+                indien hij drijfhout is.
+
+        Regel opslag onbekend in de winter
+            geldig altijd
+                De opslagkosten van een Vondst moet gesteld worden op onbekend van dd. 01-01-2025 tot dd. 01-03-2025.
+        """;
+
+    private static PrioritizedDefaults group(RegelSpraakModel m, String name) {
+        return m.prioritizedDefaults.stream().filter(g -> g.name().equals(name)).findFirst()
+                .orElseThrow(() -> new AssertionError("geen groep '" + name + "'"));
+    }
+
+    /** Beside the opgave marker (grammar/DIVERGENCES.md §7) the markers lower the three members to one sum type, over
+     *  the domain of the marked attribute: the moved writers write 'berekende X' as they wrote X, a value as a Construct
+     *  of the value constructor and a marker as the Construct of the marker; the group passes the opgave and the
+     *  computation on as the references they are, so a marker decides as a value does; and the deviation compares the
+     *  two as sum-typed values, a marker that differs included (RUNTIME-SEMANTICS ch. 9.3). No value is read. */
+    @Test void the_opgave_and_the_computation_share_the_sum_type_of_the_marked_attribute() {
+        RegelSpraakModel m = Resolver.resolve(OPGAVE);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        RegelSpraakModel.ObjectType vondst = m.objectTypes.get("Vondst");
+        Datatype.SumType sum = vondst.sumTypeOf("teruggavedatum");
+        assertEquals("teruggavedatum van een Vondst", sum.domain());
+        assertEquals(sum, vondst.sumTypeOf("opgegeven teruggavedatum"));
+        assertEquals(sum, vondst.sumTypeOf("berekende teruggavedatum"));
+        assertEquals("opslagkosten van een Vondst", vondst.sumTypeOf("berekende opslagkosten").domain());
+
+        ResolvedRule claim = rule(m, "teruggave op de claimdatum");
+        assertEquals("berekende teruggavedatum", assertInstanceOf(Expr.AttributeReference.class, claim.target()).attribute());
+        Expr.Construct value = assertInstanceOf(Expr.Construct.class, claim.value());
+        assertEquals("waarde", value.constructor());
+        assertEquals(sum, value.type());
+        Expr.Construct marker = assertInstanceOf(Expr.Construct.class, rule(m, "geen teruggave van drijfhout").value());
+        assertEquals("niet van toepassing", marker.constructor());
+        assertEquals(sum, marker.type());
+
+        PrioritizedDefaults group = group(m, "opgave boven berekening teruggavedatum");
+        assertEquals(List.of("opgegeven teruggavedatum", "berekende teruggavedatum"), group.defaults().stream()
+                .map(d -> assertInstanceOf(Expr.AttributeReference.class, d.consequence()))
+                .peek(r -> assertEquals(sum, r.type())).map(Expr.AttributeReference::attribute).toList());
+
+        Condition.Compound deviation = assertInstanceOf(Condition.Compound.class, rule(m, "afwijking opgave teruggavedatum").condition());
+        Condition.Comparison differs = assertInstanceOf(Condition.Comparison.class, deviation.components().get(2));
+        assertEquals(Condition.Operator.ONGELIJK, differs.op());
+        assertEquals(sum, assertInstanceOf(Expr.AttributeReference.class, differs.left()).type());
+        assertEquals(sum, assertInstanceOf(Expr.AttributeReference.class, differs.right()).type());
+
+        String ir = IrEmitter.emit(m).replaceAll("\\s+", "");
+        assertEquals(1, ir.split("\"node\":\"Domain\",\"name\":\"teruggavedatumvaneenVondst\"", -1).length - 1, ir);
+        assertFalse(ir.contains("opgegeventeruggavedatumvaneen"), ir);
+        assertFalse(ir.contains("PayloadAccess"), ir);
+    }
+
+    /** On a time-dependent marked attribute the group passes the opgave and the computation on per day; no deviation
+     *  characteristic and no consistency are generated (DIVERGENCES §7). */
+    @Test void on_a_timeline_the_group_passes_the_members_on() {
+        RegelSpraakModel m = Resolver.resolve(OPGAVE);
+        PrioritizedDefaults group = group(m, "opgave boven berekening opslagkosten");
+        Datatype.SumType sum = m.objectTypes.get("Vondst").sumTypeOf("opslagkosten");
+        for (var d : group.defaults()) assertEquals(sum, assertInstanceOf(Expr.AttributeReference.class, d.consequence()).type());
+        assertTrue(m.resolvedRules.stream().noneMatch(r -> r.name().equals("afwijking opgave opslagkosten")));
+        assertTrue(m.consistencies.stream().noneMatch(c -> c.name().equals("controle opgave opslagkosten")));
+    }
+
+    /** The value of a generated member is read under its test, as the value of the marked attribute is: without the test
+     *  the read is refused (RGS-376), and after it the read is a PayloadAccess of the member. */
+    @Test void a_read_of_the_value_of_the_opgave_needs_the_test() {
+        String scalar = OPGAVE.replace("voor elke maand (of onbekend)", "(of onbekend)")
+                .replace(" van dd. 01-01-2025 tot dd. 01-03-2025", "");
+        RegelSpraakModel refused = Resolver.resolve(scalar + """
+
+            Regel vindloon
+                geldig altijd
+                    Het vindloon van een Vondst moet berekend worden als zijn opgegeven opslagkosten plus 1.
+            """);
+        Diagnostic d = only(refused, "RGS-376");
+        assertEquals("opgegeven opslagkosten", d.args().get("attribute"));
+        assertEquals("Vondst", d.args().get("objectType"));
+        assertEquals(1, refused.diagnostics.size(), () -> "" + refused.diagnostics);
+
+        RegelSpraakModel guarded = Resolver.resolve(scalar + """
+
+            Regel vindloon
+                geldig altijd
+                    Het vindloon van een Vondst moet berekend worden als zijn opgegeven opslagkosten plus 1
+                    indien zijn opgegeven opslagkosten een waarde heeft.
+            """);
+        assertTrue(guarded.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + guarded.diagnostics);
+        Expr.PayloadAccess read = firstRead(rule(guarded, "vindloon").value());
+        assertEquals("opgegeven opslagkosten", assertInstanceOf(Expr.AttributeReference.class, read.base()).attribute());
+    }
+
+    /** A marked attribute that no rule computes is input already: the opgave marker generates nothing, and the members
+     *  it declared leave the model with their markers, so the IR carries the attribute and its one domain alone. */
+    @Test void without_a_computation_the_members_leave_with_their_markers() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Vondst (mv: Vondsten)
+                de teruggavedatum Datum in dagen (of onbekend) (mag opgegeven worden);
+            """);
+        assertEquals("RGS-153", m.diagnostics.get(0).code(), () -> "" + m.diagnostics);
+        RegelSpraakModel.ObjectType vondst = m.objectTypes.get("Vondst");
+        assertEquals(List.of("teruggavedatum"), List.copyOf(vondst.attributeMarkers.keySet()));
+        assertTrue(vondst.attributeMarkerDomain.isEmpty());
+        String ir = IrEmitter.emit(m).replaceAll("\\s+", "");
+        assertFalse(ir.contains("\"name\":\"opgegeventeruggavedatum\""), ir);
+        assertEquals(1, ir.split("\"node\":\"Domain\"", -1).length - 1, ir);
+    }
+
+    /** Both markings are keywords of the declaration. */
+    @Test void both_markings_are_keywords() {
+        var files = List.of(new SemanticTokens.SourceFile("opgave.rgs", OPGAVE));
+        SemanticTokens.Document d = Resolver.tokens(files);
+        for (String marking : List.of("(of onbekend of niet van toepassing)", "(mag opgegeven worden)"))
+            assertTrue(d.files().get(0).spans().stream().anyMatch(s -> s.text().equals(marking)
+                    && s.kind() == SemanticTokens.Kind.KEYWORD), marking);
     }
 
     /** Without the markers nothing changes: a characteristic named onbekend is checked as before, and the words lex as

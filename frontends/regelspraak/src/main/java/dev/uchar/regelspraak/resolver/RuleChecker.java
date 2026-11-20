@@ -2675,6 +2675,8 @@ final class RuleChecker {
     // deviating case through the characteristic); the writers move AFTER the defaults lowering, so a tree or an
     // unordered set of the dialect's own blocks moves whole. Case input on X itself keeps Reading A
     // (RUNTIME-SEMANTICS ch. 7.8): the marker adds an input attribute, it does not change what input on X means.
+    // Where X carries absence markers, 'opgegeven X' and 'berekende X' carry them as well, over X's sum type: an opgave
+    // or a computation may be a marker, the group passes it on, and a marker that differs is a deviation (ch. 9.3).
     // ==============================================================================================
 
     /** A marked attribute whose declaration passed the declaration checks, with its generated members declared. The
@@ -2767,6 +2769,12 @@ final class RuleChecker {
                 copyEntry(t.attributeTimelineCount, o.attribute(), g);
                 copyEntry(t.attributeTimelineName, o.attribute(), g);
                 copyEntry(t.attributeFixedStartPoint, o.attribute(), g);
+                // an opgave and a computation of an X with markers hold what X holds, a marker included, over X's
+                // domain: the group passes either on as it is, and the deviation compares them as one sum type
+                if (t.attributeMarkers.containsKey(o.attribute())) {
+                    t.attributeMarkers.put(g, t.attributeMarkers.get(o.attribute()));
+                    t.attributeMarkerDomain.put(g, o.attribute());
+                }
             }
             t.characteristics.add(o.deviating());
             t.characteristicKinds.put(o.deviating(), ObjectType.CharacteristicKind.BEZITTELIJK);
@@ -2899,6 +2907,8 @@ final class RuleChecker {
                     o.type().attributeTimelineCount.remove(g);
                     o.type().attributeTimelineName.remove(g);
                     o.type().attributeFixedStartPoint.remove(g);
+                    o.type().attributeMarkers.remove(g);
+                    o.type().attributeMarkerDomain.remove(g);
                 }
                 o.type().characteristics.remove(o.deviating());
                 o.type().characteristicKinds.remove(o.deviating());

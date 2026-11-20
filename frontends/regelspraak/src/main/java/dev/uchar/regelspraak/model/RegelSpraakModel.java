@@ -950,6 +950,12 @@ public final class RegelSpraakModel {
          *  absent for an attribute without markers. Such an attribute is of the sum type {@link #sumTypeOf}
          *  (RUNTIME-SEMANTICS ch. 9.5); its datatype in {@link #attributes} is the datatype of its value, the payload. */
         public final Map<String, List<String>> attributeMarkers = new LinkedHashMap<>();
+        /** The attribute whose sum type a member with absence markers shares, keyed by the member's naam: the members
+         *  'opgegeven X' and 'berekende X' that the opgave marker generates on an attribute X with markers carry X's
+         *  markers over X's domain (grammar/DIVERGENCES.md §7), so the defaults group on X passes either value on as it
+         *  is, a marker included, and opgave and computation compare as values of one sum type (WF-061). Absent for an
+         *  attribute with a domain of its own. */
+        public final Map<String, String> attributeMarkerDomain = new LinkedHashMap<>();
         public final List<String> characteristics = new ArrayList<>();
         /** §13.3.6 the granularity of a temporal kenmerk's tijdlijn ("is duurzaam kenmerk voor elke dag"),
          *  keyed by its naam — the kenmerk analogue of {@link #attributeGranularity}. */
@@ -1015,8 +1021,9 @@ public final class RegelSpraakModel {
 
         /** The sum type of attribute {@code name} where it has absence markers, or null: one per attribute, over the
          *  domain {@link #markerDomainName}, so a marker never passes to another attribute by the nominal identity of
-         *  sum types (IR-SPEC WF-061); its constructors are the value, with the declared datatype as payload, and then
-         *  the markers (RUNTIME-SEMANTICS ch. 9.5). */
+         *  sum types (IR-SPEC WF-061) — the members of one opgave marker excepted, which share the domain of the marked
+         *  attribute ({@link #attributeMarkerDomain}); its constructors are the value, with the declared datatype as
+         *  payload, and then the markers (RUNTIME-SEMANTICS ch. 9.5). */
         public Datatype.SumType sumTypeOf(String name) {
             ObjectType declaring = markerDeclaringType(name);
             if (declaring == null) return null;
@@ -1024,7 +1031,8 @@ public final class RegelSpraakModel {
             List<Datatype.Constructor> constructors = new ArrayList<>();
             constructors.add(new Datatype.Constructor(VALUE_CONSTRUCTOR, declaring.attributes.get(attribute)));
             for (String marker : declaring.attributeMarkers.get(attribute)) constructors.add(new Datatype.Constructor(marker, null));
-            return new Datatype.SumType(markerDomainName(declaring, attribute), constructors);
+            return new Datatype.SumType(markerDomainName(declaring,
+                    declaring.attributeMarkerDomain.getOrDefault(attribute, attribute)), constructors);
         }
 
         /** The domain of the sum type of {@code attribute}, declared with markers on {@code declaring}. */

@@ -472,13 +472,16 @@ kenmerkSpecificatie
 // uchar DIALECT EXTENSION (grammar/DIVERGENCES.md §7): the opgave marker "(mag opgegeven worden)" is the last element,
 // after the optional timeline and before the optional ';', so every clause of the production keeps its place. The
 // resolver lowers it to an opgave above the attribute's computation.
-// uchar DIALECT EXTENSION (grammar/DIVERGENCES.md, "Afwezigheidsmarkeringen"): the absence markers stand in the same
-// place, as the alternative of the opgave marker; the resolver lowers the attribute to a sum type.
+// uchar DIALECT EXTENSION (grammar/DIVERGENCES.md, "Afwezigheidsmarkeringen"): the absence markers stand after the
+// optional timeline and before the opgave marker — the markers are among the values the attribute can hold, and the
+// opgave marker then says that such a value, a marker included, may be supplied; the resolver lowers the attribute to
+// a sum type.
 attribuutSpecificatie
     : bepaaldLidwoord? lowerNaam ( MV_START meervoudsvorm RPAREN )? benaming* ( datatype | domeinNaam ) ( MET_EENHEID eenheidExpressie )?
       COMMA? ( GEDIMENSIONEERD_MET dimensieNaam ( EN dimensieNaam )* )?
       tijdlijn?
-      ( MAG_OPGEGEVEN_WORDEN | afwezigheidsmarkering )?
+      afwezigheidsmarkering?
+      MAG_OPGEGEVEN_WORDEN?
       SEMICOLON?
     ;
 afwezigheidsmarkering

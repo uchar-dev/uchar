@@ -38,7 +38,11 @@ import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
  * ({@link ObjectType#sumTypeOf}); and every value a rule, a default or an object creation writes into it that is no
  * marker becomes a Construct of the value constructor, so a leeg value leaves the Construct leeg and decides nothing
  * (ch. 9.1). A reference reads no value as the target, as the operand of a leeg or gevuld test of the attribute
- * itself, and beside a Construct in a comparison. The checks of {@link RuleChecker} run before this pass and read a reference with the
+ * itself, and beside a Construct in a comparison. The members an opgave marker generates on an attribute with markers
+ * share its sum type ({@link ObjectType#attributeMarkerDomain}): a reference to another member of the sum type a
+ * target holds is written as it is, so the group of the marker passes the opgave or the computation on whole, a marker
+ * included, and two such members compare as sum-typed values in an (in)equality (ch. 9.3). The checks of
+ * {@link RuleChecker} run before this pass and read a reference with the
  * declared datatype, so the typing of a computation reads the value as it reads every other attribute.
  *
  * <p>Then every PayloadAccess must stand after a test that the attribute holds a value — a conjunct of the condition
@@ -103,7 +107,7 @@ final class AbsenceMarkers {
 
     private ResolvedRule rule(ResolvedRule r) {
         Expr target = reference(r.target());
-        Expr value = written(targetSum(r.target()), read(r.value()));
+        Expr value = written(targetSum(r.target()), targetAttribute(r.target()), r.value());
         Condition condition = cond(r.condition());
         return target == r.target() && value == r.value() && condition == r.condition() ? r
                 : new ResolvedRule(r.name(), r.kind(), target, value, condition, r.validity(), r.statuteAnnotations());
@@ -116,7 +120,7 @@ final class AbsenceMarkers {
         for (var t : oc.assignments()) {
             Datatype.SumType sum = oc.createdType() == null || t.characteristic() ? null
                     : oc.createdType().sumTypeOf(t.attribute());
-            Expr v = written(sum, read(t.value()));
+            Expr v = written(sum, t.attribute(), t.value());
             same &= v == t.value();
             assignments.add(v == t.value() ? t : new ResolvedObjectCreation.MemberAssignment(t.attribute(), v, t.characteristic(), t.labels()));
         }
@@ -130,19 +134,19 @@ final class AbsenceMarkers {
     private PrioritizedDefaults group(PrioritizedDefaults p) {
         ObjectType subject = model.objectTypes.get(p.subject());
         Datatype.SumType sum = subject == null || p.attribute() == null ? null : subject.sumTypeOf(p.attribute());
-        List<Default> defaults = defaults(p.defaults(), sum);
+        List<Default> defaults = defaults(p.defaults(), sum, p.attribute());
         return defaults == p.defaults() ? p : new PrioritizedDefaults(p.name(), p.subject(), p.characteristic(),
                 p.attribute(), p.unordered(), defaults, p.source(), p.validity());
     }
 
-    private List<Default> defaults(List<Default> defaults, Datatype.SumType sum) {
+    private List<Default> defaults(List<Default> defaults, Datatype.SumType sum, String attribute) {
         if (defaults == null) return null;
         List<Default> result = new ArrayList<>();
         boolean same = true;
         for (Default d : defaults) {
             Condition c = cond(d.condition());
-            Expr consequence = written(sum, read(d.consequence()));
-            Default.Exceptions exceptions = exceptions(d.exceptions(), sum);
+            Expr consequence = written(sum, attribute, d.consequence());
+            Default.Exceptions exceptions = exceptions(d.exceptions(), sum, attribute);
             Default n = c == d.condition() && consequence == d.consequence() && exceptions == d.exceptions() ? d
                     : new Default(d.decision(), c, consequence, d.initialisation(), exceptions, d.source(), d.name(),
                             d.statuteAnnotations());
@@ -152,16 +156,23 @@ final class AbsenceMarkers {
         return same ? defaults : result;
     }
 
-    private Default.Exceptions exceptions(Default.Exceptions e, Datatype.SumType sum) {
+    private Default.Exceptions exceptions(Default.Exceptions e, Datatype.SumType sum, String attribute) {
         if (e == null) return null;
         List<ExceptionGroup> members = new ArrayList<>();
         boolean same = true;
         for (ExceptionGroup g : e.members()) {
-            List<Default> d = defaults(g.defaults(), sum);
+            List<Default> d = defaults(g.defaults(), sum, attribute);
             same &= d == g.defaults();
             members.add(d == g.defaults() ? g : new ExceptionGroup(d, g.source()));
         }
         return same ? e : new Default.Exceptions(e.unordered(), members);
+    }
+
+    /** The attribute a rule writes, its own or the one of the cell it writes; null for any other target. */
+    private static String targetAttribute(Expr target) {
+        Expr.AttributeReference a = target instanceof Expr.DimensionCellRead c ? c.attribute()
+                : target instanceof Expr.AttributeReference r ? r : null;
+        return a == null ? null : a.attribute();
     }
 
     /** The sum type of the attribute a rule writes, its own or the one of the cell it writes; null for any other. */
@@ -171,11 +182,25 @@ final class AbsenceMarkers {
         return a == null || a.objectType() == null ? null : a.objectType().sumTypeOf(a.attribute());
     }
 
-    /** The value written into a target of the sum type {@code sum}: a marker stands as the Construct it is, every other
-     *  value is the payload of a Construct of the value constructor. */
-    private static Expr written(Datatype.SumType sum, Expr value) {
-        if (sum == null || value == null || value instanceof Expr.Construct) return value;
-        return new Expr.Construct(sum, RegelSpraakModel.VALUE_CONSTRUCTOR, value, value.source());
+    /** The value {@code value} written into the attribute {@code attribute} of the sum type {@code sum}: a reference to
+     *  another member of that sum type — the opgave or the computation that the group of an opgave marker passes on to
+     *  X, the members that share X's domain — stands as the reference it is, so the value passes on whole, a marker
+     *  included; a marker stands as the Construct it is; every other value is read as a value and is the payload of a
+     *  Construct of the value constructor. */
+    private Expr written(Datatype.SumType sum, String attribute, Expr value) {
+        if (sum != null && sharesSum(sum, attribute, value)) return reference(value);
+        Expr read = read(value);
+        if (sum == null || read == null || read instanceof Expr.Construct) return read;
+        return new Expr.Construct(sum, RegelSpraakModel.VALUE_CONSTRUCTOR, read, read.source());
+    }
+
+    /** Whether {@code e} is a reference to an attribute other than {@code attribute} of the sum type {@code sum}: two
+     *  members share a sum type only where an opgave marker generated them on an attribute with markers. */
+    private static boolean sharesSum(Datatype.SumType sum, String attribute, Expr e) {
+        if (!(e instanceof Expr.AttributeReference a) || attribute == null || a.attribute().equalsIgnoreCase(attribute))
+            return false;
+        Datatype.SumType s = sumOf(a);
+        return s != null && s.domain().equalsIgnoreCase(sum.domain());
     }
 
     private static Datatype.SumType sumOf(Expr.AttributeReference a) {
@@ -313,8 +338,12 @@ final class AbsenceMarkers {
                         : new Condition.Predicate(p.kind(), o, p.dayKind(), p.negation(), p.digits(), p.period(), p.source());
             }
             case Condition.Comparison k -> {
-                // beside a marker the attribute is compared as a sum-typed value (ch. 9.3)
-                boolean beside = k.left() instanceof Expr.Construct || k.right() instanceof Expr.Construct;
+                // beside a marker the attribute is compared as a sum-typed value (ch. 9.3), and so are two members of
+                // one sum type in an (in)equality: an opgave and a computation that differ in a marker differ
+                boolean beside = k.left() instanceof Expr.Construct || k.right() instanceof Expr.Construct
+                        || (k.op() == Condition.Operator.GELIJK || k.op() == Condition.Operator.ONGELIJK)
+                        && k.left() instanceof Expr.AttributeReference member && sumOf(member) != null
+                        && sharesSum(sumOf(member), member.attribute(), k.right());
                 Expr l = beside && marked(k.left()) ? reference(k.left()) : read(k.left());
                 Expr r = beside && marked(k.right()) ? reference(k.right()) : read(k.right());
                 yield l == k.left() && r == k.right() ? k : new Condition.Comparison(k.op(), l, r, k.period(), k.source());

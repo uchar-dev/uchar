@@ -255,7 +255,8 @@ public final class IrEmitter {
         w.key("domains").beginArray();
         for (var entry : m.domains.entrySet()) domain(entry.getKey(), entry.getValue());
         for (ObjectType ot : m.objectTypes.values())
-            for (String a : ot.attributeMarkers.keySet()) markerDomain(ot.sumTypeOf(a));
+            for (String a : ot.attributeMarkers.keySet())
+                if (!ot.attributeMarkerDomain.containsKey(a)) markerDomain(ot.sumTypeOf(a));
         w.endArray();
 
         w.key("unitSystems").beginArray();
