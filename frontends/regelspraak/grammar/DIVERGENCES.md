@@ -2698,17 +2698,25 @@ amount of the initialisation default among them. The lowering written by hand in
 group cannot be written by hand in the dialect, so that piece is measured on the
 golden itself.
 `jutterswet-opgave-afwezigheidsmarkers` puts the marker beside the absence
-markers: on a Datum in dagen with both markers, computed from another date and
-set to niet van toepassing or onbekend by two conditional rules, and on a whole
-number for every month with the marker onbekend, set to onbekend in winter and
-to 10 in spring; ten cases, written as a scenario document: a computed marker
-that stands, a supplied date above a computed marker and a supplied marker above
-a computed date, each with the deviation, the same marker supplied and computed
-without it, two different markers with it, a supplied marker beside an empty
+markers: on a Datum in dagen with both markers, computed as another date plus a
+parameter as its duration and set to niet van toepassing or onbekend by two
+conditional rules; on a Datum in dagen with the marker niet van toepassing,
+computed as another date plus 7 dagen and initialised on a date; on a whole
+number with the marker onbekend, computed as one number verminderd met 2 maal
+another and initialised on onbekend; and on a whole number for every month with
+the marker onbekend, set to onbekend in winter and to 10 in spring; fifteen
+cases, written as a scenario document: a computed marker that stands, a
+supplied date above a computed marker and a supplied marker above a computed
+date, each with the deviation, the same marker supplied and computed without
+it, two different markers with it, a supplied marker beside an empty
 computation without it, a supplied date above a computed date with and without
-it, the attribute leeg without opgave and computation, and per month the opgave
-deciding the days on which it holds a value or a marker. ref, clingo and both
-branches of the Drools backend replay the ten cases exactly.
+it, the attribute leeg without opgave and computation, per month the opgave
+deciding the days on which it holds a value or a marker, a computed date above
+the initialisation, the initialisation where the computation is leeg, a
+supplied marker above the initialisation, a computed number, and the
+initialisation onbekend where the left operand of the computation is leeg. ref,
+clingo and both branches of the Drools backend replay the fifteen cases
+exactly.
 
 ---
 
@@ -2813,14 +2821,18 @@ document without markers emits what it emits without the extension.
   marker written per period, the input per day and a test of a marker per period are lowered and executed.
 - No negation of a test ("geen waarde heeft") and no marker in a decision table cell is lowered.
 - The ASP backend scales a number and a day-precision date into a constructor term; markers on an attribute of
-  another datatype play in ref and are refused by name in the ASP backend (`spec/ASP-TRANSLATION.md` S19).
+  another datatype play in ref and are refused by name in the ASP backend (`spec/ASP-TRANSLATION.md` S19). A computed
+  value it writes at the scale of the declared payload: a value whose term stands at another scale, such as a sum of
+  whole numbers into an attribute of 2 decimals with markers, plays in ref and in the Drools backend and is refused
+  by name in the ASP backend (CLINGO-006).
 - The semantic tokens read the words of the markers as keywords in a document that declares markers.
 
 Goldens: `jutterswet-afwezigheidsmarkers` (scalar and per month; ten cases), with the red twin
 `jutterswet-afwezigheidsmarkers-botsing` (EF-016, scalar and per day); `jutterswet-afwezigheidsmarkers-cel` (a marker
 written into a cell, the tests of a cell and a read under the test; four cases); `jutterswet-afwezigheidsmarkers-creatie`
 (a marker and a number in an object creation, a number written into an attribute with markers; four cases);
-`jutterswet-opgave-afwezigheidsmarkers` (the markers beside the opgave marker, scalar and per month; ten cases, §7).
+`jutterswet-opgave-afwezigheidsmarkers` (the markers beside the opgave marker, scalar and per month, with computed
+values and initialisations; fifteen cases, §7).
 Each has its source as `source.rgs` and a `scenario.rgs` that lowers to its case files (gate 16). Ref, clingo and both
 branches of the Drools backend replay every case exactly, and the red twin faults with EF-016 in each.
 

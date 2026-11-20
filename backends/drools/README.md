@@ -712,7 +712,8 @@ in the periods of its condition (`PeriodArithmetic.writtenValues`), a comparison
 period (`PeriodCondition.whereEqual`), the input and the writers are read per day as on every timeline target, and
 the generated `Segment` holds the constructor value. A defaults group on an attribute of a sum type passes on the
 value of a member of that sum type as it stands, scalar and per day: the opgave and the computation of the dialect's
-opgave marker on an attribute with markers. Refused by name: a `Match` (DROOLS-021), the payload of a
+opgave marker on an attribute with markers, with a constructor value as the initialisation below them, a value or a
+marker, and a computation whose payload is computed (a date plus a duration, an arithmetic of numbers). Refused by name: a `Match` (DROOLS-021), the payload of a
 timeline (DROOLS-314), whose reading per day this backend does not execute, and every other value on a timeline of a
 sum type (DROOLS-303). Witness `AbsenceMarkerWitnessTest`, goldens `jutterswet-afwezigheidsmarkers`,
 `jutterswet-afwezigheidsmarkers-cel`, `jutterswet-afwezigheidsmarkers-creatie`,

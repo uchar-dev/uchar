@@ -1,14 +1,20 @@
+Parameter de teruggavetermijn : Numeriek (geheel getal) met eenheid dg;
+
 Objecttype de Vondst (mv: Vondsten)
     de claimdatum Datum in dagen;
     de teruggavedatum Datum in dagen (of onbekend of niet van toepassing) (mag opgegeven worden);
+    de afhaaldatum Datum in dagen (of niet van toepassing) (mag opgegeven worden);
+    het gewicht Numeriek (geheel getal);
+    de schade Numeriek (geheel getal);
+    het bergloon Numeriek (geheel getal) (of onbekend) (mag opgegeven worden);
     de opslagkosten Numeriek (geheel getal) voor elke maand (of onbekend) (mag opgegeven worden);
     is drijfhout kenmerk (bijvoeglijk);
     is onleesbaar kenmerk (bijvoeglijk);
 
 // Bron: art. 3h lid 1
-Regel teruggave op de claimdatum
+Regel teruggave na de claimdatum
     geldig altijd
-        De teruggavedatum van een Vondst moet gesteld worden op zijn claimdatum.
+        De teruggavedatum van een Vondst moet berekend worden als zijn claimdatum plus de teruggavetermijn.
 
 // Bron: art. 3h lid 2
 Regel geen teruggave van drijfhout
@@ -23,11 +29,31 @@ Regel teruggave bij een onleesbaar etiket
         indien hij onleesbaar is.
 
 // Bron: art. 3h lid 4
+Regel afhaal na de claimdatum
+    geldig altijd
+        De afhaaldatum van een Vondst moet berekend worden als zijn claimdatum plus 7 dagen.
+
+// Bron: art. 3h lid 4
+Regel afhaal zonder claim
+    geldig altijd
+        De afhaaldatum van een Vondst moet geïnitialiseerd worden op 01-01-2026.
+
+// Bron: art. 3h lid 5
+Regel bergloon naar gewicht en schade
+    geldig altijd
+        Het bergloon van een Vondst moet berekend worden als zijn gewicht verminderd met 2 maal zijn schade.
+
+// Bron: art. 3h lid 5
+Regel bergloon zonder gewicht
+    geldig altijd
+        Het bergloon van een Vondst moet geïnitialiseerd worden op onbekend.
+
+// Bron: art. 3h lid 6
 Regel opslag onbekend in de winter
     geldig altijd
         De opslagkosten van een Vondst moet gesteld worden op onbekend van dd. 01-01-2025 tot dd. 01-03-2025.
 
-// Bron: art. 3h lid 4
+// Bron: art. 3h lid 6
 Regel opslag in het voorjaar
     geldig altijd
         De opslagkosten van een Vondst moet gesteld worden op 10 van dd. 01-03-2025 tot dd. 01-07-2025.

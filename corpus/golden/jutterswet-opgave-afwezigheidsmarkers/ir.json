@@ -109,6 +109,190 @@
           },
           {
             "node": "Attribute",
+            "name": "afhaaldatum",
+            "datatype": {
+              "node": "SumType",
+              "domain": "afhaaldatum van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Date",
+                    "precision": "day"
+                  }
+                },
+                {
+                  "name": "niet van toepassing",
+                  "payload": null
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opgegeven afhaaldatum",
+            "datatype": {
+              "node": "SumType",
+              "domain": "afhaaldatum van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Date",
+                    "precision": "day"
+                  }
+                },
+                {
+                  "name": "niet van toepassing",
+                  "payload": null
+                }
+              ]
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "afhaaldatum"
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "berekende afhaaldatum",
+            "datatype": {
+              "node": "SumType",
+              "domain": "afhaaldatum van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Date",
+                    "precision": "day"
+                  }
+                },
+                {
+                  "name": "niet van toepassing",
+                  "payload": null
+                }
+              ]
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "afhaaldatum"
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "schade",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bergloon",
+            "datatype": {
+              "node": "SumType",
+              "domain": "bergloon van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opgegeven bergloon",
+            "datatype": {
+              "node": "SumType",
+              "domain": "bergloon van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                }
+              ]
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "bergloon"
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "berekende bergloon",
+            "datatype": {
+              "node": "SumType",
+              "domain": "bergloon van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                }
+              ]
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "bergloon"
+              }
+            }
+          },
+          {
+            "node": "Attribute",
             "name": "opslagkosten",
             "datatype": {
               "node": "SumType",
@@ -231,12 +415,60 @@
                 "name": "teruggavedatum"
               }
             }
+          },
+          {
+            "node": "Characteristic",
+            "name": "afwijkende opgave afhaaldatum",
+            "kind": "possessive",
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "afhaaldatum"
+              }
+            }
+          },
+          {
+            "node": "Characteristic",
+            "name": "afwijkende opgave bergloon",
+            "kind": "possessive",
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "bergloon"
+              }
+            }
           }
         ]
       }
     ],
     "factTypes": [],
-    "parameters": [],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "teruggavetermijn",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified",
+          "unit": [
+            {
+              "node": "Unit",
+              "abbreviation": "dg",
+              "canonical": "dg",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              }
+            }
+          ]
+        }
+      }
+    ],
     "domains": [
       {
         "node": "Domain",
@@ -257,6 +489,48 @@
             },
             {
               "name": "niet van toepassing",
+              "payload": null
+            }
+          ]
+        }
+      },
+      {
+        "node": "Domain",
+        "name": "afhaaldatum van een Vondst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "waarde",
+              "payload": {
+                "node": "Date",
+                "precision": "day"
+              }
+            },
+            {
+              "name": "niet van toepassing",
+              "payload": null
+            }
+          ]
+        }
+      },
+      {
+        "node": "Domain",
+        "name": "bergloon van een Vondst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "waarde",
+              "payload": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              }
+            },
+            {
+              "name": "onbekend",
               "payload": null
             }
           ]
@@ -294,7 +568,7 @@
     "rules": [
       {
         "node": "Rule",
-        "name": "teruggave op de claimdatum",
+        "name": "teruggave na de claimdatum",
         "versions": [
           {
             "validity": {
@@ -333,19 +607,37 @@
               },
               "constructor": "waarde",
               "argument": {
-                "node": "AttributeReference",
-                "attribute": "claimdatum",
-                "subjectType": "Vondst",
+                "node": "Binary",
+                "op": "plus",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "claimdatum",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn claimdatum"
+                  }
+                },
+                "right": {
+                  "node": "ParameterReference",
+                  "parameter": "teruggavetermijn",
+                  "source": {
+                    "snippet": "de teruggavetermijn"
+                  }
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
                 "source": {
-                  "snippet": "zijn claimdatum"
+                  "snippet": "zijn claimdatum plus de teruggavetermijn"
                 }
               },
               "source": {
-                "snippet": "zijn claimdatum"
+                "snippet": "zijn claimdatum plus de teruggavetermijn"
               }
             },
             "initialisation": false,
-            "presentation": "equation"
+            "presentation": "calculation"
           }
         ],
         "statuteAnnotations": [
@@ -476,6 +768,206 @@
       },
       {
         "node": "Rule",
+        "name": "afhaal na de claimdatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "berekende afhaaldatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De afhaaldatum van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "afhaaldatum van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Date",
+                      "precision": "day"
+                    }
+                  },
+                  {
+                    "name": "niet van toepassing",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "waarde",
+              "argument": {
+                "node": "Binary",
+                "op": "plus",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "claimdatum",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn claimdatum"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "7"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified",
+                    "unit": [
+                      {
+                        "node": "Unit",
+                        "abbreviation": "dag",
+                        "canonical": "dag",
+                        "factorToCanonical": {
+                          "num": 1,
+                          "den": 1
+                        }
+                      }
+                    ]
+                  },
+                  "source": {
+                    "snippet": "7 dagen"
+                  }
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "zijn claimdatum plus 7 dagen"
+                }
+              },
+              "source": {
+                "snippet": "zijn claimdatum plus 7 dagen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3h lid 4"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "bergloon naar gewicht en schade",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "berekende bergloon",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het bergloon van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "bergloon van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "waarde",
+              "argument": {
+                "node": "Binary",
+                "op": "reducedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn gewicht"
+                  }
+                },
+                "right": {
+                  "node": "Binary",
+                  "op": "times",
+                  "left": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "2"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "2"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "schade",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn schade"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "2 maal zijn schade"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "zijn gewicht verminderd met 2 maal zijn schade"
+                }
+              },
+              "source": {
+                "snippet": "zijn gewicht verminderd met 2 maal zijn schade"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3h lid 5"
+        ]
+      },
+      {
+        "node": "Rule",
         "name": "opslag onbekend in de winter",
         "versions": [
           {
@@ -555,7 +1047,7 @@
           }
         ],
         "statuteAnnotations": [
-          "art. 3h lid 4"
+          "art. 3h lid 6"
         ]
       },
       {
@@ -653,7 +1145,7 @@
           }
         ],
         "statuteAnnotations": [
-          "art. 3h lid 4"
+          "art. 3h lid 6"
         ]
       },
       {
@@ -762,6 +1254,220 @@
             "name": "teruggavedatum"
           }
         }
+      },
+      {
+        "node": "Rule",
+        "name": "afwijking opgave afhaaldatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "afwijkende opgave afhaaldatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst heeft afwijkende opgave afhaaldatum"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven afhaaldatum",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn opgegeven afhaaldatum"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn opgegeven afhaaldatum is gevuld"
+                  }
+                },
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende afhaaldatum",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn berekende afhaaldatum"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn berekende afhaaldatum is gevuld"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven afhaaldatum",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn opgegeven afhaaldatum"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende afhaaldatum",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn berekende afhaaldatum"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn opgegeven afhaaldatum is ongelijk aan zijn berekende afhaaldatum"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven afhaaldatum is gevuld - zijn berekende afhaaldatum is gevuld - zijn opgegeven afhaaldatum is ongelijk aan zijn berekende afhaaldatum"
+              }
+            },
+            "initialisation": false
+          }
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "afhaaldatum"
+          }
+        }
+      },
+      {
+        "node": "Rule",
+        "name": "afwijking opgave bergloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "afwijkende opgave bergloon",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst heeft afwijkende opgave bergloon"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven bergloon",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn opgegeven bergloon"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn opgegeven bergloon is gevuld"
+                  }
+                },
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende bergloon",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn berekende bergloon"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn berekende bergloon is gevuld"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven bergloon",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn opgegeven bergloon"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende bergloon",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn berekende bergloon"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn opgegeven bergloon is ongelijk aan zijn berekende bergloon"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven bergloon is gevuld - zijn berekende bergloon is gevuld - zijn opgegeven bergloon is ongelijk aan zijn berekende bergloon"
+              }
+            },
+            "initialisation": false
+          }
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "bergloon"
+          }
+        }
       }
     ],
     "dayKindDefinitions": [],
@@ -787,7 +1493,7 @@
             },
             "source": {
               "snippet": "de teruggavedatum Datum in dagen (of onbekend of niet van toepassing) (mag opgegeven worden)",
-              "line": 3
+              "line": 5
             }
           }
         ],
@@ -797,6 +1503,70 @@
             "kind": "attribute",
             "owner": "Vondst",
             "name": "teruggavedatum"
+          }
+        }
+      },
+      {
+        "node": "Consistency",
+        "name": "controle opgave afhaaldatum",
+        "versions": [
+          {
+            "subject": "Vondst",
+            "assertion": {
+              "node": "CharacteristicCheck",
+              "characteristic": "afwijkende opgave afhaaldatum",
+              "negated": true,
+              "source": {
+                "snippet": "hij heeft geen afwijkende opgave afhaaldatum"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "de afhaaldatum Datum in dagen (of niet van toepassing) (mag opgegeven worden)",
+              "line": 6
+            }
+          }
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "afhaaldatum"
+          }
+        }
+      },
+      {
+        "node": "Consistency",
+        "name": "controle opgave bergloon",
+        "versions": [
+          {
+            "subject": "Vondst",
+            "assertion": {
+              "node": "CharacteristicCheck",
+              "characteristic": "afwijkende opgave bergloon",
+              "negated": true,
+              "source": {
+                "snippet": "hij heeft geen afwijkende opgave bergloon"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "het bergloon Numeriek (geheel getal) (of onbekend) (mag opgegeven worden)",
+              "line": 9
+            }
+          }
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "bergloon"
           }
         }
       }
@@ -868,6 +1638,216 @@
             "kind": "attribute",
             "owner": "Vondst",
             "name": "teruggavedatum"
+          }
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "opgave boven berekening afhaaldatum",
+        "subject": "Vondst",
+        "attribute": "afhaaldatum",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "opgegeven afhaaldatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn opgegeven afhaaldatum"
+              }
+            },
+            "source": {
+              "snippet": "opgegeven afhaaldatum"
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "berekende afhaaldatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn berekende afhaaldatum"
+              }
+            },
+            "source": {
+              "snippet": "berekende afhaaldatum"
+            }
+          },
+          {
+            "node": "Default",
+            "name": "afhaal zonder claim",
+            "consequence": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "afhaaldatum van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Date",
+                      "precision": "day"
+                    }
+                  },
+                  {
+                    "name": "niet van toepassing",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "waarde",
+              "argument": {
+                "node": "Literal",
+                "value": {
+                  "date": "2026-01-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "01-01-2026"
+                }
+              },
+              "source": {
+                "snippet": "01-01-2026"
+              }
+            },
+            "initialisation": true,
+            "statuteAnnotations": [
+              "art. 3h lid 4"
+            ]
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        },
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "afhaaldatum"
+          }
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "opgave boven berekening bergloon",
+        "subject": "Vondst",
+        "attribute": "bergloon",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "opgegeven bergloon",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn opgegeven bergloon"
+              }
+            },
+            "source": {
+              "snippet": "opgegeven bergloon"
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "berekende bergloon",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn berekende bergloon"
+              }
+            },
+            "source": {
+              "snippet": "berekende bergloon"
+            }
+          },
+          {
+            "node": "Default",
+            "name": "bergloon zonder gewicht",
+            "consequence": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "bergloon van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "onbekend",
+              "argument": null,
+              "source": {
+                "snippet": "onbekend"
+              }
+            },
+            "initialisation": true,
+            "statuteAnnotations": [
+              "art. 3h lid 5"
+            ]
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        },
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "bergloon"
           }
         }
       },

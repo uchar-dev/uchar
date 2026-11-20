@@ -18,7 +18,11 @@
         "characteristics": []
       }
     ],
-    "parameters": {}
+    "parameters": {
+      "teruggavetermijn": {
+        "number": "14"
+      }
+    }
   },
   "expected": [
     {
@@ -36,7 +40,7 @@
       "value": {
         "constructor": "waarde",
         "payload": {
-          "date": "2026-03-10"
+          "date": "2026-03-24"
         }
       }
     },

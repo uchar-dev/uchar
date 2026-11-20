@@ -18870,7 +18870,8 @@ let () =
   both_answer ~name:"absence markers: a copy of a timeline with markers" ~ir ~case_text;
   (* the opgave marker beside the markers (golden jutterswet-opgave-afwezigheidsmarkers): a defaults group on a
      sum-typed target, scalar and per day, whose consequences are members of the target's sum type, and the deviation
-     of the two as sum values; and an initialisation of such a target with a marker and with a date literal, the
+     of the two as sum values; a computed payload, a date plus a parameter and plus a literal duration and a number
+     verminderd met a product; and an initialisation of such a target with a marker and with a date literal, the
      latter a day number like a date payload of the input *)
   let g = "corpus/golden/jutterswet-opgave-afwezigheidsmarkers/" in
   let ir = read (g ^ "ir.json") in
@@ -18879,9 +18880,9 @@ let () =
     [ "case1-berekende-marker"; "case2-opgegeven-datum-verdringt-berekende-marker";
       "case3-opgegeven-marker-verdringt-berekende-datum"; "case4-dezelfde-marker"; "case5-andere-marker";
       "case6-opgegeven-marker-zonder-berekening"; "case7-opgegeven-datum-verdringt-berekende-datum";
-      "case8-opgegeven-datum-gelijk-aan-berekende-datum"; "case9-niets"; "case10-opgave-per-maand" ];
-  let ir, case_text = fixture "initialisation-under-the-opgave-marker" in
-  both_answer ~name:"absence markers: an initialisation with a marker and with a date literal" ~ir ~case_text;
+      "case8-opgegeven-datum-gelijk-aan-berekende-datum"; "case9-niets"; "case10-opgave-per-maand";
+      "case11-berekende-afhaaldatum"; "case12-afhaaldatum-zonder-claim"; "case13-opgegeven-marker-boven-de-initialisatie";
+      "case14-berekend-bergloon"; "case15-bergloon-zonder-gewicht" ];
   both_answer ~name:"S19 door 2: a rule-level Construct with a parameter payload is carried" ~ir:param_payload_doc
     ~case_text:param_payload_case;
   (* a computed payload is leeg where ref's operator reads it leeg (RUNTIME-SEMANTICS ch. 9.1, 1.2a): plus, min and

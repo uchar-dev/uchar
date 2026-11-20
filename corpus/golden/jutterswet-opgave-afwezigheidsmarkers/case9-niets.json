@@ -11,7 +11,11 @@
         "characteristics": []
       }
     ],
-    "parameters": {}
+    "parameters": {
+      "teruggavetermijn": {
+        "number": "14"
+      }
+    }
   },
   "expected": [
     {

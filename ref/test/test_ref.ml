@@ -14113,16 +14113,20 @@ let () =
 
 (* WV-9.5-opgave: the opgave marker beside the absence markers (RUNTIME-SEMANTICS
    ch. 9.5), on the golden jutterswet-opgave-afwezigheidsmarkers. The opgave and
-   the computation share the sum type of the teruggavedatum: a computed
-   niet van toepassing stands without an opgave; a supplied 12-03-2026 displaces
-   it, and a supplied niet van toepassing displaces a computed 10-03-2026, each
-   with the deviation; the same marker supplied and computed deviates not, a
-   supplied niet van toepassing beside a computed onbekend does; a supplied
-   onbekend beside an empty computation stands without it; a supplied date above
-   a computed one deviates where they differ and not where they are equal;
+   the computation share the sum type of the teruggavedatum, computed as the
+   claimdatum plus the teruggavetermijn of 14 days: a computed niet van
+   toepassing stands without an opgave; a supplied 12-03-2026 displaces it, and
+   a supplied niet van toepassing displaces a computed 24-03-2026, each with the
+   deviation; the same marker supplied and computed deviates not, a supplied
+   niet van toepassing beside a computed onbekend does; a supplied onbekend
+   beside an empty computation stands without it; a supplied date above a
+   computed one deviates where they differ and not where they are equal;
    without both the teruggavedatum is leeg. The opslagkosten for every month are
    onbekend in January and February 2025 and 10 from March to June; the opgave 4
-   from February to April and onbekend in June and July decides those days *)
+   from February to April and onbekend in June and July decides those days. The
+   afhaaldatum is the claimdatum plus 7 days, else its initialisation
+   01-01-2026, below a supplied niet van toepassing; the bergloon is the gewicht
+   verminderd met 2 maal the schade, else its initialisation onbekend *)
 let () =
   let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
   let g = "corpus/golden/jutterswet-opgave-afwezigheidsmarkers/" in
@@ -14137,7 +14141,12 @@ let () =
       ("WV-9.5-opgave-datum-boven-datum", "case7-opgegeven-datum-verdringt-berekende-datum");
       ("WV-9.5-opgave-gelijke-datum", "case8-opgegeven-datum-gelijk-aan-berekende-datum");
       ("WV-9.5-opgave-niets", "case9-niets");
-      ("WV-9.5-opgave-per-maand", "case10-opgave-per-maand") ]
+      ("WV-9.5-opgave-per-maand", "case10-opgave-per-maand");
+      ("WV-9.5-opgave-berekende-afhaaldatum", "case11-berekende-afhaaldatum");
+      ("WV-9.5-opgave-afhaaldatum-zonder-claim", "case12-afhaaldatum-zonder-claim");
+      ("WV-9.5-opgave-marker-boven-initialisatie", "case13-opgegeven-marker-boven-de-initialisatie");
+      ("WV-9.5-opgave-berekend-bergloon", "case14-berekend-bergloon");
+      ("WV-9.5-opgave-bergloon-zonder-gewicht", "case15-bergloon-zonder-gewicht") ]
 
 (* WV-9.5-botsing: a marker decided against another value is the fault of two
    writers (EF-016), on a scalar target and per day, on the red twin

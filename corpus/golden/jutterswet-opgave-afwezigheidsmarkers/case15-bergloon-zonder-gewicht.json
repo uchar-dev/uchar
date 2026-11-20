@@ -6,32 +6,34 @@
       {
         "label": "V",
         "objectType": "Vondst",
-        "attributes": {},
+        "attributes": {
+          "schade": {
+            "number": "4"
+          }
+        },
         "roles": {},
         "characteristics": []
       }
     ],
-    "parameters": {}
+    "parameters": {
+      "teruggavetermijn": {
+        "number": "14"
+      }
+    }
   },
   "expected": [
     {
       "kind": "attributeValue",
       "label": "V",
-      "attribute": "teruggavedatum",
+      "attribute": "bergloon",
       "value": {
         "constructor": "onbekend"
       }
     },
     {
-      "kind": "attributeValue",
+      "kind": "attributeEmpty",
       "label": "V",
-      "attribute": "afhaaldatum",
-      "value": {
-        "constructor": "waarde",
-        "payload": {
-          "date": "2026-01-01"
-        }
-      }
+      "attribute": "berekende bergloon"
     },
     {
       "kind": "consistent"
