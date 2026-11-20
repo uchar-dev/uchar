@@ -456,3 +456,36 @@ in een bestaande golden).
 ### make gates
 
 Eén run op `85af811e0`, groen: `end 2026-11-20 12:59:05 586s red=0` (zie "make gates" hierboven, `logs/gates-2.log`).
+
+## Landing (hoofdsessie, 2026-11-20)
+
+De hoofdsessie las beide Results en de diff van de code, de golden en de beschermde paden, en nam het werk over.
+
+- **Besluiten.** De spelling (de afwezigheidsmarkering vóór de opgavemarkering) is op dezelfde dag door de eigenaar
+  bevestigd. De voorlopige besluiten van de bouwers blijven staan: één domein voor X, `opgegeven X` en `berekende X`;
+  alleen een verwijzing naar een ander lid van hetzelfde sum type gaat ongewijzigd door; alleen een gelijkheid of
+  ongelijkheid vergelijkt de waarden met marker; geen nieuwe code in een register.
+- **De open punten van het eerste Result.** De berekende payload in clingo en de initialisatie onder de opgavemarkering
+  zijn in deze kaart opgelost (het tweede Result), omdat de golden anders niet vastlegt wat een regelset schrijft: een
+  berekende datum met markers onder een opgave. De telling in DIVERGENCES is bijgewerkt.
+- **De eenheid van een payload.** De fout die de tweede bouwer vond (2 t in een payload in kg werd `waarde(2)` in clingo
+  en Drools) bestond vóór de kaart en is gehouden: WF-062 leest de payload als een schrijfactie in het gedeclareerde
+  datatype. Bij het nalezen vond de hoofdsessie het zustergeval: een literal "2 t" als payload ging in clingo langs
+  `construct_ground_term` en gaf `MISMATCH: V.gewicht = [waarde(2)], expected waarde(2000)`. Clingo weigert nu beide
+  vormen op één plek (`refuse_payload_in_another_unit`, CLINGO-006); de fixture
+  `ref/test/fixtures/absence-markers/literal-payload-in-another-unit` legt vast dat ref en beide Drools-branches
+  `waarde(2000)` geven (`ea9b3815d`; clingo-suite 2945 → 2948 checks, `AbsenceMarkerWitnessTest` loopt beide fixtures).
+- **Spec, geredigeerd naar de huidige stand** (`94949d8ac`). RUNTIME-SEMANTICS ch. 9.1 zegt dat de payload van een
+  `Construct` in de gedeclareerde eenheid staat; ch. 9.5 beschrijft de opgave boven een berekening in termen van de IR
+  (een defaults-groep geeft een attribuut van hetzelfde sum type ongewijzigd door, de afwijking is de ongelijkheid van
+  ch. 9.3), zonder besluitdatum; de zin "Executed" verwijst voor de weigeringen van clingo naar ASP-TRANSLATION S14.
+  CONSTRUCTS rij 47 noemt de combinatie, de golden en de datum. `scripts/check-drools.sh`: `EXPECTED_PLAYED` 383.
+- **Wat open blijft, zonder kaart.** Clingo weigert bij naam een berekende payload op een andere schaal dan de
+  gedeclareerde en een payload in een andere eenheid; ref en Drools spelen beide. Dat ref een payload in een voorwaarde
+  niet inpast in de decimalen van de payload, is niet gemeten; de frontend schrijft daar alleen markers.
+- **Vervolg.** De dienst van de distributie (een marker als opgave in verzoek, antwoord, uitleg en OpenAPI) is een
+  kaart in de toolchain, bij de pin naar deze landing.
+
+`make gates` op `4d04a6b84`, groen (`out/gates/20261120-130820/`): `end 2026-11-20 13:21:59 819s red=0`. Suites in die
+run: ref 2806 uitgewerkte voorbeelden, clingo 2948 checks, frontend 1694 tests, Drools 1969 tests; gate 12 speelt 383
+goldens op beide branches. De commit hierna raakt alleen deze kaart.
