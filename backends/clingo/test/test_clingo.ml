@@ -18896,8 +18896,8 @@ let () =
     [ "case1-alles-gevuld"; "case2-links-leeg"; "case3-rechts-leeg"; "case4-beide-leeg" ];
   (* ref holds a payload's number as computed, never fitted, and restates a payload in another unit into the declared
      one, so a payload whose term stands at another scale than the declared payload (a sum of whole numbers into a
-     payload of 2 decimals), a payload in another unit, computed or literal (2 t into a payload in kg), and a Match as
-     payload are refused by name *)
+     payload of 2 decimals), a payload in another unit (2 t into a payload in kg) — computed or literal, at rule level,
+     in the step of a fold and in its initial value — and a Match as payload are refused by name *)
   List.iter
     (fun (d, what) ->
       let ir, case_text = fixture d in
@@ -18912,6 +18912,8 @@ let () =
     [ ("payload-at-another-scale", "a computed payload at another scale than the declared one is refused");
       ("payload-in-another-unit", "a computed payload in another unit than the declared one is refused");
       ("literal-payload-in-another-unit", "a literal payload in another unit than the declared one is refused");
+      ("payload-in-another-unit-in-a-fold-step", "a payload in another unit in the step of a fold is refused");
+      ("payload-in-another-unit-in-a-fold-init", "a payload in another unit in the initial value of a fold is refused");
       ("match-as-payload", "a Match as payload is refused") ]
 
 (* THE DAY NUMBERS THIS ENCODING HOLDS (RUNTIME-SEMANTICS ch. 3.8; card

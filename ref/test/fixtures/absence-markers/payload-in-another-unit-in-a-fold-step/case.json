@@ -1,0 +1,37 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V",
+        "objectType": "Vondst",
+        "attributes": {
+          "metingen": {
+            "list": [
+              {
+                "number": "2"
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "gewicht",
+      "value": {
+        "constructor": "waarde",
+        "payload": {
+          "number": "2000"
+        }
+      }
+    }
+  ]
+}

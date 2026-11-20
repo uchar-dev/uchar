@@ -10471,6 +10471,7 @@ and body_branches ctx ~carrier (e : expr) : (string list * string * int) list =
       | Some d ->
           let pscale = pow10 (decimals_of_datatype (Some d)) in
           let f = ctor_functor constructor_ in
+          refuse_payload_in_another_unit ctx d payload;
           List.map
             (fun (g, t, s) ->
               if s <> pscale then
@@ -10669,6 +10670,7 @@ and closed_term ctx ~carrier (e : expr) : string list * string * int =
               "a Construct payload at scale %d does not match the declared payload scale %d \
                (rescaling a bound sum payload has no corpus case)"
               scale payload_scale;
+          refuse_payload_in_another_unit ctx d arg;
           (atoms, Printf.sprintf "%s(%s)" (ctor_functor constructor_) term, 0))
   | Field_access { base; field_name; _ } ->
       (* ch. 11.1 inside a closed body (the MapList-over-struct-field lelem
