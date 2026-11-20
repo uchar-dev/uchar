@@ -703,11 +703,12 @@ refusals below `TmsTimelineRefusalWitnessTest`.
 **Sum types and absence markers.** A sum type (RUNTIME-SEMANTICS ch. 9) is carried as a datatype, and its value is a
 `ConstructorValue`, its tag and, for a unary constructor, its payload, on a bean, in a fact and in a segment of a
 timeline; two are equal where their tags are one declared name and their payloads one value, numbers by value, and
-their hash code agrees with it. A `Construct` builds one, leeg where its argument is (ch. 9.1); an equality with one
-is the equality of a text (ch. 9.3); a `PayloadAccess` is the payload where the value carries its constructor and leeg
-elsewhere (ch. 9.5), also as the source of a fold over members, whose contribution takes the member's payload. The
-absence markers of the RegelSpraak dialect are such values, in an attribute and in a cell of a dimensioned one. On a
-timeline of a sum type a rule writes a constructor of a literal, or a copy of an own timeline of the same sum type,
+their hash code agrees with it. A `Construct` builds one, leeg where its argument is and with a number restated into
+the unit of the payload in the declaration of the domain (ch. 9.1, WF-062); an equality with one is the equality of a
+text (ch. 9.3); a `PayloadAccess` is the payload where the value carries its constructor and leeg elsewhere (ch. 9.5),
+also as the source of a fold over members, whose contribution takes the member's payload. The absence markers of the
+RegelSpraak dialect are such values, in an attribute and in a cell of a dimensioned one. On a timeline of a sum type a
+rule writes a constructor of a literal, or a copy of an own timeline of the same sum type,
 in the periods of its condition (`PeriodArithmetic.writtenValues`), a comparison with a constructor value is read per
 period (`PeriodCondition.whereEqual`), the input and the writers are read per day as on every timeline target, and
 the generated `Segment` holds the constructor value. A defaults group on an attribute of a sum type passes on the

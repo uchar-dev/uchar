@@ -7400,10 +7400,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          being [expr_term]'s own (plus and min coalesce, verminderd met
          propagates its left, a date propagates and its duration coalesces),
          so where the payload is leeg the rule does not fire and the whole
-         Construct is leeg. ref holds the payload as computed and never
-         restates it, so the term must already stand at the scale of the
-         DECLARED payload datatype; a sum term itself is not numeric, scale 0,
-         carried by [attr_sum_typed]'s write path and never fitted. *)
+         Construct is leeg. ref holds the payload's number as computed, never
+         rounded or fitted, so the term must already stand at the scale of the
+         DECLARED payload datatype; a payload in another unit ref restates
+         into the declared one, which this arm does not, so it refuses it. A
+         sum term itself is not numeric, scale 0, carried by
+         [attr_sum_typed]'s write path and never fitted. *)
       match ctor_payload_datatype (sum_constructors typ) constructor_ with
       | None -> fault "nullary constructor %S built with an argument" constructor_
       | Some d ->
@@ -7415,6 +7417,13 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
               "a Construct payload at scale %d does not match the declared payload scale %d \
                (rescaling a computed payload has no corpus case)"
               scale payload_scale;
+          (match (d, eff_unit ctx arg) with
+          | (Number { measure_unit = Some u; _ } | Percentage { measure_unit = Some u; _ }), Some v
+            when (not (Ir_v0.Units.identical u v)) && not (Normalise.same_quantity u v) ->
+              faultc "CLINGO-006"
+                "a Construct payload in another unit than the declared payload's is not restated \
+                 (ref restates it into the declared unit; no corpus case)"
+          | _ -> ());
           (atoms, Printf.sprintf "%s(%s)" f term, 0))
   | Payload_access { base = Attribute_reference { attribute_ref = Some a; _ } as base; constructor_; typ; _ } ->
       (* ch. 9.5: the payload is a member of its own, which a projection rule

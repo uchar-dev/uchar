@@ -1201,6 +1201,27 @@ let payload_of c (v : Value.t) =
   | Value.Empty | Value.Ctor _ -> Value.Empty
   | v -> Value.fault "payload access base is %s, not a constructor value" (Value.to_string v)
 
+(* the payload [v] of the constructor [tag] of the sum type [typ] as a value
+   of the declared payload datatype (ch. 9.1; WF-062 reads the argument as a
+   write): a number in another unit restated into the payload's declared
+   unit, read off the declaration of the domain (ch. 2.10), as the write
+   boundary restates (ch. 2.4, 2.6); every other value as it is *)
+let in_payload_unit env (typ : datatype option) tag (v : Value.t) =
+  let declared =
+    match typ with
+    | Some (Sum_type { domain_spec; _ }) -> (
+        match Ir_v0.Checks.find_ci env.doc.domain_specs domain_spec with
+        | Some (Some (Sum_type { constructor_list; _ })) -> (
+            match List.find_opt (fun (c, _) -> norm c = norm tag) constructor_list with
+            | Some (_, Some (Number { measure_unit = Some m; _ } | Percentage { measure_unit = Some m; _ })) -> Some m
+            | _ -> None)
+        | _ -> None)
+    | _ -> None
+  in
+  match (declared, v) with
+  | Some m, Value.Num (q, (Value.Unit _ as u)) -> Value.Num (Arith.restate_into (Value.Unit m) q u, Value.Unit m)
+  | _ -> v
+
 let rec static_type env (e : expr) : datatype option =
   match e with
   | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } -> (
@@ -1790,7 +1811,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
       | v ->
           Value.fault "temporal-read date operand is %s, must be a day-precision date"
             (Value.to_string v))
-  | Construct { constructor_; argument; _ } -> (
+  | Construct { typ; constructor_; argument; _ } -> (
       (* ch. 9.1: a leeg argument propagates — a constructor value never
          carries a leeg payload; a nullary constructor (argument absent) is
          gevuld by construction *)
@@ -1799,7 +1820,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
       | Some a -> (
           match eval_expr env world self ~err a with
           | Value.Empty -> Value.Empty
-          | v -> Value.Ctor (constructor_, Some v)))
+          | v -> Value.Ctor (constructor_, Some (in_payload_unit env typ constructor_ v))))
   | Match { scrutinee; arms; _ } -> (
       (* ch. 9.2: evaluate the scrutinee; a leeg scrutinee propagates leeg
          (no implicit leeg-arm); otherwise the unique arm for the tag, with

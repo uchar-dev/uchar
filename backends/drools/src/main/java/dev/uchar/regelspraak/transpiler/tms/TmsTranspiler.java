@@ -4909,14 +4909,25 @@ public final class TmsTranspiler {
     }
 
     /** A constructor value (RUNTIME-SEMANTICS ch. 9.1): a nullary constructor filled by construction, a unary one of its
-     *  argument, leeg where the argument is. The payload is the argument's value as it is, as the reference interpreter
-     *  builds it. */
+     *  argument, leeg where the argument is. The payload is a value of the declared payload datatype (WF-062 reads the
+     *  argument as a write), so a number in another unit is restated into the unit of the payload in the declaration
+     *  of the domain, as the write boundary restates (ch. 2.4, 2.6) and as the reference interpreter builds it. */
     private Term construct(Expr.Construct c, Reads reads) {
         String source = source(c.source());
         if (c.argument() == null)
             return new Term.Call(StaticFunction.CONSTRUCTOR_VALUE, List.of(constant(c.constructor())), source);
-        return new Term.Call(StaticFunction.CONSTRUCT, List.of(constant(c.constructor()), value(c.argument(), reads)),
-                source);
+        Datatype payload = EffectiveUnit.payloadOf(declaredDomain(c.type()), c.constructor());
+        Term argument = restated(value(c.argument(), reads), eff.unitOf(c.argument()),
+                payload == null ? null : payload.unitOf(), DroolsCode.UNIT_CONFLICT.part("write-boundary-target"));
+        return new Term.Call(StaticFunction.CONSTRUCT, List.of(constant(c.constructor()), argument), source);
+    }
+
+    /** The declaration of the domain the sum type {@code t} names (RUNTIME-SEMANTICS ch. 2.10: a consumer derives from
+     *  declarations); the use site's copy where the document declares none, which the verifier precludes (WF-088). */
+    private Datatype declaredDomain(Datatype.SumType t) {
+        for (Map.Entry<String, Datatype> d : model.domains.entrySet())
+            if (Namen.norm(d.getKey()).equals(Namen.norm(t.domain()))) return d.getValue();
+        return t;
     }
 
     /** The payload of a sum-typed value where it carries the constructor of the node, leeg elsewhere (RUNTIME-SEMANTICS

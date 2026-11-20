@@ -2822,9 +2822,10 @@ document without markers emits what it emits without the extension.
 - No negation of a test ("geen waarde heeft") and no marker in a decision table cell is lowered.
 - The ASP backend scales a number and a day-precision date into a constructor term; markers on an attribute of
   another datatype play in ref and are refused by name in the ASP backend (`spec/ASP-TRANSLATION.md` S19). A computed
-  value it writes at the scale of the declared payload: a value whose term stands at another scale, such as a sum of
-  whole numbers into an attribute of 2 decimals with markers, plays in ref and in the Drools backend and is refused
-  by name in the ASP backend (CLINGO-006).
+  value it writes at the scale and in the unit of the declared payload: a value whose term stands at another scale,
+  such as a sum of whole numbers into an attribute of 2 decimals with markers, and a value in another unit, such as
+  2 t into an attribute in kg, play in ref and in the Drools backend and are refused by name in the ASP backend
+  (CLINGO-006).
 - The semantic tokens read the words of the markers as keywords in a document that declares markers.
 
 Goldens: `jutterswet-afwezigheidsmarkers` (scalar and per month; ten cases), with the red twin

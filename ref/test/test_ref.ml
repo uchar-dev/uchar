@@ -14193,7 +14193,16 @@ let () =
   plays ~ident:"WV-9.5-twee-namen-een-symbool" ~ir:(read (dir ^ "constructors-in-one-symbol/ir.json"))
     ~case_data:(read (dir ^ "constructors-in-one-symbol/case.json")) (fun _ -> ());
   plays ~ident:"WV-9.5-kopie-van-een-tijdlijn" ~ir:(read (dir ^ "copy-of-a-timeline/ir.json"))
-    ~case_data:(read (dir ^ "copy-of-a-timeline/case.json")) (fun _ -> ())
+    ~case_data:(read (dir ^ "copy-of-a-timeline/case.json")) (fun _ -> ());
+  (* the value of an attribute with markers is held in the declared unit
+     (ch. 9.1, WF-062): the lading 2 t written into a gewicht in kg is
+     waarde(2000), not waarde(2) *)
+  plays ~ident:"WV-9.5-waarde-in-de-gedeclareerde-eenheid" ~ir:(read (dir ^ "payload-in-another-unit/ir.json"))
+    ~case_data:(read (dir ^ "payload-in-another-unit/case.json")) (fun final ->
+      check "WV-9.5-waarde-in-de-gedeclareerde-eenheid: the payload restated into kg"
+        (match World.attr (World.get final "V") "gewicht" with
+        | Value.Ctor ("waarde", Some (Value.Num (q, _))) -> Q.equal q (Q.of_int 2000)
+        | _ -> false))
 
 (* WV-4.4-plaats-in-de-case: an ordered allocation without rounding over a pot
    of 100, the case listing Wc (wachtjaar 2020), Wa and Wb (both 2010, weights

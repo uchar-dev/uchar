@@ -119,6 +119,20 @@ class AbsenceMarkerWitnessTest {
         }
     }
 
+    /** A value written into an attribute with markers is a value of the declared payload datatype (ch. 9.1, WF-062): the
+     *  lading 2 t written into a gewicht in kg is restated into kg on both branches, and its reading is the reference
+     *  interpreter's trace line, on its fixture. Red before the restatement: both branches {@code FAIL ... expected
+     *  waarde(2000), actual waarde(2)}. */
+    @Test void a_payload_in_another_unit_is_restated_into_the_declared_one() throws Exception {
+        Path dir = FIXTURES.resolve("payload-in-another-unit");
+        BothBranches.green(dir.resolve("ir.json"), JSON.readTree(Files.readString(dir.resolve("case.json"))), "case.json");
+        String line = "reading /rules/rules/0/versions/0 \"V\" 0 Construct \"waarde\"(2000)";
+        for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
+            List<String> lines = CaseRunner.readings(dir.resolve("ir.json"), List.of(dir.resolve("case.json")), branch);
+            assertTrue(lines.contains(line), branch + " reads " + line + ": " + lines);
+        }
+    }
+
     /** Two constructor values are one where their tags are one declared name and their payloads one value, numbers by
      *  value (ch. 9.3), and their hash codes agree, since equal logical facts are one fact; a payload of another tag is
      *  leeg (ch. 9.5), and a leeg payload leaves the constructor value leeg (ch. 9.1). */
