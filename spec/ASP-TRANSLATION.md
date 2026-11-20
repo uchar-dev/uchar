@@ -2092,13 +2092,13 @@ propagates and its duration counts 0), so where the payload is leeg no atom
 binds and the `Construct` is leeg. ref holds the payload's number as computed,
 never fitted, so the term must stand at the scale of the declared payload
 datatype; a term at another scale (a sum of whole numbers into a payload of 2
-decimals), a payload in another unit than the declared one (2 t into a payload
-in kg, which ref restates into the declared unit) and a `Match` as payload are
-refused (CLINGO-006). Witnesses: the golden
-`jutterswet-opgave-afwezigheidsmarkers` (a date plus a parameter, a date plus
-7 dagen, a number verminderd met a product) and the fixtures of
+decimals), a payload in another unit than the declared one, computed or
+literal (2 t into a payload in kg, which ref restates into the declared unit,
+ch. 9.1) and a `Match` as payload are refused (CLINGO-006). Witnesses: the
+golden `jutterswet-opgave-afwezigheidsmarkers` (a date plus a parameter, a
+date plus 7 dagen, a number verminderd met a product) and the fixtures of
 `ref/test/fixtures/absence-markers` in the backend's suite (the leeg operands
-per operator, the three refusals).
+per operator, the four refusals).
 
 **Total match** (`Match`, ch. 9.2) lowers to **one rule per arm** into a
 `matchN(S,Result)` helper — the scrutinee's `val/3` atom carries the

@@ -9775,6 +9775,13 @@ leeg propagates — the whole `Construct` evaluates leeg (the ch. 1.3
 strict default; constructing "a grant of nothing" is not expressible,
 exactly as prioritized defaults never write leeg, ch. 7.1).
 
+The argument is a write into the declared payload (`IR-SPEC.md` WF-062):
+a number in another unit of the payload's unit system is restated into
+the payload's unit, as a value written into an attribute is restated
+into the attribute's (ch. 2.6). A `Construct waarde(lading)` with a
+`lading` of 2 t and a payload in kg is `waarde(2000)` (worked in
+ch. 9.5).
+
 Worked (the `jutterswet-beschikkingsom` anchor's declarations —
 `beschikking` = `Toegekend(bedrag: 2 decimals)` | `Afgewezen` |
 `Aangehouden`):
@@ -9995,35 +10002,36 @@ the alternative skips the markers as leeg contributors without a filter
 in the source; this chapter takes the filter, the reading of the decision
 "wie leest, toetst eerst".
 
-**An opgave above a computation.** The RegelSpraak dialect's opgave marker
-on an attribute with markers (`frontends/regelspraak/grammar/DIVERGENCES.md`
-§7) gives the opgave and the computation the sum type of the attribute, over
-its domain, so an opgave may itself be a marker. The defaults group of the
-marker (ch. 7.1, 7.11) passes on the value of the member that decides as it
-stands: a marker decides as a value does, and the opgave decides above a
-computed marker as above a computed value. The deviation compares the two as
-constructor values (ch. 9.3): both filled, a marker included, and a
-different tag or payload — a supplied date beside a computed marker, a
-supplied marker beside a computed date, two different markers. Two equal
-markers do not deviate, and an opgave beside an empty computation deposits
-nothing (decided by the maintainer 2026-11-20).
+**An opgave above a computation.** A consequence of a defaults group on an
+attribute with markers may be another attribute of the same sum type. The
+reference is read whole, without a `PayloadAccess`, so the group passes on
+the value that decides as it stands, a marker included (ch. 9.4, ch. 7.1;
+per day ch. 7.11). The RegelSpraak dialect's opgave marker on an attribute
+with markers lowers to this
+(`frontends/regelspraak/grammar/DIVERGENCES.md` §7): the opgave and the
+computation are attributes of the marked attribute's sum type, so an opgave
+may itself be a marker, and it decides above a computed marker as above a
+computed value. Whether an opgave deviates from the computation is the
+inequality of ch. 9.3 over the two, both filled: a value beside a marker, a
+marker beside a value, two different markers and two different values
+deviate; two equal markers and two equal values do not, and neither does an
+opgave beside a leeg computation.
 
 **Executed.** In ref, the ASP backend and both branches of the Drools
 backend: writing, a computed value included (a date plus a duration, an
-arithmetic of numbers), testing, reading the value in arithmetic, comparisons and
-a fold over members, scalar, per cell and in an object creation, the write
-and the test per period, the copy of a timeline and a defaults group on an
-attribute with markers whose consequences are members of its sum type, with
-an initialisation as its lowest default,
-scalar and per day, with the readings of ch. 5.12. Not executed, refused by name in all three: a `PayloadAccess` of a
-timeline, whose test per period is a gevuld test per period without a
-reading (ch. 3.12 row 5). The ASP backend and the Drools backend write a
-sum-typed timeline from a constructor of a literal and from a copy of an
-own timeline of the same sum type, and from nothing else. A value written
-in another unit than the declared one is held in the declared unit (ch. 9.1,
-WF-062 reads the value as a write, ch. 2.4). The ASP backend writes a computed value at the scale of the declared
-payload and refuses by name a value whose term stands at another scale, a
-value in another unit and a `Match` as the value (CLINGO-006).
+arithmetic of numbers), testing, reading the value in arithmetic,
+comparisons and a fold over members, scalar, per cell and in an object
+creation, the write and the test per period, the copy of a timeline, and a
+defaults group on an attribute with markers whose consequences are
+attributes of its sum type, with an initialisation as its lowest default,
+scalar and per day, with the readings of ch. 5.12. Not executed, refused by
+name in all three: a `PayloadAccess` of a timeline, whose test per period is
+a gevuld test per period without a reading (ch. 3.12 row 5). The ASP backend
+and the Drools backend write a sum-typed timeline from a constructor of a
+literal and from a copy of an own timeline of the same sum type, and from
+nothing else. The ASP backend refuses by name a computed value whose term
+stands at another scale than the declared payload, a value in another unit
+than the payload's, and a `Match` as the value (`ASP-TRANSLATION.md` S14).
 
 Worked examples (absolute; `ref/test/` verbatim, the golden
 `jutterswet-afwezigheidsmarkers` and its red twin
