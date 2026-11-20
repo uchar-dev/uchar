@@ -513,5 +513,13 @@ binaries.
   dus nog de waarde, onder een toets, en neemt een marker niet mee; dat is zo sinds de afwezigheidsmarkeringen en
   verandert de bestaande emissie niet. In clingo draagt de weigering van een andere schaal op regelniveau CLINGO-006 en
   in een gesloten lichaam geen code. In Drools (`declaredDomain`) en ref (`in_payload_unit`) staat een tak voor een
-  domein dat het document niet declareert; de verifier sluit dat uit (WF-088). De omgekeerde volgorde van de twee
-  markeringen geeft de gewone syntaxfout, zonder eigen melding.
+  domein dat het document niet declareert; de verifier sluit dat uit (WF-088).
+- **De omgekeerde volgorde krijgt een eigen melding** (besluit van de eigenaar, dezelfde dag). `(mag opgegeven worden)
+  (of onbekend)` gaf de gewone syntaxfout, terwijl de kaart zelf die volgorde als voorbeeld gaf. De grammatica laat een
+  markering na de opgavemarkering nu toe (`afwezigheidsmarkeringNaOpgave`), alleen zodat de resolver haar weigert met
+  RGS-461: "attribuut 'taxatie' van Vondst: '(of onbekend)' staat vóór '(mag opgegeven worden)', niet erna — schrijf
+  '(of onbekend) (mag opgegeven worden)' (dialect §7)". De declaratie wordt daarna in de goede volgorde gelezen, zodat
+  er geen tweede fout uit volgt. Test die dit omdraait: `AbsenceMarkerTest.a_marker_on_a_characteristic_or_after_the_
+  opgave_marker_is_a_syntax_error` (oud: RGS-091 voor beide) is gesplitst in `a_marker_on_a_characteristic_is_a_syntax_
+  error` (RGS-091) en `a_marking_after_the_opgave_marker_is_refused_with_the_right_order` (RGS-461, regel en zin).
+  Frontend-suite 1694 → 1695 tests; register 410 → 411 codes.
