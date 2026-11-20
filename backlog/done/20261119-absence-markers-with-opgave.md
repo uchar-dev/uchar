@@ -523,3 +523,6 @@ binaries.
   opgave_marker_is_a_syntax_error` (oud: RGS-091 voor beide) is gesplitst in `a_marker_on_a_characteristic_is_a_syntax_
   error` (RGS-091) en `a_marking_after_the_opgave_marker_is_refused_with_the_right_order` (RGS-461, regel en zin).
   Frontend-suite 1694 → 1695 tests; register 410 → 411 codes.
+
+`make gates` op `999d69f05`, groen (`out/gates/20261120-140516/`): `end 2026-11-20 14:24:49 1173s red=0`; clingo-suite
+2954 checks, frontend 1695 tests, gate 10 emitteert 220 goldens byte-gelijk. De commit hierna raakt alleen deze kaart.
