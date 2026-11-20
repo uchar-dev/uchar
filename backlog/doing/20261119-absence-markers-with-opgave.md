@@ -44,6 +44,25 @@ Normvragen voor de eigenaar, elk met een aanbeveling van de bouwer:
 1. Mag een opgave zelf een marker zijn ("de opgegeven herlevingsdatum is niet van toepassing")?
 2. Is een opgave met een datum tegenover een berekende marker een afwijkende opgave (de melding van §7), en omgekeerd?
 
+## Besluiten vóór de bouw (2026-11-20)
+
+Van de eigenaar, op de twee normvragen hierboven:
+
+- Een opgave mag zelf een marker zijn, voor elke marker die de declaratie van het attribuut toelaat: `opgegeven X` draagt
+  dezelfde markers als X.
+- Een opgave die verschilt van een gevulde berekening is een afwijkende opgave, ook waar een van de twee een marker is:
+  een opgegeven datum tegenover een berekende marker, een opgegeven marker tegenover een berekende datum, en twee
+  verschillende markers. Twee gelijke markers zijn gelijk. De reden: een marker is een gevulde waarde (RS ch. 9.5), dus
+  de voorwaarde van §7 (beide gevuld en ongelijk) beslist het zonder extra regel. Een opgave naast een lege berekening
+  geeft geen melding, zoals nu.
+
+Van de hoofdsessie, voorlopig, over de spelling in de bron:
+
+- De afwezigheidsmarkering staat vóór de opgavemarkering, in die ene volgorde: `Datum in dagen (of niet van toepassing)
+  (mag opgegeven worden)`, en na een tijdlijn `… voor elke maand (of onbekend) (mag opgegeven worden)`. De marker hoort
+  bij de waarden die het attribuut kan dragen; de opgavemarkering zegt daarna dat die waarde, een marker inbegrepen, mag
+  worden opgegeven. De omgekeerde volgorde blijft een syntaxfout.
+
 ## Acceptance
 
 - (a) Rood eerst: een golden met `source.rgs` en `scenario.rgs` en een attribuut met beide markeringen, scalair en per
