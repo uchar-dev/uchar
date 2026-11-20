@@ -535,8 +535,15 @@ public final class DefinitionResolver {
             ot.attributes.put(name, withUnit(datatypeOf(a.datatype(), a.domeinNaam()), a, name));
             if (a.meervoudsvorm() != null) ot.attributePlural.put(name, src(a.meervoudsvorm())); // §3.3, for §8.1.6
             // the absence markers (grammar/DIVERGENCES.md, "Afwezigheidsmarkeringen"), in their canonical order
-            if (a.afwezigheidsmarkering() != null) {
-                AfwezigheidsmarkeringContext marking = a.afwezigheidsmarkering();
+            AfwezigheidsmarkeringContext marking = a.afwezigheidsmarkering();
+            if (a.afwezigheidsmarkeringNaOpgave() != null) {
+                AfwezigheidsmarkeringContext after = a.afwezigheidsmarkeringNaOpgave().afwezigheidsmarkering();
+                error("RGS-461", params("attribute", name, "objectType", ot.name, "marking", after.getText(),
+                        "opgave", a.MAG_OPGEGEVEN_WORDEN().getText()), after.getStart().getLine());
+                // the declaration is read as written in the right order, so this one error stands alone
+                if (marking == null) marking = after;
+            }
+            if (marking != null) {
                 ot.attributeMarkers.put(name, marking.OF_ONBEKEND() != null ? List.of("onbekend")
                         : marking.OF_NIET_VAN_TOEPASSING() != null ? List.of("niet van toepassing")
                         : RegelSpraakModel.ABSENCE_MARKERS);

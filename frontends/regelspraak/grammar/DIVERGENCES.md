@@ -2309,8 +2309,9 @@ of the production keeps its place:
 ```
 
 The absence marking names the values the attribute can hold, and the opgave
-marker then says that such a value, a marker included, may be supplied; the
-other order is a syntax error. The grammar also admits
+marker then says that such a value, a marker included, may be supplied. The
+grammar admits the other order as well, so that the resolver refuses it with a
+message that names this one (RGS-461, "Afwezigheidsmarkeringen"). The grammar also admits
 it at the end of both alternatives of `kenmerkSpecificatie`, so that the
 resolver refuses it there with a message of its own instead of a bare syntax
 error. The token reserves no name word: `mag`, `opgegeven` and `worden` keep
@@ -2741,8 +2742,9 @@ Three new tokens, each a whole token with its parentheses like the opgave marker
 `OF_NIET_VAN_TOEPASSING` `'(of niet van toepassing)'` and `OF_ONBEKEND_OF_NIET_VAN_TOEPASSING` `'(of onbekend of niet
 van toepassing)'`; the parser rule `afwezigheidsmarkering` takes one of them. It stands in `attribuutSpecificatie`
 after the optional timeline and before the optional opgave marker (§7): an attribute carries a marking, the opgave
-marker, both in that order — `(of onbekend) (mag opgegeven worden)` — or neither. `(mag opgegeven worden) (of
-onbekend)` is a syntax error, and so is a marker on a characteristic, whose production does not take it. The tokens
+marker, both in that order — `(of onbekend) (mag opgegeven worden)` — or neither. The grammar admits a marking after
+the opgave marker too (`afwezigheidsmarkeringNaOpgave`), only so that the resolver can refuse it by name (RGS-461,
+below). A marker on a characteristic is a syntax error: its production does not take it. The tokens
 reserve no word: `of`, `onbekend`, `niet`, `van` and `toepassing` lex as before everywhere else.
 
 A rule writes a marker as the whole value of a gelijkstelling, "… moet gesteld worden op onbekend", "… op niet van
@@ -2795,7 +2797,11 @@ to X with its declared datatype, so the typing of a computation reads the value 
 
 ### Fail-fast refusals (resolver, loud diagnostics)
 
-One code, RGS-376: a read of the value of an attribute with markers without a test before it, the frontend's half of
+RGS-461: a marking after the opgave marker, `(mag opgegeven worden) (of onbekend)`. The ERROR names the attribute and
+the order to write, `(of onbekend) (mag opgegeven worden)`; the declaration is then read in that order, so no second
+error follows from it (witness: `AbsenceMarkerTest.a_marking_after_the_opgave_marker_is_refused_with_the_right_order`).
+
+RGS-376: a read of the value of an attribute with markers without a test before it, the frontend's half of
 WF-127, judged on the `PayloadAccess` nodes of the last pass. The test before it is a value test that holds as a
 conjunct before the read: of the condition of the rule for its value, earlier in the same `alle` for a read in a
 condition, of the subselection of the aggregation for its operand. The ERROR names the attribute, its type and the

@@ -366,17 +366,33 @@ class AbsenceMarkerTest {
     }
 
     /** The markers stand on an attribute, before the opgave marker and not after it. */
-    @Test void a_marker_on_a_characteristic_or_after_the_opgave_marker_is_a_syntax_error() {
+    @Test void a_marker_on_a_characteristic_is_a_syntax_error() {
         RegelSpraakModel k = Resolver.resolve("""
             Objecttype de Vondst (mv: Vondsten)
                 is drijfhout kenmerk (bijvoeglijk) (of onbekend);
             """);
         assertEquals("RGS-091", k.errors().get(0).code(), () -> "" + k.diagnostics);
+    }
+
+    /** The marking after the opgave marker is one error that names the right order, and the declaration is read in that
+     *  order, so no second error follows from it. */
+    @Test void a_marking_after_the_opgave_marker_is_refused_with_the_right_order() {
         RegelSpraakModel o = Resolver.resolve("""
             Objecttype de Vondst (mv: Vondsten)
+                de schatting Numeriek (getal met 2 decimalen);
                 de taxatie Numeriek (getal met 2 decimalen) (mag opgegeven worden) (of onbekend);
+
+            Regel taxatie uit schatting
+                geldig altijd
+                    De taxatie van een Vondst moet gesteld worden op zijn schatting.
             """);
-        assertEquals("RGS-091", o.errors().get(0).code(), () -> "" + o.diagnostics);
+        assertEquals(1, o.errors().size(), () -> "" + o.diagnostics);
+        Diagnostic d = o.errors().get(0);
+        assertEquals("RGS-461", d.code(), () -> "" + o.diagnostics);
+        assertEquals(3, d.line());
+        assertEquals("attribuut 'taxatie' van Vondst: '(of onbekend)' staat vóór '(mag opgegeven worden)', niet erna"
+                + " — schrijf '(of onbekend) (mag opgegeven worden)' (dialect §7)", d.message());
+        assertEquals(List.of("onbekend"), o.objectTypes.get("Vondst").markersOf("opgegeven taxatie"));
     }
 
     private static final String OPGAVE = """

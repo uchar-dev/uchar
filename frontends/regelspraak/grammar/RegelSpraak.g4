@@ -475,14 +475,18 @@ kenmerkSpecificatie
 // uchar DIALECT EXTENSION (grammar/DIVERGENCES.md, "Afwezigheidsmarkeringen"): the absence markers stand after the
 // optional timeline and before the opgave marker — the markers are among the values the attribute can hold, and the
 // opgave marker then says that such a value, a marker included, may be supplied; the resolver lowers the attribute to
-// a sum type.
+// a sum type. An absence marking after the opgave marker is admitted only so that the resolver can refuse it with a
+// message that names the right order instead of a bare syntax error.
 attribuutSpecificatie
     : bepaaldLidwoord? lowerNaam ( MV_START meervoudsvorm RPAREN )? benaming* ( datatype | domeinNaam ) ( MET_EENHEID eenheidExpressie )?
       COMMA? ( GEDIMENSIONEERD_MET dimensieNaam ( EN dimensieNaam )* )?
       tijdlijn?
       afwezigheidsmarkering?
-      MAG_OPGEGEVEN_WORDEN?
+      ( MAG_OPGEGEVEN_WORDEN afwezigheidsmarkeringNaOpgave? )?
       SEMICOLON?
+    ;
+afwezigheidsmarkeringNaOpgave
+    : afwezigheidsmarkering
     ;
 afwezigheidsmarkering
     : OF_ONBEKEND
