@@ -10009,15 +10009,20 @@ markers do not deviate, and an opgave beside an empty computation deposits
 nothing (decided by the maintainer 2026-11-20).
 
 **Executed.** In ref, the ASP backend and both branches of the Drools
-backend: writing, testing, reading the value in arithmetic, comparisons and
+backend: writing, a computed value included (a date plus a duration, an
+arithmetic of numbers), testing, reading the value in arithmetic, comparisons and
 a fold over members, scalar, per cell and in an object creation, the write
 and the test per period, the copy of a timeline and a defaults group on an
-attribute with markers whose consequences are members of its sum type,
+attribute with markers whose consequences are members of its sum type, with
+an initialisation as its lowest default,
 scalar and per day, with the readings of ch. 5.12. Not executed, refused by name in all three: a `PayloadAccess` of a
 timeline, whose test per period is a gevuld test per period without a
 reading (ch. 3.12 row 5). The ASP backend and the Drools backend write a
 sum-typed timeline from a constructor of a literal and from a copy of an
-own timeline of the same sum type, and from nothing else.
+own timeline of the same sum type, and from nothing else. The ASP backend
+writes a computed value at the scale of the declared payload and refuses by
+name a value whose term stands at another scale and a `Match` as the value
+(CLINGO-006).
 
 Worked examples (absolute; `ref/test/` verbatim, the golden
 `jutterswet-afwezigheidsmarkers` and its red twin
@@ -10114,31 +10119,45 @@ dat hij verkocht is", beside the writers of the opslagkosten above.
 
 The opgave (the golden `jutterswet-opgave-afwezigheidsmarkers`): a Vondst
 whose `teruggavedatum` (a date with both markers) is computed as "zijn
-claimdatum", "niet van toepassing indien hij drijfhout is" and "onbekend
-indien hij onleesbaar is", below the opgave, and whose `opslagkosten`
-(whole, for every month, the marker onbekend) are computed as onbekend on
-[2025-01-01, 2025-03-01) and 10 on [2025-03-01, 2025-07-01), below the
-opgave. A deviation deposits one fact `controle opgave teruggavedatum` × the
-Vondst (ch. 5.6).
+claimdatum plus de teruggavetermijn" (a parameter of 14 days), "niet van
+toepassing indien hij drijfhout is" and "onbekend indien hij onleesbaar is",
+below the opgave; whose `afhaaldatum` (a date, the marker niet van
+toepassing) is computed as "zijn claimdatum plus 7 dagen" and initialised on
+01-01-2026, below the opgave; whose `bergloon` (whole, the marker onbekend) is
+computed as "zijn gewicht verminderd met 2 maal zijn schade" and initialised
+on onbekend, below the opgave; and whose `opslagkosten` (whole, for every
+month, the marker onbekend) are computed as onbekend on [2025-01-01,
+2025-03-01) and 10 on [2025-03-01, 2025-07-01), below the opgave. A deviation
+deposits one fact `controle opgave X` × the Vondst (ch. 5.6).
 
 - `WV-9.5-opgave-berekende-marker`: drijfhout → teruggavedatum **niet van
   toepassing**, no deviation; `-datum-boven-marker`: drijfhout and the
   opgave 12-03-2026 → **waarde(2026-03-12)**, a deviation;
   `-marker-boven-datum`: claimdatum 10-03-2026 and the opgave niet van
-  toepassing → **niet van toepassing**, a deviation; `-dezelfde-marker`:
+  toepassing → **niet van toepassing**, the computation
+  **waarde(2026-03-24)**, a deviation; `-dezelfde-marker`:
   drijfhout and the opgave niet van toepassing → **niet van toepassing**, no
   deviation; `-andere-marker`: onleesbaar and the opgave niet van toepassing
   → **niet van toepassing**, a deviation; `-marker-zonder-berekening`: the
   opgave onbekend → **onbekend**, no deviation; `-datum-boven-datum`:
   claimdatum 10-03-2026 and the opgave 12-03-2026 → **waarde(2026-03-12)**, a
-  deviation; `-gelijke-datum`: both 10-03-2026 → **waarde(2026-03-10)**, no
-  deviation; `-niets`: no input → **leeg**, and the opslagkosten **onbekend**
-  on [2025-01-01, 2025-03-01) and **waarde(10)** on [2025-03-01, 2025-07-01).
+  deviation; `-gelijke-datum`: claimdatum 10-03-2026 and the opgave
+  24-03-2026 → **waarde(2026-03-24)**, no deviation; `-niets`: no input →
+  **leeg**, and the opslagkosten **onbekend** on [2025-01-01, 2025-03-01) and
+  **waarde(10)** on [2025-03-01, 2025-07-01).
 - `WV-9.5-opgave-per-maand`: the opgave of the opslagkosten waarde(4) on
   [2025-02-01, 2025-05-01) and onbekend on [2025-06-01, 2025-08-01) →
   **onbekend** on [2025-01-01, 2025-02-01), **waarde(4)** on [2025-02-01,
   2025-05-01), **waarde(10)** on [2025-05-01, 2025-06-01) and **onbekend** on
   [2025-06-01, 2025-08-01).
+- `WV-9.5-opgave-berekende-afhaaldatum`: claimdatum 10-03-2026 → afhaaldatum
+  **waarde(2026-03-17)**; `-afhaaldatum-zonder-claim`: no input → the
+  initialisation, **waarde(2026-01-01)**; `-marker-boven-initialisatie`: the
+  opgave niet van toepassing → **niet van toepassing**, no deviation.
+- `WV-9.5-opgave-berekend-bergloon`: gewicht 30 and schade 4 → bergloon
+  **waarde(22)**; `-bergloon-zonder-gewicht`: schade 4 → the computation
+  **leeg** (verminderd met propagates its left operand, ch. 1.2a), the
+  initialisation **onbekend**.
 
 ## 10. Folds and function values
 

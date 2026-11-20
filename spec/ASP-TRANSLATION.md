@@ -2076,6 +2076,28 @@ consequence is a copy of an own timeline of that sum type
 `Construct` is its civil day number (`construct_ground_term`), as a date
 payload of the case input is.
 
+**A computed payload at rule level** (RUNTIME-SEMANTICS ch. 9.1): the payload
+of a `Construct` that a rule writes is any expression `expr_term` translates —
+an attribute or parameter read, a date plus a duration, an arithmetic of
+those — and the functor wraps its term,
+
+```
+val(S,"berekende afhaaldatum",waarde(((D)+(7)))) :- isa(S,"vondst"), val(S,"claimdatum",D).
+```
+
+The payload's atoms bind exactly where ref reads its operands as values, the
+empty rule of each operator being `expr_term`'s own (ch. 1.2a: plus, min and
+maal count a leeg operand as 0, verminderd met propagates its left, a date
+propagates and its duration counts 0), so where the payload is leeg no atom
+binds and the `Construct` is leeg. ref holds the payload as computed, without
+restating it, so the term must stand at the scale of the declared payload
+datatype; a term at another scale (a sum of whole numbers into a payload of 2
+decimals) and a `Match` as payload are refused (CLINGO-006). Witnesses: the
+golden `jutterswet-opgave-afwezigheidsmarkers` (a date plus a parameter, a
+date plus 7 dagen, a number verminderd met a product) and the fixtures of
+`ref/test/fixtures/absence-markers` in the backend's suite (the leeg operands
+per operator, the two refusals).
+
 **Total match** (`Match`, ch. 9.2) lowers to **one rule per arm** into a
 `matchN(S,Result)` helper — the scrutinee's `val/3` atom carries the
 constructor **pattern**, so the functor itself selects the arm:
@@ -3204,9 +3226,12 @@ refusals and gave it a reason that was not the true one, and it counted the two
 closed-body arms as one, so the boundary it stated was wrong in both
 directions. Carried:
 
-- **(i) at RULE level** an own-subject attribute read rides its `val` atom —
-  the anchor's `herbeschikking` rule
-  `val(S,herbeschikking,toegekend(V)) :- …, val(S,borg,V)`.
+- **(i) at RULE level** the payload is the term `expr_term` gives it, at
+  the declared payload scale (S14, "A computed payload at rule level"): an
+  own-subject attribute read rides its `val` atom — the anchor's
+  `herbeschikking` rule `val(S,herbeschikking,toegekend(V)) :- …, val(S,borg,V)` —
+  and a parameter read, a date plus a duration and an arithmetic of those
+  bring their atoms the same way.
 - **(ii) in a BRANCHING closed body** — a fold STEP, a function body — the
   payload goes through `body_branches` and EACH branch is wrapped in the
   constructor functor (the reduce lowering's `present(⟨body⟩)` step, above).
@@ -3230,9 +3255,9 @@ artifact at all.
 
 Refused, each with its own true reason:
 
-- a **rule-level payload that is neither a literal nor an own-subject
-  attribute read** — a document parameter read, a `Match`, a composite.
-  No corpus case; the rule-level `Construct` arm carries only the two.
+- a **rule-level payload whose term stands at another scale than the
+  declared payload**, and a **`Match` as payload** (CLINGO-006). ref holds
+  the payload as computed and never restates it; no corpus case.
 - a **`Construct` with a bound payload in a ground-term position** — a
   sum-typed comparison operand, or a sum-typed operand inside a closed
   body. Those positions return a term and NO body atoms, so a payload
