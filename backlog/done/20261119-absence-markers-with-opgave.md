@@ -489,3 +489,29 @@ De hoofdsessie las beide Results en de diff van de code, de golden en de bescher
 `make gates` op `4d04a6b84`, groen (`out/gates/20261120-130820/`): `end 2026-11-20 13:21:59 819s red=0`. Suites in die
 run: ref 2806 uitgewerkte voorbeelden, clingo 2948 checks, frontend 1694 tests, Drools 1969 tests; gate 12 speelt 383
 goldens op beide branches. De commit hierna raakt alleen deze kaart.
+
+## Na de landing: lezing op methode en randgevallen (hoofdsessie, 2026-11-20)
+
+Op verzoek van de eigenaar las de hoofdsessie de gelande code tegendraads na en mat zij vier randgevallen op de gelande
+binaries.
+
+- **Opgelost.** Clingo schreef een payload in een andere eenheid ongewijzigd op twee plekken naast de regel: in de stap
+  van een fold (of het lichaam van een functie) en in de beginwaarde van een fold. Gemeten op twee documenten die de
+  verifier toelaat: `MISMATCH: V.gewicht = [waarde(2)], expected waarde(2000)`, waar ref `waarde(2000)` geeft. Geen
+  document van het corpus en geen frontend schrijft die vorm (0 van 615 documenten). Beide plekken weigeren nu bij naam
+  met dezelfde functie als de regel (`refuse_payload_in_another_unit`, CLINGO-006); getuigen: de fixtures
+  `payload-in-another-unit-in-a-fold-step` en `-in-a-fold-init` (clingo-suite 2948 → 2954 checks).
+- **Gemeten en in orde.** Een zelfgeschreven "zijn opgegeven X ongelijk is aan zijn berekende X" speelt gelijk in ref,
+  clingo en beide Drools-branches (een marker tegenover een datum, gelijke datums, alleen een berekening, beide leeg);
+  per periode weigeren alle drie de vergelijking met dezelfde reden (ch. 3.10). "Moet gesteld worden op 2 t" op een
+  attribuut in kg met markers, scalair en per periode, geeft in ref en Drools `waarde(2000)` en `waarde(3000)` en weigert
+  clingo bij naam; de frontend schrijft die vorm, dus de fix voor de literal van de landing was nodig. Een tijdlijn met
+  markers uit een tijdlijn in een andere eenheid weigeren alle drie bij naam. De opgavemarkering op een gedimensioneerd
+  attribuut weigert de frontend al.
+- **Gezien en gelaten.** De frontend snijdt de uitzondering op de naam van het attribuut: een verwijzing naar een ander
+  lid van het sum type van het doel gaat ongewijzigd door. Een kopie van hetzelfde attribuut van een ander object leest
+  dus nog de waarde, onder een toets, en neemt een marker niet mee; dat is zo sinds de afwezigheidsmarkeringen en
+  verandert de bestaande emissie niet. In clingo draagt de weigering van een andere schaal op regelniveau CLINGO-006 en
+  in een gesloten lichaam geen code. In Drools (`declaredDomain`) en ref (`in_payload_unit`) staat een tak voor een
+  domein dat het document niet declareert; de verifier sluit dat uit (WF-088). De omgekeerde volgorde van de twee
+  markeringen geeft de gewone syntaxfout, zonder eigen melding.
