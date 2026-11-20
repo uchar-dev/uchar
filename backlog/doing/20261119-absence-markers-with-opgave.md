@@ -56,7 +56,7 @@ Van de eigenaar, op de twee normvragen hierboven:
   de voorwaarde van §7 (beide gevuld en ongelijk) beslist het zonder extra regel. Een opgave naast een lege berekening
   geeft geen melding, zoals nu.
 
-Van de hoofdsessie, voorlopig, over de spelling in de bron:
+Van de eigenaar, over de spelling in de bron (voorgesteld door de hoofdsessie, akkoord op dezelfde dag):
 
 - De afwezigheidsmarkering staat vóór de opgavemarkering, in die ene volgorde: `Datum in dagen (of niet van toepassing)
   (mag opgegeven worden)`, en na een tijdlijn `… voor elke maand (of onbekend) (mag opgegeven worden)`. De marker hoort
