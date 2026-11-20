@@ -7389,13 +7389,21 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          ground — a nullary tag, or a literal payload scaled to the DECLARED
          payload datatype. *)
       ([], construct_ground_term ctx typ constructor_ argument, 0)
-  | Construct { typ; constructor_; argument = Some (Attribute_reference _ as arg); _ } -> (
-      (* ch. 9.1: a bound payload (an own attribute read) rides the argument's
-         own val atom, scaled to the DECLARED payload datatype; a leeg argument
-         binds no atom, so the rule does not fire and the whole Construct is
-         leeg — propagation for free. The scale of the constructor VALUE itself
-         is 0 (a sum term is not numeric); it is carried by [attr_sum_typed]'s
-         write path, never fitted. *)
+  | Construct { argument = Some (Match _); _ } ->
+      faultc "CLINGO-006"
+        "a Match as the payload of a Construct is not translated at rule level (no corpus case)"
+  | Construct { typ; constructor_; argument = Some arg; _ } -> (
+      (* ch. 9.1: a computed payload — an attribute or parameter read, a date
+         plus a duration, an arithmetic of those — is the term [expr_term]
+         gives it, wrapped in the functor. Its atoms bind only where ref's
+         operator reads the payload as a value, the leeg rule of each operator
+         being [expr_term]'s own (plus and min coalesce, verminderd met
+         propagates its left, a date propagates and its duration coalesces),
+         so where the payload is leeg the rule does not fire and the whole
+         Construct is leeg. ref holds the payload as computed and never
+         restates it, so the term must already stand at the scale of the
+         DECLARED payload datatype; a sum term itself is not numeric, scale 0,
+         carried by [attr_sum_typed]'s write path and never fitted. *)
       match ctor_payload_datatype (sum_constructors typ) constructor_ with
       | None -> fault "nullary constructor %S built with an argument" constructor_
       | Some d ->
@@ -7403,9 +7411,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           let payload_scale = pow10 (decimals_of_datatype (Some d)) in
           let atoms, term, scale = expr_term ctx ~subject ~subject_ot arg in
           if scale <> payload_scale then
-            fault
+            faultc "CLINGO-006"
               "a Construct payload at scale %d does not match the declared payload scale %d \
-               (rescaling a bound sum payload has no corpus case)"
+               (rescaling a computed payload has no corpus case)"
               scale payload_scale;
           (atoms, Printf.sprintf "%s(%s)" f term, 0))
   | Payload_access { base = Attribute_reference { attribute_ref = Some a; _ } as base; constructor_; typ; _ } ->
@@ -7427,10 +7435,6 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (atoms, v, value_scale typ)
   | Payload_access _ ->
       fault "a payload access is translated over an attribute read or a cell read (no corpus case for more)"
-  | Construct _ ->
-      faultc "CLINGO-006"
-        "a Construct payload other than a literal or an own attribute read is not translated at \
-         rule level (a parameter read, a Match or a composite payload has no corpus case)"
   | Match { typ; scrutinee; arms; _ } ->
       translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms
   | If_then_else { typ; condition; then_; else_; _ } ->

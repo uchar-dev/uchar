@@ -1214,8 +1214,10 @@ let plist_init_case =
 |}
 
 (* DOOR 2 — a rule-level Construct whose payload is a document PARAMETER
-   read. The rule-level Construct arm carries a literal and an own-attribute
-   read; anything else (a parameter, a Match, a composite) has no witness. *)
+   read. The rule-level Construct arm carries every payload [expr_term]
+   translates at the declared payload scale, so this door is carried: the
+   parameter's param/2 atom binds the payload (played below, after
+   [both_answer]). *)
 let param_payload_doc =
   split_doc
     ~attributes:(attribute_ref "meldpositie" meldstatus)
@@ -1238,7 +1240,9 @@ let param_payload_case =
       { "label": "M1", "objectType": "Meldplicht",
         "attributes": {}, "roles": {}, "characteristics": [] } ],
     "parameters": { "volle termijn": { "number": "30" } } },
-  "expected": [ { "kind": "consistent" } ] }
+  "expected": [ { "kind": "attributeValue", "label": "M1", "attribute": "meldpositie",
+      "value": { "constructor": "Openstaand", "payload": { "number": "30" } } },
+    { "kind": "consistent" } ] }
 |}
 
 (* DOOR 3 — a Construct with a bound payload as a sum-typed COMPARISON
@@ -1340,11 +1344,6 @@ let () =
        subjects' init facts collide on that one key and every subject reads every subject's \
        outcome — a wrong answer, not a missing one; a derived source (a mapped list) keeps the \
        subject in its id but has no corpus case";
-  faults_with ~name:"S19 via 2 (rule-level Construct with a parameter payload)"
-    ~ir:param_payload_doc ~case_text:param_payload_case
-    ~needle:
-      "a Construct payload other than a literal or an own attribute read is not translated at \
-       rule level (a parameter read, a Match or a composite payload has no corpus case)";
   faults_with ~name:"S19 via 3 (Construct with a bound payload as a sum-typed operand)"
     ~ir:sum_operand_doc ~case_text:sum_operand_case
     ~needle:
@@ -18882,7 +18881,33 @@ let () =
       "case6-opgegeven-marker-zonder-berekening"; "case7-opgegeven-datum-verdringt-berekende-datum";
       "case8-opgegeven-datum-gelijk-aan-berekende-datum"; "case9-niets"; "case10-opgave-per-maand" ];
   let ir, case_text = fixture "initialisation-under-the-opgave-marker" in
-  both_answer ~name:"absence markers: an initialisation with a marker and with a date literal" ~ir ~case_text
+  both_answer ~name:"absence markers: an initialisation with a marker and with a date literal" ~ir ~case_text;
+  both_answer ~name:"S19 door 2: a rule-level Construct with a parameter payload is carried" ~ir:param_payload_doc
+    ~case_text:param_payload_case;
+  (* a computed payload is leeg where ref's operator reads it leeg (RUNTIME-SEMANTICS ch. 9.1, 1.2a): plus, min and
+     maal read a leeg operand as 0, verminderd met propagates its left, a date propagates and its duration counts 0;
+     the payload a parameter read, and a date plus a parameter *)
+  let ir = read (dir ^ "empty-operands-of-a-computed-payload/ir.json") in
+  List.iter
+    (fun c ->
+      both_answer ~name:("absence markers: a computed payload, " ^ c) ~ir
+        ~case_text:(read (dir ^ "empty-operands-of-a-computed-payload/" ^ c ^ ".json")))
+    [ "case1-alles-gevuld"; "case2-links-leeg"; "case3-rechts-leeg"; "case4-beide-leeg" ];
+  (* ref holds a payload as computed, so a payload whose term stands at another scale than the declared payload (a sum
+     of whole numbers into a payload of 2 decimals) and a Match as payload are refused by name *)
+  List.iter
+    (fun (d, what) ->
+      let ir, case_text = fixture d in
+      let name = "absence markers: " ^ what in
+      verifier_clean ~name ~ir;
+      ref_matches ~name ~ir ~case_text;
+      let doc, case = load_pair ~ir ~case_text in
+      match translate doc case with
+      | (_ : string) -> check (name ^ ": expected a refusal, got a program") false
+      | exception Uchar_ref.Value.Fault { code; params; text } ->
+          check (name ^ ": CLINGO-006 (" ^ Uchar_ref.Value.report ~code text ^ ")") (code = Some "CLINGO-006" && params = []))
+    [ ("payload-at-another-scale", "a computed payload at another scale than the declared one is refused");
+      ("match-as-payload", "a Match as payload is refused") ]
 
 (* THE DAY NUMBERS THIS ENCODING HOLDS (RUNTIME-SEMANTICS ch. 3.8; card
    datumrekening-slaat-stil-om). A date step that would leave clingo's integers

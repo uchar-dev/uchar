@@ -1,0 +1,1211 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "a",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "b",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vinddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "duur",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "optelling",
+            "datatype": {
+              "node": "SumType",
+              "domain": "optelling van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "verschil",
+            "datatype": {
+              "node": "SumType",
+              "domain": "verschil van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "rest",
+            "datatype": {
+              "node": "SumType",
+              "domain": "rest van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "product",
+            "datatype": {
+              "node": "SumType",
+              "domain": "product van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "samenstelling",
+            "datatype": {
+              "node": "SumType",
+              "domain": "samenstelling van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "latere dag",
+            "datatype": {
+              "node": "SumType",
+              "domain": "latere dag van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Date",
+                    "precision": "day"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "eerdere dag",
+            "datatype": {
+              "node": "SumType",
+              "domain": "eerdere dag van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Date",
+                    "precision": "day"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wachtdag",
+            "datatype": {
+              "node": "SumType",
+              "domain": "wachtdag van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Date",
+                    "precision": "day"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "kopie",
+            "datatype": {
+              "node": "SumType",
+              "domain": "kopie van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified",
+                    "unit": [
+                      {
+                        "node": "Unit",
+                        "abbreviation": "dg",
+                        "canonical": "dg",
+                        "factorToCanonical": {
+                          "num": 1,
+                          "den": 1
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                }
+              ]
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "wachttijd",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified",
+          "unit": [
+            {
+              "node": "Unit",
+              "abbreviation": "dg",
+              "canonical": "dg",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "optelling van een Vondst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "waarde",
+              "payload": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              }
+            },
+            {
+              "name": "onbekend",
+              "payload": null
+            }
+          ]
+        }
+      },
+      {
+        "node": "Domain",
+        "name": "verschil van een Vondst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "waarde",
+              "payload": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              }
+            },
+            {
+              "name": "onbekend",
+              "payload": null
+            }
+          ]
+        }
+      },
+      {
+        "node": "Domain",
+        "name": "rest van een Vondst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "waarde",
+              "payload": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              }
+            },
+            {
+              "name": "onbekend",
+              "payload": null
+            }
+          ]
+        }
+      },
+      {
+        "node": "Domain",
+        "name": "product van een Vondst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "waarde",
+              "payload": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              }
+            },
+            {
+              "name": "onbekend",
+              "payload": null
+            }
+          ]
+        }
+      },
+      {
+        "node": "Domain",
+        "name": "samenstelling van een Vondst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "waarde",
+              "payload": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              }
+            },
+            {
+              "name": "onbekend",
+              "payload": null
+            }
+          ]
+        }
+      },
+      {
+        "node": "Domain",
+        "name": "latere dag van een Vondst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "waarde",
+              "payload": {
+                "node": "Date",
+                "precision": "day"
+              }
+            },
+            {
+              "name": "onbekend",
+              "payload": null
+            }
+          ]
+        }
+      },
+      {
+        "node": "Domain",
+        "name": "eerdere dag van een Vondst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "waarde",
+              "payload": {
+                "node": "Date",
+                "precision": "day"
+              }
+            },
+            {
+              "name": "onbekend",
+              "payload": null
+            }
+          ]
+        }
+      },
+      {
+        "node": "Domain",
+        "name": "wachtdag van een Vondst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "waarde",
+              "payload": {
+                "node": "Date",
+                "precision": "day"
+              }
+            },
+            {
+              "name": "onbekend",
+              "payload": null
+            }
+          ]
+        }
+      },
+      {
+        "node": "Domain",
+        "name": "kopie van een Vondst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "waarde",
+              "payload": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "dg",
+                    "canonical": "dg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "onbekend",
+              "payload": null
+            }
+          ]
+        }
+      }
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "optelling",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "optelling",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De optelling van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "optelling van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "waarde",
+              "argument": {
+                "node": "Binary",
+                "op": "plus",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "a",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn a"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "b",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn b"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "zijn a plus zijn b"
+                }
+              },
+              "source": {
+                "snippet": "zijn a plus zijn b"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "verschil",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "verschil",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het verschil van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "verschil van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "waarde",
+              "argument": {
+                "node": "Binary",
+                "op": "minus",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "a",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn a"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "b",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn b"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "zijn a min zijn b"
+                }
+              },
+              "source": {
+                "snippet": "zijn a min zijn b"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "rest",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "rest",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De rest van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "rest van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "waarde",
+              "argument": {
+                "node": "Binary",
+                "op": "reducedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "a",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn a"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "b",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn b"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "zijn a verminderd met zijn b"
+                }
+              },
+              "source": {
+                "snippet": "zijn a verminderd met zijn b"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "product",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "product",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het product van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "product van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "waarde",
+              "argument": {
+                "node": "Binary",
+                "op": "times",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "a",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn a"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "b",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn b"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "zijn a maal zijn b"
+                }
+              },
+              "source": {
+                "snippet": "zijn a maal zijn b"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "samenstelling",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "samenstelling",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De samenstelling van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "samenstelling van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "waarde",
+              "argument": {
+                "node": "Binary",
+                "op": "reducedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "a",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn a"
+                  }
+                },
+                "right": {
+                  "node": "Binary",
+                  "op": "times",
+                  "left": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "2"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "2"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "b",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn b"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "2 maal zijn b"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "zijn a verminderd met 2 maal zijn b"
+                }
+              },
+              "source": {
+                "snippet": "zijn a verminderd met 2 maal zijn b"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "latere dag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "latere dag",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De latere dag van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "latere dag van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Date",
+                      "precision": "day"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "waarde",
+              "argument": {
+                "node": "Binary",
+                "op": "plus",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "vinddag",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn vinddag"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "duur",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn duur"
+                  }
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "zijn vinddag plus zijn duur"
+                }
+              },
+              "source": {
+                "snippet": "zijn vinddag plus zijn duur"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "eerdere dag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "eerdere dag",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De eerdere dag van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "eerdere dag van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Date",
+                      "precision": "day"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "waarde",
+              "argument": {
+                "node": "Binary",
+                "op": "minus",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "vinddag",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn vinddag"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "duur",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn duur"
+                  }
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "zijn vinddag min zijn duur"
+                }
+              },
+              "source": {
+                "snippet": "zijn vinddag min zijn duur"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "wachtdag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "wachtdag",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De wachtdag van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "wachtdag van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Date",
+                      "precision": "day"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "waarde",
+              "argument": {
+                "node": "Binary",
+                "op": "plus",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "vinddag",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn vinddag"
+                  }
+                },
+                "right": {
+                  "node": "ParameterReference",
+                  "parameter": "wachttijd",
+                  "source": {
+                    "snippet": "de wachttijd"
+                  }
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "zijn vinddag plus de wachttijd"
+                }
+              },
+              "source": {
+                "snippet": "zijn vinddag plus de wachttijd"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "kopie",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "kopie",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De kopie van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "kopie van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified",
+                      "unit": [
+                        {
+                          "node": "Unit",
+                          "abbreviation": "dg",
+                          "canonical": "dg",
+                          "factorToCanonical": {
+                            "num": 1,
+                            "den": 1
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "waarde",
+              "argument": {
+                "node": "ParameterReference",
+                "parameter": "wachttijd",
+                "source": {
+                  "snippet": "de wachttijd"
+                }
+              },
+              "source": {
+                "snippet": "de wachttijd"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

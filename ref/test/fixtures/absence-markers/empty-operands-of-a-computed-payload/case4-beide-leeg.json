@@ -1,0 +1,91 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "wachttijd": {
+        "number": "5"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "optelling",
+      "value": {
+        "constructor": "waarde",
+        "payload": {
+          "number": "0"
+        }
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "verschil",
+      "value": {
+        "constructor": "waarde",
+        "payload": {
+          "number": "0"
+        }
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V",
+      "attribute": "rest"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "product",
+      "value": {
+        "constructor": "waarde",
+        "payload": {
+          "number": "0"
+        }
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V",
+      "attribute": "samenstelling"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V",
+      "attribute": "latere dag"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V",
+      "attribute": "eerdere dag"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V",
+      "attribute": "wachtdag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "kopie",
+      "value": {
+        "constructor": "waarde",
+        "payload": {
+          "number": "5"
+        }
+      }
+    }
+  ]
+}
