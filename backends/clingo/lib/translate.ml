@@ -10016,9 +10016,13 @@ and construct_ground_term ctx typ constructor_ argument =
   | Some _, None -> fault "unary constructor %S built without an argument" constructor_
   | Some d, Some (Literal { variant; _ }) ->
       ignore ctx;
-      Printf.sprintf "%s(%d)" f
-        (scaled_of_value ~decimals:(decimals_of_datatype (Some d))
-           (Value.Num (Value.q_of_lexeme (Ir_v0.Loader.literal_lexeme variant), Value.Unitless)))
+      (* a date literal is its day number, as a date payload of the case input is *)
+      let v =
+        match variant with
+        | Lv_date lex -> Value.date_of_iso lex
+        | _ -> Value.Num (Value.q_of_lexeme (Ir_v0.Loader.literal_lexeme variant), Value.Unitless)
+      in
+      Printf.sprintf "%s(%d)" f (scaled_of_value ~decimals:(decimals_of_datatype (Some d)) v)
   | Some _, Some _ ->
       faultc "CLINGO-012"
         "a Construct payload other than a literal is not a ground term (a payload that must be \
@@ -13758,7 +13762,11 @@ let translate_defaults_group ctx gidx ~owner
       let hi = Printf.sprintf "grp%d_has_input" gidx in
       head_body ctx (Printf.sprintf "%s(%s)" hi subject)
         [ base; Printf.sprintf "inputval(%s,%s,_)" subject (str target_name) ];
-      (pow10 (attr_decimals ctx ~otype:owner ~attr:target_name), Some hi)
+      (* a sum-typed target holds a ground constructor term, without a numeric scale (ch. 9.4: the defaults
+         carry over unchanged), and a consequence of that sum type rides in at scale 0 as well *)
+      ( (if attr_sum_typed ctx ~otype:owner ~attr:target_name then 0
+         else pow10 (attr_decimals ctx ~otype:owner ~attr:target_name)),
+        Some hi )
     end
   in
   let target_unbounded =

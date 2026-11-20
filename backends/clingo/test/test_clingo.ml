@@ -18868,7 +18868,21 @@ let () =
   faults_with ~name:"absence markers: a sum over the payloads of a timeline is refused" ~ir ~case_text
     ~needle:"a payload access to the time-dependent attribute \"opslagkosten\" is read per day";
   let ir, case_text = fixture "copy-of-a-timeline" in
-  both_answer ~name:"absence markers: a copy of a timeline with markers" ~ir ~case_text
+  both_answer ~name:"absence markers: a copy of a timeline with markers" ~ir ~case_text;
+  (* the opgave marker beside the markers (golden jutterswet-opgave-afwezigheidsmarkers): a defaults group on a
+     sum-typed target, scalar and per day, whose consequences are members of the target's sum type, and the deviation
+     of the two as sum values; and an initialisation of such a target with a marker and with a date literal, the
+     latter a day number like a date payload of the input *)
+  let g = "corpus/golden/jutterswet-opgave-afwezigheidsmarkers/" in
+  let ir = read (g ^ "ir.json") in
+  List.iter
+    (fun c -> both_answer ~name:("absence markers beside the opgave marker: " ^ c) ~ir ~case_text:(read (g ^ c ^ ".json")))
+    [ "case1-berekende-marker"; "case2-opgegeven-datum-verdringt-berekende-marker";
+      "case3-opgegeven-marker-verdringt-berekende-datum"; "case4-dezelfde-marker"; "case5-andere-marker";
+      "case6-opgegeven-marker-zonder-berekening"; "case7-opgegeven-datum-verdringt-berekende-datum";
+      "case8-opgegeven-datum-gelijk-aan-berekende-datum"; "case9-niets"; "case10-opgave-per-maand" ];
+  let ir, case_text = fixture "initialisation-under-the-opgave-marker" in
+  both_answer ~name:"absence markers: an initialisation with a marker and with a date literal" ~ir ~case_text
 
 (* THE DAY NUMBERS THIS ENCODING HOLDS (RUNTIME-SEMANTICS ch. 3.8; card
    datumrekening-slaat-stil-om). A date step that would leave clingo's integers

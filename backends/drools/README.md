@@ -437,10 +437,12 @@ of the target: its `Value` is the timeline of the days it decides, each segment 
 target's input stands on every other day, as beside a computing rule (below, "Writers per day"); a conflict deposits
 one EF-027 fact per key on the subject. In a build with readings each default reads its justification per period and
 its consequence where that holds on some day, and is `HOLDS` where it is at its turn on some day and `DISPLACED`
-where on none (ch. 5.12). Refused by name: a consequence that is no period arithmetic (DROOLS-105) and a target that
-is no number (DROOLS-303). Witnesses `TmsDefaultsPerDayWitnessTest` (the documents of
-`ref/test/fixtures/defaults-per-day` and the cases of `ref/test/fixtures/defaults-per-day-cases`), golden
-`jutterswet-opgave-per-periode`.
+where on none (ch. 5.12). On a target of a sum type a consequence is the copy of an own timeline of that sum type,
+and the root writes the constructor values it decides as they stand (`PeriodArithmetic.writtenValues`, ch. 9.4).
+Refused by name: a consequence that is no period arithmetic (DROOLS-105), and on a target that is no number a
+consequence that is no such copy (DROOLS-303). Witnesses `TmsDefaultsPerDayWitnessTest` (the documents of
+`ref/test/fixtures/defaults-per-day` and the cases of `ref/test/fixtures/defaults-per-day-cases`), goldens
+`jutterswet-opgave-per-periode` and `jutterswet-opgave-afwezigheidsmarkers`.
 
 **Who decided per period.** `decisionsOf` has no record of a stack per day, which decides per day and has no
 decider per object. `DroolsBackend.periodDecisionsOf(build, session)` gives, per object and per attribute on a
@@ -708,11 +710,13 @@ absence markers of the RegelSpraak dialect are such values, in an attribute and 
 timeline of a sum type a rule writes a constructor of a literal, or a copy of an own timeline of the same sum type,
 in the periods of its condition (`PeriodArithmetic.writtenValues`), a comparison with a constructor value is read per
 period (`PeriodCondition.whereEqual`), the input and the writers are read per day as on every timeline target, and
-the generated `Segment` holds the constructor value. Refused by name: a `Match` (DROOLS-021), the payload of a
+the generated `Segment` holds the constructor value. A defaults group on an attribute of a sum type passes on the
+value of a member of that sum type as it stands, scalar and per day: the opgave and the computation of the dialect's
+opgave marker on an attribute with markers. Refused by name: a `Match` (DROOLS-021), the payload of a
 timeline (DROOLS-314), whose reading per day this backend does not execute, and every other value on a timeline of a
 sum type (DROOLS-303). Witness `AbsenceMarkerWitnessTest`, goldens `jutterswet-afwezigheidsmarkers`,
-`jutterswet-afwezigheidsmarkers-cel`, `jutterswet-afwezigheidsmarkers-creatie` and
-`jutterswet-afwezigheidsmarkers-kopie`.
+`jutterswet-afwezigheidsmarkers-cel`, `jutterswet-afwezigheidsmarkers-creatie`,
+`jutterswet-afwezigheidsmarkers-kopie` and `jutterswet-opgave-afwezigheidsmarkers`.
 
 **Period arithmetic over all time.** A timeline divides all time (RUNTIME-SEMANTICS ch. 3.1), so a segment may have an
 open bound: in a `Period` an open `from` is `Period.OPEN_FROM` (`LocalDate.MIN`) and an open `to` `Period.OPEN_TO`

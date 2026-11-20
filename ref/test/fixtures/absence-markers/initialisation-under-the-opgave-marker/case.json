@@ -1,0 +1,40 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "teruggavedatum",
+      "value": {
+        "constructor": "onbekend"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "afhaaldatum",
+      "value": {
+        "constructor": "waarde",
+        "payload": {
+          "date": "2026-01-01"
+        }
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

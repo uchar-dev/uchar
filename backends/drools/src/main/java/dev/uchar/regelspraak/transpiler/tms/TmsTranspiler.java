@@ -1925,14 +1925,20 @@ public final class TmsTranspiler {
      *  copy of an own timeline of a sum type, whose values are constructor values. Refused by name as
      *  {@link #periodArithmetic} refuses. */
     private ProducedTimeline producedTimeline(Expr value, Member target, ObjectType subject, Reads reads) {
-        boolean copy = target.datatype() instanceof Datatype.SumType && value instanceof Expr.AttributeReference a
-                && a.attribute() != null && a.objectType() != null && subject.chain().contains(a.objectType())
-                && declared(subject, a.attribute(), false).time() != null;
+        boolean copy = copyOfOwnTimeline(value, target, subject);
         if (!target.datatype().isNumberLike() && !copy)
             throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(value.source())));
         Term timeline = periodOperand(value, target, subject, reads);
         if (!copy) periodUnit(periodUnitOf(value), unitCarrier(value), target.datatype().unitOf());
         return new ProducedTimeline(timeline, copy);
+    }
+
+    /** Whether {@code value} into {@code target} of {@code subject} is the copy of an own timeline of a sum type: a target
+     *  of a sum type and an own time-dependent attribute, which the verifier holds to the target's domain (WF-023). */
+    private boolean copyOfOwnTimeline(Expr value, Member target, ObjectType subject) {
+        return target.datatype() instanceof Datatype.SumType && value instanceof Expr.AttributeReference a
+                && a.attribute() != null && a.objectType() != null && subject.chain().contains(a.objectType())
+                && declared(subject, a.attribute(), false).time() != null;
     }
 
     /**
@@ -4540,7 +4546,10 @@ public final class TmsTranspiler {
         if (!isPeriodArithmetic(consequence))
             throw new Refusal(DroolsCode.TIME_TARGET_UNSUPPORTED_VALUE.reason("attribute", b.member.name(), "declarant",
                     b.member.declarant().name, "snippet", snippet(consequence.source())));
-        if (!b.member.datatype().isNumberLike())
+        // on a target of a sum type the consequence is the copy of an own timeline of that sum type: the opgave and the
+        // computation of the opgave marker on an attribute with markers (ch. 9.4)
+        boolean copy = copyOfOwnTimeline(consequence, b.member, k.levelOf());
+        if (!b.member.datatype().isNumberLike() && !copy)
             throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(consequence.source())));
         Reads reads = new Reads(k.levelOf());
         reads.addSubjectAlpha(concreteType(b.javaClass));
@@ -4559,7 +4568,7 @@ public final class TmsTranspiler {
         beginReading();
         Term periods = d.condition() == null ? null : periodCondition(d.condition(), b.member, reads);
         Term timeline = periodOperand(consequence, b.member, k.levelOf(), reads);
-        periodUnit(periodUnitOf(consequence), unitCarrier(consequence), b.member.datatype().unitOf());
+        if (!copy) periodUnit(periodUnitOf(consequence), unitCarrier(consequence), b.member.datatype().unitOf());
         // the days it may decide, each narrowing a Let whose empty binder ends the evaluation (ch. 7.11)
         Term value;
         Term within = periods;
@@ -4636,11 +4645,15 @@ public final class TmsTranspiler {
         Term roots = new Term.SlotValue(reads.outcomes(b.name, 0, chains, -1), null);
         reads.stop();
         Term reconciled = new Term.Call(StaticFunction.DAYS_RECONCILED, List.of(constant(b.targetForm), roots), null);
+        Term decided = new Term.Call(StaticFunction.DAYS_DECIDED_OF, List.of(reconciled), null);
+        // a target of a sum type holds constructor values, which carry no decimals to bound (ch. 9.4)
+        Term written = b.member.datatype() instanceof Datatype.SumType
+                ? new Term.Call(StaticFunction.PERIOD_WRITTEN_VALUES, List.of(decided), null)
+                : new Term.Call(StaticFunction.PERIOD_WRITTEN, List.of(decided, constant(ceiling(b.member.datatype())),
+                        constant(b.member.spelled())), null);
         if (key == null)
             return reads.rulePlan(b.name + ": eens wortel", reads.plan(TestItem.Role.CONDITION, null, Set.of()),
-                    new Consequence.Value(SUBJECT, b.member.key(), b.name, new Term.Call(StaticFunction.PERIOD_WRITTEN,
-                            List.of(new Term.Call(StaticFunction.DAYS_DECIDED_OF, List.of(reconciled), null),
-                                    constant(ceiling(b.member.datatype())), constant(b.member.spelled())), null),
+                    new Consequence.Value(SUBJECT, b.member.key(), b.name, written,
                             List.copyOf(use), reads.size(), false, false, null, new Consequence.FaultName(b.name, b.name),
                             Consequence.Insertion.LOGICAL));
         Term conflicted = new Term.Call(StaticFunction.DAYS_CONFLICTED, List.of(reconciled, constant(key)), null);

@@ -14111,6 +14111,34 @@ let () =
       ("WV-9.5-kopie-na-verkoop", "kopie", "case2-kopie-na-verkoop");
       ("WV-9.5-kopie-invoer-naast-de-kopie", "kopie", "case3-invoer-naast-de-kopie") ]
 
+(* WV-9.5-opgave: the opgave marker beside the absence markers (RUNTIME-SEMANTICS
+   ch. 9.5), on the golden jutterswet-opgave-afwezigheidsmarkers. The opgave and
+   the computation share the sum type of the teruggavedatum: a computed
+   niet van toepassing stands without an opgave; a supplied 12-03-2026 displaces
+   it, and a supplied niet van toepassing displaces a computed 10-03-2026, each
+   with the deviation; the same marker supplied and computed deviates not, a
+   supplied niet van toepassing beside a computed onbekend does; a supplied
+   onbekend beside an empty computation stands without it; a supplied date above
+   a computed one deviates where they differ and not where they are equal;
+   without both the teruggavedatum is leeg. The opslagkosten for every month are
+   onbekend in January and February 2025 and 10 from March to June; the opgave 4
+   from February to April and onbekend in June and July decides those days *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let g = "corpus/golden/jutterswet-opgave-afwezigheidsmarkers/" in
+  List.iter
+    (fun (ident, c) -> plays ~ident ~ir:(read (g ^ "ir.json")) ~case_data:(read (g ^ c ^ ".json")) (fun _ -> ()))
+    [ ("WV-9.5-opgave-berekende-marker", "case1-berekende-marker");
+      ("WV-9.5-opgave-datum-boven-marker", "case2-opgegeven-datum-verdringt-berekende-marker");
+      ("WV-9.5-opgave-marker-boven-datum", "case3-opgegeven-marker-verdringt-berekende-datum");
+      ("WV-9.5-opgave-dezelfde-marker", "case4-dezelfde-marker");
+      ("WV-9.5-opgave-andere-marker", "case5-andere-marker");
+      ("WV-9.5-opgave-marker-zonder-berekening", "case6-opgegeven-marker-zonder-berekening");
+      ("WV-9.5-opgave-datum-boven-datum", "case7-opgegeven-datum-verdringt-berekende-datum");
+      ("WV-9.5-opgave-gelijke-datum", "case8-opgegeven-datum-gelijk-aan-berekende-datum");
+      ("WV-9.5-opgave-niets", "case9-niets");
+      ("WV-9.5-opgave-per-maand", "case10-opgave-per-maand") ]
+
 (* WV-9.5-botsing: a marker decided against another value is the fault of two
    writers (EF-016), on a scalar target and per day, on the red twin
    jutterswet-afwezigheidsmarkers-botsing: the taxatie onbekend beside

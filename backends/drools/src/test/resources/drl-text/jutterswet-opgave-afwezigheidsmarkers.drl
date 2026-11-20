@@ -1,0 +1,477 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Decides;
+import dev.uchar.regelspraak.transpiler.tms.EmptyBarrier;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Outcome;
+import dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic;
+import dev.uchar.regelspraak.transpiler.tms.PeriodCondition;
+import dev.uchar.regelspraak.transpiler.tms.PeriodDefaults;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn claimdatum
+function Object waarde_teruggaveOpDeClaimdatum(Object $claimdatum) {
+    try {
+        return ComputeHelpers.construct("waarde", $claimdatum);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "teruggave op de claimdatum"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $claimdatum : claimdatum )
+then
+    Object v = waarde_teruggaveOpDeClaimdatum($claimdatum);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "teruggave op de claimdatum", ComputeHelpers.designate(v, "teruggave op de claimdatum")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "berekende teruggavedatum", false), v, "teruggave op de claimdatum"));
+        }
+    }
+end
+
+// hij drijfhout is
+function boolean toets_geenTeruggaveVanDrijfhout(Object $drijfhout) {
+    return ComputeHelpers.characteristic($drijfhout, Boolean.TRUE);
+}
+
+// niet van toepassing
+function Object waarde_geenTeruggaveVanDrijfhout() {
+    try {
+        return ComputeHelpers.constructorValue("niet van toepassing");
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "geen teruggave van drijfhout"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $drijfhout : (ComputeHelpers.holds(drijfhout)) )
+    eval( toets_geenTeruggaveVanDrijfhout($drijfhout) )
+then
+    Object v = waarde_geenTeruggaveVanDrijfhout();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "geen teruggave van drijfhout", ComputeHelpers.designate(v, "geen teruggave van drijfhout")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "berekende teruggavedatum", false), v, "geen teruggave van drijfhout"));
+        }
+    }
+end
+
+// hij onleesbaar is
+function boolean toets_teruggaveBijEenOnleesbaarEtiket(Object $onleesbaar) {
+    return ComputeHelpers.characteristic($onleesbaar, Boolean.TRUE);
+}
+
+// onbekend
+function Object waarde_teruggaveBijEenOnleesbaarEtiket() {
+    try {
+        return ComputeHelpers.constructorValue("onbekend");
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "teruggave bij een onleesbaar etiket"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $onleesbaar : (ComputeHelpers.holds(onleesbaar)) )
+    eval( toets_teruggaveBijEenOnleesbaarEtiket($onleesbaar) )
+then
+    Object v = waarde_teruggaveBijEenOnleesbaarEtiket();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "teruggave bij een onleesbaar etiket", ComputeHelpers.designate(v, "teruggave bij een onleesbaar etiket")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "berekende teruggavedatum", false), v, "teruggave bij een onleesbaar etiket"));
+        }
+    }
+end
+
+// onbekend
+function Object waarde_opslagOnbekendInDeWinter() {
+    try {
+        return PeriodArithmetic.writtenValues(PeriodArithmetic.clipped(PeriodCondition.window(java.time.LocalDate.parse("2025-01-01"), Boolean.TRUE, java.time.LocalDate.parse("2025-03-01"), Boolean.TRUE, Boolean.FALSE), PeriodArithmetic.scalar(ComputeHelpers.constructorValue("onbekend"))));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "opslag onbekend in de winter"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+then
+    Object v = waarde_opslagOnbekendInDeWinter();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "opslag onbekend in de winter", ComputeHelpers.designate(v, "opslag onbekend in de winter")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "berekende opslagkosten", false), v, "opslag onbekend in de winter"));
+        }
+    }
+end
+
+// 10
+function Object waarde_opslagInHetVoorjaar() {
+    try {
+        return PeriodArithmetic.writtenValues(PeriodArithmetic.clipped(PeriodCondition.window(java.time.LocalDate.parse("2025-03-01"), Boolean.TRUE, java.time.LocalDate.parse("2025-07-01"), Boolean.TRUE, Boolean.FALSE), PeriodArithmetic.scalar(ComputeHelpers.construct("waarde", new java.math.BigDecimal("10")))));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "opslag in het voorjaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+then
+    Object v = waarde_opslagInHetVoorjaar();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "opslag in het voorjaar", ComputeHelpers.designate(v, "opslag in het voorjaar")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "berekende opslagkosten", false), v, "opslag in het voorjaar"));
+        }
+    }
+end
+
+// hij aan alle volgende voorwaarden voldoet: - zijn opgegeven teruggavedatum is gevuld - zijn berekende teruggavedatum is gevuld - zijn opgegeven teruggavedatum is ongelijk aan zijn berekende teruggavedatum
+function boolean toets_afwijkingOpgaveTeruggavedatum(Object $opgegevenTeruggavedatum, Object $berekendeTeruggavedatum) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($opgegevenTeruggavedatum, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest($berekendeTeruggavedatum, Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.textEqual($opgegevenTeruggavedatum, $berekendeTeruggavedatum, Boolean.FALSE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+}
+
+rule "afwijking opgave teruggavedatum"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $opgegevenTeruggavedatum : opgegevenTeruggavedatum )
+    $stand_1 : State( attribute == ElementKey.of("vondst", "berekende teruggavedatum", false), subject == $onderwerp, $berekendeTeruggavedatum : value )
+    eval( toets_afwijkingOpgaveTeruggavedatum($opgegevenTeruggavedatum, $berekendeTeruggavedatum) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "afwijkende opgave teruggavedatum", true)));
+end
+
+// hij heeft geen afwijkende opgave teruggavedatum
+function boolean toets_controleOpgaveTeruggavedatum(Object $afwijkendeOpgaveTeruggavedatum) {
+    return ComputeHelpers.not(ComputeHelpers.characteristic($afwijkendeOpgaveTeruggavedatum, Boolean.FALSE));
+}
+
+rule "controle opgave teruggavedatum"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "afwijkende opgave teruggavedatum", true), subject == $onderwerp, $afwijkendeOpgaveTeruggavedatum : holds )
+    eval( toets_controleOpgaveTeruggavedatum($afwijkendeOpgaveTeruggavedatum) )
+then
+    insertLogical(ComputeHelpers.inconsistency("controle opgave teruggavedatum", $onderwerp, ComputeHelpers.list1("EF-025")));
+end
+
+rule "defaults A:Vondst.teruggavedatum: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $opgegevenTeruggavedatum : opgegevenTeruggavedatum )
+then
+    // zijn opgegeven teruggavedatum
+    Object v = $opgegevenTeruggavedatum;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "teruggavedatum", false), v, "defaults A:Vondst.teruggavedatum"));
+        insertLogical(new Decides($onderwerp, "defaults A:Vondst.teruggavedatum", 0));
+    }
+end
+
+rule "defaults A:Vondst.teruggavedatum: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst") )
+    $stand_0 : State( attribute == ElementKey.of("vondst", "berekende teruggavedatum", false), subject == $onderwerp, $berekendeTeruggavedatum : value )
+    not( $hoger_13 : Decides( stack == "defaults A:Vondst.teruggavedatum" && index < 1, subject == $onderwerp ) )
+then
+    // zijn berekende teruggavedatum
+    Object v = $berekendeTeruggavedatum;
+    if (v != null) {
+        insertLogical(new Value($onderwerp, ElementKey.of("vondst", "teruggavedatum", false), v, "defaults A:Vondst.teruggavedatum"));
+        insertLogical(new Decides($onderwerp, "defaults A:Vondst.teruggavedatum", 1));
+    }
+end
+
+function boolean toets_defaultsAVondstOpslagkostenDefault0() {
+    return PeriodDefaults.atTurn(PeriodDefaults.reach(null));
+}
+
+function Object afloop_defaultsAVondstOpslagkostenDefault0(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        return let_defaultsAVondstOpslagkostenDefault0($tijdlijn_0, $onderwerp);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+function Object let_defaultsAVondstOpslagkostenDefault0(Object $tijdlijn_0, Object $onderwerp) {
+    Object cel_2 = ComputeHelpers.binderCell();
+    try {
+        return PeriodDefaults.decided(binder_defaultsAVondstOpslagkostenDefault0($tijdlijn_0, $onderwerp, cel_2), ComputeHelpers.complete($tijdlijn_0, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"opgegeven opslagkosten\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "opgegeven opslagkosten", Boolean.TRUE));
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_2);
+    }
+}
+
+function Object binder_defaultsAVondstOpslagkostenDefault0(Object $tijdlijn_0, Object $onderwerp, Object cel_2) {
+    // altijd
+    if (!ComputeHelpers.binderCellFilled(cel_2)) {
+        ComputeHelpers.fillBinderCell(cel_2, PeriodDefaults.within(PeriodDefaults.reach(null), PeriodCondition.always(Boolean.valueOf(ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 0, 0)))));
+    }
+    return ComputeHelpers.binderValue(cel_2);
+}
+
+rule "defaults A:Vondst.opslagkosten: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst") )
+    $stand_0 : State( attribute == ElementKey.of("vondst", "opgegeven opslagkosten", false), subject == $onderwerp, $tijdlijn_0 : value )
+    eval( toets_defaultsAVondstOpslagkostenDefault0() )
+then
+    Object v = afloop_defaultsAVondstOpslagkostenDefault0($tijdlijn_0, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Vondst.opslagkosten", ComputeHelpers.designate(v, "defaults A:Vondst.opslagkosten")));
+    } else if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.opslagkosten", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function boolean toets_defaultsAVondstOpslagkostenDefault1(Object $uitkomsten_dagen_22) {
+    return PeriodDefaults.atTurn(PeriodDefaults.reach($uitkomsten_dagen_22));
+}
+
+function Object afloop_defaultsAVondstOpslagkostenDefault1(Object $uitkomsten_dagen_22, Object $tijdlijn_1, Object $onderwerp) {
+    try {
+        return let_defaultsAVondstOpslagkostenDefault1($uitkomsten_dagen_22, $tijdlijn_1, $onderwerp);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+function Object let_defaultsAVondstOpslagkostenDefault1(Object $uitkomsten_dagen_22, Object $tijdlijn_1, Object $onderwerp) {
+    Object cel_3 = ComputeHelpers.binderCell();
+    try {
+        return PeriodDefaults.decided(binder_defaultsAVondstOpslagkostenDefault1($uitkomsten_dagen_22, $tijdlijn_1, $onderwerp, cel_3), ComputeHelpers.complete($tijdlijn_1, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"berekende opslagkosten\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "berekende opslagkosten", Boolean.TRUE));
+    } catch (EmptyBarrier barriere) {
+        return ComputeHelpers.intercepted(barriere, cel_3);
+    }
+}
+
+function Object binder_defaultsAVondstOpslagkostenDefault1(Object $uitkomsten_dagen_22, Object $tijdlijn_1, Object $onderwerp, Object cel_3) {
+    // altijd
+    if (!ComputeHelpers.binderCellFilled(cel_3)) {
+        ComputeHelpers.fillBinderCell(cel_3, PeriodDefaults.within(PeriodDefaults.reach($uitkomsten_dagen_22), PeriodCondition.always(Boolean.valueOf(ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 0, 0)))));
+    }
+    return ComputeHelpers.binderValue(cel_3);
+}
+
+rule "defaults A:Vondst.opslagkosten: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst") )
+    accumulate( $uitkomst_dagen_21 : Outcome( stack == "defaults A:Vondst.opslagkosten" && chain >= 0 && chain < 1 && position < 1, subject == $onderwerp ); $uitkomsten_dagen_22 : collectList($uitkomst_dagen_21) )
+    $stand_1 : State( attribute == ElementKey.of("vondst", "berekende opslagkosten", false), subject == $onderwerp, $tijdlijn_1 : value )
+    eval( toets_defaultsAVondstOpslagkostenDefault1($uitkomsten_dagen_22) )
+then
+    Object v = afloop_defaultsAVondstOpslagkostenDefault1($uitkomsten_dagen_22, $tijdlijn_1, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Vondst.opslagkosten", ComputeHelpers.designate(v, "defaults A:Vondst.opslagkosten")));
+    } else if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.opslagkosten", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function Object waarde_defaultsAVondstOpslagkostenEensWortel(Object $uitkomsten_dagen_30) {
+    try {
+        return PeriodArithmetic.writtenValues(PeriodDefaults.decidedOf(PeriodDefaults.reconciled("Vondst.opslagkosten", $uitkomsten_dagen_30)));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Vondst.opslagkosten: eens wortel"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst") )
+    accumulate( $uitkomst_dagen_29 : Outcome( stack == "defaults A:Vondst.opslagkosten" && chain >= 0 && chain < 1, subject == $onderwerp ); $uitkomsten_dagen_30 : collectList($uitkomst_dagen_29) )
+then
+    Object v = waarde_defaultsAVondstOpslagkostenEensWortel($uitkomsten_dagen_30);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Vondst.opslagkosten", ComputeHelpers.designate(v, "defaults A:Vondst.opslagkosten")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "opslagkosten", false), v, "defaults A:Vondst.opslagkosten"));
+        }
+    }
+end
+
+function boolean toets_schrijversVondstBerekendeTeruggavedatumVerschil(Object $waarden) {
+    return ComputeHelpers.differ($waarden);
+}
+
+rule "schrijvers Vondst.berekende teruggavedatum: verschil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    accumulate( $waarde : Value( attribute == ElementKey.of("vondst", "berekende teruggavedatum", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+    eval( toets_schrijversVondstBerekendeTeruggavedatumVerschil($waarden) )
+then
+    insertLogical(ComputeHelpers.writersConflict($onderwerp, $waarden, "berekende teruggavedatum", ComputeHelpers.list6("teruggave op de claimdatum", "geen teruggave van drijfhout", "teruggave bij een onleesbaar etiket", "opslag onbekend in de winter", "opslag in het voorjaar", "afwijking opgave teruggavedatum"), ComputeHelpers.list1("Vondst"), ComputeHelpers.list1("Vondst")));
+end
+
+function boolean toets_schrijversVondstBerekendeOpslagkostenVerschil(Object $waarden) {
+    return ComputeHelpers.differ($waarden);
+}
+
+rule "schrijvers Vondst.berekende opslagkosten: verschil"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    accumulate( $waarde : Value( attribute == ElementKey.of("vondst", "berekende opslagkosten", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+    eval( toets_schrijversVondstBerekendeOpslagkostenVerschil($waarden) )
+then
+    insertLogical(ComputeHelpers.writersConflict($onderwerp, $waarden, "berekende opslagkosten", ComputeHelpers.list6("teruggave op de claimdatum", "geen teruggave van drijfhout", "teruggave bij een onleesbaar etiket", "opslag onbekend in de winter", "opslag in het voorjaar", "afwijking opgave teruggavedatum"), ComputeHelpers.list1("Vondst"), ComputeHelpers.list1("Vondst")));
+end
+
+rule "stand Vondst.berekende teruggavedatum: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $waarde : Value( attribute == ElementKey.of("vondst", "berekende teruggavedatum", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "berekende teruggavedatum", false), $v));
+end
+
+rule "stand Vondst.berekende teruggavedatum: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : berekendeTeruggavedatum )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "berekende teruggavedatum", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "berekende teruggavedatum", false), $invoer));
+end
+
+rule "kenmerkstand Vondst.afwijkende opgave teruggavedatum: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(afwijkendeOpgaveTeruggavedatum) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "afwijkende opgave teruggavedatum", true), true));
+end
+
+rule "kenmerkstand Vondst.afwijkende opgave teruggavedatum: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "afwijkende opgave teruggavedatum", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "afwijkende opgave teruggavedatum", true), true));
+end
+
+rule "kenmerkstand Vondst.afwijkende opgave teruggavedatum: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(afwijkendeOpgaveTeruggavedatum) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "afwijkende opgave teruggavedatum", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "afwijkende opgave teruggavedatum", true), false));
+end
+
+rule "stand Vondst.opgegeven opslagkosten: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : (ComputeHelpers.periods(opgegevenOpslagkosten)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("vondst", "opgegeven opslagkosten", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "opgegeven opslagkosten", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "opgegeven opslagkosten", false), $invoer));
+end
+
+rule "stand Vondst.opgegeven opslagkosten: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : (ComputeHelpers.periods(opgegevenOpslagkosten)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("vondst", "opgegeven opslagkosten", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "opgegeven opslagkosten", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "opgegeven opslagkosten", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
+rule "stand Vondst.berekende opslagkosten: de vereniging van de schrijvers"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : (ComputeHelpers.periods(berekendeOpslagkosten)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("vondst", "berekende opslagkosten", false), subject == $onderwerp ) )
+    exists( $schrijver : Value( attribute == ElementKey.of("vondst", "berekende opslagkosten", false), subject == $onderwerp ) )
+    accumulate( $waarde : Value( attribute == ElementKey.of("vondst", "berekende opslagkosten", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+then
+    insertLogical(ComputeHelpers.writersUnion($onderwerp, ElementKey.of("vondst", "berekende opslagkosten", false), $waarden, $invoer, ComputeHelpers.list6("teruggave op de claimdatum", "geen teruggave van drijfhout", "teruggave bij een onleesbaar etiket", "opslag onbekend in de winter", "opslag in het voorjaar", "afwijking opgave teruggavedatum")));
+end
+
+rule "stand Vondst.berekende opslagkosten: de vereniging van de schrijvers, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("vondst", "berekende opslagkosten", false), subject == $onderwerp ) )
+    exists( $schrijver : Value( attribute == ElementKey.of("vondst", "berekende opslagkosten", false), subject == $onderwerp ) )
+    accumulate( $waarde : Value( attribute == ElementKey.of("vondst", "berekende opslagkosten", false), subject == $onderwerp ); $waarden : collectList($waarde) )
+then
+    insertLogical(ComputeHelpers.writersUnion($onderwerp, ElementKey.of("vondst", "berekende opslagkosten", false), $waarden, null, ComputeHelpers.list6("teruggave op de claimdatum", "geen teruggave van drijfhout", "teruggave bij een onleesbaar etiket", "opslag onbekend in de winter", "opslag in het voorjaar", "afwijking opgave teruggavedatum")));
+end
+
+rule "stand Vondst.berekende opslagkosten: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : (ComputeHelpers.periods(berekendeOpslagkosten)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("vondst", "berekende opslagkosten", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "berekende opslagkosten", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "berekende opslagkosten", false), $invoer));
+end
+
+rule "stand Vondst.berekende opslagkosten: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : (ComputeHelpers.periods(berekendeOpslagkosten)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("vondst", "berekende opslagkosten", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "berekende opslagkosten", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "berekende opslagkosten", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+
