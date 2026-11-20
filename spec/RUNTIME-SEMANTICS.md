@@ -10019,10 +10019,11 @@ scalar and per day, with the readings of ch. 5.12. Not executed, refused by name
 timeline, whose test per period is a gevuld test per period without a
 reading (ch. 3.12 row 5). The ASP backend and the Drools backend write a
 sum-typed timeline from a constructor of a literal and from a copy of an
-own timeline of the same sum type, and from nothing else. The ASP backend
-writes a computed value at the scale of the declared payload and refuses by
-name a value whose term stands at another scale and a `Match` as the value
-(CLINGO-006).
+own timeline of the same sum type, and from nothing else. A value written
+in another unit than the declared one is held in the declared unit (ch. 9.1,
+WF-062 reads the value as a write, ch. 2.4). The ASP backend writes a computed value at the scale of the declared
+payload and refuses by name a value whose term stands at another scale, a
+value in another unit and a `Match` as the value (CLINGO-006).
 
 Worked examples (absolute; `ref/test/` verbatim, the golden
 `jutterswet-afwezigheidsmarkers` and its red twin
@@ -10158,6 +10159,14 @@ deposits one fact `controle opgave X` × the Vondst (ch. 5.6).
   **waarde(22)**; `-bergloon-zonder-gewicht`: schade 4 → the computation
   **leeg** (verminderd met propagates its left operand, ch. 1.2a), the
   initialisation **onbekend**.
+
+A value in another unit (the fixture
+`ref/test/fixtures/absence-markers/payload-in-another-unit`): a Vondst whose
+`gewicht` (whole, in kg, the marker onbekend) is computed as "zijn lading", a
+whole number in t.
+
+- `WV-9.5-waarde-in-de-gedeclareerde-eenheid`: lading 2 t → gewicht
+  **waarde(2000)**, in kg.
 
 ## 10. Folds and function values
 

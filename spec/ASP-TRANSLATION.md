@@ -2089,14 +2089,16 @@ The payload's atoms bind exactly where ref reads its operands as values, the
 empty rule of each operator being `expr_term`'s own (ch. 1.2a: plus, min and
 maal count a leeg operand as 0, verminderd met propagates its left, a date
 propagates and its duration counts 0), so where the payload is leeg no atom
-binds and the `Construct` is leeg. ref holds the payload as computed, without
-restating it, so the term must stand at the scale of the declared payload
+binds and the `Construct` is leeg. ref holds the payload's number as computed,
+never fitted, so the term must stand at the scale of the declared payload
 datatype; a term at another scale (a sum of whole numbers into a payload of 2
-decimals) and a `Match` as payload are refused (CLINGO-006). Witnesses: the
-golden `jutterswet-opgave-afwezigheidsmarkers` (a date plus a parameter, a
-date plus 7 dagen, a number verminderd met a product) and the fixtures of
+decimals), a payload in another unit than the declared one (2 t into a payload
+in kg, which ref restates into the declared unit) and a `Match` as payload are
+refused (CLINGO-006). Witnesses: the golden
+`jutterswet-opgave-afwezigheidsmarkers` (a date plus a parameter, a date plus
+7 dagen, a number verminderd met a product) and the fixtures of
 `ref/test/fixtures/absence-markers` in the backend's suite (the leeg operands
-per operator, the two refusals).
+per operator, the three refusals).
 
 **Total match** (`Match`, ch. 9.2) lowers to **one rule per arm** into a
 `matchN(S,Result)` helper — the scrutinee's `val/3` atom carries the
@@ -3256,8 +3258,10 @@ artifact at all.
 Refused, each with its own true reason:
 
 - a **rule-level payload whose term stands at another scale than the
-  declared payload**, and a **`Match` as payload** (CLINGO-006). ref holds
-  the payload as computed and never restates it; no corpus case.
+  declared payload**, a **payload in another unit than the declared one**
+  and a **`Match` as payload** (CLINGO-006). ref holds the payload's number
+  as computed, never fitted, and restates its unit into the declared one;
+  no corpus case.
 - a **`Construct` with a bound payload in a ground-term position** — a
   sum-typed comparison operand, or a sum-typed operand inside a closed
   body. Those positions return a term and NO body atoms, so a payload
