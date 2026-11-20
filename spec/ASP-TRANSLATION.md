@@ -2098,7 +2098,7 @@ ch. 9.1) and a `Match` as payload are refused (CLINGO-006). Witnesses: the
 golden `jutterswet-opgave-afwezigheidsmarkers` (a date plus a parameter, a
 date plus 7 dagen, a number verminderd met a product) and the fixtures of
 `ref/test/fixtures/absence-markers` in the backend's suite (the leeg operands
-per operator, the four refusals).
+per operator, the refusals).
 
 **Total match** (`Match`, ch. 9.2) lowers to **one rule per arm** into a
 `matchN(S,Result)` helper — the scrutinee's `val/3` atom carries the
@@ -3258,10 +3258,12 @@ artifact at all.
 Refused, each with its own true reason:
 
 - a **rule-level payload whose term stands at another scale than the
-  declared payload**, a **payload in another unit than the declared one**
-  and a **`Match` as payload** (CLINGO-006). ref holds the payload's number
-  as computed, never fitted, and restates its unit into the declared one;
-  no corpus case.
+  declared payload** and a **`Match` as payload** (CLINGO-006), and a
+  **payload in another unit than the declared one** in every position
+  that writes a bound or literal payload: at rule level, in the step of a
+  fold or the body of a function, and in the initial value of a fold
+  (CLINGO-006). ref holds the payload's number as computed, never fitted,
+  and restates its unit into the declared one; no corpus case.
 - a **`Construct` with a bound payload in a ground-term position** — a
   sum-typed comparison operand, or a sum-typed operand inside a closed
   body. Those positions return a term and NO body atoms, so a payload
