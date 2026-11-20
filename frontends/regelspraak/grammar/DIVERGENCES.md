@@ -3810,8 +3810,8 @@ written by hand, each refusal of a cell, and the semantic tokens of a cell)
 and `ScenarioAbsenceMarkerTest` (a marker and a value of an attribute with
 markers as input and as expectation, scalar and per segment, in a case file
 written by hand, each refusal of RGS-377 on its line, and the semantic tokens
-of a marker). The corpus: 41 goldens carry a `scenario.rgs` beside their
-`source.rgs` (counted 2026-11-05) whose lowering reproduces their pinned case
+of a marker). The corpus: 47 goldens carry a `scenario.rgs` beside their
+`source.rgs` (counted 2026-11-20) whose lowering reproduces their pinned case
 files, and whose scenario route reproduces their `ir.json`, byte for byte —
 the handwritten expectations are the anchor —, among them
 `ww-herleving-inkomen-rgs`, `jutterswet-uitsluiting-rgs`,
