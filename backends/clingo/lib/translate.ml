@@ -5218,6 +5218,20 @@ let fault_where_reached ctx ~subject ~subject_ot ~code (node : expr) reason =
   guard ();
   beside_hoisted_arms ctx node guard
 
+(* ref restates the payload of a Construct in another unit into the unit of
+   the declared payload [d] (ch. 9.1; WF-062 reads the argument as a write).
+   The encoding holds the payload's term or lexeme as it stands, so a payload
+   [arg] in another unit, computed or literal, is refused: unrestated it
+   would be a wrong number in the declared unit. *)
+let refuse_payload_in_another_unit ctx (d : datatype) (arg : expr) =
+  match (d, eff_unit ctx arg) with
+  | (Number { measure_unit = Some u; _ } | Percentage { measure_unit = Some u; _ }), Some v
+    when (not (Ir_v0.Units.identical u v)) && not (Normalise.same_quantity u v) ->
+      faultc "CLINGO-006"
+        "a Construct payload in another unit than the declared payload's is not restated \
+         (ref restates it into the declared unit; no corpus case)"
+  | _ -> ()
+
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
   (* the rounding's mark is for its base alone, the node translated first here *)
   let calendar_ok = ctx.calendar_rounding in
@@ -7417,13 +7431,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
               "a Construct payload at scale %d does not match the declared payload scale %d \
                (rescaling a computed payload has no corpus case)"
               scale payload_scale;
-          (match (d, eff_unit ctx arg) with
-          | (Number { measure_unit = Some u; _ } | Percentage { measure_unit = Some u; _ }), Some v
-            when (not (Ir_v0.Units.identical u v)) && not (Normalise.same_quantity u v) ->
-              faultc "CLINGO-006"
-                "a Construct payload in another unit than the declared payload's is not restated \
-                 (ref restates it into the declared unit; no corpus case)"
-          | _ -> ());
+          refuse_payload_in_another_unit ctx d arg;
           (atoms, Printf.sprintf "%s(%s)" f term, 0))
   | Payload_access { base = Attribute_reference { attribute_ref = Some a; _ } as base; constructor_; typ; _ } ->
       (* ch. 9.5: the payload is a member of its own, which a projection rule
@@ -10027,8 +10035,8 @@ and construct_ground_term ctx typ constructor_ argument =
   | None, None -> f
   | None, Some _ -> fault "nullary constructor %S built with an argument" constructor_
   | Some _, None -> fault "unary constructor %S built without an argument" constructor_
-  | Some d, Some (Literal { variant; _ }) ->
-      ignore ctx;
+  | Some d, Some (Literal { variant; _ } as literal) ->
+      refuse_payload_in_another_unit ctx d literal;
       (* a date literal is its day number, as a date payload of the case input is *)
       let v =
         match variant with

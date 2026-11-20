@@ -4,7 +4,7 @@ CLINGO-002	fallback	text-operand-shape		symbolic_term
 CLINGO-003	fallback	gedurende-condition-shape		expr_term
 CLINGO-004	fallback	temporal-read-base-shape		expr_term
 CLINGO-005	refusal	clamp-bound-not-literal	bound	expr_term
-CLINGO-006	fallback	construct-payload-rule-level		expr_term
+CLINGO-006	fallback	construct-payload-rule-level		expr_term,refuse_payload_in_another_unit
 CLINGO-007	refusal	sum-over-listed-operands		expr_term
 CLINGO-008	fallback	expression-node-kind		expr_term
 CLINGO-009	fallback	datum-tijd-term-shape		dt_term
