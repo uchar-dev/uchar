@@ -1640,7 +1640,9 @@ EXPECTED_CHANNEL=(
 # 381 with jutterswet-percentage-plus-percentage: the sum of two percentages is a percentage (RUNTIME-SEMANTICS ch. 2.6;
 # PLAYED 1).
 # 382 with jutterswet-vondsten-van-de-meester: a one-step range with a role as anchor runs through that role (PLAYED 1).
-EXPECTED_PLAYED=382
+# 383 with jutterswet-opgave-afwezigheidsmarkers: the opgave marker beside the absence markers, a defaults group on a
+# sum-typed target that passes on the members of its sum type, scalar and per day (RUNTIME-SEMANTICS ch. 9.5; PLAYED 10).
+EXPECTED_PLAYED=383
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
