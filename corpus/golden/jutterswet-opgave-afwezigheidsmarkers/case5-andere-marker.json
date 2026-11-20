@@ -1,0 +1,50 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V",
+        "objectType": "Vondst",
+        "attributes": {
+          "opgegeven teruggavedatum": {
+            "constructor": "niet van toepassing"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "onleesbaar"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "teruggavedatum",
+      "value": {
+        "constructor": "niet van toepassing"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "berekende teruggavedatum",
+      "value": {
+        "constructor": "onbekend"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V",
+      "characteristic": "afwijkende opgave teruggavedatum"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "controle opgave teruggavedatum",
+      "label": "V"
+    }
+  ]
+}

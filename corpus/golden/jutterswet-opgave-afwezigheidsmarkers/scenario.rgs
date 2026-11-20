@@ -1,0 +1,108 @@
+Scenario berekende marker
+Gegeven is de volgende situatie:
+een Vondst V
+- is drijfhout
+Met als verwacht resultaat:
+- de teruggavedatum van V is niet van toepassing
+- de berekende teruggavedatum van V is niet van toepassing
+- V heeft geen afwijkende opgave teruggavedatum
+- de gegevens zijn consistent
+
+Scenario opgegeven datum verdringt berekende marker
+Gegeven is de volgende situatie:
+een Vondst V
+- is drijfhout
+- de opgegeven teruggavedatum is 12-03-2026
+Met als verwacht resultaat:
+- de teruggavedatum van V is 12-03-2026
+- de berekende teruggavedatum van V is niet van toepassing
+- V heeft afwijkende opgave teruggavedatum
+- de gegevens zijn inconsistent volgens "controle opgave teruggavedatum" voor V
+
+Scenario opgegeven marker verdringt berekende datum
+Gegeven is de volgende situatie:
+een Vondst V
+- de claimdatum is 10-03-2026
+- de opgegeven teruggavedatum is niet van toepassing
+Met als verwacht resultaat:
+- de teruggavedatum van V is niet van toepassing
+- de berekende teruggavedatum van V is 10-03-2026
+- V heeft afwijkende opgave teruggavedatum
+- de gegevens zijn inconsistent volgens "controle opgave teruggavedatum" voor V
+
+Scenario dezelfde marker
+Gegeven is de volgende situatie:
+een Vondst V
+- is drijfhout
+- de opgegeven teruggavedatum is niet van toepassing
+Met als verwacht resultaat:
+- de teruggavedatum van V is niet van toepassing
+- de berekende teruggavedatum van V is niet van toepassing
+- V heeft geen afwijkende opgave teruggavedatum
+- de gegevens zijn consistent
+
+Scenario andere marker
+Gegeven is de volgende situatie:
+een Vondst V
+- is onleesbaar
+- de opgegeven teruggavedatum is niet van toepassing
+Met als verwacht resultaat:
+- de teruggavedatum van V is niet van toepassing
+- de berekende teruggavedatum van V is onbekend
+- V heeft afwijkende opgave teruggavedatum
+- de gegevens zijn inconsistent volgens "controle opgave teruggavedatum" voor V
+
+Scenario opgegeven marker zonder berekening
+Gegeven is de volgende situatie:
+een Vondst V
+- de opgegeven teruggavedatum is onbekend
+Met als verwacht resultaat:
+- de teruggavedatum van V is onbekend
+- de berekende teruggavedatum van V is leeg
+- V heeft geen afwijkende opgave teruggavedatum
+- de gegevens zijn consistent
+
+Scenario opgegeven datum verdringt berekende datum
+Gegeven is de volgende situatie:
+een Vondst V
+- de claimdatum is 10-03-2026
+- de opgegeven teruggavedatum is 12-03-2026
+Met als verwacht resultaat:
+- de teruggavedatum van V is 12-03-2026
+- de berekende teruggavedatum van V is 10-03-2026
+- V heeft afwijkende opgave teruggavedatum
+- de gegevens zijn inconsistent volgens "controle opgave teruggavedatum" voor V
+
+Scenario opgegeven datum gelijk aan berekende datum
+Gegeven is de volgende situatie:
+een Vondst V
+- de claimdatum is 10-03-2026
+- de opgegeven teruggavedatum is 10-03-2026
+Met als verwacht resultaat:
+- de teruggavedatum van V is 10-03-2026
+- de berekende teruggavedatum van V is 10-03-2026
+- V heeft geen afwijkende opgave teruggavedatum
+- de gegevens zijn consistent
+
+Scenario niets
+Gegeven is de volgende situatie:
+een Vondst V
+Met als verwacht resultaat:
+- de teruggavedatum van V is leeg
+- de berekende teruggavedatum van V is leeg
+- V heeft geen afwijkende opgave teruggavedatum
+- de opslagkosten van V is onbekend van 01-01-2025 tot 01-03-2025
+- de opslagkosten van V is 10 van 01-03-2025 tot 01-07-2025
+- de gegevens zijn consistent
+
+Scenario opgave per maand
+Gegeven is de volgende situatie:
+een Vondst V
+- de opgegeven opslagkosten is 4 van 01-02-2025 tot 01-05-2025
+- de opgegeven opslagkosten is onbekend van 01-06-2025 tot 01-08-2025
+Met als verwacht resultaat:
+- de opslagkosten van V is onbekend van 01-01-2025 tot 01-02-2025
+- de opslagkosten van V is 4 van 01-02-2025 tot 01-05-2025
+- de opslagkosten van V is 10 van 01-05-2025 tot 01-06-2025
+- de opslagkosten van V is onbekend van 01-06-2025 tot 01-08-2025
+- de gegevens zijn consistent

@@ -1,0 +1,33 @@
+Objecttype de Vondst (mv: Vondsten)
+    de claimdatum Datum in dagen;
+    de teruggavedatum Datum in dagen (of onbekend of niet van toepassing) (mag opgegeven worden);
+    de opslagkosten Numeriek (geheel getal) voor elke maand (of onbekend) (mag opgegeven worden);
+    is drijfhout kenmerk (bijvoeglijk);
+    is onleesbaar kenmerk (bijvoeglijk);
+
+// Bron: art. 3h lid 1
+Regel teruggave op de claimdatum
+    geldig altijd
+        De teruggavedatum van een Vondst moet gesteld worden op zijn claimdatum.
+
+// Bron: art. 3h lid 2
+Regel geen teruggave van drijfhout
+    geldig altijd
+        De teruggavedatum van een Vondst moet gesteld worden op niet van toepassing
+        indien hij drijfhout is.
+
+// Bron: art. 3h lid 3
+Regel teruggave bij een onleesbaar etiket
+    geldig altijd
+        De teruggavedatum van een Vondst moet gesteld worden op onbekend
+        indien hij onleesbaar is.
+
+// Bron: art. 3h lid 4
+Regel opslag onbekend in de winter
+    geldig altijd
+        De opslagkosten van een Vondst moet gesteld worden op onbekend van dd. 01-01-2025 tot dd. 01-03-2025.
+
+// Bron: art. 3h lid 4
+Regel opslag in het voorjaar
+    geldig altijd
+        De opslagkosten van een Vondst moet gesteld worden op 10 van dd. 01-03-2025 tot dd. 01-07-2025.

@@ -51,5 +51,5 @@ Case1 and case2 are the worked example of RUNTIME-SEMANTICS ch. 7.11
 justified on the days the input leaves empty, so it does not decide January and
 February, where the input 7 stands.
 
-Every case plays in ref and in the ASP backend. The Drools backend refuses the
-golden on both branches (DROOLS-271), and gate 12 lists it in its channel.
+Every case plays in ref, in the ASP backend and on both branches of the Drools
+backend.

@@ -1,0 +1,942 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "claimdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "teruggavedatum",
+            "datatype": {
+              "node": "SumType",
+              "domain": "teruggavedatum van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Date",
+                    "precision": "day"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                },
+                {
+                  "name": "niet van toepassing",
+                  "payload": null
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opgegeven teruggavedatum",
+            "datatype": {
+              "node": "SumType",
+              "domain": "teruggavedatum van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Date",
+                    "precision": "day"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                },
+                {
+                  "name": "niet van toepassing",
+                  "payload": null
+                }
+              ]
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "teruggavedatum"
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "berekende teruggavedatum",
+            "datatype": {
+              "node": "SumType",
+              "domain": "teruggavedatum van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Date",
+                    "precision": "day"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                },
+                {
+                  "name": "niet van toepassing",
+                  "payload": null
+                }
+              ]
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "teruggavedatum"
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opslagkosten",
+            "datatype": {
+              "node": "SumType",
+              "domain": "opslagkosten van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                }
+              ]
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opgegeven opslagkosten",
+            "datatype": {
+              "node": "SumType",
+              "domain": "opslagkosten van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                }
+              ]
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "opslagkosten"
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "berekende opslagkosten",
+            "datatype": {
+              "node": "SumType",
+              "domain": "opslagkosten van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                }
+              ]
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "opslagkosten"
+              }
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "drijfhout",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "onleesbaar",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "afwijkende opgave teruggavedatum",
+            "kind": "possessive",
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "teruggavedatum"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "teruggavedatum van een Vondst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "waarde",
+              "payload": {
+                "node": "Date",
+                "precision": "day"
+              }
+            },
+            {
+              "name": "onbekend",
+              "payload": null
+            },
+            {
+              "name": "niet van toepassing",
+              "payload": null
+            }
+          ]
+        }
+      },
+      {
+        "node": "Domain",
+        "name": "opslagkosten van een Vondst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "waarde",
+              "payload": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              }
+            },
+            {
+              "name": "onbekend",
+              "payload": null
+            }
+          ]
+        }
+      }
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "teruggave op de claimdatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "berekende teruggavedatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De teruggavedatum van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "teruggavedatum van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Date",
+                      "precision": "day"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  },
+                  {
+                    "name": "niet van toepassing",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "waarde",
+              "argument": {
+                "node": "AttributeReference",
+                "attribute": "claimdatum",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn claimdatum"
+                }
+              },
+              "source": {
+                "snippet": "zijn claimdatum"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3h lid 1"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "geen teruggave van drijfhout",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "berekende teruggavedatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De teruggavedatum van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "teruggavedatum van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Date",
+                      "precision": "day"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  },
+                  {
+                    "name": "niet van toepassing",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "niet van toepassing",
+              "argument": null,
+              "source": {
+                "snippet": "niet van toepassing"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "drijfhout",
+              "negated": false,
+              "source": {
+                "snippet": "hij drijfhout is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3h lid 2"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "teruggave bij een onleesbaar etiket",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "berekende teruggavedatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De teruggavedatum van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "teruggavedatum van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Date",
+                      "precision": "day"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  },
+                  {
+                    "name": "niet van toepassing",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "onbekend",
+              "argument": null,
+              "source": {
+                "snippet": "onbekend"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "onleesbaar",
+              "negated": false,
+              "source": {
+                "snippet": "hij onleesbaar is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3h lid 3"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "opslag onbekend in de winter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "berekende opslagkosten",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De opslagkosten van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "opslagkosten van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "onbekend",
+              "argument": null,
+              "source": {
+                "snippet": "onbekend"
+              }
+            },
+            "condition": {
+              "node": "TimeWindow",
+              "from": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-01-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-01-2025"
+                }
+              },
+              "to": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-03-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-03-2025"
+                }
+              },
+              "toInclusive": false,
+              "source": {
+                "snippet": "van dd. 01-01-2025 tot dd. 01-03-2025"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3h lid 4"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "opslag in het voorjaar",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "berekende opslagkosten",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De opslagkosten van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "opslagkosten van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "waarde",
+              "argument": {
+                "node": "Literal",
+                "value": {
+                  "number": "10"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "10"
+                }
+              },
+              "source": {
+                "snippet": "10"
+              }
+            },
+            "condition": {
+              "node": "TimeWindow",
+              "from": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-03-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-03-2025"
+                }
+              },
+              "to": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-07-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-07-2025"
+                }
+              },
+              "toInclusive": false,
+              "source": {
+                "snippet": "van dd. 01-03-2025 tot dd. 01-07-2025"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3h lid 4"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "afwijking opgave teruggavedatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "afwijkende opgave teruggavedatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst heeft afwijkende opgave teruggavedatum"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven teruggavedatum",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn opgegeven teruggavedatum"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn opgegeven teruggavedatum is gevuld"
+                  }
+                },
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende teruggavedatum",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn berekende teruggavedatum"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn berekende teruggavedatum is gevuld"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven teruggavedatum",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn opgegeven teruggavedatum"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende teruggavedatum",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn berekende teruggavedatum"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn opgegeven teruggavedatum is ongelijk aan zijn berekende teruggavedatum"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven teruggavedatum is gevuld - zijn berekende teruggavedatum is gevuld - zijn opgegeven teruggavedatum is ongelijk aan zijn berekende teruggavedatum"
+              }
+            },
+            "initialisation": false
+          }
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "teruggavedatum"
+          }
+        }
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [
+      {
+        "node": "Consistency",
+        "name": "controle opgave teruggavedatum",
+        "versions": [
+          {
+            "subject": "Vondst",
+            "assertion": {
+              "node": "CharacteristicCheck",
+              "characteristic": "afwijkende opgave teruggavedatum",
+              "negated": true,
+              "source": {
+                "snippet": "hij heeft geen afwijkende opgave teruggavedatum"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "de teruggavedatum Datum in dagen (of onbekend of niet van toepassing) (mag opgegeven worden)",
+              "line": 3
+            }
+          }
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "teruggavedatum"
+          }
+        }
+      }
+    ],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "opgave boven berekening teruggavedatum",
+        "subject": "Vondst",
+        "attribute": "teruggavedatum",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "opgegeven teruggavedatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn opgegeven teruggavedatum"
+              }
+            },
+            "source": {
+              "snippet": "opgegeven teruggavedatum"
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "berekende teruggavedatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn berekende teruggavedatum"
+              }
+            },
+            "source": {
+              "snippet": "berekende teruggavedatum"
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        },
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "teruggavedatum"
+          }
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "opgave boven berekening opslagkosten",
+        "subject": "Vondst",
+        "attribute": "opslagkosten",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "opgegeven opslagkosten",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn opgegeven opslagkosten"
+              }
+            },
+            "source": {
+              "snippet": "opgegeven opslagkosten"
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "berekende opslagkosten",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn berekende opslagkosten"
+              }
+            },
+            "source": {
+              "snippet": "berekende opslagkosten"
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        },
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "opslagkosten"
+          }
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}
