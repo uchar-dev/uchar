@@ -2066,6 +2066,16 @@ segment term with the ground term (`period_condition`); an ordering
 over it is refused. The model check reads a timeline expectation of
 constructor values through the same `ctor_value_term`.
 
+**A defaults group on a sum-typed target** (RUNTIME-SEMANTICS ch. 9.4, 9.5;
+the dialect's opgave marker on an attribute with markers) carries its
+decisions at scale 0: a consequence is a `Construct`, a ground term, or the
+`val/3` term of a member of the same sum type, so the scalar group writes
+the term as it stands (`translate_defaults_group`), and per day a
+consequence is a copy of an own timeline of that sum type
+(`translate_defaults_timeline`). A date literal as the payload of a
+`Construct` is its civil day number (`construct_ground_term`), as a date
+payload of the case input is.
+
 **Total match** (`Match`, ch. 9.2) lowers to **one rule per arm** into a
 `matchN(S,Result)` helper — the scrutinee's `val/3` atom carries the
 constructor **pattern**, so the functor itself selects the arm:
