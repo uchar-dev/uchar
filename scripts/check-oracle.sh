@@ -71,7 +71,7 @@ EXPECTED_MIN_PRESERVED_CASES=784    # 2026-11-21: measured 784 (check 5: their c
 PRESERVATION_MUTANT=jutterswet-leeg-deeltal
 
 EXPECTED_MIN_MONOTONE_RUNS=2255     # 2026-11-21: measured 2255 (check 6: runs without one input compared with the case; 2254 while context-value-behind-a-failing-condition case1 faulted past its open actief)
-EXPECTED_MIN_MONOTONE_CLOSURES=401  # 2026-11-22: measured 401 (check 6: runs without one input in which a closure decided, counted apart; 443 while the opgave of the goldens with an opgave marker was open without a value and their initialisation closed over it: declared complete, it is settled leeg, so of those 42 runs the 27 without the opgave count as no input member's and the 15 without another input are compared)
+EXPECTED_MIN_MONOTONE_CLOSURES=401  # 2026-11-22: measured 401 (check 6: runs without one input in which a closure decided, counted apart; 443 while the opgave of the goldens with an opgave marker was open without a value and their initialisation closed over it: declared complete, it is settled leeg, so of those 42 runs the 27 without the opgave count as a member not open without its value and the 15 without another input are compared)
 
 # check 6's own red row: a run in which a closure decided, compared all the same, must lose an outcome. Measured
 # 2026-11-21: jutterswet-afleiden-uit-leeg case1 without the taxatie of V1, where "ongetaxeerd indien zijn taxatie leeg
@@ -305,11 +305,12 @@ fi
 # session faults, `closures <n>`, those applied before the fault). The run without the input keeps every outcome of
 # its end state in the other: each of its lines that is not open stands there; a member it has no line for (settled
 # leeg, or standing not to hold) has none there either; a link or an object the other adds lies on a relation it has
-# open. A run in which the member left out is not open is no input member's (a value the case gives a derived member,
-# ch. 1.5) and is counted apart, and so is a run in which a closure decided, the exception ch. 1.5 names: the leg does
-# not assign outcomes to the closure, it leaves that whole run out. Every other difference fails by name unless
-# MONOTONE_GAPS lists it; the comparison passes rows of its own, and the run of MONOTONE_MUTANT, compared all the same,
-# must lose an outcome. The runs go in one batch, one runner per core, and are judged in corpus order.
+# open. A run in which the member left out is not open without its value (a value the case gives a derived member, or
+# a member declared complete, ch. 1.5) is counted apart, and so is a run in which a closure decided, the exception
+# ch. 1.5 names: the leg does not assign outcomes to the closure, it leaves that whole run out. Every other difference
+# fails by name unless MONOTONE_GAPS lists it; the comparison passes rows of its own, and the run of MONOTONE_MUTANT,
+# compared all the same, must lose an outcome. The runs go in one batch, one runner per core, and are judged in corpus
+# order.
 if ! python3 -I - "$list" "$work" <<'PYEOF'
 import collections, copy, json, os, sys
 
@@ -573,7 +574,7 @@ if problems:
     sys.stderr.write("".join("check-oracle: FAIL (monotonicity) — %s\n" % p for p in problems))
     sys.exit(1)
 print("monotonicity: %d cases, %d runs without one input compared, floor %d, %d with a closure apart, floor %d, %d of "
-      "no input member; %d listed gap(s) of ch. 1.5; %d comparison rows; red row: %s loses %d outcome(s)"
+      "a member not open without its value; %d listed gap(s) of ch. 1.5; %d comparison rows; red row: %s loses %d outcome(s)"
       % (counts["cases"], counts["runs"], min_runs, counts["closures"], min_closures, counts["derived"], len(gaps),
          len(rows), mutant, len(mutant_lost)))
 PYEOF
