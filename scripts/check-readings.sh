@@ -18,7 +18,8 @@
 #
 # Checks:
 #   1. ref builds, and `runner --trace` reads every golden case file, also of a golden the backend does
-#      not carry: a trace that faults or refuses fails the gate;
+#      not carry: a trace that faults or refuses fails the gate, unless TRACE_REFUSED below names the golden
+#      with the code of the refusal;
 #   2. the backend jar is fresh or rebuilt (scripts/lib/drools-jar.sh). Per golden with case files, on
 #      both branches, `--readings [--drl]` ends in `READINGS <n>`, n its number of case files, or in
 #      `EXCLUDE`, and both branches end in the same line. A golden the readings exclude is one the replay
@@ -98,6 +99,17 @@ READINGS_ERROR_KNOWN=(
 # (2026-11-12): on every case file both branches read, the two executors end in the same state.
 STATE_DEVIATIONS=(
 )
+# A golden whose trace ref refuses by name, with the code of the refusal: '<golden>|REF-###|<reason>'. Every case
+# file of a listed golden ends its trace with exit 1, the report `EVALUATION FAULT: <code>: …` and no line on standard
+# output; the golden is then compared with nothing, so the backend's readings must exclude it as well (check 2). A
+# refused trace of a golden the list does not name fails (check 1), and so does a listed golden that traces a case
+# file, refuses with another code, or has no case file under corpus/golden (stale). A document with inferFromEmpty
+# false is played by ref (RUNTIME-SEMANTICS ch. 1.5), but the reading at the fixpoint of an undetermined condition and
+# of an open member (ch. 5.12, 5.12a) is not defined yet, so `runner --trace` refuses it with REF-014, form `reading`
+# (card open-values-in-ref, 2026-11-21).
+TRACE_REFUSED=(
+  "jutterswet-afleiden-uit-leeg|REF-014|the document carries inferFromEmpty false: ref plays its four cases (gate 5) and refuses the readings at the fixpoint, form reading; both Drools branches exclude the golden with DROOLS-370"
+)
 
 # --- monotone floors (maintainer decision 2026-09-09) --------------------------------------------------
 # Lower bounds, never equalities: they catch SHRINK — a comparison that quietly reads half — while growth
@@ -153,8 +165,19 @@ while IFS= read -r ir; do
     || fail "cannot list the case files of $ir into $work"
 done < "$work/goldens"
 
+# --- the list of refused traces, read once: each entry three fields, a REF code, a reason, a golden named once ---
+declare -A trace_refused=()
+for e in "${TRACE_REFUSED[@]+"${TRACE_REFUSED[@]}"}"; do
+  IFS='|' read -r t_name t_code t_why <<< "$e"
+  [ -n "$t_name" ] && [ -n "${t_why// /}" ] || fail "TRACE_REFUSED entry without a golden or a reason: '$e'"
+  [[ "$t_code" =~ ^REF-[0-9]{3}$ ]] || fail "TRACE_REFUSED entry '$t_name' pins '$t_code', which is no REF code"
+  [ -z "${trace_refused[$t_name]+x}" ] || fail "TRACE_REFUSED names '$t_name' twice — the first entry would silently win"
+  trace_refused[$t_name]=$t_code
+done
+declare -A trace_refused_seen=()
+
 # --- 1 and 2: the trace and the readings, per golden ----------------------------------------------------
-n_traced=0; nocase=''
+n_traced=0; n_trace_refused=0; nocase=''
 start=$(date +%s)
 # One process per core for the traces (the runner is single-threaded), one per two cores for the JVMs (a
 # replay JVM with PARALLEL_JVM_FLAGS uses 1.5 cores; the measurement is in scripts/lib/parallel.sh). The tasks
@@ -199,15 +222,33 @@ while IFS= read -r ir; do
   file=$(printf '%s' "$name" | tr / _).txt
   : > "$work/ref/$file"
   ncases=0
+  refused_code=${trace_refused[$name]-}
   for c in $cases; do
     ncases=$((ncases + 1))
+    rc=$(cat "$work/traces/$i.$ncases.rc")
+    if [ -n "$refused_code" ]; then
+      [ "$rc" != 0 ] || fail "$name: TRACE_REFUSED lists it with $refused_code, but ref traces $c — the entry is stale, remove it"
+      head=$(head -1 "$work/traces/$i.$ncases.err")
+      case "$head" in
+        "EVALUATION FAULT: $refused_code: "*) ;;
+        *) fail "$name: TRACE_REFUSED lists it with $refused_code, but the trace of $c ends in exit $rc and '$head'" ;;
+      esac
+      [ "$rc" = 1 ] || fail "$name: the refused trace of $c ends in exit $rc, not 1"
+      [ ! -s "$work/traces/$i.$ncases.out" ] || fail "$name: the refused trace of $c wrote lines on standard output"
+      continue
+    fi
     echo "case $(basename "$c")" >> "$work/ref/$file"
     cat "$work/traces/$i.$ncases.out" >> "$work/ref/$file"
-    if [ "$(cat "$work/traces/$i.$ncases.rc")" != 0 ]; then
+    if [ "$rc" != 0 ]; then
       fail "ref does not trace $c: $(tail -3 "$work/traces/$i.$ncases.err")"
     fi
   done
-  n_traced=$((n_traced + ncases))
+  if [ -n "$refused_code" ]; then
+    trace_refused_seen[$name]=1
+    n_trace_refused=$((n_trace_refused + ncases))
+  else
+    n_traced=$((n_traced + ncases))
+  fi
   mv "$work/readings/exec.$i.out" "$work/exec/$file" && mv "$work/readings/drl.$i.out" "$work/drl/$file" \
     || fail "$name: cannot move its readings into $work"
   exec_last=$(tail -1 "$work/exec/$file"); drl_last=$(tail -1 "$work/drl/$file")
@@ -229,9 +270,20 @@ while IFS= read -r ir; do
       fi ;;
     *) fail "$name: the readings end in '$exec_last' — neither READINGS nor EXCLUDE" ;;
   esac
+  # a golden whose trace ref refuses is compared with nothing, so the backend must not read it either
+  if [ -n "$refused_code" ]; then
+    case "$status" in
+      EXCLUDE*) ;;
+      *) fail "$name: ref refuses its trace ($refused_code), but the backend's readings end in '$exec_last' — readings no one compares" ;;
+    esac
+  fi
   printf '%s\t%s\t%s\n' "$name" "$file" "$status" >> "$manifest"
 done < "$work/goldens"
 elapsed=$(( $(date +%s) - start ))
+for t_name in "${!trace_refused[@]}"; do
+  [ -n "${trace_refused_seen[$t_name]+x}" ] \
+    || fail "stale TRACE_REFUSED entry: '$t_name' is no golden with case files under corpus/golden — remove it"
+done
 
 [ "$n_traced" -gt 0 ] || fail "no golden case file was traced — an empty comparison is a failure, never silently green"
 [ "$n_traced" -ge "$EXPECTED_MIN_TRACED_CASES" ] \
@@ -246,7 +298,7 @@ python3 -I - "$work" "$EXPECTED_MIN_COMPARED_GOLDENS" "$EXPECTED_MIN_COMPARED_CA
   "$EXPECTED_MIN_NODE_LINES" "$EXPECTED_MIN_UNREACHED" "$EXPECTED_MIN_CONTRIBUTOR_LINES" \
   "$EXPECTED_MIN_TIMELINE_LINES" "$EXPECTED_MIN_UNREACHED_CONTRIBUTORS" "$EXPECTED_MIN_OBJECT_LINES" \
   "$EXPECTED_MIN_DISPLACED_NODE_LINES" "$EXPECTED_MIN_STATE_OBJECTS" "$EXPECTED_MIN_STATE_MEMBERS" \
-  "$EXPECTED_MIN_STATE_MADE" "$n_traced" "$elapsed" "$nocase" <<'PY'
+  "$EXPECTED_MIN_STATE_MADE" "$n_traced" "$elapsed" "$nocase" "$n_trace_refused" "${#trace_refused[@]}" <<'PY'
 import os, sys
 
 work = sys.argv[1]
@@ -254,6 +306,7 @@ floors = dict(zip(['goldens', 'cases', 'readings', 'nodes', 'unreached', 'contri
                    'unreached_contributors', 'objects', 'displaced_nodes', 'state_objects', 'state_members',
                    'state_made'], map(int, sys.argv[2:15])))
 n_traced, elapsed, nocase = int(sys.argv[15]), sys.argv[16], sys.argv[17].split()
+n_trace_refused, n_trace_refused_goldens = int(sys.argv[18]), int(sys.argv[19])
 problems = []
 
 # --- the canonical text, read back (RUNTIME-SEMANTICS ch. 5.12) ---
@@ -693,12 +746,14 @@ if nocase:
 if problems:
     print('\n'.join('check-readings: FAIL — ' + p for p in problems), file=sys.stderr)
     sys.exit(1)
-print('check-readings: PASS (ref traced %d golden case files; on both branches %d goldens and %d case files compared, '
-      '%d readings, %d node lines of which %d unreached, %d with contributors, %d with a timeline, %d with the object '
+print('check-readings: PASS (ref traced %d golden case files, and refused by name the trace of %d case file(s) of '
+      '%d golden(s) (TRACE_REFUSED); on both branches %d goldens and %d case files compared, %d readings, %d node lines of which '
+      '%d unreached, %d with contributors, %d with a timeline, %d with the object '
       'of a read and %d of a displaced reading, %d contributors of ref not reached; end states of %d objects (%d made) '
       'and %d members; all at or above their floors; deviations %d, end-state deviations %d; %d comparison rows, '
       '%d tripwire rows, %d end-state rows; %s s)' % (
-          n_traced, counts['goldens'], counts['cases'], counts['readings'], counts['nodes'], counts['unreached'],
+          n_traced, n_trace_refused, n_trace_refused_goldens, counts['goldens'], counts['cases'], counts['readings'],
+          counts['nodes'], counts['unreached'],
           counts['contributors'], counts['timelines'], counts['objects'], counts['displaced_nodes'],
           counts['unreached_contributors'], counts['state_objects'], counts['state_made'], counts['state_members'],
           len(deviations), len(state_deviations), len(rows), len(tripwire_rows), len(state_rows), elapsed))
