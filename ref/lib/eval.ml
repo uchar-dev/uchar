@@ -29,9 +29,15 @@ let norm = Ir_v0.Checks.norm
    (ch. 10.6): the value is evaluated at the FIRST read of the binder and
    reused after (call-by-need), and a read whose value evaluates leeg raises
    the owning Let's barrier instead of yielding leeg. [Later] carries that
-   read as a closure, so the barrier it raises is the owning Let's own local
-   exception — a nested Let can never catch an enclosing one's. *)
+   read as a closure, so the barrier it raises carries the identity of the
+   owning Let's evaluation — a nested Let can never catch an enclosing one's. *)
 type binding = Now of Value.t | Later of (unit -> Value.t)
+
+(* the barrier of a Let (ch. 10.6), with the identity of the evaluation of
+   the Let it belongs to; [let_evaluations] counts those evaluations *)
+exception Let_barrier of int
+
+let let_evaluations = ref 0
 
 type env = {
   doc : document;
@@ -2280,20 +2286,21 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
          value) at the first read of the binder, and [Lazy] memoises that one
          result for every further read, so a value whose evaluation deposits a
          §9.5 channel fact deposits it exactly once. (2) THE BARRIER AT THE
-         READ: a read whose value is leeg raises [Barrier], caught HERE, so the
-         whole Let is leeg — the body binder is never leeg, which is what keeps
-         WF-077's condition operands total. [Barrier] is a LOCAL exception,
-         freshly generated per evaluation of this arm, so a nested Let's
-         barrier passes an enclosing handler by (it belongs to the Let that
-         bound the binder that was read). (3) AN UNREAD BINDER EVALUATES
+         READ: a read whose value is leeg raises [Let_barrier] with the
+         identity of this evaluation of the arm, caught HERE, so the whole Let
+         is leeg — the body binder is never leeg, which is what keeps WF-077's
+         condition operands total. A nested Let's barrier carries another
+         identity and passes an enclosing handler by (it belongs to the Let
+         that bound the binder that was read). (3) AN UNREAD BINDER EVALUATES
          NOTHING: a body that never reads the binder never forces [memo] — no
          leeg, no fault, no channel fact — and its outcome IS the Let's. *)
-      let exception Barrier in
+      incr let_evaluations;
+      let mine = !let_evaluations in
       let memo = lazy (eval_expr env world self ~err value) in
-      let read () = match Lazy.force memo with Value.Empty -> raise Barrier | v -> v in
+      let read () = match Lazy.force memo with Value.Empty -> raise (Let_barrier mine) | v -> v in
       let locals = SMap.add (norm binder) (Later read) env.locals in
       let btypes = SMap.add (norm binder) (bound_of env value, static_type env value) env.btypes in
-      (try eval_expr { env with locals; btypes } world self ~err body with Barrier -> Value.Empty)
+      (try eval_expr { env with locals; btypes } world self ~err body with Let_barrier id when id = mine -> Value.Empty)
   | Struct_literal { field_list; typ; _ } ->
       (* ch. 11.1: a record value; a field evaluating leeg propagates — the
          whole literal evaluates leeg (a record carries no hole). The fields
@@ -3324,12 +3331,18 @@ and eval_cond env world (self : World.instance) ~err (c : condition_expr) : bool
    stand for another, the open read of the first such. Whether the ordinary
    reading reaches [c] then does not stand, so what [c] deposits is dropped
    and a fault leaves it undetermined by that read, for the form itself and
-   for another; its truth counts as any member's *)
+   for another; its truth counts as any member's. The barrier of a Let around
+   [c] (ch. 10.6) is that open read instead: whether the Let is leeg does not
+   stand, so the value it stands in has an open read. A Let inside [c]
+   catches its own barrier before *)
 and judge_cond ?past env world (self : World.instance) ~err (c : condition_expr) : judgement =
   let node () =
     match past with
     | None -> judge_cond_node env world self ~err c
-    | Some read -> ( try judge_cond_node env world self ~err:ignore c with Value.Fault _ -> undetermined read)
+    | Some ((label, member) as read) -> (
+        try judge_cond_node env world self ~err:ignore c with
+        | Value.Fault _ -> undetermined read
+        | Let_barrier _ -> raise (World.Open_read { label; member }))
   in
   match !observer with None -> node () | Some o -> o.cond c node
 

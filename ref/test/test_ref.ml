@@ -15505,6 +15505,45 @@ let () =
     (ov_fault_of (fun () -> ov_eval ~closed:(Eval.Members []) fault (ov_v1 [ ("gewicht", "20"); ("taxatie", "2000") ])))
     "EF-011"
 
+(* "de uitkering van een Vondst is, daarbij geldt: de toeslag is zijn
+   vindloon, 10 als ten minste één van: zijn gewicht is groter dan 10, de
+   toeslag is groter dan 5; anders 0", beside the vindloon of the card *)
+let ov_uitkering ?(strict = true) () =
+  let toeslag : Ir_v0.Ast.expr = Binder_ref { ident = "toeslag"; source_name = None } in
+  let condition =
+    ov_compound At_least 1
+      [ ov_cmp Greater "gewicht" "10";
+        Comparison { op = Greater; left_side = Some toeslag; right_side = Some (ov_lit "5"); time_period = None; source_name = None } ]
+  in
+  ov_doc ~strict
+    [ ov_vondst [ "taxatie"; "vindloon"; "gewicht"; "uitkering" ] [] ]
+    [ ov_vindloon;
+      ov_calc "uitkering"
+        (Let
+           { typ = Some num0; binder = "toeslag"; value = ov_ref "vindloon";
+             body = If_then_else { typ = Some num0; condition; then_ = ov_lit "10"; else_ = ov_lit "0"; source_name = None };
+             source_name = None }) ]
+
+(* WV-1.5-past-undetermined-barrier: a member read past one undetermined for
+   another that reads a leeg binder of a Let around it (ch. 10.6) makes an
+   open read: whether the ordinary reading reaches that read does not stand,
+   so the value the Let stands in is open. The uitkering above at taxatie 50,
+   where the vindloon is settled leeg: without a gewicht it is open; at gewicht
+   20 the first member decides and it is 10; at gewicht 5 the second member
+   reads the leeg binder and it is settled leeg, and so without the property
+   and without a gewicht *)
+let () =
+  let id = "WV-1.5-past-undetermined-barrier" in
+  let uitkering ?(doc = ov_uitkering ()) name attrs =
+    ov_attr (ov_run name doc (ov_v1 (("taxatie", "50") :: attrs))) "V1" "uitkering"
+  in
+  ov_expect (id ^ " (no gewicht)") (uitkering "past-undetermined-barrier-open" []) "open";
+  ov_expect (id ^ " (gewicht 20)") (uitkering "past-undetermined-barrier-decided" [ ("gewicht", "20") ]) "10";
+  ov_expect (id ^ " (gewicht 5)") (uitkering "past-undetermined-barrier-reached" [ ("gewicht", "5") ]) "leeg";
+  ov_expect (id ^ " (without the property, no gewicht)")
+    (uitkering ~doc:(ov_uitkering ~strict:false ()) "past-undetermined-barrier-ordinary" [])
+    "leeg"
+
 (* WV-1.5-boundary-*: within one boundary, what the evaluation deposited
    before an open read is dropped, a fault before it stays a fault, and a
    fault that would come after it does not arise. "Het restgewicht van een
@@ -16914,7 +16953,10 @@ let () =
    the node that faulted carries its fault, and the nodes after it within the
    member are not reached. The document of WV-1.5-past-undetermined-fault
    without a gewicht and at taxatie 50: the second member names the gewicht
-   of V1, the Rekenjaar faulted, and the third member decides *)
+   of V1, the Rekenjaar faulted, and the third member decides. A member that
+   the barrier of a Let around it broke off is broken off in the same way, and
+   so is every node on the way out to the boundary; the read of the binder is
+   empty. The uitkering of WV-1.5-past-undetermined-barrier without a gewicht *)
 let () =
   lines_equal "WV-5.12-open-past-undetermined"
     (ov_readings ov_vrijgesteld (ov_v1 [ ("taxatie", "50") ]))
@@ -16922,7 +16964,18 @@ let () =
        [ "0 Compound false"; "1 Comparison undetermined open \"V1\" \"gewicht\"";
          "2 AttributeReference undetermined open \"V1\" \"gewicht\""; "3 Literal unreached";
          "4 Comparison undetermined open \"V1\" \"gewicht\""; "5 ContextValue fault EF-011"; "6 Literal unreached";
-         "7 Comparison false"; "8 AttributeReference 50"; "9 Literal 1000"; "FAILS" ])
+         "7 Comparison false"; "8 AttributeReference 50"; "9 Literal 1000"; "FAILS" ]);
+  let form = rule_form 1 in
+  lines_equal "WV-5.12-open-past-undetermined (barrier)"
+    (List.filter
+       (fun l -> String.starts_with ~prefix:(form ^ " ") l)
+       (ov_readings (ov_uitkering ()) (ov_v1 [ ("taxatie", "50") ])))
+    (on_object form "V1"
+       [ "0 Let undetermined open \"V1\" \"gewicht\""; "1 AttributeReference empty";
+         "2 IfThenElse undetermined open \"V1\" \"gewicht\""; "3 Compound undetermined open \"V1\" \"gewicht\"";
+         "4 Comparison undetermined open \"V1\" \"gewicht\""; "5 AttributeReference undetermined open \"V1\" \"gewicht\"";
+         "6 Literal unreached"; "7 Comparison undetermined open \"V1\" \"gewicht\""; "8 BinderRef empty";
+         "9 Literal unreached"; "10 Literal unreached"; "11 Literal unreached"; "OPEN" ])
 
 (* WV-5.12-open-quantifier-fold: a contributor carries the truth of the matrix
    on it for the form itself, undetermined among them, and the fold the open

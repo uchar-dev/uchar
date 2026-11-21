@@ -578,9 +578,18 @@ Rekenjaar is groter dan 2025, zijn taxatie is groter dan 1000", in a session
 without an evaluation date: without a gewicht the second member faults and is
 undetermined, and vrijgesteld stands not to hold at taxatie 50 and is open at
 taxatie 2000; at gewicht 20 the session faults with EF-011 (ch. 8.2), and at
-gewicht 5 the read stops at the first member. In a document without the
-property every member stands, and nothing is read provisionally
-(WV-1.5-past-undetermined-ordinary). Example (WV-1.5-atom, WV-1.5-table-*): "een Vondst is zwaar indien zijn
+gewicht 5 the read stops at the first member. Such a member that reads a leeg
+binder of a Let around it (ch. 10.6) makes an open read instead of the
+Let's barrier: whether the Let is leeg does not stand, so the value it stands
+in is open. Example (WV-1.5-past-undetermined-barrier): "de uitkering van een
+Vondst is, daarbij geldt: de toeslag is zijn vindloon, 10 als ten minste één
+van: zijn gewicht is groter dan 10, de toeslag is groter dan 5; anders 0",
+with the vindloon of the card and taxatie 50, so that the toeslag is leeg:
+without a gewicht the uitkering is open; at gewicht 20 it is 10, and at
+gewicht 5 the second member reads the leeg toeslag and the uitkering is
+settled leeg. In a document without the property every member stands, and
+nothing is read provisionally (WV-1.5-past-undetermined-ordinary; the
+uitkering without a gewicht is settled leeg there). Example (WV-1.5-atom, WV-1.5-table-*): "een Vondst is zwaar indien zijn
 gewicht groter is dan 100" is undetermined without a gewicht. With "een
 Vondst is opvallend indien [Q] van: zijn gewicht groter is dan 100 (A), zijn
 schatting groter is dan 1000 (B), zijn lengte groter is dan 2 (C)": `all`
@@ -864,10 +873,11 @@ deelnemers groter dan 2 hebben", over V1 with 2 deelnemers and V2 with gewicht
 9 and 0 deelnemers: without the gewicht of V1, V2 is false and gelijkmatig
 stands not to hold, without the EF-005 fact of the division; at a gewicht of
 10 for V1 it stands not to hold with the fact. "… van zijn vondsten die
-gemerkt zijn …", over V1 alone: where the case does not name gemerkt,
-gelijkmatig is open without the fact, and where V1 is gemerkt it stands not
-to hold with it; "ten minste twee van zijn vondsten die gemerkt zijn …", with
-V1 gemerkt and a V2 of gewicht 10 and 2 deelnemers whose gemerkt the case does
+gemerkt zijn …", over one vondst V1 of gewicht 9 with 0 deelnemers: where the
+case does not name gemerkt, gelijkmatig is open without the fact, and where V1
+is gemerkt it stands not to hold with it; "ten minste twee van zijn vondsten
+die gemerkt zijn …", with that V1 gemerkt and a V2 of gewicht 10 and 2
+deelnemers whose gemerkt the case does
 not name, stands not to hold without the fact; where V2 is gemerkt it stands
 not to hold with the fact, and where it stands that V2 is not gemerkt the
 read stops before the matrix of V1. Example (WV-1.5-quantifier-fold-*): "een
@@ -7432,11 +7442,12 @@ has there:
   the form itself, of its filter where the filter is undetermined and else of
   its matrix; at a node that an undetermined condition broke off, that
   condition's; at a member of a composite or a matrix of a quantifier fold
-  that a fault left undetermined (ch. 1.5, read provisionally), the open
-  read of the first member or filter read before it that is undetermined for
-  another form, for a closure the read it closed over. Inside such a member
-  the node that faulted, and every node the fault passed on its way out to
-  the member, carries `fault` with its code.
+  that a fault left undetermined or that the barrier of a Let around it
+  broke off (ch. 1.5, read provisionally), the open read of the first member
+  or filter read before it that is undetermined for another form, for a
+  closure the read it closed over. Inside such a member the node that
+  faulted, and every node the fault passed on its way out to the member,
+  carries `fault` with its code; the read of the leeg binder is `empty`.
 
 A composite and a quantifier fold read their members until their judgement
 for another form stands (ch. 1.5), and the members after that are not
@@ -7499,8 +7510,10 @@ gewicht is groter dan 10, het Rekenjaar is groter dan 2025, zijn taxatie is
 groter dan 1000", without a gewicht and an evaluation date and at taxatie 50,
 reads `0 Compound false`, `1 Comparison undetermined open "V1" "gewicht"`, `4
 Comparison undetermined open "V1" "gewicht"`, `5 ContextValue fault EF-011`,
-`6 Literal unreached`, `7 Comparison false`, `FAILS`. Example
-(`WV-5.12-open-quantifier-fold`, `WV-5.12-open-fold-over-a-set`, the
+`6 Literal unreached`, `7 Comparison false`, `FAILS`; the uitkering of
+ch. 1.5 without a gewicht reads `0 Let undetermined open "V1" "gewicht"`, `7
+Comparison undetermined open "V1" "gewicht"`, `8 BinderRef empty`, `OPEN`.
+Example (`WV-5.12-open-quantifier-fold`, `WV-5.12-open-fold-over-a-set`, the
 documents of `ref/test/fixtures/strict-empty/`): "een Jutter is kundig
 indien het gewicht van alle vondsten van de Jutter groter is dan 10", over
 vondsten of 20, 30 and one, V3, without a gewicht, reads `0 QuantifierFold
