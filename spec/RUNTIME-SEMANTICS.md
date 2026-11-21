@@ -587,7 +587,16 @@ van: zijn gewicht is groter dan 10, de toeslag is groter dan 5; anders 0",
 with the vindloon of the card and taxatie 50, so that the toeslag is leeg:
 without a gewicht the uitkering is open; at gewicht 20 it is 10, and at
 gewicht 5 the second member reads the leeg toeslag and the uitkering is
-settled leeg. In a document without the property every member stands, and
+settled leeg. A binder such a member reads first is computed there, once, and
+what the computation deposits arises at the first read of the binder that is
+not provisional, and not at all where none comes; a fault of the computation
+leaves the member undetermined and arises at that read, and an open read in
+it is an open read at every read of the binder. Example
+(WV-1.5-past-undetermined-binder): with the toeslag "zijn taxatie gedeeld door
+0 plus 3", "alle van" for "ten minste één van" and "anders 0", at taxatie 50:
+without a gewicht the uitkering is 0 without the EF-005 fact of the division,
+at gewicht 20 0 with it, at gewicht 5 0 without it; with "anders de toeslag" it
+is 3 with the fact, once. In a document without the property every member stands, and
 nothing is read provisionally (WV-1.5-past-undetermined-ordinary; the
 uitkering without a gewicht is settled leeg there). Example (WV-1.5-atom, WV-1.5-table-*): "een Vondst is zwaar indien zijn
 gewicht groter is dan 100" is undetermined without a gewicht. With "een

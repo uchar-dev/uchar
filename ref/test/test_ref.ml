@@ -15544,6 +15544,67 @@ let () =
     (uitkering ~doc:(ov_uitkering ~strict:false ()) "past-undetermined-barrier-ordinary" [])
     "leeg"
 
+(* "de uitkering van een Vondst is, daarbij geldt: de toeslag is [value], 10
+   als alle van: zijn gewicht is groter dan 10, de toeslag is groter dan 5[,
+   more]; anders [otherwise]" *)
+let ov_toeslag : Ir_v0.Ast.expr = Binder_ref { ident = "toeslag"; source_name = None }
+
+let ov_toeslag_uitkering ?(more = []) ~value otherwise =
+  let condition =
+    ov_compound All 0
+      ([ ov_cmp Greater "gewicht" "10";
+         Comparison { op = Greater; left_side = Some ov_toeslag; right_side = Some (ov_lit "5"); time_period = None; source_name = None } ]
+      @ more)
+  in
+  ov_doc
+    [ ov_vondst [ "taxatie"; "gewicht"; "uitkering" ] [] ]
+    [ ov_calc "uitkering"
+        (Let
+           { typ = Some num0; binder = "toeslag"; value;
+             body = If_then_else { typ = Some num0; condition; then_ = ov_lit "10"; else_ = otherwise; source_name = None };
+             source_name = None }) ]
+
+(* WV-1.5-past-undetermined-binder: a binder of a Let read first by a member
+   read provisionally is computed there, once, and what the computation
+   deposits arises at the first read of the binder that is not provisional,
+   and not at all where none comes. With the toeslag "zijn taxatie gedeeld
+   door 0 plus 3" (3, with the EF-005 fact of the division) and taxatie 50:
+   without a gewicht the uitkering is 0 without the fact; at gewicht 20 the
+   second member reads the toeslag as in the ordinary reading, and it is 0
+   with the fact; at gewicht 5 the read stops at the first member, 0 without
+   it. With "anders de toeslag" the else branch reads the toeslag after the
+   provisional member, and the uitkering is 3 with the fact once. A fault of
+   the computation leaves the member undetermined and arises at the first
+   read that is not provisional: with the toeslag "het Rekenjaar" (EF-011 in
+   a session without an evaluation date) and a third member "zijn taxatie is
+   groter dan 1000", the uitkering is 0 with "anders 0", and the session faults
+   with "anders de toeslag" *)
+let () =
+  let id = "WV-1.5-past-undetermined-binder" in
+  let quotient = ov_bin Plus (ov_bin Divided_by (ov_ref "taxatie") (ov_lit "0")) (ov_lit "3") in
+  let row name otherwise gewicht want want_fact =
+    let w = ov_run name (ov_toeslag_uitkering ~value:quotient otherwise) (ov_v1 (("taxatie", "50") :: gewicht)) in
+    ov_expect (id ^ " (" ^ name ^ ")") (ov_attr w "V1" "uitkering") want;
+    ov_expect (id ^ " (" ^ name ^ ", channel)") (String.concat "; " (ov_channel w))
+      (if want_fact then "uitkering V1 EF-005" else "")
+  in
+  row "past-undetermined-binder-open" (ov_lit "0") [] "0" false;
+  row "past-undetermined-binder-reached" (ov_lit "0") [ ("gewicht", "20") ] "0" true;
+  row "past-undetermined-binder-stops" (ov_lit "0") [ ("gewicht", "5") ] "0" false;
+  row "past-undetermined-binder-read-after" ov_toeslag [] "3" true;
+  row "past-undetermined-binder-read-after-stops" ov_toeslag [ ("gewicht", "5") ] "3" true;
+  let rekenjaar : Ir_v0.Ast.expr = Context_value { ident = Some Ir_v0.Spelling.evaluation_year; typ = Some num0; source_name = None } in
+  let fault otherwise =
+    ov_toeslag_uitkering ~more:[ ov_cmp Greater "taxatie" "1000" ] ~value:rekenjaar otherwise
+  in
+  ov_expect (id ^ " (fault, no ordinary read)")
+    (ov_attr (ov_run "past-undetermined-binder-fault" (fault (ov_lit "0")) (ov_v1 [ ("taxatie", "50") ])) "V1" "uitkering")
+    "0";
+  (* not registered: a run that faults has no outcomes to compare *)
+  ov_expect (id ^ " (fault at the ordinary read)")
+    (ov_fault_of (fun () -> ov_eval ~closed:(Eval.Members []) (fault ov_toeslag) (ov_v1 [ ("taxatie", "50") ])))
+    "EF-011"
+
 (* WV-1.5-boundary-*: within one boundary, what the evaluation deposited
    before an open read is dropped, a fault before it stays a fault, and a
    fault that would come after it does not arise. "Het restgewicht van een
