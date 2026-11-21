@@ -1,6 +1,7 @@
 package dev.uchar.regelspraak.tms;
 
 import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
 import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
 
@@ -152,5 +153,63 @@ when
     eval( toets_onherleidbareVondst($jutterNaam) )
 then
     insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "onherleidbaar", true)));
+end
+
+// zijn herkeuring gevuld is
+function boolean toets_herkeurdeVondst(Object $herkeuring) {
+    return ComputeHelpers.emptyTest($herkeuring, Boolean.FALSE);
+}
+
+rule "herkeurde vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $herkeuring : herkeuring )
+    eval( toets_herkeurdeVondst($herkeuring) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "herkeurd", true)));
+end
+
+// zijn herkeuring leeg is
+function boolean toets_onherkeurdeVondst(Object $herkeuring) {
+    return ComputeHelpers.emptyTest($herkeuring, Boolean.TRUE);
+}
+
+rule "onherkeurde vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $herkeuring : herkeuring )
+    eval( toets_onherkeurdeVondst($herkeuring) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "onherkeurd", true)));
+end
+
+// hij aan alle volgende voorwaarden voldoet: - zijn herkeuring heeft een waarde - zijn herkeuring is gelijk aan 'hout'
+function boolean toets_houtenVondst(Object $herkeuring) {
+    int raak = 0;
+    Boolean vast;
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.emptyTest(ComputeHelpers.payload($herkeuring, "waarde"), Boolean.FALSE)) {
+        raak++;
+    }
+    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
+    if (vast != null) {
+        return vast;
+    }
+    if (ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam(ComputeHelpers.payload($herkeuring, "waarde")), RegelSpraakRuntime.rsEnumNaam("hout"), Boolean.TRUE)) {
+        raak++;
+    }
+    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+}
+
+rule "houten vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $herkeuring : herkeuring )
+    eval( toets_houtenVondst($herkeuring) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "houten", true)));
 end
 
