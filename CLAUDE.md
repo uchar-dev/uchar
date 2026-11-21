@@ -171,8 +171,9 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
    `corpus/golden/**/ir.json` and `corpus/red/**/ir.json` validates against it and round-trips byte-identically;
    every object in `corpus/golden`, `corpus/red` and `corpus/negative` carries its keys in the canonical order of the
    subschema it instantiates (the `properties` order), failing with the path and both orders; an object no subschema
-   admits is counted apart, never skipped. A shape self-test holds `EmbeddedExpression.unit` to `true` and
-   `DeclaredUnit.symbol` to a non-empty string. Floor: `EXPECTED_MIN_DOCS`.
+   admits is counted apart, never skipped. A shape self-test holds `EmbeddedExpression.unit` to `true`,
+   `DeclaredUnit.symbol` to a non-empty string and `inferFromEmpty` to `false` on a root that admits no unknown field;
+   a key-order self-test holds `inferFromEmpty` directly after `format`. Floor: `EXPECTED_MIN_DOCS`.
 
 3. `scripts/check-verifier.sh` — the OCaml verifier (`spec/verifier/`) builds in the workspace `_build`
    (`scripts/lib/ocaml-build.sh`), the one gates 11 and 15 use, and builds on its own: no dune file under
