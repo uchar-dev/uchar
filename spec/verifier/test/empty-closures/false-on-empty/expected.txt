@@ -1,0 +1,1 @@
+negation	false-on-empty	/rules/consistencies/0/versions/0/assertion	rangcontrole	attr:jutter:rang=input	attr:jutter:rang	-	6	De rang van een Jutter moet kleiner zijn dan 5

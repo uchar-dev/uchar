@@ -1,0 +1,1 @@
+negation	negated-characteristic	/rules/rules/1/versions/0/condition	bijdrageplicht	char:jutter:vrijgesteld=derived	attr:jutter:inkomen	-	-	hij niet vrijgesteld is

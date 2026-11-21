@@ -1,0 +1,115 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vangst",
+        "animate": false,
+        "plural": "Vangsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "ruwgewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "ondergrens",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bandgewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "bandgewicht van een vangst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "bandgewicht",
+              "subjectType": "Vangst",
+              "source": {
+                "snippet": "Het bandgewicht van een Vangst"
+              }
+            },
+            "value": {
+              "node": "Clamp",
+              "base": {
+                "node": "AttributeReference",
+                "attribute": "ruwgewicht",
+                "subjectType": "Vangst",
+                "source": {
+                  "snippet": "het ruwgewicht van de Vangst"
+                }
+              },
+              "minimum": {
+                "node": "AttributeReference",
+                "attribute": "ondergrens",
+                "subjectType": "Vangst",
+                "source": {
+                  "snippet": "de ondergrens van de Vangst"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "het ruwgewicht van de Vangst, met een minimum van de ondergrens van de Vangst"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

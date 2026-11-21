@@ -1,0 +1,1 @@
+absent-instance	vacuous-quantifier	/rules/rules/0/versions/0/condition	premiewaardige ploeg	rel:keurindeling:keurmeester=input	rel:keurindeling:keurmeester	-	-	de keurvergoeding van alle keurmeesters van de Keurploeg groter is dan 40

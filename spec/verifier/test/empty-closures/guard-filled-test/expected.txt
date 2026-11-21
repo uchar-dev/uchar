@@ -1,0 +1,1 @@
+closure	coalesce-operand	/rules/rules/0/versions/0/value	heffing van een jutter	attr:jutter:grondslag=input; attr:jutter:toeslag=input	attr:jutter:grondslag; attr:jutter:toeslag	filled-test:attr:jutter:grondslag; filled-test:attr:jutter:toeslag	-	zijn grondslag plus zijn toeslag

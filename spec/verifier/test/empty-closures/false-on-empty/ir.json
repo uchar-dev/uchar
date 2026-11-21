@@ -1,0 +1,92 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "rang",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [
+      {
+        "node": "Consistency",
+        "name": "rangcontrole",
+        "versions": [
+          {
+            "subject": "Jutter",
+            "assertion": {
+              "node": "Comparison",
+              "op": "less",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "rang",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "De rang van een Jutter"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "5"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "5"
+                }
+              },
+              "source": {
+                "snippet": "De rang van een Jutter moet kleiner zijn dan 5"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "De rang van een Jutter moet kleiner zijn dan 5",
+              "line": 6
+            }
+          }
+        ]
+      }
+    ],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

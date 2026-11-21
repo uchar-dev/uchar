@@ -1,0 +1,1 @@
+closure	empty-text-part	/rules/rules/0/versions/0/value	omschrijving van een vondst	attr:vondst:gewicht=input	attr:vondst:gewicht	-	-	"Gewicht: «zijn gewicht»"

@@ -1,0 +1,1 @@
+closure	coalesce-subtrahend	/rules/rules/0/versions/0/value	heffing van een jutter	attr:jutter:korting=input	attr:jutter:korting	-	-	zijn grondslag verminderd met zijn korting

@@ -1,0 +1,3 @@
+closure	fold-skips-empty	/rules/rules/0/versions/0/value	keurlast van een keurploeg	attr:keurmeester:keurvergoeding=input	attr:keurmeester:keurvergoeding	-	-	de som van de keurvergoeding van alle keurmeesters van de Keurploeg of 0 als die er niet zijn
+closure	empty-fallback	/rules/rules/0/versions/0/value/emptyFallback	keurlast van een keurploeg	attr:keurmeester:keurvergoeding=input	attr:keurmeester:keurvergoeding	-	-	0
+absent-instance	empty-set-fallback	/rules/rules/0/versions/0/value/emptyFallback	keurlast van een keurploeg	rel:keurindeling:keurmeester=input	rel:keurindeling:keurmeester	-	-	0

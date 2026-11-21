@@ -1,0 +1,1 @@
+closure	coalesce-duration	/rules/rules/0/versions/0/value	meldingsdatum van een vondst	attr:vondst:meldtermijn=input	attr:vondst:meldtermijn	-	-	zijn vinddatum plus zijn meldtermijn

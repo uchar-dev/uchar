@@ -1,0 +1,1 @@
+closure	coalesce-dividend	/rules/rules/0/versions/0/value	heffing van een jutter	attr:jutter:grondslag=input	attr:jutter:grondslag	-	-	zijn grondslag gedeeld door 4

@@ -1,0 +1,2 @@
+closure	coalesce-dividend	/rules/rules/0/versions/0/value	aandeel van een jutter	attr:jutter:grondslag=input	attr:jutter:grondslag	-	-	zijn grondslag gedeeld door zijn ploegomvang
+closure	empty-divisor-fault	/rules/rules/0/versions/0/value	aandeel van een jutter	attr:jutter:ploegomvang=input	attr:jutter:ploegomvang	-	-	zijn grondslag gedeeld door zijn ploegomvang

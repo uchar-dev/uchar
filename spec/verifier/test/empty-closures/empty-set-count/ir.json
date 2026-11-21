@@ -1,0 +1,136 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Keurploeg",
+        "animate": false,
+        "plural": "Keurploegen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "keurtal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Keurmeester",
+        "animate": true,
+        "plural": "Keurmeesters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "keurvergoeding",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "keurindeling",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "ploeg",
+            "objectType": "Keurploeg",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "keurmeester",
+            "objectType": "Keurmeester",
+            "plural": "keurmeesters",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "keurtal van een keurploeg",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "keurtal",
+              "subjectType": "Keurploeg",
+              "source": {
+                "snippet": "Het keurtal van een Keurploeg"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "keurmeesters",
+                  "subjectType": "Keurploeg",
+                  "source": {
+                    "snippet": "keurmeesters van de Keurploeg"
+                  }
+                }
+              ],
+              "elementType": "Keurmeester",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "keurindeling",
+                "role": "keurmeester"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal keurmeesters van de Keurploeg"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

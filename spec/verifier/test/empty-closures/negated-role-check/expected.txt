@@ -1,0 +1,1 @@
+absent-instance	negated-role-check	/rules/rules/0/versions/0/condition	onaangemelde vondst	rel:vondst heeft melding:vondst=input	rel:vondst heeft melding:vondst	-	-	hij geen vondst is

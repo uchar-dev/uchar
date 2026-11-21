@@ -1,0 +1,1 @@
+closure	empty-test	/rules/rules/0/versions/0/condition	heffing zonder grondslag	attr:jutter:grondslag=input	attr:jutter:grondslag	-	-	zijn grondslag leeg is

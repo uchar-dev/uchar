@@ -1,0 +1,122 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "onaangemeld",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Melding",
+        "animate": false,
+        "plural": "Meldingen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "ernst",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vondst heeft melding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "melding",
+            "objectType": "Melding",
+            "plural": "meldingen",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "onaangemelde vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "onaangemeld",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is onaangemeld"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "RoleMembership",
+              "factType": "vondst heeft melding",
+              "role": "vondst",
+              "negated": true,
+              "source": {
+                "snippet": "hij geen vondst is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

@@ -1,0 +1,1 @@
+closure	allocation-empty-input	/rules/allocations/0/versions/0/ratioAttribute	verdeel de opbrengst van een berging	attr:berger:geborgen gewicht=input	attr:berger:geborgen gewicht	-	-	-

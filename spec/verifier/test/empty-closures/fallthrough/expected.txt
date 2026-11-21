@@ -1,0 +1,1 @@
+negation	fallthrough	/rules/prioritizedDefaults/0/defaults/1	penningrecht	attr:jutter:boete=input	attr:jutter:boete	-	-	-

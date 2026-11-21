@@ -1,0 +1,1 @@
+absent-instance	empty-set-count	/rules/rules/0/versions/0/value	keurtal van een keurploeg	rel:keurindeling:keurmeester=input	rel:keurindeling:keurmeester	-	-	het aantal keurmeesters van de Keurploeg

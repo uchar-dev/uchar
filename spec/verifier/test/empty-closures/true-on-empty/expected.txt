@@ -1,0 +1,1 @@
+closure	true-on-empty	/rules/rules/0/versions/0/condition	afwijkend register	attr:jutter:telling=input; attr:jutter:opgave=input	attr:jutter:opgave; attr:jutter:telling	-	-	zijn telling ongelijk is aan zijn opgave

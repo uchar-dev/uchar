@@ -1,0 +1,1 @@
+closure	clamp-empty-bound	/rules/rules/0/versions/0/value	bandgewicht van een vangst	attr:vangst:ondergrens=input	attr:vangst:ondergrens	-	-	het ruwgewicht van de Vangst, met een minimum van de ondergrens van de Vangst

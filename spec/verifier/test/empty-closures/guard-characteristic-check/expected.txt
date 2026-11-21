@@ -1,0 +1,3 @@
+closure	empty-test	/rules/rules/0/versions/0/condition	onvolledige aangifte	attr:jutter:toeslag=input	attr:jutter:toeslag	-	-	zijn toeslag leeg is
+closure	coalesce-operand	/rules/rules/1/versions/0/value	heffing van een jutter	attr:jutter:grondslag=input; attr:jutter:toeslag=input	attr:jutter:grondslag; attr:jutter:toeslag	characteristic-check:char:jutter:onvolledig; tested-elsewhere:attr:jutter:toeslag>char:jutter:onvolledig	-	zijn grondslag plus zijn toeslag
+negation	negated-characteristic	/rules/rules/1/versions/0/condition	heffing van een jutter	char:jutter:onvolledig=derived	attr:jutter:toeslag	tested-elsewhere:attr:jutter:toeslag>char:jutter:onvolledig	-	hij niet onvolledig is

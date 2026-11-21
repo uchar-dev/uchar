@@ -1,0 +1,2 @@
+closure	filled-count	/rules/rules/0/versions/0/value	aantal gewogen vondsten	attr:vondst:gewicht=input	attr:vondst:gewicht	-	-	het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter
+absent-instance	empty-set-count	/rules/rules/0/versions/0/value	aantal gewogen vondsten	rel:vondstaanmelding:vondst=input	rel:vondstaanmelding:vondst	-	-	het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter

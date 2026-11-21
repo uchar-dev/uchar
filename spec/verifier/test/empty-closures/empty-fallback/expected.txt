@@ -1,0 +1,3 @@
+closure	fold-skips-empty	/rules/rules/0/versions/0/value	totaalgewicht van een jutter	attr:vondst:gewicht=input	attr:vondst:gewicht	-	-	de som van het gewicht van alle vondsten van de Jutter of 0 als die er niet zijn
+closure	empty-fallback	/rules/rules/0/versions/0/value/emptyFallback	totaalgewicht van een jutter	attr:vondst:gewicht=input	attr:vondst:gewicht	-	-	0
+absent-instance	empty-set-fallback	/rules/rules/0/versions/0/value/emptyFallback	totaalgewicht van een jutter	rel:vondstaanmelding:vondst=input	rel:vondstaanmelding:vondst	-	-	0

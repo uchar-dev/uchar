@@ -1,0 +1,156 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Keurploeg",
+        "animate": false,
+        "plural": "Keurploegen",
+        "attributes": [],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "premiewaardig",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Keurmeester",
+        "animate": true,
+        "plural": "Keurmeesters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "keurvergoeding",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "keurindeling",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "ploeg",
+            "objectType": "Keurploeg",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "keurmeester",
+            "objectType": "Keurmeester",
+            "plural": "keurmeesters",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "premiewaardige ploeg",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "premiewaardig",
+              "subjectType": "Keurploeg",
+              "source": {
+                "snippet": "Een Keurploeg is premiewaardig"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Keurmeester",
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "keurvergoeding",
+                  "subjectType": "Keurmeester",
+                  "source": {
+                    "snippet": "de keurvergoeding van alle keurmeesters van de Keurploeg"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "40"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "40"
+                  }
+                },
+                "source": {
+                  "snippet": "de keurvergoeding van alle keurmeesters van de Keurploeg groter is dan 40"
+                }
+              },
+              "source": {
+                "snippet": "de keurvergoeding van alle keurmeesters van de Keurploeg groter is dan 40"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "keurindeling",
+                "role": "keurmeester"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
