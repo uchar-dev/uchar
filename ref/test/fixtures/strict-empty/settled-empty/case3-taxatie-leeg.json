@@ -15,12 +15,12 @@
   },
   "expected": [
     {
-      "kind": "characteristicAbsent",
+      "kind": "characteristicOpen",
       "label": "V1",
       "characteristic": "kostbaar"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "vindloon"
     },
@@ -33,47 +33,47 @@
       }
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "uitbetaling"
     },
     {
-      "kind": "characteristicAbsent",
+      "kind": "characteristicOpen",
       "label": "V1",
       "characteristic": "beloond"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "beloningstoeslag"
     },
     {
-      "kind": "characteristicAbsent",
+      "kind": "characteristicOpen",
       "label": "V1",
       "characteristic": "duur"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "duurtoeslag"
     },
     {
-      "kind": "characteristicAbsent",
+      "kind": "characteristicOpen",
       "label": "V1",
       "characteristic": "beloonbaar"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "wachttoeslag"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "extra vindloon"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "extra uitbetaling"
     },

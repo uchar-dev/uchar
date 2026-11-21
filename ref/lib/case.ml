@@ -27,9 +27,16 @@ let fail fmt = Printf.ksprintf (fun s -> raise (Error { code = None; params = []
 let failc ?(params = []) code fmt =
   Printf.ksprintf (fun s -> raise (Error { code = Some code; params; text = s })) fmt
 
+(* The states of a member (RUNTIME-SEMANTICS ch. 1.5): [Attribute_empty] and
+   [Char_absent] expect it to stand that there is no value or that the
+   characteristic does not hold, [Attribute_open] and [Char_open] that the
+   member is open. A document without inferFromEmpty false has no open member,
+   so there the first two read as they always did and the last two never
+   hold. *)
 type expectation =
   | Attribute_value of { label : string; attr : string; value : Value.t }
   | Attribute_empty of { label : string; attr : string }
+  | Attribute_open of { label : string; attr : string }
   | Attribute_timeline of { label : string; attr : string; tl : Timeline.t }
   | Cell_value of { label : string; attr : string; labels : string list; value : Value.t }
   | Cell_empty of { label : string; attr : string; labels : string list }
@@ -37,6 +44,7 @@ type expectation =
          labels in the declared order of the attribute's dimensions *)
   | Char_present of { label : string; char : string }
   | Char_absent of { label : string; char : string }
+  | Char_open of { label : string; char : string }
   | Consistent
   | Inconsistent of { rule : string option; label : string option; code : string option }
       (* [code]: the EF code (RUNTIME-SEMANTICS ch. 5.7b) a matching channel
@@ -517,7 +525,7 @@ let cells_of_json (doc : document) ~label ~attr ~(dims : string list) (decl : da
        [] cells);
   cells
 
-let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
+let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance * string list =
   let kvs = obj ~at j in
   let label = str_field ~at kvs "label" in
   (* the schema asks minLength 1, and every later position of this instance
@@ -618,6 +626,31 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
         norm c)
       (list_field ~at:label kvs "characteristics")
   in
+  (* the characteristics the case states do not hold (RUNTIME-SEMANTICS ch.
+     1.5): declared, scalar as the static list is, and never also in that
+     list, which would state that one characteristic holds and does not *)
+  let absent =
+    match List.assoc_opt "characteristicsAbsent" kvs with
+    | None -> []
+    | Some j ->
+        List.mapi
+          (fun i cj ->
+            let c = str ~at:(Printf.sprintf "%s.characteristicsAbsent[%d]" label i) cj in
+            if not (Ir_v0.Checks.mem_ci (Ir_v0.Checks.some_names ot.characteristics) c) then
+              undeclared c "characteristic %S is not declared on %S" c otype_name;
+            if List.exists (fun (k, _) -> norm k = norm c) ot.characteristic_granularity then
+              fail
+                "%s.%s: characteristic %S is declared time-dependent on %S: it holds per period, and \
+                 \"characteristicsAbsent\" states a scalar truth no temporal reader consults"
+                label c c otype_name;
+            if List.mem (norm c) chars then
+              failc ~params:[ ("label", label); ("characteristic", c) ] "EF-047"
+                "%s: characteristic %S is named in \"characteristics\" and in \"characteristicsAbsent\": the \
+                 case states that it holds and that it does not"
+                label c;
+            norm c)
+          (list_ ~at:(child label "characteristicsAbsent") j)
+  in
   let left_side =
     List.fold_left
       (fun (acc, seen) (key, vj) ->
@@ -700,7 +733,7 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
           SMap.empty
           (obj ~at:(child label "characteristicTimelines") j)
   in
-  { label; otype = otype_name; attrs; chars; left_side; tls; ctls }
+  ({ label; otype = otype_name; attrs; chars; left_side; tls; ctls }, absent)
 
 (* ch. 5.7a: a supplied role link ESTABLISHES the relation instance, and
    BOTH roles read it — a relation is symmetric, so the reader arriving
@@ -905,10 +938,10 @@ let not_time_dependent_attribute ~at ot attr =
     fail "%s: %S is a time-dependent attribute, whose value is a timeline: an expectation on it is an \
           attributeTimeline" at attr
 
-let not_time_dependent_characteristic ~at ot c =
+let not_time_dependent_characteristic ?(kinds = "characteristicPresent or characteristicAbsent") ~at ot c =
   if List.exists (fun (k, _) -> norm k = norm c) ot.characteristic_granularity then
-    fail "%s: %S is a time-dependent characteristic, which holds per period: a characteristicPresent or \
-          characteristicAbsent expectation asks a scalar truth it does not have" at c
+    fail "%s: %S is a time-dependent characteristic, which holds per period: a %s expectation asks a scalar \
+          truth it does not have" at c kinds
 
 let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) : expectation =
   let kvs = obj ~at j in
@@ -937,7 +970,7 @@ let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) 
           attr;
           value = value_of_json ~at:("expected " ^ i.label ^ "." ^ attr) decl (field ~at kvs "value");
         }
-  | "attributeEmpty" ->
+  | "attributeEmpty" | "attributeOpen" ->
       let i = get_instance () in
       let attr = str_field ~at kvs "attribute" in
       let ot = find_object_type doc i.otype in
@@ -945,7 +978,8 @@ let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) 
         fail "expected attribute %S is not declared on %S" attr i.otype;
       not_dimensioned ~at ot attr;
       not_time_dependent_attribute ~at ot attr;
-      Attribute_empty { label = i.label; attr }
+      if kind = "attributeEmpty" then Attribute_empty { label = i.label; attr }
+      else Attribute_open { label = i.label; attr }
   | "attributeTimeline" ->
       let i = get_instance () in
       let attr = str_field ~at kvs "attribute" in
@@ -1010,16 +1044,21 @@ let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) 
                 value_of_json ~at:("expected " ^ i.label ^ "." ^ World.cell attr labels) decl (field ~at kvs "value");
             }
       | _ -> Cell_empty { label = i.label; attr; labels })
-  | "characteristicPresent" | "characteristicAbsent" ->
+  | "characteristicPresent" | "characteristicAbsent" | "characteristicOpen" ->
       let i = get_instance () in
       let c = str_field ~at kvs "characteristic" in
       let ot = find_object_type doc i.otype in
       if not (Ir_v0.Checks.mem_ci (Ir_v0.Checks.some_names ot.characteristics) c) then
         fail "expected characteristic %S is not declared on %S" c i.otype;
-      not_time_dependent_characteristic ~at ot c;
-      if kind = "characteristicPresent" then
-        Char_present { label = i.label; char = c }
-      else Char_absent { label = i.label; char = c }
+      if kind = "characteristicOpen" then begin
+        not_time_dependent_characteristic ~kinds:kind ~at ot c;
+        Char_open { label = i.label; char = c }
+      end
+      else begin
+        not_time_dependent_characteristic ~at ot c;
+        if kind = "characteristicPresent" then Char_present { label = i.label; char = c }
+        else Char_absent { label = i.label; char = c }
+      end
   | "consistent" -> Consistent
   | "inconsistent" ->
       let opt_str k = Option.map (str ~at:(child at k)) (List.assoc_opt k kvs) in
@@ -1155,13 +1194,17 @@ let load_file (doc : document) path : t =
   let world =
     List.fold_left
       (fun (w : World.t) (n, ij) ->
-        let i = load_instance doc ~at:(Printf.sprintf "input.instances[%d]" n) ij in
+        let i, absent = load_instance doc ~at:(Printf.sprintf "input.instances[%d]" n) ij in
         (* label uniqueness is this loader's cross-check (see the header);
            left to the world's own guard it surfaced as an evaluation
            fault, exit 1, from a case that never got to evaluation *)
         if SMap.mem i.label w.instances then
           failc ~params:[ ("label", i.label) ] "EF-039" "duplicate instance label %S" i.label;
-        World.add_instance w i)
+        let w = World.add_instance w i in
+        {
+          w with
+          stated_absent = List.fold_left (fun acc c -> World.Key.add (i.label, c) () acc) w.stated_absent absent;
+        })
       World.empty
       (List.mapi (fun n ij -> (n, ij)) (list_field ~at:"input" input "instances"))
   in
@@ -1224,10 +1267,17 @@ let check (case : t) (final : World.t) : string list =
             Some
               (Printf.sprintf "%s.%s = %s, expected %s" label attr (Value.to_string actual)
                  (Value.to_string value))
-      | Attribute_empty { label; attr } ->
-          let actual = World.attr (World.get final label) attr in
-          if actual = Value.Empty then None
-          else Some (Printf.sprintf "%s.%s = %s, expected leeg" label attr (Value.to_string actual))
+      | Attribute_empty { label; attr } -> (
+          match World.attr (World.get final label) attr with
+          | Value.Empty when World.is_open final ~label ~member:attr ->
+              Some (Printf.sprintf "%s.%s is open, expected leeg" label attr)
+          | Value.Empty -> None
+          | actual -> Some (Printf.sprintf "%s.%s = %s, expected leeg" label attr (Value.to_string actual)))
+      | Attribute_open { label; attr } -> (
+          match World.attr (World.get final label) attr with
+          | Value.Empty when World.is_open final ~label ~member:attr -> None
+          | Value.Empty -> Some (Printf.sprintf "%s.%s = leeg, expected open" label attr)
+          | actual -> Some (Printf.sprintf "%s.%s = %s, expected open" label attr (Value.to_string actual)))
       | Cell_value { label; attr; labels; value } ->
           let member = World.cell attr labels in
           let actual = World.attr (World.get final label) member in
@@ -1278,8 +1328,16 @@ let check (case : t) (final : World.t) : string list =
           if World.has_char (World.get final label) char then None
           else Some (Printf.sprintf "%s lacks characteristic %S" label char)
       | Char_absent { label; char } ->
-          if not (World.has_char (World.get final label) char) then None
-          else Some (Printf.sprintf "%s carries characteristic %S, expected absent" label char)
+          if World.has_char (World.get final label) char then
+            Some (Printf.sprintf "%s carries characteristic %S, expected absent" label char)
+          else if World.is_open final ~label ~member:char then
+            Some (Printf.sprintf "%s: characteristic %S is open, expected absent" label char)
+          else None
+      | Char_open { label; char } ->
+          if World.has_char (World.get final label) char then
+            Some (Printf.sprintf "%s carries characteristic %S, expected open" label char)
+          else if World.is_open final ~label ~member:char then None
+          else Some (Printf.sprintf "%s: characteristic %S stands not to hold, expected open" label char)
       | Consistent ->
           if final.channel = [] then None
           else

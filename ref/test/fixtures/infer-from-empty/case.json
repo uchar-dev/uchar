@@ -30,7 +30,7 @@
   "expected": [
     { "kind": "characteristicPresent", "label": "V1", "characteristic": "meldplichtig" },
     { "kind": "characteristicAbsent", "label": "V2", "characteristic": "meldplichtig" },
-    { "kind": "characteristicAbsent", "label": "V3", "characteristic": "meldplichtig" },
+    { "kind": "characteristicOpen", "label": "V3", "characteristic": "meldplichtig" },
     { "kind": "consistent" }
   ]
 }

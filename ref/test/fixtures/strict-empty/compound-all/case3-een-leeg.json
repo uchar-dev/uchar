@@ -19,17 +19,17 @@
   },
   "expected": [
     {
-      "kind": "characteristicAbsent",
+      "kind": "characteristicOpen",
       "label": "V1",
       "characteristic": "kostbaar"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "bergtoeslag"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "waardetoeslag"
     }

@@ -31,32 +31,32 @@
   },
   "expected": [
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "brutogewicht"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "nettogewicht"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "schadegewicht"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "restgewicht"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "gewicht per getuige"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "begrensd gewicht"
     },
@@ -69,7 +69,7 @@
       }
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "omschrijving"
     },

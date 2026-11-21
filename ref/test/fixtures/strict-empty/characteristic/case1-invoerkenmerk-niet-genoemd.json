@@ -19,22 +19,22 @@
   },
   "expected": [
     {
-      "kind": "characteristicAbsent",
+      "kind": "characteristicOpen",
       "label": "V1",
       "characteristic": "drijfhout"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "drijftoeslag"
     },
     {
-      "kind": "characteristicAbsent",
+      "kind": "characteristicOpen",
       "label": "V1",
       "characteristic": "aangespoeld"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "strandtoeslag"
     }

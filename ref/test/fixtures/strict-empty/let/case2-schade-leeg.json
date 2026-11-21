@@ -19,12 +19,12 @@
   },
   "expected": [
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "J1",
       "attribute": "drempelgewicht"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "J1",
       "attribute": "drempelaandeel"
     }

@@ -19,52 +19,52 @@
   },
   "expected": [
     {
-      "kind": "characteristicAbsent",
+      "kind": "characteristicOpen",
       "label": "V1",
       "characteristic": "zwaar"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "lichttoeslag"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "afwijktoeslag"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "gelijktoeslag"
     },
     {
-      "kind": "characteristicAbsent",
+      "kind": "characteristicOpen",
       "label": "V1",
       "characteristic": "houtachtig"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "steentoeslag"
     },
     {
-      "kind": "characteristicAbsent",
+      "kind": "characteristicOpen",
       "label": "V1",
       "characteristic": "vroeg"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "laattoeslag"
     },
     {
-      "kind": "characteristicAbsent",
+      "kind": "characteristicOpen",
       "label": "V1",
       "characteristic": "gemerkt"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "merktoeslag"
     },

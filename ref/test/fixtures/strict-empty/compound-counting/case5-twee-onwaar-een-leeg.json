@@ -45,12 +45,12 @@
       "attribute": "eentoeslag"
     },
     {
-      "kind": "characteristicAbsent",
+      "kind": "characteristicOpen",
       "label": "V1",
       "characteristic": "enkelvoudig"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "enkeltoeslag"
     }

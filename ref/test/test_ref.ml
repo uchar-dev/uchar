@@ -12672,14 +12672,15 @@ let () =
         characteristic_granularity = [ ("actief", Some Ir_v0.Ast.Month) ] } )
   in
   let doc = { empty_doc with object_types = [ jutter ] } in
-  let load expected =
+  let load ?(absent = "") expected =
     let f = Filename.temp_file "ref-time-dependent" ".json" in
     let oc = open_out f in
     Printf.fprintf oc
       {|{ "format": "uchar-case-v0", "asOfDate": "2026-01-01",
   "input": { "instances": [ { "label": "j1", "objectType": "Jutter", "attributes": {},
-    "roles": {}, "characteristics": [] } ], "parameters": {} },
+    "roles": {}, "characteristics": []%s } ], "parameters": {} },
   "expected": [ %s ] }|}
+      (if absent = "" then "" else Printf.sprintf {|, "characteristicsAbsent": [ %s ]|} absent)
       expected;
     close_out oc;
     let r =
@@ -12688,8 +12689,8 @@ let () =
     Sys.remove f;
     r
   in
-  let refused ident expected ~text =
-    match load expected with
+  let refused ?absent ident expected ~text =
+    match load ?absent expected with
     | Error (c, p, t) -> check (ident ^ " (got: " ^ t ^ ")") (c = None && p = [] && t = text)
     | Ok _ -> check (ident ^ " (loaded)") false
   in
@@ -12722,6 +12723,19 @@ let () =
   refused "WV-5.7-case-reader-refuses-characteristicAbsent-on-time-dependent"
     {|{ "kind": "characteristicAbsent", "label": "j1", "characteristic": "actief" }|}
     ~text:characteristic_sentence;
+  refused "WV-5.7-case-reader-refuses-characteristicsAbsent-on-time-dependent" ~absent:{|"actief"|}
+    {|{ "kind": "consistent" }|}
+    ~text:
+      "j1.actief: characteristic \"actief\" is declared time-dependent on \"Jutter\": it holds per period, and \
+       \"characteristicsAbsent\" states a scalar truth no temporal reader consults";
+  refused "WV-5.7-case-reader-refuses-attributeOpen-on-time-dependent"
+    {|{ "kind": "attributeOpen", "label": "j1", "attribute": "vergoeding" }|}
+    ~text:attribute_sentence;
+  refused "WV-5.7-case-reader-refuses-characteristicOpen-on-time-dependent"
+    {|{ "kind": "characteristicOpen", "label": "j1", "characteristic": "actief" }|}
+    ~text:
+      "expected[0]: \"actief\" is a time-dependent characteristic, which holds per period: a characteristicOpen \
+       expectation asks a scalar truth it does not have";
   accepted "WV-5.7-case-reader-scalar-expectations-on-scalar-members"
     {|{ "kind": "attributeEmpty", "label": "j1", "attribute": "loon" },
       { "kind": "characteristicAbsent", "label": "j1", "characteristic": "erkend" }|};
@@ -14677,12 +14691,14 @@ let () =
    the verifier finds nothing in the document;
    the serialiser writes false back directly after format and leaves an absent
    field absent. ref carries its one rule and comparison (ch. 1.5): the replay
-   plays the case, V3's vondstwaarde is open and meldplichtig is not attributed
-   to it; the readings at the fixpoint are refused with REF-014, form reading,
-   before an outcome is written. The golden itself plays the same case. *)
+   plays the case, V3's vondstwaarde is open and so is its meldplichtig
+   (characteristicOpen); the readings at the fixpoint are refused with
+   REF-014, form reading, before an outcome is written. The golden itself
+   plays the same input with V3 not meldplichtig (case-ordinary.json). *)
 let () =
   let dir = "ref/test/fixtures/infer-from-empty/" in
   let fixture = corpus_file (dir ^ "ir.json") and case_file = corpus_file (dir ^ "case.json") in
+  let ordinary_case_file = corpus_file (dir ^ "case-ordinary.json") in
   let golden = corpus_file "corpus/golden/jutterswet-meldplicht-flogic/ir.json" in
   let ident s = "WV-2-infer-from-empty-" ^ s in
   let readers = [ ("verifier", Ir_v0.Loader.Verifier); ("executor", Ir_v0.Loader.Executor) ] in
@@ -14770,7 +14786,7 @@ let () =
    check (ident "vondstwaarde-of-V3-is-open") (World.is_open final ~label:"V3" ~member:"vondstwaarde");
    check (ident "meldplichtig-of-V3-is-open") (World.is_open final ~label:"V3" ~member:"meldplichtig");
    check (ident "meldplichtig-of-V2-stands") (not (World.is_open final ~label:"V2" ~member:"meldplichtig")));
-  let status, out = run [ golden; case_file ] in
+  let status, out = run [ golden; ordinary_case_file ] in
   check (ident "runner-plays-the-golden (exit " ^ string_of_int status ^ ": " ^ out ^ ")")
     (status = 0 && out = "oracle: PASS (4 expectations)\n")
 
@@ -15362,57 +15378,175 @@ let () =
 (* WV-1.5-witness-*: broader examples, a document per form with cases whose
    expectations were computed by hand for this reading (spec/proposals/
    STRICT-EMPTY.md §5, the witnesses of the forms this reading is defined
-   for). The case format says nothing of a state yet, so states.json says it
-   per case file: the members the session closes, and the expected state of a
-   member, "not" or "open" for a characteristic, "leeg" or "open" for an
-   attribute. Every other expectation is the case file's *)
+   for). A case file says every state itself (attributeEmpty, attributeOpen,
+   characteristicAbsent, characteristicOpen, characteristicsAbsent in the
+   input); closed.json, where a witness has one, names per case file the
+   members the session closes per object type, which a case cannot say *)
 let () =
   let witnesses =
     [ "absent-link"; "absent-link-path"; "arithmetic"; "characteristic"; "closed-input"; "comparison"; "compound-all";
       "compound-any"; "compound-counting"; "compound-none"; "consistency"; "exact-digits"; "filled-test"; "initialisation";
       "let"; "marker"; "navigated-read"; "settled-empty"; "settled-empty-date" ]
   in
-  let str = function `String s -> s | _ -> invalid_arg "ref/test/test_ref.ml: states.json holds a string here" in
-  let list = function `List l -> l | _ -> invalid_arg "ref/test/test_ref.ml: states.json holds a list here" in
-  let field k = function
-    | `Assoc kvs -> ( match List.assoc_opt k kvs with Some v -> v | None -> invalid_arg ("states.json: no " ^ k))
-    | _ -> invalid_arg "ref/test/test_ref.ml: states.json holds an object here"
-  in
+  let str = function `String s -> s | _ -> invalid_arg "ref/test/test_ref.ml: closed.json holds a string here" in
+  let list = function `List l -> l | _ -> invalid_arg "ref/test/test_ref.ml: closed.json holds a list here" in
   List.iter
     (fun name ->
       let dir = corpus_file ("ref/test/fixtures/strict-empty/" ^ name ^ "/") in
       let doc = Ir_v0.Loader.load_file (dir ^ "ir.json") in
-      let cases = match Yojson.Safe.from_file (dir ^ "states.json") with `Assoc kvs -> kvs | _ -> [] in
+      let cases =
+        List.sort compare
+          (List.filter
+             (fun f -> String.starts_with ~prefix:"case" f && Filename.check_suffix f ".json")
+             (Array.to_list (Sys.readdir dir)))
+      in
+      let closures =
+        if Sys.file_exists (dir ^ "closed.json") then
+          match Yojson.Safe.from_file (dir ^ "closed.json") with
+          | `Assoc kvs -> kvs
+          | _ -> invalid_arg "ref/test/test_ref.ml: closed.json holds an object"
+        else []
+      in
       check ("WV-1.5-witness-" ^ name ^ " (cases)") (cases <> []);
       List.iter
-        (fun (case_file, spec) ->
+        (fun (case_file, _) ->
+          check ("WV-1.5-witness-" ^ name ^ " closed.json names " ^ case_file) (List.mem case_file cases))
+        closures;
+      List.iter
+        (fun case_file ->
           let id = Printf.sprintf "WV-1.5-witness-%s/%s" name case_file in
           let case = Case.load_file doc (dir ^ case_file) in
           let closed =
             Eval.Members
-              (List.map (fun m -> match list m with [ t; k ] -> (str t, str k) | _ -> invalid_arg id) (list (field "closed" spec)))
+              (List.map
+                 (fun m -> match list m with [ t; k ] -> (str t, str k) | _ -> invalid_arg id)
+                 (match List.assoc_opt case_file closures with Some l -> list l | None -> []))
           in
           let env =
             { (env_of doc) with params = case.params; param_tls = case.param_tls; as_of = case.as_of }
           in
           let final = Eval.evaluate ~closed env case.world in
-          (match Case.check case final with
+          match Case.check case final with
           | [] -> check id true
-          | mismatches -> check (id ^ " (" ^ String.concat "; " mismatches ^ ")") false);
-          List.iter
-            (fun s ->
-              let label = str (field "label" s) and member = str (field "member" s) and want = str (field "state" s) in
-              let otype = (World.get final label).otype in
-              let is_attribute =
-                match Ir_v0.Checks.effective_ot doc otype with
-                | Some ot -> Ir_v0.Checks.find_ci ot.attributes member <> None
-                | None -> invalid_arg id
-              in
-              let got = if is_attribute then ov_attr final label member else ov_char final label member in
-              ov_expect (Printf.sprintf "%s %s.%s" id label member) got want)
-            (list (field "states" spec)))
+          | mismatches -> check (id ^ " (" ^ String.concat "; " mismatches ^ ")") false)
         cases)
     witnesses
+
+(* WV-1.5-case-*: the case format says the states of ch. 1.5. attributeEmpty
+   and characteristicAbsent hold where it stands that the member has no value
+   or does not hold, attributeOpen and characteristicOpen where it is open; a
+   document without the property has no open member, so there the last two
+   never hold. "characteristicsAbsent" in the input states that a
+   characteristic does not hold, and that statement stands beside a writer
+   that decides nothing, as an input value does (ch. 7.8); without the
+   property it changes nothing. Named in "characteristics" as well it is
+   EF-047, undeclared EF-040. On the raw input, the no-op guard of gate 7,
+   nothing is open. The document: "een Vondst is kostbaar indien zijn taxatie
+   groter is dan 1000", the vindloon of the card, and "de drijftoeslag is 2
+   indien hij niet drijfhout is" over an input drijfhout *)
+let () =
+  let doc strict =
+    ov_doc ~strict
+      [ ov_vondst [ "taxatie"; "vindloon"; "drijftoeslag" ] [ "kostbaar"; "drijfhout" ] ]
+      [ ov_attribution "kostbaar" (ov_cmp Greater "taxatie" "1000");
+        ov_vindloon;
+        ov_calc ~cond:(ov_check ~negation:true "drijfhout") "drijftoeslag" (ov_lit "2") ]
+  in
+  let load d instance expected =
+    let f = Filename.temp_file "ref-case-states" ".json" in
+    Out_channel.with_open_text f (fun oc ->
+        Printf.fprintf oc
+          {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "V1", "objectType": "Vondst", %s } ], "parameters": {} },
+  "expected": [ %s ] }|}
+          instance expected);
+    let r = try Ok (Case.load_file d f) with Case.Error { code; params; text } -> Error (code, params, text) in
+    Sys.remove f;
+    r
+  in
+  let run ?(raw = false) ?(strict = true) instance expected =
+    let d = doc strict in
+    match load d instance expected with
+    | Error (_, _, text) -> [ "CASE ERROR: " ^ text ]
+    | Ok c -> Case.check c (if raw then c.world else Eval.evaluate (env_of d) c.world)
+  in
+  let holds id got = check (id ^ " (got: " ^ String.concat "; " got ^ ")") (got = []) in
+  let fails id want got = check (id ^ " (got: " ^ String.concat "; " got ^ ")") (got = [ want ]) in
+  let input ?(absent = "") ?(chars = "") attrs =
+    Printf.sprintf {|"attributes": { %s }, "roles": {}, "characteristics": [ %s ]%s|} attrs chars
+      (if absent = "" then "" else Printf.sprintf {|, "characteristicsAbsent": [ %s ]|} absent)
+  in
+  let none = input "" and taxatie v = input (Printf.sprintf {|"taxatie": { "number": "%s" }|} v) in
+  let attribute kind = Printf.sprintf {|{ "kind": "%s", "label": "V1", "attribute": "vindloon" }|} kind in
+  let characteristic ?(c = "kostbaar") kind = Printf.sprintf {|{ "kind": "%s", "label": "V1", "characteristic": "%s" }|} kind c in
+  (* WV-1.5-case-attribute-open *)
+  holds "WV-1.5-case-attribute-open (open)" (run none (attribute "attributeOpen"));
+  fails "WV-1.5-case-attribute-open (open, attributeEmpty)" "V1.vindloon is open, expected leeg"
+    (run none (attribute "attributeEmpty"));
+  holds "WV-1.5-case-attribute-open (settled leeg, attributeEmpty)" (run (taxatie "50") (attribute "attributeEmpty"));
+  fails "WV-1.5-case-attribute-open (settled leeg)" "V1.vindloon = leeg, expected open"
+    (run (taxatie "50") (attribute "attributeOpen"));
+  fails "WV-1.5-case-attribute-open (filled)" "V1.vindloon = 10, expected open"
+    (run (taxatie "2000") (attribute "attributeOpen"));
+  fails "WV-1.5-case-attribute-open (without the property)" "V1.vindloon = leeg, expected open"
+    (run ~strict:false none (attribute "attributeOpen"));
+  holds "WV-1.5-case-attribute-open (without the property, attributeEmpty)"
+    (run ~strict:false none (attribute "attributeEmpty"));
+  (* WV-1.5-case-characteristic-open *)
+  holds "WV-1.5-case-characteristic-open (open)" (run none (characteristic "characteristicOpen"));
+  fails "WV-1.5-case-characteristic-open (open, characteristicAbsent)"
+    "V1: characteristic \"kostbaar\" is open, expected absent" (run none (characteristic "characteristicAbsent"));
+  holds "WV-1.5-case-characteristic-open (stands not, characteristicAbsent)"
+    (run (taxatie "50") (characteristic "characteristicAbsent"));
+  fails "WV-1.5-case-characteristic-open (stands not)" "V1: characteristic \"kostbaar\" stands not to hold, expected open"
+    (run (taxatie "50") (characteristic "characteristicOpen"));
+  fails "WV-1.5-case-characteristic-open (holds)" "V1 carries characteristic \"kostbaar\", expected open"
+    (run (taxatie "2000") (characteristic "characteristicOpen"));
+  fails "WV-1.5-case-characteristic-open (without the property)"
+    "V1: characteristic \"kostbaar\" stands not to hold, expected open"
+    (run ~strict:false none (characteristic "characteristicOpen"));
+  holds "WV-1.5-case-characteristic-open (without the property, characteristicAbsent)"
+    (run ~strict:false none (characteristic "characteristicAbsent"));
+  (* WV-1.5-case-characteristics-absent *)
+  let drijftoeslag kind =
+    match kind with
+    | "2" -> {|{ "kind": "attributeValue", "label": "V1", "attribute": "drijftoeslag", "value": { "number": "2" } }|}
+    | k -> Printf.sprintf {|{ "kind": "%s", "label": "V1", "attribute": "drijftoeslag" }|} k
+  in
+  holds "WV-1.5-case-characteristics-absent (stated)"
+    (run (input ~absent:{|"drijfhout"|} "")
+       (drijftoeslag "2" ^ ", " ^ characteristic ~c:"drijfhout" "characteristicAbsent"));
+  fails "WV-1.5-case-characteristics-absent (stated, not open)"
+    "V1: characteristic \"drijfhout\" stands not to hold, expected open"
+    (run (input ~absent:{|"drijfhout"|} "") (characteristic ~c:"drijfhout" "characteristicOpen"));
+  holds "WV-1.5-case-characteristics-absent (not named: open)"
+    (run none (drijftoeslag "attributeOpen" ^ ", " ^ characteristic ~c:"drijfhout" "characteristicOpen"));
+  holds "WV-1.5-case-characteristics-absent (without the property, stated)"
+    (run ~strict:false (input ~absent:{|"drijfhout"|} "") (drijftoeslag "2"));
+  holds "WV-1.5-case-characteristics-absent (without the property, not named)" (run ~strict:false none (drijftoeslag "2"));
+  holds "WV-1.5-case-characteristics-absent (beside a writer that decides nothing)"
+    (run (input ~absent:{|"kostbaar"|} "") (characteristic "characteristicAbsent"));
+  holds "WV-1.5-case-characteristics-absent (beside a writer that decides)"
+    (run (input ~absent:{|"kostbaar"|} {|"taxatie": { "number": "2000" }|}) (characteristic "characteristicPresent"));
+  (* WV-1.5-case-characteristics-absent-refused *)
+  let refused id want instance =
+    match load (doc true) instance (characteristic "characteristicAbsent") with
+    | Ok _ -> check (id ^ " (loaded)") false
+    | Error (code, params, text) -> check (id ^ " (got: " ^ text ^ ")") ((code, params) = want)
+  in
+  refused "WV-1.5-case-characteristics-absent-refused (both lists)"
+    (Some "EF-047", [ ("label", "V1"); ("characteristic", "drijfhout") ])
+    (input ~chars:{|"drijfhout"|} ~absent:{|"drijfhout"|} "");
+  refused "WV-1.5-case-characteristics-absent-refused (undeclared)"
+    (Some "EF-040", [ ("label", "V1"); ("name", "drijfhoud") ])
+    (input ~absent:{|"drijfhoud"|} "");
+  (* WV-1.5-case-raw-input *)
+  fails "WV-1.5-case-raw-input (attributeOpen)" "V1.vindloon = leeg, expected open"
+    (run ~raw:true none (attribute "attributeOpen"));
+  holds "WV-1.5-case-raw-input (attributeEmpty)" (run ~raw:true none (attribute "attributeEmpty"));
+  fails "WV-1.5-case-raw-input (characteristicOpen)" "V1: characteristic \"kostbaar\" stands not to hold, expected open"
+    (run ~raw:true none (characteristic "characteristicOpen"));
+  holds "WV-1.5-case-raw-input (characteristicAbsent)" (run ~raw:true none (characteristic "characteristicAbsent"))
 
 (* WV-1.5-monotone: for every scenario above and every attribute value and
    characteristic its case gives, the run without that input has no outcome

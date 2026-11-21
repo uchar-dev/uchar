@@ -385,6 +385,14 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
               Some
                 (Printf.sprintf "%s.%s = [%s], expected leeg" label attr
                    (String.concat ";" (List.map render_arg got))))
+      (* this encoding translates no document with inferFromEmpty false
+         (CLINGO-049), and a document without it has no open member
+         (RUNTIME-SEMANTICS ch. 1.5): an expectation of an open member never
+         holds here *)
+      | Attribute_open { label; attr } ->
+          Some (Printf.sprintf "%s.%s: no member of this encoding's model is open, expected open" label attr)
+      | Char_open { label; char } ->
+          Some (Printf.sprintf "%s: no member of this encoding's model is open, expected characteristic %S open" label char)
       (* a cell (RUNTIME-SEMANTICS ch. 5.8c) is the val/3 member World.cell
          names, its value encoded as an attribute's of its declaration: a
          number or a date scaled by it, a text, an enumeration label or a

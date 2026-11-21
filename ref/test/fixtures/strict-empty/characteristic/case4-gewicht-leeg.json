@@ -8,7 +8,10 @@
         "objectType": "Vondst",
         "attributes": {},
         "roles": {},
-        "characteristics": []
+        "characteristics": [],
+        "characteristicsAbsent": [
+          "drijfhout"
+        ]
       }
     ],
     "parameters": {}
@@ -28,12 +31,12 @@
       }
     },
     {
-      "kind": "characteristicAbsent",
+      "kind": "characteristicOpen",
       "label": "V1",
       "characteristic": "aangespoeld"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "strandtoeslag"
     }

@@ -19,7 +19,7 @@
   },
   "expected": [
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "J1",
       "attribute": "strandloon"
     }

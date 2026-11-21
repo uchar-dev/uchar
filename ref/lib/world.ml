@@ -128,12 +128,17 @@ type t = {
   opened : unit Key.t;
       (* the members a standing outcome leaves open: the union of their
          [opened] *)
+  stated_absent : unit Key.t;
+      (* by (label, norm characteristic): the characteristics the case states
+         do not hold (`characteristicsAbsent`), set by the case reader. The
+         case gives them as it gives a value, so none of them is open
+         ([is_open]) *)
 }
 
 let empty =
   { instances = SMap.empty; order = []; channel = []; outcomes = []; evaluating = []; owners = Key.empty;
     holders = Key.empty; mints = SMap.empty; written = Key.empty; char_writes = Key.empty; parts = Key.empty;
-    open_input = Key.empty; opening = []; opened = Key.empty }
+    open_input = Key.empty; opening = []; opened = Key.empty; stated_absent = Key.empty }
 
 let add_instance w inst =
   if SMap.mem inst.label w.instances then
@@ -181,11 +186,13 @@ let has_char i name = List.mem (norm name) i.chars
 exception Open_read of { label : string; member : string }
 
 (* Whether [member] of [label] is open where it holds no value: open input, or
-   left open by a standing outcome. A member without a value that is neither
-   is settled leeg *)
+   left open by a standing outcome, unless the case states that it does not
+   hold — that statement stands beside a writer that decides nothing, as an
+   input value does (ch. 7.8). A member without a value that is not open is
+   settled leeg *)
 let is_open w ~label ~member =
   let key = (label, norm member) in
-  Key.mem key w.open_input || Key.mem key w.opened
+  (Key.mem key w.open_input || Key.mem key w.opened) && not (Key.mem key w.stated_absent)
 
 (* The value of [name] on [i] as an evaluation reads it: the value, leeg where
    it is settled leeg, and [Open_read] where it is open *)

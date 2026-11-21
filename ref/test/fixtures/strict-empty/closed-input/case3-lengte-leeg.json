@@ -32,7 +32,7 @@
       }
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "omvang"
     },

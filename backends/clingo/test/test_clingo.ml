@@ -19576,18 +19576,19 @@ let () =
    V3 would not be meldplichtig. The translation refuses the document before it
    writes a line, with CLINGO-049, form document, and the runner, whose golden
    and red paths both translate through [Translate.translate_guarded], reports
-   that code and no model; the golden itself translates and plays. *)
+   that code and no model; the golden itself translates and plays the same
+   input with V3 not meldplichtig (case-ordinary.json). *)
 let () =
   let dir = "ref/test/fixtures/infer-from-empty/" in
   let golden = "corpus/golden/jutterswet-meldplicht-flogic/ir.json" in
-  let case_text = corpus_file (dir ^ "case.json") in
+  let case_text = corpus_file (dir ^ "case.json") and ordinary_case_text = corpus_file (dir ^ "case-ordinary.json") in
   let doc, case = load_pair ~ir:(corpus_file (dir ^ "ir.json")) ~case_text in
   check "inferFromEmpty false: refused before translation with CLINGO-049, form document"
     (match translate_guarded doc case with
      | _ -> false
      | exception Uchar_ref.Value.Fault { code; params; _ } ->
          code = Some "CLINGO-049" && params = [ ("form", "document") ]);
-  let doc, case = load_pair ~ir:(corpus_file golden) ~case_text in
+  let doc, case = load_pair ~ir:(corpus_file golden) ~case_text:ordinary_case_text in
   check "inferFromEmpty absent: the golden translates"
     (match translate_guarded doc case with _ -> true | exception Uchar_ref.Value.Fault _ -> false);
   (* the runner of this tree: from the repository root, where gate 6 runs the
@@ -19597,17 +19598,17 @@ let () =
     let built = "_build/default/backends/clingo/bin/clingo_runner.exe" in
     if Sys.file_exists built then built else "../bin/clingo_runner.exe"
   in
-  let run ir =
+  let run ir case_file =
     let out = Filename.temp_file "clingo-infer-from-empty" ".out" in
     Fun.protect
       ~finally:(fun () -> Sys.remove out)
       (fun () ->
         let status =
-          Sys.command (Filename.quote_command runner ~stdout:out ~stderr:out [ at_root ir; at_root (dir ^ "case.json") ])
+          Sys.command (Filename.quote_command runner ~stdout:out ~stderr:out [ at_root ir; at_root (dir ^ case_file) ])
         in
         (status, In_channel.with_open_bin out In_channel.input_all))
   in
-  let status, out = run (dir ^ "ir.json") in
+  let status, out = run (dir ^ "ir.json") "case.json" in
   check
     ("inferFromEmpty false: the runner refuses it with CLINGO-049 and writes no model (exit " ^ string_of_int status
    ^ ": " ^ out ^ ")")
@@ -19617,7 +19618,7 @@ let () =
          (List.exists
             (fun l -> String.starts_with ~prefix:"clingo:" l || String.starts_with ~prefix:"MISMATCH" l)
             (String.split_on_char '\n' out)));
-  let status, out = run golden in
+  let status, out = run golden "case-ordinary.json" in
   check ("inferFromEmpty absent: the runner plays the golden (exit " ^ string_of_int status ^ ": " ^ out ^ ")")
     (status = 0 && out = "clingo: PASS (4 expectations)\n")
 

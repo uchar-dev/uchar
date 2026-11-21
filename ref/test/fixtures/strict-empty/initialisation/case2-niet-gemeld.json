@@ -12,7 +12,10 @@
           }
         },
         "roles": {},
-        "characteristics": []
+        "characteristics": [],
+        "characteristicsAbsent": [
+          "gemeld"
+        ]
       }
     ],
     "parameters": {}
