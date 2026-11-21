@@ -896,6 +896,9 @@ type vocabulary_table = {
 (* The M1 root nests [model] (the declaration set) and [rules]; this record
    keeps them flat, and [format] is checked by the loader and not kept. *)
 type document = {
+  infer_from_empty : bool;
+      (* inferFromEmpty (IR-SPEC ch. 2): written false or not at all, and
+         absent is true, the reading of RUNTIME-SEMANTICS ch. 1.2-1.4 *)
   object_types : (string * object_type) list;
   domain_specs : (string * datatype option) list;
       (* the Domain wrapper's name and datatype; always [Some] since M1. At

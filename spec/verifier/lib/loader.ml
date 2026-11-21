@@ -2131,10 +2131,23 @@ let document ?(reader = Executor) (j : json) : document =
   refuse_duplicate_keys j;
   let path = "" in
   let kvs = obj path j in
-  check_keys path kvs ~ext:[ "vocabularies" ] [ "format"; "model"; "rules"; "diagnostics" ];
+  check_keys path kvs ~ext:[ "inferFromEmpty"; "vocabularies" ] [ "format"; "model"; "rules"; "diagnostics" ];
   (match str (path / "format") (field path kvs "format") with
   | "uchar-ir-v1" -> ()
   | s -> fail (path / "format") ("unknown format \"" ^ s ^ "\""));
+  (* written false or not at all: absent is the reading of RUNTIME-SEMANTICS
+     ch. 1.2-1.4. The loader reads the choice and refuses nothing for it; an
+     executor that does not carry the reading of false refuses the document
+     itself. *)
+  let infer_from_empty =
+    Option.value ~default:true
+      (ext_field path kvs "inferFromEmpty" (fun p -> function
+         | `Bool false -> false
+         | j ->
+             fail p
+               ("expected false, the one spelling of a document that infers nothing from an empty value, got "
+               ^ Yojson.Safe.to_string j)))
+  in
   let mpath = path / "model" in
   let model = obj mpath (field path kvs "model") in
   check_keys mpath model ~ext:[ "functionDefs" ]
@@ -2160,6 +2173,7 @@ let document ?(reader = Executor) (j : json) : document =
   let uniqueness_versions = forms "uniquenesses" uniqueness in
   let doc =
     {
+      infer_from_empty;
       object_types = m "objectTypes" object_type;
       domain_specs = m "domains" domain;
       parameters = m "parameters" parameter;

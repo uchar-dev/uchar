@@ -960,7 +960,7 @@ let document (stmts : stmt list) : A.document * string option list list =
                      role_names = List.map (fun (_, r, _) -> r) f.f_roles }))
       m.ftypes
   in
-  ( { A.object_types; domain_specs = []; parameters = []; unit_systems = []; fact_types;
+  ( { A.infer_from_empty = true; object_types; domain_specs = []; parameters = []; unit_systems = []; fact_types;
       dimensions = []; timelines = []; day_kinds = [];
       resolved_rules = !resolved; resolved_day_kind_definitions = []; object_creations = [];
       allocations = []; consistencies = []; uniquenesses = []; uniqueness_unions = [];

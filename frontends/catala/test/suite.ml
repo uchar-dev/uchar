@@ -689,7 +689,7 @@ let () =
       pd_desugared = false; pd_validity = Some { valid_from = None; valid_to = None } }
   in
   let trial : A.document =
-    { object_types = [ ("Zaak", case_data) ]; domain_specs = []; parameters = []; unit_systems = [];
+    { infer_from_empty = true; object_types = [ ("Zaak", case_data) ]; domain_specs = []; parameters = []; unit_systems = [];
       fact_types = [ ("Zaakkoppeling", link) ]; dimensions = []; timelines = []; day_kinds = [];
       resolved_rules =
         [ rule_def "peildatum van een zaak" Equation "peildatum"

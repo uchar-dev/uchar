@@ -636,9 +636,12 @@ module Make (P : PRODUCER) = struct
     let function_defs =
       match d.function_defs with [] -> [] | fds -> [ ("functionDefs", `List (List.map function_def fds)) ]
     in
+    (* written false or not at all, directly after format *)
+    let infer_from_empty = if d.infer_from_empty then [] else [ ("inferFromEmpty", `Bool false) ] in
     `Assoc
-      [ ("format", `String "uchar-ir-v1");
-        ("model",
+      ([ ("format", `String "uchar-ir-v1") ]
+      @ infer_from_empty
+      @ [ ("model",
          `Assoc
            ([ ("objectTypes", `List (List.map object_type d.object_types));
               ("factTypes",
@@ -667,7 +670,7 @@ module Make (P : PRODUCER) = struct
              ("startPointDeterminations", `List []);
              ("ruleGroups", `List []);
              ("prioritizedDefaults", `List (List.map prioritized_defaults groups)) ]);
-        ("diagnostics", `List []) ]
+        ("diagnostics", `List []) ])
 
   let to_string ?default_names (d : document) : string =
     Yojson.Safe.pretty_to_string (document ?default_names d) ^ "\n"

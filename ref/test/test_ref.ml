@@ -1274,6 +1274,7 @@ let () =
 
 let empty_doc : Ir_v0.Ast.document =
   {
+    infer_from_empty = true;
     object_types = [];
     domain_specs = [];
     parameters = [];

@@ -334,7 +334,7 @@ let () =
       rr_condition = cond; rr_validity = validity_window; rr_source_annotations = None; rr_pointer = "" }
   in
   let trial : A.document =
-    { object_types = [ ("Sein", sein) ]; domain_specs = []; parameters = []; unit_systems = [];
+    { infer_from_empty = true; object_types = [ ("Sein", sein) ]; domain_specs = []; parameters = []; unit_systems = [];
       fact_types = [ ("seinpaar", sein_pair) ]; dimensions = []; timelines = []; day_kinds = [];
       resolved_rules =
         [ rule_def "hoogte van een sein" Equation "hoogte" (number "12") None None;

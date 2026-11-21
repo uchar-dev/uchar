@@ -2611,7 +2611,7 @@ let file_to_document (input : string) : I.document =
         (fun name -> (StructName.base name, Some (struct_type_of enums structs name)))
         (StructName.Set.elements !used_structs)
   in
-  { object_types = List.rev !object_types;
+  { infer_from_empty = true; object_types = List.rev !object_types;
     domain_specs; parameters = []; unit_systems = []; fact_types = !fact_types;
     dimensions = []; timelines = []; day_kinds = [];
     resolved_rules = !rule_defs; resolved_day_kind_definitions = [];
