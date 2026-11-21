@@ -91,6 +91,19 @@ let verdict ~(pinned : Uchar_ref.Case.expected_fault) ~observed ~what report =
 
 let () =
   match Sys.argv with
+  (* the program alone, unsolved: what a change to the translation is measured
+     on, document by document *)
+  | [| _; "--program"; ir_path; case_path |] -> (
+      try
+        let doc = Ir_v0.Loader.load_file ir_path in
+        print_string (Clingo_backend.Translate.translate doc (Uchar_ref.Case.load_file doc case_path))
+      with
+      | Uchar_ref.Value.Fault { code; text; _ } | Uchar_ref.Case.Error { code; text; _ } ->
+          Printf.eprintf "FAULT: %s\n" (Uchar_ref.Value.report ~code text);
+          exit 1
+      | Ir_v0.Loader.Error (path, msg) ->
+          Printf.eprintf "IR LOAD ERROR at %s: %s\n" (if path = "" then "<root>" else path) msg;
+          exit 2)
   | [| _; ir_path; case_path |] -> (
       try
         (* Split reading, exactly as ref/bin/runner.ml does it: the
@@ -163,5 +176,5 @@ let () =
           Printf.eprintf "LOAD ERROR: %s\n" e;
           exit 2)
   | _ ->
-      prerr_endline "usage: clingo_runner <ir.json> <case.json>";
+      prerr_endline "usage: clingo_runner [--program] <ir.json> <case.json>";
       exit 2
