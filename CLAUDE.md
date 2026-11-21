@@ -172,8 +172,9 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
    every object in `corpus/golden`, `corpus/red` and `corpus/negative` carries its keys in the canonical order of the
    subschema it instantiates (the `properties` order), failing with the path and both orders; an object no subschema
    admits is counted apart, never skipped. A shape self-test holds `EmbeddedExpression.unit` to `true`,
-   `DeclaredUnit.symbol` to a non-empty string and `inferFromEmpty` to `false` on a root that admits no unknown field;
-   a key-order self-test holds `inferFromEmpty` directly after `format`. Floor: `EXPECTED_MIN_DOCS`.
+   `DeclaredUnit.symbol` to a non-empty string, `inferFromEmpty` to `false` on a root that admits no unknown field and
+   `complete` to `true` on an Attribute and a Characteristic; a key-order self-test holds `inferFromEmpty` directly
+   after `format` and `complete` after a member's `timeline`. Floor: `EXPECTED_MIN_DOCS`.
 
 3. `scripts/check-verifier.sh` — the OCaml verifier (`spec/verifier/`) builds in the workspace `_build`
    (`scripts/lib/ocaml-build.sh`), the one gates 11 and 15 use, and builds on its own: no dune file under
@@ -212,7 +213,7 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
    golden the preservation leg carries or that carries the property, per case and per input the case gives,
    `runner --end-state` of the case without that input against the case, every outcome of the first standing in the
    second; a run in which a closure decided (a `closure` line, or a fault after one) and a run whose member left out
-   is no input member are counted apart, any other difference fails by name unless `MONOTONE_GAPS` lists it
+   is not open without its value (a derived member, or a member declared complete) are counted apart, any other difference fails by name unless `MONOTONE_GAPS` lists it
    (reason-carrying, stale-failing in both directions), the comparison passes rows of its own, and the run of
    `MONOTONE_MUTANT`, compared all the same, must lose an outcome. Floors: `EXPECTED_MIN_CASES`,
    `EXPECTED_MIN_EXAMPLES`, `EXPECTED_MIN_PRESERVED_GOLDENS`, `EXPECTED_MIN_PRESERVED_CASES`,
