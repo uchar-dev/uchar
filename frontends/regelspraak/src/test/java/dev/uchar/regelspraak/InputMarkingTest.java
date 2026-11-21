@@ -252,10 +252,10 @@ class InputMarkingTest {
         assertTrue(c.contains(consistency), () -> "de consistentie staat niet zo op de wire:\n" + ir);
         String members = compact("""
             {"node": "Attribute", "name": "opgegeven waarde",
-             "datatype": {"node": "Number", "whole": false, "decimals": 2, "sign": "unspecified"},
+             "datatype": {"node": "Number", "whole": false, "decimals": 2, "sign": "unspecified"}, "complete": true,
              "origin": {"form": "inputAboveComputation", "from": {"kind": "attribute", "owner": "Vondst", "name": "waarde"}}},
             {"node": "Attribute", "name": "berekende waarde",
-             "datatype": {"node": "Number", "whole": false, "decimals": 2, "sign": "unspecified"},
+             "datatype": {"node": "Number", "whole": false, "decimals": 2, "sign": "unspecified"}, "complete": true,
              "origin": {"form": "inputAboveComputation", "from": {"kind": "attribute", "owner": "Vondst", "name": "waarde"}}}],
             "characteristics": [{"node": "Characteristic", "name": "afwijkende opgave waarde", "kind": "possessive",
              "origin": {"form": "inputAboveComputation", "from": {"kind": "attribute", "owner": "Vondst", "name": "waarde"}}}]""");
@@ -351,10 +351,10 @@ class InputMarkingTest {
         String c = compact(ir);
         assertTrue(c.contains(compact("""
             {"node": "Attribute", "name": "opgegeven meldingsdatum",
-             "datatype": {"node": "Date", "precision": "day"},
+             "datatype": {"node": "Date", "precision": "day"}, "complete": true,
              "origin": {"form": "inputAboveComputation", "from": {"kind": "attribute", "owner": "Vondst", "name": "meldingsdatum"}}},
             {"node": "Attribute", "name": "berekende meldingsdatum",
-             "datatype": {"node": "Date", "precision": "day"},
+             "datatype": {"node": "Date", "precision": "day"}, "complete": true,
              "origin": {"form": "inputAboveComputation", "from": {"kind": "attribute", "owner": "Vondst", "name": "meldingsdatum"}}}""")),
                 () -> "de gegenereerde attributen dragen het datumtype niet:\n" + ir);
         assertTrue(c.contains(compact("""

@@ -37,6 +37,7 @@
               "decimals": 2,
               "sign": "unspecified"
             },
+            "complete": true,
             "origin": {
               "form": "inputAboveComputation",
               "from": {
@@ -55,6 +56,7 @@
               "decimals": 2,
               "sign": "unspecified"
             },
+            "complete": true,
             "origin": {
               "form": "inputAboveComputation",
               "from": {
@@ -93,6 +95,7 @@
               "decimals": 2,
               "sign": "unspecified"
             },
+            "complete": true,
             "origin": {
               "form": "inputAboveComputation",
               "from": {
@@ -111,6 +114,7 @@
               "decimals": 2,
               "sign": "unspecified"
             },
+            "complete": true,
             "origin": {
               "form": "inputAboveComputation",
               "from": {

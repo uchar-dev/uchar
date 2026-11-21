@@ -470,9 +470,11 @@ koptekst : KOPTEKST ; // §13.3.1.5 — the whole '--- heading' line is one toke
 // attaches a timeline to an attribute OR kenmerk).
 // The opgave marker (uchar DIALECT EXTENSION, grammar/DIVERGENCES.md §7) is admitted here only so that the resolver
 // can refuse it on a kenmerk with a message of its own instead of a bare syntax error.
+// uchar DIALECT EXTENSION (grammar/DIVERGENCES.md, "Volledig gegeven"): the marker '(volledig)' stands after the
+// optional timeline: the input of the kenmerk is complete, so where the case does not name it, it does not hold.
 kenmerkSpecificatie
-    : IS lowerNaam ( MV_START meervoudsvorm RPAREN )? benaming* KENMERK BIJVOEGLIJK? tijdlijn? MAG_OPGEGEVEN_WORDEN? SEMICOLON?   # bijvoeglijkKenmerk
-    | bepaaldLidwoord? lowerNaam benaming* KENMERK ( BEZITTELIJK | BIJVOEGLIJK )? tijdlijn? MAG_OPGEGEVEN_WORDEN? SEMICOLON?       # naamwoordKenmerk
+    : IS lowerNaam ( MV_START meervoudsvorm RPAREN )? benaming* KENMERK BIJVOEGLIJK? tijdlijn? VOLLEDIG? MAG_OPGEGEVEN_WORDEN? SEMICOLON?   # bijvoeglijkKenmerk
+    | bepaaldLidwoord? lowerNaam benaming* KENMERK ( BEZITTELIJK | BIJVOEGLIJK )? tijdlijn? VOLLEDIG? MAG_OPGEGEVEN_WORDEN? SEMICOLON?       # naamwoordKenmerk
     ;
 
 // §13.3.2.5 Attribuut. The 'met eenheid' clause lives inside the numeric datatypes
@@ -488,16 +490,23 @@ kenmerkSpecificatie
 // opgave marker then says that such a value, a marker included, may be supplied; the resolver lowers the attribute to
 // a sum type. An absence marking after the opgave marker is admitted only so that the resolver can refuse it with a
 // message that names the right order instead of a bare syntax error.
+// uchar DIALECT EXTENSION (grammar/DIVERGENCES.md, "Volledig gegeven"): the marker '(volledig)' stands in the place of
+// the opgave marker: the input of the attribute is complete. Beside the opgave marker, before or after it, it is
+// admitted only so that the resolver can refuse the pair with a message of its own instead of a bare syntax error.
 attribuutSpecificatie
     : bepaaldLidwoord? lowerNaam ( MV_START meervoudsvorm RPAREN )? benaming* ( datatype | domeinNaam ) ( MET_EENHEID eenheidExpressie )?
       COMMA? ( GEDIMENSIONEERD_MET dimensieNaam ( EN dimensieNaam )* )?
       tijdlijn?
       afwezigheidsmarkering?
-      ( MAG_OPGEGEVEN_WORDEN afwezigheidsmarkeringNaOpgave? )?
+      VOLLEDIG?
+      ( MAG_OPGEGEVEN_WORDEN afwezigheidsmarkeringNaOpgave? volledigNaOpgave? )?
       SEMICOLON?
     ;
 afwezigheidsmarkeringNaOpgave
     : afwezigheidsmarkering
+    ;
+volledigNaOpgave
+    : VOLLEDIG
     ;
 afwezigheidsmarkering
     : OF_ONBEKEND

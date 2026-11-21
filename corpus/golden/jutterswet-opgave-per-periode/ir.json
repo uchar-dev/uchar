@@ -37,6 +37,7 @@
               "granularity": "month",
               "count": 1
             },
+            "complete": true,
             "origin": {
               "form": "inputAboveComputation",
               "from": {
@@ -60,6 +61,7 @@
               "granularity": "month",
               "count": 1
             },
+            "complete": true,
             "origin": {
               "form": "inputAboveComputation",
               "from": {
@@ -98,6 +100,7 @@
               "granularity": "month",
               "count": 1
             },
+            "complete": true,
             "origin": {
               "form": "inputAboveComputation",
               "from": {
@@ -121,6 +124,7 @@
               "granularity": "month",
               "count": 1
             },
+            "complete": true,
             "origin": {
               "form": "inputAboveComputation",
               "from": {

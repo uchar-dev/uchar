@@ -65,6 +65,11 @@ EENHEID_AANWIJZING : '(eenheid)' ;
 // meaning. Inside a comment, an enumeration literal or a text literal it is never lexed at all. Inertness on the
 // sources inside and outside this repository is MEASURED, see DIVERGENCES.md §7.
 MAG_OPGEGEVEN_WORDEN : '(mag' WSP 'opgegeven' WSP 'worden)' ;
+// uchar DIALECT EXTENSION (grammar/DIVERGENCES.md, "Volledig gegeven"): the marker that the input of a member is
+// complete, the last element of a member declaration. A whole token with its parentheses, as the opgave marker: it
+// reserves no name word, so 'volledig' keeps lexing as before everywhere else, and an attribute, a characteristic or a
+// rule named with it stays readable.
+VOLLEDIG : '(volledig)' ;
 // uchar DIALECT EXTENSION (grammar/DIVERGENCES.md, "Afwezigheidsmarkeringen"): the absence markers of an attribute,
 // the last element of its declaration in the place of the opgave marker. Whole tokens with their parentheses, as the
 // opgave marker: they reserve no name word, so 'of', 'onbekend', 'niet', 'van' and 'toepassing' keep lexing as before

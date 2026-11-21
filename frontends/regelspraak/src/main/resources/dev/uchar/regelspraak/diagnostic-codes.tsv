@@ -411,3 +411,5 @@ RGS-451	day-kind-reads-parameter-without-value	ERROR	dayKind,parameter,where
 RGS-460	percentage-sign-dropped	WARNING	datatype,sign
 RGS-461	absence-marking-after-input-marking	ERROR	attribute,marking,objectType,opgave
 RGS-462	infer-from-empty-twice	ERROR	first,value
+RGS-463	complete-beside-input-marking	ERROR	attribute,complete,objectType,opgave
+RGS-464	complete-on-written-member	ERROR	complete,kind,name,objectType,writer

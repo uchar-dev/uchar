@@ -571,6 +571,14 @@ public final class DefinitionResolver {
                         : marking.OF_NIET_VAN_TOEPASSING() != null ? List.of("niet van toepassing")
                         : RegelSpraakModel.ABSENCE_MARKERS);
             }
+            // '(volledig)' (grammar/DIVERGENCES.md, "Volledig gegeven"): beside the opgave marker the attribute is the
+            // target of a stack and no input, and the opgave the marker generates is complete already
+            TerminalNode complete = a.VOLLEDIG() != null ? a.VOLLEDIG()
+                    : a.volledigNaOpgave() != null ? a.volledigNaOpgave().VOLLEDIG() : null;
+            if (complete != null && a.MAG_OPGEGEVEN_WORDEN() != null)
+                error("RGS-463", params("attribute", name, "objectType", ot.name, "complete", complete.getText(),
+                        "opgave", a.MAG_OPGEGEVEN_WORDEN().getText()), complete.getSymbol().getLine());
+            else if (complete != null) ot.completeAttributes.add(name);
             // §13.3.7 "gedimensioneerd met <dimensie> (en <dimensie>)*": record the attribute's dimensions
             // in declared order so a reference / aggregation can range over their label sets (§3.6).
             if (!a.dimensieNaam().isEmpty())
@@ -599,6 +607,7 @@ public final class DefinitionResolver {
             // a head after an extension that declared the characteristic: the name stands once
             if (!repetition || !ot.characteristics.contains(name)) ot.characteristics.add(name);
             ot.characteristicKinds.put(name, characteristicKindOf(m.kenmerkSpecificatie()));   // §3.5 drives the §8.1.8 predicate form
+            if (completeMarked(m.kenmerkSpecificatie())) ot.completeCharacteristics.add(name);
             TijdlijnContext kt = timelineOf(m.kenmerkSpecificatie());
             Granularity gk = granularityOf(kt);
             if (gk != null) {
@@ -630,6 +639,13 @@ public final class DefinitionResolver {
                             "earlierName", nameOf.apply(earlier), "earlierLine", earlier.getStart().getLine()))
                     .variant("." + variant).at(RegelSpraakModel.Severity.ERROR, entry.getStart().getLine()));
         }
+    }
+
+    /** Whether the kenmerk declaration carries '(volledig)' (grammar/DIVERGENCES.md, "Volledig gegeven"). */
+    static boolean completeMarked(KenmerkSpecificatieContext k) {
+        if (k instanceof BijvoeglijkKenmerkContext b) return b.VOLLEDIG() != null;
+        if (k instanceof NaamwoordKenmerkContext n) return n.VOLLEDIG() != null;
+        return false;
     }
 
     private String characteristicName(KenmerkSpecificatieContext k) {

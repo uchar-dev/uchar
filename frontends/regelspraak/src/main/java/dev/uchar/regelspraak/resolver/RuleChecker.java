@@ -153,6 +153,8 @@ final class RuleChecker {
         defaults(doc);        // §4 lift the base+exception families and unordered groups into PrioritizedDefaults nodes
         // §7 after the lift, so a tree or an unordered set of the dialect's blocks moves to 'berekende X' whole
         inputLowering(doc);
+        // "Volledig gegeven" after the lowering, when every writer stands where the emitter writes it
+        completeMembers(doc);
         precisionAfterWriters();   // after every writer has registered and moved to where the emitter writes it
         // §7 a read of a generated member closes a cycle only once the writers have moved to 'berekende X'
         checkCycleReferenceAfterInput();
@@ -2934,6 +2936,10 @@ final class RuleChecker {
                 t.characteristics.remove(o.deviating());
                 t.characteristicKinds.remove(o.deviating());
             }
+            // the input of both is complete ("Volledig gegeven"): the opgave may be given, so without one there is
+            // none, and 'berekende X' is the moved writers', never the case's
+            t.completeAttributes.add(o.supplied());
+            t.completeAttributes.add(o.computed());
 
             // 2. the computing writers keep their names and shapes and write 'berekende X'
             for (int i : computing) {
@@ -3001,6 +3007,58 @@ final class RuleChecker {
                 generated.put(dev.uchar.regelspraak.emit.IrEmitter.norm(n), o);
             lowered.add(o);
         }
+    }
+
+    /** '(volledig)' on a member that a rule or a defaults group writes on the declaring type itself, as
+     *  RUNTIME-SEMANTICS ch. 1.5 counts a writer: the member is input on no object of that type and its subtypes, and
+     *  the marker would do nothing without a word. One ERROR per marked member, at its first declaration, naming the
+     *  first writer. A writer on a subtype alone is no reason: on an object outside that subtype the member is input.
+     *  An allocation and an object creation's member assignment are no writer in that sense (grammar/DIVERGENCES.md,
+     *  "Volledig gegeven"). */
+    private void completeMembers(RegelSpraakDocumentContext doc) {
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (DefinitieContext d : doc.definitie()) {
+            ObjectTypeNaamContext typeName;
+            List<ObjectTypeMemberContext> members;
+            if (d.objectTypeDefinition() != null) {
+                typeName = d.objectTypeDefinition().objectTypeNaam();
+                members = d.objectTypeDefinition().objectTypeMember();
+            } else if (d.objectTypeExtensie() != null) {
+                typeName = d.objectTypeExtensie().objectTypeNaam();
+                members = d.objectTypeExtensie().objectTypeMember();
+            } else continue;
+            ObjectType t = model.objectTypeByName(src(typeName));
+            if (t == null) continue;
+            for (ObjectTypeMemberContext member : members) {
+                boolean attribute = member.attribuutSpecificatie() != null;
+                String name = attribute ? src(member.attribuutSpecificatie().lowerNaam())
+                        : member.kenmerkSpecificatie() != null ? characteristicDeclarationName(member.kenmerkSpecificatie())
+                        : null;
+                if (name == null) continue;
+                // the model holds the member complete only where its declaration passed: RGS-463 marks nothing
+                boolean complete = attribute ? t.completeAttributes.contains(name) : t.completeCharacteristics.contains(name);
+                if (!complete || !seen.add(t.name + "\u0000" + attribute + "\u0000" + dev.uchar.regelspraak.emit.IrEmitter.norm(name)))
+                    continue;
+                Msg writer = ownWriter(t, name, attribute);
+                if (writer != null)
+                    error(member.getStart().getLine(), "RGS-464", params("kind",
+                            Msg.frontend(attribute ? "PART.member-kind.attribute" : "PART.member-kind.characteristic-kind"),
+                            "name", name, "objectType", t.name, "writer", writer, "complete", "(volledig)"));
+            }
+        }
+    }
+
+    /** The first rule or defaults group that writes the member {@code name} of {@code t} on {@code t} itself, as a part
+     *  of a message, or null. A characteristic attribution writes a characteristic, every other rule an attribute. */
+    private Msg ownWriter(ObjectType t, String name, boolean attribute) {
+        for (ResolvedRule r : model.resolvedRules) {
+            if ((r.kind() == ResolvedRule.Kind.KENMERKTOEKENNING) == attribute) continue;
+            if (ownTarget(r.target(), name) == t) return Msg.frontend("PART.form-rule", "name", withoutVersion(r.name()));
+        }
+        for (PrioritizedDefaults pd : model.prioritizedDefaults)
+            if (pd.isCharacteristic() != attribute && sameName(pd.target(), name) && model.objectTypeByName(pd.subject()) == t)
+                return Msg.frontend("PART.writer-defaults-group", "name", pd.name());
+        return null;
     }
 
     /** The object type whose own attribute {@code name} the target {@code target} writes, or null: a navigated target
