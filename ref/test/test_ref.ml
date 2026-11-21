@@ -15185,12 +15185,14 @@ let () =
    as ch. 1.2 and 5.8 read it; over a link that is present an open attribute
    is open. "De vindpremie van een Vondst is zijn waarde plus de bonus van de
    vinder van de Vondst" and "een Vondst is deskundig gevonden indien de
-   vinder ervaren is", with waarde 100 *)
+   vinder ervaren is", with waarde 100. A role check reads no value and
+   stands: "een Vondst is toegewezen indien hij een vinder heeft" *)
 let () =
   let vinder : Ir_v0.Ast.role_binding = { rb_fact_type = "vinding"; rb_role = "vinder" } in
   let doc =
     { (ov_doc
-         [ ov_vondst [ "waarde"; "vindpremie" ] [ "deskundig gevonden" ]; ot "Jutter" [ ("bonus", Some num0) ] [ "ervaren" ] ]
+         [ ov_vondst [ "waarde"; "vindpremie" ] [ "deskundig gevonden"; "toegewezen" ];
+           ot "Jutter" [ ("bonus", Some num0) ] [ "ervaren" ] ]
          [ ov_calc "vindpremie"
              (ov_bin Plus (ov_ref "waarde")
                 (Attribute_reference
@@ -15199,7 +15201,10 @@ let () =
            ov_attribution "deskundig gevonden"
              (Characteristic_check
                 { characteristic = Some "ervaren"; negation = false; holder = None; time_period = None; source_name = None;
-                  navigation_binding = Some vinder; anchor = None }) ])
+                  navigation_binding = Some vinder; anchor = None });
+           ov_attribution "toegewezen"
+             (Role_membership
+                { fact_type = "vinding"; role = "vondst"; counterpart_type = None; negated = false; source_name = None }) ])
       with
       fact_types =
         [ ( "vinding",
@@ -15217,9 +15222,11 @@ let () =
   let w = ov_run "link-absent" doc (input false) in
   ov_expect "WV-1.5-link-absent (vindpremie)" (ov_attr w "V1" "vindpremie") "100";
   ov_expect "WV-1.5-link-absent (deskundig gevonden)" (ov_char w "V1" "deskundig gevonden") "not";
+  ov_expect "WV-1.5-link-absent (toegewezen)" (ov_char w "V1" "toegewezen") "not";
   let w = ov_run "link-present-open" doc (input true) in
   ov_expect "WV-1.5-link-present-open (vindpremie)" (ov_attr w "V1" "vindpremie") "open";
   ov_expect "WV-1.5-link-present-open (deskundig gevonden)" (ov_char w "V1" "deskundig gevonden") "open";
+  ov_expect "WV-1.5-link-present-open (toegewezen)" (ov_char w "V1" "toegewezen") "holds";
   let w = ov_run "link-present-filled" doc (input ~bonus:[ ("bonus", "20") ] ~chars:[ "ervaren" ] true) in
   ov_expect "WV-1.5-link-present-filled (vindpremie)" (ov_attr w "V1" "vindpremie") "120";
   ov_expect "WV-1.5-link-present-filled (deskundig gevonden)" (ov_char w "V1" "deskundig gevonden") "holds"
@@ -15252,6 +15259,30 @@ let () =
   ov_expect "WV-1.5-closed-characteristic (drijfhout)" (ov_char w "V1" "drijfhout") "not";
   ov_expect "WV-1.5-closed-characteristic (drijftoeslag)" (ov_attr w "V1" "drijftoeslag") "2";
   ignore (ov_run ~closed "closed-characteristic-named" doc (ov_v1 ~chars:[ "drijfhout" ] []))
+
+(* WV-1.5-boundary-keeps-a-barrier: the boundary of one judgement drops what
+   it deposited only where it read an open value. In a document without the
+   property, the barrier of a Let (ch. 10.6) raised inside a condition keeps
+   what that condition deposited before it: "het bedrag is (daarbij geldt: de
+   grens is zijn drempel) 1 als zijn gewicht gedeeld door 0 groter is dan de
+   grens, anders 2", without a drempel, is leeg with the EF-005 of the
+   division *)
+let () =
+  let body : Ir_v0.Ast.expr =
+    If_then_else
+      { typ = Some num0;
+        condition =
+          Comparison
+            { op = Greater; left_side = Some (ov_bin Divided_by (ov_ref "gewicht") (ov_lit "0"));
+              right_side = Some (Binder_ref { ident = "grens"; source_name = None }); time_period = None;
+              source_name = None };
+        then_ = ov_lit "1"; else_ = ov_lit "2"; source_name = None }
+  in
+  let value : Ir_v0.Ast.expr = Let { typ = Some num0; binder = "grens"; value = ov_ref "drempel"; body; source_name = None } in
+  let doc = ov_doc ~strict:false [ ov_vondst [ "gewicht"; "drempel"; "bedrag" ] [] ] [ ov_calc "bedrag" value ] in
+  let w = ov_run "boundary-keeps-a-barrier" doc (ov_v1 [ ("gewicht", "10") ]) in
+  ov_expect "WV-1.5-boundary-keeps-a-barrier (bedrag)" (ov_attr w "V1" "bedrag") "leeg";
+  check "WV-1.5-boundary-keeps-a-barrier (EF-005)" (ov_channel w = [ "bedrag V1 EF-005" ])
 
 (* WV-1.5-initialisation: an initialisation writes where its target has no
    value, also where another writer leaves it open: it closes over the writers

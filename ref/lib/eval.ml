@@ -1607,14 +1607,21 @@ let count_verdict (q : quantifier_kind) ~cutoff ~n ~hits ~fails : truth =
 
 (* [f] evaluated as one judgement or one value: [Some] its result, with the
    deposits it made passed on to [err] in their order, or [None] where it read
-   an open member, its deposits dropped *)
+   an open member, its deposits dropped. Any other exception — a fault, the
+   barrier of a Let (ch. 10.6) — passes on with the deposits made before it, as
+   it does without the boundary *)
 let held ~err f =
   let deposits = ref [] in
+  let pass () = List.iter err (List.rev !deposits) in
   match f (fun d -> deposits := d :: !deposits) with
   | x ->
-      List.iter err (List.rev !deposits);
+      pass ();
       Some x
   | exception World.Open_read _ -> None
+  | exception e ->
+      let trace = Printexc.get_raw_backtrace () in
+      pass ();
+      Printexc.raise_with_backtrace e trace
 
 (* The verdict of a condition at a position that reads one truth value. In a
    document without open input every judgement is two-valued and equal for

@@ -645,7 +645,9 @@ waarde plus de bonus van de vinder van de Vondst", waarde 100, is 100 without
 a vinder, open with a vinder without a bonus, and 120 with a bonus of 20.
 "Een Vondst is deskundig gevonden indien de vinder ervaren is" stands not to
 hold without a vinder, is open where the case does not name ervaren for the
-vinder, and holds where it does.
+vinder, and holds where it does. A role check reads no value and stands: "een
+Vondst is toegewezen indien hij een vinder heeft" stands not to hold without a
+vinder, and holds with a vinder whose bonus is open.
 
 **Complete input.** A session can treat input members as complete: every
 input member, or the members it names by object type and member, on every
