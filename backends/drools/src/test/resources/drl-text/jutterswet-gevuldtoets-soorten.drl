@@ -1,0 +1,156 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+
+// zijn categorie gevuld is
+function boolean toets_ingedeeldeVondst(Object $categorie) {
+    return ComputeHelpers.emptyTest($categorie, Boolean.FALSE);
+}
+
+rule "ingedeelde vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $categorie : categorie )
+    eval( toets_ingedeeldeVondst($categorie) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "ingedeeld", true)));
+end
+
+// zijn categorie leeg is
+function boolean toets_onbepaaldeVondst(Object $categorie) {
+    return ComputeHelpers.emptyTest($categorie, Boolean.TRUE);
+}
+
+rule "onbepaalde vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $categorie : categorie )
+    eval( toets_onbepaaldeVondst($categorie) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "onbepaald", true)));
+end
+
+// zijn omschrijving gevuld is
+function boolean toets_beschrevenVondst(Object $omschrijving) {
+    return ComputeHelpers.emptyTest($omschrijving, Boolean.FALSE);
+}
+
+rule "beschreven vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $omschrijving : omschrijving )
+    eval( toets_beschrevenVondst($omschrijving) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "beschreven", true)));
+end
+
+// zijn omschrijving leeg is
+function boolean toets_onbeschrevenVondst(Object $omschrijving) {
+    return ComputeHelpers.emptyTest($omschrijving, Boolean.TRUE);
+}
+
+rule "onbeschreven vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $omschrijving : omschrijving )
+    eval( toets_onbeschrevenVondst($omschrijving) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "onbeschreven", true)));
+end
+
+// zijn aangifte gevuld is
+function boolean toets_verantwoordeVondst(Object $aangifte) {
+    return ComputeHelpers.emptyTest($aangifte, Boolean.FALSE);
+}
+
+rule "verantwoorde vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $aangifte : aangifte )
+    eval( toets_verantwoordeVondst($aangifte) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "verantwoord", true)));
+end
+
+// zijn aangifte leeg is
+function boolean toets_onverantwoordeVondst(Object $aangifte) {
+    return ComputeHelpers.emptyTest($aangifte, Boolean.TRUE);
+}
+
+rule "onverantwoorde vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $aangifte : aangifte )
+    eval( toets_onverantwoordeVondst($aangifte) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "onverantwoord", true)));
+end
+
+// zijn taxatie gevuld is
+function boolean toets_getaxeerdeVondst(Object $taxatie) {
+    return ComputeHelpers.emptyTest($taxatie, Boolean.FALSE);
+}
+
+rule "getaxeerde vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $taxatie : taxatie )
+    eval( toets_getaxeerdeVondst($taxatie) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "getaxeerd", true)));
+end
+
+// zijn taxatie leeg is
+function boolean toets_ongetaxeerdeVondst(Object $taxatie) {
+    return ComputeHelpers.emptyTest($taxatie, Boolean.TRUE);
+}
+
+rule "ongetaxeerde vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $taxatie : taxatie )
+    eval( toets_ongetaxeerdeVondst($taxatie) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "ongetaxeerd", true)));
+end
+
+function Object pad_herleidbareVondst(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("jutter"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "naam");
+}
+
+// de naam van de jutter van de Vondst gevuld is
+function boolean toets_herleidbareVondst(Object $jutterNaam) {
+    return ComputeHelpers.emptyTest($jutterNaam, Boolean.FALSE);
+}
+
+rule "herleidbare vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $jutterNaam : (pad_herleidbareVondst(this)) )
+    eval( toets_herleidbareVondst($jutterNaam) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "herleidbaar", true)));
+end
+
+function Object pad_onherleidbareVondst(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("jutter"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "naam");
+}
+
+// de naam van de jutter van de Vondst leeg is
+function boolean toets_onherleidbareVondst(Object $jutterNaam) {
+    return ComputeHelpers.emptyTest($jutterNaam, Boolean.TRUE);
+}
+
+rule "onherleidbare vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $jutterNaam : (pad_onherleidbareVondst(this)) )
+    eval( toets_onherleidbareVondst($jutterNaam) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "onherleidbaar", true)));
+end
+
