@@ -1950,12 +1950,43 @@ SYMBOL_SHAPE_ROWS = [
 ]
 
 
+# A document may carry the choice that nothing is inferred from an empty value (card infer-from-empty-property,
+# 2026-11-21): one spelling, false, directly after format, and absent where the document reads empty as
+# RUNTIME-SEMANTICS ch. 1.2-1.4 lays down. The root stays closed: a misspelt choice would be accepted and dropped, and
+# the document read as if it made none.
+def _root_with(key, value, after="format"):
+    def mutate(d):
+        items = list(d.items())
+        d.clear()
+        for k, v in items:
+            d[k] = v
+            if k == after:
+                d[key] = value
+    return mutate
+
+
+INFER_FROM_EMPTY_SHAPE_ROWS = [
+    ("inferFromEmpty = false", _root_with("inferFromEmpty", False), True,
+     "the document's choice that nothing is inferred from an empty value (IR-SPEC ch. 2)"),
+    ("inferFromEmpty = true", _root_with("inferFromEmpty", True), False,
+     "absent is the one spelling of the reading of RUNTIME-SEMANTICS ch. 1.2-1.4"),
+    ("inferFromEmpty = null", _root_with("inferFromEmpty", None), False,
+     "absent is the one spelling of the reading of RUNTIME-SEMANTICS ch. 1.2-1.4"),
+    ("inferFromEmpty as a text", _root_with("inferFromEmpty", "nee"), False,
+     "false is the one spelling of the choice, never the word of a source language"),
+    ("inferFromEmpty as a number", _root_with("inferFromEmpty", 0), False,
+     "false is the one spelling of the choice"),
+    ("root carries 'inferFromNothing'", _root_with("inferFromNothing", False), False,
+     "the root is closed: an unknown field would be accepted and dropped"),
+]
+
+
 shape_bad = 0
 for base, rows in ((_m1_base, M1_SHAPE_ROWS), (_l2_base, L2_SHAPE_ROWS),
                    (_l3_base, L3_SHAPE_ROWS), (_l4_base, L4_SHAPE_ROWS),
                    (_l5_base, L5_SHAPE_ROWS), (_l5_base, CELL_SHAPE_ROWS),
                    (_l5_base, L7_SHAPE_ROWS), (_l5_base, UNIT_SHAPE_ROWS),
-                   (_l3_base, SYMBOL_SHAPE_ROWS)):
+                   (_l3_base, SYMBOL_SHAPE_ROWS), (_m1_base, INFER_FROM_EMPTY_SHAPE_ROWS)):
     for row, mutate, want_ok, why in rows:
         probe = base()
         mutate(probe)
@@ -1970,7 +2001,7 @@ if shape_bad:
     sys.exit(1)
 n_shape = (len(M1_SHAPE_ROWS) + len(L2_SHAPE_ROWS) + len(L3_SHAPE_ROWS) + len(L4_SHAPE_ROWS)
            + len(L5_SHAPE_ROWS) + len(CELL_SHAPE_ROWS) + len(L7_SHAPE_ROWS) + len(UNIT_SHAPE_ROWS)
-           + len(SYMBOL_SHAPE_ROWS))
+           + len(SYMBOL_SHAPE_ROWS) + len(INFER_FROM_EMPTY_SHAPE_ROWS))
 
 
 # NOTE: gate 9 (scripts/check-catala.sh) executes the slice of this
@@ -2171,6 +2202,32 @@ def _key_order(inst, s, path, doc):
             for i, x in enumerate(inst):
                 _key_order(x, cs[0]["items"], _ptr(path, i), doc)
 
+
+# The place of inferFromEmpty in the root's key order, held on the M1 base in both polarities, the way check 1c holds
+# its shape: directly after format the root follows the schema's order, after diagnostics it does not. The probes
+# leave the counts of the corpus walk as they were.
+ORDER_ROWS = [
+    ("inferFromEmpty directly after format", _root_with("inferFromEmpty", False), True),
+    ("inferFromEmpty after diagnostics", _root_with("inferFromEmpty", False, after="diagnostics"), False),
+]
+order_bad = 0
+for row, mutate, want_in_order in ORDER_ROWS:
+    probe = _m1_base()
+    mutate(probe)
+    seen = (ko_objects, ko_unmatched, len(ko_devs))
+    _key_order(probe, schema, "", "<self-test>")
+    got_in_order = len(ko_devs) == seen[2] and ko_unmatched == seen[1]
+    ko_objects, ko_unmatched = seen[0], seen[1]
+    del ko_devs[seen[2]:]
+    if got_in_order != want_in_order:
+        order_bad += 1
+        sys.stderr.write("FAIL: key-order self-test, %s: the root %s the schema's order, expected it %s\n"
+                         % (row, "follows" if got_in_order else "breaks",
+                            "to follow" if want_in_order else "to break"))
+if order_bad:
+    sys.stderr.write("check-ir-schema: FAIL (%d key-order self-test row(s) bad)\n" % order_bad)
+    sys.exit(1)
+n_shape += len(ORDER_ROWS)
 
 ko_files = list(files)
 if mode == "corpus":
