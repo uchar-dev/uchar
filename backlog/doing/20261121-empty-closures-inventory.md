@@ -47,3 +47,49 @@ subcommando, of in de lint van de werkbank) stelt de bouwer voor.
 
 Klein: één ronde, alleen analyse. Daarna besluit de eigenaar over stap 2 (voorstel `STRICT-EMPTY.md` en een proef
 achter een vlag) en stap 3 (landen).
+
+## May touch
+
+- `spec/verifier/lib/empty_closures.ml` (nieuw), `spec/verifier/bin/verifier.ml`, `spec/verifier/README.md`;
+- `spec/verifier/test/empty-closures/` (nieuw): één getuige per soort;
+- `scripts/check-verifier.sh` (een poot in gate 3) en de alinea van gate 3 in `CLAUDE.md`: een voorstel, dat de
+  hoofdsessie landt;
+- deze kaart.
+
+## Out of scope
+
+Het IR-schema, de executors (ref, clingo, Drools), de semantiek en de verlaging van de frontends, het corpus, de
+toolchain, de werkbank, regelspraak-rules en de dataset. Geen naam of afspraak van een regelset in code, tests of
+README.
+
+## Besluiten vóór de bouw
+
+Van de eigenaar (2026-11-21):
+
+- Het commando hoort in uchar zelf, als analyse over de IR; niet in de toolchain en niet in de lint van de werkbank.
+  De stappen 2 en 3 van het advies komen in de frontend en de IR van uchar.
+- De meting op v2 komt in het Result en in WERKBANK.md; alleen de telling op het corpus is een test.
+- Waar de IR geen bestand en regel draagt, geeft het commando de JSON-pointer en de positie die de IR wel draagt, en
+  het Result benoemt wat ontbreekt.
+- Een afvanging meldt het commando naar haar vorm ("staat onder een toets op gevuld", "afgevangen door een kenmerk
+  waarvan een regel op leeg toetst"), zonder namen van een regelset.
+
+Van de hoofdsessie (voorlopig, ter bevestiging):
+
+- **Vorm.** `verifier --empty-closures <ir.json>`: één tab-gescheiden regel per plek, in documentvolgorde; exit 0 ook
+  als er plekken zijn, 2 bij een laadfout. De analyse staat in een eigen module `Empty_closures` van de
+  verifier-bibliotheek en leest de afhankelijkheidsgraaf die WF-045 en WF-046 lopen.
+- **Maatstaf.** Een plek telt wanneer de tweewaardige lezing van RUNTIME-SEMANTICS ch. 1.2 een vorm laat beslissen
+  (een waarde schrijven, een kenmerk toekennen, een consistentiefout melden) in een toestand waarin een waarde die zij
+  leest leeg is, terwijl een lezing waarin leeg doorgeeft en een voorwaarde over leeg onbepaald is (het advies, §3.3)
+  daar niets zou beslissen. Een vergelijking die op leeg onwaar is en waar verder niets uit volgt, telt dus niet; dezelfde
+  vergelijking onder een ontkenning wel.
+- **Twee klassen.** `closure`: de waarde- en vormkant (een operand die als 0 telt, een bijdrage die een vouw overslaat,
+  een lege grens, een vergelijking die op leeg waar is, een toets op leeg, een initialisatie, een terugvalwaarde).
+  `negation`: een kenmerk of voorwaarde in een ontkennende positie, en een default die beslist onder een hogere default
+  of uitzonderingsgroep die op leeg niet kon toetsen.
+- **Per plek.** De soort, de pointer, de naam van de vorm, de leden die op de plek gelezen worden en leeg kunnen zijn,
+  de invoerleden (die geen vorm schrijft) van waaruit leeg de plek kan bereiken, de afvangingen, en het bronfragment.
+- **De test.** Een poot in gate 3: het commando loopt op elke golden en rode `ir.json`, elke pointer bestaat in het
+  document, de totalen per klasse en het aantal soorten houden een floor, en elke soort heeft een getuige met een
+  vaste uitvoer onder `spec/verifier/test/empty-closures/`.
