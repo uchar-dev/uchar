@@ -15732,8 +15732,8 @@ let () =
 
 (* WV-1.5-refused-*: a form this reading is not carried for is refused by name,
    REF-014 with the form, before anything is evaluated; the same document
-   without the property is not walked. A fold over a set is carried, the
-   temporal total of the subject's own attribute is not *)
+   without the property is not walked. A fold over a set and an IfThenElse
+   are carried, the temporal total of the subject's own attribute is not *)
 let () =
   let range : Ir_v0.Ast.role_binding = { rb_fact_type = "vinding"; rb_role = "vondst" } in
   let sum source_role : Ir_v0.Ast.expr =
@@ -15757,13 +15757,14 @@ let () =
   refused "WV-1.5-refused-temporal-total" (doc true fold) "temporal-total";
   check "WV-1.5-refused-not-the-set-fold"
     (match Eval.refuse_uncarried (doc true (sum (Some range))) with () -> true | exception Value.Fault _ -> false);
-  refused "WV-1.5-refused-if-then-else" (doc true branch) "if-then-else";
+  check "WV-1.5-refused-not-the-if-then-else"
+    (match Eval.refuse_uncarried (doc true branch) with () -> true | exception Value.Fault _ -> false);
   check "WV-1.5-refused-not-walked-without-the-property"
     (match Eval.refuse_uncarried (doc false fold) with () -> true | exception Value.Fault _ -> false);
-  (match Eval.evaluate (env_of (doc true branch)) (ov_world (doc true branch) (ov_v1 [])) with
+  (match Eval.evaluate (env_of (doc true fold)) (ov_world (doc true fold) (ov_v1 [])) with
   | _ -> check "WV-1.5-refused-before-evaluation (evaluated)" false
   | exception Value.Fault { code; params; _ } ->
-      check "WV-1.5-refused-before-evaluation" (code = Some "REF-014" && params = [ ("form", "if-then-else") ]))
+      check "WV-1.5-refused-before-evaluation" (code = Some "REF-014" && params = [ ("form", "temporal-total") ]))
 
 (* --- the stack (ch. 1.5, 7.1-7.3, 7.9, 7.10) -----------------------------
    A defaults group on a target of the Vondst ([ov_stack]), its defaults
@@ -16189,6 +16190,37 @@ let () =
   | exception Value.Fault { code; params; _ } ->
       check "WV-1.5-creation-cycle-refused" (code = Some "REF-014" && params = [ ("form", "creation-cycle") ])
 
+(* WV-1.5-if-then-else: an IfThenElse in a value reads its condition as a
+   judgement: an undetermined condition leaves the value open, and a closure
+   that decided it tells the boundary, so the value stands for the form itself
+   and not for another. Only the chosen branch is read. "Het vindloon van een
+   Vondst is 10 als zijn taxatie groter is dan 1000, anders zijn gewicht",
+   "de bergtoeslag is 5 als zijn taxatie leeg is, anders 0", and "een Vondst
+   is gewoon indien (1 als zijn taxatie leeg is, anders 0) gelijk is aan 0" *)
+let () =
+  let ite c t e : Ir_v0.Ast.expr = If_then_else { typ = Some num0; condition = c; then_ = t; else_ = e; source_name = None } in
+  let leeg = ov_test Empty_predicate "taxatie" in
+  let doc =
+    ov_doc
+      [ ov_vondst [ "taxatie"; "gewicht"; "vindloon"; "bergtoeslag" ] [ "gewoon" ] ]
+      [ ov_calc "vindloon" (ite (ov_cmp Greater "taxatie" "1000") (ov_lit "10") (ov_ref "gewicht"));
+        ov_calc "bergtoeslag" (ite leeg (ov_lit "5") (ov_lit "0"));
+        ov_attribution "gewoon"
+          (Comparison
+             { op = Equal; left_side = Some (ite leeg (ov_lit "1") (ov_lit "0")); right_side = Some (ov_lit "0");
+               time_period = None; source_name = None }) ]
+  in
+  let row name input want =
+    let id = "if-then-else-" ^ name in
+    ov_row ("WV-1.5-" ^ id) (fun () -> ov_run id doc input)
+      (fun w -> String.concat " " [ ov_attr w "V1" "vindloon"; ov_attr w "V1" "bergtoeslag"; ov_char w "V1" "gewoon" ])
+      want
+  in
+  row "then" (ov_v1 [ ("taxatie", "2000") ]) "10 0 holds";
+  row "else" (ov_v1 [ ("taxatie", "50"); ("gewicht", "3") ]) "3 0 holds";
+  row "else-open" (ov_v1 [ ("taxatie", "50") ]) "open 0 holds";
+  row "condition-open" (ov_v1 [ ("gewicht", "3") ]) "open 5 open"
+
 (* WV-1.5-direct-reads: every read of a member while a form is evaluated goes
    through World.read_attr, read_char, read_timeline or read_char_periods,
    and every read of a relation through World.read_links, which raise
@@ -16515,6 +16547,9 @@ let () =
       (("initialisation", "V1.vangst"), [ "V1.strandloon 5" ]);
       (("stack-initialisation-below-the-base", "V1.gewicht"), [ "V1.vindloon 5" ]);
       (("stack-initialisation-below-the-exception", "V1 betwist"), [ "V1.vindloon 5" ]);
+      (("if-then-else-then", "V1.taxatie"), [ "V1.bergtoeslag 5" ]);
+      (("if-then-else-else", "V1.taxatie"), [ "V1.bergtoeslag 5" ]);
+      (("if-then-else-else-open", "V1.taxatie"), [ "V1.bergtoeslag 5" ]);
       (("closed-characteristic-named", "V1 drijfhout"), [ "V1 drijfhout not"; "V1.drijftoeslag 2" ]) ]
   in
   let used = ref [] in

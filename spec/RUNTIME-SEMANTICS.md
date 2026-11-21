@@ -476,7 +476,7 @@ reads as ch. 1.2–1.4 lay down. It defines the reading for a rule (an
 equation, a calculation, a characteristic attribution, an initialisation), a
 defaults group on a target without a timeline, a creation off a cycle, a
 consistency rule, and a condition or an expression without a timeline, a
-quantifier fold and a fold over a set among them; for every other form the
+quantifier fold, a fold over a set and an IfThenElse among them; for every other form the
 reading is not defined here, and
 IR-SPEC ch. 2 says what an executor does with a document that holds one. Each
 example is a test of the reference interpreter's suite under the name given;
@@ -882,6 +882,18 @@ itself, undetermined for another; "… groter is dan 1" holds. "Het gewogen
 totaal is de som van het gewicht van zijn vondsten waarvan het gewicht
 gevuld is" is 50 there; over vondsten that all lack a gewicht it is open, and
 over no vondst settled leeg.
+
+**An IfThenElse in a value** (ch. 10.2) reads its condition as a judgement,
+and then the branch it chooses and no other. Where the condition is
+undetermined the value has an open read; where a closure decided it, the
+value stands for the form itself and not for another, as a closure inside a
+value does. Example (WV-1.5-if-then-else): "het vindloon van een Vondst is 10
+als zijn taxatie groter is dan 1000, anders zijn gewicht" is 10 at taxatie
+2000, 3 at taxatie 50 and gewicht 3, open at taxatie 50 without a gewicht,
+and open without a taxatie. "De bergtoeslag is 5 als zijn taxatie leeg is,
+anders 0" is 5 without a taxatie, and "een Vondst is gewoon indien (1 als
+zijn taxatie leeg is, anders 0) gelijk is aan 0" is open there — false for
+itself, undetermined for another — and holds at taxatie 50.
 
 **Complete input.** A session can treat input members as complete: every
 input member, or the members it names by object type and member, on every

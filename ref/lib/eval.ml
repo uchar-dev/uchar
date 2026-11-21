@@ -248,7 +248,7 @@ let refuse_ranking_fold (kind : function_kind) attribute =
    nothing from an empty value (RUNTIME-SEMANTICS ch. 1.5). This interpreter
    carries it for a rule, a defaults group, a creation off a cycle, a
    consistency, and a condition or an expression without a timeline, a
-   quantifier fold and a fold over a set among them; every other form, read by ch.
+   quantifier fold, a fold over a set and an IfThenElse among them; every other form, read by ch.
    1.2-1.4, would get an answer that reading excludes and no report would say
    so. A document with the property that holds one is refused by name before
    anything is evaluated or any expectation checked, the form named with it by
@@ -334,7 +334,7 @@ let refuse_uncarried ?(reading = false) (doc : document) =
       | Match _ -> refuse "match"
       | Struct_literal _ | Field_access _ -> refuse "record"
       | List_literal _ | Lambda _ | Fold _ | Map_list _ | Filter_list _ | List_length _ -> refuse "list-family"
-      | If_then_else _ -> refuse "if-then-else"
+      | If_then_else { condition; then_; else_; _ } -> cond condition; expr then_; expr else_
       | Invoke _ -> refuse "invoke"
     and opt = function Some e -> expr e | None -> ()
     and cond (c : condition_expr) =
@@ -1749,7 +1749,7 @@ let left_open ~label ~member ((w : World.t), changed) = (World.leave_open w ~lab
 (* The verdict of a condition at a position that reads one truth value. In a
    document without open input every judgement is two-valued and equal for
    both walks. A position whose form the strict reading does not carry yet —
-   an IfThenElse, a filter of a list, a day kind, a reading of ch. 5.12 — is
+   a filter of a list, a day kind, a reading of ch. 5.12 — is
    refused in a document with inferFromEmpty false before anything is
    evaluated ([refuse_uncarried]), so it meets no other judgement; meeting one
    is a fault of ref. *)
@@ -2342,8 +2342,11 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
       Value.fault "a Lambda is position-restricted: it is only a Fold/MapList operand"
   | If_then_else { condition; then_; else_; _ } ->
       (* ch. 10.2: evaluate the condition under the ordinary comparison
-         discipline, then exactly the chosen branch — strict, no coalesce *)
-      if eval_cond env world self ~err condition then eval_expr env world self ~err then_
+         discipline, then exactly the chosen branch — strict, no coalesce. An
+         undetermined condition leaves the value open, and one a closure
+         decided tells the boundary (ch. 1.5) *)
+      if value_verdict ~what:"the condition of an IfThenElse" ~label:self.label (judge_cond env world self ~err condition)
+      then eval_expr env world self ~err then_
       else eval_expr env world self ~err else_
   | Invoke { function_name; arguments; _ } -> (
       (* ch. 10.2: evaluate arguments strictly (a leeg argument propagates
