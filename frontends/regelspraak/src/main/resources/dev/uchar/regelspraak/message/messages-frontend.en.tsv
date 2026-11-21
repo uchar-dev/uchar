@@ -790,3 +790,4 @@ RGS-450	the attribute '{attribute}' of {label} is time-dependent; a value withou
 RGS-451	the day-kind definition of '{dayKind}' reads the parameter '{parameter}', which {where} has no value
 RGS-460	the sign '{sign}' in '{datatype}' is dropped: a percentage carries no sign (IR-SPEC ch. 2.4), so no executor checks that restriction
 RGS-461	member '{attribute}' of {objectType}: '{marking}' stands before '{opgave}', not after it — write '{marking} {opgave}' (dialect §7)
+RGS-462	'Afleiden uit leeg: {value}' stands in the document a second time, after 'Afleiden uit leeg: {first}'; a document chooses once whether anything follows from an empty value, also when it consists of several files

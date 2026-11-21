@@ -308,6 +308,10 @@ DAGSOORT       : 'Dagsoort'       ;
 // uchar DIALECT EXTENSION (grammar/DIVERGENCES.md, "Vocabulaires en benamingen"): the vocabulary declaration. A
 // keyword before UPPER_ID, as 'Dagsoort' is; the word occurs in no source of the measured collections.
 VOCABULAIRE    : 'Vocabulaire'    ;
+// uchar DIALECT EXTENSION (grammar/DIVERGENCES.md, "Afleiden uit leeg"): the opener of the document's choice whether
+// anything follows from an empty value. One token of three words, so 'Afleiden' alone stays a name word and 'uit' and
+// 'leeg' keep their tokens everywhere else; the phrase occurs in no source of the measured collections.
+AFLEIDEN_UIT_LEEG : 'Afleiden' WSP 'uit' WSP 'leeg' ;
 TIJDLIJN       : 'Tijdlijn'       ;
 // REGELGROEP is a DOCUMENTED EXTENSION (v2.3.0 §9.10 is prose-only; see grammar/DIVERGENCES.md).
 // Listed BEFORE REGEL so maximal-munch prefers the longer 'Regelgroep' keyword over 'Regel' + a name word.

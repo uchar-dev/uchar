@@ -333,7 +333,18 @@ definitie
     | tijdlijnDefinitie
     | dimensieDefinition
     | vocabulaireDefinition
+    | afleidenUitLeegKeuze
     ;
+
+// ====================================================================
+// uchar DIALECT EXTENSION — the document's choice whether anything follows from an empty value (grammar/DIVERGENCES.md,
+// "Afleiden uit leeg"; the wire property inferFromEmpty). 'Afleiden uit leeg: nee' or 'Afleiden uit leeg: ja', beside
+// the definitions. The opener occurs in no official document, so such a document parses exactly as before. The value
+// is matched on its text, on this one position only, so 'ja' and 'nee' become no keywords; any other word is a syntax
+// error here.
+// ====================================================================
+afleidenUitLeegKeuze  : AFLEIDEN_UIT_LEEG COLON afleidenUitLeegWaarde SEMICOLON? ;
+afleidenUitLeegWaarde : { isWord("ja") }? ja=LOWER_ID | { isWord("nee") }? nee=LOWER_ID ;
 
 // ====================================================================
 // uchar DIALECT EXTENSION — named vocabularies and designations (grammar/DIVERGENCES.md, "Vocabulaires en

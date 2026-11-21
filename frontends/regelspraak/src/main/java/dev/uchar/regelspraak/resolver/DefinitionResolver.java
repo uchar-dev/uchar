@@ -38,6 +38,7 @@ public final class DefinitionResolver {
 
     public RegelSpraakModel build(RegelSpraakDocumentContext doc) {
         refuseDuplicateNames(doc);
+        inferFromEmpty(doc);
         for (DefinitieContext d : definitions(doc)) {        // pass 1: domains + units + timelines
             if (d.domeinDefinition() != null) domain(d.domeinDefinition());
             if (d.eenheidsysteemDefinition() != null) unitSystem(d.eenheidsysteemDefinition());
@@ -132,6 +133,28 @@ public final class DefinitionResolver {
 
     private static List<DefinitieContext> definitions(RegelSpraakDocumentContext doc) {
         return doc.definitie();
+    }
+
+    // ---------------- the uchar 'Afleiden uit leeg' dialect extension ----------------
+    /** The document's choice whether anything follows from an empty value (grammar/DIVERGENCES.md, "Afleiden uit
+     *  leeg"): 'nee' sets it, 'ja' states the default. A document is what one call reads, a chain of files included,
+     *  and chooses once: a second line is an ERROR on its own line, also where it says the same. A value the parse did
+     *  not read has its syntax error already. */
+    private void inferFromEmpty(RegelSpraakDocumentContext doc) {
+        String first = null;
+        for (DefinitieContext d : definitions(doc)) {
+            AfleidenUitLeegKeuzeContext c = d.afleidenUitLeegKeuze();
+            if (c == null) continue;
+            AfleidenUitLeegWaardeContext v = c.afleidenUitLeegWaarde();
+            if (v == null || v.exception != null || (v.ja == null && v.nee == null)) continue;
+            String value = v.nee != null ? "nee" : "ja";
+            if (first != null) {
+                error("RGS-462", params("first", first, "value", value), c.getStart().getLine());
+                continue;
+            }
+            first = value;
+            if (v.nee != null) model.inferFromEmpty(false);
+        }
     }
 
     // ---------------- §13.3.1 object types ----------------

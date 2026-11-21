@@ -4569,7 +4569,8 @@ A character the lexer cannot read (a lone `_`) is no token; a syntax error says 
 articles, prepositions and quantifiers, the comparison and arithmetic words, the datatypes, the phrases, `waar` and
 `onwaar`, a time unit written as a keyword outside a unit expression ("de maand uit"), the head markers `(mv:`,
 `(bezield)` and the like, `(taal:` in a vocabulary head, the word `geen` (a word to the lexer, the negation to the
-language) and the table cell `n.v.t.`. `comment`: a `//` comment, the `// Bron:` annotations included. `heading`: a
+language), the value `ja` or `nee` of `Afleiden uit leeg:` (words to the lexer, the value of the choice to the language)
+and the table cell `n.v.t.`. `comment`: a `//` comment, the `// Bron:` annotations included. `heading`: a
 `---` heading line of an object type. `number`, `date`: the literals. `string`: a text literal. `punctuation`: brackets,
 `;` `.` `:` `,` `-` `..` `•` `/` `=` `%` `^` `'` `«` `»`, a currency sign (`€`, `R$`) outside a unit, the `)` closing
 a designation, and a table's pipes.
@@ -4800,3 +4801,74 @@ token for `€` alone. They write 178 currency signs, every one `€` and none d
 `SemanticTokensTest.a_shared_word_points_at_no_declaration`,
 `UnitIdentityTest.a_calendar_unit_and_a_currency_sign_need_no_declaration_over_a_number`; the goldens
 `jutterswet-tekst-van-een-waarde` and `jutterswet-stelselweging`.
+
+## Afleiden uit leeg — the document's choice that nothing follows from an empty value
+
+uchar DIALECT EXTENSION (decision of the maintainer, 2026-11-21). The reading of an empty value in RUNTIME-SEMANTICS
+ch. 1.2–1.4 infers from it: in the Jutterswet rule "Een Vondst is kostbaar indien zijn taxatie groter is dan 1000" a
+Vondst without a taxatie is not kostbaar, and "het vindloon van een Vondst moet berekend worden als zijn gewicht plus 10"
+gives a Vondst without a gewicht the vindloon 10. A document can choose that nothing follows from an empty value: then
+it is not settled whether that Vondst is kostbaar. Official RegelSpraak v2.3.0 has no way to write the choice; this
+extension gives the dialect one line for it, and the wire one property on the root of the document,
+`inferFromEmpty: false`. The frontend writes the choice and gives it no meaning of its own: what it means for an
+evaluation is the executors', and an executor that does not carry that reading refuses the document by name
+(`backends/drools/README.md`).
+
+### Surface syntax (additive; a new definition)
+
+```
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    de taxatie Numeriek (geheel getal);
+```
+
+The line stands beside the definitions, anywhere at the top level of a document, with an optional `;`. Its value is
+`nee` or `ja`; `ja` states the default, the reading without the line. A document is what the frontend reads in one call:
+one file, or a chain of files read as one text (`--ir`, `--cases`, `--tokens`). The line holds for the whole document, in
+whichever file of the chain it stands, and the document writes it at most once.
+
+One new token. `AFLEIDEN_UIT_LEEG` is the phrase `Afleiden uit leeg` as one token of three words, as `bestaande uit de`
+is, so `Afleiden` alone stays a name word and `uit` and `leeg` keep their tokens everywhere else. The value is a
+`LOWER_ID` matched on its text, `ja` or `nee`, on this one position only, so neither becomes a keyword; any other word
+there, `Nee` included, is a syntax error on the line.
+
+### Inertness — measured, not assumed
+
+Counted on 2026-11-21 over the 392 RegelSpraak sources of the repository (the rgs goldens and scenario files, the
+negative and red documents, the fixtures of `ref` and of the Drools backend, and the parity zone): `afleiden` occurs in
+none of them, in any case, and in no test source of the frontend, the Drools backend or the parity zone. Their 63633
+tokens lex the same, type, position and channel, with the lexer before and after the extension. Gates 10, 11 and 16
+hold the re-emission on their documents. A syntax-error message whose expected set is that of a top-level position
+names the new token as `'Afleiden uit leeg'`.
+
+### Lowering (resolver)
+
+The definition resolver reads every line of the document before the declarations: the first sets the model's choice
+(`RegelSpraakModel.inferFromEmpty`, false for `nee`), every later one is refused. A line whose value the parse did not
+read has its syntax error and is passed over. The scenario route hands the definitions of a test document to the same
+pipeline, so a test document with the line gives an IR document with the property, also with a scope: the scoped
+document is a copy of the model that keeps the choice (`RegelSpraakModel.copy`).
+
+### Fail-fast refusals (resolver, loud diagnostics)
+
+- `'Afleiden uit leeg: <waarde>' staat een tweede keer in het document, na 'Afleiden uit leeg: <eerste>'; een document
+  kiest één keer of uit een lege waarde iets volgt, ook als het uit meer bestanden bestaat` — RGS-462, an ERROR on the
+  line of the second, also where both say the same.
+
+### Emission
+
+`inferFromEmpty: false` stands on the root directly after `format` and before `vocabularies`, written only for `nee`.
+`ja` and a document without the line write nothing there, so such a document emits exactly what it emits without the
+extension, which is the measurement above stated as a property (`InferFromEmptyDialectTest` holds it on one document,
+gate 10 on the corpus). The Drools IR loader reads the property back into the model.
+
+### Semantic tokens
+
+`Afleiden uit leeg` is a `keyword`, the colon and the `;` are `punctuation`, and the value `ja` or `nee` is a `keyword`:
+a word to the lexer, the value of the choice to the language.
+
+**Witnesses.** `InferFromEmptyDialectTest` (the property and its place, `ja` and no line byte for byte the same, the
+line in either file of a chain, RGS-462 in both languages, a value other than `ja` or `nee`, the token, the semantic
+tokens, the scenario route with and without a scope); the golden `jutterswet-afleiden-uit-leeg`, which gate 10
+re-emits and which carries no case file: no executor of this repository plays a document with the property yet.

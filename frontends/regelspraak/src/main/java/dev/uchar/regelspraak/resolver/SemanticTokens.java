@@ -455,6 +455,10 @@ public final class SemanticTokens {
             else if (d.vocabulaireDefinition() != null) {
                 VocabulaireNaamContext v = d.vocabulaireDefinition().vocabulaireNaam();
                 claim(v, Kind.VOCABULARY, true, Decl.of(Kind.VOCABULARY, null, src(v)));
+            } else if (d.afleidenUitLeegKeuze() != null) {
+                // 'ja' and 'nee' are words to the lexer and the value of the choice to the language
+                AfleidenUitLeegWaardeContext v = d.afleidenUitLeegKeuze().afleidenUitLeegWaarde();
+                if (v != null && v.exception == null) claim(v, Kind.KEYWORD, false, null);
             }
         }
         for (RegelContext r : DefinitionResolver.allRules(doc))

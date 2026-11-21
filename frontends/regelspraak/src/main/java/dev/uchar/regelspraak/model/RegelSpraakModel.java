@@ -93,9 +93,16 @@ public final class RegelSpraakModel {
      *  checks judged and {@code --ir} writes; null for a model with an ERROR and for one the resolver did not build,
      *  a {@link #copy()} included. A change to the model after the build is not in it. */
     private String document;
+    /** Whether the document lets a reading infer from an empty value: false where it carries the wire property
+     *  {@code inferFromEmpty: false}, which the frontend writes for the dialect's {@code Afleiden uit leeg: nee}
+     *  (grammar/DIVERGENCES.md, "Afleiden uit leeg") and the Drools IR loader reads; true otherwise, the reading of
+     *  RUNTIME-SEMANTICS ch. 1.2–1.4. */
+    private boolean inferFromEmpty = true;
 
     public String document() { return document; }
     public void document(String document) { this.document = document; }
+    public boolean inferFromEmpty() { return inferFromEmpty; }
+    public void inferFromEmpty(boolean inferFromEmpty) { this.inferFromEmpty = inferFromEmpty; }
 
     /** The constructor of the value of an attribute with absence markers, and the markers in their order: the sum type
      *  such an attribute lowers to (RUNTIME-SEMANTICS ch. 9.5). */
@@ -122,6 +129,9 @@ public final class RegelSpraakModel {
                 throw new IllegalStateException("RegelSpraakModel.copy: the field '" + f.getName() + "'", e);
             }
         }
+        // the one scalar of the document the copy carries: the walk above reads the public collections only, and a
+        // scoped document of a source with 'Afleiden uit leeg: nee' must keep the choice
+        k.inferFromEmpty = inferFromEmpty;
         return k;
     }
 

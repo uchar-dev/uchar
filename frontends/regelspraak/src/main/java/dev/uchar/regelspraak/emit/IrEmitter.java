@@ -223,6 +223,9 @@ public final class IrEmitter {
         this.m = m;
         w.beginObject();
         w.key("format").value("uchar-ir-v1");
+        // the document's choice that nothing follows from an empty value; false is its one spelling, so a document
+        // without 'Afleiden uit leeg: nee' writes nothing here (grammar/DIVERGENCES.md, "Afleiden uit leeg")
+        if (!m.inferFromEmpty()) w.key("inferFromEmpty").value(false);
         // IR-SPEC ch. 2.12: the vocabulary side table, an extension list written only when the document declares a
         // vocabulary, so a document without one emits exactly what it emitted before
         if (!m.vocabularies.isEmpty()) {

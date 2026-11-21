@@ -1,0 +1,15 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    de taxatie Numeriek (geheel getal);
+    het gewicht Numeriek (geheel getal);
+    het vindloon Numeriek (geheel getal);
+    is kostbaar kenmerk (bijvoeglijk);
+
+Regel kostbaarheid
+    geldig altijd
+        Een Vondst is kostbaar indien zijn taxatie groter is dan 1000.
+
+Regel vindloon
+    geldig altijd
+        Het vindloon van een Vondst moet berekend worden als zijn gewicht plus 10.
