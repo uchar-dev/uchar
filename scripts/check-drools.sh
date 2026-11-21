@@ -1643,7 +1643,9 @@ EXPECTED_CHANNEL=(
 # 382 with jutterswet-vondsten-van-de-meester: a one-step range with a role as anchor runs through that role (PLAYED 1).
 # 383 with jutterswet-opgave-afwezigheidsmarkers: the opgave marker beside the absence markers, a defaults group on a
 # sum-typed target that passes on the members of its sum type, scalar and per day (RUNTIME-SEMANTICS ch. 9.5; PLAYED 10).
-EXPECTED_PLAYED=383
+# 384 with jutterswet-gevuldtoets-soorten: the leeg and gevuld tests on an enumeration, a text, a boolean and an attribute
+# with absence markers, whose markers are values, also over a role (RUNTIME-SEMANTICS ch. 1.2, 9.5; PLAYED 3).
+EXPECTED_PLAYED=384
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
