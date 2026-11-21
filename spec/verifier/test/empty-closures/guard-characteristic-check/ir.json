@@ -44,6 +44,11 @@
             "node": "Characteristic",
             "name": "onvolledig",
             "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "aangegeven",
+            "kind": "adjectival"
           }
         ]
       }
@@ -109,6 +114,55 @@
       },
       {
         "node": "Rule",
+        "name": "aangegeven grondslag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aangegeven",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is aangegeven"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "grondslag",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn grondslag"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn grondslag gevuld is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
         "name": "heffing van een jutter",
         "versions": [
           {
@@ -153,11 +207,29 @@
               }
             },
             "condition": {
-              "node": "CharacteristicCheck",
-              "characteristic": "onvolledig",
-              "negated": true,
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "onvolledig",
+                  "negated": true,
+                  "source": {
+                    "snippet": "hij is niet onvolledig"
+                  }
+                },
+                {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "aangegeven",
+                  "negated": false,
+                  "source": {
+                    "snippet": "hij is aangegeven"
+                  }
+                }
+              ],
               "source": {
-                "snippet": "hij niet onvolledig is"
+                "snippet": "er aan alle volgende voorwaarden wordt voldaan: - hij is niet onvolledig - hij is aangegeven"
               }
             },
             "initialisation": false,

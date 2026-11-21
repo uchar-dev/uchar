@@ -98,8 +98,10 @@ faults (EF-014). A read over an absent to-one link is leeg like any other.
 5. the members read at the place that can be leeg, each `<node>=input` (no
    form writes it) or `<node>=derived`, spelled as `--dependency-edges` spells
    a node (`attr:<type>:<attribute>`, a cell with its labels,
-   `char:<type>:<characteristic>`, `param:<parameter>`); a relation of the
-   third class is `rel:<fact type>:<role>`;
+   `char:<type>:<characteristic>`, `param:<parameter>`), the type being the
+   one that declares the member, so a member read on a subtype and written on
+   its supertype is one name; a relation of the third class is
+   `rel:<fact type>:<role>`;
 6. the input members from which a leeg can reach the place: the member
    itself where it is input, else what its writers read, transitively over
    the dependency graph of WF-045/046; for the third class the relations and
@@ -111,9 +113,12 @@ faults (EF-014). A read over an absent to-one link is leeg like any other.
    filter of a fold for its per-member positions, the condition of an
    IfThenElse for its then branch); a payload access always does;
    `characteristic-check:<node>` — the form's own condition checks, as a
-   conjunct, a characteristic one of whose writers tests a member on leeg;
+   conjunct, a characteristic one of whose writers closes on the leeg of a
+   member (a leeg or gevuld test where its leeg verdict decides: an
+   `empty-test` place of that writer); a positive gevuld test is no such
+   closure;
    `tested-elsewhere:<input>><node>,…` — another form that writes a
-   characteristic tests that input member on leeg, named per input;
+   characteristic closes on the leeg of that input member, named per input;
 8. the line of the source, where the form or a node above the place carries
    one, else `-`;
 9. the source snippet of the node or the nearest node above it, on one line,

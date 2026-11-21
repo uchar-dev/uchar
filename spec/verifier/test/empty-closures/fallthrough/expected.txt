@@ -1,1 +1,3 @@
 negation	fallthrough	/rules/prioritizedDefaults/0/defaults/1	penningrecht	attr:jutter:boete=input	attr:jutter:boete	-	-	-
+negation	fallthrough	/rules/prioritizedDefaults/1/defaults/0	heffing basis	attr:jutter:korting=input	attr:jutter:korting	-	-	-
+negation	fallthrough	/rules/prioritizedDefaults/1/defaults/1	heffing basis	attr:jutter:boete=input; attr:jutter:korting=input	attr:jutter:boete; attr:jutter:korting	-	-	-

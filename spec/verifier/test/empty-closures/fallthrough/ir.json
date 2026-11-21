@@ -27,6 +27,26 @@
               "decimals": 2,
               "sign": "unspecified"
             }
+          },
+          {
+            "node": "Attribute",
+            "name": "korting",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "heffing",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
           }
         ],
         "characteristics": [
@@ -170,6 +190,196 @@
               },
               "source": {
                 "snippet": "zijn aantal aangemelde vondsten groter of gelijk is aan 12"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "heffing basis",
+        "subject": "Jutter",
+        "attribute": "heffing",
+        "defaults": [
+          {
+            "node": "Default",
+            "name": "heffing bij boete",
+            "justification": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "boete",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn boete"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "0"
+                }
+              },
+              "source": {
+                "snippet": "zijn boete groter is dan 0"
+              }
+            },
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "20"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "20"
+              }
+            },
+            "exceptions": {
+              "unordered": false,
+              "members": [
+                {
+                  "node": "ExceptionGroup",
+                  "defaults": [
+                    {
+                      "node": "Default",
+                      "name": "heffing bij korting",
+                      "justification": {
+                        "node": "Compound",
+                        "quantifier": "all",
+                        "threshold": 0,
+                        "parts": [
+                          {
+                            "node": "Comparison",
+                            "op": "greater",
+                            "left": {
+                              "node": "AttributeReference",
+                              "attribute": "boete",
+                              "subjectType": "Jutter",
+                              "source": {
+                                "snippet": "zijn boete"
+                              }
+                            },
+                            "right": {
+                              "node": "Literal",
+                              "value": {
+                                "number": "0"
+                              },
+                              "type": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "unspecified"
+                              },
+                              "source": {
+                                "snippet": "0"
+                              }
+                            },
+                            "source": {
+                              "snippet": "zijn boete groter is dan 0"
+                            }
+                          },
+                          {
+                            "node": "Comparison",
+                            "op": "greater",
+                            "left": {
+                              "node": "AttributeReference",
+                              "attribute": "korting",
+                              "subjectType": "Jutter",
+                              "source": {
+                                "snippet": "zijn korting"
+                              }
+                            },
+                            "right": {
+                              "node": "Literal",
+                              "value": {
+                                "number": "0"
+                              },
+                              "type": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "unspecified"
+                              },
+                              "source": {
+                                "snippet": "0"
+                              }
+                            },
+                            "source": {
+                              "snippet": "zijn korting groter is dan 0"
+                            }
+                          }
+                        ],
+                        "source": {
+                          "snippet": "zijn boete groter is dan 0 en zijn korting groter is dan 0"
+                        }
+                      },
+                      "consequence": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "15"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "15"
+                        }
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "Uitzondering op heffing bij boete"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Default",
+            "name": "heffing basis",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "10"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "10"
               }
             }
           }

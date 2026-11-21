@@ -1,2 +1,4 @@
 closure	empty-test	/rules/rules/0/versions/0/condition	onvolledige aangifte	attr:jutter:toeslag=input	attr:jutter:toeslag	-	-	zijn toeslag leeg is
-closure	coalesce-operand	/rules/rules/1/versions/0/value	heffing van een jutter	attr:jutter:grondslag=input; attr:jutter:toeslag=input	attr:jutter:grondslag; attr:jutter:toeslag	tested-elsewhere:attr:jutter:toeslag>char:jutter:onvolledig	-	zijn grondslag plus zijn toeslag
+closure	coalesce-operand	/rules/rules/2/versions/0/value	heffing van een jutter	attr:jutter:grondslag=input; attr:jutter:toeslag=input	attr:jutter:grondslag; attr:jutter:toeslag	tested-elsewhere:attr:jutter:toeslag>char:jutter:onvolledig	-	zijn grondslag plus zijn toeslag
+closure	empty-test	/rules/rules/3/versions/0/condition	ongewogen vondst	attr:vondst:gewicht=input	attr:vondst:gewicht	-	-	zijn gewicht leeg is
+closure	coalesce-operand	/rules/rules/4/versions/0/value	wrakloon van een wrakvondst	attr:vondst:gewicht=input	attr:vondst:gewicht	tested-elsewhere:attr:vondst:gewicht>char:vondst:ongewogen	-	zijn gewicht plus 5

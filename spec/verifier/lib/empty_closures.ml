@@ -84,7 +84,7 @@ type env = {
   tests : read_key list; (* the gevuld tests in scope, WF-127's dominance *)
   form : form_info;
   emit : place -> unit;
-  record_test : string -> string list -> unit; (* form key, members a leeg or gevuld test reads *)
+  record_test : string -> string list -> unit; (* form key, members a test closes on *)
 }
 
 let rec strip_payload (e : expr) =
@@ -188,6 +188,32 @@ let union_roles (e : expr) =
       []
 
 let relations range = List.map (fun rb -> ({ node = rel_node rb; key = None }, false)) range
+
+let starts p node = String.length node >= String.length p && String.sub node 0 (String.length p) = p
+
+(* A member spelled on the type that declares it: a read spells it on the
+   type it is read on, the graph a write on every comparable type, and one
+   member must be one name in the report and in the guards. A cell keeps its
+   labels; a member no type of the chain declares keeps its spelling. *)
+let canon_node doc node =
+  let rebuild prefix kind =
+    let rest = String.sub node (String.length prefix) (String.length node - String.length prefix) in
+    match String.index_opt rest ':' with
+    | None -> node
+    | Some i -> (
+        let t = String.sub rest 0 i and m = String.sub rest (i + 1) (String.length rest - i - 1) in
+        let name, labels =
+          match String.index_opt m '[' with
+          | Some j -> (String.sub m 0 j, String.sub m j (String.length m - j))
+          | None -> (m, "")
+        in
+        match Checks.declaring_type doc ~from:t ~kind ~member:name with
+        | Some d -> prefix ^ Checks.norm d ^ ":" ^ name ^ labels
+        | None -> node)
+  in
+  if starts "attr:" node then rebuild "attr:" `Attribute
+  else if starts "char:" node then rebuild "char:" `Characteristic
+  else node
 
 let place env ~cls ~kind ~at members =
   match members with [] -> () | _ -> env.emit { cls; kind; at; form = env.form; members }
@@ -394,11 +420,14 @@ and co env pol at (c : condition_expr) : unit =
       if on_false && decides_on_false pol then emit_carriers env ~cls:"negation" ~kind:"false-on-empty" ~at (l @ r)
   | Predicate { variety = (Empty_predicate | Filled) as variety; operand; negation; time_period; _ } ->
       let o = opt "operand" operand in
-      env.record_test env.form.f_key (List.map (fun x -> x.node) o);
       let pol = qualified pol time_period in
       let true_on_empty = (variety = Empty_predicate) <> negation in
-      if (true_on_empty && decides_on_true pol) || ((not true_on_empty) && decides_on_false pol) then
+      if (true_on_empty && decides_on_true pol) || ((not true_on_empty) && decides_on_false pol) then begin
+        (* the form closes on the leeg of what it tests: only such a test
+           guards a reader elsewhere, a positive gevuld test does not *)
+        env.record_test env.form.f_key (List.map (fun x -> x.node) o);
         emit_carriers env ~cls:"closure" ~kind:"empty-test" ~at o
+      end
   | Predicate { variety = Exact_digits | Day_kind_predicate; operand; negation; time_period; _ } ->
       let o = opt "operand" operand in
       let pol = qualified pol time_period in
@@ -572,7 +601,7 @@ let without_needs env condition value reads =
   let own = needs env condition value in
   List.filter
     (fun ((c : carrier), _) ->
-      not (List.exists (fun (n : carrier) -> match (c.key, n.key) with Some a, Some b -> a = b | None, None -> c.node = n.node | Some _, None | None, Some _ -> false) own))
+      not (List.exists (fun (n : carrier) -> match (c.key, n.key) with Some a, Some b -> a = b | None, None -> canon_node env.ctx.doc c.node = canon_node env.ctx.doc n.node | Some _, None | None, Some _ -> false) own))
     reads
 
 let rule_form env (r : resolved_rule) ~same_target =
@@ -657,8 +686,12 @@ let defaults_form env i (l : prioritized_defaults) =
     if own then begin
       place env ~cls:"negation" ~kind:"fallthrough" ~at:prefix
         (without_needs env d.default_justification d.default_consequence (higher @ below_exceptions));
-      falls_through { env with emit = ignore } ~at_condition:(prefix ^ "/justification") ~at_value:(prefix ^ "/consequence")
-        d.default_justification d.default_consequence
+      (* the default below is reached only when the exception groups decide
+         nothing and this default's own content does not decide either
+         (ch. 7.9), so it rests on both *)
+      below_exceptions
+      @ falls_through { env with emit = ignore } ~at_condition:(prefix ^ "/justification")
+          ~at_value:(prefix ^ "/consequence") d.default_justification d.default_consequence
     end
     else below_exceptions
   and chain prefix higher defaults =
@@ -768,8 +801,6 @@ let walk_forms env (doc : document) =
 
 (* --- the report --------------------------------------------------------- *)
 
-let starts p node = String.length node >= String.length p && String.sub node 0 (String.length p) = p
-
 (* The nodes the input closure follows: the members for the classes closure
    and negation; for an absent instance also the relations and populations,
    which a creation writes. *)
@@ -833,11 +864,12 @@ let report (doc : document) (j : Yojson.Safe.t) : string list =
   let ctx = Checks.ctx_of doc in
   let forms = Array.of_list (Checks.dep_forms ctx) in
   let writers = Hashtbl.create 64 in
-  Array.iteri (fun i (f : Checks.dep_form) -> List.iter (fun n -> Hashtbl.add writers n i) f.df_writes) forms;
+  let canon = canon_node doc in
+  Array.iteri (fun i (f : Checks.dep_form) -> List.iter (fun n -> Hashtbl.add writers (canon n) i) f.df_writes) forms;
   let index_of_key = Hashtbl.create 64 in
   Array.iteri (fun i (f : Checks.dep_form) -> Hashtbl.replace index_of_key (Checks.m1_root f.df_at) i) forms;
   let tested = Hashtbl.create 64 in
-  let record_test key nodes = List.iter (fun n -> Hashtbl.replace tested (key, n) ()) nodes in
+  let record_test key nodes = List.iter (fun n -> Hashtbl.replace tested (key, canon n) ()) nodes in
   let places = ref [] in
   let env =
     { ctx; subject = None; tests = [];
@@ -857,15 +889,15 @@ let report (doc : document) (j : Yojson.Safe.t) : string list =
         if ws = [] then inputs := node :: !inputs
         else
           List.iter
-            (fun w -> List.iter (fun (r, _) -> if follows ~instances r then go r) forms.(w).Checks.df_reads)
+            (fun w -> List.iter (fun (r, _) -> if follows ~instances r then go (canon r)) forms.(w).Checks.df_reads)
             (dedup ws)
       end
     in
     go node;
     !inputs
   in
-  (* the forms that test a member on leeg, and the characteristics a form
-     writes *)
+  (* the forms that close on the leeg of a member, and the characteristics a
+     form writes *)
   let testing_forms = Hashtbl.create 64 and testers = Hashtbl.create 64 in
   Hashtbl.iter
     (fun (key, node) () ->
@@ -879,13 +911,13 @@ let report (doc : document) (j : Yojson.Safe.t) : string list =
   List.iter
     (fun (r : resolved_rule) ->
       match (r.rr_presentation, target_node r) with
-      | Some Characteristic_attribution, Some n -> Hashtbl.add primary r.rr_pointer n
+      | Some Characteristic_attribution, Some n -> Hashtbl.add primary r.rr_pointer (canon n)
       | _ -> ())
     doc.resolved_rules;
   List.iteri
     (fun i (l : prioritized_defaults) ->
       match l.pd_characteristic with
-      | Some k -> Hashtbl.add primary (Printf.sprintf "/rules/prioritizedDefaults/%d" i) (Checks.n_char l.pd_subject k)
+      | Some k -> Hashtbl.add primary (Printf.sprintf "/rules/prioritizedDefaults/%d" i) (canon (Checks.n_char l.pd_subject k))
       | None -> ())
     doc.prioritized_defaults;
   List.iter
@@ -893,7 +925,7 @@ let report (doc : document) (j : Yojson.Safe.t) : string list =
       List.iter
         (fun (t : assignment) ->
           match (t.to_characteristic, t.to_attribute, o.created_type) with
-          | true, Some a, Some ct -> Hashtbl.add primary o.oc_pointer (Checks.n_char ct a)
+          | true, Some a, Some ct -> Hashtbl.add primary o.oc_pointer (canon (Checks.n_char ct a))
           | _ -> ())
         o.assignments)
     doc.object_creations;
@@ -908,8 +940,9 @@ let report (doc : document) (j : Yojson.Safe.t) : string list =
     List.map
       (fun (p : place) ->
         let own = Hashtbl.find_opt index_of_key p.form.f_key in
-        let skip_for n = if p.form.f_skip_target = Some n then own else None in
-        let nodes = dedup (List.map (fun (c, _) -> c.node) p.members) in
+        let skip_for n = if Option.map canon p.form.f_skip_target = Some n then own else None in
+        let members_c = List.map (fun ((c : carrier), g) -> (canon c.node, g)) p.members in
+        let nodes = dedup (List.map fst members_c) in
         let derived n = List.exists (fun w -> Some w <> skip_for n) (Hashtbl.find_all writers (graph_node n)) in
         let members =
           List.map (fun n -> n ^ "=" ^ if derived n then "derived" else "input") nodes
@@ -924,7 +957,7 @@ let report (doc : document) (j : Yojson.Safe.t) : string list =
         let filled =
           List.filter_map
             (fun n ->
-              if List.for_all (fun (c, g) -> c.node <> n || g) p.members then Some ("filled-test:" ^ n) else None)
+              if List.for_all (fun (c, g) -> c <> n || g) members_c then Some ("filled-test:" ^ n) else None)
             nodes
         in
         let char_guards =
@@ -932,7 +965,7 @@ let report (doc : document) (j : Yojson.Safe.t) : string list =
             (fun k ->
               if List.exists tests_leeg (Hashtbl.find_all writers k) then Some ("characteristic-check:" ^ k) else None)
             (* a check is no guard of itself *)
-            (List.filter (fun k -> not (List.mem k nodes)) (dedup p.form.f_chars))
+            (List.filter (fun k -> not (List.mem k nodes)) (dedup (List.map canon p.form.f_chars)))
         in
         let elsewhere =
           List.concat_map
