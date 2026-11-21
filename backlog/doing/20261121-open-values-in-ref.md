@@ -950,3 +950,21 @@ check-graph: PASS (extra; route leg: the graph of the wire equals the graph of t
 check-scenario: PASS — 48 scenario golden(s) (floor 7) regenerate 176 case file(s) (floor 31) and their ir.json byte-identically
 check-readings: PASS (ref traced 1199 golden case files, and refused by name the trace of 6 case file(s) of 1 golden(s) (TRACE_REFUSED); on both branches 385 goldens and 1073 case files compared, 8468 readings, 27262 node lines of which 4427 unreached, 1016 with contributors, 1317 with a timeline, 842 with the object of a read and 618 of a displaced reading, 147 contributors of ref not reached; end states of 3044 objects (479 made) and 8501 members; all at or above their floors; deviations 0, end-state deviations 0; 14 comparison rows, 3 tripwire rows, 10 end-state rows; 89 s)
 ```
+
+### Landing van deel 2b (hoofdsessie, 2026-11-21)
+
+Nagelezen: de drie uitkomsten van een schrijver op één plaats (`writer_outcome`, `outcome_of`, `value_outcome`), de
+lezer van een relatie met haar merkteken (`World.read_links`, `links_open`), en de twee nieuwe cases van de golden, met
+de hand nagerekend. Twee afwijkingen van de opdracht, die de hoofdsessie overneemt:
+
+- **De opgave is niet gesloten door haar declaratie.** Het voorlopige besluit van de kaart vroeg dat, herkend aan de
+  herkomst van de groep; IR-SPEC ch. 2.13 zegt dat geen executor de herkomst leest en gate 13 houdt dat vast. Een
+  opgave die de case niet geeft is dus open, en de berekening eronder beslist niet, tenzij een initialisatie sluit.
+  Dat een niet-gegeven opgave "er is geen opgave" betekent, komt met de kaart voor een volledig gegeven: een
+  uitdrukkelijk veld op de declaratie, dat de frontend voor een opgave zet. Het besluit "een opgave is gesloten door
+  haar declaratie" onder "Besluiten vóór de bouw" geldt in die vorm niet meer.
+- **Een creatie telt in `open_inputs` niet als schrijver**: een lid op een object dat de case geeft, blijft invoer.
+
+De zin in de README en het commentaar van clingo dat ref een strikt document weigert, is bijgewerkt; rij 48 van
+`spec/CONSTRUCTS.md` ook. `make gates` groen op `73d6f05e2` (671 s, 17 gates, red=0; de poot voor behoud: 281 goldens en
+787 cases).
