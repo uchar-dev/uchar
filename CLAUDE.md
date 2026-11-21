@@ -198,12 +198,18 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
 4. `scripts/check-case-schema.sh` — `spec/schema/uchar-case-v0.schema.json` is metaschema-valid; every golden and
    red `case*.json` validates against it and sits beside an `ir.json`; golden carries `expected`, red carries
    `expectedFault`; a zone without a case file fails. Self-test rows hold the shape of `expectedFault` (a `params`
-   object of strings, no fragment key).
+   object of strings, no fragment key) and of the states of RUNTIME-SEMANTICS ch. 1.5 (`characteristicsAbsent`,
+   `attributeOpen`, `characteristicOpen`).
 
 5. `scripts/check-oracle.sh` — the reference interpreter (`ref/`) builds and replays every golden `case*.json` with
    exact expectation match (the oracle guard of PLAN §8); goldens without a case file are listed. It also runs
-   `ref/test/`, the executable form of the `RUNTIME-SEMANTICS.md` worked examples, demanding its count line. Floors:
-   `EXPECTED_MIN_CASES`, `EXPECTED_MIN_EXAMPLES`.
+   `ref/test/`, the executable form of the `RUNTIME-SEMANTICS.md` worked examples, demanding its count line. A
+   preservation leg (RUNTIME-SEMANTICS ch. 1.5) holds that complete knowledge gives the ordinary outcome: every golden
+   whose document does not carry `inferFromEmpty`, copied with `inferFromEmpty: false` and replayed with
+   `runner --closed-inputs`, plays its own cases; a golden whose copy ref refuses (REF-014) is counted per form, any
+   other difference fails by name, and the copy of `PRESERVATION_MUTANT` without `--closed-inputs` must miss a case
+   (its red row). Floors: `EXPECTED_MIN_CASES`, `EXPECTED_MIN_EXAMPLES`, `EXPECTED_MIN_PRESERVED_GOLDENS`,
+   `EXPECTED_MIN_PRESERVED_CASES`.
 
 6. `scripts/check-clingo.sh` — the differential: `backends/clingo` translates every golden case to ASP-Core-2 and
    clingo's stable model must match the absolute expectations gate 5 pins. Played is the default. A golden whose form
@@ -393,7 +399,8 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
     `ref/lib/end_state.ml`: the end state, each line after `state `) and the backend's readings
     (`DroolsBackendMain --readings`, the end state through the outcome reader `DroolsBackend.endStateOf`) are held
     equal per golden case file, on both branches; the two share no code (gate 1). The trace reads every golden case
-    file; per golden both branches end in `READINGS <n>`, n its case files, or in the `EXCLUDE` line the plain replay
+    file except those of a golden `TRACE_REFUSED` names with the code of its refusal (REF-014, form `reading`: a
+    document with `inferFromEmpty: false`), which the backend must exclude as well; per golden both branches end in `READINGS <n>`, n its case files, or in the `EXCLUDE` line the plain replay
     prints; an `ERROR` fails unless `READINGS_ERROR_KNOWN` lists it. Every reading line is compared verbatim — the
     object a role path reached (`on "<object>"`, `on none`) and a `DISPLACED` default's node lines included — except
     the position of a contributor of a quantifier fold: member and verdict, value or fault are compared verbatim, the
@@ -402,7 +409,7 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
     too). A difference fails unless `DEVIATIONS` names case and branch. The end state — every object, of the input
     and made by a creation, with its type; every attribute with a value, a timeline as its segments; every
     characteristic that holds; every link; the §9.5 facts — is compared line for line, verbatim; a difference fails
-    unless `STATE_DEVIATIONS` names case and branch. The three lists are reason-carrying and stale-failing in both
+    unless `STATE_DEVIATIONS` names case and branch. The four lists are reason-carrying and stale-failing in both
     directions, and the comparison rule, the tripwire, the object reader, the displaced counter, the end-state
     comparison and its counter pass rows of their own. Traces run on one process per core. Floors:
     `EXPECTED_MIN_TRACED_CASES`, `EXPECTED_MIN_COMPARED_GOLDENS`, `EXPECTED_MIN_COMPARED_CASES`,

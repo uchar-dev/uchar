@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * built, and the CLI reports it in the status line {@code EXCLUDE DROOLS-370: <sentence>}. This backend reads an empty
  * value as RUNTIME-SEMANTICS ch. 1.2–1.4 does, so an answer on such a document would be a wrong answer without a word.
  * The same document without the property builds and plays, so the property alone is refused. The fixture is the golden
- * {@code jutterswet-afleiden-uit-leeg}, which carries no case file: the case below lives in the test's own directory.
+ * {@code jutterswet-afleiden-uit-leeg}; the case below lives in the test's own directory.
  */
 class InferFromEmptyRefusalWitnessTest {
 
