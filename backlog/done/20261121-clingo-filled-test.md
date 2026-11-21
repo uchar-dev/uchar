@@ -232,3 +232,10 @@ en gemeten; niet hersteld in deze ronde):
 - gate 15: `check-graph: PASS`
 - gate 16: `check-scenario: PASS — 48 scenario golden(s) (floor 7) regenerate 176 case file(s) (floor 31) and their ir.json byte-identically`
 - gate 17: `check-readings: PASS (ref traced 1199 golden case files; on both branches 385 goldens and 1073 case files compared, 8468 readings, 27262 node lines of…`
+
+**Landing (hoofdsessie, 2026-11-21).** Nagelezen: de arm van de toets (`filled_operand_atoms`), `param_read`,
+`unscaled_term` en de case-emissie van een payload en een parameter. De regel bij rij 47 van `spec/CONSTRUCTS.md` en de
+alinea over de toets op gevuld in `spec/ASP-TRANSLATION.md` zijn gezet. De vijf open punten hierboven landen niet mee:
+zij gaan over waarden die geen getal of datum zijn buiten de toets en de gelijkheid, en horen bij de kaart waarin
+clingo de lezing "uit leeg volgt niets" zelf vertaalt, die dezelfde lezingen en schrijvers raakt. `make gates` groen op
+`d8e3ec408` (800 s, 17 gates, red=0).

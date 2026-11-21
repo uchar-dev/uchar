@@ -2526,11 +2526,20 @@ these forms — `has(S,dubbel) :- …, val(S,dossier,B), B == dossier(12050,3).`
 and `has(S,afwijkend) :- …, val(S,dossier,B), B != dossier(12050,3).`
 
 The **gevuld gate** (`Predicate` kind `filled`, ref: value ≠ leeg) is the
-operand's binding atoms as a **positive join**: a struct operand rides
-`struct_term`'s `val/3` atom, any other rides `expr_term`; either way an
-absent value leaves the atoms unbound, so the gated rule does not fire —
-leeg-on-absence for free (the anchor's `premie` rule reads
-`filled(dossier)`).
+operand's binding atoms as a **positive join**: an attribute or a cell
+read binds its `val/3` atom, unscaled where its datatype has no scale, on
+the subject or over a path of to-one roles; a parameter binds its
+`param/2` atom, which the case writes as the term an attribute of its
+datatype carries; any other operand rides the term function of its
+datatype (`expr_term` for a number, a date and a sum type, `struct_term`,
+`symbolic_term`, `dt_term`). Either way an absent value leaves the atoms
+unbound, so the gated rule does not fire — leeg-on-absence for free (the
+anchor's `premie` rule reads `filled(dossier)`; the golden
+`jutterswet-gevuldtoets-soorten` carries the test on an enumeration, a
+text, a boolean and an attribute with absence markers). A list is refused
+(CLINGO-050). In an equality of records, sum types, texts, enumerations
+or booleans an operand is an attribute on the subject or over a path of
+to-one roles, a parameter, a literal or a constructor term alike.
 
 On the check side, `model.ml` builds a record-valued `attributeValue`
 expectation by the **same** `struct_value_term` emission (each field
