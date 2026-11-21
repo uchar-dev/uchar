@@ -474,8 +474,9 @@ A document with `inferFromEmpty: false` (IR-SPEC ch. 2) reads a value in
 three states instead of two. This section says what that changes; what it does not name
 reads as ch. 1.2–1.4 lay down. It defines the reading for a rule (an
 equation, a calculation, a characteristic attribution, an initialisation), a
-consistency rule, a condition without a fold, and an expression without a
-fold or a timeline; for every other form the reading is not defined here, and
+consistency rule, and a condition or an expression without a timeline, a
+quantifier fold and a fold over a set among them; for every other form the
+reading is not defined here, and
 IR-SPEC ch. 2 says what an executor does with a document that holds one. Each
 example is a test of the reference interpreter's suite under the name given;
 the examples are from the Jutterswet, on a Vondst whose attributes are whole
@@ -702,6 +703,65 @@ vinder, and holds where it does. A role check reads no value and stands: "een
 Vondst is toegewezen indien hij een vinder heeft" stands not to hold without a
 vinder, and holds with a vinder whose bonus is open.
 
+**A quantifier fold** (ch. 3.9a) reads the filter of every member of its
+range first, in order, and then the matrix of each member whose filter is not
+false, each as a judgement; the set is complete, as a relation is. Each member
+of the range is a member of a composite: for `all` and `the` it is true where
+its filter is false or its matrix true, for the other quantifiers where both
+are true, by Kleene's table, and the fold is the table of the composite over
+those members, read until its judgement for another form stands. An open read
+in the filter or the matrix of one member leaves that member undetermined,
+not the fold. Where every filter stands this is the count of ch. 3.9a over
+the contributors, with its stop. Example (WV-1.5-quantifier-fold-*): "een
+Jutter is [Q] indien [Q] van zijn vondsten een gewicht groter dan 10
+hebben", over vondsten of 20, 30 and one without a gewicht: `all` is open,
+`none` stands not to hold, `atLeast` 1 and 2 hold, `atMost` 1 and `exactly` 1
+stand not to hold; over 5, 6 and one without: `atLeast` 2 stands not to hold,
+`atMost` 1 holds, `exactly` 1 is open; with the vondst without a gewicht
+first, the members after it decide as they do. "Een Jutter is keurder indien
+al zijn vondsten die gemerkt zijn een gewicht groter dan 10 hebben", with a
+gemerkt vondst of 20 and one of 5 whose gemerkt the case does not name, is
+open, where the document without the property attributes keurder; with that
+second vondst at 30 it holds. Over no vondst `all` holds and `atLeast` 1
+stands not to hold.
+
+**A fold over a set** — the sum, the minimum, the maximum, the first, the
+last, the count and the filled-value count over the members of a range (ch.
+3.4a), and a listed fold over such folds — reads the filter of each member
+first and then its value. A member whose filter is false does not count, a
+settled leeg value is skipped as ch. 1.2 skips a leeg value, and a member
+whose filter is undetermined or whose value is open makes the fold open; a
+count reads no value, so only an undetermined filter makes it open. A fold
+over no contribution is settled leeg, or its fallback. Example
+(WV-1.5-set-fold): "het totaalgewicht van een Jutter is de som van het
+gewicht van zijn vondsten", "het zwaargewicht … van zijn vondsten die een
+gewicht groter dan 10 hebben", their minimum, "het zwaaraantal" and "het
+vondstaantal": over vondsten of 20 and 5 they are 25, 20, 5, 1 and 2; over 20
+and a vondst without a gewicht all are open but the vondstaantal, 2; over no
+vondst the sums and the minimum are settled leeg and the counts 0, and "de
+som … of 0 als die er niet zijn" is 0. The sum of the vindloon of the card over
+a vondst of taxatie 2000 and one of taxatie 50 is 10, the settled leeg
+vindloon skipped; with the second taxatie missing it is open.
+
+**A closure inside a value.** The filled-value count (ch. 3.4c) and a fold
+filter that tests on gevuld are closures inside an expression: for the form
+itself an open value is leeg, so the count counts what is filled and the
+filter leaves the member out; for another form what they give does not
+stand. The evaluation tells its boundary that it applied a closure to an open
+value, beside the one value it computes. An atomic condition is then
+established for the form itself and undetermined for another — the test on
+leeg and gevuld is this closure on one value. A rule whose value applied one
+decides with that value; where that value is leeg, it does not stand for
+another form that the rule fills nothing, and its target is open. Example
+(WV-1.5-closure-in-a-value): "het aantal gewogen vondsten van een Jutter is
+het aantal gevulde gewichten van zijn vondsten", over vondsten of 20, without
+a gewicht and of 30, is 2. "Een Jutter is volledig gewogen indien het aantal
+gevulde gewichten van zijn vondsten gelijk is aan 3" is open there: false for
+itself, undetermined for another; "… groter is dan 1" holds. "Het gewogen
+totaal is de som van het gewicht van zijn vondsten waarvan het gewicht
+gevuld is" is 50 there; over vondsten that all lack a gewicht it is open, and
+over no vondst settled leeg.
+
 **Complete input.** A session can treat input members as complete: every
 input member, or the members it names by object type and member, on every
 object of that type. A complete member without a value is settled leeg; a
@@ -734,8 +794,9 @@ state.
 outcomes and changes none — an outcome being a value, a settled leeg
 attribute, a characteristic that holds or stands not to hold, or a §9.5 fact
 — except through a closure: a leeg test or a gevuld assertion over an open
-value (the form's own negation of a gevuld test among them), an
-initialisation, and complete input. A value the case gives a derived member
+value (the form's own negation of a gevuld test among them), a
+filled-value count and a fold filter that tests on gevuld over an open value,
+an initialisation, and complete input. A value the case gives a derived member
 is no input member's: where every writer fills nothing it stands in place of
 settled leeg. *Preservation with complete knowledge*: where nothing is open,
 every input member given or complete, the outcomes are those of ch. 1.2–1.4.

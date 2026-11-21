@@ -1,0 +1,304 @@
+{
+  "format": "uchar-ir-v1",
+  "inferFromEmpty": false,
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "eerste meldingsdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "laatste meldingsdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vinddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Klacht",
+        "animate": false,
+        "plural": "Klachten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "klachtdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vangst",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "jutter",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "beklag",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "beklaagde",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "klacht",
+            "objectType": "Klacht",
+            "plural": "klachten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "eerste meldingsdag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "eerste meldingsdag",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De eerste meldingsdag van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "first",
+              "arguments": [
+                {
+                  "node": "Aggregation",
+                  "kind": "first",
+                  "arguments": [
+                    {
+                      "node": "AttributeReference",
+                      "attribute": "vinddag",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "de vinddag van alle vondsten van de Jutter"
+                      }
+                    }
+                  ],
+                  "elementType": "Vondst",
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "vangst",
+                    "role": "vondst"
+                  },
+                  "type": {
+                    "node": "Date",
+                    "precision": "day"
+                  },
+                  "source": {
+                    "snippet": "de eerste van de vinddag van alle vondsten van de Jutter"
+                  }
+                },
+                {
+                  "node": "Aggregation",
+                  "kind": "first",
+                  "arguments": [
+                    {
+                      "node": "AttributeReference",
+                      "attribute": "klachtdag",
+                      "subjectType": "Klacht",
+                      "source": {
+                        "snippet": "de klachtdag van alle klachten van de Jutter"
+                      }
+                    }
+                  ],
+                  "elementType": "Klacht",
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "beklag",
+                    "role": "klacht"
+                  },
+                  "type": {
+                    "node": "Date",
+                    "precision": "day"
+                  },
+                  "source": {
+                    "snippet": "de eerste van de klachtdag van alle klachten van de Jutter"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de eerste van (de eerste van de vinddag van alle vondsten van de Jutter) en (de eerste van de klachtdag van alle klachten van de Jutter)"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "laatste meldingsdag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "laatste meldingsdag",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De laatste meldingsdag van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "last",
+              "arguments": [
+                {
+                  "node": "Aggregation",
+                  "kind": "last",
+                  "arguments": [
+                    {
+                      "node": "AttributeReference",
+                      "attribute": "vinddag",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "de vinddag van alle vondsten van de Jutter"
+                      }
+                    }
+                  ],
+                  "elementType": "Vondst",
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "vangst",
+                    "role": "vondst"
+                  },
+                  "type": {
+                    "node": "Date",
+                    "precision": "day"
+                  },
+                  "source": {
+                    "snippet": "de laatste van de vinddag van alle vondsten van de Jutter"
+                  }
+                },
+                {
+                  "node": "Aggregation",
+                  "kind": "last",
+                  "arguments": [
+                    {
+                      "node": "AttributeReference",
+                      "attribute": "klachtdag",
+                      "subjectType": "Klacht",
+                      "source": {
+                        "snippet": "de klachtdag van alle klachten van de Jutter"
+                      }
+                    }
+                  ],
+                  "elementType": "Klacht",
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "beklag",
+                    "role": "klacht"
+                  },
+                  "type": {
+                    "node": "Date",
+                    "precision": "day"
+                  },
+                  "source": {
+                    "snippet": "de laatste van de klachtdag van alle klachten van de Jutter"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de laatste van (de laatste van de vinddag van alle vondsten van de Jutter) en (de laatste van de klachtdag van alle klachten van de Jutter)"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

@@ -246,8 +246,9 @@ let refuse_ranking_fold (kind : function_kind) attribute =
 
 (* inferFromEmpty false (IR-SPEC ch. 2) asks for the reading that infers
    nothing from an empty value (RUNTIME-SEMANTICS ch. 1.5). This interpreter
-   carries it for a rule, a consistency, a condition without a fold and an
-   expression without a fold or a timeline; every other form, read by ch.
+   carries it for a rule, a consistency, and a condition or an expression
+   without a timeline, a quantifier fold and a fold over a set among them;
+   every other form, read by ch.
    1.2-1.4, would get an answer that reading excludes and no report would say
    so. A document with the property that holds one is refused by name before
    anything is evaluated or any expectation checked, the form named with it by
@@ -294,19 +295,28 @@ let refuse_uncarried ?(reading = false) (doc : document) =
       | Construct { argument; _ } -> opt argument
       | Payload_access { base; _ } -> expr base
       | Let { value; body; _ } -> expr value; expr body
-      | Function_call { kind; call_arguments; element_object_type; filter; dimension_selections; grain; source_role; source_path; _ } -> (
+      | Function_call
+          { kind; call_arguments; element_object_type; filter; dimension_selections; grain; source_role; source_path;
+            empty_fallback; _ } -> (
           let ranged = element_object_type <> None || source_role <> None || source_path <> None in
           match kind with
           | _ when dimension_selections <> None -> refuse "dimension-fold"
           | Time_proportional_part -> refuse "time-proportional-part"
           | Day_count -> refuse "day-kind"
-          | (Sum_function | Total | Count | Filled_count | Minimum | Maximum | First | Last) when ranged -> refuse "set-fold"
+          (* a fold over a set: its filter, its source and a sum's fallback *)
+          | (Sum_function | Total | Count | Filled_count | Minimum | Maximum | First | Last) when ranged ->
+              Option.iter cond filter;
+              List.iter expr call_arguments;
+              opt empty_fallback
+          (* the count of an instance-set union (ch. 3.4d) *)
+          | Count when (match call_arguments with [ Instance_set_union _ ] -> filter = None | _ -> false) ->
+              List.iter expr call_arguments
           | Sum_function | Total | Count | Filled_count -> refuse "temporal-total"
           | _ when filter <> None || grain <> None -> refuse "builtin-filter"
           | Minimum | Maximum | First | Last | Square_root | Absolute_value | Concatenation | Duration
           | Absolute_duration | Easter_sunday | Year_of | Month_of | Day_of | Date_with | Date_time_with ->
               List.iter expr call_arguments)
-      | Instance_set_union _ -> refuse "set-fold"
+      | Instance_set_union { branches; _ } -> List.iter (fun (b : instance_set_branch) -> Option.iter cond b.isb_filter) branches
       | Dimension_cell_read _ -> refuse "dimension-cell"
       | Variable_reference _ -> refuse "variable-reference"
       | Expr_unresolved _ -> refuse "unresolved"
@@ -328,7 +338,7 @@ let refuse_uncarried ?(reading = false) (doc : document) =
       | Predicate { operand; _ } -> opt operand
       | Characteristic_check _ | Role_membership _ | Identity_check _ -> ()
       | Compound { components; _ } -> List.iter cond components
-      | Quantifier_fold _ -> refuse "quantifier-fold"
+      | Quantifier_fold { kv_filter; kv_test; _ } -> Option.iter cond kv_filter; Option.iter cond kv_test
       | Time_window _ -> refuse "time-window"
       | Rule_status_check _ -> refuse "rule-status-check"
       | Condition_unresolved _ -> refuse "unresolved"
@@ -1683,8 +1693,8 @@ let value_verdict ~label (j : judgement) =
 (* The verdict of a condition at a position that reads one truth value. In a
    document without open input every judgement is two-valued and equal for
    both walks. A position whose form the strict reading does not carry yet —
-   an IfThenElse, a fold's filter or matrix, a creation's condition, a
-   defaults group, a filter of a list, a day kind, a reading of ch. 5.12 — is
+   an IfThenElse, a creation's condition, a defaults group, a filter of a
+   list, a day kind, a reading of ch. 5.12 — is
    refused in a document with inferFromEmpty false before anything is
    evaluated ([refuse_uncarried]), so it meets no other judgement; meeting one
    is a fault of ref. *)
@@ -2677,8 +2687,12 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
     let keep (i : World.instance) =
       match filter with
       | None -> true
-      | Some c -> eval_cond (at_member env self element_object_type) world i ~err c
+      | Some c -> value_verdict ~label:i.label (judge_cond (at_member env self element_object_type) world i ~err c)
     in
+    (* the value of a member: the filled-value count is a closure, which counts
+       an open value as leeg for the form itself (ch. 1.5); every other fold
+       has an open read there *)
+    let member_value read = if kind = Filled_count then closure_over_open ~err (fun _ -> read ()) else read () in
     (* D8: the single argument of an instance fold that carries a range is
        its SET source. Under `count` it names the counted role and the count
        folds the reached INSTANCES; under every value fold and the filled
@@ -2736,7 +2750,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
            has no defined moment to rank, so it is refused rather than
            reading a value the timeline does not have at one instant. *)
         if not (Ir_v0.Checks.attr_temporal el_decl name) then
-          `Values (contributing_values members (map_in_order (fun i -> World.read_attr world i name) members))
+          `Values (contributing_values members (map_in_order (fun i -> member_value (fun () -> World.read_attr world i name)) members))
         else begin
           (match kind with
           | Sum_function | Total -> ()
@@ -2881,7 +2895,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
                   let bkeep (i : World.instance) =
                     match b.isb_filter with
                     | None -> true
-                    | Some c -> eval_cond (at_member env self (Some el)) world i ~err c
+                    | Some c -> value_verdict ~label:i.label (judge_cond (at_member env self (Some el)) world i ~err c)
                   in
                   filter_in_order bkeep
                     (fold_members ~binding env world self ~element:el))
@@ -2929,7 +2943,9 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
         let members =
           filter_in_order keep (fold_members ?binding:source_role ?path:source_path env world self ~element:el)
         in
-        `Values (contributing_values members (map_in_order (fun i -> World.read_attr world i member) members))
+        `Values
+          (contributing_values members
+             (map_in_order (fun i -> member_value (fun () -> World.read_attr world i member)) members))
     (* the payload of each member (ch. 9.5): the set source reads the
        attribute of the element type and takes the constructor's payload out
        of it, leeg where the member carries another constructor; WF-127 holds
@@ -2954,7 +2970,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
         in
         `Values
           (contributing_values members
-             (map_in_order (fun i -> payload_of constructor_ (World.read_attr world i name)) members))
+             (map_in_order (fun i -> member_value (fun () -> payload_of constructor_ (World.read_attr world i name))) members))
     (* WF-037, the fold-source arm, in the verifier's sentence: the one
        argument of an aggregation that carries an elementType is an
        AttributeReference, and any other node there is refused by name. A
@@ -3526,13 +3542,27 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
      apart between the two.
 
      Two different disciplines meet here, each taken from the node it
-     belongs to. The CONTRIBUTORS are settled in full first, filter and all,
-     exactly as an instance fold settles them (ch. 3.4a): the subselection
-     says which members the sentence is about, and that question is not
-     short-circuited by the answer. The MATRIX then short-circuits, exactly
-     as a composite condition does (ch. 5.10): evaluation stops at the first
-     contributor whose verdict settles the fold, so a member never reached
-     produces no fault and no §9.5 channel fact. *)
+     belongs to. The FILTER of every member of the range is read first, in
+     order, exactly as an instance fold settles its contributors (ch. 3.4a):
+     the subselection says which members the sentence is about, and that
+     question is not short-circuited by the answer. The MATRIX then
+     short-circuits, exactly as a composite condition does (ch. 5.10): the
+     read stops at the first member after which the fold's judgement for
+     another form stands, so a member never reached produces no fault and no
+     §9.5 channel fact.
+
+     Each member is one member of a composite over the RANGE, filter and
+     matrix judged per walk (ch. 1.5): for `all` (and `the`) it holds where
+     its filter is false or its matrix true, for the other quantifiers where
+     both are true, by Kleene's strong table, and the fold counts the members
+     with [count_verdict] as the composite does. A member whose filter is
+     false is counted before the read, a member whose filter is not false has
+     its matrix read; an open read inside a filter or a matrix makes that
+     member undetermined, not the fold. Where every filter stands this is ch.
+     3.9a's count over the contributors with the same stop: `all` true at
+     [hits = n] over the range is every contributor passing, and the
+     excluded members counted as failing leave at-least, at-most and exactly
+     the comparisons they were. The empty range needs no arm of its own. *)
   | Quantifier_fold
       { kv_quantifier; kv_threshold; kv_element_object_type; kv_filter; kv_test; kv_source_role;
         kv_source_path; _ } ->
@@ -3543,48 +3573,36 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
         quantifier_fold_shape ~quantifier_kind:kv_quantifier ~cutoff:kv_threshold ~test:kv_test
           ~source_role:kv_source_role ~source_path:kv_source_path
       in
-      let keep (i : World.instance) =
-        match kv_filter with
-        | None -> true
-        | Some c -> eval_cond (at_member env self (Some el)) world i ~err c
+      let range = fold_members ?binding:kv_source_role ?path:kv_source_path env world self ~element:el in
+      let filters =
+        map_in_order
+          (fun (i : World.instance) ->
+            match kv_filter with
+            | None -> (i, established true)
+            | Some c -> (i, judge_cond (at_member env self (Some el)) world i ~err c))
+          range
       in
-      let members =
-        filter_in_order keep
-          (fold_members ?binding:kv_source_role ?path:kv_source_path env world self ~element:el)
+      let n = List.length range in
+      let verdict = count_verdict kv_quantifier ~cutoff ~n in
+      let implication = match kv_quantifier with The | All -> true | None_of | At_least | At_most | Exactly -> false in
+      (* the truth of a member in one walk, its filter not false there *)
+      let member f t =
+        match (f, t) with
+        | Established true, t -> t
+        | _, Established true when implication -> Established true
+        | _, Established false when not implication -> Established false
+        | _ -> Undetermined
       in
-      (* ch. 3.9a's count, and it is ch. 5.10's machinery over the
-         CONTRIBUTORS instead of over a written member list — `all` is
-         [hits = n] and `none` is [hits = 0], so all five quantifiers are the
-         same comparison and the same stop triggers. `none` stays the
-         per-MEMBER complement and never the fold's: "geen van de bergers
-         heeft gedurende het gehele jaar meer dan 40" asks each member to
-         fail the matrix, so a member whose timeline does not cover the
-         period fails it and does not block `none` either. The empty
-         contributor set needs no arm of its own: `all` and `none` both read
-         [hits = 0 = n], at-least and exactly are out of reach, at-most can
-         no longer be exceeded. *)
-      let n = List.length members in
-      let verdict hits =
-        match kv_quantifier with
-        | The | All -> hits = n
-        | None_of -> hits = 0
-        | At_least -> hits >= cutoff
-        | At_most -> hits <= cutoff
-        | Exactly -> hits = cutoff
+      let count (hits, fails) = function
+        | Established true -> (hits + 1, fails)
+        | Established false -> (hits, fails + 1)
+        | Undetermined -> (hits, fails)
       in
-      let settled ~hits ~left =
-        match kv_quantifier with
-        | The | All -> if hits < n - left then Some false else None
-        | None_of -> if hits > 0 then Some false else None
-        | At_least ->
-            if hits >= cutoff then Some true
-            else if hits + left < cutoff then Some false
-            else None
-        | At_most ->
-            if hits > cutoff then Some false
-            else if hits + left <= cutoff then Some true
-            else None
-        | Exactly -> if hits > cutoff || hits + left < cutoff then Some false else None
+      (* a member whose filter is false in a walk: true for `all`, false for the others *)
+      let excluded walk =
+        List.fold_left
+          (fun acc (_, f) -> if walk f = Established false then count acc (Established implication) else acc)
+          (0, 0) filters
       in
       (* ch. 5.12: the reading records the table of ch. 3.9a over every
          contributor, so under an observer that records this fold's table
@@ -3633,26 +3651,27 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
                 contribute ~reached:false m.label found)
               parts
       in
-      let rec read hits left (parts : World.instance list) =
-        match settled ~hits ~left with
-        | Some v ->
-            unreached parts;
-            v
-        | None -> (
-            match parts with
-            | [] -> verdict hits
-            | m :: rest ->
-                let hit =
-                  try eval_cond (at_member env self (Some el)) world m ~err test
-                  with Value.Fault { code; _ } as fault ->
-                    contribute m.label (Member_fault code);
-                    unreached rest;
-                    raise fault
-                in
-                contribute m.label (Member_verdict hit);
-                read (if hit then hits + 1 else hits) (left - 1) rest)
+      let rec read own other (parts : (World.instance * judgement) list) =
+        let j = { own = verdict ~hits:(fst own) ~fails:(snd own); other = verdict ~hits:(fst other) ~fails:(snd other) } in
+        match (j, parts) with
+        | { other = Established _; _ }, _ ->
+            unreached (List.map fst parts);
+            j
+        | _, [] -> j
+        | _, (m, f) :: rest ->
+            let t =
+              try judge_cond (at_member env self (Some el)) world m ~err test
+              with Value.Fault { code; _ } as fault ->
+                contribute m.label (Member_fault code);
+                unreached (List.map fst rest);
+                raise fault
+            in
+            (match !observer with None -> () | Some _ -> contribute m.label (Member_verdict (two_valued test t)));
+            let step counts fw tw = if fw = Established false then counts else count counts (member fw tw) in
+            read (step own f.own t.own) (step other f.other t.other) rest
       in
-      established (read 0 n members)
+      read (excluded (fun j -> j.own)) (excluded (fun j -> j.other))
+        (List.filter (fun (_, (f : judgement)) -> f.other <> Established false) filters)
   | Time_window { starting_at; up_to; to_inclusive; _ } ->
       (* ch. 3.10, the SCALAR target's evaluation-date gate — the chapter's
          first case, in its own six clauses: vanaf inclusive, tot exclusive,

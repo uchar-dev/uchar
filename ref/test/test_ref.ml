@@ -15544,17 +15544,204 @@ let () =
         [ ("stopdag of V1 open", open_case); ("stopdag of V1 given", given_case) ])
     [ [ 0; 1; 2 ]; [ 2; 1; 0 ] ]
 
+(* The folds of ch. 1.5 range over the vondsten of a Jutter: "vinding", its
+   vinder a Jutter and its vondsten Vondsten. A scenario gives J1 and its
+   vondsten, each with its attributes and characteristics *)
+let ov_vinding : string * Ir_v0.Ast.fact_type_name =
+  ( "vinding",
+    { ft_name = Some "vinding"; reciprocal = false;
+      role_names =
+        [ { role_identifier = Some "vinder"; role_object_type_name = Some "Jutter"; role_plural = None; role_many = false };
+          { role_identifier = Some "vondst"; role_object_type_name = Some "Vondst"; role_plural = Some "vondsten";
+            role_many = true } ] } )
+
+let ov_jdoc ?(jutter = []) ?(jchars = []) ?(vondst = []) ?(vchars = []) rules =
+  { (ov_doc [ ot "Jutter" (List.map (fun a -> (a, Some num0)) jutter) jchars; ov_vondst vondst vchars ] rules) with
+    fact_types = [ ov_vinding ] }
+
+let ov_j1 vondsten =
+  { ov_label = "J1"; ov_type = "Jutter"; ov_attrs = []; ov_chars = [];
+    ov_links = (if vondsten = [] then [] else [ ("vondsten", List.map (fun (l, _, _) -> l) vondsten) ]) }
+  :: List.map (fun (l, attrs, chars) -> { ov_label = l; ov_type = "Vondst"; ov_attrs = attrs; ov_chars = chars; ov_links = [] }) vondsten
+
+let ov_range : Ir_v0.Ast.role_binding = { rb_fact_type = "vinding"; rb_role = "vondst" }
+
+(* "[kind] van [het a van] zijn vondsten (die [filter]) (of [fallback] als die er niet zijn)" *)
+let ov_fold ?filter ?fallback kind a : Ir_v0.Ast.expr =
+  Function_call
+    { kind; call_arguments = [ aref a "Vondst" ]; element_object_type = Some "Vondst"; empty_fallback = fallback; filter;
+      dimension_selections = None; typ = Some num0; source_name = None; grain = None; source_role = Some ov_range;
+      source_path = None; anchor = None }
+
+(* "een Jutter is [k] indien [q] van zijn vondsten (die [filter]) [test]" *)
+let ov_qfold ?filter ?cutoff q test : Ir_v0.Ast.condition_expr =
+  Quantifier_fold
+    { kv_quantifier = q; kv_threshold = cutoff; kv_element_object_type = Some "Vondst"; kv_filter = filter;
+      kv_test = Some test; kv_source = None; kv_source_role = Some ov_range; kv_source_path = None; kv_anchor = None }
+
+let ov_jcalc ?cond a value = rr a Calculation (Some (aref a "Jutter")) (Some value) cond
+let ov_jattribution k cond = rr k Characteristic_attribution (Some (aref k "Jutter")) (Some (litv "waar" Boolean)) (Some cond)
+
+(* WV-1.5-quantifier-fold-member: a quantifier fold reads per member its filter
+   and its matrix as a judgement, and counts the members by the table of the
+   composite. "Een Jutter is [Q] indien [Q] van zijn vondsten een gewicht
+   groter dan 10 hebben", over three vondsten, a member T (gewicht 20 or 30),
+   F (5 or 6) or U (no gewicht): an open gewicht leaves its member
+   undetermined, not the fold *)
+let () =
+  let doc q cutoff = ov_jdoc ~jchars:[ "q" ] ~vondst:[ "gewicht" ] [ ov_jattribution "q" (ov_qfold ?cutoff q (ov_cmp Greater "gewicht" "10")) ] in
+  let row r =
+    ov_j1
+      (List.mapi
+         (fun i t ->
+           let l = Printf.sprintf "V%d" (i + 1) in
+           (l, (match t with 'T' -> [ ("gewicht", string_of_int (20 + (10 * i))) ] | 'F' -> [ ("gewicht", string_of_int (5 + i)) ] | _ -> []), []))
+         (List.init (String.length r) (String.get r)))
+  in
+  let table name q cutoff rows =
+    List.iter
+      (fun (r, want) ->
+        let id = Printf.sprintf "WV-1.5-quantifier-fold-member-%s-%s" name r in
+        ov_expect id (ov_char (ov_run id (doc q cutoff) (row r)) "J1" "q") want)
+      rows
+  in
+  table "all" All None [ ("TTU", "open"); ("FFU", "not"); ("TFU", "not"); ("TTT", "holds"); ("UFT", "not") ];
+  table "none" None_of None [ ("TTU", "not"); ("FFU", "open"); ("TFU", "not"); ("FFF", "holds"); ("UTF", "not") ];
+  table "at-least-1" At_least (Some 1) [ ("TTU", "holds"); ("FFU", "open"); ("TFU", "holds"); ("UFT", "holds") ];
+  table "at-least-2" At_least (Some 2) [ ("TTU", "holds"); ("FFU", "not"); ("TFU", "open"); ("UTT", "holds"); ("UFF", "not") ];
+  table "at-most-1" At_most (Some 1) [ ("TTU", "not"); ("FFU", "holds"); ("TFU", "open"); ("UTT", "not"); ("UFF", "holds") ];
+  table "exactly-1" Exactly (Some 1)
+    [ ("TTU", "not"); ("FFU", "open"); ("TFU", "open"); ("TFF", "holds"); ("UTT", "not"); ("UFF", "open") ]
+
+(* WV-1.5-quantifier-fold-filter: a member whose filter is undetermined counts
+   by Kleene's table. "Een Jutter is keurder indien al zijn vondsten die
+   gemerkt zijn een gewicht groter dan 10 hebben": V1 gemerkt with gewicht 20,
+   V2 with gewicht 5 and gemerkt not named: V2 is undetermined, so keurder is
+   open, where the ordinary reading drops V2 and attributes keurder; with V2's
+   gewicht 30 it holds either way *)
+let () =
+  let doc =
+    ov_jdoc ~jchars:[ "keurder" ] ~vondst:[ "gewicht" ] ~vchars:[ "gemerkt" ]
+      [ ov_jattribution "keurder" (ov_qfold ~filter:(ov_check "gemerkt") All (ov_cmp Greater "gewicht" "10")) ]
+  in
+  let keurder id v2 = ov_char (ov_run id doc (ov_j1 [ ("V1", [ ("gewicht", "20") ], [ "gemerkt" ]); ("V2", [ ("gewicht", v2) ], []) ])) "J1" "keurder" in
+  ov_expect "WV-1.5-quantifier-fold-filter (failing member, filter open)" (keurder "quantifier-fold-filter-open" "5") "open";
+  ov_expect "WV-1.5-quantifier-fold-filter (passing member, filter open)" (keurder "quantifier-fold-filter-passes" "30") "holds"
+
+(* WV-1.5-quantifier-fold-closed-set: the set is closed. A Jutter without
+   vondsten: "al zijn vondsten" holds, "ten minste één van zijn vondsten"
+   stands not to hold *)
+let () =
+  let doc =
+    ov_jdoc ~jchars:[ "alle"; "een" ] ~vondst:[ "gewicht" ]
+      [ ov_jattribution "alle" (ov_qfold All (ov_cmp Greater "gewicht" "10"));
+        ov_jattribution "een" (ov_qfold ~cutoff:1 At_least (ov_cmp Greater "gewicht" "10")) ]
+  in
+  let w = ov_run "quantifier-fold-closed-set" doc (ov_j1 []) in
+  ov_expect "WV-1.5-quantifier-fold-closed-set (all)" (ov_char w "J1" "alle") "holds";
+  ov_expect "WV-1.5-quantifier-fold-closed-set (at least 1)" (ov_char w "J1" "een") "not"
+
+(* WV-1.5-set-fold-*: a fold over a set. "Het totaalgewicht van een Jutter is
+   de som van het gewicht van zijn vondsten", "het zwaargewicht ... van zijn
+   vondsten die een gewicht groter dan 10 hebben", "het minimumgewicht" the
+   minimum, "het zwaaraantal" the number of those vondsten, and "het
+   vondstaantal" the number of his vondsten. A member whose filter is false
+   does not count; a settled leeg value is skipped as ch. 1.2 skips it; a
+   member whose filter is undetermined or whose value is open leaves the fold
+   open, the count only through its filter; a fold over no contribution is
+   settled leeg, or its fallback *)
+let () =
+  let zwaar = ov_cmp Greater "gewicht" "10" in
+  let count ?filter () : Ir_v0.Ast.expr =
+    Function_call
+      { kind = Count; call_arguments = [ aref "vondsten" "Vondst" ]; element_object_type = Some "Vondst";
+        empty_fallback = None; filter; dimension_selections = None; typ = Some num0; source_name = None; grain = None;
+        source_role = Some ov_range; source_path = None; anchor = None }
+  in
+  let doc =
+    ov_jdoc
+      ~jutter:[ "totaalgewicht"; "zwaargewicht"; "minimumgewicht"; "zwaaraantal"; "vondstaantal"; "nulgewicht" ]
+      ~vondst:[ "gewicht" ]
+      [ ov_jcalc "totaalgewicht" (ov_fold Sum_function "gewicht");
+        ov_jcalc "zwaargewicht" (ov_fold ~filter:zwaar Sum_function "gewicht");
+        ov_jcalc "minimumgewicht" (ov_fold Minimum "gewicht");
+        ov_jcalc "zwaaraantal" (count ~filter:zwaar ());
+        ov_jcalc "vondstaantal" (count ());
+        ov_jcalc "nulgewicht" (ov_fold ~fallback:(ov_lit "0") Sum_function "gewicht") ]
+  in
+  let states id vondsten =
+    let w = ov_run id doc (ov_j1 vondsten) in
+    List.map (fun a -> ov_attr w "J1" a) [ "totaalgewicht"; "zwaargewicht"; "minimumgewicht"; "zwaaraantal"; "vondstaantal"; "nulgewicht" ]
+  in
+  let expect id vondsten want =
+    let got = states id vondsten in
+    ov_expect id (String.concat " " got) (String.concat " " want)
+  in
+  expect "WV-1.5-set-fold (all given)" [ ("V1", [ ("gewicht", "20") ], []); ("V2", [ ("gewicht", "5") ], []) ]
+    [ "25"; "20"; "5"; "1"; "2"; "25" ];
+  expect "WV-1.5-set-fold (a value open)" [ ("V1", [ ("gewicht", "20") ], []); ("V2", [], []) ]
+    [ "open"; "open"; "open"; "open"; "2"; "open" ];
+  expect "WV-1.5-set-fold (no vondst)" [] [ "leeg"; "leeg"; "leeg"; "0"; "0"; "0" ];
+  expect "WV-1.5-set-fold (every filter false)" [ ("V1", [ ("gewicht", "5") ], []); ("V2", [ ("gewicht", "6") ], []) ]
+    [ "11"; "leeg"; "5"; "0"; "2"; "11" ];
+  (* a settled leeg value is skipped: the vindloon of the card on each vondst *)
+  let doc =
+    ov_jdoc ~jutter:[ "totaalvindloon" ] ~vondst:[ "taxatie"; "vindloon" ]
+      [ ov_vindloon; ov_jcalc "totaalvindloon" (ov_fold Sum_function "vindloon") ]
+  in
+  let total id v2 = ov_attr (ov_run id doc (ov_j1 [ ("V1", [ ("taxatie", "2000") ], []); ("V2", v2, []) ])) "J1" "totaalvindloon" in
+  ov_expect "WV-1.5-set-fold (settled leeg skipped)" (total "set-fold-settled-leeg" [ ("taxatie", "50") ]) "10";
+  ov_expect "WV-1.5-set-fold (derived open)" (total "set-fold-derived-open" []) "open"
+
+(* WV-1.5-closure-in-a-value: the filled-value count and a fold filter that
+   tests on gevuld are closures inside a value: an open value counts as leeg
+   for the form itself, and for another form that does not stand. "Het aantal
+   gewogen vondsten van een Jutter is het aantal gevulde gewichten van zijn
+   vondsten" over 20, no gewicht and 30 is 2: the rule decides. "Een Jutter is
+   volledig gewogen indien het aantal gevulde gewichten van zijn vondsten
+   gelijk is aan 3" is false for itself and undetermined for another form:
+   volledig gewogen is open; "gedeeltelijk gewogen indien … groter is dan 1"
+   holds. "Het gewogen totaal is de som van het gewicht van zijn vondsten
+   waarvan het gewicht gevuld is" is 50 there; over vondsten that all lack a
+   gewicht it is leeg for the rule itself, and since that does not stand for
+   another form, the gewogen totaal is open, not settled leeg *)
+let () =
+  let filled_count : Ir_v0.Ast.expr = ov_fold Filled_count "gewicht" in
+  let cmp op v : Ir_v0.Ast.condition_expr =
+    Comparison { op; left_side = Some filled_count; right_side = Some (ov_lit v); time_period = None; source_name = None }
+  in
+  let doc =
+    ov_jdoc ~jutter:[ "gewogen"; "gewogen totaal" ] ~jchars:[ "volledig gewogen"; "gedeeltelijk gewogen" ] ~vondst:[ "gewicht" ]
+      [ ov_jcalc "gewogen" filled_count;
+        ov_jattribution "volledig gewogen" (cmp Equal "3");
+        ov_jattribution "gedeeltelijk gewogen" (cmp Greater "1");
+        ov_jcalc "gewogen totaal" (ov_fold ~filter:(ov_test Filled "gewicht") Sum_function "gewicht") ]
+  in
+  let w = ov_run "closure-in-a-value" doc (ov_j1 [ ("V1", [ ("gewicht", "20") ], []); ("V2", [], []); ("V3", [ ("gewicht", "30") ], []) ]) in
+  ov_expect "WV-1.5-closure-in-a-value (filled count)" (ov_attr w "J1" "gewogen") "2";
+  ov_expect "WV-1.5-closure-in-a-value (false for itself)" (ov_char w "J1" "volledig gewogen") "open";
+  ov_expect "WV-1.5-closure-in-a-value (true for itself)" (ov_char w "J1" "gedeeltelijk gewogen") "holds";
+  ov_expect "WV-1.5-closure-in-a-value (gevuld filter)" (ov_attr w "J1" "gewogen totaal") "50";
+  let w = ov_run "closure-in-a-value-none" doc (ov_j1 [ ("V1", [], []); ("V2", [], []) ]) in
+  ov_expect "WV-1.5-closure-in-a-value (filled count over open values)" (ov_attr w "J1" "gewogen") "0";
+  ov_expect "WV-1.5-closure-in-a-value (leeg through the closure)" (ov_attr w "J1" "gewogen totaal") "open";
+  let w = ov_run "closure-in-a-value-settled" doc (ov_j1 []) in
+  ov_expect "WV-1.5-closure-in-a-value (no vondst: settled leeg)" (ov_attr w "J1" "gewogen totaal") "leeg"
+
 (* WV-1.5-refused-*: a form this reading is not carried for is refused by name,
    REF-014 with the form, before anything is evaluated; the same document
-   without the property is not walked *)
+   without the property is not walked. A fold over a set is carried, the
+   temporal total of the subject's own attribute is not *)
 let () =
   let range : Ir_v0.Ast.role_binding = { rb_fact_type = "vinding"; rb_role = "vondst" } in
-  let fold : Ir_v0.Ast.expr =
+  let sum source_role : Ir_v0.Ast.expr =
     Function_call
-      { kind = Sum_function; call_arguments = [ aref "gewicht" "Vondst" ]; element_object_type = Some "Vondst";
-        empty_fallback = None; filter = None; dimension_selections = None; typ = Some num0; source_name = None; grain = None;
-        source_role = Some range; source_path = None; anchor = None }
+      { kind = Sum_function; call_arguments = [ aref "gewicht" "Vondst" ];
+        element_object_type = (if source_role = None then None else Some "Vondst"); empty_fallback = None; filter = None;
+        dimension_selections = None; typ = Some num0; source_name = None; grain = None; source_role; source_path = None;
+        anchor = None }
   in
+  let fold = sum None in
   let branch : Ir_v0.Ast.expr =
     If_then_else { typ = Some num0; condition = ov_cmp Greater "gewicht" "1"; then_ = ov_lit "1"; else_ = ov_lit "2"; source_name = None }
   in
@@ -15565,7 +15752,9 @@ let () =
     | exception Value.Fault { code; params; text } ->
         check (id ^ " (got " ^ Value.report ~code text ^ ")") (code = Some "REF-014" && params = [ ("form", want) ])
   in
-  refused "WV-1.5-refused-set-fold" (doc true fold) "set-fold";
+  refused "WV-1.5-refused-temporal-total" (doc true fold) "temporal-total";
+  check "WV-1.5-refused-not-the-set-fold"
+    (match Eval.refuse_uncarried (doc true (sum (Some range))) with () -> true | exception Value.Fault _ -> false);
   refused "WV-1.5-refused-if-then-else" (doc true branch) "if-then-else";
   check "WV-1.5-refused-not-walked-without-the-property"
     (match Eval.refuse_uncarried (doc false fold) with () -> true | exception Value.Fault _ -> false);
@@ -15698,8 +15887,9 @@ let () =
 let () =
   let witnesses =
     [ "absent-link"; "absent-link-path"; "arithmetic"; "characteristic"; "closed-input"; "comparison"; "compound-all";
-      "compound-any"; "compound-counting"; "compound-none"; "consistency"; "exact-digits"; "filled-test"; "initialisation";
-      "let"; "marker"; "navigated-read"; "settled-empty"; "settled-empty-date" ]
+      "compound-any"; "compound-counting"; "compound-none"; "consistency"; "empty-by-fault"; "exact-digits"; "filled-test";
+      "initialisation"; "let"; "listed-fold"; "marker"; "navigated-read"; "quantifier-fold"; "set-fold"; "settled-empty";
+      "settled-empty-date"; "settled-empty-fold" ]
   in
   let str = function `String s -> s | _ -> invalid_arg "ref/test/test_ref.ml: closed.json holds a string here" in
   let list = function `List l -> l | _ -> invalid_arg "ref/test/test_ref.ml: closed.json holds a list here" in
@@ -15868,7 +16058,8 @@ let () =
    has no outcome the full run lacks: filling an input adds outcomes and never
    changes one. The named exceptions are the closures, each listed here with
    the outcomes it adds: a test that says an open value is leeg, a consistency
-   that says an open value must be gevuld, and a member the session closes. A
+   that says an open value must be gevuld, a filled-value count and a fold
+   filter on gevuld over an open value, and a member the session closes. A
    link is no input that can be open (ch. 1.5) and is not left out, and
    neither is a value the case gives a member a rule writes on the object's
    type: that is no input member, and its value stands in place of settled
@@ -15880,6 +16071,8 @@ let () =
       (("filled-test-computed", "V1.gewicht"), [ "V1.getuigentoeslag 7" ]);
       (("filled-test-computed", "V1.getuigen"), [ "V1.getuigentoeslag 7" ]);
       (("own-negation-filled", "V1.taxatie"), [ "V1 ongetaxeerd holds" ]);
+      (("closure-in-a-value", "V1.gewicht"), [ "J1.gewogen 1"; "J1.gewogen totaal 30" ]);
+      (("closure-in-a-value", "V3.gewicht"), [ "J1.gewogen 1"; "J1.gewogen totaal 20" ]);
       (("closed-member-given", "V1.vindloon"), [ "V1.uitbetaling 3"; "V1.vindloon leeg" ]);
       (("closed-every-input", "V1.bergloon"), [ "V1.bergloon leeg"; "V1.uitbetaling 0" ]);
       (("closed-other-member", "V1.bergloon"), [ "V1.bergloon leeg" ]);

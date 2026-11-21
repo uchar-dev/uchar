@@ -1,0 +1,120 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V1",
+            "V2",
+            "V3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "20.00"
+          },
+          "vinddag": {
+            "date": "2026-01-10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-02-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "30.00"
+          },
+          "vinddag": {
+            "date": "2026-03-05"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "totaalgewicht"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "zwaargewicht"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "minimumgewicht"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "maximumgewicht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "eerste vinddag",
+      "value": {
+        "date": "2026-01-10"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "laatste vinddag",
+      "value": {
+        "date": "2026-03-05"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "vondstaantal",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "zwaaraantal"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "gewogen aantal",
+      "value": {
+        "number": "2"
+      }
+    }
+  ]
+}

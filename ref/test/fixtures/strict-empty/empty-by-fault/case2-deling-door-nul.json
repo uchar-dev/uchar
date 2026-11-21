@@ -1,0 +1,71 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "10.00"
+          },
+          "aantal getuigen": {
+            "number": "0"
+          },
+          "schatting": {
+            "number": "4.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "afwijkend"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "totaal",
+      "value": {
+        "number": "4.00"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "lichtvoetig"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "afwijkend",
+      "label": "V1",
+      "code": "EF-005",
+      "params": {}
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "totaal",
+      "label": "V1",
+      "code": "EF-005",
+      "params": {}
+    }
+  ]
+}

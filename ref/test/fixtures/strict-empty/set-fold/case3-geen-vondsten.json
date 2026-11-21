@@ -1,0 +1,75 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "totaalgewicht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "zwaargewicht",
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "minimumgewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "maximumgewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "eerste vinddag"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "laatste vinddag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "vondstaantal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "zwaaraantal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "gewogen aantal",
+      "value": {
+        "number": "0"
+      }
+    }
+  ]
+}
