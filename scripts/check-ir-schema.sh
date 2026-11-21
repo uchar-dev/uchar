@@ -1981,12 +1981,47 @@ INFER_FROM_EMPTY_SHAPE_ROWS = [
 ]
 
 
+# A member may carry the statement that its input is complete (card complete-member, 2026-11-21): one spelling, true,
+# directly after timeline, and absent where the member is open on an object where it is input and the case gives it
+# no value (RUNTIME-SEMANTICS ch. 1.5). No corpus document can show that the schema refuses false, null, a text or a
+# number there: golden and red must validate.
+def _member_with(member, key, value, after="timeline"):
+    def mutate(d):
+        m = member(d)
+        items = list(m.items())
+        m.clear()
+        for k, v in items:
+            m[k] = v
+            if k == after:
+                m[key] = value
+    return mutate
+
+
+COMPLETE_SHAPE_ROWS = [
+    ("Attribute.complete = true", _member_with(_attr, "complete", True), True,
+     "the declaration's statement that the input of the attribute is complete (IR-SPEC ch. 2.2)"),
+    ("Characteristic.complete = true", _member_with(_char, "complete", True), True,
+     "the declaration's statement that the input of the characteristic is complete (IR-SPEC ch. 2.2)"),
+    ("Attribute.complete = false", _member_with(_attr, "complete", False), False,
+     "absent is the one spelling of a member whose input can be open"),
+    ("Characteristic.complete = false", _member_with(_char, "complete", False), False,
+     "absent is the one spelling of a member whose input can be open"),
+    ("Attribute.complete = null", _member_with(_attr, "complete", None), False,
+     "absent is the one spelling of a member whose input can be open"),
+    ("Characteristic.complete as a text", _member_with(_char, "complete", "volledig"), False,
+     "true is the one spelling of the statement, never the word of a source language"),
+    ("Attribute.complete as a number", _member_with(_attr, "complete", 1), False,
+     "true is the one spelling of the statement"),
+]
+
+
 shape_bad = 0
 for base, rows in ((_m1_base, M1_SHAPE_ROWS), (_l2_base, L2_SHAPE_ROWS),
                    (_l3_base, L3_SHAPE_ROWS), (_l4_base, L4_SHAPE_ROWS),
                    (_l5_base, L5_SHAPE_ROWS), (_l5_base, CELL_SHAPE_ROWS),
                    (_l5_base, L7_SHAPE_ROWS), (_l5_base, UNIT_SHAPE_ROWS),
-                   (_l3_base, SYMBOL_SHAPE_ROWS), (_m1_base, INFER_FROM_EMPTY_SHAPE_ROWS)):
+                   (_l3_base, SYMBOL_SHAPE_ROWS), (_m1_base, INFER_FROM_EMPTY_SHAPE_ROWS),
+                   (_m1_base, COMPLETE_SHAPE_ROWS)):
     for row, mutate, want_ok, why in rows:
         probe = base()
         mutate(probe)
@@ -2001,7 +2036,7 @@ if shape_bad:
     sys.exit(1)
 n_shape = (len(M1_SHAPE_ROWS) + len(L2_SHAPE_ROWS) + len(L3_SHAPE_ROWS) + len(L4_SHAPE_ROWS)
            + len(L5_SHAPE_ROWS) + len(CELL_SHAPE_ROWS) + len(L7_SHAPE_ROWS) + len(UNIT_SHAPE_ROWS)
-           + len(SYMBOL_SHAPE_ROWS) + len(INFER_FROM_EMPTY_SHAPE_ROWS))
+           + len(SYMBOL_SHAPE_ROWS) + len(INFER_FROM_EMPTY_SHAPE_ROWS) + len(COMPLETE_SHAPE_ROWS))
 
 
 # NOTE: gate 9 (scripts/check-catala.sh) executes the slice of this
@@ -2209,6 +2244,11 @@ def _key_order(inst, s, path, doc):
 ORDER_ROWS = [
     ("inferFromEmpty directly after format", _root_with("inferFromEmpty", False), True),
     ("inferFromEmpty after diagnostics", _root_with("inferFromEmpty", False, after="diagnostics"), False),
+    # and the place of complete on a member, directly after its timeline and before it
+    ("complete directly after an attribute's timeline", _member_with(_attr, "complete", True), True),
+    ("complete before an attribute's timeline", _member_with(_attr, "complete", True, after="datatype"), False),
+    ("complete directly after a characteristic's timeline", _member_with(_char, "complete", True), True),
+    ("complete before a characteristic's timeline", _member_with(_char, "complete", True, after="kind"), False),
 ]
 order_bad = 0
 for row, mutate, want_in_order in ORDER_ROWS:
@@ -2221,7 +2261,7 @@ for row, mutate, want_in_order in ORDER_ROWS:
     del ko_devs[seen[2]:]
     if got_in_order != want_in_order:
         order_bad += 1
-        sys.stderr.write("FAIL: key-order self-test, %s: the root %s the schema's order, expected it %s\n"
+        sys.stderr.write("FAIL: key-order self-test, %s: the document %s the schema's order, expected it %s\n"
                          % (row, "follows" if got_in_order else "breaks",
                             "to follow" if want_in_order else "to break"))
 if order_bad:
