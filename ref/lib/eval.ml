@@ -246,9 +246,9 @@ let refuse_ranking_fold (kind : function_kind) attribute =
 
 (* inferFromEmpty false (IR-SPEC ch. 2) asks for the reading that infers
    nothing from an empty value (RUNTIME-SEMANTICS ch. 1.5). This interpreter
-   carries it for a rule, a defaults group, a consistency, and a condition or
-   an expression without a timeline, a quantifier fold and a fold over a set
-   among them; every other form, read by ch.
+   carries it for a rule, a defaults group, a creation off a cycle, a
+   consistency, and a condition or an expression without a timeline, a
+   quantifier fold and a fold over a set among them; every other form, read by ch.
    1.2-1.4, would get an answer that reading excludes and no report would say
    so. A document with the property that holds one is refused by name before
    anything is evaluated or any expectation checked, the form named with it by
@@ -269,8 +269,18 @@ let refuse_uncarried ?(reading = false) (doc : document) =
     let some form = function [] -> () | _ :: _ -> refuse form in
     if reading then refuse "reading";
     some "allocation" doc.allocations;
-    some "object-creation" doc.object_creations;
-    some "fact-creation" doc.fact_creations;
+    (* a creation on a cycle — a member of a recursive group (ch. 6) — adds
+       links and objects round after round, and a read on the cycle that
+       answers to the absence of a mark would depend on the order of the
+       rounds *)
+    let recursive =
+      List.concat_map (fun (g : resolved_rule_group) -> if g.recursive then List.filter_map Fun.id g.member_list else [])
+        doc.rule_groups
+    in
+    let on_cycle = function Some n -> List.exists (fun m -> norm m = norm n) recursive | None -> false in
+    if List.exists (fun (oc : resolved_object_creation) -> on_cycle oc.oc_name) doc.object_creations
+       || List.exists (fun (fc : resolved_fact_creation) -> on_cycle fc.fc_name) doc.fact_creations
+    then refuse "creation-cycle";
     some "uniqueness" (List.map ignore doc.uniquenesses @ List.map ignore doc.uniqueness_unions);
     some "start-point" doc.resolved_start_point_determinations;
     some "day-kind" (List.map ignore doc.day_kinds @ List.map ignore doc.resolved_day_kind_definitions);
@@ -356,7 +366,13 @@ let refuse_uncarried ?(reading = false) (doc : document) =
         (fun (egs : exception_groups) -> List.iter (fun (eg : exception_group) -> List.iter default eg.eg_defaults) egs.egs_members)
         d.default_exceptions
     in
-    List.iter (fun (l : prioritized_defaults) -> List.iter default l.defaults) doc.prioritized_defaults
+    List.iter (fun (l : prioritized_defaults) -> List.iter default l.defaults) doc.prioritized_defaults;
+    List.iter
+      (fun (oc : resolved_object_creation) ->
+        Option.iter cond oc.oc_condition;
+        List.iter (fun (t : assignment) -> Option.iter expr t.to_value) oc.assignments)
+      doc.object_creations;
+    List.iter (fun (fc : resolved_fact_creation) -> Option.iter cond fc.fc_condition) doc.fact_creations
   end
 
 (* the ranking fold of [e] and the first temporal attribute it ranks: a
@@ -954,9 +970,11 @@ let created_role env ~fact_type ~role =
       | _ -> Value.fault "created fact type '%s' does not have exactly two roles" fact_type)
 
 (* linked instances over [role] of [fact_type] seen from [self]: the links
-   of that relation only, whoever wrote them — the case or a creation *)
-let role_linked_instances world (self : World.instance) ~fact_type (role : role_ref) =
-  List.map (World.get world) (World.links self ~fact_type role)
+   of that relation only, whoever wrote them — the case or a creation — read
+   past the state of the relation, which is open where a creation could still
+   link [self] there (World.read_links, ch. 1.5) *)
+let role_linked_instances (world : World.t) (self : World.instance) ~fact_type (role : role_ref) =
+  List.map (World.get world) (World.read_links world self ~fact_type role)
 
 (* linked instances seen from [self] over the bound role: the relation a
    node reads is written on it, never derived (B12) *)
@@ -1731,8 +1749,7 @@ let left_open ~label ~member ((w : World.t), changed) = (World.leave_open w ~lab
 (* The verdict of a condition at a position that reads one truth value. In a
    document without open input every judgement is two-valued and equal for
    both walks. A position whose form the strict reading does not carry yet —
-   an IfThenElse, a creation's condition, a filter of a list, a day kind, a
-   reading of ch. 5.12 — is
+   an IfThenElse, a filter of a list, a day kind, a reading of ch. 5.12 — is
    refused in a document with inferFromEmpty false before anything is
    evaluated ([refuse_uncarried]), so it meets no other judgement; meeting one
    is a fault of ref. *)
@@ -3463,14 +3480,17 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
       (* the reached type, taken from the DECLARATION: on the qualified form
          the time-dependence cross must fire whether or not a link is there *)
       let reached = Option.value role.role_object_type_name ~default:"" in
-      match role_linked_instances world self ~fact_type:rb.rb_fact_type role with
-      | [] -> (
+      (* the hop reads the relation as one judgement: where it is open, the
+         check is undetermined (ch. 1.5) *)
+      match open_read_boundary ~err (fun _ -> role_linked_instances world self ~fact_type:rb.rb_fact_type role) with
+      | None -> undetermined
+      | Some ([], _) -> (
           object_reached (Navigated_check c) None;
           match time_period with
           | Some gp -> established (whole_period_characteristic env world ~ot:reached ~inst:None ~characteristic:k ~negation gp)
           (* over an absent link the check stands, false (ch. 1.5) *)
           | None -> established false)
-      | [ target ] -> (
+      | Some ([ target ], _) -> (
           object_reached (Navigated_check c) (Some target.label);
           match time_period with
           | Some gp ->
@@ -3551,6 +3571,9 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
           "role check: the subject %S does not fill the role %S of %S, so no link of it can \
            hold the subject there"
           self.otype role fact_type;
+      (* the relation is complete, or open where a creation could still link
+         the subject there (ch. 1.5): read as one atomic condition *)
+      atomic ~err (fun _ ->
       let linked = role_linked_instances world self ~fact_type other in
       let linked =
         match counterpart_type with
@@ -3571,8 +3594,7 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
             List.filter (fun (i : World.instance) -> isa env i.otype ct) linked
       in
       let exists = linked <> [] in
-      (* the relation is closed: the check reads no value and stands (ch. 1.5) *)
-      established (if negated then not exists else exists)
+      if negated then not exists else exists)
   (* ch. 3.9a, the QUANTIFIER FOLD: a condition quantified over the members
      of a linked instance set. The contributors are the instance fold's,
      down to the helper — [fold_members] decides the population once, for
@@ -3603,7 +3625,7 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
      the comparisons they were. The empty range needs no arm of its own. *)
   | Quantifier_fold
       { kv_quantifier; kv_threshold; kv_element_object_type; kv_filter; kv_test; kv_source_role;
-        kv_source_path; _ } ->
+        kv_source_path; _ } -> (
       period_under_count_quantifier kv_quantifier
         (List.filter_map Fun.id [ kv_filter; kv_test ]);
       let el = req "QuantifierFold.elementType" kv_element_object_type in
@@ -3611,7 +3633,11 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
         quantifier_fold_shape ~quantifier_kind:kv_quantifier ~cutoff:kv_threshold ~test:kv_test
           ~source_role:kv_source_role ~source_path:kv_source_path
       in
-      let range = fold_members ?binding:kv_source_role ?path:kv_source_path env world self ~element:el in
+      (* the range is read as one judgement: where its relation is open, the
+         fold is undetermined (ch. 1.5) *)
+      match open_read_boundary ~err (fun _ -> fold_members ?binding:kv_source_role ?path:kv_source_path env world self ~element:el) with
+      | None -> undetermined
+      | Some (range, _) ->
       let filters =
         map_in_order
           (fun (i : World.instance) ->
@@ -3709,7 +3735,7 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
             read (step own f.own t.own) (step other f.other t.other) rest
       in
       read (excluded (fun j -> j.own)) (excluded (fun j -> j.other))
-        (List.filter (fun (_, (f : judgement)) -> f.other <> Established false) filters)
+        (List.filter (fun (_, (f : judgement)) -> f.other <> Established false) filters))
   | Time_window { starting_at; up_to; to_inclusive; _ } ->
       (* ch. 3.10, the SCALAR target's evaluation-date gate — the chapter's
          first case, in its own six clauses: vanaf inclusive, tot exclusive,
@@ -4941,35 +4967,66 @@ let run_fact_creation env ~read world (fc : resolved_fact_creation) =
     let anchor_guard = if target_guard = None then fc.fc_condition else None in
     over_subjects ~read env world ~form:fc.fc_pointer ~otype:(req "FactCreationVersion.anchor" fc.anchor_point) ~rule:name
       (fun w self err ->
-        let fire =
-          match anchor_guard with Some c -> eval_cond env read self ~err c | None -> true
+        let hop insts rb =
+          List.concat_map (fun i -> role_linked_instances read i ~fact_type:rb.rb_fact_type (bound_role env rb)) insts
         in
-        if not fire then (w, false)
-        else
-          let hop insts rb =
-            List.concat_map (fun i -> role_linked_instances read i ~fact_type:rb.rb_fact_type (bound_role env rb)) insts
-          in
-          let mids =
-            List.fold_left
-              (fun insts (t : path_step) -> hop insts t.ts_role)
-              [ self ] fc.intermediates
-          in
-          let targets = hop mids fc.join_role in
+        (* the targets the join chain reaches over the links that stand, read
+           as one value: [None] where the chain crosses a relation that is open *)
+        let reach () =
+          match
+            open_read_boundary ~err (fun _ ->
+                hop (List.fold_left (fun insts (t : path_step) -> hop insts t.ts_role) [ self ] fc.intermediates) fc.join_role)
+          with
+          | Some (targets, _) -> Some targets
+          | None -> None
+        in
+        (* the relation this creation could link [self] to the [targets] over
+           is open on both ends; where the chain is open, on every object of
+           the target type (ch. 1.5) *)
+        let leave_open targets w =
           let targets =
-            match target_guard with
-            | None -> targets
-            | Some c -> List.filter (fun t -> eval_cond env read t ~err c) targets
+            match targets with
+            | Some ts -> ts
+            | None -> World.of_type ~isa:(isa env) read (req "FactCreationVersion.target" fc.fc_target)
           in
           List.fold_left
-            (fun (w, ch) (t : World.instance) ->
-              let w, c1 =
-                World.add_link w ~label:self.label ~fact_type:ftn ~role:objective_role ~target:t.label
-              in
-              let w, c2 =
-                World.add_link w ~label:t.label ~fact_type:ftn ~role:anchor_role ~target:self.label
-              in
-              (w, ch || c1 || c2))
-            (w, false) targets)
+            (fun w (t : World.instance) -> World.leave_links_open w ~label:t.label ~fact_type:ftn anchor_role)
+            (World.leave_links_open w ~label:self.label ~fact_type:ftn objective_role)
+            targets
+        in
+        let judged = match anchor_guard with Some c -> judge_cond env read self ~err c | None -> established true in
+        match outcome_of judged (fun () -> Decides ()) with
+        | Fills_nothing -> (w, false)
+        | Leaves_open -> (leave_open (reach ()) w, false)
+        | Decides () -> (
+            match reach () with
+            | None -> (leave_open None w, false)
+            | Some targets ->
+                (* a guard on the target decides per target, with the three
+                   outcomes of a writer *)
+                let linked, unsettled =
+                  List.fold_left
+                    (fun (linked, unsettled) (t : World.instance) ->
+                      match target_guard with
+                      | None -> (linked @ [ t ], unsettled)
+                      | Some c -> (
+                          match outcome_of (judge_cond env read t ~err c) (fun () -> Decides ()) with
+                          | Decides () -> (linked @ [ t ], unsettled)
+                          | Fills_nothing -> (linked, unsettled)
+                          | Leaves_open -> (linked, unsettled @ [ t ])))
+                    ([], []) targets
+                in
+                let w = if unsettled = [] then w else leave_open (Some unsettled) w in
+                List.fold_left
+                  (fun (w, ch) (t : World.instance) ->
+                    let w, c1 =
+                      World.add_link w ~label:self.label ~fact_type:ftn ~role:objective_role ~target:t.label
+                    in
+                    let w, c2 =
+                      World.add_link w ~label:t.label ~fact_type:ftn ~role:anchor_role ~target:self.label
+                    in
+                    (w, ch || c1 || c2))
+                  (w, false) linked))
   end
 
 (* ch. 5.5, object creation, a member of a recursive group included
@@ -5070,17 +5127,34 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
                     the subject %s, which a creation of stratum %d minted"
                    name stratum self.label k)
         in
-        let fire =
-          match oc.oc_condition with Some c -> eval_cond env read self ~err c | None -> true
+        (* keyed by the creation INDEX, never the (nullable) name —
+           the same key the ASP backend's ocN(Subject) term uses, so
+           two name-less creations can never collide into one label;
+           the case loader reserves the "::" namespace for mints *)
+        let label = Printf.sprintf "oc%d::%s" idx self.label in
+        (* what this creation left open on the object it made stays open: its
+           member values are written once, at the creation (ch. 5.5) *)
+        let w =
+          if SMap.mem label w.World.instances then
+            List.fold_left
+              (fun w ((l, _) as m) -> if String.equal l label then World.leave_open_again w m else w)
+              w
+              (World.opened_by w ~form:oc.oc_pointer ~at:self.label)
+          else w
         in
-        if not fire then (w, false)
-        else begin
-          (* keyed by the creation INDEX, never the (nullable) name —
-             the same key the ASP backend's ocN(Subject) term uses, so
-             two name-less creations can never collide into one label;
-             the case loader reserves the "::" namespace for mints *)
-          let label = Printf.sprintf "oc%d::%s" idx self.label in
-          let blocked = creation_blocked ~world0 pair self in
+        let judged = match oc.oc_condition with Some c -> judge_cond env read self ~err c | None -> established true in
+        let blocked = creation_blocked ~world0 pair self in
+        match outcome_of judged (fun () -> Decides ()) with
+        | Fills_nothing -> (w, false)
+        (* where its condition is undetermined, what the creation would make is
+           open: the relation over which it would link its object to the
+           subject (ch. 1.5) *)
+        | Leaves_open -> (
+            match pair with
+            | Some (fact_type, new_role, _) when not (blocked || SMap.mem label w.World.instances) ->
+                (World.leave_links_open w ~label:self.label ~fact_type new_role, false)
+            | _ -> (w, false))
+        | Decides () ->
           if blocked || SMap.mem label w.World.instances then (w, false)
           else begin
             let depth = subject_depth + 1 in
@@ -5120,11 +5194,15 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
                            characteristic check — matching the ASP backend, where
                            an absent atom is both. The boolean constant above
                            stays the v0 form; a truly non-boolean value (a
-                           number, a text) still faults fast. *)
-                        match eval_expr env read self ~err e with
-                        | Value.Bool true -> fst (World.set_char w ~label ~char:m)
-                        | Value.Bool false | Value.Empty -> w
-                        | v ->
+                           number, a text) still faults fast. A value with an
+                           open read, or false or leeg after a closure over
+                           one, leaves the characteristic open on the object
+                           made (ch. 1.5) *)
+                        match open_read_boundary ~err (fun err -> eval_expr env read self ~err e) with
+                        | None | Some ((Value.Bool false | Value.Empty), true) -> World.leave_open w ~label ~member:m
+                        | Some (Value.Bool true, _) -> fst (World.set_char w ~label ~char:m)
+                        | Some ((Value.Bool false | Value.Empty), false) -> w
+                        | Some (v, _) ->
                             Value.fault
                               "characteristic assignment of %S is not boolean: %s"
                               m (Value.to_string v))
@@ -5147,11 +5225,12 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
                     if tl = [] then w else fst (World.write_timeline w ~label ~attr:m (World.restate_timeline ~decl tl))
                   end
                   else
-                    let v = eval_expr env read self ~err (req "MemberAssignment.value" t.to_value) in
-                    fst
-                      (World.write_attr w ~label ~attr:member
-                         ~decl:(attr_decl env ~otype:created ~attr:m)
-                         v))
+                    (* the value is the input of the object made: filled,
+                       settled leeg (it assigns nothing), or open (ch. 1.5) *)
+                    match value_outcome ~err (fun err -> eval_expr env read self ~err (req "MemberAssignment.value" t.to_value)) with
+                    | Decides v -> fst (World.write_attr w ~label ~attr:member ~decl:(attr_decl env ~otype:created ~attr:m) v)
+                    | Fills_nothing -> w
+                    | Leaves_open -> World.leave_open w ~label ~member)
                 w oc.assignments
             in
             let w =
@@ -5165,8 +5244,7 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
                   w
             in
             (w, true)
-          end
-        end)
+          end)
   end
 
 (* ch. 7.1/7.9: a defaults-group member's decision, and the reconciled outcome

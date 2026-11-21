@@ -262,6 +262,30 @@ let links i ~fact_type role = Option.value (SMap.find_opt (link_key ~fact_type r
 let role_spelling (r : Ir_v0.Ast.role_ref) =
   match (r.role_plural, r.role_identifier) with Some m, _ -> m | None, Some n -> n | None, None -> "?"
 
+(* Whether the relation over [role] of [fact_type] is open on [i]: a creation
+   whose condition is undetermined could link [i] there (RUNTIME-SEMANTICS
+   ch. 1.5). The mark is kept with the members a standing outcome leaves open,
+   under the link key, which no member name spells *)
+let links_open w (i : instance) ~fact_type role = Key.mem (i.label, link_key ~fact_type role) w.opened
+
+(* The labels linked to [i] over [role] of [fact_type] as an evaluation reads
+   them: the links that stand, and [Open_read] where the relation is open on
+   [i] *)
+let read_links w (i : instance) ~fact_type role =
+  if links_open w i ~fact_type role then raise (Open_read { label = i.label; member = role_spelling role })
+  else links i ~fact_type role
+
+(* The evaluation under way leaves the relation over [role] of [fact_type] open
+   on [label]: it does not stand which links a creation lays there *)
+let leave_links_open w ~label ~fact_type role =
+  let m = (label, link_key ~fact_type role) in
+  if List.mem m w.opening then w else { w with opening = m :: w.opening }
+
+(* The evaluation under way leaves [m] open again, as the standing outcome of
+   its form holds it: what a creation left open on the object it made stays
+   open, since its member values are written once (ch. 5.5) *)
+let leave_open_again w m = if List.mem m w.opening then w else { w with opening = m :: w.opening }
+
 (* --- the write boundary (ch. 2.4) -------------------------------------- *)
 
 (* collapse a computed value to the target attribute's declared

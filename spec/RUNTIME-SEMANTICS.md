@@ -474,7 +474,7 @@ A document with `inferFromEmpty: false` (IR-SPEC ch. 2) reads a value in
 three states instead of two. This section says what that changes; what it does not name
 reads as ch. 1.2–1.4 lay down. It defines the reading for a rule (an
 equation, a calculation, a characteristic attribution, an initialisation), a
-defaults group on a target without a timeline, a
+defaults group on a target without a timeline, a creation off a cycle, a
 consistency rule, and a condition or an expression without a timeline, a
 quantifier fold and a fold over a set among them; for every other form the
 reading is not defined here, and
@@ -769,7 +769,49 @@ where it holds and an open one where it is not named; at bergingsdiepte 25 it
 is 55 whatever betwist. A stack on a timeline target (ch. 7.11) is not
 defined here (WV-1.5-stack-timeline-refused).
 
-**A read over a link.** A relation is complete: a read over a link that is
+**A creation** (ch. 5.5) has the three outcomes of a rule. An object creation
+makes its object, and a fact creation lays its links, where its condition is
+established true for itself; where its condition is established false for
+another form, it stands that it makes nothing. Where its condition is
+undetermined, what it would make is open: the relation over which it would
+link its object to the subject, or lay its links, is open on the subject, and
+for a fact creation on every object it could reach, so a count, a fold, a
+quantifier fold, a role check and a navigated read over that relation from
+there are open reads. Example (WV-1.5-creation-condition,
+WV-1.5-creation-open): "een Jutter heeft een proefvondst met gewicht gelijk
+aan 3 indien hij niet ervaren is", with "een Jutter is ervaren indien zijn
+ervaring groter is dan 5", the number of his vondsten, the sum of their
+gewicht and "een Jutter is vindend indien hij een vondst heeft": at ervaring
+2 the proefvondst is made, the number is 1, the sum 3 and vindend holds; at
+ervaring 8 none is made, the number is 0, the sum settled leeg and vindend
+stands not to hold; without an ervaring all three are open, also beside a
+vondst the case links to the Jutter. Example (WV-1.5-fact-creation): "een
+hulpvondst van een Jutter is een vondst van de Jutter indien de Jutter niet
+gemeld is", "het hulptal van een Jutter is het aantal hulpvondsten" and "een
+Vondst is geholpen indien hij een hulpjutter heeft", over two vondsten: the
+hulptal is 2 and V1 is geholpen where gemeld stands not to hold, 0 and not
+geholpen where gemeld holds, and both are open where the case does not name
+gemeld.
+
+**An object made** has the member values its creation assigns, as the input
+of an object (ch. 7.8): an attribute it assigns is filled, settled leeg where
+the value is settled leeg (it assigns nothing), and open where the value has
+an open read; a member that no one assigns and no form writes is settled
+leeg, since no case gives an object made its input. On an object the case
+gives, a member that a creation assigns on the objects it makes is an input
+member. Example (WV-1.5-creation-member): "een Jutter heeft een proefvondst
+met gewicht gelijk aan zijn ervaring en taxatie gelijk aan zijn bonus", with
+"de bonus van een Jutter is 5 indien zijn ervaring groter is dan 10": at
+ervaring 12 the proefvondst has gewicht 12 and taxatie 5, at ervaring 2
+gewicht 2 and a settled leeg taxatie, and without an ervaring both are open;
+its schade is settled leeg in each. The gewicht of a Vondst the case gives
+without one is open. A creation on a cycle, a member of a recursive group
+(ch. 6), is not defined here: a read on the cycle answers to the absence of a
+mark, and what it answers would depend on the order of the rounds
+(WV-1.5-creation-cycle-refused).
+
+**A read over a link.** A relation is complete, but where a creation could
+still lay a link in it (below): a read over a link that is
 absent is settled leeg and is read as ch. 1.2 and 5.8 lay down, and a
 navigated check over an absent link is false and stands. Over a link that is
 present, an open attribute or characteristic of the object it reaches is an

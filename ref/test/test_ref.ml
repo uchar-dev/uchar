@@ -16041,21 +16041,172 @@ let () =
   | exception Value.Fault { code; params; _ } ->
       check "WV-1.5-stack-timeline-refused" (code = Some "REF-014" && params = [ ("form", "timeline-member") ])
 
+(* --- the creations (ch. 1.5, 5.5) ------------------------------------------
+   "Een Jutter heeft een proefvondst met …": an object creation that makes a
+   Vondst for a Jutter, linked to it over vinding as one of its vondsten; the
+   object made is "oc0::J1" *)
+let ov_count ?(binding = ov_range) () : Ir_v0.Ast.expr =
+  Function_call
+    { kind = Count; call_arguments = [ aref "vondsten" "Vondst" ]; element_object_type = Some "Vondst";
+      empty_fallback = None; filter = None; dimension_selections = None; typ = Some num0; source_name = None; grain = None;
+      source_role = Some binding; source_path = None; anchor = None }
+
+let ov_jcmp a v : Ir_v0.Ast.condition_expr =
+  Comparison { op = Greater; left_side = Some (aref a "Jutter"); right_side = Some (ov_lit v); time_period = None; source_name = None }
+
+let ov_proefvondst ?cond assignments : Ir_v0.Ast.resolved_object_creation =
+  { oc_name = Some "proefvondst"; created_type = Some "Vondst"; oc_subject = Some "Jutter";
+    assignments =
+      List.map
+        (fun (a, v) -> { Ir_v0.Ast.to_attribute = Some a; to_labels = None; to_value = Some v; to_characteristic = false })
+        assignments;
+    oc_condition = cond; oc_validity = None; oc_connecting_role = None; oc_pointer = "" }
+
+(* "een Jutter is vindend indien hij een vondst heeft" *)
+let ov_has_vondst : Ir_v0.Ast.condition_expr =
+  Role_membership { fact_type = "vinding"; role = "vinder"; counterpart_type = None; negated = false; source_name = None }
+
+(* WV-1.5-creation-condition, WV-1.5-creation-open: "een Jutter heeft een
+   proefvondst met gewicht gelijk aan 3 indien hij niet ervaren is", "een
+   Jutter is ervaren indien zijn ervaring groter is dan 5", with the number and
+   the totaalgewicht of his vondsten and "vindend indien hij een vondst heeft".
+   The creation makes its object where its condition is established true for
+   itself, and nothing where it is established false; where it is
+   undetermined, what it would make is open: the relation it could link the
+   Jutter over, so a count, a fold and a role check over it are open *)
+let () =
+  let doc =
+    { (ov_jdoc ~jutter:[ "ervaring"; "vondstaantal"; "totaalgewicht" ] ~jchars:[ "ervaren"; "vindend" ]
+         ~vondst:[ "gewicht" ]
+         [ ov_jattribution "ervaren" (ov_jcmp "ervaring" "5");
+           ov_jattribution "vindend" ov_has_vondst;
+           ov_jcalc "vondstaantal" (ov_count ());
+           ov_jcalc "totaalgewicht" (ov_fold Sum_function "gewicht") ])
+      with
+      object_creations = [ ov_proefvondst ~cond:(ov_check ~negation:true "ervaren") [ ("gewicht", ov_lit "3") ] ] }
+  in
+  let row test name ?(vondsten = []) attrs want =
+    let id = test ^ "-" ^ name in
+    let input = { (List.hd (ov_j1 vondsten)) with ov_attrs = attrs } :: List.tl (ov_j1 vondsten) in
+    ov_row ("WV-1.5-" ^ id) (fun () -> ov_run id doc input)
+      (fun w ->
+        String.concat " "
+          [ ov_attr w "J1" "vondstaantal"; ov_attr w "J1" "totaalgewicht"; ov_char w "J1" "vindend";
+            (if List.mem "oc0::J1" w.World.order then ov_attr w "oc0::J1" "gewicht" else "none") ])
+      want
+  in
+  row "creation-condition" "makes" [ ("ervaring", "2") ] "1 3 holds 3";
+  row "creation-condition" "makes-nothing" [ ("ervaring", "8") ] "0 leeg not none";
+  row "creation-open" "no-vondst" [] "open open open none";
+  row "creation-open" "beside-a-vondst" ~vondsten:[ ("V1", [ ("gewicht", "4") ], []) ] [] "open open open none"
+
+(* WV-1.5-creation-member: a member value is the input of the object made: an
+   attribute the creation assigns is filled, settled leeg (a settled leeg value
+   assigns nothing) or open (a value with an open read); a member no one
+   assigns and no form writes is settled leeg, since an object made has no
+   input a case can give. On an object the case gives, a member the creation
+   assigns elsewhere is an input member, open where the case gives it no
+   value. "Een Jutter heeft een proefvondst met gewicht gelijk aan zijn
+   ervaring en taxatie gelijk aan zijn bonus", "de bonus van een Jutter is 5
+   indien zijn ervaring groter is dan 10" *)
+let () =
+  let doc =
+    { (ov_jdoc ~jutter:[ "ervaring"; "bonus" ] ~vondst:[ "gewicht"; "taxatie"; "schade" ]
+         [ ov_jcalc ~cond:(ov_jcmp "ervaring" "10") "bonus" (ov_lit "5") ])
+      with
+      object_creations = [ ov_proefvondst [ ("gewicht", aref "ervaring" "Jutter"); ("taxatie", aref "bonus" "Jutter") ] ] }
+  in
+  let row name attrs want =
+    let id = "creation-member-" ^ name in
+    let input =
+      [ { ov_label = "J1"; ov_type = "Jutter"; ov_attrs = attrs; ov_chars = []; ov_links = [] };
+        { ov_label = "V9"; ov_type = "Vondst"; ov_attrs = [ ("taxatie", "1") ]; ov_chars = []; ov_links = [] } ]
+    in
+    ov_row ("WV-1.5-" ^ id) (fun () -> ov_run ~closed:(Eval.Members [ ("Vondst", "schade") ]) id doc input)
+      (fun w ->
+        String.concat " "
+          (List.map (ov_attr w "oc0::J1") [ "gewicht"; "taxatie"; "schade" ] @ [ ov_attr w "V9" "gewicht" ]))
+      want
+  in
+  row "filled" [ ("ervaring", "12") ] "12 5 leeg open";
+  row "settled-leeg" [ ("ervaring", "2") ] "2 leeg leeg open";
+  row "open" [] "open open leeg open"
+
+(* WV-1.5-fact-creation: "een hulpvondst van een Jutter is een vondst van de
+   Jutter indien de Jutter niet gemeld is", "het hulptal is het aantal
+   hulpvondsten van de Jutter" and "een Vondst is geholpen indien hij een
+   hulpjutter heeft": a fact creation with an undetermined condition leaves
+   its relation open on the Jutter and on every vondst it could reach *)
+let () =
+  let hulp : string * Ir_v0.Ast.fact_type_name =
+    ( "hulp",
+      { ft_name = Some "hulp"; reciprocal = false;
+        role_names =
+          [ { role_identifier = Some "hulpjutter"; role_object_type_name = Some "Jutter"; role_plural = None; role_many = false };
+            { role_identifier = Some "hulpvondst"; role_object_type_name = Some "Vondst"; role_plural = Some "hulpvondsten";
+              role_many = true } ] } )
+  in
+  let base =
+    ov_jdoc ~jutter:[ "hulptal" ] ~jchars:[ "gemeld" ] ~vondst:[ "gewicht" ] ~vchars:[ "geholpen" ]
+      [ ov_jcalc "hulptal" (ov_count ~binding:{ rb_fact_type = "hulp"; rb_role = "hulpvondst" } ());
+        rr "geholpen" Characteristic_attribution (Some (aref "geholpen" "Vondst")) (Some (litv "waar" Boolean))
+          (Some
+             (Role_membership
+                { fact_type = "hulp"; role = "hulpvondst"; counterpart_type = None; negated = false; source_name = None })) ]
+  in
+  let doc =
+    { base with
+      fact_types = base.fact_types @ [ hulp ];
+      fact_creations =
+        [ { fc_name = Some "hulpvondsten van een jutter"; anchor_point = Some "Jutter"; fc_target = Some "Vondst";
+            intermediates = []; fc_condition = Some (ov_check ~negation:true "gemeld"); fc_validity = None;
+            fc_fact_type = "hulp"; anchor_role = "hulpjutter"; objective_role = "hulpvondst"; join_role = ov_range;
+            fc_pointer = "" } ] }
+  in
+  let row name ?closed ?(chars = []) want =
+    let id = "fact-creation-" ^ name in
+    let input = ov_j1 [ ("V1", [ ("gewicht", "4") ], []); ("V2", [ ("gewicht", "5") ], []) ] in
+    let input = { (List.hd input) with ov_chars = chars } :: List.tl input in
+    ov_row ("WV-1.5-" ^ id) (fun () -> ov_run ?closed id doc input)
+      (fun w -> String.concat " " [ ov_attr w "J1" "hulptal"; ov_char w "V1" "geholpen" ])
+      want
+  in
+  row "links" ~closed:(Eval.Members [ ("Jutter", "gemeld") ]) "2 holds";
+  row "links-nothing" ~chars:[ "gemeld" ] "0 not";
+  row "open" "open open"
+
+(* WV-1.5-creation-cycle-refused: a creation in a recursive group (ch. 6) is
+   refused by name: a read on the cycle would answer to the absence of a mark,
+   and the outcome would depend on the order of the rounds *)
+let () =
+  let doc =
+    { (ov_jdoc ~jutter:[ "ervaring" ] ~vondst:[ "gewicht" ] []) with
+      object_creations = [ ov_proefvondst ~cond:(ov_jcmp "ervaring" "5") [] ];
+      rule_groups = [ { rgr_name = Some "proeven"; recursive = true; member_list = [ Some "proefvondst" ]; rgr_source = None; rgr_line = 0 } ] }
+  in
+  match Eval.refuse_uncarried doc with
+  | () -> check "WV-1.5-creation-cycle-refused (not refused)" false
+  | exception Value.Fault { code; params; _ } ->
+      check "WV-1.5-creation-cycle-refused" (code = Some "REF-014" && params = [ ("form", "creation-cycle") ])
+
 (* WV-1.5-direct-reads: every read of a member while a form is evaluated goes
    through World.read_attr, read_char, read_timeline or read_char_periods,
-   which raise World.Open_read where the member is open (ch. 1.5). The code
-   of ref/lib and ref/bin, World itself apart, is read per top-level
+   and every read of a relation through World.read_links, which raise
+   World.Open_read where the member or the relation is open (ch. 1.5). The
+   code of ref/lib and ref/bin, World itself apart, is read per top-level
    function, comments and strings left out, for the readers that skip the
-   state: World.attr, has_char, timeline and char_periods, and the stored
-   fields of an instance. Each place that keeps one is listed here with the
+   state: World.attr, has_char, timeline, char_periods and links, and the
+   stored fields of an instance. Each place that keeps one is listed here with the
    number of its reads and the reason it needs the stored value; a read the
    list does not name, and a place it names that reads otherwise, fail *)
 let () =
   let tokens =
-    [ "World.attr"; "World.has_char"; "World.timeline"; "World.char_periods"; ".attrs"; ".tls"; ".ctls"; ".chars" ]
+    [ "World.attr"; "World.has_char"; "World.timeline"; "World.char_periods"; "World.links"; ".attrs"; ".tls"; ".ctls";
+      ".chars"; ".left_side" ]
   in
   let input = "reads the input world: what the case gives the target" in
   let end_check = "the end check of a case: the state first (World.attr_open, char_open), then the stored value" in
+  let case_links = "the case reader builds and checks the links the case gives, before any evaluation (ch. 5.7a)" in
   let end_state =
     "the end state of ch. 5.12a lists what is stored; for a document with the property it is refused (REF-014, form \
      reading)"
@@ -16080,6 +16231,11 @@ let () =
       ("ref/lib/end_state.ml", "object_lines", "World.timeline", 1, end_state);
       ("ref/lib/end_state.ml", "object_lines", "World.has_char", 1, end_state);
       ("ref/lib/end_state.ml", "object_lines", ".ctls", 1, end_state);
+      ("ref/lib/end_state.ml", "link_lines", "World.links", 1, end_state);
+      ("ref/lib/case.ml", "materialise_relations", "World.links", 1, case_links);
+      ("ref/lib/case.ml", "materialise_relations", ".left_side", 4, case_links);
+      ("ref/lib/case.ml", "check_role_targets", ".left_side", 1, case_links);
+      ("ref/lib/case.ml", "check_link_cycles", "World.links", 1, case_links);
       ("ref/lib/reading.ml", "defaults", "World.attr", 1, input) ]
   in
   (* the code of a source: comments and string literals blanked, so a line
