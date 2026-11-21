@@ -979,9 +979,11 @@ uitzonderingsgroepen, de ongeordende groep en de stapel van ch. 7.10), object- e
 consistentieregel, en elke voorwaarde en uitdrukking zonder tijdlijn, de kwantorvouw, de vouwen over een verzameling,
 de telling van een vereniging en `IfThenElse` daaronder. Eén evaluator: een open lezing werpt `World.Open_read` en
 breekt de evaluatie af tot de grens van één oordeel of één waarde (`open_read_boundary`); het oordeel van een
-voorwaarde is een paar (voor de vorm zelf, voor een ander) met de open lezing die het onbepaald liet; een sluiting
-binnen een waarde meldt zich bij haar grens (`signal_closure`); een schrijver heeft drie uitkomsten (`outcome_of`,
-`value_outcome`). De lezing aan het fixpunt (ch. 5.12) en de eindstand (ch. 5.12a) zijn gedefinieerd voor open waarden;
+voorwaarde is een paar (voor de vorm zelf, voor een ander) met de open lezing die het onbepaald liet; een lid van een
+samengestelde voorwaarde of een matrix van een kwantorvouw dat gelezen wordt na een lid of filter dat voor een ander
+niet vaststaat, wordt voorlopig gelezen (`judge_cond ~past`): zijn oordeel telt, een deponering vervalt, een fout laat
+het lid onbepaald; een sluiting binnen een waarde meldt zich bij haar grens met de lezing waarover zij sloot
+(`signal_closure`); een schrijver heeft drie uitkomsten (`outcome_of`, `value_outcome`). De lezing aan het fixpunt (ch. 5.12) en de eindstand (ch. 5.12a) zijn gedefinieerd voor open waarden;
 `runner --trace` leest elk strikt document.
 
 **Wat ref weigert.** REF-014 met `form` = de slug van de eerste vorm uit de lijst aan het eind van ch. 1.5 die het
@@ -993,14 +995,14 @@ document bevat: `allocation`, `creation-cycle`, `uniqueness`, `start-point`, `da
 **De twee eisen en hun poten.** Behoud bij volledige kennis: gate 5 check 5, elke golden met de eigenschap in een
 kopie en alle invoer gesloten speelt haar eigen cases (280 goldens, 784 cases), en WV-1.5-preserved. Monotonie: gate 5
 check 6, per golden die ref strikt draagt, per case en per gegeven invoer houdt de eindstand zonder dat gegeven elke
-uitkomst in de eindstand met het gegeven (2254 runs vergeleken; 443 met een sluiting apart, 71 waarin het weggelaten lid
-geen invoerlid is; 8 bekende gaten van de norm bij naam), en WV-1.5-monotone.
+uitkomst in de eindstand met het gegeven (790 cases, 2255 runs vergeleken; 443 met een sluiting apart, 71 waarin het
+weggelaten lid geen invoerlid is; `MONOTONE_GAPS` leeg), en WV-1.5-monotone.
 
 **De naad over alle delen** (`ref/` tegenover `fadbce3a3`, `git diff --numstat`):
 
 | bestand | regels | wat |
 |---|---|---|
-| `eval.ml` | +908 −365 | open lezing en grens, oordeel als paar met open lezing, `count_verdict`, sluitingssignaal, drie uitkomsten van een schrijver; armen van de voorwaarden, de kwantorvouw, de vouwen, `IfThenElse`, de stapel, de creaties; `open_inputs` (de ene lezer van de eigenschap) en `refuse_uncarried` met `uncarried_forms`; de teller van sluitingen per evaluatie |
+| `eval.ml` | +940 −366 | open lezing en grens, oordeel als paar met open lezing, `count_verdict`, sluitingssignaal met de gesloten lezing, drie uitkomsten van een schrijver; armen van de voorwaarden, de kwantorvouw, de vouwen, `IfThenElse`, de stapel, de creaties; het voorlopig lezen (`judge_cond ~past`); `open_inputs` (de ene lezer van de eigenschap) en `refuse_uncarried` met `uncarried_forms`; de teller van sluitingen per evaluatie |
 | `world.ml` | +157 −19 | `Open_read`, de stand van een lid (`attr_open`, `char_open`, `links_open`) en de lezers erlangs; `opened`, `open_input`, `stated_absent`; de uitkomst van een evaluatie met `opened` en `closure` |
 | `case.ml` | +111 −34 | `characteristicsAbsent`, de verwachtingen `attributeOpen`/`characteristicOpen`, de eindcontrole via de stand |
 | `reading.ml` | +181 −78 | het oordeel per knoop, de open lezing, de status `OPEN`, de stapel onder een open default |
@@ -1009,11 +1011,12 @@ geen invoerlid is; 8 bekende gaten van de norm bij naam), en WV-1.5-monotone.
 
 `value.ml` is niet geraakt (`Value.t` zonder nieuwe constructor), en de eigenschap wordt gelezen in `refuse_uncarried`
 en `open_inputs`, nergens anders. Een gewoon document gaf in elk deel byte voor byte dezelfde uitkomsten, lezingen en
-eindstand (gate 5, 7, 8, 13 en 17 zonder gewijzigde verwachting; in deel 3 ook de 1199 sporen van `runner --trace`
-over de gewone goldens, byte voor byte tegen de binary van `dbb53b038`).
+eindstand (gate 5, 7, 8, 13 en 17 zonder gewijzigde verwachting; in deel 3 en 3b ook de 1199 sporen van
+`runner --trace` over de gewone goldens, byte voor byte tegen de binary van `dbb53b038` en van `95be947d4`).
 
 **Wat de kaarten van clingo en Drools moeten naspelen.** De leesregel van de samengestelde voorwaarde en de kwantorvouw
-(lezen tot het oordeel voor een ander vaststaat, ch. 1.5); de eindstand met `attribute … open`, `characteristic … open`
+(lezen tot het oordeel voor een ander vaststaat, en voorlopig lezen voorbij een lid of filter dat voor een ander niet
+vaststaat, ch. 1.5); de eindstand met `attribute … open`, `characteristic … open`
 en de link met `open` (ch. 5.12a); de lezing met `undetermined open <object> "<lid>"`, `true closure`/`false closure`,
 de status `OPEN` en de stapel onder een open default (ch. 5.12, "Open values"); de slugs en hun volgorde (ch. 1.5,
 "Forms without the reading"). De overdracht (`werk/open-values-in-ref/overdracht.md`, sectie "voor de bouwers van
@@ -1231,4 +1234,130 @@ check-red: PASS (102 red cases fault observably in ref and clingo, floor 44; 181
 check-drools: PASS (played 384; auto-excluded 48, among them 1x DROOLS-370; DRL-text branch played 384; JUnit 1976 tests, floor 1573)
 check-reftype-derivation: PASS (129 unit annotations twisted over 42 goldens, floor 38; 242 executor replays reproduce the untouched outcome, 40 of them PLAYED by the DRL-text branch, equal to the exec-model branch; 0 pinned survivors)
 check-readings: PASS (ref traced 1205 golden case files, and refused by name the trace of 0 case file(s) of 0 golden(s) (TRACE_REFUSED); on both branches 385 goldens and 1073 case files compared, 8468 readings, 27262 node lines of which 4427 unreached, 1016 with contributors, 1317 with a timeline, 842 with the object of a read and 618 of a displaced reading, 147 contributors of ref not reached; end states of 3044 objects (479 made) and 8501 members; all at or above their floors; deviations 0, end-state deviations 0; 14 comparison rows, 3 tripwire rows, 10 end-state rows; 88 s)
+```
+
+## Result (deel 3b)
+
+*Bouwer deel 3b, 2026-11-21. Branch `card/open-values-in-ref`, op `95be947d4`. Opdracht: wat een lid deponeert of aan
+fout geeft dat voorbij een onbepaald lid gelezen wordt (open punt 1 van deel 3, D.2). Besluit van de hoofdsessie
+(voorlopig, ter bevestiging door de eigenaar): zo'n lid is voorlopig.*
+
+| commit | wat |
+|---|---|
+| `7e73ecd54` | ref: een lid voorbij een lid dat voor een ander niet vaststaat wordt voorlopig gelezen; een sluiting draagt de lezing waarover zij sloot; ch. 1.5 en 5.12; tests |
+| `d7a2aa833` | gate 5: `MONOTONE_GAPS` leeg, `EXPECTED_MIN_MONOTONE_RUNS` 2254 → 2255 (eigen commit) |
+| (slotcommit) | dit Result en de samenvatting |
+
+### De regel (ch. 1.5, "The judgement of a condition" en "A quantifier fold")
+
+"Whether ch. 5.10 would read a member that comes after one undetermined for another form (below) does not stand, so
+that member is read provisionally: its judgement counts, what it deposits in the §9.5 channel is dropped, and a fault of
+it does not end the evaluation but leaves the member undetermined, for the form itself and for another. A member after
+members that all stand for another is read as ch. 5.10 reads it." Bij de kwantorvouw: "A matrix is read provisionally
+[…] where a member before it is undetermined for another form, and also where a filter is: every filter is read before
+every matrix, and whether ch. 3.9a reads a matrix depends on its own filter and, through the members it excludes, on
+every other." In "For the form itself and for another" is de zin "A member read after the form's own judgement stands
+deposits and faults as any member read" vervangen door: zo'n lid komt na een lid dat voor een ander onbepaald is en wordt
+voorlopig gelezen. "The two requirements" kreeg niets: de uitzondering bestaat niet.
+
+In ref: `judge_cond ?past` (één plaats, binnen de observer): met `past` = de open lezing van het eerste eerdere lid
+(of filter) dat voor een ander niet vaststaat, leest het lid met `~err:ignore` en maakt het van een `Value.Fault`
+`undetermined past`. De samengestelde voorwaarde geeft `first_other` mee, de kwantorvouw het eerste filter dat voor een
+ander niet vaststaat (`filter_past`), anders `first_other`. Geen tweede evaluatie: het lid wordt één keer gelezen.
+
+### De tests en hun rode stand
+
+Rood op `95be947d4` met de nieuwe testfile (losse worktree `logs/3b-base`, opgeruimd; de nieuwe blokken in een handler zodat een
+fout van de sessie per test zichtbaar is; `logs/3b-red-01.log`, 10 FAIL):
+
+| test | wat | rood eerst |
+|---|---|---|
+| WV-1.5-past-undetermined-deposit | samengestelde voorwaarde: de deponering (EF-005) van het tweede lid na een onbepaald gewicht vervalt; het lid beslist; bij gewicht 20 staat het feit, bij 5 stopt de lezing | rij zonder gewicht: `got vrijstelling V1 EF-005`; WV-1.5-monotone `past-undetermined-deposit-stops without V1.gewicht (adds channel vrijstelling V1 EF-005)` |
+| WV-1.5-past-undetermined-fault | samengestelde voorwaarde: de fout (EF-011, het Rekenjaar zonder rekendatum) van het tweede lid laat het onbepaald; het derde lid beslist (taxatie 50: staat niet) of niet (2000: open); bij gewicht 20 faalt de sessie; kwantorvouw-rij: de matrix van V1 onbepaald door de fout, V2 beslist | de sessie faalt met EF-011 (beide blokken) |
+| WV-1.5-past-undetermined-fold | kwantorvouw: de deponering van V2 na een onbepaalde V1 vervalt; V2 beslist | `got gelijkmatig J1 EF-005` |
+| WV-1.5-past-undetermined-filter | kwantorvouw: een filter dat voor een ander niet vaststaat maakt elke matrix voorlopig, het eigen filter en een later filter | rijen `own-open` en `later-open`: `got gelijkmatig J1 EF-005` |
+| WV-1.5-past-undetermined-ordinary | in een document zonder de eigenschap verandert niets | groen op de oude code (een bewaker, geen nieuwe eis) |
+| WV-5.12-open-past-undetermined | de lezing: het lid toont `undetermined open "V1" "gewicht"`, de knoop die faalde `fault EF-011` | de sessie faalt met EF-011 |
+
+Gewijzigde bestaande tests (de taak verandert hun gedrag):
+
+- WV-1.5-read-for-another: de rij `WV-1.5-read-for-another (EF-031)` verwachtte `vrijstelling V1 EF-031`; nu heet zij
+  `WV-1.5-read-for-another (no fact)` en verwacht zij geen feit (het tweede lid wordt gelezen na een sluiting die voor
+  een ander niet vaststaat); rood op de oude code. Het voorbeeld in ch. 1.5 zegt het zo.
+- WV-1.5-monotone: de lijst `closures` kreeg één rij, `("past-undetermined-filter-later-not", "V1 gemerkt") → V1 gemerkt
+  not`: een nieuw scenario met gesloten invoer, de benoemde uitzondering.
+
+### De acht runs
+
+Met de wijziging in ref meldde gate 5 alle acht als verouderd ("keeps every outcome now", en voor
+`context-value-behind-a-failing-condition` case1 "runs now"; `logs/3b-gate05-01.log`), en niets anders. De lijst is
+leeg, met haar controles. Die case draait nu met al haar invoer (actief open: het tweede lid faalt voorlopig, gemeld is
+open) en levert één vergeleken run meer: 790 cases, 2255 runs (floor 2255), 443 met een sluiting apart (floor 443), 71
+geen invoerlid, 0 gaten. De poot vond niets nieuws.
+
+Gewoon document: de 1199 sporen van `runner --trace` over de gewone goldens byte voor byte gelijk aan die van de
+binary van `95be947d4`, en de zes van de strikte golden ook (`logs/3b-traces-01.log`).
+
+### De naad (`95be947d4..`, `git diff --numstat`)
+
+| bestand | regels | wat |
+|---|---|---|
+| `ref/lib/eval.ml` | +83 −52 | `judge_cond ?past`; `first_other` in de samengestelde voorwaarde en de kwantorvouw, `filter_past`; `judged ~first_other`; de grens geeft de lezing van de eerste sluiting terug (`signal_closure read`, `closed : (string * string) option`), `atomic` zet haar in `open_read` van een sluiting, `value_verdict` geeft haar door |
+| `ref/test/test_ref.ml` | +202 −5 | de zes tests hierboven, de wijziging van WV-1.5-read-for-another, de rij in `closures` |
+| `spec/RUNTIME-SEMANTICS.md` | +62 −14 | ch. 1.5 (drie alinea's), ch. 5.12 ("Open values": de open lezing van een lid dat een fout onbepaald liet; voorbeeld) |
+| `scripts/check-oracle.sh` | +4 −13 | `MONOTONE_GAPS` leeg, floor |
+
+De architectuur: één evaluator; `Value.t` ongewijzigd; geen tak op de eigenschap (in een document zonder de eigenschap
+is geen lid onbepaald en wordt `past` nooit gezet); een gewoon document byte-gelijk.
+
+### Voorlopige besluiten
+
+1. **De kwantorvouw ruimer dan "een eerder lid"**: elke matrix is voorlopig waar een filter van het bereik voor een
+   ander niet vaststaat, ook een later filter. Reden: het filter van het lid zelf beslist of de matrix gelezen wordt, en
+   een later filter dat onwaar blijkt telt vooraf als uitgesloten en kan de lezing vóór deze matrix laten stoppen
+   (`atLeast`, `atMost`, `exactly`); de rij `later-open` van WV-1.5-past-undetermined-filter toont het gat dat er
+   anders bleef. Voor `all`, `the`, `none` en `atLeast` 1 kan een later filter de lezing niet eerder laten stoppen; daar is de regel
+   ruimer dan nodig (een fout die bij elke invulling zou ontstaan, is dan onbepaald). Zo ook de regel zelf (het besluit):
+   "een eerder lid dat voor een ander niet vaststaat" is een voldoende voorwaarde, geen precieze.
+2. **De open lezing van een lid dat een fout onbepaald liet** is die van het eerste eerdere lid (of filter) dat voor een
+   ander niet vaststaat. Is dat een sluiting, dan de lezing waarover zij sloot: daarvoor draagt een sluiting nu haar
+   lezing (`open_read` van een oordeel dat voor de vorm zelf vaststaat en voor een ander niet). Geen nieuw woord in de
+   lezing; de knoop die faalde en de knopen op weg naar het lid tonen `fault` met de code, zoals bij elke fout.
+3. **Een sluiting binnen een lid dat daarna voorlopig faalt** telt in `closures_applied` mee (grof, zoals de poot al is:
+   de run valt dan apart).
+
+### Voorgestelde rij voor `spec/CONSTRUCTS.md`
+
+Rij 48, kolom van de stand, na "… the quantifier fold, the folds over a set, the count of an instance-set union and the
+IfThenElse among them;" (bovenop de rij van deel 3): "a member of a composite, and a matrix of a quantifier fold, read
+after a member or a filter undetermined for another form is read provisionally: its judgement counts, its deposits are
+dropped, and a fault leaves it undetermined (ch. 1.5);". Getuigenkolom erbij: "WV-1.5-past-undetermined-*,
+WV-5.12-open-past-undetermined".
+
+### Voorstel voor `CLAUDE.md`
+
+Geen wijziging bovenop het voorstel van deel 3: `MONOTONE_GAPS` blijft er (leeg, reason-carrying, stale-failing).
+
+### Open punten
+
+1. **De barrière van een `Let` (ch. 10.6) in een voorlopig lid**: leest een voorlopig lid een binder van een omsluitende
+   `Let` waarvan de waarde vaststaand leeg is, dan maakt de barrière de hele `Let` leeg; bij volledige kennis had de
+   lezing dat lid misschien niet bereikt. Dat is geen deponering of fout en valt buiten het besluit; niet gebouwd, niet
+   gemeten (de vorm vraagt een samengestelde voorwaarde in een `IfThenElse` binnen een `Let`-lichaam die de binder
+   leest).
+2. Open punt 1 van deel 3 (het gat van D.2) is met dit deel gesloten; de punten 2–4 van deel 3 staan.
+
+### Gates, los gedraaid
+
+Elk los en één tegelijk in de achtergrond, op `d7a2aa833` (daarna veranderde alleen deze kaart). Logs
+`logs/3b-final-gate*.log` in de werkmap; gate 17 met `opam exec -- bash`.
+
+```
+check-self-contained: PASS
+check-oracle: PASS (ref suite 3993 worked examples, floor 489; 1205 cases replayed exactly, floor 427; preservation with complete knowledge: 280 goldens and 784 cases play, floors 280 and 784; 151 goldens refused per form (timeline-member 49, allocation 21, day-kind 17, list-family 16, dimension-cell 8, match 8, uniqueness 8, creation-cycle 7, record 7, function-def 4, time-window 2, dimension-fold 1, rule-status-check 1, start-point 1, unresolved 1); 1 carrying the property already, played by check 3 (jutterswet-afleiden-uit-leeg); red row: jutterswet-leeg-deeltal misses 1 of 3 cases without --closed-inputs; monotonicity: 790 cases, 2255 runs without one input compared, floor 2255, 443 with a closure apart, floor 443, 71 of no input member; 0 listed gap(s) of ch. 1.5; 14 comparison rows; red row: jutterswet-afleiden-uit-leeg/case1-alles-gegeven.json|attribute|V1|taxatie loses 1 outcome(s))
+check-clingo: PASS (backend suite 3231 checks, floor 83; 1169 cases replay exactly through clingo — ref = clingo over the corpus; 11 golden(s) in the refusal channel, by name, 36 cases refused with the pinned codes; the channel rule passes 22 rows of its own)
+check-noop: PASS (1163 cases refute a do-nothing executor; 42 pinned survivors pin defeasible standing)
+check-red: PASS (102 red cases fault observably in ref and clingo, floor 44; 181 ref and clingo code checks report the case's code, floor 82, 23 listed as divergence; 301 pinned parameter checks confirmed, floor 120; 47 fault kinds in RUNTIME-SEMANTICS ch. 5.7b, floor 31)
+check-reftype-derivation: PASS (129 unit annotations twisted over 42 goldens, floor 38; 242 executor replays reproduce the untouched outcome, 40 of them PLAYED by the DRL-text branch, equal to the exec-model branch; 0 pinned survivors)
+check-readings: PASS (ref traced 1205 golden case files, and refused by name the trace of 0 case file(s) of 0 golden(s) (TRACE_REFUSED); on both branches 385 goldens and 1073 case files compared, 8468 readings, 27262 node lines of which 4427 unreached, 1016 with contributors, 1317 with a timeline, 842 with the object of a read and 618 of a displaced reading, 147 contributors of ref not reached; end states of 3044 objects (479 made) and 8501 members; all at or above their floors; deviations 0, end-state deviations 0; 14 comparison rows, 3 tripwire rows, 10 end-state rows; 87 s)
 ```
