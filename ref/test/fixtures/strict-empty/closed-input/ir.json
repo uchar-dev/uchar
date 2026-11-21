@@ -27,7 +27,8 @@
               "whole": false,
               "decimals": 2,
               "sign": "unspecified"
-            }
+            },
+            "complete": true
           },
           {
             "node": "Attribute",
@@ -74,7 +75,8 @@
           {
             "node": "Characteristic",
             "name": "beschadigd",
-            "kind": "adjectival"
+            "kind": "adjectival",
+            "complete": true
           }
         ]
       }

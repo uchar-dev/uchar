@@ -6306,20 +6306,19 @@ let instance_depth env world0 (o : Ir_v0.Checks.instance_order) =
   in
   depth []
 
-(* The input members a session treats as complete (RUNTIME-SEMANTICS ch. 1.5):
-   every input member, or the members named as (object type, member), on every
-   object of that type *)
-type closed = Every_input | Members of (string * string) list
-
 (* The open members of the input world: in a document with inferFromEmpty
-   false, every input member the case gives no value and the session does not
-   close (ch. 1.5). A member is input on an object where no rule and no
-   defaults group writes it on the object's type; a member one of them writes
-   there follows its writers, also where the case gives it no value. The one place the property is read for
-   the evaluation: a document without it has no open member, and nothing in
-   the evaluation tells it from another. *)
-let open_inputs env ~closed (world : World.t) =
-  if env.doc.infer_from_empty then World.Key.empty
+   false, every input member the case gives no value and whose declaration does
+   not say that its input is complete (complete, IR-SPEC ch. 2.2;
+   RUNTIME-SEMANTICS ch. 1.5). A member is input on an object where no rule and
+   no defaults group writes it on the object's type; a member one of them
+   writes there follows its writers, also where the case gives it no value, and
+   its field changes nothing there. [closed_inputs] treats every input member as
+   complete (runner --closed-inputs, the measurement of preservation with
+   complete knowledge). The one place the property is read for the evaluation:
+   a document without it has no open member, and nothing in the evaluation
+   tells it from another. *)
+let open_inputs env ~closed_inputs (world : World.t) =
+  if env.doc.infer_from_empty || closed_inputs then World.Key.empty
   else
     let written ~otype member =
       List.exists
@@ -6334,31 +6333,33 @@ let open_inputs env ~closed (world : World.t) =
              && isa env otype l.pd_subject)
            env.doc.prioritized_defaults
     in
-    let is_closed ~otype member =
-      match closed with
-      | Every_input -> true
-      | Members ms -> List.exists (fun (t, m) -> norm m = norm member && isa env otype t) ms
-    in
     SMap.fold
       (fun label (i : World.instance) acc ->
+        (* the effective type: a member inherited from a supertype carries its field *)
         let ot = object_type env i.otype in
-        let member acc name ~given =
-          if given || written ~otype:i.otype name || is_closed ~otype:i.otype name then acc
+        let member acc name ~given ~complete =
+          if given || complete || written ~otype:i.otype name then acc
           else World.Key.add (label, norm name) () acc
         in
         let acc =
           List.fold_left
-            (fun acc (a, _) -> member acc a ~given:(World.attr i a <> Value.Empty || World.timeline i a <> None))
+            (fun acc (a, _) ->
+              member acc a
+                ~given:(World.attr i a <> Value.Empty || World.timeline i a <> None)
+                ~complete:(List.mem a ot.attribute_complete))
             acc ot.attributes
         in
         List.fold_left
           (fun acc -> function
-            | Some k -> member acc k ~given:(World.has_char i k || World.char_periods i k <> None)
+            | Some k ->
+                member acc k
+                  ~given:(World.has_char i k || World.char_periods i k <> None)
+                  ~complete:(List.mem k ot.characteristic_complete)
             | None -> acc)
           acc ot.characteristics)
       world.World.instances World.Key.empty
 
-let evaluate ?(closed = Members []) env world =
+let evaluate ?(closed_inputs = false) env world =
   refuse_uncarried env.doc;
   (* WF-007: a presentation tag inside a type annotation. The loader lists
      where one stands (the in-memory datatype does not carry the tag), and
@@ -6383,7 +6384,7 @@ let evaluate ?(closed = Members []) env world =
         wf at reason);
   parameter_set_check env;
   validate_input_precision env world;
-  let world = { world with World.open_input = open_inputs env ~closed world } in
+  let world = { world with World.open_input = open_inputs env ~closed_inputs world } in
   (* the input-world snapshot the 1:1 creation guard reads (ch. 5.5) *)
   let world0 = world in
   (* Strata (ch. 6.3), computed from the same dependency graph the

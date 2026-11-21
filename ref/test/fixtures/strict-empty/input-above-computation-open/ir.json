@@ -1,0 +1,394 @@
+{
+  "format": "uchar-ir-v1",
+  "inferFromEmpty": false,
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "schade",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bergloon",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opgegeven bergloon",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "bergloon"
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "berekende bergloon",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "bergloon"
+              }
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "afwijkende opgave bergloon",
+            "kind": "possessive",
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "bergloon"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "bergloon naar gewicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "berekende bergloon",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het bergloon van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "gewicht",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn gewicht"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "schade",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn schade"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn gewicht plus zijn schade"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "afwijking opgave bergloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "afwijkende opgave bergloon",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst heeft afwijkende opgave bergloon"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven bergloon",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn opgegeven bergloon"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn opgegeven bergloon is gevuld"
+                  }
+                },
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende bergloon",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn berekende bergloon"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn berekende bergloon is gevuld"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven bergloon",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn opgegeven bergloon"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende bergloon",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn berekende bergloon"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn opgegeven bergloon is ongelijk aan zijn berekende bergloon"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven bergloon is gevuld - zijn berekende bergloon is gevuld - zijn opgegeven bergloon is ongelijk aan zijn berekende bergloon"
+              }
+            },
+            "initialisation": false
+          }
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "bergloon"
+          }
+        }
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [
+      {
+        "node": "Consistency",
+        "name": "controle opgave bergloon",
+        "versions": [
+          {
+            "subject": "Vondst",
+            "assertion": {
+              "node": "CharacteristicCheck",
+              "characteristic": "afwijkende opgave bergloon",
+              "negated": true,
+              "source": {
+                "snippet": "hij heeft geen afwijkende opgave bergloon"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "het bergloon Numeriek (getal met 2 decimalen) (mag opgegeven worden)",
+              "line": 4
+            }
+          }
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "bergloon"
+          }
+        }
+      }
+    ],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "opgave boven berekening bergloon",
+        "subject": "Vondst",
+        "attribute": "bergloon",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "opgegeven bergloon",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn opgegeven bergloon"
+              }
+            },
+            "source": {
+              "snippet": "opgegeven bergloon"
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "berekende bergloon",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn berekende bergloon"
+              }
+            },
+            "source": {
+              "snippet": "berekende bergloon"
+            }
+          },
+          {
+            "node": "Default",
+            "name": "standaardbergloon",
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "25.00"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "25,00"
+              }
+            },
+            "initialisation": true
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        },
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "bergloon"
+          }
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}

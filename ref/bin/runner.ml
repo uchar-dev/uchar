@@ -120,11 +120,11 @@ let () =
   (* --closed-inputs: the replay with every input member treated as complete
      (RUNTIME-SEMANTICS ch. 1.5), so that nothing is open: the measurement of
      preservation with complete knowledge *)
-  let noop, closed, ir_path, case_path =
+  let noop, closed_inputs, ir_path, case_path =
     match Sys.argv with
-    | [| _; "--noop"; ir; case |] -> (true, Uchar_ref.Eval.Members [], ir, case)
-    | [| _; "--closed-inputs"; ir; case |] -> (false, Uchar_ref.Eval.Every_input, ir, case)
-    | [| _; ir; case |] -> (false, Uchar_ref.Eval.Members [], ir, case)
+    | [| _; "--noop"; ir; case |] -> (true, false, ir, case)
+    | [| _; "--closed-inputs"; ir; case |] -> (false, true, ir, case)
+    | [| _; ir; case |] -> (false, false, ir, case)
     | _ ->
         prerr_endline
           "usage: runner [--noop | --trace | --end-state | --closed-inputs] <ir.json> <case.json>";
@@ -172,14 +172,14 @@ let () =
     | Some pinned -> (
         (* the red path's EVALUATION arm (the load arm is above): the
            run MUST fault, observably, as pinned — never a silent success *)
-        match Uchar_ref.Eval.evaluate ~closed env case.world with
+        match Uchar_ref.Eval.evaluate ~closed_inputs env case.world with
         | (_ : Uchar_ref.World.t) ->
             prerr_endline "EXPECTED FAULT DID NOT OCCUR: evaluation succeeded";
             exit 1
         | exception Uchar_ref.Value.Fault { code; params; text } ->
             verdict ~pinned ~code ~params ~what:"" (Uchar_ref.Value.report ~code text))
     | None -> (
-        let final = if noop then case.world else Uchar_ref.Eval.evaluate ~closed env case.world in
+        let final = if noop then case.world else Uchar_ref.Eval.evaluate ~closed_inputs env case.world in
         match Uchar_ref.Case.check case final with
         | [] ->
             Printf.printf "oracle: PASS (%d expectations%s)\n" (List.length case.expected)
