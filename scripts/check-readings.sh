@@ -76,6 +76,12 @@
 # An empty comparison is a failure, never silently green. Report: goldens and cases traced, compared per
 # branch, excluded (per first word of the reason), and the counts the floors hold.
 set -u
+# bash 4 or later: the list of refused traces is an associative array. Under an older bash (the /bin/bash and /bin/sh
+# of macOS are 3.2) `declare -A` fails and the script would go on without the list, so it stops here instead.
+[ "${BASH_VERSINFO[0]:-0}" -ge 4 ] || {
+  echo "check-readings: FAIL — needs bash 4 or later, this is ${BASH_VERSION:-not bash}; run it as the Makefile does: opam exec -- bash scripts/check-readings.sh" >&2
+  exit 2
+}
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
 fail() { echo "check-readings: FAIL — $*" >&2; exit 1; }
