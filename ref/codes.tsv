@@ -12,4 +12,4 @@ REF-010	fallback	day-count-condition-shape		run_pro_rata
 REF-011	fallback	temporal-target-shape		run_pro_rata
 REF-012	fallback	rule-target-shape	rule	run_rule
 REF-013	refusal	ranking-fold-over-a-timeline	fold,attribute	refuse_ranking_fold
-REF-014	refusal	infer-from-empty-false	form	refuse_infer_from_empty
+REF-014	refusal	infer-from-empty-false	form	refuse_uncarried

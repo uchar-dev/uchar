@@ -47,6 +47,11 @@ type outcome = {
   at : string;
   deposits : (string * string * string option) list;
   fault : fault option;
+  opened : (string * string) list;
+      (* the members, as (label, norm member), that this evaluation left open
+         (RUNTIME-SEMANTICS ch. 1.5): the form wrote no value there and it
+         does not stand that it fills nothing. Empty in a document without
+         open input *)
 }
 
 module Key = Map.Make (struct
@@ -113,11 +118,22 @@ type t = {
          segments; on a day no writer decides, what it held before; and on a day
          on which that is leeg too, the initialisation's value (RUNTIME-SEMANTICS
          ch. 3.11, 5.7 and 7.8 per day) *)
+  open_input : unit Key.t;
+      (* by (label, norm member): the input members the case leaves without a
+         value and that are open in this session (RUNTIME-SEMANTICS ch. 1.5),
+         set once before the evaluation (Eval.open_inputs) *)
+  opening : (string * string) list;
+      (* the members the evaluation under way leaves open, newest first;
+         [close_evaluation] ends it *)
+  opened : unit Key.t;
+      (* the members a standing outcome leaves open: the union of their
+         [opened] *)
 }
 
 let empty =
   { instances = SMap.empty; order = []; channel = []; outcomes = []; evaluating = []; owners = Key.empty;
-    holders = Key.empty; mints = SMap.empty; written = Key.empty; char_writes = Key.empty; parts = Key.empty }
+    holders = Key.empty; mints = SMap.empty; written = Key.empty; char_writes = Key.empty; parts = Key.empty;
+    open_input = Key.empty; opening = []; opened = Key.empty }
 
 let add_instance w inst =
   if SMap.mem inst.label w.instances then
@@ -156,6 +172,40 @@ let cell_of name m = String.starts_with ~prefix:(norm name ^ "[") (norm m)
 
 let attr i name = Option.value (SMap.find_opt (norm name) i.attrs) ~default:Value.Empty
 let has_char i name = List.mem (norm name) i.chars
+
+(* --- the three states of a member (RUNTIME-SEMANTICS ch. 1.5) ------------ *)
+
+(* A read of a member that is open: what reads it has no value and no verdict
+   of its own, and the evaluation it belongs to is broken off where one
+   judgement or one value ends (Eval) *)
+exception Open_read of { label : string; member : string }
+
+(* Whether [member] of [label] is open where it holds no value: open input, or
+   left open by a standing outcome. A member without a value that is neither
+   is settled leeg *)
+let is_open w ~label ~member =
+  let key = (label, norm member) in
+  Key.mem key w.open_input || Key.mem key w.opened
+
+(* The value of [name] on [i] as an evaluation reads it: the value, leeg where
+   it is settled leeg, and [Open_read] where it is open *)
+let read_attr w i name =
+  match attr i name with
+  | Value.Empty when is_open w ~label:i.label ~member:name -> raise (Open_read { label = i.label; member = name })
+  | v -> v
+
+(* Whether the characteristic [name] holds on [i] as an evaluation reads it:
+   true where it holds, false where it stands that it does not, and
+   [Open_read] where it is open *)
+let read_char w i name =
+  has_char i name
+  || (if is_open w ~label:i.label ~member:name then raise (Open_read { label = i.label; member = name }) else false)
+
+(* The evaluation under way leaves [member] of [label] open: it writes no value
+   there, and it does not stand that it fills nothing *)
+let leave_open w ~label ~member =
+  let m = (label, norm member) in
+  if List.mem m w.opening then w else { w with opening = m :: w.opening }
 
 (* the key the links over one role of one fact type are stored under. A link
    belongs to its fact type (ch. 5.7a), so two fact types whose roles carry
@@ -561,34 +611,45 @@ let channel_of outcomes =
     []
     (List.concat_map (fun o -> o.deposits) outcomes)
 
-(* the evaluation of [form] on [at] came to [deposits] or [fault]: this replaces
-   its earlier outcome *)
-let set_outcome w ~form ~at ~deposits ~fault =
+(* the members the outcomes leave open *)
+let opened_of outcomes =
+  List.fold_left (fun acc (o : outcome) -> List.fold_left (fun acc m -> Key.add m () acc) acc o.opened) Key.empty outcomes
+
+(* the evaluation of [form] on [at] came to [deposits] or [fault], leaving
+   [opened] open: this replaces its earlier outcome *)
+let set_outcome w ~form ~at ~deposits ~fault ~opened =
   let mine o = String.equal o.form form && String.equal o.at at in
   let standing = List.find_opt mine w.outcomes in
   let unchanged =
     match standing with
-    | None -> deposits = [] && fault = None
-    | Some o -> o.deposits = deposits && o.fault = fault
+    | None -> deposits = [] && fault = None && opened = []
+    | Some o -> o.deposits = deposits && o.fault = fault && o.opened = opened
   in
   if unchanged then w
   else
-    let entry = { form; at; deposits; fault } in
+    let entry = { form; at; deposits; fault; opened } in
     let outcomes =
-      match (standing, deposits, fault) with
-      | Some _, [], None -> List.filter (fun o -> not (mine o)) w.outcomes
-      | Some _, _, _ -> List.map (fun o -> if mine o then entry else o) w.outcomes
-      | None, _, _ -> w.outcomes @ [ entry ]
+      match (standing, deposits, fault, opened) with
+      | Some _, [], None, [] -> List.filter (fun o -> not (mine o)) w.outcomes
+      | Some _, _, _, _ -> List.map (fun o -> if mine o then entry else o) w.outcomes
+      | None, _, _, _ -> w.outcomes @ [ entry ]
     in
-    { w with outcomes; channel = channel_of outcomes }
+    { w with outcomes; channel = channel_of outcomes; opened = opened_of outcomes }
+
+(* what the standing outcome of [form] on [at] leaves open *)
+let opened_by w ~form ~at =
+  match List.find_opt (fun o -> String.equal o.form form && String.equal o.at at) w.outcomes with
+  | Some (o : outcome) -> o.opened
+  | None -> []
 
 (* the evaluation under way ended without a fault *)
 let close_evaluation w ~form ~at =
-  set_outcome { w with evaluating = [] } ~form ~at ~deposits:(List.rev w.evaluating) ~fault:None
+  set_outcome { w with evaluating = []; opening = [] } ~form ~at ~deposits:(List.rev w.evaluating) ~fault:None
+    ~opened:(List.sort compare w.opening)
 
-(* the evaluation ended in [fault]; [w] is the world before it, so what it wrote
-   and deposited is gone *)
-let fault_evaluation w ~form ~at fault = set_outcome w ~form ~at ~deposits:[] ~fault:(Some fault)
+(* the evaluation ended in [fault]; [w] is the world before it, so what it wrote,
+   deposited and left open is gone *)
+let fault_evaluation w ~form ~at fault = set_outcome w ~form ~at ~deposits:[] ~fault:(Some fault) ~opened:[]
 
 (* the faults that stand, in an order the order of the rules does not move *)
 let standing_faults w =

@@ -14676,9 +14676,10 @@ let () =
    executor, and refuses every other value and an unknown field on the root;
    the verifier finds nothing in the document;
    the serialiser writes false back directly after format and leaves an absent
-   field absent; ref refuses the document with REF-014, form document, at every
-   entrance of its runner, before an outcome is written. The golden itself plays
-   the same case. *)
+   field absent. ref carries its one rule and comparison (ch. 1.5): the replay
+   plays the case, V3's vondstwaarde is open and meldplichtig is not attributed
+   to it; the readings at the fixpoint are refused with REF-014, form reading,
+   before an outcome is written. The golden itself plays the same case. *)
 let () =
   let dir = "ref/test/fixtures/infer-from-empty/" in
   let fixture = corpus_file (dir ^ "ir.json") and case_file = corpus_file (dir ^ "case.json") in
@@ -14722,14 +14723,18 @@ let () =
   let read file = Yojson.Safe.to_string (Yojson.Safe.from_file file) in
   check (ident "written-back-after-format") (written fixture = read fixture);
   check (ident "absent-stays-absent") (written golden = read golden);
-  (match Eval.refuse_infer_from_empty (Ir_v0.Loader.load_file fixture) with
-  | () -> check (ident "ref-refuses (no refusal)") false
+  check (ident "ref-carries-the-fixture")
+    (match Eval.refuse_uncarried (Ir_v0.Loader.load_file fixture) with
+    | () -> true
+    | exception Value.Fault _ -> false);
+  (match Eval.refuse_uncarried ~reading:true (Ir_v0.Loader.load_file fixture) with
+  | () -> check (ident "ref-refuses-the-reading (no refusal)") false
   | exception Value.Fault { code; params; text } ->
       check
-        (ident "ref-refuses (got: " ^ Value.report ~code text ^ ")")
-        (code = Some "REF-014" && params = [ ("form", "document") ]));
+        (ident "ref-refuses-the-reading (got: " ^ Value.report ~code text ^ ")")
+        (code = Some "REF-014" && params = [ ("form", "reading") ]));
   check (ident "ref-reads-the-golden")
-    (match Eval.refuse_infer_from_empty (Ir_v0.Loader.load_file golden) with
+    (match Eval.refuse_uncarried ~reading:true (Ir_v0.Loader.load_file golden) with
     | () -> true
     | exception Value.Fault _ -> false);
   (* the runner of this tree: from the repository root, where gate 5 runs the
@@ -14746,20 +14751,613 @@ let () =
         let status = Sys.command (Filename.quote_command runner ~stdout:out ~stderr:out args) in
         (status, In_channel.with_open_bin out In_channel.input_all))
   in
-  List.iter
-    (fun (entrance, args, outcome) ->
-      let status, out = run args in
-      check
-        (ident ("runner-" ^ entrance ^ "-refuses") ^ " (exit " ^ string_of_int status ^ ": " ^ out ^ ")")
-        (status = 1
-        && substring out "REF-014: the document carries inferFromEmpty false"
-        && not (List.exists (fun l -> List.exists (fun prefix -> String.starts_with ~prefix l) outcome) (String.split_on_char '\n' out))))
-    [ ("replay", [ fixture; case_file ], [ "oracle:"; "MISMATCH" ]);
-      ("noop", [ "--noop"; fixture; case_file ], [ "oracle:"; "MISMATCH" ]);
-      ("trace", [ "--trace"; fixture; case_file ], [ "reading "; "state " ]) ];
+  (let status, out = run [ "--trace"; fixture; case_file ] in
+   check
+     (ident "runner-trace-refuses (exit " ^ string_of_int status ^ ": " ^ out ^ ")")
+     (status = 1
+     && substring out "REF-014: the document carries inferFromEmpty false"
+     && substring out "for the reading"
+     && not
+          (List.exists
+             (fun l -> List.exists (fun prefix -> String.starts_with ~prefix l) [ "reading "; "state " ])
+             (String.split_on_char '\n' out))));
+  (let status, out = run [ fixture; case_file ] in
+   check
+     (ident "runner-replay-plays (exit " ^ string_of_int status ^ ": " ^ out ^ ")")
+     (status = 0 && out = "oracle: PASS (4 expectations)\n"));
+  (let case = Case.load_file (Ir_v0.Loader.load_file fixture) case_file in
+   let final = Eval.evaluate (env_of (Ir_v0.Loader.load_file fixture)) case.world in
+   check (ident "vondstwaarde-of-V3-is-open") (World.is_open final ~label:"V3" ~member:"vondstwaarde");
+   check (ident "meldplichtig-of-V3-is-open") (World.is_open final ~label:"V3" ~member:"meldplichtig");
+   check (ident "meldplichtig-of-V2-stands") (not (World.is_open final ~label:"V2" ~member:"meldplichtig")));
   let status, out = run [ golden; case_file ] in
   check (ident "runner-plays-the-golden (exit " ^ string_of_int status ^ ": " ^ out ^ ")")
     (status = 0 && out = "oracle: PASS (4 expectations)\n")
+
+(* --- ch. 1.5: a document that infers nothing from an empty value ----------
+   The worked examples of RUNTIME-SEMANTICS ch. 1.5, one principle per test
+   (WV-1.5-…), each on the smallest document that shows it: the Vondst of the
+   Jutterswet with one or two rules, and a Jutter for a read over a link. A
+   scenario is a document, the input of its objects and the members the
+   session closes. The state of an attribute is written as its value, "leeg"
+   where it is settled leeg, or "open"; of a characteristic as "holds", "not"
+   where it stands that it does not hold, or "open". Every scenario of a
+   document with inferFromEmpty false is registered, and the last two tests
+   read them all: monotonicity (WV-1.5-monotone) and preservation with
+   complete knowledge (WV-1.5-preserved). *)
+
+type ov_input = {
+  ov_label : string;
+  ov_type : string;
+  ov_attrs : (string * string) list; (* attribute, number lexeme *)
+  ov_chars : string list; (* the characteristics the case names *)
+  ov_links : (string * string list) list; (* role key, linked labels *)
+}
+
+type ov_scenario = { sc_name : string; sc_doc : Ir_v0.Ast.document; sc_closed : Eval.closed; sc_input : ov_input list }
+
+let ov_registered : ov_scenario list ref = ref []
+
+let ov_world (doc : Ir_v0.Ast.document) input =
+  List.fold_left
+    (fun w i ->
+      World.add_instance w
+        { (inst i.ov_label i.ov_type (List.map (fun (a, v) -> (a, n v)) i.ov_attrs)) with
+          chars = List.map Ir_v0.Checks.norm i.ov_chars;
+          left_side = case_links doc ~otype:i.ov_type i.ov_links })
+    World.empty input
+
+let ov_eval ~closed doc input = Eval.evaluate ~closed (env_of doc) (ov_world doc input)
+
+(* the state of an attribute and of a characteristic, as the header says *)
+let ov_attr w label a =
+  match World.attr (World.get w label) a with
+  | Value.Empty -> if World.is_open w ~label ~member:a then "open" else "leeg"
+  | v -> Value.to_string v
+
+let ov_char w label k =
+  if World.has_char (World.get w label) k then "holds" else if World.is_open w ~label ~member:k then "open" else "not"
+
+let ov_channel w =
+  List.map (fun (f : World.error_fact) -> f.rule ^ " " ^ f.subject ^ " " ^ String.concat "," f.codes) w.World.channel
+
+(* every outcome of a run: a value, a settled leeg attribute, a characteristic
+   that holds or that stands not to hold, a §9.5 fact; an open member is no
+   outcome *)
+let ov_outcomes (doc : Ir_v0.Ast.document) w =
+  List.concat_map
+    (fun label ->
+      let i = World.get w label in
+      let ot =
+        match Ir_v0.Checks.effective_ot doc i.otype with
+        | Some ot -> ot
+        | None -> invalid_arg ("ref/test/test_ref.ml: no object type " ^ i.otype)
+      in
+      List.filter_map
+        (fun (a, _) -> match ov_attr w label a with "open" -> None | s -> Some (label ^ "." ^ a ^ " " ^ s))
+        ot.attributes
+      @ List.filter_map
+          (function
+            | Some k -> ( match ov_char w label k with "open" -> None | s -> Some (label ^ " " ^ k ^ " " ^ s))
+            | None -> None)
+          ot.characteristics)
+    w.World.order
+  @ List.map (fun c -> "channel " ^ c) (ov_channel w)
+
+(* run a scenario, and register it where its document has the property *)
+let ov_run ?(closed = Eval.Members []) name (doc : Ir_v0.Ast.document) input =
+  if not doc.infer_from_empty then
+    ov_registered := !ov_registered @ [ { sc_name = name; sc_doc = doc; sc_closed = closed; sc_input = input } ];
+  ov_eval ~closed doc input
+
+let ov_expect name got want =
+  if got = want then check name true else check (Printf.sprintf "%s (got %s, want %s)" name got want) false
+
+let ov_v1 ?(chars = []) attrs = [ { ov_label = "V1"; ov_type = "Vondst"; ov_attrs = attrs; ov_chars = chars; ov_links = [] } ]
+let ov_ref a = aref a "Vondst"
+let ov_lit v = litv v num0
+
+let ov_cmp op a v : Ir_v0.Ast.condition_expr =
+  Comparison { op; left_side = Some (ov_ref a); right_side = Some (ov_lit v); time_period = None; source_name = None }
+
+let ov_check ?(negation = false) k : Ir_v0.Ast.condition_expr =
+  Characteristic_check
+    { characteristic = Some k; negation; holder = None; time_period = None; source_name = None; navigation_binding = None;
+      anchor = None }
+
+let ov_test variety a : Ir_v0.Ast.condition_expr =
+  Predicate
+    { variety; operand = Some (ov_ref a); day_kind = None; negation = false; digit_chars = 0; time_period = None;
+      source_name = None }
+
+let ov_compound quantifier_kind cutoff components : Ir_v0.Ast.condition_expr =
+  Compound { quantifier_kind; cutoff; components; source_name = None }
+
+let ov_bin op l r : Ir_v0.Ast.expr = Binary { op; left_side = Some l; right_side = Some r; typ = Some num0; source_name = None }
+
+(* "een Vondst is [k] indien [cond]" and "[a] van een Vondst is [value] (indien [cond])" *)
+let ov_attribution ?(name = "") k cond =
+  rr (if name = "" then k else name) Characteristic_attribution (Some (ov_ref k)) (Some (litv "waar" Boolean)) (Some cond)
+
+let ov_calc ?(name = "") ?cond a value = rr (if name = "" then a else name) Calculation (Some (ov_ref a)) (Some value) cond
+let ov_vondst attrs chars = ot "Vondst" (List.map (fun a -> (a, Some num0)) attrs) chars
+
+let ov_doc ?(strict = true) ?(consistencies = []) types rules : Ir_v0.Ast.document =
+  { empty_doc with infer_from_empty = not strict; object_types = types; resolved_rules = rules; consistencies }
+
+(* the vindloon of the card: "het vindloon van een Vondst is 10 indien zijn
+   taxatie groter is dan 1000" *)
+let ov_vindloon = ov_calc ~cond:(ov_cmp Greater "taxatie" "1000") "vindloon" (ov_lit "10")
+
+(* "de uitbetaling van een Vondst is zijn vindloon plus zijn bergloon" *)
+let ov_uitbetaling = ov_calc "uitbetaling" (ov_bin Plus (ov_ref "vindloon") (ov_ref "bergloon"))
+
+(* WV-1.5-open-input, WV-1.5-no-open-without-the-property: the case gives no
+   vindloon, which no rule writes. In the document with the property it is
+   open; in the same document without it nothing is open, and the uitbetaling
+   is the bergloon (ch. 1.2) *)
+let () =
+  let doc strict = ov_doc ~strict [ ov_vondst [ "vindloon"; "bergloon"; "uitbetaling" ] [] ] [ ov_uitbetaling ] in
+  let w = ov_run "open-input" (doc true) (ov_v1 [ ("bergloon", "3") ]) in
+  ov_expect "WV-1.5-open-input (vindloon)" (ov_attr w "V1" "vindloon") "open";
+  ov_expect "WV-1.5-open-input (bergloon)" (ov_attr w "V1" "bergloon") "3";
+  let w = ov_run "no-open-without-the-property" (doc false) (ov_v1 [ ("bergloon", "3") ]) in
+  ov_expect "WV-1.5-no-open-without-the-property (vindloon)" (ov_attr w "V1" "vindloon") "leeg";
+  ov_expect "WV-1.5-no-open-without-the-property (uitbetaling)" (ov_attr w "V1" "uitbetaling") "3";
+  (* an input characteristic the case does not name is open; named, it holds *)
+  let doc = ov_doc [ ov_vondst [] [ "drijfhout" ] ] [] in
+  ov_expect "WV-1.5-open-input (drijfhout not named)" (ov_char (ov_run "open-input-characteristic" doc (ov_v1 [])) "V1" "drijfhout") "open";
+  ov_expect "WV-1.5-open-input (drijfhout named)"
+    (ov_char (ov_run "open-input-characteristic-named" doc (ov_v1 ~chars:[ "drijfhout" ] [])) "V1" "drijfhout")
+    "holds"
+
+(* WV-1.5-settled-operand: what stands is read as ch. 1.2 reads it. With
+   taxatie 50 the vindloon is settled leeg; the uitbetaling counts it as 0,
+   and "beloond indien zijn vindloon ongelijk is aan 5" holds (leeg ≠ 5) *)
+let () =
+  let doc =
+    ov_doc [ ov_vondst [ "taxatie"; "vindloon"; "bergloon"; "uitbetaling" ] [] ] [ ov_vindloon; ov_uitbetaling ]
+  in
+  let w = ov_run "settled-operand-plus" doc (ov_v1 [ ("taxatie", "50"); ("bergloon", "3") ]) in
+  ov_expect "WV-1.5-settled-operand (vindloon)" (ov_attr w "V1" "vindloon") "leeg";
+  ov_expect "WV-1.5-settled-operand (uitbetaling)" (ov_attr w "V1" "uitbetaling") "3";
+  let doc =
+    ov_doc [ ov_vondst [ "taxatie"; "vindloon" ] [ "beloond" ] ]
+      [ ov_vindloon; ov_attribution "beloond" (ov_cmp Not_equal "vindloon" "5") ]
+  in
+  ov_expect "WV-1.5-settled-operand (beloond)"
+    (ov_char (ov_run "settled-operand-comparison" doc (ov_v1 [ ("taxatie", "50") ])) "V1" "beloond")
+    "holds";
+  (* the contrast: without a taxatie the vindloon does not stand *)
+  ov_expect "WV-1.5-settled-operand (beloond, taxatie open)"
+    (ov_char (ov_run "settled-operand-comparison-open" doc (ov_v1 [])) "V1" "beloond")
+    "open"
+
+(* WV-1.5-open-passes-on: an expression that reads an open value has no value
+   and deposits nothing. "Het aandeel is zijn gewicht gedeeld door zijn
+   getuigen" with getuigen open: no aandeel and no EF-031 fact, which the same
+   document without the property deposits *)
+let () =
+  let doc strict =
+    ov_doc ~strict [ ov_vondst [ "vindloon"; "bergloon"; "uitbetaling" ] [] ] [ ov_uitbetaling ]
+  in
+  ov_expect "WV-1.5-open-passes-on (uitbetaling)"
+    (ov_attr (ov_run "open-passes-on" (doc true) (ov_v1 [ ("bergloon", "3") ])) "V1" "uitbetaling")
+    "open";
+  let doc strict =
+    ov_doc ~strict [ ov_vondst [ "gewicht"; "getuigen"; "aandeel" ] [] ]
+      [ ov_calc "aandeel" (ov_bin Divided_by (ov_ref "gewicht") (ov_ref "getuigen")) ]
+  in
+  let w = ov_run "open-divisor" (doc true) (ov_v1 [ ("gewicht", "10") ]) in
+  ov_expect "WV-1.5-open-passes-on (aandeel)" (ov_attr w "V1" "aandeel") "open";
+  check "WV-1.5-open-passes-on (no §9.5 fact)" (ov_channel w = []);
+  check "WV-1.5-open-passes-on (without the property: EF-031)"
+    (ov_channel (ov_run "open-divisor-ordinary" (doc false) (ov_v1 [ ("gewicht", "10") ])) = [ "aandeel V1 EF-031" ])
+
+(* WV-1.5-atom: a comparison that reads an open value is undetermined, so the
+   characteristic it attributes is open *)
+let () =
+  let doc = ov_doc [ ov_vondst [ "gewicht" ] [ "zwaar" ] ] [ ov_attribution "zwaar" (ov_cmp Greater "gewicht" "100") ] in
+  ov_expect "WV-1.5-atom" (ov_char (ov_run "atom" doc (ov_v1 [])) "V1" "zwaar") "open"
+
+(* WV-1.5-table-*: the composite by Kleene's strong table (ch. 1.5, 5.10),
+   also after an undetermined member. "Een Vondst is opvallend indien [Q]
+   van: zijn gewicht groter is dan 100 (A), zijn schatting groter is dan
+   1000 (B), zijn lengte groter is dan 2 (C)". A member is T, F or U: gewicht
+   150, 50 or not given; schatting 2000, 500 or not given; lengte 5, 1 or not
+   given *)
+let () =
+  let parts = [ ("gewicht", "100", "150", "50"); ("schatting", "1000", "2000", "500"); ("lengte", "2", "5", "1") ] in
+  let doc q cutoff n =
+    let members = List.filteri (fun i _ -> i < n) parts in
+    ov_doc [ ov_vondst [ "gewicht"; "schatting"; "lengte" ] [ "opvallend" ] ]
+      [ ov_attribution "opvallend" (ov_compound q cutoff (List.map (fun (a, bound, _, _) -> ov_cmp Greater a bound) members)) ]
+  in
+  let input row =
+    List.concat
+      (List.mapi
+         (fun i t ->
+           let a, _, yes, no = List.nth parts i in
+           match t with 'T' -> [ (a, yes) ] | 'F' -> [ (a, no) ] | _ -> [])
+         (List.init (String.length row) (String.get row)))
+  in
+  let table name q cutoff rows =
+    List.iter
+      (fun (row, want) ->
+        let n = String.length row in
+        let id = Printf.sprintf "WV-1.5-table-%s-%s" name row in
+        ov_expect id (ov_char (ov_run id (doc q cutoff n) (ov_v1 (input row))) "V1" "opvallend") want)
+      rows
+  in
+  table "and" All 0
+    [ ("TT", "holds"); ("TF", "not"); ("TU", "open"); ("FT", "not"); ("FF", "not"); ("FU", "not"); ("UT", "open");
+      ("UF", "not"); ("UU", "open") ];
+  table "or" At_least 1
+    [ ("TT", "holds"); ("TF", "holds"); ("TU", "holds"); ("FT", "holds"); ("FF", "not"); ("FU", "open"); ("UT", "holds");
+      ("UF", "open"); ("UU", "open") ];
+  table "not" None_of 0 [ ("T", "not"); ("F", "holds"); ("U", "open") ];
+  table "none" None_of 0
+    [ ("TT", "not"); ("TF", "not"); ("TU", "not"); ("FT", "not"); ("FF", "holds"); ("FU", "open"); ("UT", "not");
+      ("UF", "open"); ("UU", "open") ];
+  table "at-least-2" At_least 2
+    [ ("TTU", "holds"); ("TFU", "open"); ("FFU", "not"); ("UTT", "holds"); ("UFF", "not") ];
+  table "at-most-1" At_most 1
+    [ ("TTU", "not"); ("TFU", "open"); ("FFU", "holds"); ("UFF", "holds"); ("UTT", "not") ];
+  table "exactly-1" Exactly 1
+    [ ("TTU", "not"); ("TFU", "open"); ("FFU", "open"); ("TFF", "holds"); ("UFF", "open"); ("UTT", "not") ]
+
+(* WV-1.5-rule: "het vindloon van een Vondst is zijn taxatie gedeeld door 100
+   indien zijn gewicht groter is dan 10". It decides where its condition is
+   established true and its value stands; it fills nothing where its
+   condition is established false; otherwise its target is open *)
+let () =
+  let doc =
+    ov_doc [ ov_vondst [ "gewicht"; "taxatie"; "vindloon" ] [] ]
+      [ ov_calc ~cond:(ov_cmp Greater "gewicht" "10") "vindloon" (ov_bin Divided_by (ov_ref "taxatie") (ov_lit "100")) ]
+  in
+  let vindloon id input = ov_attr (ov_run id doc (ov_v1 input)) "V1" "vindloon" in
+  ov_expect "WV-1.5-rule-decides" (vindloon "rule-decides" [ ("gewicht", "20"); ("taxatie", "500") ]) "5";
+  ov_expect "WV-1.5-rule-fills-nothing" (vindloon "rule-fills-nothing" [ ("gewicht", "5") ]) "leeg";
+  ov_expect "WV-1.5-rule-open-condition" (vindloon "rule-open-condition" [ ("taxatie", "500") ]) "open";
+  ov_expect "WV-1.5-rule-open-value" (vindloon "rule-open-value" [ ("gewicht", "20") ]) "open"
+
+(* WV-1.5-consistency: "het gewicht van een Vondst moet groter of gelijk zijn
+   aan 0" reports where its assertion is established false, and not where it
+   reads an open value *)
+let () =
+  let cons : Ir_v0.Ast.resolved_consistency =
+    { cons_name = Some "gewicht niet negatief"; cons_subject = Some "Vondst";
+      assertion = Some (ov_cmp Greater_or_equal "gewicht" "0"); cons_source = None; cons_line = 0; cons_validity = None;
+      cons_pointer = "" }
+  in
+  let doc = ov_doc ~consistencies:[ cons ] [ ov_vondst [ "gewicht" ] [] ] [] in
+  check "WV-1.5-consistency (gewicht open)" (ov_channel (ov_run "consistency-open" doc (ov_v1 [])) = []);
+  check "WV-1.5-consistency (gewicht -1)"
+    (ov_channel (ov_run "consistency-false" doc (ov_v1 [ ("gewicht", "-1") ])) = [ "gewicht niet negatief V1 EF-025" ])
+
+(* WV-1.5-derived-*: a member a rule writes follows its writers. The vindloon
+   with a second writer, "het vindloon is 5 indien zijn gewicht groter is
+   dan 100": settled leeg where both fill nothing, open where one is
+   undetermined and none decides, filled where one decides. "Kostbaar indien
+   zijn taxatie groter is dan 1000" holds, stands not to hold, or is open. And
+   an open member passes on to its reader: the chain vindloon, uitbetaling *)
+let () =
+  let doc =
+    ov_doc [ ov_vondst [ "taxatie"; "gewicht"; "vindloon" ] [] ]
+      [ ov_vindloon; ov_calc ~name:"vindloon bij gewicht" ~cond:(ov_cmp Greater "gewicht" "100") "vindloon" (ov_lit "5") ]
+  in
+  let vindloon id input = ov_attr (ov_run id doc (ov_v1 input)) "V1" "vindloon" in
+  ov_expect "WV-1.5-derived-attribute (both fill nothing)"
+    (vindloon "derived-attribute-leeg" [ ("taxatie", "50"); ("gewicht", "50") ]) "leeg";
+  ov_expect "WV-1.5-derived-attribute (one undetermined)" (vindloon "derived-attribute-open" [ ("taxatie", "50") ]) "open";
+  ov_expect "WV-1.5-derived-attribute (one decides)" (vindloon "derived-attribute-filled" [ ("taxatie", "2000") ]) "10";
+  let doc = ov_doc [ ov_vondst [ "taxatie" ] [ "kostbaar" ] ] [ ov_attribution "kostbaar" (ov_cmp Greater "taxatie" "1000") ] in
+  let kostbaar id input = ov_char (ov_run id doc (ov_v1 input)) "V1" "kostbaar" in
+  ov_expect "WV-1.5-derived-characteristic (taxatie 2000)" (kostbaar "derived-characteristic-holds" [ ("taxatie", "2000") ]) "holds";
+  ov_expect "WV-1.5-derived-characteristic (taxatie 50)" (kostbaar "derived-characteristic-not" [ ("taxatie", "50") ]) "not";
+  ov_expect "WV-1.5-derived-characteristic (taxatie open)" (kostbaar "derived-characteristic-open" []) "open";
+  let doc =
+    ov_doc [ ov_vondst [ "taxatie"; "vindloon"; "bergloon"; "uitbetaling" ] [] ] [ ov_vindloon; ov_uitbetaling ]
+  in
+  let w = ov_run "derived-chain-open" doc (ov_v1 [ ("bergloon", "3") ]) in
+  ov_expect "WV-1.5-derived-chain (vindloon)" (ov_attr w "V1" "vindloon") "open";
+  ov_expect "WV-1.5-derived-chain (uitbetaling)" (ov_attr w "V1" "uitbetaling") "open";
+  ov_expect "WV-1.5-derived-chain (taxatie 2000)"
+    (ov_attr (ov_run "derived-chain-filled" doc (ov_v1 [ ("taxatie", "2000"); ("bergloon", "3") ])) "V1" "uitbetaling")
+    "13";
+  (* the reader first in the document: it reads the vindloon before its writer
+     leaves it open, and evaluates again after *)
+  let reversed = { doc with resolved_rules = List.rev doc.resolved_rules } in
+  ov_expect "WV-1.5-derived-chain (reader first)"
+    (ov_attr (ov_run "derived-chain-reader-first" reversed (ov_v1 [ ("bergloon", "3") ])) "V1" "uitbetaling")
+    "open";
+  (* and where nothing is written at all: "de toeslag is 5 indien zijn vindloon
+     groter is dan 5", first in the document, reads a vindloon without a value
+     and fills nothing; the open vindloon is what makes it evaluate again *)
+  let doc =
+    ov_doc [ ov_vondst [ "taxatie"; "vindloon"; "toeslag" ] [] ]
+      [ ov_calc ~cond:(ov_cmp Greater "vindloon" "5") "toeslag" (ov_lit "5"); ov_vindloon ]
+  in
+  ov_expect "WV-1.5-derived-chain (reader first, nothing written)"
+    (ov_attr (ov_run "derived-chain-nothing-written" doc (ov_v1 [])) "V1" "toeslag")
+    "open"
+
+(* WV-1.5-negation: "niet K" reads the state of K. "De toeslag is 5 indien
+   hij niet kostbaar is": 5 where it stands that the vondst is not
+   kostbaar, open where kostbaar is open; and over the input characteristic
+   drijfhout, which the case does not name, "de drijftoeslag is 2 indien hij
+   niet drijfhout is" is open *)
+let () =
+  let doc =
+    ov_doc [ ov_vondst [ "taxatie"; "toeslag" ] [ "kostbaar" ] ]
+      [ ov_attribution "kostbaar" (ov_cmp Greater "taxatie" "1000");
+        ov_calc ~cond:(ov_check ~negation:true "kostbaar") "toeslag" (ov_lit "5") ]
+  in
+  let toeslag id input = ov_attr (ov_run id doc (ov_v1 input)) "V1" "toeslag" in
+  ov_expect "WV-1.5-negation (taxatie 50)" (toeslag "negation-settled" [ ("taxatie", "50") ]) "5";
+  ov_expect "WV-1.5-negation (taxatie open)" (toeslag "negation-open" []) "open";
+  ov_expect "WV-1.5-negation (taxatie 2000)" (toeslag "negation-holds" [ ("taxatie", "2000") ]) "leeg";
+  let doc =
+    ov_doc [ ov_vondst [ "drijftoeslag" ] [ "drijfhout" ] ]
+      [ ov_calc ~cond:(ov_check ~negation:true "drijfhout") "drijftoeslag" (ov_lit "2") ]
+  in
+  ov_expect "WV-1.5-negation (drijfhout not named)"
+    (ov_attr (ov_run "negation-open-input" doc (ov_v1 [])) "V1" "drijftoeslag") "open";
+  ov_expect "WV-1.5-negation (drijfhout named)"
+    (ov_attr (ov_run "negation-open-input-named" doc (ov_v1 ~chars:[ "drijfhout" ] [])) "V1" "drijftoeslag") "leeg"
+
+(* WV-1.5-filled-test-*: the test on leeg and gevuld (ch. 1.5, the four rows
+   of its table). "Getaxeerd indien zijn taxatie gevuld is" and "ongetaxeerd
+   indien zijn taxatie leeg is" are two-valued over a filled or a settled leeg
+   taxatie; over an open taxatie getaxeerd is open and ongetaxeerd holds, the
+   closure the form wrote. "Kostbaar indien zijn taxatie gevuld is en zijn
+   taxatie groter is dan 1000" is no closure: over an open taxatie kostbaar
+   is open, and so is "de bewakingstoeslag is 5 indien hij niet kostbaar
+   is". "De taxatie van een Vondst moet gevuld zijn" reports over an open
+   taxatie *)
+let () =
+  let doc =
+    ov_doc [ ov_vondst [ "taxatie" ] [ "getaxeerd"; "ongetaxeerd" ] ]
+      [ ov_attribution "getaxeerd" (ov_test Filled "taxatie"); ov_attribution "ongetaxeerd" (ov_test Empty_predicate "taxatie") ]
+  in
+  let closed = Eval.Members [ ("Vondst", "taxatie") ] in
+  let w = ov_run "filled-test-filled" doc (ov_v1 [ ("taxatie", "50") ]) in
+  ov_expect "WV-1.5-filled-test-two-valued (taxatie 50, getaxeerd)" (ov_char w "V1" "getaxeerd") "holds";
+  ov_expect "WV-1.5-filled-test-two-valued (taxatie 50, ongetaxeerd)" (ov_char w "V1" "ongetaxeerd") "not";
+  let w = ov_run ~closed "filled-test-settled" doc (ov_v1 []) in
+  ov_expect "WV-1.5-filled-test-two-valued (taxatie settled leeg, getaxeerd)" (ov_char w "V1" "getaxeerd") "not";
+  ov_expect "WV-1.5-filled-test-two-valued (taxatie settled leeg, ongetaxeerd)" (ov_char w "V1" "ongetaxeerd") "holds";
+  let w = ov_run "filled-test-open" doc (ov_v1 []) in
+  ov_expect "WV-1.5-filled-test-open (getaxeerd)" (ov_char w "V1" "getaxeerd") "open";
+  ov_expect "WV-1.5-filled-test-closure (ongetaxeerd)" (ov_char w "V1" "ongetaxeerd") "holds";
+  let doc =
+    ov_doc [ ov_vondst [ "taxatie"; "bewakingstoeslag" ] [ "kostbaar" ] ]
+      [ ov_attribution "kostbaar" (ov_compound All 0 [ ov_test Filled "taxatie"; ov_cmp Greater "taxatie" "1000" ]);
+        ov_calc ~cond:(ov_check ~negation:true "kostbaar") "bewakingstoeslag" (ov_lit "5") ]
+  in
+  let w = ov_run "filled-guard-open" doc (ov_v1 []) in
+  ov_expect "WV-1.5-filled-guard (taxatie open, kostbaar)" (ov_char w "V1" "kostbaar") "open";
+  ov_expect "WV-1.5-filled-guard (taxatie open, bewakingstoeslag)" (ov_attr w "V1" "bewakingstoeslag") "open";
+  let w = ov_run ~closed "filled-guard-settled" doc (ov_v1 []) in
+  ov_expect "WV-1.5-filled-guard (taxatie settled leeg, kostbaar)" (ov_char w "V1" "kostbaar") "not";
+  ov_expect "WV-1.5-filled-guard (taxatie settled leeg, bewakingstoeslag)" (ov_attr w "V1" "bewakingstoeslag") "5";
+  let cons : Ir_v0.Ast.resolved_consistency =
+    { cons_name = Some "controle taxatie"; cons_subject = Some "Vondst"; assertion = Some (ov_test Filled "taxatie");
+      cons_source = None; cons_line = 0; cons_validity = None; cons_pointer = "" }
+  in
+  let doc = ov_doc ~consistencies:[ cons ] [ ov_vondst [ "taxatie" ] [] ] [] in
+  check "WV-1.5-filled-test-consistency (taxatie open)"
+    (ov_channel (ov_run "filled-test-consistency-open" doc (ov_v1 [])) = [ "controle taxatie V1 EF-025" ]);
+  check "WV-1.5-filled-test-consistency (taxatie 50)"
+    (ov_channel (ov_run "filled-test-consistency-filled" doc (ov_v1 [ ("taxatie", "50") ])) = [])
+
+(* WV-1.5-link-*: a read over a link that is absent stands, leeg, and is read
+   as ch. 1.2 and 5.8 read it; over a link that is present an open attribute
+   is open. "De vindpremie van een Vondst is zijn waarde plus de bonus van de
+   vinder van de Vondst" and "een Vondst is deskundig gevonden indien de
+   vinder ervaren is", with waarde 100 *)
+let () =
+  let vinder : Ir_v0.Ast.role_binding = { rb_fact_type = "vinding"; rb_role = "vinder" } in
+  let doc =
+    { (ov_doc
+         [ ov_vondst [ "waarde"; "vindpremie" ] [ "deskundig gevonden" ]; ot "Jutter" [ ("bonus", Some num0) ] [ "ervaren" ] ]
+         [ ov_calc "vindpremie"
+             (ov_bin Plus (ov_ref "waarde")
+                (Attribute_reference
+                   { attribute_ref = Some "bonus"; object_type = Some "Jutter"; source_name = None;
+                     navigation_bindings = Some [ vinder ]; anchor = None }));
+           ov_attribution "deskundig gevonden"
+             (Characteristic_check
+                { characteristic = Some "ervaren"; negation = false; holder = None; time_period = None; source_name = None;
+                  navigation_binding = Some vinder; anchor = None }) ])
+      with
+      fact_types =
+        [ ( "vinding",
+            { ft_name = Some "vinding"; reciprocal = false;
+              role_names =
+                [ { role_identifier = Some "vinder"; role_object_type_name = Some "Jutter"; role_plural = None; role_many = false };
+                  { role_identifier = Some "vondst"; role_object_type_name = Some "Vondst"; role_plural = Some "vondsten";
+                    role_many = true } ] } ) ] }
+  in
+  let input ?(bonus = []) ?(chars = []) linked =
+    { ov_label = "V1"; ov_type = "Vondst"; ov_attrs = [ ("waarde", "100") ]; ov_chars = [];
+      ov_links = (if linked then [ ("vinder", [ "J1" ]) ] else []) }
+    :: (if linked then [ { ov_label = "J1"; ov_type = "Jutter"; ov_attrs = bonus; ov_chars = chars; ov_links = [] } ] else [])
+  in
+  let w = ov_run "link-absent" doc (input false) in
+  ov_expect "WV-1.5-link-absent (vindpremie)" (ov_attr w "V1" "vindpremie") "100";
+  ov_expect "WV-1.5-link-absent (deskundig gevonden)" (ov_char w "V1" "deskundig gevonden") "not";
+  let w = ov_run "link-present-open" doc (input true) in
+  ov_expect "WV-1.5-link-present-open (vindpremie)" (ov_attr w "V1" "vindpremie") "open";
+  ov_expect "WV-1.5-link-present-open (deskundig gevonden)" (ov_char w "V1" "deskundig gevonden") "open";
+  let w = ov_run "link-present-filled" doc (input ~bonus:[ ("bonus", "20") ] ~chars:[ "ervaren" ] true) in
+  ov_expect "WV-1.5-link-present-filled (vindpremie)" (ov_attr w "V1" "vindpremie") "120";
+  ov_expect "WV-1.5-link-present-filled (deskundig gevonden)" (ov_char w "V1" "deskundig gevonden") "holds"
+
+(* WV-1.5-closed-*: a member the session treats as complete is settled leeg
+   where the case gives it no value, a characteristic it does not name stands
+   not to hold *)
+let () =
+  let doc = ov_doc [ ov_vondst [ "vindloon"; "bergloon"; "uitbetaling" ] [] ] [ ov_uitbetaling ] in
+  let w = ov_run ~closed:(Eval.Members [ ("Vondst", "vindloon") ]) "closed-member" doc (ov_v1 [ ("bergloon", "3") ]) in
+  ov_expect "WV-1.5-closed-member (vindloon)" (ov_attr w "V1" "vindloon") "leeg";
+  ov_expect "WV-1.5-closed-member (uitbetaling)" (ov_attr w "V1" "uitbetaling") "3";
+  (* the contrast: closing another member leaves the vindloon open *)
+  ov_expect "WV-1.5-closed-member (bergloon closed instead)"
+    (ov_attr (ov_run ~closed:(Eval.Members [ ("Vondst", "bergloon") ]) "closed-other-member" doc (ov_v1 [ ("bergloon", "3") ]))
+       "V1" "uitbetaling")
+    "open";
+  ignore
+    (ov_run ~closed:(Eval.Members [ ("Vondst", "vindloon") ]) "closed-member-given" doc
+       (ov_v1 [ ("vindloon", "4"); ("bergloon", "3") ]));
+  ov_expect "WV-1.5-closed-every-input (uitbetaling)"
+    (ov_attr (ov_run ~closed:Eval.Every_input "closed-every-input" doc (ov_v1 [ ("bergloon", "3") ])) "V1" "uitbetaling")
+    "3";
+  let doc =
+    ov_doc [ ov_vondst [ "drijftoeslag" ] [ "drijfhout" ] ]
+      [ ov_calc ~cond:(ov_check ~negation:true "drijfhout") "drijftoeslag" (ov_lit "2") ]
+  in
+  let closed = Eval.Members [ ("Vondst", "drijfhout") ] in
+  let w = ov_run ~closed "closed-characteristic" doc (ov_v1 []) in
+  ov_expect "WV-1.5-closed-characteristic (drijfhout)" (ov_char w "V1" "drijfhout") "not";
+  ov_expect "WV-1.5-closed-characteristic (drijftoeslag)" (ov_attr w "V1" "drijftoeslag") "2";
+  ignore (ov_run ~closed "closed-characteristic-named" doc (ov_v1 ~chars:[ "drijfhout" ] []))
+
+(* WV-1.5-initialisation: an initialisation writes where its target has no
+   value, also where another writer leaves it open: it closes over the writers
+   of its target. "Het strandloon van een Vondst is zijn vangst maal 2 indien
+   hij gemeld is" and "het strandloon van een Vondst moet geïnitialiseerd
+   worden op 5": with vangst 4 and gemeld named 8, and 5 where the case does
+   not name gemeld. Its own condition and value are read as a rule's: with
+   "... op 5 indien zijn vangst groter is dan 1" the strandloon stays open
+   without a vangst *)
+let () =
+  let doc init_cond =
+    ov_doc [ ov_vondst [ "vangst"; "strandloon" ] [ "gemeld" ] ]
+      [ ov_calc ~cond:(ov_check "gemeld") "strandloon" (ov_bin Times (ov_ref "vangst") (ov_lit "2"));
+        rr "strandloon initialisatie" Initialisation (Some (ov_ref "strandloon")) (Some (ov_lit "5")) init_cond ]
+  in
+  let strandloon id doc input = ov_attr (ov_run id doc input) "V1" "strandloon" in
+  ov_expect "WV-1.5-initialisation (gemeld)"
+    (strandloon "initialisation" (doc None) (ov_v1 ~chars:[ "gemeld" ] [ ("vangst", "4") ])) "8";
+  ov_expect "WV-1.5-initialisation (gemeld not named)"
+    (strandloon "initialisation-not-named" (doc None) (ov_v1 [ ("vangst", "4") ])) "5";
+  let conditional = doc (Some (ov_cmp Greater "vangst" "1")) in
+  ov_expect "WV-1.5-initialisation (its condition open)" (strandloon "initialisation-condition-open" conditional (ov_v1 [])) "open";
+  ov_expect "WV-1.5-initialisation (its condition true)"
+    (strandloon "initialisation-condition-true" conditional (ov_v1 [ ("vangst", "4") ])) "5"
+
+(* WV-1.5-input-per-object: whether a member is input is asked per object.
+   "Het vindloon van een Strandvondst is 10 indien zijn taxatie groter is dan
+   1000", a Strandvondst being a Vondst: on a Strandvondst with taxatie 50 the
+   vindloon is settled leeg; on a Vondst that is no Strandvondst no rule writes
+   it, and without a value it is open input *)
+let () =
+  let sub = ot "Strandvondst" [] [] in
+  let doc =
+    ov_doc
+      [ ov_vondst [ "taxatie"; "vindloon" ] []; (fst sub, { (snd sub) with ot_supertype = Some "Vondst" }) ]
+      [ rr "vindloon van een strandvondst" Calculation (Some (aref "vindloon" "Strandvondst")) (Some (ov_lit "10"))
+          (Some
+             (Comparison
+                { op = Greater; left_side = Some (aref "taxatie" "Strandvondst"); right_side = Some (ov_lit "1000");
+                  time_period = None; source_name = None })) ]
+  in
+  let object_ label otype = { ov_label = label; ov_type = otype; ov_attrs = [ ("taxatie", "50") ]; ov_chars = []; ov_links = [] } in
+  let w = ov_run "input-per-object" doc [ object_ "S1" "Strandvondst"; object_ "V1" "Vondst" ] in
+  ov_expect "WV-1.5-input-per-object (Strandvondst)" (ov_attr w "S1" "vindloon") "leeg";
+  ov_expect "WV-1.5-input-per-object (Vondst)" (ov_attr w "V1" "vindloon") "open"
+
+(* WV-1.5-refused-*: a form this reading is not carried for is refused by name,
+   REF-014 with the form, before anything is evaluated; the same document
+   without the property is not walked *)
+let () =
+  let range : Ir_v0.Ast.role_binding = { rb_fact_type = "vinding"; rb_role = "vondst" } in
+  let fold : Ir_v0.Ast.expr =
+    Function_call
+      { kind = Sum_function; call_arguments = [ aref "gewicht" "Vondst" ]; element_object_type = Some "Vondst";
+        empty_fallback = None; filter = None; dimension_selections = None; typ = Some num0; source_name = None; grain = None;
+        source_role = Some range; source_path = None; anchor = None }
+  in
+  let branch : Ir_v0.Ast.expr =
+    If_then_else { typ = Some num0; condition = ov_cmp Greater "gewicht" "1"; then_ = ov_lit "1"; else_ = ov_lit "2"; source_name = None }
+  in
+  let doc strict value = ov_doc ~strict [ ov_vondst [ "gewicht"; "totaal" ] [] ] [ ov_calc "totaal" value ] in
+  let refused id doc want =
+    match Eval.refuse_uncarried doc with
+    | () -> check (id ^ " (no refusal)") false
+    | exception Value.Fault { code; params; text } ->
+        check (id ^ " (got " ^ Value.report ~code text ^ ")") (code = Some "REF-014" && params = [ ("form", want) ])
+  in
+  refused "WV-1.5-refused-set-fold" (doc true fold) "set-fold";
+  refused "WV-1.5-refused-if-then-else" (doc true branch) "if-then-else";
+  check "WV-1.5-refused-not-walked-without-the-property"
+    (match Eval.refuse_uncarried (doc false fold) with () -> true | exception Value.Fault _ -> false);
+  (match Eval.evaluate (env_of (doc true branch)) (ov_world (doc true branch) (ov_v1 [])) with
+  | _ -> check "WV-1.5-refused-before-evaluation (evaluated)" false
+  | exception Value.Fault { code; params; _ } ->
+      check "WV-1.5-refused-before-evaluation" (code = Some "REF-014" && params = [ ("form", "if-then-else") ]))
+
+(* WV-1.5-monotone: for every scenario above and every attribute value and
+   characteristic its case gives, the run without that input has no outcome
+   the full run lacks: filling an input adds outcomes and never changes one.
+   The named exceptions are the closures, each listed here with the outcomes
+   it adds: a test that says an open value is leeg, a consistency that says an
+   open value must be gevuld, and a member the session closes. A link is no
+   input that can be open (ch. 1.5) and is not left out. *)
+let () =
+  let closures =
+    [ (("filled-test-filled", "V1.taxatie"), [ "V1 ongetaxeerd holds" ]);
+      (("filled-test-consistency-filled", "V1.taxatie"), [ "channel controle taxatie V1 EF-025" ]);
+      (("closed-member-given", "V1.vindloon"), [ "V1.uitbetaling 3"; "V1.vindloon leeg" ]);
+      (("closed-every-input", "V1.bergloon"), [ "V1.bergloon leeg"; "V1.uitbetaling 0" ]);
+      (("closed-other-member", "V1.bergloon"), [ "V1.bergloon leeg" ]);
+      (("initialisation", "V1 gemeld"), [ "V1.strandloon 5" ]);
+      (("initialisation", "V1.vangst"), [ "V1.strandloon 5" ]);
+      (("closed-characteristic-named", "V1 drijfhout"), [ "V1 drijfhout not"; "V1.drijftoeslag 2" ]) ]
+  in
+  let used = ref [] in
+  List.iter
+    (fun sc ->
+      let full = ov_outcomes sc.sc_doc (ov_eval ~closed:sc.sc_closed sc.sc_doc sc.sc_input) in
+      List.iter
+        (fun (i : ov_input) ->
+          let without what input =
+            let reduced = ov_outcomes sc.sc_doc (ov_eval ~closed:sc.sc_closed sc.sc_doc input) in
+            let added = List.sort compare (List.filter (fun l -> not (List.mem l full)) reduced) in
+            let named = Option.value (List.assoc_opt (sc.sc_name, what) closures) ~default:[] in
+            if named <> [] then used := (sc.sc_name, what) :: !used;
+            let id = Printf.sprintf "WV-1.5-monotone %s without %s" sc.sc_name what in
+            if added = named then check id true
+            else check (id ^ " (adds " ^ String.concat "; " added ^ ")") false
+          in
+          let others = List.filter (fun (o : ov_input) -> o.ov_label <> i.ov_label) sc.sc_input in
+          List.iter
+            (fun (a, v) ->
+              without (i.ov_label ^ "." ^ a)
+                ({ i with ov_attrs = List.filter (fun (a', v') -> (a', v') <> (a, v)) i.ov_attrs } :: others))
+            i.ov_attrs;
+          List.iter
+            (fun k -> without (i.ov_label ^ " " ^ k) ({ i with ov_chars = List.filter (( <> ) k) i.ov_chars } :: others))
+            i.ov_chars)
+        sc.sc_input)
+    !ov_registered;
+  (* every named exception is met, so none stands without a reason *)
+  List.iter
+    (fun (key, _) -> check ("WV-1.5-monotone named exception " ^ fst key ^ " without " ^ snd key) (List.mem key !used))
+    closures
+
+(* WV-1.5-preserved: every scenario above with every input member closed has
+   the outcomes of the same document without the property (ch. 1.2-1.4) *)
+let () =
+  List.iter
+    (fun sc ->
+      let strict = ov_outcomes sc.sc_doc (ov_eval ~closed:Eval.Every_input sc.sc_doc sc.sc_input) in
+      let ordinary_doc = { sc.sc_doc with infer_from_empty = true } in
+      let ordinary = ov_outcomes ordinary_doc (ov_eval ~closed:(Eval.Members []) ordinary_doc sc.sc_input) in
+      check ("WV-1.5-preserved " ^ sc.sc_name) (strict = ordinary))
+    !ov_registered
+
 
 let () =
   if !failures > 0 then begin

@@ -245,20 +245,102 @@ let refuse_ranking_fold (kind : function_kind) attribute =
     fold attribute
 
 (* inferFromEmpty false (IR-SPEC ch. 2) asks for the reading that infers
-   nothing from an empty value, and this interpreter reads empty as ch.
-   1.2-1.4 lay down. Evaluated with that reading, the document would get an
-   answer it excludes, and no report would say so; it is refused by name
-   before anything is evaluated or any expectation checked, the form named
-   with it, here the whole document. The runner calls this for every
-   entrance. *)
-let refuse_infer_from_empty (doc : document) =
-  if not doc.infer_from_empty then
-    Value.faultc
-      ~params:[ ("form", "document") ]
-      "REF-014"
-      "the document carries inferFromEmpty false, and this interpreter does not carry the reading that infers \
-       nothing from an empty value for the %s: it is refused, not read as ch. 1.2-1.4 lay down"
-      "document"
+   nothing from an empty value (RUNTIME-SEMANTICS ch. 1.5). This interpreter
+   carries it for a rule, a consistency, a condition without a fold and an
+   expression without a fold or a timeline; every other form, read by ch.
+   1.2-1.4, would get an answer that reading excludes and no report would say
+   so. A document with the property that holds one is refused by name before
+   anything is evaluated or any expectation checked, the form named with it by
+   its slug. [reading] adds the reading at the fixpoint and the end state (ch.
+   5.12, 5.12a), which are not carried for an open member either. The runner
+   calls this for every entrance and [evaluate] for itself; a document without
+   the property is not walked. *)
+let refuse_uncarried ?(reading = false) (doc : document) =
+  if not doc.infer_from_empty then begin
+    let refuse form =
+      Value.faultc
+        ~params:[ ("form", form) ]
+        "REF-014"
+        "the document carries inferFromEmpty false, and this interpreter does not carry the reading that infers \
+         nothing from an empty value for the %s: it is refused, not read as ch. 1.2-1.4 lay down"
+        form
+    in
+    let some form = function [] -> () | _ :: _ -> refuse form in
+    if reading then refuse "reading";
+    some "defaults-group" doc.prioritized_defaults;
+    some "allocation" doc.allocations;
+    some "object-creation" doc.object_creations;
+    some "fact-creation" doc.fact_creations;
+    some "uniqueness" (List.map ignore doc.uniquenesses @ List.map ignore doc.uniqueness_unions);
+    some "start-point" doc.resolved_start_point_determinations;
+    some "day-kind" (List.map ignore doc.day_kinds @ List.map ignore doc.resolved_day_kind_definitions);
+    some "function-def" doc.function_defs;
+    (* a member with a timeline has no state per day in this reading *)
+    List.iter
+      (fun (_, (ot : object_type)) ->
+        if List.exists (fun (_, g) -> g <> None) ot.attribute_granularity
+           || List.exists (fun (_, g) -> g <> None) ot.characteristic_granularity
+        then refuse "timeline-member")
+      doc.object_types;
+    List.iter (fun (_, (p : parameter)) -> if p.par_granularity <> None then refuse "timeline-member") doc.parameters;
+    let rec expr (e : expr) =
+      match e with
+      | Literal _ | Parameter_ref _ | Context_value _ | Binder_ref _ | Attribute_reference _ -> ()
+      | Text_composition { pieces; _ } ->
+          List.iter (function Embedded_expression { expr = Some e; _ } -> expr e | _ -> ()) pieces
+      | Binary { left_side; right_side; _ } -> opt left_side; opt right_side
+      | Rounding { base_expr; _ } -> opt base_expr
+      | Clamp { base_expr; minimum; maximum; _ } -> opt base_expr; opt minimum; opt maximum
+      | Construct { argument; _ } -> opt argument
+      | Payload_access { base; _ } -> expr base
+      | Let { value; body; _ } -> expr value; expr body
+      | Function_call { kind; call_arguments; element_object_type; filter; dimension_selections; grain; source_role; source_path; _ } -> (
+          let ranged = element_object_type <> None || source_role <> None || source_path <> None in
+          match kind with
+          | _ when dimension_selections <> None -> refuse "dimension-fold"
+          | Time_proportional_part -> refuse "time-proportional-part"
+          | Day_count -> refuse "day-kind"
+          | (Sum_function | Total | Count | Filled_count | Minimum | Maximum | First | Last) when ranged -> refuse "set-fold"
+          | Sum_function | Total | Count | Filled_count -> refuse "temporal-total"
+          | _ when filter <> None || grain <> None -> refuse "builtin-filter"
+          | Minimum | Maximum | First | Last | Square_root | Absolute_value | Concatenation | Duration
+          | Absolute_duration | Easter_sunday | Year_of | Month_of | Day_of | Date_with | Date_time_with ->
+              List.iter expr call_arguments)
+      | Instance_set_union _ -> refuse "set-fold"
+      | Dimension_cell_read _ -> refuse "dimension-cell"
+      | Variable_reference _ -> refuse "variable-reference"
+      | Expr_unresolved _ -> refuse "unresolved"
+      | Bound_day _ -> refuse "day-kind"
+      | Temporal_read _ -> refuse "temporal-read"
+      | Match _ -> refuse "match"
+      | Struct_literal _ | Field_access _ -> refuse "record"
+      | List_literal _ | Lambda _ | Fold _ | Map_list _ | Filter_list _ | List_length _ -> refuse "list-family"
+      | If_then_else _ -> refuse "if-then-else"
+      | Invoke _ -> refuse "invoke"
+    and opt = function Some e -> expr e | None -> ()
+    and cond (c : condition_expr) =
+      match c with
+      | Comparison { time_period = Some _; _ } | Predicate { time_period = Some _; _ }
+      | Characteristic_check { time_period = Some _; _ } ->
+          refuse "whole-period"
+      | Comparison { left_side; right_side; _ } -> opt left_side; opt right_side
+      | Predicate { variety = Day_kind_predicate; _ } -> refuse "day-kind"
+      | Predicate { operand; _ } -> opt operand
+      | Characteristic_check _ | Role_membership _ | Identity_check _ -> ()
+      | Compound { components; _ } -> List.iter cond components
+      | Quantifier_fold _ -> refuse "quantifier-fold"
+      | Time_window _ -> refuse "time-window"
+      | Rule_status_check _ -> refuse "rule-status-check"
+      | Condition_unresolved _ -> refuse "unresolved"
+    in
+    List.iter
+      (fun (r : resolved_rule) ->
+        (match r.objective with Some (Dimension_cell_read _) -> refuse "dimension-cell" | _ -> ());
+        Option.iter expr r.value_node;
+        Option.iter cond r.rr_condition)
+      doc.resolved_rules;
+    List.iter (fun (c : resolved_consistency) -> Option.iter cond c.assertion) doc.consistencies
+  end
 
 (* the ranking fold of [e] and the first temporal attribute it ranks: a
    member's of a fold over a set, or an operand of a listed fold *)
@@ -1477,6 +1559,81 @@ let reversed : Ir_v0.Ast.compare_op -> Ir_v0.Ast.compare_op = function
   | Later_or_equal -> Earlier_or_equal
   | (Equal | Not_equal) as op -> op
 
+(* --- open values and the judgement of a condition (RUNTIME-SEMANTICS ch. 1.5)
+
+   A member is filled, settled leeg or open. Only a document with
+   inferFromEmpty false has open members ([open_inputs]); in every other
+   document nothing below meets one, and the evaluation is the one of ch.
+   1.2-1.4. A read of an open member raises World.Open_read, and that
+   breaks the evaluation off up to the boundary of one judgement or one
+   value ([held]): what reads an open value has no value and no verdict of
+   its own, and what it deposited up to there is dropped. So no operator
+   knows of open values.
+
+   The judgement of a condition is a pair: its truth for the form whose
+   condition it is ([own]), and for another form that reads the same
+   condition as the opposite of its own ([other]). The two differ in one
+   place only, a test that says an open value is leeg (ch. 1.5): for the
+   form that wrote it that is a closure, true, and for another form it is
+   undetermined. *)
+
+type truth = Established of bool | Undetermined
+type judgement = { own : truth; other : truth }
+
+(* the judgement of a condition read on values that all stand *)
+let established b = { own = Established b; other = Established b }
+let undetermined = { own = Undetermined; other = Undetermined }
+
+(* The verdict of a composite over [n] members (ch. 5.10) or of a count of
+   members, [hits] of them established true and [fails] established false,
+   every other one undetermined or not yet read: Kleene's strong table,
+   which is the verdict of every way the undetermined members could come
+   out, where they all agree. With every member read and none undetermined
+   it is the two-valued verdict of ch. 5.10, and the first prefix on which
+   it is established is where ch. 5.10 stops. *)
+let count_verdict (q : quantifier_kind) ~cutoff ~n ~hits ~fails : truth =
+  let k = cutoff in
+  match q with
+  | The | All -> if fails >= 1 then Established false else if hits = n then Established true else Undetermined
+  | None_of -> if hits >= 1 then Established false else if fails = n then Established true else Undetermined
+  | At_least ->
+      if hits >= k then Established true else if fails >= n - k + 1 then Established false else Undetermined
+  | At_most ->
+      if fails >= n - k then Established true else if hits >= k + 1 then Established false else Undetermined
+  | Exactly ->
+      if hits >= k + 1 || fails >= n - k + 1 then Established false
+      else if hits >= k && fails >= n - k then Established true
+      else Undetermined
+
+(* [f] evaluated as one judgement or one value: [Some] its result, with the
+   deposits it made passed on to [err] in their order, or [None] where it read
+   an open member, its deposits dropped *)
+let held ~err f =
+  let deposits = ref [] in
+  match f (fun d -> deposits := d :: !deposits) with
+  | x ->
+      List.iter err (List.rev !deposits);
+      Some x
+  | exception World.Open_read _ -> None
+
+(* The verdict of a condition at a position that reads one truth value. In a
+   document without open input every judgement is two-valued and equal for
+   both walks. A position whose form the strict reading does not carry yet —
+   an IfThenElse, a fold's filter or matrix, a creation's condition, a
+   defaults group, a filter of a list, a day kind, a reading of ch. 5.12 — is
+   refused in a document with inferFromEmpty false before anything is
+   evaluated ([refuse_uncarried]), so it meets no other judgement; meeting one
+   is a fault of ref. *)
+let two_valued (c : condition_expr) (j : judgement) =
+  match j with
+  | { own = Established b; other = Established b' } when b = b' -> b
+  | _ ->
+      failwith
+        (Printf.sprintf
+           "ref/lib/eval.ml: %s has no two-valued verdict where an open value is read, at a position the strict \
+            reading (RUNTIME-SEMANTICS ch. 1.5) does not carry and [refuse_uncarried] refuses"
+           ("the " ^ Ir_v0.Spelling.cond_node c))
+
 let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
   match !observer with
   | None -> eval_expr_node env world self ~err e
@@ -1530,9 +1687,11 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
            of its own, so it is read as the attribute of a DimensionCellRead or as the argument of a \
            dimension fold"
           name ot;
+      (* over an absent link the read is settled leeg; on the object the path
+         reaches an open member is an open read (ch. 1.5) *)
       match member_holder env world self ~node:e e with
       | None -> Value.Empty
-      | Some holder -> World.attr holder name)
+      | Some holder -> World.read_attr world holder name)
   | Binary { op = (Plus | Min) as op; left_side; right_side; _ }
     when List.exists
            (fun e ->
@@ -2959,24 +3118,37 @@ and window_bounds env world (self : World.instance) ~err starting_at up_to =
   let dt = day t in
   (dv, dt)
 
+(* The verdict of [c] at a position that reads one truth value
+   ([two_valued]): every caller but the rule, the consistency and the
+   composite, which read the judgement itself ([judge_cond]) *)
 and eval_cond env world (self : World.instance) ~err (c : condition_expr) : bool =
-  match !observer with
-  | None -> eval_cond_node env world self ~err c
-  | Some o -> o.cond c (fun () -> eval_cond_node env world self ~err c)
+  two_valued c (judge_cond env world self ~err c)
 
-and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) : bool =
+(* The judgement of [c] (ch. 1.5). The observer of a reading (ch. 5.12) sees a
+   verdict, so under an observer a judgement is two-valued *)
+and judge_cond env world (self : World.instance) ~err (c : condition_expr) : judgement =
+  match !observer with
+  | None -> judge_cond_node env world self ~err c
+  | Some o -> established (o.cond c (fun () -> two_valued c (judge_cond_node env world self ~err c)))
+
+(* An atomic condition: [verdict] read on values that all stand, undetermined
+   where it reads an open value, its deposits dropped then ([held]) *)
+and atomic ~err verdict : judgement =
+  match held ~err verdict with Some b -> established b | None -> undetermined
+
+and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) : judgement =
   match Ir_v0.Checks.unanchored_cond c with
   | Some inner ->
       let env, self = at_form env in
-      eval_cond_node env world self ~err inner
+      judge_cond_node env world self ~err inner
   | None ->
   match c with
   | Comparison { op; left_side; right_side; time_period = None; _ } ->
       let le = req "Comparison.left" left_side and re = req "Comparison.right" right_side in
-      let l = eval_expr env world self ~err le in
-      let r = eval_expr env world self ~err re in
-      Arith.compare_op ?static_numeric:(static_numeric env le re) ~static_date:(static_date env le re) op l
-        r
+      atomic ~err (fun err ->
+          let l = eval_expr env world self ~err le in
+          let r = eval_expr env world self ~err re in
+          Arith.compare_op ?static_numeric:(static_numeric env le re) ~static_date:(static_date env le re) op l r)
   (* ch. 3.9, the whole-period VALUE test — the second of the chapter's two
      specified collapses, and the door ch. 3.3's scalar refusal must not
      shut.
@@ -3036,7 +3208,7 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
               ~static_date:(static_date env le re) op v boundary)
       in
       (* ch. 3.9: "Negation complements the folded result" *)
-      if gp.gp_negated then not verdict else verdict
+      established (if gp.gp_negated then not verdict else verdict)
   (* ch. 3.9, the leeg and gevuld tests under the whole-period qualifier. The
      two arms below match `time_period` away with `_`, which is why this one
      stands before them: there the qualifier would be dropped and the operand
@@ -3048,15 +3220,16 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
       let g : Ir_v0.Ast.grain = if gp.gp_granularity then Year else Month in
       let populated = (variety = Filled) <> negation in
       let verdict = Timeline.whole_period_empty_filled g ~populated ~tl in
-      if gp.gp_negated then not verdict else verdict
-  | Predicate { variety = Empty_predicate; operand; negation; _ } ->
-      let v = eval_expr env world self ~err (req "Predicate.operand" operand) in
-      let is_empty = v = Value.Empty in
-      if negation then not is_empty else is_empty
-  | Predicate { variety = Filled; operand; negation; _ } ->
-      let v = eval_expr env world self ~err (req "Predicate.operand" operand) in
-      let is_filled = v <> Value.Empty in
-      if negation then not is_filled else is_filled
+      established (if gp.gp_negated then not verdict else verdict)
+  (* the negated leeg test is the gevuld test and the negated gevuld test the
+     leeg test (ch. 1.2). Over an open value the test that says the value is
+     leeg is a closure for the form that wrote it, and the gevuld test is
+     false for it; for another form both are undetermined (ch. 1.5) *)
+  | Predicate { variety = (Empty_predicate | Filled) as variety; operand; negation; _ } -> (
+      let says_empty = (variety = Empty_predicate) <> negation in
+      match held ~err (fun err -> eval_expr env world self ~err (req "Predicate.operand" operand)) with
+      | Some v -> established ((v = Value.Empty) = says_empty)
+      | None -> { own = Established says_empty; other = Undetermined })
   | Predicate { variety = Day_kind_predicate; day_kind; operand; negation; _ }
     when SMap.mem day_kind_binder env.locals ->
       (* A NESTED day-kind reference, inside a day-kind condition (ch. 3.7,
@@ -3096,7 +3269,7 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
               (fst (Arith.split_ms t))
         | v -> Value.fault "a day-kind test needs a date operand, got %s" (Value.to_string v)
       in
-      if negation then not hit else hit
+      established (if negation then not hit else hit)
   | Predicate { variety = Day_kind_predicate; day_kind; _ } ->
       Value.fault
         "the day-kind predicate ('is een %s') is a recognised, unexecuted form outside a \
@@ -3104,7 +3277,8 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
          executor reads one inside the rule fixpoint"
         (Option.value day_kind ~default:"?")
   | Predicate { variety = Exact_digits; operand; negation; digit_chars; time_period = None; _ } ->
-      exact_digits ~digits:digit_chars ~negation (eval_expr env world self ~err (req "Predicate.operand" operand))
+      atomic ~err (fun err ->
+          exact_digits ~digits:digit_chars ~negation (eval_expr env world self ~err (req "Predicate.operand" operand)))
   (* ch. 3.9: the test of ch. 1.2 read per day on the day's value, a leeg day
      included, so the inner negation is per day; the qualifier's own negation
      complements the fold's verdict *)
@@ -3112,7 +3286,7 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
       let tl = whole_period_operand env world self (req "Predicate.operand" operand) in
       let g : Ir_v0.Ast.grain = if gp.gp_granularity then Year else Month in
       let verdict = Timeline.whole_period_value g ~tl (exact_digits ~digits:digit_chars ~negation) in
-      if gp.gp_negated then not verdict else verdict
+      established (if gp.gp_negated then not verdict else verdict)
   | Characteristic_check { characteristic; navigation_binding = None; negation; holder; time_period; _ } ->
       let hosting = owner_hosts env.doc ~otype:self.otype ~subj:env.subj ~characteristic holder in
       let k = req "CharacteristicCheck.characteristic" characteristic in
@@ -3124,20 +3298,24 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
       | Some gp, Hosted ->
           (* ch. 3.9, the specified collapse — NOT the scalar context
              ch. 3.3 refuses below *)
-          whole_period_characteristic env ~ot:self.otype ~inst:(Some self) ~characteristic:k ~negation gp
+          established (whole_period_characteristic env ~ot:self.otype ~inst:(Some self) ~characteristic:k ~negation gp)
       | None, Narrowing e ->
           (* ch. 5.8b rule 4: the declaration key is the host, whatever the
              object; an object outside the host has no K, so the positive
              form is false there and the negated form true *)
           if characteristic_temporal (object_type env e) k then
             Value.fault "temporal characteristic %S in a scalar condition is refused (ch. 3.3)" k;
-          let has = isa env self.otype e && World.has_char self k in
-          if negation then not has else has
+          atomic ~err (fun _ ->
+              let has = isa env self.otype e && World.read_char world self k in
+              if negation then not has else has)
       | None, Hosted ->
           if characteristic_temporal (object_type env self.otype) k then
             Value.fault "temporal characteristic %S in a scalar condition is refused (ch. 3.3)" k;
-          let has = World.has_char self k in
-          if negation then not has else has)
+          (* an open characteristic leaves the check and its negation
+             undetermined (ch. 1.5) *)
+          atomic ~err (fun _ ->
+              let has = World.read_char world self k in
+              if negation then not has else has))
   | Characteristic_check { characteristic; negation; navigation_binding = Some rb; holder; time_period; _ } -> (
       (* the navigated check (ch. 5.8): one to-one hop. The v0 asymmetry,
          mirrored deliberately: an ABSENT link makes the check false for
@@ -3165,19 +3343,22 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
       | [] -> (
           object_reached (Navigated_check c) None;
           match time_period with
-          | Some gp -> whole_period_characteristic env ~ot:reached ~inst:None ~characteristic:k ~negation gp
-          | None -> false)
+          | Some gp -> established (whole_period_characteristic env ~ot:reached ~inst:None ~characteristic:k ~negation gp)
+          (* over an absent link the check stands, false (ch. 1.5) *)
+          | None -> established false)
       | [ target ] -> (
           object_reached (Navigated_check c) (Some target.label);
           match time_period with
           | Some gp ->
-              whole_period_characteristic env ~ot:target.otype ~inst:(Some target) ~characteristic:k ~negation gp
+              established
+                (whole_period_characteristic env ~ot:target.otype ~inst:(Some target) ~characteristic:k ~negation gp)
           | None ->
               if characteristic_temporal (object_type env target.otype) k then
                 Value.fault "temporal characteristic %S in a scalar condition is refused (ch. 3.3)"
                   k;
-              let has = World.has_char target k in
-              if negation then not has else has)
+              atomic ~err (fun _ ->
+                  let has = World.read_char world target k in
+                  if negation then not has else has))
       | _ ->
           Value.fault "to-one role %S links more than one instance on %S (ch. 5.5)"
             (Option.value role.role_identifier ~default:"?")
@@ -3192,51 +3373,34 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
          after which the outcome stands. A member never reached produces no
          fault and no §9.5 channel fact — which is the whole point: an earlier
          member gates a later one that would otherwise fault. The truth value
-         is never affected; [settled] only reports an outcome the members still
-         unread can no longer change. *)
+         is never affected: the read stops at the first prefix on which the
+         verdict, with every member still unread taken as undetermined, is
+         established ([count_verdict]), which is the moment the outcome can
+         no longer change (maintainer decision 2026-09-07). A threshold that
+         already covers the whole member list therefore settles on the EMPTY
+         prefix and reads nothing at all — vacuously true for at-most at d >=
+         n, vacuously false for at-least and exactly above n. Each walk counts
+         its own verdicts, and the read goes on until both are established or
+         every member is read: an undetermined member does not stop it, and a
+         member after it can still decide (ch. 1.5). *)
       let n = List.length components in
-      let verdict hits =
-        match quantifier_kind with
-        | The | All -> hits = n
-        | None_of -> hits = 0
-        | At_least -> hits >= cutoff
-        | At_most -> hits <= cutoff
-        | Exactly -> hits = cutoff
+      let verdict = count_verdict quantifier_kind ~cutoff ~n in
+      let count (hits, fails) = function
+        | Established true -> (hits + 1, fails)
+        | Established false -> (hits, fails + 1)
+        | Undetermined -> (hits, fails)
       in
-      (* [hits] over the [n - left] members already read, [left] still unread.
-         One rule, no exception: every arm marks the moment the outcome can no
-         longer change, and the arms together are the exhaustive list of those
-         moments per quantifier (maintainer decision 2026-09-07). A threshold
-         that already covers the whole member list therefore settles on the
-         EMPTY prefix and reads nothing at all — vacuously true for at-most at
-         d >= n, vacuously false for at-least and exactly above n. *)
-      let settled ~hits ~left =
-        match quantifier_kind with
-        | The | All -> if hits < n - left then Some false else None
-        | None_of -> if hits > 0 then Some false else None
-        | At_least ->
-            if hits >= cutoff then Some true
-            else if hits + left < cutoff then Some false
-            else None
-        | At_most ->
-            if hits > cutoff then Some false
-            else if hits + left <= cutoff then Some true
-            else None
-        | Exactly -> if hits > cutoff || hits + left < cutoff then Some false else None
+      let rec read own other parts =
+        let j = { own = verdict ~hits:(fst own) ~fails:(snd own); other = verdict ~hits:(fst other) ~fails:(snd other) } in
+        match (j, parts) with
+        | { own = Established _; other = Established _ }, _ | _, [] -> j
+        | _, c :: rest ->
+            let part = judge_cond env world self ~err c in
+            read (count own part.own) (count other part.other) rest
       in
-      let rec read hits left parts =
-        match settled ~hits ~left with
-        | Some v -> v
-        | None -> (
-            match parts with
-            | [] -> verdict hits
-            | c :: rest ->
-                let hit = eval_cond env world self ~err c in
-                read (if hit then hits + 1 else hits) (left - 1) rest)
-      in
-      read 0 n components
+      read (0, 0) (0, 0) components
   | Rule_status_check { rule_def; _ } ->
-      World.channel_has world ~rule:(req "Regelversie.regel" rule_def)
+      established (World.channel_has world ~rule:(req "Regelversie.regel" rule_def))
   | Role_membership { fact_type; role; counterpart_type; negated; _ } ->
       (* ch. 5.8a, the role check (D11, U12): true iff a link of [fact_type]
          exists in which the subject fills [role] and the filler of the OTHER
@@ -3280,7 +3444,8 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
             List.filter (fun (i : World.instance) -> isa env i.otype ct) linked
       in
       let exists = linked <> [] in
-      if negated then not exists else exists
+      (* the relation is closed: the check reads no value and stands (ch. 1.5) *)
+      established (if negated then not exists else exists)
   (* ch. 3.9a, the QUANTIFIER FOLD: a condition quantified over the members
      of a linked instance set. The contributors are the instance fold's,
      down to the helper — [fold_members] decides the population once, for
@@ -3414,7 +3579,7 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
                 contribute m.label (Member_verdict hit);
                 read (if hit then hits + 1 else hits) (left - 1) rest)
       in
-      read 0 n members
+      established (read 0 n members)
   | Time_window { starting_at; up_to; to_inclusive; _ } ->
       (* ch. 3.10, the SCALAR target's evaluation-date gate — the chapter's
          first case, in its own six clauses: vanaf inclusive, tot exclusive,
@@ -3427,6 +3592,7 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
          The bounds are read by [window_bounds], the one reader both cases
          share, and BEFORE the verdict looks at the evaluation date. *)
       let dv, dt = window_bounds env world self ~err starting_at up_to in
+      established
       (match (env.as_of, dv, dt) with
        | None, _, _ -> false (* an unset evaluation date never matches *)
        | _, Some None, _ | _, _, Some None -> false
@@ -3446,7 +3612,7 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
      value, so it is never leeg and never faults *)
   | Identity_check { negation; _ } ->
       let _, form_self = at_form env in
-      String.equal form_self.label self.label <> negation
+      established (String.equal form_self.label self.label <> negation)
 
 (* --- day kinds as duration units (ch. 3.7/3.8) --------------------------
    Two steps stand between a unit SPELLING on a duration node and a verdict
@@ -3524,6 +3690,10 @@ let over_subjects ?(exact = false) ?(except = []) ?read ?(only = fun _ -> true) 
       let self = match read with Some _ -> snapshot | None -> World.get w snapshot.label in
       let pending = ref [] in
       let err reason = pending := reason :: !pending in
+      (* what the form leaves open is read like a write of its target: a
+         reader that read it before must evaluate again (ch. 1.5) *)
+      let opened_before = World.opened_by w ~form ~at:self.label in
+      let reopened w' = World.opened_by w' ~form ~at:self.label <> opened_before in
       match body w self err with
       | w', ch ->
           let w' =
@@ -3531,11 +3701,14 @@ let over_subjects ?(exact = false) ?(except = []) ?read ?(only = fun _ -> true) 
               (fun w (d : Value.deposit) -> World.insert_error w ~rule ~subject:self.label ~code:d.code)
               w' !pending
           in
-          (World.close_evaluation w' ~form ~at:self.label, changed || ch)
+          let w' = World.close_evaluation w' ~form ~at:self.label in
+          (w', changed || ch || reopened w')
       | exception Value.Fault { code; params; text } ->
-          ( World.fault_evaluation w ~form ~at:self.label
-              { World.fault_code = code; fault_params = params; fault_text = text },
-            changed ))
+          let w' =
+            World.fault_evaluation w ~form ~at:self.label
+              { World.fault_code = code; fault_params = params; fault_text = text }
+          in
+          (w', changed || reopened w'))
     (world, false)
     (List.filter only (World.of_type ~isa (Option.value read ~default:world) otype))
 
@@ -3611,7 +3784,7 @@ let rec cond_periods env w (self : World.instance) ~err ~(target : Timeline.grid
     if gp.gp_negated then Timeline.complement_all b else b
   in
   if not (read_per_period env.doc ~ot:self.otype c) then
-    record (if eval_cond_node env w self ~err c then Timeline.all_time else [])
+    record (if two_valued c (judge_cond_node env w self ~err c) then Timeline.all_time else [])
   else
     match c with
     | Time_window { starting_at; up_to; to_inclusive; _ } ->
@@ -4392,16 +4565,31 @@ let run_rule ?only env world (r : resolved_rule) =
               && (not temporal_target)
               && not (World.init_may_write w ~label:self.label ~attr:member)
             in
-            let fire =
-              (not blocked)
-              &&
-              match r.rr_condition with
-              | Some _ when per_period || temporal_characteristic -> true
-              | Some c -> eval_cond env w self ~err c
-              | None -> true
+            (* the rule does not decide on [self]: what it wrote is given back,
+               and where it does not stand that it fills nothing its target is
+               open (ch. 1.5) *)
+            let undecided () =
+              let w, changed = release () in
+              (World.leave_open w ~label:self.label ~member, changed)
             in
-            if not fire then release ()
-            else
+            (* the rule decides where its condition is established true for
+               itself; where it is established false for another form, it
+               stands that the rule fills nothing (ch. 1.5) *)
+            let judged =
+              if blocked then established false
+              else
+                match r.rr_condition with
+                | Some _ when per_period || temporal_characteristic -> established true
+                | Some c -> judge_cond env w self ~err c
+                | None -> established true
+            in
+            (* the value of a rule that decides, as one value: [None] where it
+               reads an open value, its deposits dropped *)
+            let value () = held ~err (fun err -> eval_expr env w self ~err (req "RuleVersion.value" r.value_node)) in
+            match judged with
+            | { own = Established false | Undetermined; other = Established false } -> release ()
+            | { own = Established false | Undetermined; other = _ } -> undecided ()
+            | { own = Established true; _ } ->
               match r.rr_presentation with
               (* a time-dependent characteristic holds in the periods of its
                  condition, the window among them (ch. 3.11) *)
@@ -4443,17 +4631,19 @@ let run_rule ?only env world (r : resolved_rule) =
                   in
                   run_timeline_initialisation ?periods env w self ~err ~form ~ot ~attr
                     (Ir_v0.Checks.let_bound_value (req "RuleVersion.value" r.value_node))
-              | Some (Equation | Calculation) ->
-                  let v = eval_expr env w self ~err (req "RuleVersion.value" r.value_node) in
+              | Some (Equation | Calculation) -> (
                   (* a leeg evaluation decides nothing (ch. 3.11, 7.8): the rule
                      gives back what it wrote before, so the target holds what
                      another writer, an initialisation or the input put there,
                      or stays leeg; channel deposits of the evaluation persist
-                     as in any evaluation *)
-                  if v = Value.Empty then release ()
-                  else
-                    World.write_attr_by w ~form ~label:self.label ~attr:member ~decl:(attr_decl env ~otype:ot ~attr) v
-              | Some Initialisation ->
+                     as in any evaluation. A value that reads an open value
+                     leaves the target open (ch. 1.5) *)
+                  match value () with
+                  | None -> undecided ()
+                  | Some Value.Empty -> release ()
+                  | Some v ->
+                      World.write_attr_by w ~form ~label:self.label ~attr:member ~decl:(attr_decl env ~otype:ot ~attr) v)
+              | Some Initialisation -> (
                   (* writes only where the target is empty (ch. 5.4) — apart
                      from its own write ([blocked] above). A case input and a
                      value another writer placed switch the guard off, so the
@@ -4463,9 +4653,9 @@ let run_rule ?only env world (r : resolved_rule) =
                      Read off the running world alone, the guard kept the value
                      the initialisation computed against a read that another
                      rule had not yet written: the document order decided *)
-                  let v = eval_expr env w self ~err (req "RuleVersion.value" r.value_node) in
-                  World.write_attr_init w ~form ~label:self.label ~attr:member
-                    ~decl:(attr_decl env ~otype:ot ~attr) v
+                  match value () with
+                  | None -> undecided ()
+                  | Some v -> World.write_attr_init w ~form ~label:self.label ~attr:member ~decl:(attr_decl env ~otype:ot ~attr) v)
               | None -> Value.fault "rule %S has no kind" (rule_name r))
     | _ -> Value.faultc ~params:[ ("rule", (rule_name r)) ] "REF-012" "rule %S: unsupported target shape" (rule_name r)
 
@@ -5260,8 +5450,11 @@ let run_consistency env world (c : resolved_consistency) =
     let world, _ =
       over_subjects env world ~form:c.cons_pointer ~otype:(req "ConsistencyVersion.subject" c.cons_subject) ~rule:name
         (fun w self err ->
-          if eval_cond env w self ~err (req "ConsistencyVersion.assertion" c.assertion) then (w, false)
-          else (World.insert_error w ~rule:name ~subject:self.label ~code:(Some "EF-025"), false))
+          (* it reports where its assertion is established false for itself
+             (ch. 1.5), not where the assertion reads an open value *)
+          match (judge_cond env w self ~err (req "ConsistencyVersion.assertion" c.assertion)).own with
+          | Established false -> (World.insert_error w ~rule:name ~subject:self.label ~code:(Some "EF-025"), false)
+          | Established true | Undetermined -> (w, false))
     in
     world
 
@@ -5743,7 +5936,53 @@ let instance_depth env world0 (o : Ir_v0.Checks.instance_order) =
   in
   depth []
 
-let evaluate env world =
+(* The input members a session treats as complete (RUNTIME-SEMANTICS ch. 1.5):
+   every input member, or the members named as (object type, member), on every
+   object of that type *)
+type closed = Every_input | Members of (string * string) list
+
+(* The open members of the input world: in a document with inferFromEmpty
+   false, every input member the case gives no value and the session does not
+   close (ch. 1.5). A member is input on an object where no rule writes it on
+   the object's type; a member a rule writes there follows its writers, also
+   where the case gives it no value. The one place the property is read for
+   the evaluation: a document without it has no open member, and nothing in
+   the evaluation tells it from another. *)
+let open_inputs env ~closed (world : World.t) =
+  if env.doc.infer_from_empty then World.Key.empty
+  else
+    let written ~otype member =
+      List.exists
+        (fun (r : resolved_rule) ->
+          match target_member env r.objective with
+          | Some (ot, a, _) -> norm a = norm member && isa env otype ot
+          | None -> false)
+        env.doc.resolved_rules
+    in
+    let is_closed ~otype member =
+      match closed with
+      | Every_input -> true
+      | Members ms -> List.exists (fun (t, m) -> norm m = norm member && isa env otype t) ms
+    in
+    SMap.fold
+      (fun label (i : World.instance) acc ->
+        let ot = object_type env i.otype in
+        let member acc name ~given =
+          if given || written ~otype:i.otype name || is_closed ~otype:i.otype name then acc
+          else World.Key.add (label, norm name) () acc
+        in
+        let acc =
+          List.fold_left
+            (fun acc (a, _) -> member acc a ~given:(World.attr i a <> Value.Empty || World.timeline i a <> None))
+            acc ot.attributes
+        in
+        List.fold_left
+          (fun acc -> function Some k -> member acc k ~given:(World.has_char i k) | None -> acc)
+          acc ot.characteristics)
+      world.World.instances World.Key.empty
+
+let evaluate ?(closed = Members []) env world =
+  refuse_uncarried env.doc;
   (* WF-007: a presentation tag inside a type annotation. The loader lists
      where one stands (the in-memory datatype does not carry the tag), and
      this interpreter refuses the document in the verifier's sentence rather
@@ -5767,6 +6006,7 @@ let evaluate env world =
         wf at reason);
   parameter_set_check env;
   validate_input_precision env world;
+  let world = { world with World.open_input = open_inputs env ~closed world } in
   (* the input-world snapshot the 1:1 creation guard reads (ch. 5.5) *)
   let world0 = world in
   (* Strata (ch. 6.3), computed from the same dependency graph the
