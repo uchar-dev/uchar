@@ -342,3 +342,192 @@ operator is geraakt, het oordeel van de samengestelde voorwaarde verving de twee
 voor het rekenen alleen in `open_inputs` gelezen. De paragraaf landt als geldende tekst (de statusregel "PROPOSAL" is
 eruit); rij 48 van `spec/CONSTRUCTS.md` is bijgewerkt. `make gates` groen op `1f8711886` (654 s, 17 gates, red=0).
 De kaart blijft in `backlog/doing/`: deel 1b, 2 en 3 volgen op dezelfde branch.
+
+## Result (deel 1b)
+
+*Bouwer deel 1b, 2026-11-21. Branch `card/open-values-in-ref`, op `e1c24bc6f`.*
+
+### Wat er is
+
+| commit | wat |
+|---|---|
+| `fcf76af0b` | case-schema: `characteristicsAbsent` in de invoer (na `characteristics`), de verwachtingen `attributeOpen` en `characteristicOpen` (achteraan in de `oneOf`, zodat de patroonposities van gate 4 blijven), beschrijvingen van `attributeEmpty` en `characteristicAbsent` als vaststaand |
+| `40d2e9fdd` | gate 4: twaalf zelftestrijen voor de standen (`STATE_ROWS`) |
+| `5b5e36111` | ref: caselezer en controle (`Case`, `World.stated_absent`, `World.is_open`), tests WV-1.5-case-* en drie rijen WV-5.7-case-reader-refuses-…; de fixtures van de getuigen zonder `states.json`; clingo's modelcontrole kent de twee open soorten |
+| `486be6dd5` | golden `jutterswet-afleiden-uit-leeg`: drie regels erbij, vier cases, `NOTE.md`; de zin in `DIVERGENCES.md` over de golden |
+| `a8621336d` | RUNTIME-SEMANTICS (voorstel): ch. 1.5 "The case", ch. 5.7 de weigeringen, ch. 5.7b rij EF-047; rode getuige `corpus/red/jutterswet-kenmerk-wel-en-niet` |
+| `e19320f49` | gate 8: Drools-poot `jutterswet-kenmerk-wel-en-niet|EXCLUDE DROOLS-370` |
+| `b7e0604ad` | gate 6: `jutterswet-afleiden-uit-leeg|CLINGO-049` in `EXPECTED_CHANNEL` |
+| `337bd7b37` | gate 12: de `NOCASE`-regel wordt `EXCLUDE DROOLS-370` |
+| `413206b96` | gate 17: lijst `TRACE_REFUSED` (golden, REF-code, reden) |
+| `95a08baa4` | gate 5: check 5, behoud bij volledige kennis, met floors en een rode rij |
+| (slotcommit) | dit Result |
+
+`backends/drools/` is niet geraakt: de build weigert de golden (DROOLS-370) voordat er een plan is, dus
+`DrlTextPinWitnessTest` vraagt geen DRL-pin.
+
+### Het case-formaat
+
+- **Invoer** `characteristicsAbsent` (lijst namen, optioneel): de case zegt dat het kenmerk vaststaand niet geldt. De
+  lezer zet het in `World.stated_absent` (per label en kenmerk); `World.is_open` geeft voor zo'n lid nooit open. Dat is
+  data, geen tak op de eigenschap: in een gewoon document is niets open en verandert het veld niets. Fouten: in
+  `characteristics` en in `characteristicsAbsent` → EF-047 (`label`, `characteristic`); niet gedeclareerd → EF-040
+  (`label`, `name`); tijdsafhankelijk → fout van de case zonder code, zoals bij `characteristics`.
+- **Verwachtingen**: `attributeEmpty` houdt waar het attribuut geen waarde heeft en niet open is; `characteristicAbsent`
+  waar het kenmerk niet geldt en niet open is; `attributeOpen` en `characteristicOpen` waar het lid open is. Op een
+  tijdsafhankelijk lid weigert de lezer de open soorten zoals de andere scalaire soorten. clingo, dat geen strikt
+  document vertaalt, vindt een open verwachting nooit vervuld (`backends/clingo/lib/model.ml`, twee armen).
+- **No-op** (gate 7): de ruwe invoer kent geen open lid, dus een `…Open`-verwachting houdt daar nooit en
+  `attributeEmpty`/`characteristicAbsent` lezen de ruwe invoer als voorheen (WV-1.5-case-raw-input).
+
+### Per eis van de opdracht
+
+| eis | getuige | gate | rood eerst |
+|---|---|---|---|
+| schema: twee soorten en het veld | `STATE_ROWS` (12 rijen) | 4 | 4 rijen rood op het schema van `e1c24bc6f` (`logs/1b-red-schema-01.log`) |
+| caselezer: het veld | WV-1.5-case-characteristics-absent (7), -absent-refused (2), WV-5.7-case-reader-refuses-characteristicsAbsent-on-time-dependent | 5 | rood op `e1c24bc6f`: stated, stated-not-open, not-named-open, beide weigeringen, de tijdsafhankelijke rij (het veld werd genegeerd) |
+| caselezer: `attributeOpen` | WV-1.5-case-attribute-open (7), WV-1.5-case-raw-input, WV-5.7-…-attributeOpen-on-time-dependent | 5 | rood: elke rij met de soort ("unknown expectation kind") en "open, attributeEmpty" (de oude controle zag open als leeg) |
+| caselezer: `characteristicOpen` | WV-1.5-case-characteristic-open (7), WV-1.5-case-raw-input, WV-5.7-…-characteristicOpen-on-time-dependent | 5 | rood als hierboven |
+| rood eerst, samen | — | — | 20 FAIL op `e1c24bc6f` met alleen de nieuwe tests (`logs/1b-red-suite-01.log`; 3 andere FAIL daar zijn de runner-checks van WV-2, die in die boom geen runner hadden) |
+| fixtures: standen in de casebestanden | WV-1.5-witness-* (19 getuigen, 77 cases) leest nu alleen de casebestanden en `closed-input/closed.json` | 5 | met de strengere controle faalden 28 cases van de oude fixtures (100 verwachtingen op een open lid) en de case van WV-2-infer-from-empty (`logs/1b-suite-01.log`) |
+| golden met handberekende cases | `corpus/golden/jutterswet-afleiden-uit-leeg` (4 cases, 32 verwachtingen) | 5, 7 | elke case faalt in `--noop` |
+| clingo weigert bij naam | `EXPECTED_CHANNEL` regel | 6 | — |
+| Drools weigert bij naam | `EXPECTED_CHANNEL` `EXCLUDE DROOLS-370` | 12 | de oude `NOCASE`-regel zou nu falen (de golden heeft cases) |
+| lezingen bij naam geweigerd | `TRACE_REFUSED` | 17 | zonder de regel faalt check 1 op "ref does not trace" |
+| behoud bij volledige kennis | check 5 van gate 5, rode rij `PRESERVATION_MUTANT` | 5 | de rode rij: zonder `--closed-inputs` mist `jutterswet-leeg-deeltal` 1 van 3 cases |
+
+**De fixtures.** Per getuige: een invoerkenmerk "K (niet)" van de proef, eerder een sluiting per type in `states.json`,
+is nu `characteristicsAbsent` op het object (`characteristic` case2 en case4, `initialisation` case2 en case6); de
+standen "not", "leeg" en "open" staan als `characteristicAbsent`, `attributeEmpty`, `attributeOpen`/`characteristicOpen`
+in de case. Alleen `closed-input` houdt een `closed.json` (schade en beschadigd per type gesloten, de sluiting die de
+proef bij de omzetting maakte). De strengere controle vond 100 verwachtingen "geen waarde" op een lid dat open is; 35 noemde `states.json` als open,
+de 65 andere niet (de toeslagen achter een open kenmerk, de berekeningen over een open operand); elk is met
+de hand nagerekend op de regels van de getuige en omgezet naar de open soort. Het script en de gecontroleerde lijst
+staan in de werkmap (`draft/convert_fixtures.py`, `draft/open_mismatches.py`).
+
+**De golden.** Bron: de taxatie, het gewicht, het vindloon en kostbaar, plus de bewakingstoeslag ("5 indien hij niet
+kostbaar is"), ongetaxeerd ("indien zijn taxatie leeg is") en het meldloon ("3 indien hij gemeld is", gemeld een
+invoerkenmerk). Cases:
+
+- case1-alles-gegeven: V1 taxatie 2000, gewicht 5, gemeld → kostbaar, vindloon 15, bewakingstoeslag vaststaand leeg,
+  ongetaxeerd staat vast niet, meldloon 3; V2 taxatie 50, gewicht 0, gemeld afwezig → kostbaar niet, vindloon 10,
+  bewakingstoeslag 5, ongetaxeerd niet, gemeld niet, meldloon vaststaand leeg; consistent.
+- case2-taxatie-open: gewicht 5, gemeld → kostbaar open, vindloon 15, bewakingstoeslag open, ongetaxeerd geldt
+  (sluiting), meldloon 3.
+- case3-gewicht-open: taxatie 50, gemeld afwezig → kostbaar niet, vindloon open, bewakingstoeslag 5, ongetaxeerd niet,
+  gemeld niet, meldloon vaststaand leeg.
+- case4-beide-open: niets → kostbaar, vindloon, bewakingstoeslag, gemeld en meldloon open, ongetaxeerd geldt.
+
+ref speelt de vier (gate 5); clingo weigert elke case met CLINGO-049 (gate 6); beide Drools-branches eindigen in
+`EXCLUDE DROOLS-370`, ook `--readings` (gate 12, 17); `runner --trace` weigert met REF-014 `form` `reading` (gate 17).
+Gate 10 herschrijft `ir.json` byte-identiek.
+
+**Gate 5, check 5.** Per golden met cases zonder de eigenschap: een kopie met `"inferFromEmpty": false` direct na
+`format`, `runner --closed-inputs` per case, één runner per core (`scripts/lib/parallel.sh`), in corpusvolgorde
+beoordeeld. Gemeten: **134 goldens, 339 cases, alle gelijk** (floors `EXPECTED_MIN_PRESERVED_GOLDENS=134`,
+`EXPECTED_MIN_PRESERVED_CASES=339`, 2026-11-21); 297 goldens geweigerd, per eerste vorm (defaults-group 55, set-fold 48,
+timeline-member 48, object-creation 27, allocation 21, list-family 16, if-then-else 11, fact-creation 10,
+quantifier-fold 10, day-kind 9, match 8, record 7, uniqueness 7, dimension-cell 6, temporal-total 6, function-def 3, en
+1 elk dimension-fold, rule-status-check, start-point, time-window, unresolved); 1 golden draagt de eigenschap al
+(`jutterswet-afleiden-uit-leeg`, gespeeld door check 3). Rode rij: dezelfde kopie van `jutterswet-leeg-deeltal` zonder
+`--closed-inputs` mist case1 ("V1.loon = leeg, expected 0"); speelt zij al haar cases, dan faalt de gate.
+
+**Gate 7, 13 en 17, gemeten.** Gate 7: de vier cases falen in `--noop` (elke case heeft een verwachting die de ruwe
+invoer niet geeft); geen survivor nodig, het script is niet geraakt. Gate 13: zie de samenvattingsregel hieronder.
+Gate 17: zonder lijst faalt check 1 op de geweigerde sporen; `TRACE_REFUSED` is daarom gebouwd zoals besluit 5 vroeg,
+met als extra eis dat de backend een genoemde golden uitsluit (anders zijn er lezingen die niemand vergelijkt).
+
+### Gewijzigde bestaande tests (de taak verandert hun gedrag)
+
+- WV-2-infer-from-empty: V3 van het fixture is open, dus `ref/test/fixtures/infer-from-empty/case.json` verwacht nu
+  `characteristicOpen` voor V3's meldplichtig; de gewone golden `jutterswet-meldplicht-flogic` speelt dezelfde invoer
+  met `case-ordinary.json` (V3 niet meldplichtig). Zo ook de clingo-test "inferFromEmpty absent: the runner plays the
+  golden" (`backends/clingo/test/test_clingo.ml`).
+- WV-1.5-witness-*: leest de casebestanden en `closed.json` in plaats van `states.json`. De suite telt nu 3328 in plaats
+  van 3374 voorbeelden: de losse standcontroles van `states.json` zijn verwachtingen binnen de controle van hun case
+  geworden (één controle per case), niets is weggelaten.
+- De weigerzin voor een open soort op een tijdsafhankelijk kenmerk noemt de soort (`characteristicOpen`); de zin voor
+  `characteristicPresent` en `characteristicAbsent` is ongewijzigd.
+
+### Voorlopige besluiten
+
+1. **Een kenmerk in `characteristicsAbsent` is nooit open**, ook naast een schrijver die niets beslist (zoals een
+   invoerwaarde blijft staan, ch. 7.8); een schrijver die beslist dat het geldt, wint (WV-1.5-case-characteristics-absent,
+   "beside a writer that decides"). Gebouwd in `World.is_open`, niet in `open_inputs`: één plek voor invoer en afgeleid lid.
+2. **EF-047** voor een kenmerk in beide lijsten, met `label` en `characteristic`; de rode getuige draagt het strikte
+   document (daar beslist het veld), dus Drools weigert eerst met DROOLS-370 en staat in de Drools-poot van gate 8.
+3. **De golden groeit met drie regels**: het ontkende kenmerk en de toets op leeg (de twee die de opdracht noemde) en een
+   invoerkenmerk met het meldloon, omdat `characteristicsAbsent` anders in geen golden staat en gate 4 en 5 het veld dan
+   alleen via zelftest en unit tests zien.
+4. **Fixtures**: "K (niet)" is `characteristicsAbsent` per object (de proef bedoelde een object), niet langer een
+   sluiting per type; `closed.json` alleen voor de sluiting van de sessie zelf.
+5. **Gate 5, check 5**: een golden die de eigenschap al draagt, doet niet mee; de vorm van een weigering wordt uit de
+   eerste regel van het rapport gelezen (`… for the <slug>: it is refused`), een onbekend rapport faalt bij naam.
+6. **Gate 17**: een genoemde golden moet ook door de backend worden uitgesloten.
+
+### Voorgestelde rij voor `spec/CONSTRUCTS.md`
+
+Rij 48, de kolom van de stand: na "…The reading of the other forms is open." toevoegen: "The case format says the
+states of ch. 1.5: `characteristicsAbsent` in the input (a characteristic named there and in `characteristics` is
+EF-047), `attributeOpen` and `characteristicOpen` beside `attributeEmpty` and `characteristicAbsent`, which expect a
+settled member. The golden `jutterswet-afleiden-uit-leeg` plays in ref and is refused by name by clingo (gate 6) and
+both Drools branches (gate 12), its readings by ref (gate 17); gate 5 holds preservation with complete knowledge over
+the corpus." Getuigenkolom: "the golden `jutterswet-afleiden-uit-leeg`, without a case file" vervangen door "the golden
+`jutterswet-afleiden-uit-leeg` with four cases; `corpus/red/jutterswet-kenmerk-wel-en-niet`; WV-1.5-case-*; check 5 of
+gate 5".
+
+### Voorstel voor `CLAUDE.md`
+
+- Gate 4, laatste zin: "Self-test rows hold the shape of `expectedFault` (a `params` object of strings, no fragment
+  key), of a cell, and of the states of RUNTIME-SEMANTICS ch. 1.5 (`characteristicsAbsent`, `attributeOpen`,
+  `characteristicOpen`)."
+- Gate 5, vóór "Floors:": "A preservation leg (RUNTIME-SEMANTICS ch. 1.5): every golden whose document does not carry
+  `inferFromEmpty`, copied with `inferFromEmpty: false` and replayed with `runner --closed-inputs`, plays its own
+  cases; a golden whose copy ref refuses (REF-014) is counted per form, any other difference fails by name, and the
+  copy of `PRESERVATION_MUTANT` without `--closed-inputs` must miss a case (its red row)." Floors erbij:
+  `EXPECTED_MIN_PRESERVED_GOLDENS`, `EXPECTED_MIN_PRESERVED_CASES`.
+- Gate 6 en 12: geen tekstwijziging (alleen een regel in hun lijst).
+- Gate 17: "The trace reads every golden case file; …" wordt "The trace reads every golden case file except those of a
+  golden `TRACE_REFUSED` names with the code of its refusal (REF-014, form `reading`, a document with
+  `inferFromEmpty: false`), which the backend must exclude as well; …", en "The three lists are reason-carrying" wordt
+  "The four lists are reason-carrying".
+
+### Open punten
+
+1. `InferFromEmptyRefusalWitnessTest` (javadoc) zegt dat de golden geen casebestand heeft; dat klopt niet meer.
+   `backends/drools/` viel buiten dit deel; een regel tekst voor de hoofdsessie of de kaart van de Drools-lezing.
+2. De caselezer van Drools kent `characteristicsAbsent` en de open soorten niet: het veld wordt genegeerd, een open
+   soort is "unknown expectation kind". Alleen bereikbaar op een document dat de build niet weigert, dus een gewoon
+   document met een `…Open`-verwachting: ref en clingo geven een mismatch, Drools een fout. Van de kaart van de
+   Drools-lezing.
+3. De scenariolaag van de RegelSpraak-frontend (`--cases`) schrijft `characteristicsAbsent` en de open soorten nog niet;
+   een schrijfwijze in `scenario.rgs` is niet gekozen.
+4. Een cel van een gedimensioneerd attribuut heeft geen open soort (`cellEmpty` blijft zoals het was); in een strikt
+   document weigert ref de lezing van een cel (`dimension-cell`).
+5. De gemeten paragraaf "Parameters" van ch. 5.7b (2026-10-19) noemt EF-047 niet; ref en clingo geven beide
+   parameters.
+6. Deel 3 maakt `TRACE_REFUSED` stale zodra `--trace` een strikt document leest.
+
+### Gates, los gedraaid
+
+Elk los, één zware tegelijk, logs `logs/1b-gate*.log` in de werkmap. Op de eindstand `95a08baa4`: gate 1–7, 8 (tweede
+run), 10, 12, 13, 16, en extra gate 15 (de bron van de golden groeide). Gate 17 draaide op de stand van `413206b96`
+voordat de tekst van zijn PASS-regel en zijn kopcommentaar veranderden (de regel hieronder heeft nog de oude woorden);
+de nieuwe PASS-regel is los met de echte argumenten geformatteerd.
+
+```
+check-self-contained: PASS
+check-ir-schema: PASS (schema valid; 79 pattern self-test row(s); 552 shape self-test row(s); 509 file(s) validate and round-trip, floor 192; 66926 object(s) in 1166 document(s) in the schema's key order, 2 in no subschema)
+check-verifier: PASS (the verifier's dune files name no library of another project of the workspace: 4 names (ir_v0 yojson zarith); 509 golden clean; 657 negative rejected for their declared rule, floor 568; 502 on their declared arm (expect.txt), floor 411, 277 arm keys, floor 239, 844 name=value lines, floor 686; 374 keys of one template each in the reports, floor 340, 468 key literals in checks.ml, floor 442; 825 cited pointers resolve in their documents, floor 705; empty-closures inventory over 509 documents: 837 closure places, floor 827, 385 negation, floor 383, 206 absent-instance, floor 206, 20 kinds, floor 20, 24 witnesses verbatim, floor 24, 1466 pointers resolve)
+check-case-schema: PASS (schema valid; 146 self-test row(s); 1305 case file(s) validate)
+check-oracle: PASS (ref suite 3328 worked examples, floor 489; 1203 cases replayed exactly, floor 427; preservation with complete knowledge: 134 goldens and 339 cases play, floors 134 and 339; 297 goldens refused per form (defaults-group 55, set-fold 48, timeline-member 48, object-creation 27, allocation 21, list-family 16, if-then-else 11, fact-creation 10, quantifier-fold 10, day-kind 9, match 8, record 7, uniqueness 7, dimension-cell 6, temporal-total 6, function-def 3, dimension-fold 1, rule-status-check 1, start-point 1, time-window 1, unresolved 1); 1 carrying the property already, played by check 3 (jutterswet-afleiden-uit-leeg); red row: jutterswet-leeg-deeltal misses 1 of 3 cases without --closed-inputs)
+check-clingo: PASS (backend suite 3231 checks, floor 83; 1169 cases replay exactly through clingo — ref = clingo over the corpus; 11 golden(s) in the refusal channel, by name, 34 cases refused with the pinned codes; the channel rule passes 22 rows of its own)
+check-noop: PASS (1161 cases refute a do-nothing executor; 42 pinned survivors pin defeasible standing)
+check-red: PASS (102 red cases fault observably in ref and clingo, floor 44; 181 ref and clingo code checks report the case's code, floor 82, 23 listed as divergence; 301 pinned parameter checks confirmed, floor 120; 47 fault kinds in RUNTIME-SEMANTICS ch. 5.7b, floor 31)
+check-regelspraak: PASS — JUnit suite green (1704 tests, floor 173); 222 rgs golden(s) re-emit byte-identically (floor 80)
+check-drools: PASS (played 384; auto-excluded 48; no-case 0; channel floor 48 non-PLAYED goldens pinned by name, played matches the pinned 384; DRL-text branch played 384; JUnit 1976 tests, floor 1573)
+check-reftype-derivation: PASS (129 unit annotations twisted over 42 goldens, floor 38; 242 executor replays reproduce the untouched outcome, 40 of them PLAYED by the DRL-text branch, equal to the exec-model branch; 0 pinned survivors)
+check-graph: PASS (extra; route leg: the graph of the wire equals the graph of the source on all 222 goldens with a source.rgs, floor 98; 83 unit tests green, floor 23)
+check-scenario: PASS — 48 scenario golden(s) (floor 7) regenerate 176 case file(s) (floor 31) and their ir.json byte-identically
+check-readings: PASS (ref traced 1199 golden case files, and refused the trace of 4 of 1 golden(s) by name (TRACE_REFUSED); on both branches 385 goldens and 1073 case files compared, 8468 readings, 27262 node lines of which 4427 unreached, 1016 with contributors, 1317 with a timeline, 842 with the object of a read and 618 of a displaced reading, 147 contributors of ref not reached; end states of 3044 objects (479 made) and 8501 members; all at or above their floors; deviations 0, end-state deviations 0; 14 comparison rows, 3 tripwire rows, 10 end-state rows; 89 s)
+```
