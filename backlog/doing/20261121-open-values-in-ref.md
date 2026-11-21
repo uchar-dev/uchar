@@ -757,3 +757,196 @@ de toevoegingen aan ch. 1.5. Bij de landing erbij: `scripts/check-readings.sh` s
 lijst `TRACE_REFUSED` van deel 1b is een associatieve array; onder bash 3.2 liep het script zonder de lijst door; de
 gate-set draait met bash 5, dus de eerdere runs waren geldig), en rij 48 van `spec/CONSTRUCTS.md`. `make gates` groen
 op `fdc742de0` (675 s, 17 gates, red=0; de poot voor behoud: 197 goldens en 480 cases).
+
+## Result (deel 2b)
+
+*Bouwer deel 2b, 2026-11-21. Branch `card/open-values-in-ref`, op `ddf33bac0`. Opdracht: de defaults-stapel (A), de
+creaties (B), `IfThenElse` in een waarde (C), de getuigen, de golden en de poot voor behoud (D).*
+
+### Wat er is
+
+| commit | wat |
+|---|---|
+| `8883b8995` | A: de drie uitkomsten van een schrijver op één plaats (`outcome_of`, `value_outcome`), gelezen door `run_rule` en de defaults-groep; de stapel van hoog naar laag, de initialisatie als sluiting, uitzonderingsgroepen en de ongeordende groep met `Left_open`; `open_inputs` telt een defaults-groep als schrijver; ch. 1.5 "A stack" en verder; tests WV-1.5-stack-* |
+| `843d60f88` | B: creaties met de drie uitkomsten; het merkteken per onderwerp en relatie (`World.read_links`, `links_open`, `leave_links_open`) en één lezer in `role_linked_instances`; de leden van een gemaakt object; weigering `creation-cycle`; ch. 1.5 "A creation", "An object made"; tests WV-1.5-creation-*, WV-1.5-fact-creation; de lijst rechtstreekse lezingen kent de relatie |
+| `8fadebe23` | C: de voorwaarde van een `IfThenElse` via `value_verdict`; ch. 1.5 "An IfThenElse in a value"; test WV-1.5-if-then-else |
+| `67584ada4` | D: negen getuigen als fixtures; de golden `jutterswet-afleiden-uit-leeg` met een uitzondering boven een basisregel en twee cases; de rode case draagt hetzelfde document |
+| `4dc61bb7e` | gate 5: floors van de poot voor behoud 281 goldens, 787 cases (eigen commit) |
+| (slotcommit) | dit Result |
+
+### Per principe: de zin in ch. 1.5, de test, de rode stand
+
+Rood eerst: de testfile van elk deel gedraaid op de commit ervoor, in een losse worktree
+(`logs/2b-red-A`, opgeruimd). Daar weigert ref elk document van de nieuwe tests met REF-014 (`form` `defaults-group`,
+`object-creation`, `fact-creation`, `if-then-else`): elke rij FAIL (`ov_row` vangt de fout per rij). Omdat de rode stand
+een weigering is, toont per principe een mutant van de nieuwe code dat de test onderscheidt
+(`mutants_2b.py` in de werkmap, logs `2b-mutants-*.log`).
+
+| principe | zin | test(s) | rood eerst |
+|---|---|---|---|
+| A1 de stapel, de eerste die beslist; voorrang geven | "A stack" | WV-1.5-stack-first-decides (5), -gives-way (3) | REF-014 op alle 44 A-rijen (`2b-red-A-01.log`); mutant "open default geeft voorrang" 55 FAIL |
+| A2 alles geeft voorrang, geen initialisatie: vaststaand leeg | "A stack" | WV-1.5-stack-settled-leeg (2) | REF-014 |
+| A3 initialisatie sluit over de stapel | "The initialisation of a stack" | WV-1.5-stack-initialisation (8) | REF-014; mutant "geen sluiting" 6 FAIL |
+| A4 de opgave | "An opgave" (zie voorlopig besluit 1) | WV-1.5-stack-opgave (4) | REF-014 |
+| A5 stapel op een kenmerk | "A stack on a characteristic" | WV-1.5-stack-characteristic (5) | REF-014 |
+| A6 uitzonderingsgroepen, ongeordende groep, typeketen | "Exception groups and a declared-unordered group" | WV-1.5-stack-exception-groups (5), -unordered (4), -type-chain (7) | REF-014; mutant "open lid valt weg" 44 FAIL, "groep open schrijft niets" 37 FAIL |
+| A7 tijdlijndoel blijft geweigerd | "Exception groups …", slotzin | WV-1.5-stack-timeline-refused | rood: de oude code noemt `defaults-group` |
+| B1 creatie maakt waar haar voorwaarde voor haarzelf waar is | "A creation" | WV-1.5-creation-condition (2), WV-1.5-fact-creation (links, links-nothing) | REF-014 `object-creation`/`fact-creation` (`2b-red-B-01.log`) |
+| B2 onbepaalde voorwaarde laat open wat zij zou maken | "A creation" | WV-1.5-creation-open (2), WV-1.5-fact-creation (open) | REF-014; mutant "geen merkteken" 3 FAIL, "verre kant niet gemerkt" 1 FAIL |
+| B3 leden van een gemaakt object | "An object made" | WV-1.5-creation-member (3) | REF-014; mutant "open lid wordt leeg" 3 FAIL, "merktekens niet bewaard" 3 FAIL |
+| B4 `open_inputs` en de creatie | "An object made" (zie voorlopig besluit 2) | WV-1.5-creation-member (V9) | REF-014 |
+| B5 creatie op een cyclus geweigerd | "An object made", slotzin | WV-1.5-creation-cycle-refused | rood: de oude code noemt `object-creation` |
+| C `IfThenElse` | "An IfThenElse in a value" | WV-1.5-if-then-else (4), WV-1.5-refused-not-the-if-then-else | REF-014 `if-then-else` (`2b-red-C-01.log`); mutant "geen signaal" 4 FAIL |
+
+Gewijzigde bestaande tests (de taak verandert hun gedrag): WV-1.5-refused-if-then-else is
+WV-1.5-refused-not-the-if-then-else geworden, en WV-1.5-refused-before-evaluation gebruikt nu de eigen totaalsom
+(`temporal-total`) als voorbeeld. De monotonie-test telt een defaults-groep als schrijver en noemt vijf sluitingen
+erbij (de initialisatie van de stapel twee keer, de toets op leeg in een `IfThenElse` drie keer). WV-1.5-direct-reads
+leest ook `World.links` en `.left_side`. De suite telt 3873 voorbeelden (was 3603).
+
+### Wat gedragen wordt en wat geweigerd
+
+Gedragen in een strikt document, bovenop deel 1a–2a: de defaults-groep op een doel zonder tijdlijn (uitzonderingsgroepen,
+de ongeordende groep, de samengestelde stapel van ch. 7.10, de initialisatie en de opgave), de object- en de feitcreatie
+buiten een cyclus, en `IfThenElse`. `refuse_uncarried` noemt nog, in deze volgorde: `reading` (alleen bij `--trace`),
+`allocation`, `creation-cycle`, `uniqueness`, `start-point`, `day-kind`, `function-def`, `timeline-member`, en per regel,
+consistentie, default en creatie `dimension-cell`, `temporal-total`, `time-proportional-part`, `dimension-fold`,
+`builtin-filter`, `day-kind`, `variable-reference`, `unresolved`, `temporal-read`, `match`, `record`, `list-family`,
+`invoke`, `whole-period`, `time-window`, `rule-status-check`.
+
+### B.2: het merkteken van een relatie
+
+Gebouwd zoals de opdracht vroeg, zonder de sluiting van het voorstel. Een creatie met een onbepaalde voorwaarde laat
+het paar (onderwerp, sleutel van de relatie) open in haar uitkomst (`World.leave_links_open`); `World.opened` houdt het
+naast de open leden (de sleutel bevat een teken dat geen lidnaam spelt). Elke lezing van een relatie tijdens een
+evaluatie gaat via `role_linked_instances`, dat `World.read_links` vraagt; een open relatie werpt `World.Open_read`.
+De navigatiecheck, de rolcheck en het bereik van een kwantorvouw lezen de relatie binnen een grens (onbepaald); een
+vouw, een telling en een genavigeerde lezing in een waarde laten de waarde open. Een objectcreatie merkt de relatie
+waarover zij haar object aan het onderwerp zou koppelen; een feitcreatie merkt beide kanten: het anker, en elk doel dat
+de keten bereikt (gaat de keten zelf over een open relatie, elk object van het doeltype). De fixpuntlus ziet het
+merkteken als een verandering (`over_subjects`, `reopened`), dus een lezer wordt opnieuw geëvalueerd. Verwachting van
+de proef die verandert: `fact-creation` case3 (gemeld niet genoemd) was hulptal 0 en is open; `object-creation` case3
+(ervaring leeg) was ontvangen taxatie leeg en is open.
+
+### De getuigen
+
+`defaults-stack` (8 cases), `defaults-characteristic` (6), `defaults-subtype` (7), `settled-empty-stack` (6),
+`input-above-computation` (7, waarvan case7 eigen werk), `object-creation` (3), `fact-creation` (4),
+`filled-test-not-closure` (4), `composite-filled-test` (5) in `ref/test/fixtures/strict-empty/`, omgezet met
+`draft2a/witness_cases.py`. 24 verwachtingen "geen waarde" van de proef zijn open, elk met de hand nagerekend en omgezet
+met `draft2b/open_by_hand.py` (de lijst met de reden per groep staat in dat script): de stapel open (betwist onbepaald,
+een open waarde, de invoer naast een open stapel), de premies naast een open kenmerk, de eigen uitzondering van de
+Strandjutter, de uitbetaling over een open bergloon, de toeslagen achter een gevuld-toets over een open waarde, de
+berekende bergloon over een open schade, en de twee creaties hierboven. `input-above-computation` speelt met
+`closed.json` (de opgave gesloten door de sessie; voorlopig besluit 1); case7 zonder die sluiting geeft 25 (de
+initialisatie sluit over de open opgave).
+
+### De golden
+
+`jutterswet-afleiden-uit-leeg` krijgt de premie: "Regel premie: 10" met daarboven "Afwijking van premie: betwiste premie:
+0 indien hij betwist is", `betwist` een invoerkenmerk. case5-uitzondering-open: betwist niet genoemd → premie open;
+case6-uitzondering-staat-niet: V1 betwist in `characteristicsAbsent` → 10, V2 betwist → 0. `ir.json` via de frontend
+(`make ir`), gate 10 herschrijft hem byte-identiek; de rode case `jutterswet-kenmerk-wel-en-niet` draagt dezelfde
+`ir.json`. Elke case faalt in `--noop`. De pins van gate 6, 12 en 17 noemen de golden en blijven kloppen (zie onder).
+
+### De poot voor behoud
+
+Gate 5, check 5: **281 goldens, 787 cases, 0 afwijkingen** (was 197 en 480); floors naar 281/787 in `4dc61bb7e`.
+Geweigerd per eerste vorm: timeline-member 57, allocation 21, list-family 16, day-kind 9, dimension-cell 8, match 8,
+uniqueness 8, record 7, creation-cycle 6, function-def 4, time-window 2, en 1 elk dimension-fold, rule-status-check,
+start-point, unresolved. Na A alleen: 242/704; na B: 269/761.
+
+### De naad (ref/lib tegenover `ddf33bac0`)
+
+| bestand | regels | wat |
+|---|---|---|
+| `eval.ml` | +312 −179 | nieuw: `writer_outcome`, `outcome_of`, `value_outcome`, `map_outcome`, `left_open`; `chain_result.Left_open`; gewijzigd: `value_verdict` (`?what`), `refuse_uncarried` (laat stapel, creaties en `IfThenElse` los, loopt hun voorwaarden en waarden af, weigert `creation-cycle`), `role_linked_instances` (via `World.read_links`), `eval_expr_node` (de arm van `IfThenElse`), `judge_cond_node` (navigatiecheck, rolcheck, bereik van de kwantorvouw binnen een grens), `run_rule` (de beslissing via `outcome_of`), `run_fact_creation`, `run_object_creation`, `run_defaults_group` (oordeel per default, `own_outcome`, `closing`, `reconcile`), `open_inputs` (defaults-groep als schrijver) |
+| `world.ml` | +24 −0 | nieuw: `links_open`, `read_links`, `leave_links_open`, `leave_open_again` |
+
+De architectuur: één evaluator (geen kopie van `eval_expr` of `eval_cond`; de stapel en de creaties gebruiken de
+bestaande armen); `Value.t` ongewijzigd (`value.ml`, clingo en de frontends niet geraakt); de eigenschap op twee plaatsen
+(`refuse_uncarried`, `open_inputs`); de drie uitkomsten van een default en van een regel op één plaats (`outcome_of`,
+`value_outcome`); een gewoon document geeft dezelfde uitkomsten (gate 5, 7, 8, 13 en 17 groen zonder gewijzigde
+verwachting of pin, zie onder).
+
+### Voorlopige besluiten
+
+1. **De opgave is niet gesloten door haar herkomst.** De wire draagt de opgave alleen in `origin` (`inputAboveComputation`),
+   en IR-SPEC ch. 2.13 zegt: "An origin never resolves anything and decides nothing: no executor reads it for
+   evaluation, and a document whose `origin` fields are removed gives every executor the same answer"; gate 13 houdt
+   dat vast (de ORIGIN-poot); en volgens de aanwijzing van de eigenaar (2026-11-07) staat RegelSpraak in de IR-SPEC
+   alleen als herkomst. ref leest de herkomst daarom niet: de opgave leest als elke default over een invoerlid (open waar de
+   case haar niet geeft; een sessie die haar volledig noemt laat de berekening beslissen; een initialisatie sluit over
+   de open opgave, WV-1.5-stack-opgave). Twee wegen voor de eigenaar: (a) een veld op de declaratie dat een invoerlid
+   volledig noemt (STRICT-EMPTY §9, beslispunt 3: `(volledig)`), door de frontend geschreven voor `opgegeven X`, gelezen
+   in `open_inputs` — een eigen kaart (schema, verifier, frontend, IR-SPEC); of (b) de herkomst lezen: de runner en de
+   testhelper zetten de attributen met `origin.form = inputAboveComputation` (via `Ir_v0.Loader.vocabularies`) in
+   `closed`, met een uitzonderingszin in IR-SPEC ch. 2.13 en een uitzondering voor strikte goldens in de ORIGIN-poot
+   van gate 13 (ongeveer twintig regels in ref).
+2. **Een creatie telt in `open_inputs` niet als schrijver.** Op een object dat de case geeft, blijft een lid dat een
+   creatie op haar eigen objecten toekent een invoerlid (open zonder waarde), zoals ch. 1.5 een invoerlid definieert en
+   ch. 7.8 de waarde van een creatie als invoer van het gemaakte object (rang 2) leest. Op een gemaakt object is de
+   zorg van de opdracht er niet: het staat niet in de invoerwereld, dus wat niemand toekent staat vast leeg
+   (WV-1.5-creation-member, V9 en de schade van het gemaakte object).
+3. **Een open relatie is een open lezing van de hele vorm**: een telling, een kwantorvouw en een rolcheck over een
+   relatie die open is, zijn open, ook waar een link er al staat (een rolcheck "heeft een vondst" met een gegeven vondst
+   is open). Veilig; een fijnere lezing (het bereik als de staande leden plus één onbepaald lid) is mogelijk.
+4. **Een feitcreatie** merkt beide kanten; gaat haar keten over een open relatie, dan elk object van het doeltype.
+5. **Een objectcreatie zonder koppelrelatie** merkt niets: geen lezing bereikt haar object over een relatie; een vorm
+   over de populatie (consistentie) voegt bij een latere invulling alleen uitkomsten toe.
+6. **Wat een creatie op haar gemaakte object open liet, blijft open** bij latere evaluaties van de creatie
+   (`World.leave_open_again`): de leden worden eenmaal, bij de creatie, geschreven.
+7. **Een kenmerktoekenning van een creatie** met een open lezing, of onwaar/leeg na een sluiting, laat het kenmerk op
+   het gemaakte object open; waar na een sluiting zet het.
+8. **De verzoening van groepen**: eerst een conflict (twee leden die verschillend beslissen staan vast), dan een open lid
+   (open), dan niets (voorrang), anders de beslissing. Onder een open default wordt alleen de initialisatie geëvalueerd.
+9. **Een creatie op een cyclus** herkent ref aan het lidmaatschap van een recursieve groep (op naam), niet aan de graaf.
+
+### Voorgestelde rij voor `spec/CONSTRUCTS.md`
+
+Rij 48, de kolom van de stand: "ref carries the reading of RUNTIME-SEMANTICS ch. 1.5 for a rule, a consistency rule,
+and a condition or an expression without a timeline, the quantifier fold, the folds over a set and the count of an
+instance-set union among them" wordt "ref carries the reading of RUNTIME-SEMANTICS ch. 1.5 for a rule, a defaults group
+on a target without a timeline (its exception groups, a declared-unordered group and the effective stack of ch. 7.10
+among them), an object creation and a fact creation off a cycle, a consistency rule, and a condition or an expression
+without a timeline, the quantifier fold, the folds over a set, the count of an instance-set union and the IfThenElse
+among them; a creation on a cycle is refused by name (`creation-cycle`)". Getuigenkolom erbij: "WV-1.5-stack-*,
+WV-1.5-creation-*, WV-1.5-fact-creation, WV-1.5-if-then-else; the witnesses of the stack and the creations under
+`ref/test/fixtures/strict-empty/`; the golden `jutterswet-afleiden-uit-leeg` with six cases".
+
+### Voorstel voor `CLAUDE.md`
+
+Geen: de alinea van gate 5 noemt de floors bij naam.
+
+### Open punten
+
+1. De opgave (voorlopig besluit 1): een keuze van de eigenaar tussen een veld voor volledige invoer en de herkomst.
+2. `backends/clingo/README.md` r. 509–513 zegt dat ref een strikt document weigert (REF-014); dat klopt sinds deel 1a
+   niet meer. Van de kaart waarin clingo de lezing draagt.
+3. Deel 3: de lezingen (ch. 5.12) van een default die open is, van een creatie met een onbepaalde voorwaarde en van een
+   `IfThenElse` met een onbepaalde voorwaarde; de eindstand (ch. 5.12a) van een open relatie (het merkteken staat in
+   `World.opened` onder de sleutel van de relatie).
+4. De kwantorvouw, de telling en de rolcheck over een open relatie zijn als geheel open (voorlopig besluit 3).
+
+### Gates, los gedraaid
+
+Elk los, één zware tegelijk, logs `logs/2b-gate*.log` in de werkmap. Gate 1, 3, 5, 6, 7, 8, 12, 13, 15 (extra: de bron
+van de golden groeide met een defaults-groep), 16 en 17 op `4dc61bb7e`; gate 2, 4 en 10 op dezelfde inhoud vóór de
+commit `67584ada4` (daarna veranderde alleen `scripts/check-oracle.sh`); gate 17 met `opam exec -- bash`.
+
+```
+check-self-contained: PASS
+check-ir-schema: PASS (schema valid; 79 pattern self-test row(s); 552 shape self-test row(s); 509 file(s) validate and round-trip, floor 192; 66964 object(s) in 1166 document(s) in the schema's key order, 2 in no subschema)
+check-verifier: PASS (the verifier's dune files name no library of another project of the workspace: 4 names (ir_v0 yojson zarith); 509 golden clean; 657 negative rejected for their declared rule, floor 568; 502 on their declared arm (expect.txt), floor 411, 277 arm keys, floor 239, 844 name=value lines, floor 686; 374 keys of one template each in the reports, floor 340, 468 key literals in checks.ml, floor 442; 825 cited pointers resolve in their documents, floor 705; empty-closures inventory over 509 documents: 837 closure places, floor 827, 387 negation, floor 383, 206 absent-instance, floor 206, 20 kinds, floor 20, 24 witnesses verbatim, floor 24, 1468 pointers resolve)
+check-case-schema: PASS (schema valid; 146 self-test row(s); 1307 case file(s) validate)
+check-oracle: PASS (ref suite 3873 worked examples, floor 489; 1205 cases replayed exactly, floor 427; preservation with complete knowledge: 281 goldens and 787 cases play, floors 281 and 787; 150 goldens refused per form (timeline-member 57, allocation 21, list-family 16, day-kind 9, dimension-cell 8, match 8, uniqueness 8, record 7, creation-cycle 6, function-def 4, time-window 2, dimension-fold 1, rule-status-check 1, start-point 1, unresolved 1); 1 carrying the property already, played by check 3 (jutterswet-afleiden-uit-leeg); red row: jutterswet-leeg-deeltal misses 1 of 3 cases without --closed-inputs)
+check-clingo: PASS (backend suite 3231 checks, floor 83; 1169 cases replay exactly through clingo — ref = clingo over the corpus; 11 golden(s) in the refusal channel, by name, 36 cases refused with the pinned codes; the channel rule passes 22 rows of its own)
+check-noop: PASS (1163 cases refute a do-nothing executor; 42 pinned survivors pin defeasible standing)
+check-red: PASS (102 red cases fault observably in ref and clingo, floor 44; 181 ref and clingo code checks report the case's code, floor 82, 23 listed as divergence; 301 pinned parameter checks confirmed, floor 120; 47 fault kinds in RUNTIME-SEMANTICS ch. 5.7b, floor 31)
+check-regelspraak: PASS — JUnit suite green (1704 tests, floor 173); 222 rgs golden(s) re-emit byte-identically (floor 80)
+check-drools: PASS (played 384; auto-excluded 48, among them 1x DROOLS-370; DRL-text branch played 384; JUnit 1976 tests, floor 1573)
+check-reftype-derivation: PASS (129 unit annotations twisted over 42 goldens, floor 38; 242 executor replays reproduce the untouched outcome, 40 of them PLAYED by the DRL-text branch, equal to the exec-model branch; 0 pinned survivors)
+check-graph: PASS (extra; route leg: the graph of the wire equals the graph of the source on all 222 goldens with a source.rgs, floor 98; 84 unit tests green, floor 23)
+check-scenario: PASS — 48 scenario golden(s) (floor 7) regenerate 176 case file(s) (floor 31) and their ir.json byte-identically
+check-readings: PASS (ref traced 1199 golden case files, and refused by name the trace of 6 case file(s) of 1 golden(s) (TRACE_REFUSED); on both branches 385 goldens and 1073 case files compared, 8468 readings, 27262 node lines of which 4427 unreached, 1016 with contributors, 1317 with a timeline, 842 with the object of a read and 618 of a displaced reading, 147 contributors of ref not reached; end states of 3044 objects (479 made) and 8501 members; all at or above their floors; deviations 0, end-state deviations 0; 14 comparison rows, 3 tripwire rows, 10 end-state rows; 89 s)
+```
