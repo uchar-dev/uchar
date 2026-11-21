@@ -131,8 +131,8 @@ type t = {
   stated_absent : unit Key.t;
       (* by (label, norm characteristic): the characteristics the case states
          do not hold (`characteristicsAbsent`), set by the case reader. The
-         case gives them as it gives a value, so none of them is open
-         ([is_open]) *)
+         case gives them as it gives a value: none of them is open but
+         beside a writer that leaves it open ([char_open]) *)
 }
 
 let empty =
@@ -177,6 +177,7 @@ let cell_of name m = String.starts_with ~prefix:(norm name ^ "[") (norm m)
 
 let attr i name = Option.value (SMap.find_opt (norm name) i.attrs) ~default:Value.Empty
 let has_char i name = List.mem (norm name) i.chars
+let timeline i name = SMap.find_opt (norm name) i.tls
 
 (* --- the three states of a member (RUNTIME-SEMANTICS ch. 1.5) ------------ *)
 
@@ -185,28 +186,39 @@ let has_char i name = List.mem (norm name) i.chars
    judgement or one value ends (Eval) *)
 exception Open_read of { label : string; member : string }
 
-(* Whether [member] of [label] is open where it holds no value: open input, or
-   left open by a standing outcome, unless the case states that it does not
-   hold — that statement stands beside a writer that decides nothing, as an
-   input value does (ch. 7.8). A member without a value that is not open is
-   settled leeg *)
-let is_open w ~label ~member =
-  let key = (label, norm member) in
-  (Key.mem key w.open_input || Key.mem key w.opened) && not (Key.mem key w.stated_absent)
+(* The state of a member, the one place a read and the end check of a case get
+   it. An attribute without a value is open where it is open input or a
+   standing outcome leaves it open, and settled leeg otherwise. One with a
+   value that a writer decided is filled. One with a value no writer decided —
+   the case's, or a creation's — is open while a standing outcome leaves it
+   open: that value stands only where it stands of every writer that it fills
+   nothing (ch. 7.8), and giving another input could make the writer decide.
+   A value counts as present with a timeline as well *)
+let attr_open w (i : instance) name =
+  let key = (i.label, norm name) in
+  if attr i name = Value.Empty && timeline i name = None then Key.mem key w.open_input || Key.mem key w.opened
+  else Key.mem key w.opened && not (Key.mem key w.owners)
+
+(* A characteristic that holds is never open: a writer can only grant it. One
+   that does not hold is open where it is open input and the case does not
+   state that it does not hold, or where a standing outcome leaves it open —
+   beside that writer the statement of the case stands no more than an input
+   value does *)
+let char_open w (i : instance) name =
+  let key = (i.label, norm name) in
+  (not (has_char i name))
+  && ((Key.mem key w.open_input && not (Key.mem key w.stated_absent)) || Key.mem key w.opened)
 
 (* The value of [name] on [i] as an evaluation reads it: the value, leeg where
    it is settled leeg, and [Open_read] where it is open *)
 let read_attr w i name =
-  match attr i name with
-  | Value.Empty when is_open w ~label:i.label ~member:name -> raise (Open_read { label = i.label; member = name })
-  | v -> v
+  if attr_open w i name then raise (Open_read { label = i.label; member = name }) else attr i name
 
 (* Whether the characteristic [name] holds on [i] as an evaluation reads it:
    true where it holds, false where it stands that it does not, and
    [Open_read] where it is open *)
 let read_char w i name =
-  has_char i name
-  || (if is_open w ~label:i.label ~member:name then raise (Open_read { label = i.label; member = name }) else false)
+  if char_open w i name then raise (Open_read { label = i.label; member = name }) else has_char i name
 
 (* The evaluation under way leaves [member] of [label] open: it writes no value
    there, and it does not stand that it fills nothing *)
@@ -233,7 +245,6 @@ let links i ~fact_type role = Option.value (SMap.find_opt (link_key ~fact_type r
 (* the spelling of a role in a sentence: its plural where it declares one *)
 let role_spelling (r : Ir_v0.Ast.role_ref) =
   match (r.role_plural, r.role_identifier) with Some m, _ -> m | None, Some n -> n | None, None -> "?"
-let timeline i name = SMap.find_opt (norm name) i.tls
 
 (* --- the write boundary (ch. 2.4) -------------------------------------- *)
 

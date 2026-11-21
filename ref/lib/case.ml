@@ -1260,24 +1260,33 @@ let check (case : t) (final : World.t) : string list =
   List.filter_map
     (fun e ->
       match e with
+      (* the state first (World.attr_open): a value the member holds while it
+         is open is no outcome *)
       | Attribute_value { label; attr; value } ->
-          let actual = World.attr (World.get final label) attr in
-          if Arith.equal actual value then None
+          let i = World.get final label in
+          if World.attr_open final i attr then
+            Some (Printf.sprintf "%s.%s is open, expected %s" label attr (Value.to_string value))
           else
-            Some
-              (Printf.sprintf "%s.%s = %s, expected %s" label attr (Value.to_string actual)
-                 (Value.to_string value))
+            let actual = World.attr i attr in
+            if Arith.equal actual value then None
+            else
+              Some
+                (Printf.sprintf "%s.%s = %s, expected %s" label attr (Value.to_string actual)
+                   (Value.to_string value))
       | Attribute_empty { label; attr } -> (
-          match World.attr (World.get final label) attr with
-          | Value.Empty when World.is_open final ~label ~member:attr ->
-              Some (Printf.sprintf "%s.%s is open, expected leeg" label attr)
-          | Value.Empty -> None
-          | actual -> Some (Printf.sprintf "%s.%s = %s, expected leeg" label attr (Value.to_string actual)))
+          let i = World.get final label in
+          if World.attr_open final i attr then Some (Printf.sprintf "%s.%s is open, expected leeg" label attr)
+          else
+            match World.attr i attr with
+            | Value.Empty -> None
+            | actual -> Some (Printf.sprintf "%s.%s = %s, expected leeg" label attr (Value.to_string actual)))
       | Attribute_open { label; attr } -> (
-          match World.attr (World.get final label) attr with
-          | Value.Empty when World.is_open final ~label ~member:attr -> None
-          | Value.Empty -> Some (Printf.sprintf "%s.%s = leeg, expected open" label attr)
-          | actual -> Some (Printf.sprintf "%s.%s = %s, expected open" label attr (Value.to_string actual)))
+          let i = World.get final label in
+          if World.attr_open final i attr then None
+          else
+            match World.attr i attr with
+            | Value.Empty -> Some (Printf.sprintf "%s.%s = leeg, expected open" label attr)
+            | actual -> Some (Printf.sprintf "%s.%s = %s, expected open" label attr (Value.to_string actual)))
       | Cell_value { label; attr; labels; value } ->
           let member = World.cell attr labels in
           let actual = World.attr (World.get final label) member in
@@ -1330,13 +1339,13 @@ let check (case : t) (final : World.t) : string list =
       | Char_absent { label; char } ->
           if World.has_char (World.get final label) char then
             Some (Printf.sprintf "%s carries characteristic %S, expected absent" label char)
-          else if World.is_open final ~label ~member:char then
+          else if World.char_open final (World.get final label) char then
             Some (Printf.sprintf "%s: characteristic %S is open, expected absent" label char)
           else None
       | Char_open { label; char } ->
           if World.has_char (World.get final label) char then
             Some (Printf.sprintf "%s carries characteristic %S, expected open" label char)
-          else if World.is_open final ~label ~member:char then None
+          else if World.char_open final (World.get final label) char then None
           else Some (Printf.sprintf "%s: characteristic %S stands not to hold, expected open" label char)
       | Consistent ->
           if final.channel = [] then None

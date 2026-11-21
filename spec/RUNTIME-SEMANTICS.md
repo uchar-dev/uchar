@@ -614,7 +614,14 @@ strandloon is 8, and where the case does not name gemeld it is 5. With "… op
 writers, also where the case gives it no value: it is filled where a writer
 decides with a value, settled leeg where it stands of every writer that it
 fills nothing or decides with a leeg value, and open otherwise; a
-characteristic holds, stands not to hold, or is open, in the same way. The
+characteristic holds, stands not to hold, or is open, in the same way. A value
+the case gives it stands where it stands of every writer that it fills
+nothing (ch. 7.8), and the member is open while a writer leaves it open: a
+characteristic the case names holds whatever its writers do, since a writer
+only grants it. Example (WV-1.5-input-beside-a-writer): with the vindloon of
+the card and a case that gives the vindloon 7, the vindloon is open without a
+taxatie, and so is the uitbetaling that reads it; it is 10 at taxatie 2000 and
+7 at taxatie 50. The
 states are those at the fixpoint of the session (ch. 5): a rule that leaves
 its target open changes it as a write does, so a form that read the target
 before is evaluated again. Example (WV-1.5-derived-*): the vindloon of the
@@ -706,9 +713,8 @@ niet drijfhout is", with drijfhout complete and not named, is 2.
 
 **The case.** Beside the characteristics that hold, the input of an object
 can name the characteristics that stand not to hold (`characteristicsAbsent`,
-ch. 5.7). Such a characteristic is not open, also where a rule writes it and
-decides nothing: the statement stands beside that writer as an input value
-does (ch. 7.8). An expectation `attributeEmpty` holds where the attribute is
+ch. 5.7). Such a characteristic is not open, but beside a rule that writes
+it and leaves it open, where it is open as an input value is (above). An expectation `attributeEmpty` holds where the attribute is
 settled leeg, `characteristicAbsent` where the characteristic stands not to
 hold, and `attributeOpen` and `characteristicOpen` where the member is open.
 In a document without the property nothing is open: the first two read as
@@ -720,8 +726,8 @@ not; with taxatie 50 the reverse, and so without the property and without a
 taxatie. "De drijftoeslag is 2 indien hij niet drijfhout is" is 2 where the
 case names drijfhout in `characteristicsAbsent` and open where it names it
 nowhere; without the property it is 2 either way. Kostbaar in
-`characteristicsAbsent` with no taxatie stands not to hold, and holds with
-taxatie 2000. The golden `jutterswet-afleiden-uit-leeg` has a case per
+`characteristicsAbsent` is open without a taxatie, stands not to hold at
+taxatie 50, and holds at taxatie 2000. The golden `jutterswet-afleiden-uit-leeg` has a case per
 state.
 
 **The two requirements.** *Monotonicity*: giving an input member a value adds
@@ -729,9 +735,11 @@ outcomes and changes none — an outcome being a value, a settled leeg
 attribute, a characteristic that holds or stands not to hold, or a §9.5 fact
 — except through a closure: a leeg test or a gevuld assertion over an open
 value (the form's own negation of a gevuld test among them), an
-initialisation, and complete input. *Preservation with complete
-knowledge*: where nothing is open, every input member given or complete, the
-outcomes are those of ch. 1.2–1.4. Example (WV-1.5-monotone,
+initialisation, and complete input. A value the case gives a derived member
+is no input member's: where every writer fills nothing it stands in place of
+settled leeg. *Preservation with complete knowledge*: where nothing is open,
+every input member given or complete, the outcomes are those of ch. 1.2–1.4.
+Example (WV-1.5-monotone,
 WV-1.5-preserved): every example of this section, run once with each input
 member it gives left out, and once with every input member complete against
 the same document without the property; the closures the first meets are

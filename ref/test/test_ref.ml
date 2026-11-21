@@ -14783,9 +14783,9 @@ let () =
      (status = 0 && out = "oracle: PASS (4 expectations)\n"));
   (let case = Case.load_file (Ir_v0.Loader.load_file fixture) case_file in
    let final = Eval.evaluate (env_of (Ir_v0.Loader.load_file fixture)) case.world in
-   check (ident "vondstwaarde-of-V3-is-open") (World.is_open final ~label:"V3" ~member:"vondstwaarde");
-   check (ident "meldplichtig-of-V3-is-open") (World.is_open final ~label:"V3" ~member:"meldplichtig");
-   check (ident "meldplichtig-of-V2-stands") (not (World.is_open final ~label:"V2" ~member:"meldplichtig")));
+   check (ident "vondstwaarde-of-V3-is-open") (World.attr_open final (World.get final "V3") "vondstwaarde");
+   check (ident "meldplichtig-of-V3-is-open") (World.char_open final (World.get final "V3") "meldplichtig");
+   check (ident "meldplichtig-of-V2-stands") (not (World.char_open final (World.get final "V2") "meldplichtig")));
   let status, out = run [ golden; ordinary_case_file ] in
   check (ident "runner-plays-the-golden (exit " ^ string_of_int status ^ ": " ^ out ^ ")")
     (status = 0 && out = "oracle: PASS (4 expectations)\n")
@@ -14827,12 +14827,11 @@ let ov_eval ~closed doc input = Eval.evaluate ~closed (env_of doc) (ov_world doc
 
 (* the state of an attribute and of a characteristic, as the header says *)
 let ov_attr w label a =
-  match World.attr (World.get w label) a with
-  | Value.Empty -> if World.is_open w ~label ~member:a then "open" else "leeg"
-  | v -> Value.to_string v
+  let i = World.get w label in
+  if World.attr_open w i a then "open" else match World.attr i a with Value.Empty -> "leeg" | v -> Value.to_string v
 
 let ov_char w label k =
-  if World.has_char (World.get w label) k then "holds" else if World.is_open w ~label ~member:k then "open" else "not"
+  if World.char_open w (World.get w label) k then "open" else if World.has_char (World.get w label) k then "holds" else "not"
 
 let ov_channel w =
   List.map (fun (f : World.error_fact) -> f.rule ^ " " ^ f.subject ^ " " ^ String.concat "," f.codes) w.World.channel
@@ -15475,6 +15474,27 @@ let () =
   ov_expect "WV-1.5-outside-the-window (uitbetaling)" (ov_attr w "V1" "uitbetaling") "3";
   ov_expect "WV-1.5-outside-the-window (inside it)" (ov_attr (run "2031-06-01") "V1" "vindloon") "open"
 
+(* WV-1.5-input-beside-a-writer: a member with a value no writer decided is
+   open while a writer leaves it open, since that value stands only where it
+   stands of every writer that it fills nothing (ch. 7.8). The case gives the
+   vindloon 7 beside the vindloon of the card: without a taxatie the vindloon is
+   open and so is the uitbetaling that reads it; with taxatie 2000 it is 10,
+   with taxatie 50 it is 7, and the uitbetaling 10 at bergloon 3 *)
+let () =
+  let doc =
+    ov_doc [ ov_vondst [ "taxatie"; "vindloon"; "bergloon"; "uitbetaling" ] [] ] [ ov_vindloon; ov_uitbetaling ]
+  in
+  let given input = ov_v1 (("vindloon", "7") :: ("bergloon", "3") :: input) in
+  let w = ov_run "input-beside-a-writer-open" doc (given []) in
+  ov_expect "WV-1.5-input-beside-a-writer (taxatie open, vindloon)" (ov_attr w "V1" "vindloon") "open";
+  ov_expect "WV-1.5-input-beside-a-writer (taxatie open, uitbetaling)" (ov_attr w "V1" "uitbetaling") "open";
+  ov_expect "WV-1.5-input-beside-a-writer (taxatie 2000)"
+    (ov_attr (ov_run "input-beside-a-writer-decides" doc (given [ ("taxatie", "2000") ])) "V1" "vindloon")
+    "10";
+  let w = ov_run "input-beside-a-writer-fills-nothing" doc (given [ ("taxatie", "50") ]) in
+  ov_expect "WV-1.5-input-beside-a-writer (taxatie 50, vindloon)" (ov_attr w "V1" "vindloon") "7";
+  ov_expect "WV-1.5-input-beside-a-writer (taxatie 50, uitbetaling)" (ov_attr w "V1" "uitbetaling") "10"
+
 (* WV-1.5-instance-ordered: the instance-ordered part of WV-6.4-i in a
    document with the property. V1 has no stopdag: its restant is open, and V2,
    whose vorige vergunning V1 is, takes its einddag from "einddag zonder
@@ -15616,9 +15636,9 @@ let () =
    or does not hold, attributeOpen and characteristicOpen where it is open; a
    document without the property has no open member, so there the last two
    never hold. "characteristicsAbsent" in the input states that a
-   characteristic does not hold, and that statement stands beside a writer
-   that decides nothing, as an input value does (ch. 7.8); without the
-   property it changes nothing. Named in "characteristics" as well it is
+   characteristic does not hold; beside a writer that leaves it open the
+   statement does not stand, as an input value does not (ch. 7.8), and beside
+   one that fills nothing it does; without the property it changes nothing. Named in "characteristics" as well it is
    EF-047, undeclared EF-040. On the raw input, the no-op guard of gate 7,
    nothing is open. The document: "een Vondst is kostbaar indien zijn taxatie
    groter is dan 1000", the vindloon of the card, and "de drijftoeslag is 2
@@ -15704,7 +15724,9 @@ let () =
     (run ~strict:false (input ~absent:{|"drijfhout"|} "") (drijftoeslag "2"));
   holds "WV-1.5-case-characteristics-absent (without the property, not named)" (run ~strict:false none (drijftoeslag "2"));
   holds "WV-1.5-case-characteristics-absent (beside a writer that decides nothing)"
-    (run (input ~absent:{|"kostbaar"|} "") (characteristic "characteristicAbsent"));
+    (run (input ~absent:{|"kostbaar"|} "") (characteristic "characteristicOpen"));
+  holds "WV-1.5-case-characteristics-absent (beside a writer that fills nothing)"
+    (run (input ~absent:{|"kostbaar"|} {|"taxatie": { "number": "50" }|}) (characteristic "characteristicAbsent"));
   holds "WV-1.5-case-characteristics-absent (beside a writer that decides)"
     (run (input ~absent:{|"kostbaar"|} {|"taxatie": { "number": "2000" }|}) (characteristic "characteristicPresent"));
   (* WV-1.5-case-characteristics-absent-refused *)
@@ -15728,12 +15750,15 @@ let () =
   holds "WV-1.5-case-raw-input (characteristicAbsent)" (run ~raw:true none (characteristic "characteristicAbsent"))
 
 (* WV-1.5-monotone: for every scenario above and every attribute value and
-   characteristic its case gives, the run without that input has no outcome
-   the full run lacks: filling an input adds outcomes and never changes one.
-   The named exceptions are the closures, each listed here with the outcomes
-   it adds: a test that says an open value is leeg, a consistency that says an
-   open value must be gevuld, and a member the session closes. A link is no
-   input that can be open (ch. 1.5) and is not left out. *)
+   characteristic its case gives an input member, the run without that input
+   has no outcome the full run lacks: filling an input adds outcomes and never
+   changes one. The named exceptions are the closures, each listed here with
+   the outcomes it adds: a test that says an open value is leeg, a consistency
+   that says an open value must be gevuld, and a member the session closes. A
+   link is no input that can be open (ch. 1.5) and is not left out, and
+   neither is a value the case gives a member a rule writes on the object's
+   type: that is no input member, and its value stands in place of settled
+   leeg where every writer fills nothing (ch. 7.8). *)
 let () =
   let closures =
     [ (("filled-test-filled", "V1.taxatie"), [ "V1 ongetaxeerd holds" ]);
@@ -15749,6 +15774,15 @@ let () =
       (("closed-characteristic-named", "V1 drijfhout"), [ "V1 drijfhout not"; "V1.drijftoeslag 2" ]) ]
   in
   let used = ref [] in
+  let written (doc : Ir_v0.Ast.document) (i : ov_input) member =
+    List.exists
+      (fun (r : Ir_v0.Ast.resolved_rule) ->
+        match r.objective with
+        | Some (Attribute_reference { attribute_ref = Some a; object_type = Some t; _ }) ->
+            Ir_v0.Checks.norm a = Ir_v0.Checks.norm member && Eval.isa (env_of doc) i.ov_type t
+        | _ -> false)
+      doc.resolved_rules
+  in
   List.iter
     (fun sc ->
       let full = ov_outcomes sc.sc_doc (ov_eval ~closed:sc.sc_closed sc.sc_doc sc.sc_input) in
@@ -15766,11 +15800,14 @@ let () =
           let others = List.filter (fun (o : ov_input) -> o.ov_label <> i.ov_label) sc.sc_input in
           List.iter
             (fun (a, v) ->
-              without (i.ov_label ^ "." ^ a)
-                ({ i with ov_attrs = List.filter (fun (a', v') -> (a', v') <> (a, v)) i.ov_attrs } :: others))
+              if not (written sc.sc_doc i a) then
+                without (i.ov_label ^ "." ^ a)
+                  ({ i with ov_attrs = List.filter (fun (a', v') -> (a', v') <> (a, v)) i.ov_attrs } :: others))
             i.ov_attrs;
           List.iter
-            (fun k -> without (i.ov_label ^ " " ^ k) ({ i with ov_chars = List.filter (( <> ) k) i.ov_chars } :: others))
+            (fun k ->
+              if not (written sc.sc_doc i k) then
+                without (i.ov_label ^ " " ^ k) ({ i with ov_chars = List.filter (( <> ) k) i.ov_chars } :: others))
             i.ov_chars)
         sc.sc_input)
     !ov_registered;
