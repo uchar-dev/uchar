@@ -1,0 +1,78 @@
+Domein Categorie is van het type Enumeratie
+    'schelp'
+    'hout'
+    'metaal'
+
+Objecttype de Jutter (mv: Jutters)
+    de naam Tekst;
+
+Objecttype de Vondst (mv: Vondsten)
+    de categorie Categorie;
+    de omschrijving Tekst;
+    de aangifte Boolean;
+    de taxatie Numeriek (getal met 2 decimalen) (of onbekend of niet van toepassing);
+    is ingedeeld kenmerk (bijvoeglijk);
+    is onbepaald kenmerk (bijvoeglijk);
+    is beschreven kenmerk (bijvoeglijk);
+    is onbeschreven kenmerk (bijvoeglijk);
+    is verantwoord kenmerk (bijvoeglijk);
+    is onverantwoord kenmerk (bijvoeglijk);
+    is getaxeerd kenmerk (bijvoeglijk);
+    is ongetaxeerd kenmerk (bijvoeglijk);
+    is herleidbaar kenmerk (bijvoeglijk);
+    is onherleidbaar kenmerk (bijvoeglijk);
+
+Feittype vangst
+    de jutter Jutter
+    de vondst Vondst
+    één jutter heeft meerdere vondsten
+
+Regel ingedeelde vondst
+    geldig altijd
+        Een Vondst is ingedeeld
+        indien zijn categorie gevuld is.
+
+Regel onbepaalde vondst
+    geldig altijd
+        Een Vondst is onbepaald
+        indien zijn categorie leeg is.
+
+Regel beschreven vondst
+    geldig altijd
+        Een Vondst is beschreven
+        indien zijn omschrijving gevuld is.
+
+Regel onbeschreven vondst
+    geldig altijd
+        Een Vondst is onbeschreven
+        indien zijn omschrijving leeg is.
+
+Regel verantwoorde vondst
+    geldig altijd
+        Een Vondst is verantwoord
+        indien zijn aangifte gevuld is.
+
+Regel onverantwoorde vondst
+    geldig altijd
+        Een Vondst is onverantwoord
+        indien zijn aangifte leeg is.
+
+Regel getaxeerde vondst
+    geldig altijd
+        Een Vondst is getaxeerd
+        indien zijn taxatie gevuld is.
+
+Regel ongetaxeerde vondst
+    geldig altijd
+        Een Vondst is ongetaxeerd
+        indien zijn taxatie leeg is.
+
+Regel herleidbare vondst
+    geldig altijd
+        Een Vondst is herleidbaar
+        indien de naam van de jutter van de Vondst gevuld is.
+
+Regel onherleidbare vondst
+    geldig altijd
+        Een Vondst is onherleidbaar
+        indien de naam van de jutter van de Vondst leeg is.
