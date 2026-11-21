@@ -14668,6 +14668,96 @@ let () =
       "object \"W1\" \"Strandwacht\"";
       "object \"W2\" \"Strandwacht\"" ]
 
+(* WV-2-infer-from-empty: the golden jutterswet-meldplicht-flogic with
+   inferFromEmpty false directly after format (fixtures/infer-from-empty), and
+   a case whose third vondst has no vondstwaarde. Read as ch. 1.2-1.4 lay down,
+   V3 is not meldplichtig, which a document that infers nothing from an empty
+   value excludes. The shared loader reads false, for the verifier and for an
+   executor, and refuses every other value and an unknown field on the root;
+   the serialiser writes false back directly after format and leaves an absent
+   field absent; ref refuses the document with REF-014, form document, at every
+   entrance of its runner, before an outcome is written. The golden itself plays
+   the same case. *)
+let () =
+  let dir = "ref/test/fixtures/infer-from-empty/" in
+  let fixture = corpus_file (dir ^ "ir.json") and case_file = corpus_file (dir ^ "case.json") in
+  let golden = corpus_file "corpus/golden/jutterswet-meldplicht-flogic/ir.json" in
+  let ident s = "WV-2-infer-from-empty-" ^ s in
+  let readers = [ ("verifier", Ir_v0.Loader.Verifier); ("executor", Ir_v0.Loader.Executor) ] in
+  List.iter
+    (fun (who, reader) ->
+      check (ident ("false-is-read-" ^ who)) (not (Ir_v0.Loader.load_file ~reader fixture).infer_from_empty);
+      check (ident ("absent-is-true-" ^ who)) (Ir_v0.Loader.load_file ~reader golden).infer_from_empty)
+    readers;
+  let with_root key value =
+    match Yojson.Safe.from_file fixture with
+    | `Assoc kvs -> `Assoc (List.map (fun (k, v) -> if k = "inferFromEmpty" then (key, value) else (k, v)) kvs)
+    | _ -> invalid_arg "ref/test/test_ref.ml: the fixture of WV-2-infer-from-empty is no object"
+  in
+  let spelling got =
+    "expected false, the one spelling of a document that infers nothing from an empty value, got " ^ got
+  in
+  List.iter
+    (fun (name, j, want_path, want_msg) ->
+      List.iter
+        (fun (who, reader) ->
+          match Ir_v0.Loader.document ~reader j with
+          | _ -> check (ident (name ^ "-" ^ who) ^ " (loaded)") false
+          | exception Ir_v0.Loader.Error (path, msg) ->
+              check (ident (name ^ "-" ^ who) ^ " (got: " ^ path ^ ": " ^ msg ^ ")")
+                (path = want_path && msg = want_msg))
+        readers)
+    [ ("true-is-a-load-error", with_root "inferFromEmpty" (`Bool true), "/inferFromEmpty", spelling "true");
+      ("null-is-a-load-error", with_root "inferFromEmpty" `Null, "/inferFromEmpty", spelling "null");
+      ("text-is-a-load-error", with_root "inferFromEmpty" (`String "nee"), "/inferFromEmpty", spelling "\"nee\"");
+      ("number-is-a-load-error", with_root "inferFromEmpty" (`Int 0), "/inferFromEmpty", spelling "0");
+      ("unknown-root-field", with_root "inferFromNothing" (`Bool false), "", "unknown field 'inferFromNothing'") ];
+  let module Emit = Ir_v0.Emit.Make (struct
+    let producer = "ref suite"
+  end) in
+  let written file = Yojson.Safe.to_string (Emit.document (Ir_v0.Loader.load_file file)) in
+  let read file = Yojson.Safe.to_string (Yojson.Safe.from_file file) in
+  check (ident "written-back-after-format") (written fixture = read fixture);
+  check (ident "absent-stays-absent") (written golden = read golden);
+  (match Eval.refuse_infer_from_empty (Ir_v0.Loader.load_file fixture) with
+  | () -> check (ident "ref-refuses (no refusal)") false
+  | exception Value.Fault { code; params; text } ->
+      check
+        (ident "ref-refuses (got: " ^ Value.report ~code text ^ ")")
+        (code = Some "REF-014" && params = [ ("form", "document") ]));
+  check (ident "ref-reads-the-golden")
+    (match Eval.refuse_infer_from_empty (Ir_v0.Loader.load_file golden) with
+    | () -> true
+    | exception Value.Fault _ -> false);
+  (* the runner of this tree: from the repository root, where gate 5 runs the
+     suite, or from the build tree dune runs it in *)
+  let runner =
+    let at_root = "_build/default/ref/bin/runner.exe" in
+    if Sys.file_exists at_root then at_root else "../bin/runner.exe"
+  in
+  let run args =
+    let out = Filename.temp_file "ref-infer-from-empty" ".out" in
+    Fun.protect
+      ~finally:(fun () -> Sys.remove out)
+      (fun () ->
+        let status = Sys.command (Filename.quote_command runner ~stdout:out ~stderr:out args) in
+        (status, In_channel.with_open_bin out In_channel.input_all))
+  in
+  List.iter
+    (fun (entrance, args, outcome) ->
+      let status, out = run args in
+      check
+        (ident ("runner-" ^ entrance ^ "-refuses") ^ " (exit " ^ string_of_int status ^ ": " ^ out ^ ")")
+        (status = 1
+        && substring out "REF-014: the document carries inferFromEmpty false"
+        && not (List.exists (fun l -> List.exists (fun prefix -> String.starts_with ~prefix l) outcome) (String.split_on_char '\n' out))))
+    [ ("replay", [ fixture; case_file ], [ "oracle:"; "MISMATCH" ]);
+      ("noop", [ "--noop"; fixture; case_file ], [ "oracle:"; "MISMATCH" ]);
+      ("trace", [ "--trace"; fixture; case_file ], [ "reading "; "state " ]) ];
+  let status, out = run [ golden; case_file ] in
+  check (ident "runner-plays-the-golden (exit " ^ string_of_int status ^ ": " ^ out ^ ")")
+    (status = 0 && out = "oracle: PASS (4 expectations)\n")
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

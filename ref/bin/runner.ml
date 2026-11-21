@@ -27,6 +27,14 @@ let print_codes ~observed ~params ~(pinned : Uchar_ref.Case.expected_fault) =
   line "CODE" observed params;
   line "CODE-PINNED" (Some pinned.ef_code) pinned.ef_params
 
+(* Every entrance — the replay, --noop and --trace — reads its document here
+   and nowhere else, so a document whose reading ref does not carry is refused
+   before any of them evaluates or checks anything (REF-014). *)
+let load_document ir_path =
+  let doc = Ir_v0.Loader.load_file ir_path in
+  Uchar_ref.Eval.refuse_infer_from_empty doc;
+  doc
+
 (* the verdict on an observed fault: the pin matches, or the whole report is shown *)
 let verdict ~(pinned : Uchar_ref.Case.expected_fault) ~code ~params ~what report =
   print_codes ~observed:code ~params ~pinned;
@@ -47,7 +55,7 @@ let verdict ~(pinned : Uchar_ref.Case.expected_fault) ~code ~params ~what report
    or a case that pins a fault, which has no fixpoint to read. *)
 let trace ir_path case_path =
   try
-    let doc = Ir_v0.Loader.load_file ir_path in
+    let doc = load_document ir_path in
     let case = Uchar_ref.Case.load_file doc case_path in
     if case.expected_fault <> None then (
       prerr_endline "--trace reads the fixpoint of a golden case; an expectedFault case has none";
@@ -110,7 +118,7 @@ let () =
     if noop && pinned <> None then (
       prerr_endline "--noop is a golden-corpus guard; an expectedFault case has no use for it";
       exit 2);
-    let doc = Ir_v0.Loader.load_file ir_path in
+    let doc = load_document ir_path in
     let case =
       try Uchar_ref.Case.load_file doc case_path
       with Uchar_ref.Case.Error { code; params; text = msg } -> (

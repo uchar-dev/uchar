@@ -154,5 +154,10 @@
   ; a document that writes one key twice in one object
   fixtures/duplicate-key/ir.json
   ; the asOfDate-bucket scalar in the end state without an evaluation date and without a bucket
-  (glob_files fixtures/end-state-bucket/*.json))
+  (glob_files fixtures/end-state-bucket/*.json)
+  ; a document that carries inferFromEmpty false, the golden it is written from, and the runner whose
+  ; every entrance refuses it
+  (glob_files fixtures/infer-from-empty/*.json)
+  ../../corpus/golden/jutterswet-meldplicht-flogic/ir.json
+  ../bin/runner.exe)
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

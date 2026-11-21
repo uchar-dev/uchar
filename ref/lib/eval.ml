@@ -244,6 +244,22 @@ let refuse_ranking_fold (kind : function_kind) attribute =
      sum and the total collapse a timeline, and a ranking fold over a timeline is refused"
     fold attribute
 
+(* inferFromEmpty false (IR-SPEC ch. 2) asks for the reading that infers
+   nothing from an empty value, and this interpreter reads empty as ch.
+   1.2-1.4 lay down. Evaluated with that reading, the document would get an
+   answer it excludes, and no report would say so; it is refused by name
+   before anything is evaluated or any expectation checked, the form named
+   with it, here the whole document. The runner calls this for every
+   entrance. *)
+let refuse_infer_from_empty (doc : document) =
+  if not doc.infer_from_empty then
+    Value.faultc
+      ~params:[ ("form", "document") ]
+      "REF-014"
+      "the document carries inferFromEmpty false, and this interpreter does not carry the reading that infers \
+       nothing from an empty value for the %s: it is refused, not read as ch. 1.2-1.4 lay down"
+      "document"
+
 (* the ranking fold of [e] and the first temporal attribute it ranks: a
    member's of a fold over a set, or an operand of a listed fold *)
 let ranked_timeline env (e : expr) =
