@@ -237,8 +237,9 @@ is a field on the root that this table does not name. These are load
 errors, not WF rules: the verifier reads a document with the field as it
 reads one without. An executor that does not carry the reading of `false`
 for a form refuses the document with a registered refusal code that names
-the form, before it evaluates anything, and does not evaluate it by the
-reading of ch. 1.2–1.4. Witnesses: the self-test rows of gate 2, and
+the form, by the slug of the list in `RUNTIME-SEMANTICS.md` ch. 1.5 ("Forms
+without the reading"), before it evaluates anything, and does not evaluate
+it by the reading of ch. 1.2–1.4. Witnesses: the self-test rows of gate 2, and
 `ref/test/fixtures/infer-from-empty` in the suites of gates 5 and 6.
 
 A **model** is the declaration set. Its structure:

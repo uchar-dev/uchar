@@ -262,18 +262,26 @@ let refuse_ranking_fold (kind : function_kind) attribute =
    1.2-1.4, would get an answer that reading excludes and no report would say
    so. A document with the property that holds one is refused by name before
    anything is evaluated or any expectation checked, the form named with it by
-   its slug; RUNTIME-SEMANTICS ch. 1.5 lists the slugs. The runner calls this
-   for every entrance and [evaluate] for itself; a document without the
-   property is not walked. *)
+   its slug, the first of [uncarried_forms] the document holds. The runner
+   calls this for every entrance and [evaluate] for itself; a document without
+   the property is not walked. *)
+
+(* The forms without the reading, by their slugs, in the order of
+   RUNTIME-SEMANTICS ch. 1.5 ("Forms without the reading"), which the suite
+   holds to this list *)
+let uncarried_forms =
+  [ "allocation"; "creation-cycle"; "uniqueness"; "start-point"; "day-kind"; "function-def"; "timeline-member";
+    "dimension-cell"; "dimension-fold"; "time-proportional-part"; "temporal-total"; "builtin-filter";
+    "variable-reference"; "unresolved"; "temporal-read"; "match"; "record"; "list-family"; "invoke"; "whole-period";
+    "time-window"; "rule-status-check" ]
+
 let refuse_uncarried (doc : document) =
   if not doc.infer_from_empty then begin
+    let found = ref [] in
     let refuse form =
-      Value.faultc
-        ~params:[ ("form", form) ]
-        "REF-014"
-        "the document carries inferFromEmpty false, and this interpreter does not carry the reading that infers \
-         nothing from an empty value for the %s: it is refused, not read as ch. 1.2-1.4 lay down"
-        form
+      if not (List.mem form uncarried_forms) then
+        failwith (Printf.sprintf "ref/lib/eval.ml: refuse_uncarried names %S, which uncarried_forms does not list" form);
+      if not (List.mem form !found) then found := form :: !found
     in
     let some form = function [] -> () | _ :: _ -> refuse form in
     some "allocation" doc.allocations;
@@ -383,7 +391,16 @@ let refuse_uncarried (doc : document) =
         Option.iter cond oc.oc_condition;
         List.iter (fun (t : assignment) -> Option.iter expr t.to_value) oc.assignments)
       doc.object_creations;
-    List.iter (fun (fc : resolved_fact_creation) -> Option.iter cond fc.fc_condition) doc.fact_creations
+    List.iter (fun (fc : resolved_fact_creation) -> Option.iter cond fc.fc_condition) doc.fact_creations;
+    match List.find_opt (fun form -> List.mem form !found) uncarried_forms with
+    | None -> ()
+    | Some form ->
+        Value.faultc
+          ~params:[ ("form", form) ]
+          "REF-014"
+          "the document carries inferFromEmpty false, and this interpreter does not carry the reading that infers \
+           nothing from an empty value for the %s: it is refused, not read as ch. 1.2-1.4 lay down"
+          form
   end
 
 (* the ranking fold of [e] and the first temporal attribute it ranks: a

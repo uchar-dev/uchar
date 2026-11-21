@@ -16197,6 +16197,81 @@ let () =
     { (Ir_v0.Loader.load_file (corpus_file "corpus/golden/jutterswet-opvolgerversies/ir.json")) with
       infer_from_empty = false }
 
+(* WV-1.5-uncarried-forms: the forms without the reading of ch. 1.5 are one
+   list of slugs, in one order, for every executor: the table at the end of
+   ch. 1.5 ("Forms without the reading") is [Eval.uncarried_forms], slug for
+   slug and in its order; every slug [refuse_uncarried] names in its code is
+   one of them and each of them is named there; and a document that holds
+   several is refused with the first of the list, whatever the order in which
+   the walk meets them: a period window in the first rule and a list literal in
+   the value of the second give list-family *)
+let () =
+  let read file = In_channel.with_open_bin (corpus_file file) In_channel.input_all in
+  let spec = read "spec/RUNTIME-SEMANTICS.md" in
+  let lines = String.split_on_char '\n' spec in
+  let rec after_head = function
+    | [] -> []
+    | l :: rest -> if String.starts_with ~prefix:"**Forms without the reading.**" l then rest else after_head rest
+  in
+  let rec table acc started = function
+    | [] -> List.rev acc
+    | l :: rest when String.starts_with ~prefix:"| `" l -> (
+        match String.split_on_char '`' l with _ :: slug :: _ -> table (slug :: acc) true rest | _ -> table acc started rest)
+    | l :: rest when started && not (String.starts_with ~prefix:"|" l) -> ignore rest; List.rev acc
+    | _ :: rest -> table acc started rest
+  in
+  let in_spec = table [] false (after_head lines) in
+  check
+    (Printf.sprintf "WV-1.5-uncarried-forms (the table of ch. 1.5: %s)" (String.concat " " in_spec))
+    (in_spec = Eval.uncarried_forms);
+  let source = read "ref/lib/eval.ml" in
+  (* the first place of [sub] in [s] from [i] *)
+  let rec find s sub i =
+    if i + String.length sub > String.length s then None
+    else if String.sub s i (String.length sub) = sub then Some i
+    else find s sub (i + 1)
+  in
+  let body =
+    match find source "let refuse_uncarried " 0 with
+    | None -> ""
+    | Some start -> (
+        match find source "\nlet ranked_timeline " start with
+        | Some stop -> String.sub source start (stop - start)
+        | None -> "")
+  in
+  (* the slugs after [refuse "] and [some "] *)
+  let named =
+    let slugs_after prefix =
+      let rec go i acc =
+        match find body prefix i with
+        | None -> acc
+        | Some j ->
+            let k = j + String.length prefix in
+            let e = String.index_from body k '"' in
+            go e (String.sub body k (e - k) :: acc)
+      in
+      go 0 []
+    in
+    List.sort_uniq compare (slugs_after "refuse \"" @ slugs_after "some \"")
+  in
+  check
+    (Printf.sprintf "WV-1.5-uncarried-forms (the slugs refuse_uncarried names: %s)" (String.concat " " named))
+    (named = List.sort compare Eval.uncarried_forms);
+  let window : Ir_v0.Ast.condition_expr =
+    Time_window { starting_at = None; up_to = None; to_inclusive = false; source_name = None }
+  in
+  let doc =
+    ov_doc [ ov_vondst [ "vindloon"; "bergloon" ] [] ]
+      [ ov_calc ~cond:window "vindloon" (ov_lit "10");
+        ov_calc "bergloon" (List_literal { typ = None; elements = []; source_name = None }) ]
+  in
+  match Eval.refuse_uncarried doc with
+  | () -> check "WV-1.5-uncarried-forms (the first of the list: not refused)" false
+  | exception Value.Fault { params; _ } ->
+      check
+        (Printf.sprintf "WV-1.5-uncarried-forms (the first of the list: %s)" (String.concat ", " (List.map snd params)))
+        (params = [ ("form", "list-family") ])
+
 (* WV-1.5-if-then-else: an IfThenElse in a value reads its condition as a
    judgement: an undetermined condition leaves the value open, and a closure
    that decided it tells the boundary, so the value stands for the form itself

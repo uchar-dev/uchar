@@ -937,11 +937,50 @@ Example (WV-1.5-monotone,
 WV-1.5-preserved): every example of this section, run once with each input
 member it gives left out, and once with every input member complete against
 the same document without the property; the closures the first meets are
-listed in the test, with the outcomes each adds.
+listed in the test, with the outcomes each adds. Gate 5 holds both over the
+corpus: every golden whose forms the reference interpreter carries, with the
+property, plays its own cases with every input member complete; and per case
+and per input member it gives, the end state without that input (ch. 5.12a)
+keeps its every outcome in the end state with it, a run in which a closure
+decided counted apart.
 
 Broader examples, a document per form with cases whose expectations were
 computed by hand (`spec/proposals/STRICT-EMPTY.md` §5), are in the suite
 under `ref/test/fixtures/strict-empty/` (WV-1.5-witness-*).
+
+**Forms without the reading.** The reading of this section is not defined
+for the forms below. An executor that meets one in a document with
+`inferFromEmpty: false` refuses the document before it evaluates anything
+(IR-SPEC ch. 2), and names the form by its slug; where the document holds
+several, it names the first of this list:
+
+| slug | the form |
+|---|---|
+| `allocation` | an allocation (ch. 4) |
+| `creation-cycle` | an object creation or a fact creation that is a member of a recursive group (ch. 6), by its form, whatever its versions |
+| `uniqueness` | a uniqueness check or a uniqueness over a union (ch. 5.9) |
+| `start-point` | a start-point determination (ch. 3.2) |
+| `day-kind` | a day kind or a day-kind definition, a day count, a day-kind test and a bound day (ch. 3.8) |
+| `function-def` | a function definition (ch. 10) |
+| `timeline-member` | an attribute, a characteristic or a parameter with a timeline (ch. 3) |
+| `dimension-cell` | the read of a cell, and a rule whose target is a cell (ch. 5.8c) |
+| `dimension-fold` | a fold over the cells of a dimensioned attribute (ch. 5.8c) |
+| `time-proportional-part` | the time-proportional part (ch. 3.7) |
+| `temporal-total` | a sum, a total, a count or a filled-value count without a range (ch. 3.6) |
+| `builtin-filter` | another builtin with a filter or a grain |
+| `variable-reference` | a variable reference |
+| `unresolved` | an `Unresolved` node |
+| `temporal-read` | a temporal read |
+| `match` | a match (ch. 9.2) |
+| `record` | a record literal and a field access (ch. 11) |
+| `list-family` | a list literal, a Lambda, a Fold, a MapList, a FilterList and a ListLength (ch. 10) |
+| `invoke` | an Invoke (ch. 10) |
+| `whole-period` | the whole-period qualifier (ch. 3.9) |
+| `time-window` | a period window (ch. 3.10) |
+| `rule-status-check` | a check of the status of a rule version |
+
+The suite holds this table to the slugs the reference interpreter refuses
+with, in this order (`WV-1.5-uncarried-forms`).
 
 ---
 
