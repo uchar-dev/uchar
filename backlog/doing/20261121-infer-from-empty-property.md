@@ -110,3 +110,124 @@ hoofdsessie leest na en landt.
 
 Voorbeelden komen uit de Jutterswet (vondst, jutter, taxatie, gewicht, vindloon). In niets dat in de repository komt
 staat een naam, regel of casus van een regelset buiten deze repository.
+
+## Result
+
+De wire kent `inferFromEmpty` op de wortel van een document, alleen `false`, direct na `format`. Schema, OCaml-lader
+en OCaml-schrijver lezen en schrijven haar; de verifier keurt een document dat haar draagt goed. ref weigert zo'n
+document met `REF-014`, clingo met `CLINGO-049`, beide van soort `refusal`, sleutel `infer-from-empty-false`,
+parameter `form` (hier `document`), vóór er iets geëvalueerd of vertaald wordt.
+
+Commits (branch `card/infer-from-empty-property`):
+
+- `9f8ed704a` schema: `"inferFromEmpty": {"const": false}` met beschrijving, na `format`; de wortelbeschrijving
+  noemt haar.
+- `1934de45e` gate 2 (eigen commit, beschermd script): zes zelftestrijen op de M1-basis (`false` aanvaard; `true`,
+  `null`, `"nee"`, `0` en een wortelveld `inferFromNothing` geweigerd) en twee sleutelvolgorde-rijen (direct na
+  `format` in de volgorde van het schema, na `diagnostics` niet).
+- `c57917abb` OCaml: het veld `infer_from_empty : bool` vooraan in `Ast.document` (afwezig is `true`); de lader
+  leest het in `check_keys ... ~ext:[ "inferFromEmpty"; "vocabularies" ]` en geeft op `/inferFromEmpty` de laadfout
+  `expected false, the one spelling of a document that infers nothing from an empty value, got <json>`; `Emit` schrijft
+  `false` direct na `format` en niets bij `true`; de Catala- en F-logic-frontend bouwen het record met `true`.
+- `18e56ab94` ref: `Eval.refuse_infer_from_empty` (`REF-014`, `ref/codes.tsv`), aangeroepen in `load_document` van
+  `ref/bin/runner.ml`, de ene plaats waar de replay, `--noop` en `--trace` hun document lezen. De getuige
+  (`ref/test/test_ref.ml`, `WV-2-infer-from-empty-*`) op de fixture `ref/test/fixtures/infer-from-empty/`: de golden
+  `jutterswet-meldplicht-flogic` met de eigenschap, en een casus waarin V3 geen vondstwaarde heeft.
+- `f758f381f` clingo: `Translate.refuse_infer_from_empty` (`CLINGO-049`, `backends/clingo/codes.tsv`), de eerste
+  regel van `translate_guarded`, waar het golden- en het rode pad van de runner langs komen; de getuige in
+  `backends/clingo/test/test_clingo.ml` op dezelfde fixture; de README noemt de weigering.
+- `a189158c3` ref-suite: de verifier vindt niets in de fixture.
+- `20bd22ff4` IR-SPEC (voorstel, de hoofdsessie redigeert): een rij `inferFromEmpty` in de tabel van het document in
+  ch. 2 en een alinea direct onder die tabel (wat zij is, `layer: core`, haar vorm en plaats, afwezig = de lezing van
+  RUNTIME-SEMANTICS ch. 1.2–1.4, laadfout voor elke lezer, geen WF-regel, een executor die de lezing niet draagt
+  weigert met een geregistreerde code; een voorbeeld uit de Jutterswet; de getuigen).
+
+### Per eis: getuige, gate, rode stand
+
+- **Schema** (gate 2): de zelftestrijen hierboven. Rood: het nieuwe script op het schema van `58cc53cee` weigert
+  `inferFromEmpty = false`; mutant `{"type": "boolean"}` laat `true` door; mutant zonder `const` laat `true`, `null`,
+  tekst en getal door; mutant met de eigenschap achteraan in `properties` breekt beide volgorderijen; mutant met een
+  open wortel laat `inferFromNothing` door (logs `red-gate2-*.log` in de logmap van de bouwer).
+- **OCaml-lader en -schrijver** (gate 5, `ref/test/`): `false` gelezen en afwezig `true`, voor de verifier en een
+  executor; `true`, `null`, `"nee"`, `0` geven de laadfout op `/inferFromEmpty`, `inferFromNothing` geeft
+  `unknown field 'inferFromNothing'` op de wortel, voor beide lezers; `Emit` op de geladen fixture geeft de fixture
+  terug, op de golden de golden. Byte-identiek rond voor alle bestaande documenten: gate 2 (506 bestanden), 3, 9
+  (13 Catala-goldens), 14 (3 F-logic-goldens). Rood met mutanten: lader die `true` aanvaardt (2 rood), lader die
+  `inferFromNothing` toelaat (2 rood), schrijver die nooit schrijft (1 rood).
+- **ref** (gate 5): `Eval.refuse_infer_from_empty` geeft `REF-014` met `[("form", "document")]`; de runner van
+  dezelfde build weigert in de replay, `--noop` en `--trace` met exit 1 en `REF-014: the document carries
+  inferFromEmpty false` en schrijft geen `oracle:`-, `MISMATCH`-, `reading`- of `state`-regel; dezelfde casus op de
+  golden zonder eigenschap geeft `oracle: PASS (4 expectations)`. Rood: de runner van `58cc53cee` geeft
+  `IR LOAD ERROR at <root>: unknown field 'inferFromEmpty'` (exit 2); mutant zonder de aanroep in de runner: replay
+  `oracle: PASS (4 expectations)` (V3 niet meldplichtig, het stille foute antwoord), noop `MISMATCH`, trace
+  `reading`-regels (3 rood); mutant met een lege weigerfunctie: 4 rood.
+- **clingo** (gate 6, suite van de backend): `translate_guarded` weigert met `CLINGO-049` en `[("form", "document")]`;
+  de runner geeft exit 1 en `TRANSLATION FAULT: CLINGO-049: the document carries inferFromEmpty false` zonder model;
+  de golden zonder eigenschap vertaalt en speelt (`clingo: PASS (4 expectations)`). Rood: mutant zonder de aanroep, 2
+  rood, de runner met `clingo: PASS (4 expectations)`.
+- **Registers** (gate 8, `check-exec-codes.sh`): 14 REF- en 49 CLINGO-codes, parameters per plaats in hun regel.
+- **De OCaml-frontends** (gate 9 en 14): bouwen het record met `true`, hun goldens herschrijven byte-identiek.
+- **De verifier** (besluit 8): de fixture is verifier-clean (getuige in gate 5). Eenmalig gemeten, niet als getuige:
+  `--empty-closures` en `--dependency-edges` op `jutterswet-keurgemiddelde` en `jutterswet-werfkeur`, en `--arms` op
+  `wf001-duplicate-day-kind`, geven met de eigenschap erbij byte voor byte dezelfde uitvoer.
+
+### Voorlopige besluiten
+
+1. In het geheugen is de keuze `infer_from_empty : bool`, `true` bij afwezigheid, als eerste veld van het record
+   (zoals `with_unit` bij `EmbeddedExpression.unit`); `Emit` schrijft alleen `false`.
+2. De weigering van ref staat in een functie in `ref/lib/eval.ml` en wordt aangeroepen in `load_document` van de
+   runner, niet in `Eval.evaluate` (de no-op-modus evalueert niet) en niet in `Case.load_file` (clingo deelt die
+   caselezer).
+3. Een rode casus waarvan het document de eigenschap draagt, krijgt van ref `EVALUATION FAULT: REF-014: …` en exit 1
+   zonder `CODE`-regel: de weigering valt vóór het rode pad. Gate 8 faalt zo'n casus dan luid ("ref did not observe
+   the expected fault") en kan hem niet als divergentie noteren. clingo meldt op het rode pad wel
+   `CODE CLINGO-049 {"form":"document"}`. Kleinste wijziging; zo'n casus bestaat niet.
+4. De weigering van clingo staat vóór `Scale.document` en de WF-007-weigering in `translate_guarded`; bij een
+   document met de eigenschap en een presentatietag in een typeannotatie noemen ref en clingo dus allebei eerst
+   hun eigen refusal-code.
+5. De getuigen draaien de runner van dezelfde build (`_build/default/…` vanaf de root, `../bin/…` in de boom van
+   dune); `ref/test/dune` en `backends/clingo/test/dune` noemen die runner als dep.
+6. De fixture staat onder `ref/test/fixtures/infer-from-empty/` en de clingo-suite leest haar daar, zoals zij andere
+   fixtures van ref leest.
+7. De meldingstekst: `the document carries inferFromEmpty false, and this interpreter|backend does not carry the
+   reading that infers nothing from an empty value for the document: it is refused, not read as ch. 1.2-1.4 lay
+   down`.
+
+### Voorgestelde rij voor `spec/CONSTRUCTS.md` (ch. 1)
+
+| 48 | The choice that nothing is inferred from an empty value — `inferFromEmpty` on the document | the owner's decision of 2026-11-21 that a rule set can choose that nothing is inferred from an empty value (in RegelSpraak the rule `Afleiden uit leeg: nee`) | core | neither: a field of the document, no node | v0 has none. **Landed (2026-11-21, card `infer-from-empty-property`):** optional field `inferFromEmpty` on the document, directly after `format`, written `false` or not at all (schema `{"const": false}`); absent is the reading of RUNTIME-SEMANTICS ch. 1.2–1.4. No WF rule: another value is a load error at `/inferFromEmpty` in every reader. ref and clingo refuse a document that carries it before they evaluate or translate, with `REF-014` and `CLINGO-049` (key `infer-from-empty-false`, parameter `form`, here `document`). The reading itself is open. | witnesses: the self-test rows of gate 2; `ref/test/fixtures/infer-from-empty` in the suites of gates 5 and 6 |
+
+### Voorstel voor `CLAUDE.md`, gate 2
+
+De zin "A shape self-test holds `EmbeddedExpression.unit` to `true` and `DeclaredUnit.symbol` to a non-empty string."
+wordt: "A shape self-test holds `EmbeddedExpression.unit` to `true`, `DeclaredUnit.symbol` to a non-empty string and
+`inferFromEmpty` to `false` on a closed root, and a key-order self-test holds `inferFromEmpty` directly after
+`format`."
+
+### Open punten
+
+1. De parallelle kaart `regelspraak-infer-from-empty` geeft de Java-lader dezelfde zin en Drools zijn weigering; haar
+   golden valideert pas tegen het schema en de OCaml-lader van deze kaart.
+2. Besluit 3: zodra een rode casus met de eigenschap nodig is, hoort de weigering van ref op het rode pad met een
+   `CODE`-regel te komen.
+3. Bijvangst buiten het mandaat `frontends/*/lib/`: `frontends/catala/test/suite.ml` en
+   `frontends/flogic/test/suite.ml` bouwen elk één documentrecord, en kregen het veld `infer_from_empty = true` (de
+   compiler eist het).
+4. `spec/schema/README.md` en `ref/README.md` noemen de wortelvelden en de refusal-codes van ref niet; niet gewijzigd.
+5. De lezing zelf (RUNTIME-SEMANTICS) en de verlaging in ref, clingo en Drools zijn open.
+
+### Losse gates in de worktree
+
+Alle op `20bd22ff4`, één tegelijk (gate 9 met catala op deze machine):
+
+- `check-self-contained: PASS`
+- `check-ir-schema: PASS (schema valid; 79 pattern self-test row(s); 552 shape self-test row(s); 506 file(s) validate and round-trip, floor 192; 66520 object(s) in 1163 document(s) in the schema's key order, 2 in no subschema)`
+- `check-verifier: PASS (the verifier's dune files name no library of another project of the workspace: 4 names (ir_v0 yojson zarith); 506 golden clean; 657 negative rejected for their declared rule, floor 568; 502 on their declared arm (expect.txt), floor 411, 277 arm keys, floor 239, 844 name=value lines, floor 686; 374 keys of one template each in the reports, floor 340, 468 key literals in checks.ml, floor 442; 825 cited pointers resolve in their documents, floor 705; empty-closures inventory over 506 documents: 827 closure places, floor 827, 383 negation, floor 383, 206 absent-instance, floor 206, 20 kinds, floor 20, 24 witnesses verbatim, floor 24, 1454 pointers resolve)`
+- `check-case-schema: PASS (schema valid; 134 self-test row(s); 1297 case file(s) validate)`
+- `check-oracle: PASS (ref suite 2829 worked examples, floor 489; 1196 cases replayed exactly, floor 427)`
+- `check-clingo: PASS (backend suite 2958 checks, floor 83; 1166 cases replay exactly through clingo — ref = clingo over the corpus; 10 golden(s) in the refusal channel, by name, 30 cases refused with the pinned codes; the channel rule passes 22 rows of its own)`
+- `check-noop: PASS (1154 cases refute a do-nothing executor; 42 pinned survivors pin defeasible standing)`
+- `check-red: PASS (101 red cases fault observably in ref and clingo, floor 44; 179 ref and clingo code checks report the case's code, floor 82, 23 listed as divergence; 297 pinned parameter checks confirmed, floor 120; 46 fault kinds in RUNTIME-SEMANTICS ch. 5.7b, floor 31)`
+- `check-catala: PASS — frontend suite green (262 checks, floor 201); 13 catala golden(s) regenerate byte-identically (floor 12)`
+- `check-flogic: PASS — frontend suite green (164 checks, floor 81); 3 flogic golden(s) re-emit byte-identically (floor 1)`
+- `check-exec-codes: PASS — 14 REF codes and 49 CLINGO codes, numbered without a gap, every one not retired raised in its source, every raised code registered, every EF code a row of ch. 5.7b, the parameters of every site in its line or row (floors 12 and 27)` (in gate 8)
