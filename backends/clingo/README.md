@@ -487,6 +487,11 @@ Recorded limitations:
   `21-06-2026`) needs string functions, ASP-Core-2 has none, and the
   encoding runs no script. The golden `jutterswet-tekst-van-een-waarde`
   stands with that code in gate 6's channel.
+- A document that carries `inferFromEmpty: false` (IR-SPEC ch. 2) is
+  refused before anything is translated, as the refusal CLINGO-049 with
+  the form `document`: the encoding reads empty as RUNTIME-SEMANTICS
+  ch. 1.2–1.4 lay down, so its model would answer what the document
+  excludes. ref refuses such a document alike (REF-014).
 - The Let lowering keeps an enclosing Let's need on a path that does
   not read its binder, also with every parameter bound, so a value ref
   computes stays leeg. [V1] A Match with an arm that reads the binder,

@@ -1,3 +1,5 @@
 (test
  (name test_clingo)
+ ; the runner, which refuses a document that carries inferFromEmpty false
+ (deps ../bin/clingo_runner.exe)
  (libraries clingo_backend uchar-ir-v0 uchar-ref yojson unix))

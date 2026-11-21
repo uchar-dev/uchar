@@ -15542,7 +15542,24 @@ let refuse_functor_collisions (doc : document) =
       | _ -> ())
     doc.domain_specs
 
+(* inferFromEmpty false (IR-SPEC ch. 2) asks for the reading that infers
+   nothing from an empty value, and this translation reads empty as
+   RUNTIME-SEMANTICS ch. 1.2-1.4 lay down (emptiness is absence, an
+   underivable atom). Its model would answer what the document excludes,
+   and no report would say so; the document is refused by name before
+   anything is translated, the form named with it, here the whole document.
+   ref refuses it alike (REF-014). *)
+let refuse_infer_from_empty (doc : document) =
+  if not doc.infer_from_empty then
+    faultc
+      ~params:[ ("form", "document") ]
+      "CLINGO-049"
+      "the document carries inferFromEmpty false, and this backend does not carry the reading that infers nothing \
+       from an empty value for the %s: it is refused, not read as ch. 1.2-1.4 lay down"
+      "document"
+
 let translate_guarded (doc : document) (case : Case.t) : string * guards =
+  refuse_infer_from_empty doc;
   (* the unbounded form at the scale its writes and the case give it
      ([Scale]); [Model.check] reads the model through the same declarations *)
   let doc = Scale.document doc case in
