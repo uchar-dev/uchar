@@ -253,3 +253,10 @@ code zonder nieuwe regel).
 2. Een token van meer woorden pakt ook het begin van een langer woord: `Afleiden uit leegstand` zou lexen als
    `AFLEIDEN_UIT_LEEG` plus `stand`, zoals `bestaande uit de` dat doet met `bestaande uit dezelfde`. Geen bron schrijft
    het; de grammatica houdt het zoals bij de andere tokens van meer woorden.
+
+**Landing (hoofdsessie, 2026-11-21).** Nagelezen: de grammatica, de resolver (één keuze per document, ook over de
+bestanden van een keten heen), de emitter, de kopie van het model voor een scope, de lader en de weigering in
+`DroolsBackend.build`. De branch staat op `main` na de landing van `infer-from-empty-property`; gate 2, 3 en 15 zijn
+daar groen op de golden. De rij in `spec/CONSTRUCTS.md` is met die van de eigenschap samengevoegd. `make gates` groen
+op `e8edbc57a` (734 s, 17 gates, red=0). Voor de pin van de distributie: nagaan dat elke ingang die een KieBase bouwt
+langs `DroolsBackend.build` komt.
