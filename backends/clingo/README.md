@@ -510,7 +510,7 @@ Recorded limitations:
   refused before anything is translated, as the refusal CLINGO-049 with
   the form `document`: the encoding reads empty as RUNTIME-SEMANTICS
   ch. 1.2–1.4 lay down, so its model would answer what the document
-  excludes. ref refuses such a document alike (REF-014).
+  excludes. ref carries that reading (RUNTIME-SEMANTICS ch. 1.5).
 - A leeg or gevuld test on a list, an attribute or a parameter, is
   refused at translation as the refusal CLINGO-050 (parameters `operand`,
   `datatype`): the encoding holds a list as `lpres`/`lelem` facts, not as

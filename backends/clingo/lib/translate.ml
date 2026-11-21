@@ -15654,7 +15654,7 @@ let refuse_functor_collisions (doc : document) =
    underivable atom). Its model would answer what the document excludes,
    and no report would say so; the document is refused by name before
    anything is translated, the form named with it, here the whole document.
-   ref refuses it alike (REF-014). *)
+   ref carries that reading (ch. 1.5). *)
 let refuse_infer_from_empty (doc : document) =
   if not doc.infer_from_empty then
     faultc
