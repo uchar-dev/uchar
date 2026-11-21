@@ -359,7 +359,8 @@ public final class IrLoader {
         // non-string format is a defect of this one
         String format = textAt(root, "", "format");
         if (!"uchar-ir-v1".equals(format)) throw new Refusal(DroolsCode.DOCUMENT_FORMAT_UNSUPPORTED.reason("format", format), "format");
-        fields(root, "", null, ROOT, List.of("vocabularies"));
+        inferFromEmpty(root);
+        fields(root, "", null, ROOT, List.of("inferFromEmpty", "vocabularies"));
         vocabularies(root);
         JsonNode model = section(root, "", "model");
         JsonNode rules = section(root, "", "rules");
@@ -781,6 +782,20 @@ public final class IrLoader {
     }
 
     // --- the side table: vocabularies (IR-SPEC ch. 2.12) and origins (ch. 2.13)
+
+    /** The document's choice that nothing follows from an empty value, {@code inferFromEmpty}, into the model: written
+     *  {@code false} or not at all, refused in the OCaml loader's sentence otherwise. Read before the key set of the
+     *  root, so that a {@code null} is named in that sentence as well, and not as an optional field written as null.
+     *  The loader refuses no document that carries it: what a backend does with the choice is its build's to say, and
+     *  the rule graph reads such a document as any other. */
+    private void inferFromEmpty(JsonNode root) {
+        JsonNode v = root.get("inferFromEmpty");
+        if (v == null) return;
+        if (!v.isBoolean() || v.booleanValue())
+            throw new DocumentError("/inferFromEmpty",
+                    "expected false, the one spelling of a document that infers nothing from an empty value, got " + v);
+        m.inferFromEmpty(false);
+    }
 
     /** The root list {@code vocabularies} into the model. A side table without semantics: read as strictly as every
      *  node here, in the shared loader's sentences, and never read for evaluation; what a vocabulary or a designation

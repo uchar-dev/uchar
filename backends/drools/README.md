@@ -57,7 +57,14 @@ said so, which is why there is no shorter way in. A document whose lowering hold
 two forms of one name, which WF-020 forbids and a hand-written document can still carry — is refused on both branches
 before the KieBase is built: the KieBase keeps one rule per name, so the second rule would replace the first and no
 marker would say so. The analysis refuses it in the words of Drools' DRL compiler, on both branches in one sentence:
-"exec-model: Duplicate rule name: actief — …" (witness `DuplicateRuleNameWitnessTest`).
+"exec-model: Duplicate rule name: actief — …" (witness `DuplicateRuleNameWitnessTest`). A document that carries
+`inferFromEmpty: false` — the choice that nothing follows from an empty value, which RegelSpraak writes as
+`Afleiden uit leeg: nee` — is refused by the build on both branches, with and without readings, before a bean is
+generated, with DROOLS-370 and `form=document` (`EXCLUDE DROOLS-370: …`): this backend reads an empty value as
+RUNTIME-SEMANTICS ch. 1.2–1.4 does, so an answer on such a document would be a wrong answer without a word. The loader
+reads the property into the model (`RegelSpraakModel.inferFromEmpty()`) and refuses no document for it, so the rule
+graph reads such a document as any other; every other value of the property is a `DocumentError` at `/inferFromEmpty`
+(witnesses `InferFromEmptyLoaderWitnessTest`, `InferFromEmptyRefusalWitnessTest`).
 
 **A session in four calls.** The replay makes them for every case (`CaseRunner`), so the gate fires a session as a
 consumer does.

@@ -168,7 +168,8 @@ public final class DroolsBackend {
      *
      *  @throws IrLoader.Refusal      a form the loader does not carry; the replay reports it as {@code loader: …}
      *  @throws IrLoader.DocumentError a document that is not well-formed {@code uchar-ir-v1}
-     *  @throws CaseRunner.Excluded   a form the backend does not carry past the loader: two declarations on one
+     *  @throws CaseRunner.Excluded   a form the backend does not carry past the loader: a document that carries
+     *      {@code inferFromEmpty: false} ({@code DROOLS-370}, before a bean is generated), two declarations on one
      *      Java name of the bean model, a reciprocal self-relation the bean model cannot hold, a bean-contract
      *      violation, a construct the analysis does not lower, a cycle of the dependency graph that WF-045 or WF-046
      *      forbids, two rules of one name, and on the DRL-text branch a kind its rendering does not carry
@@ -200,6 +201,10 @@ public final class DroolsBackend {
         IrLoader.Positioned positioned = IrLoader.loadWithPositions(document);
         IrLoader.Loaded loaded = positioned.loaded();
         RegelSpraakModel model = loaded.model();
+        // this backend reads an empty value as RUNTIME-SEMANTICS ch. 1.2–1.4 does; on a document that infers nothing
+        // from one, an answer in that reading would be a wrong answer without a word
+        if (!model.inferFromEmpty())
+            throw new Excluded(DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", "document"));
         refuseBeanNameCollision(loaded);
 
         // A form the v0 backend cannot REPLAY is refused up front — a LOUD per-form exclusion, never a
