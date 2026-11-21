@@ -1612,23 +1612,73 @@ let count_verdict (q : quantifier_kind) ~cutoff ~n ~hits ~fails : truth =
       else if hits >= k && fails >= n - k then Established true
       else Undetermined
 
-(* [f] evaluated as one judgement or one value: [Some] its result, with the
-   deposits it made passed on to [err] in their order, or [None] where it read
+(* A closure inside one judgement or one value: what the author wrote for an
+   absent value — a test on leeg or gevuld, a filled-value count, a fold filter
+   that tests on gevuld — applied to a value that is open. For the form itself
+   the outcome stands; for another form it does not, since another input could
+   fill the value. The node that applies it tells the innermost boundary under
+   way ([signal_closure]), and the boundary hands the signal back beside the
+   value, so the expression keeps one value and is evaluated once. *)
+let boundaries : bool ref list ref = ref []
+
+let signal_closure () =
+  match !boundaries with
+  | b :: _ -> b := true
+  | [] ->
+      failwith
+        "ref/lib/eval.ml: a closure over an open value outside the boundary of one judgement or one value, where \
+         no form would learn that its outcome does not stand for another form"
+
+(* [f] evaluated as one judgement or one value: [Some (x, closed)], its result
+   and whether a closure was applied to an open value inside it, with the
+   deposits it made passed on to [err] in their order; or [None] where it read
    an open member, its deposits dropped. Any other exception — a fault, the
    barrier of a Let (ch. 10.6) — passes on with the deposits made before it, as
    it does without the boundary *)
 let open_read_boundary ~err f =
   let deposits = ref [] in
+  let closed = ref false in
+  let outer = !boundaries in
+  boundaries := closed :: outer;
   let pass () = List.iter err (List.rev !deposits) in
   match f (fun d -> deposits := d :: !deposits) with
   | x ->
+      boundaries := outer;
       pass ();
-      Some x
-  | exception World.Open_read _ -> None
+      Some (x, !closed)
+  | exception World.Open_read _ ->
+      boundaries := outer;
+      None
   | exception e ->
       let trace = Printexc.get_raw_backtrace () in
+      boundaries := outer;
       pass ();
       Printexc.raise_with_backtrace e trace
+
+(* The closure over the value [f] evaluates: where [f] reads an open value the
+   value is leeg for the form itself, and the enclosing boundary is told; what
+   [f] deposited before the open read is dropped. A closure inside [f] is
+   passed on *)
+let closure_over_open ~err f =
+  match open_read_boundary ~err f with
+  | Some (v, closed) ->
+      if closed then signal_closure ();
+      v
+  | None ->
+      signal_closure ();
+      Value.Empty
+
+(* The truth of the judgement [j] of a condition inside a value — the filter
+   of a fold — for that value. Undetermined for the form itself, the value has
+   an open read, on the object [label]; established for the form itself and
+   undetermined for another, a closure decided it, and the boundary is told *)
+let value_verdict ~label (j : judgement) =
+  match j with
+  | { own = Established b; other = Established _ } -> b
+  | { own = Established b; other = Undetermined } ->
+      signal_closure ();
+      b
+  | { own = Undetermined; _ } -> raise (World.Open_read { label; member = "the filter of a fold" })
 
 (* The verdict of a condition at a position that reads one truth value. In a
    document without open input every judgement is two-valued and equal for
@@ -3146,9 +3196,14 @@ and judge_cond env world (self : World.instance) ~err (c : condition_expr) : jud
   | Some o -> established (o.cond c (fun () -> two_valued c (judge_cond_node env world self ~err c)))
 
 (* An atomic condition: [verdict] read on values that all stand, undetermined
-   where it reads an open value, its deposits dropped then ([open_read_boundary]) *)
+   where it reads an open value, its deposits dropped then
+   ([open_read_boundary]); where a closure was applied to an open value inside
+   it, established for the form itself and undetermined for another *)
 and atomic ~err verdict : judgement =
-  match open_read_boundary ~err verdict with Some b -> established b | None -> undetermined
+  match open_read_boundary ~err verdict with
+  | Some (b, false) -> established b
+  | Some (b, true) -> { own = Established b; other = Undetermined }
+  | None -> undetermined
 
 and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) : judgement =
   match Ir_v0.Checks.unanchored_cond c with
@@ -3236,14 +3291,15 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
       let verdict = Timeline.whole_period_empty_filled g ~populated ~tl in
       established (if gp.gp_negated then not verdict else verdict)
   (* the negated leeg test is the gevuld test and the negated gevuld test the
-     leeg test (ch. 1.2). Over an open value the test that says the value is
-     leeg is a closure for the form that wrote it, and the gevuld test is
-     false for it; for another form both are undetermined (ch. 1.5) *)
-  | Predicate { variety = (Empty_predicate | Filled) as variety; operand; negation; _ } -> (
+     leeg test (ch. 1.2). Over an open value the test is a closure: the value
+     is leeg for the form that wrote it, so the leeg test is true and the
+     gevuld test false for it, and for another form both are undetermined
+     (ch. 1.5) *)
+  | Predicate { variety = (Empty_predicate | Filled) as variety; operand; negation; _ } ->
       let says_empty = (variety = Empty_predicate) <> negation in
-      match open_read_boundary ~err (fun err -> eval_expr env world self ~err (req "Predicate.operand" operand)) with
-      | Some v -> established ((v = Value.Empty) = says_empty)
-      | None -> { own = Established says_empty; other = Undetermined })
+      atomic ~err (fun err ->
+          let v = closure_over_open ~err (fun err -> eval_expr env world self ~err (req "Predicate.operand" operand)) in
+          (v = Value.Empty) = says_empty)
   | Predicate { variety = Day_kind_predicate; day_kind; operand; negation; _ }
     when SMap.mem day_kind_binder env.locals ->
       (* A NESTED day-kind reference, inside a day-kind condition (ch. 3.7,
@@ -4601,7 +4657,8 @@ let run_rule ?only env world (r : resolved_rule) =
                 | None -> established true
             in
             (* the value of a rule that decides, as one value: [None] where it
-               reads an open value, its deposits dropped *)
+               reads an open value, its deposits dropped; beside it whether a
+               closure was applied to an open value inside it *)
             let value () = open_read_boundary ~err (fun err -> eval_expr env w self ~err (req "RuleVersion.value" r.value_node)) in
             match judged with
             (* established false for another form, so for the form itself *)
@@ -4658,8 +4715,12 @@ let run_rule ?only env world (r : resolved_rule) =
                      leaves the target open (ch. 1.5) *)
                   match value () with
                   | None -> undecided ()
-                  | Some Value.Empty -> release ()
-                  | Some v ->
+                  (* leeg through a closure over an open value: for the form
+                     itself it fills nothing, and for another that does not
+                     stand (ch. 1.5) *)
+                  | Some (Value.Empty, true) -> undecided ()
+                  | Some (Value.Empty, false) -> release ()
+                  | Some (v, _) ->
                       World.write_attr_by w ~form ~label:self.label ~attr:member ~decl:(attr_decl env ~otype:ot ~attr) v)
               | Some Initialisation -> (
                   (* writes only where the target is empty (ch. 5.4) — apart
@@ -4672,8 +4733,8 @@ let run_rule ?only env world (r : resolved_rule) =
                      the initialisation computed against a read that another
                      rule had not yet written: the document order decided *)
                   match value () with
-                  | None -> undecided ()
-                  | Some v -> World.write_attr_init w ~form ~label:self.label ~attr:member ~decl:(attr_decl env ~otype:ot ~attr) v)
+                  | None | Some (Value.Empty, true) -> undecided ()
+                  | Some (v, _) -> World.write_attr_init w ~form ~label:self.label ~attr:member ~decl:(attr_decl env ~otype:ot ~attr) v)
               | None -> Value.fault "rule %S has no kind" (rule_name r))
     | _ -> Value.faultc ~params:[ ("rule", (rule_name r)) ] "REF-012" "rule %S: unsupported target shape" (rule_name r)
 
