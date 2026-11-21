@@ -218,7 +218,8 @@ let number_nodes json ~form ~condition ~value =
 
 type outcome =
   | Got of Value.t (* an expression's value *)
-  | Held of bool (* a condition's verdict *)
+  | Judged of Eval.judgement (* a condition's judgement (ch. 1.5) *)
+  | Broken of string * string (* an open read of the member, on the object, broke the evaluation off here *)
   | Whole of Timeline.t option (* an operand read as a timeline, None where it is absent *)
   | Over of Timeline.t (* a condition read over a timeline: the part in which it holds *)
   | Faulted of string option (* the fault the node raised or passed on, with its EF code *)
@@ -238,7 +239,7 @@ type node = {
          the evaluation did not walk the path *)
 }
 
-type status = Holds | Fails | Faults | Displaced | Outside_validity
+type status = Holds | Fails | Faults | Displaced | Outside_validity | Open
 
 type reading = { form : string; subject : string; status : status; nodes : node list }
 
@@ -265,6 +266,10 @@ let observing (nodes : node list) f =
             pop ();
             n.outcome <- Some (Faulted code);
             raise e
+        | exception (World.Open_read { label; member } as e) ->
+            pop ();
+            n.outcome <- Some (Broken (label, member));
+            raise e
         | exception e ->
             pop ();
             n.outcome <- Some Ended;
@@ -287,7 +292,7 @@ let observing (nodes : node list) f =
   let o =
     {
       Eval.expr = (fun e k -> around (S_expr e) k (fun v -> Got v));
-      cond = (fun c k -> around (S_cond c) k (fun b -> Held b));
+      cond = (fun c k -> around (S_cond c) k (fun j -> Judged j));
       member =
         (fun label c ->
           match !stack with `Node n :: _ -> n.members <- (label, c) :: n.members | _ -> ());
@@ -325,32 +330,45 @@ let fresh numbered =
       { number; kind; site; own; scope; outcome = None; members = []; target = None })
     numbered
 
-(* The reading of [condition] on [self], and of the value where it holds:
-   [compute] evaluates it, by default [value] as an expression. A form
-   without a condition, read where it is at its turn, holds. *)
-let read_on ?compute ~form ~numbered env world (self : World.instance) ~condition ~value =
+(* The reading of [condition] on [self], and of the value where it holds for
+   the form itself: [compute] evaluates it, by default [value] as one value.
+   The status says what the form does with its target, as the session reads
+   its three outcomes (ch. 1.5, [Eval.outcome_of]): it decides (Holds, a leeg
+   value and a value that faults included), it stands that it fills nothing
+   (Fails), or it leaves its target open (Open): its condition is neither true
+   for itself nor false for another, or its value has an open read or is leeg
+   after a closure over one. A consistency ([assertion]) holds, reports
+   (Fails) or is open as its assertion is for itself. A form without a
+   condition, read where it is at its turn, decides as one whose condition
+   holds. *)
+let read_on ?(assertion = false) ?compute ~form ~numbered env world (self : World.instance) ~condition ~value =
   let nodes = fresh numbered in
-  let compute =
+  (* the value's fault stands at its nodes, and the form decides *)
+  let evaluate () : status Eval.writer_outcome =
     match (compute, value) with
-    | Some f, _ -> Some f
-    | None, Some v -> Some (fun () -> ignore (Eval.eval_expr env world self ~err:drop v))
-    | None, None -> None
+    | Some f, _ ->
+        (try f () with Value.Fault _ -> ());
+        Decides Holds
+    | None, Some v -> (
+        match Eval.value_outcome ~err:drop (fun err -> Eval.eval_expr env world self ~err v) with
+        | Leaves_open -> Leaves_open
+        | Decides _ | Fills_nothing -> Decides Holds
+        | exception Value.Fault _ -> Decides Holds)
+    | None, None -> Decides Holds
   in
-  (* the value's fault stands at its nodes; the status is the condition's *)
-  let evaluate () = match compute with Some f -> ( try f () with Value.Fault _ -> ()) | None -> () in
   let status =
     observing nodes (fun () ->
-        match condition with
-        | None ->
-            evaluate ();
-            Holds
-        | Some condition -> (
-            match Eval.eval_cond env world self ~err:drop condition with
-            | true ->
-                evaluate ();
-                Holds
-            | false -> Fails
-            | exception Value.Fault _ -> Faults))
+        match Option.map (Eval.judge_cond env world self ~err:drop) condition with
+        | exception Value.Fault _ -> Faults
+        | judged -> (
+            let judged = Option.value judged ~default:(Eval.established true) in
+            if assertion then
+              match judged.own with Established true -> Holds | Established false -> Fails | Undetermined -> Open
+            else
+              match Eval.outcome_of judged evaluate with
+              | Decides status -> status
+              | Fills_nothing -> Fails
+              | Leaves_open -> Open))
   in
   { form; subject = self.label; status; nodes }
 
@@ -497,7 +515,7 @@ let consistencies json env ~world =
             number_nodes json ~form ~condition:(Some (condition, form ^ "/assertion")) ~value:None
           in
           in_window env c.cons_validity ~form (of_type env world ot) (fun self ->
-              [ read_on ~form ~numbered env world self ~condition:(Some condition) ~value:None ])
+              [ read_on ~assertion:true ~form ~numbered env world self ~condition:(Some condition) ~value:None ])
       | _ -> [])
     env.Eval.doc.consistencies
 
@@ -813,65 +831,113 @@ let defaults json env ~world0 ~world =
                        ~reach:Timeline.all_time ~path:[] l.defaults)
               | Some true ->
                   let is_char = l.pd_characteristic <> None in
-                  (* whether the default's own justification and consequence decide,
-                     its reading emitted *)
+                  (* what the default's own justification and consequence do,
+                     its reading emitted: it decides, with what it decides (its
+                     value, or its decision on a characteristic), it gives way,
+                     or it is open (ch. 1.5) *)
                   let own env (d : default) =
                     let input_filled = input_filled d in
+                    let decision () = `Decides (Value.Bool (d.default_decision = Some true)) in
                     match reading_of l d with
                     | Some (form, _, _, _) when input_filled ->
                         emit (without ~form Displaced self);
-                        false
-                    | Some (form, condition, value, numbered) ->
+                        `Gives_way
+                    | Some (form, condition, value, numbered) -> (
                         let r = read_on ~form ~numbered env world self ~condition ~value in
                         emit r;
-                        r.status = Holds
-                        && (is_char
-                           || List.exists
-                                (fun n ->
-                                  (match value with Some v -> same n.site (S_expr v) | None -> false)
-                                  && match n.outcome with Some (Got v) -> v <> Value.Empty | _ -> false)
-                                r.nodes)
-                    | None -> (
+                        let filled =
+                          List.find_map
+                            (fun n ->
+                              match (value, n.outcome) with
+                              | Some v, Some (Got x) when same n.site (S_expr v) && x <> Value.Empty -> Some x
+                              | _ -> None)
+                            r.nodes
+                        in
+                        match (r.status, filled) with
+                        | Open, _ -> `Open
+                        | Holds, _ when is_char -> decision ()
+                        | Holds, Some x -> `Decides x
+                        | _ -> `Gives_way)
+                    | None ->
                         (* no reading: the decision without one, as the session takes it *)
-                        (not input_filled)
-                        && (match d.default_justification with
-                           | Some c -> Eval.eval_cond env world self ~err:drop c
-                           | None -> true)
-                        &&
-                        if is_char then d.default_decision <> None
-                        else
-                          match d.default_consequence with
-                          | Some v -> Eval.eval_expr env world self ~err:drop v <> Value.Empty
-                          | None -> false)
+                        if
+                          (not input_filled)
+                          && (match d.default_justification with
+                             | Some c -> Eval.eval_cond env world self ~err:drop c
+                             | None -> true)
+                          &&
+                          if is_char then d.default_decision <> None
+                          else
+                            match d.default_consequence with
+                            | Some v -> Eval.eval_expr env world self ~err:drop v <> Value.Empty
+                            | None -> false
+                        then
+                          if is_char then decision ()
+                          else `Decides (Eval.eval_expr env world self ~err:drop (Option.get d.default_consequence))
+                        else `Gives_way
                   in
-                  (* whether the chain [ds] decides; a conflict of exception
-                     groups settles them as a decision does (ch. 7.9) *)
+                  (* the exception groups of one default, reconciled as the
+                     session reconciles them (ch. 7.2, 7.9): a conflict, or two
+                     that decide differently, settle them; beside one that is
+                     open they are open; else they decide or all give way *)
+                  let reconcile results =
+                    let decided = List.filter_map (function `Decides x -> Some x | _ -> None) results in
+                    if List.mem `Conflict results then `Conflict
+                    else
+                      match decided with
+                      | x :: rest when List.exists (fun y -> not (Arith.equal x y)) rest -> `Conflict
+                      | _ when List.mem `Open results -> `Open
+                      | [] -> `Gives_way
+                      | x :: _ -> `Decides x
+                  in
+                  (* what the chain [ds] does. Below the default that decides
+                     or settles every default is displaced; below one that is
+                     open only the initialisation default is at its turn, a
+                     closure over the stack (ch. 1.5, 7.3), and every other
+                     default is displaced *)
                   let rec decide ~env_at (ds : default list) =
                     let rec go i = function
-                      | [] -> false
-                      | (d : default) :: rest ->
+                      | [] -> `Gives_way
+                      | (d : default) :: rest -> (
                           let env = env_at i in
                           let has_content = d.default_decision <> None || d.default_consequence <> None in
-                          let settled =
+                          let groups =
                             match d.default_exceptions with
-                            | None -> false
+                            | None -> `Gives_way
                             | Some egs ->
                                 (* every exception group is walked: they reconcile as equals *)
-                                List.fold_left
-                                  (fun acc (eg : exception_group) ->
-                                    decide ~env_at:(fun _ -> env) eg.eg_defaults || acc)
-                                  false egs.egs_members
+                                reconcile
+                                  (List.map
+                                     (fun (eg : exception_group) -> decide ~env_at:(fun _ -> env) eg.eg_defaults)
+                                     egs.egs_members)
                           in
-                          if settled then (
-                            (* the content of the default, its fall-back,
-                               is not at its turn *)
-                            read_displaced env d;
-                            displace ~env_at ~from:(i + 1) rest;
-                            true)
-                          else if has_content && own env d then (
-                            displace ~env_at ~from:(i + 1) rest;
-                            true)
-                          else go (i + 1) rest
+                          match groups with
+                          | (`Decides _ | `Conflict) as settled ->
+                              (* the content of the default, its fall-back,
+                                 is not at its turn *)
+                              read_displaced env d;
+                              displace ~env_at ~from:(i + 1) rest;
+                              settled
+                          | `Open ->
+                              read_displaced env d;
+                              closing (i + 1) rest
+                          | `Gives_way when has_content -> (
+                              match own env d with
+                              | `Decides _ as decided ->
+                                  displace ~env_at ~from:(i + 1) rest;
+                                  decided
+                              | `Open -> closing (i + 1) rest
+                              | `Gives_way -> go (i + 1) rest)
+                          | `Gives_way -> go (i + 1) rest)
+                    and closing i = function
+                      | [] -> `Open
+                      | (d : default) :: rest when d.default_initialisation -> (
+                          let closed = own (env_at i) d in
+                          displace ~env_at ~from:(i + 1) rest;
+                          match closed with `Decides _ as decided -> decided | `Gives_way | `Open -> `Open)
+                      | (d : default) :: rest ->
+                          displace_all (env_at i) d;
+                          closing (i + 1) rest
                     in
                     go 0 ds
                   in
@@ -1000,18 +1066,52 @@ let status_text = function
   | Faults -> "FAULTS"
   | Displaced -> "DISPLACED"
   | Outside_validity -> "OUTSIDE_VALIDITY"
+  | Open -> "OPEN"
 
 let fault_text = function Some c -> "fault " ^ c | None -> "fault -"
+
+let truth_text = function Eval.Established b -> string_of_bool b | Undetermined -> "undetermined"
+
+(* An open read as the canonical text names it (ch. 5.12): [open], the
+   object, and the member read open — an attribute or a characteristic by the
+   name its object's type declares, a relation by its role as the reader spells
+   it *)
+let open_text (doc : document) (world : World.t) label member =
+  let declared =
+    match SMap.find_opt label world.World.instances with
+    | None -> None
+    | Some (i : World.instance) -> (
+        match Ir_v0.Checks.effective_ot doc i.otype with
+        | None -> None
+        | Some ot -> (
+            match List.find_opt (fun (a, _) -> norm a = norm member) ot.attributes with
+            | Some (a, _) -> Some a
+            | None -> List.find_map (function Some k when norm k = norm member -> Some k | _ -> None) ot.characteristics))
+  in
+  "open " ^ name_of doc world label ^ " " ^ quote (Option.value declared ~default:member)
+
+(* The judgement at a node (ch. 5.12): the truth for the form itself;
+   [closure] after it where the truth for another form is undetermined; and
+   for an undetermined one the open read that left it so *)
+let judgement_text doc world (j : Eval.judgement) =
+  match j with
+  | { own = Established b; other = Established _; _ } -> string_of_bool b
+  | { own = Established b; other = Undetermined; _ } -> string_of_bool b ^ " closure"
+  | { own = Undetermined; open_read = Some (label, member); _ } -> "undetermined " ^ open_text doc world label member
+  | { own = Undetermined; open_read = None; _ } ->
+      failwith "ref/lib/reading.ml: an undetermined judgement without the open read that left it so"
 
 (* The readings in the canonical text, sorted: per reading one line with the
    form, the object and the status, and per node with a reading of its own
    one line with the number and the kind of the node and what the
-   evaluation found there — [unreached]; a verdict; a value, with the unit of
-   a number; [fault] with the EF code of the fault (ch. 5.7b) or [-]; after
-   the value of a node that reads a member over a path, [on] and the object
-   the path reached, or [on none] where a link on it is absent; and the
-   contributors of a fold over a set, sorted, each with its value, verdict
-   or fault and [reached] or [unreached]. An
+   evaluation found there — [unreached]; a judgement; a value, with the unit
+   of a number; [fault] with the EF code of the fault (ch. 5.7b) or [-];
+   [undetermined] and the open read that broke the evaluation off there;
+   after the value or the established judgement of a node that reads a member
+   over a path, [on] and the object the path reached, or [on none] where a
+   link on it is absent; and the contributors of a fold over a set, sorted,
+   each with its value, its truth for the form itself or its fault and
+   [reached] or [unreached]. An
    expression whose value is leeg, which a read of a leeg binder ended or
    which faulted carries the unit of its declaration or its annotation. *)
 let lines env ~world (rs : reading list) =
@@ -1047,7 +1147,8 @@ let lines env ~world (rs : reading list) =
     let found =
       match n.outcome with
       | None -> b ^ " unreached"
-      | Some (Held v) -> b ^ " " ^ string_of_bool v
+      | Some (Judged j) -> b ^ " " ^ judgement_text env.Eval.doc world j
+      | Some (Broken (label, member)) -> b ^ " undetermined " ^ open_text env.Eval.doc world label member
       | Some (Got (Value.Num (q, u))) ->
           let q, u = in_effective_unit q u in
           with_unit (b ^ " " ^ canonical (Value.Num (q, u))) (unit_text u)
@@ -1070,9 +1171,9 @@ let lines env ~world (rs : reading list) =
     in
     let found =
       match (n.target, n.outcome) with
-      | Some target, Some (Got _ | Held _ | Whole _ | Over _) ->
+      | Some target, Some (Got _ | Judged { own = Established _; _ } | Whole _ | Over _) ->
           found ^ " on " ^ (match target with Some l -> name l | None -> "none")
-      | None, Some (Got _ | Held _ | Whole _ | Over _) when navigates ->
+      | None, Some (Got _ | Judged { own = Established _; _ } | Whole _ | Over _) when navigates ->
           failwith
             (Printf.sprintf "ref/lib/reading.ml: node %d (%s) of %s read a member over a path without walking it"
                n.number n.kind head)
@@ -1083,7 +1184,9 @@ let lines env ~world (rs : reading list) =
     let counts =
       match n.site with S_expr (Function_call { kind = Filled_count; _ }) -> true | _ -> false
     in
-    if n.outcome = None || n.members = [] then found
+    (* a fold an open read broke off has no contributors, as one that faulted
+       before they were settled *)
+    if n.members = [] || (match n.outcome with None | Some (Broken _) -> true | _ -> false) then found
     else
       let contributor (label, (c : Eval.contribution)) =
         name label ^ " "
@@ -1091,7 +1194,7 @@ let lines env ~world (rs : reading list) =
           | Member_value _ when counts -> canonical Value.Empty
           | Member_value v -> canonical v
           | Member_timeline tl -> timeline_text tl
-          | Member_verdict v -> string_of_bool v
+          | Member_verdict j -> truth_text j.own
           | Member_fault code -> fault_text code)
         ^ if c.reached then " reached" else " unreached"
       in

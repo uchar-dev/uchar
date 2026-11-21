@@ -7145,9 +7145,10 @@ allocation, a creation — has none: there is nothing to read.
 | `FAILS` | the condition does not hold | the nodes of the condition |
 | `FAULTS` | the evaluation of the condition faults (ch. 5.7) | the nodes, the fault at those it reached |
 | `FAULTS` | the form has a dated validity and the session no evaluation date (ch. 8.1) | none |
-| `DISPLACED` | the form is a default that is not at its turn because a higher default of its chain decided or settled (ch. 7.1, 7.9): a default below the one that decides, at the root or in an exception group, and every default inside its exception groups; the content of a default whose exception groups settled; an ordinary rule that ch. 7.10 folds into a stack, below the default that decides; the initialisation default below the default that decides, where the input leaves its target empty; on a timeline target, a default at its turn on no day (ch. 7.11) | the nodes of the condition, and of the value where the condition holds, as at its turn (**A displaced default is read**, below) |
+| `DISPLACED` | the form is a default that is not at its turn because a higher default of its chain decided or settled (ch. 7.1, 7.9): a default below the one that decides, at the root or in an exception group, and every default inside its exception groups; the content of a default whose exception groups settled; an ordinary rule that ch. 7.10 folds into a stack, below the default that decides; the initialisation default below the default that decides, where the input leaves its target empty; on a timeline target, a default at its turn on no day (ch. 7.11); below a default that is open, every default but the initialisation default, and the content of a default whose exception groups are open (**Open values**, below) | the nodes of the condition, and of the value where the condition holds, as at its turn (**A displaced default is read**, below) |
 | `DISPLACED` | the target of an initialisation — a rule's, a folded one's in a stack, or the initialisation default's — holds a value of the input or of another writer (ch. 5.4, 7.3), on a timeline target on every day; the subject of an object creation of the 1:1 shape is linked in the input (ch. 5.5) | none |
 | `OUTSIDE_VALIDITY` | the validity window of the form does not admit the evaluation date (ch. 8.2) | none |
+| `OPEN` | the form leaves its target open, or a consistency's assertion is undetermined (ch. 1.5; **Open values**, below) | the nodes of the condition, and of the value where the condition is true for the form itself |
 
 The session does not evaluate a form that is not at its turn or outside its
 validity. Every default below the one that decides is displaced, and with
@@ -7331,6 +7332,114 @@ AttributeReference fault EF-037`, `3 Literal unreached` and every later node
 (`WV-5.12-default-per-dag-voorwaarde-faalt`; gate 17 holds the readings on
 both branches).
 
+**Open values.** In a document with `inferFromEmpty: false` (ch. 1.5) the
+reading is the same evaluation, and each node records what that evaluation
+has there:
+
+- a condition its truth for the form itself, `true`, `false` or
+  `undetermined`, and `closure` after a truth for the form itself where its
+  truth for another form is undetermined: a closure decided it;
+- a node that an open read broke off is `undetermined` and has no value:
+  the node that read the open member, and every node the read passed on its
+  way out to the boundary of ch. 1.5, one atomic condition or one value;
+  within that boundary the nodes after the open read are not reached. A node
+  of a value that an undetermined condition broke off, an IfThenElse or a fold
+  over a set whose filter is undetermined on a member, is `undetermined` in
+  the same way;
+- after `undetermined` stands the open read that left the node so: `open`, the
+  object, and the member read open by the name its object's type declares,
+  or a relation open on the object (ch. 1.5) by its role. At a node broken
+  off and at an atomic condition that is the member the evaluation read open;
+  at a composite, the open read of its first member that is undetermined for
+  the form itself; at a quantifier fold, the relation of its range where that
+  is open, and else the open read of its first member that is undetermined for
+  the form itself, of its filter where the filter is undetermined and else of
+  its matrix; at a node that an undetermined condition broke off, that
+  condition's.
+
+A composite and a quantifier fold read their members until their judgement
+for another form stands (ch. 1.5), and the members after that are not
+reached. A contributor of a quantifier fold carries the truth of the matrix on
+it for the form itself, `undetermined` among them; a fold over a set that an
+open read broke off carries no contributors. The status follows the three
+outcomes of ch. 1.5: `HOLDS` where the condition is true for the form itself
+and the value has no open read, a leeg value and a value that faults
+included; `FAILS` where the condition is false for another form; and `OPEN`
+where the form leaves its target open, its condition neither true for itself
+nor false for another, or its value open or leeg after a closure over an
+open value. A consistency is `HOLDS`, `FAILS` or `OPEN` as its assertion is
+true, false or undetermined for itself. In a stack, below a default that is
+`OPEN` the initialisation default is at its turn, a closure over the stack,
+and every other default is `DISPLACED` and read as at its turn; so is the
+content of a default whose exception groups are open. A document without the
+property has no open value: every judgement is one truth, no node is broken
+off, and no form is `OPEN`.
+
+Worked example (absolute; the golden `jutterswet-afleiden-uit-leeg` of
+ch. 1.5, verbatim in the `ref/` test `WV-5.12-afleiden-uit-leeg`). Case 2
+gives V1 a gewicht of 5 and no taxatie. Rule 0, "een Vondst is kostbaar
+indien zijn taxatie groter is dan 1000", reads the taxatie open, so the
+comparison is undetermined and the literal after it not reached; rule 2, "de
+bewakingstoeslag … 5 indien hij niet kostbaar is", reads kostbaar open; and
+rule 3, "ongetaxeerd indien zijn taxatie leeg is", decides by its closure:
+
+```
+/rules/rules/0/versions/0 "V1" 0 Comparison undetermined open "V1" "taxatie"
+/rules/rules/0/versions/0 "V1" 1 AttributeReference undetermined open "V1" "taxatie"
+/rules/rules/0/versions/0 "V1" 2 Literal unreached
+/rules/rules/0/versions/0 "V1" OPEN
+/rules/rules/2/versions/0 "V1" 0 CharacteristicCheck undetermined open "V1" "kostbaar"
+/rules/rules/2/versions/0 "V1" 1 Literal unreached
+/rules/rules/2/versions/0 "V1" OPEN
+/rules/rules/3/versions/0 "V1" 0 Predicate true closure
+/rules/rules/3/versions/0 "V1" 1 AttributeReference undetermined open "V1" "taxatie"
+/rules/rules/3/versions/0 "V1" HOLDS
+```
+
+In case 3, without a gewicht, the vindloon "zijn gewicht plus 10" reads `0
+Binary undetermined open "V1" "gewicht"` and `2 Literal unreached`, `OPEN`. In
+case 5, where betwist is not named, the exception of the premie, "0 indien hij
+betwist is", reads `0 CharacteristicCheck undetermined open "V1" "betwist"`,
+`OPEN`, and the default below it, "10", is not at its turn and reads `0
+Compound true`, `1 Literal 10`, `DISPLACED`; in case 6, where it stands that
+V1 is not betwist, the exception `FAILS` and the default `HOLDS`.
+
+Example (`WV-5.12-open-composite`): "een Vondst is opvallend indien ten
+minste één van: zijn taxatie groter is dan 1000, zijn gewicht groter is dan
+100, zijn lengte groter is dan 2", with gewicht 200 and no taxatie, reads `0
+Compound true`, `1 Comparison undetermined open "V1" "taxatie"`, `4
+Comparison true` and `7 Comparison unreached`, `HOLDS`; with gewicht 50 and
+lengte 1 it reads `0 Compound undetermined open "V1" "taxatie"`, the second
+and third members `false`, `OPEN`; and the consistency "het gewicht moet
+groter of gelijk zijn aan 0" without a gewicht reads `0 Comparison
+undetermined open "V1" "gewicht"`, `OPEN`. Example
+(`WV-5.12-open-quantifier-fold`, `WV-5.12-open-fold-over-a-set`, the
+documents of `ref/test/fixtures/strict-empty/`): "een Jutter is kundig
+indien het gewicht van alle vondsten van de Jutter groter is dan 10", over
+vondsten of 20, 30 and one, V3, without a gewicht, reads `0 QuantifierFold
+undetermined open "V3" "gewicht" contributors ["V1" true reached; "V2" true
+reached; "V3" undetermined reached]`; "keurder indien het gewicht van alle
+vondsten van de Jutter die gemerkt zijn groter is dan 10", over a gemerkte V1
+of 20, V2 of 5 whose gemerkt is open and V3 of 30 that stands not gemerkt,
+reads `0 QuantifierFold undetermined open "V2" "gemerkt" contributors ["V1"
+true reached; "V2" false reached]`; and "de som van het gewicht van alle
+vondsten van de Jutter", where V2 has no gewicht, reads `0 Aggregation
+undetermined open "V2" "gewicht"`, without contributors. Example
+(`WV-5.12-open-stack`): over "het bergloon is zijn opgegeven bergloon", "…
+zijn berekende bergloon" and "… moet geïnitialiseerd worden op 25", without
+an opgave, the opgave reads `1 AttributeReference undetermined open "V1"
+"opgegeven bergloon"`, `OPEN`, the computation `DISPLACED`, and the
+initialisation default `0 Literal 25`, `HOLDS`. Example
+(`WV-5.12-open-creation`, `WV-5.12-open-path`): the creation of a
+proefvondst "indien hij niet ervaren is", for a Jutter without an ervaring,
+reads `0 CharacteristicCheck undetermined open "J1" "ervaren"`, `OPEN`, and a
+read over the relation it leaves open reads `0 AttributeReference
+undetermined open "J1" "proefvondst"`; a read of the leeftijd of the vinder
+J1 of V1, which J1 has open, reads `undetermined open "J1" "leeftijd"`. The
+test `WV-5.12-open-status` holds, over every case of those documents, that a
+rule or a creation is `OPEN` exactly where the session left a member or a
+relation of it open.
+
 **A reading deposits nothing and writes nothing.** A §9.5 deposit the
 evaluation makes is dropped, a value it computes is written nowhere, and no
 outcome of the session reads a reading. Two consequences follow from the
@@ -7353,7 +7462,8 @@ its own records one of:
   (ch. 5.10, 3.9a), in the branch of a choice that is not taken (ch. 10.2),
   in the value of a `Let` whose binder no read forces (ch. 10.6), in the
   value of a form whose condition does not hold, after a fault;
-- a condition's **verdict**, true or false;
+- a condition's **verdict**, true or false, and in a document with
+  `inferFromEmpty: false` its judgement (**Open values**, below);
 - an expression's **value**, a number with its unit (ch. 2.6); leeg is a
   value. A read of a leeg binder that ends the evaluation at the node
   (ch. 10.6, clause 2) reaches it and leaves it leeg;
@@ -7523,7 +7633,9 @@ it. An object of the input is written as its case label, quoted; an object
 a creation made as `«"<creation>"»(<subject>)#<k>`, the name of its
 creation, the object it was made for and its number among the objects that
 creation made for it, which is 1, since a creation makes one object per
-subject (ch. 5.5). `<found>` is `unreached`; `true` or `false`; `fault`
+subject (ch. 5.5). `<found>` is `unreached`; `true` or `false`, followed by
+`closure` where the truth for another form is undetermined; `undetermined
+open <object> "<member>"` (**Open values**, below); `fault`
 with the EF code, or `fault -` for a fault without one; or the value: a
 number as its exact decimal without trailing zeros where it terminates, and
 else as its numerator and denominator in lowest terms, `t/n`, the sign on the
@@ -7557,11 +7669,12 @@ absent:
 `<form> <object> <number> <kind> <found> ["<unit>"] on <object>|none`. A
 node that reads a member of its own writes no object, since the object of
 the reading stands at the head of its line (ch. 5.8 rule 4), and neither
-does a node that was not reached or that faulted (card
-`reading-read-objects`, 2026-10-27). After the node of a fold over a set
+does a node that was not reached, that faulted (card
+`reading-read-objects`, 2026-10-27) or that is undetermined. After the node of a fold over a set
 stand its contributors,
 `contributors [<object> <value|verdict|fault> reached|unreached; …]`,
-sorted, each found written as at a node, and `unordered` in place of the
+sorted, each found written as at a node, a verdict as the truth for the
+form itself (`true`, `false`, `undetermined`), and `unordered` in place of the
 position where the executor keeps no order. `runner --trace` prints this
 text for a golden case, each line after `reading `.
 
@@ -7980,7 +8093,12 @@ which an evaluation fault stands (ch. 5.7) has no end state.
 - every link (ch. 5.7a), once: the links of the case, the reverse legs the
   loader adds to them, and the links a creation laid;
 - every fact of the channel (ch. 5.6): its rule, its subject, and the EF
-  codes (ch. 5.7b) of the kinds deposited for that pair.
+  codes (ch. 5.7b) of the kinds deposited for that pair;
+- in a document with `inferFromEmpty: false` (ch. 1.5), every member that is
+  open, in place of a value, also where the world holds a value that no
+  writer decided, and every relation that is open on an object. An attribute
+  without a line is then settled leeg, and a characteristic without one
+  stands not to hold. A document without the property has no open member.
 
 **The canonical text.** The end state of a case is written one line per
 fact, all lines sorted in code-unit order, in the canonical value text and
@@ -7998,6 +8116,10 @@ characteristic <object> "<characteristic>"
 characteristic <object> "<characteristic>" [[<from> <to> empty], …]
 link "<fact type>" "<role>" <object> "<role>" <object>
 channel "<rule>" <object> <codes>
+attribute <object> "<attribute>" open
+characteristic <object> "<characteristic>" open
+link "<fact type>" "<role>" <object> "<role>" open
+link "<fact type>" "<role>" open "<role>" <object>
 ```
 
 - `attribute`: the value as a reading writes a value — a number as its
@@ -8015,6 +8137,10 @@ channel "<rule>" <object> <codes>
   type, whose one role both fill, in the code-unit order of their names.
 - `channel`: the rule as the deposit names it, the subject, and the codes
   ascending, joined by `,`, or `-` where no deposit named one.
+- `open`: an open member, `open` in the place of its value; a relation open
+  on an object (ch. 1.5), as a link with `open` in the place of the objects a
+  creation could still link to it, the roles in the order the fact type
+  declares them, as for a link.
 
 The text does not hold the order of the links of one object over one role
 (ch. 5.7a): the lines are sorted (*provisional decision of the builder of
@@ -8054,6 +8180,37 @@ object "J1" "Jutter"
 object "J2" "Jutter"
 object «"stel het penningbesluit vast"»("J1")#1 "Penningbesluit"
 object «"stel het penningbesluit vast"»("J2")#1 "Penningbesluit"
+```
+
+**Worked example — open members** (absolute; the golden
+`jutterswet-afleiden-uit-leeg` of ch. 1.5, case 4, verbatim in the `ref/`
+test `WV-5.12a-afleiden-uit-leeg`). The case gives V1 nothing: every input
+member is open, and so is every member a rule writes from one, but
+ongetaxeerd, which its closure attributes (ch. 1.5):
+
+```
+attribute "V1" "bewakingstoeslag" open
+attribute "V1" "gewicht" open
+attribute "V1" "meldloon" open
+attribute "V1" "premie" open
+attribute "V1" "taxatie" open
+attribute "V1" "vindloon" open
+characteristic "V1" "betwist" open
+characteristic "V1" "gemeld" open
+characteristic "V1" "kostbaar" open
+characteristic "V1" "ongetaxeerd"
+object "V1" "Vondst"
+```
+
+In case 2, with gewicht 5 and gemeld, the gewicht, the meldloon and the
+vindloon have their values, 5, 3 and 15. A relation that a creation could
+still lay a link in (`WV-5.12a-open-link`, the document of
+`ref/test/fixtures/strict-empty/object-creation`): the creation of a
+proefvondst "indien hij niet ervaren is", for a Jutter J1 without an
+ervaring, leaves the relation open on J1:
+
+```
+link "proefvangst" "jutter" "J1" "proefvondst" open
 ```
 
 **Worked example — a timeline and the asOfDate bucket** (absolute; the

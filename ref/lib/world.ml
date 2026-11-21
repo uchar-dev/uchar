@@ -183,7 +183,8 @@ let timeline i name = SMap.find_opt (norm name) i.tls
 
 (* A read of a member that is open: what reads it has no value and no verdict
    of its own, and the evaluation it belongs to is broken off where one
-   judgement or one value ends (Eval) *)
+   judgement or one value ends (Eval). [member] is the member as the reader
+   names it, or the spelling of the role of a relation that is open *)
 exception Open_read of { label : string; member : string }
 
 (* The state of a member, the one place a read and the end check of a case get

@@ -30,11 +30,10 @@ let print_codes ~observed ~params ~(pinned : Uchar_ref.Case.expected_fault) =
 (* Every entrance — the replay, --noop, --closed-inputs and --trace — reads its
    document here and nowhere else, so a document with a form whose reading ref
    does not carry is refused before any of them evaluates or checks anything
-   (REF-014); --trace refuses the readings of a document with inferFromEmpty
-   false as well ([reading]). *)
-let load_document ?reading ir_path =
+   (REF-014). *)
+let load_document ir_path =
   let doc = Ir_v0.Loader.load_file ir_path in
-  Uchar_ref.Eval.refuse_uncarried ?reading doc;
+  Uchar_ref.Eval.refuse_uncarried doc;
   doc
 
 (* the verdict on an observed fault: the pin matches, or the whole report is shown *)
@@ -57,7 +56,7 @@ let verdict ~(pinned : Uchar_ref.Case.expected_fault) ~code ~params ~what report
    or a case that pins a fault, which has no fixpoint to read. *)
 let trace ir_path case_path =
   try
-    let doc = load_document ~reading:true ir_path in
+    let doc = load_document ir_path in
     let case = Uchar_ref.Case.load_file doc case_path in
     if case.expected_fault <> None then (
       prerr_endline "--trace reads the fixpoint of a golden case; an expectedFault case has none";

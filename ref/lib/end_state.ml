@@ -61,8 +61,9 @@ let periods_text ps =
       (List.rev_map (fun (f, t) -> "[" ^ Reading.day_text f ^ " " ^ Reading.day_text t ^ " empty]") joined)
   ^ "]"
 
-(* the members of one object *)
-let object_lines (env : Eval.env) name (i : World.instance) =
+(* the members of one object; a member that is open (ch. 1.5) says so in
+   place of its value *)
+let object_lines (env : Eval.env) name (world : World.t) (i : World.instance) =
   let doc = env.Eval.doc in
   let ot =
     match Ir_v0.Checks.effective_ot doc i.otype with
@@ -76,9 +77,11 @@ let object_lines (env : Eval.env) name (i : World.instance) =
     let unit = Eval.unit_of_datatype decl in
     let line suffix value = Printf.sprintf "attribute %s %s%s %s" self (quote a) suffix value in
     let scalar suffix member =
-      match World.attr i member with
-      | Value.Empty -> []
-      | v -> [ line suffix (with_unit unit (Reading.canonical (in_unit unit v))) ]
+      if World.attr_open world i member then [ line suffix "open" ]
+      else
+        match World.attr i member with
+        | Value.Empty -> []
+        | v -> [ line suffix (with_unit unit (Reading.canonical (in_unit unit v))) ]
     in
     match List.assoc_opt a ot.attribute_dimensions with
     | Some dims when dims <> [] ->
@@ -116,12 +119,15 @@ let object_lines (env : Eval.env) name (i : World.instance) =
       | None | Some [] -> []
       | Some ps -> [ Printf.sprintf "characteristic %s %s %s" self (quote c) (periods_text ps) ]
     else if World.has_char i c then [ Printf.sprintf "characteristic %s %s" self (quote c) ]
+    else if World.char_open world i c then [ Printf.sprintf "characteristic %s %s open" self (quote c) ]
     else []
   in
   (head :: List.concat_map attribute ot.attributes) @ List.concat_map characteristic ot.characteristics
 
 (* every link, once, its objects in the order of the roles the fact type
-   declares; a reciprocal fact type's two objects in the order of their names *)
+   declares; a reciprocal fact type's two objects in the order of their names.
+   A relation that is open on an object (ch. 1.5) has a line of its own, with
+   [open] in the place of the objects it could reach *)
 let link_lines (doc : document) name (world : World.t) =
   List.concat_map
     (fun (ftn, (ft : fact_type_name)) ->
@@ -136,6 +142,7 @@ let link_lines (doc : document) name (world : World.t) =
       in
       (* the objects that fill [far] opposite the object [i] fills its sister in *)
       let over (far : role_ref) (i : World.instance) = World.links i ~fact_type:ftn far in
+      let opened (far : role_ref) (i : World.instance) = World.links_open world i ~fact_type:ftn far in
       SMap.fold
         (fun _ (i : World.instance) acc ->
           match ft.role_names with
@@ -143,6 +150,8 @@ let link_lines (doc : document) name (world : World.t) =
               (* i fills r0 and the targets r1, or i fills r1 and the targets r0 *)
               List.map (fun t -> line r0 (name i.label) r1 (name t)) (over r1 i)
               @ List.map (fun t -> line r0 (name t) r1 (name i.label)) (over r0 i)
+              @ (if opened r1 i then [ line r0 (name i.label) r1 "open" ] else [])
+              @ (if opened r0 i then [ line r0 "open" r1 (name i.label) ] else [])
               @ acc
           | [ r ] when ft.reciprocal ->
               List.map
@@ -150,6 +159,7 @@ let link_lines (doc : document) name (world : World.t) =
                   let a = name i.label and b = name t in
                   if compare a b <= 0 then line r a r b else line r b r a)
                 (over r i)
+              @ (if opened r i then [ line r (name i.label) r "open" ] else [])
               @ acc
           | _ -> acc)
         world.instances [])
@@ -168,6 +178,6 @@ let lines (env : Eval.env) ~(world : World.t) =
   let doc = env.Eval.doc in
   let name = Reading.name_of doc world in
   let objects =
-    SMap.fold (fun _ (i : World.instance) acc -> object_lines env name i @ acc) world.instances []
+    SMap.fold (fun _ (i : World.instance) acc -> object_lines env name world i @ acc) world.instances []
   in
   List.sort_uniq compare (objects @ link_lines doc name world @ channel_lines name world)

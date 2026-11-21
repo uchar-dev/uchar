@@ -14743,14 +14743,8 @@ let () =
     (match Eval.refuse_uncarried (Ir_v0.Loader.load_file fixture) with
     | () -> true
     | exception Value.Fault _ -> false);
-  (match Eval.refuse_uncarried ~reading:true (Ir_v0.Loader.load_file fixture) with
-  | () -> check (ident "ref-refuses-the-reading (no refusal)") false
-  | exception Value.Fault { code; params; text } ->
-      check
-        (ident "ref-refuses-the-reading (got: " ^ Value.report ~code text ^ ")")
-        (code = Some "REF-014" && params = [ ("form", "reading") ]));
   check (ident "ref-reads-the-golden")
-    (match Eval.refuse_uncarried ~reading:true (Ir_v0.Loader.load_file golden) with
+    (match Eval.refuse_uncarried (Ir_v0.Loader.load_file golden) with
     | () -> true
     | exception Value.Fault _ -> false);
   (* the runner of this tree: from the repository root, where gate 5 runs the
@@ -14767,16 +14761,20 @@ let () =
         let status = Sys.command (Filename.quote_command runner ~stdout:out ~stderr:out args) in
         (status, In_channel.with_open_bin out In_channel.input_all))
   in
+  (* the trace reads the strict document as well (RUNTIME-SEMANTICS ch. 5.12,
+     5.12a): V3 without a vondstwaarde is open, and so is its meldplichtig *)
   (let status, out = run [ "--trace"; fixture; case_file ] in
+   let lines = String.split_on_char '\n' out in
    check
-     (ident "runner-trace-refuses (exit " ^ string_of_int status ^ ": " ^ out ^ ")")
-     (status = 1
-     && substring out "REF-014: the document carries inferFromEmpty false"
-     && substring out "for the reading"
-     && not
-          (List.exists
-             (fun l -> List.exists (fun prefix -> String.starts_with ~prefix l) [ "reading "; "state " ])
-             (String.split_on_char '\n' out))));
+     (ident "runner-trace-reads (exit " ^ string_of_int status ^ ": " ^ out ^ ")")
+     (status = 0
+     && List.for_all
+          (fun l -> List.mem l lines)
+          [ "reading /rules/rules/0/versions/0 \"V3\" 0 Comparison undetermined open \"V3\" \"vondstwaarde\"";
+            "reading /rules/rules/0/versions/0 \"V3\" OPEN";
+            "state attribute \"V3\" \"vondstwaarde\" open";
+            "state characteristic \"V3\" \"meldplichtig\" open";
+            "state characteristic \"V1\" \"meldplichtig\"" ]));
   (let status, out = run [ fixture; case_file ] in
    check
      (ident "runner-replay-plays (exit " ^ string_of_int status ^ ": " ^ out ^ ")")
@@ -16239,10 +16237,7 @@ let () =
   let input = "reads the input world: what the case gives the target" in
   let end_check = "the end check of a case: the state first (World.attr_open, char_open), then the stored value" in
   let case_links = "the case reader builds and checks the links the case gives, before any evaluation (ch. 5.7a)" in
-  let end_state =
-    "the end state of ch. 5.12a lists what is stored; for a document with the property it is refused (REF-014, form \
-     reading)"
-  in
+  let end_state = "the end state of ch. 5.12a: the state first (World.attr_open, char_open, links_open), then what is stored" in
   let listed =
     [ ("ref/lib/eval.ml", "initialisation_days", "World.attr", 1,
        "the guard of an initialisation reads what its own target stores: it writes where that is nothing (ch. 5.4), a \
@@ -16520,6 +16515,274 @@ let () =
   fails "WV-1.5-case-raw-input (characteristicOpen)" "V1: characteristic \"kostbaar\" stands not to hold, expected open"
     (run ~raw:true none (characteristic "characteristicOpen"));
   holds "WV-1.5-case-raw-input (characteristicAbsent)" (run ~raw:true none (characteristic "characteristicAbsent"))
+
+(* --- ch. 5.12 and 5.12a in a document with inferFromEmpty false ------------
+   The reading at the fixpoint and the end state of a session, with open values
+   (RUNTIME-SEMANTICS ch. 1.5): a node shows its judgement for the form itself,
+   [closure] where another form reads it undetermined, and the open read that
+   left it undetermined or broke it off; the status OPEN says that the form
+   leaves its target open; the end state names every open member and relation.
+   The examples are the golden jutterswet-afleiden-uit-leeg and the documents
+   under ref/test/fixtures/strict-empty/. *)
+
+(* the reading lines of the forms [forms] on a case *)
+let readings_named irf casef forms =
+  List.filter (fun l -> List.exists (fun f -> String.starts_with ~prefix:(f ^ " ") l) forms) (readings_of irf casef)
+
+let lines_equal id got expected =
+  let expected = List.sort compare expected in
+  check id (got = expected);
+  if got <> expected then List.iter (Printf.printf "  got: %s\n") got
+
+let strict_fixture name = corpus_file ("ref/test/fixtures/strict-empty/" ^ name ^ "/")
+let rule_form k = Printf.sprintf "/rules/rules/%d/versions/0" k
+let default_form k = Printf.sprintf "/rules/prioritizedDefaults/0/defaults/%d" k
+let on_object form subject cells = List.map (fun c -> Printf.sprintf "%s \"%s\" %s" form subject c) cells
+
+(* The readings of a document built here, written to the wire and read back, so
+   that its forms carry their pointers, on the input of its objects *)
+let ov_readings (doc : Ir_v0.Ast.document) input =
+  let module Emit = Ir_v0.Emit.Make (struct
+    let producer = "ref suite"
+  end) in
+  let json = Emit.document doc in
+  let doc = Ir_v0.Loader.document ~reader:Ir_v0.Loader.Executor json in
+  let env = env_of doc in
+  let world0 = ov_world doc input in
+  let final = Eval.evaluate env world0 in
+  Reading.lines env ~world:final (Reading.readings json env ~world0 ~world:final)
+
+(* WV-5.12-afleiden-uit-leeg: the chapter's worked example of open values, the
+   golden of ch. 1.5. Without a taxatie the comparison of kostbaar is
+   undetermined and names the taxatie of V1, which broke the read of its left
+   operand off, and the literal after it is not reached; the rule leaves
+   kostbaar open (OPEN), and so does the bewakingstoeslag, whose negated check
+   reads kostbaar open; the leeg test of ongetaxeerd is true for itself and
+   undetermined for another (closure), and the rule decides. Without a gewicht
+   the sum of the vindloon is broken off. Where betwist is not named the
+   exception of the premie is open, and the default below it, which is not at
+   its turn, is read as displaced; where betwist stands not to hold the
+   exception gives way and the default decides *)
+let () =
+  let golden = "corpus/golden/jutterswet-afleiden-uit-leeg/" in
+  let read case forms = readings_named (corpus_file (golden ^ "ir.json")) (corpus_file (golden ^ case)) forms in
+  lines_equal "WV-5.12-afleiden-uit-leeg (taxatie open)"
+    (read "case2-taxatie-open.json" [ rule_form 0; rule_form 2; rule_form 3 ])
+    (on_object (rule_form 0) "V1"
+       [ "0 Comparison undetermined open \"V1\" \"taxatie\""; "1 AttributeReference undetermined open \"V1\" \"taxatie\"";
+         "2 Literal unreached"; "OPEN" ]
+    @ on_object (rule_form 2) "V1" [ "0 CharacteristicCheck undetermined open \"V1\" \"kostbaar\""; "1 Literal unreached"; "OPEN" ]
+    @ on_object (rule_form 3) "V1"
+        [ "0 Predicate true closure"; "1 AttributeReference undetermined open \"V1\" \"taxatie\""; "HOLDS" ]);
+  lines_equal "WV-5.12-afleiden-uit-leeg (gewicht open)" (read "case3-gewicht-open.json" [ rule_form 1 ])
+    (on_object (rule_form 1) "V1"
+       [ "0 Binary undetermined open \"V1\" \"gewicht\""; "1 AttributeReference undetermined open \"V1\" \"gewicht\"";
+         "2 Literal unreached"; "OPEN" ]);
+  lines_equal "WV-5.12-afleiden-uit-leeg (betwist open)"
+    (read "case5-uitzondering-open.json" [ default_form 0; default_form 1 ])
+    (on_object (default_form 0) "V1" [ "0 CharacteristicCheck undetermined open \"V1\" \"betwist\""; "1 Literal unreached"; "OPEN" ]
+    @ on_object (default_form 1) "V1" [ "0 Compound true"; "1 Literal 10"; "DISPLACED" ]);
+  lines_equal "WV-5.12-afleiden-uit-leeg (betwist given)"
+    (read "case6-uitzondering-staat-niet.json" [ default_form 0; default_form 1 ])
+    (on_object (default_form 0) "V1" [ "0 CharacteristicCheck false"; "1 Literal unreached"; "FAILS" ]
+    @ on_object (default_form 1) "V1" [ "0 Compound true"; "1 Literal 10"; "HOLDS" ]
+    @ on_object (default_form 0) "V2" [ "0 CharacteristicCheck true"; "1 Literal 0"; "HOLDS" ]
+    @ on_object (default_form 1) "V2" [ "0 Compound true"; "1 Literal 10"; "DISPLACED" ])
+
+(* WV-5.12-open-composite: a composite reads its members until its judgement
+   for another form stands; an undetermined member does not stop the read, and
+   the members after the one that settles it are not reached. "Een Vondst is
+   opvallend indien ten minste één van: zijn taxatie groter is dan 1000, zijn
+   gewicht groter is dan 100, zijn lengte groter is dan 2", with no taxatie and
+   gewicht 200: the first member is undetermined, the second true, and the
+   third not reached. With gewicht 50 the composite is undetermined, and names
+   the open read of its first undetermined member, also beside a lengte that is
+   open; its
+   consistency twin, "… moet groter of gelijk zijn aan 0", is open as well.
+   The fixture consistency: with gewicht open and a schatting of 500, the
+   second member decides *)
+let () =
+  let opvallend =
+    ov_attribution "opvallend"
+      (ov_compound At_least 1 [ ov_cmp Greater "taxatie" "1000"; ov_cmp Greater "gewicht" "100"; ov_cmp Greater "lengte" "2" ])
+  in
+  let doc = ov_doc [ ov_vondst [ "taxatie"; "gewicht"; "lengte" ] [ "opvallend" ] ] [ opvallend ] in
+  let form = rule_form 0 in
+  lines_equal "WV-5.12-open-composite (settled after an undetermined member)"
+    (ov_readings doc (ov_v1 [ ("gewicht", "200") ]))
+    (on_object form "V1"
+       [ "0 Compound true"; "1 Comparison undetermined open \"V1\" \"taxatie\"";
+         "2 AttributeReference undetermined open \"V1\" \"taxatie\""; "3 Literal unreached"; "4 Comparison true";
+         "5 AttributeReference 200"; "6 Literal 100"; "7 Comparison unreached"; "8 AttributeReference unreached";
+         "9 Literal unreached"; "HOLDS" ]);
+  lines_equal "WV-5.12-open-composite (undetermined)"
+    (ov_readings doc (ov_v1 [ ("gewicht", "50"); ("lengte", "1") ]))
+    (on_object form "V1"
+       [ "0 Compound undetermined open \"V1\" \"taxatie\""; "1 Comparison undetermined open \"V1\" \"taxatie\"";
+         "2 AttributeReference undetermined open \"V1\" \"taxatie\""; "3 Literal unreached"; "4 Comparison false";
+         "5 AttributeReference 50"; "6 Literal 100"; "7 Comparison false"; "8 AttributeReference 1"; "9 Literal 2";
+         "OPEN" ]);
+  lines_equal "WV-5.12-open-composite (the first undetermined member)"
+    (ov_readings doc (ov_v1 [ ("gewicht", "50") ]))
+    (on_object form "V1"
+       [ "0 Compound undetermined open \"V1\" \"taxatie\""; "1 Comparison undetermined open \"V1\" \"taxatie\"";
+         "2 AttributeReference undetermined open \"V1\" \"taxatie\""; "3 Literal unreached"; "4 Comparison false";
+         "5 AttributeReference 50"; "6 Literal 100"; "7 Comparison undetermined open \"V1\" \"lengte\"";
+         "8 AttributeReference undetermined open \"V1\" \"lengte\""; "9 Literal unreached"; "OPEN" ]);
+  let fixture = strict_fixture "consistency" in
+  let c = "/rules/consistencies/1/versions/0" in
+  lines_equal "WV-5.12-open-composite (consistency, decided after an undetermined member)"
+    (readings_named (fixture ^ "ir.json") (fixture ^ "case4-gewicht-leeg-criterium-waar.json") [ c ])
+    (on_object c "V1"
+       [ "0 Compound true"; "1 Comparison undetermined open \"V1\" \"gewicht\"";
+         "2 AttributeReference undetermined open \"V1\" \"gewicht\""; "3 Literal unreached"; "4 Comparison true";
+         "5 AttributeReference 500"; "6 Literal 100"; "HOLDS" ]);
+  let c0 = "/rules/consistencies/0/versions/0" in
+  lines_equal "WV-5.12-open-composite (consistency open)"
+    (readings_named (fixture ^ "ir.json") (fixture ^ "case4-gewicht-leeg-criterium-waar.json") [ c0 ])
+    (on_object c0 "V1"
+       [ "0 Comparison undetermined open \"V1\" \"gewicht\""; "1 AttributeReference undetermined open \"V1\" \"gewicht\"";
+         "2 Literal unreached"; "OPEN" ])
+
+(* WV-5.12-open-quantifier-fold: a contributor carries the truth of the matrix
+   on it for the form itself, undetermined among them, and the fold the open
+   read of its first undetermined member — its filter's where its filter is
+   undetermined. The fixture quantifier-fold: "alle vondsten zwaar" over V1
+   and V2 of 20 and 30 and V3 without a gewicht; and "keurder", over gemerkte
+   vondsten, with V2's gemerkt open and its gewicht 5 *)
+let () =
+  let fixture = strict_fixture "quantifier-fold" in
+  lines_equal "WV-5.12-open-quantifier-fold (matrix)"
+    (readings_named (fixture ^ "ir.json") (fixture ^ "case2-een-leeg.json") [ rule_form 0 ])
+    (on_object (rule_form 0) "J1"
+       [ "0 QuantifierFold undetermined open \"V3\" \"gewicht\" contributors [\"V1\" true reached; \"V2\" true reached; \
+          \"V3\" undetermined reached]";
+         "OPEN" ]);
+  lines_equal "WV-5.12-open-quantifier-fold (filter)"
+    (readings_named (fixture ^ "ir.json") (fixture ^ "case7-filter-onbepaald.json") [ rule_form 6 ])
+    (on_object (rule_form 6) "J1"
+       [ "0 QuantifierFold undetermined open \"V2\" \"gemerkt\" contributors [\"V1\" true reached; \"V2\" false reached]";
+         "OPEN" ])
+
+(* WV-5.12-open-fold-over-a-set: a fold over a set that a member's open value
+   or undetermined filter broke off is undetermined, names that open read, and
+   carries no contributors. The fixture set-fold, V2 without a gewicht: the sum
+   of the gewicht reads it open, and the sum over the zware vondsten reads
+   V2's zwaar open in its filter, so its fallback is not reached *)
+let () =
+  let fixture = strict_fixture "set-fold" in
+  lines_equal "WV-5.12-open-fold-over-a-set"
+    (readings_named (fixture ^ "ir.json") (fixture ^ "case2-een-gewicht-leeg.json") [ rule_form 1; rule_form 2 ])
+    (on_object (rule_form 1) "J1" [ "0 Aggregation undetermined open \"V2\" \"gewicht\""; "OPEN" ]
+    @ on_object (rule_form 2) "J1" [ "0 Aggregation undetermined open \"V2\" \"zwaar\""; "3 Literal unreached"; "OPEN" ])
+
+(* WV-5.12-open-stack: below a default that is open every default but the
+   initialisation default is displaced, read as at its turn; the
+   initialisation default is at its turn, a closure over the stack. The
+   fixture defaults-stack, with betwist not named: the second default is open,
+   the two below it displaced. The fixture input-above-computation without an
+   opgave: the opgave is open, the computation displaced, and the
+   initialisation default decides 25 *)
+let () =
+  let fixture = strict_fixture "defaults-stack" in
+  let statuses lines = List.filter (fun l -> List.exists (fun s -> String.ends_with ~suffix:s l) [ " OPEN"; " DISPLACED"; " HOLDS"; " FAILS" ]) lines in
+  lines_equal "WV-5.12-open-stack (open default)"
+    (statuses (readings_named (fixture ^ "ir.json") (fixture ^ "case4-betwist-onbepaald.json") (List.map default_form [ 0; 1; 2; 3 ])))
+    [ default_form 0 ^ " \"V1\" FAILS"; default_form 1 ^ " \"V1\" OPEN"; default_form 2 ^ " \"V1\" DISPLACED";
+      default_form 3 ^ " \"V1\" DISPLACED" ];
+  let fixture = strict_fixture "input-above-computation" in
+  lines_equal "WV-5.12-open-stack (the initialisation closes)"
+    (readings_named (fixture ^ "ir.json") (fixture ^ "case2-geen-opgave.json") [ default_form 0; default_form 2 ])
+    (on_object (default_form 0) "V1"
+       [ "0 Compound true"; "1 AttributeReference undetermined open \"V1\" \"opgegeven bergloon\""; "OPEN" ]
+    @ on_object (default_form 2) "V1" [ "0 Literal 25"; "HOLDS" ])
+
+(* WV-5.12-open-creation: a creation whose condition is undetermined is open,
+   and a read over the relation it leaves open names that relation by its role.
+   The fixture object-creation, a Jutter without an ervaring *)
+let () =
+  let fixture = strict_fixture "object-creation" in
+  lines_equal "WV-5.12-open-creation"
+    (readings_named (fixture ^ "ir.json") (fixture ^ "case3-ervaring-leeg.json")
+       [ "/rules/objectCreations/0/versions/0"; rule_form 1 ])
+    (on_object "/rules/objectCreations/0/versions/0" "J1" [ "0 CharacteristicCheck undetermined open \"J1\" \"ervaren\""; "OPEN" ]
+    @ on_object (rule_form 1) "J1" [ "0 AttributeReference undetermined open \"J1\" \"proefvondst\""; "OPEN" ])
+
+(* WV-5.12-open-path: a read over a path whose object has the member open names
+   that object and that member, and no object after [on]. The fixture
+   navigated-read, the vinder without a leeftijd *)
+let () =
+  let fixture = strict_fixture "navigated-read" in
+  lines_equal "WV-5.12-open-path"
+    (readings_named (fixture ^ "ir.json") (fixture ^ "case4-leeftijd-leeg.json") [ rule_form 0 ])
+    (on_object (rule_form 0) "V1"
+       [ "0 Comparison undetermined open \"J1\" \"leeftijd\""; "1 AttributeReference undetermined open \"J1\" \"leeftijd\"";
+         "2 Literal unreached"; "OPEN" ])
+
+(* WV-5.12-open-status: the status of a reading is the session's outcome: a
+   rule or a creation is OPEN exactly where the session's evaluation of it on
+   that object left a member or a relation open. Over every case of every
+   document under ref/test/fixtures/strict-empty/ and of the golden *)
+let () =
+  let dirs =
+    corpus_file "corpus/golden/jutterswet-afleiden-uit-leeg/"
+    :: List.map strict_fixture (List.sort compare (Array.to_list (Sys.readdir (strict_fixture ""))))
+  in
+  let compared = ref 0 in
+  List.iter
+    (fun dir ->
+      let irf = dir ^ "ir.json" in
+      if Sys.file_exists irf then
+        List.iter
+          (fun case_file ->
+            let d = Ir_v0.Loader.load_file irf in
+            let c = Case.load_file d (dir ^ case_file) in
+            let env = { (env_of d) with params = c.params; param_tls = c.param_tls; as_of = c.as_of } in
+            let final = Eval.evaluate env c.world in
+            List.iter
+              (fun (r : Reading.reading) ->
+                if List.exists (fun p -> String.starts_with ~prefix:p r.form) [ "/rules/rules/"; "/rules/objectCreations/"; "/rules/factCreations/" ]
+                then begin
+                  incr compared;
+                  let opened = World.opened_by final ~form:r.form ~at:r.subject <> [] in
+                  if (r.status = Reading.Open) <> opened then
+                    check (Printf.sprintf "WV-5.12-open-status %s%s %s %s" dir case_file r.form r.subject) false
+                end)
+              (Reading.readings (Yojson.Safe.from_file irf) env ~world0:c.world ~world:final))
+          (List.filter
+             (fun f -> String.starts_with ~prefix:"case" f && Filename.check_suffix f ".json")
+             (List.sort compare (Array.to_list (Sys.readdir dir)))))
+    dirs;
+  check (Printf.sprintf "WV-5.12-open-status (%d readings compared)" !compared) (!compared > 400)
+
+(* WV-5.12a-afleiden-uit-leeg: the end state names every open member, in
+   place of its value; a member without a line is settled leeg, a
+   characteristic without one stands not to hold. The golden with nothing
+   given, and without a taxatie *)
+let () =
+  end_state_example "WV-5.12a-afleiden-uit-leeg (nothing given)" "jutterswet-afleiden-uit-leeg" "case4-beide-open.json"
+    ~whole:true
+    [ "attribute \"V1\" \"bewakingstoeslag\" open"; "attribute \"V1\" \"gewicht\" open"; "attribute \"V1\" \"meldloon\" open";
+      "attribute \"V1\" \"premie\" open"; "attribute \"V1\" \"taxatie\" open"; "attribute \"V1\" \"vindloon\" open";
+      "characteristic \"V1\" \"betwist\" open"; "characteristic \"V1\" \"gemeld\" open";
+      "characteristic \"V1\" \"kostbaar\" open"; "characteristic \"V1\" \"ongetaxeerd\""; "object \"V1\" \"Vondst\"" ];
+  end_state_example "WV-5.12a-afleiden-uit-leeg (taxatie open)" "jutterswet-afleiden-uit-leeg" "case2-taxatie-open.json"
+    ~whole:true
+    [ "attribute \"V1\" \"bewakingstoeslag\" open"; "attribute \"V1\" \"gewicht\" 5"; "attribute \"V1\" \"meldloon\" 3";
+      "attribute \"V1\" \"premie\" open"; "attribute \"V1\" \"taxatie\" open"; "attribute \"V1\" \"vindloon\" 15";
+      "characteristic \"V1\" \"betwist\" open"; "characteristic \"V1\" \"gemeld\"";
+      "characteristic \"V1\" \"kostbaar\" open"; "characteristic \"V1\" \"ongetaxeerd\""; "object \"V1\" \"Vondst\"" ]
+
+(* WV-5.12a-open-link: a relation that a creation could still lay a link in is
+   open on its object, written as a link with [open] in the place of the
+   objects it could reach. The fixture object-creation, a Jutter without an
+   ervaring *)
+let () =
+  let fixture = strict_fixture "object-creation" in
+  let got = end_state_of (fixture ^ "ir.json") (fixture ^ "case3-ervaring-leeg.json") in
+  check "WV-5.12a-open-link" (List.mem "link \"proefvangst\" \"jutter\" \"J1\" \"proefvondst\" open" got);
+  if not (List.mem "link \"proefvangst\" \"jutter\" \"J1\" \"proefvondst\" open" got) then
+    List.iter (Printf.printf "  got: %s\n") got
 
 (* WV-1.5-monotone: for every scenario above and every attribute value and
    characteristic its case gives an input member, the run without that input
