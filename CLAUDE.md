@@ -208,8 +208,15 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
    whose document does not carry `inferFromEmpty`, copied with `inferFromEmpty: false` and replayed with
    `runner --closed-inputs`, plays its own cases; a golden whose copy ref refuses (REF-014) is counted per form, any
    other difference fails by name, and the copy of `PRESERVATION_MUTANT` without `--closed-inputs` must miss a case
-   (its red row). Floors: `EXPECTED_MIN_CASES`, `EXPECTED_MIN_EXAMPLES`, `EXPECTED_MIN_PRESERVED_GOLDENS`,
-   `EXPECTED_MIN_PRESERVED_CASES`.
+   (its red row). A monotonicity leg (the same section) holds that giving an input adds outcomes and changes none: per
+   golden the preservation leg carries or that carries the property, per case and per input the case gives,
+   `runner --end-state` of the case without that input against the case, every outcome of the first standing in the
+   second; a run in which a closure decided (a `closure` line, or a fault after one) and a run whose member left out
+   is no input member are counted apart, any other difference fails by name unless `MONOTONE_GAPS` lists it
+   (reason-carrying, stale-failing in both directions), the comparison passes rows of its own, and the run of
+   `MONOTONE_MUTANT`, compared all the same, must lose an outcome. Floors: `EXPECTED_MIN_CASES`,
+   `EXPECTED_MIN_EXAMPLES`, `EXPECTED_MIN_PRESERVED_GOLDENS`, `EXPECTED_MIN_PRESERVED_CASES`,
+   `EXPECTED_MIN_MONOTONE_RUNS`, `EXPECTED_MIN_MONOTONE_CLOSURES`.
 
 6. `scripts/check-clingo.sh` — the differential: `backends/clingo` translates every golden case to ASP-Core-2 and
    clingo's stable model must match the absolute expectations gate 5 pins. Played is the default. A golden whose form
@@ -399,8 +406,8 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
     `ref/lib/end_state.ml`: the end state, each line after `state `) and the backend's readings
     (`DroolsBackendMain --readings`, the end state through the outcome reader `DroolsBackend.endStateOf`) are held
     equal per golden case file, on both branches; the two share no code (gate 1). The trace reads every golden case
-    file except those of a golden `TRACE_REFUSED` names with the code of its refusal (REF-014, form `reading`: a
-    document with `inferFromEmpty: false`), which the backend must exclude as well; per golden both branches end in `READINGS <n>`, n its case files, or in the `EXCLUDE` line the plain replay
+    file, a document with `inferFromEmpty: false` included, except those of a golden `TRACE_REFUSED` names with the
+    REF code of its refusal (empty), which the backend must exclude as well; per golden both branches end in `READINGS <n>`, n its case files, or in the `EXCLUDE` line the plain replay
     prints; an `ERROR` fails unless `READINGS_ERROR_KNOWN` lists it. Every reading line is compared verbatim — the
     object a role path reached (`on "<object>"`, `on none`) and a `DISPLACED` default's node lines included — except
     the position of a contributor of a quantifier fold: member and verdict, value or fault are compared verbatim, the
