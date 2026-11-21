@@ -306,6 +306,7 @@ EXPECTED_CHANNEL=(
   "anchor/jutterswet-vondstdossier|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "closed-runtime-division-by-zero|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType — a red case until card zero-division-channel (2026-10-19), excluded in check-red.sh on the same refusal"
   "jutterswet-aanspraakherziening|EXCLUDE DROOLS-002|loader Refusal: functionDefs"
+  "jutterswet-afleiden-uit-leeg|NOCASE|no case file: the document carries inferFromEmpty false (RegelSpraak 'Afleiden uit leeg: nee'), a reading no executor of this repository plays yet; the build refuses it with DROOLS-370 on both branches (InferFromEmptyRefusalWitnessTest)"
   "jutterswet-dossierrecht-catala|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "jutterswet-dossierspelling|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "jutterswet-grens-per-jutter|EXCLUDE DROOLS-193|transpiler SKIP: a BinderRef of a Let over a fold, in the filter or the matrix of that fold: the contribution rules of the fold compute the filter and the matrix per element and do not bind the value of the Let. Measured 2026-11-06 (cards clingo-let-binder-tussen-onderwerpen and clingo-let-binder-vergelijking-over-eenheden) in both branches, same sentence; ref and the ASP backend answer the golden, so its pins are a ref = clingo pair"
