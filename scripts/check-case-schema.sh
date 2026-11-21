@@ -291,6 +291,43 @@ for ref_, doc, want_ok, why in CELL_ROWS:
         selftest_bad += 1
         sys.stderr.write("FAIL: cell self-test, %r: schema %s it, expected %s\n  %s\n"
                          % (doc, "accepts" if got_ok else "refuses", "accept" if want_ok else "refuse", why))
+# The states of a member in a document with inferFromEmpty false (RUNTIME-SEMANTICS ch. 1.5; card open-values-in-ref,
+# 2026-11-21): the input field that states a characteristic does not hold, and the two expectations of an open member.
+# Only the strict golden carries them, so the shape is held HERE as well, through the same validator; that the names
+# are declared and that no characteristic stands in both input lists are the case readers' (EF-040, EF-047).
+def _v1(**extra):
+    inst = {"label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": []}
+    inst.update(extra)
+    return inst
+STATE_ROWS = [
+    ("#/$defs/instance", _v1(characteristicsAbsent=["gemeld"]), True,
+     "a characteristic the case states does not hold"),
+    ("#/$defs/instance", _v1(characteristicsAbsent=[]), True, "an empty list states nothing, as 'characteristics' may"),
+    ("#/$defs/instance", _v1(), True, "the field is optional"),
+    ("#/$defs/instance", _v1(characteristicsAbsent=[""]), False, "a characteristic is named"),
+    ("#/$defs/instance", _v1(characteristicsAbsent="gemeld"), False, "a list, never a single name"),
+    ("#/$defs/instance", _v1(characteristicsAbsent={"gemeld": False}), False,
+     "a list of names, never an object of truths"),
+    ("#/$defs/expectation", {"kind": "attributeOpen", "label": "V1", "attribute": "vindloon"}, True,
+     "an open attribute"),
+    ("#/$defs/expectation", {"kind": "attributeOpen", "label": "V1", "attribute": "vindloon",
+                             "value": {"number": "10"}}, False, "an open attribute carries no value"),
+    ("#/$defs/expectation", {"kind": "attributeOpen", "label": "V1"}, False, "an attributeOpen names its attribute"),
+    ("#/$defs/expectation", {"kind": "characteristicOpen", "label": "V1", "characteristic": "kostbaar"}, True,
+     "an open characteristic"),
+    ("#/$defs/expectation", {"kind": "characteristicOpen", "label": "V1", "attribute": "kostbaar"}, False,
+     "a characteristicOpen names a characteristic, never an attribute"),
+    ("#/$defs/expectation", {"kind": "characteristicOpen", "characteristic": "kostbaar"}, False,
+     "a characteristicOpen names its instance"),
+]
+for ref_, doc, want_ok, why in STATE_ROWS:
+    n_selftest += 1
+    probe = CaseValidator({"properties": schema["properties"], "$defs": schema["$defs"], "$ref": ref_})
+    got_ok = not list(probe.iter_errors(doc))
+    if got_ok != want_ok:
+        selftest_bad += 1
+        sys.stderr.write("FAIL: state self-test, %r: schema %s it, expected %s\n  %s\n"
+                         % (doc, "accepts" if got_ok else "refuses", "accept" if want_ok else "refuse", why))
 if selftest_bad:
     sys.stderr.write("check-case-schema: FAIL (%d self-test row(s) bad)\n" % selftest_bad)
     sys.exit(1)
