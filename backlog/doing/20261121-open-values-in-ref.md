@@ -540,3 +540,209 @@ cases van de golden, met de hand nagerekend. De alinea's van gate 4, 5 en 17 in 
 casebestand heeft (open punt 1). `make gates` groen op `266b24d0b` (684 s, 17 gates, red=0; de poot voor behoud: 134
 goldens en 339 cases). De open punten 2 en 3 (de caselezer van Drools, de scenariolaag) horen bij de kaart waarin
 Drools de lezing draagt en bij een kaart voor de scenariotaal.
+
+## Result (deel 2a)
+
+*Bouwer deel 2a, 2026-11-21. Branch `card/open-values-in-ref`, op `247a61084`. Opdracht: de voorwaarden 1–4 van het
+onafhankelijke oordeel over deel 1a (A–D), daarna de vouwen (E).*
+
+### Wat er is
+
+| commit | wat |
+|---|---|
+| `cc20991ce` | A: ch. 1.5 zegt de operationele keuzes (wat een evaluatie bereikt, binnen één grens, de leesregel van de samengestelde voorwaarde, de eigen ontkenning, een regel buiten haar venster, een instance-ordered deel), met tests; de invariant van het paar in tekst en commentaar; stopconditie en `run_rule` korter |
+| `037aca65e` | B: een waarde die geen schrijver besliste, is open zolang een schrijver het lid open laat; `World.attr_open`/`char_open` als de ene plaats van de stand; eindcontrole van een case via die plaats; monotonie-test over invoerleden |
+| `d3ca0b4ce` | C: elke lezing tijdens een evaluatie via een lezer met de stand (`read_attr`, `read_char`, nieuw `read_timeline`, `read_char_periods`); de lijst rechtstreekse lezingen als test; de grens heet `open_read_boundary` |
+| `83ce7a370` | D: het sluitingssignaal van de grens; de toets op leeg en gevuld als bijzonder geval; een regel met een lege waarde na een sluiting laat haar doel open |
+| `3714a6fad` | E: de kwantorvouw en de vouwen over een verzameling strikt, de telling van gevulde waarden en een filter op gevuld via het signaal; `refuse_uncarried` laat ze los; vijf getuigen als fixtures; ch. 1.5 |
+| `aba670949` | gate 5: floors van de poot voor behoud 197 goldens, 480 cases (eigen commit) |
+| (slotcommit) | dit Result |
+
+### A. De norm zegt wat de code doet
+
+Ch. 1.5 "An open read" zegt nu de regel: een evaluatie leest wat de gewone lezing bereikt (ch. 5.11), en wat zij leest
+dat open is, breekt haar af; binnen één grens vervalt een deponering vóór de open lezing, blijft een fout ervoor een
+fout, en ontstaat een fout erna niet. "For the form itself and for another" zegt de invariant (het oordeel voor een
+ander staat nooit vast waar het eigen oordeel dat niet doet, en dan met dezelfde waarde) en de leesregel (de
+samengestelde voorwaarde leest tot haar oordeel voor een ander vaststaat; een lid daarna deponeert en faalt als elk
+gelezen lid). "The test on leeg and gevuld": de eigen ontkenning van een gevuld-toets sluit. "The three states": een
+regel buiten haar venster schrijft haar doel en vult daar niets. "A derived member": een instance-ordered deel komt per
+object tot zijn fixpunt. Code: de stopconditie is `other = Established _`; `run_rule` heeft drie armen (`other`
+onwaar → vult niets; eigen niet waar → open; eigen waar → beslist).
+
+| keuze | test | rood eerst |
+|---|---|---|
+| wat bereikt wordt | WV-1.5-reached (leeg deeltal, binder niet gelezen, en de tegenhangers) | nee op `247a61084` (gedrag bestond); mutant "deler altijd lezen": 2 FAIL |
+| leesregel samengestelde voorwaarde | WV-1.5-read-for-another (vrijstelling 1 met EF-031; volledig: zonder feit) | nee; mutant "stop op het eigen oordeel": 1 FAIL, door geen bestaande test gevangen |
+| deponering vóór een open lezing | WV-1.5-boundary-deposit-before-an-open-read (4) | nee; mutant "deposito's doorlaten": 1 FAIL |
+| fout vóór / na een open lezing | WV-1.5-boundary-fault-before-an-open-read, -after-an-open-read (EF-014) | nee (vastgelegd gedrag) |
+| eigen ontkenning | WV-1.5-own-negation (2) | nee; mutant "geen sluiting": FAIL |
+| buiten het venster | WV-1.5-outside-the-window (3) | nee (vastgelegd gedrag) |
+| instance-ordered deel | WV-1.5-instance-ordered (2 cases × 2 volgordes, de documenten van WV-6.4-i met de eigenschap) | nee; mutant "geen sluiting": 2 FAIL |
+
+Logs: `logs/2a-mutants-A-01.log`, `-02.log` in de werkmap. Het instance-ordered deel wordt gedragen, niet geweigerd.
+
+### B. Monotonie
+
+**Voorlopig besluit (hoofdsessie, ter bevestiging):** een lid met een waarde die geen schrijver besliste (de case, of
+een creatie) is open zolang een staande uitkomst het open laat; de waarde staat pas vast als van elke schrijver
+vaststaat dat hij niets vult (ch. 7.8). Gebouwd op de ene plaats van de stand, `World.attr_open`: zonder waarde open
+als open invoer of door een uitkomst opengelaten; met een waarde die een schrijver besliste (`owners`) gevuld; met een
+andere waarde open zolang een uitkomst het lid open laat.
+
+Wat het verder raakte, en waarom:
+- **de eindcontrole van een case** (`Case.check`): `attributeValue`, `attributeEmpty`, `attributeOpen`, de cel- en
+  tijdlijnverwachtingen en `characteristicAbsent`/`characteristicOpen` vragen eerst de stand; anders zou een case 7
+  verwachten van een lid dat open is.
+- **`characteristicsAbsent`**: het voorlopige besluit 1 van deel 1b ("nooit open, ook naast een schrijver die niets
+  beslist") rustte op het herziene besluit en volgt het: naast een schrijver die het kenmerk open laat, is het open;
+  naast een schrijver die niets vult, staat het (`World.char_open`). Een kenmerk dat de case noemt, blijft gelden: een
+  schrijver kan het alleen toekennen. De test WV-1.5-case-characteristics-absent verwacht daarom op de rij "beside a
+  writer that decides nothing" nu `characteristicOpen` (gewijzigde verwachting, door de taak), met een nieuwe rij
+  "beside a writer that fills nothing".
+- **de initialisatie die bij een invoerwaarde uit staat** (`World.init_may_write`): ongewijzigd en juist: met een
+  invoerwaarde schrijft de initialisatie in geen enkele aanvulling.
+- **de monotonie-test** laat alleen invoerleden weg: een waarde die de case een afgeleid lid geeft, is geen invoer en
+  staat waar elke schrijver niets vult in plaats van vaststaand leeg (een zin in ch. 1.5).
+
+Test: WV-1.5-input-beside-a-writer (vindloon 7 naast "10 indien taxatie > 1000": open zonder taxatie, ook de
+uitbetaling; 10 bij 2000; 7 bij 50), drie geregistreerde scenario's in WV-1.5-monotone. Rood eerst op `cc20991ce` met
+stubs die de nieuwe API de oude lezing geven: 4 FAIL (beide rijen open, de case-rij, de monotonie bij taxatie 2000;
+`logs/2a-red-B-01.log`).
+
+### C. De open lezing is niet te omzeilen
+
+Elke lezing van een lid tijdens een evaluatie gaat via `World.read_attr`, `read_char`, `read_timeline` of
+`read_char_periods` (de laatste twee nieuw, voor een tijdlijn en de waarperiodes van een kenmerk); een cel leest via
+`read_attr`. Ook in de vormen die een strikt document nog weigert (tijdlijnen, verdeling, uniciteit, dimensievouw),
+zodat een vorm die later vrijkomt de stand al vraagt. De test **WV-1.5-direct-reads** leest de code van `ref/lib` (zonder
+`world.ml`) en `ref/bin`, commentaar en strings eruit, per top-level functie, op `World.attr`, `has_char`, `timeline`,
+`char_periods` en de velden `.attrs`, `.tls`, `.ctls`, `.chars`, en eist gelijkheid met de lijst; een mutant die één
+lezing terugzet op `World.attr` faalt bij naam (`logs/2a-mutants-C-01.log`). De lijst: **18 plaatsen, 26 lezingen**:
+
+| plaats | lezingen | reden |
+|---|---|---|
+| `eval.ml` `open_inputs` | `World.attr`, `timeline`, `has_char`, `char_periods` | wat de case geeft, bepaalt welk invoerlid open is |
+| `eval.ml` `validate_input_precision` | `.attrs`, `.tls` | toetst de invoer vóór de evaluatie (ch. 2.4) |
+| `eval.ml` `input_empty_days` | `World.attr`, `timeline` | leest de invoerwereld |
+| `eval.ml` `run_defaults_group` | `World.attr` | leest de invoerwereld |
+| `eval.ml` `initialisation_days` | `World.attr` | de bewaking van een initialisatie leest haar eigen doel (ch. 5.4) |
+| `case.ml` `check` | 5× `World.attr`, `timeline`, 3× `has_char` | de eindcontrole: eerst de stand, dan de opgeslagen waarde |
+| `end_state.ml` `object_lines` | 3× `World.attr`, `timeline`, `has_char`, `.ctls` | de eindstand (ch. 5.12a); geweigerd voor een strikt document |
+| `reading.ml` `defaults` | `World.attr` | leest de invoerwereld |
+
+De grens heet `open_read_boundary`; `held` betekent in `ref/lib` nu alleen nog `World.held` (en `held_over`, de
+observer). Bijvangst: `open_inputs` telt een kenmerk dat de case met waarperiodes geeft als gegeven (was open invoer;
+onbereikbaar, want `timeline-member` wordt geweigerd).
+
+### D. Een sluiting binnen een uitdrukking
+
+Het signaal: een knoop die een sluiting op een open waarde toepast, roept `signal_closure` aan; dat zet een vlag van de
+binnenste grens onder weg (een stapel `boundaries`), en `open_read_boundary` geeft `Some (waarde, gesloten)` terug.
+`atomic` maakt van `gesloten` het oordeel `{ own = b; other = Undetermined }`; een regel met waarde en signaal beslist,
+een regel met een lege waarde en signaal laat haar doel open (eigen: vult niets; voor een ander staat dat niet vast).
+De toets op leeg en gevuld is het bijzondere geval: zij leest haar operand met `closure_over_open` (open → leeg voor de
+vorm zelf, signaal) binnen een atomaire grens. Een filter in een waarde gaat via `value_verdict`: eigen onbepaald →
+open lezing, eigen vast en voor een ander onbepaald → signaal. Eén evaluatie per uitdrukking; de evaluator geeft één
+waarde; een signaal buiten een grens is een fout van ref (`failwith`).
+
+Ch. 1.5 "A closure inside a value". Test: WV-1.5-closure-in-a-value (7: gevuld-telling 2 over 20, open, 30; "gelijk aan
+3" open, "groter dan 1" geldt; som met filter op gevuld 50; over alleen open gewichten telling 0 en som **open**; zonder
+vondsten som vaststaand leeg). Rood: op `83ce7a370` weigert ref de vouw (zie E); mutanten "gevuld-telling zonder
+sluiting" 3 FAIL, "leeg na sluiting vult niets" 1 FAIL (`logs/2a-mutants-E-01.log`).
+
+### E. De vouwen
+
+- **De kwantorvouw**: eerst het filter van elk lid van het bereik (zoals een vouw haar bijdragers vaststelt), dan per
+  lid waarvan het filter voor een ander niet onwaar is de matrix, beide als oordeel; een lid is lid van een
+  samengestelde voorwaarde over het bereik (bij `all`/`the`: filter onwaar of matrix waar; anders: beide waar, Kleene),
+  geteld met `count_verdict`, gelezen tot het oordeel voor een ander vaststaat. Waar elk filter vaststaat zijn de
+  stoppunten die van ch. 3.9a (afgeleid in het commentaar; gate 17 ongewijzigd groen). Tests: WV-1.5-quantifier-fold-
+  member (32 rijen over zes kwantoren, ook met het open lid voorop), -filter (2), -closed-set (2).
+- **De vouwen over een verzameling** (som, minimum, maximum, eerste, laatste, telling, gevuld-telling, de telling van
+  een vereniging, en opgesomde vormen erover): filter onwaar telt niet, vaststaand leeg wordt overgeslagen, onbepaald
+  filter of open waarde maakt de vouw open (de telling alleen via haar filter), geen bijdrage is vaststaand leeg of de
+  terugvalwaarde. Test: WV-1.5-set-fold (4 rijen × 6 doelen, plus vaststaand leeg overgeslagen en een open afgeleid lid).
+- **Getuigen**: `quantifier-fold` (7 cases, case7 nu met `characteristicsAbsent` per object), `set-fold` (4),
+  `settled-empty-fold` (4), `listed-fold` (5), `empty-by-fault` (4, nu geheel) in `ref/test/fixtures/strict-empty/`,
+  omgezet met `draft2a/witness_cases.py` in de werkmap (het case-formaat van deel 1b). Dertien verwachtingen "geen
+  waarde" van de proef bleken open, elk met de hand nagerekend en omgezet: `empty-by-fault` case4 (afwijkend, totaal:
+  deling door een open aantal), `listed-fold` case3/4 (eerste en laatste meldingsdag: een vouw over een open vinddag),
+  `set-fold` case2 (vijf vouwen over een open gewicht of een open zwaar), case4 (eerste en laatste vinddag: V1 zonder
+  vinddag), `settled-empty-fold` case2 (jutterloon over een open totaal). `filled-test-not-closure` en
+  `composite-filled-test` hebben een defaults-groep en wachten op 2b.
+- **De weigering**: `refuse_uncarried` laat `set-fold`, `quantifier-fold` en de telling van een vereniging los en loopt
+  hun filter, bron en terugvalwaarde af. WV-1.5-refused-set-fold is WV-1.5-refused-temporal-total geworden (de eigen
+  totaalsom weigert nog) met WV-1.5-refused-not-the-set-fold (gewijzigd gedrag, door de taak).
+- **Rood eerst**: op `83ce7a370` stopt de suite bij de eerste E-test met REF-014 `form` `quantifier-fold`
+  (`logs/2a-red-E-01.log`); mutanten: "een onbepaald lid maakt de hele kwantorvouw onbepaald" 8 FAIL (de rijen met het
+  open lid voorop), "onbepaald filter sluit uit" FAIL op WV-1.5-set-fold.
+- **Poot voor behoud** (gate 5, check 5): **197 goldens, 480 cases, 0 afwijkingen** (was 134 en 339); floors naar
+  197/480 in `aba670949`. Geweigerd per eerste vorm: defaults-group 55, timeline-member 48, object-creation 27,
+  allocation 21, list-family 16, if-then-else 11, fact-creation 10, day-kind 9, match 8, record 7, uniqueness 7,
+  dimension-cell 6, function-def 3, time-window 2, en 1 elk dimension-fold, rule-status-check, start-point, unresolved.
+  De zes die eerder als `temporal-total` telden, waren tellingen van een vereniging en spelen nu.
+
+### De naad (ref/lib tegenover `247a61084`)
+
+| bestand | regels | wat |
+|---|---|---|
+| `eval.ml` | +250 −157 | `boundaries`, `signal_closure`, `closure_over_open`, `value_verdict`; `held` → `open_read_boundary` met signaal; `atomic`; de arm van leeg/gevuld; de arm van de kwantorvouw; `keep`/`bkeep` en de gevuld-telling in `eval_function_call`; `run_rule` (drie armen, lege waarde na sluiting); `refuse_uncarried`; elke lezing via een lezer (`whole_period_characteristic`, `qualifier_timeline`, `ever_tuples` met `world`); `open_inputs` |
+| `world.ml` | +43 −16 | `is_open` → `attr_open`, `char_open`; `read_timeline`, `char_periods`, `read_char_periods`; `timeline` naar boven |
+| `case.ml` | +44 −25 | `check` vraagt de stand eerst |
+
+De architectuur: één evaluator (geen kopie; de kwantorvouw en de vouwen gebruiken hun bestaande arm), `Value.t`
+ongewijzigd (`value.ml`, clingo en de frontends niet geraakt), de eigenschap op twee plaatsen (`refuse_uncarried`,
+`open_inputs`), een gewoon document ongewijzigd (gate 5, 7, 8, 13, 17 groen zonder gewijzigde verwachting, zie onder).
+
+### Voorlopige besluiten
+
+1. Een waarde die geen schrijver besliste, is open zolang een schrijver het lid open laat; zo ook een kenmerk in
+   `characteristicsAbsent`; een kenmerk dat de case noemt, blijft gelden (B).
+2. Monotonie gaat over invoerleden; een waarde op een afgeleid lid staat waar elke schrijver niets vult (B).
+3. Een instance-ordered deel wordt gedragen; het reopen-mechanisme herstelt een tijdelijk vaststaand lege lezing zoals
+   elders in een stratum (A).
+4. Een regel met een waarde na een sluiting beslist; met een lege waarde na een sluiting laat zij haar doel open; een
+   initialisatie evenzo (D).
+5. Een lid van een kwantorvouw is een lid van een samengestelde voorwaarde over het bereik (implicatie bij `all`/`the`,
+   conjunctie anders); de filters van alle leden eerst, de matrix alleen waar het filter voor een ander niet onwaar is
+   (E).
+6. De telling van een vereniging (ch. 3.4d) wordt gedragen; elk takfilter via `value_verdict` (E).
+7. Een onbepaald filter in een waarde werpt `World.Open_read` met als lid "the filter of a fold" (E).
+8. De lijst rechtstreekse lezingen is een test van de suite, geen eigen poot in een gate-script (C).
+
+### Voorgestelde rij voor `spec/CONSTRUCTS.md`
+
+Rij 48, de kolom van de stand: "ref carries the reading of RUNTIME-SEMANTICS ch. 1.5 for a rule, a consistency rule, a
+condition without a fold and an expression without a fold or a timeline" wordt "ref carries the reading of
+RUNTIME-SEMANTICS ch. 1.5 for a rule, a consistency rule, and a condition or an expression without a timeline, the
+quantifier fold, the folds over a set and the count of an instance-set union among them". Getuigenkolom erbij:
+"WV-1.5-direct-reads (every read of a member past its state, listed with its reason)".
+
+### Voorstel voor `CLAUDE.md`
+
+Geen: de alinea van gate 5 noemt de floors bij naam, niet bij getal.
+
+### Open punten
+
+1. Deel 2b: de stapel (defaults met doorval, initialisatie, opgave) en de creaties; zie de overdracht.
+2. `scripts/check-readings.sh` is niet uitvoerbaar maar vraagt `bash` (`declare -A`); de vuistregel "uitvoerbaar
+   betekent bash" van de werkafspraken klopt daar niet (`make gates` roept het met `bash` aan). Geen fout van de gate.
+3. Deel 3: wat de observer van een afgebroken evaluatie en van een sluiting ziet; `--trace` weigert een strikt document
+   nog (REF-014 `reading`).
+
+### Gates, los gedraaid
+
+Elk los, één zware tegelijk, op `aba670949`; logs `logs/2a-gate*.log` in de werkmap (gate 17 met `bash`: `2a-gate17-02`).
+
+```
+check-self-contained: PASS
+check-verifier: PASS (the verifier's dune files name no library of another project of the workspace: 4 names (ir_v0 yojson zarith); 509 golden clean; 657 negative rejected for their declared rule, floor 568; 502 on their declared arm (expect.txt), floor 411, 277 arm keys, floor 239, 844 name=value lines, floor 686; 374 keys of one template each in the reports, floor 340, 468 key literals in checks.ml, floor 442; 825 cited pointers resolve in their documents, floor 705; empty-closures inventory over 509 documents: 837 closure places, floor 827, 385 negation, floor 383, 206 absent-instance, floor 206, 20 kinds, floor 20, 24 witnesses verbatim, floor 24, 1466 pointers resolve)
+check-case-schema: PASS (schema valid; 146 self-test row(s); 1305 case file(s) validate)
+check-oracle: PASS (ref suite 3603 worked examples, floor 489; 1203 cases replayed exactly, floor 427; preservation with complete knowledge: 197 goldens and 480 cases play, floors 197 and 480; 234 goldens refused per form (defaults-group 55, timeline-member 48, object-creation 27, allocation 21, list-family 16, if-then-else 11, fact-creation 10, day-kind 9, match 8, record 7, uniqueness 7, dimension-cell 6, function-def 3, time-window 2, dimension-fold 1, rule-status-check 1, start-point 1, unresolved 1); 1 carrying the property already, played by check 3 (jutterswet-afleiden-uit-leeg); red row: jutterswet-leeg-deeltal misses 1 of 3 cases without --closed-inputs)
+check-clingo: PASS (backend suite 3231 checks, floor 83; 1169 cases replay exactly through clingo — ref = clingo over the corpus; 11 golden(s) in the refusal channel, by name, 34 cases refused with the pinned codes; the channel rule passes 22 rows of its own)
+check-noop: PASS (1161 cases refute a do-nothing executor; 42 pinned survivors pin defeasible standing)
+check-red: PASS (102 red cases fault observably in ref and clingo, floor 44; 181 ref and clingo code checks report the case's code, floor 82, 23 listed as divergence; 301 pinned parameter checks confirmed, floor 120; 47 fault kinds in RUNTIME-SEMANTICS ch. 5.7b, floor 31)
+check-reftype-derivation: PASS (129 unit annotations twisted over 42 goldens, floor 38; 242 executor replays reproduce the untouched outcome, 40 of them PLAYED by the DRL-text branch, equal to the exec-model branch; 0 pinned survivors)
+check-readings: PASS (ref traced 1199 golden case files, and refused by name the trace of 4 case file(s) of 1 golden(s) (TRACE_REFUSED); on both branches 385 goldens and 1073 case files compared, 8468 readings, 27262 node lines of which 4427 unreached, 1016 with contributors, 1317 with a timeline, 842 with the object of a read and 618 of a displaced reading, 147 contributors of ref not reached; end states of 3044 objects (479 made) and 8501 members; all at or above their floors; deviations 0, end-state deviations 0; 14 comparison rows, 3 tripwire rows, 10 end-state rows; 87 s)
+```
