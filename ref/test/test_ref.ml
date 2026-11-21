@@ -14674,6 +14674,7 @@ let () =
    V3 is not meldplichtig, which a document that infers nothing from an empty
    value excludes. The shared loader reads false, for the verifier and for an
    executor, and refuses every other value and an unknown field on the root;
+   the verifier finds nothing in the document;
    the serialiser writes false back directly after format and leaves an absent
    field absent; ref refuses the document with REF-014, form document, at every
    entrance of its runner, before an outcome is written. The golden itself plays
@@ -14689,6 +14690,8 @@ let () =
       check (ident ("false-is-read-" ^ who)) (not (Ir_v0.Loader.load_file ~reader fixture).infer_from_empty);
       check (ident ("absent-is-true-" ^ who)) (Ir_v0.Loader.load_file ~reader golden).infer_from_empty)
     readers;
+  check (ident "verifier-clean")
+    (Ir_v0.Checks.all (Ir_v0.Loader.load_file ~reader:Ir_v0.Loader.Verifier fixture) = []);
   let with_root key value =
     match Yojson.Safe.from_file fixture with
     | `Assoc kvs -> `Assoc (List.map (fun (k, v) -> if k = "inferFromEmpty" then (key, value) else (k, v)) kvs)
