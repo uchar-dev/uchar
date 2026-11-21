@@ -8,14 +8,14 @@ meten; de semantiek verandert niet.*
 
 De eigenaar besloot op 2026-11-20: **uit leeg mag niets afgeleid worden**. Het besluit is algemeen bedoeld
 (verduidelijkt op 2026-11-21): het is een eis aan het uchar-dialect, niet een keuze van één regelset; het kwam op bij
-v2/herleving-ww (regelspraak-rules). Leeg is "nog niet ingevuld"; pas als een marker (`onbekend`, `niet van
+de regelset v2 van regelspraak-rules. Leeg is "nog niet ingevuld"; pas als een marker (`onbekend`, `niet van
 toepassing`) is gegeven, of een object of feittype-relatie ontbreekt, mag worden doorgerekend (bevestigd
 2026-11-21). In uchar is leeg de spiegel van
 RegelSpraak v0 (RUNTIME-SEMANTICS ch. 1.2–1.4, besluit 2026-08-16): leeg telt in plus/min/maal als 0, een vergelijking
 met leeg is onwaar, voorwaarden zijn tweewaardig, een kenmerk is onwaar zolang het niet is toegekend. Dat is in feite
-een closed-world assumption. De regelset vangt het nu per plek af (toetsen "heeft een waarde", een hulpkenmerk
-`herleving afhankelijk-van-ontbrekende invoer`); reviews vonden steeds nieuwe plekken (regelspraak-rules 8edee01,
-inventaris: twaalf plekken en latere vondsten).
+een closed-world assumption. De regelset vangt het nu per plek af (toetsen "heeft een waarde", een hulpkenmerk voor
+ontbrekende invoer); reviews vonden steeds nieuwe plekken (regelspraak-rules 8edee01, inventaris: twaalf plekken en
+latere vondsten).
 
 Het advies stelt een strikte lezing van leeg voor (Kleene K3 voor voorwaarden, leeg propageert, de markers blijven
 gevulde waarden, de wereld sluiten alleen met een uitdrukkelijke vorm: local closed world), per document aan te
@@ -37,7 +37,7 @@ subcommando, of in de lint van de werkbank) stelt de bouwer voor.
 
 ## Acceptance
 
-- Op regelspraak-rules `229d744` (v2/herleving-ww vóór de ronde van 20-11) staan de twaalf plekken van de inventaris
+- Op regelspraak-rules `229d744` (de regelset v2 vóór de ronde van 20-11) staan de twaalf plekken van de inventaris
   (`werkbank/werknotities/20261120-leeg-afleiding/inventaris.md`) en de latere vondsten (review-regels, review-groep2)
   in de uitvoer; op `8edee01` of later zijn de afgevangen plekken herkenbaar (met hun toets of het hulpkenmerk).
 - Op het corpus: per golden een telling (sluitingen, ontkenningen), zodat zichtbaar is hoeveel op coalesceren of
@@ -207,11 +207,12 @@ de 53 met de meeste plekken dragen samen de helft.
 `1826ad09b`). De twaalf plekken van de
 inventaris (a1–a5, b1–b7) en de latere vondsten R5–R8, G3 en G7 staan op `229d744` in de uitvoer; G4, G5 en G6 gaan over
 regels die pas later bestaan en staan op die commits. Geen plek ontbreekt. Op `229d744` draagt geen van de twaalf het
-hulpkenmerk `herleving afhankelijk-van-ontbrekende invoer`; a1, a3 en b3 dragen alleen een `tested-elsewhere` op een
-kenmerk dat op andere invoer sluit, a2, a5 en b6 niets. Op `8edee01` zijn a1, a3, a5 (in hww-18), b6 en b7 herkenbaar aan het
-hulpkenmerk, a2 alleen via de lezers. Gelezen leden op `6d39e7d`: 78 (38 invoer); plekken die alleen invoer lezen 288,
-alleen afgeleide 296, beide 37; bovenaan de code reden beëindiging (126), de relatie naar de eindigingsgronden (57) en
-de code soort aanvraag (19). Per invoerlid van de sluiting dragen 1 of 2 invoerleden de helft, door de ruime sluiting.
+hulpkenmerk van de regelset; a1, a3 en b3 dragen alleen een `tested-elsewhere` op een kenmerk dat op andere invoer
+sluit, a2, a5 en b6 niets. Op `8edee01` zijn a1, a3, a5, b6 en b7 herkenbaar aan het hulpkenmerk, a2 alleen via de
+lezers. Gelezen leden op `6d39e7d`: 78 (38 invoer); plekken die alleen invoer lezen 288, alleen afgeleide 296, beide
+37; het meest gelezen invoerlid, een code, staat op 126 plekken, een relatie op 57, een tweede code op 19. Per
+invoerlid van de sluiting dragen 1 of 2 invoerleden de helft, door de ruime sluiting. De koppeling per plek en per
+lid staat in de werkmap, niet in deze kaart.
 Het concept voor de werkbank: `werk/empty-closures-inventory/WERKBANK.md`.
 
 De werkbanksessie meldde: het afvangen per plek in v2 is een tussenstand die na de strikte lezing vervalt, met gelijke
@@ -335,10 +336,9 @@ open punt van de bouwer:
   het kenmerk geldt, beslist juist doordat de schrijver van het kenmerk op leeg sloot. De getuige
   `guard-characteristic-check` kreeg de regel 'heffing bij een onvolledige aangifte' ("hij is onvolledig") erbij. Oud
   (binary van `7ebcbc62d`): haar `coalesce-operand` droeg `characteristic-check:char:jutter:onvolledig`; nieuw: alleen
-  `tested-elsewhere:attr:jutter:toeslag>char:jutter:onvolledig`. Op v2 vallen daarmee de positieve checks op
-  `indicatie herleving recht op uitkering` weg (plek b3 van de inventaris, die niet was afgevangen); wat overblijft is
-  het hulpkenmerk bij 'herlevingsdatum van het recht' en bij de duurverlenging van art. 42b. Het corpus verandert niet
-  (het had geen `characteristic-check`).
+  `tested-elsewhere:attr:jutter:toeslag>char:jutter:onvolledig`. Op v2 vallen daarmee de positieve checks weg op een
+  kenmerk dat niets afving (plek b3 van de inventaris, die niet was afgevangen); wat overblijft is het hulpkenmerk in
+  de twee vormen waar de inventaris het verwacht. Het corpus verandert niet (het had geen `characteristic-check`).
 - `4dc908775`: de alinea van gate 3 in `CLAUDE.md`.
 
 Proeven op de gebouwde binary: de 657 negatieve documenten geven exit 0 (geen uitzondering op een slecht gevormd
