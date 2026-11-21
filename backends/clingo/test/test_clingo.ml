@@ -19572,22 +19572,18 @@ let () =
 
 (* inferFromEmpty false, on ref's witness (ref/test/fixtures/infer-from-empty):
    the golden jutterswet-meldplicht-flogic with the property, and a case whose
-   third vondst has no vondstwaarde, which this encoding reads as absence, so
-   V3 would not be meldplichtig. The translation refuses the document before it
-   writes a line, with CLINGO-049, form document, and the runner, whose golden
-   and red paths both translate through [Translate.translate_guarded], reports
-   that code and no model; the golden itself translates and plays the same
-   input with V3 not meldplichtig (case-ordinary.json). *)
+   third vondst has no vondstwaarde, which is open there, so whether V3 is
+   meldplichtig is open (RUNTIME-SEMANTICS ch. 1.5). The translation carries
+   the document, and the runner, whose golden and red paths both translate
+   through [Translate.translate_guarded], plays the case; the golden without the
+   property plays the same input with V3 not meldplichtig (case-ordinary.json). *)
 let () =
   let dir = "ref/test/fixtures/infer-from-empty/" in
   let golden = "corpus/golden/jutterswet-meldplicht-flogic/ir.json" in
   let case_text = corpus_file (dir ^ "case.json") and ordinary_case_text = corpus_file (dir ^ "case-ordinary.json") in
   let doc, case = load_pair ~ir:(corpus_file (dir ^ "ir.json")) ~case_text in
-  check "inferFromEmpty false: refused before translation with CLINGO-049, form document"
-    (match translate_guarded doc case with
-     | _ -> false
-     | exception Uchar_ref.Value.Fault { code; params; _ } ->
-         code = Some "CLINGO-049" && params = [ ("form", "document") ]);
+  check "inferFromEmpty false: the document translates (ch. 1.5)"
+    (match translate_guarded doc case with _ -> true | exception Uchar_ref.Value.Fault _ -> false);
   let doc, case = load_pair ~ir:(corpus_file golden) ~case_text:ordinary_case_text in
   check "inferFromEmpty absent: the golden translates"
     (match translate_guarded doc case with _ -> true | exception Uchar_ref.Value.Fault _ -> false);
@@ -19609,15 +19605,8 @@ let () =
         (status, In_channel.with_open_bin out In_channel.input_all))
   in
   let status, out = run (dir ^ "ir.json") "case.json" in
-  check
-    ("inferFromEmpty false: the runner refuses it with CLINGO-049 and writes no model (exit " ^ string_of_int status
-   ^ ": " ^ out ^ ")")
-    (status = 1
-    && String.starts_with ~prefix:"TRANSLATION FAULT: CLINGO-049: the document carries inferFromEmpty false" out
-    && not
-         (List.exists
-            (fun l -> String.starts_with ~prefix:"clingo:" l || String.starts_with ~prefix:"MISMATCH" l)
-            (String.split_on_char '\n' out)));
+  check ("inferFromEmpty false: the runner plays it, meldplichtig of V3 open (exit " ^ string_of_int status ^ ": " ^ out ^ ")")
+    (status = 0 && out = "clingo: PASS (4 expectations)\n");
   let status, out = run golden "case-ordinary.json" in
   check ("inferFromEmpty absent: the runner plays the golden (exit " ^ string_of_int status ^ ": " ^ out ^ ")")
     (status = 0 && out = "clingo: PASS (4 expectations)\n")
@@ -19830,6 +19819,740 @@ let () =
     ~ir:(doc ~parameter_type:(Some list_type) ~domains:[] ~condition:(predicate ~kind:"empty" parameter_read) ())
     ~case_text:(case_text ~parameter:(Some list_value) ~j1:None ~j2:None ~v1:None ~v2:None ~v3:None [ false; false; false ])
     ~params:[ ("operand", "grensaantekening"); ("datatype", "list") ]
+
+(* --- RUNTIME-SEMANTICS ch. 1.5: a document that infers nothing from an empty
+   value ----------------------------------------------------------------------
+   One frame per principle of ch. 1.5, named after its example (WV-1.5-…), on
+   the smallest document of the Jutterswet: a Vondst with whole-number
+   attributes, and a Jutter where a link is read. Every frame holds ref and
+   this encoding to the same expectations of the case, so the outcome of the
+   one stands beside that of the other: a value, attributeEmpty for a settled
+   leeg attribute, attributeOpen, characteristicPresent, characteristicAbsent
+   for one that stands not to hold, characteristicOpen, and the channel. A
+   frame with [~closed] runs the session with every input member complete,
+   both in ref and here. *)
+
+let ov_num = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}|}
+let ov_src s = Printf.sprintf {|"source": {"snippet": "%s"}|} s
+
+let ov_roles path =
+  String.concat ", "
+    (List.map (fun (ft, role) -> Printf.sprintf {|{"node": "RoleBinding", "factType": "%s", "role": "%s"}|} ft role) path)
+
+let ov_attr ?(ty = "Vondst") ?(path = []) a =
+  Printf.sprintf {|{"node": "AttributeReference", "attribute": "%s", "subjectType": "%s", %s%s}|} a ty (ov_src a)
+    (if path = [] then "" else Printf.sprintf {|, "path": [%s]|} (ov_roles path))
+
+let ov_lit v = Printf.sprintf {|{"node": "Literal", "value": {"number": "%s"}, "type": %s, %s}|} v ov_num (ov_src v)
+(* a product and a quotient are typed fractional (WF-091); a quotient is
+   written through a rounding to whole numbers (WF-023) *)
+let ov_bin op l r =
+  let typ = if op = "times" || op = "dividedBy" then {|{"node": "Number", "whole": false, "decimals": 0, "sign": "unspecified"}|} else ov_num in
+  Printf.sprintf {|{"node": "Binary", "op": "%s", "left": %s, "right": %s, "type": %s, %s}|} op l r typ (ov_src op)
+
+let ov_div l r =
+  Printf.sprintf {|{"node": "Rounding", "base": %s, "mode": "towardZero", "decimals": 0, "type": %s, %s}|} (ov_bin "dividedBy" l r)
+    ov_num (ov_src "afgerond")
+let ov_cmp op l r = Printf.sprintf {|{"node": "Comparison", "op": "%s", "left": %s, "right": %s, %s}|} op l r (ov_src op)
+let ov_gt a v = ov_cmp "greater" (ov_attr a) (ov_lit v)
+
+let ov_check ?(negated = false) ?navigation k =
+  Printf.sprintf {|{"node": "CharacteristicCheck", "characteristic": "%s", "negated": %b, %s%s}|} k negated (ov_src k)
+    (match navigation with
+     | Some (ft, role) -> Printf.sprintf {|, "navigation": {"node": "RoleBinding", "factType": "%s", "role": "%s"}|} ft role
+     | None -> "")
+
+let ov_test kind operand =
+  Printf.sprintf {|{"node": "Predicate", "kind": "%s", "operand": %s, "negated": false, "digits": 0, %s}|} kind operand
+    (ov_src kind)
+
+let ov_compound q k parts =
+  Printf.sprintf {|{"node": "Compound", "quantifier": "%s", "threshold": %d, "parts": [%s], %s}|} q k
+    (String.concat ", " parts) (ov_src q)
+
+let ov_let binder value body =
+  Printf.sprintf {|{"node": "Let", "type": %s, "binder": "%s", "value": %s, "body": %s, %s}|} ov_num binder value body
+    (ov_src binder)
+
+let ov_binder b = Printf.sprintf {|{"node": "BinderRef", "name": "%s", %s}|} b (ov_src b)
+let ov_param p = Printf.sprintf {|{"node": "ParameterReference", "parameter": "%s", %s}|} p (ov_src p)
+
+(* a rule on [ty]: a calculation of [target], a characteristic attribution
+   ([value] None), or an initialisation *)
+let ov_rule ?(ty = "Vondst") ?(init = false) ?cond ?(validity = {|{"node": "Validity"}|}) ~name target value =
+  let value, presentation =
+    match value with
+    | Some v -> (v, if init then "" else {|, "presentation": "calculation"|})
+    | None -> ({|{"node": "Literal", "value": {"boolean": true}, "type": {"node": "Boolean"}, "source": {"snippet": "waar"}}|}, "")
+  in
+  Printf.sprintf
+    {|{"node": "Rule", "name": "%s", "versions": [{"validity": %s, "target": {"node": "AttributeReference", "attribute": "%s", "subjectType": "%s", %s}, "value": %s%s, "initialisation": %b%s}]}|}
+    name validity target ty (ov_src target) value
+    (match cond with Some c -> ", \"condition\": " ^ c | None -> "")
+    init presentation
+
+let ov_consistency ~name assertion =
+  Printf.sprintf
+    {|{"node": "Consistency", "name": "%s", "versions": [{"subject": "Vondst", "assertion": %s, "validity": {"node": "Validity"}, %s}]}|}
+    name assertion (ov_src name)
+
+(* an object type: its name, its whole-number attributes and characteristics,
+   and its supertype *)
+let ov_type ?supertype name attrs chars =
+  Printf.sprintf
+    {|{"node": "ObjectType", "name": "%s", "animate": false, "plural": "%sen"%s, "attributes": [%s], "characteristics": [%s]}|}
+    name name
+    (match supertype with Some s -> Printf.sprintf {|, "supertype": "%s"|} s | None -> "")
+    (String.concat ", " (List.map (fun a -> Printf.sprintf {|{"node": "Attribute", "name": "%s", "datatype": %s}|} a ov_num) attrs))
+    (String.concat ", "
+       (List.map (fun k -> Printf.sprintf {|{"node": "Characteristic", "name": "%s", "kind": "adjectival"}|} k) chars))
+
+(* the fact type vangst: the vinder (a Jutter) of a Vondst *)
+let ov_vangst =
+  {|{"node": "FactType", "name": "vangst", "reciprocal": false, "roles": [{"node": "Role", "name": "vinder", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "vondst", "objectType": "Vondst", "plural": "vondsten", "many": true}]}|}
+
+let ov_doc ?(strict = true) ?(fact_types = []) ?(parameters = []) ?(consistencies = []) types rules =
+  Printf.sprintf
+    {|{"format": "uchar-ir-v1",%s "model": {"objectTypes": [%s], "factTypes": [%s], "parameters": [%s], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [%s], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": []}, "diagnostics": []}|}
+    (if strict then {| "inferFromEmpty": false,|} else "")
+    (String.concat ", " types) (String.concat ", " fact_types)
+    (String.concat ", " (List.map (fun p -> Printf.sprintf {|{"node": "Parameter", "name": "%s", "datatype": %s}|} p ov_num) parameters))
+    (String.concat ", " rules) (String.concat ", " consistencies)
+
+(* an object of the case: its attributes (number lexemes), the characteristics
+   it names, those it names in characteristicsAbsent, and its links *)
+let ov_obj ?(ty = "Vondst") ?(chars = []) ?(absent = []) ?(roles = []) label attrs =
+  Printf.sprintf
+    {|{"label": "%s", "objectType": "%s", "attributes": {%s}, "roles": {%s}, "characteristics": [%s]%s}|}
+    label ty
+    (String.concat ", " (List.map (fun (a, v) -> Printf.sprintf {|"%s": {"number": "%s"}|} a v) attrs))
+    (String.concat ", " (List.map (fun (r, ls) -> Printf.sprintf {|"%s": [%s]|} r (String.concat ", " (List.map (Printf.sprintf "%S") ls))) roles))
+    (String.concat ", " (List.map (Printf.sprintf "%S") chars))
+    (if absent = [] then "" else Printf.sprintf {|, "characteristicsAbsent": [%s]|} (String.concat ", " (List.map (Printf.sprintf "%S") absent)))
+
+(* an expectation on V1 (or [label]): "value 3", "leeg", "open" of an
+   attribute; "holds", "not", "open" of a characteristic *)
+let ov_attr_is ?(label = "V1") a state =
+  match String.split_on_char ' ' state with
+  | [ "leeg" ] -> Printf.sprintf {|{"kind": "attributeEmpty", "label": "%s", "attribute": "%s"}|} label a
+  | [ "open" ] -> Printf.sprintf {|{"kind": "attributeOpen", "label": "%s", "attribute": "%s"}|} label a
+  | [ v ] -> Printf.sprintf {|{"kind": "attributeValue", "label": "%s", "attribute": "%s", "value": {"number": "%s"}}|} label a v
+  | _ -> invalid_arg state
+
+let ov_char_is ?(label = "V1") k state =
+  let kind =
+    match state with
+    | "holds" -> "characteristicPresent"
+    | "not" -> "characteristicAbsent"
+    | "open" -> "characteristicOpen"
+    | _ -> invalid_arg state
+  in
+  Printf.sprintf {|{"kind": "%s", "label": "%s", "characteristic": "%s"}|} kind label k
+
+let ov_consistent = {|{"kind": "consistent"}|}
+let ov_inconsistent ?code rule = Printf.sprintf {|{"kind": "inconsistent", "rule": "%s", "label": "V1"%s}|} rule
+    (match code with Some c -> Printf.sprintf {|, "code": "%s"|} c | None -> "")
+
+let ov_case ?(as_of = "null") ?(parameters = []) objs expected =
+  Printf.sprintf {|{"format": "uchar-case-v0", "asOfDate": %s, "input": {"instances": [%s], "parameters": {%s}}, "expected": [%s]}|}
+    as_of (String.concat ", " objs)
+    (String.concat ", " (List.map (fun (p, v) -> Printf.sprintf {|"%s": {"number": "%s"}|} p v) parameters))
+    (String.concat ", " expected)
+
+(* the frame: verifier-clean, and ref and this encoding hold the case's
+   expectations, with every input member complete where [closed] *)
+let ov_frame ?(closed = false) ~name ~ir ~case_text () =
+  verifier_clean ~name ~ir;
+  let doc, case = load_pair ~ir ~case_text in
+  let env =
+    { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls; as_of = case.as_of;
+      locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty; subj = None; form = None }
+  in
+  (match
+     Uchar_ref.Case.check case
+       (Uchar_ref.Eval.evaluate ~closed:(if closed then Uchar_ref.Eval.Every_input else Uchar_ref.Eval.Members []) env case.world)
+   with
+  | [] -> check (name ^ ": ref") true
+  | ms -> check (name ^ ": ref (" ^ String.concat "; " ms ^ ")") false
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check (name ^ ": ref (fault: " ^ m ^ ")") false);
+  let label = name ^ ": clingo" in
+  match
+    match Solve.run_clingo (Translate.translate ~closed_inputs:closed doc case) with
+    | out, Unix.WEXITED (10 | 30) -> Model.check doc case (Model.model_of_text out)
+    | _, Unix.WEXITED 20 -> [ "UNSATISFIABLE — a fail-fast guard fired" ]
+    | _, Unix.WEXITED c -> [ Printf.sprintf "clingo exited %d" c ]
+    | _, _ -> [ "clingo killed" ]
+  with
+  | [] -> check label true
+  | ms -> check (label ^ " (" ^ String.concat "; " ms ^ ")") false
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check (label ^ " (fault: " ^ m ^ ")") false
+
+(* the frame of a fault: ref faults with [code], and the program is
+   UNSATISFIABLE with a witness that stands for that code *)
+let ov_fault_frame ~name ~ir ~case_text code =
+  verifier_clean ~name ~ir;
+  let doc, case = load_pair ~ir ~case_text in
+  let env =
+    { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls; as_of = case.as_of;
+      locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty; subj = None; form = None }
+  in
+  check (name ^ ": ref faults with " ^ code)
+    (match Uchar_ref.Eval.evaluate env case.world with
+     | _ -> false
+     | exception Uchar_ref.Value.Fault { code = c; _ } -> c = Some code);
+  let program, guards = Translate.translate_guarded doc case in
+  check (name ^ ": clingo faults with " ^ code)
+    (match Solve.run_clingo program with
+     | _, Unix.WEXITED 20 ->
+         List.exists (fun w -> match Translate.viol_code guards w with Some (c, _) -> c = code | None -> false)
+           (Solve.diagnostic program)
+     | _ -> false)
+
+let ov_vondst attrs chars = ov_type "Vondst" attrs chars
+let ov_v1 ?chars ?absent attrs = [ ov_obj ?chars ?absent "V1" attrs ]
+
+(* "het vindloon van een Vondst is 10 indien zijn taxatie groter is dan 1000"
+   and "de uitbetaling van een Vondst is zijn vindloon plus zijn bergloon" *)
+let ov_vindloon = ov_rule ~name:"vindloon" ~cond:(ov_gt "taxatie" "1000") "vindloon" (Some (ov_lit "10"))
+let ov_uitbetaling = ov_rule ~name:"uitbetaling" "uitbetaling" (Some (ov_bin "plus" (ov_attr "vindloon") (ov_attr "bergloon")))
+
+(* WV-1.5-open-input, WV-1.5-no-open-without-the-property: the vindloon, which
+   no rule writes, is open where the case gives it no value, and the
+   uitbetaling that reads it with it; without the property it is leeg and the
+   uitbetaling is 3. A characteristic no rule attributes is open where the case
+   does not name it *)
+let () =
+  let ir strict = ov_doc ~strict [ ov_vondst [ "vindloon"; "bergloon"; "uitbetaling" ] [ "drijfhout" ] ] [ ov_uitbetaling ] in
+  ov_frame ~name:"WV-1.5-open-input" ~ir:(ir true)
+    ~case_text:(ov_case (ov_v1 [ ("bergloon", "3") ])
+                  [ ov_attr_is "vindloon" "open"; ov_attr_is "bergloon" "3"; ov_attr_is "uitbetaling" "open";
+                    ov_char_is "drijfhout" "open" ]) ();
+  ov_frame ~name:"WV-1.5-open-input (drijfhout named)" ~ir:(ir true)
+    ~case_text:(ov_case (ov_v1 ~chars:[ "drijfhout" ] []) [ ov_char_is "drijfhout" "holds" ]) ();
+  ov_frame ~name:"WV-1.5-no-open-without-the-property" ~ir:(ir false)
+    ~case_text:(ov_case (ov_v1 [ ("bergloon", "3") ]) [ ov_attr_is "vindloon" "leeg"; ov_attr_is "uitbetaling" "3" ]) ()
+
+(* WV-1.5-input-per-object: with "het vindloon van een Strandvondst is 10
+   indien zijn taxatie groter is dan 1000", the vindloon of a Vondst that is no
+   Strandvondst is input and open, while that of a Strandvondst with taxatie 50
+   is settled leeg *)
+let () =
+  let ir =
+    ov_doc
+      [ ov_vondst [ "taxatie"; "vindloon" ] []; ov_type ~supertype:"Vondst" "Strandvondst" [] [] ]
+      [ ov_rule ~ty:"Strandvondst" ~name:"vindloon" ~cond:(ov_cmp "greater" (ov_attr ~ty:"Strandvondst" "taxatie") (ov_lit "1000")) "vindloon" (Some (ov_lit "10")) ]
+  in
+  ov_frame ~name:"WV-1.5-input-per-object" ~ir
+    ~case_text:
+      (ov_case
+         [ ov_obj "V1" [ ("taxatie", "50") ]; ov_obj ~ty:"Strandvondst" "S1" [ ("taxatie", "50") ] ]
+         [ ov_attr_is "vindloon" "open"; ov_attr_is ~label:"S1" "vindloon" "leeg" ]) ()
+
+(* WV-1.5-outside-the-window: the vindloon of the card valid from 2030 fills
+   nothing on 1 June 2026, so a Vondst without a taxatie has a settled leeg
+   vindloon and an uitbetaling of 3; on 1 June 2031 the vindloon is open *)
+let () =
+  let ir =
+    ov_doc [ ov_vondst [ "taxatie"; "vindloon"; "bergloon"; "uitbetaling" ] [] ]
+      [ ov_rule ~name:"vindloon" ~validity:{|{"node": "Validity", "from": "2030-01-01"}|} ~cond:(ov_gt "taxatie" "1000") "vindloon"
+          (Some (ov_lit "10"));
+        ov_uitbetaling ]
+  in
+  ov_frame ~name:"WV-1.5-outside-the-window (2026)" ~ir
+    ~case_text:(ov_case ~as_of:{|"2026-06-01"|} (ov_v1 [ ("bergloon", "3") ]) [ ov_attr_is "vindloon" "leeg"; ov_attr_is "uitbetaling" "3" ]) ();
+  ov_frame ~name:"WV-1.5-outside-the-window (2031)" ~ir
+    ~case_text:(ov_case ~as_of:{|"2031-06-01"|} (ov_v1 [ ("bergloon", "3") ]) [ ov_attr_is "vindloon" "open"; ov_attr_is "uitbetaling" "open" ]) ()
+
+(* WV-1.5-settled-operand: what stands reads as ch. 1.2: at taxatie 50 the
+   vindloon is settled leeg, the uitbetaling counts it as 0, and "beloond
+   indien zijn vindloon ongelijk is aan 5" holds; without a taxatie beloond is
+   open *)
+let () =
+  let ir =
+    ov_doc [ ov_vondst [ "taxatie"; "vindloon"; "bergloon"; "uitbetaling" ] [ "beloond" ] ]
+      [ ov_vindloon; ov_uitbetaling; ov_rule ~name:"beloond" ~cond:(ov_cmp "notEqual" (ov_attr "vindloon") (ov_lit "5")) "beloond" None ]
+  in
+  ov_frame ~name:"WV-1.5-settled-operand" ~ir
+    ~case_text:(ov_case (ov_v1 [ ("taxatie", "50"); ("bergloon", "3") ])
+                  [ ov_attr_is "vindloon" "leeg"; ov_attr_is "uitbetaling" "3"; ov_char_is "beloond" "holds" ]) ();
+  ov_frame ~name:"WV-1.5-settled-operand (no taxatie)" ~ir
+    ~case_text:(ov_case (ov_v1 [ ("bergloon", "3") ]) [ ov_char_is "beloond" "open"; ov_attr_is "uitbetaling" "open" ]) ()
+
+(* WV-1.5-open-passes-on: "het aandeel is zijn gewicht gedeeld door zijn
+   getuigen", gewicht 10 and getuigen open, has no value and deposits nothing,
+   where the document without the property deposits EF-031 *)
+let () =
+  let ir strict =
+    ov_doc ~strict [ ov_vondst [ "gewicht"; "getuigen"; "aandeel" ] [] ]
+      [ ov_rule ~name:"aandeel" "aandeel" (Some (ov_div (ov_attr "gewicht") (ov_attr "getuigen"))) ]
+  in
+  ov_frame ~name:"WV-1.5-open-passes-on" ~ir:(ir true)
+    ~case_text:(ov_case (ov_v1 [ ("gewicht", "10") ]) [ ov_attr_is "aandeel" "open"; ov_consistent ]) ();
+  ov_frame ~name:"WV-1.5-open-passes-on (without the property)" ~ir:(ir false)
+    ~case_text:(ov_case (ov_v1 [ ("gewicht", "10") ]) [ ov_attr_is "aandeel" "leeg"; ov_inconsistent ~code:"EF-031" "aandeel" ]) ()
+
+(* WV-1.5-reached: "het aandeel is zijn vindloon gedeeld door zijn getuigen",
+   getuigen open: 0 at taxatie 50, where the vindloon is settled leeg and the
+   divisor is not reached; open at taxatie 2000. The example of the binder,
+   "… gedeeld door de vangst, daarbij geldt: de vangst is zijn gewicht plus zijn
+   schade", is refused: its body reads the vindloon before the binder *)
+let () =
+  let ir =
+    ov_doc [ ov_vondst [ "taxatie"; "vindloon"; "getuigen"; "aandeel" ] [] ]
+      [ ov_vindloon; ov_rule ~name:"aandeel" "aandeel" (Some (ov_div (ov_attr "vindloon") (ov_attr "getuigen"))) ]
+  in
+  ov_frame ~name:"WV-1.5-reached (dividend settled leeg)" ~ir
+    ~case_text:(ov_case (ov_v1 [ ("taxatie", "50") ]) [ ov_attr_is "aandeel" "0"; ov_consistent ]) ();
+  ov_frame ~name:"WV-1.5-reached (dividend filled)" ~ir
+    ~case_text:(ov_case (ov_v1 [ ("taxatie", "2000") ]) [ ov_attr_is "aandeel" "open"; ov_consistent ]) ()
+
+(* WV-1.5-boundary-*: "het restgewicht is zijn gewicht gedeeld door 0 plus zijn
+   schade", gewicht 10: 0 with the EF-005 fact of the division at schade 0, and
+   no value and no fact with schade open. "De vrachtprijs is het TARIEF maal zijn
+   gewicht", the parameter unbound, faults with EF-014 also where the gewicht is
+   open; "zijn gewicht maal het TARIEF" has no value there, and no fault *)
+let () =
+  let ir =
+    ov_doc [ ov_vondst [ "gewicht"; "schade"; "restgewicht" ] [] ]
+      [ ov_rule ~name:"restgewicht" "restgewicht"
+          (Some (ov_bin "plus" (ov_div (ov_attr "gewicht") (ov_lit "0")) (ov_attr "schade"))) ]
+  in
+  ov_frame ~name:"WV-1.5-boundary-deposit (schade 2)" ~ir
+    ~case_text:(ov_case (ov_v1 [ ("gewicht", "10"); ("schade", "2") ]) [ ov_attr_is "restgewicht" "2"; ov_inconsistent ~code:"EF-005" "restgewicht" ]) ();
+  ov_frame ~name:"WV-1.5-boundary-deposit (schade open)" ~ir
+    ~case_text:(ov_case (ov_v1 [ ("gewicht", "10") ]) [ ov_attr_is "restgewicht" "open"; ov_consistent ]) ();
+  let ir value = ov_doc ~parameters:[ "TARIEF" ] [ ov_vondst [ "gewicht"; "vrachtprijs" ] [] ] [ ov_rule ~name:"vrachtprijs" "vrachtprijs" (Some value) ] in
+  ov_fault_frame ~name:"WV-1.5-boundary-fault (het TARIEF maal zijn gewicht)"
+    ~ir:(ir (ov_bin "times" (ov_param "TARIEF") (ov_attr "gewicht"))) ~case_text:(ov_case (ov_v1 []) [ ov_consistent ]) "EF-014";
+  ov_frame ~name:"WV-1.5-boundary-fault (zijn gewicht maal het TARIEF)"
+    ~ir:(ir (ov_bin "times" (ov_attr "gewicht") (ov_param "TARIEF"))) ~case_text:(ov_case (ov_v1 []) [ ov_attr_is "vrachtprijs" "open" ]) ()
+
+(* WV-1.5-atom and WV-1.5-table-*: "een Vondst is opvallend indien [Q] van: zijn
+   gewicht groter is dan 100 (A), zijn schatting groter is dan 1000 (B), zijn
+   lengte groter is dan 2 (C)", each member true, false or undetermined (150,
+   50 or no gewicht; 2000, 500 or no schatting; 5, 1 or no lengte). The nine
+   rows of all, atLeast 1 and none over A and B, the three rows of "niet A",
+   and the rows of atLeast 2, atMost 1 and exactly 1 of the spec *)
+let () =
+  let parts = [ ("gewicht", "100", "150", "50"); ("schatting", "1000", "2000", "500"); ("lengte", "2", "5", "1") ] in
+  let doc cond = ov_doc [ ov_vondst [ "gewicht"; "schatting"; "lengte" ] [ "opvallend"; "zwaar" ] ] [ ov_rule ~name:"opvallend" ~cond "opvallend" None ] in
+  let members n = List.filteri (fun i _ -> i < n) parts in
+  let input states =
+    List.concat
+      (List.map2
+         (fun (a, _, t, f) s -> match s with 'T' -> [ (a, t) ] | 'F' -> [ (a, f) ] | _ -> [])
+         (members (String.length states)) (List.init (String.length states) (String.get states)))
+  in
+  let row ~name q k n states want =
+    ov_frame ~name:(Printf.sprintf "%s %s" name states)
+      ~ir:(doc (ov_compound q k (List.map (fun (a, b, _, _) -> ov_gt a b) (members n))))
+      ~case_text:(ov_case (ov_v1 (input states)) [ ov_char_is "opvallend" want ]) ()
+  in
+  ov_frame ~name:"WV-1.5-atom" ~ir:(ov_doc [ ov_vondst [ "gewicht" ] [ "zwaar" ] ] [ ov_rule ~name:"zwaar" ~cond:(ov_gt "gewicht" "100") "zwaar" None ])
+    ~case_text:(ov_case (ov_v1 []) [ ov_char_is "zwaar" "open" ]) ();
+  let kleene = function 'T' -> 2 | 'F' -> 0 | _ -> 1 in
+  let verdict v = match v with 2 -> "holds" | 0 -> "not" | _ -> "open" in
+  List.iter
+    (fun a ->
+      List.iter
+        (fun b ->
+          let s = Printf.sprintf "%c%c" a b in
+          row ~name:"WV-1.5-table-and" "all" 0 2 s (verdict (min (kleene a) (kleene b)));
+          row ~name:"WV-1.5-table-or" "atLeast" 1 2 s (verdict (max (kleene a) (kleene b)));
+          row ~name:"WV-1.5-table-none" "none" 0 2 s (verdict (2 - max (kleene a) (kleene b))))
+        [ 'T'; 'F'; 'U' ])
+    [ 'T'; 'F'; 'U' ];
+  List.iter (fun a -> row ~name:"WV-1.5-table-not" "none" 0 1 (String.make 1 a) (verdict (2 - kleene a))) [ 'T'; 'F'; 'U' ];
+  List.iter
+    (fun (states, at_least_2, at_most_1, exactly_1) ->
+      row ~name:"WV-1.5-table-at-least-2" "atLeast" 2 3 states at_least_2;
+      row ~name:"WV-1.5-table-at-most-1" "atMost" 1 3 states at_most_1;
+      row ~name:"WV-1.5-table-exactly-1" "exactly" 1 3 states exactly_1)
+    [ ("TTU", "holds", "not", "not"); ("TFU", "open", "open", "open"); ("FFU", "not", "holds", "open") ]
+
+(* WV-1.5-past-undetermined-deposit, WV-1.5-past-undetermined-fault: a member
+   after one undetermined for another form is read provisionally, its deposit
+   dropped and its fault leaving it undetermined. "De vrijstelling is 1 indien
+   alle van: zijn gewicht is groter dan 10, zijn taxatie gedeeld door zijn
+   getuigen is groter dan 3", taxatie 50 and getuigen 0: settled leeg without
+   the EF-005 fact without a gewicht, with it at gewicht 20, without it at
+   gewicht 5. "Vrijgesteld indien alle van: zijn gewicht is groter dan 10, het
+   Rekenjaar is groter dan 2025, zijn taxatie is groter dan 1000", without an
+   evaluation date: without a gewicht it stands not to hold at taxatie 50 and
+   is open at 2000; at gewicht 20 the session faults with EF-011; at gewicht 5
+   the read stops at the first member *)
+let () =
+  let ir =
+    ov_doc [ ov_vondst [ "gewicht"; "taxatie"; "getuigen"; "vrijstelling" ] [] ]
+      [ ov_rule ~name:"vrijstelling"
+          ~cond:(ov_compound "all" 0 [ ov_gt "gewicht" "10"; ov_cmp "greater" (ov_bin "dividedBy" (ov_attr "taxatie") (ov_attr "getuigen")) (ov_lit "3") ])
+          "vrijstelling" (Some (ov_lit "1")) ]
+  in
+  List.iter
+    (fun (gewicht, channel) ->
+      ov_frame ~name:("WV-1.5-past-undetermined-deposit (gewicht " ^ Option.value gewicht ~default:"open" ^ ")") ~ir
+        ~case_text:
+          (ov_case (ov_v1 ((("taxatie", "50") :: ("getuigen", "0") :: Option.to_list (Option.map (fun g -> ("gewicht", g)) gewicht))))
+             [ ov_attr_is "vrijstelling" "leeg"; channel ]) ())
+    [ (None, ov_consistent); (Some "20", ov_inconsistent ~code:"EF-005" "vrijstelling"); (Some "5", ov_consistent) ];
+  let rekenjaar = Printf.sprintf {|{"node": "ContextValue", "name": "evaluationYear", "type": %s, %s}|} ov_num (ov_src "het Rekenjaar") in
+  let ir =
+    ov_doc [ ov_vondst [ "gewicht"; "taxatie" ] [ "vrijgesteld" ] ]
+      [ ov_rule ~name:"vrijgesteld"
+          ~cond:(ov_compound "all" 0 [ ov_gt "gewicht" "10"; ov_cmp "greater" rekenjaar (ov_lit "2025"); ov_gt "taxatie" "1000" ])
+          "vrijgesteld" None ]
+  in
+  List.iter
+    (fun (attrs, want) ->
+      ov_frame ~name:(Printf.sprintf "WV-1.5-past-undetermined-fault (%s)" (String.concat ", " (List.map (fun (a, v) -> a ^ " " ^ v) attrs))) ~ir
+        ~case_text:(ov_case (ov_v1 attrs) [ ov_char_is "vrijgesteld" want ]) ())
+    [ ([ ("taxatie", "50") ], "not"); ([ ("taxatie", "2000") ], "open"); ([ ("gewicht", "5"); ("taxatie", "2000") ], "not") ];
+  ov_fault_frame ~name:"WV-1.5-past-undetermined-fault (gewicht 20)" ~ir
+    ~case_text:(ov_case (ov_v1 [ ("gewicht", "20"); ("taxatie", "2000") ]) [ ov_consistent ]) "EF-011"
+
+(* WV-1.5-rule-*: "het vindloon is zijn taxatie gedeeld door 100 indien zijn
+   gewicht groter is dan 10": 5 with gewicht 20 and taxatie 500, settled leeg
+   with gewicht 5 whatever the taxatie, open without a gewicht, and open with
+   gewicht 20 and no taxatie *)
+let () =
+  let ir =
+    ov_doc [ ov_vondst [ "gewicht"; "taxatie"; "vindloon" ] [] ]
+      [ ov_rule ~name:"vindloon" ~cond:(ov_gt "gewicht" "10") "vindloon" (Some (ov_div (ov_attr "taxatie") (ov_lit "100"))) ]
+  in
+  List.iter
+    (fun (name, attrs, want) -> ov_frame ~name ~ir ~case_text:(ov_case (ov_v1 attrs) [ ov_attr_is "vindloon" want ]) ())
+    [ ("WV-1.5-rule-decides", [ ("gewicht", "20"); ("taxatie", "500") ], "5");
+      ("WV-1.5-rule-fills-nothing", [ ("gewicht", "5") ], "leeg");
+      ("WV-1.5-rule-open-condition", [ ("taxatie", "500") ], "open");
+      ("WV-1.5-rule-open-value", [ ("gewicht", "20") ], "open") ]
+
+(* WV-1.5-derived-*: the vindloon of the card with a second writer "het
+   vindloon is 5 indien zijn gewicht groter is dan 100": settled leeg at taxatie
+   50 and gewicht 50, open at taxatie 50 without a gewicht, 10 at taxatie 2000.
+   Kostbaar holds at taxatie 2000, stands not to hold at 50, is open without a
+   taxatie. The uitbetaling, in either order of the two rules, and "de toeslag
+   is 5 indien zijn vindloon groter is dan 5" before both *)
+let () =
+  let tweede = ov_rule ~name:"vindloon zwaar" ~cond:(ov_gt "gewicht" "100") "vindloon" (Some (ov_lit "5")) in
+  let ir = ov_doc [ ov_vondst [ "taxatie"; "gewicht"; "vindloon" ] [] ] [ ov_vindloon; tweede ] in
+  List.iter
+    (fun (name, attrs, want) -> ov_frame ~name ~ir ~case_text:(ov_case (ov_v1 attrs) [ ov_attr_is "vindloon" want ]) ())
+    [ ("WV-1.5-derived-attribute (both fill nothing)", [ ("taxatie", "50"); ("gewicht", "50") ], "leeg");
+      ("WV-1.5-derived-attribute (one open)", [ ("taxatie", "50") ], "open");
+      ("WV-1.5-derived-attribute (one decides)", [ ("taxatie", "2000") ], "10") ];
+  let ir = ov_doc [ ov_vondst [ "taxatie" ] [ "kostbaar" ] ] [ ov_rule ~name:"kostbaar" ~cond:(ov_gt "taxatie" "1000") "kostbaar" None ] in
+  List.iter
+    (fun (attrs, want) ->
+      ov_frame ~name:("WV-1.5-derived-characteristic " ^ want) ~ir ~case_text:(ov_case (ov_v1 attrs) [ ov_char_is "kostbaar" want ]) ())
+    [ ([ ("taxatie", "2000") ], "holds"); ([ ("taxatie", "50") ], "not"); ([], "open") ];
+  let toeslag = ov_rule ~name:"toeslag" ~cond:(ov_gt "vindloon" "5") "toeslag" (Some (ov_lit "5")) in
+  List.iter
+    (fun (order, rules) ->
+      let ir = ov_doc [ ov_vondst [ "taxatie"; "vindloon"; "bergloon"; "uitbetaling"; "toeslag" ] [] ] rules in
+      ov_frame ~name:("WV-1.5-derived-chain (no taxatie, " ^ order ^ ")") ~ir
+        ~case_text:(ov_case (ov_v1 [ ("bergloon", "3") ]) [ ov_attr_is "vindloon" "open"; ov_attr_is "uitbetaling" "open"; ov_attr_is "toeslag" "open" ]) ();
+      ov_frame ~name:("WV-1.5-derived-chain (taxatie 2000, " ^ order ^ ")") ~ir
+        ~case_text:(ov_case (ov_v1 [ ("taxatie", "2000"); ("bergloon", "3") ]) [ ov_attr_is "uitbetaling" "13"; ov_attr_is "toeslag" "5" ]) ())
+    [ ("writer first", [ ov_vindloon; ov_uitbetaling; toeslag ]); ("reader first", [ toeslag; ov_uitbetaling; ov_vindloon ]) ]
+
+(* WV-1.5-input-beside-a-writer: the vindloon of the card with 7 in the case
+   is open without a taxatie, and so is the uitbetaling; 10 at taxatie 2000 and
+   7 at taxatie 50 *)
+let () =
+  let ir = ov_doc [ ov_vondst [ "taxatie"; "vindloon"; "bergloon"; "uitbetaling" ] [] ] [ ov_vindloon; ov_uitbetaling ] in
+  List.iter
+    (fun (attrs, vindloon, uitbetaling) ->
+      ov_frame ~name:("WV-1.5-input-beside-a-writer " ^ vindloon) ~ir
+        ~case_text:(ov_case (ov_v1 (("vindloon", "7") :: ("bergloon", "3") :: attrs)) [ ov_attr_is "vindloon" vindloon; ov_attr_is "uitbetaling" uitbetaling ]) ())
+    [ ([], "open", "open"); ([ ("taxatie", "2000") ], "10", "13"); ([ ("taxatie", "50") ], "7", "10") ]
+
+(* WV-1.5-negation: "de toeslag is 5 indien hij niet kostbaar is": 5 at
+   taxatie 50, settled leeg at 2000, open without a taxatie; "de drijftoeslag
+   is 2 indien hij niet drijfhout is" over a drijfhout the case does not name
+   is open, and 2 where the case names it in characteristicsAbsent *)
+let () =
+  let ir =
+    ov_doc [ ov_vondst [ "taxatie"; "toeslag"; "drijftoeslag" ] [ "kostbaar"; "drijfhout" ] ]
+      [ ov_rule ~name:"kostbaar" ~cond:(ov_gt "taxatie" "1000") "kostbaar" None;
+        ov_rule ~name:"toeslag" ~cond:(ov_check ~negated:true "kostbaar") "toeslag" (Some (ov_lit "5"));
+        ov_rule ~name:"drijftoeslag" ~cond:(ov_check ~negated:true "drijfhout") "drijftoeslag" (Some (ov_lit "2")) ]
+  in
+  List.iter
+    (fun (attrs, want) -> ov_frame ~name:("WV-1.5-negation " ^ want) ~ir ~case_text:(ov_case (ov_v1 attrs) [ ov_attr_is "toeslag" want; ov_attr_is "drijftoeslag" "open" ]) ())
+    [ ([ ("taxatie", "50") ], "5"); ([ ("taxatie", "2000") ], "leeg"); ([], "open") ];
+  ov_frame ~name:"WV-1.5-case-characteristics-absent (drijfhout)" ~ir
+    ~case_text:(ov_case (ov_v1 ~absent:[ "drijfhout" ] []) [ ov_attr_is "drijftoeslag" "2"; ov_char_is "drijfhout" "not" ]) ();
+  (* kostbaar in characteristicsAbsent beside its writer *)
+  List.iter
+    (fun (attrs, want) ->
+      ov_frame ~name:("WV-1.5-case-characteristics-absent (kostbaar " ^ want ^ ")") ~ir
+        ~case_text:(ov_case (ov_v1 ~absent:[ "kostbaar" ] attrs) [ ov_char_is "kostbaar" want ]) ())
+    [ ([], "open"); ([ ("taxatie", "50") ], "not"); ([ ("taxatie", "2000") ], "holds") ]
+
+(* WV-1.5-filled-test-*, WV-1.5-filled-guard, WV-1.5-own-negation: "getaxeerd
+   indien zijn taxatie gevuld is", "ongetaxeerd indien zijn taxatie leeg is",
+   "kostbaar indien zijn taxatie gevuld is en zijn taxatie groter is dan 1000"
+   with "de bewakingstoeslag is 5 indien hij niet kostbaar is", "verweesd
+   indien geen van: zijn taxatie is gevuld": at taxatie 50, at an open taxatie,
+   and at a settled leeg one (the session treats the input as complete) *)
+let () =
+  let ir =
+    ov_doc [ ov_vondst [ "taxatie"; "bewakingstoeslag" ] [ "getaxeerd"; "ongetaxeerd"; "kostbaar"; "verweesd" ] ]
+      [ ov_rule ~name:"getaxeerd" ~cond:(ov_test "filled" (ov_attr "taxatie")) "getaxeerd" None;
+        ov_rule ~name:"ongetaxeerd" ~cond:(ov_test "empty" (ov_attr "taxatie")) "ongetaxeerd" None;
+        ov_rule ~name:"kostbaar" ~cond:(ov_compound "all" 0 [ ov_test "filled" (ov_attr "taxatie"); ov_gt "taxatie" "1000" ]) "kostbaar" None;
+        ov_rule ~name:"bewakingstoeslag" ~cond:(ov_check ~negated:true "kostbaar") "bewakingstoeslag" (Some (ov_lit "5"));
+        ov_rule ~name:"verweesd" ~cond:(ov_compound "none" 0 [ ov_test "filled" (ov_attr "taxatie") ]) "verweesd" None ]
+  in
+  let expect ~getaxeerd ~ongetaxeerd ~kostbaar ~toeslag ~verweesd =
+    [ ov_char_is "getaxeerd" getaxeerd; ov_char_is "ongetaxeerd" ongetaxeerd; ov_char_is "kostbaar" kostbaar;
+      ov_attr_is "bewakingstoeslag" toeslag; ov_char_is "verweesd" verweesd ]
+  in
+  ov_frame ~name:"WV-1.5-filled-test-two-valued" ~ir
+    ~case_text:(ov_case (ov_v1 [ ("taxatie", "50") ]) (expect ~getaxeerd:"holds" ~ongetaxeerd:"not" ~kostbaar:"not" ~toeslag:"5" ~verweesd:"not")) ();
+  ov_frame ~name:"WV-1.5-filled-test-open" ~ir
+    ~case_text:(ov_case (ov_v1 []) (expect ~getaxeerd:"open" ~ongetaxeerd:"holds" ~kostbaar:"open" ~toeslag:"open" ~verweesd:"holds")) ();
+  ov_frame ~closed:true ~name:"WV-1.5-filled-test-settled" ~ir
+    ~case_text:(ov_case (ov_v1 []) (expect ~getaxeerd:"not" ~ongetaxeerd:"holds" ~kostbaar:"not" ~toeslag:"5" ~verweesd:"holds")) ()
+
+(* WV-1.5-filled-test-computed: "de getuigentoeslag is 7 indien zijn gewicht
+   gedeeld door zijn getuigen leeg is": 7 where the gewicht or the getuigen is
+   open, without a fact, and 7 with the EF-005 fact at gewicht 10 and getuigen
+   0; "de schadetoeslag is 3 indien zijn gewicht plus zijn schade gevuld is" is
+   open where the gewicht is open *)
+let () =
+  let ir =
+    ov_doc [ ov_vondst [ "gewicht"; "getuigen"; "schade"; "getuigentoeslag"; "schadetoeslag" ] [] ]
+      [ ov_rule ~name:"getuigentoeslag" ~cond:(ov_test "empty" (ov_bin "dividedBy" (ov_attr "gewicht") (ov_attr "getuigen"))) "getuigentoeslag" (Some (ov_lit "7"));
+        ov_rule ~name:"schadetoeslag" ~cond:(ov_test "filled" (ov_bin "plus" (ov_attr "gewicht") (ov_attr "schade"))) "schadetoeslag" (Some (ov_lit "3")) ]
+  in
+  ov_frame ~name:"WV-1.5-filled-test-computed (gewicht open)" ~ir
+    ~case_text:(ov_case (ov_v1 [ ("getuigen", "2"); ("schade", "1") ]) [ ov_attr_is "getuigentoeslag" "7"; ov_attr_is "schadetoeslag" "open"; ov_consistent ]) ();
+  ov_frame ~name:"WV-1.5-filled-test-computed (getuigen open)" ~ir
+    ~case_text:(ov_case (ov_v1 [ ("gewicht", "10"); ("schade", "1") ]) [ ov_attr_is "getuigentoeslag" "7"; ov_attr_is "schadetoeslag" "3"; ov_consistent ]) ();
+  ov_frame ~name:"WV-1.5-filled-test-computed (getuigen 0)" ~ir
+    ~case_text:(ov_case (ov_v1 [ ("gewicht", "10"); ("getuigen", "0"); ("schade", "1") ])
+                  [ ov_attr_is "getuigentoeslag" "7"; ov_inconsistent ~code:"EF-005" "getuigentoeslag" ]) ()
+
+(* WV-1.5-initialisation: "het strandloon is zijn vangst maal 2 indien hij
+   gemeld is" and "het strandloon moet geïnitialiseerd worden op 5": 8 with
+   vangst 4 and gemeld named, 5 where the case does not name gemeld; with "… op
+   5 indien zijn vangst groter is dan 1" it stays open without a vangst *)
+let () =
+  let ir init_cond =
+    ov_doc [ ov_vondst [ "vangst"; "strandloon" ] [ "gemeld" ] ]
+      [ ov_rule ~name:"strandloon" ~cond:(ov_check "gemeld") "strandloon" (Some (ov_bin "times" (ov_attr "vangst") (ov_lit "2")));
+        ov_rule ~init:true ?cond:init_cond ~name:"standaardstrandloon" "strandloon" (Some (ov_lit "5")) ]
+  in
+  ov_frame ~name:"WV-1.5-initialisation (gemeld)" ~ir:(ir None)
+    ~case_text:(ov_case (ov_v1 ~chars:[ "gemeld" ] [ ("vangst", "4") ]) [ ov_attr_is "strandloon" "8" ]) ();
+  ov_frame ~name:"WV-1.5-initialisation (gemeld open)" ~ir:(ir None)
+    ~case_text:(ov_case (ov_v1 [ ("vangst", "4") ]) [ ov_attr_is "strandloon" "5" ]) ();
+  ov_frame ~name:"WV-1.5-initialisation (conditional, no vangst)" ~ir:(ir (Some (ov_gt "vangst" "1")))
+    ~case_text:(ov_case (ov_v1 []) [ ov_attr_is "strandloon" "open" ]) ()
+
+(* WV-1.5-consistency: "het gewicht van een Vondst moet groter of gelijk zijn
+   aan 0" reports at gewicht −1, and not without a gewicht *)
+let () =
+  let ir =
+    ov_doc ~consistencies:[ ov_consistency ~name:"controle gewicht" (ov_cmp "greaterOrEqual" (ov_attr "gewicht") (ov_lit "0")) ]
+      [ ov_vondst [ "gewicht" ] [] ] []
+  in
+  ov_frame ~name:"WV-1.5-consistency (gewicht -1)" ~ir
+    ~case_text:(ov_case (ov_v1 [ ("gewicht", "-1") ]) [ ov_inconsistent "controle gewicht" ]) ();
+  ov_frame ~name:"WV-1.5-consistency (no gewicht)" ~ir ~case_text:(ov_case (ov_v1 []) [ ov_consistent ]) ()
+
+(* WV-1.5-link-*: "de vindpremie van een Vondst is zijn waarde plus de bonus van
+   de vinder van de Vondst", waarde 100: 100 without a vinder, open with a
+   vinder without a bonus, 120 with a bonus of 20. "Deskundig gevonden indien
+   de vinder ervaren is" and "ongeschoold gevonden indien de vinder niet
+   ervaren is" stand not to hold without a vinder, are open where the case does
+   not name ervaren for the vinder, and "toegewezen indien hij een vinder
+   heeft" stands without a bonus *)
+let () =
+  let ir =
+    ov_doc ~fact_types:[ ov_vangst ]
+      [ ov_type "Jutter" [ "bonus" ] [ "ervaren" ];
+        ov_vondst [ "waarde"; "vindpremie" ] [ "deskundig gevonden"; "ongeschoold gevonden"; "toegewezen" ] ]
+      [ ov_rule ~name:"vindpremie" "vindpremie" (Some (ov_bin "plus" (ov_attr "waarde") (ov_attr ~ty:"Jutter" ~path:[ ("vangst", "vinder") ] "bonus")));
+        ov_rule ~name:"deskundig gevonden" ~cond:(ov_check ~navigation:("vangst", "vinder") "ervaren") "deskundig gevonden" None;
+        ov_rule ~name:"ongeschoold gevonden" ~cond:(ov_check ~negated:true ~navigation:("vangst", "vinder") "ervaren") "ongeschoold gevonden" None;
+        ov_rule ~name:"toegewezen"
+          ~cond:{|{"node": "RoleMembership", "factType": "vangst", "role": "vondst", "negated": false, "source": {"snippet": "hij een vinder heeft"}}|}
+          "toegewezen" None ]
+  in
+  let v1 roles = ov_obj ~roles "V1" [ ("waarde", "100") ] in
+  ov_frame ~name:"WV-1.5-link-absent" ~ir
+    ~case_text:(ov_case [ v1 [] ]
+                  [ ov_attr_is "vindpremie" "100"; ov_char_is "deskundig gevonden" "not"; ov_char_is "ongeschoold gevonden" "not";
+                    ov_char_is "toegewezen" "not" ]) ();
+  ov_frame ~name:"WV-1.5-link-present-open" ~ir
+    ~case_text:(ov_case [ v1 [ ("vinder", [ "J1" ]) ]; ov_obj ~ty:"Jutter" "J1" [] ]
+                  [ ov_attr_is "vindpremie" "open"; ov_char_is "deskundig gevonden" "open"; ov_char_is "ongeschoold gevonden" "open";
+                    ov_char_is "toegewezen" "holds" ]) ();
+  ov_frame ~name:"WV-1.5-link-present-filled" ~ir
+    ~case_text:(ov_case [ v1 [ ("vinder", [ "J1" ]) ]; ov_obj ~ty:"Jutter" ~chars:[ "ervaren" ] "J1" [ ("bonus", "20") ] ]
+                  [ ov_attr_is "vindpremie" "120"; ov_char_is "deskundig gevonden" "holds"; ov_char_is "ongeschoold gevonden" "not" ]) ()
+
+(* WV-1.5-closed-*: the uitbetaling of the first example, with every input
+   member complete and bergloon 3, is 3; "de drijftoeslag is 2 indien hij niet
+   drijfhout is", with drijfhout complete and not named, is 2 *)
+let () =
+  let ir =
+    ov_doc [ ov_vondst [ "vindloon"; "bergloon"; "uitbetaling"; "drijftoeslag" ] [ "drijfhout" ] ]
+      [ ov_uitbetaling; ov_rule ~name:"drijftoeslag" ~cond:(ov_check ~negated:true "drijfhout") "drijftoeslag" (Some (ov_lit "2")) ]
+  in
+  ov_frame ~closed:true ~name:"WV-1.5-closed-every-input" ~ir
+    ~case_text:(ov_case (ov_v1 [ ("bergloon", "3") ]) [ ov_attr_is "vindloon" "leeg"; ov_attr_is "uitbetaling" "3"; ov_attr_is "drijftoeslag" "2"; ov_char_is "drijfhout" "not" ]) ()
+
+(* WV-1.5-case-*: with the vindloon of the card and no taxatie attributeOpen
+   holds for the vindloon and attributeEmpty does not; with taxatie 50 the
+   reverse, and so without the property and without a taxatie *)
+let () =
+  let ir strict = ov_doc ~strict [ ov_vondst [ "taxatie"; "vindloon" ] [] ] [ ov_vindloon ] in
+  ov_frame ~name:"WV-1.5-case-attribute-open" ~ir:(ir true) ~case_text:(ov_case (ov_v1 []) [ ov_attr_is "vindloon" "open" ]) ();
+  ov_frame ~name:"WV-1.5-case-attribute-empty" ~ir:(ir true) ~case_text:(ov_case (ov_v1 [ ("taxatie", "50") ]) [ ov_attr_is "vindloon" "leeg" ]) ();
+  ov_frame ~name:"WV-1.5-case-without-the-property" ~ir:(ir false) ~case_text:(ov_case (ov_v1 []) [ ov_attr_is "vindloon" "leeg" ]) ()
+
+(* WV-1.5-let: "het drempelgewicht is de vangst plus de vangst, daarbij geldt:
+   de vangst is zijn gewicht plus zijn schade", whose body reads its binder
+   first: 24 at gewicht 10 and schade 2, open with the schade open *)
+let () =
+  let ir =
+    ov_doc [ ov_vondst [ "gewicht"; "schade"; "drempelgewicht" ] [] ]
+      [ ov_rule ~name:"drempelgewicht" "drempelgewicht"
+          (Some (ov_let "vangst" (ov_bin "plus" (ov_attr "gewicht") (ov_attr "schade")) (ov_bin "plus" (ov_binder "vangst") (ov_binder "vangst")))) ]
+  in
+  ov_frame ~name:"WV-1.5-let (filled)" ~ir ~case_text:(ov_case (ov_v1 [ ("gewicht", "10"); ("schade", "2") ]) [ ov_attr_is "drempelgewicht" "24" ]) ();
+  ov_frame ~name:"WV-1.5-let (schade open)" ~ir ~case_text:(ov_case (ov_v1 [ ("gewicht", "10") ]) [ ov_attr_is "drempelgewicht" "open" ]) ()
+
+(* the refusal (RUNTIME-SEMANTICS ch. 1.5, "Forms without the reading"): the
+   slugs of the table, in its order, are the first of this encoding's list, as
+   ref lists them; every slug after them names a form ref carries and this
+   encoding does not yet. A document that holds such a form is refused with
+   CLINGO-049 and its slug before anything is translated, and where it holds
+   several, with the first of the list *)
+let () =
+  let ch15 = Uchar_ref.Eval.uncarried_forms in
+  check "WV-1.5-uncarried-forms: the forms of ch. 1.5 head the list, in their order"
+    (List.filteri (fun i _ -> i < List.length ch15) Translate.uncarried_forms = ch15);
+  let refused ~name ~ir slug =
+    verifier_clean ~name ~ir;
+    let doc, case = load_pair ~ir ~case_text:(ov_case (ov_v1 []) [ ov_consistent ]) in
+    check (Printf.sprintf "%s: CLINGO-049, form %s" name slug)
+      (match Translate.translate doc case with
+       | _ -> false
+       | exception Uchar_ref.Value.Fault { code; params; _ } -> code = Some "CLINGO-049" && params = [ ("form", slug) ])
+  in
+  let vondst = ov_vondst [ "gewicht"; "schade"; "vindloon"; "drempelgewicht" ] [ "zwaar" ] in
+  (* the binder example of WV-1.5-reached: the body reads the vindloon before
+     the binder *)
+  refused ~name:"WV-1.5-reached (binder)"
+    ~ir:
+      (ov_doc [ vondst ]
+         [ ov_rule ~name:"drempelgewicht" "drempelgewicht"
+             (Some (ov_let "vangst" (ov_bin "plus" (ov_attr "gewicht") (ov_attr "schade")) (ov_div (ov_attr "vindloon") (ov_binder "vangst")))) ])
+    "let-binder-not-first";
+  (* README [S1]: Let k = schade in Let bel = (als DREMPEL > 0 dan k anders 0)
+     in ((1 plus bel) plus TARIEF); the body of the outer Let reads DREMPEL
+     before k, which it reads in an arm *)
+  let ite c t e = Printf.sprintf {|{"node": "IfThenElse", "condition": %s, "then": %s, "else": %s, "type": %s, %s}|} c t e ov_num (ov_src "als") in
+  refused ~name:"README [S1] with the property"
+    ~ir:
+      (ov_doc ~parameters:[ "TARIEF"; "DREMPEL" ] [ vondst ]
+         [ ov_rule ~name:"drempelgewicht" "drempelgewicht"
+             (Some
+                (ov_let "k" (ov_attr "schade")
+                   (ov_let "bel" (ite (ov_cmp "greater" (ov_param "DREMPEL") (ov_lit "0")) (ov_binder "k") (ov_lit "0"))
+                      (ov_bin "plus" (ov_bin "plus" (ov_lit "1") (ov_binder "bel")) (ov_param "TARIEF"))))) ])
+    "let-binder-not-first";
+  (* an IfThenElse in the body of a Let that reads its binder first, in the
+     condition *)
+  let ite_rule =
+    ov_rule ~name:"vindloon" "vindloon"
+      (Some (ov_let "g" (ov_attr "gewicht") (ite (ov_cmp "greater" (ov_binder "g") (ov_lit "0")) (ov_lit "1") (ov_lit "0"))))
+  in
+  refused ~name:"if-then-else" ~ir:(ov_doc [ vondst ] [ ite_rule ]) "if-then-else";
+  (* where a document holds several, the first of the list: a Let that reads
+     something before its binder before an IfThenElse, and a parameter with a
+     timeline, a form of the table, before both *)
+  let not_first =
+    ov_rule ~name:"drempelgewicht" "drempelgewicht"
+      (Some (ov_let "k" (ov_attr "schade") (ov_bin "plus" (ov_attr "gewicht") (ov_binder "k"))))
+  in
+  refused ~name:"WV-1.5-uncarried-forms (own forms in their order)" ~ir:(ov_doc [ vondst ] [ ite_rule; not_first ])
+    "let-binder-not-first";
+  refused ~name:"WV-1.5-uncarried-forms (the table before own forms)"
+    ~ir:
+      (replace ~tok:{|{"node": "Parameter", "name": "TARIEF", "datatype": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}}|}
+         ~by:{|{"node": "Parameter", "name": "TARIEF", "datatype": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}, "timeline": {"node": "TimelineFacet", "granularity": "month", "count": 1}}|}
+         (ov_doc ~parameters:[ "TARIEF" ] [ vondst ] [ ite_rule; not_first ]))
+    "timeline-member"
+
+(* WV-1.5-witness-*: the witnesses of ref's suite (ref/test/fixtures/strict-
+   empty/), read where they stand, each with its case files and their
+   expectations. A witness whose forms this encoding carries plays every case;
+   one that holds a form it does not carry is refused, by CLINGO-049 with the
+   slug of that form, or by a limit of this encoding in every document. Two
+   wait for the field complete of a declaration (card complete-member): their
+   closed.json names per case the members the session closes, which no case
+   can say. Every witness is in exactly one list *)
+let () =
+  let dir = "ref/test/fixtures/strict-empty/" in
+  let plays =
+    [ "absent-link"; "absent-link-path"; "characteristic"; "comparison"; "compound-all"; "compound-any";
+      "compound-counting"; "compound-none"; "consistency"; "filled-test"; "initialisation"; "let"; "marker";
+      "navigated-read"; "settled-empty"; "settled-empty-date" ]
+  and refused =
+    [ ("arithmetic", "CLINGO-005", None); ("composite-filled-test", "CLINGO-049", Some "defaults-group");
+      ("defaults-characteristic", "CLINGO-049", Some "defaults-group"); ("defaults-stack", "CLINGO-049", Some "defaults-group");
+      ("defaults-subtype", "CLINGO-049", Some "defaults-group"); ("empty-by-fault", "CLINGO-049", Some "set-fold");
+      ("exact-digits", "CLINGO-046", None); ("fact-creation", "CLINGO-049", Some "set-fold");
+      ("filled-test-not-closure", "CLINGO-049", Some "defaults-group"); ("listed-fold", "CLINGO-049", Some "set-fold");
+      ("object-creation", "CLINGO-049", Some "object-creation"); ("quantifier-fold", "CLINGO-049", Some "quantifier-fold");
+      ("set-fold", "CLINGO-049", Some "set-fold"); ("settled-empty-fold", "CLINGO-049", Some "set-fold");
+      ("settled-empty-stack", "CLINGO-049", Some "defaults-group") ]
+  and waits = [ "closed-input"; "input-above-computation" ] in
+  let root = if Sys.file_exists dir then dir else Filename.concat "../../../../.." dir in
+  let present = List.sort compare (List.filter (fun n -> Sys.is_directory (Filename.concat root n)) (Array.to_list (Sys.readdir root))) in
+  let listed = List.sort compare (plays @ List.map (fun (n, _, _) -> n) refused @ waits) in
+  check "WV-1.5-witness-*: every witness is listed once, and every listed one exists" (present = listed);
+  let cases name =
+    List.sort compare
+      (List.filter
+         (fun f -> String.starts_with ~prefix:"case" f && Filename.check_suffix f ".json")
+         (Array.to_list (Sys.readdir (Filename.concat root name))))
+  in
+  List.iter
+    (fun name ->
+      let ir = corpus_file (dir ^ name ^ "/ir.json") in
+      List.iter
+        (fun c ->
+          let case_text = corpus_file (dir ^ name ^ "/" ^ c) in
+          let id = Printf.sprintf "WV-1.5-witness-%s/%s plays" name c in
+          ref_matches ~name:id ~ir ~case_text;
+          clingo_matches ~name:id ~ir ~case_text)
+        (cases name))
+    plays;
+  List.iter
+    (fun (name, want, form) ->
+      let ir = corpus_file (dir ^ name ^ "/ir.json") in
+      List.iter
+        (fun c ->
+          let doc, case = load_pair ~ir ~case_text:(corpus_file (dir ^ name ^ "/" ^ c)) in
+          check (Printf.sprintf "WV-1.5-witness-%s/%s is refused with %s%s" name c want
+                   (match form with Some f -> ", form " ^ f | None -> ""))
+            (match Translate.translate doc case with
+             | _ -> false
+             | exception Uchar_ref.Value.Fault { code; params; _ } ->
+                 code = Some want && (match form with Some f -> params = [ ("form", f) ] | None -> true)))
+        (cases name))
+    refused;
+  List.iter
+    (fun name ->
+      check (Printf.sprintf "WV-1.5-witness-%s waits for the field complete (card complete-member): it has a closed.json" name)
+        (Sys.file_exists (Filename.concat root (name ^ "/closed.json"))))
+    waits
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total

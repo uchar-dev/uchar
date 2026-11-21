@@ -463,6 +463,36 @@ spec bug.
   initialisation default whose body is `not grpN_has_input(S)` and the
   condition's atoms. Every default of a composed stack is translated on
   the level that declared it, so an own read in it names that type.
+- A document that carries `inferFromEmpty: false` (IR-SPEC ch. 2) is
+  read as RUNTIME-SEMANTICS ch. 1.5 lays down. A member is filled
+  (`val/3`, `has/2`), settled leeg (`settled/2`, `hasnot/2`) or open,
+  which is the absence of all of them. Settled leeg is derived
+  positively: for an input member from the case (`characteristicsAbsent`,
+  and every input member the session treats as complete, the runner's
+  `--closed-inputs`); for a member a rule writes, per concrete type,
+  from its writers, each of which states where it fills nothing
+  (`wnil<i>/1`: its condition is false for another form, its value is
+  settled leeg, or the date lies outside its window). The case's value
+  of such a member stands where each computing rule fills nothing
+  (`wnila/2`). An expression and an atomic condition are translated as
+  in any other document, each as one boundary (`ob<n>/1`) that holds
+  where a read the evaluation reaches does not stand (`stands/2`): a
+  divisor only past a filled dividend, the body of a Let only past its
+  binder. A value, a judgement and a §9.5 deposit arise only outside
+  it, and a fault after an open read within it does not. A condition is
+  judged as a pair, for the form itself and for another form, each side
+  established true or false, a composite by Kleene's strong table over
+  its members; a test on leeg or gevuld closes over an open value for
+  the form itself. A rule decides on its own judgement, and fills
+  nothing where its judgement for another form is false; an
+  initialisation also writes beside a writer that leaves the target
+  open, and the ch. 7.7 desugaring is not applied. Every other form is
+  refused before translation with CLINGO-049 and the slug of the form
+  (`Translate.uncarried_forms`): the slugs of the table of ch. 1.5, in
+  its order, and after them `let-binder-not-first` (a Let whose body
+  reads something before its binder, the form of [S1] and [L3]),
+  `defaults-group`, `quantifier-fold`, `set-fold`, `if-then-else`,
+  `object-creation` and `fact-creation`.
 - Constructs outside the corpus-exercised subset fault the translator —
   fail fast, never a silent SKIP.
 
@@ -506,11 +536,6 @@ Recorded limitations:
   `21-06-2026`) needs string functions, ASP-Core-2 has none, and the
   encoding runs no script. The golden `jutterswet-tekst-van-een-waarde`
   stands with that code in gate 6's channel.
-- A document that carries `inferFromEmpty: false` (IR-SPEC ch. 2) is
-  refused before anything is translated, as the refusal CLINGO-049 with
-  the form `document`: the encoding reads empty as RUNTIME-SEMANTICS
-  ch. 1.2–1.4 lay down, so its model would answer what the document
-  excludes. ref carries that reading (RUNTIME-SEMANTICS ch. 1.5).
 - A leeg or gevuld test on a list, an attribute or a parameter, is
   refused at translation as the refusal CLINGO-050 (parameters `operand`,
   `datatype`): the encoding holds a list as `lpres`/`lelem` facts, not as
@@ -609,10 +634,12 @@ Recorded limitations:
 ## Run
 
     dune build backends
-    _build/default/backends/clingo/bin/clingo_runner.exe <ir.json> <case.json>
+    _build/default/backends/clingo/bin/clingo_runner.exe [--closed-inputs] [--program] <ir.json> <case.json>
 
 Exit 0: every expectation matches; 1: mismatch or translation fault;
-2: load error or clingo unavailable.
+2: load error or clingo unavailable. `--closed-inputs` treats every input
+member as complete (RUNTIME-SEMANTICS ch. 1.5), `--program` prints the
+program without solving it.
 
 The runner reads clingo's text output, one atom per line (`--outf=0
 --out-ifs='\n'`, `Solve.run_clingo`). Clingo 5.8.2 aborts (SIGABRT) while

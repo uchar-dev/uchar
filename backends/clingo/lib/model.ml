@@ -225,6 +225,10 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
   (* the declarations [Translate.translate] wrote the program under: an
      attribute of the unbounded form at the scale [Scale] gives it *)
   let doc = Scale.document doc case in
+  (* the one place the model is read by the property: only a document with
+     inferFromEmpty false has open members *)
+  let strict = not doc.infer_from_empty in
+  let settled label attr = has model "settled" [ A_str label; A_str (norm attr) ] in
   let scaled_expect ~label ~attr (v : Value.t) =
     let i = Uchar_ref.World.SMap.find label case.world.Uchar_ref.World.instances in
     let ot = i.Uchar_ref.World.otype in
@@ -378,21 +382,33 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
                 (Printf.sprintf "%s.%s = [%s], expected %d" label attr
                    (String.concat ";" (List.map string_of_int got))
                    because))
+      (* RUNTIME-SEMANTICS ch. 1.5: in a document with inferFromEmpty false a
+         member is settled leeg where the model says so (settled/2, hasnot/2)
+         and open where it holds none of its atoms; in any other document
+         nothing is open, and an attribute without a value is leeg *)
       | Attribute_empty { label; attr } -> (
           match val_present model label attr with
+          | [] when strict && not (settled label attr) ->
+              Some (Printf.sprintf "%s.%s is open, expected leeg" label attr)
           | [] -> None
           | got ->
               Some
                 (Printf.sprintf "%s.%s = [%s], expected leeg" label attr
                    (String.concat ";" (List.map render_arg got))))
-      (* this encoding translates no document with inferFromEmpty false
-         (CLINGO-049), and a document without it has no open member
-         (RUNTIME-SEMANTICS ch. 1.5): an expectation of an open member never
-         holds here *)
-      | Attribute_open { label; attr } ->
-          Some (Printf.sprintf "%s.%s: no member of this encoding's model is open, expected open" label attr)
+      | Attribute_open { label; attr } -> (
+          match val_present model label attr with
+          | [] when strict && not (settled label attr) -> None
+          | [] -> Some (Printf.sprintf "%s.%s is leeg, expected open" label attr)
+          | got ->
+              Some
+                (Printf.sprintf "%s.%s = [%s], expected open" label attr
+                   (String.concat ";" (List.map render_arg got))))
       | Char_open { label; char } ->
-          Some (Printf.sprintf "%s: no member of this encoding's model is open, expected characteristic %S open" label char)
+          if has model "has" [ A_str label; A_str (norm char) ] then
+            Some (Printf.sprintf "%s carries characteristic %S, expected open" label char)
+          else if (not strict) || has model "hasnot" [ A_str label; A_str (norm char) ] then
+            Some (Printf.sprintf "%s: characteristic %S stands not to hold, expected open" label char)
+          else None
       (* a cell (RUNTIME-SEMANTICS ch. 5.8c) is the val/3 member World.cell
          names, its value encoded as an attribute's of its declaration: a
          number or a date scaled by it, a text, an enumeration label or a
@@ -501,6 +517,8 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
       | Char_absent { label; char } ->
           if has model "has" [ A_str label; A_str (norm char) ] then
             Some (Printf.sprintf "%s carries characteristic %S, expected absent" label char)
+          else if strict && not (has model "hasnot" [ A_str label; A_str (norm char) ]) then
+            Some (Printf.sprintf "%s: characteristic %S is open, expected absent" label char)
           else None
       | Consistent -> (
           match List.filter (fun a -> a.name = "inconsistent") model with

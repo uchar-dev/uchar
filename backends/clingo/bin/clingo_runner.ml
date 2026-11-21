@@ -89,14 +89,21 @@ let verdict ~(pinned : Uchar_ref.Case.expected_fault) ~observed ~what report =
       (Uchar_ref.Case.params_json pinned.ef_params) report;
     exit 1)
 
+(* --closed-inputs: the session treats every input member as complete
+   (RUNTIME-SEMANTICS ch. 1.5, "Complete input"), as ref's runner does *)
+let closed_inputs, argv =
+  match Array.to_list Sys.argv with
+  | prog :: "--closed-inputs" :: rest -> (true, Array.of_list (prog :: rest))
+  | args -> (false, Array.of_list args)
+
 let () =
-  match Sys.argv with
+  match argv with
   (* the program alone, unsolved: what a change to the translation is measured
      on, document by document *)
   | [| _; "--program"; ir_path; case_path |] -> (
       try
         let doc = Ir_v0.Loader.load_file ir_path in
-        print_string (Clingo_backend.Translate.translate doc (Uchar_ref.Case.load_file doc case_path))
+        print_string (Clingo_backend.Translate.translate ~closed_inputs doc (Uchar_ref.Case.load_file doc case_path))
       with
       | Uchar_ref.Value.Fault { code; text; _ } | Uchar_ref.Case.Error { code; text; _ } ->
           Printf.eprintf "FAULT: %s\n" (Uchar_ref.Value.report ~code text);
@@ -134,7 +141,7 @@ let () =
                pinned code — never a silent model *)
             let observed =
               match
-                solve (Clingo_backend.Translate.translate_guarded doc case)
+                solve (Clingo_backend.Translate.translate_guarded ~closed_inputs doc case)
               with
               | `Sat _ -> None
               | `Fails (msg, codes) -> Some (with_codes codes msg, codes)
@@ -150,7 +157,7 @@ let () =
             | Some (msg, codes) -> verdict ~pinned ~observed:codes ~what:"" msg)
         | None -> (
             let model =
-              match solve (Clingo_backend.Translate.translate_guarded doc case) with
+              match solve (Clingo_backend.Translate.translate_guarded ~closed_inputs doc case) with
               | `Sat model -> model
               | `Fails (msg, codes) ->
                   prerr_endline (with_codes codes msg);
@@ -176,5 +183,5 @@ let () =
           Printf.eprintf "LOAD ERROR: %s\n" e;
           exit 2)
   | _ ->
-      prerr_endline "usage: clingo_runner [--program] <ir.json> <case.json>";
+      prerr_endline "usage: clingo_runner [--closed-inputs] [--program] <ir.json> <case.json>";
       exit 2
