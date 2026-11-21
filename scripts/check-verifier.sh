@@ -34,6 +34,15 @@
 #      the document does not have is refused, whatever its rule and arm.
 #      The pointer is read up to the first ": ", spaces included, and a
 #      FAIL line without that separator is refused as well.
+#   6. the empty-closures inventory (`verifier --empty-closures`): it runs on
+#      every golden and red document with exit 0; every line carries the nine
+#      columns, a known class and a kind slug, and a pointer that resolves in
+#      its document (the resolver of check 4); every witness under
+#      spec/verifier/test/empty-closures/<kind>/ is verifier-clean, gives its
+#      expected.txt byte for byte, and reports the kind (or the guard) its
+#      directory names; every kind the corpus or a witness reports has its
+#      witness. The places per class, the kinds the corpus touches and the
+#      witnesses are floored.
 #
 # With explicit file arguments it runs the verifier against those files and
 # prints the reports (handy for a dump outside the repo).
@@ -196,6 +205,13 @@ EXPECTED_MIN_REPORT_KEYS=340  # 2026-11-02: measured 340 distinct keys over the 
 EXPECTED_MIN_ARM_SITES=442    # 2026-11-02: measured 442 key literals "WF-###.<slug>" in spec/verifier/lib/checks.ml (421 on 2026-10-19)
 # The cited pointers (check 4) are floored in the same regime: a parse that stopped finding the
 # pointer in a report line would check nothing and pass.
+# The empty-closures inventory (check 6), floored in the same regime: an analysis that quietly stopped
+# finding a kind of place would still pass its witnesses.
+EXPECTED_MIN_EMPTY_CLOSURE=827   # 2026-11-21: measured 827 places of class closure over corpus/golden and corpus/red
+EXPECTED_MIN_EMPTY_NEGATION=382  # 2026-11-21: measured 382 places of class negation, same documents
+EXPECTED_MIN_EMPTY_ABSENT=206    # 2026-11-21: measured 206 places of class absent-instance, same documents
+EXPECTED_MIN_EMPTY_KINDS=20      # 2026-11-21: 20 of the 21 kinds; clamp-empty-bound has only its witness, no clamp of the corpus has a bound that can be leeg
+EXPECTED_MIN_EMPTY_WITNESSES=24  # 2026-11-21: 24 witnesses, one per kind (21) and one per guard (3)
 EXPECTED_MIN_POINTERS=705   # 2026-11-02: measured 705 pointers over the negative reports, all resolving (706 that morning, 619 on 2026-10-19, 547 on 2026-09-25); lowered by one with the card dimensions-remaining, which admits a filled count over cells: wf037-filled-count-dimension-selection, whose report cited two pointers, gave way to wf037-total-dimension-selection, which cites one
 
 # check 2: golden dumps — and the red corpus's documents, whose faults
@@ -203,10 +219,13 @@ EXPECTED_MIN_POINTERS=705   # 2026-11-02: measured 705 pointers over the negativ
 list=$(mktemp) || exit 2
 ptrs=$(mktemp) || exit 2
 noptr=$(mktemp) || exit 2
-trap 'rm -f "$list" "$ptrs" "$noptr"' EXIT
+docs=$(mktemp) || exit 2
+ec_ptrs=$(mktemp) || exit 2
+trap 'rm -f "$list" "$ptrs" "$noptr" "$docs" "$ec_ptrs"' EXIT
 
 n_golden=0
 find corpus/golden corpus/red -name ir.json 2>/dev/null | sort > "$list"
+cp "$list" "$docs"
 while IFS= read -r f; do
     n_golden=$((n_golden + 1))
     if ! out=$("$BIN" "$f" 2>&1); then
@@ -263,7 +282,10 @@ if [ -s "$noptr" ]; then
     done < "$noptr"
     status=1
 fi
-n_ptr=$(python3 - "$ptrs" <<'PY'
+# The resolver reads lines `<document>\t<pointer>` and prints how many it read; the second argument
+# names the reader of the pointer in a failure (check 4: a negative case, check 6: an inventory line).
+resolve_pointers() {
+python3 - "$1" "$2" <<'PY'
 import json, sys
 docs, n, bad = {}, 0, []
 for line in open(sys.argv[1], encoding="utf-8"):
@@ -284,12 +306,13 @@ for line in open(sys.argv[1], encoding="utf-8"):
     if not ok:
         bad.append((f, ptr))
 for f, ptr in bad:
-    sys.stderr.write("FAIL: negative case %s cites %s, which does not resolve in the document: the "
-                     "report sends its reader to a position the document does not have\n" % (f, ptr))
+    sys.stderr.write("FAIL: %s %s cites %s, which does not resolve in the document: the "
+                     "report sends its reader to a position the document does not have\n" % (sys.argv[2], f, ptr))
 print(n)
 sys.exit(1 if bad else 0)
 PY
-) || status=1
+}
+n_ptr=$(resolve_pointers "$ptrs" "negative case") || status=1
 if [ "${n_ptr:-0}" -lt "$EXPECTED_MIN_POINTERS" ]; then
     echo "FAIL: ${n_ptr:-0} cited pointer(s) found in the negative reports, but EXPECTED_MIN_POINTERS pins at least $EXPECTED_MIN_POINTERS — the pointer check read fewer than it did (a deliberate removal lowers the floor in the same commit)" >&2
     status=1
@@ -411,6 +434,89 @@ for floor in "n_arms:EXPECTED_MIN_ARMS:arm keys named by expect.txt files" "n_pa
     fi
 done
 
+# check 6: the empty-closures inventory over the golden and red documents, and its witnesses.
+EC_DIR="$VERIFIER_DIR/test/empty-closures"
+ec_counts=$(python3 - "$BIN" "$docs" "$EC_DIR" "$ec_ptrs" <<'PY'
+import difflib, os, re, subprocess, sys
+exe, listfile, wdir, ptrfile = sys.argv[1:5]
+CLASSES = ("closure", "negation", "absent-instance")
+KIND = re.compile(r"^[a-z]+(-[a-z]+)*$")
+GUARDS = ("filled-test", "characteristic-check", "tested-elsewhere")
+bad, counts, corpus_kinds, seen_kinds = [], dict.fromkeys(CLASSES, 0), set(), set()
+pf = open(ptrfile, "w", encoding="utf-8")
+
+def lines_of(doc):
+    r = subprocess.run([exe, "--empty-closures", doc], capture_output=True, text=True)
+    if r.returncode != 0:
+        bad.append("%s: verifier --empty-closures exits %d: %s" % (doc, r.returncode, r.stderr.strip()))
+        return None, []
+    rows = []
+    for line in r.stdout.splitlines():
+        cols = line.split("\t")
+        if len(cols) != 9:
+            bad.append("%s: a line of %d columns, not 9: %s" % (doc, len(cols), line)); continue
+        if cols[0] not in CLASSES:
+            bad.append("%s: unknown class %r: %s" % (doc, cols[0], line)); continue
+        if not KIND.match(cols[1]):
+            bad.append("%s: kind %r is no slug: %s" % (doc, cols[1], line)); continue
+        pf.write("%s\t%s\n" % (doc, cols[2]))
+        rows.append(cols)
+    return r.stdout, rows
+
+docs = [l.rstrip("\n") for l in open(listfile, encoding="utf-8") if l.strip()]
+if not docs:
+    bad.append("no golden or red document: the inventory read nothing")
+for f in docs:
+    _, rows = lines_of(f)
+    for cols in rows:
+        counts[cols[0]] += 1
+        corpus_kinds.add(cols[1])
+witnesses = sorted(d for d in os.listdir(wdir) if os.path.isdir(os.path.join(wdir, d))) if os.path.isdir(wdir) else []
+if not witnesses:
+    bad.append("no witness under %s" % wdir)
+for w in witnesses:
+    doc, exp = os.path.join(wdir, w, "ir.json"), os.path.join(wdir, w, "expected.txt")
+    if not (os.path.isfile(doc) and os.path.isfile(exp)):
+        bad.append("witness %s lacks ir.json or expected.txt" % w); continue
+    clean = subprocess.run([exe, doc], capture_output=True, text=True)
+    if clean.returncode != 0:
+        bad.append("witness %s is not verifier-clean:\n%s" % (w, clean.stdout + clean.stderr))
+    out, rows = lines_of(doc)
+    want = open(exp, encoding="utf-8").read()
+    if out is not None and out != want:
+        bad.append("witness %s does not give its expected.txt:\n%s" % (w, "".join(difflib.unified_diff(
+            want.splitlines(True), out.splitlines(True), "expected.txt", "verifier --empty-closures"))))
+    kinds = {cols[1] for cols in rows}
+    seen_kinds |= kinds
+    if w.startswith("guard-"):
+        guard = w[len("guard-"):]
+        if guard not in GUARDS:
+            bad.append("witness %s names no guard of %s" % (w, ", ".join(GUARDS)))
+        elif not any(g.startswith(guard + ":") for cols in rows for g in cols[6].split("; ")):
+            bad.append("witness %s reports no %s guard" % (w, guard))
+    elif w not in kinds:
+        bad.append("witness %s does not report the kind its directory names (it reports %s)" % (w, sorted(kinds)))
+for k in sorted((corpus_kinds | seen_kinds) - set(witnesses)):
+    bad.append("kind %s has no witness under %s" % (k, wdir))
+pf.close()
+for x in bad:
+    sys.stderr.write("FAIL: empty-closures: " + x + "\n")
+print(len(docs), counts["closure"], counts["negation"], counts["absent-instance"], len(corpus_kinds), len(witnesses), 1 if bad else 0)
+PY
+) || { echo "FAIL: the empty-closures check could not run" >&2; exit 1; }
+set -- $ec_counts
+ec_docs=$1; ec_closure=$2; ec_negation=$3; ec_absent=$4; ec_kinds=$5; ec_witnesses=$6
+[ "$7" -eq 0 ] || status=1
+n_ec_ptr=$(resolve_pointers "$ec_ptrs" "empty-closures line of") || status=1
+for floor in "ec_closure:EXPECTED_MIN_EMPTY_CLOSURE:places of class closure" "ec_negation:EXPECTED_MIN_EMPTY_NEGATION:places of class negation" "ec_absent:EXPECTED_MIN_EMPTY_ABSENT:places of class absent-instance" "ec_kinds:EXPECTED_MIN_EMPTY_KINDS:kinds the corpus touches" "ec_witnesses:EXPECTED_MIN_EMPTY_WITNESSES:empty-closures witnesses"; do
+    var=${floor%%:*}; rest=${floor#*:}; name=${rest%%:*}; what=${rest#*:}
+    eval "have=\$$var; min=\$$name"
+    if [ "$have" -lt "$min" ]; then
+        echo "FAIL: $have $what found, but $name pins at least $min — the inventory found fewer than it did (a deliberate removal lowers the floor in the same commit)" >&2
+        status=1
+    fi
+done
+
 # The floor is evaluated BEFORE the unpopulated-corpus exit, or that exit would answer the very
 # case the floor exists for: with the zones moved aside both counts are 0 and an "all zero -> exit
 # 0" branch placed first never lets the floor run. Measured 2026-09-10, before this order: both
@@ -433,6 +539,6 @@ if [ "$n_expect" -lt "$EXPECTED_MIN_EXPECT" ]; then
 fi
 
 if [ "$status" -eq 0 ]; then
-    echo "check-verifier: PASS (the verifier's dune files name no library of another project of the workspace: $standalone; $n_golden golden clean; $n_neg negative rejected for their declared rule, floor $EXPECTED_MIN_NEGATIVE; $n_expect on their declared arm (expect.txt), floor $EXPECTED_MIN_EXPECT, $n_arms arm keys, floor $EXPECTED_MIN_ARMS, $n_params name=value lines, floor $EXPECTED_MIN_PARAM_LINES; $n_keys keys of one template each in the reports, floor $EXPECTED_MIN_REPORT_KEYS, $n_sites key literals in checks.ml, floor $EXPECTED_MIN_ARM_SITES; $n_ptr cited pointers resolve in their documents, floor $EXPECTED_MIN_POINTERS)"
+    echo "check-verifier: PASS (the verifier's dune files name no library of another project of the workspace: $standalone; $n_golden golden clean; $n_neg negative rejected for their declared rule, floor $EXPECTED_MIN_NEGATIVE; $n_expect on their declared arm (expect.txt), floor $EXPECTED_MIN_EXPECT, $n_arms arm keys, floor $EXPECTED_MIN_ARMS, $n_params name=value lines, floor $EXPECTED_MIN_PARAM_LINES; $n_keys keys of one template each in the reports, floor $EXPECTED_MIN_REPORT_KEYS, $n_sites key literals in checks.ml, floor $EXPECTED_MIN_ARM_SITES; $n_ptr cited pointers resolve in their documents, floor $EXPECTED_MIN_POINTERS; empty-closures inventory over $ec_docs documents: $ec_closure closure places, floor $EXPECTED_MIN_EMPTY_CLOSURE, $ec_negation negation, floor $EXPECTED_MIN_EMPTY_NEGATION, $ec_absent absent-instance, floor $EXPECTED_MIN_EMPTY_ABSENT, $ec_kinds kinds, floor $EXPECTED_MIN_EMPTY_KINDS, $ec_witnesses witnesses verbatim, floor $EXPECTED_MIN_EMPTY_WITNESSES, $n_ec_ptr pointers resolve)"
 fi
 exit "$status"
