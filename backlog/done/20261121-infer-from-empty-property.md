@@ -231,3 +231,10 @@ Alle op `20bd22ff4`, één tegelijk (gate 9 met catala op deze machine):
 - `check-catala: PASS — frontend suite green (262 checks, floor 201); 13 catala golden(s) regenerate byte-identically (floor 12)`
 - `check-flogic: PASS — frontend suite green (164 checks, floor 81); 3 flogic golden(s) re-emit byte-identically (floor 1)`
 - `check-exec-codes: PASS — 14 REF codes and 49 CLINGO codes, numbered without a gap, every one not retired raised in its source, every raised code registered, every EF code a row of ch. 5.7b, the parameters of every site in its line or row (floors 12 and 27)` (in gate 8)
+
+### Landing (hoofdsessie, 2026-11-21)
+
+Nagelezen: de weigering van ref staat in de runner, waar de replay, `--noop` en `--trace` hun document lezen, en buiten
+de runner roepen alleen tests de evaluatie aan; die van clingo staat vooraan in `translate_guarded`, waar ook
+`translate` langs komt. De paragraaf in IR-SPEC landt zoals voorgesteld; de rij staat in `spec/CONSTRUCTS.md` en de zin
+van gate 2 in `CLAUDE.md`. `make gates` groen op `fa45843d1` (714 s, 17 gates, red=0).
