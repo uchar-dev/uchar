@@ -488,7 +488,7 @@ value, a characteristic holds), *settled leeg* (it stands that the attribute
 has no value, or that the characteristic does not hold) or *open* (neither
 stands). An input member — an attribute or a characteristic that no rule
 and no defaults group writes on the object's type — is open where the case gives it no value or
-does not name it, unless the session treats it as complete (below). A
+does not name it, unless its declaration says that its input is complete (below). A
 document without the property has no open member: a member without a value is
 settled leeg, and the rest of this section then reads as ch. 1.2–1.4. Example
 (WV-1.5-open-input, WV-1.5-no-open-without-the-property): "de uitbetaling van
@@ -765,12 +765,14 @@ not named, and 100 where betwist stands not to hold.
 **An opgave** — a stack whose highest default is the value the case may give
 for its target, "het bergloon (mag opgegeven worden)" — reads as any default
 over an input member: where the case gives the opgave no value it is open,
-and the computation below it does not decide. A session that treats the
-opgave as complete lets the computation decide, and an initialisation closes
-over an open opgave. Example (WV-1.5-stack-opgave): "het bergloon van een
-Vondst is zijn opgegeven bergloon", above "… zijn gewicht maal 2", at gewicht
-10: 30 with an opgave of 30, open without one, 20 where the opgave is
-complete, and 25 above "… moet geïnitialiseerd worden op 25".
+and the computation below it does not decide; an initialisation closes over
+an open opgave. An opgave declared complete (below) is settled leeg where the
+case gives it no value: its default gives way, and the computation decides.
+Example (WV-1.5-stack-opgave): "het bergloon van een Vondst is zijn opgegeven
+bergloon", above "… zijn gewicht maal 2", at gewicht 10: 30 with an opgave of
+30, open without one, and 25 above "… moet geïnitialiseerd worden op 25";
+with the opgave declared complete it is 20 without one and 30 with an opgave
+of 30.
 
 **A stack on a characteristic** decides to attribute or not to attribute
 (ch. 7.1). Where a default decides not to attribute, or every default gives
@@ -951,14 +953,28 @@ anders 0" is 5 without a taxatie, and "een Vondst is gewoon indien (1 als
 zijn taxatie leeg is, anders 0) gelijk is aan 0" is open there — false for
 itself, undetermined for another — and holds at taxatie 50.
 
-**Complete input.** A session can treat input members as complete: every
-input member, or the members it names by object type and member, on every
-object of that type. A complete member without a value is settled leeg; a
-complete characteristic the case does not name stands not to hold. Example
-(WV-1.5-closed-*): the uitbetaling of the first example, with the vindloon
-complete and bergloon 3, is 3, and so with every input member complete; with
-only the bergloon complete it stays open. "De drijftoeslag is 2 indien hij
-niet drijfhout is", with drijfhout complete and not named, is 2.
+**Complete input.** The declaration of an attribute or a characteristic can
+say that its input is complete (`complete`, IR-SPEC ch. 2.2); a subtype
+inherits the member with it. On an object where the member is input, a
+complete member without a value is settled leeg, and a complete
+characteristic the case does not name stands not to hold. On an object where
+a rule or a defaults group writes the member, it follows its writers and the
+field changes nothing; in a document without the property nothing is open,
+and the field changes no outcome. A session can treat every input member as
+complete, the measurement of preservation below. Example (WV-1.5-complete-*):
+the uitbetaling of the first example, with the vindloon declared complete and
+bergloon 3, is 3, and so with the vindloon and the bergloon declared complete,
+and in a session that treats every input member as complete; with only the
+bergloon declared complete it stays open. "De drijftoeslag is 2 indien hij
+niet drijfhout is", with drijfhout declared complete and not named, is 2. With
+the vindloon declared complete on the Vondst, a Strandvondst with bergloon 3
+and no vindloon has the uitbetaling 3. The vindloon of the card, declared
+complete, is open without a taxatie, as without the field; with "het vindloon
+van een Strandvondst is 10 indien zijn taxatie groter is dan 1000" as its one
+writer, the vindloon of a Vondst that is no Strandvondst is settled leeg
+without a value, and that of a Strandvondst without a taxatie is open. In the
+document without the property the uitbetaling is 3 with the field and without
+it.
 
 **The case.** Beside the characteristics that hold, the input of an object
 can name the characteristics that stand not to hold (`characteristicsAbsent`,
@@ -985,9 +1001,9 @@ attribute, a characteristic that holds or stands not to hold, or a §9.5 fact
 — except through a closure: a leeg test or a gevuld assertion over an open
 value (the form's own negation of a gevuld test among them), a
 filled-value count and a fold filter that tests on gevuld over an open value,
-an initialisation, and complete input. A value the case gives a derived member
-is no input member's: where every writer fills nothing it stands in place of
-settled leeg. *Preservation with complete knowledge*: where nothing is open,
+an initialisation, and a member declared complete. A value the case gives a
+derived member is no input member's: where every writer fills nothing it
+stands in place of settled leeg. *Preservation with complete knowledge*: where nothing is open,
 every input member given or complete, the outcomes are those of ch. 1.2–1.4.
 Example (WV-1.5-monotone,
 WV-1.5-preserved): every example of this section, run once with each input
@@ -998,7 +1014,8 @@ corpus: every golden whose forms the reference interpreter carries, with the
 property, plays its own cases with every input member complete; and per case
 and per input member it gives, the end state without that input (ch. 5.12a)
 keeps its every outcome in the end state with it, a run in which a closure
-decided counted apart.
+decided, and one whose member left out is not open there (a member declared
+complete among them), counted apart.
 
 Broader examples, a document per form with cases whose expectations were
 computed by hand (`spec/proposals/STRICT-EMPTY.md` §5), are in the suite
