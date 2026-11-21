@@ -531,3 +531,12 @@ check-graph: PASS (extra; route leg: the graph of the wire equals the graph of t
 check-scenario: PASS — 48 scenario golden(s) (floor 7) regenerate 176 case file(s) (floor 31) and their ir.json byte-identically
 check-readings: PASS (ref traced 1199 golden case files, and refused the trace of 4 of 1 golden(s) by name (TRACE_REFUSED); on both branches 385 goldens and 1073 case files compared, 8468 readings, 27262 node lines of which 4427 unreached, 1016 with contributors, 1317 with a timeline, 842 with the object of a read and 618 of a displaced reading, 147 contributors of ref not reached; end states of 3044 objects (479 made) and 8501 members; all at or above their floors; deviations 0, end-state deviations 0; 14 comparison rows, 3 tripwire rows, 10 end-state rows; 89 s)
 ```
+
+### Landing van deel 1b (hoofdsessie, 2026-11-21)
+
+Nagelezen: de caselezer en de controle (`ref/lib/case.ml`), `stated_absent` in de wereld, de poot in gate 5, en de vier
+cases van de golden, met de hand nagerekend. De alinea's van gate 4, 5 en 17 in `CLAUDE.md` en rij 48 van
+`spec/CONSTRUCTS.md` zijn gezet; de javadoc van `InferFromEmptyRefusalWitnessTest` zegt niet meer dat de golden geen
+casebestand heeft (open punt 1). `make gates` groen op `266b24d0b` (684 s, 17 gates, red=0; de poot voor behoud: 134
+goldens en 339 cases). De open punten 2 en 3 (de caselezer van Drools, de scenariolaag) horen bij de kaart waarin
+Drools de lezing draagt en bij een kaart voor de scenariotaal.
