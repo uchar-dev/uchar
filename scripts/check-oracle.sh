@@ -70,7 +70,7 @@ EXPECTED_MIN_PRESERVED_CASES=784    # 2026-11-21: measured 784 (check 5: their c
 # strict reading from the ordinary one, and the gate fails.
 PRESERVATION_MUTANT=jutterswet-leeg-deeltal
 
-EXPECTED_MIN_MONOTONE_RUNS=2254     # 2026-11-21: measured 2254 (check 6: runs without one input compared with the case)
+EXPECTED_MIN_MONOTONE_RUNS=2255     # 2026-11-21: measured 2255 (check 6: runs without one input compared with the case; 2254 while context-value-behind-a-failing-condition case1 faulted past its open actief)
 EXPECTED_MIN_MONOTONE_CLOSURES=443  # 2026-11-21: measured 443 (check 6: runs without one input in which a closure decided, counted apart)
 
 # check 6's own red row: a run in which a closure decided, compared all the same, must lose an outcome. Measured
@@ -81,18 +81,9 @@ MONOTONE_MUTANT='jutterswet-afleiden-uit-leeg/case1-alles-gegeven.json|attribute
 
 # check 6: the runs whose difference is a gap of RUNTIME-SEMANTICS ch. 1.5 rather than a fault of ref, one per line,
 # '<golden>/<case file>|<attribute or characteristic>|<object>|<member>|<reason>', the input "-" for a case whose run
-# with every input it gives already faults. Each is a fault or a §9.5 fact of a member that a composite or a quantifier
-# fold reads past an undetermined member ("The judgement of a condition": the read goes on where ch. 5.10 would stop),
-# which the case with the input never reaches; "The two requirements" names no such exception. Stale-failing in both
-# directions: a listed run that keeps every outcome, or that is not compared, fails.
-MONOTONE_GAPS='jutterswet-keurgemiddelde/case3-het-tweede-lid-beslist.json|attribute|W2|keurpunten|the fold reads W3 past the undetermined W2, and its division by 0 deposits EF-005 on P1
-jutterswet-keurgemiddelde/case3-het-tweede-lid-beslist.json|attribute|W2|keuringen|the fold reads W3 past the undetermined W2, and its division by 0 deposits EF-005 on P1
-jutterswet-kwantorvouw-en-unie/case1-niet-bereikt.json|attribute|V1|gewicht|"druk" reads V2 past the undetermined V1, and its division by 0 deposits EF-005 on J1
-jutterswet-kwantorvouw-en-unie/case1-niet-bereikt.json|attribute|V1|deelnemers|"druk" reads V2 past the undetermined V1, and its division by 0 deposits EF-005 on J1
-jutterswet-vouwfilter-buiten-de-beurt/case1-buiten-de-beurt.json|characteristic|J1|actief|"geen van" reads its second member past an undetermined actief, and its division by 0 deposits EF-005 on J1
-jutterswet-werfkeur/case1-kotter-voor-de-sloep.json|attribute|S1|lengte|the matrix reads the rekendatum past an undetermined lengte and faults with EF-011
-jutterswet-werfkeur/case1-kotter-voor-de-sloep.json|attribute|S2|lengte|the matrix reads the rekendatum past an undetermined lengte and faults with EF-011
-context-value-behind-a-failing-condition/case1-niet-actief.json|-|-|-|the case leaves actief open, so the condition reads the evaluationYear past it and faults with EF-011'
+# with every input it gives already faults. Empty: every run the leg compares keeps every outcome. Stale-failing in
+# both directions: a listed run that keeps every outcome, or that is not compared, fails.
+MONOTONE_GAPS=''
 
 if [ "$#" -eq 2 ]; then
     exec "$BIN" "$1" "$2"
