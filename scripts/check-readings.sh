@@ -109,12 +109,11 @@ STATE_DEVIATIONS=(
 # file of a listed golden ends its trace with exit 1, the report `EVALUATION FAULT: <code>: …` and no line on standard
 # output; the golden is then compared with nothing, so the backend's readings must exclude it as well (check 2). A
 # refused trace of a golden the list does not name fails (check 1), and so does a listed golden that traces a case
-# file, refuses with another code, or has no case file under corpus/golden (stale). A document with inferFromEmpty
-# false is played by ref (RUNTIME-SEMANTICS ch. 1.5), but the reading at the fixpoint of an undetermined condition and
-# of an open member (ch. 5.12, 5.12a) is not defined yet, so `runner --trace` refuses it with REF-014, form `reading`
-# (card open-values-in-ref, 2026-11-21).
+# file, refuses with another code, or has no case file under corpus/golden (stale). Empty: ref traces every golden case
+# file, those of a document with inferFromEmpty false included (RUNTIME-SEMANTICS ch. 5.12, 5.12a: the judgement of
+# ch. 1.5 at a node, the status OPEN, the open members of the end state), whose golden the backend excludes as it
+# excludes every golden it does not carry.
 TRACE_REFUSED=(
-  "jutterswet-afleiden-uit-leeg|REF-014|the document carries inferFromEmpty false: ref plays its four cases (gate 5) and refuses the readings at the fixpoint, form reading; both Drools branches exclude the golden with DROOLS-370"
 )
 
 # --- monotone floors (maintainer decision 2026-09-09) --------------------------------------------------
