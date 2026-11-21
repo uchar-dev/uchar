@@ -15380,9 +15380,10 @@ let () =
    minste één van: zijn gewicht is leeg, zijn taxatie gedeeld door zijn
    getuigen is groter dan 3", with gewicht open, getuigen complete and not
    given, and taxatie 50: the first member is true for the form itself (the
-   closure) and undetermined for another, so the second is read; its division
-   by a settled leeg getuigen deposits EF-031 and the comparison is false. The
-   vrijstelling is 1 with an EF-031 fact. With the gewicht complete as well the
+   closure) and undetermined for another, so the second is read past it; its
+   division by a settled leeg getuigen would deposit EF-031, which is dropped
+   (WV-1.5-past-undetermined-deposit), and the comparison is false. The
+   vrijstelling is 1 without a fact. With the gewicht complete as well the
    first member is true for both, the read stops there, and there is no fact *)
 let () =
   let doc =
@@ -15398,13 +15399,111 @@ let () =
   in
   let w = ov_run ~closed:(Eval.Members [ ("Vondst", "getuigen") ]) "read-for-another" doc (ov_v1 [ ("taxatie", "50") ]) in
   ov_expect "WV-1.5-read-for-another (vrijstelling)" (ov_attr w "V1" "vrijstelling") "1";
-  check "WV-1.5-read-for-another (EF-031)" (ov_channel w = [ "vrijstelling V1 EF-031" ]);
+  check "WV-1.5-read-for-another (no fact)" (ov_channel w = []);
   let w =
     ov_run ~closed:(Eval.Members [ ("Vondst", "getuigen"); ("Vondst", "gewicht") ]) "read-for-another-settled" doc
       (ov_v1 [ ("taxatie", "50") ])
   in
   ov_expect "WV-1.5-read-for-another (settled, vrijstelling)" (ov_attr w "V1" "vrijstelling") "1";
   check "WV-1.5-read-for-another (settled, no fact)" (ov_channel w = [])
+
+(* "zijn [a] gedeeld door zijn [b] is groter dan [v]" *)
+let ov_quotient_greater a b v : Ir_v0.Ast.condition_expr =
+  Comparison
+    { op = Greater; left_side = Some (ov_bin Divided_by (ov_ref a) (ov_ref b)); right_side = Some (ov_lit v);
+      time_period = None; source_name = None }
+
+(* "het Rekenjaar is groter dan 2025", which faults with EF-011 in a session
+   without an evaluation date, as every session of this suite is (ch. 8.2) *)
+let ov_rekenjaar_greater : Ir_v0.Ast.condition_expr =
+  Comparison
+    { op = Greater;
+      left_side = Some (Context_value { ident = Some Ir_v0.Spelling.evaluation_year; typ = Some num0; source_name = None });
+      right_side = Some (ov_lit "2025"); time_period = None; source_name = None }
+
+(* the fault of a session, or "none" *)
+let ov_fault_of f = match f () with _ -> "none" | exception Value.Fault { code; _ } -> Option.value code ~default:"-"
+
+(* WV-1.5-past-undetermined-deposit: whether the ordinary reading reaches a
+   member read past one that is undetermined for another does not stand, so
+   what it deposits is dropped; its truth counts. "De vrijstelling van een
+   Vondst is 1 indien alle van: zijn gewicht is groter dan 10, zijn taxatie
+   gedeeld door zijn getuigen is groter dan 3", taxatie 50 and getuigen 0:
+   without a gewicht the second member is read past the undetermined first,
+   divides by 0 and is false, so the vrijstelling is settled leeg without the
+   EF-005 fact of the division. At gewicht 20 the second member is read as in
+   the ordinary reading, and the fact stands; at gewicht 5 the read stops at
+   the first member, and there is none *)
+let ov_vrijstelling =
+  ov_doc [ ov_vondst [ "gewicht"; "taxatie"; "getuigen"; "vrijstelling" ] [] ]
+    [ ov_calc
+        ~cond:(ov_compound All 0 [ ov_cmp Greater "gewicht" "10"; ov_quotient_greater "taxatie" "getuigen" "3" ])
+        "vrijstelling" (ov_lit "1") ]
+
+let () =
+  let doc = ov_vrijstelling in
+  let row id gewicht want_fact =
+    let w = ov_run id doc (ov_v1 (gewicht @ [ ("taxatie", "50"); ("getuigen", "0") ])) in
+    ov_expect ("WV-1.5-past-undetermined-deposit (" ^ id ^ ", vrijstelling)") (ov_attr w "V1" "vrijstelling") "leeg";
+    ov_expect ("WV-1.5-past-undetermined-deposit (" ^ id ^ ", channel)") (String.concat "; " (ov_channel w))
+      (if want_fact then "vrijstelling V1 EF-005" else "")
+  in
+  row "past-undetermined-deposit-open" [] false;
+  row "past-undetermined-deposit-reached" [ ("gewicht", "20") ] true;
+  row "past-undetermined-deposit-stops" [ ("gewicht", "5") ] false
+
+(* WV-1.5-past-undetermined-fault: a fault of a member read past one that is
+   undetermined for another leaves that member undetermined, for the form
+   itself and for another, and a member after it can still decide. "Een
+   Vondst is vrijgesteld indien alle van: zijn gewicht is groter dan 10, het
+   Rekenjaar is groter dan 2025, zijn taxatie is groter dan 1000", no evaluation
+   date: without a gewicht the second member faults and is undetermined;
+   at taxatie 50 the third member is false and vrijgesteld stands not to hold,
+   at taxatie 2000 it is open. At gewicht 20 the second member is read as in
+   the ordinary reading and the session faults with EF-011; at gewicht 5 the
+   read stops at the first member. The matrix of a quantifier fold reads its
+   members in the same way (below) *)
+let ov_vrijgesteld =
+  ov_doc [ ov_vondst [ "gewicht"; "taxatie" ] [ "vrijgesteld" ] ]
+    [ ov_attribution "vrijgesteld"
+        (ov_compound All 0 [ ov_cmp Greater "gewicht" "10"; ov_rekenjaar_greater; ov_cmp Greater "taxatie" "1000" ]) ]
+
+let () =
+  let doc = ov_vrijgesteld in
+  let id = "WV-1.5-past-undetermined-fault" in
+  ov_expect (id ^ " (no gewicht, taxatie 50)")
+    (ov_char (ov_run "past-undetermined-fault-decided" doc (ov_v1 [ ("taxatie", "50") ])) "V1" "vrijgesteld")
+    "not";
+  ov_expect (id ^ " (no gewicht, taxatie 2000)")
+    (ov_char (ov_run "past-undetermined-fault-open" doc (ov_v1 [ ("taxatie", "2000") ])) "V1" "vrijgesteld")
+    "open";
+  ov_expect (id ^ " (gewicht 5)")
+    (ov_char (ov_run "past-undetermined-fault-stops" doc (ov_v1 [ ("gewicht", "5"); ("taxatie", "2000") ])) "V1" "vrijgesteld")
+    "not";
+  (* not registered: a run that faults has no outcomes to compare *)
+  ov_expect (id ^ " (gewicht 20)")
+    (ov_fault_of (fun () -> ov_eval ~closed:(Eval.Members []) doc (ov_v1 [ ("gewicht", "20"); ("taxatie", "2000") ])))
+    "EF-011"
+
+(* WV-1.5-past-undetermined-ordinary: in a document without the property every
+   member stands for another, so no member is read past an undetermined one:
+   the documents of WV-1.5-past-undetermined-deposit and -fault without the
+   property and without a gewicht stop at the first member, settled leeg
+   without a fact and not vrijgesteld; at gewicht 20 the fact stands and the
+   session faults *)
+let () =
+  let deposit = { ov_vrijstelling with infer_from_empty = true } and fault = { ov_vrijgesteld with infer_from_empty = true } in
+  let id = "WV-1.5-past-undetermined-ordinary" in
+  let w = ov_eval ~closed:(Eval.Members []) deposit (ov_v1 [ ("taxatie", "50"); ("getuigen", "0") ]) in
+  ov_expect (id ^ " (no gewicht, channel)") (String.concat "; " (ov_channel w)) "";
+  let w = ov_eval ~closed:(Eval.Members []) deposit (ov_v1 [ ("gewicht", "20"); ("taxatie", "50"); ("getuigen", "0") ]) in
+  ov_expect (id ^ " (gewicht 20, channel)") (String.concat "; " (ov_channel w)) "vrijstelling V1 EF-005";
+  ov_expect (id ^ " (no gewicht, vrijgesteld)")
+    (ov_char (ov_eval ~closed:(Eval.Members []) fault (ov_v1 [ ("taxatie", "2000") ])) "V1" "vrijgesteld")
+    "not";
+  ov_expect (id ^ " (gewicht 20, fault)")
+    (ov_fault_of (fun () -> ov_eval ~closed:(Eval.Members []) fault (ov_v1 [ ("gewicht", "20"); ("taxatie", "2000") ])))
+    "EF-011"
 
 (* WV-1.5-boundary-*: within one boundary, what the evaluation deposited
    before an open read is dropped, a fault before it stays a fault, and a
@@ -15640,6 +15739,87 @@ let () =
   let w = ov_run "quantifier-fold-closed-set" doc (ov_j1 []) in
   ov_expect "WV-1.5-quantifier-fold-closed-set (all)" (ov_char w "J1" "alle") "holds";
   ov_expect "WV-1.5-quantifier-fold-closed-set (at least 1)" (ov_char w "J1" "een") "not"
+
+(* WV-1.5-past-undetermined-fold: a quantifier fold reads the matrix of a
+   member past one that is undetermined for another as a composite does (WV-
+   1.5-past-undetermined-deposit). "Een Jutter is gelijkmatig indien al zijn
+   vondsten een gewicht gedeeld door hun deelnemers groter dan 2 hebben", over
+   V1 with 2 deelnemers and V2 with gewicht 9 and 0 deelnemers: without the
+   gewicht of V1 the matrix of V2 is read past V1, which is undetermined, and
+   is false, so gelijkmatig stands not to hold without the EF-005 fact of the
+   division; at a gewicht of 10 for V1 it stands not to hold with the fact,
+   and at 2 the read stops at V1, without it *)
+let () =
+  let doc =
+    ov_jdoc ~jchars:[ "gelijkmatig" ] ~vondst:[ "gewicht"; "deelnemers" ]
+      [ ov_jattribution "gelijkmatig" (ov_qfold All (ov_quotient_greater "gewicht" "deelnemers" "2")) ]
+  in
+  let row id v1 want_fact =
+    let w =
+      ov_run id doc (ov_j1 [ ("V1", v1 @ [ ("deelnemers", "2") ], []); ("V2", [ ("gewicht", "9"); ("deelnemers", "0") ], []) ])
+    in
+    ov_expect ("WV-1.5-past-undetermined-fold (" ^ id ^ ")") (ov_char w "J1" "gelijkmatig") "not";
+    ov_expect ("WV-1.5-past-undetermined-fold (" ^ id ^ ", channel)") (String.concat "; " (ov_channel w))
+      (if want_fact then "gelijkmatig J1 EF-005" else "")
+  in
+  row "past-undetermined-fold-open" [] false;
+  row "past-undetermined-fold-reached" [ ("gewicht", "10") ] true;
+  row "past-undetermined-fold-stops" [ ("gewicht", "2") ] false
+
+(* WV-1.5-past-undetermined-filter: the filters of a quantifier fold are read
+   before every matrix, so where one of them is undetermined for another every
+   matrix is read past it: its own filter may be false, and a later one may
+   stop the read by being false. "Een Jutter is gelijkmatig indien al zijn
+   vondsten die gemerkt zijn een gewicht gedeeld door hun deelnemers groter dan
+   2 hebben", over V1 with gewicht 9 and 0 deelnemers: where the case does not
+   name gemerkt, gelijkmatig is open without the EF-005 fact of the division;
+   where V1 is gemerkt it stands not to hold with the fact; with gemerkt
+   complete and not named it holds without one. "… indien ten minste twee van
+   zijn vondsten die gemerkt zijn …", with V1 gemerkt and V2 of gewicht 10 and
+   2 deelnemers: where the case does not name gemerkt for V2, the matrix of V1
+   is read past the open filter of V2 and is false, and the fold stands not to
+   hold without the fact; with V2 gemerkt it is the same with the fact; with
+   gemerkt complete and V2 not named the read stops before the matrix of V1 *)
+let () =
+  let doc q cutoff =
+    ov_jdoc ~jchars:[ "gelijkmatig" ] ~vondst:[ "gewicht"; "deelnemers" ] ~vchars:[ "gemerkt" ]
+      [ ov_jattribution "gelijkmatig"
+          (ov_qfold ~filter:(ov_check "gemerkt") ?cutoff q (ov_quotient_greater "gewicht" "deelnemers" "2")) ]
+  in
+  let v1 = [ ("gewicht", "9"); ("deelnemers", "0") ] and v2 = [ ("gewicht", "10"); ("deelnemers", "2") ] in
+  let gemerkt = Eval.Members [ ("Vondst", "gemerkt") ] in
+  let row ?(closed = Eval.Members []) id d input want want_fact =
+    let w = ov_run ~closed id d (ov_j1 input) in
+    ov_expect ("WV-1.5-past-undetermined-filter (" ^ id ^ ")") (ov_char w "J1" "gelijkmatig") want;
+    ov_expect ("WV-1.5-past-undetermined-filter (" ^ id ^ ", channel)") (String.concat "; " (ov_channel w))
+      (if want_fact then "gelijkmatig J1 EF-005" else "")
+  in
+  row "past-undetermined-filter-own-open" (doc All None) [ ("V1", v1, []) ] "open" false;
+  row "past-undetermined-filter-own-holds" (doc All None) [ ("V1", v1, [ "gemerkt" ]) ] "not" true;
+  row ~closed:gemerkt "past-undetermined-filter-own-not" (doc All None) [ ("V1", v1, []) ] "holds" false;
+  let doc = doc At_least (Some 2) in
+  row "past-undetermined-filter-later-open" doc [ ("V1", v1, [ "gemerkt" ]); ("V2", v2, []) ] "not" false;
+  row "past-undetermined-filter-later-holds" doc [ ("V1", v1, [ "gemerkt" ]); ("V2", v2, [ "gemerkt" ]) ] "not" true;
+  row ~closed:gemerkt "past-undetermined-filter-later-not" doc [ ("V1", v1, [ "gemerkt" ]); ("V2", v2, []) ] "not" false
+
+(* WV-1.5-past-undetermined-fault, the matrix of a quantifier fold: "een Jutter
+   is vrijgesteld indien ten minste één van zijn vondsten aan ten minste één
+   van de volgende voorwaarden voldoet: zijn gewicht is groter dan 10, het
+   Rekenjaar is groter dan 2025", no evaluation date, over V1 without a gewicht
+   and V2 of 20: in the matrix of V1 the second member faults past the
+   undetermined first and is undetermined, the matrix of V2 is true, and
+   vrijgesteld holds; at a gewicht of 5 for V1 the second member of its matrix
+   is read as in the ordinary reading and the session faults with EF-011. Not
+   registered: with every input complete the session faults as well *)
+let () =
+  let doc =
+    ov_jdoc ~jchars:[ "vrijgesteld" ] ~vondst:[ "gewicht" ]
+      [ ov_jattribution "vrijgesteld"
+          (ov_qfold ~cutoff:1 At_least (ov_compound At_least 1 [ ov_cmp Greater "gewicht" "10"; ov_rekenjaar_greater ])) ]
+  in
+  let run v1 () = ov_eval ~closed:(Eval.Members []) doc (ov_j1 [ ("V1", v1, []); ("V2", [ ("gewicht", "20") ], []) ]) in
+  ov_expect "WV-1.5-past-undetermined-fault (fold, no gewicht for V1)" (ov_char (run [] ()) "J1" "vrijgesteld") "holds";
+  ov_expect "WV-1.5-past-undetermined-fault (fold, gewicht 5 for V1)" (ov_fault_of (run [ ("gewicht", "5") ])) "EF-011"
 
 (* WV-1.5-set-fold-*: a fold over a set. "Het totaalgewicht van een Jutter is
    de som van het gewicht van zijn vondsten", "het zwaargewicht ... van zijn
@@ -16728,6 +16908,22 @@ let () =
        [ "0 Comparison undetermined open \"V1\" \"gewicht\""; "1 AttributeReference undetermined open \"V1\" \"gewicht\"";
          "2 Literal unreached"; "OPEN" ])
 
+(* WV-5.12-open-past-undetermined: a member that a fault left undetermined, read
+   past one undetermined for another (ch. 1.5), is undetermined and names the
+   open read of the first member before it that does not stand for another;
+   the node that faulted carries its fault, and the nodes after it within the
+   member are not reached. The document of WV-1.5-past-undetermined-fault
+   without a gewicht and at taxatie 50: the second member names the gewicht
+   of V1, the Rekenjaar faulted, and the third member decides *)
+let () =
+  lines_equal "WV-5.12-open-past-undetermined"
+    (ov_readings ov_vrijgesteld (ov_v1 [ ("taxatie", "50") ]))
+    (on_object (rule_form 0) "V1"
+       [ "0 Compound false"; "1 Comparison undetermined open \"V1\" \"gewicht\"";
+         "2 AttributeReference undetermined open \"V1\" \"gewicht\""; "3 Literal unreached";
+         "4 Comparison undetermined open \"V1\" \"gewicht\""; "5 ContextValue fault EF-011"; "6 Literal unreached";
+         "7 Comparison false"; "8 AttributeReference 50"; "9 Literal 1000"; "FAILS" ])
+
 (* WV-5.12-open-quantifier-fold: a contributor carries the truth of the matrix
    on it for the form itself, undetermined among them, and the fold the open
    read of its first undetermined member — its filter's where its filter is
@@ -16899,7 +17095,8 @@ let () =
       (("if-then-else-then", "V1.taxatie"), [ "V1.bergtoeslag 5" ]);
       (("if-then-else-else", "V1.taxatie"), [ "V1.bergtoeslag 5" ]);
       (("if-then-else-else-open", "V1.taxatie"), [ "V1.bergtoeslag 5" ]);
-      (("closed-characteristic-named", "V1 drijfhout"), [ "V1 drijfhout not"; "V1.drijftoeslag 2" ]) ]
+      (("closed-characteristic-named", "V1 drijfhout"), [ "V1 drijfhout not"; "V1.drijftoeslag 2" ]);
+      (("past-undetermined-filter-later-not", "V1 gemerkt"), [ "V1 gemerkt not" ]) ]
   in
   let used = ref [] in
   let written (doc : Ir_v0.Ast.document) (i : ov_input) member =

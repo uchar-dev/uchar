@@ -560,9 +560,27 @@ table:
 
 and is undetermined otherwise. It reads its members left to right, and
 where it stops is said with its two judgements below. An undetermined member
-does not stop the read, so a member after it can decide the composite, and a
-fault or a §9.5 fact of that member can arise where ch. 5.10 would have
-stopped. "Niet A" is `none` over A. Example (WV-1.5-atom, WV-1.5-table-*): "een Vondst is zwaar indien zijn
+does not stop the read, so a member after it can decide the composite.
+Whether ch. 5.10 would read a member that comes after one undetermined for
+another form (below) does not stand, so that member is read provisionally:
+its judgement counts, what it deposits in the §9.5 channel is dropped, and a
+fault of it does not end the evaluation but leaves the member undetermined,
+for the form itself and for another. A member after members that all stand
+for another is read as ch. 5.10 reads it. "Niet A" is `none` over A. Example
+(WV-1.5-past-undetermined-deposit, WV-1.5-past-undetermined-fault): "de
+vrijstelling van een Vondst is 1 indien alle van: zijn gewicht is groter dan
+10, zijn taxatie gedeeld door zijn getuigen is groter dan 3", with taxatie 50
+and getuigen 0: without a gewicht the second member is false, so the
+vrijstelling is settled leeg, without the EF-005 fact of the division; at
+gewicht 20 it is settled leeg with the fact, and at gewicht 5 without it. "Een
+Vondst is vrijgesteld indien alle van: zijn gewicht is groter dan 10, het
+Rekenjaar is groter dan 2025, zijn taxatie is groter dan 1000", in a session
+without an evaluation date: without a gewicht the second member faults and is
+undetermined, and vrijgesteld stands not to hold at taxatie 50 and is open at
+taxatie 2000; at gewicht 20 the session faults with EF-011 (ch. 8.2), and at
+gewicht 5 the read stops at the first member. In a document without the
+property every member stands, and nothing is read provisionally
+(WV-1.5-past-undetermined-ordinary). Example (WV-1.5-atom, WV-1.5-table-*): "een Vondst is zwaar indien zijn
 gewicht groter is dan 100" is undetermined without a gewicht. With "een
 Vondst is opvallend indien [Q] van: zijn gewicht groter is dan 100 (A), zijn
 schatting groter is dan 1000 (B), zijn lengte groter is dan 2 (C)": `all`
@@ -583,15 +601,17 @@ judgement for the form itself is not, and where it is established the two are
 equal. A composite reads its members until its judgement for another form is
 established, every unread member taken as undetermined — which establishes
 its judgement for the form itself as well — or until every member is read; in
-a document without open members this is the stop of ch. 5.10. A member read after the form's own judgement stands deposits and faults
-as any member read. Example (WV-1.5-read-for-another): "de vrijstelling van
-een Vondst is 1 indien ten minste één van: zijn gewicht is leeg, zijn taxatie
-gedeeld door zijn getuigen is groter dan 3", with gewicht open, getuigen
-complete without a value and taxatie 50: the first member is true for the
-form itself and undetermined for another, so the second is read, its division
-deposits EF-031 and it is false; the vrijstelling is 1 with an EF-031 fact.
-With the gewicht complete as well the first member is true for both, the read
-stops there, and there is no fact.
+a document without open members this is the stop of ch. 5.10. A member read
+after the form's own judgement stands comes after one undetermined for
+another, and is read provisionally (above). Example (WV-1.5-read-for-another):
+"de vrijstelling van een Vondst is 1 indien ten minste één van: zijn gewicht
+is leeg, zijn taxatie gedeeld door zijn getuigen is groter dan 3", with
+gewicht open, getuigen complete without a value and taxatie 50: the first
+member is true for the form itself and undetermined for another, so the
+second is read; its division would deposit EF-031, which is dropped, and it
+is false; the vrijstelling is 1 without a fact. With the gewicht complete as
+well the first member is true for both, the read stops there, and there is no
+fact.
 
 **A rule** decides where its condition is established true for itself and
 its value has no open read; it then writes as ch. 1.2 and 5 lay down, a leeg
@@ -833,7 +853,24 @@ are true, by Kleene's table, and the fold is the table of the composite over
 those members, read until its judgement for another form stands. An open read
 in the filter or the matrix of one member leaves that member undetermined,
 not the fold. Where every filter stands this is the count of ch. 3.9a over
-the contributors, with its stop. Example (WV-1.5-quantifier-fold-*): "een
+the contributors, with its stop. A matrix is read provisionally, as a member
+of a composite is (**The judgement of a condition**), where a member before it
+is undetermined for another form, and also where a filter is: every filter is
+read before every matrix, and whether ch. 3.9a reads a matrix depends on its
+own filter and, through the members it excludes, on every other. Example
+(WV-1.5-past-undetermined-fold, WV-1.5-past-undetermined-filter): "een Jutter
+is gelijkmatig indien al zijn vondsten een gewicht gedeeld door hun
+deelnemers groter dan 2 hebben", over V1 with 2 deelnemers and V2 with gewicht
+9 and 0 deelnemers: without the gewicht of V1, V2 is false and gelijkmatig
+stands not to hold, without the EF-005 fact of the division; at a gewicht of
+10 for V1 it stands not to hold with the fact. "… van zijn vondsten die
+gemerkt zijn …", over V1 alone: where the case does not name gemerkt,
+gelijkmatig is open without the fact, and where V1 is gemerkt it stands not
+to hold with it; "ten minste twee van zijn vondsten die gemerkt zijn …", with
+V1 gemerkt and a V2 of gewicht 10 and 2 deelnemers whose gemerkt the case does
+not name, stands not to hold without the fact; where V2 is gemerkt it stands
+not to hold with the fact, and where it stands that V2 is not gemerkt the
+read stops before the matrix of V1. Example (WV-1.5-quantifier-fold-*): "een
 Jutter is [Q] indien [Q] van zijn vondsten een gewicht groter dan 10
 hebben", over vondsten of 20, 30 and one without a gewicht: `all` is open,
 `none` stands not to hold, `atLeast` 1 and 2 hold, `atMost` 1 and `exactly` 1
@@ -7394,7 +7431,12 @@ has there:
   is open, and else the open read of its first member that is undetermined for
   the form itself, of its filter where the filter is undetermined and else of
   its matrix; at a node that an undetermined condition broke off, that
-  condition's.
+  condition's; at a member of a composite or a matrix of a quantifier fold
+  that a fault left undetermined (ch. 1.5, read provisionally), the open
+  read of the first member or filter read before it that is undetermined for
+  another form, for a closure the read it closed over. Inside such a member
+  the node that faulted, and every node the fault passed on its way out to
+  the member, carries `fault` with its code.
 
 A composite and a quantifier fold read their members until their judgement
 for another form stands (ch. 1.5), and the members after that are not
@@ -7452,6 +7494,12 @@ lengte 1 it reads `0 Compound undetermined open "V1" "taxatie"`, the second
 and third members `false`, `OPEN`; and the consistency "het gewicht moet
 groter of gelijk zijn aan 0" without a gewicht reads `0 Comparison
 undetermined open "V1" "gewicht"`, `OPEN`. Example
+(`WV-5.12-open-past-undetermined`): vrijgesteld of ch. 1.5, "alle van: zijn
+gewicht is groter dan 10, het Rekenjaar is groter dan 2025, zijn taxatie is
+groter dan 1000", without a gewicht and an evaluation date and at taxatie 50,
+reads `0 Compound false`, `1 Comparison undetermined open "V1" "gewicht"`, `4
+Comparison undetermined open "V1" "gewicht"`, `5 ContextValue fault EF-011`,
+`6 Literal unreached`, `7 Comparison false`, `FAILS`. Example
 (`WV-5.12-open-quantifier-fold`, `WV-5.12-open-fold-over-a-set`, the
 documents of `ref/test/fixtures/strict-empty/`): "een Jutter is kundig
 indien het gewicht van alle vondsten van de Jutter groter is dan 10", over

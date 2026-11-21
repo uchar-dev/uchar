@@ -139,7 +139,9 @@ let rec filter_in_order p = function
 (* The judgement of a condition (ch. 1.5): its truth for the form whose
    condition it is ([own]) and for another form ([other]); see "open values and
    the judgement of a condition" below. [open_read] is the read, as (object,
-   member), that left [own] undetermined, None where [own] is established *)
+   member), that left [own] undetermined; where [own] is established and
+   [other] undetermined, the read a closure closed over; None where [other] is
+   established *)
 type truth = Established of bool | Undetermined
 type judgement = { own : truth; other : truth; open_read : (string * string) option }
 
@@ -1648,7 +1650,9 @@ let reversed : Ir_v0.Ast.compare_op -> Ir_v0.Ast.compare_op = function
    false beside an undetermined [other]. An undetermined [own] carries the
    open read that left it so ([open_read]): an atomic condition the member it
    read open; a composite and a quantifier fold that of their first member
-   that is undetermined for the form itself. *)
+   that is undetermined for the form itself. A closure carries the read it
+   closed over, and a composite or a quantifier fold whose [other] alone is
+   undetermined that of its first member undetermined for another. *)
 
 (* the judgement of a condition read on values that all stand *)
 let established b = { own = Established b; other = Established b; open_read = None }
@@ -1680,19 +1684,22 @@ let count_verdict (q : quantifier_kind) ~cutoff ~n ~hits ~fails : truth =
 
 (* The judgement of a count of members, [own] and [other] the (hits, fails)
    of each walk, carrying [first] — the open read of its first member
-   undetermined for the form itself — where it is undetermined *)
-let judged ~verdict ~own ~other ~first =
-  let own = verdict ~hits:(fst own) ~fails:(snd own) in
-  { own; other = verdict ~hits:(fst other) ~fails:(snd other); open_read = (if own = Undetermined then first else None) }
+   undetermined for the form itself — where it is undetermined, and
+   [first_other] — that of its first member undetermined for another — where
+   only its judgement for another is *)
+let judged ~verdict ~own ~other ~first ~first_other =
+  let own = verdict ~hits:(fst own) ~fails:(snd own) and other = verdict ~hits:(fst other) ~fails:(snd other) in
+  { own; other; open_read = (match (own, other) with Undetermined, _ -> first | _, Undetermined -> first_other | _ -> None) }
 
 (* A closure inside one judgement or one value: what the author wrote for an
    absent value — a test on leeg or gevuld, a filled-value count, a fold filter
    that tests on gevuld — applied to a value that is open. For the form itself
    the outcome stands; for another form it does not, since another input could
    fill the value. The node that applies it tells the innermost boundary under
-   way ([signal_closure]), and the boundary hands the signal back beside the
-   value, so the expression keeps one value and is evaluated once. *)
-let boundaries : bool ref list ref = ref []
+   way ([signal_closure]) with the read it closed over, and the boundary hands
+   the first such read back beside the value, so the expression keeps one
+   value and is evaluated once. *)
+let boundaries : (string * string) option ref list ref = ref []
 
 (* how many closures over an open value the session applied: a closure inside a
    value or a judgement ([signal_closure]), an initialisation that writes a
@@ -1701,24 +1708,25 @@ let boundaries : bool ref list ref = ref []
    outcome whether it applied one *)
 let closures_applied = ref 0
 
-let signal_closure () =
+let signal_closure read =
   incr closures_applied;
   match !boundaries with
-  | b :: _ -> b := true
+  | b :: _ -> if !b = None then b := Some read
   | [] ->
       failwith
         "ref/lib/eval.ml: a closure over an open value outside the boundary of one judgement or one value, where \
          no form would learn that its outcome does not stand for another form"
 
 (* [f] evaluated as one judgement or one value: [Ok (x, closed)], its result
-   and whether a closure was applied to an open value inside it, with the
-   deposits it made passed on to [err] in their order; or [Error (label,
-   member)] where it read [member] of [label] open, its deposits dropped. Any
-   other exception — a fault, the barrier of a Let (ch. 10.6) — passes on with
-   the deposits made before it, as it does without the boundary *)
+   and, where a closure was applied to an open value inside it, the read the
+   first one closed over, with the deposits it made passed on to [err] in
+   their order; or [Error (label, member)] where it read [member] of [label]
+   open, its deposits dropped. Any other exception — a fault, the barrier of a
+   Let (ch. 10.6) — passes on with the deposits made before it, as it does
+   without the boundary *)
 let open_read_boundary ~err f =
   let deposits = ref [] in
-  let closed = ref false in
+  let closed = ref None in
   let outer = !boundaries in
   boundaries := closed :: outer;
   let pass () = List.iter err (List.rev !deposits) in
@@ -1743,10 +1751,10 @@ let open_read_boundary ~err f =
 let closure_over_open ~err f =
   match open_read_boundary ~err f with
   | Ok (v, closed) ->
-      if closed then signal_closure ();
+      Option.iter signal_closure closed;
       v
-  | Error _ ->
-      signal_closure ();
+  | Error read ->
+      signal_closure read;
       Value.Empty
 
 (* The truth of the judgement [j] of a condition inside a value — the filter
@@ -1757,11 +1765,11 @@ let closure_over_open ~err f =
 let value_verdict (j : judgement) =
   match j with
   | { own = Established b; other = Established _; _ } -> b
-  | { own = Established b; other = Undetermined; _ } ->
-      signal_closure ();
+  | { own = Established b; other = Undetermined; open_read = Some read } ->
+      signal_closure read;
       b
   | { own = Undetermined; open_read = Some (label, member); _ } -> raise (World.Open_read { label; member })
-  | { own = Undetermined; open_read = None; _ } ->
+  | { open_read = None; _ } ->
       failwith "ref/lib/eval.ml: an undetermined judgement without the open read that left it so"
 
 (* The three outcomes of a writer (ch. 1.5) — a rule, a default of a stack, a
@@ -1784,8 +1792,8 @@ let outcome_of (j : judgement) decide =
    form that leeg does not stand *)
 let value_outcome ~err f =
   match open_read_boundary ~err f with
-  | Error _ | Ok (Value.Empty, true) -> Leaves_open
-  | Ok (Value.Empty, false) -> Fills_nothing
+  | Error _ | Ok (Value.Empty, Some _) -> Leaves_open
+  | Ok (Value.Empty, None) -> Fills_nothing
   | Ok (v, _) -> Decides v
 
 let map_outcome f = function Decides x -> Decides (f x) | Fills_nothing -> Fills_nothing | Leaves_open -> Leaves_open
@@ -3311,11 +3319,19 @@ and eval_cond env world (self : World.instance) ~err (c : condition_expr) : bool
   two_valued c (judge_cond env world self ~err c)
 
 (* The judgement of [c] (ch. 1.5), which the observer of a reading (ch. 5.12)
-   is handed as it is *)
-and judge_cond env world (self : World.instance) ~err (c : condition_expr) : judgement =
-  match !observer with
-  | None -> judge_cond_node env world self ~err c
-  | Some o -> o.cond c (fun () -> judge_cond_node env world self ~err c)
+   is handed as it is. [past]: [c] is a member of a composite or the matrix of
+   a quantifier fold read while a member or a filter read before it does not
+   stand for another, the open read of the first such. Whether the ordinary
+   reading reaches [c] then does not stand, so what [c] deposits is dropped
+   and a fault leaves it undetermined by that read, for the form itself and
+   for another; its truth counts as any member's *)
+and judge_cond ?past env world (self : World.instance) ~err (c : condition_expr) : judgement =
+  let node () =
+    match past with
+    | None -> judge_cond_node env world self ~err c
+    | Some read -> ( try judge_cond_node env world self ~err:ignore c with Value.Fault _ -> undetermined read)
+  in
+  match !observer with None -> node () | Some o -> o.cond c node
 
 (* An atomic condition: [verdict] read on values that all stand, undetermined
    where it reads an open value, its deposits dropped then
@@ -3323,8 +3339,8 @@ and judge_cond env world (self : World.instance) ~err (c : condition_expr) : jud
    it, established for the form itself and undetermined for another *)
 and atomic ~err verdict : judgement =
   match open_read_boundary ~err verdict with
-  | Ok (b, false) -> established b
-  | Ok (b, true) -> { own = Established b; other = Undetermined; open_read = None }
+  | Ok (b, None) -> established b
+  | Ok (b, (Some _ as closed)) -> { own = Established b; other = Undetermined; open_read = closed }
   | Error read -> undetermined read
 
 and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) : judgement =
@@ -3578,9 +3594,11 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
          its own verdicts, and the read goes on until the judgement for
          another form is established, which establishes the form's own as
          well, or every member is read: an undetermined member does not stop
-         it, a member after it can still decide, and a member read after the
-         form's own judgement stands deposits and faults as it would before
-         (ch. 1.5). *)
+         it, and a member after it can still decide. Whether ch. 5.10 would
+         reach a member read past one undetermined for another does not
+         stand, so that member is read provisionally ([judge_cond ~past]):
+         its truth counts, what it deposits and a fault of it do not (ch.
+         1.5). *)
       let n = List.length components in
       let verdict = count_verdict quantifier_kind ~cutoff ~n in
       let count (hits, fails) = function
@@ -3589,17 +3607,19 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
         | Undetermined -> (hits, fails)
       in
       (* [first]: the open read of the first member undetermined for the form
-         itself, which the composite carries where it is undetermined *)
-      let rec read own other first parts =
-        let j = judged ~verdict ~own ~other ~first in
+         itself, which the composite carries where it is undetermined;
+         [first_other]: that of the first member undetermined for another *)
+      let rec read own other first first_other parts =
+        let j = judged ~verdict ~own ~other ~first ~first_other in
         match (j, parts) with
         | { other = Established _; _ }, _ | _, [] -> j
         | _, c :: rest ->
-            let part = judge_cond env world self ~err c in
+            let part = judge_cond ?past:first_other env world self ~err c in
             let first = if first = None && part.own = Undetermined then part.open_read else first in
-            read (count own part.own) (count other part.other) first rest
+            let first_other = if first_other = None && part.other = Undetermined then part.open_read else first_other in
+            read (count own part.own) (count other part.other) first first_other rest
       in
-      read (0, 0) (0, 0) None components
+      read (0, 0) (0, 0) None None components
   | Rule_status_check { rule_def; _ } ->
       established (World.channel_has world ~rule:(req "Regelversie.regel" rule_def))
   | Role_membership { fact_type; role; counterpart_type; negated; _ } ->
@@ -3769,19 +3789,27 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
                 contribute ~reached:false m.label found)
               parts
       in
+      (* the filters are read before every matrix: where one of them does not
+         stand for another, whether ch. 3.9a reads a matrix does not stand
+         either — its own filter may be false, a later one may stop the read
+         by being false — so each matrix is read provisionally, as a member
+         past one undetermined for another is ([judge_cond ~past], ch. 1.5) *)
+      let filter_past = List.find_map (fun (_, (f : judgement)) -> if f.other = Undetermined then f.open_read else None) filters in
       (* [first]: the open read of the first member undetermined for the form
          itself — of its filter where that is undetermined, else of its
-         matrix — which the fold carries where it is undetermined *)
-      let rec read own other first (parts : (World.instance * judgement) list) =
-        let j = judged ~verdict ~own ~other ~first in
+         matrix — which the fold carries where it is undetermined; [first_other]
+         the same for another *)
+      let rec read own other first first_other (parts : (World.instance * judgement) list) =
+        let j = judged ~verdict ~own ~other ~first ~first_other in
         match (j, parts) with
         | { other = Established _; _ }, _ ->
             unreached (List.map fst parts);
             j
         | _, [] -> j
         | _, (m, f) :: rest ->
+            let past = if filter_past <> None then filter_past else first_other in
             let t =
-              try judge_cond (at_member env self (Some el)) world m ~err test
+              try judge_cond ?past (at_member env self (Some el)) world m ~err test
               with Value.Fault { code; _ } as fault ->
                 contribute m.label (Member_fault code);
                 unreached (List.map fst rest);
@@ -3789,14 +3817,17 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
             in
             (match !observer with None -> () | Some _ -> contribute m.label (Member_verdict t));
             let step counts fw tw = if fw = Established false then counts else count counts (member fw tw) in
-            let first =
-              if first <> None || f.own = Established false || member f.own t.own <> Undetermined then first
-              else if f.own = Undetermined then f.open_read
+            let first_of walk earlier =
+              if earlier <> None || walk f = Established false || member (walk f) (walk t) <> Undetermined then earlier
+              else if walk f = Undetermined then f.open_read
               else t.open_read
             in
-            read (step own f.own t.own) (step other f.other t.other) first rest
+            read (step own f.own t.own) (step other f.other t.other)
+              (first_of (fun j -> j.own) first)
+              (first_of (fun j -> j.other) first_other)
+              rest
       in
-      read (excluded (fun j -> j.own)) (excluded (fun j -> j.other)) None
+      read (excluded (fun j -> j.own)) (excluded (fun j -> j.other)) None None
         (List.filter (fun (_, (f : judgement)) -> f.other <> Established false) filters))
   | Time_window { starting_at; up_to; to_inclusive; _ } ->
       (* ch. 3.10, the SCALAR target's evaluation-date gate — the chapter's
@@ -5268,9 +5299,9 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
                            one, leaves the characteristic open on the object
                            made (ch. 1.5) *)
                         match open_read_boundary ~err (fun err -> eval_expr env read self ~err e) with
-                        | Error _ | Ok ((Value.Bool false | Value.Empty), true) -> World.leave_open w ~label ~member:m
+                        | Error _ | Ok ((Value.Bool false | Value.Empty), Some _) -> World.leave_open w ~label ~member:m
                         | Ok (Value.Bool true, _) -> fst (World.set_char w ~label ~char:m)
-                        | Ok ((Value.Bool false | Value.Empty), false) -> w
+                        | Ok ((Value.Bool false | Value.Empty), None) -> w
                         | Ok (v, _) ->
                             Value.fault
                               "characteristic assignment of %S is not boolean: %s"
