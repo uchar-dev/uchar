@@ -294,7 +294,8 @@ let () =
       attribute_timeline_count = []; attribute_timeline_names = [];
       characteristics = [ Some "gehesen"; Some "zichtbaar" ];
       characteristic_kinds = [ ("gehesen", Some A.Adjectival); ("zichtbaar", Some A.Adjectival) ];
-      characteristic_granularity = []; characteristic_timeline_count = []; animate = false; plural = None }
+      characteristic_granularity = []; characteristic_timeline_count = []; attribute_complete = [];
+      characteristic_complete = []; animate = false; plural = None }
   in
   let aref a : A.expr =
     Attribute_reference { attribute_ref = Some a; object_type = Some "Sein"; source_name = Some a; navigation_bindings = None; anchor = None }

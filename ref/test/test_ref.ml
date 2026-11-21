@@ -1314,6 +1314,8 @@ let ot name attrs characteristics : string * Ir_v0.Ast.object_type =
       characteristic_kinds = [];
       characteristic_granularity = [];
       characteristic_timeline_count = [];
+      attribute_complete = [];
+      characteristic_complete = [];
       animate = false;
       plural = None;
     } )
@@ -14787,6 +14789,81 @@ let () =
   let status, out = run [ golden; ordinary_case_file ] in
   check (ident "runner-plays-the-golden (exit " ^ string_of_int status ^ ": " ^ out ^ ")")
     (status = 0 && out = "oracle: PASS (4 expectations)\n")
+
+(* WV-2.2-complete: the member field complete (IR-SPEC ch. 2.2) on the
+   fixture of WV-2-infer-from-empty, twisted in memory: true on the attribute
+   vondstwaarde and on the characteristic meldplichtig. The shared loader reads
+   it into the two lists of the object type, for the verifier and for an
+   executor, and refuses every other value and a misspelt field at the
+   member's pointer; the verifier finds nothing in the document; the
+   serialiser writes the field back directly after the member's last field
+   before it, and an absent field stays absent *)
+let () =
+  let fixture = corpus_file "ref/test/fixtures/infer-from-empty/ir.json" in
+  let ident s = "WV-2.2-complete-" ^ s in
+  let readers = [ ("verifier", Ir_v0.Loader.Verifier); ("executor", Ir_v0.Loader.Executor) ] in
+  (* the fixture with [key] set to [value] on its one attribute and on its one
+     characteristic, written last on each node *)
+  let twisted ?(attribute = true) ?(characteristic = true) key value =
+    let member = function
+      | `Assoc kvs -> `Assoc (kvs @ [ (key, value) ])
+      | _ -> invalid_arg "ref/test/test_ref.ml: a member of the fixture of WV-2.2-complete is no object"
+    in
+    let rec walk path = function
+      | `Assoc kvs ->
+          `Assoc
+            (List.map
+               (fun (k, v) ->
+                 match (path, k, v) with
+                 | [ "objectTypes"; "model" ], "attributes", `List [ a ] when attribute -> (k, `List [ member a ])
+                 | [ "objectTypes"; "model" ], "characteristics", `List [ c ] when characteristic -> (k, `List [ member c ])
+                 | _, _, `List l -> (k, `List (List.map (walk (k :: path)) l))
+                 | _ -> (k, walk (k :: path) v))
+               kvs)
+      | j -> j
+    in
+    walk [] (Yojson.Safe.from_file fixture)
+  in
+  let ot (d : Ir_v0.Ast.document) =
+    match d.object_types with [ (_, ot) ] -> ot | _ -> invalid_arg "ref/test/test_ref.ml: WV-2.2-complete wants one type"
+  in
+  List.iter
+    (fun (who, reader) ->
+      let d = Ir_v0.Loader.document ~reader (twisted "complete" (`Bool true)) in
+      check (ident ("true-is-read-" ^ who))
+        ((ot d).attribute_complete = [ "vondstwaarde" ] && (ot d).characteristic_complete = [ "meldplichtig" ]);
+      let d = Ir_v0.Loader.load_file ~reader fixture in
+      check (ident ("absent-is-no-member-" ^ who)) ((ot d).attribute_complete = [] && (ot d).characteristic_complete = []))
+    readers;
+  check (ident "verifier-clean")
+    (Ir_v0.Checks.all (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier (twisted "complete" (`Bool true))) = []);
+  let spelling got = "expected true, the one spelling of a member whose input is complete, got " ^ got in
+  let attribute_at = "/model/objectTypes/0/attributes/0" and characteristic_at = "/model/objectTypes/0/characteristics/0" in
+  List.iter
+    (fun (name, j, want_path, want_msg) ->
+      List.iter
+        (fun (who, reader) ->
+          match Ir_v0.Loader.document ~reader j with
+          | _ -> check (ident (name ^ "-" ^ who) ^ " (loaded)") false
+          | exception Ir_v0.Loader.Error (path, msg) ->
+              check (ident (name ^ "-" ^ who) ^ " (got: " ^ path ^ ": " ^ msg ^ ")") (path = want_path && msg = want_msg))
+        readers)
+    [ ("false-is-a-load-error", twisted ~characteristic:false "complete" (`Bool false), attribute_at ^ "/complete",
+        spelling "false");
+      ("null-is-a-load-error", twisted ~attribute:false "complete" `Null, characteristic_at ^ "/complete", spelling "null");
+      ("text-is-a-load-error", twisted ~characteristic:false "complete" (`String "volledig"), attribute_at ^ "/complete",
+        spelling "\"volledig\"");
+      ("number-is-a-load-error", twisted ~attribute:false "complete" (`Int 1), characteristic_at ^ "/complete", spelling "1");
+      ("misspelt-field", twisted ~characteristic:false "completed" (`Bool true), attribute_at, "unknown field 'completed'") ];
+  let module Emit = Ir_v0.Emit.Make (struct
+    let producer = "ref suite"
+  end) in
+  let j = twisted "complete" (`Bool true) in
+  check (ident "written-back")
+    (Yojson.Safe.to_string (Emit.document (Ir_v0.Loader.document j)) = Yojson.Safe.to_string j);
+  check (ident "absent-stays-absent")
+    (Yojson.Safe.to_string (Emit.document (Ir_v0.Loader.load_file fixture))
+    = Yojson.Safe.to_string (Yojson.Safe.from_file fixture))
 
 (* --- ch. 1.5: a document that infers nothing from an empty value ----------
    The worked examples of RUNTIME-SEMANTICS ch. 1.5, one principle per test

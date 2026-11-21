@@ -443,6 +443,7 @@ public final class IrEmitter {
             if (ot.attributeGranularity.containsKey(a))
                 timelineFacet(ot.attributeGranularity.get(a), ot.attributeTimelineCount.get(a),
                         ot.attributeFixedStartPoint.get(a), ot.attributeTimelineName.get(a));
+            if (ot.completeAttributes.contains(a)) w.key("complete").value(true);
             originAndDesignations(RegelSpraakModel.Designatable.attribute(ot.name, a));
             w.endObject();
         }
@@ -459,6 +460,7 @@ public final class IrEmitter {
             if (ot.characteristicGranularity.containsKey(k))
                 timelineFacet(ot.characteristicGranularity.get(k), ot.characteristicTimelineCount.get(k),
                         ot.characteristicFixedStartPoint.get(k), null);
+            if (ot.completeCharacteristics.contains(k)) w.key("complete").value(true);
             originAndDesignations(RegelSpraakModel.Designatable.characteristic(ot.name, k));
             w.endObject();
         }
@@ -492,6 +494,14 @@ public final class IrEmitter {
         sideMapFits(ot, "kenmerkSoorten", ot.characteristicKinds, characteristics, false);
         sideMapFits(ot, "kenmerkGranulariteit", ot.characteristicGranularity, characteristics, true);
         sideMapFits(ot, "kenmerkTijdlijnAantal", ot.characteristicTimelineCount, ot.characteristicGranularity.keySet(), true);
+        for (String a : ot.completeAttributes)
+            if (!attributes.contains(a))
+                throw new IllegalStateException("IrEmitter: " + ot.name + ".completeAttributes holds '" + a
+                        + "' without an attribute to carry it");
+        for (String k : ot.completeCharacteristics)
+            if (!characteristics.contains(k))
+                throw new IllegalStateException("IrEmitter: " + ot.name + ".completeCharacteristics holds '" + k
+                        + "' without a characteristic to carry it");
     }
 
     private static void sideMapFits(ObjectType ot, String map, Map<String, ?> sideMap,

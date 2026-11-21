@@ -978,6 +978,12 @@ public final class RegelSpraakModel {
          *  BIJVOEGLIJK kenmerk is written "is &lt;k&gt;", a BEZITTELIJK one "heeft het &lt;k&gt;", a
          *  ZELFSTANDIG one "is een &lt;k&gt;" (so only a ZELFSTANDIG kenmerk binds the EEN-form). */
         public final Map<String, CharacteristicKind> characteristicKinds = new LinkedHashMap<>();
+        /** The attributes whose declaration says that their input is complete, by naam: the attributes declared
+         *  "(volledig)" (grammar/DIVERGENCES.md, "Volledig gegeven") and the members 'opgegeven X' and 'berekende X'
+         *  of a lowered opgave marker (§7). The wire writes {@code complete: true} on each (IR-SPEC ch. 2.2). */
+        public final java.util.Set<String> completeAttributes = new java.util.LinkedHashSet<>();
+        /** The characteristic analogue of {@link #completeAttributes}. */
+        public final java.util.Set<String> completeCharacteristics = new java.util.LinkedHashSet<>();
         /** IR-SPEC ch. 2.2: the single direct supertype, or null for a root type. Resolved after
          *  every declaration is read, because the wire reference is order-free. The member maps
          *  above stay OWN — the chain is walked by the accessors below, and a bean generator that

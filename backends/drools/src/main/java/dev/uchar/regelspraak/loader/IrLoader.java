@@ -1051,8 +1051,9 @@ public final class IrLoader {
         supertypeName.put(ot, optText(n, path, "supertype"));   // resolved after every declaration is read
         supertypePath.put(ot, path + "/supertype");
         list(n, path, "attributes", (ap, a) -> {
+            boolean complete = complete(a, ap);
             fields(a, ap, "Attribute", List.of("node", "name", "datatype"),
-                    List.of("plural", "dimensions", "timeline", "origin", "designations"));
+                    List.of("plural", "dimensions", "timeline", "complete", "origin", "designations"));
             String member = name(a, ap, "name");
             origin(a, ap, RegelSpraakModel.Designatable.attribute(ot.name, member));
             designations(a, ap, RegelSpraakModel.Designatable.attribute(ot.name, member));
@@ -1084,9 +1085,12 @@ public final class IrLoader {
                     overnames.add(new Adoption(tp + "/timelineName", timelineName, fixed));
                 }
             }
+            if (complete) ot.completeAttributes.add(member);
         });
         list(n, path, "characteristics", (cp, c) -> {
-            fields(c, cp, "Characteristic", List.of("node", "name", "kind"), List.of("timeline", "origin", "designations"));
+            boolean complete = complete(c, cp);
+            fields(c, cp, "Characteristic", List.of("node", "name", "kind"),
+                    List.of("timeline", "complete", "origin", "designations"));
             String member = name(c, cp, "name");
             origin(c, cp, RegelSpraakModel.Designatable.characteristic(ot.name, member));
             designations(c, cp, RegelSpraakModel.Designatable.characteristic(ot.name, member));
@@ -1108,8 +1112,24 @@ public final class IrLoader {
                 String fixed = fixedStartPoint(tl, tp, gran, facetCount);
                 if (fixed != null) ot.characteristicFixedStartPoint.put(member, fixed);
             }
+            if (complete) ot.completeCharacteristics.add(member);
         });
         return ot;
+    }
+
+    /** A member's statement that its input is complete, {@code complete} (IR-SPEC ch. 2.2): written {@code true} or
+     *  not at all, refused in the OCaml loader's sentence otherwise. Read before the member's key set, so that a
+     *  {@code null} is named in that sentence as well, and not as an optional field written as null. Read into the model as the
+     *  frontend holds it; what it means is the reading of RUNTIME-SEMANTICS ch. 1.5, which this backend does not
+     *  carry: it refuses a document with {@code inferFromEmpty: false}, and without that property the field changes
+     *  no outcome. */
+    private static boolean complete(JsonNode member, String path) {
+        JsonNode v = member.get("complete");
+        if (v == null) return false;
+        if (!v.isBoolean() || !v.booleanValue())
+            throw new DocumentError(path + "/complete",
+                    "expected true, the one spelling of a member whose input is complete, got " + v);
+        return true;
     }
 
     /** IR-SPEC ch. 2.3: the wrapper carries the name, and a datatype at this declaration position carries no

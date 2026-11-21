@@ -666,6 +666,7 @@ default. The clause left the wire with the side-maps (ch. 4.6 (p), WF index).
 | `plural` | string? | declared plural; absent = none declared |
 | `dimensions` | list of dimension names | absent = scalar; when present non-empty (WF-004); order as declared, and that order is the order of a cell's labels (ch. 2.7) |
 | `timeline` | TimelineFacet? | absent = not time-dependent |
+| `complete` | `true`? | the input of the attribute is complete (below); written `true` or not at all |
 | `origin` | Origin? | extension field: the declaration a producer made this one from, and the form that made it (ch. 2.13); absent on a declaration the source declares |
 | `designations` | list of Designation? | extension field: the attribute's names in the vocabularies (ch. 2.12) |
 
@@ -676,6 +677,7 @@ default. The clause left the wire with the side-maps (ch. 4.6 (p), WF index).
 | `name` | string | declared name |
 | `kind` | `adjectival` \| `possessive` \| `nominal` | presentation tag (below) |
 | `timeline` | TimelineFacet? | absent = not time-dependent |
+| `complete` | `true`? | the input of the characteristic is complete (below); written `true` or not at all |
 | `origin` | Origin? | extension field: the declaration a producer made this one from, and the form that made it (ch. 2.13); absent on a declaration the source declares |
 | `designations` | list of Designation? | extension field: the characteristic's names in the vocabularies (ch. 2.12) |
 
@@ -688,6 +690,29 @@ same boolean membership; the tag only selects the predicate surface form
 (§3.5, §8.1.8). Layer: the tag is `layer: presentation`; the boolean
 membership is core. The schema requires the tag, so gate 13 tests it by
 exchanging its value, not by removing it (ch. 10).
+
+**complete** is the declaration's statement that the input of the member is
+complete, `layer: core`: it changes outcomes. In a document with
+`inferFromEmpty: false` (above) a member without the field is open on an
+object where it is input and the case gives it no value or does not name it;
+with the field it is settled leeg there, and a characteristic the case does
+not name stands not to hold (`RUNTIME-SEMANTICS.md` ch. 1.5, "Complete
+input"). On an object where a rule or a defaults group writes the member, the
+member follows its writers and the field changes nothing; in a document
+without `inferFromEmpty: false` nothing is open, and the field changes no
+outcome. A subtype inherits the member with the field, as it inherits its
+facets. In the Jutterswet, with "de uitbetaling van een Vondst is zijn
+taxatie plus zijn toeslag" in a document with `inferFromEmpty: false`, a
+Vondst with taxatie 50 and no toeslag has the uitbetaling 50 where the
+toeslag is declared complete, and an open uitbetaling where it is not. The
+field is a boolean with one spelling, `true`, as `false` is the one spelling
+of `inferFromEmpty`, and it stands after `timeline` and before `origin`.
+`false`, `null` and every other value are a load error at the field for
+every reader, the verifier included. No WF rule: the field has no
+requirement beyond its form. Witnesses: the self-test rows of gate 2;
+`WV-2.2-complete` (the shared loader and serialiser) and `WV-1.5-complete-*`
+in the suite of the reference interpreter; and the golden
+`jutterswet-volledig-gegeven`.
 
 **TimelineFacet** — the time-dependence of one member or parameter:
 

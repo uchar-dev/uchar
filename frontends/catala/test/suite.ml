@@ -643,6 +643,7 @@ let () =
       characteristics = [ Some "spoedeisend"; Some "voorrang"; Some "hoofdzaak" ];
       characteristic_kinds = [ ("spoedeisend", Some A.Adjectival); ("voorrang", Some A.Possessive) ];
       characteristic_granularity = []; characteristic_timeline_count = [];
+      attribute_complete = []; characteristic_complete = [];
       animate = false; plural = Some "Zaken" }
   in
   let aref a : A.expr =

@@ -1118,6 +1118,18 @@ let timeline_facet ~named path j =
       tv_fixed_start_point = ext_field path kvs "fixedStart" str },
     ext_field path kvs "timelineName" str )
 
+(* complete (IR-SPEC ch. 2.2) on an Attribute or a Characteristic: written
+   true or not at all, so a member without it is absent from the list. The
+   loader refuses nothing for the field; what it means is the reading of
+   RUNTIME-SEMANTICS ch. 1.5. *)
+let complete_field path kvs =
+  ext_field path kvs "complete" (fun p -> function
+    | `Bool true -> ()
+    | j ->
+        fail p
+          ("expected true, the one spelling of a member whose input is complete, got " ^ Yojson.Safe.to_string j))
+  <> None
+
 let object_type path j : string * object_type =
   let kvs = obj path j in
   expect_node path kvs "ObjectType";
@@ -1131,14 +1143,15 @@ let object_type path j : string * object_type =
         let ap = path / "attributes" / string_of_int i in
         let akvs = obj ap a in
         expect_node ap akvs "Attribute";
-        check_keys ap akvs ~ext:[ "plural"; "dimensions"; "timeline"; "origin"; "designations" ]
+        check_keys ap akvs ~ext:[ "plural"; "dimensions"; "timeline"; "complete"; "origin"; "designations" ]
           [ "node"; "name"; "datatype" ];
         ( str (ap / "name") (field ap akvs "name"),
           opt (ap / "datatype") datatype (field ap akvs "datatype"),
           ext_field ap akvs "plural" str,
           ext_field ap akvs "dimensions" (fun p j ->
               List.mapi (fun k x -> Some (str (p / string_of_int k) x)) (list_ p j)),
-          ext_field ap akvs "timeline" (timeline_facet ~named:true) ))
+          ext_field ap akvs "timeline" (timeline_facet ~named:true),
+          complete_field ap akvs ))
       (list_ (path / "attributes") (f "attributes"))
   in
   let chars =
@@ -1147,35 +1160,38 @@ let object_type path j : string * object_type =
         let cp = path / "characteristics" / string_of_int i in
         let ckvs = obj cp c in
         expect_node cp ckvs "Characteristic";
-        check_keys cp ckvs ~ext:[ "timeline"; "origin"; "designations" ] [ "node"; "name"; "kind" ];
+        check_keys cp ckvs ~ext:[ "timeline"; "complete"; "origin"; "designations" ] [ "node"; "name"; "kind" ];
         ( str (cp / "name") (field cp ckvs "name"),
           enum Spelling.characteristic_kind (cp / "kind") (field cp ckvs "kind"),
-          ext_field cp ckvs "timeline" (timeline_facet ~named:false) ))
+          ext_field cp ckvs "timeline" (timeline_facet ~named:false),
+          complete_field cp ckvs ))
       (list_ (path / "characteristics") (f "characteristics"))
   in
   let table get members = List.filter_map (fun m -> get m) members in
-  let tl_attr get = table (fun (n, _, _, _, t) -> Option.map (fun t -> (n, get t)) t) attrs in
-  let tl_char get = table (fun (n, _, t) -> Option.map (fun t -> (n, get t)) t) chars in
+  let tl_attr get = table (fun (n, _, _, _, t, _) -> Option.map (fun t -> (n, get t)) t) attrs in
+  let tl_char get = table (fun (n, _, t, _) -> Option.map (fun t -> (n, get t)) t) chars in
   ( name,
     {
       ot_ident = Some name;
       (* whole or not at all: the extension field is absent or a string,
          never null — a null parent would name a type called nothing *)
       ot_supertype = ext_field path kvs "supertype" str;
-      attributes = List.map (fun (n, dt, _, _, _) -> (n, dt)) attrs;
-      attribute_plural = table (fun (n, _, pl, _, _) -> Option.map (fun p -> (n, Some p)) pl) attrs;
-      attribute_dimensions = table (fun (n, _, _, ds, _) -> Option.map (fun d -> (n, d)) ds) attrs;
+      attributes = List.map (fun (n, dt, _, _, _, _) -> (n, dt)) attrs;
+      attribute_plural = table (fun (n, _, pl, _, _, _) -> Option.map (fun p -> (n, Some p)) pl) attrs;
+      attribute_dimensions = table (fun (n, _, _, ds, _, _) -> Option.map (fun d -> (n, d)) ds) attrs;
       attribute_granularity = tl_attr (fun (g, _, _) -> Some g);
       attribute_timeline_count = tl_attr (fun (_, t, _) -> t);
       attribute_timeline_names =
         table
-          (fun (n, _, _, _, t) ->
+          (fun (n, _, _, _, t, _) ->
             match t with Some (_, _, Some tn) -> Some (n, Some tn) | _ -> None)
           attrs;
-      characteristics = List.map (fun (n, _, _) -> Some n) chars;
-      characteristic_kinds = List.map (fun (n, k, _) -> (n, Some k)) chars;
+      characteristics = List.map (fun (n, _, _, _) -> Some n) chars;
+      characteristic_kinds = List.map (fun (n, k, _, _) -> (n, Some k)) chars;
       characteristic_granularity = tl_char (fun (g, _, _) -> Some g);
       characteristic_timeline_count = tl_char (fun (_, t, _) -> t);
+      attribute_complete = table (fun (n, _, _, _, _, c) -> if c then Some n else None) attrs;
+      characteristic_complete = table (fun (n, _, _, c) -> if c then Some n else None) chars;
       animate = bool_ (path / "animate") (f "animate");
       plural = ext_field path kvs "plural" str;
     } )

@@ -944,6 +944,7 @@ let document (stmts : stmt list) : A.document * string option list list =
             characteristics = List.map (fun (n, _, _) -> Some n) o.o_characteristics;
             characteristic_kinds = List.map (fun (n, s, _) -> (n, Some s)) o.o_characteristics;
             characteristic_granularity = []; characteristic_timeline_count = [];
+            attribute_complete = []; characteristic_complete = [];
             (* F-logic declares no grammatical number and no animacy: the
                two RegelSpraak surface affordances stay unset rather than
                invented *)

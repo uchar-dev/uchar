@@ -404,6 +404,18 @@ module Make (P : PRODUCER) = struct
         if not (List.mem k characteristics) then
           failwith (Printf.sprintf "Emit: object type %S tags %S, which it does not declare" key k))
       o.characteristic_kinds;
+    (* complete (IR-SPEC ch. 2.2): written true or not at all, directly after the timeline this emitter never
+       writes; a name no member of its kind carries would be dropped without a word *)
+    let complete table name = if List.mem name table then [ ("complete", b true) ] else [] in
+    List.iter
+      (fun (table, members, kind) ->
+        List.iter
+          (fun m ->
+            if not (List.mem m members) then
+              failwith (Printf.sprintf "Emit: object type %S declares %S complete, which is no %s of it" key m kind))
+          table)
+      [ (o.attribute_complete, List.map fst o.attributes, "attribute");
+        (o.characteristic_complete, characteristics, "characteristic") ];
     let supertype = match o.ot_supertype with None -> [] | Some st -> [ ("supertype", s st) ] in
     let plural = match o.plural with None -> [] | Some pl -> [ ("plural", s pl) ] in
     node "ObjectType"
@@ -411,7 +423,9 @@ module Make (P : PRODUCER) = struct
       @ [ ("attributes",
            `List
              (List.map
-                (fun (a, dt) -> node "Attribute" [ ("name", s a); ("datatype", opt datatype dt) ])
+                (fun (a, dt) ->
+                  node "Attribute"
+                    ([ ("name", s a); ("datatype", opt datatype dt) ] @ complete o.attribute_complete a))
                 o.attributes));
           ("characteristics",
            `List
@@ -423,7 +437,9 @@ module Make (P : PRODUCER) = struct
                     | Some (Some variety) -> variety
                     | Some None | None -> Nominal
                   in
-                  node "Characteristic" [ ("name", s k); ("kind", enum Spelling.characteristic_kind kind) ])
+                  node "Characteristic"
+                    ([ ("name", s k); ("kind", enum Spelling.characteristic_kind kind) ]
+                    @ complete o.characteristic_complete k))
                 characteristics)) ])
 
   (* Domain (IR-SPEC ch. 2.3): the name is written here, so the datatype at

@@ -526,6 +526,11 @@ type object_type = {
   characteristic_kinds : (string * characteristic_kind_type option) list;
   characteristic_granularity : (string * grain option) list;
   characteristic_timeline_count : (string * period) list; (* as [attribute_timeline_count] *)
+  attribute_complete : string list;
+  characteristic_complete : string list;
+      (* the members whose declaration carries complete (IR-SPEC ch. 2.2),
+         each list by the name of its kind: an attribute and a characteristic
+         of one type may share a name *)
   animate : bool;
   plural : string option;
 }

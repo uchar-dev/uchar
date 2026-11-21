@@ -1536,6 +1536,8 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
       characteristic_kinds = List.map (fun k -> (k, Some I.Adjectival)) characteristics;
       characteristic_granularity = [];
       characteristic_timeline_count = [];
+      attribute_complete = [];
+      characteristic_complete = [];
       animate = true;
       plural = None }
   in

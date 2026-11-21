@@ -806,6 +806,8 @@ let effective_object_type ctx (ot : object_type) =
         characteristic_kinds = cat (fun t -> t.characteristic_kinds);
         characteristic_granularity = cat (fun t -> t.characteristic_granularity);
         characteristic_timeline_count = cat (fun t -> t.characteristic_timeline_count);
+        attribute_complete = cat (fun t -> t.attribute_complete);
+        characteristic_complete = cat (fun t -> t.characteristic_complete);
       }
 
 (* Resolution walks the chain UPWARD ONLY: this is the one lookup every
