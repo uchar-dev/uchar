@@ -1289,17 +1289,24 @@ let check (case : t) (final : World.t) : string list =
             | actual -> Some (Printf.sprintf "%s.%s = %s, expected open" label attr (Value.to_string actual)))
       | Cell_value { label; attr; labels; value } ->
           let member = World.cell attr labels in
-          let actual = World.attr (World.get final label) member in
-          if Arith.equal actual value then None
+          let i = World.get final label in
+          if World.attr_open final i member then
+            Some (Printf.sprintf "%s.%s is open, expected %s" label member (Value.to_string value))
           else
-            Some
-              (Printf.sprintf "%s.%s = %s, expected %s" label member (Value.to_string actual)
-                 (Value.to_string value))
+            let actual = World.attr i member in
+            if Arith.equal actual value then None
+            else
+              Some
+                (Printf.sprintf "%s.%s = %s, expected %s" label member (Value.to_string actual)
+                   (Value.to_string value))
       | Cell_empty { label; attr; labels } ->
           let member = World.cell attr labels in
-          let actual = World.attr (World.get final label) member in
-          if actual = Value.Empty then None
-          else Some (Printf.sprintf "%s.%s = %s, expected leeg" label member (Value.to_string actual))
+          let i = World.get final label in
+          if World.attr_open final i member then Some (Printf.sprintf "%s.%s is open, expected leeg" label member)
+          else
+            let actual = World.attr i member in
+            if actual = Value.Empty then None
+            else Some (Printf.sprintf "%s.%s = %s, expected leeg" label member (Value.to_string actual))
       | Attribute_timeline { label; attr; tl } -> (
           let bound z =
             if z = Timeline.open_from then "-inf" else if z = Timeline.open_to then "+inf" else Value.iso_of_date z
@@ -1312,7 +1319,10 @@ let check (case : t) (final : World.t) : string list =
              what the timeline reads on each day, not how a producer or the
              case divides a run of equal values into segments *)
           let tl = Timeline.canonical tl in
-          match World.timeline (World.get final label) attr with
+          let i = World.get final label in
+          if World.attr_open final i attr then Some (Printf.sprintf "%s.%s is open, expected %s" label attr (render tl))
+          else
+          match World.timeline i attr with
           | None when tl = [] ->
               (* a never-written temporal target and an explicitly empty
                  timeline read leeg on every day (ch. 3.1) — the empty

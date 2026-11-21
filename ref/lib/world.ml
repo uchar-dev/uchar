@@ -220,6 +220,22 @@ let read_attr w i name =
 let read_char w i name =
   if char_open w i name then raise (Open_read { label = i.label; member = name }) else has_char i name
 
+(* The timeline of [name] on [i] as an evaluation reads it whole: the stored
+   timeline, None where there is none, and [Open_read] where the member is
+   open *)
+let read_timeline w i name =
+  if attr_open w i name then raise (Open_read { label = i.label; member = name }) else timeline i name
+
+(* the true periods of the time-dependent characteristic [name] on [i], as the
+   case or a writer stored them *)
+let char_periods i name = SMap.find_opt (norm name) i.ctls
+
+(* The true periods of [name] on [i] as an evaluation reads them: none where
+   they are not stored, and [Open_read] where the characteristic is open *)
+let read_char_periods w i name =
+  if char_open w i name then raise (Open_read { label = i.label; member = name })
+  else Option.value (char_periods i name) ~default:[]
+
 (* The evaluation under way leaves [member] of [label] open: it writes no value
    there, and it does not stand that it fills nothing *)
 let leave_open w ~label ~member =

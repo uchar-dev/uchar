@@ -15574,6 +15574,120 @@ let () =
   | exception Value.Fault { code; params; _ } ->
       check "WV-1.5-refused-before-evaluation" (code = Some "REF-014" && params = [ ("form", "if-then-else") ]))
 
+(* WV-1.5-direct-reads: every read of a member while a form is evaluated goes
+   through World.read_attr, read_char, read_timeline or read_char_periods,
+   which raise World.Open_read where the member is open (ch. 1.5). The code
+   of ref/lib and ref/bin, World itself apart, is read per top-level
+   function, comments and strings left out, for the readers that skip the
+   state: World.attr, has_char, timeline and char_periods, and the stored
+   fields of an instance. Each place that keeps one is listed here with the
+   number of its reads and the reason it needs the stored value; a read the
+   list does not name, and a place it names that reads otherwise, fail *)
+let () =
+  let tokens =
+    [ "World.attr"; "World.has_char"; "World.timeline"; "World.char_periods"; ".attrs"; ".tls"; ".ctls"; ".chars" ]
+  in
+  let input = "reads the input world: what the case gives the target" in
+  let end_check = "the end check of a case: the state first (World.attr_open, char_open), then the stored value" in
+  let end_state =
+    "the end state of ch. 5.12a lists what is stored; for a document with the property it is refused (REF-014, form \
+     reading)"
+  in
+  let listed =
+    [ ("ref/lib/eval.ml", "initialisation_days", "World.attr", 1,
+       "the guard of an initialisation reads what its own target stores: it writes where that is nothing (ch. 5.4), a \
+        closure over the writers of the target");
+      ("ref/lib/eval.ml", "input_empty_days", "World.attr", 1, input);
+      ("ref/lib/eval.ml", "input_empty_days", "World.timeline", 1, input);
+      ("ref/lib/eval.ml", "run_defaults_group", "World.attr", 1, input);
+      ("ref/lib/eval.ml", "validate_input_precision", ".attrs", 1, "checks the values the case gives before the evaluation (ch. 2.4)");
+      ("ref/lib/eval.ml", "validate_input_precision", ".tls", 1, "checks the values the case gives before the evaluation (ch. 2.4)");
+      ("ref/lib/eval.ml", "open_inputs", "World.attr", 1, "what the case gives decides which input member is open (ch. 1.5)");
+      ("ref/lib/eval.ml", "open_inputs", "World.timeline", 1, "what the case gives decides which input member is open (ch. 1.5)");
+      ("ref/lib/eval.ml", "open_inputs", "World.has_char", 1, "what the case gives decides which input member is open (ch. 1.5)");
+      ("ref/lib/eval.ml", "open_inputs", "World.char_periods", 1, "what the case gives decides which input member is open (ch. 1.5)");
+      ("ref/lib/case.ml", "check", "World.attr", 5, end_check);
+      ("ref/lib/case.ml", "check", "World.timeline", 1, end_check);
+      ("ref/lib/case.ml", "check", "World.has_char", 3, end_check);
+      ("ref/lib/end_state.ml", "object_lines", "World.attr", 3, end_state);
+      ("ref/lib/end_state.ml", "object_lines", "World.timeline", 1, end_state);
+      ("ref/lib/end_state.ml", "object_lines", "World.has_char", 1, end_state);
+      ("ref/lib/end_state.ml", "object_lines", ".ctls", 1, end_state);
+      ("ref/lib/reading.ml", "defaults", "World.attr", 1, input) ]
+  in
+  (* the code of a source: comments and string literals blanked, so a line
+     keeps its place and its first column *)
+  let code text =
+    let b = Bytes.of_string text and n = String.length text in
+    let blank i = if Bytes.get b i <> '\n' then Bytes.set b i ' ' in
+    let rec go i depth =
+      if i >= n then ()
+      else if i + 1 < n && text.[i] = '(' && text.[i + 1] = '*' then (blank i; blank (i + 1); go (i + 2) (depth + 1))
+      else if depth > 0 && i + 1 < n && text.[i] = '*' && text.[i + 1] = ')' then (blank i; blank (i + 1); go (i + 2) (depth - 1))
+      else if depth > 0 then (blank i; go (i + 1) depth)
+      else if text.[i] = '"' then (
+        let rec str j = if j >= n then j else if text.[j] = '\\' then (blank j; if j + 1 < n then blank (j + 1); str (j + 2)) else if text.[j] = '"' then j else (blank j; str (j + 1)) in
+        let j = str (i + 1) in
+        go (j + 1) depth)
+      else if i + 1 < n && text.[i] = '{' && text.[i + 1] = '|' then (
+        let rec quoted j = if j + 1 >= n then n else if text.[j] = '|' && text.[j + 1] = '}' then j + 2 else (blank j; quoted (j + 1)) in
+        go (quoted (i + 2)) depth)
+      else if text.[i] = '\'' && i + 2 < n && text.[i + 2] = '\'' then go (i + 3) depth
+      else go (i + 1) depth
+    in
+    go 0 0;
+    Bytes.to_string b
+  in
+  let ident c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c = '_' || c = '\'' in
+  let found = Hashtbl.create 16 in
+  let sources =
+    List.concat_map
+      (fun dir ->
+        List.map (fun f -> dir ^ f)
+          (List.sort compare
+             (List.filter
+                (fun f -> Filename.check_suffix f ".ml" && f <> "world.ml")
+                (Array.to_list (Sys.readdir (corpus_file dir))))))
+      [ "ref/lib/"; "ref/bin/" ]
+  in
+  List.iter
+    (fun file ->
+      let lines = String.split_on_char '\n' (code (In_channel.with_open_bin (corpus_file file) In_channel.input_all)) in
+      let fn = ref "" in
+      List.iter
+        (fun line ->
+          (match String.split_on_char ' ' line with
+          | ("let" | "and") :: "rec" :: name :: _ | ("let" | "and") :: name :: _ -> fn := name
+          | _ -> ());
+          List.iter
+            (fun t ->
+              let lt = String.length t and ll = String.length line in
+              let rec scan i =
+                if i + lt <= ll then
+                  if String.sub line i lt = t && (i + lt = ll || not (ident line.[i + lt]))
+                     && (t.[0] = '.' || i = 0 || not (ident line.[i - 1]) && line.[i - 1] <> '.')
+                  then (
+                    let key = (file, !fn, t) in
+                    Hashtbl.replace found key (1 + Option.value (Hashtbl.find_opt found key) ~default:0);
+                    scan (i + lt))
+                  else scan (i + 1)
+              in
+              scan 0)
+            tokens)
+        lines)
+    sources;
+  check "WV-1.5-direct-reads (sources read)" (List.length sources >= 8);
+  List.iter
+    (fun (file, fn, t, n, _) ->
+      let got = Option.value (Hashtbl.find_opt found (file, fn, t)) ~default:0 in
+      check (Printf.sprintf "WV-1.5-direct-reads %s %s %s (listed %d, found %d)" file fn t n got) (got = n))
+    listed;
+  Hashtbl.iter
+    (fun (file, fn, t) got ->
+      if not (List.exists (fun (f, g, t', _, _) -> f = file && g = fn && t' = t) listed) then
+        check (Printf.sprintf "WV-1.5-direct-reads %s %s %s (%d not listed)" file fn t got) false)
+    found
+
 (* WV-1.5-witness-*: broader examples, a document per form with cases whose
    expectations were computed by hand for this reading (spec/proposals/
    STRICT-EMPTY.md §5, the witnesses of the forms this reading is defined

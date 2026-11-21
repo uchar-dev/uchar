@@ -789,7 +789,7 @@ let guard_on_target (doc : document) (fc : resolved_fact_creation) =
    reached type, which the verifier does not cross there — so this fault is
    the only thing standing between a non-temporal characteristic and a
    silently vacuous pass from an always-empty period set. *)
-let whole_period_characteristic env ~(ot : string) ~(inst : World.instance option) ~characteristic ~negation
+let whole_period_characteristic env world ~(ot : string) ~(inst : World.instance option) ~characteristic ~negation
     (gp : entire_period) =
   if not (characteristic_temporal (object_type env ot) characteristic) then
     Value.fault
@@ -799,7 +799,7 @@ let whole_period_characteristic env ~(ot : string) ~(inst : World.instance optio
   let true_periods =
     match inst with
     | None -> []
-    | Some (i : World.instance) -> Option.value (SMap.find_opt (norm characteristic) i.ctls) ~default:[]
+    | Some (i : World.instance) -> World.read_char_periods world i characteristic
   in
   let verdict = Timeline.entire_period_characteristic g ~negation true_periods in
   (* ch. 3.9: "Negation complements the folded result" — the QUALIFIER's
@@ -1182,9 +1182,9 @@ let member_attribute env ~otype member =
 (* the timeline of [attr] of [i] that the whole-period fold of ch. 3.9 reads
    whole: an absent attribute is no timeline, and the asOfDate-bucket scalar
    faults (ch. 8.4) *)
-let qualifier_timeline (i : World.instance) attr =
-  let tl = World.timeline i attr in
-  if tl = None && World.attr i attr <> Value.Empty then
+let qualifier_timeline world (i : World.instance) attr =
+  let tl = World.read_timeline world i attr in
+  if tl = None && World.read_attr world i attr <> Value.Empty then
     bucket_scalar ~attr i
       "the whole-period qualifier over %S needs the full timeline; %S supplies only the asOfDate-bucket scalar \
        (ch. 3.9, ch. 8.4)"
@@ -1221,7 +1221,7 @@ let whole_period_operand env world (self : World.instance) (e : expr) : Timeline
                 "a read of %S on %S without navigation bindings is the subject's own read, but the \
                  subject is %S"
                 a otn self.otype;
-            qualifier_timeline self a
+            qualifier_timeline world self a
         | Some bindings -> (
             match nav_target env world self ~bindings ~endpoint:otn with
             | None ->
@@ -1229,7 +1229,7 @@ let whole_period_operand env world (self : World.instance) (e : expr) : Timeline
                 None
             | Some target ->
                 object_reached (Navigated_read e) (Some target.label);
-                qualifier_timeline target a)
+                qualifier_timeline world target a)
       in
       read_whole e tl;
       Option.value tl ~default:[]
@@ -1566,7 +1566,7 @@ let reversed : Ir_v0.Ast.compare_op -> Ir_v0.Ast.compare_op = function
    document nothing below meets one, and the evaluation is the one of ch.
    1.2-1.4. A read of an open member raises World.Open_read, and that
    breaks the evaluation off up to the boundary of one judgement or one
-   value ([held]): what reads an open value has no value and no verdict of
+   value ([open_read_boundary]): what reads an open value has no value and no verdict of
    its own, and what it deposited up to there is dropped. So no operator
    knows of open values.
 
@@ -1617,7 +1617,7 @@ let count_verdict (q : quantifier_kind) ~cutoff ~n ~hits ~fails : truth =
    an open member, its deposits dropped. Any other exception — a fault, the
    barrier of a Let (ch. 10.6) — passes on with the deposits made before it, as
    it does without the boundary *)
-let held ~err f =
+let open_read_boundary ~err f =
   let deposits = ref [] in
   let pass () = List.iter err (List.rev !deposits) in
   match f (fun d -> deposits := d :: !deposits) with
@@ -1952,7 +1952,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
           let member = cell_member env ~ot ~attr:name (List.map (req "DimensionCellRead.labels") labels) in
           match member_holder env world self ~node:e inner with
           | None -> Value.Empty
-          | Some holder -> World.attr holder member)
+          | Some holder -> World.read_attr world holder member)
       | _ -> Value.fault "the attribute of a DimensionCellRead is an attribute reference (IR-SPEC ch. 4.3)")
   | Dimension_cell_read { attribute_ref = None; _ } -> req "DimensionCellRead.attribute" None
   | Variable_reference _ | Context_value _ ->
@@ -1975,10 +1975,10 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
             when own_read env self otn ->
               if not (Ir_v0.Checks.attr_temporal (object_type env otn) a) then
                 Value.fault "temporal read of %S, which is not a temporal attribute" a;
-              (match World.timeline self a with
+              (match World.read_timeline world self a with
               | Some tl -> Timeline.read tl d
               | None ->
-                  if World.attr self a = Value.Empty then Value.Empty
+                  if World.read_attr world self a = Value.Empty then Value.Empty
                   else
                     bucket_scalar ~attr:a self
                       "the temporal read of %S needs the full timeline; the case supplies none \
@@ -2455,17 +2455,17 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
              The clip needs the FULL value timeline: a case that
              carries only the asOfDate-bucket scalar cannot serve it. *)
           let tl =
-            match World.timeline self a with
+            match World.read_timeline world self a with
             | Some tl -> tl
             | None ->
-                if World.attr self a = Value.Empty then []
+                if World.read_attr world self a = Value.Empty then []
                 else
                   bucket_scalar ~attr:a self
                     "the gedurende clip of %S needs the full timeline; the case supplies only \
                      the asOfDate-bucket scalar"
                     a
           in
-          read_whole base (World.timeline self a);
+          read_whole base (World.read_timeline world self a);
           let span = List.map (fun (s : Timeline.segment) -> (s.s_from, s.s_to)) tl in
           let rec true_periods_of_cond (c : condition_expr) =
             match c with
@@ -2473,9 +2473,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
                 if not (characteristic_temporal ot_decl k) then
                   Value.fault
                     "gedurende over %S, which is not a temporal characteristic" k;
-                let periods =
-                  Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[]
-                in
+                let periods = World.read_char_periods world self k in
                 let periods = if negation then Timeline.complement periods ~span else periods in
                 held_over c (as_periods periods);
                 periods
@@ -2490,17 +2488,17 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
                    the scalar bound (piecewise-constant, never per day), so it
                    is read whole and the asOfDate-bucket scalar faults (ch. 8.4) *)
                 let tested =
-                  match World.timeline self b with
+                  match World.read_timeline world self b with
                   | Some t -> t
                   | None ->
-                      if World.attr self b <> Value.Empty then
+                      if World.read_attr world self b <> Value.Empty then
                         bucket_scalar ~attr:b self
                           "the gedurende clip of %S compares %S per segment and needs its full timeline; %S \
                            supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)"
                           a b self.label;
                       []
                 in
-                read_whole left (World.timeline self b);
+                read_whole left (World.read_timeline world self b);
                 let bound = eval_expr env world self ~err boundary in
                 (* the operand types decide the empty cells of the comparison
                    (ch. 1.2), which two leeg runtime values cannot reveal *)
@@ -2572,14 +2570,14 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
           (* ch. 3.6 over the timeline a rule of ch. 3.4/3.5 writes: it divides all
              time and is totalled whole, so no asOfDate bucket enters. Before that
              rule has written it is absent, leeg on every day, and totals 0. *)
-          let tl = World.timeline self a in
+          let tl = World.read_timeline world self a in
           read_whole base tl;
           Timeline.grand_total ~grid_unit:grid ~place:(self.label, a) ~zero_unit periods (Option.value tl ~default:[]))
       | None -> (
       (* EF-042 and EF-043 (ch. 5.7b, ch. 3.6, ch. 8.4): the own total reads
          the asOfDate-bucket scalar, so a full timeline and a session without
          an evaluation date both fault *)
-      if World.timeline self a <> None then
+      if World.read_timeline world self a <> None then
         Value.faultc ~params:[ ("attribute", a); ("label", self.label) ] "EF-042"
           "the temporal total of %S reads the asOfDate-bucket scalar, and %S supplies a full timeline \
            (ch. 3.6, ch. 8.4)"
@@ -2591,7 +2589,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
              bucket's value"
             a
       | Some d -> (
-          match World.attr self a with
+          match World.read_attr world self a with
           | Value.Empty ->
               (* an absent timeline is leeg on every day and totals 0 (ch. 3.6) *)
               read_whole base None;
@@ -2688,7 +2686,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
            has no defined moment to rank, so it is refused rather than
            reading a value the timeline does not have at one instant. *)
         if not (Ir_v0.Checks.attr_temporal el_decl name) then
-          `Values (contributing_values members (List.map (fun i -> World.attr i name) members))
+          `Values (contributing_values members (map_in_order (fun i -> World.read_attr world i name) members))
         else begin
           (match kind with
           | Sum_function | Total -> ()
@@ -2741,10 +2739,10 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
           `Values
             (contributing_values members @@ map_in_order
                (fun (i : World.instance) ->
-                 match World.timeline i name with
+                 match World.read_timeline world i name with
                  | Some tl -> Timeline.grand_total ~grid_unit:grid ~place:(i.label, name) ~zero_unit periods tl
                  | None ->
-                     if World.attr i name = Value.Empty then Timeline.grand_total ~grid_unit:grid ~zero_unit periods []
+                     if World.read_attr world i name = Value.Empty then Timeline.grand_total ~grid_unit:grid ~zero_unit periods []
                      else
                        bucket_scalar ~attr:name i
                          "the per-element temporal total of %S over %S: the case supplies an \
@@ -2881,7 +2879,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
         let members =
           filter_in_order keep (fold_members ?binding:source_role ?path:source_path env world self ~element:el)
         in
-        `Values (contributing_values members (List.map (fun i -> World.attr i member) members))
+        `Values (contributing_values members (map_in_order (fun i -> World.read_attr world i member) members))
     (* the payload of each member (ch. 9.5): the set source reads the
        attribute of the element type and takes the constructor's payload out
        of it, leeg where the member carries another constructor; WF-127 holds
@@ -2904,7 +2902,9 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
         let members =
           filter_in_order keep (fold_members ?binding:source_role ?path:source_path env world self ~element:el)
         in
-        `Values (contributing_values members (List.map (fun i -> payload_of constructor_ (World.attr i name)) members))
+        `Values
+          (contributing_values members
+             (map_in_order (fun i -> payload_of constructor_ (World.read_attr world i name)) members))
     (* WF-037, the fold-source arm, in the verifier's sentence: the one
        argument of an aggregation that carries an elementType is an
        AttributeReference, and any other node there is refused by name. A
@@ -3051,7 +3051,7 @@ and eval_dimension_fold env world self ~err ~kind ~call_arguments ~empty_fallbac
           let cells =
             match member_holder env world self argument with
             | None -> List.map (fun _ -> Value.Empty) members
-            | Some holder -> List.map (World.attr holder) members
+            | Some holder -> map_in_order (World.read_attr world holder) members
           in
           match kind with
           | Sum_function ->
@@ -3146,9 +3146,9 @@ and judge_cond env world (self : World.instance) ~err (c : condition_expr) : jud
   | Some o -> established (o.cond c (fun () -> two_valued c (judge_cond_node env world self ~err c)))
 
 (* An atomic condition: [verdict] read on values that all stand, undetermined
-   where it reads an open value, its deposits dropped then ([held]) *)
+   where it reads an open value, its deposits dropped then ([open_read_boundary]) *)
 and atomic ~err verdict : judgement =
-  match held ~err verdict with Some b -> established b | None -> undetermined
+  match open_read_boundary ~err verdict with Some b -> established b | None -> undetermined
 
 and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) : judgement =
   match Ir_v0.Checks.unanchored_cond c with
@@ -3208,7 +3208,7 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
              (ch. 3.9, 3.12)"
             attr
       | _ -> ());
-      let tl = qualifier_timeline owner attr in
+      let tl = qualifier_timeline world owner attr in
       read_whole tested_e tl;
       let tested = Option.value tl ~default:[] in
       let boundary = eval_expr env world self ~err bound_e in
@@ -3241,7 +3241,7 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
      false for it; for another form both are undetermined (ch. 1.5) *)
   | Predicate { variety = (Empty_predicate | Filled) as variety; operand; negation; _ } -> (
       let says_empty = (variety = Empty_predicate) <> negation in
-      match held ~err (fun err -> eval_expr env world self ~err (req "Predicate.operand" operand)) with
+      match open_read_boundary ~err (fun err -> eval_expr env world self ~err (req "Predicate.operand" operand)) with
       | Some v -> established ((v = Value.Empty) = says_empty)
       | None -> { own = Established says_empty; other = Undetermined })
   | Predicate { variety = Day_kind_predicate; day_kind; operand; negation; _ }
@@ -3312,7 +3312,7 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
       | Some gp, Hosted ->
           (* ch. 3.9, the specified collapse — NOT the scalar context
              ch. 3.3 refuses below *)
-          established (whole_period_characteristic env ~ot:self.otype ~inst:(Some self) ~characteristic:k ~negation gp)
+          established (whole_period_characteristic env world ~ot:self.otype ~inst:(Some self) ~characteristic:k ~negation gp)
       | None, Narrowing e ->
           (* ch. 5.8b rule 4: the declaration key is the host, whatever the
              object; an object outside the host has no K, so the positive
@@ -3357,7 +3357,7 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
       | [] -> (
           object_reached (Navigated_check c) None;
           match time_period with
-          | Some gp -> established (whole_period_characteristic env ~ot:reached ~inst:None ~characteristic:k ~negation gp)
+          | Some gp -> established (whole_period_characteristic env world ~ot:reached ~inst:None ~characteristic:k ~negation gp)
           (* over an absent link the check stands, false (ch. 1.5) *)
           | None -> established false)
       | [ target ] -> (
@@ -3365,7 +3365,7 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
           match time_period with
           | Some gp ->
               established
-                (whole_period_characteristic env ~ot:target.otype ~inst:(Some target) ~characteristic:k ~negation gp)
+                (whole_period_characteristic env world ~ot:target.otype ~inst:(Some target) ~characteristic:k ~negation gp)
           | None ->
               if characteristic_temporal (object_type env target.otype) k then
                 Value.fault "temporal characteristic %S in a scalar condition is refused (ch. 3.3)"
@@ -3820,7 +3820,7 @@ let rec cond_periods env w (self : World.instance) ~err ~(target : Timeline.grid
         | Hosted -> ());
         if not (characteristic_temporal ot_decl k) then
           Value.fault "wholePeriod qualifier on a non-time-dependent operand";
-        let periods = Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[] in
+        let periods = World.read_char_periods w self k in
         let inner = if negation then Timeline.complement_all periods else Timeline.merge_periods periods in
         record
           (match time_period with
@@ -3853,8 +3853,8 @@ let rec cond_periods env w (self : World.instance) ~err ~(target : Timeline.grid
         in
         let tested_e, bound_e, op = if tested_left then (le, re, op) else (re, le, reversed op) in
         let read_tested () =
-          let tl = World.timeline self tested_attr in
-          if tl = None && World.attr self tested_attr <> Value.Empty then begin
+          let tl = World.read_timeline w self tested_attr in
+          if tl = None && World.read_attr w self tested_attr <> Value.Empty then begin
             let fault () =
               bucket_scalar ~attr:tested_attr self
                 "a condition per period reads the time-dependent attribute %S of %S whole; the case supplies only \
@@ -4017,10 +4017,10 @@ let write_produced env w (self : World.instance) ~form ~ot ~attr result =
 let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.grid) ~attr ~target_unit ?(root = false)
     ?reach (e : expr) : Timeline.t =
   let whole (i : World.instance) a =
-    match World.timeline i a with
+    match World.read_timeline w i a with
     | Some tl -> tl
     | None ->
-        if World.attr i a = Value.Empty then []
+        if World.read_attr w i a = Value.Empty then []
         else
           bucket_scalar ~attr:a i
             "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute %S of %S whole; the \
@@ -4249,7 +4249,7 @@ let day_count_periods env w (self : World.instance) ~err (c : condition_expr) : 
   | Some ([ k ], day_kinds) ->
       if not (characteristic_temporal ot_decl k) then
         Value.fault "gedurende over %S, which is not a temporal characteristic" k;
-      let base = Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[] in
+      let base = World.read_char_periods w self k in
       if day_kinds = [] then base
       else begin
         Timeline.refuse_open_periods "a day-kind test in a day count" base;
@@ -4332,7 +4332,7 @@ let run_pro_rata ?periods env w (self : World.instance) ~err ~form ~ot ~attr val
         | Characteristic_check { characteristic = Some k; navigation_binding = None; negation = false; _ } ->
             if not (characteristic_temporal ot_decl k) then
               Value.fault "gedurende over %S, which is not a temporal characteristic" k;
-            Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[]
+            World.read_char_periods w self k
         | _ ->
             Value.faultc "REF-009"
               "unsupported pro-rata condition shape (an own temporal characteristic; no corpus \
@@ -4340,16 +4340,16 @@ let run_pro_rata ?periods env w (self : World.instance) ~err ~form ~ot ~attr val
       in
       (* ch. 8.4: the base is read whole, so a case that gives it as the
          asOfDate-bucket scalar faults; an absent base is the empty timeline *)
-      if World.timeline self b = None && World.attr self b <> Value.Empty then
+      if World.read_timeline w self b = None && World.read_attr w self b <> Value.Empty then
         bucket_scalar ~attr:b self
           "the pro-rata base %S needs the full timeline; %S supplies only the asOfDate-bucket scalar (ch. 3.7, \
            ch. 8.4)"
           b self.label;
       (match value_node with
-      | Function_call { call_arguments = [ base ]; _ } -> read_whole base (World.timeline self b)
+      | Function_call { call_arguments = [ base ]; _ } -> read_whole base (World.read_timeline w self b)
       | _ -> ());
       held_over c (as_periods true_periods);
-      let base_expr = Option.value (World.timeline self b) ~default:[] in
+      let base_expr = Option.value (World.read_timeline w self b) ~default:[] in
       let result = clip_periods periods (Timeline.pro_rata g base_expr true_periods) in
       read_whole value_node (Some result);
       (* the fold decides the buckets it writes; a bucket without a true day
@@ -4382,7 +4382,7 @@ let run_pro_rata ?periods env w (self : World.instance) ~err ~form ~ot ~attr val
             (fun (m : condition_expr) ->
               match m with
               | Characteristic_check { characteristic = Some k; _ } ->
-                  held_over m (as_periods (Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[]))
+                  held_over m (as_periods (World.read_char_periods w self k))
               (* a day-kind test, with the days it lets count *)
               | _ -> held_over m (as_periods true_periods))
             components
@@ -4602,7 +4602,7 @@ let run_rule ?only env world (r : resolved_rule) =
             in
             (* the value of a rule that decides, as one value: [None] where it
                reads an open value, its deposits dropped *)
-            let value () = held ~err (fun err -> eval_expr env w self ~err (req "RuleVersion.value" r.value_node)) in
+            let value () = open_read_boundary ~err (fun err -> eval_expr env w self ~err (req "RuleVersion.value" r.value_node)) in
             match judged with
             (* established false for another form, so for the form itself *)
             | { other = Established false; _ } -> release ()
@@ -4737,15 +4737,15 @@ let run_allocation env world (v : resolved_allocation) =
               (fun (i : World.instance) ->
                 {
                   Alloc.id = i.label;
-                  weight = Option.map (fun a -> World.attr i a) v.ratio_attribute;
-                  cap = Option.map (fun a -> World.attr i a) v.maximum_attribute;
-                  key = Option.map (fun a -> World.attr i a) v.ordering_attribute;
+                  weight = Option.map (fun a -> World.read_attr w i a) v.ratio_attribute;
+                  cap = Option.map (fun a -> World.read_attr w i a) v.maximum_attribute;
+                  key = Option.map (fun a -> World.read_attr w i a) v.ordering_attribute;
                 })
               recipients
           in
           let alloc_errs = ref [] in
           let err ~id (d : Value.deposit) = alloc_errs := (id, d.code) :: !alloc_errs in
-          let pot = World.attr src source_attr in
+          let pot = World.read_attr w src source_attr in
           (* shares and rest are amounts in the pot's unit; the write
              restates them into their target's (ch. 2.4, 2.6 rule 6) *)
           let pot_unit = match pot with Value.Num (_, u) -> u | _ -> Value.Unitless in
@@ -5487,7 +5487,7 @@ let run_consistency env world (c : resolved_consistency) =
    key needs its full timeline; a bucket scalar would silently miss
    values. One shared function carries the single form and the union
    (compositionality: the same key, the same reading, either form). *)
-let ever_tuples env ~otype ~keys (i : World.instance) : string list =
+let ever_tuples env world ~otype ~keys (i : World.instance) : string list =
   let ot_decl = object_type env otype in
   let temporal = List.filter (Ir_v0.Checks.attr_temporal ot_decl) keys in
   if List.length temporal > 1 then
@@ -5495,12 +5495,12 @@ let ever_tuples env ~otype ~keys (i : World.instance) : string list =
       "a uniqueness key list carries at most one temporal key component (the same-moment \
        tuple join has no corpus case; ch. 5.9)";
   let carried k =
-    if not (Ir_v0.Checks.attr_temporal ot_decl k) then [ World.attr i k ]
+    if not (Ir_v0.Checks.attr_temporal ot_decl k) then [ World.read_attr world i k ]
     else
-      match World.timeline i k with
+      match World.read_timeline world i k with
       | Some tl -> List.map (fun (s : Timeline.segment) -> s.s_value) tl
       | None ->
-          if World.attr i k <> Value.Empty then
+          if World.read_attr world i k <> Value.Empty then
             Value.faultc ~params:[ ("key", k); ("label", i.label) ] "EF-020"
               "the ever-unique key %S needs the full timeline; %S supplies only a scalar \
                (ch. 5.9)"
@@ -5558,7 +5558,7 @@ let run_uniqueness env world (u : resolved_uniqueness) =
              whether the row would have participated (data integrity
              precedes the scope narrowing — and the ASP side checks
              the same way, at translation) *)
-          let tuples = ever_tuples env ~otype:subject ~keys i in
+          let tuples = ever_tuples env world ~otype:subject ~keys i in
           let prefix =
             match scope_of with
             | None -> Some ""
@@ -5609,7 +5609,7 @@ let run_uniqueness_union env world (u : resolved_uniqueness_union) =
              the union and the single form alike *)
           List.concat_map
             (fun (i : World.instance) ->
-              List.map (fun key -> (key, i.label)) (ever_tuples env ~otype:t ~keys i))
+              List.map (fun key -> (key, i.label)) (ever_tuples env world ~otype:t ~keys i))
             (World.of_type ~isa:(isa env) world t))
         u.source_list
     in
@@ -5995,7 +5995,9 @@ let open_inputs env ~closed (world : World.t) =
             acc ot.attributes
         in
         List.fold_left
-          (fun acc -> function Some k -> member acc k ~given:(World.has_char i k) | None -> acc)
+          (fun acc -> function
+            | Some k -> member acc k ~given:(World.has_char i k || World.char_periods i k <> None)
+            | None -> acc)
           acc ot.characteristics)
       world.World.instances World.Key.empty
 

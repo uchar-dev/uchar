@@ -161,5 +161,8 @@
   ; the witnesses of a document that infers nothing from an empty value, a directory per form (ch. 1.5)
   (glob_files_rec fixtures/strict-empty/*.json)
   ../../corpus/golden/jutterswet-meldplicht-flogic/ir.json
+  ; the code of ref, read for the places that read a member past its state (ch. 1.5)
+  (glob_files ../lib/*.ml)
+  (glob_files ../bin/*.ml)
   ../bin/runner.exe)
  (libraries uchar_ref uchar-ir-v0 zarith yojson))
