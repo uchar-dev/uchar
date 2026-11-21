@@ -14,7 +14,8 @@ spec bug.
   attribute value is `val(Inst, "naam", V)`; a role link is
   `role(Bron, ("feittype", "rolnaam"), Doel)`, the fact type beside the
   role, since a link belongs to its fact type (ch. 5.7a) and two fact
-  types may name a role alike; a parameter is `param("naam", V)`.
+  types may name a role alike; a parameter is `param("naam", V)`, V the
+  term an attribute of its datatype carries, also where no form reads it.
   Names are normalised on both sides. A scalar parameter the case does
   not bind has no fact, and binding is fail-fast (ch. 5.7): every read
   of it carries one `viol/2` guard in ref's own words, whose body is
@@ -89,9 +90,17 @@ spec bug.
   floor the recurrence prescribes.
 - Emptiness is absence: an underivable `val/3` atom is leeg, and an
   ordering comparison over leeg fails through the unbound body join —
-  the ch. 1.2d ordering rule for free. The equality/inequality empty
-  asymmetry has no such free encoding and faults until a corpus case
-  demands it (recorded finding). Kin to it: a computed **leeg
+  the ch. 1.2d ordering rule for free. Equality has no such free
+  encoding. A numeric gelijk-aan holds on two leeg operands and fails on
+  one (ch. 1.2d), so it is a helper `eqN` that holds where both operands
+  bind with equal values or neither binds, and ongelijk-aan is its
+  negation. A date, a text, an enumeration, a boolean, a sum type and a
+  record compare their terms in a positive join, so gelijk-aan is false on
+  any leeg operand, and their ongelijk-aan holds where exactly one operand
+  is leeg (Tabel 44): a date through `eqN`, the others through a helper
+  over both bindings (`neq_helper`). An operand of those datatypes is an
+  attribute on the subject or over a path of to-one roles, a parameter, a
+  literal or a constructor term alike. Kin to it: a computed **leeg
   overwriting an input value** (ch. 1.2g) has no absence encoding on
   the native rule path — the input fact would stand beside the
   underivable computation, so a case pinning that write goes red on
@@ -103,7 +112,8 @@ spec bug.
   `val/3` atom for every datatype the encoding stores there, on the
   subject or over a path of to-one roles: a number, a percentage, a date,
   a datum-tijd, a text, an enumeration, a boolean (onwaar is a value), a
-  record and a sum type, whose absence markers are values (ch. 9.5). Any
+  record and a sum type, whose absence markers are values (ch. 9.5), with
+  a payload of any of those; a parameter binds its `param/2` atom. Any
   other operand is read by the term function of its datatype (golden
   `jutterswet-gevuldtoets-soorten`).
 - Negated characteristic reads are negation-as-failure — sound because
@@ -501,14 +511,12 @@ Recorded limitations:
   the form `document`: the encoding reads empty as RUNTIME-SEMANTICS
   ch. 1.2–1.4 lay down, so its model would answer what the document
   excludes. ref refuses such a document alike (REF-014).
-- A leeg or gevuld test on a list, or on a parameter of a datatype other
-  than a number, a percentage or a day-precision date, is refused at
-  translation as the refusal CLINGO-050 (parameters `operand`,
-  `datatype`): the encoding holds a list as `lpres`/`lelem` facts and a
-  parameter as `param/2` with a number or a day number, so neither has
-  the binding the test reads. ref plays both (suite frames `ch1.2 the
-  gevuld test on a list attribute` and `ch1.2 the leeg test on a text
-  parameter`).
+- A leeg or gevuld test on a list, an attribute or a parameter, is
+  refused at translation as the refusal CLINGO-050 (parameters `operand`,
+  `datatype`): the encoding holds a list as `lpres`/`lelem` facts, not as
+  the `val/3` or `param/2` binding the test reads. ref plays it (suite
+  frames `ch1.2 the gevuld test on a list attribute` and `ch1.2 the leeg
+  test on a list parameter`).
 - The Let lowering keeps an enclosing Let's need on a path that does
   not read its binder, also with every parameter bound, so a value ref
   computes stays leeg. [V1] A Match with an arm that reads the binder,

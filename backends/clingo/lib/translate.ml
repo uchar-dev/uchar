@@ -4216,6 +4216,12 @@ let rec symbolic_term ctx ~subject ~subject_ot (e : expr) : string list * string
       faultc "CLINGO-042"
         "a text composition or a concatenation needs the text of a value, and ASP-Core-2 has no \
          string functions"
+  (* the text, enumeration or boolean payload of a sum-typed attribute (ch.
+     9.5): the member a projection rule derives from its constructor term
+     ([payload_projections]), read as the attribute is *)
+  | Payload_access { base = Attribute_reference { attribute_ref = Some a; _ } as base; constructor_; _ } ->
+      let atoms, v, _ = member_read ~scaled:false ctx ~subject ~subject_ot ~member:(payload_member a constructor_) base in
+      (atoms, v)
   | _ ->
       faultc "CLINGO-002"
         "a text/enum/boolean operand here is an own-subject attribute read or a literal (no \
@@ -4261,12 +4267,16 @@ let rec struct_value_term (domain_spec, field_list) (fs : (string * Value.t) lis
   in
   Printf.sprintf "%s(%s)" f (String.concat "," (List.map arg field_list))
 
-(* the ground term for a constructor VALUE (case emission): payload scaled
-   by the constructor's declared payload datatype *)
+(* the ground term for a constructor VALUE (case emission): a number or a date
+   payload scaled by the constructor's declared payload datatype; a text, an
+   enumeration label, a boolean and a datum-tijd as the ground term their
+   attribute carries ([symbolic_value_term], [datetime_term]) *)
 let ctor_value_term constructor_list (tag, (payload : Value.t option)) =
   let f = ctor_functor tag in
   match (ctor_payload_datatype constructor_list tag, payload) with
   | None, None -> f
+  | Some _, Some ((Value.Text _ | Value.Enum _ | Value.Bool _) as v) -> Printf.sprintf "%s(%s)" f (symbolic_value_term v)
+  | Some _, Some (Value.Date_time t) -> Printf.sprintf "%s(%s)" f (datetime_term t)
   | Some d, Some v -> Printf.sprintf "%s(%d)" f (scaled_input ~what:("the payload of " ^ tag) (Some d) v)
   | Some _, None -> fault "unary constructor %S carries no payload value" tag
   | None, Some _ -> fault "nullary constructor %S carries a payload value" tag
@@ -5232,6 +5242,23 @@ let refuse_payload_in_another_unit ctx (d : datatype) (arg : expr) =
          (ref restates it into the declared unit; no corpus case)"
   | _ -> ()
 
+(* the read of the scalar parameter [name] at [e], of any datatype the case
+   carries in param/2: its atom and the variable that binds the value, with the
+   fail-fast guard of an unbound parameter (ch. 5.7) where the evaluation
+   reaches [e] *)
+let param_read ctx ~subject ~subject_ot (e : expr) name : string list * string =
+  match Ir_v0.Checks.find_ci ctx.doc.parameters name with
+  | Some { par_granularity = Some _; _ } -> fault "granular parameter %S in a scalar slot is refused (ch. 3.3/8)" name
+  | Some _ ->
+      let v = fresh ctx "P" in
+      let guard () =
+        unbound_param_guard ctx ~witness:subject ~guard:(fun () -> rule_reach ctx ~subject ~subject_ot e) name
+      in
+      guard ();
+      if param_unbound ctx name then beside_hoisted_arms ctx e guard;
+      ([ Printf.sprintf "param(%s,%s)" (str name) v ], v)
+  | None -> fault "unknown parameter %S" name
+
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
   (* the rounding's mark is for its base alone, the node translated first here *)
   let calendar_ok = ctx.calendar_rounding in
@@ -5269,19 +5296,13 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       | _ -> fault "non-numeric literal in a term position")
   | Parameter_ref { parameter; _ } ->
       let name = req "ParameterReference.parameter" parameter in
-      (match Ir_v0.Checks.find_ci ctx.doc.parameters name with
-      | Some { par_granularity = Some _; _ } ->
-          fault "granular parameter %S in a scalar slot is refused (ch. 3.3/8)" name
-      | Some p ->
-          let d = decimals_of_datatype p.par_datatype in
-          let v = fresh ctx "P" in
-          let guard () =
-            unbound_param_guard ctx ~witness:subject ~guard:(fun () -> rule_reach ctx ~subject ~subject_ot e) name
-          in
-          guard ();
-          if param_unbound ctx name then beside_hoisted_arms ctx e guard;
-          ([ Printf.sprintf "param(%s,%s)" (str name) v ], v, pow10 d)
-      | None -> fault "unknown parameter %S" name)
+      let scale =
+        match Ir_v0.Checks.find_ci ctx.doc.parameters name with
+        | Some { par_granularity = None; par_datatype; _ } -> pow10 (decimals_of_datatype par_datatype)
+        | _ -> 1 (* [param_read] refuses a granular and an unknown parameter *)
+      in
+      let atoms, v = param_read ctx ~subject ~subject_ot e name in
+      (atoms, v, scale)
   | Attribute_reference { attribute_ref; object_type = ot; _ } ->
       let a = req "attribute" attribute_ref in
       let ot = req "subjectType" ot in
@@ -7737,6 +7758,17 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
         fault "a temporal datum-tijd read has no v0 form (ch. 3.3)";
       let d = fresh ctx "DD" and ms = fresh ctx "DM" in
       ([ Printf.sprintf "val(%s,%s,dt(%s,%s))" subject (str a) d ms ], d, ms)
+  (* over a path of to-one roles: the val/3 term of the object the path
+     reaches ([member_read]), split into its pair *)
+  | Attribute_reference { attribute_ref = Some a; navigation_bindings = Some _; _ } ->
+      let atoms, v, _ = member_read ~scaled:false ctx ~subject ~subject_ot ~member:a e in
+      let d = fresh ctx "DD" and ms = fresh ctx "DM" in
+      (atoms @ [ Printf.sprintf "%s = dt(%s,%s)" v d ms ], d, ms)
+  (* a parameter: its param/2 term, which the case writes as the pair *)
+  | Parameter_ref { parameter; _ } ->
+      let atoms, v = param_read ctx ~subject ~subject_ot e (req "ParameterReference.parameter" parameter) in
+      let d = fresh ctx "DD" and ms = fresh ctx "DM" in
+      (atoms @ [ Printf.sprintf "%s = dt(%s,%s)" v d ms ], d, ms)
   | Binary { op = (Plus | Min) as op; left_side; right_side; _ } ->
       (* datetime ± duration (ch. 3.8): the datum-tijd operand stands on the
          LEFT of plus and min (WF-035, fail-fast behind the verifier); the
@@ -9114,23 +9146,25 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
   | Comparison { op = (Equal | Not_equal) as op; left_side; right_side; time_period = None; _ }
     when is_struct_operand ctx left_side || is_struct_operand ctx right_side ->
       (* ch. 11.2: record equality is POSITIVE ground-term unification, the
-         sum-type pattern (S14). Both operands bind their record term (an own
-         attribute read via its val atom, a StructLiteral as its computed
-         term); Equal tests == — a leeg operand binds no term, so equality
+         sum-type pattern (S14). Both operands bind their record term (an
+         attribute read via its val atom, on the subject or over a role, a
+         parameter via its param atom, a StructLiteral as its computed term;
+         [unscaled_term]); Equal tests == — a leeg operand binds no term, so equality
          fails (Tabel 38's non-numeric branch, the case3 dubbel-afwezig corner).
          Ongelijk is now the Tabel-44 uniform inequality (neq_helper): exactly
          one empty → waar (case3 afwijkend now aanwezig), both empty → onwaar.
          Nominal identity is carried by the functor itself (= the declaring
          domain); WF-072 precludes a cross-domain comparison statically. *)
-      let ll, tl = struct_term ctx ~subject ~subject_ot (req "left" left_side) in
-      let rr, tr = struct_term ctx ~subject ~subject_ot (req "right" right_side) in
+      let ll, tl = unscaled_term struct_term ctx ~subject ~subject_ot (req "left" left_side) in
+      let rr, tr = unscaled_term struct_term ctx ~subject ~subject_ot (req "right" right_side) in
       if op = Equal then ll @ rr @ [ Printf.sprintf "%s == %s" tl tr ]
       else neq_helper ctx ~subject ~subject_ot (ll, tl) (rr, tr)
   | Comparison { op = (Equal | Not_equal) as op; left_side; right_side; time_period = None; _ }
     when is_sum_operand ctx left_side || is_sum_operand ctx right_side ->
       (* ch. 9.3: sum-typed equality is POSITIVE ground-term unification.
-         Both operand terms bind (an own attribute read via its val atom, a
-         Construct as a bare ground term); Equal tests T1 == T2 — a leeg
+         Both operand terms bind (an attribute read via its val atom, on the
+         subject or over a role, a parameter via its param atom, a Construct as
+         a bare ground term; [unscaled_term]); Equal tests T1 == T2 — a leeg
          operand fails the positive join, so equality is false (Tabel 38, the
          non-numeric branch). Not_equal is the Tabel-44 uniform inequality
          (neq_helper): exactly one empty → waar (beschikking leeg ≠ Aangehouden
@@ -9138,15 +9172,16 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          the eqN-negation route — a bare `not gelijk` positive join could not
          express it (S5's non-complement warning is why the numeric row already
          goes through eqN, and the inequality is now uniform with it). *)
-      let ll, tl = sum_term ctx ~subject ~subject_ot (req "left" left_side) in
-      let rr, tr = sum_term ctx ~subject ~subject_ot (req "right" right_side) in
+      let ll, tl = unscaled_term sum_term ctx ~subject ~subject_ot (req "left" left_side) in
+      let rr, tr = unscaled_term sum_term ctx ~subject ~subject_ot (req "right" right_side) in
       if op = Equal then ll @ rr @ [ Printf.sprintf "%s == %s" tl tr ]
       else neq_helper ctx ~subject ~subject_ot (ll, tl) (rr, tr)
   | Comparison { op = (Equal | Not_equal) as op; left_side; right_side; time_period = None; _ }
     when is_symbolic_operand ctx left_side || is_symbolic_operand ctx right_side ->
       (* ch. 1.2d text/enum/boolean comparison. Gelijk is POSITIVE ground-term
-         comparison — both operands bind (an own attribute read via its val
-         atom, a literal as a ground term) and Equal tests ==; ANY empty
+         comparison — both operands bind (an attribute read via its val atom,
+         on the subject or over a role, a parameter via its param atom, a
+         literal as a ground term; [unscaled_term]) and Equal tests ==; ANY empty
          operand fails the unbound positive join, so equality is false (Tabel
          38, unchanged — the equality asymmetry between numeric leeg=leeg-waar
          and this non-numeric leeg=leeg-onwaar stays). Ongelijk is now uniform
@@ -9154,8 +9189,8 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          ≠ 'zeevondst' fires omstreden), both empty → onwaar. It takes the
          eqN-negation route (neq_helper) because a positive != join cannot
          express the one-empty-true cell. *)
-      let ll, tl = symbolic_term ctx ~subject ~subject_ot (req "left" left_side) in
-      let rr, tr = symbolic_term ctx ~subject ~subject_ot (req "right" right_side) in
+      let ll, tl = unscaled_term symbolic_term ctx ~subject ~subject_ot (req "left" left_side) in
+      let rr, tr = unscaled_term symbolic_term ctx ~subject ~subject_ot (req "right" right_side) in
       if op = Equal then ll @ rr @ [ Printf.sprintf "%s == %s" tl tr ]
       else neq_helper ctx ~subject ~subject_ot (ll, tl) (rr, tr)
   | Comparison { op; left_side; right_side; time_period = None; _ }
@@ -9971,32 +10006,28 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
      unscaled ([member_read]), on the subject or over a path of to-one roles:
      a text, an enumeration and a boolean (onwaar is a value), a datum-tijd,
      a record, and a sum type — an attribute with absence markers among
-     them, whose markers are values (ch. 9.5). The term functions of those
-     datatypes read the subject's own attribute only, and the test needs no
-     term to compare;
+     them, whose markers are values (ch. 9.5); a parameter of such a datatype
+     binds its param/2 atom ([param_read]);
    - any other operand of those datatypes rides the term function the
      equality arms choose for it: [symbolic_term], [dt_term], [struct_term],
      and [expr_term] for a sum type, which builds more sum-typed forms than
      [sum_term] (a Construct with a bound payload, a Match, a fold).
-   Two operands have no binding this encoding reads, and both refuse by name
-   (CLINGO-050): a list, which it holds as lpres/lelem facts and never as
-   val/3, so a val/3 join would read every list as leeg; and a parameter of
-   any other datatype, because the case carries a parameter as param/2 with a
-   number or a day number and holds no other value. *)
+   A list has no binding the test reads: this encoding holds it as lpres/lelem
+   facts and never as val/3, so a val/3 join would read every list as leeg. It
+   is refused by name (CLINGO-050). *)
 and filled_operand_atoms ctx ~subject ~subject_ot (e : expr) : string list =
-  let refuse what datatype sentence =
-    faultc ~params:[ ("operand", what); ("datatype", Ir_v0.Checks.datatype_kind datatype) ] "CLINGO-050"
-      "the leeg or gevuld test on %S is not translated: %s" what sentence
-  in
-  let name_of = function
-    | Attribute_reference { attribute_ref = Some a; _ } -> a
-    | Parameter_ref { parameter = Some p; _ } -> p
-    | e -> Ir_v0.Spelling.a_node e
-  in
   match (static_type ctx e, Option.value (Ir_v0.Checks.unanchored_expr e) ~default:e) with
   | Some (List_type _ as dt), inner ->
-      refuse (name_of inner) dt
-        "this encoding holds a list as lpres/lelem facts, not as the val/3 binding the test reads"
+      let what =
+        match inner with
+        | Attribute_reference { attribute_ref = Some a; _ } -> a
+        | Parameter_ref { parameter = Some p; _ } -> p
+        | _ -> Ir_v0.Spelling.a_node inner
+      in
+      faultc ~params:[ ("operand", what); ("datatype", Ir_v0.Checks.datatype_kind dt) ] "CLINGO-050"
+        "the leeg or gevuld test on %S, a list, is not translated: this encoding holds a list as lpres/lelem facts, \
+         not as the val/3 binding the test reads"
+        what
   | (None | Some (Number _ | Percentage _ | Date_in_days)), _ ->
       let atoms, _, _ = expr_term ctx ~subject ~subject_ot e in
       atoms
@@ -10008,9 +10039,8 @@ and filled_operand_atoms ctx ~subject ~subject_ot (e : expr) : string list =
       let member = cell_member ctx.doc ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
       let atoms, _, _ = member_read ~scaled:false ctx ~subject ~subject_ot ~member inner in
       atoms
-  | Some dt, (Parameter_ref _ as inner) ->
-      refuse (name_of inner) dt
-        "this encoding carries a parameter as param/2 with a number or a day number, and no other value"
+  | Some _, Parameter_ref { parameter; _ } ->
+      fst (param_read ctx ~subject ~subject_ot e (req "ParameterReference.parameter" parameter))
   | Some (Text_type | Boolean | Enumeration _), _ -> fst (symbolic_term ctx ~subject ~subject_ot e)
   | Some Date_time_type, _ ->
       let atoms, _, _ = dt_term ctx ~subject ~subject_ot e in
@@ -10019,6 +10049,22 @@ and filled_operand_atoms ctx ~subject ~subject_ot (e : expr) : string list =
   | Some (Sum_type _), _ ->
       let atoms, _, _ = expr_term ctx ~subject ~subject_ot e in
       atoms
+
+(* The term an operand of an unscaled datatype binds — a text, an enumeration,
+   a boolean, a sum type, a record — where the term function of its datatype
+   ([term]) reads the subject's own attribute only: a parameter binds its
+   param/2 term ([param_read]), and an attribute read over a path of to-one
+   roles the val/3 term of the object the path reaches ([member_read]), as a
+   number is read there. The equality arms read their operands through here,
+   so a comparison over a role or with a parameter is the comparison on the
+   subject's own attribute. *)
+and unscaled_term term ctx ~subject ~subject_ot (e : expr) : string list * string =
+  match e with
+  | Parameter_ref { parameter; _ } -> param_read ctx ~subject ~subject_ot e (req "ParameterReference.parameter" parameter)
+  | Attribute_reference { attribute_ref = Some a; navigation_bindings = Some _; _ } ->
+      let atoms, v, _ = member_read ~scaled:false ctx ~subject ~subject_ot ~member:a e in
+      (atoms, v)
+  | _ -> term ctx ~subject ~subject_ot e
 
 (* the ground term of a Construct (ch. 9.1): a Literal payload scaled to the
    constructor's DECLARED payload datatype; the nullary case is the bare
@@ -14740,6 +14786,17 @@ let translate_case ctx (case : Case.t) =
             targets)
         i.left_side)
     case.world.instances;
+  (* the term of a parameter's value, scalar or on a segment of its timeline:
+     the ground term the attribute of its datatype carries, so a parameter the
+     document reads nowhere stands as a fact too *)
+  let param_term pname datatype (v : Value.t) =
+    match (datatype, v) with
+    | _, (Value.Text _ | Value.Enum _ | Value.Bool _) -> symbolic_value_term v
+    | _, Value.Date_time t -> datetime_term t
+    | Some (Sum_type { constructor_list; _ }), Value.Ctor (tag, payload) -> ctor_value_term constructor_list (tag, payload)
+    | Some (Struct_type { domain_spec; field_list }), Value.Record fs -> struct_value_term (domain_spec, field_list) fs
+    | dt, _ -> string_of_int (scaled_input ~what:("parameter " ^ pname) dt v)
+  in
   Uchar_ref.World.SMap.iter
     (fun pname v ->
       match Ir_v0.Checks.find_ci doc.parameters pname with
@@ -14750,9 +14807,7 @@ let translate_case ctx (case : Case.t) =
           match v with
           | Value.List_value xs -> reify_list ctx ~one_member:(Printf.sprintf "plist(%s)" (str pname)) ~element xs
           | _ -> fault "list-typed parameter %S carries a non-list value" pname)
-      | Some p ->
-          emit ctx "param(%s,%d)." (str pname)
-            (scaled_input ~what:("parameter " ^ pname) p.par_datatype v)
+      | Some p -> emit ctx "param(%s,%s)." (str pname) (param_term pname p.par_datatype v)
       | None -> fault "unknown parameter %S" pname)
     case.params;
   Uchar_ref.World.SMap.iter
@@ -14761,8 +14816,8 @@ let translate_case ctx (case : Case.t) =
       | Some p ->
           List.iter
             (fun (s : Uchar_ref.Timeline.segment) ->
-              emit ctx "param_tl(%s,%s,%s,%d)." (str pname) (bound_term s.s_from) (bound_term s.s_to)
-                (scaled_input ~what:("parameter " ^ pname) p.par_datatype s.s_value))
+              emit ctx "param_tl(%s,%s,%s,%s)." (str pname) (bound_term s.s_from) (bound_term s.s_to)
+                (param_term pname p.par_datatype s.s_value))
             tl
       | None -> fault "unknown parameter %S" pname)
     case.param_tls
