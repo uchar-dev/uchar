@@ -1408,3 +1408,21 @@ check-self-contained: PASS
 check-oracle: PASS (ref suite 4033 worked examples, floor 489; 1205 cases replayed exactly, floor 427; preservation with complete knowledge: 280 goldens and 784 cases play, floors 280 and 784; 151 goldens refused per form (timeline-member 49, allocation 21, day-kind 17, list-family 16, dimension-cell 8, match 8, uniqueness 8, creation-cycle 7, record 7, function-def 4, time-window 2, dimension-fold 1, rule-status-check 1, start-point 1, unresolved 1); 1 carrying the property already, played by check 3 (jutterswet-afleiden-uit-leeg); red row: jutterswet-leeg-deeltal misses 1 of 3 cases without --closed-inputs; monotonicity: 790 cases, 2255 runs without one input compared, floor 2255, 443 with a closure apart, floor 443, 71 of no input member; 0 listed gap(s) of ch. 1.5; 14 comparison rows; red row: jutterswet-afleiden-uit-leeg/case1-alles-gegeven.json|attribute|V1|taxatie loses 1 outcome(s))
 check-readings: PASS (ref traced 1205 golden case files, and refused by name the trace of 0 case file(s) of 0 golden(s) (TRACE_REFUSED); on both branches 385 goldens and 1073 case files compared, 8468 readings, 27262 node lines of which 4427 unreached, 1016 with contributors, 1317 with a timeline, 842 with the object of a read and 618 of a displaced reading, 147 contributors of ref not reached; end states of 3044 objects (479 made) and 8501 members; all at or above their floors; deviations 0, end-state deviations 0; 14 comparison rows, 3 tripwire rows, 10 end-state rows; 88 s)
 ```
+
+**Landing van deel 3 en 3b (hoofdsessie, 2026-11-21).** Nagelezen: de eindstand en de runner (`end_state.ml`,
+`runner.ml --end-state`), de lezing met het oordeel als paar (`reading.ml`: `Judged`, `Broken`, de status `OPEN`, de
+stapel onder een open default), de lijst `uncarried_forms`, de poot voor monotonie van gate 5 met haar methode, en van
+deel 3b de regel in `judge_cond ?past` met de barrière van een `Let` en de deponeringen van een binder; de voorbeelden
+van ch. 1.5 voor het voorlopig lezen zijn met de hand nagerekend. De floors van de poot voor behoud gingen van 281/787
+naar 280/784 omdat een creatie met twee versies op een cyclus nu als vorm geweigerd wordt. De acht gaten die de poot
+voor monotonie vond, zijn met deel 3b gedicht; twee verwante gaten die de bouwer daarbij meldde (de barrière, de binder)
+zijn in dezelfde landing hersteld. Rij 48 van `spec/CONSTRUCTS.md` en de alinea's van gate 5 en 17 in `CLAUDE.md` zijn
+gezet. `make gates` groen op `8d5b9d9ec` (673 s, 17 gates, red=0). Hiermee rekent de referentie-interpreter de lezing
+van ch. 1.5 voor elke vorm buiten de lijst "Forms without the reading"; de kaart is af.
+
+Voorlopige besluiten van de hoofdsessie in deze kaart, ter bevestiging door de eigenaar: een invoerwaarde naast een
+schrijver die zijn doel open laat is open; een creatie met een onbepaalde voorwaarde laat haar relatie open; een
+opgave is open zonder waarde (zij is niet gesloten door haar herkomst; een declaratie die een lid volledig noemt is
+een eigen kaart); een lid dat voorbij een onbepaald lid gelezen wordt, is voorlopig (zijn oordeel telt, een
+deponering vervalt, een fout laat het onbepaald, een barrière is een open lezing, de deponeringen van een binder
+wachten op een gewone lezing).
