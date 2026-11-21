@@ -184,8 +184,15 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
    rule plus `name=value` lines, matched as a subset against the parameters of one violation. Every JSON pointer a
    negative report cites resolves in its document (RFC 6901, read up to the first `: `; a FAIL line without that
    separator fails). The gate refuses a key with two message templates and a violation built without a key in
-   `checks.ml`. Floors: `EXPECTED_MIN_ARMS`, `EXPECTED_MIN_PARAM_LINES`, `EXPECTED_MIN_REPORT_KEYS`,
-   `EXPECTED_MIN_ARM_SITES`, `EXPECTED_MIN_EXPECT`, `EXPECTED_MIN_POINTERS`, `EXPECTED_MIN_NEGATIVE`.
+   `checks.ml`. The empty-closures inventory (`verifier --empty-closures`, `spec/verifier/README.md`: every place of
+   a document where an outcome can rest on an empty value, a list and no verdict) runs on every golden and red
+   `ir.json` with exit 0; every line carries nine columns, a class (`closure`, `negation`, `absent-instance`), a
+   kind slug and a pointer that resolves in its document; every witness under
+   `spec/verifier/test/empty-closures/<kind>/` is verifier-clean, gives its `expected.txt` byte for byte and reports
+   the kind or guard its directory names, and every kind reported has a witness. Floors: `EXPECTED_MIN_ARMS`,
+   `EXPECTED_MIN_PARAM_LINES`, `EXPECTED_MIN_REPORT_KEYS`, `EXPECTED_MIN_ARM_SITES`, `EXPECTED_MIN_EXPECT`,
+   `EXPECTED_MIN_POINTERS`, `EXPECTED_MIN_NEGATIVE`, `EXPECTED_MIN_EMPTY_CLOSURE`, `EXPECTED_MIN_EMPTY_NEGATION`,
+   `EXPECTED_MIN_EMPTY_ABSENT`, `EXPECTED_MIN_EMPTY_KINDS`, `EXPECTED_MIN_EMPTY_WITNESSES`.
 
 4. `scripts/check-case-schema.sh` — `spec/schema/uchar-case-v0.schema.json` is metaschema-valid; every golden and
    red `case*.json` validates against it and sits beside an `ir.json`; golden carries `expected`, red carries
