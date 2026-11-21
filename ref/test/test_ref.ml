@@ -15145,6 +15145,36 @@ let () =
     { cons_name = Some "controle taxatie"; cons_subject = Some "Vondst"; assertion = Some (ov_test Filled "taxatie");
       cons_source = None; cons_line = 0; cons_validity = None; cons_pointer = "" }
   in
+  (* the test of a computed value: "de getuigentoeslag is 7 indien zijn gewicht
+     gedeeld door zijn getuigen leeg is" and "de schadetoeslag is 3 indien zijn
+     gewicht plus zijn schade gevuld is" *)
+  let doc =
+    ov_doc [ ov_vondst [ "gewicht"; "getuigen"; "schade"; "getuigentoeslag"; "schadetoeslag" ] [] ]
+      [ ov_calc
+          ~cond:
+            (Predicate
+               { variety = Empty_predicate; operand = Some (ov_bin Divided_by (ov_ref "gewicht") (ov_ref "getuigen"));
+                 day_kind = None; negation = false; digit_chars = 0; time_period = None; source_name = None })
+          "getuigentoeslag" (ov_lit "7");
+        ov_calc
+          ~cond:
+            (Predicate
+               { variety = Filled; operand = Some (ov_bin Plus (ov_ref "gewicht") (ov_ref "schade")); day_kind = None;
+                 negation = false; digit_chars = 0; time_period = None; source_name = None })
+          "schadetoeslag" (ov_lit "3") ]
+  in
+  let w = ov_run "filled-test-computed" doc (ov_v1 [ ("gewicht", "10"); ("getuigen", "2"); ("schade", "1") ]) in
+  ov_expect "WV-1.5-filled-test-computed (all given, getuigentoeslag)" (ov_attr w "V1" "getuigentoeslag") "leeg";
+  ov_expect "WV-1.5-filled-test-computed (all given, schadetoeslag)" (ov_attr w "V1" "schadetoeslag") "3";
+  let w = ov_run "filled-test-computed-open" doc (ov_v1 [ ("getuigen", "2"); ("schade", "1") ]) in
+  ov_expect "WV-1.5-filled-test-computed (gewicht open, getuigentoeslag)" (ov_attr w "V1" "getuigentoeslag") "7";
+  ov_expect "WV-1.5-filled-test-computed (gewicht open, schadetoeslag)" (ov_attr w "V1" "schadetoeslag") "open";
+  let w = ov_run "filled-test-computed-open-divisor" doc (ov_v1 [ ("gewicht", "10"); ("schade", "1") ]) in
+  ov_expect "WV-1.5-filled-test-computed (getuigen open)" (ov_attr w "V1" "getuigentoeslag") "7";
+  check "WV-1.5-filled-test-computed (getuigen open, no §9.5 fact)" (ov_channel w = []);
+  let w = ov_run "filled-test-computed-zero" doc (ov_v1 [ ("gewicht", "10"); ("getuigen", "0"); ("schade", "1") ]) in
+  ov_expect "WV-1.5-filled-test-computed (getuigen 0)" (ov_attr w "V1" "getuigentoeslag") "7";
+  check "WV-1.5-filled-test-computed (getuigen 0, EF-005)" (ov_channel w = [ "getuigentoeslag V1 EF-005" ]);
   let doc = ov_doc ~consistencies:[ cons ] [ ov_vondst [ "taxatie" ] [] ] [] in
   check "WV-1.5-filled-test-consistency (taxatie open)"
     (ov_channel (ov_run "filled-test-consistency-open" doc (ov_v1 [])) = [ "controle taxatie V1 EF-025" ]);
@@ -15298,6 +15328,61 @@ let () =
   | exception Value.Fault { code; params; _ } ->
       check "WV-1.5-refused-before-evaluation" (code = Some "REF-014" && params = [ ("form", "if-then-else") ]))
 
+(* WV-1.5-witness-*: broader examples, a document per form with cases whose
+   expectations were computed by hand for this reading (spec/proposals/
+   STRICT-EMPTY.md §5, the witnesses of the forms this reading is defined
+   for). The case format says nothing of a state yet, so states.json says it
+   per case file: the members the session closes, and the expected state of a
+   member, "not" or "open" for a characteristic, "leeg" or "open" for an
+   attribute. Every other expectation is the case file's *)
+let () =
+  let witnesses =
+    [ "absent-link"; "absent-link-path"; "arithmetic"; "characteristic"; "closed-input"; "comparison"; "compound-all";
+      "compound-any"; "compound-counting"; "compound-none"; "consistency"; "exact-digits"; "filled-test"; "initialisation";
+      "let"; "marker"; "navigated-read"; "settled-empty"; "settled-empty-date" ]
+  in
+  let str = function `String s -> s | _ -> invalid_arg "ref/test/test_ref.ml: states.json holds a string here" in
+  let list = function `List l -> l | _ -> invalid_arg "ref/test/test_ref.ml: states.json holds a list here" in
+  let field k = function
+    | `Assoc kvs -> ( match List.assoc_opt k kvs with Some v -> v | None -> invalid_arg ("states.json: no " ^ k))
+    | _ -> invalid_arg "ref/test/test_ref.ml: states.json holds an object here"
+  in
+  List.iter
+    (fun name ->
+      let dir = corpus_file ("ref/test/fixtures/strict-empty/" ^ name ^ "/") in
+      let doc = Ir_v0.Loader.load_file (dir ^ "ir.json") in
+      let cases = match Yojson.Safe.from_file (dir ^ "states.json") with `Assoc kvs -> kvs | _ -> [] in
+      check ("WV-1.5-witness-" ^ name ^ " (cases)") (cases <> []);
+      List.iter
+        (fun (case_file, spec) ->
+          let id = Printf.sprintf "WV-1.5-witness-%s/%s" name case_file in
+          let case = Case.load_file doc (dir ^ case_file) in
+          let closed =
+            Eval.Members
+              (List.map (fun m -> match list m with [ t; k ] -> (str t, str k) | _ -> invalid_arg id) (list (field "closed" spec)))
+          in
+          let env =
+            { (env_of doc) with params = case.params; param_tls = case.param_tls; as_of = case.as_of }
+          in
+          let final = Eval.evaluate ~closed env case.world in
+          (match Case.check case final with
+          | [] -> check id true
+          | mismatches -> check (id ^ " (" ^ String.concat "; " mismatches ^ ")") false);
+          List.iter
+            (fun s ->
+              let label = str (field "label" s) and member = str (field "member" s) and want = str (field "state" s) in
+              let otype = (World.get final label).otype in
+              let is_attribute =
+                match Ir_v0.Checks.effective_ot doc otype with
+                | Some ot -> Ir_v0.Checks.find_ci ot.attributes member <> None
+                | None -> invalid_arg id
+              in
+              let got = if is_attribute then ov_attr final label member else ov_char final label member in
+              ov_expect (Printf.sprintf "%s %s.%s" id label member) got want)
+            (list (field "states" spec)))
+        cases)
+    witnesses
+
 (* WV-1.5-monotone: for every scenario above and every attribute value and
    characteristic its case gives, the run without that input has no outcome
    the full run lacks: filling an input adds outcomes and never changes one.
@@ -15309,6 +15394,8 @@ let () =
   let closures =
     [ (("filled-test-filled", "V1.taxatie"), [ "V1 ongetaxeerd holds" ]);
       (("filled-test-consistency-filled", "V1.taxatie"), [ "channel controle taxatie V1 EF-025" ]);
+      (("filled-test-computed", "V1.gewicht"), [ "V1.getuigentoeslag 7" ]);
+      (("filled-test-computed", "V1.getuigen"), [ "V1.getuigentoeslag 7" ]);
       (("closed-member-given", "V1.vindloon"), [ "V1.uitbetaling 3"; "V1.vindloon leeg" ]);
       (("closed-every-input", "V1.bergloon"), [ "V1.bergloon leeg"; "V1.uitbetaling 0" ]);
       (("closed-other-member", "V1.bergloon"), [ "V1.bergloon leeg" ]);

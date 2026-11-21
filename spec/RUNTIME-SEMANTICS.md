@@ -623,7 +623,13 @@ holds. "Kostbaar indien zijn taxatie gevuld is en zijn taxatie groter is dan
 1000" is no closure: over an open taxatie kostbaar is open, and so is "de
 bewakingstoeslag is 5 indien hij niet kostbaar is"; over a settled leeg
 taxatie kostbaar stands not to hold and the bewakingstoeslag is 5. "De
-taxatie van een Vondst moet gevuld zijn" reports over an open taxatie.
+taxatie van een Vondst moet gevuld zijn" reports over an open taxatie. Over a
+computed value (WV-1.5-filled-test-computed): "de getuigentoeslag is 7 indien
+zijn gewicht gedeeld door zijn getuigen leeg is" is 7 where the gewicht or the
+getuigen is open, without a §9.5 fact, and 7 with an EF-005 fact at gewicht 10
+and getuigen 0, a division by 0 of standing values being settled leeg (ch.
+1.4); "de schadetoeslag is 3 indien zijn gewicht plus zijn schade gevuld is"
+is open where the gewicht is open.
 
 **A consistency rule** reports where its assertion is established false for
 itself, and not where its assertion is undetermined. Example
@@ -661,6 +667,10 @@ WV-1.5-preserved): every example of this section, run once with each input
 member it gives left out, and once with every input member complete against
 the same document without the property; the closures the first meets are
 listed in the test, with the outcomes each adds.
+
+Broader examples, a document per form with cases whose expectations were
+computed by hand (`spec/proposals/STRICT-EMPTY.md` §5), are in the suite
+under `ref/test/fixtures/strict-empty/` (WV-1.5-witness-*).
 
 ---
 

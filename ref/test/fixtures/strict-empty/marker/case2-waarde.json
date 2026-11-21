@@ -1,0 +1,46 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "constructor": "waarde",
+            "payload": {
+              "number": "300.00"
+            }
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "onschatbaar"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "taxatietoeslag",
+      "value": {
+        "number": "4"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vindloon",
+      "value": {
+        "number": "30.00"
+      }
+    }
+  ]
+}

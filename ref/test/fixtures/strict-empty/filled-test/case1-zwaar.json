@@ -1,0 +1,56 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "20.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "vrijgesteld"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "opslagtoeslag",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "licht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vrachttoeslag",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "wegingstoeslag",
+      "value": {
+        "number": "2"
+      }
+    }
+  ]
+}

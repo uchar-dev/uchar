@@ -1,0 +1,67 @@
+{
+  "case1-volledig.json": {
+    "closed": [],
+    "states": [
+      {
+        "label": "V1",
+        "member": "houtachtig",
+        "state": "not"
+      },
+      {
+        "label": "V1",
+        "member": "vroeg",
+        "state": "not"
+      },
+      {
+        "label": "V1",
+        "member": "gemerkt",
+        "state": "not"
+      }
+    ]
+  },
+  "case2-volledig-andersom.json": {
+    "closed": [],
+    "states": [
+      {
+        "label": "V1",
+        "member": "zwaar",
+        "state": "not"
+      }
+    ]
+  },
+  "case3-een-operand-leeg.json": {
+    "closed": [],
+    "states": [
+      {
+        "label": "V1",
+        "member": "zwaar",
+        "state": "open"
+      },
+      {
+        "label": "V1",
+        "member": "houtachtig",
+        "state": "open"
+      },
+      {
+        "label": "V1",
+        "member": "vroeg",
+        "state": "open"
+      },
+      {
+        "label": "V1",
+        "member": "gemerkt",
+        "state": "open"
+      }
+    ]
+  },
+  "case4-beide-operanden-leeg.json": {
+    "closed": [],
+    "states": [
+      {
+        "label": "V1",
+        "member": "zwaar",
+        "state": "open"
+      }
+    ]
+  }
+}

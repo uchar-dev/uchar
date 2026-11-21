@@ -1,0 +1,99 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "150.00"
+          },
+          "schatting": {
+            "number": "150.00"
+          },
+          "soort": {
+            "enumeration": "barnsteen"
+          },
+          "vinddatum": {
+            "date": "2026-04-01"
+          },
+          "merkteken": {
+            "text": "XX"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "zwaar"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "lichttoeslag"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "afwijktoeslag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "gelijktoeslag",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "houtachtig"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "steentoeslag",
+      "value": {
+        "number": "4"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "vroeg"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "laattoeslag",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "gemerkt"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "merktoeslag",
+      "value": {
+        "number": "6"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "10.00"
+          },
+          "schade": {
+            "number": "4.00"
+          },
+          "korting": {
+            "number": "1.00"
+          },
+          "aantal getuigen": {
+            "number": "3"
+          },
+          "vinddatum": {
+            "date": "2026-03-01"
+          },
+          "bewaartermijn": {
+            "number": "14"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "brutogewicht",
+      "value": {
+        "number": "14.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "nettogewicht",
+      "value": {
+        "number": "6.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "schadegewicht",
+      "value": {
+        "number": "40.0000"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "restgewicht",
+      "value": {
+        "number": "9.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "gewicht per getuige",
+      "value": {
+        "number": "3.33"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "begrensd gewicht",
+      "value": {
+        "number": "4.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vervaldatum",
+      "value": {
+        "date": "2026-03-15"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "omschrijving",
+      "value": {
+        "text": "Gewicht 10,00, schade 4,00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

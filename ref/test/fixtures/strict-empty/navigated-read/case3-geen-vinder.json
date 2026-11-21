@@ -1,0 +1,31 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "volwassen gevonden"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "begeleidingstoeslag",
+      "value": {
+        "number": "6"
+      }
+    }
+  ]
+}

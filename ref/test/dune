@@ -158,6 +158,8 @@
   ; a document that carries inferFromEmpty false, the golden it is written from, and the runner whose
   ; every entrance refuses it
   (glob_files fixtures/infer-from-empty/*.json)
+  ; the witnesses of a document that infers nothing from an empty value, a directory per form (ch. 1.5)
+  (glob_files_rec fixtures/strict-empty/*.json)
   ../../corpus/golden/jutterswet-meldplicht-flogic/ir.json
   ../bin/runner.exe)
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

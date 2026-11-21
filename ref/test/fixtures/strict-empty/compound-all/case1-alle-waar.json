@@ -1,0 +1,43 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "20.00"
+          },
+          "schatting": {
+            "number": "200.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "kostbaar"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "bergtoeslag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "waardetoeslag",
+      "value": {
+        "number": "8"
+      }
+    }
+  ]
+}

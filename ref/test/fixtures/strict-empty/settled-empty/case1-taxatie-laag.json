@@ -1,0 +1,103 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "50.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "kostbaar"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "vindloon"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "bergloon",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "uitbetaling",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "beloond"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "beloningstoeslag",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "duur"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "duurtoeslag",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "beloonbaar"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "wachttoeslag",
+      "value": {
+        "number": "4"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "extra vindloon"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "extra uitbetaling",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

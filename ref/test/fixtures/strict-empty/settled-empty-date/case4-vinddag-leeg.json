@@ -1,0 +1,45 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "50.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "kostbaar"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "keurdag"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "laat gekeurd"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "laattoeslag"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "10.00"
+          },
+          "korting": {
+            "number": "1.00"
+          },
+          "aantal getuigen": {
+            "number": "3"
+          },
+          "vinddatum": {
+            "date": "2026-03-01"
+          },
+          "bewaartermijn": {
+            "number": "14"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "brutogewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "nettogewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "schadegewicht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "restgewicht",
+      "value": {
+        "number": "9.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "gewicht per getuige",
+      "value": {
+        "number": "3.33"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "begrensd gewicht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vervaldatum",
+      "value": {
+        "date": "2026-03-15"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "omschrijving"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "150.00"
+          },
+          "schatting": {
+            "number": "500.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "veelzijdig"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "veeltoeslag"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "eenzijdig"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "eentoeslag"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "enkelvoudig"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "enkeltoeslag"
+    }
+  ]
+}

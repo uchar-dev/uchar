@@ -1,0 +1,92 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "number": "100.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "gewicht": {
+            "number": "70.00"
+          },
+          "bonus": {
+            "number": "5.00"
+          },
+          "ervaring": {
+            "number": "2"
+          }
+        },
+        "roles": {
+          "vondsten": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vindpremie",
+      "value": {
+        "number": "105.00"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "afwijkend gemeld"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "meldtoeslag"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "ervaren"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "deskundig gevonden"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "leertoeslag",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "ongeschoold gevonden"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "scholingstoeslag"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "schade": {
+            "number": "2.00"
+          },
+          "lengte": {
+            "number": "3.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "nettogewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "omvang"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "hersteltoeslag",
+      "value": {
+        "number": "5"
+      }
+    }
+  ]
+}

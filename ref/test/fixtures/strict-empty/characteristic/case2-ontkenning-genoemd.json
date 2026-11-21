@@ -1,0 +1,48 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "20.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "drijfhout"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "drijftoeslag",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "aangespoeld"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "strandtoeslag",
+      "value": {
+        "number": "3"
+      }
+    }
+  ]
+}

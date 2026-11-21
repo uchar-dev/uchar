@@ -1,0 +1,22 @@
+{
+  "case1-criteria-onwaar.json": {
+    "closed": [],
+    "states": []
+  },
+  "case2-gewicht-negatief.json": {
+    "closed": [],
+    "states": []
+  },
+  "case3-gewicht-leeg.json": {
+    "closed": [],
+    "states": []
+  },
+  "case4-gewicht-leeg-criterium-waar.json": {
+    "closed": [],
+    "states": []
+  },
+  "case5-volledig.json": {
+    "closed": [],
+    "states": []
+  }
+}

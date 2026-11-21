@@ -1,0 +1,31 @@
+{
+  "case1-zwaar.json": {
+    "closed": [],
+    "states": [
+      {
+        "label": "V1",
+        "member": "vrijgesteld",
+        "state": "not"
+      },
+      {
+        "label": "V1",
+        "member": "licht",
+        "state": "not"
+      }
+    ]
+  },
+  "case2-licht.json": {
+    "closed": [],
+    "states": []
+  },
+  "case3-gewicht-leeg.json": {
+    "closed": [],
+    "states": [
+      {
+        "label": "V1",
+        "member": "licht",
+        "state": "open"
+      }
+    ]
+  }
+}

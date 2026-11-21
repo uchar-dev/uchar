@@ -1,0 +1,93 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "40.00"
+          },
+          "schatting": {
+            "number": "50.00"
+          },
+          "soort": {
+            "enumeration": "wrakhout"
+          },
+          "vinddatum": {
+            "date": "2026-01-15"
+          },
+          "merkteken": {
+            "text": "JW"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "zwaar"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "lichttoeslag",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "afwijktoeslag",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "gelijktoeslag"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "houtachtig"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "steentoeslag"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "vroeg"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "laattoeslag"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "gemerkt"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "merktoeslag"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

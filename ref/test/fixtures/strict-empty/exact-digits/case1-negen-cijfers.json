@@ -1,0 +1,32 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "registratienummer": {
+            "text": "123456782"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "geregistreerd"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "registratietoeslag"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "case1-volledig.json": {
+    "closed": [],
+    "states": []
+  },
+  "case2-schade-leeg.json": {
+    "closed": [],
+    "states": []
+  },
+  "case3-alles-leeg.json": {
+    "closed": [],
+    "states": []
+  }
+}

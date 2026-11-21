@@ -1,0 +1,57 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "P1",
+        "objectType": "Ploeg",
+        "attributes": {
+          "omvang": {
+            "number": "5"
+          }
+        },
+        "roles": {
+          "leden": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "ploegwerk"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "ploegtoeslag"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
