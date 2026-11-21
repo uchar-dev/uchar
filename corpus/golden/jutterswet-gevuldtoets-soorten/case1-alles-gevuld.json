@@ -32,6 +32,12 @@
             "payload": {
               "number": "120.00"
             }
+          },
+          "herkeuring": {
+            "constructor": "waarde",
+            "payload": {
+              "enumeration": "hout"
+            }
           }
         },
         "roles": {
@@ -94,6 +100,21 @@
       "kind": "characteristicAbsent",
       "label": "V1",
       "characteristic": "onherleidbaar"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "herkeurd"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "onherkeurd"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "houten"
     },
     {
       "kind": "consistent"

@@ -77,6 +77,32 @@
                 }
               ]
             }
+          },
+          {
+            "node": "Attribute",
+            "name": "herkeuring",
+            "datatype": {
+              "node": "SumType",
+              "domain": "herkeuring van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Enumeration",
+                    "domain": "Categorie",
+                    "values": [
+                      "schelp",
+                      "hout",
+                      "metaal"
+                    ]
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                }
+              ]
+            }
           }
         ],
         "characteristics": [
@@ -128,6 +154,21 @@
           {
             "node": "Characteristic",
             "name": "onherleidbaar",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "herkeurd",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "onherkeurd",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "houten",
             "kind": "adjectival"
           }
         ]
@@ -189,6 +230,31 @@
             },
             {
               "name": "niet van toepassing",
+              "payload": null
+            }
+          ]
+        }
+      },
+      {
+        "node": "Domain",
+        "name": "herkeuring van een Vondst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "waarde",
+              "payload": {
+                "node": "Enumeration",
+                "domain": "Categorie",
+                "values": [
+                  "schelp",
+                  "hout",
+                  "metaal"
+                ]
+              }
+            },
+            {
+              "name": "onbekend",
               "payload": null
             }
           ]
@@ -700,6 +766,228 @@
               "digits": 0,
               "source": {
                 "snippet": "de naam van de jutter van de Vondst leeg is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "herkeurde vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "herkeurd",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is herkeurd"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "herkeuring",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn herkeuring"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn herkeuring gevuld is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "onherkeurde vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "onherkeurd",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is onherkeurd"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "empty",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "herkeuring",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn herkeuring"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn herkeuring leeg is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "houten vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "houten",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is houten"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "PayloadAccess",
+                    "type": {
+                      "node": "Enumeration",
+                      "domain": "Categorie",
+                      "values": [
+                        "schelp",
+                        "hout",
+                        "metaal"
+                      ]
+                    },
+                    "base": {
+                      "node": "AttributeReference",
+                      "attribute": "herkeuring",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn herkeuring"
+                      }
+                    },
+                    "constructor": "waarde",
+                    "source": {
+                      "snippet": "zijn herkeuring"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn herkeuring heeft een waarde"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "equal",
+                  "left": {
+                    "node": "PayloadAccess",
+                    "type": {
+                      "node": "Enumeration",
+                      "domain": "Categorie",
+                      "values": [
+                        "schelp",
+                        "hout",
+                        "metaal"
+                      ]
+                    },
+                    "base": {
+                      "node": "AttributeReference",
+                      "attribute": "herkeuring",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn herkeuring"
+                      }
+                    },
+                    "constructor": "waarde",
+                    "source": {
+                      "snippet": "zijn herkeuring"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "enumeration": "hout"
+                    },
+                    "type": {
+                      "node": "Enumeration",
+                      "domain": "Categorie",
+                      "values": [
+                        "schelp",
+                        "hout",
+                        "metaal"
+                      ]
+                    },
+                    "source": {
+                      "snippet": "'hout'"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn herkeuring is gelijk aan 'hout'"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn herkeuring heeft een waarde - zijn herkeuring is gelijk aan 'hout'"
               }
             },
             "initialisation": false

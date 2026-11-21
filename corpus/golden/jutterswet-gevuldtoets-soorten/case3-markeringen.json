@@ -15,6 +15,9 @@
           },
           "taxatie": {
             "constructor": "onbekend"
+          },
+          "herkeuring": {
+            "constructor": "onbekend"
           }
         },
         "roles": {},
@@ -29,6 +32,12 @@
           },
           "taxatie": {
             "constructor": "niet van toepassing"
+          },
+          "herkeuring": {
+            "constructor": "waarde",
+            "payload": {
+              "enumeration": "metaal"
+            }
           }
         },
         "roles": {},
@@ -80,6 +89,21 @@
     },
     {
       "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "herkeurd"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "onherkeurd"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "houten"
+    },
+    {
+      "kind": "characteristicPresent",
       "label": "V2",
       "characteristic": "getaxeerd"
     },
@@ -117,6 +141,21 @@
       "kind": "characteristicPresent",
       "label": "V2",
       "characteristic": "onverantwoord"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V2",
+      "characteristic": "herkeurd"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V2",
+      "characteristic": "onherkeurd"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V2",
+      "characteristic": "houten"
     },
     {
       "kind": "consistent"

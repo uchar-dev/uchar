@@ -84,6 +84,21 @@
     },
     {
       "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "herkeurd"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "onherkeurd"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "houten"
+    },
+    {
+      "kind": "characteristicAbsent",
       "label": "V2",
       "characteristic": "ingedeeld"
     },

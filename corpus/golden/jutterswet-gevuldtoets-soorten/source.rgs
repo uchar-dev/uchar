@@ -11,6 +11,7 @@ Objecttype de Vondst (mv: Vondsten)
     de omschrijving Tekst;
     de aangifte Boolean;
     de taxatie Numeriek (getal met 2 decimalen) (of onbekend of niet van toepassing);
+    de herkeuring Categorie (of onbekend);
     is ingedeeld kenmerk (bijvoeglijk);
     is onbepaald kenmerk (bijvoeglijk);
     is beschreven kenmerk (bijvoeglijk);
@@ -21,6 +22,9 @@ Objecttype de Vondst (mv: Vondsten)
     is ongetaxeerd kenmerk (bijvoeglijk);
     is herleidbaar kenmerk (bijvoeglijk);
     is onherleidbaar kenmerk (bijvoeglijk);
+    is herkeurd kenmerk (bijvoeglijk);
+    is onherkeurd kenmerk (bijvoeglijk);
+    is houten kenmerk (bijvoeglijk);
 
 Feittype vangst
     de jutter Jutter
@@ -76,3 +80,20 @@ Regel onherleidbare vondst
     geldig altijd
         Een Vondst is onherleidbaar
         indien de naam van de jutter van de Vondst leeg is.
+
+Regel herkeurde vondst
+    geldig altijd
+        Een Vondst is herkeurd
+        indien zijn herkeuring gevuld is.
+
+Regel onherkeurde vondst
+    geldig altijd
+        Een Vondst is onherkeurd
+        indien zijn herkeuring leeg is.
+
+Regel houten vondst
+    geldig altijd
+        Een Vondst is houten
+        indien hij aan alle volgende voorwaarden voldoet:
+        - zijn herkeuring heeft een waarde
+        - zijn herkeuring is gelijk aan 'hout'.
