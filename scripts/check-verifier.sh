@@ -208,7 +208,7 @@ EXPECTED_MIN_ARM_SITES=442    # 2026-11-02: measured 442 key literals "WF-###.<s
 # The empty-closures inventory (check 6), floored in the same regime: an analysis that quietly stopped
 # finding a kind of place would still pass its witnesses.
 EXPECTED_MIN_EMPTY_CLOSURE=827   # 2026-11-21: measured 827 places of class closure over corpus/golden and corpus/red
-EXPECTED_MIN_EMPTY_NEGATION=382  # 2026-11-21: measured 382 places of class negation, same documents
+EXPECTED_MIN_EMPTY_NEGATION=383  # 2026-11-21: measured 383 places of class negation, same documents (382 before a default with own content passed on what its exception groups read)
 EXPECTED_MIN_EMPTY_ABSENT=206    # 2026-11-21: measured 206 places of class absent-instance, same documents
 EXPECTED_MIN_EMPTY_KINDS=20      # 2026-11-21: 20 of the 21 kinds; clamp-empty-bound has only its witness, no clamp of the corpus has a bound that can be leeg
 EXPECTED_MIN_EMPTY_WITNESSES=24  # 2026-11-21: 24 witnesses, one per kind (21) and one per guard (3)
