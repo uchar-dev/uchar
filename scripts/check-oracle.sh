@@ -19,7 +19,11 @@
 #      two requirements"): every golden whose document does not carry
 #      inferFromEmpty, with the property added in a copy and every input
 #      member complete (`runner --closed-inputs`), plays its own cases — see
-#      below.
+#      below;
+#   6. monotonicity (the same section): per golden that check 5 carries or
+#      that carries the property itself, per case and per input the case
+#      gives, the end state without that input keeps every outcome of the end
+#      state with it, but where a closure decided — see below.
 #
 # With explicit arguments (ir.json case.json) it replays just that pair.
 set -u
@@ -57,14 +61,38 @@ BIN=_build/default/ref/bin/runner.exe
 # removal lowers the floor in the same commit.
 EXPECTED_MIN_EXAMPLES=489   # 2026-09-10: measured 489 (ref/test/test_ref.ml worked examples)
 EXPECTED_MIN_CASES=427      # 2026-09-10: measured 427 (corpus/golden/**/case*.json)
-EXPECTED_MIN_PRESERVED_GOLDENS=281  # 2026-11-21: measured 281 (check 5: goldens whose forms ref carries strictly, the folds over a set, the quantifier fold, the defaults group, the creations off a cycle and the IfThenElse among them)
-EXPECTED_MIN_PRESERVED_CASES=787    # 2026-11-21: measured 787 (check 5: their case files)
+EXPECTED_MIN_PRESERVED_GOLDENS=280  # 2026-11-21: measured 280 (check 5: goldens whose forms ref carries strictly, the folds over a set, the quantifier fold, the defaults group, the creations off a cycle and the IfThenElse among them; 281 before jutterswet-opvolgerversies, a creation of two versions in a recursive group, was refused as creation-cycle)
+EXPECTED_MIN_PRESERVED_CASES=784    # 2026-11-21: measured 784 (check 5: their case files; 787 before that golden's three)
 
 # check 5's own red row: a golden on which the copy with the property and WITHOUT --closed-inputs gives another
 # outcome than the case expects. Measured 2026-11-21: jutterswet-leeg-deeltal case1-leeg-deeltal, an open bonus as the
 # dividend, "V1.loon = leeg, expected 0". Where that copy plays the golden's every case, the leg could not tell the
 # strict reading from the ordinary one, and the gate fails.
 PRESERVATION_MUTANT=jutterswet-leeg-deeltal
+
+EXPECTED_MIN_MONOTONE_RUNS=2254     # 2026-11-21: measured 2254 (check 6: runs without one input compared with the case)
+EXPECTED_MIN_MONOTONE_CLOSURES=443  # 2026-11-21: measured 443 (check 6: runs without one input in which a closure decided, counted apart)
+
+# check 6's own red row: a run in which a closure decided, compared all the same, must lose an outcome. Measured
+# 2026-11-21: jutterswet-afleiden-uit-leeg case1 without the taxatie of V1, where "ongetaxeerd indien zijn taxatie leeg
+# is" holds by its closure and stands not to hold with the taxatie of 2000. Where it keeps every outcome, the
+# comparison could not see a change, and the gate fails.
+MONOTONE_MUTANT='jutterswet-afleiden-uit-leeg/case1-alles-gegeven.json|attribute|V1|taxatie'
+
+# check 6: the runs whose difference is a gap of RUNTIME-SEMANTICS ch. 1.5 rather than a fault of ref, one per line,
+# '<golden>/<case file>|<attribute or characteristic>|<object>|<member>|<reason>', the input "-" for a case whose run
+# with every input it gives already faults. Each is a fault or a §9.5 fact of a member that a composite or a quantifier
+# fold reads past an undetermined member ("The judgement of a condition": the read goes on where ch. 5.10 would stop),
+# which the case with the input never reaches; "The two requirements" names no such exception. Stale-failing in both
+# directions: a listed run that keeps every outcome, or that is not compared, fails.
+MONOTONE_GAPS='jutterswet-keurgemiddelde/case3-het-tweede-lid-beslist.json|attribute|W2|keurpunten|the fold reads W3 past the undetermined W2, and its division by 0 deposits EF-005 on P1
+jutterswet-keurgemiddelde/case3-het-tweede-lid-beslist.json|attribute|W2|keuringen|the fold reads W3 past the undetermined W2, and its division by 0 deposits EF-005 on P1
+jutterswet-kwantorvouw-en-unie/case1-niet-bereikt.json|attribute|V1|gewicht|"druk" reads V2 past the undetermined V1, and its division by 0 deposits EF-005 on J1
+jutterswet-kwantorvouw-en-unie/case1-niet-bereikt.json|attribute|V1|deelnemers|"druk" reads V2 past the undetermined V1, and its division by 0 deposits EF-005 on J1
+jutterswet-vouwfilter-buiten-de-beurt/case1-buiten-de-beurt.json|characteristic|J1|actief|"geen van" reads its second member past an undetermined actief, and its division by 0 deposits EF-005 on J1
+jutterswet-werfkeur/case1-kotter-voor-de-sloep.json|attribute|S1|lengte|the matrix reads the rekendatum past an undetermined lengte and faults with EF-011
+jutterswet-werfkeur/case1-kotter-voor-de-sloep.json|attribute|S2|lengte|the matrix reads the rekendatum past an undetermined lengte and faults with EF-011
+context-value-behind-a-failing-condition/case1-niet-actief.json|-|-|-|the case leaves actief open, so the condition reads the evaluationYear past it and faults with EF-011'
 
 if [ "$#" -eq 2 ]; then
     exec "$BIN" "$1" "$2"
@@ -277,12 +305,297 @@ PYEOF
     status=1
 fi
 
+# check 6: monotonicity (RUNTIME-SEMANTICS ch. 1.5, "The two requirements"): giving an input member a value adds
+# outcomes and changes none, but through a closure. Per golden that check 5 carries (every case of its strict copy
+# plays) and per golden that carries the property itself, per case file and per input the case gives (an attribute
+# value, a characteristic in `characteristics` or in `characteristicsAbsent`), the case without that input runs beside
+# the case as it is, both with `runner --end-state`: the end state of ch. 5.12a with its open members, and a line
+# `closure <form> <object>` per evaluation at the fixpoint that applied a closure to an open value (or, where the
+# session faults, `closures <n>`, those applied before the fault). The run without the input keeps every outcome of
+# its end state in the other: each of its lines that is not open stands there; a member it has no line for (settled
+# leeg, or standing not to hold) has none there either; a link or an object the other adds lies on a relation it has
+# open. A run in which the member left out is not open is no input member's (a value the case gives a derived member,
+# ch. 1.5) and is counted apart, and so is a run in which a closure decided, the exception ch. 1.5 names: the leg does
+# not assign outcomes to the closure, it leaves that whole run out. Every other difference fails by name unless
+# MONOTONE_GAPS lists it; the comparison passes rows of its own, and the run of MONOTONE_MUTANT, compared all the same,
+# must lose an outcome. The runs go in one batch, one runner per core, and are judged in corpus order.
+if ! python3 -I - "$list" "$work" <<'PYEOF'
+import collections, copy, json, os, sys
+
+list_path, work = sys.argv[1:3]
+by_golden = collections.OrderedDict()
+for line in open(list_path, encoding="utf-8"):
+    case = line.rstrip("\n")
+    if case:
+        by_golden.setdefault(os.path.dirname(case), []).append(case)
+# the goldens check 5 carries: every case of the strict copy plays
+closed = collections.OrderedDict()
+for line in open(os.path.join(work, "tasks.tsv"), encoding="utf-8"):
+    key, mode, name, copy_path, case = line.rstrip("\n").split("\t")
+    if mode != "closed":
+        continue
+    run = os.path.join(work, "run", key)
+    ok = open(run + ".rc").read().strip() == "0" and open(run + ".out").read().startswith("oracle: PASS")
+    entry = closed.setdefault(name, [copy_path, True])
+    entry[1] = entry[1] and ok
+strict = [l.strip() for l in open(os.path.join(work, "strict.txt"), encoding="utf-8") if l.strip()]
+os.makedirs(os.path.join(work, "mono", "cases"))
+with open(os.path.join(work, "mono", "tasks.tsv"), "w", encoding="utf-8") as tasks:
+    for n, (golden, cases) in enumerate(by_golden.items(), 1):
+        name = os.path.relpath(golden, "corpus/golden")
+        if name in strict:
+            doc = os.path.join(golden, "ir.json")
+        elif name in closed and closed[name][1]:
+            doc = closed[name][0]
+        else:
+            continue
+        for m, case_path in enumerate(cases, 1):
+            case_file = os.path.basename(case_path)
+            tasks.write("f%d.%d\t%s\t%s\t-\t%s\t%s\n" % (n, m, name, case_file, doc, case_path))
+            with open(case_path, encoding="utf-8") as f:
+                case = json.load(f, object_pairs_hook=collections.OrderedDict)
+            j = 0
+            for i, inst in enumerate(case["input"]["instances"]):
+                left_out = [("attribute", a, lambda c, i=i, a=a: c["input"]["instances"][i]["attributes"].pop(a))
+                            for a in (inst.get("attributes") or {})]
+                for field in ("characteristics", "characteristicsAbsent"):
+                    left_out += [("characteristic", k,
+                                  lambda c, i=i, field=field, k=k: c["input"]["instances"][i][field].remove(k))
+                                 for k in (inst.get(field) or [])]
+                for kind, member, drop in left_out:
+                    j += 1
+                    reduced = copy.deepcopy(case)
+                    drop(reduced)
+                    path = os.path.join(work, "mono", "cases", "%d.%d.%d.json" % (n, m, j))
+                    with open(path, "w", encoding="utf-8") as f:
+                        json.dump(reduced, f, ensure_ascii=False)
+                    tasks.write("v%d.%d.%d\t%s\t%s\t%s|%s|%s\t%s\t%s\n"
+                                % (n, m, j, name, case_file, kind, inst["label"], member, doc, path))
+PYEOF
+then
+    echo 'check-oracle: FAIL (monotonicity: the cases without one input could not be written)' >&2
+    exit 1
+fi
+mkdir "$work/mono/run" || exit 2
+while IFS="$tab" read -r key _name _case _what doc file; do
+    parallel_task "$work/mono/run" "$key" out "$BIN" --end-state "$doc" "$file"
+done < "$work/mono/tasks.tsv"
+if ! parallel_run "$work/mono/run" "$procs"; then
+    echo 'check-oracle: FAIL (parallel_run failed over the monotonicity runs; the parallel line above says why)' >&2
+    exit 1
+fi
+if ! monotone=$(python3 -I - "$work" "$MONOTONE_MUTANT" "$MONOTONE_GAPS" "$EXPECTED_MIN_MONOTONE_RUNS" \
+        "$EXPECTED_MIN_MONOTONE_CLOSURES" <<'PYEOF'
+import collections, os, re, sys
+
+work, mutant, gaps_text = sys.argv[1], sys.argv[2], sys.argv[3]
+min_runs, min_closures = int(sys.argv[4]), int(sys.argv[5])
+problems = []
+
+# --- the end state, read back (RUNTIME-SEMANTICS ch. 5.12a) ---
+QUOTED = r'"(?:[^"\\]|\\.)*"'
+NAME = r'(?:%s|«%s»\((?:[^()]|\([^()]*\))*\)#\d+)' % (QUOTED, QUOTED)
+MEMBER = re.compile(r'^(attribute|characteristic) (%s) (%s)(?: (\[[^\]]*\]))?' % (NAME, QUOTED))
+LINK = re.compile(r'^link (%s) (%s) (%s|open) (%s) (%s|open)$' % (QUOTED, QUOTED, NAME, QUOTED, NAME))
+OBJECT = re.compile(r'^object (%s) ' % NAME)
+MADE = re.compile(r'^«%s»\((.*)\)#\d+$' % QUOTED)
+
+
+def member_key(line):
+    # (kind, object, member, cell) of an attribute or characteristic line, else None
+    m = MEMBER.match(line)
+    return (m.group(1), m.group(2), m.group(3), m.group(4)) if m else None
+
+
+def is_open(line):
+    m = LINK.match(line)
+    return (m is not None and "open" in (m.group(3), m.group(5))) or (line.endswith(" open") and member_key(line) is not None)
+
+
+def open_on(reduced, fact_type, objects):
+    # whether the end state [reduced] has the relation of [fact_type] open on one of [objects]
+    for line in reduced:
+        m = LINK.match(line)
+        if m and m.group(1) == fact_type and "open" in (m.group(3), m.group(5)) \
+                and ({m.group(3), m.group(5)} - {"open"}) & set(objects):
+            return True
+    return False
+
+
+def lost(reduced, full):
+    # the outcomes of the end state [reduced] that [full] does not keep
+    out = []
+    full_set = set(full)
+    reduced_keys = {member_key(l): l for l in reduced if member_key(l)}
+    objects = {OBJECT.match(l).group(1) for l in reduced if OBJECT.match(l)}
+
+    def made_on_open(name):
+        # a made object the reduced run lacks: made for an object of it on a relation open there, or for such a
+        # made object in turn
+        made = MADE.match(name)
+        if not made:
+            return False
+        subject = made.group(1)
+        if subject in objects:
+            return any(is_open(l) and l.startswith("link ") and subject in l for l in reduced)
+        return made_on_open(subject)
+
+    for line in reduced:
+        if not is_open(line) and line not in full_set:
+            out.append("lost: " + line)
+    for line in full:
+        key = member_key(line)
+        if key is not None and key[1] in objects:
+            before = reduced_keys.get(key)
+            if before is None:
+                out.append("settled without the input, now: " + line)
+            elif before != line and not is_open(before):
+                out.append("changed: %s -> %s" % (before, line))
+        m = LINK.match(line)
+        if m and line not in reduced and not open_on(reduced, m.group(1), [m.group(3), m.group(5)]) \
+                and not any(o not in objects and made_on_open(o) for o in (m.group(3), m.group(5))):
+            out.append("a link on no open relation: " + line)
+        o = OBJECT.match(line)
+        if o and o.group(1) not in objects and not made_on_open(o.group(1)):
+            out.append("an object on no open relation: " + line)
+    return out
+
+
+# --- the comparison's own rows ---
+V = 'attribute "V1" '
+rows = [
+    ("equal states keep everything", ['object "V1" "Vondst"', V + '"vindloon" 10'], ['object "V1" "Vondst"', V + '"vindloon" 10'], True),
+    ("an open member may become a value", ['object "V1" "Vondst"', V + '"vindloon" open'], ['object "V1" "Vondst"', V + '"vindloon" 10'], True),
+    ("a value lost", ['object "V1" "Vondst"', V + '"vindloon" 10'], ['object "V1" "Vondst"', V + '"vindloon" open'], False),
+    ("a value changed", ['object "V1" "Vondst"', V + '"vindloon" 10'], ['object "V1" "Vondst"', V + '"vindloon" 5'], False),
+    ("settled leeg, then a value", ['object "V1" "Vondst"'], ['object "V1" "Vondst"', V + '"vindloon" 10'], False),
+    ("stands not to hold, then holds", ['object "V1" "Vondst"'], ['object "V1" "Vondst"', 'characteristic "V1" "kostbaar"'], False),
+    ("an open characteristic may hold", ['object "V1" "Vondst"', 'characteristic "V1" "kostbaar" open'],
+     ['object "V1" "Vondst"', 'characteristic "V1" "kostbaar"'], True),
+    ("a fact lost", ['channel "r" "V1" EF-005'], [], False),
+    ("a fact added", [], ['channel "r" "V1" EF-005'], True),
+    ("a link on an open relation", ['object "J1" "Jutter"', 'link "vangst" "jutter" "J1" "vondst" open'],
+     ['object "J1" "Jutter"', 'link "vangst" "jutter" "J1" "vondst" open', 'link "vangst" "jutter" "J1" "vondst" "V1"'], True),
+    ("a link on no open relation", ['object "J1" "Jutter"'], ['object "J1" "Jutter"', 'link "vangst" "jutter" "J1" "vondst" "V1"'], False),
+    ("a made object on an open relation",
+     ['object "J1" "Jutter"', 'link "proefvangst" "jutter" "J1" "proefvondst" open'],
+     ['object "J1" "Jutter"', 'link "proefvangst" "jutter" "J1" "proefvondst" open', 'object «"maak"»("J1")#1 "Vondst"',
+      'attribute «"maak"»("J1")#1 "gewicht" 3'], True),
+    ("a made object on no open relation", ['object "J1" "Jutter"'], ['object "J1" "Jutter"', 'object «"maak"»("J1")#1 "Vondst"'], False),
+    ("a made object made for a made object on an open relation",
+     ['object "J1" "Jutter"', 'link "proefvangst" "jutter" "J1" "proefvondst" open'],
+     ['object "J1" "Jutter"', 'object «"maak"»("J1")#1 "Vondst"', 'object «"meld"»(«"maak"»("J1")#1)#1 "Melding"',
+      'link "melding" "vondst" «"maak"»("J1")#1 "melding" «"meld"»(«"maak"»("J1")#1)#1'], True),
+]
+for name, reduced, full, keeps in rows:
+    if (not lost(reduced, full)) != keeps:
+        problems.append('the comparison fails its row "%s": it says %s' % (name, "keeps" if not keeps else "loses"))
+
+gaps = {}
+for line in gaps_text.splitlines():
+    if not line.strip():
+        continue
+    parts = line.split("|")
+    if len(parts) != 5 or not parts[4].strip():
+        problems.append("malformed MONOTONE_GAPS entry %r: '<golden>/<case file>|<kind>|<object>|<member>|<reason>'" % line)
+        continue
+    gaps["|".join(parts[:4])] = parts[4]
+seen_gaps = set()
+
+
+def read_run(key):
+    run = os.path.join(work, "mono", "run", key)
+    with open(run + ".rc", encoding="utf-8") as f:
+        rc = f.read().strip()
+    with open(run + ".out", encoding="utf-8") as f:
+        out = f.read().splitlines()
+    state = [l[len("state "):] for l in out if l.startswith("state ")]
+    closures = [l for l in out if l.startswith("closure ")]
+    before_fault = [int(l.split()[1]) for l in out if l.startswith("closures ")]
+    return rc, state, closures, (before_fault[0] if before_fault else 0)
+
+
+def quote(s):
+    return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+mutant_case, mutant_what = mutant.split("|", 1)
+full = {}
+counts = collections.Counter()
+mutant_lost = None
+for line in open(os.path.join(work, "mono", "tasks.tsv"), encoding="utf-8"):
+    key, name, case_file, what, _doc, _file = line.rstrip("\n").split("\t")
+    case = name + "/" + case_file
+    rc, state, closures, before_fault = read_run(key)
+    if what == "-":
+        gap = case + "|-|-|-"
+        if rc == "0":
+            full[case] = state
+            counts["cases"] += 1
+            if gap in gaps:
+                problems.append("stale MONOTONE_GAPS entry: %s runs now — remove it" % gap)
+                seen_gaps.add(gap)
+        elif gap in gaps:
+            seen_gaps.add(gap)
+        else:
+            problems.append("%s does not run with the inputs it gives (exit %s)" % (case, rc))
+        continue
+    if case not in full:
+        continue
+    gap = case + "|" + what
+    kind, label, member = what.split("|", 2)
+    if rc == "0":
+        if "%s %s %s open" % (kind, quote(label), quote(member)) not in state:
+            counts["derived"] += 1
+            continue
+        if case == mutant_case and what == mutant_what:
+            mutant_lost = lost(state, full[case])
+        if closures:
+            counts["closures"] += 1
+            continue
+        found = lost(state, full[case])
+    elif rc == "1" and before_fault > 0:
+        counts["closures"] += 1
+        continue
+    else:
+        found = ["the run without the input faults (exit %s)" % rc]
+    counts["runs"] += 1
+    if found and gap in gaps:
+        seen_gaps.add(gap)
+    elif found:
+        problems.append("%s without the %s %s of %s: %s" % (case, kind, member, label, "; ".join(found[:4])))
+    elif gap in gaps:
+        problems.append("stale MONOTONE_GAPS entry: %s keeps every outcome now — remove it" % gap)
+        seen_gaps.add(gap)
+for gap in gaps:
+    if gap not in seen_gaps:
+        problems.append("stale MONOTONE_GAPS entry: %s is not compared — remove it" % gap)
+if mutant_lost is None:
+    problems.append("MONOTONE_MUTANT %s is no run the leg reads" % mutant)
+elif not mutant_lost:
+    problems.append("the red row: the run of MONOTONE_MUTANT %s keeps every outcome, so the comparison cannot see a change" % mutant)
+if counts["runs"] < min_runs:
+    problems.append("%d run(s) compared, but EXPECTED_MIN_MONOTONE_RUNS pins at least %d" % (counts["runs"], min_runs))
+if counts["closures"] < min_closures:
+    problems.append("%d run(s) with a closure, but EXPECTED_MIN_MONOTONE_CLOSURES pins at least %d" % (counts["closures"], min_closures))
+if problems:
+    sys.stderr.write("".join("check-oracle: FAIL (monotonicity) — %s\n" % p for p in problems))
+    sys.exit(1)
+print("monotonicity: %d cases, %d runs without one input compared, floor %d, %d with a closure apart, floor %d, %d of "
+      "no input member; %d listed gap(s) of ch. 1.5; %d comparison rows; red row: %s loses %d outcome(s)"
+      % (counts["cases"], counts["runs"], min_runs, counts["closures"], min_closures, counts["derived"], len(gaps),
+         len(rows), mutant, len(mutant_lost)))
+PYEOF
+); then
+    status=1
+fi
+
 if [ "$status" -eq 0 ]; then
     printf 'check-oracle: PASS (ref suite %s worked examples, floor %s; %s cases replayed exactly, floor %s' \
         "$SUITE_N" "$EXPECTED_MIN_EXAMPLES" "$n_cases" "$EXPECTED_MIN_CASES"
     if [ -n "$uncovered" ]; then
         printf '; NOT replayed, no case file yet:%s' "$uncovered"
     fi
-    printf '; %s)\n' "$preserved"
+    printf '; %s; %s)\n' "$preserved" "$monotone"
 fi
 exit "$status"
