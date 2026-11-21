@@ -236,6 +236,64 @@
             "presentation": "calculation"
           }
         ]
+      },
+      {
+        "node": "Rule",
+        "name": "heffing bij een onvolledige aangifte",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "heffing",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De heffing van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "grondslag",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn grondslag"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "toeslag",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn toeslag"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn grondslag plus zijn toeslag"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "onvolledig",
+              "negated": false,
+              "source": {
+                "snippet": "hij is onvolledig"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
       }
     ],
     "dayKindDefinitions": [],

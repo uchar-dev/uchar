@@ -112,11 +112,13 @@ faults (EF-014). A read over an absent to-one link is leeg like any other.
    before it in the same `all`, the condition of the form for its value, the
    filter of a fold for its per-member positions, the condition of an
    IfThenElse for its then branch); a payload access always does;
-   `characteristic-check:<node>` — the form's own condition checks, as a
-   conjunct, a characteristic one of whose writers closes on the leeg of a
-   member (a leeg or gevuld test where its leeg verdict decides: an
-   `empty-test` place of that writer); a positive gevuld test is no such
-   closure;
+   `characteristic-check:<node>` — the form's own condition requires, as a
+   conjunct, that a characteristic does not hold ("heeft geen K"), one of
+   whose writers closes on the leeg of a member (a leeg or gevuld test where
+   its leeg verdict decides: an `empty-test` place of that writer). A
+   positive gevuld test is no such closure, and a form that requires the
+   characteristic to hold has no guard in it: it decides because the writer
+   closed on leeg;
    `tested-elsewhere:<input>><node>,…` — another form that writes a
    characteristic closes on the leeg of that input member, named per input;
 8. the line of the source, where the form or a node above the place carries

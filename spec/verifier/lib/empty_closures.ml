@@ -51,7 +51,7 @@ type carrier = { node : string; key : read_key option }
 type form_info = {
   f_name : string;
   f_key : string; (* the pointer of the form in the dependency graph, on the wire *)
-  f_chars : string list; (* the characteristics its own condition checks as a conjunct *)
+  f_chars : string list; (* the characteristics its own condition requires not to hold, as a conjunct *)
   f_skip_target : string option; (* an initialisation: its own target, read as the input it guards *)
 }
 
@@ -134,15 +134,25 @@ let characteristic_node env ~subject (c : condition_expr) =
   | Identity_check _ | Rule_status_check _ | Condition_unresolved _ ->
       None
 
-(* The characteristics a condition checks as a conjunct of the form: the
-   condition itself, or a member of an `all` at any depth. *)
+(* The characteristics a condition requires not to hold, as a conjunct of the
+   form: the condition itself, or a member of an `all` at any depth, checked
+   where the form decides on false ("heeft geen K"). A form that requires K
+   to hold decides because the writer of K closed on leeg, which is no guard
+   of what the form reads. *)
 let rec conjunct_chars ctx ~subject (c : condition_expr) =
   let env = { ctx; subject; tests = []; form = { f_name = ""; f_key = ""; f_chars = []; f_skip_target = None };
               emit = ignore; record_test = (fun _ _ -> ()) } in
   match c with
   | Compound { quantifier_kind = All; components; _ } -> List.concat_map (conjunct_chars ctx ~subject) components
-  | Characteristic_check { anchor = Some Anchor_form; _ } -> Option.to_list (characteristic_node env ~subject:ctx.form c)
-  | Characteristic_check { anchor = None; _ } -> Option.to_list (characteristic_node env ~subject c)
+  | Characteristic_check { negation; time_period; anchor; _ } ->
+      (* a negated whole-period qualifier turns the check around once more *)
+      let qualifier_negated =
+        match time_period with Some { gp_negated; _ } -> gp_negated | None -> false
+      in
+      if negation <> qualifier_negated then
+        let subject = match anchor with Some Anchor_form -> ctx.form | None -> subject in
+        Option.to_list (characteristic_node env ~subject c)
+      else []
   | Compound _ | Predicate _ | Comparison _ | Role_membership _ | Time_window _ | Quantifier_fold _
   | Identity_check _ | Rule_status_check _ | Condition_unresolved _ ->
       []
