@@ -57,8 +57,8 @@ BIN=_build/default/ref/bin/runner.exe
 # removal lowers the floor in the same commit.
 EXPECTED_MIN_EXAMPLES=489   # 2026-09-10: measured 489 (ref/test/test_ref.ml worked examples)
 EXPECTED_MIN_CASES=427      # 2026-09-10: measured 427 (corpus/golden/**/case*.json)
-EXPECTED_MIN_PRESERVED_GOLDENS=197  # 2026-11-21: measured 197 (check 5: goldens whose forms ref carries strictly, the folds over a set and the quantifier fold among them)
-EXPECTED_MIN_PRESERVED_CASES=480    # 2026-11-21: measured 480 (check 5: their case files)
+EXPECTED_MIN_PRESERVED_GOLDENS=281  # 2026-11-21: measured 281 (check 5: goldens whose forms ref carries strictly, the folds over a set, the quantifier fold, the defaults group, the creations off a cycle and the IfThenElse among them)
+EXPECTED_MIN_PRESERVED_CASES=787    # 2026-11-21: measured 787 (check 5: their case files)
 
 # check 5's own red row: a golden on which the copy with the property and WITHOUT --closed-inputs gives another
 # outcome than the case expects. Measured 2026-11-21: jutterswet-leeg-deeltal case1-leeg-deeltal, an open bonus as the
