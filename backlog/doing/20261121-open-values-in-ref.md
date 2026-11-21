@@ -333,3 +333,12 @@ check-red: PASS (101 red cases fault observably in ref and clingo, floor 44; 179
 check-reftype-derivation: PASS (129 unit annotations twisted over 42 goldens, floor 38; 242 executor replays reproduce the untouched outcome, 40 of them PLAYED by the DRL-text branch, equal to the exec-model branch; 0 pinned survivors)
 check-readings: PASS (ref traced 1199 golden case files; on both branches 385 goldens and 1073 case files compared, 8468 readings, 27262 node lines of which 4427 unreached, 1016 with contributors, 1317 with a timeline, 842 with the object of a read and 618 of a displaced reading, 147 contributors of ref not reached; end states of 3044 objects (479 made) and 8501 members; all at or above their floors; deviations 0, end-state deviations 0; 14 comparison rows, 3 tripwire rows, 10 end-state rows; 87 s)
 ```
+
+### Landing van deel 1a (hoofdsessie, 2026-11-21)
+
+Nagelezen: de hele wijziging in `ref/lib/world.ml`, `ref/lib/eval.ml` en `ref/bin/runner.ml`, de namen van de tests per
+principe en de paragraaf 1.5. De architectuur van de kaart is gehouden: `Open_read` en `held` dragen de lezing, geen
+operator is geraakt, het oordeel van de samengestelde voorwaarde verving de tweewaardige telling, en de eigenschap wordt
+voor het rekenen alleen in `open_inputs` gelezen. De paragraaf landt als geldende tekst (de statusregel "PROPOSAL" is
+eruit); rij 48 van `spec/CONSTRUCTS.md` is bijgewerkt. `make gates` groen op `1f8711886` (654 s, 17 gates, red=0).
+De kaart blijft in `backlog/doing/`: deel 1b, 2 en 3 volgen op dezelfde branch.

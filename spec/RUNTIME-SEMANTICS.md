@@ -470,9 +470,8 @@ on the table, kept as the decision's rationale:
 
 ### 1.5 A document that infers nothing from an empty value
 
-*Status: PROPOSAL, from `spec/proposals/STRICT-EMPTY.md`.* A document with
-`inferFromEmpty: false` (IR-SPEC ch. 2) reads a value in three states
-instead of two. This section says what that changes; what it does not name
+A document with `inferFromEmpty: false` (IR-SPEC ch. 2) reads a value in
+three states instead of two. This section says what that changes; what it does not name
 reads as ch. 1.2–1.4 lay down. It defines the reading for a rule (an
 equation, a calculation, a characteristic attribution, an initialisation), a
 consistency rule, a condition without a fold, and an expression without a
