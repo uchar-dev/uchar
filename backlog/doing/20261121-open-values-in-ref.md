@@ -968,3 +968,267 @@ de hand nagerekend. Twee afwijkingen van de opdracht, die de hoofdsessie overnee
 De zin in de README en het commentaar van clingo dat ref een strikt document weigert, is bijgewerkt; rij 48 van
 `spec/CONSTRUCTS.md` ook. `make gates` groen op `73d6f05e2` (671 s, 17 gates, red=0; de poot voor behoud: 281 goldens en
 787 cases).
+
+## Samenvatting van de kaart
+
+*Voor wie de kaart in `backlog/done/` leest; de Results per deel staan erboven, dat van deel 3 eronder.*
+
+**Wat ref rekent.** Een document met `inferFromEmpty: false` rekent ref met drie standen (gevuld, vaststaand leeg,
+open), zoals RUNTIME-SEMANTICS ch. 1.5 het vastlegt: de regel, de defaults-groep op een doel zonder tijdlijn (met
+uitzonderingsgroepen, de ongeordende groep en de stapel van ch. 7.10), object- en feitcreatie buiten een cyclus, de
+consistentieregel, en elke voorwaarde en uitdrukking zonder tijdlijn, de kwantorvouw, de vouwen over een verzameling,
+de telling van een vereniging en `IfThenElse` daaronder. Eén evaluator: een open lezing werpt `World.Open_read` en
+breekt de evaluatie af tot de grens van één oordeel of één waarde (`open_read_boundary`); het oordeel van een
+voorwaarde is een paar (voor de vorm zelf, voor een ander) met de open lezing die het onbepaald liet; een sluiting
+binnen een waarde meldt zich bij haar grens (`signal_closure`); een schrijver heeft drie uitkomsten (`outcome_of`,
+`value_outcome`). De lezing aan het fixpunt (ch. 5.12) en de eindstand (ch. 5.12a) zijn gedefinieerd voor open waarden;
+`runner --trace` leest elk strikt document.
+
+**Wat ref weigert.** REF-014 met `form` = de slug van de eerste vorm uit de lijst aan het eind van ch. 1.5 die het
+document bevat: `allocation`, `creation-cycle`, `uniqueness`, `start-point`, `day-kind`, `function-def`,
+`timeline-member`, `dimension-cell`, `dimension-fold`, `time-proportional-part`, `temporal-total`, `builtin-filter`,
+`variable-reference`, `unresolved`, `temporal-read`, `match`, `record`, `list-family`, `invoke`, `whole-period`,
+`time-window`, `rule-status-check` (`Eval.uncarried_forms`, gelijk gehouden door WV-1.5-uncarried-forms).
+
+**De twee eisen en hun poten.** Behoud bij volledige kennis: gate 5 check 5, elke golden met de eigenschap in een
+kopie en alle invoer gesloten speelt haar eigen cases (280 goldens, 784 cases), en WV-1.5-preserved. Monotonie: gate 5
+check 6, per golden die ref strikt draagt, per case en per gegeven invoer houdt de eindstand zonder dat gegeven elke
+uitkomst in de eindstand met het gegeven (2254 runs vergeleken; 443 met een sluiting apart, 71 waarin het weggelaten lid
+geen invoerlid is; 8 bekende gaten van de norm bij naam), en WV-1.5-monotone.
+
+**De naad over alle delen** (`ref/` tegenover `fadbce3a3`, `git diff --numstat`):
+
+| bestand | regels | wat |
+|---|---|---|
+| `eval.ml` | +908 −365 | open lezing en grens, oordeel als paar met open lezing, `count_verdict`, sluitingssignaal, drie uitkomsten van een schrijver; armen van de voorwaarden, de kwantorvouw, de vouwen, `IfThenElse`, de stapel, de creaties; `open_inputs` (de ene lezer van de eigenschap) en `refuse_uncarried` met `uncarried_forms`; de teller van sluitingen per evaluatie |
+| `world.ml` | +157 −19 | `Open_read`, de stand van een lid (`attr_open`, `char_open`, `links_open`) en de lezers erlangs; `opened`, `open_input`, `stated_absent`; de uitkomst van een evaluatie met `opened` en `closure` |
+| `case.ml` | +111 −34 | `characteristicsAbsent`, de verwachtingen `attributeOpen`/`characteristicOpen`, de eindcontrole via de stand |
+| `reading.ml` | +181 −78 | het oordeel per knoop, de open lezing, de status `OPEN`, de stapel onder een open default |
+| `end_state.ml` | +17 −7 | open leden en open relaties |
+| `bin/runner.ml` | +43 −19 | `--closed-inputs`, `--trace` voor een strikt document, `--end-state` |
+
+`value.ml` is niet geraakt (`Value.t` zonder nieuwe constructor), en de eigenschap wordt gelezen in `refuse_uncarried`
+en `open_inputs`, nergens anders. Een gewoon document gaf in elk deel byte voor byte dezelfde uitkomsten, lezingen en
+eindstand (gate 5, 7, 8, 13 en 17 zonder gewijzigde verwachting; in deel 3 ook de 1199 sporen van `runner --trace`
+over de gewone goldens, byte voor byte tegen de binary van `dbb53b038`).
+
+**Wat de kaarten van clingo en Drools moeten naspelen.** De leesregel van de samengestelde voorwaarde en de kwantorvouw
+(lezen tot het oordeel voor een ander vaststaat, ch. 1.5); de eindstand met `attribute … open`, `characteristic … open`
+en de link met `open` (ch. 5.12a); de lezing met `undetermined open <object> "<lid>"`, `true closure`/`false closure`,
+de status `OPEN` en de stapel onder een open default (ch. 5.12, "Open values"); de slugs en hun volgorde (ch. 1.5,
+"Forms without the reading"). De overdracht (`werk/open-values-in-ref/overdracht.md`, sectie "voor de bouwers van
+clingo en Drools") zegt waar het in ref staat.
+
+## Result (deel 3)
+
+*Bouwer deel 3, 2026-11-21. Branch `card/open-values-in-ref`, op `dbb53b038`. Opdracht: de eindstand (A), de lezing aan
+het fixpunt (B), gate 17 (C), monotonie als poot in gate 5 (D), de lijst van vormen zonder lezing (E).*
+
+### Wat er is
+
+| commit | wat |
+|---|---|
+| `5b48f31bc` | A en B: de observer krijgt het oordeel; de lezing toont waarheid, `closure`, `undetermined open …`; status `OPEN`; de stapel onder een open default; de eindstand met open leden en relaties; `runner --trace` weigert geen strikt document; ch. 5.12 "Open values" en ch. 5.12a; tests WV-5.12-afleiden-uit-leeg, WV-5.12-open-*, WV-5.12a-afleiden-uit-leeg, WV-5.12a-open-link |
+| `1289079bc` | C: gate 17, `TRACE_REFUSED` leeg (eigen commit) |
+| `df9d9a17d` | D in ref: de uitkomst van een evaluatie onthoudt een sluiting; `runner --end-state`; een creatie met versies op een cyclus wordt geweigerd (bijvangst van de poot) met een testrij |
+| `a79adc07e` | D in gate 5: check 6, monotonie; floors van check 5 naar 280/784 (eigen commit) |
+| `01cd365f9` | E: de tabel in ch. 1.5, `Eval.uncarried_forms` met voorrang naar de lijst, WV-1.5-uncarried-forms; de verwijzing in IR-SPEC ch. 2 |
+| (slotcommit) | deze samenvatting en dit Result |
+
+Gewijzigd gedrag van bestaande tests (de taak verandert het): WV-2-infer-from-empty verwachtte dat `--trace` het fixture
+weigert (REF-014 `reading`) en dat `refuse_uncarried ~reading:true` weigert; nu leest `--trace` het fixture
+(`runner-trace-reads`: V3 `undetermined open "V3" "vondstwaarde"`, `OPEN`, de open leden in de eindstand) en bestaat de
+parameter `~reading` niet meer. De reden bij `end_state.ml` in WV-1.5-direct-reads zegt nu dat de eindstand eerst de
+stand vraagt.
+
+### A. De eindstand
+
+Regelvorm: een open lid staat met `open` op de plaats van zijn waarde, `attribute <object> "<lid>" open` en
+`characteristic <object> "<kenmerk>" open`; een relatie die op een object open is als link met `open` op de plaats van
+de objecten die een creatie er nog aan kan koppelen, de rollen in de volgorde van het feittype:
+`link "<feittype>" "<rol>" <object> "<rol>" open`. Een attribuut zonder regel is vaststaand leeg, een kenmerk zonder
+regel staat vast niet. De plaats in de volgorde is die van het sorteren, zoals elke regel. Een lid met een waarde die
+geen schrijver besliste en dat open is (invoer naast een open schrijver) staat als `open`, niet met die waarde.
+
+| eis | getuige | gate | rood eerst |
+|---|---|---|---|
+| open leden | WV-5.12a-afleiden-uit-leeg (case4 heel, case2 heel) | 5 | op `dbb53b038` weigert `--trace` de golden (REF-014 `reading`, `logs/3-red-trace-01.log`); mutant "geen open lid" 3 FAIL |
+| open relatie | WV-5.12a-open-link (fixture `object-creation` case3) | 5 | mutant "geen open relatie" 1 FAIL |
+| gewoon document ongewijzigd | 1199 sporen byte-gelijk; gate 17 | 17 | — |
+
+### B. De lezing aan het fixpunt
+
+Woorden: `true` en `false` blijven; `undetermined` erbij voor onbepaald, en `closure` na de waarheid voor de vorm zelf
+waar die voor een ander onbepaald is. Na `undetermined` staat de open lezing: `open <object> "<lid>"` (een relatie bij
+haar rol). Status `OPEN` erbij: de vorm laat haar doel open (regel, default, creatie), of de bewering van een
+consistentieregel is onbepaald. `HOLDS` en `FAILS` volgen de drie uitkomsten: `HOLDS` waar de vorm beslist (ook met
+een lege waarde), `FAILS` waar zij voor een ander vaststaand niets vult. Voorbeeld (golden, case2, regel 0):
+
+```
+/rules/rules/0/versions/0 "V1" 0 Comparison undetermined open "V1" "taxatie"
+/rules/rules/0/versions/0 "V1" 1 AttributeReference undetermined open "V1" "taxatie"
+/rules/rules/0/versions/0 "V1" OPEN
+```
+
+| punt | zin in ch. 5.12 | test | rood eerst |
+|---|---|---|---|
+| 1 oordeel voor de vorm zelf, `closure` | "Open values", eerste punt | WV-5.12-afleiden-uit-leeg (ongetaxeerd `true closure`), WV-5.12-open-composite | REF-014 op `dbb53b038`; mutant "closure niet getoond" 1 FAIL |
+| 2 afgebroken knoop is onbepaald en noemt het lid | tweede en derde punt | WV-5.12-afleiden-uit-leeg, -open-path, -open-fold-over-a-set | mutant "afgebroken knoop als ended" 10 FAIL |
+| welke open lezing (atomair, samengesteld: eerste onbepaalde lid, kwantorvouw: filter vóór matrix) | derde punt | WV-5.12-open-composite (eerste van twee), -open-quantifier-fold | mutant "laatste onbepaalde lid" 1 FAIL |
+| 3 leden tot het oordeel voor een ander vaststaat | alinea na de punten | WV-5.12-open-composite ("opvallend": lid 1 onbepaald, lid 2 waar, lid 3 niet bereikt) | — (de lus van de sessie zelf) |
+| 4 status `OPEN`; stapel onder een open default | alinea na de punten; tabel van de status | WV-5.12-open-stack, -open-creation, WV-5.12-open-status (over alle strikte fixtures en de golden: `OPEN` precies waar de sessie iets open liet) | mutanten "open default geeft voorrang" 3 FAIL, "open waarde houdt" 57 FAIL |
+| 5 de observer geeft een oordeel; geen knoop met een uitkomst die er niet is | eerste zin van "Open values" | alle bovenstaande; geen tweede wandeling | — |
+| 6 gewoon document byte-gelijk | slotzin | gate 17 (1205 sporen, 0 afwijkingen), 1199 sporen tegen de oude binary | — |
+
+Logs: `logs/3-mutants-AB-01.log`, `-02.log` in de werkmap.
+
+### C. Gate 17
+
+`TRACE_REFUSED` is leeg (de lijst en haar controles blijven, zoals `READINGS_ERROR_KNOWN`); ref traceert 1205
+case-bestanden, de zes van `jutterswet-afleiden-uit-leeg` erbij; de backend sluit de golden uit met `EXCLUDE
+DROOLS-370`. De versiecontrole op bash staat er nog. Het script kent de status `OPEN` en de nieuwe woorden niet: alleen
+de golden die de backend uitsluit draagt ze, en die wordt niet vergeleken (open punt 3).
+
+### D. Monotonie als poot
+
+`runner --end-state <ir> <case>`: de eindstand (regels na `state `) en per evaluatie aan het fixpunt die een sluiting
+op een open waarde toepaste een regel `closure <vorm> <object>`; bij een fout van de evaluatie `closures <n>`, het
+aantal sluitingen ervoor. Een sluiting is: het signaal van de grens (de toets op leeg en gevuld, de gevuld-telling, een
+filter op gevuld, een `IfThenElse` die een sluiting besliste), een initialisatieregel aan de beurt naast een schrijver
+die haar doel open laat (welke uitkomst zij ook heeft: ook haar deposito's rusten op de sluiting), en de initialisatie
+van een stapel die onder een open default beslist. Gesloten invoer komt in de poot niet voor.
+
+Check 6 van gate 5: per golden die check 5 draagt en per golden met de eigenschap, per case en per invoergegeven
+(attribuutwaarde, kenmerk in `characteristics` of in `characteristicsAbsent`) de case zonder dat gegeven tegenover de
+case. **789 cases; 2254 runs vergeleken (floor 2254); 443 met een sluiting apart (floor 443); 71 waarin het weggelaten
+lid geen invoerlid is (een waarde op een afgeleid lid, de uitzondering van ch. 1.5), apart; 8 gaten van de norm bij
+naam (`MONOTONE_GAPS`, stale-failing); 14 eigen rijen van de vergelijking; rode rij `MONOTONE_MUTANT`: de golden case1
+zonder de taxatie van V1, vergeleken alsof er geen sluiting was, verliest 1 uitkomst (ongetaxeerd).** Mutant van ref
+"het signaal telt niet": de poot faalt met 73 meldingen, elk bij naam (`logs/3-mutant-gate5-01.log`). De toewijzing is grof: een run
+met een sluiting valt als geheel weg; van die 443 verschillen er 114 van de case (gemeten; de 25 die ik las rusten op een
+gevuld-telling, een toets op leeg of een initialisatie); een fijnere toewijzing (welke leden rusten op de sluiting) vraagt
+de afhankelijkheidsgraaf per document en is niet gebouwd.
+
+Wat de poot vond:
+
+1. **Fout in ref, hersteld**: een creatie met twee versies in een recursieve groep (`jutterswet-opvolgerversies`) werd
+   niet als `creation-cycle` geweigerd: een versie heet `<naam> #<k>`, de groep noemt de vorm. De weigering vergelijkt
+   nu de vorm (`Ir_v0.Checks.strip_version`). Test: WV-1.5-creation-cycle-refused, rij "a creation with two versions";
+   rood met de oude vergelijking (`logs/3-red-cycle-01.log`). Gevolg: de poot voor behoud draagt 280 goldens en 784
+   cases (was 281/787); de floors zijn in dezelfde commit verlaagd (een bewuste verwijdering, geen verzwakking).
+2. **Gat in de norm** (8 runs, `MONOTONE_GAPS`): ch. 1.5 laat een samengestelde voorwaarde en een kwantorvouw voorbij een
+   onbepaald lid lezen ("a fault or a §9.5 fact of that member can arise where ch. 5.10 would have stopped"), en "The two
+   requirements" noemt een §9.5-feit een uitkomst zonder die uitzondering. Voorbeeld: `jutterswet-keurgemiddelde` case3
+   zonder de keurpunten van W2: de vouw "inzetbaar" leest W3 voorbij de onbepaalde W2 en deelt door 0 keuringen, EF-005
+   op P1; met de keurpunten (50) is W2 onwaar, stopt de vouw en is er geen feit. Hetzelfde met een fout: in
+   `jutterswet-werfkeur` case1 zonder de lengte van S1 leest de matrix de rekendatum en faalt met EF-011; in
+   `context-value-behind-a-failing-condition` case1 faalt de case zelf al zo. Twee wegen: de uitzondering in "The two
+   requirements" benoemen (een fout of feit van een lid dat voorbij een onbepaald lid gelezen wordt), of een deposito en
+   een fout na een onbepaald lid binnen dezelfde samengestelde voorwaarde niet laten staan. Een normkeuze; de poot houdt
+   de acht bij naam tot die keuze er is.
+
+### E. De vormen zonder lezing
+
+De tabel staat aan het eind van ch. 1.5 met 22 slugs en hun vorm. Waar een document er meer bevat, noemt de executor de
+eerste van de lijst (niet de eerste die zijn wandeling tegenkomt): één zin, voor drie executors na te spelen. ref:
+`Eval.uncarried_forms`; `refuse_uncarried` verzamelt wat het document bevat en weigert met de eerste van de lijst; een
+slug die de lijst niet kent is een fout van ref (`failwith`). Test WV-1.5-uncarried-forms: de tabel uit
+`spec/RUNTIME-SEMANTICS.md` gelezen is de lijst, slug voor slug en in volgorde; de namen in `refuse_uncarried` zijn de
+lijst als verzameling; een document met een periodevenster in regel 0 en een lijstliteraal in regel 1 geeft
+`list-family`. Mutanten: een rij uit de tabel 1 FAIL, twee slugs omgewisseld 1 FAIL, "de eerste die de wandeling
+tegenkomt" 1 FAIL (`logs/3-mutants-E-01.log`). Gevolg in gate 5: de telling per eerste vorm verschuift (day-kind 17,
+timeline-member 49); het totaal geweigerd (151) niet.
+
+### De naad van deel 3 (`ref/` tegenover `dbb53b038`)
+
+| bestand | regels | wat |
+|---|---|---|
+| `eval.ml` | +148 −78 | `judgement` met `open_read` naar voren (vóór de observer); `undetermined` met de lezing; `judged`; `open_read_boundary` geeft `Ok`/`Error`; `value_verdict` werpt de echte open lezing; `judge_cond` geeft het oordeel aan de observer; de samengestelde voorwaarde en de kwantorvouw dragen hun eerste onbepaalde lid; `Member_verdict` met oordeel; `closures_applied` en de drie plaatsen die tellen; `over_subjects` geeft `closure` door; `refuse_uncarried` zonder `~reading`, met `uncarried_forms`, de cyclus per vorm |
+| `reading.ml` | +181 −78 | `Judged`, `Broken`, `Open`; `read_on` via `outcome_of` en `value_outcome`; de stapel met drie uitkomsten en `closing`; de tekst van oordeel en open lezing |
+| `world.ml` | +33 −14 | `outcome.closure`, `closures`, `open_beside_initialisation` |
+| `end_state.ml` | +17 −7 | open leden en open relaties |
+| `bin/runner.ml` | +33 −15 | `--trace` zonder weigering, `--end-state` |
+
+De architectuur: één evaluator (de lezing is de evaluatie van de sessie door de observer; geen tweede wandeling: de
+stapel in `reading.ml` volgde de sessie al en kreeg alleen de derde uitkomst); `Value.t` ongewijzigd; de eigenschap op
+twee plaatsen (`refuse_uncarried`, `open_inputs`); een gewoon document byte-gelijk.
+
+### Voorlopige besluiten
+
+1. **Een onbepaalde knoop noemt één open lezing**: bij een atomaire voorwaarde en een afgebroken knoop het gelezen lid;
+   bij een samengestelde voorwaarde die van haar eerste lid dat voor de vorm zelf onbepaald is; bij een kwantorvouw de
+   relatie van het bereik, anders die van haar eerste onbepaalde lid (het filter waar dat onbepaald is, anders de
+   matrix); een knoop die een onbepaalde voorwaarde in een waarde afbrak (`IfThenElse`, het filter van een vouw) die van
+   die voorwaarde. Daarvoor draagt het oordeel de open lezing (`open_read`); `value_verdict` werpt haar in plaats van
+   een omschrijving ("the filter of a fold").
+2. **Een bijdrager van een kwantorvouw** schrijft alleen de waarheid voor de vorm zelf (`true`, `false`,
+   `undetermined`), zonder open lezing en zonder `closure`: de regel blijft één token per waarde, zoals gate 17 hem leest.
+3. **Een vouw die een open lezing afbrak heeft geen bijdragers**, zoals een vouw die faalde voordat ze vaststonden.
+4. **De status volgt de uitkomst van de schrijver**, niet alleen de voorwaarde: een regel met een ware voorwaarde en een
+   open waarde is `OPEN`. In een gewoon document is dat dezelfde status als voorheen.
+5. **Onder een open default** is de initialisatie aan de beurt en is elke andere default `DISPLACED` (speculatief
+   gelezen, zoals onder een default die beslist); zo ook de inhoud van een default wiens uitzonderingsgroepen open zijn.
+6. **Een open lid met een waarde** (invoer naast een open schrijver) staat in de eindstand als `open`, zonder de waarde.
+7. **`TRACE_REFUSED` blijft als lege lijst** met haar controles, zoals `READINGS_ERROR_KNOWN`; de bash-controle houdt
+   daarmee haar reden.
+8. **De poot voor monotonie is grof** (een run met een sluiting valt weg) en slaat een weggelaten lid dat zonder het
+   gegeven niet open is over als geen invoerlid; een fout van de run zonder het gegeven telt als sluiting waar er een
+   vóór de fout was.
+9. **De voorrang van de slugs is de volgorde van de lijst**, niet de wandeling van de executor.
+
+### Voorgestelde rij voor `spec/CONSTRUCTS.md`
+
+Rij 48, de kolom van de stand: "…, and refuses a document with another form by name: `REF-014` with the slug of the form
+as `form` (`reading` for `--trace`). The reading of the other forms is open." wordt "…, and refuses a document with
+another form by name: `REF-014` with the slug of the form as `form`, the first of the list of RUNTIME-SEMANTICS ch. 1.5
+("Forms without the reading") the document holds. The reading at the fixpoint and the end state are defined for open
+values (ch. 5.12 "Open values", ch. 5.12a), and `runner --trace` reads every document with the property. The reading of
+the other forms is open." En "…; gate 5 holds preservation with complete knowledge over the corpus." wordt "…; gate 5
+holds preservation with complete knowledge and monotonicity over the corpus." Getuigenkolom erbij: "WV-5.12-afleiden-
+uit-leeg, WV-5.12-open-*, WV-5.12a-afleiden-uit-leeg, WV-5.12a-open-link, WV-1.5-uncarried-forms; the monotonicity leg
+of gate 5".
+
+### Voorstel voor `CLAUDE.md`
+
+- Gate 5, na "(its red row).": "A monotonicity leg (the same section): per golden that leg carries or that carries the
+  property, per case and per input the case gives, `runner --end-state` of the case without that input against the
+  case: every outcome of the first stands in the second; a run in which a closure decided (a `closure` line, or a fault
+  after one) and a run whose member left out is no input member are counted apart, every other difference fails by
+  name unless `MONOTONE_GAPS` lists it (reason-carrying, stale-failing), the comparison passes rows of its own, and the
+  run of `MONOTONE_MUTANT` compared all the same must lose an outcome." Floors erbij: `EXPECTED_MIN_MONOTONE_RUNS`,
+  `EXPECTED_MIN_MONOTONE_CLOSURES`.
+- Gate 17: "The trace reads every golden case file except those of a golden `TRACE_REFUSED` names with the code of its
+  refusal (REF-014, form `reading`: a document with `inferFromEmpty: false`), which the backend must exclude as well;"
+  wordt "The trace reads every golden case file, a document with `inferFromEmpty: false` included, except those of a
+  golden `TRACE_REFUSED` names with the REF code of its refusal (empty), which the backend must exclude as well;".
+
+### Open punten
+
+1. **Het gat in de norm van D.2** (monotonie tegenover lezen voorbij een onbepaald lid): een keuze voor de eigenaar of
+   Fable; tot dan staan de acht runs in `MONOTONE_GAPS`.
+2. **De fijnere toewijzing van een sluiting** (welke leden erop rusten) is niet gebouwd; de poot laat 443 runs weg, waarvan
+   114 van de case verschillen.
+3. **Gate 17 leest de nieuwe woorden niet**: `displaced_nodes` en de telling van statusregels kennen `OPEN` niet, en een
+   bijdrager met `undetermined` is één token (zo gekozen). Zodra Drools een strikt document leest, moet de rij-telling
+   `OPEN` kennen; nu leest de gate de golden niet (`EXCLUDE DROOLS-370`).
+4. **clingo en Drools** weigeren een strikt document nog als geheel (`form` `document`); de lijst van ch. 1.5 is voor
+   hun kaarten.
+
+### Gates, los gedraaid
+
+Elk los, één zware tegelijk (6, 12, 13, 17, 8 achter elkaar in de achtergrond), op `01cd365f9`; daarna veranderde
+alleen tekst (de rij van `OPEN` in ch. 5.12, deze kaart). Logs `logs/3-final-gate*.log` in de werkmap; gate 17 met
+`opam exec -- bash`.
+
+```
+check-self-contained: PASS
+check-verifier: PASS (the verifier's dune files name no library of another project of the workspace: 4 names (ir_v0 yojson zarith); 509 golden clean; 657 negative rejected for their declared rule, floor 568; 502 on their declared arm (expect.txt), floor 411, 277 arm keys, floor 239, 844 name=value lines, floor 686; 374 keys of one template each in the reports, floor 340, 468 key literals in checks.ml, floor 442; 825 cited pointers resolve in their documents, floor 705; empty-closures inventory over 509 documents: 837 closure places, floor 827, 387 negation, floor 383, 206 absent-instance, floor 206, 20 kinds, floor 20, 24 witnesses verbatim, floor 24, 1468 pointers resolve)
+check-case-schema: PASS (schema valid; 146 self-test row(s); 1307 case file(s) validate)
+check-oracle: PASS (ref suite 3896 worked examples, floor 489; 1205 cases replayed exactly, floor 427; preservation with complete knowledge: 280 goldens and 784 cases play, floors 280 and 784; 151 goldens refused per form (timeline-member 49, allocation 21, day-kind 17, list-family 16, dimension-cell 8, match 8, uniqueness 8, creation-cycle 7, record 7, function-def 4, time-window 2, dimension-fold 1, rule-status-check 1, start-point 1, unresolved 1); 1 carrying the property already, played by check 3 (jutterswet-afleiden-uit-leeg); red row: jutterswet-leeg-deeltal misses 1 of 3 cases without --closed-inputs; monotonicity: 789 cases, 2254 runs without one input compared, floor 2254, 443 with a closure apart, floor 443, 71 of no input member; 8 listed gap(s) of ch. 1.5; 14 comparison rows; red row: jutterswet-afleiden-uit-leeg/case1-alles-gegeven.json|attribute|V1|taxatie loses 1 outcome(s))
+check-clingo: PASS (backend suite 3231 checks, floor 83; 1169 cases replay exactly through clingo — ref = clingo over the corpus; 11 golden(s) in the refusal channel, by name, 36 cases refused with the pinned codes; the channel rule passes 22 rows of its own)
+check-noop: PASS (1163 cases refute a do-nothing executor; 42 pinned survivors pin defeasible standing)
+check-red: PASS (102 red cases fault observably in ref and clingo, floor 44; 181 ref and clingo code checks report the case's code, floor 82, 23 listed as divergence; 301 pinned parameter checks confirmed, floor 120; 47 fault kinds in RUNTIME-SEMANTICS ch. 5.7b, floor 31)
+check-drools: PASS (played 384; auto-excluded 48, among them 1x DROOLS-370; DRL-text branch played 384; JUnit 1976 tests, floor 1573)
+check-reftype-derivation: PASS (129 unit annotations twisted over 42 goldens, floor 38; 242 executor replays reproduce the untouched outcome, 40 of them PLAYED by the DRL-text branch, equal to the exec-model branch; 0 pinned survivors)
+check-readings: PASS (ref traced 1205 golden case files, and refused by name the trace of 0 case file(s) of 0 golden(s) (TRACE_REFUSED); on both branches 385 goldens and 1073 case files compared, 8468 readings, 27262 node lines of which 4427 unreached, 1016 with contributors, 1317 with a timeline, 842 with the object of a read and 618 of a displaced reading, 147 contributors of ref not reached; end states of 3044 objects (479 made) and 8501 members; all at or above their floors; deviations 0, end-state deviations 0; 14 comparison rows, 3 tripwire rows, 10 end-state rows; 88 s)
+```
