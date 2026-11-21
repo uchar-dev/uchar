@@ -285,7 +285,10 @@ let refuse_uncarried (doc : document) =
       List.concat_map (fun (g : resolved_rule_group) -> if g.recursive then List.filter_map Fun.id g.member_list else [])
         doc.rule_groups
     in
-    let on_cycle = function Some n -> List.exists (fun m -> norm m = norm n) recursive | None -> false in
+    (* a version of a creation with several is named for its form and its
+       number, and a group names the form *)
+    let form_of n = norm (Ir_v0.Checks.strip_version n) in
+    let on_cycle = function Some n -> List.exists (fun m -> form_of m = form_of n) recursive | None -> false in
     if List.exists (fun (oc : resolved_object_creation) -> on_cycle oc.oc_name) doc.object_creations
        || List.exists (fun (fc : resolved_fact_creation) -> on_cycle fc.fc_name) doc.fact_creations
     then refuse "creation-cycle";
@@ -1674,7 +1677,15 @@ let judged ~verdict ~own ~other ~first =
    value, so the expression keeps one value and is evaluated once. *)
 let boundaries : bool ref list ref = ref []
 
+(* how many closures over an open value the session applied: a closure inside a
+   value or a judgement ([signal_closure]), an initialisation that writes a
+   target another writer leaves open, and the initialisation of a stack below
+   a default that is open (ch. 1.5). [over_subjects] tells each evaluation's
+   outcome whether it applied one *)
+let closures_applied = ref 0
+
 let signal_closure () =
+  incr closures_applied;
   match !boundaries with
   | b :: _ -> b := true
   | [] ->
@@ -3884,6 +3895,7 @@ let over_subjects ?(exact = false) ?(except = []) ?read ?(only = fun _ -> true) 
          reader that read it before must evaluate again (ch. 1.5) *)
       let opened_before = World.opened_by w ~form ~at:self.label in
       let reopened w' = World.opened_by w' ~form ~at:self.label <> opened_before in
+      let closures_before = !closures_applied in
       match body w self err with
       | w', ch ->
           let w' =
@@ -3891,7 +3903,7 @@ let over_subjects ?(exact = false) ?(except = []) ?read ?(only = fun _ -> true) 
               (fun w (d : Value.deposit) -> World.insert_error w ~rule ~subject:self.label ~code:d.code)
               w' !pending
           in
-          let w' = World.close_evaluation w' ~form ~at:self.label in
+          let w' = World.close_evaluation ~closure:(!closures_applied > closures_before) w' ~form ~at:self.label in
           (w', changed || ch || reopened w')
       | exception Value.Fault { code; params; text } ->
           let w' =
@@ -4762,6 +4774,12 @@ let run_rule ?only env world (r : resolved_rule) =
             (* the rule decides where its condition is established true for
                itself; where it is established false for another form, it
                stands that the rule fills nothing (ch. 1.5) *)
+            (* an initialisation at its turn on a target another writer
+               leaves open closes over that writer (ch. 1.5): whatever it comes
+               to rests on the closure *)
+            if r.rr_presentation = Some Initialisation && (not blocked)
+               && World.open_beside_initialisation w ~label:self.label ~member
+            then incr closures_applied;
             let judged =
               if blocked then established false
               else
@@ -5661,7 +5679,11 @@ let run_defaults_group ?only env world ~world0 ~owner
             and closing i = function
               | [] -> Left_open
               | (r : default) :: _ when r.default_initialisation -> (
-                  match own_outcome (env_at i) r with Decides d -> Decided d | Fills_nothing | Leaves_open -> Left_open)
+                  match own_outcome (env_at i) r with
+                  | Decides d ->
+                      incr closures_applied;
+                      Decided d
+                  | Fills_nothing | Leaves_open -> Left_open)
               | _ :: rest -> closing (i + 1) rest
             in
             go 0 defaults

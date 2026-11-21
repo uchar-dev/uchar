@@ -16183,10 +16183,19 @@ let () =
       object_creations = [ ov_proefvondst ~cond:(ov_jcmp "ervaring" "5") [] ];
       rule_groups = [ { rgr_name = Some "proeven"; recursive = true; member_list = [ Some "proefvondst" ]; rgr_source = None; rgr_line = 0 } ] }
   in
-  match Eval.refuse_uncarried doc with
-  | () -> check "WV-1.5-creation-cycle-refused (not refused)" false
-  | exception Value.Fault { code; params; _ } ->
-      check "WV-1.5-creation-cycle-refused" (code = Some "REF-014" && params = [ ("form", "creation-cycle") ])
+  let refused id doc =
+    match Eval.refuse_uncarried doc with
+    | () -> check (id ^ " (not refused)") false
+    | exception Value.Fault { code; params; _ } ->
+        check id (code = Some "REF-014" && params = [ ("form", "creation-cycle") ])
+  in
+  refused "WV-1.5-creation-cycle-refused" doc;
+  (* a creation with several versions, each named for the form and its number,
+     in a group that names the form: the golden jutterswet-opvolgerversies with
+     the property *)
+  refused "WV-1.5-creation-cycle-refused (a creation with two versions)"
+    { (Ir_v0.Loader.load_file (corpus_file "corpus/golden/jutterswet-opvolgerversies/ir.json")) with
+      infer_from_empty = false }
 
 (* WV-1.5-if-then-else: an IfThenElse in a value reads its condition as a
    judgement: an undetermined condition leaves the value open, and a closure
