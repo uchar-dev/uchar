@@ -15345,6 +15345,185 @@ let () =
   ov_expect "WV-1.5-input-per-object (Strandvondst)" (ov_attr w "S1" "vindloon") "leeg";
   ov_expect "WV-1.5-input-per-object (Vondst)" (ov_attr w "V1" "vindloon") "open"
 
+(* WV-1.5-reached: an evaluation reads what the ordinary reading reaches (ch.
+   5.11), and what it reads that is open breaks it off. "Het aandeel van een
+   Vondst is zijn vindloon gedeeld door zijn getuigen", with taxatie 50 and no
+   getuigen: the vindloon is settled leeg, an empty dividend decides the
+   division (ch. 1.4) and the open getuigen is not reached: the aandeel is 0.
+   With taxatie 2000 the getuigen is reached, and the aandeel is open. "Het
+   drempelgewicht van een Vondst is zijn vindloon gedeeld door de vangst,
+   daarbij geldt: de vangst is zijn gewicht plus zijn schade": with taxatie
+   50, gewicht 5 and no schade the binder is never read and the drempelgewicht
+   is 0; with taxatie 2000 it is read, and the drempelgewicht is open *)
+let () =
+  let divisor = ov_bin Divided_by (ov_ref "vindloon") (ov_ref "getuigen") in
+  let binder : Ir_v0.Ast.expr =
+    Let
+      { typ = Some num0; binder = "vangst"; value = ov_bin Plus (ov_ref "gewicht") (ov_ref "schade");
+        body = ov_bin Divided_by (ov_ref "vindloon") (Binder_ref { ident = "vangst"; source_name = None });
+        source_name = None }
+  in
+  let doc =
+    ov_doc
+      [ ov_vondst [ "taxatie"; "vindloon"; "getuigen"; "aandeel"; "gewicht"; "schade"; "drempelgewicht" ] [] ]
+      [ ov_vindloon; ov_calc "aandeel" divisor; ov_calc "drempelgewicht" binder ]
+  in
+  let w = ov_run "reached-settled-dividend" doc (ov_v1 [ ("taxatie", "50"); ("gewicht", "5") ]) in
+  ov_expect "WV-1.5-reached (settled leeg dividend)" (ov_attr w "V1" "aandeel") "0";
+  ov_expect "WV-1.5-reached (binder not read)" (ov_attr w "V1" "drempelgewicht") "0";
+  let w = ov_run "reached-filled-dividend" doc (ov_v1 [ ("taxatie", "2000"); ("gewicht", "5") ]) in
+  ov_expect "WV-1.5-reached (divisor read)" (ov_attr w "V1" "aandeel") "open";
+  ov_expect "WV-1.5-reached (binder read)" (ov_attr w "V1" "drempelgewicht") "open"
+
+(* WV-1.5-read-for-another: the composite reads its members until its
+   judgement for another form is established, which establishes its judgement
+   for the form itself as well. "De vrijstelling van een Vondst is 1 indien ten
+   minste één van: zijn gewicht is leeg, zijn taxatie gedeeld door zijn
+   getuigen is groter dan 3", with gewicht open, getuigen complete and not
+   given, and taxatie 50: the first member is true for the form itself (the
+   closure) and undetermined for another, so the second is read; its division
+   by a settled leeg getuigen deposits EF-031 and the comparison is false. The
+   vrijstelling is 1 with an EF-031 fact. With the gewicht complete as well the
+   first member is true for both, the read stops there, and there is no fact *)
+let () =
+  let doc =
+    ov_doc [ ov_vondst [ "gewicht"; "taxatie"; "getuigen"; "vrijstelling" ] [] ]
+      [ ov_calc
+          ~cond:
+            (ov_compound At_least 1
+               [ ov_test Empty_predicate "gewicht";
+                 Comparison
+                   { op = Greater; left_side = Some (ov_bin Divided_by (ov_ref "taxatie") (ov_ref "getuigen"));
+                     right_side = Some (ov_lit "3"); time_period = None; source_name = None } ])
+          "vrijstelling" (ov_lit "1") ]
+  in
+  let w = ov_run ~closed:(Eval.Members [ ("Vondst", "getuigen") ]) "read-for-another" doc (ov_v1 [ ("taxatie", "50") ]) in
+  ov_expect "WV-1.5-read-for-another (vrijstelling)" (ov_attr w "V1" "vrijstelling") "1";
+  check "WV-1.5-read-for-another (EF-031)" (ov_channel w = [ "vrijstelling V1 EF-031" ]);
+  let w =
+    ov_run ~closed:(Eval.Members [ ("Vondst", "getuigen"); ("Vondst", "gewicht") ]) "read-for-another-settled" doc
+      (ov_v1 [ ("taxatie", "50") ])
+  in
+  ov_expect "WV-1.5-read-for-another (settled, vrijstelling)" (ov_attr w "V1" "vrijstelling") "1";
+  check "WV-1.5-read-for-another (settled, no fact)" (ov_channel w = [])
+
+(* WV-1.5-boundary-*: within one boundary, what the evaluation deposited
+   before an open read is dropped, a fault before it stays a fault, and a
+   fault that would come after it does not arise. "Het restgewicht van een
+   Vondst is zijn gewicht gedeeld door 0 plus zijn schade", gewicht 10: with
+   schade 2 it is 2 with the EF-005 of the division; with schade open it is
+   open and the EF-005 is dropped. "De vrachtprijs van een Vondst is het TARIEF
+   maal zijn gewicht", TARIEF unbound (EF-014): the fault stands with the
+   gewicht open; written "zijn gewicht maal het TARIEF" the open gewicht is
+   read first, the vrachtprijs is open and there is no fault *)
+let () =
+  let doc =
+    ov_doc [ ov_vondst [ "gewicht"; "schade"; "restgewicht" ] [] ]
+      [ ov_calc "restgewicht" (ov_bin Plus (ov_bin Divided_by (ov_ref "gewicht") (ov_lit "0")) (ov_ref "schade")) ]
+  in
+  let w = ov_run "boundary-deposit-stands" doc (ov_v1 [ ("gewicht", "10"); ("schade", "2") ]) in
+  ov_expect "WV-1.5-boundary-deposit-before-an-open-read (schade 2)" (ov_attr w "V1" "restgewicht") "2";
+  check "WV-1.5-boundary-deposit-before-an-open-read (schade 2, EF-005)" (ov_channel w = [ "restgewicht V1 EF-005" ]);
+  let w = ov_run "boundary-deposit-dropped" doc (ov_v1 [ ("gewicht", "10") ]) in
+  ov_expect "WV-1.5-boundary-deposit-before-an-open-read (schade open)" (ov_attr w "V1" "restgewicht") "open";
+  check "WV-1.5-boundary-deposit-before-an-open-read (schade open, no fact)" (ov_channel w = []);
+  let tarief : Ir_v0.Ast.expr = Parameter_ref { parameter = Some "TARIEF"; source_name = None } in
+  let doc value =
+    { (ov_doc [ ov_vondst [ "gewicht"; "vrachtprijs" ] [] ] [ ov_calc "vrachtprijs" value ]) with
+      parameters =
+        [ ( "TARIEF",
+            { par_name = Some "TARIEF"; par_datatype = Some num0; par_granularity = None; par_timeline_count = None;
+              par_fixed_start_point = None } ) ] }
+  in
+  let fault id d =
+    match ov_eval ~closed:(Eval.Members []) d (ov_v1 []) with
+    | _ -> check (id ^ " (no fault)") false
+    | exception Value.Fault { code; _ } -> check id (code = Some "EF-014")
+  in
+  fault "WV-1.5-boundary-fault-before-an-open-read" (doc (ov_bin Times tarief (ov_ref "gewicht")));
+  (* not registered: with every input complete the gewicht stands and the
+     fault arises, which is what a session without a binding does *)
+  ov_expect "WV-1.5-boundary-fault-after-an-open-read"
+    (ov_attr (ov_eval ~closed:(Eval.Members []) (doc (ov_bin Times (ov_ref "gewicht") tarief)) (ov_v1 [])) "V1" "vrachtprijs")
+    "open"
+
+(* WV-1.5-own-negation: "een Vondst is ongetaxeerd indien geen van: zijn
+   taxatie is gevuld" is the form's own negation of a gevuld test, so over an
+   open taxatie it closes as "zijn taxatie is leeg" does: ongetaxeerd holds;
+   at taxatie 50 it stands not to hold *)
+let () =
+  let doc =
+    ov_doc [ ov_vondst [ "taxatie" ] [ "ongetaxeerd" ] ]
+      [ ov_attribution "ongetaxeerd" (ov_compound None_of 0 [ ov_test Filled "taxatie" ]) ]
+  in
+  ov_expect "WV-1.5-own-negation (taxatie open)" (ov_char (ov_run "own-negation-open" doc (ov_v1 [])) "V1" "ongetaxeerd") "holds";
+  ov_expect "WV-1.5-own-negation (taxatie 50)"
+    (ov_char (ov_run "own-negation-filled" doc (ov_v1 [ ("taxatie", "50") ])) "V1" "ongetaxeerd")
+    "not"
+
+(* WV-1.5-outside-the-window: a rule outside its window of validity is a
+   writer of its target and fills nothing there. The vindloon of the card,
+   valid from 2030: on 1 June 2026 without a taxatie the vindloon is settled
+   leeg and the uitbetaling is the bergloon 3; on 1 June 2031 the vindloon is
+   open *)
+let () =
+  let windowed = { ov_vindloon with rr_validity = Some { valid_from = Some "2030-01-01"; valid_to = None } } in
+  let doc = ov_doc [ ov_vondst [ "taxatie"; "vindloon"; "bergloon"; "uitbetaling" ] [] ] [ windowed; ov_uitbetaling ] in
+  let run as_of = Eval.evaluate { (env_of doc) with as_of = Some as_of } (ov_world doc (ov_v1 [ ("bergloon", "3") ])) in
+  let w = run "2026-06-01" in
+  ov_expect "WV-1.5-outside-the-window (vindloon)" (ov_attr w "V1" "vindloon") "leeg";
+  ov_expect "WV-1.5-outside-the-window (uitbetaling)" (ov_attr w "V1" "uitbetaling") "3";
+  ov_expect "WV-1.5-outside-the-window (inside it)" (ov_attr (run "2031-06-01") "V1" "vindloon") "open"
+
+(* WV-1.5-instance-ordered: the instance-ordered part of WV-6.4-i in a
+   document with the property. V1 has no stopdag: its restant is open, and V2,
+   whose vorige vergunning V1 is, takes its einddag from "einddag zonder
+   restant", whose leeg test closes over the open restant of V1: 01-12-2026;
+   V2's own restant is open (no stopdag). With the stopdag of V1 given, V2's
+   einddag is 03-03-2027 as in the document without the property. In two
+   orders of the three rules *)
+let () =
+  let strict =
+    let prefix = {|{"format":"uchar-ir-v1",|} in
+    let n = String.length prefix in
+    if String.sub wv64_r1 0 n <> prefix then invalid_arg "WV-1.5-instance-ordered: the document starts otherwise";
+    prefix ^ {|"inferFromEmpty":false,|} ^ String.sub wv64_r1 n (String.length wv64_r1 - n)
+  in
+  let case ~stopdag expected =
+    Printf.sprintf
+      {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [
+       {"label": "V1", "objectType": "Vergunning", "attributes": {%s"basiseinddag": {"date": "2026-06-01"}}, "roles": {}, "characteristics": []},
+       {"label": "V2", "objectType": "Vergunning", "attributes": {"basiseinddag": {"date": "2026-12-01"}}, "roles": {"vorige vergunning": ["V1"]}, "characteristics": []}],
+       "parameters": {}}, "expected": [%s]}|}
+      (if stopdag then {|"stopdag": {"date": "2026-03-01"}, |} else "")
+      expected
+  in
+  let open_case =
+    case ~stopdag:false
+      {|{"kind": "attributeValue", "label": "V1", "attribute": "einddag", "value": {"date": "2026-06-01"}},
+        {"kind": "attributeOpen", "label": "V1", "attribute": "restant"},
+        {"kind": "attributeValue", "label": "V2", "attribute": "einddag", "value": {"date": "2026-12-01"}},
+        {"kind": "attributeOpen", "label": "V2", "attribute": "restant"}|}
+  and given_case =
+    case ~stopdag:true
+      {|{"kind": "attributeValue", "label": "V1", "attribute": "einddag", "value": {"date": "2026-06-01"}},
+        {"kind": "attributeValue", "label": "V1", "attribute": "restant", "value": {"number": "92"}},
+        {"kind": "attributeValue", "label": "V2", "attribute": "einddag", "value": {"date": "2027-03-03"}},
+        {"kind": "attributeOpen", "label": "V2", "attribute": "restant"}|}
+  in
+  List.iter
+    (fun order ->
+      List.iter
+        (fun (name, data) ->
+          with_instance_case strict ~order data (fun _ load evaluate ->
+              let c = load () in
+              let id = Printf.sprintf "WV-1.5-instance-ordered (%s, %s)" name (String.concat "" (List.map string_of_int order)) in
+              match Case.check c (evaluate c) with
+              | [] -> check id true
+              | mismatches -> check (id ^ " (" ^ String.concat "; " mismatches ^ ")") false))
+        [ ("stopdag of V1 open", open_case); ("stopdag of V1 given", given_case) ])
+    [ [ 0; 1; 2 ]; [ 2; 1; 0 ] ]
+
 (* WV-1.5-refused-*: a form this reading is not carried for is refused by name,
    REF-014 with the form, before anything is evaluated; the same document
    without the property is not walked *)
@@ -15561,6 +15740,7 @@ let () =
       (("filled-test-consistency-filled", "V1.taxatie"), [ "channel controle taxatie V1 EF-025" ]);
       (("filled-test-computed", "V1.gewicht"), [ "V1.getuigentoeslag 7" ]);
       (("filled-test-computed", "V1.getuigen"), [ "V1.getuigentoeslag 7" ]);
+      (("own-negation-filled", "V1.taxatie"), [ "V1 ongetaxeerd holds" ]);
       (("closed-member-given", "V1.vindloon"), [ "V1.uitbetaling 3"; "V1.vindloon leeg" ]);
       (("closed-every-input", "V1.bergloon"), [ "V1.bergloon leeg"; "V1.uitbetaling 0" ]);
       (("closed-other-member", "V1.bergloon"), [ "V1.bergloon leeg" ]);

@@ -498,6 +498,11 @@ Whether a member is input is asked per object (WV-1.5-input-per-object): with
 "het vindloon van een Strandvondst is 10 indien zijn taxatie groter is dan
 1000", the vindloon of a Vondst that is no Strandvondst is input, and open
 without a value, while that of a Strandvondst with taxatie 50 is settled leeg.
+A rule outside its window of validity (ch. 3.10) writes its target as well,
+and fills nothing there (WV-1.5-outside-the-window): with that vindloon valid
+from 2030, on 1 June 2026 a Vondst without a taxatie has a settled leeg
+vindloon and an uitbetaling of 3 at bergloon 3; on 1 June 2031 the vindloon is
+open.
 
 **What stands reads as before.** An expression or a condition whose reads are
 all filled or settled leeg is evaluated as ch. 1.2–1.4 lay down: a settled
@@ -507,14 +512,33 @@ is 10 indien zijn taxatie groter is dan 1000" and taxatie 50, the vindloon is
 settled leeg (below); the uitbetaling is 3, and "een Vondst is beloond indien
 zijn vindloon ongelijk is aan 5" holds. Without a taxatie beloond is open.
 
-**An open read.** An evaluation that reads an open value is broken off: the
-expression has no value, and what the evaluation deposited in the §9.5
-channel up to there is dropped. The boundary is one value — the value of a
-rule — or one atomic condition (below). Example (WV-1.5-open-passes-on): the
-uitbetaling above with an open vindloon has no value; "het aandeel van een
-Vondst is zijn gewicht gedeeld door zijn getuigen", with gewicht 10 and
-getuigen open, has no value and deposits nothing, where the document without
-the property deposits EF-031.
+**An open read.** An evaluation reads what the ordinary reading reaches (ch.
+5.11): an empty dividend decides a division without its divisor (ch. 1.4
+point 4), a binder of a `Let` is read where its body reads it (ch. 10.6), and
+a composite reads its members as below. An evaluation that reaches an open
+value is broken off: the expression has no value, and what the evaluation
+deposited in the §9.5 channel up to there is dropped. The boundary is one
+value — the value of a rule — or one atomic condition (below). Within one
+boundary a deposit made before the open read is dropped, a fault raised
+before it stays a fault, and a fault that would come after it does not
+arise, since the evaluation does not get there. Example
+(WV-1.5-open-passes-on): the uitbetaling above with an open vindloon has no
+value; "het aandeel van een Vondst is zijn gewicht gedeeld door zijn
+getuigen", with gewicht 10 and getuigen open, has no value and deposits
+nothing, where the document without the property deposits EF-031. Example
+(WV-1.5-reached): "het aandeel van een Vondst is zijn vindloon gedeeld door
+zijn getuigen", with the vindloon of the card settled leeg (taxatie 50) and
+getuigen open, is 0: the divisor is not reached; with taxatie 2000 it has no
+value. "Het drempelgewicht van een Vondst is zijn vindloon gedeeld door de
+vangst, daarbij geldt: de vangst is zijn gewicht plus zijn schade", with
+taxatie 50, gewicht 5 and schade open, is 0: the binder is never read; with
+taxatie 2000 it has no value. Example (WV-1.5-boundary-*): "het restgewicht
+van een Vondst is zijn gewicht gedeeld door 0 plus zijn schade", gewicht 10,
+is 2 with the EF-005 fact of the division at schade 2, and has no value and
+no fact with schade open. "De vrachtprijs van een Vondst is het TARIEF maal
+zijn gewicht", the parameter unbound, faults with EF-014 also where the
+gewicht is open; written "zijn gewicht maal het TARIEF" it has no value there,
+and no fault.
 
 **The judgement of a condition.** A condition is established true,
 established false, or undetermined. An atomic condition — a comparison, the
@@ -532,13 +556,11 @@ table:
 | `atMost` *k* | *f* ≥ *n* − *k* | *h* ≥ *k* + 1 |
 | `exactly` *k* | *h* ≥ *k* and *f* ≥ *n* − *k* | *h* ≥ *k* + 1, or *f* ≥ *n* − *k* + 1 |
 
-and is undetermined otherwise. It reads its members left to right and stops
-at the first prefix on which its judgement is established with every unread
-member taken as undetermined, which in a document without open members is
-the stop of ch. 5.10. An undetermined member does not stop the read, so a
-member after it can decide the composite, and a fault or a §9.5 fact of that
-member can arise where ch. 5.10 would have stopped. "Niet A" is `none` over
-A. Example (WV-1.5-atom, WV-1.5-table-*): "een Vondst is zwaar indien zijn
+and is undetermined otherwise. It reads its members left to right, and
+where it stops is said with its two judgements below. An undetermined member
+does not stop the read, so a member after it can decide the composite, and a
+fault or a §9.5 fact of that member can arise where ch. 5.10 would have
+stopped. "Niet A" is `none` over A. Example (WV-1.5-atom, WV-1.5-table-*): "een Vondst is zwaar indien zijn
 gewicht groter is dan 100" is undetermined without a gewicht. With "een
 Vondst is opvallend indien [Q] van: zijn gewicht groter is dan 100 (A), zijn
 schatting groter is dan 1000 (B), zijn lengte groter is dan 2 (C)": `all`
@@ -554,7 +576,20 @@ over A and B, and the three rows of "niet A".
 pair: its truth for the form whose condition it is, and its truth for another
 form, which reads from it that the form fills nothing. The two differ only at
 a test on leeg or gevuld over an open value (below); everywhere else they are
-equal.
+equal. So the judgement for another form is never established where the
+judgement for the form itself is not, and where it is established the two are
+equal. A composite reads its members until its judgement for another form is
+established, every unread member taken as undetermined — which establishes
+its judgement for the form itself as well — or until every member is read; in
+a document without open members this is the stop of ch. 5.10. A member read after the form's own judgement stands deposits and faults
+as any member read. Example (WV-1.5-read-for-another): "de vrijstelling van
+een Vondst is 1 indien ten minste één van: zijn gewicht is leeg, zijn taxatie
+gedeeld door zijn getuigen is groter dan 3", with gewicht open, getuigen
+complete without a value and taxatie 50: the first member is true for the
+form itself and undetermined for another, so the second is read, its division
+deposits EF-031 and it is false; the vrijstelling is 1 with an EF-031 fact.
+With the gewicht complete as well the first member is true for both, the read
+stops there, and there is no fact.
 
 **A rule** decides where its condition is established true for itself and
 its value has no open read; it then writes as ch. 1.2 and 5 lay down, a leeg
@@ -591,7 +626,14 @@ hold at 50, and is open without a taxatie. An open member passes on to its
 reader: without a taxatie the vindloon is open and so is the uitbetaling that
 reads it, in either order of the two rules; with taxatie 2000 and bergloon 3
 the uitbetaling is 13. "De toeslag is 5 indien zijn vindloon groter is dan
-5", first in the document, is open without a taxatie as well.
+5", first in the document, is open without a taxatie as well. An
+instance-ordered part (ch. 6.2) reaches its fixpoint per object in the same
+way. Example (WV-1.5-instance-ordered), the Vergunningen of WV-6.4-i: without
+a stopdag of V1 its restant is open, and the einddag of V2 is its basiseinddag,
+01-12-2026, written by "einddag zonder restant", whose leeg test of the
+restant of V1 closes over the open value; with the stopdag of V1 given it is
+03-03-2027, as without the property. The restant of V2, which has no stopdag,
+is open in both.
 
 **A negated characteristic check** is true where it stands that the
 characteristic does not hold, false where it holds, and undetermined where it
@@ -606,6 +648,11 @@ evaluation has an open read, the gevuld test is false for the form itself and
 undetermined for another; the leeg test is true for the form itself — a
 closure: the author has written what the form does where the value is absent
 — and undetermined for another. A negated test is its sister test (ch. 1.2).
+The form's own negation of a gevuld test closes as a leeg test does, since the
+composite keeps the pair: "geen van: X is gevuld" over an open X is true for
+the form itself and undetermined for another. Example (WV-1.5-own-negation):
+"een Vondst is ongetaxeerd indien geen van: zijn taxatie is gevuld" holds
+over an open taxatie and stands not to hold at taxatie 50.
 
 | the rule, over an open X | for the form itself | for another form |
 |---|---|---|
@@ -681,7 +728,8 @@ state.
 outcomes and changes none — an outcome being a value, a settled leeg
 attribute, a characteristic that holds or stands not to hold, or a §9.5 fact
 — except through a closure: a leeg test or a gevuld assertion over an open
-value, an initialisation, and complete input. *Preservation with complete
+value (the form's own negation of a gevuld test among them), an
+initialisation, and complete input. *Preservation with complete
 knowledge*: where nothing is open, every input member given or complete, the
 outcomes are those of ch. 1.2–1.4. Example (WV-1.5-monotone,
 WV-1.5-preserved): every example of this section, run once with each input

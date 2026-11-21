@@ -1575,7 +1575,14 @@ let reversed : Ir_v0.Ast.compare_op -> Ir_v0.Ast.compare_op = function
    condition as the opposite of its own ([other]). The two differ in one
    place only, a test that says an open value is leeg (ch. 1.5): for the
    form that wrote it that is a closure, true, and for another form it is
-   undetermined. *)
+   undetermined.
+
+   So [other] never knows more than [own]: where [other] is established,
+   [own] is established with the same truth. A closure makes [own]
+   established and leaves [other] undetermined, and [count_verdict] is
+   monotone in what is known, so the composite keeps it. Of the nine pairs
+   five occur: both true, both false, both undetermined, and [own] true or
+   false beside an undetermined [other]. *)
 
 type truth = Established of bool | Undetermined
 type judgement = { own : truth; other : truth }
@@ -3387,9 +3394,12 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
          already covers the whole member list therefore settles on the EMPTY
          prefix and reads nothing at all — vacuously true for at-most at d >=
          n, vacuously false for at-least and exactly above n. Each walk counts
-         its own verdicts, and the read goes on until both are established or
-         every member is read: an undetermined member does not stop it, and a
-         member after it can still decide (ch. 1.5). *)
+         its own verdicts, and the read goes on until the judgement for
+         another form is established, which establishes the form's own as
+         well, or every member is read: an undetermined member does not stop
+         it, a member after it can still decide, and a member read after the
+         form's own judgement stands deposits and faults as it would before
+         (ch. 1.5). *)
       let n = List.length components in
       let verdict = count_verdict quantifier_kind ~cutoff ~n in
       let count (hits, fails) = function
@@ -3400,7 +3410,7 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
       let rec read own other parts =
         let j = { own = verdict ~hits:(fst own) ~fails:(snd own); other = verdict ~hits:(fst other) ~fails:(snd other) } in
         match (j, parts) with
-        | { own = Established _; other = Established _ }, _ | _, [] -> j
+        | { other = Established _; _ }, _ | _, [] -> j
         | _, c :: rest ->
             let part = judge_cond env world self ~err c in
             read (count own part.own) (count other part.other) rest
@@ -4594,8 +4604,9 @@ let run_rule ?only env world (r : resolved_rule) =
                reads an open value, its deposits dropped *)
             let value () = held ~err (fun err -> eval_expr env w self ~err (req "RuleVersion.value" r.value_node)) in
             match judged with
-            | { own = Established false | Undetermined; other = Established false } -> release ()
-            | { own = Established false | Undetermined; other = _ } -> undecided ()
+            (* established false for another form, so for the form itself *)
+            | { other = Established false; _ } -> release ()
+            | { own = Established false | Undetermined; _ } -> undecided ()
             | { own = Established true; _ } ->
               match r.rr_presentation with
               (* a time-dependent characteristic holds in the periods of its
