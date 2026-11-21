@@ -746,3 +746,14 @@ check-red: PASS (102 red cases fault observably in ref and clingo, floor 44; 181
 check-reftype-derivation: PASS (129 unit annotations twisted over 42 goldens, floor 38; 242 executor replays reproduce the untouched outcome, 40 of them PLAYED by the DRL-text branch, equal to the exec-model branch; 0 pinned survivors)
 check-readings: PASS (ref traced 1199 golden case files, and refused by name the trace of 4 case file(s) of 1 golden(s) (TRACE_REFUSED); on both branches 385 goldens and 1073 case files compared, 8468 readings, 27262 node lines of which 4427 unreached, 1016 with contributors, 1317 with a timeline, 842 with the object of a read and 618 of a displaced reading, 147 contributors of ref not reached; end states of 3044 objects (479 made) and 8501 members; all at or above their floors; deviations 0, end-state deviations 0; 14 comparison rows, 3 tripwire rows, 10 end-state rows; 87 s)
 ```
+
+### Landing van deel 2a (hoofdsessie, 2026-11-21)
+
+Aanleiding van dit deel: een onafhankelijke beoordelaar las deel 1a in plaats van de eigenaar en oordeelde "schoon,
+overdraagbaar naar clingo en Drools, onder voorwaarden"; de vier voorwaarden voor ref zijn A tot en met D. Nagelezen:
+de standen op één plaats (`World.attr_open`, `char_open`), de grens met haar signaal (`open_read_boundary`,
+`signal_closure`, `closure_over_open`, `value_verdict`), de kwantorvouw als samengestelde voorwaarde over het bereik, en
+de toevoegingen aan ch. 1.5. Bij de landing erbij: `scripts/check-readings.sh` stopt onder een bash ouder dan 4 (de
+lijst `TRACE_REFUSED` van deel 1b is een associatieve array; onder bash 3.2 liep het script zonder de lijst door; de
+gate-set draait met bash 5, dus de eerdere runs waren geldig), en rij 48 van `spec/CONSTRUCTS.md`. `make gates` groen
+op `fdc742de0` (675 s, 17 gates, red=0; de poot voor behoud: 197 goldens en 480 cases).
