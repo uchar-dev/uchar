@@ -1,0 +1,43 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "ervaring": {
+            "number": "5"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicsAbsent": [
+          "geschorst"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "vindgerechtigd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "vindpremie",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "wachtpremie"
+    }
+  ]
+}

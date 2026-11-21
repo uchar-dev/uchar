@@ -1,0 +1,8 @@
+{
+  "case1-opgave-wijkt-af.json": [ [ "Vondst", "opgegeven bergloon" ] ],
+  "case2-geen-opgave.json": [ [ "Vondst", "opgegeven bergloon" ] ],
+  "case3-schade-leeg.json": [ [ "Vondst", "opgegeven bergloon" ] ],
+  "case4-alles-leeg.json": [ [ "Vondst", "opgegeven bergloon" ] ],
+  "case5-opgave-gelijk.json": [ [ "Vondst", "opgegeven bergloon" ] ],
+  "case6-doel-in-invoer.json": [ [ "Vondst", "opgegeven bergloon" ] ]
+}

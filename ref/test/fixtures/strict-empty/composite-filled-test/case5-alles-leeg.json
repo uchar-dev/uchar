@@ -1,0 +1,42 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "getuigentoeslag",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "schadetoeslag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vindloon",
+      "value": {
+        "number": "9"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

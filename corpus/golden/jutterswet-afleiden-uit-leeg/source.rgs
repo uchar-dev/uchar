@@ -6,9 +6,11 @@ Objecttype de Vondst (mv: Vondsten)
     het vindloon Numeriek (geheel getal);
     de bewakingstoeslag Numeriek (geheel getal);
     het meldloon Numeriek (geheel getal);
+    de premie Numeriek (geheel getal);
     is kostbaar kenmerk (bijvoeglijk);
     is ongetaxeerd kenmerk (bijvoeglijk);
     is gemeld kenmerk (bijvoeglijk);
+    is betwist kenmerk (bijvoeglijk);
 
 Regel kostbaarheid
     geldig altijd
@@ -29,3 +31,11 @@ Regel ongetaxeerd
 Regel meldloon
     geldig altijd
         Het meldloon van een Vondst moet gesteld worden op 3 indien hij gemeld is.
+
+Regel premie
+    geldig altijd
+        De premie van een Vondst moet gesteld worden op 10.
+
+Afwijking van premie: betwiste premie
+    geldig altijd
+        De premie van een Vondst moet gesteld worden op 0 indien hij betwist is.

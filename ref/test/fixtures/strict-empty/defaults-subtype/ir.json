@@ -1,0 +1,381 @@
+{
+  "format": "uchar-ir-v1",
+  "inferFromEmpty": false,
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "ervaring",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "meldloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gemeld",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Strandjutter",
+        "supertype": "Jutter",
+        "animate": false,
+        "plural": "Strandjutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vergunningsduur",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "meldloon",
+        "subject": "Jutter",
+        "attribute": "meldloon",
+        "defaults": [
+          {
+            "node": "Default",
+            "name": "meldloon",
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "gemeld",
+              "negated": false,
+              "source": {
+                "snippet": "hij gemeld is"
+              }
+            },
+            "consequence": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "ervaring",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn ervaring"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "2"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "2"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn ervaring maal 2"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "meldloon voor Strandjutter",
+        "subject": "Strandjutter",
+        "attribute": "meldloon",
+        "defaults": [
+          {
+            "node": "Default",
+            "exceptions": {
+              "unordered": false,
+              "members": [
+                {
+                  "node": "ExceptionGroup",
+                  "defaults": [
+                    {
+                      "node": "Default",
+                      "name": "strandmeldloon",
+                      "justification": {
+                        "node": "Compound",
+                        "quantifier": "all",
+                        "threshold": 0,
+                        "parts": [
+                          {
+                            "node": "CharacteristicCheck",
+                            "characteristic": "gemeld",
+                            "negated": false,
+                            "source": {
+                              "snippet": "hij gemeld is"
+                            }
+                          },
+                          {
+                            "node": "Comparison",
+                            "op": "greater",
+                            "left": {
+                              "node": "AttributeReference",
+                              "attribute": "vergunningsduur",
+                              "subjectType": "Strandjutter",
+                              "source": {
+                                "snippet": "zijn vergunningsduur"
+                              }
+                            },
+                            "right": {
+                              "node": "Literal",
+                              "value": {
+                                "number": "0"
+                              },
+                              "type": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "unspecified"
+                              },
+                              "source": {
+                                "snippet": "0"
+                              }
+                            },
+                            "source": {
+                              "snippet": "zijn vergunningsduur groter is dan 0"
+                            }
+                          }
+                        ],
+                        "source": {
+                          "snippet": "hij gemeld is en zijn vergunningsduur groter is dan 0"
+                        }
+                      },
+                      "consequence": {
+                        "node": "Binary",
+                        "op": "times",
+                        "left": {
+                          "node": "AttributeReference",
+                          "attribute": "vergunningsduur",
+                          "subjectType": "Strandjutter",
+                          "source": {
+                            "snippet": "zijn vergunningsduur"
+                          }
+                        },
+                        "right": {
+                          "node": "Literal",
+                          "value": {
+                            "number": "3"
+                          },
+                          "type": {
+                            "node": "Number",
+                            "whole": true,
+                            "decimals": 0,
+                            "sign": "unspecified"
+                          },
+                          "source": {
+                            "snippet": "3"
+                          }
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "zijn vergunningsduur maal 3"
+                        }
+                      },
+                      "exceptions": {
+                        "unordered": false,
+                        "members": [
+                          {
+                            "node": "ExceptionGroup",
+                            "defaults": [
+                              {
+                                "node": "Default",
+                                "name": "meldloon bij lange vergunning",
+                                "justification": {
+                                  "node": "Compound",
+                                  "quantifier": "all",
+                                  "threshold": 0,
+                                  "parts": [
+                                    {
+                                      "node": "CharacteristicCheck",
+                                      "characteristic": "gemeld",
+                                      "negated": false,
+                                      "source": {
+                                        "snippet": "hij gemeld is"
+                                      }
+                                    },
+                                    {
+                                      "node": "Comparison",
+                                      "op": "greater",
+                                      "left": {
+                                        "node": "AttributeReference",
+                                        "attribute": "vergunningsduur",
+                                        "subjectType": "Strandjutter",
+                                        "source": {
+                                          "snippet": "zijn vergunningsduur"
+                                        }
+                                      },
+                                      "right": {
+                                        "node": "Literal",
+                                        "value": {
+                                          "number": "0"
+                                        },
+                                        "type": {
+                                          "node": "Number",
+                                          "whole": true,
+                                          "decimals": 0,
+                                          "sign": "unspecified"
+                                        },
+                                        "source": {
+                                          "snippet": "0"
+                                        }
+                                      },
+                                      "source": {
+                                        "snippet": "zijn vergunningsduur groter is dan 0"
+                                      }
+                                    },
+                                    {
+                                      "node": "Comparison",
+                                      "op": "greater",
+                                      "left": {
+                                        "node": "AttributeReference",
+                                        "attribute": "vergunningsduur",
+                                        "subjectType": "Strandjutter",
+                                        "source": {
+                                          "snippet": "zijn vergunningsduur"
+                                        }
+                                      },
+                                      "right": {
+                                        "node": "Literal",
+                                        "value": {
+                                          "number": "10"
+                                        },
+                                        "type": {
+                                          "node": "Number",
+                                          "whole": true,
+                                          "decimals": 0,
+                                          "sign": "unspecified"
+                                        },
+                                        "source": {
+                                          "snippet": "10"
+                                        }
+                                      },
+                                      "source": {
+                                        "snippet": "zijn vergunningsduur groter is dan 10"
+                                      }
+                                    }
+                                  ],
+                                  "source": {
+                                    "snippet": "hij gemeld is en zijn vergunningsduur groter is dan 0 en zijn vergunningsduur groter is dan 10"
+                                  }
+                                },
+                                "consequence": {
+                                  "node": "Literal",
+                                  "value": {
+                                    "number": "50"
+                                  },
+                                  "type": {
+                                    "node": "Number",
+                                    "whole": true,
+                                    "decimals": 0,
+                                    "sign": "unspecified"
+                                  },
+                                  "source": {
+                                    "snippet": "50"
+                                  }
+                                }
+                              }
+                            ],
+                            "source": {
+                              "snippet": "Uitzondering op strandmeldloon"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "Uitzondering op meldloon"
+                  }
+                }
+              ]
+            },
+            "source": {
+              "snippet": "Uitzondering op meldloon"
+            }
+          }
+        ],
+        "source": {
+          "snippet": "eigen uitzonderingen van Strandjutter; de basis 'meldloon' is geërfd van Jutter"
+        },
+        "validity": {
+          "node": "Validity"
+        },
+        "origin": {
+          "form": "exceptionForSubtype",
+          "from": {
+            "kind": "namedForm",
+            "name": "meldloon"
+          }
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}

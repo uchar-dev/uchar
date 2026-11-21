@@ -1,0 +1,110 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "2000.00"
+          },
+          "waarde": {
+            "number": "60.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "kostbaar"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "bewakingstoeslag"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "waardevol"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "verzekeringstoeslag"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "ongetaxeerd"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "ongetaxeerd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "taxatietoeslag",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "taxatiekosten"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "ongeschat"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "ongeschat"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "schattingstoeslag",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "schattingskosten"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vindloon",
+      "value": {
+        "number": "50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "bergloon",
+      "value": {
+        "number": "50"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

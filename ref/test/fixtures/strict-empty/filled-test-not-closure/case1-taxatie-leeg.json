@@ -1,0 +1,109 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "number": "60.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicOpen",
+      "label": "V1",
+      "characteristic": "kostbaar"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "bewakingstoeslag"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "waardevol"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "verzekeringstoeslag"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "ongetaxeerd"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "taxatietoeslag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "taxatiekosten",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "ongeschat"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "ongeschat"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "schattingstoeslag",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "schattingskosten"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "schatting",
+      "value": {
+        "number": "120.00"
+      }
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "vindloon"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "bergloon",
+      "value": {
+        "number": "50"
+      }
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "controle taxatie",
+      "label": "V1"
+    }
+  ]
+}

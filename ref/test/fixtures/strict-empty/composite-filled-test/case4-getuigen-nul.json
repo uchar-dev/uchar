@@ -1,0 +1,66 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "10.00"
+          },
+          "aantal getuigen": {
+            "number": "0"
+          },
+          "schade": {
+            "number": "1.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "getuigentoeslag",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "schadetoeslag",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vindloon",
+      "value": {
+        "number": "9"
+      }
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "getuigentoeslag",
+      "label": "V1",
+      "code": "EF-005",
+      "params": {}
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "Vondst.vindloon",
+      "label": "V1",
+      "code": "EF-005",
+      "params": {}
+    }
+  ]
+}

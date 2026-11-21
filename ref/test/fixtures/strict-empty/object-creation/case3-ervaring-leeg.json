@@ -1,0 +1,28 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicOpen",
+      "label": "J1",
+      "characteristic": "ervaren"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "ontvangen taxatie"
+    }
+  ]
+}

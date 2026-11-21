@@ -1,0 +1,54 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "opgegeven bergloon": {
+            "number": "30.00"
+          },
+          "gewicht": {
+            "number": "10.00"
+          },
+          "schade": {
+            "number": "2.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "bergloon",
+      "value": {
+        "number": "30.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "berekende bergloon",
+      "value": {
+        "number": "12.00"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "afwijkende opgave bergloon"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "controle opgave bergloon",
+      "label": "V1"
+    }
+  ]
+}

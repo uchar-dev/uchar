@@ -1,0 +1,40 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "ervaring": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "ervaren"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "ervaren"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "ontvangen taxatie",
+      "value": {
+        "number": "12.50"
+      }
+    }
+  ]
+}

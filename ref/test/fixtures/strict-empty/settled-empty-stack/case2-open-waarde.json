@@ -1,0 +1,42 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "200.00"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gemeld"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "vindloon"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "bergloon"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "uitbetaling"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "bergloon": {
+            "number": "40.00"
+          },
+          "gewicht": {
+            "number": "10.00"
+          },
+          "schade": {
+            "number": "2.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "bergloon",
+      "value": {
+        "number": "12.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

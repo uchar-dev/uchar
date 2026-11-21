@@ -16352,10 +16352,12 @@ let () =
    members the session closes per object type, which a case cannot say *)
 let () =
   let witnesses =
-    [ "absent-link"; "absent-link-path"; "arithmetic"; "characteristic"; "closed-input"; "comparison"; "compound-all";
-      "compound-any"; "compound-counting"; "compound-none"; "consistency"; "empty-by-fault"; "exact-digits"; "filled-test";
-      "initialisation"; "let"; "listed-fold"; "marker"; "navigated-read"; "quantifier-fold"; "set-fold"; "settled-empty";
-      "settled-empty-date"; "settled-empty-fold" ]
+    [ "absent-link"; "absent-link-path"; "arithmetic"; "characteristic"; "closed-input"; "comparison"; "composite-filled-test";
+      "compound-all"; "compound-any"; "compound-counting"; "compound-none"; "consistency"; "defaults-characteristic";
+      "defaults-stack"; "defaults-subtype"; "empty-by-fault"; "exact-digits"; "fact-creation"; "filled-test";
+      "filled-test-not-closure"; "initialisation"; "input-above-computation"; "let"; "listed-fold"; "marker";
+      "navigated-read"; "object-creation"; "quantifier-fold"; "set-fold"; "settled-empty"; "settled-empty-date";
+      "settled-empty-fold"; "settled-empty-stack" ]
   in
   let str = function `String s -> s | _ -> invalid_arg "ref/test/test_ref.ml: closed.json holds a string here" in
   let list = function `List l -> l | _ -> invalid_arg "ref/test/test_ref.ml: closed.json holds a list here" in

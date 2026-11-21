@@ -1,0 +1,267 @@
+{
+  "format": "uchar-ir-v1",
+  "inferFromEmpty": false,
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "ervaring",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vindpremie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wachtpremie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "geschorst",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "vindgerechtigd",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "vindpremie",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vindpremie",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De vindpremie van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "10"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "10"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "vindgerechtigd",
+              "negated": false,
+              "source": {
+                "snippet": "hij vindgerechtigd is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "wachtpremie",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "wachtpremie",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De wachtpremie van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "3"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "3"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "vindgerechtigd",
+              "negated": true,
+              "source": {
+                "snippet": "hij niet vindgerechtigd is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "vindrecht",
+        "subject": "Jutter",
+        "characteristic": "vindgerechtigd",
+        "defaults": [
+          {
+            "node": "Default",
+            "name": "geschorste jutter",
+            "decision": false,
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "ervaring",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn ervaring"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "2"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "2"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn ervaring groter is dan 2"
+                  }
+                },
+                {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "geschorst",
+                  "negated": false,
+                  "source": {
+                    "snippet": "hij geschorst is"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "zijn ervaring groter is dan 2 en hij geschorst is"
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "name": "vindrecht",
+            "decision": true,
+            "justification": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "ervaring",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn ervaring"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "2"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "2"
+                }
+              },
+              "source": {
+                "snippet": "zijn ervaring groter is dan 2"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}

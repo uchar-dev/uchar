@@ -1,0 +1,73 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "50"
+          },
+          "gewicht": {
+            "number": "5"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicsAbsent": [
+          "betwist"
+        ]
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "50"
+          },
+          "gewicht": {
+            "number": "5"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "betwist"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "betwist"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "premie",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V2",
+      "characteristic": "betwist"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "premie",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

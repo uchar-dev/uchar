@@ -1,0 +1,43 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "50.00"
+          },
+          "gewicht": {
+            "number": "200.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "vindloon"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "bergloon"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "uitbetaling"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
