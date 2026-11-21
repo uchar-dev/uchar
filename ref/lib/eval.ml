@@ -246,9 +246,9 @@ let refuse_ranking_fold (kind : function_kind) attribute =
 
 (* inferFromEmpty false (IR-SPEC ch. 2) asks for the reading that infers
    nothing from an empty value (RUNTIME-SEMANTICS ch. 1.5). This interpreter
-   carries it for a rule, a consistency, and a condition or an expression
-   without a timeline, a quantifier fold and a fold over a set among them;
-   every other form, read by ch.
+   carries it for a rule, a defaults group, a consistency, and a condition or
+   an expression without a timeline, a quantifier fold and a fold over a set
+   among them; every other form, read by ch.
    1.2-1.4, would get an answer that reading excludes and no report would say
    so. A document with the property that holds one is refused by name before
    anything is evaluated or any expectation checked, the form named with it by
@@ -268,7 +268,6 @@ let refuse_uncarried ?(reading = false) (doc : document) =
     in
     let some form = function [] -> () | _ :: _ -> refuse form in
     if reading then refuse "reading";
-    some "defaults-group" doc.prioritized_defaults;
     some "allocation" doc.allocations;
     some "object-creation" doc.object_creations;
     some "fact-creation" doc.fact_creations;
@@ -349,7 +348,15 @@ let refuse_uncarried ?(reading = false) (doc : document) =
         Option.iter expr r.value_node;
         Option.iter cond r.rr_condition)
       doc.resolved_rules;
-    List.iter (fun (c : resolved_consistency) -> Option.iter cond c.assertion) doc.consistencies
+    List.iter (fun (c : resolved_consistency) -> Option.iter cond c.assertion) doc.consistencies;
+    let rec default (d : default) =
+      Option.iter cond d.default_justification;
+      Option.iter expr d.default_consequence;
+      Option.iter
+        (fun (egs : exception_groups) -> List.iter (fun (eg : exception_group) -> List.iter default eg.eg_defaults) egs.egs_members)
+        d.default_exceptions
+    in
+    List.iter (fun (l : prioritized_defaults) -> List.iter default l.defaults) doc.prioritized_defaults
   end
 
 (* the ranking fold of [e] and the first temporal attribute it ranks: a
@@ -1679,22 +1686,53 @@ let closure_over_open ~err f =
       Value.Empty
 
 (* The truth of the judgement [j] of a condition inside a value — the filter
-   of a fold — for that value. Undetermined for the form itself, the value has
-   an open read, on the object [label]; established for the form itself and
-   undetermined for another, a closure decided it, and the boundary is told *)
-let value_verdict ~label (j : judgement) =
+   of a fold, the condition of an IfThenElse ([what]) — for that value.
+   Undetermined for the form itself, the value has an open read, on the object
+   [label]; established for the form itself and undetermined for another, a
+   closure decided it, and the boundary is told *)
+let value_verdict ?(what = "the filter of a fold") ~label (j : judgement) =
   match j with
   | { own = Established b; other = Established _ } -> b
   | { own = Established b; other = Undetermined } ->
       signal_closure ();
       b
-  | { own = Undetermined; _ } -> raise (World.Open_read { label; member = "the filter of a fold" })
+  | { own = Undetermined; _ } -> raise (World.Open_read { label; member = what })
+
+(* The three outcomes of a writer (ch. 1.5) — a rule, a default of a stack, a
+   creation — kept in this one place. It decides, with what it writes; it fills
+   nothing, where it stands for another form that its condition is false or
+   that its value is settled leeg (a default gives way); or it leaves open what
+   it writes. [decide] is asked only where the condition is established true
+   for the writer itself, and gives the outcome of its value *)
+type 'a writer_outcome = Decides of 'a | Fills_nothing | Leaves_open
+
+let outcome_of (j : judgement) decide =
+  match j with
+  | { other = Established false; _ } -> Fills_nothing
+  | { own = Established false | Undetermined; _ } -> Leaves_open
+  | { own = Established true; _ } -> decide ()
+
+(* The outcome of the value [f] evaluates as one value: it decides with a value
+   that is filled, fills nothing with a settled leeg one, and leaves open where
+   it reads an open value or is leeg after a closure over one, since for another
+   form that leeg does not stand *)
+let value_outcome ~err f =
+  match open_read_boundary ~err f with
+  | None | Some (Value.Empty, true) -> Leaves_open
+  | Some (Value.Empty, false) -> Fills_nothing
+  | Some (v, _) -> Decides v
+
+let map_outcome f = function Decides x -> Decides (f x) | Fills_nothing -> Fills_nothing | Leaves_open -> Leaves_open
+
+(* a writer that leaves [member] of [label] open, on the world and change flag
+   it has after giving back what it wrote *)
+let left_open ~label ~member ((w : World.t), changed) = (World.leave_open w ~label ~member, changed)
 
 (* The verdict of a condition at a position that reads one truth value. In a
    document without open input every judgement is two-valued and equal for
    both walks. A position whose form the strict reading does not carry yet —
-   an IfThenElse, a creation's condition, a defaults group, a filter of a
-   list, a day kind, a reading of ch. 5.12 — is
+   an IfThenElse, a creation's condition, a filter of a list, a day kind, a
+   reading of ch. 5.12 — is
    refused in a document with inferFromEmpty false before anything is
    evaluated ([refuse_uncarried]), so it meets no other judgement; meeting one
    is a fault of ref. *)
@@ -4660,10 +4698,7 @@ let run_rule ?only env world (r : resolved_rule) =
             (* the rule does not decide on [self]: what it wrote is given back,
                and where it does not stand that it fills nothing its target is
                open (ch. 1.5) *)
-            let undecided () =
-              let w, changed = release () in
-              (World.leave_open w ~label:self.label ~member, changed)
-            in
+            let undecided () = left_open ~label:self.label ~member (release ()) in
             (* the rule decides where its condition is established true for
                itself; where it is established false for another form, it
                stands that the rule fills nothing (ch. 1.5) *)
@@ -4675,15 +4710,11 @@ let run_rule ?only env world (r : resolved_rule) =
                 | Some c -> judge_cond env w self ~err c
                 | None -> established true
             in
-            (* the value of a rule that decides, as one value: [None] where it
-               reads an open value, its deposits dropped; beside it whether a
-               closure was applied to an open value inside it *)
-            let value () = open_read_boundary ~err (fun err -> eval_expr env w self ~err (req "RuleVersion.value" r.value_node)) in
-            match judged with
-            (* established false for another form, so for the form itself *)
-            | { other = Established false; _ } -> release ()
-            | { own = Established false | Undetermined; _ } -> undecided ()
-            | { own = Established true; _ } ->
+            (* the outcome of the value of a rule that decides, as one value
+               ([value_outcome]) *)
+            let value () = value_outcome ~err (fun err -> eval_expr env w self ~err (req "RuleVersion.value" r.value_node)) in
+            match
+              outcome_of judged (fun () ->
               match r.rr_presentation with
               (* a time-dependent characteristic holds in the periods of its
                  condition, the window among them (ch. 3.11) *)
@@ -4700,10 +4731,10 @@ let run_rule ?only env world (r : resolved_rule) =
                       "the periods in which the time-dependent characteristic %S of %S holds have an open \
                        bound: a characteristic holds in bounded periods only (ch. 3.11). Declined at evaluation"
                       attr self.label;
-                  World.write_char_timeline_by w ~form ~label:self.label ~char:attr periods
+                  Decides (World.write_char_timeline_by w ~form ~label:self.label ~char:attr periods)
               (* the value is the constant waar, checked before any subject
                  was taken ([characteristic_value_constant_true]) *)
-              | Some Characteristic_attribution -> World.set_char_by w ~form ~label:self.label ~char:attr
+              | Some Characteristic_attribution -> Decides (World.set_char_by w ~form ~label:self.label ~char:attr)
               | Some (Equation | Calculation) when temporal_target ->
                   let periods =
                     match r.rr_condition with
@@ -4713,8 +4744,9 @@ let run_rule ?only env world (r : resolved_rule) =
                     | _ -> None
                   in
                   let value = Ir_v0.Checks.let_bound_value (req "RuleVersion.value" r.value_node) in
-                  if is_period_arithmetic value then run_period_arithmetic ?periods env w self ~err ~form ~ot ~attr value
-                  else run_pro_rata ?periods env w self ~err ~form ~ot ~attr value
+                  Decides
+                    (if is_period_arithmetic value then run_period_arithmetic ?periods env w self ~err ~form ~ot ~attr value
+                     else run_pro_rata ?periods env w self ~err ~form ~ot ~attr value)
               | Some Initialisation when temporal_target ->
                   let periods =
                     match r.rr_condition with
@@ -4723,38 +4755,37 @@ let run_rule ?only env world (r : resolved_rule) =
                         Some (cond_periods env w self ~err ~target ~attr c)
                     | _ -> None
                   in
-                  run_timeline_initialisation ?periods env w self ~err ~form ~ot ~attr
-                    (Ir_v0.Checks.let_bound_value (req "RuleVersion.value" r.value_node))
-              | Some (Equation | Calculation) -> (
-                  (* a leeg evaluation decides nothing (ch. 3.11, 7.8): the rule
-                     gives back what it wrote before, so the target holds what
-                     another writer, an initialisation or the input put there,
-                     or stays leeg; channel deposits of the evaluation persist
-                     as in any evaluation. A value that reads an open value
-                     leaves the target open (ch. 1.5) *)
-                  match value () with
-                  | None -> undecided ()
-                  (* leeg through a closure over an open value: for the form
-                     itself it fills nothing, and for another that does not
-                     stand (ch. 1.5) *)
-                  | Some (Value.Empty, true) -> undecided ()
-                  | Some (Value.Empty, false) -> release ()
-                  | Some (v, _) ->
-                      World.write_attr_by w ~form ~label:self.label ~attr:member ~decl:(attr_decl env ~otype:ot ~attr) v)
-              | Some Initialisation -> (
-                  (* writes only where the target is empty (ch. 5.4) — apart
-                     from its own write ([blocked] above). A case input and a
-                     value another writer placed switch the guard off, so the
-                     computed value wins whichever fires first; the
-                     initialisation's own earlier write does not, so its value
-                     is re-evaluated under freshness like any attribute write.
-                     Read off the running world alone, the guard kept the value
-                     the initialisation computed against a read that another
-                     rule had not yet written: the document order decided *)
-                  match value () with
-                  | None | Some (Value.Empty, true) -> undecided ()
-                  | Some (v, _) -> World.write_attr_init w ~form ~label:self.label ~attr:member ~decl:(attr_decl env ~otype:ot ~attr) v)
+                  Decides
+                    (run_timeline_initialisation ?periods env w self ~err ~form ~ot ~attr
+                       (Ir_v0.Checks.let_bound_value (req "RuleVersion.value" r.value_node)))
+              (* a leeg evaluation decides nothing (ch. 3.11, 7.8): the rule
+                 gives back what it wrote before, so the target holds what
+                 another writer, an initialisation or the input put there, or
+                 stays leeg; channel deposits of the evaluation persist as in any
+                 evaluation *)
+              | Some (Equation | Calculation) ->
+                  map_outcome
+                    (World.write_attr_by w ~form ~label:self.label ~attr:member ~decl:(attr_decl env ~otype:ot ~attr))
+                    (value ())
+              (* writes only where the target is empty (ch. 5.4) — apart from
+                 its own write ([blocked] above). A case input and a value
+                 another writer placed switch the guard off, so the computed
+                 value wins whichever fires first; the initialisation's own
+                 earlier write does not, so its value is re-evaluated under
+                 freshness like any attribute write. Read off the running world
+                 alone, the guard kept the value the initialisation computed
+                 against a read that another rule had not yet written: the
+                 document order decided *)
+              | Some Initialisation ->
+                  map_outcome
+                    (World.write_attr_init w ~form ~label:self.label ~attr:member ~decl:(attr_decl env ~otype:ot ~attr))
+                    (value ())
               | None -> Value.fault "rule %S has no kind" (rule_name r))
+            with
+            | Decides written -> written
+            (* established false for another form, or a settled leeg value *)
+            | Fills_nothing -> release ()
+            | Leaves_open -> undecided ())
     | _ -> Value.faultc ~params:[ ("rule", (rule_name r)) ] "REF-012" "rule %S: unsupported target shape" (rule_name r)
 
 let run_allocation env world (v : resolved_allocation) =
@@ -5141,9 +5172,11 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
 (* ch. 7.1/7.9: a defaults-group member's decision, and the reconciled outcome
    of a default chain — [Decided] (the highest deciding default), [Conflict] (a
    differing exception group, keyed by its default-index path, propagating to
-   the root with no write), or [Undecided] (nothing decided; fall-through). *)
+   the root with no write), [Undecided] (nothing decided; fall-through), or
+   [Left_open] (a default that is neither, so nothing below it but the
+   initialisation decides; ch. 1.5). *)
 type defaults_decision = Char_dec of bool | Attr_dec of Value.t
-type chain_result = Decided of defaults_decision | Conflict of string | Undecided
+type chain_result = Decided of defaults_decision | Conflict of string | Undecided | Left_open
 
 (* --- a defaults group on a timeline target, read per day (RUNTIME-SEMANTICS ch. 7.11) --- *)
 
@@ -5405,16 +5438,18 @@ let run_defaults_group ?only env world ~world0 ~owner
          by ch. 7.9): a conflict from a deeper exception group propagates unchanged;
          otherwise the deciding members must agree — equal decisions are one
          decision, differing decisions are a conflict keyed at [path] (no
-         write). Members that decide nothing drop out. *)
+         write). Members that decide nothing drop out. A member decides only
+         where every other member stands to decide nothing or to decide the
+         same, so beside a member that is open the group is open (ch. 1.5) *)
       let reconcile ~path (results : chain_result list) : chain_result =
         match List.find_opt (function Conflict _ -> true | _ -> false) results with
         | Some c -> c
         | None -> (
             match List.filter_map (function Decided d -> Some d | _ -> None) results with
+            | d0 :: rest when not (List.for_all (equal_dec d0) rest) -> Conflict (path_key path)
+            | _ when List.mem Left_open results -> Left_open
             | [] -> Undecided
-            | d0 :: rest ->
-                if List.for_all (equal_dec d0) rest then Decided d0
-                else Conflict (path_key path))
+            | d0 :: _ -> Decided d0)
       in
       (* one member's decision (ch. 7.1), recursive per ch. 7.9: the
          highest default that decides wins; a default carrying [excepties]
@@ -5431,65 +5466,65 @@ let run_defaults_group ?only env world ~world0 ~owner
              ancestor's default into this stack, and its own reads name the
              ancestor (WF-053) *)
           let env_at i = { env with subj = Some (List.nth origins i) } in
-          let justified env (r : default) err =
+          (* the judgement of a default's justification (ch. 1.5). The
+             initialisation default is justified where the target is empty in
+             the INPUT facts (ch. 7.3): read off the running world instead, the
+             default's own earlier write switched it off, and the target kept a
+             value its consequence had computed against a read that was not
+             final yet. An initialisation folded with its condition is
+             justified only where that condition holds as well *)
+          let justified env (r : default) err : judgement =
             if r.default_initialisation then (
               match l.pd_attribute with
               | Some a ->
-                  (* ch. 7.3: justified where the target is empty in the INPUT
-                     facts. Read off the running world instead, the default's
-                     own earlier write switched it off, and the target kept a
-                     value its consequence had computed against a read that
-                     was not final yet. An initialisation folded with its
-                     condition is justified only where that condition holds
-                     as well. *)
-                  (match SMap.find_opt self.label world0.World.instances with
-                  | Some (i0 : World.instance) -> World.attr i0 a = Value.Empty
-                  | None -> true)
-                  && (match r.default_justification with
-                     | Some c -> eval_cond env w self ~err c
-                     | None -> true)
+                  let input_empty =
+                    match SMap.find_opt self.label world0.World.instances with
+                    | Some (i0 : World.instance) -> World.attr i0 a = Value.Empty
+                    | None -> true
+                  in
+                  if not input_empty then established false
+                  else (
+                    match r.default_justification with
+                    | Some c -> judge_cond env w self ~err c
+                    | None -> established true)
               | None -> Value.fault "initialisation default on characteristic defaults")
-            else eval_cond env w self ~err (req "default justification" r.default_justification)
+            else judge_cond env w self ~err (req "default justification" r.default_justification)
           in
-          (* the default's OWN decision, exception groups aside (a plain default, the
-             initialisation default, or a form-a default's fall-back): Some when it
-             decides, None when it falls through *)
-          let own_decision env (r : default) : defaults_decision option =
-            if is_char then (
-              let j, flush = speculate (fun err -> justified env r err) in
-              if j then (
-                flush ();
-                Some (Char_dec (req "default decision" r.default_decision)))
-              else None)
-            else
-              let outcome, flush =
-                speculate (fun err ->
-                    if justified env r err then
-                      Some
-                        (eval_expr env w self ~err
-                           (req "default consequence" r.default_consequence))
-                    else None)
-              in
-              match outcome with
-              | Some v when v <> Value.Empty ->
-                  flush ();
-                  Some (Attr_dec v)
-              | Some _ (* leeg: falls through *) | None -> None
+          (* the default's OWN outcome, exception groups aside (a plain default,
+             the initialisation default, or a form-a default's fall-back): it
+             decides, gives way (falls through), or is open, as a rule does
+             ([outcome_of]); its deposits flush only where it decides *)
+          let own_outcome env (r : default) : defaults_decision writer_outcome =
+            let outcome, flush =
+              speculate (fun err ->
+                  outcome_of (justified env r err) (fun () ->
+                      if is_char then Decides (Char_dec (req "default decision" r.default_decision))
+                      else
+                        map_outcome
+                          (fun v -> Attr_dec v)
+                          (value_outcome ~err (fun err ->
+                               eval_expr env w self ~err (req "default consequence" r.default_consequence)))))
+            in
+            (match outcome with Decides _ -> flush () | Fills_nothing | Leaves_open -> ());
+            outcome
           in
           let rec decide ~env_at ~path (defaults : default list) : chain_result =
             let rec go i = function
               | [] -> Undecided
               | (r : default) :: rest -> (
                   let env = env_at i in
+                  let after = function
+                    | Decides d -> Decided d
+                    | Fills_nothing -> go (i + 1) rest
+                    | Leaves_open -> closing (i + 1) rest
+                  in
                   let fall_through () =
                     (* a form-a default falls back to its own decision; a
                        group-default (no own content) decides nothing (ch. 7.9) *)
                     let has_content =
                       r.default_decision <> None || r.default_consequence <> None
                     in
-                    if has_content then
-                      match own_decision env r with Some d -> Decided d | None -> go (i + 1) rest
-                    else go (i + 1) rest
+                    if has_content then after (own_outcome env r) else go (i + 1) rest
                   in
                   match r.default_exceptions with
                   | Some egs -> (
@@ -5505,11 +5540,17 @@ let run_defaults_group ?only env world ~world0 ~owner
                       in
                       match reconcile ~path:sub_path results with
                       | (Conflict _ | Decided _) as d -> d
-                      | Undecided -> fall_through ())
-                  | None -> (
-                      match own_decision env r with
-                      | Some d -> Decided d
-                      | None -> go (i + 1) rest))
+                      | Undecided -> fall_through ()
+                      | Left_open -> closing (i + 1) rest)
+                  | None -> after (own_outcome env r))
+            (* below a default that is open only the initialisation decides: it
+               is a closure over the stack (ch. 1.5, 7.3); no other default is
+               evaluated, and the chain is open where it does not decide *)
+            and closing i = function
+              | [] -> Left_open
+              | (r : default) :: _ when r.default_initialisation -> (
+                  match own_outcome (env_at i) r with Decides d -> Decided d | Fills_nothing | Leaves_open -> Left_open)
+              | _ :: rest -> closing (i + 1) rest
             in
             go 0 defaults
           in
@@ -5524,6 +5565,12 @@ let run_defaults_group ?only env world ~world0 ~owner
       in
       match reconcile ~path:[] (List.map member_decision members) with
       | Undecided -> release ()
+      (* nothing decides and it does not stand that nothing does: the target
+         is open (ch. 1.5) *)
+      | Left_open ->
+          left_open ~label:self.label
+            ~member:(match l0.pd_characteristic with Some k -> k | None -> req "defaults attribute" l0.pd_attribute)
+            (release ())
       | Conflict rule ->
           (* over-determination (ch. 7.2/7.9): no write, one channel fact —
              bare-keyed at the root, path-keyed for a nested exception group *)
@@ -6041,9 +6088,9 @@ type closed = Every_input | Members of (string * string) list
 
 (* The open members of the input world: in a document with inferFromEmpty
    false, every input member the case gives no value and the session does not
-   close (ch. 1.5). A member is input on an object where no rule writes it on
-   the object's type; a member a rule writes there follows its writers, also
-   where the case gives it no value. The one place the property is read for
+   close (ch. 1.5). A member is input on an object where no rule and no
+   defaults group writes it on the object's type; a member one of them writes
+   there follows its writers, also where the case gives it no value. The one place the property is read for
    the evaluation: a document without it has no open member, and nothing in
    the evaluation tells it from another. *)
 let open_inputs env ~closed (world : World.t) =
@@ -6056,6 +6103,11 @@ let open_inputs env ~closed (world : World.t) =
           | Some (ot, a, _) -> norm a = norm member && isa env otype ot
           | None -> false)
         env.doc.resolved_rules
+      || List.exists
+           (fun (l : prioritized_defaults) ->
+             List.exists (fun t -> norm t = norm member) (Option.to_list l.pd_attribute @ Option.to_list l.pd_characteristic)
+             && isa env otype l.pd_subject)
+           env.doc.prioritized_defaults
     in
     let is_closed ~otype member =
       match closed with

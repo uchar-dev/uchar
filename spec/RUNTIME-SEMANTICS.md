@@ -474,6 +474,7 @@ A document with `inferFromEmpty: false` (IR-SPEC ch. 2) reads a value in
 three states instead of two. This section says what that changes; what it does not name
 reads as ch. 1.2–1.4 lay down. It defines the reading for a rule (an
 equation, a calculation, a characteristic attribution, an initialisation), a
+defaults group on a target without a timeline, a
 consistency rule, and a condition or an expression without a timeline, a
 quantifier fold and a fold over a set among them; for every other form the
 reading is not defined here, and
@@ -486,7 +487,7 @@ numbers.
 value, a characteristic holds), *settled leeg* (it stands that the attribute
 has no value, or that the characteristic does not hold) or *open* (neither
 stands). An input member — an attribute or a characteristic that no rule
-writes on the object's type — is open where the case gives it no value or
+and no defaults group writes on the object's type — is open where the case gives it no value or
 does not name it, unless the session treats it as complete (below). A
 document without the property has no open member: a member without a value is
 settled leeg, and the rest of this section then reads as ch. 1.2–1.4. Example
@@ -611,7 +612,7 @@ moet geïnitialiseerd worden op 5": with vangst 4 and gemeld named the
 strandloon is 8, and where the case does not name gemeld it is 5. With "… op
 5 indien zijn vangst groter is dan 1" it stays open without a vangst.
 
-**A derived member** — one a rule writes on the object's type — follows its
+**A derived member** — one a rule or a defaults group writes on the object's type — follows its
 writers, also where the case gives it no value: it is filled where a writer
 decides with a value, settled leeg where it stands of every writer that it
 fills nothing or decides with a leeg value, and open otherwise; a
@@ -689,6 +690,84 @@ is open where the gewicht is open.
 itself, and not where its assertion is undetermined. Example
 (WV-1.5-consistency): "het gewicht van een Vondst moet groter of gelijk zijn
 aan 0" reports at gewicht −1, and not without a gewicht.
+
+**A stack.** A default of a defaults group (ch. 7.1) has the three outcomes
+of a rule: it decides where its justification is established true for
+itself and its value is filled; it gives way where its justification is
+established false for another form, or where it holds with a settled leeg
+value (the fall-through of ch. 7.1); and it is open otherwise. The stack is
+read from high to low: the first default that decides decides the target, a
+lower default decides only where it stands of every higher one that it gives
+way, and at the first default that is open the target is open. Example
+(WV-1.5-stack-first-decides): "het vindloon van een Vondst is zijn gewicht
+maal 2", with above it "… op 0 indien hij betwist is": at gewicht 50 the
+vindloon is 100 where betwist stands not to hold, 0 where it holds, and open
+where the case does not name it; without a gewicht it is 0 where betwist
+holds and open where it stands not to hold. Example
+(WV-1.5-stack-gives-way): "het bergloon van een Vondst is 7 indien hij
+gemeld is", with above it "… zijn vindloon indien hij gemeld is en zijn
+gewicht groter is dan 100" and the vindloon of the card: a gemelde Vondst of
+gewicht 200 has a bergloon of 7 at taxatie 50, where the vindloon is settled
+leeg, of 10 at taxatie 2000, and an open bergloon without a taxatie. Where
+every default gives way and no initialisation stands below them, the target
+is settled leeg (WV-1.5-stack-settled-leeg): that bergloon where gemeld
+stands not to hold.
+
+**The initialisation of a stack** (ch. 7.3) is a closure over the stack, as
+an initialisation rule is over the writers of its target: it decides where
+nothing above it decides, also where a default above it is open. A value the
+case gives the target stands above it. Example
+(WV-1.5-stack-initialisation): below the vindloon above, "… moet
+geïnitialiseerd worden op 5" gives 5 at gewicht 50 where betwist is not
+named, and 5 without a gewicht where betwist stands not to hold; with "… op
+zijn schatting" in its place the vindloon is open without a schatting and 4
+at schatting 4. With a vindloon of 7 in the case it is open where betwist is
+not named, and 100 where betwist stands not to hold.
+
+**An opgave** — a stack whose highest default is the value the case may give
+for its target, "het bergloon (mag opgegeven worden)" — reads as any default
+over an input member: where the case gives the opgave no value it is open,
+and the computation below it does not decide. A session that treats the
+opgave as complete lets the computation decide, and an initialisation closes
+over an open opgave. Example (WV-1.5-stack-opgave): "het bergloon van een
+Vondst is zijn opgegeven bergloon", above "… zijn gewicht maal 2", at gewicht
+10: 30 with an opgave of 30, open without one, 20 where the opgave is
+complete, and 25 above "… moet geïnitialiseerd worden op 25".
+
+**A stack on a characteristic** decides to attribute or not to attribute
+(ch. 7.1). Where a default decides not to attribute, or every default gives
+way, it stands that the characteristic does not hold, unless the case names
+it; where the first default that does not give way is open, the
+characteristic is open. Example (WV-1.5-stack-characteristic): "een Vondst is
+beloonbaar indien zijn gewicht groter is dan 2", with above it "niet
+beloonbaar indien hij betwist is en zijn gewicht groter is dan 2", "de premie
+is 10 indien hij beloonbaar is" and "de wachtpremie is 3 indien hij niet
+beloonbaar is": at gewicht 5 beloonbaar holds and the premie is 10 where
+betwist stands not to hold; it stands not to hold and the wachtpremie is 3
+where betwist holds; it is open, and both premies with it, where betwist is
+not named. At gewicht 1 it stands not to hold.
+
+**Exception groups and a declared-unordered group** (ch. 7.9, 7.2) read each
+member with the three outcomes. A member decides only where it stands of every
+other member that it gives way or decides the same: two members that decide
+differently are the conflict of ch. 7.2, and beside a member that is open the
+group is open. Example (WV-1.5-stack-exception-groups): the vindloon "zijn
+gewicht maal 2" with the exception groups "op 0 indien hij betwist is" and
+"op 5 indien hij beschadigd is", at gewicht 50, is 100 where neither holds, 0
+where betwist holds and beschadigd stands not to hold, open where betwist is
+not named, open where betwist holds and beschadigd is not named, and without
+a value beside the fact `Vondst.vindloon/0` where both hold. The two as a
+declared-unordered group of two groups (WV-1.5-stack-unordered) give 0, open,
+settled leeg where neither holds, and the fact `Vondst.vindloon` where both
+hold. The effective stack of a subtype (ch. 7.10) reads in the same way
+(WV-1.5-stack-type-chain): with "de uitkering van een Strandrecht is zijn
+grondslag", the exception "… op 99 indien hij betwist is", and for a
+Wrakrecht "… zijn grondslag maal 2" with the exception "… op 55 indien zijn
+bergingsdiepte groter is dan 20", a Wrakrecht with grondslag 10 and
+bergingsdiepte 5 has an uitkering of 20 where betwist stands not to hold, 99
+where it holds and an open one where it is not named; at bergingsdiepte 25 it
+is 55 whatever betwist. A stack on a timeline target (ch. 7.11) is not
+defined here (WV-1.5-stack-timeline-refused).
 
 **A read over a link.** A relation is complete: a read over a link that is
 absent is settled leeg and is read as ch. 1.2 and 5.8 lay down, and a
