@@ -1,0 +1,34 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    de taxatie Numeriek (geheel getal);
+    het gewicht Numeriek (geheel getal);
+    de toeslag Numeriek (geheel getal) (volledig);
+    de bijslag Numeriek (geheel getal);
+    de uitbetaling Numeriek (geheel getal);
+    de bijbetaling Numeriek (geheel getal);
+    is drijfhout kenmerk (bijvoeglijk) (volledig);
+    is wrakhout kenmerk (bijvoeglijk);
+    de drijftoeslag Numeriek (geheel getal);
+    de wraktoeslag Numeriek (geheel getal);
+    het bergloon Numeriek (geheel getal) (mag opgegeven worden);
+
+Regel uitbetaling
+    geldig altijd
+        De uitbetaling van een Vondst moet berekend worden als zijn taxatie plus zijn toeslag.
+
+Regel bijbetaling
+    geldig altijd
+        De bijbetaling van een Vondst moet berekend worden als zijn taxatie plus zijn bijslag.
+
+Regel drijftoeslag
+    geldig altijd
+        De drijftoeslag van een Vondst moet gesteld worden op 2 indien hij niet drijfhout is.
+
+Regel wraktoeslag
+    geldig altijd
+        De wraktoeslag van een Vondst moet gesteld worden op 2 indien hij niet wrakhout is.
+
+Regel bergloon
+    geldig altijd
+        Het bergloon van een Vondst moet berekend worden als zijn gewicht maal 2.

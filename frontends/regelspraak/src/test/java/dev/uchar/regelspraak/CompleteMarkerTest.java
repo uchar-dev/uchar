@@ -11,6 +11,8 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.Token;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -27,6 +29,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * document below that writes the marker was a syntax error on it.
  */
 class CompleteMarkerTest {
+
+    private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden", "jutterswet-volledig-gegeven");
 
     private static final String MODEL = """
             Afleiden uit leeg: nee
@@ -137,6 +141,11 @@ class CompleteMarkerTest {
                 """);
         assertTrue(m.isOk(), () -> m.errors().toString());
         assertEquals(List.of(), complete(m.document()));
+    }
+
+    @Test void the_golden_re_emits_byte_for_byte() throws Exception {
+        assertEquals(Files.readString(GOLDEN.resolve("ir.json")),
+                clean(Files.readString(GOLDEN.resolve("source.rgs"))).document());
     }
 
     // ---------------- the refusals ----------------

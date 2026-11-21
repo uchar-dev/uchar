@@ -1,0 +1,74 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "drijfhout",
+          "wrakhout"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "drijfhout"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "drijftoeslag",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "V1",
+      "characteristic": "wrakhout"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "wraktoeslag"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V2",
+      "characteristic": "drijfhout"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "drijftoeslag"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V2",
+      "characteristic": "wrakhout"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "wraktoeslag"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

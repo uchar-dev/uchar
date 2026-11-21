@@ -1,0 +1,54 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "50"
+          },
+          "toeslag": {
+            "number": "5"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "toeslag",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "uitbetaling",
+      "value": {
+        "number": "55"
+      }
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "bijslag"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "bijbetaling"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
