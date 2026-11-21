@@ -657,6 +657,26 @@ complete and bergloon 3, is 3, and so with every input member complete; with
 only the bergloon complete it stays open. "De drijftoeslag is 2 indien hij
 niet drijfhout is", with drijfhout complete and not named, is 2.
 
+**The case.** Beside the characteristics that hold, the input of an object
+can name the characteristics that stand not to hold (`characteristicsAbsent`,
+ch. 5.7). Such a characteristic is not open, also where a rule writes it and
+decides nothing: the statement stands beside that writer as an input value
+does (ch. 7.8). An expectation `attributeEmpty` holds where the attribute is
+settled leeg, `characteristicAbsent` where the characteristic stands not to
+hold, and `attributeOpen` and `characteristicOpen` where the member is open.
+In a document without the property nothing is open: the first two read as
+ch. 1.2 does, the last two hold nowhere, and `characteristicsAbsent` changes
+no outcome. On the input before any rule is evaluated nothing is open either.
+Example (WV-1.5-case-*): with the vindloon of the examples above and no
+taxatie, `attributeOpen` holds for the vindloon and `attributeEmpty` does
+not; with taxatie 50 the reverse, and so without the property and without a
+taxatie. "De drijftoeslag is 2 indien hij niet drijfhout is" is 2 where the
+case names drijfhout in `characteristicsAbsent` and open where it names it
+nowhere; without the property it is 2 either way. Kostbaar in
+`characteristicsAbsent` with no taxatie stands not to hold, and holds with
+taxatie 2000. The golden `jutterswet-afleiden-uit-leeg` has a case per
+state.
+
 **The two requirements.** *Monotonicity*: giving an input member a value adds
 outcomes and changes none — an outcome being a value, a settled leeg
 attribute, a characteristic that holds or stands not to hold, or a §9.5 fact
@@ -5104,13 +5124,16 @@ not a calendar — is refused, naming its position and the lexeme (EF-003).
 The cells of a dimensioned attribute are refused where their labels name no
 cell of the attribute (EF-034) and where the input names one cell twice
 (EF-035), and a scalar or a timeline on a dimensioned attribute is a case
-error (ch. 5.8c). An `attributeValue` or `attributeEmpty` expectation on a
-time-dependent attribute, and a `characteristicPresent` or
-`characteristicAbsent` expectation on a time-dependent characteristic, is a
-case error without a code: the member has a value per period and none of its
-own, so the case does not fit the document's declarations, and a timeline is
-expected with `attributeTimeline` (witnesses
-`WV-5.7-case-reader-refuses-…` in `ref/test/`).
+error (ch. 5.8c). A characteristic the input names as holding
+(`characteristics`) and as not holding (`characteristicsAbsent`, ch. 1.5) is
+refused, since the case states both (EF-047). An `attributeValue`,
+`attributeEmpty` or `attributeOpen` expectation on a time-dependent
+attribute, and a `characteristicPresent`, `characteristicAbsent` or
+`characteristicOpen` expectation or a `characteristicsAbsent` entry on a
+time-dependent characteristic, is a case error without a code: the member has
+a value per period and none of its own, so the case does not fit the
+document's declarations, and a timeline is expected with `attributeTimeline`
+(witnesses `WV-5.7-case-reader-refuses-…` in `ref/test/`).
 
 **Divergence by two writers of one target.** Two rules that write one
 attribute and whose conditions both hold on one instance demand, by
@@ -5563,6 +5586,7 @@ parameters, the clause that defines it and its witnesses.
 | EF-044 | a power with a fractional exponent has a negative base | §9.5 | `rule`, `label` | ch. 1.2; ch. 2.2 | `corpus/golden/fractional-power-negative-base` |
 | EF-045 | a square root or a power with a fractional exponent has an irrational value and no rounding follows | fault | — | ch. 2.2 | `corpus/red/irrational-power-without-rounding` |
 | EF-046 | a part of a date construction is no whole number | fault | — | ch. 3.8 | `corpus/red/date-part-not-whole` |
+| EF-047 | the case input names a characteristic as holding and as not holding | case input | `label`, `characteristic` | ch. 1.5; ch. 5.7 step 3 | `corpus/red/jutterswet-kenmerk-wel-en-niet` |
 
 The four declined kinds are static properties of the document. Each ends
 as a WF rule (its witness moves to `corpus/negative`) or as a specified
