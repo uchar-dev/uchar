@@ -468,6 +468,200 @@ on the table, kept as the decision's rationale:
    session; the kind kept its code, its witness moved from the red corpus
    to the golden `fractional-power-negative-base`.
 
+### 1.5 A document that infers nothing from an empty value
+
+*Status: PROPOSAL, from `spec/proposals/STRICT-EMPTY.md`.* A document with
+`inferFromEmpty: false` (IR-SPEC ch. 2) reads a value in three states
+instead of two. This section says what that changes; what it does not name
+reads as ch. 1.2–1.4 lay down. It defines the reading for a rule (an
+equation, a calculation, a characteristic attribution, an initialisation), a
+consistency rule, a condition without a fold, and an expression without a
+fold or a timeline; for every other form the reading is not defined here, and
+IR-SPEC ch. 2 says what an executor does with a document that holds one. Each
+example is a test of the reference interpreter's suite under the name given;
+the examples are from the Jutterswet, on a Vondst whose attributes are whole
+numbers.
+
+**The three states.** A member of an object is *filled* (an attribute has a
+value, a characteristic holds), *settled leeg* (it stands that the attribute
+has no value, or that the characteristic does not hold) or *open* (neither
+stands). An input member — an attribute or a characteristic that no rule
+writes on the object's type — is open where the case gives it no value or
+does not name it, unless the session treats it as complete (below). A
+document without the property has no open member: a member without a value is
+settled leeg, and the rest of this section then reads as ch. 1.2–1.4. Example
+(WV-1.5-open-input, WV-1.5-no-open-without-the-property): "de uitbetaling van
+een Vondst is zijn vindloon plus zijn bergloon", with bergloon 3 and no
+vindloon, which no rule writes: the vindloon is open; without the property it
+is leeg and the uitbetaling is 3. A characteristic drijfhout that no rule
+attributes is open where the case does not name it, and holds where it does.
+Whether a member is input is asked per object (WV-1.5-input-per-object): with
+"het vindloon van een Strandvondst is 10 indien zijn taxatie groter is dan
+1000", the vindloon of a Vondst that is no Strandvondst is input, and open
+without a value, while that of a Strandvondst with taxatie 50 is settled leeg.
+
+**What stands reads as before.** An expression or a condition whose reads are
+all filled or settled leeg is evaluated as ch. 1.2–1.4 lay down: a settled
+leeg operand counts as 0 in a plus, an ordering with it is false, `≠` with it
+is true. Example (WV-1.5-settled-operand): with "het vindloon van een Vondst
+is 10 indien zijn taxatie groter is dan 1000" and taxatie 50, the vindloon is
+settled leeg (below); the uitbetaling is 3, and "een Vondst is beloond indien
+zijn vindloon ongelijk is aan 5" holds. Without a taxatie beloond is open.
+
+**An open read.** An evaluation that reads an open value is broken off: the
+expression has no value, and what the evaluation deposited in the §9.5
+channel up to there is dropped. The boundary is one value — the value of a
+rule — or one atomic condition (below). Example (WV-1.5-open-passes-on): the
+uitbetaling above with an open vindloon has no value; "het aandeel van een
+Vondst is zijn gewicht gedeeld door zijn getuigen", with gewicht 10 and
+getuigen open, has no value and deposits nothing, where the document without
+the property deposits EF-031.
+
+**The judgement of a condition.** A condition is established true,
+established false, or undetermined. An atomic condition — a comparison, the
+exact-digit test, a characteristic check, a role check, an identity check —
+that reads an open value is undetermined; one that reads none is established,
+as ch. 1.2 and 5.8 decide it. A composite (ch. 5.10) over *n* members, *h* of
+them established true and *f* established false, follows Kleene's strong
+table:
+
+| quantifier | established true when | established false when |
+|---|---|---|
+| `all`, `the` | *h* = *n* | *f* ≥ 1 |
+| `atLeast` *k* | *h* ≥ *k* | *f* ≥ *n* − *k* + 1 |
+| `none` | *f* = *n* | *h* ≥ 1 |
+| `atMost` *k* | *f* ≥ *n* − *k* | *h* ≥ *k* + 1 |
+| `exactly` *k* | *h* ≥ *k* and *f* ≥ *n* − *k* | *h* ≥ *k* + 1, or *f* ≥ *n* − *k* + 1 |
+
+and is undetermined otherwise. It reads its members left to right and stops
+at the first prefix on which its judgement is established with every unread
+member taken as undetermined, which in a document without open members is
+the stop of ch. 5.10. An undetermined member does not stop the read, so a
+member after it can decide the composite, and a fault or a §9.5 fact of that
+member can arise where ch. 5.10 would have stopped. "Niet A" is `none` over
+A. Example (WV-1.5-atom, WV-1.5-table-*): "een Vondst is zwaar indien zijn
+gewicht groter is dan 100" is undetermined without a gewicht. With "een
+Vondst is opvallend indien [Q] van: zijn gewicht groter is dan 100 (A), zijn
+schatting groter is dan 1000 (B), zijn lengte groter is dan 2 (C)": `all`
+over A undetermined and B false is false; `atLeast 1` over A undetermined and
+B true is true; over A true, B true and C undetermined, `atLeast 2` is true
+and `atMost 1` and `exactly 1` are false; over A true, B false and C
+undetermined, all three are undetermined; over A false, B false and C
+undetermined, `atLeast 2` is false, `atMost 1` true and `exactly 1`
+undetermined. The suite holds all nine rows of `all`, `atLeast 1` and `none`
+over A and B, and the three rows of "niet A".
+
+**For the form itself and for another.** The judgement of a condition is a
+pair: its truth for the form whose condition it is, and its truth for another
+form, which reads from it that the form fills nothing. The two differ only at
+a test on leeg or gevuld over an open value (below); everywhere else they are
+equal.
+
+**A rule** decides where its condition is established true for itself and
+its value has no open read; it then writes as ch. 1.2 and 5 lay down, a leeg
+value writing nothing. Where its condition is established false for another
+form, it stands that the rule fills nothing. Otherwise it decides nothing and
+leaves its target open. Example (WV-1.5-rule-*): "het vindloon van een Vondst
+is zijn taxatie gedeeld door 100 indien zijn gewicht groter is dan 10" gives
+5 with gewicht 20 and taxatie 500, fills nothing with gewicht 5 whatever the
+taxatie, and leaves the vindloon open without a gewicht, and with gewicht 20
+and no taxatie.
+
+**An initialisation** is a rule that writes only where its target has no
+value (ch. 5.4), also where another writer leaves the target open: it closes
+over the writers of its target. Its own condition and value are read as a
+rule's. Example (WV-1.5-initialisation): "het strandloon van een Vondst is
+zijn vangst maal 2 indien hij gemeld is" and "het strandloon van een Vondst
+moet geïnitialiseerd worden op 5": with vangst 4 and gemeld named the
+strandloon is 8, and where the case does not name gemeld it is 5. With "… op
+5 indien zijn vangst groter is dan 1" it stays open without a vangst.
+
+**A derived member** — one a rule writes on the object's type — follows its
+writers, also where the case gives it no value: it is filled where a writer
+decides with a value, settled leeg where it stands of every writer that it
+fills nothing or decides with a leeg value, and open otherwise; a
+characteristic holds, stands not to hold, or is open, in the same way. The
+states are those at the fixpoint of the session (ch. 5): a rule that leaves
+its target open changes it as a write does, so a form that read the target
+before is evaluated again. Example (WV-1.5-derived-*): the vindloon of the
+example above, with a second writer "het vindloon is 5 indien zijn gewicht
+groter is dan 100", is settled leeg with taxatie 50 and gewicht 50, open with
+taxatie 50 and no gewicht, and 10 with taxatie 2000. "Een Vondst is kostbaar
+indien zijn taxatie groter is dan 1000" holds at taxatie 2000, stands not to
+hold at 50, and is open without a taxatie. An open member passes on to its
+reader: without a taxatie the vindloon is open and so is the uitbetaling that
+reads it, in either order of the two rules; with taxatie 2000 and bergloon 3
+the uitbetaling is 13. "De toeslag is 5 indien zijn vindloon groter is dan
+5", first in the document, is open without a taxatie as well.
+
+**A negated characteristic check** is true where it stands that the
+characteristic does not hold, false where it holds, and undetermined where it
+is open. Example (WV-1.5-negation): "de toeslag van een Vondst is 5 indien
+hij niet kostbaar is" is 5 at taxatie 50, settled leeg at 2000, and open
+without a taxatie; "de drijftoeslag is 2 indien hij niet drijfhout is", over a
+drijfhout the case does not name, is open.
+
+**The test on leeg and gevuld.** Over a filled or a settled leeg value the
+test reads as ch. 1.2. Over an open value, or a computed value whose
+evaluation has an open read, the gevuld test is false for the form itself and
+undetermined for another; the leeg test is true for the form itself — a
+closure: the author has written what the form does where the value is absent
+— and undetermined for another. A negated test is its sister test (ch. 1.2).
+
+| the rule, over an open X | for the form itself | for another form |
+|---|---|---|
+| "K indien X gevuld is en X groter is dan 1000" | K is not attributed | it does not stand that K does not hold: K is open |
+| "K indien X leeg is" | K holds | — |
+| "X moet gevuld zijn" | it reports | — |
+
+Example (WV-1.5-filled-test-*, WV-1.5-filled-guard): "een Vondst is
+getaxeerd indien zijn taxatie gevuld is" and "ongetaxeerd indien zijn taxatie
+leeg is": at taxatie 50 getaxeerd holds and ongetaxeerd does not; at a
+settled leeg taxatie (a complete member, below) getaxeerd does not hold and
+ongetaxeerd holds; at an open taxatie getaxeerd is open and ongetaxeerd
+holds. "Kostbaar indien zijn taxatie gevuld is en zijn taxatie groter is dan
+1000" is no closure: over an open taxatie kostbaar is open, and so is "de
+bewakingstoeslag is 5 indien hij niet kostbaar is"; over a settled leeg
+taxatie kostbaar stands not to hold and the bewakingstoeslag is 5. "De
+taxatie van een Vondst moet gevuld zijn" reports over an open taxatie.
+
+**A consistency rule** reports where its assertion is established false for
+itself, and not where its assertion is undetermined. Example
+(WV-1.5-consistency): "het gewicht van een Vondst moet groter of gelijk zijn
+aan 0" reports at gewicht −1, and not without a gewicht.
+
+**A read over a link.** A relation is complete: a read over a link that is
+absent is settled leeg and is read as ch. 1.2 and 5.8 lay down, and a
+navigated check over an absent link is false and stands. Over a link that is
+present, an open attribute or characteristic of the object it reaches is an
+open read. Example (WV-1.5-link-*): "de vindpremie van een Vondst is zijn
+waarde plus de bonus van de vinder van de Vondst", waarde 100, is 100 without
+a vinder, open with a vinder without a bonus, and 120 with a bonus of 20.
+"Een Vondst is deskundig gevonden indien de vinder ervaren is" stands not to
+hold without a vinder, is open where the case does not name ervaren for the
+vinder, and holds where it does.
+
+**Complete input.** A session can treat input members as complete: every
+input member, or the members it names by object type and member, on every
+object of that type. A complete member without a value is settled leeg; a
+complete characteristic the case does not name stands not to hold. Example
+(WV-1.5-closed-*): the uitbetaling of the first example, with the vindloon
+complete and bergloon 3, is 3, and so with every input member complete; with
+only the bergloon complete it stays open. "De drijftoeslag is 2 indien hij
+niet drijfhout is", with drijfhout complete and not named, is 2.
+
+**The two requirements.** *Monotonicity*: giving an input member a value adds
+outcomes and changes none — an outcome being a value, a settled leeg
+attribute, a characteristic that holds or stands not to hold, or a §9.5 fact
+— except through a closure: a leeg test or a gevuld assertion over an open
+value, an initialisation, and complete input. *Preservation with complete
+knowledge*: where nothing is open, every input member given or complete, the
+outcomes are those of ch. 1.2–1.4. Example (WV-1.5-monotone,
+WV-1.5-preserved): every example of this section, run once with each input
+member it gives left out, and once with every input member complete against
+the same document without the property; the closures the first meets are
+listed in the test, with the outcomes each adds.
+
 ---
 
 ## 2. Arithmetic and rounding

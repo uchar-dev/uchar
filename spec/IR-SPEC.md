@@ -225,7 +225,7 @@ A **document** is the root container (decision V3 (b); landed at M1,
 empty value, `layer: core`: it changes outcomes. Absent, the document is
 read as `RUNTIME-SEMANTICS.md` ch. 1.2–1.4 lay down. Written `false`, the
 document asks for the reading in which nothing is inferred from an empty
-value. In the Jutterswet, with the rule that a vondst is meldplichtig if
+value (`RUNTIME-SEMANTICS.md` ch. 1.5). In the Jutterswet, with the rule that a vondst is meldplichtig if
 its vondstwaarde is greater than 100, a vondst without a vondstwaarde is
 not meldplichtig in a document without the field (ch. 1.2); a document
 with `inferFromEmpty: false` does not infer that from the empty
