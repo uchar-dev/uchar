@@ -9849,11 +9849,10 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          whole-period form never reaches here: the arm above takes every
          qualified test, negated or not (ch. 3.9).
 
-         Gevuld is the operand's binding atoms as a positive join. A struct
-         operand rides struct_term (its val atom), any other operand rides
-         expr_term — either way absence leaves the atoms unbound, so the gated
-         rule does not fire (leeg-on-absence for free). The value itself is
-         discarded; only presence matters.
+         Gevuld is the operand's binding atoms as a positive join, read by
+         [filled_operand_atoms] for every datatype it binds — absence leaves
+         the atoms unbound, so the gated rule does not fire (leeg-on-absence
+         for free). The value itself is discarded; only presence matters.
 
          Leeg is the complement of that join, and ASP forms no complement of a
          conjunction of atoms — only of a predicate. So the join is REIFIED in
@@ -9881,13 +9880,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          onwaar. The operand's own read carries the shared fail-fast guard
          ([unbound_param_guard]), so both routes refuse it in ref's words
          wherever the test is reached. *)
-      let operand = req "Predicate.operand" operand in
-      let atoms =
-        if is_struct_operand ctx (Some operand) then fst (struct_term ctx ~subject ~subject_ot operand)
-        else
-          let atoms, _, _ = expr_term ctx ~subject ~subject_ot operand in
-          atoms
-      in
+      let atoms = filled_operand_atoms ctx ~subject ~subject_ot (req "Predicate.operand" operand) in
       if (variety = Filled) <> negation then atoms
       else begin
         if has_recursive_creation ctx.doc then
@@ -9968,6 +9961,64 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       faultc "CLINGO-047"
         "a read of the inconsistency channel ('regelversie X is inconsistent') is not translated"
   | _ -> faultc "CLINGO-011" "condition kind not translated (no corpus case exercises it)"
+
+(* The atoms that bind the operand of a leeg or gevuld test (ch. 1.2). The
+   value is discarded and only the binding counts, so the choice is the one
+   place that decides, by the operand's datatype, which read binds it:
+   - a number, a percentage and a day-precision date ride [expr_term], which
+     reads their scale;
+   - an attribute or a cell read of any other datatype binds its val/3 atom
+     unscaled ([member_read]), on the subject or over a path of to-one roles:
+     a text, an enumeration and a boolean (onwaar is a value), a datum-tijd,
+     a record, and a sum type — an attribute with absence markers among
+     them, whose markers are values (ch. 9.5). The term functions of those
+     datatypes read the subject's own attribute only, and the test needs no
+     term to compare;
+   - any other operand of those datatypes rides the term function the
+     equality arms choose for it: [symbolic_term], [dt_term], [struct_term],
+     and [expr_term] for a sum type, which builds more sum-typed forms than
+     [sum_term] (a Construct with a bound payload, a Match, a fold).
+   Two operands have no binding this encoding reads, and both refuse by name
+   (CLINGO-050): a list, which it holds as lpres/lelem facts and never as
+   val/3, so a val/3 join would read every list as leeg; and a parameter of
+   any other datatype, because the case carries a parameter as param/2 with a
+   number or a day number and holds no other value. *)
+and filled_operand_atoms ctx ~subject ~subject_ot (e : expr) : string list =
+  let refuse what datatype sentence =
+    faultc ~params:[ ("operand", what); ("datatype", Ir_v0.Checks.datatype_kind datatype) ] "CLINGO-050"
+      "the leeg or gevuld test on %S is not translated: %s" what sentence
+  in
+  let name_of = function
+    | Attribute_reference { attribute_ref = Some a; _ } -> a
+    | Parameter_ref { parameter = Some p; _ } -> p
+    | e -> Ir_v0.Spelling.a_node e
+  in
+  match (static_type ctx e, Option.value (Ir_v0.Checks.unanchored_expr e) ~default:e) with
+  | Some (List_type _ as dt), inner ->
+      refuse (name_of inner) dt
+        "this encoding holds a list as lpres/lelem facts, not as the val/3 binding the test reads"
+  | (None | Some (Number _ | Percentage _ | Date_in_days)), _ ->
+      let atoms, _, _ = expr_term ctx ~subject ~subject_ot e in
+      atoms
+  | Some _, Attribute_reference { attribute_ref; _ } ->
+      let atoms, _, _ = member_read ~scaled:false ctx ~subject ~subject_ot ~member:(req "attribute" attribute_ref) e in
+      atoms
+  | Some _, Dimension_cell_read { attribute_ref = Some inner; labels; _ } ->
+      let a, ot = dimensioned_reference inner in
+      let member = cell_member ctx.doc ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
+      let atoms, _, _ = member_read ~scaled:false ctx ~subject ~subject_ot ~member inner in
+      atoms
+  | Some dt, (Parameter_ref _ as inner) ->
+      refuse (name_of inner) dt
+        "this encoding carries a parameter as param/2 with a number or a day number, and no other value"
+  | Some (Text_type | Boolean | Enumeration _), _ -> fst (symbolic_term ctx ~subject ~subject_ot e)
+  | Some Date_time_type, _ ->
+      let atoms, _, _ = dt_term ctx ~subject ~subject_ot e in
+      atoms
+  | Some (Struct_type _), _ -> fst (struct_term ctx ~subject ~subject_ot e)
+  | Some (Sum_type _), _ ->
+      let atoms, _, _ = expr_term ctx ~subject ~subject_ot e in
+      atoms
 
 (* the ground term of a Construct (ch. 9.1): a Literal payload scaled to the
    constructor's DECLARED payload datatype; the nullary case is the bare

@@ -97,6 +97,15 @@ spec bug.
   underivable computation, so a case pinning that write goes red on
   gate 6 (recorded limitation; the prioritized-defaults path carries the
   same situation correctly through its defeasible input).
+- The leeg and gevuld tests (ch. 1.2) read only whether the operand
+  binds: gevuld is its binding atoms as a positive join, leeg the
+  negation of a helper over them. An attribute or a cell read binds its
+  `val/3` atom for every datatype the encoding stores there, on the
+  subject or over a path of to-one roles: a number, a percentage, a date,
+  a datum-tijd, a text, an enumeration, a boolean (onwaar is a value), a
+  record and a sum type, whose absence markers are values (ch. 9.5). Any
+  other operand is read by the term function of its datatype (golden
+  `jutterswet-gevuldtoets-soorten`).
 - Negated characteristic reads are negation-as-failure — sound because
   WF-045/046 guarantee stratifiability; the verifier is thereby also
   the guard that a document is clingo-suitable — as it is for the
@@ -492,6 +501,14 @@ Recorded limitations:
   the form `document`: the encoding reads empty as RUNTIME-SEMANTICS
   ch. 1.2–1.4 lay down, so its model would answer what the document
   excludes. ref refuses such a document alike (REF-014).
+- A leeg or gevuld test on a list, or on a parameter of a datatype other
+  than a number, a percentage or a day-precision date, is refused at
+  translation as the refusal CLINGO-050 (parameters `operand`,
+  `datatype`): the encoding holds a list as `lpres`/`lelem` facts and a
+  parameter as `param/2` with a number or a day number, so neither has
+  the binding the test reads. ref plays both (suite frames `ch1.2 the
+  gevuld test on a list attribute` and `ch1.2 the leeg test on a text
+  parameter`).
 - The Let lowering keeps an enclosing Let's need on a path that does
   not read its binder, also with every parameter bound, so a value ref
   computes stays leeg. [V1] A Match with an arm that reads the binder,

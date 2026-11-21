@@ -19621,6 +19621,106 @@ let () =
   check ("inferFromEmpty absent: the runner plays the golden (exit " ^ string_of_int status ^ ": " ^ out ^ ")")
     (status = 0 && out = "clingo: PASS (4 expectations)\n")
 
+(* The leeg and gevuld tests (RUNTIME-SEMANTICS ch. 1.2) on each datatype the
+   arm binds besides the number, the percentage and the day-precision date: a
+   text, an enumeration, a boolean, a datum-tijd, a sum type with an absence
+   marker (whose marker is a value, ch. 9.5) and a record, each read on the
+   subject and over the to-one role of a Vondst to its Jutter. Per datatype,
+   form and test one document, verifier-clean, and one case: V1 holds a value
+   (on itself or on its Jutter J1), V2 none (its Jutter J2 none), V3 has no
+   Jutter, so the gevuld test holds on V1 alone and the leeg test on V2 and V3.
+   ref and clingo pin the same answer. The list and a parameter of a datatype
+   param/2 does not carry are refused by name with CLINGO-050, where ref plays
+   (the golden jutterswet-gevuldtoets-soorten is the corpus witness). *)
+let () =
+  let num2 = {|{"node": "Number", "whole": false, "decimals": 2, "sign": "unspecified"}|} in
+  let whole = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative"}|} in
+  let fields = Printf.sprintf {|[{"name": "waarde", "datatype": %s}, {"name": "telling", "datatype": %s}]|} num2 whole in
+  let constructors = Printf.sprintf {|[{"name": "waarde", "payload": %s}, {"name": "onbekend", "payload": null}]|} num2 in
+  let doc ~attribute_type ~parameter_type ~domain ~own ~kind ~operand =
+    let attribute =
+      match attribute_type with
+      | Some t -> Printf.sprintf {|, {"node": "Attribute", "name": "aantekening", "datatype": %s}|} t
+      | None -> ""
+    in
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Jutter", "animate": false, "plural": "Jutters", "attributes": [{"node": "Attribute", "name": "naam", "datatype": {"node": "Text"}}%s], "characteristics": []}, {"node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten", "attributes": [{"node": "Attribute", "name": "gewicht", "datatype": %s}%s], "characteristics": [{"node": "Characteristic", "name": "ingedeeld", "kind": "adjectival"}]}], "factTypes": [{"node": "FactType", "name": "vangst", "reciprocal": false, "roles": [{"node": "Role", "name": "jutter", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "vondst", "objectType": "Vondst", "many": true}]}], "parameters": [%s], "domains": [%s], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [{"node": "Rule", "name": "toets", "versions": [{"validity": {"node": "Validity"}, "target": {"node": "AttributeReference", "attribute": "ingedeeld", "subjectType": "Vondst", "source": {"snippet": "Een Vondst is ingedeeld"}}, "value": {"node": "Literal", "value": {"boolean": true}, "type": {"node": "Boolean"}, "source": {"snippet": "waar"}}, "condition": {"node": "Predicate", "kind": "%s", "operand": %s, "negated": false, "digits": 0, "source": {"snippet": "de aantekening %s is"}}, "initialisation": false}]}], "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": []}, "diagnostics": []}|}
+      (if own then "" else attribute) num2 (if own then attribute else "")
+      (match parameter_type with
+       | Some t -> Printf.sprintf {|{"node": "Parameter", "name": "grensaantekening", "datatype": %s}|} t
+       | None -> "")
+      (Option.value domain ~default:"") kind operand kind
+  in
+  let own_read =
+    {|{"node": "AttributeReference", "attribute": "aantekening", "subjectType": "Vondst", "source": {"snippet": "zijn aantekening"}}|}
+  and role_read =
+    {|{"node": "AttributeReference", "attribute": "aantekening", "subjectType": "Jutter", "source": {"snippet": "de aantekening van de jutter van de Vondst"}, "path": [{"node": "RoleBinding", "factType": "vangst", "role": "jutter"}]}|}
+  and parameter_read =
+    {|{"node": "ParameterReference", "parameter": "grensaantekening", "source": {"snippet": "de grensaantekening"}}|}
+  in
+  let case_text ~own ~kind value =
+    let holds label = if (label = "V1") = (kind = "filled") then "characteristicPresent" else "characteristicAbsent" in
+    let attrs label = if label = (if own then "V1" else "J1") then Printf.sprintf {|{"aantekening": %s}|} value else "{}" in
+    Printf.sprintf
+      {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "J1", "objectType": "Jutter", "attributes": %s, "roles": {"vondst": ["V1"]}, "characteristics": []}, {"label": "J2", "objectType": "Jutter", "attributes": {}, "roles": {"vondst": ["V2"]}, "characteristics": []}, {"label": "V1", "objectType": "Vondst", "attributes": %s, "roles": {}, "characteristics": []}, {"label": "V2", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": []}, {"label": "V3", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": []}], "parameters": {}}, "expected": [%s]}|}
+      (attrs "J1") (attrs "V1")
+      (String.concat ", "
+         (List.map
+            (fun label -> Printf.sprintf {|{"kind": "%s", "label": "%s", "characteristic": "ingedeeld"}|} (holds label) label)
+            [ "V1"; "V2"; "V3" ]))
+  in
+  List.iter
+    (fun (datatype_name, attribute_type, domain, value) ->
+      List.iter
+        (fun (own, form) ->
+          List.iter
+            (fun kind ->
+              let name = Printf.sprintf "ch1.2 the %s test on %s, %s" kind datatype_name form in
+              let ir =
+                doc ~attribute_type:(Some attribute_type) ~parameter_type:None ~domain ~own ~kind
+                  ~operand:(if own then own_read else role_read)
+              and case_text = case_text ~own ~kind value in
+              verifier_clean ~name ~ir;
+              ref_matches ~name ~ir ~case_text;
+              clingo_matches ~name ~ir ~case_text)
+            [ "filled"; "empty" ])
+        [ (true, "the subject's own"); (false, "over a role") ])
+    [ ("a text", {|{"node": "Text"}|}, None, {|{"text": "Noorderstrand"}|});
+      ( "an enumeration",
+        {|{"node": "Enumeration", "domain": "Categorie", "values": ["schelp", "hout"]}|},
+        Some {|{"node": "Domain", "name": "Categorie", "datatype": {"node": "Enumeration", "values": ["schelp", "hout"]}}|},
+        {|{"enumeration": "schelp"}|} );
+      ("a boolean onwaar", {|{"node": "Boolean"}|}, None, {|{"boolean": false}|});
+      ("a datum-tijd", {|{"node": "Date", "precision": "millisecond"}|}, None, {|{"dateTime": "2026-03-04T06:30:00"}|});
+      ( "the absence marker of a sum type",
+        Printf.sprintf {|{"node": "SumType", "domain": "aantekening", "constructors": %s}|} constructors,
+        Some (Printf.sprintf {|{"node": "Domain", "name": "aantekening", "datatype": {"node": "SumType", "constructors": %s}}|} constructors),
+        {|{"constructor": "onbekend"}|} );
+      ( "a record",
+        Printf.sprintf {|{"node": "StructType", "domain": "dossier", "fields": %s}|} fields,
+        Some (Printf.sprintf {|{"node": "Domain", "name": "dossier", "datatype": {"node": "StructType", "fields": %s}}|} fields),
+        {|{"struct": {"waarde": {"number": "1.00"}, "telling": {"number": "3"}}}|} ) ];
+  let refuses ~name ~ir ~case_text ~params =
+    verifier_clean ~name ~ir;
+    ref_matches ~name ~ir ~case_text;
+    let doc, case = load_pair ~ir ~case_text in
+    match translate doc case with
+    | (_ : string) -> check (name ^ ": expected a refusal, got a program") false
+    | exception Uchar_ref.Value.Fault { code; params = p; text } ->
+        check (name ^ ": CLINGO-050 (" ^ Uchar_ref.Value.report ~code text ^ ")") (code = Some "CLINGO-050" && p = params)
+  in
+  let list_type = Printf.sprintf {|{"node": "ListType", "element": %s}|} num2 in
+  refuses ~name:"ch1.2 the gevuld test on a list attribute"
+    ~ir:(doc ~attribute_type:(Some list_type) ~parameter_type:None ~domain:None ~own:true ~kind:"filled" ~operand:own_read)
+    ~case_text:(case_text ~own:true ~kind:"filled" {|{"list": [{"number": "1.00"}]}|})
+    ~params:[ ("operand", "aantekening"); ("datatype", "list") ];
+  refuses ~name:"ch1.2 the leeg test on a text parameter"
+    ~ir:(doc ~attribute_type:None ~parameter_type:(Some {|{"node": "Text"}|}) ~domain:None ~own:true ~kind:"empty"
+           ~operand:parameter_read)
+    ~case_text:
+      {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": []}], "parameters": {"grensaantekening": {"text": "Noorderstrand"}}}, "expected": [{"kind": "characteristicAbsent", "label": "V1", "characteristic": "ingedeeld"}]}|}
+    ~params:[ ("operand", "grensaantekening"); ("datatype", "text") ]
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
