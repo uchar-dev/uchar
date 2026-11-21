@@ -328,3 +328,18 @@ Alle op de tip van de branch, elk los gedraaid, de zware één voor één (logs 
   byte-identically`
 - 17: `check-readings: PASS (ref traced 1211 golden case files, …; on both branches 385 goldens and 1073 case files
   compared, 8468 readings, …; deviations 0, end-state deviations 0; …)`, 2 goldens excluded with DROOLS-370
+
+**Landing (hoofdsessie, 2026-11-22).** Nagelezen: het veld op de wire (schema, IR-SPEC ch. 2.2, AST, lader, emitter, de
+Java-lader), `Eval.open_inputs` met de ene sessie-instelling `closed_inputs`, de alinea's van ch. 1.5, de frontend
+(het token, de resolver, RGS-463 en RGS-464 met hun zinnen in beide catalogi) en de zes cases van
+`jutterswet-volledig-gegeven`, met de hand nagerekend. De floor `EXPECTED_MIN_MONOTONE_CLOSURES` ging van 443 naar 401
+omdat de opgave van de goldens met een opgave-markering nu volledig is: de 27 runs die haar weglaten tellen als een lid
+dat zonder zijn waarde niet open is, de 15 andere worden vergeleken en houden hun uitkomsten. Open punt 1 is hersteld
+(het label en het commentaar van de poot in gate 5 noemen zo'n lid nu bij wat het is); de punten 2 tot 4 blijven open:
+de inventaris `verifier --empty-closures` telt een plaats die een volledig lid leest zoals elke andere,
+`spec/proposals/STRICT-EMPTY.md` beschrijft als verslag van de proef nog de sessie per lid, en `(volledig)` vóór een
+afwezigheidsmarkering geeft een kale syntaxfout. Rij 49 van `spec/CONSTRUCTS.md` en de alinea's van gate 2 en 5 in
+`CLAUDE.md` zijn gezet. `make gates` groen op `b399c479e` (661 s, 17 gates, red=0).
+
+De schrijfwijze `(volledig)`, de naam `complete` en de regel dat `opgegeven X` en `berekende X` van een opgave het veld
+altijd dragen, zijn voorlopige besluiten van de hoofdsessie, ter bevestiging door de eigenaar.
