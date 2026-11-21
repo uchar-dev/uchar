@@ -215,10 +215,31 @@ A **document** is the root container (decision V3 (b); landed at M1,
 | Field | Type | Meaning |
 |---|---|---|
 | `format` | string | the format name, `uchar-ir-v1` |
+| `inferFromEmpty` | `false`? | the document's choice that nothing is inferred from an empty value (below); written `false` or not at all |
 | `vocabularies` | list of Vocabulary? | extension list: the named vocabularies of the designations (ch. 2.12); optional, written whole or not at all |
 | `model` | Model | the declaration set (below) |
 | `rules` | Rules | the rule forms of ch. 3 (below) |
 | `diagnostics` | list of Diagnostic | the producer's own account of what stayed unresolved (WF-113) |
+
+**inferFromEmpty** is the document's choice of what may follow from an
+empty value, `layer: core`: it changes outcomes. Absent, the document is
+read as `RUNTIME-SEMANTICS.md` ch. 1.2–1.4 lay down. Written `false`, the
+document asks for the reading in which nothing is inferred from an empty
+value. In the Jutterswet, with the rule that a vondst is meldplichtig if
+its vondstwaarde is greater than 100, a vondst without a vondstwaarde is
+not meldplichtig in a document without the field (ch. 1.2); a document
+with `inferFromEmpty: false` does not infer that from the empty
+vondstwaarde. The field is a boolean with one spelling, `false`, as `true`
+is the one spelling of `EmbeddedExpression.unit` (ch. 4.2), and it stands
+directly after `format`. `true`, `null` and every other value are a load
+error at `/inferFromEmpty` for every reader, the verifier included, and so
+is a field on the root that this table does not name. These are load
+errors, not WF rules: the verifier reads a document with the field as it
+reads one without. An executor that does not carry the reading of `false`
+for a form refuses the document with a registered refusal code that names
+the form, before it evaluates anything, and does not evaluate it by the
+reading of ch. 1.2–1.4. Witnesses: the self-test rows of gate 2, and
+`ref/test/fixtures/infer-from-empty` in the suites of gates 5 and 6.
 
 A **model** is the declaration set. Its structure:
 
