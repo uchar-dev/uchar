@@ -8,8 +8,9 @@ meten; de semantiek verandert niet.*
 
 De eigenaar besloot op 2026-11-20: **uit leeg mag niets afgeleid worden**. Het besluit is algemeen bedoeld
 (verduidelijkt op 2026-11-21): het is een eis aan het uchar-dialect, niet een keuze van één regelset; het kwam op bij
-v2/herleving-ww (regelspraak-rules). Leeg is "nog niet ingevuld"; pas als een marker (`onbekend`, `niet van toepassing`) is gegeven, of een
-object of feittype-relatie ontbreekt, mag worden doorgerekend (bevestigd 2026-11-21). In uchar is leeg de spiegel van
+v2/herleving-ww (regelspraak-rules). Leeg is "nog niet ingevuld"; pas als een marker (`onbekend`, `niet van
+toepassing`) is gegeven, of een object of feittype-relatie ontbreekt, mag worden doorgerekend (bevestigd
+2026-11-21). In uchar is leeg de spiegel van
 RegelSpraak v0 (RUNTIME-SEMANTICS ch. 1.2–1.4, besluit 2026-08-16): leeg telt in plus/min/maal als 0, een vergelijking
 met leeg is onwaar, voorwaarden zijn tweewaardig, een kenmerk is onwaar zolang het niet is toegekend. Dat is in feite
 een closed-world assumption. De regelset vangt het nu per plek af (toetsen "heeft een waarde", een hulpkenmerk
@@ -148,7 +149,7 @@ WF-045/046); de afvangingen; het regelnummer of `-`; het bronfragment op één r
   (een kwantorvouw waarvan het oordeel zonder lid beslist), `empty-set-count` (telling, totaal of gevulde-telling over
   een bereik: 0 zonder lid), `empty-set-fallback` (de terugvalwaarde zonder lid).
 - De afvangingen: `filled-test:<lid>` (de lezing staat onder een toets op gevuld van dezelfde lezing, de dominantie van
-  WF-127), `characteristic-check:<kenmerk>` (de vorm draagt als conjunct een check op een kenmerk waarvan een schrijver op
+  WF-127), `characteristic-check:<kenmerk>` (de vorm eist als conjunct dat een kenmerk niet geldt, waarvan een schrijver op
   de leegte van een lid sluit: een `empty-test`-plek van die schrijver), `tested-elsewhere:<invoer>><kenmerk>,…` (een
   andere vorm die een kenmerk schrijft, sluit op de leegte van dat invoerlid).
 
@@ -202,11 +203,12 @@ attr:vondst:gewicht (72), attr:vergunning:tarief (37), attr:vondst:opbrengst (29
 de 53 met de meeste plekken dragen samen de helft.
 
 **v2** (`werk/empty-closures-inventory/meting/meting-v2.md`): 206 plekken op `229d744`, 441 op `8edee01`, 621 op
-`6d39e7d`; afgevangen 79, 160, 179 (met `filled-test` of `characteristic-check`: 62, 93, 94). De twaalf plekken van de
+`6d39e7d`; afgevangen 74, 155, 174 (met `filled-test` of `characteristic-check`: 51, 82, 83; gemeten op
+`1826ad09b`). De twaalf plekken van de
 inventaris (a1–a5, b1–b7) en de latere vondsten R5–R8, G3 en G7 staan op `229d744` in de uitvoer; G4, G5 en G6 gaan over
 regels die pas later bestaan en staan op die commits. Geen plek ontbreekt. Op `229d744` draagt geen van de twaalf het
-hulpkenmerk `herleving afhankelijk-van-ontbrekende invoer`; a1, a3 en b3 dragen alleen een afvanging op een kenmerk dat
-op andere invoer sluit, a2, a5 en b6 niets. Op `8edee01` zijn a1, a3, a5 (in hww-18), b6 en b7 herkenbaar aan het
+hulpkenmerk `herleving afhankelijk-van-ontbrekende invoer`; a1, a3 en b3 dragen alleen een `tested-elsewhere` op een
+kenmerk dat op andere invoer sluit, a2, a5 en b6 niets. Op `8edee01` zijn a1, a3, a5 (in hww-18), b6 en b7 herkenbaar aan het
 hulpkenmerk, a2 alleen via de lezers. Gelezen leden op `6d39e7d`: 78 (38 invoer); plekken die alleen invoer lezen 288,
 alleen afgeleide 296, beide 37; bovenaan de code reden beëindiging (126), de relatie naar de eindigingsgronden (57) en
 de code soort aanvraag (19). Per invoerlid van de sluiting dragen 1 of 2 invoerleden de helft, door de ruime sluiting.
@@ -257,8 +259,8 @@ de vorm, met een script in de werkmap (`meting/locate.py`), niet uit het command
    als afgevangen (een uitdrukkelijke sluiting). Een initialisatie naast een berekening op hetzelfde doel krijgt een
    `fallthrough` met wat de berekening leest.
 6. Een schrijver "sluit op leeg" waar hij een `empty-test`-plek heeft; alleen die telt voor `characteristic-check` en
-   `tested-elsewhere`. `characteristic-check` telt een check in elke polariteit; `tested-elsewhere` sluit de eigen vorm
-   uit en noemt per invoerlid de kenmerken. "Afgevangen" in de tellingen: de kolom met afvangingen is niet leeg.
+   `tested-elsewhere`. `characteristic-check` telt alleen een check die eist dat het kenmerk niet geldt;
+   `tested-elsewhere` sluit de eigen vorm uit en noemt per invoerlid de kenmerken. "Afgevangen" in de tellingen: de kolom met afvangingen is niet leeg.
 7. Elk lid is gespeld op het type dat het declareert (`Checks.declaring_type`), in de uitvoer en in de sleutels van de
    afvangingen; twee leden met dezelfde naam zonder gemeenschappelijke declaratie blijven twee.
 8. De derde klasse spelt een relatie `rel:<feittype>:<rol>`; haar invoer volgt ook relaties en populaties die een
@@ -271,8 +273,7 @@ de vorm, met een script in de werkmap (`meting/locate.py`), niet uit het command
 
 **Open punten**
 
-1. `characteristic-check` telt een check in elke polariteit. Een afvanging die de polariteit volgt ("heeft geen K" waar K
-   op leeg gezet wordt) zou "afgevangen" scheiden van "uitdrukkelijk gesloten".
+1. Opgelost door de hoofdsessie (`1826ad09b`, hieronder): `characteristic-check` telde een check in elke polariteit.
 2. De invoersluiting volgt ook de voorwaarden van de schrijvers; in v2 bereikt één invoerlid de helft van de plekken. De
    telling per gelezen lid staat ernaast; een sluiting die alleen volgt wat leeg doorgeeft naar de geschreven waarde,
    zou de kolom zelf bruikbaarder maken.
@@ -284,7 +285,7 @@ de vorm, met een script in de werkmap (`meting/locate.py`), niet uit het command
 6. Bijvangst: de RegelSpraak-frontend schrijft als bronfragment van een Default de `// Bron:`-tekst, niet de regel; de
    kolom met het fragment van een `fallthrough` is daardoor in v2 weinig zeggend.
 7. De gegenereerde opgavestapel en de strikte lezing (hierboven): een vraag voor het voorstel van de volgende stap.
-8. De alinea van gate 3 in `CLAUDE.md` (voorstel hierboven) landt de hoofdsessie.
+8. Gedaan (`4dc908775`): de alinea van gate 3 in `CLAUDE.md`.
 
 **`make gates`** op `7ebcbc62d` (`werk/empty-closures-inventory/logs/gates-2.log`, `out/gates/20261121-110550/`), de
 samenvattingsregels:
@@ -316,3 +317,85 @@ end 2026-11-21 11:18:40 770s red=0
 
 Een eerdere run op `0d80c7d55` (`logs/gates-1.log`) had de 17 gates groen en `after-run` rood, omdat de bron tijdens de
 run veranderde (de fixes van `d4e9595d4`); zij telt niet.
+
+## Result (hoofdsessie, 2026-11-21)
+
+**Wat er landt.** `verifier --empty-closures <ir.json>`: een lijst van de plekken waar een uitkomst op een lege waarde
+kan rusten, in drie klassen en 21 soorten, met 24 getuigen en een poot in gate 3. IR, schema, executors, frontends en
+corpus zijn ongewijzigd. De acceptatie van de kaart is gehaald: de twaalf plekken van de inventaris en de latere
+vondsten over leeg staan in de uitvoer op `229d744`; op `8edee01` en later zijn de afgevangen plekken herkenbaar aan
+het hulpkenmerk in de kolom met afvangingen; het corpus heeft een telling per golden.
+
+**Lezing vóór de landing.** De hoofdsessie las de module en de meting tegen en stuurde drie fouten terug, die de bouwer
+in `d4e9595d4` herstelde (een afvanging telde elke toets op gevuld; één lid stond onder meerdere typen; een default met
+eigen inhoud en uitzonderingsgroepen gaf de lezingen van die groepen niet door). Daarna herstelde zij zelf het eerste
+open punt van de bouwer:
+
+- `1826ad09b`: `characteristic-check` telt alleen een check die eist dat het kenmerk niet geldt. Een vorm die eist dat
+  het kenmerk geldt, beslist juist doordat de schrijver van het kenmerk op leeg sloot. De getuige
+  `guard-characteristic-check` kreeg de regel 'heffing bij een onvolledige aangifte' ("hij is onvolledig") erbij. Oud
+  (binary van `7ebcbc62d`): haar `coalesce-operand` droeg `characteristic-check:char:jutter:onvolledig`; nieuw: alleen
+  `tested-elsewhere:attr:jutter:toeslag>char:jutter:onvolledig`. Op v2 vallen daarmee de positieve checks op
+  `indicatie herleving recht op uitkering` weg (plek b3 van de inventaris, die niet was afgevangen); wat overblijft is
+  het hulpkenmerk bij 'herlevingsdatum van het recht' en bij de duurverlenging van art. 42b. Het corpus verandert niet
+  (het had geen `characteristic-check`).
+- `4dc908775`: de alinea van gate 3 in `CLAUDE.md`.
+
+Proeven op de gebouwde binary: de 657 negatieve documenten geven exit 0 (geen uitzondering op een slecht gevormd
+document); twee runs op hetzelfde document zijn gelijk.
+
+**`make gates`** op `4dc908775` (`werk/empty-closures-inventory/logs/gates-3.log`):
+
+```
+start 2026-11-21 11:22:43 4dc908775 card/empty-closures-inventory
+ocaml rc=0 0s ocaml-build: fresh (stamp newer than 574 source files)
+frontend rc=0 0s frontend: fresh (out/ newer than every source, the tool jars present)
+jar rc=0 0s drools-jar: fresh (jar newer than 1008 source files)
+01-self-contained rc=0 4s
+02-ir-schema rc=0 274s
+04-case-schema rc=0 11s
+03-verifier rc=0 56s
+05-oracle rc=0 32s
+06-clingo rc=0 765s
+07-noop rc=0 26s
+08-red rc=0 272s
+09-catala rc=0 7s
+10-regelspraak rc=0 434s
+11-toka-parity rc=0 401s
+12-drools rc=0 659s
+13-reftype rc=0 689s
+14-flogic rc=0 3s
+15-graph rc=0 68s
+16-scenario rc=0 60s
+17-readings rc=0 370s
+after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
+end 2026-11-21 11:35:28 765s red=0
+```
+
+**Voorlopige besluiten ter bevestiging door de eigenaar.** De elf van de bouwer hierboven, en van de hoofdsessie: de
+test van de kaart is een poot in gate 3 (met een wijziging in `scripts/check-verifier.sh` en in `CLAUDE.md`); de derde
+klasse `absent-instance` staat naast de twee klassen van de kaart; de floors van de plekken staan op de meting, zodat
+een corpuskaart die een golden herschrijft ze kan raken.
+
+**Gezien en gelaten.**
+
+- De invoerkolom volgt ook de voorwaarden van de schrijvers. Dat is juist (een afgeleid lid is leeg als de voorwaarde
+  van zijn regel op leeg niet geldt), maar breed; de telling per gelezen lid staat ernaast in de meetscripts.
+- Een stapel uit de overerving per type (ch. 7.10), een initialisatie naast een defaultsblok op hetzelfde doel, een
+  doorval op een rolcheck of kwantorvouw, en gesloten bodies worden niet gelopen. De README noemt wat het commando
+  krap telt.
+- De RegelSpraak-frontend schrijft als bronfragment van een Default de `// Bron:`-tekst; het fragment van een
+  `fallthrough` zegt daardoor weinig. De frontend valt buiten deze kaart.
+
+**Voor het voorstel van de volgende stap** (geen wijziging in deze kaart):
+
+- De gegenereerde stapel "opgave boven berekening" rust op een lege opgave (24 plekken op het corpus, 9 in v2). Zoals
+  het advies de strikte lezing opschrijft, zou een berekening nooit beslissen zolang de opgave leeg is.
+- Op v2 leest een vijfde van de plekken één invoerlid, een code die de inventaris volledige invoer noemt. Sluiten per
+  gegeven zou daar het meeste wegnemen.
+- De werkbanksessie meldde dat het afvangen per plek in v2 een tussenstand is, met gemeten kosten (regelbestanden 50k
+  tekens groter, parse 126 → 659 ms, Drools-compilatie per analyse 0,9 → 4,3 s;
+  `werknotities/20261121-traagheid/verslag.md` in de werkbank).
+
+`spec/PLAN.md` en `spec/CONSTRUCTS.md`: geen rij; de kaart verandert geen construct en geen besloten koers. De tekst
+voor de werkbank: `werk/empty-closures-inventory/WERKBANK.md`.
