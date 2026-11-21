@@ -68,6 +68,24 @@ let () =
       | Sys_error e | Yojson.Json_error e ->
           Printf.eprintf "LOAD ERROR: %s\n" e;
           exit 2)
+  | [| _; "--empty-closures"; file |] -> (
+      (* the places where an outcome can rest on a leeg value, one
+         tab-separated line each (Empty_closures); a list, not a verdict,
+         so it exits 0 whatever it finds *)
+      try
+        let j = Yojson.Safe.from_file file in
+        let doc = Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier j in
+        List.iter print_endline (Ir_v0.Empty_closures.report doc j)
+      with
+      | Ir_v0.Loader.Error (path, msg) ->
+          Printf.eprintf "LOAD ERROR at %s: %s\n"
+            (if path = "" then "<root>" else path) msg;
+          exit 2
+      | Sys_error e | Yojson.Json_error e ->
+          Printf.eprintf "LOAD ERROR: %s\n" e;
+          exit 2)
   | _ ->
-      prerr_endline "usage: verifier <ir.json> | verifier --arms <ir.json> | verifier --dependency-edges <ir.json>";
+      prerr_endline
+        "usage: verifier <ir.json> | verifier --arms <ir.json> | verifier --dependency-edges <ir.json> | verifier \
+         --empty-closures <ir.json>";
       exit 2

@@ -40,6 +40,9 @@ The project is an OCaml dune build in two parts:
   node a check may add a segment of its own reading, such as a struct
   field by its name.
 
+- `verifier --empty-closures <ir.json>` lists every place of a document
+  where an outcome can rest on a leeg value; see below.
+
 Which rules are implemented, and which are still open, is tracked in one
 place only: the WF index at the end of `spec/IR-SPEC.md`. Checks are
 written as exhaustive matches over the AST's node kinds, so extending the
@@ -58,3 +61,136 @@ every `corpus/golden/**/ir.json` must be clean, every
 `corpus/negative/<wf###-slug>/ir.json` must be rejected, citing the rule
 its directory name declares (incidental extra violations are allowed; a
 case that passes, or fails only for other rules, turns the gate red).
+
+## The empty-closures inventory
+
+`verifier --empty-closures <ir.json>` (`lib/empty_closures.ml`) reads a
+document as it stands on the wire and lists, one tab-separated line per
+place in document order, every place where an outcome can rest on a leeg
+value: the size of what a reading in which nothing follows from leeg would
+change in that document. It changes nothing and judges nothing: it exits 0
+whatever it finds, and 2 on a load error, as the other modes do.
+
+**The measure.** A place counts where the two-valued reading of
+`RUNTIME-SEMANTICS.md` ch. 1.2 lets a form decide — write a value, attribute
+a characteristic, report a consistency fault — in a state where a value it
+reads is leeg, while a reading in which leeg propagates and a condition over
+leeg is undetermined would decide nothing there; and where a form closes the
+world on leeg in so many words (an initialisation, a leeg or gevuld test, a
+fallback). A comparison that is false on leeg where the form then does not
+decide is no place; the same comparison in a negative position is one. The
+walk keeps a polarity per condition node: positive where the form decides
+when the node is true, negative where it decides when the node is false (under
+`none`, `atMost`, a negated node, the assertion of a consistency, the filter of
+a quantifier fold under `all`, `none` and `atMost`), both where it decides either
+way (`exactly`, the filter of a value fold, the condition of an IfThenElse).
+
+A member can be leeg when it is an attribute, a cell or a list-typed
+parameter; any other parameter is never leeg, since reading an unbound one
+faults (EF-014). A read over an absent to-one link is leeg like any other.
+
+**The columns.**
+
+1. the class: `closure`, `negation` or `absent-instance`;
+2. the kind (below);
+3. the JSON pointer (RFC 6901) of the node, which exists in the document;
+4. the name of the form, as the WF reports name it;
+5. the members read at the place that can be leeg, each `<node>=input` (no
+   form writes it) or `<node>=derived`, spelled as `--dependency-edges` spells
+   a node (`attr:<type>:<attribute>`, a cell with its labels,
+   `char:<type>:<characteristic>`, `param:<parameter>`); a relation of the
+   third class is `rel:<fact type>:<role>`;
+6. the input members from which a leeg can reach the place: the member
+   itself where it is input, else what its writers read, transitively over
+   the dependency graph of WF-045/046; for the third class the relations and
+   populations a creation writes are followed too;
+7. the guards, `-` where there is none:
+   `filled-test:<node>` — every read of that member at the place stands under
+   a gevuld test of the same read, by the dominance of WF-127 (a conjunct
+   before it in the same `all`, the condition of the form for its value, the
+   filter of a fold for its per-member positions, the condition of an
+   IfThenElse for its then branch); a payload access always does;
+   `characteristic-check:<node>` — the form's own condition checks, as a
+   conjunct, a characteristic one of whose writers tests a member on leeg;
+   `tested-elsewhere:<input>><node>,…` — another form that writes a
+   characteristic tests that input member on leeg, named per input;
+8. the line of the source, where the form or a node above the place carries
+   one, else `-`;
+9. the source snippet of the node or the nearest node above it, on one line,
+   else `-`.
+
+**The kinds.** Class `closure`, the value side and the forms that close on
+leeg:
+
+- `coalesce-operand` — an operand of plus, min, maal or percentage van that
+  can be leeg and counts as 0, on a timeline per day;
+- `coalesce-subtrahend` — the right operand of verminderd met;
+- `coalesce-dividend` — the dividend of a division;
+- `empty-divisor-fault` — the divisor of a division, whose leeg reports a
+  §9.5 fact (EF-031);
+- `coalesce-duration` — the duration of a date plus or minus a duration;
+- `fold-skips-empty` — a sum, total, minimum, maximum, first or last (over
+  instances, listed operands, cells or a timeline) that skips leeg
+  contributors;
+- `filled-count` — the filled-value count of a value that can be leeg;
+- `empty-fallback` — the fallback of a fold whose contributors can all be
+  leeg;
+- `clamp-empty-bound` — a bound of a clamp that can be leeg, which is no
+  bound;
+- `empty-text-part` — a text part or concatenation argument that can be
+  leeg and is written as the empty string;
+- `allocation-empty-input` — the weight, cap or ordering key of an
+  allocation (ch. 4.4: left out or 0, no cap, sorted last);
+- `true-on-empty` — a comparison or predicate that is true on leeg (an
+  inequality with one leeg side, a numeric equality of two, a negated
+  exact-digits or day-kind test) in a position that decides on true;
+- `empty-test` — a leeg or gevuld test in the position where the leeg
+  verdict decides;
+- `initialisation` — a rule version or a default with `initialisation`.
+
+Class `negation`:
+
+- `false-on-empty` — a comparison, predicate or period window that is false
+  on leeg, in a position that decides on false;
+- `negated-characteristic` — a characteristic check in a position that
+  decides on false ("heeft geen K", "is niet K", K under `none`); a
+  characteristic no form writes is itself input;
+- `fallthrough` — a default (or an initialisation beside a computing rule on
+  its target) that decides when a higher default of its chain, or one of its
+  exception groups, does not, while that one's justification has a leaf that
+  cannot test on leeg or its consequence can be leeg (ch. 7.1, 7.3, 7.9);
+  reported at the lower default with what the higher one reads. A read the
+  lower default needs itself (a conjunct of its own that is false on its
+  leeg, a characteristic its own condition requires, a read of its own
+  value) is left out, because there the lower default does not decide either.
+
+Class `absent-instance`, the places where the absence of an instance or a
+link decides; a read over an absent to-one link is leeg and belongs to the
+classes above:
+
+- `negated-role-check` — a role check in a position that decides on false
+  ("heeft geen <rol>");
+- `vacuous-quantifier` — a quantifier fold whose verdict without a member
+  decides: `all`, `none` and `atMost` hold, `atLeast` and `exactly` fail;
+- `empty-set-count` — a count, a total or a filled count over a range,
+  which is 0 without a member;
+- `empty-set-fallback` — the fallback of a fold over a range, which stands
+  in without a member.
+
+**Wide and narrow.** Every attribute counts as possibly leeg, also one that
+an unconditional rule always fills: a place too many rather than one
+missed. A comparison without a static type on either side is read as
+numeric. `empty-set-count` counts every count and total over a range,
+whether or not the range can be empty. The input closure follows every read
+of every writer, conditions included. Narrow: a closed body (a lambda, a
+`FunctionDef`) reads no member and is not walked; what its call passes is
+read at the call. A fall-through on a role check or a quantifier fold in the
+higher default's justification is not reported. An Unresolved and an
+unbound variable marker are no value (an executor faults or refuses there);
+a uniqueness never reports on a leeg key (ch. 5.9) and has no place.
+
+**What the wire carries as position.** A node may carry a source record
+with a snippet; only the version of a consistency and a rule group carry a
+line as the RegelSpraak frontend writes them. The wire carries no file name,
+so a line, where there is one, is a line of a source the document does not
+name.

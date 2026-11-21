@@ -6,8 +6,9 @@ meten; de semantiek verandert niet.*
 
 ## Aanleiding
 
-De eigenaar besloot op 2026-11-20 voor de regelset v2/herleving-ww (regelspraak-rules): **uit leeg mag niets afgeleid
-worden**. Leeg is "nog niet ingevuld"; pas als een marker (`onbekend`, `niet van toepassing`) is gegeven, of een
+De eigenaar besloot op 2026-11-20: **uit leeg mag niets afgeleid worden**. Het besluit is algemeen bedoeld
+(verduidelijkt op 2026-11-21): het is een eis aan het uchar-dialect, niet een keuze van één regelset; het kwam op bij
+v2/herleving-ww (regelspraak-rules). Leeg is "nog niet ingevuld"; pas als een marker (`onbekend`, `niet van toepassing`) is gegeven, of een
 object of feittype-relatie ontbreekt, mag worden doorgerekend (bevestigd 2026-11-21). In uchar is leeg de spiegel van
 RegelSpraak v0 (RUNTIME-SEMANTICS ch. 1.2–1.4, besluit 2026-08-16): leeg telt in plus/min/maal als 0, een vergelijking
 met leeg is onwaar, voorwaarden zijn tweewaardig, een kenmerk is onwaar zolang het niet is toegekend. Dat is in feite
@@ -73,6 +74,10 @@ Van de eigenaar (2026-11-21):
   het Result benoemt wat ontbreekt.
 - Een afvanging meldt het commando naar haar vorm ("staat onder een toets op gevuld", "afgevangen door een kenmerk
   waarvan een regel op leeg toetst"), zonder namen van een regelset.
+- Het principe geldt algemeen, voor het dialect. De eigenaar wil geen closed-world assumption, het onderscheid tussen
+  leeg en de twee markers behouden, en een lezing die uitlegbaar is voor engineers en regelanalisten.
+- Het advies dat voorligt, nog geen besluit: een regelset leest standaard open en sluit uitdrukkelijk per gegeven of
+  relatie (local closed world); geen schakelaar bij het uitrekenen. Deze meting dient dat besluit.
 
 Van de hoofdsessie (voorlopig, ter bevestiging):
 
@@ -93,3 +98,8 @@ Van de hoofdsessie (voorlopig, ter bevestiging):
 - **De test.** Een poot in gate 3: het commando loopt op elke golden en rode `ir.json`, elke pointer bestaat in het
   document, de totalen per klasse en het aantal soorten houden een floor, en elke soort heeft een getuige met een
   vaste uitvoer onder `spec/verifier/test/empty-closures/`.
+- **Een derde klasse, apart geteld.** `absent-instance`: een plek waar het ontbreken van een instantie of een link een
+  uitkomst beslist. Of een relatie open of gesloten gelezen wordt, is een open beslispunt; de meting laat zien hoe groot
+  het is, los van de twee klassen van de kaart.
+- **Een telling per invoerlid.** Omdat sluiten per gegeven of relatie zou gebeuren, geeft de meting per invoerlid het
+  aantal plekken dat het bereikt.
