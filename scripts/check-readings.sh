@@ -103,10 +103,9 @@ READINGS_ERROR_KNOWN=(
 # A golden the replay plays and the backend does not read, with the code of the refusal of its build with
 # readings: '<golden>|DROOLS-###|<reason>'. Its readings end in EXCLUDE with that code on both branches, its
 # replay in PLAYED and the number of its case files; it is compared with nothing. A listed golden whose
-# readings are read, refused with another code, or whose replay does not play it, fails as stale.
+# readings are read, refused with another code, or whose replay does not play it, fails as stale. Empty: the
+# backend reads every golden it plays.
 READINGS_REFUSED=(
-  "jutterswet-afleiden-uit-leeg|DROOLS-370|the document carries inferFromEmpty false: the backend plays it with the reading of RUNTIME-SEMANTICS ch. 1.5, and the readings of an open member at the fixpoint (ch. 5.12, 'Open values') are a later part of card open-values-in-drools, so the build with readings is refused (form: reading); ref traces its cases"
-  "jutterswet-volledig-gegeven|DROOLS-370|as jutterswet-afleiden-uit-leeg"
 )
 # A golden case file whose end state differs between ref and the backend, per branch:
 # '<golden>/<case file>|<branch>|<reason>', branch `exec` or `drl`. Empty since the comparison began
@@ -119,8 +118,8 @@ STATE_DEVIATIONS=(
 # refused trace of a golden the list does not name fails (check 1), and so does a listed golden that traces a case
 # file, refuses with another code, or has no case file under corpus/golden (stale). Empty: ref traces every golden case
 # file, those of a document with inferFromEmpty false included (RUNTIME-SEMANTICS ch. 5.12, 5.12a: the judgement of
-# ch. 1.5 at a node, the status OPEN, the open members of the end state), whose golden the backend excludes as it
-# excludes every golden it does not carry.
+# ch. 1.5 at a node, the status OPEN, the open members of the end state); the backend excludes such a golden where it
+# does not carry a form of it, as it excludes every golden it does not carry.
 TRACE_REFUSED=(
 )
 
@@ -143,6 +142,8 @@ EXPECTED_MIN_OBJECT_LINES=746        # 2026-10-27: measured 746 (node lines with
 EXPECTED_MIN_DISPLACED_NODE_LINES=484 # 2026-10-27: measured 484 (node lines of a reading whose status is DISPLACED; 207 such readings)
 EXPECTED_MIN_STATE_OBJECTS=3015     # 2026-11-12: measured 3015 (end-state lines `object` of the case files compared)
 EXPECTED_MIN_STATE_MEMBERS=8337     # 2026-11-12: measured 8337 (end-state lines `attribute` and `characteristic`; beside them 1538 `link`, 157 `channel`)
+EXPECTED_MIN_UNDETERMINED_LINES=65  # 2026-11-22: measured 65 (node lines `undetermined open …`, of the goldens with inferFromEmpty false)
+EXPECTED_MIN_STATE_OPEN=79         # 2026-11-22: measured 79 (end-state lines of an open member)
 EXPECTED_MIN_STATE_MADE=479         # 2026-11-12: measured 479 (end-state lines `object` of an object a creation made)
 
 # --- tools ---------------------------------------------------------------------------------------------
@@ -337,15 +338,15 @@ python3 -I - "$work" "$EXPECTED_MIN_COMPARED_GOLDENS" "$EXPECTED_MIN_COMPARED_CA
   "$EXPECTED_MIN_NODE_LINES" "$EXPECTED_MIN_UNREACHED" "$EXPECTED_MIN_CONTRIBUTOR_LINES" \
   "$EXPECTED_MIN_TIMELINE_LINES" "$EXPECTED_MIN_UNREACHED_CONTRIBUTORS" "$EXPECTED_MIN_OBJECT_LINES" \
   "$EXPECTED_MIN_DISPLACED_NODE_LINES" "$EXPECTED_MIN_STATE_OBJECTS" "$EXPECTED_MIN_STATE_MEMBERS" \
-  "$EXPECTED_MIN_STATE_MADE" "$n_traced" "$elapsed" "$nocase" "$n_trace_refused" "${#trace_refused[@]}" <<'PY'
+  "$EXPECTED_MIN_STATE_MADE" "$EXPECTED_MIN_UNDETERMINED_LINES" "$EXPECTED_MIN_STATE_OPEN" "$n_traced" "$elapsed" "$nocase" "$n_trace_refused" "${#trace_refused[@]}" <<'PY'
 import os, sys
 
 work = sys.argv[1]
 floors = dict(zip(['goldens', 'cases', 'readings', 'nodes', 'unreached', 'contributors', 'timelines',
                    'unreached_contributors', 'objects', 'displaced_nodes', 'state_objects', 'state_members',
-                   'state_made'], map(int, sys.argv[2:15])))
-n_traced, elapsed, nocase = int(sys.argv[15]), sys.argv[16], sys.argv[17].split()
-n_trace_refused, n_trace_refused_goldens = int(sys.argv[18]), int(sys.argv[19])
+                   'state_made', 'undetermined', 'state_open'], map(int, sys.argv[2:17])))
+n_traced, elapsed, nocase = int(sys.argv[17]), sys.argv[18], sys.argv[19].split()
+n_trace_refused, n_trace_refused_goldens = int(sys.argv[20]), int(sys.argv[21])
 problems = []
 
 # --- the canonical text, read back (RUNTIME-SEMANTICS ch. 5.12) ---
@@ -428,7 +429,7 @@ def displaced_nodes(lines):
             displaced.add(head[:-len(' DISPLACED')])
             continue
         form = head.split(' ', 1)[0]
-        if head.split(' ')[-1] in ('HOLDS', 'FAILS', 'FAULTS', 'OUTSIDE_VALIDITY'):
+        if head.split(' ')[-1] in ('HOLDS', 'FAILS', 'FAULTS', 'OUTSIDE_VALIDITY', 'OPEN'):
             continue
         heads.append(head[:scan_object(head, len(form) + 1)])
     read = [h for h in heads if h in displaced]
@@ -517,6 +518,16 @@ rows = [
      [P + '1 Aggregation 1 contributors [«"maak; een"»("J1")#1 empty reached]'], True),
     ('the object of a read apart differs', [P + '2 AttributeReference 12 on "P1"'], [P + '2 AttributeReference 12 on "P3"'],
      False),
+    ('a closure against a truth differs', [P + '0 Predicate true closure'], [P + '0 Predicate true'], False),
+    ('another open read differs', [P + '0 Comparison undetermined open "P1" "taxatie"'],
+     [P + '0 Comparison undetermined open "P1" "gewicht"'], False),
+    ('an undetermined contributor against a verdict differs',
+     [P + '0 QuantifierFold undetermined open "W2" "keurpunten" contributors ["W1" true reached; "W2" undetermined reached]'],
+     [P + '0 QuantifierFold undetermined open "W2" "keurpunten" contributors ["W1" true unordered; "W2" false unordered]'], False),
+    ('an undetermined contributor without a position agrees',
+     [P + '0 QuantifierFold undetermined open "W2" "keurpunten" contributors ["W1" true reached; "W2" undetermined reached]'],
+     [P + '0 QuantifierFold undetermined open "W2" "keurpunten" contributors ["W1" true unordered; "W2" undetermined unordered]'],
+     True),
     ('an object against none differs', [P + '2 AttributeReference empty on none'],
      [P + '2 AttributeReference empty on "P3"'], False),
 ]
@@ -533,6 +544,8 @@ for name, lines, expected in [
          [D + '1 "J1" 0 CharacteristicCheck true', D + '1 "J1" 1 Literal 20', D + '1 "J1" DISPLACED',
           D + '1 "J2" 0 CharacteristicCheck false', D + '1 "J2" FAILS', D + '0 "J1" 0 Literal 3', D + '0 "J1" HOLDS',
           D + '2 "J1" DISPLACED'], (2, 1)),
+        ('the status OPEN is no node line', [D + '0 "J1" 0 CharacteristicCheck undetermined open "J1" "betwist"', D + '0 "J1" OPEN',
+          D + '1 "J1" 0 Literal 10', D + '1 "J1" DISPLACED'], (1, 1)),
         ('a made object as the object of a displaced reading',
          [D + '1 «"maak"»("J1")#1 0 Literal 3', D + '1 «"maak"»("J1")#1 DISPLACED', D + '1 "J1" 0 Literal 3',
           D + '1 "J1" HOLDS'], (1, 1))]:
@@ -700,6 +713,7 @@ for row in open(os.path.join(work, 'manifest'), encoding='utf-8'):
                     counts['state_objects'] += o
                     counts['state_members'] += m
                     counts['state_made'] += c
+                    counts['state_open'] += sum(1 for l in drools_state[case] if l.endswith(' open') and not l.startswith('object '))
                     links += sum(1 for l in drools_state[case] if l.startswith('link '))
                     channel_facts += sum(1 for l in drools_state[case] if l.startswith('channel '))
             tripped = unordered_faults(ref[case], drools[case])
@@ -731,7 +745,7 @@ for row in open(os.path.join(work, 'manifest'), encoding='utf-8'):
                 for l in drools[case]:
                     head, c = split(l)
                     parts = head.split(' ')
-                    if parts[-1] in ('HOLDS', 'FAILS', 'FAULTS', 'DISPLACED', 'OUTSIDE_VALIDITY'):
+                    if parts[-1] in ('HOLDS', 'FAILS', 'FAULTS', 'DISPLACED', 'OUTSIDE_VALIDITY', 'OPEN'):
                         counts['readings'] += 1
                         continue
                     counts['nodes'] += 1
@@ -742,6 +756,8 @@ for row in open(os.path.join(work, 'manifest'), encoding='utf-8'):
                         head = head[:-len(' on ' + tail)]
                     if head.endswith(' unreached'):
                         counts['unreached'] += 1
+                    if ' undetermined open ' in head:
+                        counts['undetermined'] += 1
                     if c is not None:
                         counts['contributors'] += 1
                     if ' [[' in head or head.endswith(' []'):
@@ -763,19 +779,20 @@ names = {'goldens': 'EXPECTED_MIN_COMPARED_GOLDENS', 'cases': 'EXPECTED_MIN_COMP
          'contributors': 'EXPECTED_MIN_CONTRIBUTOR_LINES', 'timelines': 'EXPECTED_MIN_TIMELINE_LINES',
          'unreached_contributors': 'EXPECTED_MIN_UNREACHED_CONTRIBUTORS', 'objects': 'EXPECTED_MIN_OBJECT_LINES',
          'displaced_nodes': 'EXPECTED_MIN_DISPLACED_NODE_LINES', 'state_objects': 'EXPECTED_MIN_STATE_OBJECTS',
-         'state_members': 'EXPECTED_MIN_STATE_MEMBERS', 'state_made': 'EXPECTED_MIN_STATE_MADE'}
+         'state_members': 'EXPECTED_MIN_STATE_MEMBERS', 'state_made': 'EXPECTED_MIN_STATE_MADE',
+         'undetermined': 'EXPECTED_MIN_UNDETERMINED_LINES', 'state_open': 'EXPECTED_MIN_STATE_OPEN'}
 for k, floor in floors.items():
     if counts[k] < floor:
         problems.append('%d %s compared, but %s pins at least %d — the comparison shrank (a deliberate removal lowers the floor in the same commit)' % (counts[k], k.replace('_', ' '), names[k], floor))
 
 print('  counted: ref traced %d golden case files; compared per branch: %d goldens, %d case files, %d readings, '
       '%d node lines, %d unreached, %d with contributors, %d with a timeline, %d with the object of a read (%d of them '
-      'on none), %d of a displaced reading (%d such readings); %d contributors of ref not reached' % (
+      'on none), %d of a displaced reading (%d such readings), %d undetermined; %d contributors of ref not reached' % (
           n_traced, counts['goldens'], counts['cases'], counts['readings'], counts['nodes'], counts['unreached'],
           counts['contributors'], counts['timelines'], counts['objects'], unlinked, counts['displaced_nodes'],
-          displaced_read, counts['unreached_contributors']))
-print('  end state, compared per branch: %d objects (%d made by a creation), %d members, %d links, %d channel facts' % (
-          counts['state_objects'], counts['state_made'], counts['state_members'], links, channel_facts))
+          displaced_read, counts['undetermined'], counts['unreached_contributors']))
+print('  end state, compared per branch: %d objects (%d made by a creation), %d members, %d links, %d channel facts, %d open members' % (
+          counts['state_objects'], counts['state_made'], counts['state_members'], links, channel_facts, counts['state_open']))
 for k in sorted(excluded):
     print('  excluded by the backend: %3d golden(s) %s' % (excluded[k], k))
 for name in sorted(seen_errors):
