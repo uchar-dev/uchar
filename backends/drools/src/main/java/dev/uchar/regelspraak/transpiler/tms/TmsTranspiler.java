@@ -1417,7 +1417,7 @@ public final class TmsTranspiler {
         Noted noted = endReading();
         Ends ends = reads.ends();
         reads.stop();
-        List<LhsItem> items = reads.plan(ends.open() ? Asked.ACTS : Asked.DECIDES, ends, testTerm, read);
+        List<LhsItem> items = reads.plan(Asked.ACTS, ends, testTerm, read);
         ElementKey key = member.key();
         derived.put(key, member);
         reads.recorder();
@@ -2620,7 +2620,7 @@ public final class TmsTranspiler {
         boolean openValue = reads.ends().open();
         reads.stop();
         int depositFlag = reads.depositFlagSlot();
-        List<LhsItem> items = reads.plan(ends.open() ? Asked.ACTS : Asked.DECIDES, ends, testTerm, read);
+        List<LhsItem> items = reads.plan(Asked.ACTS, ends, testTerm, read);
         List<LhsItem> blockadeItems = blockade == null ? List.of() : blockade.apply(reads);
         items.addAll(blockadeItems);
         String name = r.name();
@@ -2787,11 +2787,11 @@ public final class TmsTranspiler {
     /**
      * What the test of a rule asks of a condition of the IR (RUNTIME-SEMANTICS ch. 1.5): the outcomes of its form on
      * which the rule fires, or what the evaluation does beside them. A form decides where its condition holds for the
-     * form itself ({@code DECIDES}). The rule of a writer whose condition can be undetermined fires also where the
-     * condition neither holds for the form itself nor fails for another, so that the writer leaves its target open
-     * ({@code ACTS}), and its consequence says which of the two ({@link #judged}). Where the condition fails for another
-     * form, the form fills nothing, and its rule does not fire. Beside these the condition can fault ({@code FAULTS})
-     * and deposit ({@code DEPOSITS}). {@link Reads#conditionTest} turns each into a test.
+     * form itself ({@code DECIDES}). A writer acts ({@code ACTS}) where it decides and where the condition neither holds
+     * for the form itself nor fails for another, so that the writer leaves its target open; which of the two, its
+     * consequence says ({@link #judged}). Where the condition fails for another form, the form fills nothing, and its
+     * rule does not fire. Beside these the condition can fault ({@code FAULTS}) and deposit ({@code DEPOSITS}).
+     * {@link Reads#conditionTest} turns each into a test.
      */
     private enum Asked { DECIDES, ACTS, FAULTS, DEPOSITS }
 
@@ -7923,12 +7923,13 @@ public final class TmsTranspiler {
          * every form reads the outcomes of RUNTIME-SEMANTICS ch. 1.5 alike ({@link Asked}). Where the condition can
          * fault, the test of the form's own rule answers false on a fault, which the rule of the fault takes
          * ({@link #conditionFaultRule}). Where its judgement can be undetermined, every test answers for that end too
-         * ({@link TestItem#open}).
+         * ({@link TestItem#open}); where it always stands, a writer acts where it decides.
          */
         private TestItem conditionTest(Asked asked, Ends ends, Term testTerm, Set<Integer> read) {
             TestItem.Role role = switch (asked) {
-                case DECIDES -> ends.fault() ? TestItem.Role.WITHOUT_FAULT : TestItem.Role.CONDITION;
-                case ACTS -> ends.fault() ? TestItem.Role.ACTS_WITHOUT_FAULT : TestItem.Role.ACTS;
+                case ACTS, DECIDES -> asked == Asked.ACTS && ends.open()
+                        ? ends.fault() ? TestItem.Role.ACTS_WITHOUT_FAULT : TestItem.Role.ACTS
+                        : ends.fault() ? TestItem.Role.WITHOUT_FAULT : TestItem.Role.CONDITION;
                 case FAULTS -> TestItem.Role.FAULT;
                 case DEPOSITS -> TestItem.Role.DEPOSIT;
             };
