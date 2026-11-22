@@ -30,7 +30,8 @@ import java.util.Set;
  * decision of a default or of a reconciliation ({@link Decision}) and the conflict of a reconciliation ({@link Conflict}),
  * each with the facts it inserts as a kind of their own ({@link StackFact}): the target, and the control facts by
  * which the rules of the stack displace one another; and, in a build with readings only, the reading of a form's
- * condition ({@link Reading}, card fixpoint-readings).
+ * condition ({@link Reading}, card fixpoint-readings); and of a writer that can leave its target open, what it does where
+ * it decides and where it is open ({@link Writer}, {@link LeavesOpen}).
  */
 public sealed interface Consequence {
 
@@ -54,21 +55,13 @@ public sealed interface Consequence {
      * evaluation faults, an evaluation fault (RUNTIME-SEMANTICS ch. 5.2), it inserts that fault under {@code fault} in
      * place of the value and of a deposit; otherwise the deposit first ({@code deposit}: the rule's probe, which
      * hears only the places the evaluation of the value reaches, so a probe of the condition alone hears nothing here;
-     * null where the rule has no probe). Where {@code open}, the value reads a member that can be open, and where its
-     * evaluation reads an open value (ch. 1.5) the consequence inserts that {@code writer} leaves {@code target} open, a
-     * {@code LeftOpen}, and no value and no deposit.
+     * null where the rule has no probe).
      */
     record Value(String subject, ElementKey target, String writer, Term value, List<Integer> slots,
-                  int size, boolean collapse, boolean writesEmpty, Deposit deposit, FaultName fault, boolean open,
+                  int size, boolean collapse, boolean writesEmpty, Deposit deposit, FaultName fault,
                   Insertion insertion) implements Consequence {
         public Value {
             slots = List.copyOf(slots);
-        }
-
-        /** A value that reads no member that can be open. */
-        public Value(String subject, ElementKey target, String writer, Term value, List<Integer> slots, int size,
-                     boolean collapse, boolean writesEmpty, Deposit deposit, FaultName fault, Insertion insertion) {
-            this(subject, target, writer, value, slots, size, collapse, writesEmpty, deposit, fault, false, insertion);
         }
     }
 
@@ -76,19 +69,37 @@ public sealed interface Consequence {
     record Characteristic(String subject, ElementKey characteristic, Insertion insertion) implements Consequence {}
 
     /**
-     * The two outcomes on which the writer {@code writer} of {@code member} acts, where its condition can be undetermined
-     * (RUNTIME-SEMANTICS ch. 1.5, "A rule"): {@code condition}, which the test of the rule asked whether the writer acts
-     * ({@link TestItem.Role#ACTS}), evaluated again over the bound values at {@code slots} of a value array of
-     * {@code size}, without its fault where {@code withoutFault}; where it is true for the form itself {@code decides},
-     * a {@link Value} or a {@link Characteristic}, and else a {@code LeftOpen} of the member on the object
-     * {@code subject} binds. The third outcome, that the writer fills nothing, is where the test does not hold.
+     * What a writer does, a rule or a default, that can leave its target open (RUNTIME-SEMANTICS ch. 1.5, "A rule", "A
+     * stack"): {@code decides}, a {@link Value}, a {@link Characteristic} or the {@link Decision} of a default, and where
+     * it neither decides nor fills nothing {@code opens}, on the same object. Where {@code condition} is not null, the
+     * condition of the writer can be undetermined: the test of the rule asked it whether the writer acts
+     * ({@link TestItem.Role#ACTS}), and it is evaluated again over the bound values at {@code slots} of a value array of
+     * {@code size}, without its fault where {@code withoutFault}; the writer decides where it is true for the form itself,
+     * and is open where not, since that the writer fills nothing is where the test does not hold. Where the value of
+     * {@code decides} reads an open value, the writer is open as well, and what that evaluation deposited is dropped.
      */
-    record Judged(String subject, Term condition, boolean withoutFault, List<Integer> slots, int size, Consequence decides,
-                  ElementKey member, String writer, Insertion insertion) implements Consequence {
-        public Judged {
+    record Writer(Term condition, boolean withoutFault, List<Integer> slots, int size, Consequence decides,
+                  LeavesOpen opens) implements Consequence {
+        public Writer {
             slots = List.copyOf(slots);
-            if (!(decides instanceof Value) && !(decides instanceof Characteristic))
-                throw new IllegalArgumentException("a writer decides a value or a characteristic, not " + decides);
+            if (!(decides instanceof Value) && !(decides instanceof Decision)
+                    && (!(decides instanceof Characteristic) || condition == null))
+                throw new IllegalArgumentException("a writer decides a value, or a characteristic under a condition that"
+                        + " can be undetermined, not " + decides);
+        }
+    }
+
+    /** What a writer inserts on the object {@code subject} binds where it leaves its target open (ch. 1.5): a rule the
+     *  {@link StackFact.LeftOpen} of its target, a default of a stack in its simple form that fact and its
+     *  {@link StackFact.OpenDefault}, and a default or a reconciliation of a stack in its general form its open
+     *  {@link StackFact.Outcome}, at the root the {@code LeftOpen} of the target. */
+    record LeavesOpen(String subject, List<StackFact> facts, Insertion insertion) implements Consequence {
+        public LeavesOpen {
+            facts = List.copyOf(facts);
+            for (StackFact f : facts)
+                if (!(f instanceof StackFact.LeftOpen || f instanceof StackFact.OpenDefault
+                        || f instanceof StackFact.Outcome u && u.kind() == Kind.OPEN))
+                    throw new IllegalArgumentException("a writer that leaves its target open decides nothing: " + f);
         }
     }
 
@@ -647,8 +658,11 @@ public sealed interface Consequence {
             facts = List.copyOf(facts);
             if (facts.isEmpty()) throw new IllegalArgumentException("a decision inserts at least one fact");
             for (StackFact f : facts)
-                if (f instanceof StackFact.Inconsistency || f instanceof StackFact.Outcome u && u.kind() != Kind.DECIDED)
+                if (f instanceof StackFact.Inconsistency || f instanceof StackFact.Outcome u && u.kind() == Kind.CONFLICT)
                     throw new IllegalArgumentException("a decision inserts no conflict: " + f);
+                else if (f instanceof StackFact.LeftOpen || f instanceof StackFact.OpenDefault
+                        || f instanceof StackFact.Outcome u && u.kind() == Kind.OPEN)
+                    throw new IllegalArgumentException("a decision leaves nothing open: " + f);
         }
 
         /** A decision whose consequence cannot deposit. */
@@ -698,7 +712,8 @@ public sealed interface Consequence {
         }
     }
 
-    /** A fact the rules of a defaults stack insert on their subject with a decision or with the key of a conflict. */
+    /** A fact the rules of a defaults stack insert on their subject with a decision, with the key of a conflict, or where
+     *  they leave the target open; a rule inserts one of the last kind too ({@link LeavesOpen}). */
     sealed interface StackFact {
 
         /** The value of the stack's target attribute {@code target}, the decision, written by {@code writer}, the
@@ -718,9 +733,17 @@ public sealed interface Consequence {
          *  one, and the reading of the session names the default that decided by it. */
         record Decides(String stack, int index) implements StackFact {}
 
+        /** The control fact of the simple form of a default that neither decides nor gives way (ch. 1.5): the
+         *  {@code Decides} of default {@code index} of the stack {@code stack} that is open, which displaces the lower
+         *  defaults all the same. */
+        record OpenDefault(String stack, int index) implements StackFact {}
+
+        /** That {@code writer} leaves {@code member} open: a {@code LeftOpen}. */
+        record LeftOpen(ElementKey member, String writer) implements StackFact {}
+
         /** The control fact of the general form: the default at {@code position} in chain {@code chain} of the stack
-         *  {@code stack} settled as {@code kind} says, {@code DECIDED} with the decision as its value or
-         *  {@code CONFLICT} with the key of the conflict: an {@code Outcome}. */
+         *  {@code stack} settled as {@code kind} says, {@code DECIDED} with the decision as its value,
+         *  {@code CONFLICT} with the key of the conflict, or {@code OPEN}: an {@code Outcome}. */
         record Outcome(String stack, int chain, int position, Kind kind) implements StackFact {}
 
         /** The §9.5 inconsistency of the stack's conflict at its root, under the key of the conflict, through the

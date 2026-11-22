@@ -1,6 +1,7 @@
 package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.uchar.regelspraak.loader.IrLoader;
@@ -27,9 +28,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * A document that carries {@code inferFromEmpty: false} and holds a form whose reading of RUNTIME-SEMANTICS ch. 1.5 this
  * backend does not carry is refused by the build, {@link DroolsBackend#build}, with DROOLS-370 and the slug of that
  * form ({@code UncarriedForms}): on both branches, with and without readings, before anything is built, and the CLI
- * reports it in the status line {@code EXCLUDE DROOLS-370: <sentence>}. The fixture is the golden
- * {@code jutterswet-afleiden-uit-leeg}, whose defaults group comes first of its forms in that list; the same document
- * without the property builds and plays. The list opens with the table "Forms without the reading" of ch. 1.5, in its
+ * reports it in the status line {@code EXCLUDE DROOLS-370: <sentence>}. The fixture is the witness {@code set-fold} of
+ * the reference interpreter, whose folds over a set come first of its forms in that list; the same document without
+ * the property builds and plays. The list opens with the table "Forms without the reading" of ch. 1.5, in its
  * order, and the build with readings refuses a document whose forms this backend carries with the slug
  * {@code reading}.
  */
@@ -37,49 +38,24 @@ class InferFromEmptyRefusalWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    /** cwd under surefire is the module dir (backends/drools); the corpus is two levels up. */
-    private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden", "jutterswet-afleiden-uit-leeg");
+    /** cwd under surefire is the module dir (backends/drools); ref stands two levels up. */
+    private static final Path WITNESS = Path.of("..", "..", "ref", "test", "fixtures", "strict-empty", "set-fold");
 
-    /** A Vondst whose every value is filled, so the reading of an empty value decides nothing in it. */
-    private static final String CASE = """
-            {
-              "format": "uchar-case-v0",
-              "asOfDate": null,
-              "input": {
-                "instances": [
-                  {
-                    "label": "V1",
-                    "objectType": "Vondst",
-                    "attributes": {
-                      "taxatie": {"number": "1500"},
-                      "gewicht": {"number": "3"}
-                    },
-                    "roles": {},
-                    "characteristics": []
-                  }
-                ],
-                "parameters": {}
-              },
-              "expected": [
-                {"kind": "characteristicPresent", "label": "V1", "characteristic": "kostbaar"},
-                {"kind": "attributeValue", "label": "V1", "attribute": "vindloon", "value": {"number": "13"}},
-                {"kind": "consistent"}
-              ]
-            }
-            """;
+    /** A case in which every value is filled, so the reading of an empty value decides nothing in it. */
+    private static final Path CASE = WITNESS.resolve("case1-volledig.json");
 
-    private static ObjectNode golden() throws Exception {
-        return (ObjectNode) JSON.readTree(Files.readString(GOLDEN.resolve("ir.json")));
+    private static ObjectNode witness() throws Exception {
+        return (ObjectNode) JSON.readTree(Files.readString(WITNESS.resolve("ir.json")));
     }
 
     private static String sentence() {
-        return DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", "defaults-group").text();
+        return DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", "set-fold").text();
     }
 
     @Test void the_build_refuses_the_document_on_both_branches_with_and_without_readings() throws Exception {
         for (DroolsBackend.Branch branch : DroolsBackend.Branch.values())
             for (boolean readings : List.of(false, true)) {
-                ObjectNode ir = golden();
+                ObjectNode ir = witness();
                 CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                         () -> DroolsBackend.build(ir, branch, readings), () -> branch + " readings=" + readings);
                 assertEquals(DroolsCode.INFER_FROM_EMPTY_FALSE, e.code());
@@ -87,34 +63,52 @@ class InferFromEmptyRefusalWitnessTest {
             }
     }
 
-    @Test void the_status_line_names_the_code_and_its_sentence_on_both_branches(@TempDir Path dir) throws Exception {
-        Path casePath = dir.resolve("case1-kostbaar.json");
-        Files.writeString(casePath, CASE);
-        String ir = GOLDEN.resolve("ir.json").toString();
+    @Test void the_status_line_names_the_code_and_its_sentence_on_both_branches() throws Exception {
+        String ir = WITNESS.resolve("ir.json").toString();
         for (List<String> flags : List.of(List.<String>of(), List.of("--drl"), List.of("--readings"),
                 List.of("--readings", "--drl")))
-            assertEquals("EXCLUDE DROOLS-370: " + sentence(), statusLine(flags, ir, casePath, 2), flags::toString);
+            assertEquals("EXCLUDE DROOLS-370: " + sentence(), statusLine(flags, ir, CASE, 2), flags::toString);
     }
 
     @Test void the_sentence_in_both_languages() {
-        var reason = DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", "defaults-group");
+        var reason = DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", "set-fold");
         assertEquals("the document carries inferFromEmpty false, a reading in which nothing follows from an empty "
-                + "value, and this backend does not carry that reading for all that is asked (form: defaults-group)",
+                + "value, and this backend does not carry that reading for all that is asked (form: set-fold)",
                 reason.text(Locale.ENGLISH));
         assertEquals("het document draagt inferFromEmpty false, een lezing waarin uit een lege waarde niets volgt, en "
-                + "deze backend draagt die lezing niet voor alles wat gevraagd is (vorm: defaults-group)",
+                + "deze backend draagt die lezing niet voor alles wat gevraagd is (vorm: set-fold)",
                 reason.text(Locale.forLanguageTag("nl")));
     }
 
     /** The build with readings refuses a document with the property whose forms this backend carries, with the slug
      *  {@code reading}, on both branches; the build without readings builds it. */
     @Test void the_build_with_readings_refuses_a_carried_document() throws Exception {
-        Path ir = Path.of("src", "test", "resources", "open-values", "derived", "ir.json");
+        for (String fixture : List.of("derived", "stack-exception-groups")) {
+            Path ir = Path.of("src", "test", "resources", "open-values", fixture, "ir.json");
+            for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
+                CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(ir, branch, true),
+                        branch::name);
+                assertEquals(DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", "reading").text(), e.getMessage());
+                DroolsBackend.build(ir, branch, false);
+            }
+        }
+    }
+
+    /** A declared-unordered group of two defaults groups of which one has an initialisation is the one defaults group the
+     *  backend does not carry: whether the initialisation closes over the open default of its own group is asked per
+     *  group. Without it the same group is carried. */
+    @Test void groups_without_an_order_of_which_one_has_an_initialisation_are_refused() throws Exception {
+        Path path = Path.of("src", "test", "resources", "open-values", "stack-unordered", "ir.json");
+        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(path));
+        for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) DroolsBackend.build(ir.deepCopy(), branch, false);
+        ObjectNode initialisation = ((ArrayNode) ir.at("/rules/prioritizedDefaults/1/defaults")).addObject();
+        initialisation.put("node", "Default");
+        initialisation.set("consequence", ir.at("/rules/prioritizedDefaults/1/defaults/0/consequence").deepCopy());
+        initialisation.put("initialisation", true);
         for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
-            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(ir, branch, true),
-                    branch::name);
-            assertEquals(DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", "reading").text(), e.getMessage());
-            DroolsBackend.build(ir, branch, false);
+            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                    () -> DroolsBackend.build(ir.deepCopy(), branch, false), branch::name);
+            assertEquals(DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", "defaults-group").text(), e.getMessage());
         }
     }
 
@@ -274,13 +268,12 @@ class InferFromEmptyRefusalWitnessTest {
 
     @Test void without_the_property_the_document_builds_and_plays_on_both_branches(@TempDir Path dir)
             throws Exception {
-        ObjectNode ir = golden();
+        ObjectNode ir = witness();
         ir.remove("inferFromEmpty");
-        Path irPath = dir.resolve("ir.json"), casePath = dir.resolve("case1-kostbaar.json");
+        Path irPath = dir.resolve("ir.json");
         Files.writeString(irPath, JSON.writerWithDefaultPrettyPrinter().writeValueAsString(ir));
-        Files.writeString(casePath, CASE);
         for (List<String> flags : List.of(List.<String>of(), List.of("--drl")))
-            assertEquals("PLAYED 1", statusLine(flags, irPath.toString(), casePath, 0), flags::toString);
+            assertEquals("PLAYED 1", statusLine(flags, irPath.toString(), CASE, 0), flags::toString);
     }
 
     /** The last line {@code DroolsBackendMain} prints for {@code flags}, {@code ir} and {@code casePath}, whose exit

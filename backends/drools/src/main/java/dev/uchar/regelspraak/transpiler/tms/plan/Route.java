@@ -140,18 +140,18 @@ public enum Route {
     JUDGE(ComputeHelpers.class, "judge"),
     /** Whether an outcome of a writer is not that it fills nothing ({@link TestItem.Role#ACTS}). */
     ACTS(ComputeHelpers.class, "acts"),
-    /** Whether an outcome of a writer is that it decides ({@link Consequence.Judged}). */
+    /** Whether an outcome of a writer is that it decides ({@link Consequence.Writer}). */
     DECIDES(ComputeHelpers.class, "decides"),
     /** Whether a condition whose judgement can be undetermined faults ({@link TestItem#open}). */
     FAULTED(ComputeHelpers.class, "faulted"),
     /** Whether a condition whose judgement can be undetermined deposits ({@link TestItem#open}). */
     DEPOSITED(ComputeHelpers.class, "deposited"),
     /** The outcome of a value that can read an open value: the value, the open read or the evaluation fault
-     *  ({@link Consequence.Value#open}). */
+     *  ({@link Consequence.Writer}). */
     VALUED(ComputeHelpers.class, "valued"),
-    /** The outcome of the value of a writer whose condition can be undetermined ({@link Consequence.Judged}). */
+    /** The outcome of the value of a writer whose condition can be undetermined ({@link Consequence.Writer}). */
     DECIDED(ComputeHelpers.class, "decided"),
-    /** Whether the outcome of a value is that it does not stand ({@link Consequence.Value#open}). */
+    /** Whether the outcome of a value is that it does not stand ({@link Consequence.Writer}). */
     IS_OPEN(ComputeHelpers.class, "isOpen"),
     /** The open standing of a member on an object ({@link Consequence.OpenStanding}). */
     OPEN(ComputeHelpers.class, "open"),

@@ -1,0 +1,16 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    de taxatie Numeriek (geheel getal);
+    de getuigen Numeriek (geheel getal);
+    de schatting Numeriek (geheel getal);
+    het vindloon Numeriek (geheel getal);
+
+Regel vindloon
+    geldig altijd
+        Het vindloon van een Vondst moet gesteld worden op 1.
+
+Afwijking van vindloon: ongelijk aandeel
+    geldig altijd
+        Het vindloon van een Vondst moet gesteld worden op zijn schatting
+        indien zijn taxatie gedeeld door zijn getuigen ongelijk is aan 3.

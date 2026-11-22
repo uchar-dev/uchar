@@ -50,7 +50,7 @@ class ReplayHandoffWitnessTest {
             }
             if (casePaths.isEmpty()) continue;
             Path ir = g.resolve("ir.json");
-            if (!CaseRunner.viaExecModel(ir, casePaths).status().equals("PLAYED")) continue;
+            if (!TmsDocuments.hasReadings(ir) || !CaseRunner.viaExecModel(ir, casePaths).status().equals("PLAYED")) continue;
             String name = CORPUS.resolve("golden").relativize(g).toString();
             Map<String, Integer> readings = new LinkedHashMap<>();
             List<ScenarioResult> without = CaseRunner.report(ir, casePaths);

@@ -21,7 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * Jutterswet that shows it, under the name of the example in the spec (WV-1.5-…): a document with
  * {@code inferFromEmpty: false} read with the three states of a member, filled, settled leeg and open. The documents
  * stand in {@code src/test/resources/open-values/<name>/}, written in RegelSpraak ({@code source.rgs}) and taken to the
- * wire by the frontend ({@code ir.json}); their cases carry the expectations of the spec's example, and the reference
+ * wire by the frontend ({@code ir.json}), but the three of a stack with an initialisation, which the dialect writes only
+ * beside an opgave and which stand as the frontend's document with that default added; their cases carry the expectations of the spec's example, and the reference
  * interpreter plays every one of them ({@code runner}, {@code runner --closed-inputs} for a case named
  * {@code closed*}), so a case here is the outcome of ref beside that of this backend. Every case plays on both branches
  * and must meet its expectations there; a case named {@code closed*} plays in a session that treats every input
@@ -29,7 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * kind and the parameters it pins, as gate 8 holds a red case.
  *
  * <p><b>Red</b> on the code before the reading was carried: every document with the property was refused with
- * DROOLS-370 and {@code form=document} before it was built, and the two documents without it played as now.
+ * DROOLS-370 and {@code form=document} before it was built, and the two documents without it played as now. Every
+ * document {@code stack-*} was refused with {@code form=defaults-group} before the stack was carried.
  */
 class OpenValuesWitnessTest {
 
@@ -198,9 +200,70 @@ class OpenValuesWitnessTest {
         assertEquals(1, play("link", "case"));
     }
 
-    /** WV-1.5-outside-the-window: a rule outside its window of validity writes its target and fills nothing there. */
+    /** WV-1.5-outside-the-window: a rule outside its window of validity writes its target and fills nothing there, and so
+     *  does a defaults group. */
     @Test void wv_1_5_outside_the_window() throws Exception {
         assertEquals(2, play("outside-the-window", "case"));
+        assertEquals(2, play("stack-outside-the-window", "case"));
+    }
+
+    /** WV-1.5-stack-first-decides: the first default that decides decides the target; a lower one decides only where it
+     *  stands of every higher one that it gives way, and at the first default that is open, by its justification or, as
+     *  the unconditional base, by its value, the target is open. */
+    @Test void wv_1_5_stack_first_decides() throws Exception {
+        assertEquals(5, play("stack-first-decides", "case"));
+    }
+
+    /** WV-1.5-stack-gives-way, WV-1.5-stack-settled-leeg: a default whose justification holds with a settled leeg value
+     *  gives way, with an open value it is open; where every default gives way the target is settled leeg, or its input
+     *  stands, which does not stand beside an open default. */
+    @Test void wv_1_5_stack_gives_way() throws Exception {
+        assertEquals(6, play("stack-gives-way", "case"));
+    }
+
+    /** WV-1.5-stack-initialisation: the initialisation of a stack decides where nothing above it decides, also where a
+     *  default above it is open; an input of the target stands above it, and with an open value the target is open. In a
+     *  stack with an inherited initialisation above its own (ch. 7.10) either closes so. */
+    @Test void wv_1_5_stack_initialisation() throws Exception {
+        assertEquals(6, play("stack-initialisation", "case"));
+        assertEquals(2, play("stack-initialisation-value", "case"));
+        assertEquals(3, play("stack-two-initialisations", "case"));
+    }
+
+    /** WV-1.5-stack-opgave: an opgave the case gives no value is open and the computation below it does not decide;
+     *  declared complete it gives way. */
+    @Test void wv_1_5_stack_opgave() throws Exception {
+        assertEquals(2, play("stack-opgave", "case"));
+        assertEquals(2, play("stack-opgave-complete", "case"));
+    }
+
+    /** WV-1.5-stack-characteristic: a stack on a characteristic attributes, does not attribute, or leaves it open; a
+     *  characteristic the case names holds beside an open default. */
+    @Test void wv_1_5_stack_characteristic() throws Exception {
+        assertEquals(6, play("stack-characteristic", "case"));
+    }
+
+    /** WV-1.5-stack-exception-groups: the exception groups of a default, reconciled: beside an open member the group is
+     *  open, unless two other members decide differently; nested below an exception, whose own decision is the fall-back
+     *  where no member settles. */
+    @Test void wv_1_5_stack_exception_groups() throws Exception {
+        assertEquals(5, play("stack-exception-groups", "case"));
+        assertEquals(7, play("stack-exception-groups-nested", "case"));
+    }
+
+    /** WV-1.5-stack-unordered: a declared-unordered group reconciles as exception groups do. */
+    @Test void wv_1_5_stack_unordered() throws Exception {
+        assertEquals(4, play("stack-unordered", "case"));
+    }
+
+    /** WV-1.5-stack-type-chain: the effective stack of a subtype reads as any stack. */
+    @Test void wv_1_5_stack_type_chain() throws Exception {
+        assertEquals(1, play("stack-type-chain", "case"));
+    }
+
+    /** "A stack": what the justification of a default deposits arises where the default decides, and not where it is open. */
+    @Test void the_deposit_of_a_default() throws Exception {
+        assertEquals(4, play("stack-deposit", "case"));
     }
 
     /** A value a consumer puts on a bean between two fires fills an input that is not complete, and one it takes away
@@ -211,6 +274,8 @@ class OpenValuesWitnessTest {
             between("open-input", "case1-vindloon-open.json", branch, "V1", "uitbetaling", "V1", "setVindloon", 4,
                     "open", "7");
             between("link", "case1-links.json", branch, "V2", "vindpremie", "J1", "setBonus", 20, "open", "120");
+            between("stack-first-decides", "case5-basis-open.json", branch, "V1", "vindloon", "V1", "setGewicht", 50, "open",
+                    "100");
         }
     }
 
@@ -245,6 +310,42 @@ class OpenValuesWitnessTest {
         return String.join(", ", out);
     }
 
+    /** Who decided a stack with an open default ({@link DroolsBackend#decisionsOf}): no default where the target is open,
+     *  the initialisation where it closes over one, in either form the default that decided where none is open, and the
+     *  conflict of two members beside an open one. */
+    @Test void the_decisions_of_a_stack_with_an_open_default() throws Exception {
+        for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
+            assertEquals("none", decision("stack-first-decides", "case3-betwist-open.json", branch));
+            assertEquals("/rules/prioritizedDefaults/0/defaults/0 0",
+                    decision("stack-first-decides", "case4-betwist-gewicht-open.json", branch));
+            assertEquals("/rules/prioritizedDefaults/0/defaults/2 5",
+                    decision("stack-initialisation", "case1-onder-een-open-uitzondering.json", branch));
+            assertEquals("none", decision("stack-initialisation", "case5-onder-de-invoer.json", branch));
+            assertEquals("none", decision("stack-exception-groups", "case4-betwist-naast-open.json", branch));
+            assertEquals("/rules/prioritizedDefaults/0/defaults/0/exceptions/members/0/defaults/0 0",
+                    decision("stack-exception-groups", "case2-betwist.json", branch));
+            assertEquals("conflict Vondst.vindloon/0",
+                    decision("stack-exception-groups-nested", "case6-botsing-naast-open.json", branch));
+            assertEquals("none", decision("stack-exception-groups-nested", "case7-twee-eens-naast-open.json", branch));
+            assertEquals("none", decision("stack-unordered", "case2-betwist-naast-open.json", branch));
+        }
+    }
+
+    /** The decision of the one stack of {@code fixture} on the one object of case {@code name}: its decider, by pointer and
+     *  decision, its conflict, or none. */
+    private static String decision(String fixture, String name, DroolsBackend.Branch branch) throws Exception {
+        Path dir = FIXTURES.resolve(fixture);
+        JsonNode json = JSON.readTree(Files.readString(dir.resolve(name)));
+        return CaseRunner.forMeasurement(dir.resolve("ir.json"), branch).withSession(json, (build, session, labels) -> {
+            assertNull(DroolsBackend.fire(build, session).noFixpoint());
+            List<dev.uchar.regelspraak.transpiler.tms.DefaultsDecision> all = DroolsBackend.decisionsOf(build, session);
+            assertEquals(1, all.size(), () -> fixture + "/" + name);
+            var d = all.get(0);
+            return d.decider() != null ? d.decider().pointer() + " " + d.decider().decision()
+                    : d.conflict() != null ? "conflict " + d.conflict().key() : "none";
+        });
+    }
+
     /** Every fixture is played by a test above, and every case file of it under a prefix the tests play. */
     @Test void every_fixture_is_played() throws Exception {
         List<String> names = new ArrayList<>();
@@ -257,7 +358,10 @@ class OpenValuesWitnessTest {
                 "instance-ordered", "link",
                 "no-open-without-the-property", "open-input", "outside-the-window", "past-undetermined-deposit",
                 "past-undetermined-fault", "reach", "reach-without-the-property", "read-for-another", "rule",
-                "two-writers"), names);
+                "stack-characteristic", "stack-deposit", "stack-exception-groups", "stack-exception-groups-nested",
+                "stack-first-decides", "stack-gives-way", "stack-initialisation", "stack-initialisation-value",
+                "stack-opgave", "stack-opgave-complete", "stack-outside-the-window", "stack-two-initialisations",
+                "stack-type-chain", "stack-unordered", "two-writers"), names);
         for (String name : names)
             try (Stream<Path> s = Files.list(FIXTURES.resolve(name))) {
                 s.map(p -> p.getFileName().toString()).filter(f -> f.endsWith(".json") && !f.equals("ir.json"))

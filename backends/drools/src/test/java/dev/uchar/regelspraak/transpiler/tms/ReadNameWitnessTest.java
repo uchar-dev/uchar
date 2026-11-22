@@ -103,7 +103,9 @@ class ReadNameWitnessTest {
                     if (l.name() == null) continue;
                     slots++;
                     if (NUMBERED.matcher(l.name()).matches()) numbered.add(golden + " | " + p.name() + " | " + l);
-                    if (!identifier(l.name())) noIdentifier.add(golden + " | " + p.name() + " | " + l);
+                    // the session's open input is a global, which no pattern binds
+                    if (l.name().equals(Consequence.OPEN_INPUT) ? l.kind() != ReadKind.OPEN_INPUT : !identifier(l.name()))
+                        noIdentifier.add(golden + " | " + p.name() + " | " + l);
                 }
                 Set<String> seen = new HashSet<>();
                 for (String v : variables(p))

@@ -45,7 +45,7 @@ public record TestItem(String id, Role role, Term test, int depositFlag, List<In
         WITHOUT_FAULT,
         /** The writer whose condition it is decides or leaves its target open (ch. 1.5, "A rule"): the condition is not
          *  false for another form, for which it would stand that the writer fills nothing; which of the two, the
-         *  consequence says ({@link Consequence.Judged}). It cannot fault. */
+         *  consequence says ({@link Consequence.Writer}). It cannot fault. */
         ACTS,
         /** As {@link #ACTS}, and its evaluation does not fault: where it faults, the rule of the fault takes it. */
         ACTS_WITHOUT_FAULT,

@@ -1,0 +1,217 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Decides;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.LeftOpen;
+import dev.uchar.regelspraak.transpiler.tms.OpenInput;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global OpenInput open_invoer;
+
+// zijn taxatie groter is dan 1000
+function Boolean oordeel_kostbaarheid(Object $taxatie, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.judge(() -> RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.readInput($taxatie, open_invoer, $onderwerp, ElementKey.of("vondst", "taxatie", false)), new java.math.BigDecimal("1000"), ">"), false);
+}
+
+rule "kostbaarheid"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $taxatie : taxatie )
+    eval( ComputeHelpers.acts(oordeel_kostbaarheid($taxatie, open_invoer, $onderwerp)) )
+then
+    if (ComputeHelpers.decides(oordeel_kostbaarheid($taxatie, open_invoer, $onderwerp))) {
+        insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "kostbaar", true)));
+    } else {
+        insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "kostbaar", true), "kostbaarheid"));
+    }
+end
+
+// zijn gewicht plus 10
+function Object waarde_vindloon(Object $gewicht, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.valued(() -> ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), new java.math.BigDecimal("10")), Integer.valueOf(0), "vindloon", null));
+}
+
+rule "vindloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewicht : gewicht )
+then
+    Object v = waarde_vindloon($gewicht, open_invoer, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vindloon", ComputeHelpers.designate(v, "vindloon")));
+    } else if (ComputeHelpers.isOpen(v)) {
+        insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "vindloon", false), "vindloon"));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "vindloon", false), v, "vindloon"));
+        }
+    }
+end
+
+// hij niet kostbaar is
+function Boolean oordeel_bewakingstoeslag(Object $kostbaar) {
+    return ComputeHelpers.judge(() -> ComputeHelpers.characteristic(ComputeHelpers.read($kostbaar), Boolean.FALSE), false);
+}
+
+// 5
+function Object waarde_bewakingstoeslag(Object $kostbaar) {
+    return ComputeHelpers.decided(oordeel_bewakingstoeslag($kostbaar), () -> ComputeHelpers.fitTarget(new java.math.BigDecimal("5"), Integer.valueOf(0), "bewakingstoeslag", null));
+}
+
+rule "bewakingstoeslag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "kostbaar", true), subject == $onderwerp, $kostbaar : holds )
+    eval( ComputeHelpers.acts(oordeel_bewakingstoeslag($kostbaar)) )
+then
+    Object v = waarde_bewakingstoeslag($kostbaar);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bewakingstoeslag", ComputeHelpers.designate(v, "bewakingstoeslag")));
+    } else if (ComputeHelpers.isOpen(v)) {
+        insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "bewakingstoeslag", false), "bewakingstoeslag"));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "bewakingstoeslag", false), v, "bewakingstoeslag"));
+        }
+    }
+end
+
+// zijn taxatie leeg is
+function Boolean oordeel_ongetaxeerd(Object $taxatie, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.judge(() -> ComputeHelpers.emptyTestOverOpen(() -> ComputeHelpers.readInput($taxatie, open_invoer, $onderwerp, ElementKey.of("vondst", "taxatie", false)), Boolean.TRUE, null), false);
+}
+
+rule "ongetaxeerd"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $taxatie : taxatie )
+    eval( ComputeHelpers.acts(oordeel_ongetaxeerd($taxatie, open_invoer, $onderwerp)) )
+then
+    if (ComputeHelpers.decides(oordeel_ongetaxeerd($taxatie, open_invoer, $onderwerp))) {
+        insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "ongetaxeerd", true)));
+    } else {
+        insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "ongetaxeerd", true), "ongetaxeerd"));
+    }
+end
+
+// hij gemeld is
+function Boolean oordeel_meldloon(Object $gemeld, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.judge(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($gemeld, open_invoer, $onderwerp, ElementKey.of("vondst", "gemeld", true)), Boolean.TRUE), false);
+}
+
+// 3
+function Object waarde_meldloon(Object $gemeld, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.decided(oordeel_meldloon($gemeld, open_invoer, $onderwerp), () -> ComputeHelpers.fitTarget(new java.math.BigDecimal("3"), Integer.valueOf(0), "meldloon", null));
+}
+
+rule "meldloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gemeld : (ComputeHelpers.holds(gemeld)) )
+    eval( ComputeHelpers.acts(oordeel_meldloon($gemeld, open_invoer, $onderwerp)) )
+then
+    Object v = waarde_meldloon($gemeld, open_invoer, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "meldloon", ComputeHelpers.designate(v, "meldloon")));
+    } else if (ComputeHelpers.isOpen(v)) {
+        insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "meldloon", false), "meldloon"));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "meldloon", false), v, "meldloon"));
+        }
+    }
+end
+
+// hij betwist is
+function Boolean oordeel_defaultsAVondstPremieDefault0(Object $betwist, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.judge(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($betwist, open_invoer, $onderwerp, ElementKey.of("vondst", "betwist", true)), Boolean.TRUE), false);
+}
+
+rule "defaults A:Vondst.premie: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $betwist : (ComputeHelpers.holds(betwist)) )
+    eval( ComputeHelpers.acts(oordeel_defaultsAVondstPremieDefault0($betwist, open_invoer, $onderwerp)) )
+then
+    if (ComputeHelpers.decides(oordeel_defaultsAVondstPremieDefault0($betwist, open_invoer, $onderwerp))) {
+        // 0
+        Object v = new java.math.BigDecimal("0");
+        if (v != null) {
+            Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "premie");
+            if (ComputeHelpers.isEvaluationFault(passend)) {
+                insertLogical(new Fault($onderwerp, "defaults A:Vondst.premie", ComputeHelpers.designate(passend, "defaults A:Vondst.premie")));
+                insertLogical(new Decides($onderwerp, "defaults A:Vondst.premie", 0));
+            } else {
+                insertLogical(new Value($onderwerp, ElementKey.of("vondst", "premie", false), passend, "defaults A:Vondst.premie"));
+                insertLogical(new Decides($onderwerp, "defaults A:Vondst.premie", 0));
+            }
+        }
+    } else {
+        insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "premie", false), "defaults A:Vondst.premie: default 0"));
+        insertLogical(new Decides($onderwerp, "defaults A:Vondst.premie", 0, true));
+    }
+end
+
+rule "defaults A:Vondst.premie: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst") )
+    not( $hoger_9 : Decides( stack == "defaults A:Vondst.premie" && index < 1, subject == $onderwerp ) )
+then
+    // 10
+    Object v = new java.math.BigDecimal("10");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "premie");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondst.premie", ComputeHelpers.designate(passend, "defaults A:Vondst.premie")));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.premie", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "premie", false), passend, "defaults A:Vondst.premie"));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.premie", 1));
+        }
+    }
+end
+
+rule "kenmerkstand Vondst.kostbaar: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(kostbaar) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "kostbaar", true), true));
+end
+
+rule "kenmerkstand Vondst.kostbaar: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "kostbaar", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "kostbaar", true), true));
+end
+
+rule "kenmerkstand Vondst.kostbaar: open door een schrijver"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(kostbaar) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "kostbaar", true), subject == $onderwerp ) )
+    exists( $opengelaten : LeftOpen( member == ElementKey.of("vondst", "kostbaar", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "kostbaar", true), ComputeHelpers.open($onderwerp, ElementKey.of("vondst", "kostbaar", true))));
+end
+
+rule "kenmerkstand Vondst.kostbaar: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(kostbaar) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "kostbaar", true), subject == $onderwerp ) )
+    not( $opengelaten : LeftOpen( member == ElementKey.of("vondst", "kostbaar", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "kostbaar", true), false));
+end
+

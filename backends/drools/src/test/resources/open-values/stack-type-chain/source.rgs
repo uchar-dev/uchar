@@ -1,0 +1,25 @@
+Afleiden uit leeg: nee
+
+Objecttype het Strandrecht (mv: Strandrechten)
+    de grondslag Numeriek (geheel getal);
+    de uitkering Numeriek (geheel getal);
+    is betwist kenmerk (bijvoeglijk);
+
+Objecttype het Wrakrecht is een Strandrecht (mv: Wrakrechten)
+    de bergingsdiepte Numeriek (geheel getal);
+
+Regel uitkering
+    geldig altijd
+        De uitkering van een Strandrecht moet gesteld worden op zijn grondslag.
+
+Uitzondering op uitkering: betwist recht
+    geldig altijd
+        De uitkering van een Strandrecht moet gesteld worden op 99 indien hij betwist is.
+
+Regel wrakuitkering
+    geldig altijd
+        De uitkering van een Wrakrecht moet berekend worden als zijn grondslag maal 2.
+
+Uitzondering op wrakuitkering: diep wrak
+    geldig altijd
+        De uitkering van een Wrakrecht moet gesteld worden op 55 indien zijn bergingsdiepte groter is dan 20.

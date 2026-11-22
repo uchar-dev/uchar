@@ -38,14 +38,12 @@ class OpenValuesRefWitnessTest {
     private static final Map<String, String> WITNESS = new LinkedHashMap<>();
     static {
         for (String plays : List.of("absent-link", "absent-link-path", "arithmetic", "characteristic", "closed-input",
-                "comparison", "compound-all", "compound-any", "compound-counting", "compound-none", "consistency",
-                "exact-digits", "filled-test", "initialisation", "let", "marker", "navigated-read", "settled-empty",
-                "settled-empty-date"))
-            WITNESS.put(plays, null);
-        for (String stack : List.of("composite-filled-test", "defaults-characteristic", "defaults-stack",
-                "defaults-subtype", "filled-test-not-closure", "input-above-computation", "input-above-computation-open",
+                "comparison", "composite-filled-test", "compound-all", "compound-any", "compound-counting", "compound-none",
+                "consistency", "defaults-characteristic", "defaults-stack", "defaults-subtype", "exact-digits",
+                "filled-test", "filled-test-not-closure", "initialisation", "input-above-computation",
+                "input-above-computation-open", "let", "marker", "navigated-read", "settled-empty", "settled-empty-date",
                 "settled-empty-stack"))
-            WITNESS.put(stack, "defaults-group");
+            WITNESS.put(plays, null);
         for (String fold : List.of("empty-by-fault", "fact-creation", "listed-fold", "set-fold", "settled-empty-fold"))
             WITNESS.put(fold, "set-fold");
         WITNESS.put("object-creation", "object-creation");
@@ -85,7 +83,7 @@ class OpenValuesRefWitnessTest {
                 }
             }
         }
-        // the cases of the nineteen witnesses that play, on two branches, counted 2026-11-22
-        assertEquals(2 * 77, played);
+        // the cases of the twenty-seven witnesses that play, on two branches, counted 2026-11-22
+        assertEquals(2 * 120, played);
     }
 }

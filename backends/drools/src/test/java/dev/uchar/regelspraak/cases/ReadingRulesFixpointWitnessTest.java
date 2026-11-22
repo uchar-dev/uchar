@@ -57,7 +57,7 @@ class ReadingRulesFixpointWitnessTest {
                 if (casePaths.isEmpty()) continue;
                 String name = CORPUS.resolve("golden").relativize(g).toString();
                 Path ir = g.resolve("ir.json");
-                if (!CaseRunner.viaExecModel(ir, casePaths).status().equals("PLAYED")) continue;
+                if (!TmsDocuments.hasReadings(ir) || !CaseRunner.viaExecModel(ir, casePaths).status().equals("PLAYED")) continue;
                 CaseRunner without = CaseRunner.forMeasurement(ir, branch), with;
                 try {
                     with = CaseRunner.forMeasurement(ir, branch, true);

@@ -244,8 +244,9 @@ class DrlPiecesCorpusWitnessTest {
             String name = GOLDEN.relativize(g).toString();
             if (build.drl().chars().anyMatch(c -> c > 127)) nonAscii++;
             check(name, build, "", differences, notOwnWork, outsideTheForm, unreached, counts);
-            check(name, DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT, true), " met lezingen", differences,
-                    notOwnWork, outsideTheForm, unreachedWithReadings, counts);
+            if (TmsDocuments.hasReadings(ir))
+                check(name, DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT, true), " met lezingen", differences,
+                        notOwnWork, outsideTheForm, unreachedWithReadings, counts);
         }
         assertEquals(List.of(), differences, "stukken die de DRL-tekst niet precies dekken");
         int n = carried, a = nonAscii;

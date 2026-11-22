@@ -6,7 +6,7 @@ import java.util.Objects;
 /**
  * The control fact of a defaults group in its general form, with exception groups or with more than one group at the
  * root (RUNTIME-SEMANTICS ch. 7.2 and 7.9): the default at {@code position} in chain {@code chain} of the stack
- * {@code stack} settled for {@code subject}, deciding {@code value} or conflicting under {@code key}.
+ * {@code stack} settled for {@code subject}, deciding {@code value}, conflicting under {@code key}, or open.
  *
  * <p>A chain is the list of defaults of a root group or of one exception group; the lowering numbers them per stack,
  * the root groups first, and the exception groups of one default consecutively, so that "a member before this one" is
@@ -19,6 +19,11 @@ import java.util.Objects;
  * one fact of its highest settling default, and the reconciliation of a default reads the outcomes of its member chains
  * as positive and negated patterns on this fact. A lower default with exception groups is displaced with its conflict
  * (ch. 7.9): its rules, and those of its exception groups, are under the {@code not} of the higher one.
+ *
+ * <p>A default that neither decides nor gives way settles {@code OPEN} (RUNTIME-SEMANTICS ch. 1.5, "A stack"), and so does
+ * one whose exception groups have an open member and neither conflict nor decide differently: the lower defaults of its
+ * chain and its exception groups are under the {@code not} of it as of any outcome, but the initialisation of the stack,
+ * which closes over it, and a reconciliation over a member that is open decides nothing.
  *
  * <p>On a timeline target a default settles per day (RUNTIME-SEMANTICS ch. 7.11): its outcome is {@code DECIDED} with
  * the days it settled as its value, a {@link PeriodDefaults.Days} that holds the days it decides with their values and
@@ -34,15 +39,15 @@ public record Outcome(Object subject, String stack, int chain, int position, Kin
                        String key) implements ControlFact {
 
     /** How a default settled. */
-    public enum Kind { DECIDED, CONFLICT }
+    public enum Kind { DECIDED, CONFLICT, OPEN }
 
     public Outcome {
         Objects.requireNonNull(subject, "subject");
         Objects.requireNonNull(stack, "stack");
         Objects.requireNonNull(kind, "kind");
-        if (kind == Kind.DECIDED ? value == null || key != null : value != null || key == null)
-            throw new IllegalArgumentException("a decision carries a value, a conflict a key: " + kind
-                    + " with value " + value + " and key " + key);
+        if ((kind == Kind.DECIDED) != (value != null) || (kind == Kind.CONFLICT) != (key != null))
+            throw new IllegalArgumentException("a decision carries a value, a conflict a key, an open outcome neither: "
+                    + kind + " with value " + value + " and key " + key);
     }
 
     public boolean conflict() { return kind == Kind.CONFLICT; }
@@ -66,6 +71,10 @@ public record Outcome(Object subject, String stack, int chain, int position, Kin
 
     @Override public String toString() {
         return "Outcome(" + FactNames.object(subject) + ", " + stack + ", chain " + chain + ", position " + position
-                + ", " + (kind == Kind.DECIDED ? "decided " + value : "conflict " + key) + ")";
+                + ", " + switch (kind) {
+                    case DECIDED -> "decided " + value;
+                    case CONFLICT -> "conflict " + key;
+                    case OPEN -> "open";
+                } + ")";
     }
 }

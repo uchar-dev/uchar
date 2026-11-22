@@ -650,13 +650,13 @@ public final class TmsTranspiler {
              *  adds beside it, the rules of the folds it registered among them. */
             FORM,
             /** A rule of an effective stack that lowers one default of it: the rule of the default's own decision, its
-             *  fall-back where it has exception groups, the fault rule of its justification, the pass-on, difference and
-             *  agreement rules that reconcile its exception groups (ch. 7.9), the rules of the folds its justification
-             *  or consequence reads, and its reading rule. */
+             *  fall-back where it has exception groups, the fault rule of its justification, the pass-on, difference,
+             *  agreement and open rules that reconcile its exception groups (ch. 7.9, 1.5), the rules of the folds its
+             *  justification or consequence reads, and its reading rule. */
             DEFAULT,
-            /** A rule of an effective stack that lowers the stack itself, no default of it: the pass-on, difference and
-             *  agreement rules that reconcile the groups at its root (ch. 7.2), and the fault of a session without an
-             *  evaluation date where a group of the stack has a dated validity. */
+            /** A rule of an effective stack that lowers the stack itself, no default of it: the pass-on, difference,
+             *  agreement and open rules that reconcile the groups at its root (ch. 7.2, 1.5), and the fault of a session
+             *  without an evaluation date where a group of the stack has a dated validity. */
             STACK
         }
 
@@ -698,6 +698,9 @@ public final class TmsTranspiler {
             /** Of that reconciliation: the rule that takes the decision of the first deciding member where no member
              *  conflicts and no other one decides differently. */
             RECONCILE_AGREEMENT("reconcile-agreement", Kind.DEFAULT, Kind.STACK),
+            /** Of that reconciliation, in a document in which a default of the stack can be open (ch. 1.5): the rule that
+             *  leaves it open where a member is open and no conflict stands. */
+            RECONCILE_OPEN("reconcile-open", Kind.DEFAULT, Kind.STACK),
             /** Of a fold (ch. 3.4): the rule that inserts the contribution of a member of the range that passes the
              *  filter; one per range, and one per selection of an instance-set union. */
             FOLD_CONTRIBUTION("fold-contribution", Kind.FORM, Kind.DEFAULT),
@@ -1425,8 +1428,9 @@ public final class TmsTranspiler {
         reads.recorder();
         String ruleName = model.emittedRuleName(r.name());
         List<RulePlan> out = new ArrayList<>();
-        out.add(as(RuleOrigin.Role.OWN, reads.rulePlan(ruleName, items, judged(ends, testTerm, read, Set.of(), reads, r.name(),
-                key, new Consequence.Characteristic(SUBJECT, key, Consequence.Insertion.LOGICAL)))));
+        out.add(as(RuleOrigin.Role.OWN, reads.rulePlan(ruleName, items, writer(ends, testTerm, read, false, Set.of(), reads,
+                new Consequence.Characteristic(SUBJECT, key, Consequence.Insertion.LOGICAL),
+                leavesOpen(new Consequence.StackFact.LeftOpen(key, r.name()))))));
         if (noted != null && testTerm != null)
             conditionReadingRule(ruleName, positions.versionOf(r), reads, reads.readingPlan(List.of(), false),
                     testTerm, r.condition(), noted, r.validity(), false);
@@ -2631,12 +2635,12 @@ public final class TmsTranspiler {
         // wrote (ch. 2.1, 2.4 point 3); the write-back puts it on the bean as a decimal (readFixpoint)
         Consequence consequence = new Consequence.Value(SUBJECT, key, name, value, List.copyOf(use), reads.size(), false,
                 false, depositFlag < 0 ? null : new Consequence.Deposit(depositFlag, name), new Consequence.FaultName(name, ruleName),
-                openValue, Consequence.Insertion.LOGICAL);
+                Consequence.Insertion.LOGICAL);
         derived.put(key, member);
         reads.recorder();
         List<RulePlan> out = new ArrayList<>();
-        out.add(as(RuleOrigin.Role.OWN, reads.rulePlan(ruleName, items, judged(ends, testTerm, read, use, reads, name, key,
-                consequence))));
+        out.add(as(RuleOrigin.Role.OWN, reads.rulePlan(ruleName, items, writer(ends, testTerm, read, openValue, use, reads, consequence,
+                leavesOpen(new Consequence.StackFact.LeftOpen(key, name))))));
         // every form this writes computes a value, so it has a reading also without a condition (RUNTIME-SEMANTICS
         // ch. 5.12): the reading of its value, where it is at its turn
         if (noted != null) {
@@ -2762,21 +2766,25 @@ public final class TmsTranspiler {
     }
 
     /**
-     * The consequence of the writer {@code form} of {@code member}, whose rule asks {@code testTerm}, its condition over
-     * the values at {@code read} ending as {@code ends} says: {@code decides}, which reads the values at {@code use}; and
-     * where the condition can be undetermined, that consequence or the fact that the form leaves {@code member} of the
-     * subject open, as the condition holds for the form itself or not (RUNTIME-SEMANTICS ch. 1.5, "A rule"). Where the
-     * condition fails for another form, the rule does not fire ({@link Asked#ACTS}): it stands that the form fills
-     * nothing. A value with an open read leaves the target open from {@code decides} itself
-     * ({@link Consequence.Value#open}).
+     * The consequence of a writer, a rule or a default, whose rule asks {@code testTerm}, its condition over the values at
+     * {@code read} ending as {@code ends} says: {@code decides}, which reads the values at {@code use}; and where the
+     * condition can be undetermined, that consequence or {@code opens}, what the writer inserts where it leaves its target
+     * open, as the condition holds for the form itself or not (RUNTIME-SEMANTICS ch. 1.5, "A rule", "A stack"). Where the
+     * condition fails for another form, the rule does not fire ({@link Asked#ACTS}): it stands that the writer fills
+     * nothing. Where the value can read an open value ({@code openValue}), {@code opens} as well where it does.
      */
-    private static Consequence judged(Ends ends, Term testTerm, Set<Integer> read, Set<Integer> use, Reads reads, String form,
-                                      ElementKey member, Consequence decides) {
-        if (!ends.open()) return decides;
-        Set<Integer> slots = new TreeSet<>(read);
-        slots.addAll(use);
-        return new Consequence.Judged(SUBJECT, testTerm, ends.fault(), List.copyOf(slots), reads.size(), decides, member,
-                form, Consequence.Insertion.LOGICAL);
+    private static Consequence writer(Ends ends, Term testTerm, Set<Integer> read, boolean openValue, Set<Integer> use,
+                                      Reads reads, Consequence decides, Consequence.LeavesOpen opens) {
+        if (!ends.open() && !openValue) return decides;
+        Set<Integer> slots = new TreeSet<>(use);
+        if (ends.open()) slots.addAll(read);
+        return new Consequence.Writer(ends.open() ? testTerm : null, ends.open() && ends.fault(), List.copyOf(slots),
+                reads.size(), decides, opens);
+    }
+
+    /** What a writer of the subject inserts where it leaves its target open, {@code facts}. */
+    private static Consequence.LeavesOpen leavesOpen(Consequence.StackFact... facts) {
+        return new Consequence.LeavesOpen(SUBJECT, List.of(facts), Consequence.Insertion.LOGICAL);
     }
 
     /** How the evaluation of a condition or a value can end beside its outcome: in an evaluation fault, and in an open
@@ -2791,7 +2799,7 @@ public final class TmsTranspiler {
      * which the rule fires, or what the evaluation does beside them. A form decides where its condition holds for the
      * form itself ({@code DECIDES}). A writer acts ({@code ACTS}) where it decides and where the condition neither holds
      * for the form itself nor fails for another, so that the writer leaves its target open; which of the two, its
-     * consequence says ({@link #judged}). Where the condition fails for another form, the form fills nothing, and its
+     * consequence says ({@link #writer}). Where the condition fails for another form, the form fills nothing, and its
      * rule does not fire. Beside these the condition can fault ({@code FAULTS}) and deposit ({@code DEPOSITS}).
      * {@link Reads#conditionTest} turns each into a test.
      */
@@ -3910,6 +3918,9 @@ public final class TmsTranspiler {
         /** The default each of {@link #readings} belongs to. */
         final Map<Reads, Default> defaultOf = new IdentityHashMap<>();
         final Set<String> controlFacts = new LinkedHashSet<>();
+        /** The chains in which a default lowered so far can be open (RUNTIME-SEMANTICS ch. 1.5), by their numbers, the one
+         *  chain of the simple form among them. */
+        final Set<Integer> openChains = new HashSet<>();
         int nextChain;
 
         StackBuild(String name, Member member, boolean characteristic, ObjectType owner, Class<?> javaClass,
@@ -4112,6 +4123,10 @@ public final class TmsTranspiler {
      * initialisation default matches only where the target is empty on the bean, which holds the input (ch. 7.3). Every
      * decision stands as its {@code Decides}, the lowest one's and a do-not-attribute decision's at the bottom included,
      * which displace nothing: the session says which default decided ({@link #decisionsOf}; card defaults-decider).
+     *
+     * <p>A default that can be open (RUNTIME-SEMANTICS ch. 1.5, "A stack") inserts its open {@link Decides}, which
+     * displaces the lower defaults all the same, and the {@link LeftOpen} of the target, which the target's standing reads
+     * where nothing decides; the initialisation asks only that no default above it decides ({@link #notAbove}).
      */
     private List<RulePlan> simpleForm(StackBuild b, List<Node> chain) {
         List<Node> deciding = chain.stream().filter(k -> decidesSelf(b, k.d())).toList();
@@ -4130,8 +4145,30 @@ public final class TmsTranspiler {
             else if (Boolean.TRUE.equals(k.d().decision())) facts.add(new Consequence.StackFact.Characteristic(key));
             facts.add(new Consequence.StackFact.Decides(name, i));
             out.addAll(ownRule(b, k, RuleOrigin.Role.OWN, name + ": default " + k.label(),
-                    () -> higher ? List.of(noDecides(name, i)) : List.of(), facts));
+                    () -> higher ? notAbove(b, chain, k, (above, settled) -> noDecides(name, above, settled)) : List.of(),
+                    facts, leavesOpen(new Consequence.StackFact.LeftOpen(key, name + ": default " + k.label()),
+                            new Consequence.StackFact.OpenDefault(name, i))));
         }
+        return out;
+    }
+
+    /**
+     * The control-fact patterns that keep the default {@code k} of {@code chain} under the defaults above it, each made by
+     * {@code not} over the places above one, over every control fact or only over those of a default that does not stand
+     * open. An ordinary default waits on every one. The initialisation of a stack closes over a default above it that is
+     * open (RUNTIME-SEMANTICS ch. 1.5, "The initialisation of a stack"): it waits on those that do not stand open; and
+     * below another initialisation, on every one above that, since only the first below an open default closes over it.
+     */
+    private static List<LhsItem> notAbove(StackBuild b, List<Node> chain, Node k,
+                                          BiFunction<Integer, Boolean, LhsItem> not) {
+        int i = k.position();
+        if (!k.d().initialisation() || !b.openChains.contains(k.chain())) return List.of(not.apply(i, false));
+        List<LhsItem> out = new ArrayList<>(List.of(not.apply(i, true)));
+        for (Node above : chain)
+            if (above.position() > 0 && above.position() < i && above.d().initialisation()) {
+                out.add(not.apply(above.position(), false));
+                break;
+            }
         return out;
     }
 
@@ -4142,7 +4179,9 @@ public final class TmsTranspiler {
      * {@code not Uitkomst} over the positions above it in its chain and above each default whose exception group its
      * chain is ({@link #chainRules}), so a lower default is displaced with whatever it would settle, a conflict
      * included (ch. 7.9), and its exception groups with it. At the root the groups of the stack reconcile once more, by
-     * the same rules, under the bare key, and that reconciliation writes the target or deposits the conflict.
+     * the same rules, under the bare key, and that reconciliation writes the target or deposits the conflict. A default
+     * that can be open (RUNTIME-SEMANTICS ch. 1.5) settles so, and a reconciliation over an open member as well; at the
+     * root that leaves the target open.
      */
     private List<RulePlan> generalForm(StackBuild b, List<List<Node>> squareRoot) {
         List<RulePlan> out = new ArrayList<>();
@@ -4154,7 +4193,8 @@ public final class TmsTranspiler {
                 : new Consequence.StackFact.Value(key, b.name, ceiling(b.member.datatype()));
         int root = out.size();
         reconciliation(b, 0, squareRoot.size(), squareRoot.stream().anyMatch(TmsTranspiler::canConflict), b.targetForm, "wortel",
-                List::of, new Consequence.StackFact.Inconsistency(), target, b.characteristic, false, out);
+                List::of, new Consequence.StackFact.Inconsistency(), target,
+                new Consequence.StackFact.LeftOpen(key, b.name), b.characteristic, false, out);
         for (RulePlan r : out.subList(root, out.size())) stackOwnRules.add(r.name());
         return out;
     }
@@ -4172,15 +4212,16 @@ public final class TmsTranspiler {
             int id = k.chain(), i = k.position();
             Supplier<List<LhsItem>> notHigher = () -> {
                 List<LhsItem> guard = new ArrayList<>(ancestors.get());
-                if (i > 0) guard.add(noOutcome(name, id, i));
+                if (i > 0) guard.addAll(notAbove(b, chain, k, (above, settled) -> noOutcome(name, id, above, settled)));
                 return guard;
             };
             Consequence.StackFact decides = new Consequence.StackFact.Outcome(name, id, i, Outcome.Kind.DECIDED);
+            Consequence.StackFact open = new Consequence.StackFact.Outcome(name, id, i, Outcome.Kind.OPEN);
             if (!k.hasMembers()) {
                 if (!decidesSelf(b, k.d())) continue;
                 b.controlFacts.add("Uitkomst " + Outcome.Kind.DECIDED);
                 out.addAll(ownRule(b, k, RuleOrigin.Role.OWN, name + ": default " + k.label(), notHigher,
-                        List.of(decides)));
+                        List.of(decides), leavesOpen(open)));
                 continue;
             }
             for (List<Node> member : k.members()) chainRules(b, member, notHigher, out);
@@ -4188,7 +4229,8 @@ public final class TmsTranspiler {
             int reconciling = out.size();
             reconciliation(b, earliest, k.members().size(), k.members().stream().anyMatch(TmsTranspiler::canConflict),
                     k.key(), k.label(), notHigher,
-                    new Consequence.StackFact.Outcome(name, id, i, Outcome.Kind.CONFLICT), decides, false, true, out);
+                    new Consequence.StackFact.Outcome(name, id, i, Outcome.Kind.CONFLICT), decides, open, false, true, out);
+            if (canBeOpen(b, earliest, to)) b.openChains.add(id);
             for (RulePlan r : out.subList(reconciling, out.size())) defaultOfRule.put(r.name(), k.d());
             if (decidesSelf(b, k.d()))
                 out.addAll(ownRule(b, k, RuleOrigin.Role.FALLBACK, name + ": terugval " + k.label(), () -> {
@@ -4196,8 +4238,13 @@ public final class TmsTranspiler {
                     guard.add(new Not(outcomes(name, earliest, to, null)));
                     guard.addAll(notHigher.get());
                     return guard;
-                }, List.of(decides)));
+                }, List.of(decides), leavesOpen(open)));
         }
+    }
+
+    /** Whether a default lowered so far in one of the chains {@code [from, to)} can be open. */
+    private static boolean canBeOpen(StackBuild b, int from, int to) {
+        return b.openChains.stream().anyMatch(c -> c >= from && c < to);
     }
 
     /** Whether a chain can end in a conflict: some default in it reconciles two or more members, or a member that can. */
@@ -4216,12 +4263,19 @@ public final class TmsTranspiler {
      * per outcome, each under {@code guard}; the rules that cannot match are left out (a conflict among members that
      * cannot conflict, a difference among one member). {@code onlyTrue} restricts the decision to an attribution, the
      * one decision on a characteristic that writes; {@code between} says the outcomes are control facts, not the write.
+     *
+     * <p>Where a member can be open (RUNTIME-SEMANTICS ch. 1.5, "Exception groups and a declared-unordered group"), the
+     * decision stands only where none is, and a rule of its own inserts {@code atOpen} where one is, no member conflicts
+     * and no two members decide differently. A single chain at the root needs no more than that: its initialisation
+     * decides beside an open default above it, and the target's standing reads the decision first.
      */
     private void reconciliation(StackBuild b, int earliest, int itemCount, boolean membersConflict, String key, String label,
                             Supplier<List<LhsItem>> guard, Consequence.StackFact atConflict,
-                            Consequence.StackFact atDecision, boolean onlyTrue, boolean between, List<RulePlan> out) {
+                            Consequence.StackFact atDecision, Consequence.StackFact atOpen, boolean onlyTrue,
+                            boolean between, List<RulePlan> out) {
         String name = b.name;
         int to = earliest + itemCount;
+        boolean open = canBeOpen(b, earliest, to);
         Binding ofSubject = Binding.of(SUBJECT, Outcome.class, "subject");
         if (membersConflict) {
             List<LhsItem> items = new ArrayList<>();
@@ -4266,6 +4320,7 @@ public final class TmsTranspiler {
             if (membersConflict) items.add(new Not(outcomes(name, earliest, to, Outcome.Kind.CONFLICT)));
             items.add(new Not(outcomes(name, earliest, to, Outcome.Kind.DECIDED, "ander-besluit",
                     StaticFunction.OTHER_DECISION, "$besluit")));
+            if (open) items.add(new Not(outcomes(name, earliest, to, Outcome.Kind.OPEN)));
         }
         items.addAll(guard.get());
         out.add(as(RuleOrigin.Role.RECONCILE_AGREEMENT, new RulePlan(name + ": eens " + label, form, null,
@@ -4274,6 +4329,23 @@ public final class TmsTranspiler {
                 new Consequence.Decision(SUBJECT, new Term.SlotValue(0, null), List.of(0), 1, false, null, List.of(atDecision),
                         Consequence.Insertion.LOGICAL))));
         if (between) b.controlFacts.add("Uitkomst " + Outcome.Kind.DECIDED);
+        if (!open) return;
+        List<LhsItem> opens = new ArrayList<>();
+        opens.add(new FactPattern(Outcome.class, "$open_" + idSeq,
+                List.of(outcomeOfMember("lid-open", name, Outcome.Kind.OPEN, earliest, to, false)), List.of(),
+                List.of(ofSubject)));
+        if (membersConflict) opens.add(new Not(outcomes(name, earliest, to, Outcome.Kind.CONFLICT)));
+        // beside an open member two others can decide differently only where there are three
+        if (itemCount > 2) {
+            FactPattern one = outcomes(name, earliest, to, Outcome.Kind.DECIDED);
+            List<FactPattern> differ = List.of(one, outcomes(name, earliest, to, Outcome.Kind.DECIDED, "ander-besluit",
+                    StaticFunction.OTHER_DECISION, one.name()));
+            opens.add(new Not(differ, Exists.declared(differ), Exists.read(differ)));
+        }
+        opens.addAll(guard.get());
+        out.add(as(RuleOrigin.Role.RECONCILE_OPEN, new RulePlan(name + ": open " + label, form, null,
+                new ReadTable(List.of()), opens, leavesOpen(atOpen))));
+        if (between) b.controlFacts.add("Uitkomst " + Outcome.Kind.OPEN);
     }
 
     /** The constraint {@code category} on the outcome a reconciliation binds: of stack {@code name}, settled as
@@ -4312,23 +4384,29 @@ public final class TmsTranspiler {
         return new FactPattern(Outcome.class, variable, List.of(alpha), List.of(onSubject), beta, List.of());
     }
 
-    /** {@code not Uitkomst} over the positions above {@code position} in chain {@code chain}, for the subject. */
-    private LhsItem noOutcome(String name, int chain, int position) {
+    /** {@code not Uitkomst} over the positions above {@code position} in chain {@code chain}, for the subject; where
+     *  {@code settled}, over the outcomes that are not open. */
+    private LhsItem noOutcome(String name, int chain, int position, boolean settled) {
         String variable = "$hoger_" + idSeq;
-        Alpha higher = new Alpha(id("hoger-uitkomst"), List.of(
+        List<Alpha.FieldTest> tests = new ArrayList<>(List.of(
                 new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, name),
                 new Alpha.FieldTest("chain", Alpha.Comparator.GELIJK, chain),
                 new Alpha.FieldTest("position", Alpha.Comparator.UNDER, position)));
+        if (settled) tests.add(new Alpha.FieldTest("kind", Alpha.Comparator.NOT_EQUAL, Outcome.Kind.OPEN));
+        Alpha higher = new Alpha(id("hoger-uitkomst"), tests);
         return new Not(new FactPattern(Outcome.class, variable, List.of(higher),
                 List.of(new Join(id("hoger-uitkomst-onderwerp"), "subject", SUBJECT)), List.of()));
     }
 
-    /** {@code not Beslist} over the indices above {@code index} in the stack, for the subject. */
-    private LhsItem noDecides(String name, int index) {
+    /** {@code not Beslist} over the indices above {@code index} in the stack, for the subject; where {@code settled}, over
+     *  the defaults that are not open. */
+    private LhsItem noDecides(String name, int index, boolean settled) {
         String variable = "$hoger_" + idSeq;
-        Alpha higher = new Alpha(id("hoger-beslist"), List.of(
+        List<Alpha.FieldTest> tests = new ArrayList<>(List.of(
                 new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, name),
                 new Alpha.FieldTest("index", Alpha.Comparator.UNDER, index)));
+        if (settled) tests.add(new Alpha.FieldTest("open", Alpha.Comparator.GELIJK, Boolean.FALSE));
+        Alpha higher = new Alpha(id("hoger-beslist"), tests);
         return new Not(new FactPattern(Decides.class, variable, List.of(higher),
                 List.of(new Join(id("hoger-beslist-onderwerp"), "subject", SUBJECT)), List.of()));
     }
@@ -4352,14 +4430,19 @@ public final class TmsTranspiler {
      * <p>A division in a default deposits only where the default decides (ch. 7.1): over its consequence the consequence
      * of the rule, which deposits nothing where the value is leeg and the default falls through, and over its
      * justification a deposit rule that holds while the decision of this default stands ({@link #decidedBy}).
+     *
+     * <p>A default has the three outcomes of a rule (RUNTIME-SEMANTICS ch. 1.5, "A stack"): where its justification can be
+     * undetermined or its consequence can read an open value, its rule fires where it decides and where it is open, and
+     * inserts {@code facts} or {@code opens} ({@link #writer}); where it gives way it inserts nothing, as any default.
      */
     private List<RulePlan> ownRule(StackBuild b, Node k, RuleOrigin.Role role, String ruleName,
-                                   Supplier<List<LhsItem>> guard, List<Consequence.StackFact> facts) {
+                                   Supplier<List<LhsItem>> guard, List<Consequence.StackFact> facts,
+                                   Consequence.LeavesOpen opens) {
         // the rules built here lower the default, and so do the contributions of the folds registered meanwhile, those
         // its justification's fault rule reads
         lowering = k.d();
         try {
-            List<RulePlan> out = lowerOwnRule(b, k, role, ruleName, guard, facts);
+            List<RulePlan> out = lowerOwnRule(b, k, role, ruleName, guard, facts, opens);
             for (RulePlan r : out) defaultOfRule.put(r.name(), k.d());
             return out;
         } finally {
@@ -4370,7 +4453,8 @@ public final class TmsTranspiler {
     /** The rules of {@link #ownRule}, built while {@link #lowering} is the default: the rule of the default's own
      *  decision in the role {@code role}, the default's own or its fall-back, and the fault rule of its justification. */
     private List<RulePlan> lowerOwnRule(StackBuild b, Node k, RuleOrigin.Role role, String ruleName,
-                                        Supplier<List<LhsItem>> guard, List<Consequence.StackFact> facts) {
+                                        Supplier<List<LhsItem>> guard, List<Consequence.StackFact> facts,
+                                        Consequence.LeavesOpen opens) {
         Default d = k.d();
         Supplier<Reads> fresh = () -> {
             Reads l = new Reads(k.levelOf());
@@ -4392,29 +4476,34 @@ public final class TmsTranspiler {
         Consequence decision;
         Term value = null;
         Noted noted;
+        Set<Integer> use = Set.of();
+        boolean openValue = false;
         if (b.characteristic) {
             noted = endReading();
             control = guard.get();
-            items = reads.plan(Asked.DECIDES, ends, testTerm, read, control);
+            items = reads.plan(Asked.ACTS, ends, testTerm, read, control);
             decision = new Consequence.Decision(SUBJECT, constant(d.decision()), List.of(), reads.size(), false, null, facts,
                     Consequence.Insertion.LOGICAL);
         } else {
-            Set<Integer> use = reads.follow();
+            use = reads.follow();
             value = restated(value(d.consequence(), reads), eff.unitOf(d.consequence()),
                     b.member.datatype().unitOf(), DroolsCode.UNIT_CONFLICT.part("write-boundary-target"));
+            openValue = reads.ends().open();
             reads.stop();
             noted = endReading();
             control = guard.get();
-            items = reads.plan(Asked.DECIDES, ends, testTerm, read, control);
+            items = reads.plan(Asked.ACTS, ends, testTerm, read, control);
             decision = new Consequence.Decision(SUBJECT, value, List.copyOf(use), reads.size(), false,
                     new Consequence.FaultName(name, name),
                     deposits(d.consequence()) ? new Consequence.Deposit(reads.depositFlagSlot(), b.targetForm) : null,
                     facts, Consequence.Insertion.LOGICAL);
         }
+        boolean open = ends.open() || openValue;
         b.readings.add(reads);
         b.defaultOf.put(reads, d);
         List<RulePlan> out = new ArrayList<>();
-        out.add(as(role, reads.rulePlan(ruleName, items, decision)));
+        out.add(as(role, reads.rulePlan(ruleName, items, writer(ends, testTerm, read, openValue, use, reads,
+                decision, opens))));
         // the control facts stay: a default a higher one displaced is not at its turn (RUNTIME-SEMANTICS ch. 7.1, 7.9).
         // Beside that reading rule, where control facts guard the turn, a speculative one without them reads the
         // default where it is displaced as well (ch. 5.12): the turn stays with truth maintenance, which keeps the
@@ -4434,22 +4523,26 @@ public final class TmsTranspiler {
         out.addAll(conditionSideRules(ends, ruleName, fresh, d.condition(), name, l -> guard.get(), b.targetForm,
                 l -> {
                     List<LhsItem> decided = new ArrayList<>(guard.get());
-                    decided.add(decidedBy(facts));
+                    decided.add(decidedBy(facts, open));
                     return decided;
                 }, null));
+        if (open) b.openChains.add(k.chain());
         return out;
     }
 
-    /** That the decision whose facts are {@code facts} stands on the subject: its {@link Decides} in the simple form, its
-     *  {@link Outcome} in the general form. */
-    private LhsItem decidedBy(List<Consequence.StackFact> facts) {
+    /** That the decision whose facts are {@code facts} stands on the subject: its {@link Decides} in the simple form, which
+     *  says that it is not open where the default can be ({@code canBeOpen}), its {@link Outcome} in the general form. */
+    private LhsItem decidedBy(List<Consequence.StackFact> facts, boolean canBeOpen) {
         for (Consequence.StackFact f : facts) {
             FactPattern pattern = switch (f) {
-                case Consequence.StackFact.Decides x -> new FactPattern(Decides.class, "$beslist_" + idSeq,
-                        List.of(new Alpha(id("eigen-besluit"), List.of(
-                                new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, x.stack()),
-                                new Alpha.FieldTest("index", Alpha.Comparator.GELIJK, x.index())))),
-                        List.of(new Join(id("eigen-besluit-onderwerp"), "subject", SUBJECT)), List.of());
+                case Consequence.StackFact.Decides x -> {
+                    List<Alpha.FieldTest> tests = new ArrayList<>(List.of(
+                            new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, x.stack()),
+                            new Alpha.FieldTest("index", Alpha.Comparator.GELIJK, x.index())));
+                    if (canBeOpen) tests.add(new Alpha.FieldTest("open", Alpha.Comparator.GELIJK, Boolean.FALSE));
+                    yield new FactPattern(Decides.class, "$beslist_" + idSeq, List.of(new Alpha(id("eigen-besluit"), tests)),
+                            List.of(new Join(id("eigen-besluit-onderwerp"), "subject", SUBJECT)), List.of());
+                }
                 case Consequence.StackFact.Outcome x -> new FactPattern(Outcome.class, "$uitkomst_" + idSeq,
                         List.of(new Alpha(id("eigen-besluit"), List.of(
                                 new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, x.stack()),
@@ -8755,13 +8848,13 @@ public final class TmsTranspiler {
             case Consequence.Value w when w.deposit() == null -> {
                 Term z = withoutDepositFlag(w.value());
                 return z == w.value() ? w : new Consequence.Value(w.subject(), w.target(), w.writer(), z, w.slots(),
-                        w.size(), w.collapse(), w.writesEmpty(), null, w.fault(), w.open(), w.insertion());
+                        w.size(), w.collapse(), w.writesEmpty(), null, w.fault(), w.insertion());
             }
-            case Consequence.Judged j -> {
-                Term z = withoutDepositFlag(j.condition());
-                Consequence d = withoutUnfilledDepositFlag(j.decides());
-                return z == j.condition() && d == j.decides() ? j : new Consequence.Judged(j.subject(), z, j.withoutFault(),
-                        j.slots(), j.size(), d, j.member(), j.writer(), j.insertion());
+            case Consequence.Writer w -> {
+                Term z = withoutDepositFlag(w.condition());
+                Consequence d = withoutUnfilledDepositFlag(w.decides());
+                return z == w.condition() && d == w.decides() ? w : new Consequence.Writer(z, w.withoutFault(), w.slots(),
+                        w.size(), d, w.opens());
             }
             case Consequence.TestFault f -> {
                 Term z = withoutDepositFlag(f.test());

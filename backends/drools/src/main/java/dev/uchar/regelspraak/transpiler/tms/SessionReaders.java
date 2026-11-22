@@ -128,13 +128,15 @@ final class SessionReaders {
      * input and the objects the creations made ({@link Fixpoint#objects}), read off the control facts the stack left
      * standing
      * ({@link ControlFact}) and the analysis that placed them, without evaluating anything again. A record with neither
-     * a decider nor a conflict is one on which no default decided, and the target keeps its input; like every record it
-     * carries the root chains of its stack. Under truth maintenance only the end state counts: a decision that a higher
+     * a decider nor a conflict is one on which no default decided, and the target keeps its input, or is open where a
+     * default is (RUNTIME-SEMANTICS ch. 1.5); like every record it carries the root chains of its stack. Under truth maintenance only the end state counts: a decision that a higher
      * one displaced, or whose justification went, is not in the session any more.
      *
      * <p>The simple form leaves one {@link Decides} per object, of the highest default that decided; the decision is the
      * default's own on a characteristic and the value the stack wrote on an attribute. The general form leaves an
-     * {@link Outcome} per chain, of its highest settling default, and the reading follows them from the root down to the
+     * {@link Outcome} per chain, of its highest settling default. An open one ({@link Decides#open},
+     * {@link Outcome.Kind#OPEN}) names no decision; the initialisation that closes over it leaves its own beside it. The
+     * reading follows them from the root down to the
      * default whose own content decided: at a default with exception groups, into the members where one of them
      * settled, and else to the default itself, which fell back on its own decision (RUNTIME-SEMANTICS ch. 7.9). Members
      * are read as the reconciliation reads them (ch. 7.2): the first conflict in member order passes on unchanged;
@@ -523,8 +525,10 @@ final class SessionReaders {
 
     /** The one {@link Decides} of the simple form, on the default it names; where its decision did not fit the target,
      *  the value in {@code misfits}, the fault the stack stated in place of its write. */
-    private Settling settledInSimpleForm(String name, StackLayout s, Object subject, List<ControlFact> facts,
+    private Settling settledInSimpleForm(String name, StackLayout s, Object subject, List<ControlFact> all,
                                          Map<Object, List<Value>> written, Map<Object, WriteBoundaryFault> misfits) {
+        List<ControlFact> facts = all.stream().filter(f -> !(f instanceof Decides d && d.open())).toList();
+        if (facts.isEmpty()) return null;
         if (facts.size() != 1 || !(facts.get(0) instanceof Decides d))
             throw new IllegalStateException("the simple form of " + name + " leaves one Beslist per object, and"
                     + " on " + FactNames.object(subject) + " stand " + facts);
@@ -553,6 +557,11 @@ final class SessionReaders {
                 throw new IllegalStateException("the general form of " + name + " inserts only Uitkomst, and on "
                         + FactNames.object(subject) + " stands " + f);
             Outcome other = perChain.put(o.chain(), o);
+            if (other != null && (other.kind() == Outcome.Kind.OPEN) != (o.kind() == Outcome.Kind.OPEN)) {
+                // the initialisation of the chain decided beside the open default it closes over
+                perChain.put(o.chain(), o.kind() == Outcome.Kind.OPEN ? other : o);
+                continue;
+            }
             if (other != null)
                 throw new IllegalStateException("chain " + o.chain() + " of " + name + " leaves one outcome per object,"
                         + " that of its highest default, and on " + FactNames.object(subject) + " stand " + other
@@ -563,14 +572,17 @@ final class SessionReaders {
 
     /** The reconciliation of the member chains {@code chains}, numbered from {@code first}, as ch. 7.2 reads their
      *  outcomes: the first conflict passes on, deciding members that differ conflict under {@code key} at the default
-     *  {@code at} (null at the root), and agreeing ones decide as the first of them. Null where no member settled. */
+     *  {@code at} (null at the root), and agreeing ones decide as the first of them, where no member is open. Null where
+     *  no member settled, or one is open. */
     private Settling reconciled(String name, List<List<Node>> chains, int first, Map<Integer, Outcome> perChain,
                                 String at, String key) {
         List<Outcome> decided = new ArrayList<>();
         List<DefaultsDecision.Decider> deciders = new ArrayList<>();
+        boolean open = false;
         for (int m = 0; m < chains.size(); m++) {
             Outcome o = perChain.get(first + m);
-            if (o == null) continue;
+            open |= o != null && o.kind() == Outcome.Kind.OPEN;
+            if (o == null || o.kind() == Outcome.Kind.OPEN) continue;
             Settling settled = descended(name, chains.get(m), o, perChain);
             if (o.conflict()) return settled;
             decided.add(o);
@@ -580,7 +592,7 @@ final class SessionReaders {
         for (Outcome o : decided)
             if (!Outcome.equal(o.value(), decided.get(0).value()))
                 return new Settling(null, new DefaultsDecision.Conflict(at, key, deciders));
-        return new Settling(deciders.get(0), null);
+        return open ? null : new Settling(deciders.get(0), null);
     }
 
     /** The default of {@code chain} that settled as {@code o} says, followed down to the default whose own content

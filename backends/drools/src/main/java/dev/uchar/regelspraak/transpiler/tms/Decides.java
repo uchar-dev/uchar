@@ -13,24 +13,34 @@ import java.util.Objects;
  * variant M. The lowest deciding default inserts it too (card defaults-decider), which displaces nothing, so that the
  * session names every decision ({@code TmsTranspiler.decisionsOf}).
  *
+ * <p>Where {@code open}, the default neither decides nor gives way (RUNTIME-SEMANTICS ch. 1.5, "A stack"): its
+ * justification is undetermined, or its consequence has an open read. The fact then stands beside the {@link LeftOpen} of
+ * the target, and displaces every lower default all the same, but the initialisation of the stack, which closes over it
+ * and asks only that no default above it decides.
+ *
  * <p>Keyed and compared as {@link HasCharacteristic}: the subject by identity, the stack and the index by value.
  */
-public record Decides(Object subject, String stack, int index) implements ControlFact {
+public record Decides(Object subject, String stack, int index, boolean open) implements ControlFact {
 
     public Decides {
         Objects.requireNonNull(subject, "subject");
         Objects.requireNonNull(stack, "stack");
     }
 
+    /** A default that decides. */
+    public Decides(Object subject, String stack, int index) {
+        this(subject, stack, index, false);
+    }
+
     @Override public boolean equals(Object o) {
-        return o instanceof Decides b && b.subject == subject && b.stack.equals(stack) && b.index == index;
+        return o instanceof Decides b && b.subject == subject && b.stack.equals(stack) && b.index == index && b.open == open;
     }
 
     @Override public int hashCode() {
-        return Objects.hash(System.identityHashCode(subject), stack, index);
+        return Objects.hash(System.identityHashCode(subject), stack, index, open);
     }
 
     @Override public String toString() {
-        return "Decides(" + FactNames.object(subject) + ", " + stack + ", " + index + ")";
+        return "Decides(" + FactNames.object(subject) + ", " + stack + ", " + index + (open ? ", open)" : ")");
     }
 }

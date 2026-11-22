@@ -1,0 +1,160 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "W1",
+        "objectType": "Wrakrecht",
+        "attributes": {
+          "grondslag": {
+            "number": "10"
+          },
+          "bergingsdiepte": {
+            "number": "5"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicsAbsent": [
+          "betwist"
+        ]
+      },
+      {
+        "label": "W2",
+        "objectType": "Wrakrecht",
+        "attributes": {
+          "grondslag": {
+            "number": "10"
+          },
+          "bergingsdiepte": {
+            "number": "5"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W3",
+        "objectType": "Wrakrecht",
+        "attributes": {
+          "grondslag": {
+            "number": "10"
+          },
+          "bergingsdiepte": {
+            "number": "25"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W4",
+        "objectType": "Wrakrecht",
+        "attributes": {
+          "grondslag": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "betwist"
+        ]
+      },
+      {
+        "label": "W5",
+        "objectType": "Wrakrecht",
+        "attributes": {
+          "grondslag": {
+            "number": "10"
+          },
+          "bergingsdiepte": {
+            "number": "5"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "betwist"
+        ]
+      },
+      {
+        "label": "S1",
+        "objectType": "Strandrecht",
+        "attributes": {
+          "grondslag": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S2",
+        "objectType": "Strandrecht",
+        "attributes": {
+          "grondslag": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicsAbsent": [
+          "betwist"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "W1",
+      "attribute": "uitkering",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "W2",
+      "attribute": "uitkering"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W3",
+      "attribute": "uitkering",
+      "value": {
+        "number": "55"
+      }
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "W4",
+      "attribute": "uitkering"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W5",
+      "attribute": "uitkering",
+      "value": {
+        "number": "99"
+      }
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "S1",
+      "attribute": "uitkering"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S2",
+      "attribute": "uitkering",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (geheel getal);
+    het vindloon Numeriek (geheel getal);
+    is betwist kenmerk (bijvoeglijk);
+    is beschadigd kenmerk (bijvoeglijk);
+    is verzekerd kenmerk (bijvoeglijk);
+
+Regel vindloon
+    geldig altijd
+        Het vindloon van een Vondst moet berekend worden als zijn gewicht maal 2.
+
+Uitzonderingen ongeordend op vindloon:
+Regel betwiste vondst
+    geldig altijd
+        Het vindloon van een Vondst moet gesteld worden op 0 indien hij betwist is.
+
+Regel beschadigde vondst
+    geldig altijd
+        Het vindloon van een Vondst moet gesteld worden op 5 indien hij beschadigd is.

@@ -81,7 +81,13 @@ final class UncarriedForms {
             w.condition(r.condition());
         }
         for (ResolvedConsistency c : model.consistencies) w.condition(c.assertion());
-        if (!defaults.isEmpty()) found.add("defaults-group");
+        // groups without an order between them, of which one has an initialisation: whether the initialisation of a group
+        // closes over its open default is asked per group, which the reconciliation of the groups does not
+        for (PrioritizedDefaults p : defaults)
+            if (p.defaults().stream().anyMatch(Default::initialisation) && defaults.stream().anyMatch(q -> q != p
+                    && Namen.norm(q.subject()).equals(Namen.norm(p.subject())) && q.isCharacteristic() == p.isCharacteristic()
+                    && Namen.norm(q.target()).equals(Namen.norm(p.target()))))
+                found.add("defaults-group");
         for (PrioritizedDefaults p : defaults) for (Default d : p.defaults()) w.defaultOf(d);
         if (!model.objectCreations.isEmpty()) found.add("object-creation");
         for (ResolvedObjectCreation o : model.objectCreations) {

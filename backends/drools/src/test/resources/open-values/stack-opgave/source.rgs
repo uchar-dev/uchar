@@ -1,0 +1,14 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (geheel getal);
+    het opgegeven bergloon Numeriek (geheel getal);
+    het bergloon Numeriek (geheel getal);
+
+Regel bergloon
+    geldig altijd
+        Het bergloon van een Vondst moet berekend worden als zijn gewicht maal 2.
+
+Afwijking van bergloon: opgave
+    geldig altijd
+        Het bergloon van een Vondst moet gesteld worden op zijn opgegeven bergloon.

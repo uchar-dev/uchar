@@ -381,7 +381,16 @@ final class FormsPlan {
             "Object conflict_verschil0() {\n    return \"proefstapel/0\";\n}",
             "insertLogical(new Outcome($onderwerp, \"proefstapel\", 0, 1,"
                     + " dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT, null, (String) v));",
-            "insertLogical(ComputeHelpers.inconsistency((String) v, $onderwerp, ComputeHelpers.list1(\"EF-027\")));");
+            "insertLogical(ComputeHelpers.inconsistency((String) v, $onderwerp, ComputeHelpers.list1(\"EF-027\")));",
+            "    return ComputeHelpers.decided(oordeel_default4($uitkijkbonus), () -> ",
+            "    } else if (ComputeHelpers.isOpen(v)) {\n        insertLogical(new LeftOpen($onderwerp, ElementKey.of("
+                    + "\"wachter\", \"uitkijkbonus\", false), \"proefstapel: default 4\"));\n"
+                    + "        insertLogical(new Decides($onderwerp, \"proefstapel\", 4, true));\n    } else if (v != null) {",
+            "    if (ComputeHelpers.decides(oordeel_default5($uitkijkbonus))) {\n        Object v = Boolean.TRUE;",
+            "Object afloop_default6(Object $uitkijkbonus) {\n    return ComputeHelpers.valued(() -> ",
+            "index < 6 && open == false", "kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN",
+            "    insertLogical(new Outcome($onderwerp, \"proefstapel\", 0, 1,"
+                    + " dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));");
 
     /**
      * A plan with every consequence of the rules of a defaults stack (step 4 of card drl-teksttak-op-truth-maintenance),
@@ -434,7 +443,60 @@ final class FormsPlan {
         rules.add(new RulePlan("doorgeven wortel", "proefstapel", null, table(new Read(0, ReadKind.CONFLICT_KEY,
                 "conflictsleutel", "$sleutel")), List.of(conflict), new Consequence.Conflict(O, readOf(0), List.of(0), 1,
                 new Consequence.StackFact.Inconsistency(), Consequence.Insertion.LOGICAL)));
+        rules.addAll(openDefaults(withBonus));
         return new Modelplan(List.of(), rules);
+    }
+
+    /** The rules of a stack with a default that can be open (RUNTIME-SEMANTICS ch. 1.5): with a computed decision and with
+     *  a constant one under a condition that can be undetermined; with a value that can read an open value, under the
+     *  guard of an initialisation in each form; and the reconciliation over an open member. */
+    private static List<RulePlan> openDefaults(Subject withBonus) {
+        ElementKey bonus = ElementKey.of("wachter", "uitkijkbonus", false);
+        ReadTable one = table(new Read(0, ReadKind.INPUT, "uitkijkbonus", "$uitkijkbonus"));
+        Consequence.FaultName fault = new Consequence.FaultName("proefstapel", "proefstapel");
+        Term read = new Term.Call(StaticFunction.READ, List.of(readOf(0)), "zijn uitkijkbonus");
+        Term condition = new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(read, number("1"), text(">")),
+                "zijn uitkijkbonus groter is dan 1");
+        TestItem acts = new TestItem("oordeel", TestItem.Role.ACTS, condition, -1, List.of(0), 1, true);
+        List<RulePlan> rules = new ArrayList<>();
+        Consequence.LeavesOpen fourth = opens("proefstapel: default 4", bonus, 4), fifth = opens("proefstapel: default 5",
+                ElementKey.of("wachter", "waakzaam", true), 5), sixth = opens("proefstapel: default 6", bonus, 6);
+        rules.add(new RulePlan("default 4", "proefstapel", null, one, List.of(withBonus, acts), new Consequence.Writer(condition,
+                false, List.of(0), 1, new Consequence.Decision(O, new Term.Call(StaticFunction.FALLBACK, List.of(read,
+                number("0")), "zijn uitkijkbonus of 0"), List.of(0), 1, true, fault, null, List.of(new Consequence.StackFact.Value(
+                bonus, "proefstapel", null), new Consequence.StackFact.Decides("proefstapel", 4)), Consequence.Insertion.LOGICAL),
+                fourth)));
+        rules.add(new RulePlan("default 5", "proefstapel", null, one, List.of(withBonus, acts), new Consequence.Writer(condition,
+                false, List.of(0), 1, new Consequence.Decision(O, new Term.Const(Boolean.TRUE, null, null), List.of(), 1, false,
+                null, List.of(new Consequence.StackFact.Characteristic(ElementKey.of("wachter", "waakzaam", true)),
+                new Consequence.StackFact.Decides("proefstapel", 5)), Consequence.Insertion.LOGICAL), fifth)));
+        Not deciding = new Not(new FactPattern(Decides.class, "$hoger", List.of(new Alpha("hoger", List.of(
+                new Alpha.FieldTest("index", Alpha.Comparator.UNDER, 6),
+                new Alpha.FieldTest("open", Alpha.Comparator.GELIJK, Boolean.FALSE)))),
+                List.of(new Join("hoger-onderwerp", "subject", O)), List.of()));
+        Not settled = new Not(new FactPattern(Outcome.class, "$hogere", List.of(new Alpha("hogere", List.of(
+                new Alpha.FieldTest("kind", Alpha.Comparator.NOT_EQUAL, Outcome.Kind.OPEN)))),
+                List.of(new Join("hogere-onderwerp", "subject", O)), List.of()));
+        rules.add(new RulePlan("default 6", "proefstapel", null, one, List.of(withBonus, deciding, settled),
+                new Consequence.Writer(null, false, List.of(0), 1, new Consequence.Decision(O, read, List.of(0), 1, true, fault,
+                null, List.of(new Consequence.StackFact.Value(bonus, "proefstapel", null),
+                new Consequence.StackFact.Decides("proefstapel", 6)), Consequence.Insertion.LOGICAL), sixth)));
+        rules.add(new RulePlan("open 0", "proefstapel", null, table(), List.of(new FactPattern(Outcome.class, "$open", List.of(
+                new Alpha("lid-open", List.of(new Alpha.FieldTest("kind", Alpha.Comparator.GELIJK, Outcome.Kind.OPEN)))),
+                List.of(), List.of(Binding.of(O, Outcome.class, "subject")))), new Consequence.LeavesOpen(O, List.of(
+                new Consequence.StackFact.Outcome("proefstapel", 0, 1, Outcome.Kind.OPEN)), Consequence.Insertion.LOGICAL)));
+        return rules;
+    }
+
+    private static Consequence.LeavesOpen opens(String writer, ElementKey target, int index) {
+        return new Consequence.LeavesOpen(O, List.of(new Consequence.StackFact.LeftOpen(target, writer),
+                new Consequence.StackFact.OpenDefault("proefstapel", index)), Consequence.Insertion.LOGICAL);
+    }
+
+    /** What a rule named {@code proef} inserts where it leaves {@code target} open. */
+    private static Consequence.LeavesOpen leftOpen(ElementKey target) {
+        return new Consequence.LeavesOpen(O, List.of(new Consequence.StackFact.LeftOpen(target, "proef")),
+                Consequence.Insertion.LOGICAL);
     }
 
     /** Fragments of the text that show the forms of the fold plan ({@link #folds}), one per form. */
@@ -602,11 +664,11 @@ final class FormsPlan {
                 new Consequence.Inconsistency(O, "proef", List.of(), Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("schrijver onder een samengestelde voorwaarde", "proef", null, one, List.of(subject,
                 new TestItem("oordeel", TestItem.Role.ACTS, compositeWithoutProbe, -1, List.of(0), 1, true)),
-                new Consequence.Judged(O, compositeWithoutProbe, false, List.of(0), 1, new Consequence.Characteristic(O, watch,
-                        Consequence.Insertion.LOGICAL), watch, "proef", Consequence.Insertion.LOGICAL)));
+                new Consequence.Writer(compositeWithoutProbe, false, List.of(0), 1, new Consequence.Characteristic(O, watch,
+                        Consequence.Insertion.LOGICAL), leftOpen(watch))));
         rules.add(new RulePlan("waarde met een open lezing", "proef", null, withInput, List.of(subject),
-                new Consequence.Value(O, bonus, "proef", inputRead, List.of(0, 1, 2), 3, false, false, null, faultName, true,
-                        Consequence.Insertion.LOGICAL)));
+                new Consequence.Writer(null, false, List.of(0, 1, 2), 3, new Consequence.Value(O, bonus, "proef", inputRead,
+                        List.of(0, 1, 2), 3, false, false, null, faultName, Consequence.Insertion.LOGICAL), leftOpen(bonus))));
         for (TestItem.Role role : List.of(TestItem.Role.CONDITION, TestItem.Role.WITHOUT_FAULT, TestItem.Role.FAULT))
             rules.add(new RulePlan("open " + role, "proef", null, one, List.of(subject,
                     new TestItem("open", role, withoutProbe, -1, List.of(0), 1, true)),
@@ -617,13 +679,13 @@ final class FormsPlan {
                         Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("schrijver van een waarde", "proef", null, withInput, List.of(subject,
                 new TestItem("oordeel", TestItem.Role.ACTS_WITHOUT_FAULT, inputTest, -1, List.of(0, 1, 2), 3, true)),
-                new Consequence.Judged(O, inputTest, true, List.of(0, 1, 2), 3, new Consequence.Value(O, bonus, "proef",
-                        inputRead, List.of(0, 1, 2), 3, false, false, null, faultName, true, Consequence.Insertion.LOGICAL),
-                        bonus, "proef", Consequence.Insertion.LOGICAL)));
+                new Consequence.Writer(inputTest, true, List.of(0, 1, 2), 3, new Consequence.Value(O, bonus, "proef",
+                        inputRead, List.of(0, 1, 2), 3, false, false, null, faultName, Consequence.Insertion.LOGICAL),
+                        leftOpen(bonus))));
         rules.add(new RulePlan("schrijver van een kenmerk", "proef", null, one, List.of(subject,
                 new TestItem("oordeel", TestItem.Role.ACTS, withoutProbe, -1, List.of(0), 1, true)),
-                new Consequence.Judged(O, withoutProbe, false, List.of(0), 1, new Consequence.Characteristic(O, watch,
-                        Consequence.Insertion.LOGICAL), watch, "proef", Consequence.Insertion.LOGICAL)));
+                new Consequence.Writer(withoutProbe, false, List.of(0), 1, new Consequence.Characteristic(O, watch,
+                        Consequence.Insertion.LOGICAL), leftOpen(watch))));
         for (ElementKey member : List.of(bonus, watch))
             rules.add(new RulePlan("open stand " + member.name(), null, null, new ReadTable(List.of()), List.of(subject),
                     new Consequence.OpenStanding(O, member, Consequence.Insertion.LOGICAL)));

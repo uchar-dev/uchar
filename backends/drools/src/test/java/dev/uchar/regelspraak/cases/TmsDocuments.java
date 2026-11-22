@@ -23,6 +23,18 @@ final class TmsDocuments {
 
     static final ObjectMapper JSON = new ObjectMapper();
 
+    /** Whether the document {@code ir} has a build with readings where the branch carries it: one that infers nothing from
+     *  an empty value has none, which the build refuses with the slug {@code reading}
+     *  ({@code InferFromEmptyRefusalWitnessTest}). */
+    static boolean hasReadings(JsonNode ir) {
+        return !ir.has("inferFromEmpty");
+    }
+
+    /** {@link #hasReadings(JsonNode)} of the document at {@code ir}. */
+    static boolean hasReadings(Path ir) throws java.io.IOException {
+        return hasReadings(JSON.readTree(ir.toFile()));
+    }
+
     private static final String WAAR = IrPath.literal("waar", "{\"node\":\"Boolean\"}", "waar");
 
     /** A model with one object type, Jutter, carrying {@code characteristics} and no attribute. */

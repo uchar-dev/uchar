@@ -9,8 +9,8 @@ import java.util.Objects;
  * decided, with its decision, which conflict stood, or that no default decided. Every object of the session, the beans
  * of the input and the objects the creations made ({@link Fixpoint#objects}), has one record per effective stack of its
  * concrete type on a target that holds one value. A record with neither a decider nor a conflict is one on which no
- * default decided: its target keeps its input (RUNTIME-SEMANTICS ch. 7.1), and its {@link #rootChains} still name the
- * defaults of the stack in their order. A stack on a timeline target decides per day (ch. 7.11), and its records are
+ * default decided: its target keeps its input (RUNTIME-SEMANTICS ch. 7.1), or is open where a default of the stack is
+ * (ch. 1.5), and its {@link #rootChains} still name the defaults of the stack in their order. A stack on a timeline target decides per day (ch. 7.11), and its records are
  * {@link PeriodDecisions}, one per object with a decider, a conflict or neither per period.
  *
  * <p>A default is named by a JSON pointer (RFC 6901) into the IR document the build was made from: the {@code Default}

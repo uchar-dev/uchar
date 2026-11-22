@@ -1,0 +1,24 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (geheel getal);
+    de premie Numeriek (geheel getal);
+    de wachtpremie Numeriek (geheel getal);
+    is betwist kenmerk (bijvoeglijk);
+    is beloonbaar kenmerk (bijvoeglijk);
+
+Regel beloonbaar
+    geldig altijd
+        Een Vondst is beloonbaar indien zijn gewicht groter is dan 2.
+
+Uitzondering op beloonbaar: betwiste vondst
+    geldig altijd
+        Een Vondst is niet beloonbaar indien hij betwist is.
+
+Regel premie
+    geldig altijd
+        De premie van een Vondst moet gesteld worden op 10 indien hij beloonbaar is.
+
+Regel wachtpremie
+    geldig altijd
+        De wachtpremie van een Vondst moet gesteld worden op 3 indien hij niet beloonbaar is.

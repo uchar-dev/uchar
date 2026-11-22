@@ -167,8 +167,9 @@ class RuleOriginCorpusWitnessTest {
             String name = GOLDEN.relativize(g).toString();
             Set<String> pointers = new HashSet<>();
             check(name, ir, build, pointers, differences, plain);
-            check(name + " met lezingen", ir, DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT, true), pointers,
-                    differences, withReadings);
+            if (TmsDocuments.hasReadings(ir))
+                check(name + " met lezingen", ir, DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT, true), pointers,
+                        differences, withReadings);
             stackTypes(name, build, differences, plain);
             JsonNode groups = ir.path("rules").path("prioritizedDefaults");
             for (int i = 0; i < groups.size(); i++)

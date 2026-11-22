@@ -1,0 +1,20 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (geheel getal);
+    de taxatie Numeriek (geheel getal);
+    het vindloon Numeriek (geheel getal);
+    het bergloon Numeriek (geheel getal);
+    is gemeld kenmerk (bijvoeglijk);
+
+Regel vindloon
+    geldig altijd
+        Het vindloon van een Vondst moet gesteld worden op 10 indien zijn taxatie groter is dan 1000.
+
+Regel bergloon
+    geldig altijd
+        Het bergloon van een Vondst moet gesteld worden op 7 indien hij gemeld is.
+
+Uitzondering op bergloon: zware vondst
+    geldig altijd
+        Het bergloon van een Vondst moet gesteld worden op zijn vindloon indien zijn gewicht groter is dan 100.

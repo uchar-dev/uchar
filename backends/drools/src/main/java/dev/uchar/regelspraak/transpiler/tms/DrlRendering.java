@@ -956,7 +956,7 @@ final class DrlRendering {
         }
 
         /** The test that the writer of the rule acts: the function of its outcome ({@code ComputeHelpers.judge}), which
-         *  the consequence calls again ({@link Consequence.Judged}). */
+         *  the consequence calls again ({@link Consequence.Writer}). */
         private String acts(TestItem t) {
             int place = reserveer();
             String name = name("oordeel", place);
@@ -968,20 +968,32 @@ final class DrlRendering {
             return "eval( " + route(Route.ACTS) + "(" + outcome + ") )";
         }
 
-        /** The consequence of a writer whose condition can be undetermined: what it decides where the outcome its test
-         *  asked is that it decides, and else that it leaves its target open; a value that computes something takes that
-         *  outcome into its function, which then gives the one outcome of both ({@link Route#DECIDED}). */
-        private void judged(Consequence.Judged x, StringBuilder b) {
-            if (outcome == null) throw new IllegalStateException(plan.name() + " tests no outcome of its writer");
+        /** The consequence of a writer that can leave its target open: what it decides where the outcome its test asked is
+         *  that it decides, and else what it inserts where it is open; a value that computes something takes that outcome,
+         *  if the test asks one, into its function, which then gives the one outcome of both ({@link Route#DECIDED}). */
+        private void writer(Consequence.Writer x, StringBuilder b) {
+            if ((outcome == null) != (x.condition() == null))
+                throw new IllegalStateException(plan.name() + " tests the outcome of its writer exactly where its condition can"
+                        + " be undetermined");
             if (x.decides() instanceof Consequence.Value v && !computesNothing(v.value())) {
-                value(v, outcome, x.slots(), b);
+                value(v, outcome, x.slots(), x.opens(), b);
                 return;
             }
+            if (x.decides() instanceof Consequence.Decision d && !computesNothing(d.value())) {
+                decisionOf(d, outcome, x.slots(), x.opens(), b);
+                return;
+            }
+            if (outcome == null) throw new IllegalStateException("the writer of " + plan.name() + " cannot be open");
             b.append("    if (").append(route(Route.DECIDES)).append("(").append(outcome).append(")) {\n");
             for (String line : consequence(x.decides()).split("\n")) b.append("    ").append(line).append('\n');
             b.append("    } else {\n");
-            insert(b, "        ", x.insertion(), leftOpen(x.subject(), x.member(), x.writer()));
+            leaveOpen(x.opens(), b, "        ");
             b.append("    }\n");
+        }
+
+        /** Inserts what a writer that leaves its target open inserts ({@link Consequence.LeavesOpen}). */
+        private void leaveOpen(Consequence.LeavesOpen x, StringBuilder b, String indentation) {
+            for (Consequence.StackFact f : x.facts()) insert(b, indentation, x.insertion(), stackFact(f, x.subject()));
         }
 
         /** The statements that evaluate {@code condition}, whose judgement always stands, for the probe of the function
@@ -1336,10 +1348,11 @@ final class DrlRendering {
         private String consequence(Consequence g) {
             StringBuilder b = new StringBuilder();
             switch (g) {
-                case Consequence.Value x -> value(x, null, x.slots(), b);
+                case Consequence.Value x -> value(x, null, x.slots(), null, b);
                 case Consequence.Characteristic x -> insert(b, "    ", x.insertion(), "new " + typeName(HasCharacteristic.class) + "("
                         + x.subject() + ", " + key(x.characteristic()) + ")");
-                case Consequence.Judged x -> judged(x, b);
+                case Consequence.Writer x -> writer(x, b);
+                case Consequence.LeavesOpen x -> leaveOpen(x, b, "    ");
                 case Consequence.TestFault x -> testFault(x, b);
                 case Consequence.Fault x -> insert(b, "    ", x.insertion(), "new " + typeName(Fault.class) + "("
                         + x.subject() + ", " + str(x.fault().form()) + ", " + route(Route.COMPUTE_FAULT) + "("
@@ -1406,7 +1419,7 @@ final class DrlRendering {
                         + "))");
                 case Consequence.InsertChannelState x -> insert(b, "    ", x.insertion(), "new " + typeName(ChannelState.class)
                         + "(" + str(x.producer()) + ", " + x.inconsistent() + ")");
-                case Consequence.Decision x -> decisionOf(x, b);
+                case Consequence.Decision x -> decisionOf(x, null, x.slots(), null, b);
                 case Consequence.Conflict x -> conflict(x, b);
                 case Consequence.Creation x -> creation(x, b);
                 case Consequence.RelationLink x -> insert(b, "    ", x.insertion(), "new " + typeName(RelationLink.class) + "("
@@ -1457,12 +1470,13 @@ final class DrlRendering {
          *  outcome; the fault in place of the value and of the deposit, else the deposit first and then the value,
          *  where it is gevuld or the plan writes leeg. A value that computes nothing ({@link #computesNothing}) has no
          *  function and no fault: the consequence carries its expression ({@link #carried}), and then the deposit and
-         *  the value. Where {@code outcome} is not null, the call of the function of the writer's outcome, the function
-         *  of the value, over the bound values at {@code slots}, calls it and evaluates the value where the writer
-         *  decides. */
-        private void value(Consequence.Value x, String outcome, List<Integer> slots, StringBuilder b) {
+         *  the value. Where the writer can leave its target open, {@code opens}, what the plan inserts for that; where
+         *  {@code outcome} is not null, the call of the function of the writer's outcome, the function of the value, over
+         *  the bound values at {@code slots}, calls it and evaluates the value where the writer decides. */
+        private void value(Consequence.Value x, String outcome, List<Integer> slots, Consequence.LeavesOpen opens,
+                           StringBuilder b) {
             Consequence.Deposit d = x.deposit();
-            boolean carried = computesNothing(x.value()), open = x.open() || outcome != null;
+            boolean carried = computesNothing(x.value());
             if (d != null) b.append("    Object ").append(DEPOSIT_FLAG).append(" = ").append(route(Route.FRESH_DEPOSIT_FLAG)).append("();\n");
             if (carried) {
                 carried(x.value(), x.collapse(), x.slots(), b);
@@ -1474,16 +1488,16 @@ final class DrlRendering {
                 String v = x.collapse() ? call(StaticFunction.COLLAPSE, List.of(e)).text() : e.text();
                 fill(place, x.value().source(), "Object " + name + "(" + c.declaration() + ")", outcome != null
                         ? "    return " + route(Route.DECIDED) + "(" + outcome + ", () -> " + v + ");\n"
-                        : x.open() ? "    return " + route(Route.VALUED) + "(() -> " + v + ");\n"
+                        : opens != null ? "    return " + route(Route.VALUED) + "(() -> " + v + ");\n"
                         : tryCatch("        return " + v + ";\n", "        return " + route(Route.CAUGHT) + "(e);\n"));
                 b.append("    Object v = ").append(name).append("(").append(c.arguments()).append(");\n");
                 b.append("    if (").append(route(Route.IS_EVALUATION_FAULT)).append("(v)) {\n");
                 insert(b, "        ", x.insertion(), "new " + typeName(Fault.class) + "(" + x.subject() + ", "
                         + str(x.fault().form()) + ", " + route(Route.DESIGNATE) + "(v, " + str(x.fault().rule()) + "))");
                 // an open read breaks the value off, and what it deposited is dropped (RUNTIME-SEMANTICS ch. 1.5)
-                if (open) {
+                if (opens != null) {
                     b.append("    } else if (").append(route(Route.IS_OPEN)).append("(v)) {\n");
-                    insert(b, "        ", x.insertion(), leftOpen(x.subject(), x.target(), x.writer()));
+                    leaveOpen(opens, b, "        ");
                 }
                 b.append("    } else {\n");
             }
@@ -1509,11 +1523,6 @@ final class DrlRendering {
         /** The input {@code value} of {@code member} of the object {@code object} binds, or its open member. */
         private String input(String value, String object, ElementKey member) {
             return route(Route.INPUT) + "(" + value + ", " + Consequence.OPEN_INPUT + ", " + object + ", " + key(member) + ")";
-        }
-
-        /** The fact that {@code writer} leaves {@code member} of the object {@code subject} binds open. */
-        private String leftOpen(String subject, ElementKey member, String writer) {
-            return "new " + typeName(LeftOpen.class) + "(" + subject + ", " + key(member) + ", " + str(writer) + ")";
         }
 
         /** Whether {@code t}, the value of a decision or of a value consequence, computes nothing: a constant, or the
@@ -1654,8 +1663,11 @@ final class DrlRendering {
          *  decision; nothing where the value is null, so that the lower defaults decide (RUNTIME-SEMANTICS ch. 7.1);
          *  else the deposit where the probe heard one and the facts of the decision in the order of the plan. A value that
          *  computes nothing ({@link #computesNothing}) has no function and no fault: the consequence carries its expression
-         *  ({@link #carried}). */
-        private void decisionOf(Consequence.Decision x, StringBuilder b) {
+         *  ({@link #carried}). Where the value can read an open one, {@code opens}, what the plan inserts for that; where
+         *  {@code outcome} is not null, the call of the function of the writer's outcome, the function of the value, over
+         *  the bound values at {@code slots}, calls it as that of a {@link Consequence.Value} does. */
+        private void decisionOf(Consequence.Decision x, String outcome, List<Integer> slots, Consequence.LeavesOpen opens,
+                                StringBuilder b) {
             Consequence.Deposit d = x.deposit();
             if (d != null && computesNothing(x.value()))
                 throw new IllegalStateException("a decision that computes nothing does not deposit");
@@ -1672,17 +1684,23 @@ final class DrlRendering {
             if (d != null) b.append("    Object ").append(DEPOSIT_FLAG).append(" = ").append(route(Route.FRESH_DEPOSIT_FLAG)).append("();\n");
             int place = reserveer();
             String name = name("afloop", place);
-            Context c = context(x.slots(), d == null ? -1 : d.depositFlag(), d == null ? null : DEPOSIT_FLAG, x.value());
+            Context c = context(slots, d == null ? -1 : d.depositFlag(), d == null ? null : DEPOSIT_FLAG, x.value());
             Expr e = value(x.value(), c);
             String v = x.collapse() ? call(StaticFunction.COLLAPSE, List.of(e)).text() : e.text();
-            fill(place, x.value().source(), "Object " + name + "(" + c.declaration() + ")", x.fault() == null
-                    ? "    return " + v + ";\n"
+            fill(place, x.value().source(), "Object " + name + "(" + c.declaration() + ")",
+                    outcome != null ? "    return " + route(Route.DECIDED) + "(" + outcome + ", () -> " + v + ");\n"
+                    : opens != null ? "    return " + route(Route.VALUED) + "(() -> " + v + ");\n"
+                    : x.fault() == null ? "    return " + v + ";\n"
                     : tryCatch("        return " + v + ";\n", "        return " + route(Route.CAUGHT) + "(e);\n"));
             b.append("    Object v = ").append(name).append("(").append(c.arguments()).append(");\n");
             if (x.fault() != null) {
                 b.append("    if (").append(route(Route.IS_EVALUATION_FAULT)).append("(v)) {\n");
                 insert(b, "        ", x.insertion(), "new " + typeName(Fault.class) + "(" + x.subject() + ", "
                         + str(x.fault().form()) + ", " + route(Route.DESIGNATE) + "(v, " + str(x.fault().rule()) + "))");
+                if (opens != null) {
+                    b.append("    } else if (").append(route(Route.IS_OPEN)).append("(v)) {\n");
+                    leaveOpen(opens, b, "        ");
+                }
                 b.append("    } else if (v != null) {\n");
             } else {
                 b.append("    if (v != null) {\n");
@@ -1729,8 +1747,8 @@ final class DrlRendering {
             insert(b, "    ", x.insertion(), stackFact(x.fact(), x.subject()));
         }
 
-        /** The fact {@code f} of a defaults stack on {@code subject}, with the local {@code v} of the consequence: the
-         *  decision, or the key of a conflict. */
+        /** The fact {@code f} on {@code subject}, with the local {@code v} of the consequence where the fact carries one:
+         *  the decision, or the key of a conflict. */
         private String stackFact(Consequence.StackFact f, String subject) {
             return switch (f) {
                 case Consequence.StackFact.Value x -> "new " + typeName(Value.class) + "(" + subject + ", "
@@ -1739,9 +1757,17 @@ final class DrlRendering {
                         + key(x.characteristic()) + ")";
                 case Consequence.StackFact.Decides x -> "new " + typeName(Decides.class) + "(" + subject + ", "
                         + str(x.stack()) + ", " + x.index() + ")";
+                case Consequence.StackFact.OpenDefault x -> "new " + typeName(Decides.class) + "(" + subject + ", "
+                        + str(x.stack()) + ", " + x.index() + ", true)";
+                case Consequence.StackFact.LeftOpen x -> "new " + typeName(LeftOpen.class) + "(" + subject + ", "
+                        + key(x.member()) + ", " + str(x.writer()) + ")";
                 case Consequence.StackFact.Outcome x -> "new " + typeName(Outcome.class) + "(" + subject + ", "
                         + str(x.stack()) + ", " + x.chain() + ", " + x.position() + ", " + enumlabel(x.kind()) + ", "
-                        + (x.kind() == Outcome.Kind.DECIDED ? "v, null" : "null, (String) v") + ")";
+                        + switch (x.kind()) {
+                            case DECIDED -> "v, null";
+                            case CONFLICT -> "null, (String) v";
+                            case OPEN -> "null, null";
+                        } + ")";
                 case Consequence.StackFact.Inconsistency x -> route(Route.INCONSISTENCY) + "((String) v, " + subject + ", "
                         + list(texts(Consequence.StackFact.Inconsistency.CODES)) + ")";
             };

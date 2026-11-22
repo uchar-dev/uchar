@@ -55,7 +55,7 @@ class ReadingRulesObserverWitnessTest {
                 }
                 if (casePaths.isEmpty()) continue;
                 Path ir = g.resolve("ir.json");
-                if (!CaseRunner.viaExecModel(ir, casePaths).status().equals("PLAYED")) continue;
+                if (!TmsDocuments.hasReadings(ir) || !CaseRunner.viaExecModel(ir, casePaths).status().equals("PLAYED")) continue;
                 String name = CORPUS.resolve("golden").relativize(g).toString();
                 CaseRunner without = CaseRunner.forMeasurement(ir, branch), with = CaseRunner.forMeasurement(ir, branch, true);
                 for (Path casePath : casePaths) {

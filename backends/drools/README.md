@@ -64,8 +64,9 @@ a form whose reading this backend does not carry is refused on both branches, be
 DROOLS-370 and the slug of the form (`EXCLUDE DROOLS-370: …`), since an answer in the reading of ch. 1.2–1.4 would be a
 wrong answer without a word. `UncarriedForms` is the one place that lists those forms, in the order by which the first
 a document holds is named: the table "Forms without the reading" of ch. 1.5; the forms whose reading ch. 1.5 defines
-and this backend does not carry, `defaults-group`, `quantifier-fold`, `set-fold`, `if-then-else`, `object-creation` and
-`fact-creation`; and `reading`, the build with readings. The loader reads the property into the model
+and this backend does not carry, `defaults-group` (groups without an order between them of which one has an
+initialisation), `quantifier-fold`, `set-fold`, `if-then-else`, `object-creation` and `fact-creation`; and `reading`, the
+build with readings. The loader reads the property into the model
 (`RegelSpraakModel.inferFromEmpty()`) and refuses no document for it, so the rule graph reads such a document as any
 other; every other value of the property is a `DocumentError` at `/inferFromEmpty` (witnesses
 `InferFromEmptyLoaderWitnessTest`, `InferFromEmptyRefusalWitnessTest`).
@@ -429,42 +430,53 @@ rule, which rests on the `equals` and `hashCode` of the fact classes, the subjec
 **Open values.** In a document that infers nothing from an empty value a member of an object is filled, settled leeg or
 open (RUNTIME-SEMANTICS ch. 1.5). The analysis computes once which members can be open (`OpenableMembers`, the one place
 of the lowering that reads `inferFromEmpty`): an input member that holds one value, on the objects of a type on which no
-form writes it, unless its declaration says that its input is complete; and every member a form writes that reads such
-a member, through any number of forms. In any other document there is none, and the analysis builds nothing of what
+form writes it, unless its declaration says that its input is complete; and every member a form writes that reads such a
+member, through any number of forms. In any other document there is none, and the analysis builds nothing of what
 follows; nor does it, in a document with the property, for a member outside that set.
 
-What opens a member is one of two facts. `LeftOpen(subject, member, writer)` is inserted logically by a writer that
+What opens a member is a writer or the input. `LeftOpen(subject, member, writer)` is inserted logically by a writer that
 neither decides nor stands to fill nothing. `OpenInput` holds per object the input members that are not complete; it is
 constant in a session, so it is a global, `open_invoer`, which `insert` sets, and no rule binds it. An input member that
 no form writes is read off the bean, as any input, and the read takes that global beside the value
 (`ComputeHelpers.readInput`): the member is open where the bean holds no value, or does not hold the characteristic, and
-the `OpenInput` names it. A member a form writes is read through its standing, whose
-third state is the `OpenMember` of the member on that object, in place of a value or a truth value: the standing rules
-take the `Value` or `HasCharacteristic` of a writer first, then a `LeftOpen`, and else the input, which on an object of
-which no form writes the member is open as above. Over a path either is read through its `PathState`, whose rule binds
-the bean the path reaches. Settled leeg is the absence of all of these, per object, so no rule brings the writers of a
-member together, and a standing derived before a writer left the member open is withdrawn as any other.
+the `OpenInput` names it. A member a form writes is read through its standing, whose third state is the `OpenMember` of
+the member on that object, in place of a value or a truth value: the standing rules take the `Value` or
+`HasCharacteristic` of a writer first, then a `LeftOpen`, and else the input, which on an object of which no form writes
+the member is open as above. Over a path either is read through its `PathState`, whose rule binds the bean the path
+reaches. Settled leeg is the absence of all of these, per object, so no rule brings the writers of a member together,
+and a standing derived before a writer left the member open is withdrawn as any other.
 
 A read of an open member breaks the evaluation off with an `OpenRead`; the operators of the production runtime see no
 open value. The break is caught at the boundary of one atomic condition or one value, and what the probe heard within it
 is dropped: at a member of a composite, at the operand of a test on leeg or gevuld (`Term.ClosureOverOpen`, a closure),
 at the test of a rule, and in the consequence that computes a value, which then inserts the `LeftOpen` of its form. Each
-boundary is one function of `ComputeHelpers` or `Composite` that takes what it evaluates as a `Callable`, a lambda in the
-DRL text (`Term.Deferred` where the analysis plans it), so that the text catches nothing itself; a division whose divisor
-can read an open value takes its divisor so as well, and evaluates it only where the dividend is filled. A
+boundary is one function of `ComputeHelpers` or `Composite` that takes what it evaluates as a `Callable`, a lambda in
+the DRL text (`Term.Deferred` where the analysis plans it), so that the text catches nothing itself; a division whose
+divisor can read an open value takes its divisor so as well, and evaluates it only where the dividend is filled. A
 condition whose judgement stands for the form itself and for another answers; any other throws `Undetermined`, which
 carries the truth for the form itself. `Composite` is the one reading of a composite, in every document: it counts the
 members for the form itself and for another by Kleene's table, stops where the judgement for another stands, and reads a
-member after one that is undetermined for another provisionally (ch. 1.5); where nothing is open that is the stop of
-ch. 5.10.
+member after one that is undetermined for another provisionally (ch. 1.5); where nothing is open that is the stop of ch.
+5.10.
 
-`Reads.conditionTest` is the one place where a condition becomes the test of a rule. A form whose condition always stands
-tests that it holds. The rule of a writer whose condition can be undetermined has one function with the three outcomes
-of ch. 1.5 (`ComputeHelpers.judge`): its test asks that the writer acts, that the outcome is not that it fills
-nothing, and its consequence asks which of the other two it is (`plan.Consequence.Judged`): it decides, or it inserts
-its `LeftOpen`. So such a rule fires where the form decides and where it leaves its target open, and not where it fills
-nothing. The rule of a condition's fault and that of its deposits stand beside it as for any form. A consistency tests
-the negation of its assertion, which keeps the judgement where that can be undetermined. Witnesses `OpenableMembersWitnessTest`,
+`Reads.conditionTest` is the one place where a condition becomes the test of a rule. A form whose condition always
+stands tests that it holds. The rule of a writer whose condition can be undetermined has one function with the three
+outcomes of ch. 1.5 (`ComputeHelpers.judge`): its test asks that the writer acts, that the outcome is not that it fills
+nothing, and its consequence asks which of the other two it is (`plan.Consequence.Writer`): it decides, or it inserts
+its `LeftOpen`, which it does as well where its value reads an open one. So such a rule fires where the form decides and
+where it leaves its target open, and not where it fills nothing. The rule of a condition's fault and that of its
+deposits stand beside it as for any form. A consistency tests the negation of its assertion, which keeps the judgement
+where that can be undetermined.
+
+A default of a defaults stack is a writer with the same three outcomes. Where it is open it inserts, in the simple form,
+the `LeftOpen` of the target and its `Decides` with `open`, and in the general form an `Outcome` of the kind `OPEN`. The
+lower defaults of its chain, and their exception groups, stand under the `not` of either as under that of a decision, so
+their left-hand sides are those of any stack, and a default that gives way inserts nothing, as any default. The
+initialisation of a stack closes over an open default above it: its `not` asks only for the defaults that are not open,
+and its `Value` fills the target beside the `LeftOpen`. A reconciliation over a member that is `OPEN` decides nothing:
+the rule of the agreement stands under a `not` over an `OPEN` member, and one rule more (`reconcile-open`) settles the
+default `OPEN`, or at the root inserts the `LeftOpen` of the target, unless a member conflicts or two decide
+differently. A stack of which no default can be open is lowered as any stack. Witnesses `OpenableMembersWitnessTest`,
 `OpenValuesWitnessTest` (the examples of ch. 1.5) and `OpenValuesRefWitnessTest` (the witnesses of the reference
 interpreter).
 
