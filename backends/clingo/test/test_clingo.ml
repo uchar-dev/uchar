@@ -19970,7 +19970,7 @@ let ov_frame ?(closed = false) ~name ~ir ~case_text () =
   in
   (match
      Uchar_ref.Case.check case
-       (Uchar_ref.Eval.evaluate ~closed:(if closed then Uchar_ref.Eval.Every_input else Uchar_ref.Eval.Members []) env case.world)
+       (Uchar_ref.Eval.evaluate ~closed_inputs:closed env case.world)
    with
   | [] -> check (name ^ ": ref") true
   | ms -> check (name ^ ": ref (" ^ String.concat "; " ms ^ ")") false
@@ -20493,10 +20493,10 @@ let () =
    empty/), read where they stand, each with its case files and their
    expectations. A witness whose forms this encoding carries plays every case;
    one that holds a form it does not carry is refused, by CLINGO-049 with the
-   slug of that form, or by a limit of this encoding in every document. Two
-   wait for the field complete of a declaration (card complete-member): their
-   closed.json names per case the members the session closes, which no case
-   can say. Every witness is in exactly one list *)
+   slug of that form, or by a limit of this encoding in every document. One
+   waits for the case translation to read the field complete of a
+   declaration, which its document carries. Every witness is in exactly one
+   list *)
 let () =
   let dir = "ref/test/fixtures/strict-empty/" in
   let plays =
@@ -20508,11 +20508,13 @@ let () =
       ("defaults-characteristic", "CLINGO-049", Some "defaults-group"); ("defaults-stack", "CLINGO-049", Some "defaults-group");
       ("defaults-subtype", "CLINGO-049", Some "defaults-group"); ("empty-by-fault", "CLINGO-049", Some "set-fold");
       ("exact-digits", "CLINGO-046", None); ("fact-creation", "CLINGO-049", Some "set-fold");
-      ("filled-test-not-closure", "CLINGO-049", Some "defaults-group"); ("listed-fold", "CLINGO-049", Some "set-fold");
+      ("filled-test-not-closure", "CLINGO-049", Some "defaults-group");
+      ("input-above-computation", "CLINGO-049", Some "defaults-group");
+      ("input-above-computation-open", "CLINGO-049", Some "defaults-group"); ("listed-fold", "CLINGO-049", Some "set-fold");
       ("object-creation", "CLINGO-049", Some "object-creation"); ("quantifier-fold", "CLINGO-049", Some "quantifier-fold");
       ("set-fold", "CLINGO-049", Some "set-fold"); ("settled-empty-fold", "CLINGO-049", Some "set-fold");
       ("settled-empty-stack", "CLINGO-049", Some "defaults-group") ]
-  and waits = [ "closed-input"; "input-above-computation" ] in
+  and waits = [ "closed-input" ] in
   let root = if Sys.file_exists dir then dir else Filename.concat "../../../../.." dir in
   let present = List.sort compare (List.filter (fun n -> Sys.is_directory (Filename.concat root n)) (Array.to_list (Sys.readdir root))) in
   let listed = List.sort compare (plays @ List.map (fun (n, _, _) -> n) refused @ waits) in
@@ -20550,8 +20552,11 @@ let () =
     refused;
   List.iter
     (fun name ->
-      check (Printf.sprintf "WV-1.5-witness-%s waits for the field complete (card complete-member): it has a closed.json" name)
-        (Sys.file_exists (Filename.concat root (name ^ "/closed.json"))))
+      let ir = corpus_file (dir ^ name ^ "/ir.json") in
+      check (Printf.sprintf "WV-1.5-witness-%s waits for the case translation to read the field complete: its document carries it" name)
+        (let doc, _ = load_pair ~ir ~case_text:(corpus_file (dir ^ name ^ "/case1-volledig.json")) in
+         List.exists (fun (_, (ot : Ir_v0.Ast.object_type)) -> ot.attribute_complete <> [] || ot.characteristic_complete <> [])
+           doc.object_types))
     waits
 
 let () =
