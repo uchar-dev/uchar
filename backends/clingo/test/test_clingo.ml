@@ -20505,14 +20505,56 @@ let () =
       (Some (ov_let "g" (ov_attr "gewicht") (ite (ov_cmp "greater" (ov_binder "g") (ov_lit "0")) (ov_lit "1") (ov_lit "0"))))
   in
   (* where a document holds several, the first of the list: a Let that reads
-     something before its binder before an IfThenElse, and a parameter with a
-     timeline, a form of the table, before both *)
+     something before its binder before a union of instance sets, and a
+     parameter with a timeline, a form of the table, before the own forms *)
   let not_first =
     ov_rule ~name:"drempelgewicht" "drempelgewicht"
       (Some (ov_let "k" (ov_attr "schade") (ov_bin "plus" (ov_attr "gewicht") (ov_binder "k"))))
   in
-  refused ~name:"WV-1.5-uncarried-forms (own forms in their order)" ~ir:(ov_doc [ vondst ] [ ite_rule; not_first ])
-    "let-binder-not-first";
+  (* the golden of the union, its document with the property; with the Let
+     above and the attributes it reads on the Vondst *)
+  let union ~with_let =
+    let open Yojson.Safe in
+    let doc = from_string (corpus_file "corpus/golden/jutterswet-vondstunie/ir.json") in
+    let rec map = function
+      | `Assoc kv when List.assoc_opt "name" kv = Some (`String "Vondst") && List.mem_assoc "attributes" kv && with_let ->
+          `Assoc
+            (List.map
+               (fun (k, v) ->
+                 if k = "attributes" then
+                   (k, `List (List.map (fun a -> from_string (Printf.sprintf {|{"node": "Attribute", "name": "%s", "datatype": %s}|} a ov_num)) [ "gewicht"; "schade"; "drempelgewicht" ]))
+                 else (k, v))
+               kv)
+      | `Assoc kv -> `Assoc (List.map (fun (k, v) -> if k = "rules" && with_let then (k, match v with `List rs -> `List (rs @ [ from_string not_first ]) | v -> map v) else (k, map v)) kv)
+      | `List l -> `List (List.map map l)
+      | j -> j
+    in
+    match map doc with
+    | `Assoc (format :: rest) -> to_string (`Assoc (format :: ("inferFromEmpty", `Bool false) :: rest))
+    | _ -> invalid_arg "union"
+  in
+  refused ~name:"instance-set-union" ~ir:(union ~with_let:false) "instance-set-union";
+  refused ~name:"WV-1.5-uncarried-forms (own forms in their order)" ~ir:(union ~with_let:true) "let-binder-not-first";
+  (* WV-1.5-past-undetermined-barrier, WV-1.5-past-undetermined-binder: "de
+     uitkering van een Vondst is, daarbij geldt: g is zijn gewicht en de
+     toeslag is zijn vindloon, 10 als ten minste één van (alle van): g is
+     groter dan 10, de toeslag is groter dan 5; anders 0" (the condition of a
+     value reads binders, WF-077): the composite reads g before the toeslag *)
+  List.iter
+    (fun (name, q, k) ->
+      refused ~name
+        ~ir:
+          (ov_doc [ ov_vondst [ "gewicht"; "taxatie"; "vindloon"; "uitkering" ] [] ]
+             [ ov_vindloon;
+               ov_rule ~name:"uitkering" "uitkering"
+                 (Some
+                    (ov_let "g" (ov_attr "gewicht")
+                       (ov_let "toeslag" (ov_attr "vindloon")
+                          (ite
+                             (ov_compound q k [ ov_cmp "greater" (ov_binder "g") (ov_lit "10"); ov_cmp "greater" (ov_binder "toeslag") (ov_lit "5") ])
+                             (ov_lit "10") (ov_lit "0"))))) ])
+        "let-binder-not-first")
+    [ ("WV-1.5-past-undetermined-barrier", "atLeast", 1); ("WV-1.5-past-undetermined-binder", "all", 0) ];
   refused ~name:"WV-1.5-uncarried-forms (the table before own forms)"
     ~ir:
       (replace ~tok:{|{"node": "Parameter", "name": "TARIEF", "datatype": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}}|}
@@ -21043,6 +21085,40 @@ let () =
         ())
     [ ("not gemeld", [], [ "gemeld" ], ("2", "holds")); ("gemeld", [ "gemeld" ], [], ("0", "not"));
       ("gemeld not named", [], [], ("open", "open")) ]
+
+(* the characteristic check with a narrowing host (ch. 5.8b rule 4): "de
+   toeslag van een Vondst is 5 indien hij aangespoeld is", aangespoeld declared
+   on the Strandvondst: false and standing on a Vondst that is no Strandvondst,
+   open on a Strandvondst that does not name it, true where it does *)
+let () =
+  let ir =
+    ov_doc
+      [ ov_vondst [ "toeslag" ] []; ov_type ~supertype:"Vondst" "Strandvondst" [] [ "aangespoeld" ] ]
+      [ ov_rule ~name:"toeslag"
+          ~cond:{|{"node": "CharacteristicCheck", "characteristic": "aangespoeld", "negated": false, "host": "Strandvondst", "source": {"snippet": "aangespoeld"}}|}
+          "toeslag" (Some (ov_lit "5")) ]
+  in
+  ov_frame ~name:"WV-1.5-negation (a narrowing host)" ~ir
+    ~case_text:
+      (ov_case
+         [ ov_obj "V1" []; ov_obj ~ty:"Strandvondst" "S1" []; ov_obj ~ty:"Strandvondst" ~chars:[ "aangespoeld" ] "S2" [] ]
+         [ ov_attr_is "toeslag" "leeg"; ov_attr_is ~label:"S1" "toeslag" "open"; ov_attr_is ~label:"S2" "toeslag" "5" ])
+    ()
+
+(* the model check names what an attribute without a value is: open, or
+   settled leeg, in a document with inferFromEmpty false *)
+let () =
+  let ir = ov_doc [ ov_vondst [ "taxatie"; "vindloon" ] [] ] [ ov_vindloon ] in
+  List.iter
+    (fun (attrs, want) ->
+      let doc, case = load_pair ~ir ~case_text:(ov_case (ov_v1 attrs) [ ov_attr_is "vindloon" "10" ]) in
+      let got =
+        match Solve.run_clingo (Translate.translate doc case) with
+        | out, Unix.WEXITED (10 | 30) -> Model.check doc case (Model.model_of_text out)
+        | _ -> [ "clingo failed" ]
+      in
+      check (Printf.sprintf "WV-1.5-case-attribute (the model check says %S)" want) (got = [ want ]))
+    [ ([], "V1.vindloon is open, expected 10"); ([ ("taxatie", "50") ], "V1.vindloon is settled leeg, expected 10") ]
 
 (* WV-1.5-witness-*: the witnesses of ref's suite (ref/test/fixtures/strict-
    empty/), read where they stand, each with its case files and their
