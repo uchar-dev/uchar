@@ -20762,6 +20762,38 @@ let () =
       ("supertype open", [], "Strandrecht", [], [], "open");
       ("supertype base", [ "betwist" ], "Strandrecht", [], [], "10") ]
 
+(* WV-1.5-stack-two-initialisations: the effective stack of a Wrakvondst holds
+   the default "op 0 indien hij betwist is", the initialisation it inherits from
+   the Vondst, "op 2 maal zijn gewicht indien zijn gewicht groter is dan 10", and
+   its own, "op 5". Each decides where nothing above it decides, also where a
+   default or an initialisation above it is open *)
+let () =
+  let ir complete =
+    ov_doc
+      ~defaults:
+        [ ov_stack ~subject:"Wrakvondst" ~attribute:"bergloon"
+            [ ov_dflt ~justification:(ov_check "betwist") ~consequence:(ov_lit "0") (); ov_dflt ~init:true ~consequence:(ov_lit "5") () ] ]
+      [ ov_type ~complete "Vondst" [ "gewicht"; "bergloon" ] [ "betwist" ]; ov_type ~supertype:"Vondst" "Wrakvondst" [] [] ]
+      [ ov_rule ~init:true ~name:"standaardbergloon" ~cond:(ov_gt "gewicht" "10") "bergloon" (Some (ov_bin "times" (ov_lit "2") (ov_attr "gewicht"))) ]
+  in
+  let case chars attrs want = ov_case [ ov_obj ~ty:"Wrakvondst" ~chars "V1" attrs ] [ ov_attr_is "bergloon" want; ov_consistent ] in
+  let name row = "WV-1.5-stack-two-initialisations (" ^ row ^ ")" in
+  let settled = [ "betwist" ] in
+  List.iter
+    (fun (row, complete, chars, attrs, want) ->
+      ov_frame ~name:(name row) ~ir:(ir complete) ~case_text:(case chars attrs want) ())
+    [ ("the inherited under an open default", [], [], [ ("gewicht", "20") ], "40");
+      ("the inherited", settled, [], [ ("gewicht", "20") ], "40");
+      ("the own below one that gives way", settled, [], [ ("gewicht", "5") ], "5");
+      ("the own below one that is open", settled, [], [], "5");
+      ("the default", [], [ "betwist" ], [], "0");
+      ("input under an open default", [], [], [ ("gewicht", "5"); ("bergloon", "7") ], "open");
+      ("input", settled, [], [ ("gewicht", "5"); ("bergloon", "7") ], "7") ];
+  List.iter
+    (fun (row, attrs, want) -> clingo_matches ~name:(name row) ~ir:(ir []) ~case_text:(case [] attrs want))
+    [ ("the own under an open default, below one that gives way", [ ("gewicht", "5") ], "5");
+      ("the own under an open default, below one that is open", [], "5") ]
+
 (* WV-1.5-complete-*: a member whose declaration says that its input is
    complete is settled leeg where the case gives it no value, on an object
    where it is input; where a writer writes it the field changes nothing *)

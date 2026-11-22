@@ -14294,7 +14294,7 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
   emit ctx "#defined %s/1." cfl;
   let stl n = Printf.sprintf "%s_stl%d" tag n in
   (* ch. 1.5, "A stack": default [n] is reached where it stands of every higher
-     one that it gives way ([rch]), and the initialisation also below the first
+     one that it gives way ([rch]), and an initialisation also below the first
      default that is open, a closure over the stack ([rcx]). [gw n] says that
      default [n], reached, gives way *)
   let gw n = Printf.sprintf "%s_gw%d" tag n in
@@ -14490,23 +14490,23 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
   let gw_all = Printf.sprintf "%s_gw" tag and st = Printf.sprintf "%s_st" tag in
   if ctx.strict then begin
     (* the walk of ch. 1.5: a default is reached where every higher one gave
-       way; the initialisation also where the first default above it that does
-       not give way is open, which it closes over. The chain gives way where
-       every default does *)
+       way; an initialisation also where the first default above it that does
+       not give way is open, which it closes over, and no initialisation between
+       decides. The chain gives way where every default does *)
     List.iteri
       (fun n (r : default) ->
         emit_rule ctx ~head:(rch (n + 1)) ~body:[ rch n; Printf.sprintf "%s(%s)" (gw n) subject ];
         if closes n then begin
           let rcx = Printf.sprintf "%s_rcx%d(%s)" tag n subject in
           emit_rule ctx ~head:rcx ~body:[ rch n ];
-          let rec above m =
-            if m >= 0 && not (List.nth defaults m).default_initialisation then begin
-              emit_rule ctx ~head:rcx
-                ~body:[ rch m; Printf.sprintf "not %s(%s)" (stl m) subject; Printf.sprintf "not %s(%s)" (gw m) subject ];
-              above (m - 1)
+          let rec above m between =
+            if m >= 0 then begin
+              let undecided = Printf.sprintf "not %s(%s)" (stl m) subject in
+              emit_rule ctx ~head:rcx ~body:(rch m :: undecided :: Printf.sprintf "not %s(%s)" (gw m) subject :: between);
+              above (m - 1) (if closes m then undecided :: between else between)
             end
           in
-          above (n - 1)
+          above (n - 1) []
         end;
         head_body ctx (Printf.sprintf "%s(%s,V)" out subject)
           (Printf.sprintf "%s(%s,V)" (dec n) subject :: reached n);

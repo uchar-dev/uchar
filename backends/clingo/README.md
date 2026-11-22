@@ -514,12 +514,13 @@ spec bug.
     fault of it until no filter of a member before it is undetermined.
   - *A stack* reads each default with three outcomes: it decides, it
     stands that it gives way (`<chain>_gw<n>`), or it is open, and a
-    default is reached where every higher one gave way. The
+    default is reached where every higher one gave way. An
     initialisation of a stack closes over the first default that is
-    open. Exception groups and the members of an unordered group decide
-    beside members that stand. The ch. 7.7 desugaring is not applied: an
-    initialisation beside a computation is read natively, as a closure
-    over the writers of its target.
+    open, where no initialisation between the two decides. Exception
+    groups and the members of an unordered group decide beside members
+    that stand. The ch. 7.7 desugaring is not applied: an initialisation
+    beside a computation is read natively, as a closure over the writers
+    of its target.
   - *A creation* whose condition is undetermined leaves the relation it
     would lay open (`ropen/2`) on the subject, and for a fact creation on
     what it could reach; every read over an open relation is an open
