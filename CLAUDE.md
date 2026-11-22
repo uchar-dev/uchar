@@ -153,8 +153,8 @@ a source is newer than the jar. After the build step no gate builds and no two g
 source changes during the run and no other gate, build or `make gates` runs in the same checkout. The step
 `after-run` checks the first condition: the three builds run again and must be fresh, and none of their products may
 be newer than the end of the build step. A red build, red gate, red `after-run` or missing line exits non-zero.
-Replays run through `scripts/lib/parallel.sh` (one process per two cores, with its replay flags on JVMs) and are
-judged in corpus order; no gate takes arguments.
+Replays run through `scripts/lib/parallel.sh` (one process per two cores, in gate 6 one per core; with its replay flags
+on JVMs) and are judged in corpus order; no gate takes arguments.
 
 Throughout: "stale-failing" means a list fails on an entry that no longer applies, in both directions where said;
 "reason-carrying" means every entry carries its reason; an empty input set is a failure, never a silent green.
@@ -229,7 +229,9 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
    EF code there or with a mismatch fails whether listed or not. The list refuses a golden named twice, a line
    without a reason, a code named twice and a code that is no refusal or limit; its judge passes rows of its own
    first. The list has no floor: it is name-carrying in both directions, and gate 5 floors the case set. It also runs
-   the backend's unit suite (normalisation fault modes no corpus witness reaches). Floor: `EXPECTED_MIN_SUITE_CHECKS`.
+   the backend's unit suite (normalisation fault modes no corpus witness reaches) in shards beside the replays, and holds
+   that every shard ended green and that the shards together ran every unit of the suite exactly once. Floor:
+   `EXPECTED_MIN_SUITE_CHECKS`.
 
 7. `scripts/check-noop.sh` — the no-op guard (PLAN §8: an identity transpiler must fail): every golden case run
    through the ref runner's `--noop` mode (expectations against the raw input) must fail. Cases that legitimately
