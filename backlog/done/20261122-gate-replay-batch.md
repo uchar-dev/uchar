@@ -57,7 +57,7 @@ De JUnit-suite van gate 12 profileren (klassen die telkens dezelfde goldens bouw
 
 ## Result
 
-*Gebouwd 2026-11-22 op `card/gate-replay-batch`, vanaf `af54fac21`. Gemeten op de machine van de eigenaar, 16 kernen, zonder andere gate of suite (achtergrond:
+*Gebouwd 2026-11-22 op `card/gate-replay-batch`, vanaf `b9232544e`. Gemeten op de machine van de eigenaar, 16 kernen, zonder andere gate of suite (achtergrond:
 Spotlight en mediaanalyse, samen ongeveer één kern). Alleen deze kaart; `make gates` draait de hoofdsessie.*
 
 **Wat er staat.** `DroolsBackendMain --batch <taken> <map>` speelt een lijst aanroepen na elkaar (`batch`): per taak `<sleutel>.out` en, nadat dat bestand gesloten is,
@@ -142,6 +142,6 @@ vlaggen is elke statusregel gelijk aan die zonder.
 
 ### Nagerekend door de hoofdsessie (2026-11-22)
 
-`make gates` op `f12b13b57`: groen in 299 s (was 592 s) en 4001 CPU-s (was 8430). De verslagen van gates 8, 12, 13 en 17 naast die van de vorige set: gelijk op tijden en de testtelling na. Een tweede lezing van de diff (extern
+`make gates` op `0cd9ba625`: groen in 299 s (was 592 s) en 4001 CPU-s (was 8430). De verslagen van gates 8, 12, 13 en 17 naast die van de vorige set: gelijk op tijden en de testtelling na. Een tweede lezing van de diff (extern
 model, hoogste stand) vond geen weg naar een stille groene gate; haar twee "brekers" (awk met meer dan zeventien bestanden, `"$@"` zonder argumenten onder `set -u` in bash 3.2) zijn op deze machine weerlegd (60 bestanden,
 sh 3.2.57 en dash). Overgenomen: de scheiding per weergave in gate 13 (gate 13 alleen 80 s en 517 CPU-s, was 76 en 474; verslag gelijk) en het opruimen van een tijdelijk bestand in gate 8 (11,8 s).

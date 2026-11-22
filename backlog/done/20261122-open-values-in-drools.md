@@ -159,9 +159,9 @@ staat een naam, regel of casus van een regelset buiten deze repository.
 
 ### Wat er is
 
-Commits op `card/open-values-in-drools`: `da6d38aec` (de kern), `94354c020` (README, getuigen voor `complete` en het deel
-per instantie), `e2d7f18e5` (open invoer naast de bean, het oordeel in één regel), `1868bf221` (de zin van DROOLS-370),
-`d0a15637a` (gate 12: de reden van twee goldens), `f2762d082` (gate 8: de reden van één rode case), `6a8ad5d57` (een
+Commits op `card/open-values-in-drools`: `2801f8532` (de kern), `e3febefa3` (README, getuigen voor `complete` en het deel
+per instantie), `7c9c35a68` (open invoer naast de bean, het oordeel in één regel), `f6e53020d` (de zin van DROOLS-370),
+`768844d9e` (gate 12: de reden van twee goldens), `9576b9b37` (gate 8: de reden van één rode case), `f9c01727b` (een
 schrijver vraagt altijd of hij iets doet). De hoofdsessie zette er `8cb33afa8` en `5d3e8f054` (het heap-plafond) vóór.
 
 - **Wat open kan zijn** (`OpenableMembers`): één keer per analyse berekend, leeg in een document zonder de eigenschap.
@@ -241,11 +241,11 @@ Over de 133 goldens die dit deel draagt, met de eigenschap erbij (niet-lege rege
 | | regels | `rule`s | functies |
 |---|---|---|---|
 | gewoon | 13 463 | 612 | 677 |
-| met de eigenschap op `da6d38aec` | 29 454 | 1595 | 1127 |
+| met de eigenschap op `2801f8532` | 29 454 | 1595 | 1127 |
 | met de eigenschap nu | 18 754 (+39%) | 705 (+15%) | 857 (+27%) |
 | met de eigenschap, elke declaratie `complete` | 13 463 | 612 | 677 |
 
-Per soort, met de eigenschap (aantal, regels), eerst op `da6d38aec` en dan nu: standing "uit de invoer" 327, 2943 → 38,
+Per soort, met de eigenschap (aantal, regels), eerst op `2801f8532` en dan nu: standing "uit de invoer" 327, 2943 → 38,
 342; "uit de onvolledige invoer" 290, 2610 → 0; kenmerkstandings 197, 1627 → 64, 529; "open door een schrijver" van een
 attribuut 37, 333 → gelijk; padstandings 58, 435 → 58, 455; regel "laat open" 178, 1685 → 0; functies `toets` 422, 4441
 → 66, 521 en `oordeel` 0 → 178, 2318; `samengesteld` 96, 2488 → 53, 1329; `sluiting` 76, 608 → 42, 336; `deling` 129, 645
@@ -328,7 +328,7 @@ die spelen 177 → 216 regels en 119 → 143 feiten; de 21 documenten met de eig
 
 ### Gates
 
-Elk één keer los gedraaid op `6a8ad5d57`, op 1, 8, 10 en 15 na: die op `f2762d082`, waarna alleen
+Elk één keer los gedraaid op `f9c01727b`, op 1, 8, 10 en 15 na: die op `9576b9b37`, waarna alleen
 `TmsTranspiler.conditionTest` veranderde (dezelfde DRL-tekst voor de goldens zonder en met de eigenschap, 659 teksten).
 
 - 1 `check-self-contained: PASS`
@@ -356,7 +356,7 @@ van `open-values/`.
 
 ## Landing van deel 1
 
-`make gates` in de worktree op `9c4431593`: alle gates groen (681 s, after-run groen). Een onafhankelijke code-review
+`make gates` in de worktree op `a471ae642`: alle gates groen (681 s, after-run groen). Een onafhankelijke code-review
 (Google Neon, alleen lezen, op de diff van `src/main`) vond geen afwijkende uitkomst. Nagekeken: de vier mogelijke fouten
 bleken geen fout (een vouw anders dan een telling over een unie weigert de loader; een geneste samenstelling achter een open
 lid leest gelijk aan ref; de namen van `characteristicsAbsent` worden op de getter genormaliseerd; de regelbouwer voor een
@@ -367,10 +367,10 @@ operatorvolgorde rust, en twee kleine vereenvoudigingen. De kaart blijft in `doi
 
 ### Wat er is
 
-Commits op `card/open-values-in-drools`: `620ab3cf9` (de strikte tekst), `522130475` (de stapel), `a3e262584` (gate 12),
-`b70d1aa4e` (gate 8), `6a288667e` (gate 17), `6f7f5599f` (een update langs een pad), `ff9a739e8` (drie notities van het
-corpus), `b5e232e9b` (wie besliste, onder een open initialisatie), `d62e78065` (ref en ch. 1.5: elke initialisatie van een
-stapel sluit) en `6c0246149` (Drools volgt dat).
+Commits op `card/open-values-in-drools`: `a1497c109` (de strikte tekst), `ab4122185` (de stapel), `42527849b` (gate 12),
+`727141ae0` (gate 8), `0639bb22a` (gate 17), `7445c5dc6` (een update langs een pad), `aa40b6db3` (drie notities van het
+corpus), `2c95ee426` (wie besliste, onder een open initialisatie), `07060f78a` (ref en ch. 1.5: elke initialisatie van een
+stapel sluit) en `6145d4a1b` (Drools volgt dat).
 
 - **De strikte tekst vangt zelf niets.** Elke grens van de lezing is één functie die haar deel als lambda krijgt:
   `Composite.read`, `ComputeHelpers.emptyTestOverOpen`, `dividedLazily` (en `dividedAbsLazily`), `judge`, `holdsForItself`,
@@ -422,7 +422,7 @@ naar strikt: exec-model 12 naar 12 ms (+6%), DRL-tekst 202 naar 241 ms (+19%); d
 
 ### Een document zonder de eigenschap verandert niet
 
-De DRL-tekst van elke golden en elk rood document op `977b89a24` naast die van nu, zonder en met lezingen: **1014 teksten van
+De DRL-tekst van elke golden en elk rood document op `439231dc3` naast die van nu, zonder en met lezingen: **1014 teksten van
 507 documenten byte-gelijk, 0 andere** (90 ervan een weigering of fout van de analyse). Er zijn twee pins van
 `drl-text` bij (de twee goldens die nu spelen); geen bestaande veranderde.
 
@@ -460,8 +460,8 @@ per groep gevraagd te worden, en de verzoening vraagt het over alle groepen. Gee
   `-characteristic`, `-exception-groups`, `-unordered`, `-type-chain`; het deponeren van een default, een groep buiten haar
   venster, een wijziging van de bean tussen twee keer vuren en wie besliste (`decisionsOf`). Vier documenten zijn dat van de
   frontend met een initialisatiedefault erbij, die het dialect alleen naast een opgave schrijft.
-- **Rood eerst**: op `620ab3cf9` weigert elk document `stack-*` met DROOLS-370 en `form: defaults-group`. De getuige van de
-  update langs een pad (`TmsRepeatedFireWitnessTest`) geeft op `6a288667e` na de wijziging 120 in plaats van 150, op beide
+- **Rood eerst**: op `a1497c109` weigert elk document `stack-*` met DROOLS-370 en `form: defaults-group`. De getuige van de
+  update langs een pad (`TmsRepeatedFireWitnessTest`) geeft op `0639bb22a` na de wijziging 120 in plaats van 150, op beide
   weergaven en over één en twee links.
   In ref (`test_ref.ml`) faalden op de code ervoor drie rijen: de eigen initialisatie onder een open default met een geërfde
   die voorrang geeft (open in plaats van 5), onder een open default en een open geërfde (open in plaats van 5), en hun lezing
@@ -507,9 +507,9 @@ per groep gevraagd te worden, en de verzoening vraagt het over alle groepen. Gee
 
 ### Gates
 
-Elk los gedraaid, vóór de rebase op `0c27516df`: 8, 12 en 13 op wat nu `6f7f5599f` is, waarna alleen de lezing van de
-besluiten, tests en de wacht van een tweede initialisatie veranderden; 1, 10 en 15 op wat nu `b5e232e9b` is. Gate 5, gate 17 en
-de suite van ref op `6c0246149`. De DRL-tekst van de 170 gedragen goldens, gewoon, strikt en volledig, is vóór en na `6c0246149`
+Elk los gedraaid, vóór de rebase op `78ebd9cfe`: 8, 12 en 13 op wat nu `7445c5dc6` is, waarna alleen de lezing van de
+besluiten, tests en de wacht van een tweede initialisatie veranderden; 1, 10 en 15 op wat nu `2c95ee426` is. Gate 5, gate 17 en
+de suite van ref op `6145d4a1b`. De DRL-tekst van de 170 gedragen goldens, gewoon, strikt en volledig, is vóór en na `6145d4a1b`
 byte-gelijk.
 
 - 1 `check-self-contained: PASS`
@@ -525,15 +525,15 @@ byte-gelijk.
 - 17 `check-readings: PASS (ref traced 1211 golden case files … on both branches 385 goldens and 1073 case files compared, 8468
   readings, 27262 node lines …)`, 2 goldens DROOLS-370 (`READINGS_REFUSED`)
 
-De JUnit-suite op `6c0246149`: 2024 tests, geen overgeslagen (2009 na deel 1, twaalf van dit deel, drie met `main`). Geen floor veranderde; `EXPECTED_PLAYED` ging van 384
+De JUnit-suite op `6145d4a1b`: 2024 tests, geen overgeslagen (2009 na deel 1, twaalf van dit deel, drie met `main`). Geen floor veranderde; `EXPECTED_PLAYED` ging van 384
 naar 386 en twee `EXCLUDE`-regels van gate 12 en één van gate 8 vervielen.
 
 ## Landing van deel 2a
 
-`make gates` op `61676e09d`: alle 17 gates groen (704 s, after-run groen). De hoofdsessie rekende de omvang na over 170
+`make gates` op `8603a4d1b`: alle 17 gates groen (704 s, after-run groen). De hoofdsessie rekende de omvang na over 170
 goldens (gewoon 20 187, strikt 22 351 niet-lege regels, +10,7%; met een stapel +19,0%; alles volledig gelijk aan gewoon;
 393 gewone documenten met dezelfde tekst). Een tweede lezer (Google Neon, alleen lezen, effort high) vond geen openstaand
-punt: de melding over twee initialisaties was al hersteld (`6c0246149`), de andere vormen weigert de analyse of sluit de
+punt: de melding over twee initialisaties was al hersteld (`6145d4a1b`), de andere vormen weigert de analyse of sluit de
 verifier uit (WF-050, WF-075). De kaart blijft in `doing` tot het laatste deel.
 
 ## Result van deel 2b: de vouwen en de kwantorvouw
@@ -609,7 +609,7 @@ DRL-tekst 178 naar 227 ms (+27%); de hoogste van één golden op de DRL-tekst +3
 
 ### Een document zonder de eigenschap verandert niet
 
-De DRL-tekst van elke golden en elk rood document op `977b89a24` (de tekst van `0a79d621d`) naast die van nu, zonder en met
+De DRL-tekst van elke golden en elk rood document op `439231dc3` (de tekst van `6777c66dd`) naast die van nu, zonder en met
 lezingen: **1014 teksten van 507 documenten byte-gelijk, 0 andere** (90 ervan een weigering of fout van de analyse). Van de 388
 pins veranderen er twee, die van de goldens met de eigenschap: het oordeel heet er `Object` en `valued`/`decided` nemen de sonde
 mee; het aantal regels blijft gelijk.
@@ -654,7 +654,7 @@ mee; het aantal regels blijft gelijk.
 - **Elke smalle slug heeft een getuige** (`InferFromEmptyRefusalWitnessTest`): per vorm een document dat weigert, op beide
   weergaven, met de regel in de zin, en hetzelfde document met volledige invoer, dat bouwt; en zeven goldens met een deling, een
   macht of een parameter in filter of toets bouwen met de eigenschap.
-- **Rood eerst**: op de jar van `6c0246149` weigeren de zes eerste documenten met `set-fold` (drie) en `quantifier-fold` (drie); op
+- **Rood eerst**: op de jar van `6145d4a1b` weigeren de zes eerste documenten met `set-fold` (drie) en `quantifier-fold` (drie); op
   die van `844e34299` de zes van de volgorde (vier met `set-fold`, twee met `quantifier-fold`).
 - **Geen test verzwakt.** Aangepast: de opsommingen van routes, vormen en vouwinvoer (`RouteWitnessTest`, `FormsPlan`,
   `FoldPlanWitnessTest`), één cast (`PeriodArithmeticTest`), de getuige van de weigertest (`object-creation` in plaats van
@@ -777,7 +777,7 @@ lezingen 30 641 en 43 486 regels (1545 en 2491 `rule`s), strikt 33 555 en 48 696
   beide leden); leest geen regel het kenmerk, dan zijn lezing en eindstand die van ref (los gemeten).
 - **Een vouw in een filter**: `open-values/fold-in-a-filter`, vier cases met met de hand gerekende verwachtingen, en een wijziging van
   een binnenste lid tussen twee keer vuren (`a_value_on_the_bean_between_two_fires`).
-- **Rood eerst**: op de jar van `e0461147e` weigert de build met lezingen elk document met `form: reading`, en
+- **Rood eerst**: op de jar van `29281143f` weigert de build met lezingen elk document met `form: reading`, en
   `fold-in-a-filter` met `form: set-fold`.
 - **Geen test verzwakt.** Vervallen: de test dat de build met lezingen weigert, en de regel van een golden met een vouw in een filter in
   de weigertest, die nu in de test van de gedragen documenten staat.
@@ -829,8 +829,8 @@ De JUnit-suite: 2050 tests, geen overgeslagen (was 2039). Geen verwachting, pin 
 
 ### Wat er is
 
-Commits op `card/open-values-in-drools`: `46629ae1d` (de kwantorvouw onder een open filter, de geankerde lezing), `98ebb1f41`
-(behoud als getuige) en `4335bfab7` (de boodschap van DROOLS-370, de javadoc, de README).
+Commits op `card/open-values-in-drools`: `9b1986357` (de kwantorvouw onder een open filter, de geankerde lezing), `eff1e70ba`
+(behoud als getuige) en `cd5ba494f` (de boodschap van DROOLS-370, de javadoc, de README).
 
 - **De kwantorvouw onder een filter dat open kan zijn** leest per lid één `MemberTest`, in elke kwantorvouw van zo'n filter, ook waar de
   toets kan falen noch deponeren. De bijdrageregel blijft één regel (`Consequence.FilteredContribution` met een `MemberTest`): zij vraagt
@@ -976,7 +976,7 @@ kan door een gegeven invoer veranderen.
 
 ### Gates
 
-Elk los gedraaid op `4335bfab7`; daarna veranderde geen code.
+Elk los gedraaid op `cd5ba494f`; daarna veranderde geen code.
 
 - 1 `check-self-contained: PASS`
 - 8 `check-red: PASS (102 red cases fault observably in ref and clingo …)`

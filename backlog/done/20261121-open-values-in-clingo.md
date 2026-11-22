@@ -644,7 +644,7 @@ bouwer net `make gates` begon; gestopt op procesgroep en opnieuw gedraaid toen d
 
 ## Result (deel 3)
 
-*Bouwer deel 3, 2026-11-22. Branch `card/open-values-in-clingo`, op `0c27516df` (main met de kaart `let-in-composite`). De
+*Bouwer deel 3, 2026-11-22. Branch `card/open-values-in-clingo`, op `78ebd9cfe` (main met de kaart `let-in-composite`). De
 hashes in de tabellen van deel 1 en 2 zijn die na de rebase.*
 
 ### Wat er is
@@ -689,7 +689,7 @@ CLINGO-023).
 **Twee initialisaties in één stapel** (aanvulling van de hoofdsessie). clingo maakte het doel open in drie gevallen waar ch. 1.5
 het een waarde geeft ("it decides where nothing above it decides, also where a default above it is open"): de default open en de
 geërfde initialisatie geeft voorrang, de default open en de geërfde open, en de default geeft voorrang en de geërfde is open. Nu
-5 in alle drie. ref op `0c27516df` geeft in het derde geval 5 en in de eerste twee open; die twee staan daarom als verwachting
+5 in alle drie. ref op `78ebd9cfe` geeft in het derde geval 5 en in de eerste twee open; die twee staan daarom als verwachting
 van clingo alleen in de suite (`WV-1.5-stack-two-initialisations`), de andere zeven met ref ernaast. Zodra ref de correctie op
 `main` heeft, horen de twee rijen in dezelfde lijst.
 
@@ -794,7 +794,7 @@ Op de inhoud van `bc1e7d71b`, één tegelijk, steeds wanneer geen andere bouwer 
 
 ## Landing
 
-`make gates` op `9423f6e9f`: alle 17 gates groen (1229 s, after-run groen; gate 6 duurt nu 1221 s in de set, tegen 704 s
+`make gates` op `154bc5a43`: alle 17 gates groen (1229 s, after-run groen; gate 6 duurt nu 1221 s in de set, tegen 704 s
 daarvoor, en ongeveer vier minuten alleen: de suite is één proces van 4454 checks en loopt onder de belasting van de andere
 gates langer). Deel 3 is naar wens van de eigenaar vervallen: geen breed differentieel als poot, geen sectie in
 `spec/ASP-TRANSLATION.md`. Een tweede lezer (Google Neon, alleen lezen) noemde drie fouten in deel 1 en 2: twee zijn in de IR
