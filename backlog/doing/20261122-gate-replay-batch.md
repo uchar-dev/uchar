@@ -114,7 +114,8 @@ vlaggen is elke statusregel gelijk aan die zonder.
    gate 12 acht lijsten van 55 geven en ongeveer 30 CPU-s schelen.
 3. Een batch-JVM krijgt naast de vlaggen van nu `-XX:+ExitOnOutOfMemoryError`: een vol geheugen eindigt de JVM ook als code eronder het opvangt, zodat gate 13 nooit twee
    `ERROR`-regels door geheugengebrek gelijk vindt.
-4. Gate 13 speelt onveranderde documenten en kopieën in gescheiden batches, zodat een kopie nooit in de JVM van haar origineel speelt.
+4. Gate 13 speelt onveranderde documenten en kopieën in gescheiden batches, en elk per weergave, zodat een kopie nooit in de JVM van haar origineel speelt en een weergave nooit
+   in die van de andere, met wie zij vergeleken wordt.
 5. De vier poten van gate 13 houden één JVM tegelijk, zoals zij hadden; gate 8 speelt op één proces per twee kernen, waar zij een case tegelijk speelde.
 6. Een `RuntimeException` buiten de armen van `run` (een pad dat geen pad is) geeft zijn taak exitcode 1 en een stacktrace op de standaardfout, zoals een eigen JVM; een `Error`, een
    kapotte lijst en een veranderde JVM geven exitcode 4.
@@ -138,3 +139,9 @@ vlaggen is elke statusregel gelijk aan die zonder.
 - *Gate 13*, in plaats van "The legs run as five processes, the presentation leg's calls through `scripts/lib/parallel.sh`;": "The legs run as five processes; their replays in
   the backend run in batches, the untouched documents and the copies in JVMs of their own, the other calls of the presentation leg through `scripts/lib/parallel.sh`;".
 - *Gate 17*, "Traces run on one process per core": "Traces run on one process per core, the readings and the replays of the backend in batches."
+
+### Nagerekend door de hoofdsessie (2026-11-22)
+
+`make gates` op `f12b13b57`: groen in 299 s (was 592 s) en 4001 CPU-s (was 8430). De verslagen van gates 8, 12, 13 en 17 naast die van de vorige set: gelijk op tijden en de testtelling na. Een tweede lezing van de diff (extern
+model, hoogste stand) vond geen weg naar een stille groene gate; haar twee "brekers" (awk met meer dan zeventien bestanden, `"$@"` zonder argumenten onder `set -u` in bash 3.2) zijn op deze machine weerlegd (60 bestanden,
+sh 3.2.57 en dash). Overgenomen: de scheiding per weergave in gate 13 (gate 13 alleen 80 s en 517 CPU-s, was 76 en 474; verslag gelijk) en het opruimen van een tijdelijk bestand in gate 8 (11,8 s).

@@ -660,6 +660,7 @@ PYEOF
         done < "$list"
         if ! jvms=$(parallel_jobs 2) || ! parallel_batch "$replays" "$jvms" java $PARALLEL_BATCH_JVM_FLAGS -jar "$JAR" --batch; then
             echo 'check-red: FAIL — Drools leg: the replays of the red cases failed (the parallel line above says why)' >&2
+            rm -f "$excl"
             exit 1
         fi
         d_fault=0

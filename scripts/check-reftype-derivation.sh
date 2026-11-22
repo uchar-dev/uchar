@@ -1170,24 +1170,27 @@ mention() {
 }
 
 # The replays of a leg in the backend run in batches (parallel_batch, scripts/lib/parallel.sh), the leg's loop
-# reads them. Two batches per leg, the untouched documents and the copies: a copy never shares a JVM with a
-# document it must answer like, so nothing the JVM keeps of the one can give the answer of the other.
+# reads them. Four batches per leg, the untouched documents and the copies, each per branch: a copy never shares
+# a JVM with a document it must answer like, nor a branch with the other, so nothing the JVM keeps of the one can
+# give the answer of the other.
 replays_begin() {   # <leg>
-    mkdir "$WORK/$1.untouched" "$WORK/$1.copy" || exit 2
+    for rb_part in untouched copy; do mkdir "$WORK/$1.$rb_part.exec" "$WORK/$1.$rb_part.drl" || exit 2; done
 }
 replay_both() {   # <leg> <untouched|copy> <key> <ir.json> <case>...: on both branches, read by replay_line <key>.exec and .drl
     rb_batch=$WORK/$1.$2 rb_key=$3
     shift 3
-    parallel_batch_task "$rb_batch" "$rb_key.exec" "$@"
-    parallel_batch_task "$rb_batch" "$rb_key.drl" --drl "$@"
+    parallel_batch_task "$rb_batch.exec" "$rb_key.exec" "$@"
+    parallel_batch_task "$rb_batch.drl" "$rb_key.drl" --drl "$@"
 }
 replays_run() {   # <leg> <number of processes>
     for rr_part in untouched copy; do
-        parallel_batch "$WORK/$1.$rr_part" "$2" java $PARALLEL_BATCH_JVM_FLAGS -jar "$JAR" --batch || exit 2
+        for rr_branch in exec drl; do
+            parallel_batch "$WORK/$1.$rr_part.$rr_branch" "$2" java $PARALLEL_BATCH_JVM_FLAGS -jar "$JAR" --batch || exit 2
+        done
     done
 }
-replay_line() {   # <leg> <untouched|copy> <key>
-    tail -1 "$WORK/$1.$2/$3.out"
+replay_line() {   # <leg> <untouched|copy> <key>, the key ending in the branch
+    tail -1 "$WORK/$1.$2.${3##*.}/$3.out"
 }
 
 # The status line DroolsBackendMain prints last: `PLAYED <n>`, `FAIL <detail>`, `EXCLUDE DROOLS-###: <reason>`
