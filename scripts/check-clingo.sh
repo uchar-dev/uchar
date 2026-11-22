@@ -11,16 +11,18 @@
 # Checks:
 #   1. backends/clingo builds (the OCaml workspace, scripts/lib/ocaml-build.sh);
 #   2. clingo is available;
-#   3. every corpus/golden/**/case*.json replays exactly through the
+#   3. the backend's own suite runs green in shards, every unit of its work
+#      once, with at least the floored number of checks;
+#   4. every corpus/golden/**/case*.json replays exactly through the
 #      translate → clingo → check pipeline, except the cases of a golden
 #      that EXPECTED_CHANNEL below names: those refuse, every one of them,
 #      by name with the register code the list pins; an empty case set is
 #      a failure, never silently green.
 #
-# The replays run on one process per two cores (scripts/lib/parallel.sh;
-# the measurement is below). The judge reads each case's output and exit
-# status in the order of the case list, so the report is the one a replay
-# case by case would give.
+# The shards and the replays run side by side, on one process per core
+# (scripts/lib/parallel.sh; the measurement is below). The judge reads the
+# shards first, and then each case's output and exit status in the order of
+# the case list, so the report is the one a replay case by case would give.
 #
 # The gate takes no arguments. One pair plays through the runner itself,
 # as backends/clingo/README.md shows:
@@ -63,41 +65,36 @@ fi
 # The suite is floored because nothing else counts it — it is not corpus files, so no other gate
 # would notice it halving. NO floor on the replayed-case count: that is byte-for-byte the file set
 # gate 5 already floors (both scan corpus/golden for case*.json), and one quantity wants one floor.
-EXPECTED_MIN_SUITE_CHECKS=83   # 2026-09-10: measured 83 (backends/clingo/test/test_clingo.ml)
+EXPECTED_MIN_SUITE_CHECKS=4797   # 2026-11-22: measured 4797, so that a check missing from the shards fails here
 
 # The backend's own unit suite carries the fault-mode proof obligations of the
 # normalisation pass (no finest unit faults; 1/24 stays exact) that no corpus witness
 # can exercise — an un-run suite is a silent green, so the gate runs it and
-# demands a non-zero, floored check count (the gate-9 zero-checks discipline).
+# demands a floored check count (the gate-9 zero-checks discipline).
+#
+# It runs in shards (backends/clingo/test/test_clingo.ml, "THE SUITE IN SHARDS"): its units of work are numbered, and
+# UCHAR_SUITE_SHARD=k/n does those whose number is k modulo n and logs which. Silence is excluded by judge_suite below:
+# every shard ran and ended green, all of them met the same number of units, their logs together hold every number
+# exactly once, and their checks together reach the floor. It first passes rows of its own (SUITE_SELF_TEST).
 SUITE_BIN=_build/default/backends/clingo/test/test_clingo.exe
-SUITE_OUT=$("$SUITE_BIN" 2>&1)
-if [ $? -ne 0 ]; then
-    echo "$SUITE_OUT" >&2
-    echo 'check-clingo: FAIL (backend unit suite)' >&2
-    exit 1
-fi
-SUITE_CHECKS=$(printf '%s' "$SUITE_OUT" | grep -Eo '[0-9]+ checks' | grep -Eo '[0-9]+' | head -1)
-if [ -z "$SUITE_CHECKS" ] || [ "$SUITE_CHECKS" -eq 0 ]; then
-    echo "$SUITE_OUT" >&2
-    echo 'check-clingo: FAIL (backend unit suite ran zero checks — a silent green is not green)' >&2
-    exit 1
-fi
-if [ "$SUITE_CHECKS" -lt "$EXPECTED_MIN_SUITE_CHECKS" ]; then
-    echo "FAIL: the backend unit suite ran $SUITE_CHECKS checks, but EXPECTED_MIN_SUITE_CHECKS pins at least $EXPECTED_MIN_SUITE_CHECKS — the suite shrank (a deliberately dropped check lowers the floor in the same commit)" >&2
-    exit 1
-fi
 BIN=_build/default/backends/clingo/bin/clingo_runner.exe
 
-# One process per two cores. clingo_runner and the clingo it starts are single-threaded, but more than
-# eight processes do not help: measured 2026-10-25 on 16 cores, the 899 cases took 152 s one at a time,
-# 51 s on 4 processes and 36 s on 8 and on 16, where the longest case alone takes 35 s
-# (jutterswet-opvolgerversies/case3-tweede-versie.json). In `make gates` more processes would only take
-# cores from the JUnit suite of gate 12, the longest gate of the set.
+# One process per core, for the shards and the replays together, and two shards per process. A shard, clingo_runner and
+# the clingo either starts are single-threaded. Measured 2026-11-22 on 16 cores:
+#   - the suite takes 157 s in one process, four fifths of it in six of its 272 units (13 to 35 s each, one clingo
+#     program), and a process without units 5 ms. The longest shard, the shards alone and all at once: 59 s of 4, 72 s of
+#     6, 43 s of 8, 39 s of 12, 42 s of 16, 43 s of 32. With more shards than processes two of the six seldom stand in
+#     one shard, whatever units come before them;
+#   - the 1211 replays take 215 s one after the other, of which ten take 198 s (the longest 37 s,
+#     jutterswet-opvolgerversies/case3-tweede-versie.json, whose clingo holds 10 GB), and 40 s on 8 processes;
+#   - the gate takes 64 s on 8 processes and 47 s on 16.
+# In `make gates` a process gets a fraction of a core, so the number of processes decides how long this gate takes there.
 . scripts/lib/parallel.sh
-if ! procs=$(parallel_jobs 2); then
+if ! procs=$(parallel_jobs 1); then
     echo 'check-clingo: FAIL (no number of processes)' >&2
     exit 1
 fi
+shards=$((2 * procs))
 
 # --- the refusal channel: which goldens clingo does not play, and why (fails in both directions) ---------
 # Entry: "<golden-relative-path>|CLINGO-###[, CLINGO-###…]|<reason it is not played>", one per line. PLAYED IS THE
@@ -146,7 +143,13 @@ tasks=$(mktemp -d) || exit 2
 trap 'rm -f "$list"; rm -rf "$tasks"' EXIT
 
 find corpus/golden -name 'case*.json' 2>/dev/null | sort > "$list"
-# collect: a task per case with a sibling ir.json, keyed by the case's line in the list
+# collect: a task per shard of the suite, keyed suite-<k>; and a task per case with a sibling ir.json, keyed by the
+# case's line in the list
+k=0
+while [ "$k" -lt "$shards" ]; do
+    parallel_task "$tasks" "suite-$k" out env UCHAR_SUITE_SHARD="$k/$shards" UCHAR_SUITE_SHARD_LOG="$tasks/suite-$k.log" "$SUITE_BIN"
+    k=$((k + 1))
+done
 n_cases=0
 while IFS= read -r case; do
     n_cases=$((n_cases + 1))
@@ -155,18 +158,83 @@ while IFS= read -r case; do
         parallel_task "$tasks" "$n_cases" out "$BIN" "$ir" "$case"
     fi
 done < "$list"
-echo "check-clingo: replays on $procs processes (one per two cores)"
+echo "check-clingo: the suite in $shards shards and the replays, on $procs processes (one per core)"
 if ! parallel_run "$tasks" "$procs"; then
-    echo 'check-clingo: FAIL (parallel_run failed over the replays; the parallel line above says why)' >&2
+    echo 'check-clingo: FAIL (parallel_run failed over the shards and the replays; the parallel line above says why)' >&2
     exit 1
 fi
 
-# judge, in the order of the list
-python3 -I - "$list" "$tasks" backends/clingo/codes.tsv "$EXPECTED_CHANNEL" "$SUITE_CHECKS" "$EXPECTED_MIN_SUITE_CHECKS" <<'PYEOF'
+# judge: the shards, then the cases in the order of the list
+python3 -I - "$list" "$tasks" backends/clingo/codes.tsv "$EXPECTED_CHANNEL" "$shards" "$EXPECTED_MIN_SUITE_CHECKS" <<'PYEOF'
 import os, re, sys
 
-list_path, tasks, codes_path, channel_text, suite_checks, suite_floor = sys.argv[1:7]
+list_path, tasks, codes_path, channel_text, n_shards, suite_floor = sys.argv[1:7]
 PLAYED = "PLAYED"
+
+
+def judge_suite(shards, floor):
+    """shards: for k of 0..n-1 the exit status of shard k/n (None where it did not run), its output and its log (None
+    where it wrote none). The failures, and the units and checks of the shards together."""
+    failures = []
+    names = ["%d/%d" % (k, len(shards)) for k in range(len(shards))]
+    totals, ran, checks = {}, {}, 0
+    for name, (rc, out, log) in zip(names, shards):
+        if rc is None:
+            failures.append("shard %s of the suite did not run" % name)
+            continue
+        if rc != "0":
+            failures.append("shard %s of the suite ends with status %s:\n%s" % (name, rc, out.rstrip("\n")))
+        lines = (log or "").split("\n")
+        tail = re.fullmatch(r"TOTAL ([0-9]+)\nCHECKS ([0-9]+)\n", "\n".join(lines[-3:]))
+        runs = [re.fullmatch(r"RUN ([0-9]+)", line) for line in lines[:-3]]
+        if not tail or not all(runs):
+            failures.append("shard %s of the suite logs no lines RUN <unit> with TOTAL <units> and CHECKS <checks> at the end" % name)
+            continue
+        totals.setdefault(int(tail.group(1)), []).append(name)
+        checks += int(tail.group(2))
+        for run in runs:
+            ran.setdefault(int(run.group(1)), []).append(name)
+    if len(totals) > 1:
+        failures.append("the shards of the suite met different numbers of units: %s"
+                        % "; ".join("%d (%s)" % (total, ", ".join(totals[total])) for total in sorted(totals)))
+    units = max(totals, default=0)
+    for what, numbers in (("ran more than once", sorted(u for u in ran if len(ran[u]) > 1)),
+                          ("ran in no shard", sorted(set(range(units)) - set(ran))),
+                          ("ran beyond the %d units the shards met" % units, sorted(u for u in ran if u >= units))):
+        if numbers:
+            failures.append("%d unit(s) of the suite %s: %s" % (len(numbers), what, ", ".join(
+                "%d%s" % (u, " (%s)" % ", ".join(ran[u]) if u in ran else "") for u in numbers[:8]) + (", …" if len(numbers) > 8 else "")))
+    if checks < floor:
+        failures.append("the backend unit suite ran %d checks, but EXPECTED_MIN_SUITE_CHECKS pins at least %d — the suite shrank (a deliberately dropped check lowers the floor in the same commit)" % (checks, floor))
+    return failures, units, checks
+
+
+def log_of(runs, total=7, checks=4):
+    return "".join("RUN %d\n" % u for u in runs) + "TOTAL %d\nCHECKS %d\n" % (total, checks)
+
+
+S0, S1, S2 = ("0", "", log_of([0, 3, 6])), ("0", "", log_of([1, 4])), ("0", "", log_of([2, 5]))
+SUITE_SELF_TEST = [
+    # (row, the shards, the fragment of the first failure they must give, or None for a pass)
+    ("every unit once", [S0, S1, S2], None),
+    ("a shard left out", [S0, S1, (None, "", None)], "shard 2/3 of the suite did not run"),
+    ("a shard that ran twice, in the place of another", [S0, S1, S1], "2 unit(s) of the suite ran more than once: 1 (1/3, 2/3), 4 (1/3, 2/3)"),
+    ("a number that is missing", [S0, ("0", "", log_of([1])), S2], "1 unit(s) of the suite ran in no shard: 4"),
+    ("the last number missing", [("0", "", log_of([0, 3])), S1, S2], "1 unit(s) of the suite ran in no shard: 6"),
+    ("a total that differs", [S0, S1, ("0", "", log_of([2, 5], total=8))], "met different numbers of units: 7 (0/3, 1/3); 8 (2/3)"),
+    ("a number beyond the total", [S0, S1, ("0", "", log_of([2, 5, 8]))], "1 unit(s) of the suite ran beyond the 7 units the shards met: 8 (2/3)"),
+    ("a shard that fails", [S0, ("1", "FAIL a check", log_of([1, 4])), S2], "shard 1/3 of the suite ends with status 1:\nFAIL a check"),
+    ("a shard that ends before its last unit", [S0, ("0", "", "RUN 1\n"), S2], "shard 1/3 of the suite logs no lines RUN <unit>"),
+    ("a shard without a log", [S0, ("0", "", None), S2], "shard 1/3 of the suite logs no lines RUN <unit>"),
+    ("a log with another line", [S0, ("0", "", "RUN 1\nRAN 4\nTOTAL 7\nCHECKS 4\n"), S2], "shard 1/3 of the suite logs no lines RUN <unit>"),
+    ("a check that is missing", [S0, ("0", "", log_of([1, 4], checks=3)), S2], "ran 11 checks, but EXPECTED_MIN_SUITE_CHECKS pins at least 12"),
+]
+for row, shards, want in SUITE_SELF_TEST:
+    got = judge_suite(shards, 12)[0]
+    if not (got == [] if want is None else len(got) >= 1 and want in got[0]):
+        sys.stderr.write("check-clingo: FAIL (self-test row '%s' of the shards: wanted %s, got %s)\n"
+                         % (row, "a pass" if want is None else "a failure with '%s' first" % want, got or "a pass"))
+        sys.exit(1)
 
 
 def read_codes(path):
@@ -328,6 +396,18 @@ for row, text, cases, want in SELF_TEST:
                          % (row, "a pass" if want is None else "a failure with '%s' first" % want, got or "a pass"))
         sys.exit(1)
 
+
+def task(key, ending):
+    """The file KEY.ENDING of a task, or None where the task has none."""
+    path = os.path.join(tasks, "%s.%s" % (key, ending))
+    return open(path, encoding="utf-8", errors="replace").read() if os.path.exists(path) else None
+
+
+shards = []
+for k in range(int(n_shards)):
+    rc = task("suite-%d" % k, "rc")
+    shards.append((rc and rc.strip(), task("suite-%d" % k, "out"), task("suite-%d" % k, "log")))
+suite_failures, suite_units, suite_checks = judge_suite(shards, int(suite_floor))
 kinds = read_codes(codes_path)
 cases = []
 for n, path in enumerate(open(list_path, encoding="utf-8").read().split("\n")[:-1], 1):
@@ -342,11 +422,12 @@ if not cases:
     sys.stderr.write("FAIL: no case files under corpus/golden — the differential has nothing to replay\n")
     sys.exit(1)
 failures, played_cases, refused_cases, n_pins = judge(cases, channel_text, kinds)
+failures = suite_failures + failures
 for f in failures:
     sys.stderr.write("FAIL: %s\n" % f)
 if failures:
     sys.exit(1)
-print("check-clingo: PASS (backend suite %s checks, floor %s; %d cases replay exactly through clingo — ref = clingo over the corpus; "
-      "%d golden(s) in the refusal channel, by name, %d cases refused with the pinned codes; the channel rule passes %d rows of its own)"
-      % (suite_checks, suite_floor, played_cases, n_pins, refused_cases, len(SELF_TEST)))
+print("check-clingo: PASS (backend suite %d checks, floor %s, its %d units each once in %s shards; %d cases replay exactly through clingo — ref = clingo over the corpus; "
+      "%d golden(s) in the refusal channel, by name, %d cases refused with the pinned codes; the channel rule passes %d rows of its own, the rule of the shards %d)"
+      % (suite_checks, suite_floor, suite_units, n_shards, played_cases, n_pins, refused_cases, len(SELF_TEST), len(SUITE_SELF_TEST)))
 PYEOF
