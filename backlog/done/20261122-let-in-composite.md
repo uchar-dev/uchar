@@ -196,3 +196,16 @@ De alinea's van de gates in `CLAUDE.md` veranderen niet.
 1. clingo (`card/open-values-in-clingo`) neemt over: de slug `let-in-composite`, attribuut en kenmerk van één naam als twee
    leden, de sluiting die met de barrière meegaat, en de binder die bij elke lezing op de sluiting van haar berekening
    rust en bij een afgebroken berekening niets deponeert.
+
+## Landing
+
+`make gates` op `0160b042e` (met de registerrij): alle 17 gates groen, 732 s, after-run groen. Een tweede lezer (Google Neon,
+alleen lezen) vond de vormgrens van `let-in-composite` precies passend en één randgeval: een deponering van een binder die een
+afgebroken atomaire voorwaarde las, blijft staan, ook waar de voorwaarde open is. Dat is nagedraaid en schendt de monotonie
+niet (het feit staat er ook met het gegeven); de berekening van een binder is één waarde met haar eigen grens, zoals ch. 1.5
+zegt. Open voor de eigenaar: of zo'n feit bij een open voorwaarde hoort weg te vallen.
+
+De weigering raakt ruimer dan de kaart bij de aanvang zei: een samenstelling in de romp van een `Let` kan haar binders alleen
+in het eerste lid lezen (de voorwaarde van een `IfThenElse` leest alleen binders, parameters en literals, WF-077), en een
+filter met "en" in de romp van een `Let` met de naam in een later lid wordt geweigerd. In het corpus één golden (de strikte
+kopie van `jutterswet-grens-per-jutter`), in geen document met de schakelaar.
