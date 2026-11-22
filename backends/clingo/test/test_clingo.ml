@@ -22004,9 +22004,11 @@ let () =
               check
                 (Printf.sprintf "%s: alone %s, together %s" name (shown (Ok each)) (shown together))
                 (if carried || strict then together = Ok each else together = Error "CLINGO-051");
-              ref_matches ~name ~ir
-                ~case_text:
-                  (ov_case (objects jutters) (List.map (fun (j, v) -> ov_attr_is ~label:j "grenstotaal" v) each)))
+              if List.for_all Result.is_ok alone then
+                ref_matches ~name ~ir
+                  ~case_text:
+                    (ov_case (objects jutters) (List.map (fun (j, v) -> ov_attr_is ~label:j "grenstotaal" v) each))
+              else check (name ^ ": every Jutter plays alone") false)
             [ false; true ])
         folds)
     operators
