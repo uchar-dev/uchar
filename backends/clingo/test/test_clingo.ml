@@ -21453,6 +21453,30 @@ let () =
       | false -> ov_frame ~name ~ir:(ir [ "getuigen" ]) ~case_text:(case "50" false) ())
     [ ("all", all, ov_boven_grens, true); ("at least one", any, under, true); ("none", none, under, true) ]
 
+(* a binder under an operator in the filter is the one of its own form subject:
+   "… waarvan het gewicht plus de grens groter is dan 12", over a Jutter of
+   drempel 10 with vondsten of 20 and 5 and one of drempel 1 with vondsten of 5
+   and 10; so is an anchored read, "… het gewicht min de drempel van de Jutter" *)
+let () =
+  let drempel = ov_attr ~ty:"Jutter" "drempel" in
+  let case rows =
+    ov_case
+      [ ov_jutter_of ~attrs:[ ("drempel", "10") ] "J1" [ "V1"; "V2" ]; ov_jutter_of ~attrs:[ ("drempel", "1") ] "J2" [ "V3"; "V4" ];
+        ov_jutter_of "J3" [ "V5" ]; ov_obj "V1" [ ("gewicht", "20") ]; ov_obj "V2" [ ("gewicht", "5") ];
+        ov_obj "V3" [ ("gewicht", "5") ]; ov_obj "V4" [ ("gewicht", "10") ]; ov_obj "V5" [ ("gewicht", "30") ] ]
+      (List.map (fun (label, want) -> ov_attr_is ~label "grenstotaal" want) rows)
+  in
+  List.iter
+    (fun (name, filter, j1, j2) ->
+      ov_frame ~name:("WV-1.5-set-fold (the form subject under an operator in a filter, " ^ name ^ ")")
+        ~ir:(ov_grens_doc (ov_let "grens" drempel (ov_grens_body filter)))
+        ~case_text:(case [ ("J1", j1); ("J2", j2); ("J3", "open") ]) ())
+    (let against op term v = ov_cmp "greater" (ov_bin op (ov_attr "gewicht") term) (ov_lit v) in
+     [ ("a binder added", against "plus" (ov_binder "grens") "12", "35", "1");
+       ("a binder taken off", against "minus" (ov_binder "grens") "0", "30", "16");
+       ("a binder multiplied", against "times" (ov_binder "grens") "60", "30", "1");
+       ("an anchored read", against "plus" (ov_anchored drempel) "12", "35", "1") ])
+
 (* WV-1.5-closure-before-a-barrier: the closure applied in the computation of a
    binder that comes out leeg counts for the value of its Let: "het
    keurgewicht van een Jutter is, daarbij geldt: t is de som van het gewicht

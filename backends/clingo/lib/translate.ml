@@ -3261,15 +3261,21 @@ let coalesce0 ctx ~subject ~subject_ot (atoms, term, scale) =
   else begin
     ctx.fresh <- ctx.fresh + 1;
     let pred = Printf.sprintf "co%d" ctx.fresh in
-    let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
-    let body = (base :: atoms) in
-    emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" pred subject term) ~body:body;
-    emit_rule ctx ~head:(Printf.sprintf "%s_def(%s)" pred subject) ~body:body;
-    emit_rule ctx ~head:(Printf.sprintf "%s(%s,0)" pred subject)
-      ~body:[ base; Printf.sprintf "not %s_def(%s)" pred subject ];
+    (* an operand over a member that reads the form subject (a binder of an
+       enclosing Let, an anchored read): a judgement in a filter reads the
+       helper per pair of the two ([judged_at]), and the key carries both *)
+    let key, opening =
+      if ctx.strict then helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot) atoms
+      else (subject, [ Printf.sprintf "isa(%s,%s)" subject (str subject_ot) ])
+    in
+    let body = opening @ atoms in
+    emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" pred key term) ~body:body;
+    emit_rule ctx ~head:(Printf.sprintf "%s_def(%s)" pred key) ~body:body;
+    emit_rule ctx ~head:(Printf.sprintf "%s(%s,0)" pred key)
+      ~body:(opening @ [ Printf.sprintf "not %s_def(%s)" pred key ]);
     let v = fresh ctx "C" in
-    register_bound ctx ~pred ~subject ~body ~term ~v;
-    ([ Printf.sprintf "%s(%s,%s)" pred subject v ], v, scale)
+    register_bound ctx ~pred ~subject:key ~body ~term ~v;
+    ([ Printf.sprintf "%s(%s,%s)" pred key v ], v, scale)
   end
 
 (* --- the calendar chains (RUNTIME-SEMANTICS ch. 3.8) --------------------
