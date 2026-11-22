@@ -96,9 +96,11 @@ class InferFromEmptyRefusalWitnessTest {
     @Test void the_sentence_in_both_languages() {
         var reason = DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", "defaults-group");
         assertEquals("the document carries inferFromEmpty false, a reading in which nothing follows from an empty "
-                + "value, and this backend does not carry that reading (form: defaults-group)", reason.text(Locale.ENGLISH));
+                + "value, and this backend does not carry that reading for all that is asked (form: defaults-group)",
+                reason.text(Locale.ENGLISH));
         assertEquals("het document draagt inferFromEmpty false, een lezing waarin uit een lege waarde niets volgt, en "
-                + "deze backend draagt die lezing niet (vorm: defaults-group)", reason.text(Locale.forLanguageTag("nl")));
+                + "deze backend draagt die lezing niet voor alles wat gevraagd is (vorm: defaults-group)",
+                reason.text(Locale.forLanguageTag("nl")));
     }
 
     /** The build with readings refuses a document with the property whose forms this backend carries, with the slug

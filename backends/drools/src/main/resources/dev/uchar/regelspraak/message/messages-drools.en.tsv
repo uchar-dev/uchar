@@ -431,7 +431,7 @@ DROOLS-366	{description}: {end} is a {objectType} and does not fill the role '{r
 DROOLS-367	{description} occurs twice
 DROOLS-368	the text part '{snippet}' writes the unit of its number, and {type} has no unit (WF-129)
 DROOLS-369	the text part '{snippet}' writes the unit {unit}, and no unit system of the document declares its factor '{factor}' of the unit system '{unitSystem}': a factor without a declaration has no symbol to write
-DROOLS-370	the document carries inferFromEmpty false, a reading in which nothing follows from an empty value, and this backend does not carry that reading (form: {form})
+DROOLS-370	the document carries inferFromEmpty false, a reading in which nothing follows from an empty value, and this backend does not carry that reading for all that is asked (form: {form})
 DROOLS-371	insert: the input states that the characteristic "{characteristic}" of {bean} does not hold, and {reason}
 DROOLS-371.not-in-input	that bean is no bean of the input
 DROOLS-371.undeclared	its type {objectType} declares no characteristic of that name that holds one truth value
