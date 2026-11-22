@@ -1,0 +1,19 @@
+reading /rules/rules/0/versions/0 "J1" 0 Aggregation 0
+reading /rules/rules/0/versions/0 "J1" HOLDS
+reading /rules/rules/1/versions/0 "J1" 0 Aggregation 0
+reading /rules/rules/1/versions/0 "J1" HOLDS
+reading /rules/rules/2/versions/0 "J1" 0 QuantifierFold true
+reading /rules/rules/2/versions/0 "J1" HOLDS
+reading /rules/rules/3/versions/0 "J1" 0 Aggregation empty
+reading /rules/rules/3/versions/0 "J1" HOLDS
+reading /rules/rules/4/versions/0 "J1" 0 Aggregation empty
+reading /rules/rules/4/versions/0 "J1" HOLDS
+reading /rules/rules/5/versions/0 "J1" 0 Aggregation 0
+reading /rules/rules/5/versions/0 "J1" HOLDS
+state attribute "J1" "drempel" open
+state attribute "J1" "leegtal" 0
+state attribute "J1" "merktal" 0
+state attribute "J1" "zwaartal" 0
+state characteristic "J1" "keurig"
+state characteristic "J1" "meester" open
+state object "J1" "Jutter"

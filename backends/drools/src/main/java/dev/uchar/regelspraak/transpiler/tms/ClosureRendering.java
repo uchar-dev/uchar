@@ -273,7 +273,7 @@ final class ClosureRendering {
         };
     }
 
-    /** The verdict of a quantifier fold whose matrix can fault or deposit ({@link Term.QuantifierRead}): the count and
+    /** The verdict of a quantifier fold read in the order of its members ({@link Term.QuantifierRead}): the count and
      *  the outcomes evaluated in that order, then the plan's function over them with the quantifier, the threshold and
      *  the probe in the node's slot, or nothing where the node has none. */
     private static ValueFunction quantifierRead(Term.QuantifierRead k) {

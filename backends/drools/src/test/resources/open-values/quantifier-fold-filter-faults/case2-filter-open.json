@@ -1,0 +1,79 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2025-03-01",
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondst": [
+            "V1",
+            "V2",
+            "V3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "20"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gemerkt"
+        ],
+        "characteristicsAbsent": [
+          "gekeurd"
+        ]
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicsAbsent": [
+          "gekeurd"
+        ]
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "12"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gekeurd"
+        ],
+        "characteristicsAbsent": [
+          "gemerkt"
+        ]
+      }
+    ],
+    "parameters": {
+      "keurgrens": {
+        "number": "1"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "characteristicOpen",
+      "label": "J1",
+      "characteristic": "keurder"
+    }
+  ]
+}

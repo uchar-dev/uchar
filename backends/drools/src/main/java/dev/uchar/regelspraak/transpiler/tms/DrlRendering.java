@@ -1273,7 +1273,7 @@ final class DrlRendering {
             return p;
         }
 
-        /** The verdict of a quantifier fold whose matrix can fault or deposit, through its function. */
+        /** The verdict of a quantifier fold read in the order of its members, through its function. */
         private String quantifierRead(Term.QuantifierRead q, Context c) {
             int place = reserveer();
             String name = name("kwantorlezing", place);
@@ -1619,22 +1619,25 @@ final class DrlRendering {
                     insert(b, "    ", x.insertion(), route(x.place() == null ? Route.JUDGED : Route.JUDGED_AT) + "(" + str(x.fold()) + ", " + x.subject() + ", "
                             + variable(x.member()) + ", " + name + "(" + c.arguments() + ")" + last(placeOf(x)) + ")");
                 }
-                case Consequence.Input.MemberTest l -> {
-                    int place = reserveer();
-                    String name = name("lidtoets", place);
-                    Context c = context(x.slots(), l.depositFlag(), route(Route.FRESH_DEPOSIT_FLAG) + "()", l.matrix());
-                    // the place first, so that a member without one breaks the contract before the matrix is evaluated
-                    String body = "    java.util.List plaats = " + foldPlace(l.place(), x.fold(), x.member(), c)
-                            + ";\n    Boolean waar = null;\n    RuntimeException fout = null;\n"
-                            + tryCatch("        waar = Boolean.valueOf(" + bool(l.matrix(), c) + ");\n",
-                                    "        fout = " + route(l.open() ? Route.ENDED : Route.CAUGHT) + "(e);\n")
-                            + "    return new " + typeName(MemberTest.class) + "(plaats, waar, fout, "
-                            + route(Route.REPORTED) + "(" + (l.depositFlag() < 0 ? "null" : DEPOSIT_FLAG) + "), "
-                            + route(Route.DEPOSIT_CODES) + "(" + (l.depositFlag() < 0 ? "null" : DEPOSIT_FLAG) + "));\n";
-                    fill(place, l.matrix().source(), "Object " + name + "(" + c.declaration() + ")", body);
-                    insert(b, "    ", x.insertion(), fresh + name + "(" + c.arguments() + "))");
-                }
+                case Consequence.Input.MemberTest l -> insert(b, "    ", x.insertion(), fresh + memberTest(x, l) + ")");
             }
+        }
+
+        /** The test {@code l} of the member of {@code x}, a function of the rule: the call of it. */
+        private String memberTest(Consequence.Contribution x, Consequence.Input.MemberTest l) {
+            int place = reserveer();
+            String name = name("lidtoets", place);
+            Context c = context(x.slots(), l.depositFlag(), route(Route.FRESH_DEPOSIT_FLAG) + "()", l.matrix());
+            // the place first, so that a member without one breaks the contract before the matrix is evaluated
+            String body = "    java.util.List plaats = " + foldPlace(l.place(), x.fold(), x.member(), c)
+                    + ";\n    Boolean waar = null;\n    RuntimeException fout = null;\n"
+                    + tryCatch("        waar = Boolean.valueOf(" + bool(l.matrix(), c) + ");\n",
+                            "        fout = " + route(l.open() ? Route.ENDED : Route.CAUGHT) + "(e);\n")
+                    + "    return new " + typeName(MemberTest.class) + "(plaats, waar, fout, "
+                    + route(Route.REPORTED) + "(" + (l.depositFlag() < 0 ? "null" : DEPOSIT_FLAG) + "), "
+                    + route(Route.DEPOSIT_CODES) + "(" + (l.depositFlag() < 0 ? "null" : DEPOSIT_FLAG) + "));\n";
+            fill(place, l.matrix().source(), "Object " + name + "(" + c.declaration() + ")", body);
+            return name + "(" + c.arguments() + ")";
         }
 
         /** What the member of {@code x} gives a fold over a set by its value, inserted where it gives something. */
@@ -1677,6 +1680,12 @@ final class DrlRendering {
         private void filteredContribution(Consequence.FilteredContribution x, StringBuilder b) {
             if (outcome == null) throw new IllegalStateException(plan.name() + " does not test the judgement of its filter");
             Consequence.Contribution c = x.contributes();
+            if (c.input() instanceof Consequence.Input.MemberTest l) {
+                insert(b, "    ", c.insertion(), "new " + typeName(Contribution.class) + "(" + str(c.fold()) + ", " + c.subject()
+                        + ", " + variable(c.member()) + ", " + route(Route.FILTERED) + "(" + outcome + ", " + variable(c.member())
+                        + ", " + memberTest(c, l) + "))");
+                return;
+            }
             String place = placeOf(c);
             if (place != null) b.append("    java.util.List p = ").append(place).append(";\n");
             b.append("    for (Object f : ").append(route(place == null ? Route.CONTRIBUTED : Route.CONTRIBUTED_AT)).append("(").append(outcome).append(", ")

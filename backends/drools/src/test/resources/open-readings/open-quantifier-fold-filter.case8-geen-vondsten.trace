@@ -1,0 +1,22 @@
+reading /rules/rules/1/versions/0 "J1" 0 QuantifierFold true
+reading /rules/rules/1/versions/0 "J1" HOLDS
+reading /rules/rules/2/versions/0 "J1" 0 QuantifierFold true
+reading /rules/rules/2/versions/0 "J1" HOLDS
+reading /rules/rules/3/versions/0 "J1" 0 QuantifierFold false
+reading /rules/rules/3/versions/0 "J1" FAILS
+reading /rules/rules/4/versions/0 "J1" 0 QuantifierFold false
+reading /rules/rules/4/versions/0 "J1" FAILS
+reading /rules/rules/5/versions/0 "J1" 0 QuantifierFold true
+reading /rules/rules/5/versions/0 "J1" HOLDS
+reading /rules/rules/6/versions/0 "J1" 0 QuantifierFold false
+reading /rules/rules/6/versions/0 "J1" FAILS
+reading /rules/rules/7/versions/0 "J1" 0 QuantifierFold true
+reading /rules/rules/7/versions/0 "J1" HOLDS
+reading /rules/rules/8/versions/0 "J1" 0 QuantifierFold true
+reading /rules/rules/8/versions/0 "J1" HOLDS
+state characteristic "J1" "gewogen"
+state characteristic "J1" "hoogstens"
+state characteristic "J1" "keurder"
+state characteristic "J1" "kostbaar"
+state characteristic "J1" "licht"
+state object "J1" "Jutter"

@@ -1,0 +1,114 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Strand",
+        "attributes": {},
+        "roles": {
+          "jutter": [
+            "J1",
+            "J2",
+            "J3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "C1",
+        "objectType": "Club",
+        "attributes": {
+          "contributie": {
+            "number": "3"
+          },
+          "ledentelling": {
+            "number": "2"
+          }
+        },
+        "roles": {
+          "lid": [
+            "J1",
+            "J2"
+          ]
+        },
+        "characteristics": [
+          "groot"
+        ]
+      },
+      {
+        "label": "C2",
+        "objectType": "Club",
+        "attributes": {
+          "contributie": {
+            "number": "10"
+          },
+          "ledentelling": {
+            "number": "2"
+          }
+        },
+        "roles": {
+          "lid": [
+            "J3"
+          ]
+        },
+        "characteristics": [
+          "erkend"
+        ],
+        "characteristicsAbsent": [
+          "groot"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "S1",
+      "characteristic": "tweemaal"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "S1",
+      "characteristic": "eenling"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "S1",
+      "characteristic": "keurder"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "S1",
+      "characteristic": "dubbel"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "S1",
+      "characteristic": "enkel"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+reading /rules/rules/0/versions/0 "J1" 0 QuantifierFold true
+reading /rules/rules/0/versions/0 "J1" HOLDS
+reading /rules/rules/1/versions/0 "J1" 0 QuantifierFold false
+reading /rules/rules/1/versions/0 "J1" FAILS
+reading /rules/rules/2/versions/0 "J1" 0 QuantifierFold true
+reading /rules/rules/2/versions/0 "J1" HOLDS
+state attribute "V1" "deelnemers" 0
+state attribute "V1" "gewicht" 9
+state channel "geteld" "J1" EF-005
+state characteristic "J1" "gelijkmatig"
+state characteristic "J1" "geteld"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state object "J1" "Jutter"
+state object "V1" "Vondst"

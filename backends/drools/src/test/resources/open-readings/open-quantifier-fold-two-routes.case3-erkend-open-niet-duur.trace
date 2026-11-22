@@ -1,0 +1,34 @@
+reading /rules/rules/0/versions/0 "S1" 0 QuantifierFold false contributors ["C1" false reached; "C2" true unreached]
+reading /rules/rules/0/versions/0 "S1" FAILS
+reading /rules/rules/1/versions/0 "S1" 0 QuantifierFold true contributors ["C1" false reached; "C2" true reached]
+reading /rules/rules/1/versions/0 "S1" HOLDS
+reading /rules/rules/2/versions/0 "S1" 0 QuantifierFold undetermined open "C1" "erkend" contributors ["C1" false reached; "C2" true reached]
+reading /rules/rules/2/versions/0 "S1" OPEN
+reading /rules/rules/3/versions/0 "S1" 0 QuantifierFold false contributors ["C2" false unreached]
+reading /rules/rules/3/versions/0 "S1" FAILS
+reading /rules/rules/4/versions/0 "S1" 0 QuantifierFold false contributors ["C2" false reached]
+reading /rules/rules/4/versions/0 "S1" FAILS
+state attribute "C1" "contributie" 3
+state attribute "C1" "ledentelling" 2
+state attribute "C2" "contributie" 10
+state attribute "C2" "ledentelling" 2
+state attribute "J1" "leeftijd" open
+state attribute "J2" "leeftijd" open
+state attribute "J3" "leeftijd" open
+state characteristic "C1" "erkend" open
+state characteristic "C1" "groot"
+state characteristic "C2" "erkend"
+state characteristic "S1" "eenling"
+state characteristic "S1" "keurder" open
+state link "lidmaatschap" "club" "C1" "lid" "J1"
+state link "lidmaatschap" "club" "C1" "lid" "J2"
+state link "lidmaatschap" "club" "C2" "lid" "J3"
+state link "strandgang" "strand" "S1" "jutter" "J1"
+state link "strandgang" "strand" "S1" "jutter" "J2"
+state link "strandgang" "strand" "S1" "jutter" "J3"
+state object "C1" "Club"
+state object "C2" "Club"
+state object "J1" "Jutter"
+state object "J2" "Jutter"
+state object "J3" "Jutter"
+state object "S1" "Strand"

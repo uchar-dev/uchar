@@ -1,0 +1,79 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondst": [
+            "V1",
+            "V2"
+          ]
+        },
+        "characteristics": [
+          "meester"
+        ]
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "20"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicsAbsent": [
+          "gemerkt"
+        ]
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "30"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicsAbsent": [
+          "gemerkt"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "zwaartal"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "merktal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "keurig"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "meestergewicht",
+      "value": {
+        "number": "50"
+      }
+    }
+  ]
+}

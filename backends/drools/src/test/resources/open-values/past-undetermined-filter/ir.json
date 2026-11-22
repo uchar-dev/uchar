@@ -1,0 +1,422 @@
+{
+  "format": "uchar-ir-v1",
+  "inferFromEmpty": false,
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gelijkmatig",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "evenwichtig",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "geteld",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "plural": "gewichten"
+          },
+          {
+            "node": "Attribute",
+            "name": "deelnemers",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gemerkt",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vinding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vinder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "gelijkmatig",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "gelijkmatig",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is gelijkmatig"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Vondst",
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "gemerkt",
+                "negated": false,
+                "source": {
+                  "snippet": "gemerkt zijn"
+                }
+              },
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "Binary",
+                  "op": "dividedBy",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn gewicht"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "deelnemers",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn deelnemers"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "zijn gewicht gedeeld door zijn deelnemers"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "2"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "2"
+                  }
+                },
+                "source": {
+                  "snippet": "zijn gewicht gedeeld door zijn deelnemers groter is dan 2"
+                }
+              },
+              "source": {
+                "snippet": "alle vondsten van de Jutter die gemerkt zijn verdeeld zijn"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "evenwichtig",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "evenwichtig",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is evenwichtig"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 2,
+              "elementType": "Vondst",
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "gemerkt",
+                "negated": false,
+                "source": {
+                  "snippet": "gemerkt zijn"
+                }
+              },
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "Binary",
+                  "op": "dividedBy",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn gewicht"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "deelnemers",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn deelnemers"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "zijn gewicht gedeeld door zijn deelnemers"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "2"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "2"
+                  }
+                },
+                "source": {
+                  "snippet": "zijn gewicht gedeeld door zijn deelnemers groter is dan 2"
+                }
+              },
+              "source": {
+                "snippet": "ten minste 2 van de vondsten van de Jutter die gemerkt zijn verdeeld zijn"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "geteld",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "geteld",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is geteld"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "Binary",
+                  "op": "dividedBy",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn gewicht"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "deelnemers",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn deelnemers"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "zijn gewicht gedeeld door zijn deelnemers"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "2"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "2"
+                  }
+                },
+                "source": {
+                  "snippet": "zijn gewicht gedeeld door zijn deelnemers groter is dan 2"
+                }
+              },
+              "test": {
+                "node": "CharacteristicCheck",
+                "characteristic": "gemerkt",
+                "negated": false,
+                "source": {
+                  "snippet": "alle vondsten van de Jutter die verdeeld zijn gemerkt zijn"
+                }
+              },
+              "source": {
+                "snippet": "alle vondsten van de Jutter die verdeeld zijn gemerkt zijn"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

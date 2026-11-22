@@ -20,6 +20,11 @@ import java.util.concurrent.Callable;
  * another form is read provisionally (ch. 1.5, "The judgement of a condition"): its truth counts, what it deposits is
  * dropped, and an evaluation fault leaves it undetermined for both instead of ending the evaluation. Any other
  * exception ends the evaluation, as it does without open values.
+ *
+ * <p>A quantifier fold is the composite of the members whose filter is not false for another form (ch. 1.5, "A quantifier
+ * fold"; a member whose filter is false leaves the table as it is, ch. 3.9a), each its matrix, beside the judgement of its
+ * filter where that does not stand ({@link #read(Undetermined, Callable)}). Every filter is read before every matrix, so
+ * where one does not stand, {@code past} its open read, every matrix is read provisionally.
  */
 public final class Composite {
     private final Condition.Quantifier kw;
@@ -30,14 +35,21 @@ public final class Composite {
     private int ownHits, ownFails, otherHits, otherFails;
     /** The open read of the first member undetermined for the form itself, and of the first undetermined for another. */
     private OpenMember first, firstOther;
+    /** The open read that makes every member a provisional one, or null. */
+    private final OpenMember past;
     /** What the probe held before the member under way, and whether that member is read provisionally. */
     private Object mark;
     private boolean provisional;
 
     Composite(Condition.Quantifier kw, int threshold, int n, Object depositFlag) {
+        this(kw, threshold, n, null, depositFlag);
+    }
+
+    Composite(Condition.Quantifier kw, int threshold, int n, OpenMember past, Object depositFlag) {
         this.kw = kw;
         this.threshold = threshold;
         this.n = n;
+        this.past = past;
         this.depositFlag = depositFlag;
     }
 
@@ -45,52 +57,66 @@ public final class Composite {
      *  here; where not, the next member is under way. */
     public boolean stands() {
         if (truth(kw, threshold, n, otherHits, otherFails) != null) return true;
-        provisional = firstOther != null;
+        provisional = past != null || firstOther != null;
         mark = DepositFlag.mark(depositFlag);
         return false;
     }
 
-    /** The open read that makes the member under way a provisional one, that of the first member read before it that is
-     *  undetermined for another form; null where the member is not read provisionally. */
+    /** The open read that makes the member under way a provisional one, that of the first filter that does not stand, and
+     *  else of the first member read before it that is undetermined for another form; null where the member is not read
+     *  provisionally. */
     OpenMember past() {
-        return provisional ? firstOther : null;
+        return !provisional ? null : past != null ? past : firstOther;
     }
 
     /** The member under way is established, true or false, for the form itself and for another. */
     public void read(boolean holds) {
         if (provisional) DepositFlag.restore(depositFlag, mark);
-        count(holds, holds);
+        count(holds, holds, null, null);
     }
 
     /** The member under way, whose judgement can be undetermined: its truth value, or what its evaluation threw, an open
      *  read, an undetermined judgement, or, in a member read provisionally, an evaluation fault, each counted; anything
      *  else passes on. */
     public void read(Callable<Boolean> member) {
-        boolean holds;
-        try {
-            holds = ComputeHelpers.call(member);
-        } catch (RuntimeException e) {
-            threw(e);
-            return;
-        }
-        read(holds);
+        read(null, member);
     }
 
-    private void threw(RuntimeException e) {
-        if (e instanceof OpenRead o) {
-            DepositFlag.restore(depositFlag, mark);
-            undetermined(o.member());
-        } else if (e instanceof Undetermined u) {
+    /** As {@link #read(Callable)}, of a member of a quantifier fold whose matrix {@code member} evaluates, and whose filter
+     *  has the judgement {@code filter}, which does not stand for another form, or null where it is true: for {@code all}
+     *  the member is true where its filter is false or its matrix true, for the other quantifiers where both are true, by
+     *  Kleene's table, and it is undetermined by its filter where that is, else by its matrix. */
+    void read(Undetermined filter, Callable<Boolean> member) {
+        Boolean own = null, other = null;
+        OpenMember open = null;
+        try {
+            own = other = ComputeHelpers.call(member);
             if (provisional) DepositFlag.restore(depositFlag, mark);
-            if (u.own() == null) undetermined(u.read());
-            else {
-                count(u.own(), null);
-                if (firstOther == null) firstOther = u.read();
+        } catch (RuntimeException e) {
+            if (e instanceof Undetermined u) {
+                own = u.own();
+                open = u.read();
+                if (provisional) DepositFlag.restore(depositFlag, mark);
+            } else {
+                if (e instanceof OpenRead o) open = o.member();
+                else if (provisional && ComputeHelpers.isEvaluationFault(e)) open = past();
+                else throw e;
+                DepositFlag.restore(depositFlag, mark);
             }
-        } else if (provisional && ComputeHelpers.isEvaluationFault(e)) {
-            DepositFlag.restore(depositFlag, mark);
-            undetermined(firstOther);
-        } else throw e;
+        }
+        if (filter == null) {
+            count(own, other, open, open);
+            return;
+        }
+        boolean excluded = kw == Condition.Quantifier.ALLE || kw == Condition.Quantifier.DE;
+        count(filter.own() == null ? whatever(own, excluded) : filter.own() ? own : (Boolean) excluded, whatever(other, excluded),
+                filter.own() == null ? filter.read() : open, filter.read());
+    }
+
+    /** What a member is whatever its filter: {@code excluded}, the truth of a member whose filter is false, where
+     *  {@code matrix}, the truth of its matrix or null, is that too; else null, undetermined. */
+    private static Boolean whatever(Boolean matrix, boolean excluded) {
+        return matrix != null && matrix == excluded ? matrix : null;
     }
 
     /** The composite's truth where it is established for both forms; {@link Undetermined} where it is not. */
@@ -101,21 +127,17 @@ public final class Composite {
         return own;
     }
 
-    private void undetermined(OpenMember read) {
-        count(null, null);
-        if (first == null) first = read;
-        if (firstOther == null) firstOther = read;
-    }
-
-    private void count(Boolean own, Boolean other) {
-        if (own != null) {
-            if (own) ownHits++;
-            else ownFails++;
-        }
-        if (other != null) {
-            if (other) otherHits++;
-            else otherFails++;
-        }
+    /** Counts a member that is {@code own} for the form itself and {@code other} for another, null where undetermined, and
+     *  then by the open read {@code ownRead} and {@code otherRead}. */
+    private void count(Boolean own, Boolean other, OpenMember ownRead, OpenMember otherRead) {
+        if (own == null) {
+            if (first == null) first = ownRead;
+        } else if (own) ownHits++;
+        else ownFails++;
+        if (other == null) {
+            if (firstOther == null) firstOther = otherRead;
+        } else if (other) otherHits++;
+        else otherFails++;
     }
 
     /** Kleene's strong table of the quantifier {@code kw}, with the threshold {@code k} of a counting quantifier, over

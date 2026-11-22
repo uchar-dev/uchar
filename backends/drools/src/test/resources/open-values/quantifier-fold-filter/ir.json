@@ -1,0 +1,856 @@
+{
+  "format": "uchar-ir-v1",
+  "inferFromEmpty": false,
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "keurder",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "licht",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "eenmaal",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "tweemaal",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "hoogstens",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "eenling",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "gewogen",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "kostbaar",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "plural": "gewichten"
+          },
+          {
+            "node": "Attribute",
+            "name": "taxatie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gemerkt",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "duur",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vinding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vinder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "duur",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "duur",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is duur"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "taxatie",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn taxatie"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "1000"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "1000"
+                }
+              },
+              "source": {
+                "snippet": "zijn taxatie groter is dan 1000"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "keurder",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "keurder",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is keurder"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Vondst",
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "gemerkt",
+                "negated": false,
+                "source": {
+                  "snippet": "gemerkt zijn"
+                }
+              },
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de Jutter die gemerkt zijn"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "10"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "10"
+                  }
+                },
+                "source": {
+                  "snippet": "het gewicht van alle vondsten van de Jutter die gemerkt zijn groter is dan 10"
+                }
+              },
+              "source": {
+                "snippet": "het gewicht van alle vondsten van de Jutter die gemerkt zijn groter is dan 10"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "licht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "licht",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is licht"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "none",
+              "elementType": "Vondst",
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "gemerkt",
+                "negated": false,
+                "source": {
+                  "snippet": "gemerkt zijn"
+                }
+              },
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van geen van de vondsten van de Jutter die gemerkt zijn"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "10"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "10"
+                  }
+                },
+                "source": {
+                  "snippet": "het gewicht van geen van de vondsten van de Jutter die gemerkt zijn groter is dan 10"
+                }
+              },
+              "source": {
+                "snippet": "het gewicht van geen van de vondsten van de Jutter die gemerkt zijn groter is dan 10"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "eenmaal",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "eenmaal",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is eenmaal"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "elementType": "Vondst",
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "gemerkt",
+                "negated": false,
+                "source": {
+                  "snippet": "gemerkt zijn"
+                }
+              },
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van ten minste 1 van de vondsten van de Jutter die gemerkt zijn"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "10"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "10"
+                  }
+                },
+                "source": {
+                  "snippet": "het gewicht van ten minste 1 van de vondsten van de Jutter die gemerkt zijn groter is dan 10"
+                }
+              },
+              "source": {
+                "snippet": "het gewicht van ten minste 1 van de vondsten van de Jutter die gemerkt zijn groter is dan 10"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "tweemaal",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "tweemaal",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is tweemaal"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 2,
+              "elementType": "Vondst",
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "gemerkt",
+                "negated": false,
+                "source": {
+                  "snippet": "gemerkt zijn"
+                }
+              },
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van ten minste 2 van de vondsten van de Jutter die gemerkt zijn"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "10"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "10"
+                  }
+                },
+                "source": {
+                  "snippet": "het gewicht van ten minste 2 van de vondsten van de Jutter die gemerkt zijn groter is dan 10"
+                }
+              },
+              "source": {
+                "snippet": "het gewicht van ten minste 2 van de vondsten van de Jutter die gemerkt zijn groter is dan 10"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "hoogstens",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "hoogstens",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is hoogstens"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "atMost",
+              "threshold": 1,
+              "elementType": "Vondst",
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "gemerkt",
+                "negated": false,
+                "source": {
+                  "snippet": "gemerkt zijn"
+                }
+              },
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van ten hoogste 1 van de vondsten van de Jutter die gemerkt zijn"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "10"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "10"
+                  }
+                },
+                "source": {
+                  "snippet": "het gewicht van ten hoogste 1 van de vondsten van de Jutter die gemerkt zijn groter is dan 10"
+                }
+              },
+              "source": {
+                "snippet": "het gewicht van ten hoogste 1 van de vondsten van de Jutter die gemerkt zijn groter is dan 10"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "eenling",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "eenling",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is eenling"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "exactly",
+              "threshold": 1,
+              "elementType": "Vondst",
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "gemerkt",
+                "negated": false,
+                "source": {
+                  "snippet": "gemerkt zijn"
+                }
+              },
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van precies 1 van de vondsten van de Jutter die gemerkt zijn"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "10"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "10"
+                  }
+                },
+                "source": {
+                  "snippet": "het gewicht van precies 1 van de vondsten van de Jutter die gemerkt zijn groter is dan 10"
+                }
+              },
+              "source": {
+                "snippet": "het gewicht van precies 1 van de vondsten van de Jutter die gemerkt zijn groter is dan 10"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "gewogen",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "gewogen",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is gewogen"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Vondst",
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "gemerkt",
+                "negated": false,
+                "source": {
+                  "snippet": "gemerkt zijn"
+                }
+              },
+              "test": {
+                "node": "Predicate",
+                "kind": "filled",
+                "operand": {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de Jutter die gemerkt zijn"
+                  }
+                },
+                "negated": false,
+                "digits": 0,
+                "source": {
+                  "snippet": "het gewicht van alle vondsten van de Jutter die gemerkt zijn gevuld is"
+                }
+              },
+              "source": {
+                "snippet": "het gewicht van alle vondsten van de Jutter die gemerkt zijn gevuld is"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "kostbaar",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "kostbaar",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is kostbaar"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Vondst",
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "duur",
+                "negated": false,
+                "source": {
+                  "snippet": "duur zijn"
+                }
+              },
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de Jutter die duur zijn"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "10"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "10"
+                  }
+                },
+                "source": {
+                  "snippet": "het gewicht van alle vondsten van de Jutter die duur zijn groter is dan 10"
+                }
+              },
+              "source": {
+                "snippet": "het gewicht van alle vondsten van de Jutter die duur zijn groter is dan 10"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

@@ -266,6 +266,14 @@ final class PatternDslRendering {
             case Consequence.FilteredContribution x -> {
                 Consequence.Contribution c = x.contributes();
                 Predicate<Object[]> filter = ClosureRendering.test(x.filter());
+                if (c.input() instanceof Consequence.Input.MemberTest t) {
+                    Predicate<Object[]> matrix = ClosureRendering.test(t.matrix());
+                    yield consequenceItem(c.subject(), c.slots(), c.size(), (drools, carrier, w) -> {
+                        Object judgement = ComputeHelpers.judge(() -> filter.test(w), false);
+                        insert(drools, c.insertion(), new Contribution(c.fold(), carrier, w[c.member()],
+                                ComputeHelpers.filtered(judgement, w[c.member()], memberTest(c, t, matrix, w))));
+                    });
+                }
                 yield consequenceItem(c.subject(), c.slots(), c.size(), (drools, carrier, w) -> {
                     for (Object f : ComputeHelpers.contributedAt(ComputeHelpers.judge(() -> filter.test(w), false), c.fold(),
                             carrier, w[c.member()], memberOf(c, carrier, w), placeOf(c, w))) insert(drools, c.insertion(), f);
@@ -354,23 +362,27 @@ final class PatternDslRendering {
             }
             case Consequence.Input.MemberTest t -> {
                 Predicate<Object[]> matrix = ClosureRendering.test(t.matrix());
-                yield consequenceItem(g.subject(), g.slots(), g.size(), (drools, carrier, w) -> {
-                    List<Integer> place = foldPlace(t.place(), g.fold(), w[g.member()], w);
-                    Object s = t.depositFlag() < 0 ? null : ComputeHelpers.depositFlag();
-                    if (s != null) w[t.depositFlag()] = s;
-                    Boolean holds = null;
-                    RuntimeException fault = null;
-                    try {
-                        holds = matrix.test(w);
-                    } catch (RuntimeException e) {
-                        fault = t.open() ? ComputeHelpers.ended(e) : ComputeHelpers.caught(e);
-                    }
-                    insert(drools, g.insertion(), new Contribution(g.fold(), carrier, w[g.member()],
-                            new MemberTest(place, holds, fault, ComputeHelpers.reported(s),
-                                    ComputeHelpers.depositCodes(s))));
-                });
+                yield consequenceItem(g.subject(), g.slots(), g.size(), (drools, carrier, w) -> insert(drools,
+                        g.insertion(), new Contribution(g.fold(), carrier, w[g.member()], memberTest(g, t, matrix, w))));
             }
         };
+    }
+
+    /** The test {@code t} of the member of {@code g} by {@code matrix}, the matrix of its quantifier fold, over the bound
+     *  values {@code w}: its place first, then the matrix with the probe in its slot where the plan says so. */
+    private static MemberTest memberTest(Consequence.Contribution g, Consequence.Input.MemberTest t,
+                                         Predicate<Object[]> matrix, Object[] w) {
+        List<Integer> place = foldPlace(t.place(), g.fold(), w[g.member()], w);
+        Object s = t.depositFlag() < 0 ? null : ComputeHelpers.depositFlag();
+        if (s != null) w[t.depositFlag()] = s;
+        Boolean holds = null;
+        RuntimeException fault = null;
+        try {
+            holds = matrix.test(w);
+        } catch (RuntimeException e) {
+            fault = t.open() ? ComputeHelpers.ended(e) : ComputeHelpers.caught(e);
+        }
+        return new MemberTest(place, holds, fault, ComputeHelpers.reported(s), ComputeHelpers.depositCodes(s));
     }
 
     /** What the member of {@code g} gives a fold over a set, inserted where it gives something. */

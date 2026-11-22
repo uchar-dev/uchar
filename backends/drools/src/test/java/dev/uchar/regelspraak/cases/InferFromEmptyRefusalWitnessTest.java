@@ -157,27 +157,18 @@ class InferFromEmptyRefusalWitnessTest {
         refused("set-fold", "aangemeld gewicht", fallback);
     }
 
-    /** {@code quantifier-fold}: one whose filter reads a member that can be open. */
-    @Test void a_quantifier_fold_under_a_filter_that_can_be_open_is_refused() throws Exception {
-        refused("quantifier-fold", "keurig bij sterkte", golden("jutterswet-vuurtoren"));
-    }
-
     /** A filter and a matrix that can fault or deposit over a member that can be open are carried: a division, a power, a
-     *  parameter, in a fold over a set, a union and a quantifier fold, and a fold in the filter of another; with readings as
-     *  well, whose order is that of the members. */
+     *  parameter, in a fold over a set, a union and a quantifier fold, a quantifier fold under such a filter, and a fold in the
+     *  filter of another; with readings as well, whose order is that of the members; and an anchored read of such an input. */
     @Test void a_fold_whose_order_shows_is_carried() throws Exception {
         for (String name : List.of("fold-filter-divides-by-zero", "jutterswet-filterwacht", "jutterswet-macht-van-nul",
                 "jutterswet-kwantorvouw-en-unie", "jutterswet-vouwfilter-buiten-de-beurt", "jutterswet-keurgemiddelde",
-                "jutterswet-loodsgrens", "fold-filter-inner-fold-via-element-role"))
+                "jutterswet-loodsgrens", "fold-filter-inner-fold-via-element-role", "jutterswet-vuurtoren",
+                "jutterswet-registervoorrang"))
             for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
                 DroolsBackend.build(golden(name), branch, false);
                 DroolsBackend.build(golden(name), branch, true);
             }
-    }
-
-    /** {@code anchored-read}: an anchored read of an input member that can be open, in the filter of a fold. */
-    @Test void an_anchored_read_of_an_open_input_is_refused() throws Exception {
-        refused("anchored-read", "hoogste latere tarief", golden("jutterswet-registervoorrang"));
     }
 
     /** {@code ir} is refused on both branches with {@code slug}, in the sentence of its rule {@code rule}, and is built once

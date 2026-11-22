@@ -1,0 +1,27 @@
+reading /rules/rules/0/versions/0 "J1" 0 Aggregation undetermined open "V2" "gewicht"
+reading /rules/rules/0/versions/0 "J1" OPEN
+reading /rules/rules/1/versions/0 "J1" 0 Aggregation undetermined open "V2" "gewicht"
+reading /rules/rules/1/versions/0 "J1" OPEN
+reading /rules/rules/2/versions/0 "J1" 0 QuantifierFold undetermined open "V2" "gewicht" contributors ["V1" true reached; "V2" undetermined reached]
+reading /rules/rules/2/versions/0 "J1" OPEN
+reading /rules/rules/3/versions/0 "J1" 0 Aggregation empty
+reading /rules/rules/3/versions/0 "J1" HOLDS
+reading /rules/rules/4/versions/0 "J1" 0 Aggregation undetermined open "V2" "gewicht"
+reading /rules/rules/4/versions/0 "J1" OPEN
+reading /rules/rules/5/versions/0 "J1" 0 Aggregation 0
+reading /rules/rules/5/versions/0 "J1" HOLDS
+state attribute "J1" "drempel" 10
+state attribute "J1" "drukgewicht" open
+state attribute "J1" "leegtal" 0
+state attribute "J1" "merktal" open
+state attribute "J1" "zwaartal" open
+state attribute "V1" "gewicht" 20
+state attribute "V2" "gewicht" open
+state characteristic "J1" "keurig" open
+state characteristic "V1" "gemerkt"
+state characteristic "V2" "gemerkt"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state object "J1" "Jutter"
+state object "V1" "Vondst"
+state object "V2" "Vondst"

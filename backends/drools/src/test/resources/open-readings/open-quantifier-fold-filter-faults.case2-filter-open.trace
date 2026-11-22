@@ -1,0 +1,16 @@
+reading /rules/rules/0/versions/0 "J1" 0 QuantifierFold undetermined open "V2" "gemerkt" contributors ["V1" true reached; "V2" false reached]
+reading /rules/rules/0/versions/0 "J1" OPEN
+state attribute "V1" "gewicht" 20
+state attribute "V2" "gewicht" 3
+state attribute "V3" "gewicht" 12
+state characteristic "J1" "keurder" open
+state characteristic "V1" "gemerkt"
+state characteristic "V2" "gemerkt" open
+state characteristic "V3" "gekeurd"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state link "vinding" "vinder" "J1" "vondst" "V3"
+state object "J1" "Jutter"
+state object "V1" "Vondst"
+state object "V2" "Vondst"
+state object "V3" "Vondst"

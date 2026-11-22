@@ -207,13 +207,13 @@ public sealed interface Term {
     }
 
     /**
-     * The verdict of a quantifier fold whose matrix can fault or deposit, in the rule that reads the fold
-     * (RUNTIME-SEMANTICS ch. 3.9a, 5.10, 5.11), through {@code function} ({@link StaticFunction#QUANTIFIER_READ}): the outcome of
+     * The verdict of a quantifier fold whose matrix can fault or deposit, or whose filter can be undetermined (ch. 1.5), in
+     * the rule that reads the fold (RUNTIME-SEMANTICS ch. 3.9a, 5.10, 5.11), through {@code function} ({@link StaticFunction#QUANTIFIER_READ}): the outcome of
      * the matrix per contributor, the list {@code contributions} over the count {@code count}, read in the contributors'
      * order under {@code quantifier} with the threshold {@code threshold} of a counting quantifier, the stop triggers of
      * ch. 5.10 tested before each contributor. A contributor that is reached deposits where its matrix deposited, heard
      * by the probe in slot {@code depositFlag} of the value array (-1: the matrix does not deposit), and faults where its
-     * matrix faulted; one that is not reached does neither. A fold whose matrix can do neither is an {@link Call} of
+     * matrix faulted; one that is not reached does neither. Any other quantifier fold is an {@link Call} of
      * {@link StaticFunction#QUANTIFIER_VERDICT} over the count and the sum of the verdicts, where the order does not show.
      */
     record QuantifierRead(StaticFunction function, Term count, Term contributions, Condition.Quantifier quantifier, int threshold, int depositFlag,

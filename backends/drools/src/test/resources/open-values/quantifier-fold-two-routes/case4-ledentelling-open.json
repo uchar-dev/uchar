@@ -1,0 +1,122 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Strand",
+        "attributes": {},
+        "roles": {
+          "jutter": [
+            "J1",
+            "J2",
+            "J3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "C1",
+        "objectType": "Club",
+        "attributes": {
+          "contributie": {
+            "number": "10"
+          }
+        },
+        "roles": {
+          "lid": [
+            "J1",
+            "J2"
+          ]
+        },
+        "characteristics": [
+          "erkend",
+          "groot"
+        ]
+      },
+      {
+        "label": "C2",
+        "objectType": "Club",
+        "attributes": {
+          "contributie": {
+            "number": "10"
+          },
+          "ledentelling": {
+            "number": "0"
+          }
+        },
+        "roles": {
+          "lid": [
+            "J3"
+          ]
+        },
+        "characteristics": [
+          "erkend",
+          "groot"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "S1",
+      "characteristic": "tweemaal"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "S1",
+      "characteristic": "eenling"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "S1",
+      "characteristic": "keurder"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "S1",
+      "characteristic": "dubbel"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "S1",
+      "characteristic": "enkel"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "dubbel",
+      "label": "S1",
+      "code": "EF-005"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "enkel",
+      "label": "S1",
+      "code": "EF-005"
+    }
+  ]
+}

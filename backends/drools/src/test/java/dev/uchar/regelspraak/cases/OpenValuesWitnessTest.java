@@ -24,6 +24,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * wire by the frontend ({@code ir.json}), but the four of a stack with an initialisation, which the dialect writes only
  * beside an opgave and which stand as the frontend's document with that default added, {@code quantifier-fold}, with
  * a consistency rule over a quantifier fold added, and {@code fold-subtype}, {@code past-undetermined-fold},
+ * {@code past-undetermined-filter}, {@code quantifier-fold-filter-faults}, {@code quantifier-fold-two-routes},
+ * {@code anchored-read},
  * {@code fold-over-a-union} and {@code fold-in-a-date-stack}, with a part of one of their forms put in another, where the
  * dialect does not write it; their cases carry the expectations of the spec's example, and the reference
  * interpreter plays every one of them ({@code runner}, {@code runner --closed-inputs} for a case named
@@ -35,7 +37,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * <p><b>Red</b> on the code before the reading was carried: every document with the property was refused with
  * DROOLS-370 and {@code form=document} before it was built, and the two documents without it played as now. Every
  * document {@code stack-*} was refused with {@code form=defaults-group} before the stack was carried, and every
- * document with a fold with {@code form=set-fold} or {@code form=quantifier-fold} before the folds were.
+ * document with a fold with {@code form=set-fold} or {@code form=quantifier-fold} before the folds were, and
+ * {@code anchored-read} with {@code form=anchored-read} before an anchored read of open input was.
  */
 class OpenValuesWitnessTest {
 
@@ -306,6 +309,42 @@ class OpenValuesWitnessTest {
         assertEquals(9, play("quantifier-fold", "case"));
     }
 
+    /** WV-1.5-quantifier-fold-*, the keurder, under a filter that can be open, also of a derived member: each quantifier by
+     *  Kleene's table over filter and matrix, over no member, over a matrix that closes, with the member whose filter is open
+     *  before and after the others. */
+    @Test void wv_1_5_quantifier_fold_filter() throws Exception {
+        assertEquals(11, play("quantifier-fold-filter", "case"));
+    }
+
+    /** WV-1.5-past-undetermined-filter: every filter is read before a matrix, so a filter that is open, also that of a later
+     *  member, leaves a deposit of every matrix out; a filter that deposits does so beside another that is open. */
+    @Test void wv_1_5_past_undetermined_filter() throws Exception {
+        assertEquals(8, play("past-undetermined-filter", "case"));
+    }
+
+    /** WV-1.5-past-undetermined-filter over a fault: a matrix that faults is undetermined past a filter that is open and faults
+     *  where every filter stands, and one that the verdict does not wait for, over too few members, is not read; a filter that
+     *  faults does so past one that is open, the first of the members in order. */
+    @Test void wv_1_5_past_undetermined_filter_over_a_fault() throws Exception {
+        assertEquals(4, play("quantifier-fold-matrix-faults", "case"));
+        assertEquals(1, play("quantifier-fold-matrix-faults", "red"));
+        assertEquals(3, play("quantifier-fold-filter-faults", "case"));
+        assertEquals(4, play("quantifier-fold-filter-faults", "red"));
+    }
+
+    /** A member that two routes reach is one member of a quantifier fold under a filter that can be open, in a build without
+     *  readings and, where it has a place per route, with them ({@code OpenReadingsWitnessTest}); a filter that deposits. */
+    @Test void a_quantifier_fold_over_two_routes() throws Exception {
+        assertEquals(5, play("quantifier-fold-two-routes", "case"));
+    }
+
+    /** An anchored read of input of the form's subject that can be open (IR-SPEC ch. 4.1a): in a filter, in a member of it that
+     *  no member of the range reaches, in a test on leeg, in the matrix and in the filter of a fold in a filter; an anchored
+     *  characteristic check. */
+    @Test void an_anchored_read_of_an_open_input() throws Exception {
+        assertEquals(8, play("anchored-read", "case"));
+    }
+
     /** WV-1.5-open-passes-on, over folds: over a derived member whose writer stands after the fold, over a fold, over a
      *  path of two steps, in a quantifier fold, over an instance-set union, and in the justification and the base of a
      *  stack. */
@@ -361,7 +400,7 @@ class OpenValuesWitnessTest {
 
     /** A value a consumer puts on a bean between two fires fills an input that is not complete, and one it takes away
      *  leaves it open again: a read takes the bean beside the {@code OpenInput} that {@code insert} stated once, also of
-     *  a bean a path reaches. */
+     *  a bean a path reaches and of the form's subject in an anchored read. */
     @Test void a_value_on_the_bean_between_two_fires() throws Exception {
         for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
             between("open-input", "case1-vindloon-open.json", branch, "V1", "uitbetaling", "V1", "setVindloon", 4,
@@ -373,6 +412,8 @@ class OpenValuesWitnessTest {
             between("fold-in-a-filter", "case2-score-open.json", branch, "J1", "gewicht ksom", "K2", "setScore", 7, "open", "3");
             between("fold-in-a-filter", "case2-score-open.json", branch, "J1", "gewicht kgevuld", "K2", "setScore", 7, "open", "3");
             between("set-fold", "case2-gewicht-open.json", branch, "J1", "zwaargewicht", "V2", "setGewicht", 5, "open", "20");
+            between("anchored-read", "case2-drempel-open.json", branch, "J1", "merktal", "J1", "setDrempel", 10, "open", "1");
+            between("anchored-read", "case2-drempel-open.json", branch, "J1", "drukgewicht", "J1", "setDrempel", 10, "open", "50");
             between("closure-in-a-value", "case2-alle-open.json", branch, "J1", "gewogen totaal", "V2", "setGewicht", 5, "open",
                     "5");
         }
@@ -456,12 +497,14 @@ class OpenValuesWitnessTest {
             s.filter(Files::isDirectory).forEach(p -> names.add(p.getFileName().toString()));
         }
         names.sort(null);
-        assertEquals(List.of("boundary-after", "boundary-before", "closure-in-a-value", "complete", "complete-derived",
+        assertEquals(List.of("anchored-read", "boundary-after", "boundary-before", "closure-in-a-value", "complete", "complete-derived",
                 "composite-tables", "consistency", "derived", "filled-test", "fold-chain", "fold-in-a-binder",
                 "fold-in-a-date-stack", "fold-in-a-filter", "fold-over-a-parameter", "fold-over-a-union", "fold-over-the-date", "fold-subtype",
                 "fold-value-after-filters", "initialisation", "initialisation-condition", "input-per-object", "instance-ordered", "link",
                 "no-open-without-the-property", "open-input", "outside-the-window", "past-undetermined-deposit",
-                "past-undetermined-fault", "past-undetermined-fold", "quantifier-fold", "reach", "reach-without-the-property", "read-for-another", "rule",
+                "past-undetermined-fault", "past-undetermined-filter", "past-undetermined-fold", "quantifier-fold",
+                "quantifier-fold-filter", "quantifier-fold-filter-faults", "quantifier-fold-matrix-faults",
+                "quantifier-fold-two-routes", "reach", "reach-without-the-property", "read-for-another", "rule",
                 "set-fold", "stack-characteristic", "stack-deposit", "stack-exception-groups",
                 "stack-exception-groups-initialisation", "stack-exception-groups-nested",
                 "stack-first-decides", "stack-gives-way", "stack-initialisation", "stack-initialisation-value",

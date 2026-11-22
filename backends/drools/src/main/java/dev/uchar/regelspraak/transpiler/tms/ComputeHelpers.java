@@ -538,6 +538,12 @@ public final class ComputeHelpers {
                 : new Contribution(fold, subject, member, verdict((Boolean) judgement));
     }
 
+    /** The test {@code test} of the member {@code member} by the matrix of a quantifier fold whose filter can be undetermined,
+     *  and whose judgement for it is {@code judgement} ({@link #judge}): with that judgement ({@link MemberTest#filtered}). */
+    public static Object filtered(Object judgement, Object member, Object test) {
+        return ((MemberTest) test).filtered(judgement, member);
+    }
+
     /** The value of a fold from what the accumulate bound (RUNTIME-SEMANTICS ch. 1.2 "Aggregations"): the folded
      *  {@code value}, or {@code fallback} where the count {@code countOf} of the contributions is 0. */
     public static Object foldValue(Object countOf, Object value, Object fallback) {
@@ -982,14 +988,12 @@ public final class ComputeHelpers {
      */
     public static boolean quantifierRead(Object countOf, Object contributions, Condition.Quantifier kw, int threshold,
                                         Object depositFlag) {
-        List<?> list = ((Number) countOf).longValue() == 0 ? List.of() : (List<?>) contributions;
-        List<MemberTest> members = new ArrayList<>(list.size());
-        for (Object b : list) members.add((MemberTest) b);
-        members.sort(null);
-        Composite reading = new Composite(kw, threshold, members.size(), depositFlag);
+        List<MemberTest> members = MemberTest.inOrder(((Number) countOf).longValue() == 0 ? List.of()
+                : (List<?>) contributions);
+        Composite reading = new Composite(kw, threshold, members.size(), MemberTest.past(members), depositFlag);
         for (MemberTest member : members) {
             if (reading.stands()) break;
-            reading.read(() -> member.replayed(depositFlag));
+            reading.read(member.filter(), () -> member.replayed(depositFlag));
         }
         return reading.verdict();
     }

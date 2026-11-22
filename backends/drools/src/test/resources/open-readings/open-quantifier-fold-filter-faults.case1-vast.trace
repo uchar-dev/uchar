@@ -1,0 +1,11 @@
+reading /rules/rules/0/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached]
+reading /rules/rules/0/versions/0 "J1" HOLDS
+state attribute "V1" "gewicht" 20
+state attribute "V2" "gewicht" 3
+state characteristic "J1" "keurder"
+state characteristic "V1" "gemerkt"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state object "J1" "Jutter"
+state object "V1" "Vondst"
+state object "V2" "Vondst"

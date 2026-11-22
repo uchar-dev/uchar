@@ -1,0 +1,19 @@
+reading /rules/rules/0/versions/0 "J1" 0 QuantifierFold false contributors ["V1" false reached; "V2" true unreached]
+reading /rules/rules/0/versions/0 "J1" FAILS
+reading /rules/rules/1/versions/0 "J1" 0 QuantifierFold false contributors ["V1" false reached; "V2" true unreached]
+reading /rules/rules/1/versions/0 "J1" FAILS
+reading /rules/rules/2/versions/0 "J1" 0 QuantifierFold undetermined open "V2" "gemerkt" contributors ["V2" undetermined reached]
+reading /rules/rules/2/versions/0 "J1" OPEN
+state attribute "V1" "deelnemers" 0
+state attribute "V1" "gewicht" 9
+state attribute "V2" "deelnemers" 2
+state attribute "V2" "gewicht" 10
+state channel "geteld" "J1" EF-005
+state characteristic "J1" "geteld" open
+state characteristic "V1" "gemerkt"
+state characteristic "V2" "gemerkt" open
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state object "J1" "Jutter"
+state object "V1" "Vondst"
+state object "V2" "Vondst"

@@ -1,0 +1,69 @@
+{
+ "format": "uchar-case-v0",
+ "asOfDate": null,
+ "input": {
+  "instances": [
+   {
+    "label": "J1",
+    "objectType": "Jutter",
+    "attributes": {},
+    "roles": {
+     "vondst": [
+      "V1",
+      "V2",
+      "V3"
+     ]
+    },
+    "characteristics": []
+   },
+   {
+    "label": "V1",
+    "objectType": "Vondst",
+    "attributes": {
+     "gewicht": {
+      "number": "20"
+     },
+     "deelnemers": {
+      "number": "2"
+     }
+    },
+    "roles": {},
+    "characteristics": []
+   },
+   {
+    "label": "V2",
+    "objectType": "Vondst",
+    "attributes": {
+     "deelnemers": {
+      "number": "2"
+     }
+    },
+    "roles": {},
+    "characteristics": []
+   },
+   {
+    "label": "V3",
+    "objectType": "Vondst",
+    "attributes": {
+     "gewicht": {
+      "number": "9"
+     },
+     "deelnemers": {
+      "number": "0"
+     }
+    },
+    "roles": {},
+    "characteristics": [],
+    "characteristicsAbsent": [
+     "gemerkt"
+    ]
+   }
+  ],
+  "parameters": {}
+ },
+ "expected": [
+  {
+   "kind": "consistent"
+  }
+ ]
+}

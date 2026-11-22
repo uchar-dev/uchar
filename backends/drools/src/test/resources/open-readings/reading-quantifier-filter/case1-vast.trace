@@ -1,0 +1,81 @@
+reading /rules/rules/0/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached]
+reading /rules/rules/0/versions/0 "J1" HOLDS
+reading /rules/rules/1/versions/0 "J1" 0 QuantifierFold true
+reading /rules/rules/1/versions/0 "J1" HOLDS
+reading /rules/rules/10/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached]
+reading /rules/rules/10/versions/0 "J1" HOLDS
+reading /rules/rules/11/versions/0 "J1" 0 QuantifierFold false
+reading /rules/rules/11/versions/0 "J1" FAILS
+reading /rules/rules/12/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V2" false unreached]
+reading /rules/rules/12/versions/0 "J1" HOLDS
+reading /rules/rules/13/versions/0 "J1" 0 QuantifierFold false
+reading /rules/rules/13/versions/0 "J1" FAILS
+reading /rules/rules/14/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V2" false unreached]
+reading /rules/rules/14/versions/0 "J1" HOLDS
+reading /rules/rules/15/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true unreached]
+reading /rules/rules/15/versions/0 "J1" HOLDS
+reading /rules/rules/16/versions/0 "J1" 0 QuantifierFold true
+reading /rules/rules/16/versions/0 "J1" HOLDS
+reading /rules/rules/17/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V2" false reached]
+reading /rules/rules/17/versions/0 "J1" HOLDS
+reading /rules/rules/18/versions/0 "J1" 0 QuantifierFold true
+reading /rules/rules/18/versions/0 "J1" HOLDS
+reading /rules/rules/19/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V2" false reached]
+reading /rules/rules/19/versions/0 "J1" HOLDS
+reading /rules/rules/2/versions/0 "J1" 0 QuantifierFold false contributors ["V1" true reached; "V2" false reached]
+reading /rules/rules/2/versions/0 "J1" FAILS
+reading /rules/rules/20/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached]
+reading /rules/rules/20/versions/0 "J1" HOLDS
+reading /rules/rules/21/versions/0 "J1" 0 QuantifierFold false
+reading /rules/rules/21/versions/0 "J1" FAILS
+reading /rules/rules/22/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V2" false reached]
+reading /rules/rules/22/versions/0 "J1" HOLDS
+reading /rules/rules/23/versions/0 "J1" 0 QuantifierFold false
+reading /rules/rules/23/versions/0 "J1" FAILS
+reading /rules/rules/24/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V2" false reached]
+reading /rules/rules/24/versions/0 "J1" HOLDS
+reading /rules/rules/3/versions/0 "J1" 0 QuantifierFold true
+reading /rules/rules/3/versions/0 "J1" HOLDS
+reading /rules/rules/4/versions/0 "J1" 0 QuantifierFold false contributors ["V1" true reached; "V2" false reached]
+reading /rules/rules/4/versions/0 "J1" FAILS
+reading /rules/rules/5/versions/0 "J1" 0 QuantifierFold false contributors ["V1" true reached]
+reading /rules/rules/5/versions/0 "J1" FAILS
+reading /rules/rules/6/versions/0 "J1" 0 QuantifierFold true
+reading /rules/rules/6/versions/0 "J1" HOLDS
+reading /rules/rules/7/versions/0 "J1" 0 QuantifierFold false contributors ["V1" true reached; "V2" false unreached]
+reading /rules/rules/7/versions/0 "J1" FAILS
+reading /rules/rules/8/versions/0 "J1" 0 QuantifierFold true
+reading /rules/rules/8/versions/0 "J1" HOLDS
+reading /rules/rules/9/versions/0 "J1" 0 QuantifierFold false contributors ["V1" true reached; "V2" false unreached]
+reading /rules/rules/9/versions/0 "J1" FAILS
+state attribute "V1" "deelnemers" 2
+state attribute "V1" "gewicht" 20
+state attribute "V1" "schade" 1
+state attribute "V2" "deelnemers" 0
+state attribute "V2" "gewicht" 9
+state attribute "V2" "schade" 1
+state channel "al2" "J1" EF-005
+state channel "hoogste2" "J1" EF-005
+state channel "precies2" "J1" EF-005
+state characteristic "J1" "al0"
+state characteristic "J1" "al1"
+state characteristic "J1" "al3"
+state characteristic "J1" "geen1"
+state characteristic "J1" "geen3"
+state characteristic "J1" "hoogste0"
+state characteristic "J1" "hoogste1"
+state characteristic "J1" "hoogste2"
+state characteristic "J1" "hoogste3"
+state characteristic "J1" "hoogste4"
+state characteristic "J1" "minste0"
+state characteristic "J1" "minste2"
+state characteristic "J1" "minste4"
+state characteristic "J1" "precies0"
+state characteristic "J1" "precies2"
+state characteristic "J1" "precies4"
+state characteristic "V1" "gemerkt"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state object "J1" "Jutter"
+state object "V1" "Vondst"
+state object "V2" "Vondst"

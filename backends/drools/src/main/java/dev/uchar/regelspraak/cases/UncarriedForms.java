@@ -28,14 +28,9 @@ import java.util.Set;
  * yet, under slugs of its own. A document whose forms are all outside the list is built and played
  * with the reading of ch. 1.5.
  *
- * <p>The last three slugs depend on what the parts of a form can read, which the analysis knows ({@code TmsTranspiler}); it
- * refuses the form where it lowers it, with the same code, so a document that holds a form before them in the list is
- * refused by that:
- * <ul>
- *   <li>{@code quantifier-fold}: a quantifier fold whose filter reads a member that can be open;</li>
- *   <li>{@code set-fold}: a sum whose fallback reads a member that can be open;</li>
- *   <li>{@code anchored-read}: an anchored read of an input member that can be open (IR-SPEC ch. 4.1a).</li>
- * </ul>
+ * <p>The last slug, {@code set-fold}, a sum whose fallback reads a member that can be open, depends on what that fallback can
+ * read, which the analysis knows ({@code TmsTranspiler}); it refuses the form where it lowers it, with the same code, so a
+ * document that holds a form before it in the list is refused by that.
  *
  * <p>The loader refuses some forms of the table in every document, before this list is read: a function definition,
  * a variable reference, a temporal read, a match, a record, the list family and an invoke ({@code IrLoader}). Their
@@ -54,7 +49,7 @@ final class UncarriedForms {
             // what ch. 1.5 defines and this backend does not carry yet
             "defaults-group", "if-then-else", "object-creation", "fact-creation",
             // what the analysis refuses where it lowers the form
-            "quantifier-fold", "set-fold", "anchored-read");
+            "set-fold");
 
     /** The number of slugs of the table of ch. 1.5 at the head of {@link #SLUGS}. */
     static final int TABLE = 23;

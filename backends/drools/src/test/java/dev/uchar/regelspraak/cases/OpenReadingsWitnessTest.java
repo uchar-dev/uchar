@@ -63,10 +63,30 @@ class OpenReadingsWitnessTest {
         pinned("open-past-undetermined", VALUES.resolve("past-undetermined-fault"));
     }
 
-    /** WV-5.12-open-quantifier-fold, without a filter, and in the order of its members where the matrix can deposit. */
+    /** WV-5.12-open-quantifier-fold: the witness of the reference interpreter, without a filter and under one that is open; in
+     *  the order of its members where the matrix can deposit; and under each quantifier a filter that is open or a closure over
+     *  a matrix that closes, deposits or faults, the contributors each with the truth of the matrix. */
     @Test void wv_5_12_open_quantifier_fold() throws Exception {
         pinned("open-quantifier-fold", VALUES.resolve("quantifier-fold"));
         pinned("open-quantifier-fold-in-order", VALUES.resolve("past-undetermined-fold"));
+        Path witness = Path.of("..", "..", "ref", "test", "fixtures", "strict-empty", "quantifier-fold");
+        pinned("open-quantifier-fold-witness", witness);
+        for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
+            List<String> lines = lines(witness, witness.resolve("case7-filter-onbepaald.json"), branch);
+            assertTrue(lines.stream().anyMatch(l -> l.endsWith("QuantifierFold undetermined open \"V2\" \"gemerkt\" contributors"
+                    + " [\"V1\" true reached; \"V2\" false reached]")), () -> branch + ": " + lines);
+        }
+        pinned("open-quantifier-fold-filter", VALUES.resolve("quantifier-fold-filter"));
+        pinned("open-quantifier-fold-past-a-filter", VALUES.resolve("past-undetermined-filter"));
+        pinned("open-quantifier-fold-matrix-faults", VALUES.resolve("quantifier-fold-matrix-faults"));
+        pinned("open-quantifier-fold-filter-faults", VALUES.resolve("quantifier-fold-filter-faults"));
+        pinned("open-quantifier-fold-two-routes", VALUES.resolve("quantifier-fold-two-routes"));
+        documents("reading-quantifier-filter");
+    }
+
+    /** WV-5.12-open-fold-over-a-set over an anchored read: the open read names the form's subject. */
+    @Test void an_anchored_open_read() throws Exception {
+        pinned("open-anchored-read", VALUES.resolve("anchored-read"));
     }
 
     /** WV-5.12-open-fold-over-a-set: the first member in the order of the fold, every filter before every value, selection by

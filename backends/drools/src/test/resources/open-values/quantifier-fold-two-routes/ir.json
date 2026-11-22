@@ -1,0 +1,659 @@
+{
+  "format": "uchar-ir-v1",
+  "inferFromEmpty": false,
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Strand",
+        "animate": false,
+        "plural": "Stranden",
+        "attributes": [],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "tweemaal",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "eenling",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "keurder",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "dubbel",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "enkel",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "leeftijd",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Club",
+        "animate": false,
+        "plural": "Clubs",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "contributie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "ledentelling",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "erkend",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "groot",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "strandgang",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "strand",
+            "objectType": "Strand",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "jutter",
+            "objectType": "Jutter",
+            "plural": "jutters",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "lidmaatschap",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "club",
+            "objectType": "Club",
+            "plural": "clubs",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "lid",
+            "objectType": "Jutter",
+            "plural": "leden",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "tweemaal",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "tweemaal",
+              "subjectType": "Strand",
+              "source": {
+                "snippet": "Een Strand is tweemaal"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 2,
+              "elementType": "Club",
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "erkend",
+                "negated": false,
+                "source": {
+                  "snippet": "erkend"
+                }
+              },
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "contributie",
+                  "subjectType": "Club",
+                  "source": {
+                    "snippet": "zijn contributie"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "5"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "5"
+                  }
+                },
+                "source": {
+                  "snippet": "zijn contributie groter is dan 5"
+                }
+              },
+              "source": {
+                "snippet": "alle clubs van alle jutters van het Strand erkend zijn"
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "strandgang",
+                  "role": "jutter"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "lidmaatschap",
+                  "role": "club"
+                }
+              ]
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "eenling",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "eenling",
+              "subjectType": "Strand",
+              "source": {
+                "snippet": "Een Strand is eenling"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "exactly",
+              "threshold": 1,
+              "elementType": "Club",
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "erkend",
+                "negated": false,
+                "source": {
+                  "snippet": "erkend"
+                }
+              },
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "contributie",
+                  "subjectType": "Club",
+                  "source": {
+                    "snippet": "zijn contributie"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "5"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "5"
+                  }
+                },
+                "source": {
+                  "snippet": "zijn contributie groter is dan 5"
+                }
+              },
+              "source": {
+                "snippet": "alle clubs van alle jutters van het Strand erkend zijn"
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "strandgang",
+                  "role": "jutter"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "lidmaatschap",
+                  "role": "club"
+                }
+              ]
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "keurder",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "keurder",
+              "subjectType": "Strand",
+              "source": {
+                "snippet": "Een Strand is keurder"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Club",
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "erkend",
+                "negated": false,
+                "source": {
+                  "snippet": "erkend"
+                }
+              },
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "contributie",
+                  "subjectType": "Club",
+                  "source": {
+                    "snippet": "zijn contributie"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "5"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "5"
+                  }
+                },
+                "source": {
+                  "snippet": "zijn contributie groter is dan 5"
+                }
+              },
+              "source": {
+                "snippet": "alle clubs van alle jutters van het Strand erkend zijn"
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "strandgang",
+                  "role": "jutter"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "lidmaatschap",
+                  "role": "club"
+                }
+              ]
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "dubbel",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "dubbel",
+              "subjectType": "Strand",
+              "source": {
+                "snippet": "Een Strand is dubbel"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 2,
+              "elementType": "Club",
+              "filter": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "Binary",
+                  "op": "dividedBy",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "contributie",
+                    "subjectType": "Club",
+                    "source": {
+                      "snippet": "zijn contributie"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "ledentelling",
+                    "subjectType": "Club",
+                    "source": {
+                      "snippet": "zijn ledentelling"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "zijn contributie gedeeld door zijn ledentelling"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "2"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "2"
+                  }
+                },
+                "source": {
+                  "snippet": "zijn contributie gedeeld door zijn ledentelling groter is dan 2"
+                }
+              },
+              "test": {
+                "node": "CharacteristicCheck",
+                "characteristic": "groot",
+                "negated": false,
+                "source": {
+                  "snippet": "groot"
+                }
+              },
+              "source": {
+                "snippet": "alle clubs van alle jutters van het Strand erkend zijn"
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "strandgang",
+                  "role": "jutter"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "lidmaatschap",
+                  "role": "club"
+                }
+              ]
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "enkel",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "enkel",
+              "subjectType": "Strand",
+              "source": {
+                "snippet": "Een Strand is enkel"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "exactly",
+              "threshold": 1,
+              "elementType": "Club",
+              "filter": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "Binary",
+                  "op": "dividedBy",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "contributie",
+                    "subjectType": "Club",
+                    "source": {
+                      "snippet": "zijn contributie"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "ledentelling",
+                    "subjectType": "Club",
+                    "source": {
+                      "snippet": "zijn ledentelling"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "zijn contributie gedeeld door zijn ledentelling"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "2"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "2"
+                  }
+                },
+                "source": {
+                  "snippet": "zijn contributie gedeeld door zijn ledentelling groter is dan 2"
+                }
+              },
+              "test": {
+                "node": "CharacteristicCheck",
+                "characteristic": "groot",
+                "negated": false,
+                "source": {
+                  "snippet": "groot"
+                }
+              },
+              "source": {
+                "snippet": "alle clubs van alle jutters van het Strand erkend zijn"
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "strandgang",
+                  "role": "jutter"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "lidmaatschap",
+                  "role": "club"
+                }
+              ]
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

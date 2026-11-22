@@ -1010,9 +1010,9 @@ final class SessionReaders {
      * not reached or faulted names none.
      *
      * <p>A contributor of a fold is read off its {@link Contribution} facts on the object: of a quantifier fold whose
-     * matrix can fault or deposit, in their order with the stop rule of RUNTIME-SEMANTICS ch. 5.10 replayed over their
-     * verdicts; of a quantifier fold whose matrix can do neither, with its verdict and without an order, the members on
-     * which it does not stand by their {@link FoldOpen} facts; of a value
+     * matrix can fault or deposit, or whose filter can be undetermined, in their order with the stop rule of
+     * RUNTIME-SEMANTICS ch. 5.10 replayed over their verdicts; of any other quantifier fold, with its verdict and without an
+     * order, the members on which it does not stand by their {@link FoldOpen} facts; of a value
      * fold, with what it contributes. It refuses the sessions {@link #readOf} refuses, with the same sentences. An
      * evaluation fault that stands means the session has no answer ({@link Fixpoint#faults}); this gives what the
      * readings say all the same, and a consumer reads the faults first. The list is in no particular order.
@@ -1251,27 +1251,27 @@ final class SessionReaders {
                 out.add(new ConditionReading.Contributor(b.element(), RecordingRendering.given(b.value()), null, true, false));
             return out;
         }
-        if (!s.fold().ordered()) {
+        if (!s.fold().tested()) {
             for (Contribution b : contributions)
                 out.add(new ConditionReading.Contributor(b.element(), ((BigDecimal) b.value()).signum() > 0, null, null, false));
             for (FoldOpen o : FoldOpen.members(open))
                 out.add(new ConditionReading.Contributor(o.element(), o.own(), null, null, o.own() == null));
             return out;
         }
-        // the members read in their order as ComputeHelpers.quantifierRead reads them; every one keeps the judgement or the
-        // fault of its matrix, the position says whether the read reached it, and a fault of one read provisionally leaves
-        // it undetermined (ch. 1.5)
-        List<Contribution> ordered = new ArrayList<>(contributions);
-        ordered.sort(Comparator.comparing(b -> (MemberTest) b.value()));
+        // the members read in their order as ComputeHelpers.quantifierRead reads them, each once; every one keeps the judgement
+        // or the fault of its matrix, the position says whether the read reached it, and a fault of one read provisionally
+        // leaves it undetermined (ch. 1.5)
+        Map<Object, Object> elements = new IdentityHashMap<>();
+        for (Contribution b : contributions) elements.put(b.value(), b.element());
+        List<MemberTest> ordered = MemberTest.inOrder(contributions.stream().map(Contribution::value).toList());
         Condition.QuantifierFold q = s.quantifier();
-        Composite reading = new Composite(q.quantifier(), q.threshold(), ordered.size(), null);
+        Composite reading = new Composite(q.quantifier(), q.threshold(), ordered.size(), MemberTest.past(ordered), null);
         boolean stopped = false;
-        for (Contribution b : ordered) {
-            MemberTest m = (MemberTest) b.value();
+        for (MemberTest m : ordered) {
             stopped = stopped || reading.stands();
             boolean reached = !stopped, provisional = reached && reading.past() != null;
             if (reached) try {
-                reading.read(() -> m.replayed(null));
+                reading.read(m.filter(), () -> m.replayed(null));
             } catch (RuntimeException e) {
                 if (!ComputeHelpers.isEvaluationFault(e)) throw e;
                 stopped = true;
@@ -1279,7 +1279,7 @@ final class SessionReaders {
             RuntimeException ended = m.fault();
             RuntimeException fault = ComputeHelpers.isEvaluationFault(ended) && !provisional ? ended : null;
             Boolean verdict = ended instanceof Undetermined u ? u.own() : m.holds();
-            out.add(new ConditionReading.Contributor(b.element(), verdict, fault, reached, verdict == null && fault == null));
+            out.add(new ConditionReading.Contributor(elements.get(m), verdict, fault, reached, verdict == null && fault == null));
         }
         return out;
     }

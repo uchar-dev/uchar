@@ -1,0 +1,42 @@
+reading /rules/rules/0/versions/0 "J1" 0 QuantifierFold false contributors ["V1" false reached; "V2" false unreached; "V3" undetermined unreached]
+reading /rules/rules/0/versions/0 "J1" FAILS
+reading /rules/rules/1/versions/0 "J1" 0 QuantifierFold undetermined open "V3" "gewicht" contributors ["V1" false reached; "V2" false reached; "V3" undetermined reached]
+reading /rules/rules/1/versions/0 "J1" OPEN
+reading /rules/rules/2/versions/0 "J1" 0 QuantifierFold undetermined open "V3" "gewicht" contributors ["V1" false reached; "V2" false reached; "V3" undetermined reached]
+reading /rules/rules/2/versions/0 "J1" OPEN
+reading /rules/rules/3/versions/0 "J1" 0 QuantifierFold false contributors ["V1" false reached; "V2" false reached; "V3" undetermined unreached]
+reading /rules/rules/3/versions/0 "J1" FAILS
+reading /rules/rules/4/versions/0 "J1" 0 QuantifierFold true contributors ["V1" false reached; "V2" false reached; "V3" undetermined unreached]
+reading /rules/rules/4/versions/0 "J1" HOLDS
+reading /rules/rules/5/versions/0 "J1" 0 QuantifierFold undetermined open "V3" "gewicht" contributors ["V1" false reached; "V2" false reached; "V3" undetermined reached]
+reading /rules/rules/5/versions/0 "J1" OPEN
+reading /rules/rules/6/versions/0 "J1" 0 QuantifierFold false contributors ["V1" false reached; "V2" false unreached; "V3" undetermined unreached]
+reading /rules/rules/6/versions/0 "J1" FAILS
+reading /rules/rules/7/versions/0 "J1" 0 Compound true
+reading /rules/rules/7/versions/0 "J1" 1 CharacteristicCheck true
+reading /rules/rules/7/versions/0 "J1" 2 CharacteristicCheck unreached
+reading /rules/rules/7/versions/0 "J1" 3 CharacteristicCheck unreached
+reading /rules/rules/7/versions/0 "J1" 4 CharacteristicCheck unreached
+reading /rules/rules/7/versions/0 "J1" 5 CharacteristicCheck unreached
+reading /rules/rules/7/versions/0 "J1" 6 CharacteristicCheck unreached
+reading /rules/rules/7/versions/0 "J1" 7 CharacteristicCheck unreached
+reading /rules/rules/7/versions/0 "J1" 8 Literal 1
+reading /rules/rules/7/versions/0 "J1" HOLDS
+state attribute "J1" "keurtoeslag" 1
+state attribute "V1" "gewicht" 5
+state attribute "V2" "gewicht" 6
+state attribute "V3" "gewicht" open
+state characteristic "J1" "beginner" open
+state characteristic "J1" "eenling" open
+state characteristic "J1" "matig"
+state characteristic "J1" "vinder" open
+state characteristic "V1" "gemerkt"
+state characteristic "V2" "gemerkt"
+state characteristic "V3" "gemerkt"
+state link "aanmelding" "aanmeldende jutter" "J1" "vondst" "V1"
+state link "aanmelding" "aanmeldende jutter" "J1" "vondst" "V2"
+state link "aanmelding" "aanmeldende jutter" "J1" "vondst" "V3"
+state object "J1" "Jutter"
+state object "V1" "Vondst"
+state object "V2" "Vondst"
+state object "V3" "Vondst"

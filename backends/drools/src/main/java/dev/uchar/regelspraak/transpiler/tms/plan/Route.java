@@ -81,6 +81,9 @@ public enum Route {
     JUDGED(ComputeHelpers.class, "judged"),
     /** {@link #JUDGED} with the member's place. */
     JUDGED_AT(ComputeHelpers.class, "judgedAt"),
+    /** The test of a member by the matrix of a quantifier fold, with the judgement of the fold's filter for it
+     *  ({@link Consequence.FilteredContribution}). */
+    FILTERED(ComputeHelpers.class, "filtered"),
     /** The place of a member in a fold's order from the places its rule binds ({@link Consequence.FoldPlace}), which a
      *  filter fault, a member fault and a quantifier fold's test of a member carry; where the input states no place,
      *  the broken contract, named after what the rule needs the place for. */

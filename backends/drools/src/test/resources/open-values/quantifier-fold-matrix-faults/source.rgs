@@ -1,0 +1,34 @@
+Afleiden uit leeg: nee
+
+Parameter de keurgrens : Numeriek (geheel getal)
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is grensvast kenmerk (bijvoeglijk);
+    is tweemaal kenmerk (bijvoeglijk);
+    is hoogstens kenmerk (bijvoeglijk);
+    is eenling kenmerk (bijvoeglijk);
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht (mv: gewichten) Numeriek (geheel getal);
+    is gemerkt kenmerk (bijvoeglijk);
+
+Feittype vinding
+    de vinder Jutter
+    de vondst (mv: vondsten) Vondst
+Eén vinder heeft meerdere vondsten
+
+Regel grensvast
+    geldig altijd
+        Een Jutter is grensvast indien het gewicht van alle vondsten van de Jutter die gemerkt zijn groter is dan de keurgrens.
+
+Regel tweemaal
+    geldig altijd
+        Een Jutter is tweemaal indien het gewicht van ten minste 2 van de vondsten van de Jutter die gemerkt zijn groter is dan de keurgrens.
+
+Regel hoogstens
+    geldig altijd
+        Een Jutter is hoogstens indien het gewicht van ten hoogste 1 van de vondsten van de Jutter die gemerkt zijn groter is dan de keurgrens.
+
+Regel eenling
+    geldig altijd
+        Een Jutter is eenling indien het gewicht van precies 2 van de vondsten van de Jutter die gemerkt zijn groter is dan de keurgrens.

@@ -371,19 +371,19 @@ public sealed interface Consequence {
     }
 
     /**
-     * The contribution {@code contributes} of a member to a fold over a set whose filter, the condition {@code filter}, can
-     * be undetermined (RUNTIME-SEMANTICS ch. 1.5, "A fold over a set"): the test of the rule asked whether the filter is
+     * The contribution {@code contributes} of a member to a fold whose filter, the condition {@code filter}, can
+     * be undetermined (RUNTIME-SEMANTICS ch. 1.5): the test of the rule asked whether the filter is
      * not false for another form ({@link TestItem.Role#ACTS}), and the consequence evaluates it again over the bound values
-     * of {@code contributes} and inserts what the member gives its fold by that judgement: the contribution where the
-     * filter is true for the form itself, and a {@code FoldOpen} where it does not stand for another, made by the route
-     * {@link Route#CONTRIBUTED}.
+     * of {@code contributes} and inserts what the member gives its fold by that judgement: to a fold over a set the
+     * contribution where the filter is true for the form itself, and a {@code FoldOpen} where it does not stand for another,
+     * made by the route {@link Route#CONTRIBUTED}; to a quantifier fold its test ({@link Input.MemberTest}) with the
+     * judgement, made by the route {@link Route#FILTERED}.
      */
     record FilteredContribution(Term filter, Contribution contributes) implements Consequence {
         public FilteredContribution {
-            if (!(contributes.input() instanceof Input.Count || contributes.input() instanceof Input.MemberValue
-                    || contributes.input() instanceof Input.IncompleteInput))
-                throw new IllegalArgumentException("a filter that can be undetermined is that of a fold over a set, not of "
-                        + contributes.input());
+            if (contributes.input() instanceof Input.Verdict || contributes.input() instanceof Input.Judged)
+                throw new IllegalArgumentException("a member of a quantifier fold whose filter can be undetermined has a test,"
+                        + " not " + contributes.input());
         }
     }
 
@@ -439,7 +439,8 @@ public sealed interface Consequence {
         record Judged(Term matrix) implements Input {}
 
         /** The test of the member by the matrix of a quantifier fold, the condition {@code matrix}, which can fault or
-         *  deposit, as a {@code MemberTest}: the member's {@code place} in the order of the members, then the verdict or
+         *  deposit, or of a fold whose filter can be undetermined ({@link FilteredContribution}), as a {@code MemberTest}:
+         *  the member's {@code place} in the order of the members, then the verdict or
          *  the evaluation fault of the matrix, or where {@code open}, so that it can be undetermined (RUNTIME-SEMANTICS
          *  ch. 1.5), how it ended instead; and whether the probe the consequence puts in slot {@code depositFlag} (-1:
          *  none, the matrix deposits nothing) heard a place that deposits. The place comes first, so a member without a

@@ -1,0 +1,31 @@
+reading /rules/rules/0/versions/0 "J1" 0 Aggregation 2 contributors ["V1" empty reached; "V2" empty reached]
+reading /rules/rules/0/versions/0 "J1" HOLDS
+reading /rules/rules/1/versions/0 "J1" 0 Aggregation 1 contributors ["V1" empty reached]
+reading /rules/rules/1/versions/0 "J1" HOLDS
+reading /rules/rules/2/versions/0 "J1" 0 QuantifierFold false contributors ["V1" true reached; "V3" false reached]
+reading /rules/rules/2/versions/0 "J1" FAILS
+reading /rules/rules/3/versions/0 "J1" 0 Aggregation 55 contributors ["V1" 20 reached; "V2" 30 reached; "V3" 5 reached]
+reading /rules/rules/3/versions/0 "J1" HOLDS
+reading /rules/rules/4/versions/0 "J1" 0 Aggregation 55 contributors ["V1" 20 reached; "V2" 30 reached; "V3" 5 reached]
+reading /rules/rules/4/versions/0 "J1" HOLDS
+reading /rules/rules/5/versions/0 "J1" 0 Aggregation 0
+reading /rules/rules/5/versions/0 "J1" HOLDS
+state attribute "J1" "drempel" 10
+state attribute "J1" "drukgewicht" 55
+state attribute "J1" "leegtal" 0
+state attribute "J1" "meestergewicht" 55
+state attribute "J1" "merktal" 1
+state attribute "J1" "zwaartal" 2
+state attribute "V1" "gewicht" 20
+state attribute "V2" "gewicht" 30
+state attribute "V3" "gewicht" 5
+state characteristic "J1" "meester"
+state characteristic "V1" "gemerkt"
+state characteristic "V3" "gemerkt"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state link "vinding" "vinder" "J1" "vondst" "V3"
+state object "J1" "Jutter"
+state object "V1" "Vondst"
+state object "V2" "Vondst"
+state object "V3" "Vondst"

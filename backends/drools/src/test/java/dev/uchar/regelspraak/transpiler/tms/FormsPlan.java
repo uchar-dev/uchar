@@ -518,6 +518,7 @@ final class FormsPlan {
             "Object matrix_openOordeel(", "FoldOpen( fold == \"proefvouw: open som\"", "ComputeHelpers.atom(() -> ",
             "ComputeHelpers.countOf(ComputeHelpers.standingCount($aantal, $openleden))",
             "ComputeHelpers.quantifierVerdictOverOpen($aantal, $som, $openleden, ", "fout = ComputeHelpers.ended(e);",
+            "$vouwonderwerp, $onderwerp, ComputeHelpers.filtered(oordeel_lidtoetsOnderEenOpenFilter(", "$onderwerp, lidtoets_lidtoetsOnderEenOpenFilter(",
             "return ComputeHelpers.brokenOff(() -> ", ") != null;");
 
     /**
@@ -650,6 +651,10 @@ final class FormsPlan {
                 new Consequence.Contribution(v, "proefvouw: open lidtoets", 1, new Consequence.Input.MemberTest(filter, -1,
                         new Consequence.FoldPlace(0, List.of(), Consequence.PlaceReason.QUANTIFIER), true), null, List.of(0, 1, 2), 3,
                         Consequence.Insertion.LOGICAL)));
+        rules.add(new RulePlan("lidtoets onder een open filter", "proef", null, table, List.of(foldSubject, member(post, v, height),
+                filtered), new Consequence.FilteredContribution(filter, new Consequence.Contribution(v, "proefvouw: gefilterde lidtoets",
+                1, new Consequence.Input.MemberTest(filter, -1, new Consequence.FoldPlace(0, List.of(),
+                        Consequence.PlaceReason.QUANTIFIER), true), null, List.of(0, 1, 2), 3, Consequence.Insertion.LOGICAL))));
         rules.add(new RulePlan("open filterfout", "proef", null, table, List.of(foldSubject, member(post, v, height),
                 new TestItem("breekt", TestItem.Role.BREAKS_OFF, filter, -1, List.of(0, 1, 2), 3, true)),
                 new Consequence.FilterFault(v, "proefvouw", 1, filter, new Consequence.FoldPlace(0, List.of(),
