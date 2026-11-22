@@ -791,3 +791,17 @@ Op de inhoud van `bc1e7d71b`, één tegelijk, steeds wanneer geen andere bouwer 
   Drools-been, dat niet gedraaid is (mvn ontbreekt).
 - gate 14: check-flogic: PASS — frontend suite green (164 checks, floor 81); 3 flogic golden(s) re-emit byte-identically (floor 1)
 - gate 12, 13, 17 en `make gates`: niet gedraaid (hoofdsessie).
+
+## Landing
+
+`make gates` op `9423f6e9f`: alle 17 gates groen (1229 s, after-run groen; gate 6 duurt nu 1221 s in de set, tegen 704 s
+daarvoor, en ongeveer vier minuten alleen: de suite is één proces van 4454 checks en loopt onder de belasting van de andere
+gates langer). Deel 3 is naar wens van de eigenaar vervallen: geen breed differentieel als poot, geen sectie in
+`spec/ASP-TRANSLATION.md`. Een tweede lezer (Google Neon, alleen lezen) noemde drie fouten in deel 1 en 2: twee zijn in de IR
+uitgesloten (WF-069, WF-077) en een weigert deze backend al; de vermoedens zijn niet bevestigd.
+
+Openstaand voor de eigenaar: (a) in een **gewoon** document mengt een binder onder een operator in het filter van een vouw de
+vormonderwerpen zonder melding (open punt 1 van het Result van deel 3), en een Let in een filter met een dieper filter dat de
+binder met `=` of `≠` leest geeft een ander bedrag (open punt 2); geen golden heeft de vorm. (b) De deponering in de matrix van
+een kwantorvouw over een bereik met gemaakte leden ontbreekt, zoals in elk document. (c) Gate 6 kan de suite naast de
+corpusreplays laten lopen (nu na elkaar).
