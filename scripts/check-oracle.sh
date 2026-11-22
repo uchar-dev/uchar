@@ -61,8 +61,8 @@ BIN=_build/default/ref/bin/runner.exe
 # removal lowers the floor in the same commit.
 EXPECTED_MIN_EXAMPLES=489   # 2026-09-10: measured 489 (ref/test/test_ref.ml worked examples)
 EXPECTED_MIN_CASES=427      # 2026-09-10: measured 427 (corpus/golden/**/case*.json)
-EXPECTED_MIN_PRESERVED_GOLDENS=280  # 2026-11-21: measured 280 (check 5: goldens whose forms ref carries strictly, the folds over a set, the quantifier fold, the defaults group, the creations off a cycle and the IfThenElse among them; 281 before jutterswet-opvolgerversies, a creation of two versions in a recursive group, was refused as creation-cycle)
-EXPECTED_MIN_PRESERVED_CASES=784    # 2026-11-21: measured 784 (check 5: their case files; 787 before that golden's three)
+EXPECTED_MIN_PRESERVED_GOLDENS=279  # 2026-11-22: measured 279 (check 5: goldens whose forms ref carries strictly, the folds over a set, the quantifier fold, the defaults group, the creations off a cycle and the IfThenElse among them; 280 before jutterswet-grens-per-jutter, whose Lets are read in the filter and the matrix of a quantifier fold, was refused as let-in-composite)
+EXPECTED_MIN_PRESERVED_CASES=782    # 2026-11-22: measured 782 (check 5: their case files; 784 before that golden's two)
 
 # check 5's own red row: a golden on which the copy with the property and WITHOUT --closed-inputs gives another
 # outcome than the case expects. Measured 2026-11-21: jutterswet-leeg-deeltal case1-leeg-deeltal, an open bonus as the
@@ -70,7 +70,7 @@ EXPECTED_MIN_PRESERVED_CASES=784    # 2026-11-21: measured 784 (check 5: their c
 # strict reading from the ordinary one, and the gate fails.
 PRESERVATION_MUTANT=jutterswet-leeg-deeltal
 
-EXPECTED_MIN_MONOTONE_RUNS=2255     # 2026-11-21: measured 2255 (check 6: runs without one input compared with the case; 2254 while context-value-behind-a-failing-condition case1 faulted past its open actief)
+EXPECTED_MIN_MONOTONE_RUNS=2226     # 2026-11-22: measured 2226 (check 6: runs without one input compared with the case; 2276 before that golden's fifty)
 EXPECTED_MIN_MONOTONE_CLOSURES=401  # 2026-11-22: measured 401 (check 6: runs without one input in which a closure decided, counted apart; 443 while the opgave of the goldens with an opgave marker was open without a value and their initialisation closed over it: declared complete, it is settled leeg, so of those 42 runs the 27 without the opgave count as a member not open without its value and the 15 without another input are compared)
 
 # check 6's own red row: a run in which a closure decided, compared all the same, must lose an outcome. Measured
