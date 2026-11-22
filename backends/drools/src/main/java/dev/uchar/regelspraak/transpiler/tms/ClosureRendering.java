@@ -15,6 +15,7 @@ import java.time.temporal.Temporal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -62,18 +63,16 @@ final class ClosureRendering {
                 ValueFunction then = valueFunction(k.then()), otherwise = valueFunction(k.otherwise());
                 yield w -> condition.test(w) ? then.of(w) : otherwise.of(w);
             }
+            case Term.Deferred x -> {
+                ValueFunction value = valueFunction(x.value());
+                yield w -> (Callable<Object>) () -> value.of(w);
+            }
             case Term.ClosureOverOpen o -> {
                 ValueFunction value = valueFunction(o.value());
+                boolean empty = o.empty();
                 int depositFlag = o.depositFlag();
-                yield w -> {
-                    Object flag = depositFlag < 0 ? null : w[depositFlag];
-                    Object mark = ComputeHelpers.mark(flag);
-                    try {
-                        return value.of(w);
-                    } catch (RuntimeException e) {
-                        return ComputeHelpers.closed(e, flag, mark);
-                    }
-                };
+                yield w -> ComputeHelpers.emptyTestOverOpen((Callable<?>) value.of(w), empty,
+                        depositFlag < 0 ? null : w[depositFlag]);
             }
             case Term.Call a -> call(a.function(), a.arguments());
             case Term.Restate h -> restate(h);
@@ -155,54 +154,33 @@ final class ClosureRendering {
         boolean open = t.open(), withoutFault = t.role() == TestItem.Role.WITHOUT_FAULT;
         return switch (t.role()) {
             case VORM -> test;
-            case CONDITION, WITHOUT_FAULT -> open ? thrown(test, true, e -> ComputeHelpers.holdsForItself(e, withoutFault))
+            case CONDITION, WITHOUT_FAULT -> open ? w -> ComputeHelpers.holdsForItself(() -> test.test(w), withoutFault)
                     : withoutFault ? withoutFault(test) : test;
-            case ACTS -> w -> ComputeHelpers.acts(outcome(test, w, false));
-            case ACTS_WITHOUT_FAULT -> w -> ComputeHelpers.acts(outcome(test, w, true));
-            case FAULT -> open ? thrown(test, false, ComputeHelpers::faulted) : w -> fault(test, w) != null;
+            case ACTS -> w -> ComputeHelpers.acts(ComputeHelpers.judge(() -> test.test(w), false));
+            case ACTS_WITHOUT_FAULT -> w -> ComputeHelpers.acts(ComputeHelpers.judge(() -> test.test(w), true));
+            case FAULT -> open ? w -> ComputeHelpers.faulted(() -> test.test(w)) : w -> fault(test, w) != null;
             case DEPOSIT -> {
                 int depositFlag = t.depositFlag();
                 yield w -> {
                     Object s = ComputeHelpers.depositFlag();
                     w[depositFlag] = s;
-                    heard(test, w, s, open);
-                    return ComputeHelpers.reported(s);
+                    return deposited(test, w, s, open);
                 };
             }
         };
     }
 
-    /** The verdict of {@code test} where it answers and {@code answer} asks for it, false where it does not; and where
-     *  it throws, what {@code thrown} says of that. */
-    private static Predicate<Object[]> thrown(Predicate<Object[]> test, boolean answer, Predicate<RuntimeException> thrown) {
-        return w -> {
-            try {
-                return test.test(w) && answer;
-            } catch (RuntimeException e) {
-                return thrown.test(e);
-            }
-        };
-    }
-
-    /** The outcome over {@code w} of the writer whose condition is {@code test} ({@link ComputeHelpers#outcome}). */
-    static Boolean outcome(Predicate<Object[]> test, Object[] w, boolean withoutFault) {
-        try {
-            return test.test(w);
-        } catch (RuntimeException e) {
-            return ComputeHelpers.outcome(e, withoutFault);
-        }
-    }
-
-    /** {@code test} evaluated over {@code w} with the fresh probe {@code depositFlag} in its slot: a fault is the fault
-     *  rule's, and what the evaluation deposited before it stays heard; where {@code open}, an open read drops it
-     *  ({@link ComputeHelpers#caughtDeposit}). */
-    static void heard(Predicate<Object[]> test, Object[] w, Object depositFlag, boolean open) {
+    /** Whether evaluating {@code test} over {@code w} deposits, with the fresh probe {@code depositFlag} in its slot: a
+     *  fault is the fault rule's, and what the evaluation deposited before it stays heard; where {@code open}, an open
+     *  read drops it ({@link ComputeHelpers#deposited}). */
+    static boolean deposited(Predicate<Object[]> test, Object[] w, Object depositFlag, boolean open) {
+        if (open) return ComputeHelpers.deposited(() -> test.test(w), depositFlag);
         try {
             test.test(w);
         } catch (RuntimeException e) {
-            if (open) ComputeHelpers.caughtDeposit(e, depositFlag);
-            else ComputeHelpers.caught(e);
+            ComputeHelpers.caught(e);
         }
+        return ComputeHelpers.reported(depositFlag);
     }
 
     /** {@code test} where it answers, and not holding where it faults: the fault is the fault rule's
@@ -286,12 +264,9 @@ final class ClosureRendering {
         return w -> {
             Composite reading = ComputeHelpers.composite(kw, threshold, n, depositFlag < 0 ? null : w[depositFlag]);
             for (int i = 0; i < n && !reading.stands(); i++) {
-                if (i < openFrom) reading.read(members.get(i).test(w));
-                else try {
-                    reading.read(members.get(i).test(w));
-                } catch (RuntimeException e) {
-                    reading.read(e);
-                }
+                Predicate<Object[]> member = members.get(i);
+                if (i < openFrom) reading.read(member.test(w));
+                else reading.read(() -> member.test(w));
             }
             return reading.verdict();
         };
@@ -441,6 +416,8 @@ final class ClosureRendering {
             case DAYS_CONFLICTED -> x -> PeriodDefaults.conflicted(x[0], (String) x[1]);
             case DIVIDED -> x -> ComputeHelpers.divided(x[0], x[1], x[2]);
             case DIVIDED_ABS -> x -> ComputeHelpers.dividedAbs(x[0], x[1], x[2]);
+            case DIVIDED_LAZILY -> x -> ComputeHelpers.dividedLazily(x[0], (Callable<?>) x[1], x[2]);
+            case DIVIDED_ABS_LAZILY -> x -> ComputeHelpers.dividedAbsLazily(x[0], (Callable<?>) x[1], x[2]);
             case INVERTED_BASE -> x -> ComputeHelpers.invertedBase(x[0], x[1], x[2]);
             case NEGATIVE_BASE -> x -> ComputeHelpers.negativeBase(x[0], x[1], x[2]);
             case RADICAND -> x -> ComputeHelpers.radicand(x[0], x[1]);
@@ -503,6 +480,7 @@ final class ClosureRendering {
                     x[4]);
             case CHANNEL -> x -> ComputeHelpers.channel(x[0]);
             case NIET -> x -> ComputeHelpers.not(x[0]);
+            case NEGATED_OVER_OPEN -> x -> ComputeHelpers.negatedOverOpen((Callable<?>) x[0]);
             case BUCKET_SCALAR -> x -> ComputeHelpers.bucketScalar(x[0], (Boolean) x[1]);
             case OPEN_NONZERO -> x -> PeriodArithmetic.openNonZero(x[0]);
             case DIFFER -> x -> ComputeHelpers.differ(x[0]);

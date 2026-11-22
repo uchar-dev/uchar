@@ -13,8 +13,8 @@ import dev.uchar.regelspraak.transpiler.tms.PeriodDefaults;
  * such a call. A rendering into closures calls the function itself; a rendering into DRL text calls it
  * class-qualified, never through an {@code import function} ({@link Route}), and finds it by name, so no function is
  * overloaded. Every argument is a value, evaluated before the call in the order of
- * {@link Term.Call#arguments}; a constant of the analysis (a number of decimals, a rounding mode, a unit of time, a
- * class) is a {@link Term.Const}. {@link #canFail} says whether the function can raise an evaluation fault, a division by a
+ * {@link Term.Call#arguments}, but a {@link Term.Deferred}, which the function evaluates itself; a constant of the
+ * analysis (a number of decimals, a rounding mode, a unit of time, a class) is a {@link Term.Const}. {@link #canFail} says whether the function can raise an evaluation fault, a division by a
  * numeric zero or a {@code ComputeFault} or an {@code InputFormFault} of the branch (RUNTIME-SEMANTICS ch. 5.2).
  */
 public enum StaticFunction {
@@ -215,6 +215,11 @@ public enum StaticFunction {
     DIVIDED(ComputeHelpers.class, "divided", true),
     /** As {@link #DIVIDED}, the quotient truncated toward zero at 5 decimals. */
     DIVIDED_ABS(ComputeHelpers.class, "dividedAbs", true),
+    /** As {@link #DIVIDED}, of a divisor that can read an open value (ch. 1.5), a {@link Term.Deferred}: the function
+     *  evaluates it only where the dividend is filled. */
+    DIVIDED_LAZILY(ComputeHelpers.class, "dividedLazily", true),
+    /** As {@link #DIVIDED_LAZILY}, the quotient truncated toward zero at 5 decimals. */
+    DIVIDED_ABS_LAZILY(ComputeHelpers.class, "dividedAbsLazily", true),
     /** The base of a power with a negative exponent, the exponent's numerator an {@code Integer} constant: a numeric
      *  zero leeg with the deposit of ch. 1.4 point 4 to the probe, since the power inverts it (ch. 2.2), any other base
      *  as it is. The function of a {@link Term.Division}, in front of {@link #RS_POWER}, {@link #EXACT_POWER} or
@@ -323,8 +328,7 @@ public enum StaticFunction {
      *  enumeration (maintainer decision 2026-09-20). */
     RS_ENUM_NAME(RegelSpraakRuntime.class, "rsEnumNaam", false),
     /** The leeg test, where a {@code Boolean} constant is true, or the gevuld test, where it is false, of a value
-     *  (ch. 5.8 rule 1: a read over an absent link is leeg); over the mark of a closure ({@link Term.ClosureOverOpen})
-     *  it is true or false for the form itself and undetermined for another (ch. 1.5). */
+     *  (ch. 5.8 rule 1: a read over an absent link is leeg). */
     EMPTY_TEST(ComputeHelpers.class, "emptyTest", false),
     /** The read of a member that can be open, off its standing (ch. 1.5): the bound value, and an open read that breaks
      *  the evaluation off where the member is open. */
@@ -377,6 +381,9 @@ public enum StaticFunction {
     /** The negation of a condition's truth value: the test of a consistency, which holds where its assertion does not
      *  (IR-SPEC ch. 3.5). */
     NIET(ComputeHelpers.class, "not", false),
+    /** The negation of a condition whose judgement can be undetermined, a {@link Term.Deferred}: its judgement with the
+     *  truth for the form itself negated (ch. 1.5). */
+    NEGATED_OVER_OPEN(ComputeHelpers.class, "negatedOverOpen", false),
     /** Whether a value is the asOfDate-bucket scalar a case gives for a timeline (ch. 8.4), which a {@code Boolean}
      *  constant must equal: a part of a test a form composes itself. */
     BUCKET_SCALAR(ComputeHelpers.class, "bucketScalar", false),

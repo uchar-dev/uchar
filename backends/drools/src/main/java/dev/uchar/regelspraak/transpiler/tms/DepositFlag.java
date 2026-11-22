@@ -58,6 +58,12 @@ final class DepositFlag {
         s.codes.addAll(h.codes());
     }
 
+    /** {@code depositFlag} back to what a fresh probe has heard, nothing: an open read at the boundary it stands in drops
+     *  everything (RUNTIME-SEMANTICS ch. 1.5). */
+    static void clear(Object depositFlag) {
+        restore(depositFlag, new Heard(false, List.of()));
+    }
+
     private record Heard(boolean reported, List<String> codes) {}
 
     /** The codes the probe heard, ascending, each once. */

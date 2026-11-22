@@ -10,15 +10,16 @@ import java.util.Set;
 /**
  * The input members of the objects of one session that are not complete (RUNTIME-SEMANTICS ch. 1.5, "The three states",
  * "Complete input"): where the bean holds no value for one, an attribute without one or a characteristic that does not
- * hold, the member is open on that object, not settled leeg. One fact, stated beside the beans by
+ * hold, the member is open on that object, not settled leeg. The value of a global ({@code plan.Consequence.OPEN_INPUT}),
+ * set beside the beans by
  * {@code DroolsBackend.insert} in a document in which a member can be open ({@link OpenableMembers}), for the members the
  * analysis finds ({@link OpenableMembers#incompleteInput}); a characteristic the case states not to hold
  * ({@code characteristicsAbsent}) is not among them, and a session that treats every input member as complete has none.
  * An object it does not name, one a creation made, has no such member.
  *
- * <p>A rule that reads such a member binds this fact beside the bean's value, as it binds the evaluation date, and the
- * read takes both ({@link ComputeHelpers#readInput}): it says only which members are open where the bean holds nothing,
- * so a value a consumer puts on the bean between two fires fills the member.
+ * <p>The read of such a member takes it beside the bean's value ({@link ComputeHelpers#readInput}): it says only which
+ * members are open where the bean holds nothing, and does not change in a session, so a rule binds no fact for it, and a
+ * value a consumer puts on the bean between two fires fills the member.
  */
 public final class OpenInput {
 

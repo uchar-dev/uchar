@@ -1271,6 +1271,8 @@ public final class TmsTranspiler {
             }
         }
         globals.forEach((name, javaClass) -> declarations.add(new Modelplan.Global(name, javaClass)));
+        // the input sets it in every document in which a member can be open, whether or not a lowered rule reads one
+        if (!openable.isEmpty()) declarations.add(new Modelplan.Global(Consequence.OPEN_INPUT, OpenInput.class));
         for (RulePlan r : rules) if (!formOfRule.containsKey(r.name())) rulesWithoutForm.add(r.name());
         for (RulePlan r : states) rulesWithoutForm.add(r.name());
         // every rule of a form, a reading rule among them, has the role its lowering noted, and a rule of a fold its
@@ -2849,12 +2851,10 @@ public final class TmsTranspiler {
         Noted noted = endReading();
         Ends ends = reads.ends();
         reads.stop();
-        // "niet A" is none over A (RUNTIME-SEMANTICS ch. 1.5): where the assertion can be undetermined, the composite
-        // keeps its judgement, and the rule reports where the assertion fails for the form itself
-        String source = source(c.assertion().source());
-        Term violated = ends.open()
-                ? new Term.Compound(Condition.Quantifier.GEEN, 0, List.of(holds), 0, reads.depositFlagSlot(), source)
-                : new Term.Call(StaticFunction.NIET, List.of(holds), source);
+        // where the assertion can be undetermined, its negation keeps the judgement, and the rule reports where the
+        // assertion fails for the form itself (RUNTIME-SEMANTICS ch. 1.5)
+        Term violated = new Term.Call(ends.open() ? StaticFunction.NEGATED_OVER_OPEN : StaticFunction.NIET,
+                List.of(ends.open() ? new Term.Deferred(holds, null) : holds), source(c.assertion().source()));
         List<LhsItem> items = reads.plan(Asked.DECIDES, ends, violated, read);
         String name = c.name();
         reads.recorder();
@@ -5122,6 +5122,14 @@ public final class TmsTranspiler {
         return new Term.Const(label, t, source);
     }
 
+    /** A division of {@code left} by {@code right} through {@code function}, or where the divisor reads a member that can be
+     *  open ({@code open}) through {@code lazily}, which evaluates the divisor itself. */
+    private static Term quotient(StaticFunction function, StaticFunction lazily, Term left, Term right, boolean open,
+                                 Reads reads, String source) {
+        return open ? new Term.Division(lazily, left, new Term.Deferred(right, null), reads.depositFlag(), source)
+                : new Term.Division(function, left, right, reads.depositFlag(), source);
+    }
+
     /** The arithmetic operators on numbers, a percentage being a number in the unit % (RUNTIME-SEMANTICS ch. 2.2, 2.6),
      *  through the runtime's exact helpers and with their leeg tables (ch. 1.2); a date plus or minus a duration through
      *  {@link #dateCalculation}, a power through {@link #power}. A sum or a difference restates its right operand into the
@@ -5138,7 +5146,9 @@ public final class TmsTranspiler {
         boolean division = op == Expr.BinOp.GEDEELD_DOOR || op == Expr.BinOp.GEDEELD_DOOR_ABS;
         // a condition that holds a division carries the rule that inserts its fault (voorwaardefoutregel)
         if (division) reads.markFail();
-        Term left = value(b.left(), reads), right = value(b.right(), reads);
+        Term left = value(b.left(), reads);
+        Opened divisor = reads.opened(() -> value(b.right(), reads));
+        Term right = divisor.term();
         Unit lu = eff.unitOf(b.left()), ru = eff.unitOf(b.right());
         Term l = left;
         Term r = op == Expr.BinOp.PLUS || op == Expr.BinOp.MIN || op == Expr.BinOp.VERMINDERD_MET
@@ -5153,8 +5163,10 @@ public final class TmsTranspiler {
             case VERMINDERD_MET -> new Term.Call(StaticFunction.RS_REDUCED, List.of(l, r), source);
             case MAAL -> new Term.Call(StaticFunction.RS_TIMES, List.of(l, r), source);
             case PERCENTAGE_VAN -> new Term.Call(StaticFunction.RS_PERCENTAGE_OF, List.of(l, r), source);
-            case GEDEELD_DOOR -> new Term.Division(StaticFunction.DIVIDED, l, r, reads.depositFlag(), source);
-            case GEDEELD_DOOR_ABS -> new Term.Division(StaticFunction.DIVIDED_ABS, l, r, reads.depositFlag(), source);
+            case GEDEELD_DOOR -> quotient(StaticFunction.DIVIDED, StaticFunction.DIVIDED_LAZILY, l, r, divisor.open(), reads,
+                    source);
+            case GEDEELD_DOOR_ABS -> quotient(StaticFunction.DIVIDED_ABS, StaticFunction.DIVIDED_ABS_LAZILY, l, r,
+                    divisor.open(), reads, source);
             case TOT_DE_MACHT -> throw new IllegalStateException("a power goes through macht()");
         };
     }
@@ -5705,6 +5717,8 @@ public final class TmsTranspiler {
             }
             // a test on leeg and gevuld is a condition, as a composite is
             case Term.ClosureOverOpen o -> Boolean.FALSE;
+            // the function that takes it evaluates it on a condition, or catches what it raises
+            case Term.Deferred x -> Boolean.FALSE;
             case Term.Restate h -> readsFirst(h.term(), slot);
             case Term.Division d -> {
                 Boolean first = readsFirst(List.of(d.left(), d.right()), slot);
@@ -7688,11 +7702,13 @@ public final class TmsTranspiler {
         switch (p.kind()) {
             case LEEG, GEVULD -> {
                 Opened operand = reads.opened(() -> value(p.operand(), reads));
+                boolean empty = p.kind() == Condition.PredicateKind.LEEG;
                 // over an operand whose evaluation reads an open value the test is a closure (RUNTIME-SEMANTICS ch. 1.5)
-                Term tested = operand.open()
-                        ? new Term.ClosureOverOpen(operand.term(), reads.depositFlagSlot(), null) : operand.term();
-                return new Term.Call(StaticFunction.EMPTY_TEST, List.of(tested,
-                        constant(p.kind() == Condition.PredicateKind.LEEG)), source(p.source()));
+                return operand.open()
+                        ? new Term.ClosureOverOpen(new Term.Deferred(operand.term(), null), empty, reads.depositFlagSlot(),
+                                source(p.source()))
+                        : new Term.Call(StaticFunction.EMPTY_TEST, List.of(operand.term(), constant(empty)),
+                                source(p.source()));
             }
             case NUMERIEK_MET_EXACT -> {
                 return digitTrial(p, reads);
@@ -8072,13 +8088,12 @@ public final class TmsTranspiler {
                     new Term.SlotValue(openInput(), null), new Term.SlotValue(member(), null), constant(member.key())), source);
         }
 
-        /** The session's input members that are not complete, its {@link OpenInput}, joined to no subject. */
+        /** The session's input members that are not complete, its {@link OpenInput}, off the global that holds it: no
+         *  pattern binds it, since it is constant in a session. */
         int openInput() {
             if (atForm) return unscoped(this::openInput);
             int known = existing("open invoer");
-            if (known >= 0) return known;
-            parameters(openInputPattern());
-            return allocateSlot(ReadKind.OPEN_INPUT, "open invoer", Consequence.OPEN_INPUT);
+            return known >= 0 ? known : allocateSlot(ReadKind.OPEN_INPUT, "open invoer", Consequence.OPEN_INPUT);
         }
 
         /** Registers what the lowered rule reads with the transpiler: the standings, path standings and channel
@@ -8708,7 +8723,7 @@ public final class TmsTranspiler {
      *  one name twice. {@code ReadNameWitnessTest} holds this set equal to the fixed names this source spells. */
     static final Set<String> FIXED_NAMES = Set.of("$afgeleid", "$ander", "$bereikt", "$besluit", "$botsingen",
             "$conflict", "$creatiefase", "$een", "$element", "$emmerinvoer", "$fase", "$houder", "$inconsistentie",
-            "$invoer", "$nabij", "$onderwerp", "$opengelaten", "$openinvoer", "$rekendatum", "$schending", "$schrijver", "$sleutel", "$stand",
+            "$invoer", "$nabij", "$onderwerp", "$opengelaten", "$rekendatum", "$schending", "$schrijver", "$sleutel", "$stand",
             "$subject", "$twee",
             "$v", "$vouwonderwerp", "$waarde", "$waarden");
 
@@ -8870,9 +8885,14 @@ public final class TmsTranspiler {
                 return s.depositFlag() < 0 && z == s.members() ? s
                         : new Term.Compound(s.quantifier(), s.threshold(), z, s.openFrom(), -1, s.source());
             }
+            case Term.Deferred x -> {
+                Term z = withoutDepositFlag(x.value());
+                return z == x.value() ? x : new Term.Deferred(z, x.source());
+            }
             case Term.ClosureOverOpen o -> {
-                Term z = withoutDepositFlag(o.value());
-                return o.depositFlag() < 0 && z == o.value() ? o : new Term.ClosureOverOpen(z, -1, o.source());
+                Term.Deferred z = (Term.Deferred) withoutDepositFlag(o.value());
+                return o.depositFlag() < 0 && z == o.value() ? o
+                        : new Term.ClosureOverOpen(z, o.empty(), -1, o.source());
             }
             case Term.QuantifierRead k -> {
                 Term n = withoutDepositFlag(k.count()), b = withoutDepositFlag(k.contributions());
@@ -8946,19 +8966,10 @@ public final class TmsTranspiler {
                 List.of(onSubject(id("opengelaten-onderwerp"))), List.of());
     }
 
-    /** The pattern of the session's {@link OpenInput}, one fact, joined to nothing. */
-    private static FactPattern openInputPattern() {
-        return new FactPattern(OpenInput.class, Consequence.OPEN_INPUT, List.of(), List.of(), List.of());
-    }
-
     /** What the rule of the standing of {@code member} that no writer fills has beside the rest of its left-hand side: a
-     *  {@code not} over the writers that leave it open, where one can, and the session's {@link OpenInput}, where its
-     *  input need not be complete ({@link #inputSource}). Empty for a member that cannot be open. */
+     *  {@code not} over the writers that leave it open, where one can. */
     private List<LhsItem> settled(ElementKey member) {
-        List<LhsItem> out = new ArrayList<>();
-        if (openable.leftOpen(member)) out.add(new Not(leftOpen(member)));
-        if (openable.openInput(member)) out.add(openInputPattern());
-        return out;
+        return openable.leftOpen(member) ? List.of(new Not(leftOpen(member))) : List.of();
     }
 
     /** The source of a standing of {@code member} that its input gives: {@code complete}, or an input that need not be
@@ -9222,7 +9233,7 @@ public final class TmsTranspiler {
                             new Binding.Field(member.javaClass(), member.name()), inputForm(member), null)));
             present = new RulePlan(name + "link aanwezig", null, null,
                     oneSlot(ReadKind.REACHED_INPUT, "invoer " + ps + " " + lk, "$v"),
-                    List.of(linked, bean, openInputPattern()), new Consequence.InsertPathState(SUBJECT, ps, lk,
+                    List.of(linked, bean), new Consequence.InsertPathState(SUBJECT, ps, lk,
                             Consequence.StateSource.INCOMPLETE_INPUT, 0, "$bereikt", Consequence.Insertion.LOGICAL));
         }
 
@@ -9279,10 +9290,7 @@ public final class TmsTranspiler {
             items.add(withBinding(chain.get(chain.size() - 1), new Binding("$v", List.of(),
                     new Binding.Field(member.javaClass(), member.name()), inputForm(member), null)));
             value = oneSlot(ReadKind.REACHED_INPUT, "invoer " + ps + " " + lk, "$v");
-            if (openable.openInput(lk)) {
-                items.add(openInputPattern());
-                source = Consequence.StateSource.INCOMPLETE_INPUT;
-            }
+            source = inputSource(lk, source);
         }
         RulePlan present = new RulePlan(name + "link aanwezig", null, null, value, items,
                 new Consequence.InsertPathState(SUBJECT, ps, lk, source, 0, chain.get(chain.size() - 1).name(),

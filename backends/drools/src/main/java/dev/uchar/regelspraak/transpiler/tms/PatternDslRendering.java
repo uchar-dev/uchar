@@ -56,6 +56,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -78,10 +79,14 @@ final class PatternDslRendering {
     private final Map<String, Variable<Object>> values = new HashMap<>();
     /** The value variables a binding or an accumulate function binds already and that are still in scope. */
     private final Set<String> bound = new HashSet<>();
+    /** The globals of the model by name: a slot or a consequence that reads the session's {@code OpenInput} takes its
+     *  variable off it, since no pattern binds it ({@link Consequence#OPEN_INPUT}). */
+    private final Function<String, Global<?>> globals;
 
     /** The rendering of a whole plan, whose subject pattern, if the rule has one, is an item of its left-hand side. */
-    private PatternDslRendering(ReadTable table) {
+    private PatternDslRendering(ReadTable table, Function<String, Global<?>> globals) {
         this.table = table;
+        this.globals = globals;
     }
 
     /**
@@ -113,10 +118,10 @@ final class PatternDslRendering {
      */
     @SuppressWarnings("rawtypes")
     static Rule rule(RulePlan plan, Function<String, Global<?>> globals) {
-        PatternDslRendering w = new PatternDslRendering(plan.readings());
+        PatternDslRendering w = new PatternDslRendering(plan.readings(), globals);
         List<RuleItemBuilder<?>> items = new ArrayList<>();
         for (LhsItem item : plan.leftSide()) items.addAll(w.rendering(item));
-        items.add(w.consequence(plan.consequence(), globals));
+        items.add(w.consequence(plan.consequence()));
         org.drools.model.impl.RuleBuilder b = PatternDSL.rule(TmsTranspiler.PKG, plan.name());
         if (plan.agendaGroup() != null) b = b.attribute(Rule.Attribute.AGENDA_GROUP, plan.agendaGroup());
         return b.build(items.toArray(new RuleItemBuilder[0]));
@@ -166,7 +171,7 @@ final class PatternDslRendering {
 
     /** The consequence {@code g} plans. */
     @SuppressWarnings("rawtypes")
-    private RuleItemBuilder<?> consequence(Consequence g, Function<String, Global<?>> globals) {
+    private RuleItemBuilder<?> consequence(Consequence g) {
         return switch (g) {
             case Consequence.Value x -> consequenceItem(x.subject(), x.slots(), x.size(), value(x));
             case Consequence.Judged x -> {
@@ -175,7 +180,7 @@ final class PatternDslRendering {
                         : (drools, subject, w) -> insert(drools, x.insertion(),
                                 new HasCharacteristic(subject, ((Consequence.Characteristic) x.decides()).characteristic()));
                 yield consequenceItem(x.subject(), x.slots(), x.size(), (drools, subject, w) -> {
-                    if (ComputeHelpers.decides(ClosureRendering.outcome(condition, w, x.withoutFault())))
+                    if (ComputeHelpers.holdsForItself(() -> condition.test(w), x.withoutFault()))
                         decides.run(drools, subject, w);
                     else insert(drools, x.insertion(), new LeftOpen(subject, x.member(), x.writer()));
                 });
@@ -356,13 +361,12 @@ final class PatternDslRendering {
 
     /** The codes of the deposit of {@code condition}, which the test of the rule found: the condition evaluated again
      *  over the bound values {@code w} with a fresh probe in slot {@code depositFlag}, as the test evaluated it
-     *  ({@link ClosureRendering#heard}); a probe that heard nothing is a broken contract of {@code what}. */
+     *  ({@link ClosureRendering#deposited}); a probe that heard nothing is a broken contract of {@code what}. */
     private static List<String> depositCodesAgain(Predicate<Object[]> condition, int depositFlag, Object[] w, boolean open,
                                                   String what) {
         Object s = ComputeHelpers.depositFlag();
         w[depositFlag] = s;
-        ClosureRendering.heard(condition, w, s, open);
-        if (!ComputeHelpers.reported(s))
+        if (!ClosureRendering.deposited(condition, w, s, open))
             throw new IllegalStateException(what + " deposited in the test and not in the consequence, over the same bound"
                     + " values");
         return ComputeHelpers.depositCodes(s);
@@ -431,6 +435,19 @@ final class PatternDslRendering {
         return consequenceItem(subject, slots, slots.isEmpty() ? 0 : slots.get(slots.size() - 1) + 1, f);
     }
 
+    /** The outcome of {@code value} over {@code w}, collapsed where {@code collapse}: its value, its evaluation fault, or
+     *  where {@code open}, so that it can read an open value, the mark of one ({@link ComputeHelpers#valued}); any other
+     *  exception passes on. */
+    private static Object outcome(ValueFunction value, boolean collapse, boolean open, Object[] w) {
+        Callable<?> evaluated = () -> collapse ? ComputeHelpers.collapse(value.of(w)) : value.of(w);
+        if (open) return ComputeHelpers.valued(evaluated);
+        try {
+            return ComputeHelpers.call(evaluated);
+        } catch (RuntimeException e) {
+            return ComputeHelpers.caught(e);
+        }
+    }
+
     /** The value of {@link Consequence.Value}: computed from the bound values, with its fault, its deposit and its leeg
      *  policy as the plan says. */
     private static ConsequenceFunction value(Consequence.Value g) {
@@ -440,16 +457,15 @@ final class PatternDslRendering {
             // the probe hears every §6.5 and §6.6 place the evaluation reaches, and only those (Sonde)
             Object s = deposit == null ? null : ComputeHelpers.depositFlag();
             if (s != null) w[deposit.depositFlag()] = s;
-            Object v;
-            try {
-                v = value.of(w);
-                if (g.collapse()) v = ComputeHelpers.collapse(v);
-            } catch (RuntimeException e) {
-                RuntimeException thrown = g.open() ? ComputeHelpers.caughtOpen(e) : ComputeHelpers.caught(e);
-                // an open read breaks the value off, and what it deposited is dropped (RUNTIME-SEMANTICS ch. 1.5)
-                insert(drools, g.insertion(), ComputeHelpers.isOpen(thrown)
-                        ? new LeftOpen(subject, g.target(), g.writer())
-                        : new Fault(subject, g.fault().form(), ComputeHelpers.designate(thrown, g.fault().rule())));
+            Object v = outcome(value, g.collapse(), g.open(), w);
+            // an open read breaks the value off, and what it deposited is dropped (RUNTIME-SEMANTICS ch. 1.5)
+            if (ComputeHelpers.isOpen(v)) {
+                insert(drools, g.insertion(), new LeftOpen(subject, g.target(), g.writer()));
+                return;
+            }
+            if (ComputeHelpers.isEvaluationFault(v)) {
+                insert(drools, g.insertion(),
+                        new Fault(subject, g.fault().form(), ComputeHelpers.designate(v, g.fault().rule())));
                 return;
             }
             if (ComputeHelpers.reported(s))
@@ -869,8 +885,9 @@ final class PatternDslRendering {
 
     /** The value variable {@code name}, which an item rendered before binds: a slot, a join and an accumulate name only
      *  what the plan bound already. */
+    @SuppressWarnings("unchecked")
     private Variable<Object> known(String name) {
-        Variable<Object> v = values.get(name);
+        Variable<Object> v = name.equals(Consequence.OPEN_INPUT) ? (Variable<Object>) globals.apply(name) : values.get(name);
         if (v == null) throw new IllegalStateException("the variable " + name + " is not bound yet");
         return v;
     }

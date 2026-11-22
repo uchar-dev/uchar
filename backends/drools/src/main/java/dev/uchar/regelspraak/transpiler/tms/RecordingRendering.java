@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -67,15 +68,9 @@ final class RecordingRendering {
             case Term.Binder b -> ((Need) w[b.slot()]).read();
             case Term.Let l -> let(l, w);
             case Term.Choice k -> test(k.condition(), w) ? value(k.then(), w) : value(k.otherwise(), w);
-            case Term.ClosureOverOpen o -> {
-                Object flag = o.depositFlag() < 0 ? null : w[o.depositFlag()];
-                Object mark = ComputeHelpers.mark(flag);
-                try {
-                    yield value(o.value(), w);
-                } catch (RuntimeException e) {
-                    yield ComputeHelpers.closed(e, flag, mark);
-                }
-            }
+            case Term.Deferred x -> (Callable<Object>) () -> value(x.value(), w);
+            case Term.ClosureOverOpen o -> ComputeHelpers.emptyTestOverOpen((Callable<?>) evaluate(o.value(), w), o.empty(),
+                    o.depositFlag() < 0 ? null : w[o.depositFlag()]);
             case Term.Call a -> {
                 Object[] x = new Object[a.arguments().size()];
                 for (int i = 0; i < x.length; i++) x[i] = value(a.arguments().get(i), w);
@@ -145,12 +140,9 @@ final class RecordingRendering {
         Composite reading = ComputeHelpers.composite(s.quantifier(), s.threshold(), n,
                 s.depositFlag() < 0 ? null : w[s.depositFlag()]);
         for (int i = 0; i < n && !reading.stands(); i++) {
-            if (i < s.openFrom()) reading.read(test(s.members().get(i), w));
-            else try {
-                reading.read(test(s.members().get(i), w));
-            } catch (RuntimeException e) {
-                reading.read(e);
-            }
+            Term member = s.members().get(i);
+            if (i < s.openFrom()) reading.read(test(member, w));
+            else reading.read(() -> test(member, w));
         }
         return reading.verdict();
     }

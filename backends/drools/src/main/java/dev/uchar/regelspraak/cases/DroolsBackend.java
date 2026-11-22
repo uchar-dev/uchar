@@ -34,6 +34,7 @@ import dev.uchar.regelspraak.transpiler.tms.Fired;
 import dev.uchar.regelspraak.transpiler.tms.Cycles;
 import dev.uchar.regelspraak.transpiler.tms.ListPlace;
 import dev.uchar.regelspraak.transpiler.tms.OpenInput;
+import dev.uchar.regelspraak.transpiler.tms.plan.Consequence;
 import dev.uchar.regelspraak.transpiler.tms.OpenableMembers;
 import dev.uchar.regelspraak.transpiler.tms.RelationLink;
 import dev.uchar.regelspraak.transpiler.tms.WrittenBack;
@@ -399,7 +400,8 @@ public final class DroolsBackend {
      * as a {@code RelationLink} of phase 0, the input's; refused are a link whose fact type is no such relation, an end
      * that is no bean of the input or that does not fill its role, and a link that comes twice. A link inserted after
      * this call is a fact outside it, which {@link #fire} refuses as every such fact. For a document that infers nothing
-     * from an empty value, the input members of the beans that are not complete go in as one {@code OpenInput}, less
+     * from an empty value, the input members of the beans that are not complete are set as the global that holds the
+     * session's {@code OpenInput}, less
      * the characteristics the input states not to hold ({@link #openInput}); refused is such a statement about a bean
      * outside the input, a member its type does not declare as a characteristic of one truth value, or one the bean
      * holds.
@@ -434,22 +436,22 @@ public final class DroolsBackend {
         for (Input.Bucket e : input.buckets()) facts.add(bucketInput(types, e));
         facts.addAll(listPlaces(build, tms.listFields(), beans, types, input.lists()));
         facts.addAll(inputLinks(build, types, input.links()));
-        facts.addAll(openInput(build, beans, types, input));
+        OpenInput open = openInput(build, beans, types, input);
+        if (open != null) session.setGlobal(Consequence.OPEN_INPUT, open);
         for (Object fact : facts) session.insert(fact);
         Watch.op(session, relationFields(build, beansClasses(build)), beans, "DroolsBackend.insert");
     }
 
     /**
      * The {@link OpenInput} of the input (RUNTIME-SEMANTICS ch. 1.5, "The three states", "Complete input"), in a document
-     * in which a member can be open ({@code OpenableMembers}), and else nothing: per bean of {@code beans} the members
+     * in which a member can be open ({@code OpenableMembers}), and else null: per bean of {@code beans} the members
      * that are input on an object of its type and not complete, as the analysis finds them, less the characteristics the
      * input states not to hold; none at all in a session that treats every input member as complete. A read takes it
      * beside the bean: the member is open where the bean holds no value for it. Refused, in any document: a
      * characteristic stated not to hold that the bean's type does not declare, that lies on a timeline, or that the bean
      * holds.
      */
-    private static List<OpenInput> openInput(Build build, List<Object> beans, Map<Object, ObjectType> types,
-                                             Input input) {
+    private static OpenInput openInput(Build build, List<Object> beans, Map<Object, ObjectType> types, Input input) {
         Map<Object, Set<ProducerConsumer.ElementKey>> absent = new IdentityHashMap<>();
         for (Input.Absent a : input.absent()) {
             ObjectType t = types.get(a.bean());
@@ -464,7 +466,7 @@ public final class DroolsBackend {
                     .add(ProducerConsumer.elementOf(declarant, a.characteristic(), true));
         }
         OpenableMembers openable = build.execModelTranspiler().openableMembers();
-        if (openable.isEmpty()) return List.of();
+        if (openable.isEmpty()) return null;
         Map<Object, Set<ProducerConsumer.ElementKey>> members = new IdentityHashMap<>();
         if (!input.closed())
             for (Object bean : beans) {
@@ -475,7 +477,7 @@ public final class DroolsBackend {
                 }
                 members.put(bean, incomplete);
             }
-        return List.of(new OpenInput(members));
+        return new OpenInput(members);
     }
 
     /** The refusal of the statement that a characteristic does not hold, for {@code reason}. */

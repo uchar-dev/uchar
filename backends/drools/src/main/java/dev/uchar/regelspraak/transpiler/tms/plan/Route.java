@@ -132,29 +132,26 @@ public enum Route {
     COMPOSITE(ComputeHelpers.class, "composite"),
     /** The verdict of a composite over no member ({@link Term.Compound}). */
     END_VERDICT(ComputeHelpers.class, "endVerdict"),
-    /** What a probe has heard so far, where the operand of a test on leeg and gevuld begins
-     *  ({@link Term.ClosureOverOpen}). */
-    MARK(ComputeHelpers.class, "mark"),
-    /** The operand of a test on leeg and gevuld that read an open value, as the mark of a closure; any other exception
-     *  passes on ({@link Term.ClosureOverOpen}). */
-    CLOSED(ComputeHelpers.class, "closed"),
-    /** The answer of a test that a condition holds for the form itself, where its evaluation threw
-     *  ({@link TestItem#open}). */
+    /** The test on leeg and gevuld of a value that can read an open value ({@link Term.ClosureOverOpen}). */
+    EMPTY_TEST_OVER_OPEN(ComputeHelpers.class, "emptyTestOverOpen"),
+    /** Whether a condition whose judgement can be undetermined holds for the form itself ({@link TestItem#open}). */
     HOLDS_FOR_ITSELF(ComputeHelpers.class, "holdsForItself"),
-    /** The outcome of a writer whose condition threw ({@link TestItem.Role#ACTS}). */
-    OUTCOME(ComputeHelpers.class, "outcome"),
+    /** The outcome of a writer whose condition can be undetermined ({@link TestItem.Role#ACTS}). */
+    JUDGE(ComputeHelpers.class, "judge"),
     /** Whether an outcome of a writer is not that it fills nothing ({@link TestItem.Role#ACTS}). */
     ACTS(ComputeHelpers.class, "acts"),
     /** Whether an outcome of a writer is that it decides ({@link Consequence.Judged}). */
     DECIDES(ComputeHelpers.class, "decides"),
-    /** The answer of a test that a condition faults, where its evaluation threw ({@link TestItem#open}). */
+    /** Whether a condition whose judgement can be undetermined faults ({@link TestItem#open}). */
     FAULTED(ComputeHelpers.class, "faulted"),
-    /** What a test of deposits keeps where the evaluation of its condition threw ({@link TestItem#open}). */
-    CAUGHT_DEPOSIT(ComputeHelpers.class, "caughtDeposit"),
-    /** The open read or the evaluation fault a value raised, as its outcome; any other exception passes on
+    /** Whether a condition whose judgement can be undetermined deposits ({@link TestItem#open}). */
+    DEPOSITED(ComputeHelpers.class, "deposited"),
+    /** The outcome of a value that can read an open value: the value, the open read or the evaluation fault
      *  ({@link Consequence.Value#open}). */
-    CAUGHT_OPEN(ComputeHelpers.class, "caughtOpen"),
-    /** Whether the outcome of a value is an open read ({@link Consequence.Value#open}). */
+    VALUED(ComputeHelpers.class, "valued"),
+    /** The outcome of the value of a writer whose condition can be undetermined ({@link Consequence.Judged}). */
+    DECIDED(ComputeHelpers.class, "decided"),
+    /** Whether the outcome of a value is that it does not stand ({@link Consequence.Value#open}). */
     IS_OPEN(ComputeHelpers.class, "isOpen"),
     /** The open standing of a member on an object ({@link Consequence.OpenStanding}). */
     OPEN(ComputeHelpers.class, "open"),

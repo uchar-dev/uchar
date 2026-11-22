@@ -91,8 +91,8 @@ consumer does.
    `characteristicAbsent(bean, characteristic)` for a characteristic the input states not to hold
    (`characteristicsAbsent`, ch. 1.5), which the truth value on a bean cannot tell from one the input does not name;
    `closedInputs()` treats every input member of the session as complete. `insert` states the facts the branch reads
-   from these (`BucketInput`, `ListPlace`, `RelationLink` of phase 0, `OpenInput`), so a consumer states no fact class
-   of the branch itself.
+   from these (`BucketInput`, `ListPlace`, `RelationLink` of phase 0), and in a document in which a member can be open
+   it sets the global `open_invoer`, an `OpenInput`, so a consumer states no fact class of the branch itself.
    `CaseInput.of(build, case)` makes that `Input` from a `uchar-case-v0` case, as the replay makes it for every
    case: it reads `asOfDate` and `input.instances` onto fresh beans, sets the attributes, characteristics and role
    links (RUNTIME-SEMANTICS ch. 5.7a: the written role by name, else by the type pair; on a one-to-one relation the
@@ -264,8 +264,8 @@ subject, and after the write-back the reference fields reach it.
   outside the session is refused there, in the same sentence.
 - `insert` itself, with the beans inserted by `session.insert`: no bucket scalars, so every timeline input reads as a
   full timeline, no places, so a rule that needs one stops the fire with an `IllegalStateException` ("… heeft geen
-  Lijstplaats …"), and in a document in which a member can be open no `OpenInput`, so a rule that reads an input member
-  that can be open does not match.
+  Lijstplaats …"), and in a document in which a member can be open no `OpenInput`, so a read of an input member that can
+  be open and that the bean holds no value for stops the fire the same way.
 - A fresh session for a new or a removed object, or a changed relation: `fire` refuses a session into which a bean,
   a bucket input or a list place came, or from which one went, outside `insert`, one in which an update changed a
   reference field, naming it, after `insert` as between two fires, and, with `fixpointOf` and `setDerivedValues`, one in
@@ -434,10 +434,11 @@ a member, through any number of forms. In any other document there is none, and 
 follows; nor does it, in a document with the property, for a member outside that set.
 
 What opens a member is one of two facts. `LeftOpen(subject, member, writer)` is inserted logically by a writer that
-neither decides nor stands to fill nothing. `OpenInput` is one fact of the session, stated by `insert`: per object the
-input members that are not complete. An input member that no form writes is read off the bean, as any input, and the
-read takes that fact beside the value (`ComputeHelpers.readInput`): the member is open where the bean holds no value, or
-does not hold the characteristic, and the fact names it. A member a form writes is read through its standing, whose
+neither decides nor stands to fill nothing. `OpenInput` holds per object the input members that are not complete; it is
+constant in a session, so it is a global, `open_invoer`, which `insert` sets, and no rule binds it. An input member that
+no form writes is read off the bean, as any input, and the read takes that global beside the value
+(`ComputeHelpers.readInput`): the member is open where the bean holds no value, or does not hold the characteristic, and
+the `OpenInput` names it. A member a form writes is read through its standing, whose
 third state is the `OpenMember` of the member on that object, in place of a value or a truth value: the standing rules
 take the `Value` or `HasCharacteristic` of a writer first, then a `LeftOpen`, and else the input, which on an object of
 which no form writes the member is open as above. Over a path either is read through its `PathState`, whose rule binds
@@ -447,7 +448,10 @@ member together, and a standing derived before a writer left the member open is 
 A read of an open member breaks the evaluation off with an `OpenRead`; the operators of the production runtime see no
 open value. The break is caught at the boundary of one atomic condition or one value, and what the probe heard within it
 is dropped: at a member of a composite, at the operand of a test on leeg or gevuld (`Term.ClosureOverOpen`, a closure),
-at the test of a rule, and in the consequence that computes a value, which then inserts the `LeftOpen` of its form. A
+at the test of a rule, and in the consequence that computes a value, which then inserts the `LeftOpen` of its form. Each
+boundary is one function of `ComputeHelpers` or `Composite` that takes what it evaluates as a `Callable`, a lambda in the
+DRL text (`Term.Deferred` where the analysis plans it), so that the text catches nothing itself; a division whose divisor
+can read an open value takes its divisor so as well, and evaluates it only where the dividend is filled. A
 condition whose judgement stands for the form itself and for another answers; any other throws `Undetermined`, which
 carries the truth for the form itself. `Composite` is the one reading of a composite, in every document: it counts the
 members for the form itself and for another by Kleene's table, stops where the judgement for another stands, and reads a
@@ -456,11 +460,11 @@ ch. 5.10.
 
 `Reads.conditionTest` is the one place where a condition becomes the test of a rule. A form whose condition always stands
 tests that it holds. The rule of a writer whose condition can be undetermined has one function with the three outcomes
-of ch. 1.5 (`ComputeHelpers.outcome`): its test asks that the writer acts, that the outcome is not that it fills
+of ch. 1.5 (`ComputeHelpers.judge`): its test asks that the writer acts, that the outcome is not that it fills
 nothing, and its consequence asks which of the other two it is (`plan.Consequence.Judged`): it decides, or it inserts
 its `LeftOpen`. So such a rule fires where the form decides and where it leaves its target open, and not where it fills
 nothing. The rule of a condition's fault and that of its deposits stand beside it as for any form. A consistency tests
-`none` over its assertion where that can be undetermined. Witnesses `OpenableMembersWitnessTest`,
+the negation of its assertion, which keeps the judgement where that can be undetermined. Witnesses `OpenableMembersWitnessTest`,
 `OpenValuesWitnessTest` (the examples of ch. 1.5) and `OpenValuesRefWitnessTest` (the witnesses of the reference
 interpreter).
 

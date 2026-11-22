@@ -6,7 +6,7 @@ package dev.uchar.regelspraak.transpiler.tms;
  * ({@code own} null), or established for the form itself, true or false, by a closure over an open value. A condition
  * whose judgement is established for both returns its truth value; one whose judgement is not throws this, so that
  * a composite counts it as its member ({@link Composite}) and the test of a rule asks of it what its role names
- * ({@link ComputeHelpers#holdsForItself}, {@link ComputeHelpers#outcome}). What the condition deposited stands: what an
+ * ({@link ComputeHelpers#holdsForItself}, {@link ComputeHelpers#judge}). What the condition deposited stands: what an
  * open read inside it deposited was dropped at its own boundary ({@link OpenRead}). {@code read} is the open read that
  * left it so, for a closure the read it closed over. A signal, not a diagnosis: no stack trace.
  */

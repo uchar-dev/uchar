@@ -2,13 +2,16 @@ package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.ir.Condition;
 
+import java.util.concurrent.Callable;
+
 /**
  * The reading of one composite condition (RUNTIME-SEMANTICS ch. 5.10, 1.5): its members read left to right in wire
  * order, each counted for the form itself and for another by Kleene's strong table, and the read stopping where the
  * judgement for another form stands, every unread member taken as undetermined. A rendering evaluates the members and
  * this counts them, so that both renderings run one reading: before each member {@link #stands()}, then the member's
- * truth value ({@link #read(boolean)}), or what its evaluation threw ({@link #read(RuntimeException)}) where its
- * judgement can be undetermined ({@code Term.Compound.openFrom}), and at the end {@link #verdict()}.
+ * truth value ({@link #read(boolean)}), or the member as a {@link Callable} this reading evaluates and counts also where
+ * it throws ({@link #read(Callable)}), where its judgement can be undetermined
+ * ({@code Term.Compound.openFrom}), and at the end {@link #verdict()}.
  *
  * <p>Where no member is open the two counts are one, and the stop is the stop of ch. 5.10: Kleene's table on a prefix
  * with the unread members open is established exactly where a trigger of that chapter fires. An open read in a member
@@ -53,9 +56,21 @@ public final class Composite {
         count(holds, holds);
     }
 
-    /** The evaluation of the member under way threw {@code e}: an open read, an undetermined judgement, or, in a
-     *  member read provisionally, an evaluation fault, each counted; anything else passes on. */
-    public void read(RuntimeException e) {
+    /** The member under way, whose judgement can be undetermined: its truth value, or what its evaluation threw, an open
+     *  read, an undetermined judgement, or, in a member read provisionally, an evaluation fault, each counted; anything
+     *  else passes on. */
+    public void read(Callable<Boolean> member) {
+        boolean holds;
+        try {
+            holds = ComputeHelpers.call(member);
+        } catch (RuntimeException e) {
+            threw(e);
+            return;
+        }
+        read(holds);
+    }
+
+    private void threw(RuntimeException e) {
         if (e instanceof OpenRead o) {
             DepositFlag.restore(depositFlag, mark);
             undetermined(o.member());

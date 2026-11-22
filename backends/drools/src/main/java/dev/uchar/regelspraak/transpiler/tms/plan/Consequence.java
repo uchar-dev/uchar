@@ -186,12 +186,13 @@ public sealed interface Consequence {
      *  ({@code REACHED}); no object, where a link on the path is absent ({@code MISSING_LINK}); or the input on the
      *  object's bean, or on the bean a path reaches, of a member whose input need not be complete
      *  ({@code INCOMPLETE_INPUT}, RUNTIME-SEMANTICS ch. 1.5): where that bean holds none and the session's
-     *  {@code OpenInput}, which {@link #OPEN_INPUT} binds, names the member on that object, its {@code OpenMember}, and
+     *  {@code OpenInput}, the global {@link #OPEN_INPUT}, names the member on that object, its {@code OpenMember}, and
      *  else as from {@code INPUT}, {@code NONE} or {@code REACHED}. */
     enum StateSource { INPUT, DERIVATION, NONE, REACHED, MISSING_LINK, INCOMPLETE_INPUT }
 
-    /** The variable that binds the session's {@code OpenInput} in every plan that reads it. */
-    String OPEN_INPUT = "$openinvoer";
+    /** The global that holds the session's {@code OpenInput}, constant in a session, under which every plan that reads it
+     *  names it; its underscore keeps it apart from the global of a parameter, an identifier without one. */
+    String OPEN_INPUT = "open_invoer";
 
     /**
      * The standing of characteristic {@code characteristic} on the object {@code subject} binds, {@code waar} or onwaar:

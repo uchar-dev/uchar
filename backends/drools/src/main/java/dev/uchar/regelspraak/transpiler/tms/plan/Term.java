@@ -79,13 +79,22 @@ public sealed interface Term {
     record Choice(Term condition, Term then, Term otherwise, String source) implements Term {}
 
     /**
-     * The value of {@code value}, which can read an open value, as the operand of a test on leeg and gevuld
-     * (RUNTIME-SEMANTICS ch. 1.5): where its evaluation reads one, the mark of a closure over that read, which the test
-     * reads as leeg for the form itself and as undetermined for another ({@code ComputeHelpers.emptyTest}), with what
-     * the evaluation deposited dropped from the probe in slot {@code depositFlag} (-1: the position has none). An
-     * evaluation fault passes on. The analysis adds no node where the operand reads no member that can be open.
+     * {@code value} as the argument of a function that evaluates it itself, where it needs it or to catch what it raises
+     * (a {@code Callable}, since a function of a DRL text declares {@code Exception}): the divisor of a division that can read an open value
+     * ({@link StaticFunction#DIVIDED_LAZILY}), the operand of a closure ({@link ClosureOverOpen}) and the assertion a
+     * consistency negates ({@link StaticFunction#NEGATED_OVER_OPEN}). It stands as such an argument only.
      */
-    record ClosureOverOpen(Term value, int depositFlag, String source) implements Term {}
+    record Deferred(Term value, String source) implements Term {}
+
+    /**
+     * The test on leeg, where {@code empty}, or else on gevuld, of {@code value}, which can read an open value
+     * (RUNTIME-SEMANTICS ch. 1.5): where its evaluation reads one, a closure over that read, so that the value is leeg
+     * for the form itself and the test undetermined for another ({@code ComputeHelpers.emptyTestOverOpen}), with what
+     * the evaluation deposited dropped from the probe in slot {@code depositFlag} (-1: the position has none). An
+     * evaluation fault passes on. Over an operand that reads no member that can be open the test is a {@link Call} of
+     * {@link StaticFunction#EMPTY_TEST}.
+     */
+    record ClosureOverOpen(Deferred value, boolean empty, int depositFlag, String source) implements Term {}
 
     /** The function {@code function} on the values of {@code arguments}, evaluated in that order. */
     record Call(StaticFunction function, List<Term> arguments, String source) implements Term {
@@ -105,15 +114,16 @@ public sealed interface Term {
 
     /**
      * A division, {@code left} by {@code right}, evaluated in that order, through {@code function}
-     * ({@link StaticFunction#DIVIDED} or {@link StaticFunction#DIVIDED_ABS}) with the probe of the rule's §6.5 deposit: where a filled
+     * ({@link StaticFunction#DIVIDED}, {@link StaticFunction#DIVIDED_LAZILY} or their truncating sisters) with the probe of the rule's §6.5 deposit: where a filled
      * dividend meets a leeg divisor the probe in slot {@code depositFlag} of the value array hears it, and with {@code depositFlag}
      * -1 the place does not deposit (RUNTIME-SEMANTICS ch. 1.2). A numeric zero divisor is the fault of ch. 1.4. Where
      * {@link #emptyDividendDecides} a leeg dividend gives the quotient before the divisor is read, so the divisor is not
      * evaluated and neither faults nor deposits (ch. 1.4 point 4).
      */
     record Division(StaticFunction function, Term left, Term right, int depositFlag, String source) implements Term {
-        /** Whether a leeg dividend decides the quotient without the divisor: the scalar divisions; not the division of
-         *  a timeline per period, nor the inverted base of a power, whose right operand is the exponent. */
+        /** Whether a leeg dividend decides the quotient without the divisor, which a rendering then does not evaluate:
+         *  the scalar divisions; not the division of a timeline per period, nor the inverted base of a power, whose
+         *  right operand is the exponent, nor a division that evaluates its divisor itself. */
         public boolean emptyDividendDecides() {
             return function == StaticFunction.DIVIDED || function == StaticFunction.DIVIDED_ABS;
         }

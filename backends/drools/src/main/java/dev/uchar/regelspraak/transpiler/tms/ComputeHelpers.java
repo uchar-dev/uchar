@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.Callable;
 import java.util.function.Predicate;
 
 /**
@@ -80,6 +81,17 @@ public final class ComputeHelpers {
         }
         if (left != null && right == null) DepositFlag.report(depositFlag, DIVISION_BY_EMPTY);
         return RegelSpraakRuntime.rsGedeeldAbs(left, right);
+    }
+
+    /** As {@link #divided}, of a divisor that is evaluated only where the dividend is filled: a leeg dividend gives the
+     *  quotient before the divisor is read (RUNTIME-SEMANTICS ch. 1.4 point 4). */
+    public static Object dividedLazily(Object left, Callable<?> right, Object depositFlag) {
+        return divided(left, left == null ? null : call(right), depositFlag);
+    }
+
+    /** As {@link #dividedLazily}, truncated toward zero at 5 decimals. */
+    public static Object dividedAbsLazily(Object left, Callable<?> right, Object depositFlag) {
+        return dividedAbs(left, left == null ? null : call(right), depositFlag);
     }
 
     /** The base of a power with a negative exponent, whose numerator is {@code numerator}: the exponent inverts the
@@ -542,11 +554,8 @@ public final class ComputeHelpers {
     }
 
     /** The leeg test of {@code value}, where {@code leeg}, or else the gevuld test; a read over an absent link is leeg
-     *  (RUNTIME-SEMANTICS ch. 5.8 rule 1). Over the mark of a closure, an operand whose evaluation read an open value
-     *  ({@link #closed}), the value is leeg for the form itself, and for another form the test is undetermined
-     *  ({@link Undetermined}, ch. 1.5). */
+     *  (RUNTIME-SEMANTICS ch. 5.8 rule 1). */
     public static boolean emptyTest(Object value, boolean empty) {
-        if (value instanceof Closure c) throw new Undetermined(empty, c.read());
         return (value == null) == empty;
     }
 
@@ -569,7 +578,11 @@ public final class ComputeHelpers {
      *  {@link OpenInput}, says that the input is not complete. */
     public static Object input(Object value, Object openInput, Object subject, ElementKey member) {
         boolean filled = member.characteristic() ? Boolean.TRUE.equals(value) : value != null;
-        return filled || !((OpenInput) openInput).incomplete(subject, member) ? value : new OpenMember(subject, member);
+        if (filled) return value;
+        if (openInput == null)
+            throw new IllegalStateException("the session has no OpenInput, which DroolsBackend.insert sets: the input of "
+                    + FactNames.member(member) + " of " + FactNames.object(subject) + " reads it");
+        return ((OpenInput) openInput).incomplete(subject, member) ? new OpenMember(subject, member) : value;
     }
 
     /** The read of that input ({@link #input}): an open member breaks the evaluation off. */
@@ -577,82 +590,129 @@ public final class ComputeHelpers {
         return read(input(value, openInput, subject, member));
     }
 
-    /** The mark of a closure over the open read {@code read}: the operand of a test on leeg and gevuld that read an open
-     *  value. */
-    private record Closure(OpenMember read) {}
-
-    /** What {@code depositFlag}, a probe or nothing, has heard so far: the start of the boundary of the operand of a test
-     *  on leeg and gevuld ({@link #closed}). */
-    public static Object mark(Object depositFlag) {
-        return DepositFlag.mark(depositFlag);
+    /** The value {@code deferred} evaluates. A function of a DRL text declares {@code Exception}, so a lambda over one does,
+     *  and what it evaluates raises no checked one: that is a broken contract. */
+    static <T> T call(Callable<T> deferred) {
+        try {
+            return deferred.call();
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException("a term raised a checked exception", e);
+        }
     }
 
-    /** The operand of a test on leeg and gevuld whose evaluation threw {@code e}: where it read an open value, the mark
-     *  of a closure over that read, which {@link #emptyTest} reads, with what the evaluation deposited since
-     *  {@code mark} dropped from {@code depositFlag}; anything else passes on. */
-    public static Object closed(RuntimeException e, Object depositFlag, Object mark) {
-        if (!(e instanceof OpenRead o)) throw e;
-        DepositFlag.restore(depositFlag, mark);
-        return new Closure(o.member());
+    /** The leeg test, where {@code empty}, or else the gevuld test, of the value {@code value} evaluates, which can read an
+     *  open value (RUNTIME-SEMANTICS ch. 1.5): where its evaluation reads one, a closure over that read, so that the value
+     *  is leeg for the form itself and the test undetermined for another ({@link Undetermined}), with what the evaluation
+     *  deposited dropped from {@code depositFlag}; anything else it raises passes on. */
+    public static boolean emptyTestOverOpen(Callable<?> value, boolean empty, Object depositFlag) {
+        Object mark = DepositFlag.mark(depositFlag);
+        Object v;
+        try {
+            v = call(value);
+        } catch (OpenRead o) {
+            DepositFlag.restore(depositFlag, mark);
+            throw new Undetermined(empty, o.member());
+        }
+        return emptyTest(v, empty);
     }
 
-    /** The answer of the test that a condition holds for the form itself, where its evaluation threw {@code e}: true for
-     *  a closure that holds; false for an open read and any other undetermined judgement, and where
-     *  {@code withoutFault} for an evaluation fault, which the rule of the fault takes; any other exception passes on. */
-    public static boolean holdsForItself(RuntimeException e, boolean withoutFault) {
-        if (e instanceof Undetermined u) return Boolean.TRUE.equals(u.own());
-        if (e instanceof OpenRead || withoutFault && ComputeFault.isEvaluationFault(e)) return false;
-        throw e;
+    /** The negation of {@code condition}, whose judgement can be undetermined: "niet A" is none over A (ch. 1.5), so a
+     *  judgement that does not stand keeps its pair, its truth for the form itself negated; an open read and a fault pass
+     *  on. */
+    public static boolean negatedOverOpen(Callable<?> condition) {
+        try {
+            return !(Boolean) call(condition);
+        } catch (Undetermined u) {
+            throw new Undetermined(u.own() == null ? null : !u.own(), u.read());
+        }
     }
 
-    /** The outcome of a writer whose condition threw {@code e}: that it decides ({@code TRUE}), for a closure that
-     *  holds for the form itself; that it leaves its target open ({@code null}), for an open read and any other
+    /** Whether {@code condition}, whose judgement can be undetermined, holds for the form itself: established, or by a
+     *  closure over an open value; false for any other undetermined judgement, and where {@code withoutFault} for an
+     *  evaluation fault, which the rule of the fault takes; any other exception passes on. */
+    public static boolean holdsForItself(Callable<Boolean> condition, boolean withoutFault) {
+        return decides(judge(condition, withoutFault));
+    }
+
+    /** The outcome of a writer whose condition {@code condition} can be undetermined: that it decides ({@code TRUE}), where
+     *  the condition is true for the form itself, established or by a closure; that it fills nothing ({@code FALSE}), where
+     *  the condition is established false; that it leaves its target open ({@code null}), for an open read and any other
      *  judgement that does not stand for another form; and where {@code withoutFault}, that it does not act
-     *  ({@code FALSE}), for an evaluation fault, which the rule of the fault takes; any other exception passes on. A
-     *  condition that answers is established for both, and its truth is the outcome: it decides, or fills nothing. */
-    public static Boolean outcome(RuntimeException e, boolean withoutFault) {
-        if (e instanceof Undetermined u) return Boolean.TRUE.equals(u.own()) ? Boolean.TRUE : null;
-        if (e instanceof OpenRead) return null;
-        if (withoutFault && ComputeFault.isEvaluationFault(e)) return Boolean.FALSE;
-        throw e;
+     *  ({@code FALSE}), for an evaluation fault, which the rule of the fault takes; any other exception passes on. */
+    public static Boolean judge(Callable<Boolean> condition, boolean withoutFault) {
+        try {
+            return call(condition);
+        } catch (RuntimeException e) {
+            if (e instanceof Undetermined u) return Boolean.TRUE.equals(u.own()) ? Boolean.TRUE : null;
+            if (e instanceof OpenRead) return null;
+            if (withoutFault && ComputeFault.isEvaluationFault(e)) return Boolean.FALSE;
+            throw e;
+        }
     }
 
-    /** Whether a writer acts on {@code outcome}, its outcome ({@link #outcome}): it decides or leaves its target open. */
+    /** Whether a writer acts on {@code outcome}, its outcome ({@link #judge}): it decides or leaves its target open. */
     public static boolean acts(Object outcome) {
         return !Boolean.FALSE.equals(outcome);
     }
 
-    /** Whether {@code outcome}, the outcome of a writer ({@link #outcome}), is that it decides. */
+    /** Whether {@code outcome}, the outcome of a writer ({@link #judge}), is that it decides. */
     public static boolean decides(Object outcome) {
         return Boolean.TRUE.equals(outcome);
     }
 
-    /** The answer of the test that a condition faults, where its evaluation threw {@code e}: true for an evaluation
-     *  fault, false for an open read and an undetermined judgement; any other exception passes on. */
-    public static boolean faulted(RuntimeException e) {
-        if (e instanceof OpenRead || e instanceof Undetermined) return false;
-        caught(e);
-        return true;
+    /** Whether {@code condition}, whose judgement can be undetermined, faults: true for an evaluation fault, false for an
+     *  answer, an open read and an undetermined judgement; any other exception passes on. */
+    public static boolean faulted(Callable<Boolean> condition) {
+        try {
+            call(condition);
+            return false;
+        } catch (RuntimeException e) {
+            if (e instanceof OpenRead || e instanceof Undetermined) return false;
+            caught(e);
+            return true;
+        }
     }
 
-    /** What a test of deposits keeps where the evaluation of its condition threw {@code e}: nothing for an open read,
-     *  which broke off the one atomic condition it is, so that {@code depositFlag}, the fresh probe of the test, drops
-     *  what it heard; what was deposited before an undetermined judgement or an evaluation fault stays heard; any other
-     *  exception passes on. */
-    public static void caughtDeposit(RuntimeException e, Object depositFlag) {
-        if (e instanceof OpenRead) DepositFlag.restore(depositFlag, DepositFlag.mark(new DepositFlag()));
-        else if (!(e instanceof Undetermined)) caught(e);
+    /** Whether evaluating {@code condition}, whose judgement can be undetermined, deposits to {@code depositFlag}, the fresh
+     *  probe of the test: an open read breaks off the one atomic condition it is, so that the probe drops what it heard;
+     *  what was deposited before an undetermined judgement or an evaluation fault stays heard; any other exception passes
+     *  on. */
+    public static boolean deposited(Callable<Boolean> condition, Object depositFlag) {
+        try {
+            call(condition);
+        } catch (RuntimeException e) {
+            if (e instanceof OpenRead) DepositFlag.clear(depositFlag);
+            else if (!(e instanceof Undetermined)) caught(e);
+        }
+        return reported(depositFlag);
     }
 
-    /** {@code e}, raised by a value that reads a member that can be open, as its outcome: an open read ({@link #isOpen})
-     *  or an evaluation fault; any other exception passes on. */
-    public static RuntimeException caughtOpen(RuntimeException e) {
-        return e instanceof OpenRead ? e : caught(e);
+    /** The outcome of a value that does not stand: an open read broke it off, or its writer's condition is undetermined. */
+    private static final Object OPEN = new Object();
+
+    /** The outcome of a value that can read an open value: the value {@code value} evaluates, the mark that it read an open
+     *  one ({@link #isOpen}), or the evaluation fault it raised; any other exception passes on. */
+    public static Object valued(Callable<?> value) {
+        try {
+            return call(value);
+        } catch (OpenRead e) {
+            return OPEN;
+        } catch (RuntimeException e) {
+            return caught(e);
+        }
     }
 
-    /** Whether {@code v}, the outcome of a value, is an open read. */
+    /** As {@link #valued}, of the writer whose outcome is {@code outcome} ({@link #judge}): the value where it decides, and
+     *  else the mark that it leaves its target open, without an evaluation. */
+    public static Object decided(Object outcome, Callable<?> value) {
+        return decides(outcome) ? valued(value) : OPEN;
+    }
+
+    /** Whether {@code v}, the outcome of a value ({@link #valued}, {@link #decided}), is that it does not stand. */
     public static boolean isOpen(Object v) {
-        return v instanceof OpenRead;
+        return v == OPEN;
     }
 
     /** The exact-digit test (§8.1.4, {@code rsNumeriekMetExact}) of {@code value} with {@code digits} digits, whose

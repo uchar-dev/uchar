@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -938,38 +939,44 @@ final class DrlRendering {
             String body = switch (t.role()) {
                 case CONDITION, WITHOUT_FAULT, VORM -> {
                     boolean withoutFault = t.role() == TestItem.Role.WITHOUT_FAULT;
-                    if (t.open()) yield tryCatch(returning(t.test(), c, "        "), "        return "
-                            + route(Route.HOLDS_FOR_ITSELF) + "(e, " + withoutFault + ");\n");
+                    if (t.open()) yield "    return " + route(Route.HOLDS_FOR_ITSELF) + "(" + lambda(t.test(), c) + ", "
+                            + withoutFault + ");\n";
                     yield withoutFault ? tryCatch(returning(t.test(), c, "        "), caught + "        return false;\n")
                             : returning(t.test(), c, "    ");
                 }
                 case ACTS, ACTS_WITHOUT_FAULT -> throw new IllegalStateException("a test of an outcome is its own");
-                case FAULT -> tryCatch("        boolean uitkomst = " + bool(t.test(), c) + ";\n        return false;\n",
-                        t.open() ? "        return " + route(Route.FAULTED) + "(e);\n" : caught + "        return true;\n");
-                case DEPOSIT -> evaluated(t.test(), t.open(), c) + "    return " + route(Route.REPORTED) + "("
-                        + DEPOSIT_FLAG + ");\n";
+                case FAULT -> t.open() ? "    return " + route(Route.FAULTED) + "(() -> " + bool(t.test(), c) + ");\n"
+                        : tryCatch("        boolean uitkomst = " + bool(t.test(), c) + ";\n        return false;\n",
+                                caught + "        return true;\n");
+                case DEPOSIT -> t.open() ? "    return " + deposited(t.test(), c) + ";\n"
+                        : evaluated(t.test(), c) + "    return " + route(Route.REPORTED) + "(" + DEPOSIT_FLAG + ");\n";
             };
             fill(place, t.test().source(), "boolean " + name + "(" + c.declaration() + ")", body);
             return "eval( " + name + "(" + c.arguments() + ") )";
         }
 
-        /** The test that the writer of the rule acts: the function of its outcome ({@code ComputeHelpers.outcome}), which
+        /** The test that the writer of the rule acts: the function of its outcome ({@code ComputeHelpers.judge}), which
          *  the consequence calls again ({@link Consequence.Judged}). */
         private String acts(TestItem t) {
             int place = reserveer();
             String name = name("oordeel", place);
             Context c = context(t.slots(), -1, null, t.test());
-            fill(place, t.test().source(), "Boolean " + name + "(" + c.declaration() + ")",
-                    tryCatch(returning(t.test(), c, "        "), "        return " + route(Route.OUTCOME) + "(e, "
-                            + (t.role() == TestItem.Role.ACTS_WITHOUT_FAULT) + ");\n"));
+            fill(place, t.test().source(), "Boolean " + name + "(" + c.declaration() + ")", "    return "
+                    + route(Route.JUDGE) + "(" + lambda(t.test(), c) + ", "
+                    + (t.role() == TestItem.Role.ACTS_WITHOUT_FAULT) + ");\n");
             outcome = name + "(" + c.arguments() + ")";
             return "eval( " + route(Route.ACTS) + "(" + outcome + ") )";
         }
 
         /** The consequence of a writer whose condition can be undetermined: what it decides where the outcome its test
-         *  asked is that it decides, and else that it leaves its target open. */
+         *  asked is that it decides, and else that it leaves its target open; a value that computes something takes that
+         *  outcome into its function, which then gives the one outcome of both ({@link Route#DECIDED}). */
         private void judged(Consequence.Judged x, StringBuilder b) {
             if (outcome == null) throw new IllegalStateException(plan.name() + " tests no outcome of its writer");
+            if (x.decides() instanceof Consequence.Value v && !computesNothing(v.value())) {
+                value(v, outcome, x.slots(), b);
+                return;
+            }
             b.append("    if (").append(route(Route.DECIDES)).append("(").append(outcome).append(")) {\n");
             for (String line : consequence(x.decides()).split("\n")) b.append("    ").append(line).append('\n');
             b.append("    } else {\n");
@@ -977,11 +984,17 @@ final class DrlRendering {
             b.append("    }\n");
         }
 
-        /** The statements that evaluate {@code condition} for the probe of the function alone: a fault is the fault
-         *  rule's, and what was deposited before it stays heard; where {@code open}, an open read drops it. */
-        private String evaluated(Term condition, boolean open, Context c) {
-            return tryCatch("        boolean uitkomst = " + bool(condition, c) + ";\n", "        " + (open
-                    ? route(Route.CAUGHT_DEPOSIT) + "(e, " + DEPOSIT_FLAG + ")" : route(Route.CAUGHT) + "(e)") + ";\n");
+        /** The statements that evaluate {@code condition}, whose judgement always stands, for the probe of the function
+         *  alone: a fault is the fault rule's, and what was deposited before it stays heard. */
+        private String evaluated(Term condition, Context c) {
+            return tryCatch("        boolean uitkomst = " + bool(condition, c) + ";\n", "        " + route(Route.CAUGHT)
+                    + "(e);\n");
+        }
+
+        /** The expression that {@code condition}, whose judgement can be undetermined, deposits to the probe of the
+         *  function. */
+        private String deposited(Term condition, Context c) {
+            return route(Route.DEPOSITED) + "(() -> " + bool(condition, c) + ", " + DEPOSIT_FLAG + ")";
         }
 
         /** Whether test {@code t} holds whatever the rule binds, so that the rule has no test for it: it asks the
@@ -1068,7 +1081,9 @@ final class DrlRendering {
                 case Term.Let l -> new Expr(let(l, c), Object.class);
                 case Term.Choice k -> new Expr("(" + bool(k.condition(), c) + " ? (Object) " + value(k.then(), c).text()
                         + " : (Object) " + value(k.otherwise(), c).text() + ")", Object.class);
-                case Term.ClosureOverOpen o -> new Expr(closure(o, c), Object.class);
+                case Term.Deferred x -> new Expr("() -> " + value(x.value(), c).text(), Callable.class);
+                case Term.ClosureOverOpen o -> routeCall(Route.EMPTY_TEST_OVER_OPEN, List.of(value(o.value(), c),
+                        constant(o.empty()), depositFlag(o.depositFlag(), c)));
                 case Term.Call a -> call(a.function(), a.arguments().stream().map(x -> value(x, c)).toList());
                 case Term.Restate h -> call(StaticFunction.RESTATE_EXACT,
                         List.of(value(h.term(), c), constant(h.counter()), constant(h.denominator())));
@@ -1143,6 +1158,15 @@ final class DrlRendering {
             return indent + "return " + bool(m, c) + ";\n";
         }
 
+        /** {@code t}, a condition, as the argument of a function that evaluates it: a lambda over its value, or over the
+         *  statements of its composite, as {@link #returning} gives them. */
+        private String lambda(Term t, Context c) {
+            Term m = member(t);
+            if (m instanceof Term.Compound s && !s.members().isEmpty())
+                return "() -> {\n" + returning(m, c, "        ") + "    }";
+            return "() -> " + bool(m, c);
+        }
+
         /** A composite: the function of its statements ({@link #compoundBody}), called where it stands. A composite
          *  over one member whose verdict is that member's is that member ({@link #member}), and one over no member is
          *  its verdict, a constant: neither has a function, and its sentence goes into the function it stands in. */
@@ -1161,8 +1185,8 @@ final class DrlRendering {
 
         /** The statements of composite {@code s} over a member or more, indented by {@code indent}: its members read in
          *  order and counted by its reading ({@link Composite}), the verdict returned where it stands before a member
-         *  and after the last; a member whose judgement can be undetermined hands the reading what it throws. The
-         *  sentence of a composite that went into a member stands above the member's test ({@link #sentences}). */
+         *  and after the last; a member whose judgement can be undetermined goes to the reading as a lambda, which it
+         *  evaluates. The sentence of a composite that went into a member stands above the member's test ({@link #sentences}). */
         private String compoundBody(Term.Compound s, Context c, String indent) {
             int n = s.members().size();
             StringBuilder b = new StringBuilder(indent).append("var lezing = ").append(route(Route.COMPOSITE)).append("(")
@@ -1174,13 +1198,8 @@ final class DrlRendering {
                 int mark = absorbed.size();
                 String member = bool(s.members().get(i), c);
                 b.append(sentences(mark, indent, s.source()));
-                if (i < s.openFrom()) {
-                    b.append(indent).append("lezing.read(").append(member).append(");\n");
-                } else {
-                    b.append(indent).append("try {\n").append(indent).append("    lezing.read(").append(member)
-                            .append(");\n").append(indent).append("} catch (RuntimeException lid) {\n").append(indent)
-                            .append("    lezing.read(lid);\n").append(indent).append("}\n");
-                }
+                b.append(indent).append("lezing.read(").append(i < s.openFrom() ? "" : "() -> ").append(member)
+                        .append(");\n");
             }
             b.append(indent).append("return lezing.verdict();\n");
             return b.toString();
@@ -1193,19 +1212,6 @@ final class DrlRendering {
             for (Term u = t; u != m; u = ((Term.Compound) u).members().get(0))
                 if (u.source() != null) absorbed.add(u.source());
             return m;
-        }
-
-        /** The operand of a test on leeg and gevuld as a function that gives the mark of a closure where its
-         *  evaluation reads an open value ({@link Term.ClosureOverOpen}). */
-        private String closure(Term.ClosureOverOpen o, Context c) {
-            int place = reserveer();
-            String name = name("sluiting", place);
-            String flag = depositFlag(o.depositFlag(), c).text();
-            String v = value(o.value(), c).text();
-            fill(place, o.source(), "Object " + name + "(" + c.declaration() + ")", "    Object merk = "
-                    + route(Route.MARK) + "(" + flag + ");\n" + tryCatch("        return " + v + ";\n",
-                    "        return " + route(Route.CLOSED) + "(e, " + flag + ", merk);\n"));
-            return name + "(" + c.pass() + ")";
         }
 
         /** A condition where its evaluation answers, and not holding where it faults. */
@@ -1330,7 +1336,7 @@ final class DrlRendering {
         private String consequence(Consequence g) {
             StringBuilder b = new StringBuilder();
             switch (g) {
-                case Consequence.Value x -> value(x, b);
+                case Consequence.Value x -> value(x, null, x.slots(), b);
                 case Consequence.Characteristic x -> insert(b, "    ", x.insertion(), "new " + typeName(HasCharacteristic.class) + "("
                         + x.subject() + ", " + key(x.characteristic()) + ")");
                 case Consequence.Judged x -> judged(x, b);
@@ -1451,28 +1457,31 @@ final class DrlRendering {
          *  outcome; the fault in place of the value and of the deposit, else the deposit first and then the value,
          *  where it is gevuld or the plan writes leeg. A value that computes nothing ({@link #computesNothing}) has no
          *  function and no fault: the consequence carries its expression ({@link #carried}), and then the deposit and
-         *  the value. */
-        private void value(Consequence.Value x, StringBuilder b) {
+         *  the value. Where {@code outcome} is not null, the call of the function of the writer's outcome, the function
+         *  of the value, over the bound values at {@code slots}, calls it and evaluates the value where the writer
+         *  decides. */
+        private void value(Consequence.Value x, String outcome, List<Integer> slots, StringBuilder b) {
             Consequence.Deposit d = x.deposit();
-            boolean carried = computesNothing(x.value());
+            boolean carried = computesNothing(x.value()), open = x.open() || outcome != null;
             if (d != null) b.append("    Object ").append(DEPOSIT_FLAG).append(" = ").append(route(Route.FRESH_DEPOSIT_FLAG)).append("();\n");
             if (carried) {
                 carried(x.value(), x.collapse(), x.slots(), b);
             } else {
                 int place = reserveer();
                 String name = name("waarde", place);
-                Context c = context(x.slots(), d == null ? -1 : d.depositFlag(), DEPOSIT_FLAG, x.value());
+                Context c = context(slots, d == null ? -1 : d.depositFlag(), DEPOSIT_FLAG, x.value());
                 Expr e = value(x.value(), c);
                 String v = x.collapse() ? call(StaticFunction.COLLAPSE, List.of(e)).text() : e.text();
-                fill(place, x.value().source(), "Object " + name + "(" + c.declaration() + ")",
-                        tryCatch("        return " + v + ";\n", "        return "
-                                + route(x.open() ? Route.CAUGHT_OPEN : Route.CAUGHT) + "(e);\n"));
+                fill(place, x.value().source(), "Object " + name + "(" + c.declaration() + ")", outcome != null
+                        ? "    return " + route(Route.DECIDED) + "(" + outcome + ", () -> " + v + ");\n"
+                        : x.open() ? "    return " + route(Route.VALUED) + "(() -> " + v + ");\n"
+                        : tryCatch("        return " + v + ";\n", "        return " + route(Route.CAUGHT) + "(e);\n"));
                 b.append("    Object v = ").append(name).append("(").append(c.arguments()).append(");\n");
                 b.append("    if (").append(route(Route.IS_EVALUATION_FAULT)).append("(v)) {\n");
                 insert(b, "        ", x.insertion(), "new " + typeName(Fault.class) + "(" + x.subject() + ", "
                         + str(x.fault().form()) + ", " + route(Route.DESIGNATE) + "(v, " + str(x.fault().rule()) + "))");
                 // an open read breaks the value off, and what it deposited is dropped (RUNTIME-SEMANTICS ch. 1.5)
-                if (x.open()) {
+                if (open) {
                     b.append("    } else if (").append(route(Route.IS_OPEN)).append("(v)) {\n");
                     insert(b, "        ", x.insertion(), leftOpen(x.subject(), x.target(), x.writer()));
                 }
@@ -1533,8 +1542,8 @@ final class DrlRendering {
             int place = reserveer();
             String name = name("deponering", place);
             Context c = context(slots, depositFlag, route(Route.FRESH_DEPOSIT_FLAG) + "()", condition);
-            String body = evaluated(condition, open, c)
-                    + "    if (!" + route(Route.REPORTED) + "(" + DEPOSIT_FLAG + ")) {\n        "
+            String body = (open ? "    if (!" + deposited(condition, c) : evaluated(condition, c) + "    if (!"
+                    + route(Route.REPORTED) + "(" + DEPOSIT_FLAG + ")") + ") {\n        "
                     + route(Route.CONTRACT_BREACH) + "(" + str(what + " deposited in the test and not in the consequence,"
                             + " over the same bound values") + ");\n    }\n"
                     + "    return " + route(Route.DEPOSIT_CODES) + "(" + DEPOSIT_FLAG + ");\n";
@@ -1948,6 +1957,7 @@ final class DrlRendering {
                     dayKinds(q.contributions(), out);
                 }
                 case Term.WithoutFault z -> dayKinds(z.condition(), out);
+                case Term.Deferred x -> dayKinds(x.value(), out);
                 case Term.ClosureOverOpen o -> dayKinds(o.value(), out);
                 case Term.Const k -> { }
                 case Term.SlotValue l -> { }

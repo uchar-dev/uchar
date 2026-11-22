@@ -39,7 +39,8 @@ public enum ReadKind {
     PARAMETER,
     /** The session's evaluation date, through its {@code EvaluationDate} ({@code rekendatum}). */
     REKENDATUM,
-    /** The session's input members that are not complete, its {@code OpenInput} ({@code openInput}). */
+    /** The session's input members that are not complete, its {@code OpenInput}, off the global that holds it
+     *  ({@code openInput}): no pattern binds it. */
     OPEN_INPUT,
     /** The number of contributions to a fold on the subject ({@code vouw}). */
     FOLD_COUNT,

@@ -67,7 +67,8 @@ public final class OpenableMembers {
                 if (!relations && f.reads().stream().noneMatch(openable::contains)) continue;
                 boolean creation = f.kind() == ProducerConsumer.FormKind.OBJECT_CREATION
                         || f.kind() == ProducerConsumer.FormKind.FACT_CREATION;
-                grown |= leftOpen.addAll(f.writes()) | creation && !relations;
+                boolean opensMember = leftOpen.addAll(f.writes()), opensRelations = creation && !relations;
+                grown |= opensMember || opensRelations;
                 relations |= creation;
                 openable.addAll(f.writes());
             }

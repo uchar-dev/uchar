@@ -19,6 +19,7 @@ import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler.Node;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler.ReadingRule;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler.Site;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler.StackLayout;
+import dev.uchar.regelspraak.transpiler.tms.plan.Consequence;
 import dev.uchar.regelspraak.transpiler.tms.plan.ReadKind;
 import dev.uchar.regelspraak.transpiler.tms.plan.Term;
 
@@ -830,8 +831,8 @@ final class SessionReaders {
             byWriter.computeIfAbsent(l.subject(), k -> new HashSet<>()).add(l.member());
             candidates.computeIfAbsent(l.subject(), k -> new LinkedHashSet<>()).add(l.member());
         }
-        for (Object f : session.getObjects(o -> o instanceof OpenInput))
-            ((OpenInput) f).members().forEach((subject, members) ->
+        if (session.getGlobal(Consequence.OPEN_INPUT) instanceof OpenInput open)
+            open.members().forEach((subject, members) ->
                     candidates.computeIfAbsent(subject, k -> new LinkedHashSet<>()).addAll(members));
         Map<Object, Set<ElementKey>> holding = new IdentityHashMap<>();
         for (Object f : session.getObjects(o -> o instanceof HasCharacteristic))
