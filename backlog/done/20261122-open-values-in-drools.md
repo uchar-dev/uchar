@@ -941,7 +941,7 @@ Elke wijziging van de publieke API van `backends/drools` sinds `4b9c58943~1`, me
 |---|---|
 | `Input.characteristicAbsent(bean, kenmerk)` nieuw | geeft door wat een gebruiker uitdrukkelijk "nee" zegt; alleen onder `inferFromEmpty: false` van belang (een boolean op de bean zegt dat niet) |
 | `Input.closedInputs()` nieuw | niet nodig; een meting |
-| `EndState.EndObject.open` (component erbij, `List<EndState.Open>`) | toont deze leden als "nog niet bekend"; wie alleen `members` leest, toont een open lid als leeg, en dat is het niet. Constructor: een argument erbij |
+| `EndState.EndObject.open` (component erbij, `List<EndState.Open>`) | toont deze leden als "staat niet vast"; wie alleen `members` leest, toont een open lid als leeg, en dat is het niet. Constructor: een argument erbij |
 | `EndState.Open(characteristic, name, given)` nieuw | `given` is invoer naast een schrijver die open is; zij staat niet, dus niet als uitkomst tonen |
 | `Fixpoint.open` (component erbij, `List<Fixpoint.OpenValue>`) | hetzelfde per afgeleid fixpunt; constructor: een argument erbij |
 | `Fixpoint.OpenValue(object, member, characteristic)` nieuw | het lid van een open lezing |
@@ -987,3 +987,11 @@ Elk los gedraaid op `4335bfab7`; daarna veranderde geen code.
   readings, 27572 node lines …)`
 
 De JUnit-suite: 2055 tests, geen overgeslagen (was 2050). Geen pin, vloer, lijst of verwachting van een gate veranderde.
+
+## Landing van deel 4 en afsluiting (hoofdsessie, 2026-11-22)
+
+Nagelezen: `MemberTest` met het oordeel van zijn filter, `Composite.read(filter, toets)` met de lezing die elke toets voorlopig maakt, de
+weergaven, `SessionReaders.contributors` en de geankerde lezing. Nagerekend: 238 goldens bouwen strikt (33.223 naar 36.164 regels, +8,9%; 1643
+naar 1875 `rule`s), 387 gewone teksten gelijk, 230 strikte teksten gelijk aan deel 3, 238 volledige gelijk aan gewoon. Een tweede lezer keek naar
+de ontwerpen van deel 3 en 4; zijn toetsgevallen staan in de getuigen. De kaart is af: Drools rekent de lezing van ch. 1.5 en geeft de lezingen en de
+eindstand van ch. 5.12 en 5.12a, op de vormen na die zij bij naam weigert (Open punten hierboven). De pin van de distributie is haar eigen kaart.
