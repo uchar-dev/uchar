@@ -59,20 +59,20 @@
 # Since card drl-teksttak-op-truth-maintenance the build must also have run BranchDumpsCorpusWitnessTest,
 # both its rows by name: the suite's comparison of the two branches per case, which no count covers.
 #
-# The REPLAY runs JAR-ONLY (decision V2-B, the gate-10 pattern): the gate invokes `java -jar` per
-# golden against target/uchar-drools-backend-*-shaded.jar, which it takes FRESH OR REBUILT
+# The REPLAY runs JAR-ONLY (decision V2-B, the gate-10 pattern): the gate runs
+# target/uchar-drools-backend-*-shaded.jar, which it takes FRESH OR REBUILT
 # (scripts/lib/drools-jar.sh) like the five other gates that read the jar: rebuilt when a path it is
 # built from is newer, so the replay never runs a jar that predates the source under review.
 #
 # The replay runs in two passes, the exec-model branch and then the DRL-text branch, and each pass
-# collects, then judges (scripts/lib/parallel.sh): first the `java -jar` of every golden runs, with the
-# replay flags PARALLEL_JVM_FLAGS, on one process per two cores, each into a file of its own; then the
-# loop of the pass reads those files in the order of the corpus and judges them, with the lists, pins,
-# counts and report of a replay one golden after the other. The DRL-text pass begins only after the
-# exec-model pass is judged green, so a break on the exec-model branch fails before the cost of the
-# second pass. The goldens and their case files are listed once, before the first pass, and every loop of
-# both passes reads that list. A JVM that crashes or does not start leaves an empty or partial output,
-# which the loop meets at its golden and fails by name.
+# collects, then judges (scripts/lib/parallel.sh): first every golden is replayed, in batches of one JVM
+# each (parallel_batch, whose rows of its own run first), on one process per two cores, each golden into a
+# file of its own; then the loop of the pass reads those files in the order of the corpus and judges them,
+# with the lists, pins, counts and report of a replay one golden after the other. The DRL-text pass begins
+# only after the exec-model pass is judged green, so a break on the exec-model branch fails before the cost
+# of the second pass. The goldens and their case files are listed once, before the first pass, and every
+# loop of both passes reads that list. A JVM that ends before all its goldens are replayed fails the gate
+# with the golden it replayed; a golden alone is replayed with `java -jar <the jar> [--drl] <ir> <cases>`.
 set -u
 cd "$(dirname "$0")/.."
 
@@ -1710,6 +1710,7 @@ declare -a FAILED=()
 # --- the replay, in two passes that each collect and then judge (scripts/lib/parallel.sh) ------------------
 # One process per two cores: a replay JVM with PARALLEL_JVM_FLAGS uses 1.5 cores (the measurement is in
 # scripts/lib/parallel.sh). A task per golden with case files, keyed by the golden's place in the corpus order.
+sh scripts/lib/parallel.sh --selftest || fail "the rows of parallel_batch do not hold (the parallel lines above say which)"
 . scripts/lib/parallel.sh || fail "could not read scripts/lib/parallel.sh"
 procs=$(parallel_jobs 2) || fail "no number of processes for the replay (the parallel line above says why)"
 work=$(mktemp -d) || fail "cannot make a work directory for the replay"
@@ -1730,9 +1731,10 @@ i=0
 while IFS= read -r ir; do
   i=$((i + 1))
   cases=$(cat "$work/cases/$i")
-  [ -z "$cases" ] || parallel_task "$work/exec" "$i" null java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" $cases
+  [ -z "$cases" ] || parallel_batch_task "$work/exec" "$i" "$ir" $cases
 done < "$work/goldens"
-parallel_run "$work/exec" "$procs" || fail "parallel_run failed over the exec-model replays (the parallel line above says why)"
+parallel_batch "$work/exec" "$procs" java $PARALLEL_BATCH_JVM_FLAGS -jar "$JAR" --batch \
+  || fail "parallel_batch failed over the exec-model replays (the parallel line above says why)"
 
 i=0
 while IFS= read -r ir; do
@@ -1853,9 +1855,10 @@ while IFS= read -r ir; do
   i=$((i + 1))
   drl_cases=()
   while IFS= read -r c; do drl_cases+=("$c"); done < "$work/cases/$i"
-  [ ${#drl_cases[@]} -eq 0 ] || parallel_task "$work/drl" "$i" null java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$ir" "${drl_cases[@]}"
+  [ ${#drl_cases[@]} -eq 0 ] || parallel_batch_task "$work/drl" "$i" --drl "$ir" "${drl_cases[@]}"
 done < "$work/goldens"
-parallel_run "$work/drl" "$procs" || fail "parallel_run failed over the DRL-text replays (the parallel line above says why)"
+parallel_batch "$work/drl" "$procs" java $PARALLEL_BATCH_JVM_FLAGS -jar "$JAR" --batch \
+  || fail "parallel_batch failed over the DRL-text replays (the parallel line above says why)"
 i=0
 while IFS= read -r ir; do
   i=$((i + 1))
