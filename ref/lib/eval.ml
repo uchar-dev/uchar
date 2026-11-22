@@ -321,11 +321,13 @@ let refuse_uncarried (doc : document) =
       doc.object_types;
     List.iter (fun (_, (p : parameter)) -> if p.par_granularity <> None then refuse "timeline-member") doc.parameters;
     (* [lets]: the binders of the Lets around, each with whether the place is,
-       within the body of its Let, in a member of a composite other than its
-       first or in the filter or the matrix of a quantifier fold: a member read
-       past one that does not stand for another is read provisionally, and no
-       binder is ([judge_cond ~past]) *)
-    let past lets = SMap.map (fun _ -> true) lets in
+       within the body of its Let, in a member of a composite with more than one
+       or in the filter or the matrix of a quantifier fold: a member read past
+       one that does not stand for another is read provisionally, and no binder
+       is ([judge_cond ~past]); and the barrier of a leeg binder in the first
+       member ends the Let, where with the binder open another member can
+       decide *)
+    let beside_others lets = SMap.map (fun _ -> true) lets in
     let rec expr lets (e : expr) =
       let opt = Option.iter (expr lets) in
       match e with
@@ -382,8 +384,11 @@ let refuse_uncarried (doc : document) =
       | Predicate { variety = Day_kind_predicate; _ } -> refuse "day-kind"
       | Predicate { operand; _ } -> opt operand
       | Characteristic_check _ | Role_membership _ | Identity_check _ -> ()
-      | Compound { components; _ } -> List.iteri (fun i c -> cond (if i = 0 then lets else past lets) c) components
-      | Quantifier_fold { kv_filter; kv_test; _ } -> List.iter (Option.iter (cond (past lets))) [ kv_filter; kv_test ]
+      | Compound { components; _ } ->
+          let lets = match components with [ _ ] -> lets | _ -> beside_others lets in
+          List.iter (cond lets) components
+      | Quantifier_fold { kv_filter; kv_test; _ } ->
+          List.iter (Option.iter (cond (beside_others lets))) [ kv_filter; kv_test ]
       | Time_window _ -> refuse "time-window"
       | Rule_status_check _ -> refuse "rule-status-check"
       | Condition_unresolved _ -> refuse "unresolved"

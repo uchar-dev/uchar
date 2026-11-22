@@ -1,0 +1,297 @@
+{
+  "format": "uchar-ir-v1",
+  "inferFromEmpty": false,
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": false,
+        "plural": "Jutteren",
+        "attributes": [],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "bijzonder",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vangst",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vinder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "bijzonder",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "bijzonder",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is bijzonder"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "Let",
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "binder": "t",
+                "value": {
+                  "node": "Aggregation",
+                  "kind": "filledCount",
+                  "arguments": [
+                    {
+                      "node": "AttributeReference",
+                      "attribute": "gewicht",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "gewichten"
+                      }
+                    }
+                  ],
+                  "elementType": "Vondst",
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "vangst",
+                    "role": "vondst"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "nonNegative"
+                  },
+                  "source": {
+                    "snippet": "het aantal gevulde gewichten van zijn vondsten"
+                  }
+                },
+                "body": {
+                  "node": "IfThenElse",
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "nonNegative"
+                  },
+                  "condition": {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "BinderRef",
+                      "name": "t",
+                      "source": {
+                        "snippet": "t"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "3"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "nonNegative"
+                      },
+                      "source": {
+                        "snippet": "3"
+                      }
+                    },
+                    "source": {
+                      "snippet": "t groter is dan 3"
+                    }
+                  },
+                  "then": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "10"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "nonNegative"
+                    },
+                    "source": {
+                      "snippet": "10"
+                    }
+                  },
+                  "else": {
+                    "node": "IfThenElse",
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "nonNegative"
+                    },
+                    "condition": {
+                      "node": "Comparison",
+                      "op": "greater",
+                      "left": {
+                        "node": "BinderRef",
+                        "name": "t",
+                        "source": {
+                          "snippet": "t"
+                        }
+                      },
+                      "right": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "2"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "nonNegative"
+                        },
+                        "source": {
+                          "snippet": "2"
+                        }
+                      },
+                      "source": {
+                        "snippet": "t groter is dan 2"
+                      }
+                    },
+                    "then": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "20"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "nonNegative"
+                      },
+                      "source": {
+                        "snippet": "20"
+                      }
+                    },
+                    "else": {
+                      "node": "BinderRef",
+                      "name": "t",
+                      "source": {
+                        "snippet": "t"
+                      }
+                    },
+                    "source": {
+                      "snippet": "20 als t groter is dan 2, anders t"
+                    }
+                  },
+                  "source": {
+                    "snippet": "10 als t groter is dan 3, anders 20 als t groter is dan 2, anders t"
+                  }
+                },
+                "source": {
+                  "snippet": "t is het aantal gevulde gewichten van zijn vondsten"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "2"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "2"
+                }
+              },
+              "source": {
+                "snippet": "zijn aantal gelijk is aan 2"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

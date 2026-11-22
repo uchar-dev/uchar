@@ -16740,19 +16740,37 @@ let ov_uitkering ?(strict = true) body =
     [ ov_vondst [ "taxatie"; "vindloon"; "gewicht"; "schade"; "uitkering" ] [] ]
     [ ov_vindloon; ov_calc "uitkering" (ov_let "toeslag" (ov_ref "vindloon") body) ]
 
+(* "het vondstloon van een Jutter is, daarbij geldt: t is zijn vindloon, de som
+   van het gewicht van zijn vondsten waarvan [filter]", with "het vindloon van
+   een Jutter is 10 indien zijn taxatie groter is dan 1000", over one vondst of
+   gewicht 20 *)
+let ov_vondstloon ?(strict = true) filter =
+  { (ov_jdoc ~jutter:[ "taxatie"; "vindloon"; "vondstloon" ] ~vondst:[ "gewicht" ]
+       [ ov_jcalc ~cond:(ov_jcmp "taxatie" "1000") "vindloon" (ov_lit "10");
+         ov_jcalc "vondstloon" (ov_let "t" (aref "vindloon" "Jutter") (ov_fold ~filter Sum_function "gewicht")) ])
+    with infer_from_empty = not strict }
+
+let ov_j1_taxatie taxatie =
+  match ov_j1 [ ("V1", [ ("gewicht", "20") ], []) ] with
+  | j1 :: vondsten -> { j1 with ov_attrs = List.map (fun v -> ("taxatie", v)) (Option.to_list taxatie) } :: vondsten
+  | [] -> invalid_arg "ref/test/test_ref.ml: no J1"
+
 (* WV-1.5-let-in-composite-*: a Let of which a condition in the body reads the
-   binder in a member of a composite other than its first, at any depth, or in
-   the filter or the matrix of a quantifier fold is refused by name; without
-   the property the document is not walked and plays as ch. 10.6 and 5.10 lay
-   down. The uitkering with "10 als ten minste één van: zijn gewicht is groter
-   dan 10, de toeslag is groter dan 5; anders 0" reads the toeslag in a later
-   member; so do a later member of a composite that is the first member of
-   another, a first member of a composite that is a later member of another, a
-   choice inside a later member, the value of a Let inside a later member, and
-   a later member inside the body of a Let between the two. Without the
-   property, at gewicht 20, schade 3 and taxatie 2000 (a toeslag of 10), at
-   gewicht 5 and taxatie 50 (a leeg toeslag), at gewicht 20 and taxatie 50, and
-   without a gewicht at taxatie 2000 *)
+   binder in a member of a composite with more than one member, at any depth,
+   or in the filter or the matrix of a quantifier fold is refused by name;
+   without the property the document is not walked and plays as ch. 10.6 and
+   5.10 lay down. The uitkering with "10 als ten minste één van: de toeslag is
+   groter dan 5, zijn gewicht is groter dan 10; anders 0" reads the toeslag in
+   the first member, and with the two members exchanged in a later one; so do a
+   member of a composite that is the first or a later member of another, a
+   composite of one member that is the first member of another with more, a
+   choice inside a member, the value of a Let inside a member, and a member
+   inside the body of a Let between the two. Without the property, at gewicht
+   20, schade 3 and taxatie 2000 (a toeslag of 10), at gewicht 5 and taxatie 50
+   (a leeg toeslag), at gewicht 20 and taxatie 50, and without a gewicht at
+   taxatie 2000. The vondstloon with the filter "ten minste één van: t is groter
+   dan 5, zijn gewicht is groter dan 10" reads its binder in the filter of a fold
+   over a set; without the property, without a taxatie, at 50 and at 2000 *)
 let () =
   let refused id doc =
     match Eval.refuse_uncarried doc with
@@ -16773,6 +16791,23 @@ let () =
            ordinary [ ("gewicht", "20"); ("taxatie", "50") ]; ordinary [ ("taxatie", "2000") ] ])
       want
   in
+  row "first-member" (any [ toeslag; gewicht ]) "10 leeg leeg 10";
+  row "first-member-of-a-first-member" (all [ any [ toeslag; gewicht ]; schade ]) "10 leeg leeg 10";
+  row "one-member-in-a-first-member" (all [ any [ toeslag ]; gewicht ]) "10 leeg leeg 0";
+  row "choice-in-a-first-member" (all [ ov_greater (ov_ite toeslag (ov_lit "1") (ov_lit "0")) "0"; gewicht ]) "10 leeg leeg 0";
+  row "let-value-in-a-first-member"
+    (all [ ov_greater (ov_let "verhoogd" (ov_bin Plus ov_toeslag (ov_lit "1")) (ov_binder "verhoogd")) "5"; gewicht ])
+    "10 leeg leeg 0";
+  let filter name c want =
+    let id = "WV-1.5-let-in-composite-" ^ name in
+    refused id (ov_vondstloon c);
+    let ordinary taxatie = ov_attr (ov_eval (ov_vondstloon ~strict:false c) (ov_j1_taxatie taxatie)) "J1" "vondstloon" in
+    ov_expect (id ^ " (without the property)") (String.concat " " [ ordinary None; ordinary (Some "50"); ordinary (Some "2000") ]) want
+  in
+  let t = ov_greater (ov_binder "t") "5" in
+  filter "filter-first-member" (any [ t; gewicht ]) "leeg leeg 20";
+  filter "filter-later-member" (any [ gewicht; t ]) "20 20 20";
+  filter "filter-one-member-in-a-first-member" (all [ any [ t ]; gewicht ]) "leeg leeg 20";
   row "later-member" (any [ gewicht; toeslag ]) "10 leeg 10 10";
   row "later-member-of-a-first-member" (all [ any [ gewicht; toeslag ]; schade ]) "10 leeg 10 10";
   row "first-member-of-a-later-member" (all [ gewicht; any [ toeslag; schade ] ]) "10 0 leeg 0";
@@ -16811,20 +16846,20 @@ let () =
 
 (* WV-1.5-let-in-composite-not-*: a Let of which no condition in the body reads
    the binder there is read as before. The uitkering with "10 als ten minste
-   één van: de toeslag is groter dan 5, zijn gewicht is groter dan 10; anders 0"
-   reads the toeslag in the first member: at taxatie 2000 it is 10 without a
-   gewicht, at taxatie 50 the leeg toeslag ends the Let and it is settled leeg
-   without a gewicht, and without a taxatie it is 10 at gewicht 20 and open at
-   gewicht 5. A first member of a first member is a first member: "10 als alle
-   van: (ten minste één van: de toeslag …, zijn gewicht …), zijn schade is
-   groter dan 1; anders 0". With "7 als alle van: zijn gewicht is groter dan
+   één van: de toeslag is groter dan 5; anders 0", a composite of one member,
+   reads as that member alone does: it is 10 at taxatie 2000, at taxatie 50 the
+   leeg toeslag ends the Let and it is settled leeg, and without a taxatie it is
+   open; "0 als niet: de toeslag is groter dan 5; anders 10" and a composite of
+   one member in a composite of one member read so as well. The vondstloon
+   reads so with the atom "t is groter dan 5" as its filter, and with the
+   composite of that one member. With "7 als alle van: zijn gewicht is groter dan
    10, zijn schade is groter dan 1; anders de toeslag" the binder is read
    outside every condition: without a gewicht and at schade 0 the uitkering is
-   10 at taxatie 2000 and settled leeg at taxatie 50. A later member that reads
-   a binder of the same name bound inside it reads no binder of the Let around
+   10 at taxatie 2000 and settled leeg at taxatie 50. A member that reads a
+   binder of the same name bound inside it reads no binder of the Let around
    it: "7 als alle van: zijn gewicht is groter dan 10, (daarbij geldt: de toeslag
    is zijn schade, de toeslag) is groter dan 1; anders de toeslag". A Let inside
-   a later member whose binder is read there is none around it: "een Vondst is
+   a member whose binder is read there is none around it: "een Vondst is
    beloond indien alle van: zijn gewicht is groter dan 10, (daarbij geldt: de
    toeslag is zijn vindloon, de toeslag plus 1) is groter dan 5", without a
    gewicht, stands not to hold at taxatie 50 and is open at taxatie 2000 *)
@@ -16835,15 +16870,29 @@ let () =
     let id = "let-in-composite-not-" ^ name in
     ov_row ("WV-1.5-" ^ id) (fun () -> ov_run id (ov_uitkering body) (ov_v1 attrs)) (fun w -> ov_attr w "V1" "uitkering") want
   in
-  let first = ov_ite (any [ toeslag; gewicht ]) (ov_lit "10") (ov_lit "0") in
-  row "first-member-decides" first [ ("taxatie", "2000") ] "10";
-  row "first-member-barrier" first [ ("taxatie", "50") ] "leeg";
-  row "first-member-open" first [ ("gewicht", "20") ] "10";
-  row "first-member-undetermined" first [ ("gewicht", "5") ] "open";
-  let first = ov_ite (all [ any [ toeslag; gewicht ]; schade ]) (ov_lit "10") (ov_lit "0") in
-  row "first-of-a-first" first [ ("taxatie", "2000"); ("schade", "3") ] "10";
-  row "first-of-a-first-barrier" first [ ("taxatie", "50"); ("schade", "3") ] "leeg";
-  row "first-of-a-first-open" first [ ("schade", "0") ] "0";
+  let one_member name condition =
+    let body = match condition with `Ten c -> ov_ite c (ov_lit "10") (ov_lit "0") | `Zero c -> ov_ite c (ov_lit "0") (ov_lit "10") in
+    row name body [ ("taxatie", "2000") ] "10";
+    row (name ^ "-barrier") body [ ("taxatie", "50") ] "leeg";
+    row (name ^ "-open") body [] "open"
+  in
+  one_member "one-member" (`Ten (any [ toeslag ]));
+  one_member "negated" (`Zero (ov_compound None_of 0 [ toeslag ]));
+  one_member "one-member-in-one-member" (`Ten (all [ any [ toeslag ] ]));
+  let filter name c =
+    let row what taxatie want =
+      let id = "let-in-composite-not-" ^ name ^ what in
+      ov_row ("WV-1.5-" ^ id)
+        (fun () -> ov_run id (ov_vondstloon c) (ov_j1_taxatie taxatie))
+        (fun w -> ov_attr w "J1" "vondstloon") want
+    in
+    row "" (Some "2000") "20";
+    row "-barrier" (Some "50") "leeg";
+    row "-open" None "open"
+  in
+  let t = ov_greater (ov_binder "t") "5" in
+  filter "filter" t;
+  filter "filter-one-member" (any [ t ]);
   let outside = ov_ite (all [ gewicht; schade ]) (ov_lit "7") ov_toeslag in
   row "outside-a-condition" outside [ ("taxatie", "2000"); ("schade", "0") ] "10";
   row "outside-a-condition-barrier" outside [ ("taxatie", "50"); ("schade", "0") ] "leeg";
@@ -16957,56 +17006,56 @@ let () =
 
 (* WV-1.5-closure-of-a-binder-*: a binder whose computation applied a closure
    rests on it at every read, not at the first alone. "Een Jutter is bijzonder
-   indien (daarbij geldt: t is de som van het gewicht van zijn vondsten waarvan
-   getuigen gevuld is, 1 als alle van: t is groter dan 3, zijn ervaring is
-   groter dan 5; anders t) gelijk is aan 21", ervaring 3, over a vondst of
-   gewicht 20 with getuigen and one of gewicht 1: the first member reads t after
-   a closure, the second is false and decides the composite for another form as
-   well, and the else branch reads t again. Without the getuigen of the second
-   vondst the comparison is false for the form itself and undetermined for
-   another, so bijzonder is open; with them it holds.
+   indien (daarbij geldt: t is het aantal gevulde gewichten van zijn vondsten, 10
+   als t groter is dan 3, anders 20 als t groter is dan 2, anders t) gelijk is aan
+   2", over two vondsten, the first of gewicht 20: without a gewicht of the second
+   t is 1 after a closure, and bijzonder is open; with one it holds. The fixture
+   let-closure is this document on the wire (WV-5.12-closure-of-a-binder).
    WV-1.5-binder-broken-off-*: a computation that reads an open value deposits
    nothing. "De uitkering van een Vondst is, daarbij geldt: t is zijn taxatie
-   gedeeld door 0 plus zijn schade, 1 als alle van: t is groter dan 3, zijn
-   gewicht is groter dan 10; anders 0", taxatie 50 and gewicht 5, is 0 without a
-   fact where the schade is open, and 0 with the EF-005 fact of the division at
-   schade 5 *)
+   gedeeld door 0 plus zijn schade, 1 als t gevuld is, anders 0", taxatie 50, is 1
+   with the EF-005 fact of the division at schade 5, and 0 without a fact where
+   the schade is open *)
 let () =
   let t = ov_binder "t" in
   let keur =
-    ov_let "t" (ov_fold ~filter:(ov_test Filled "getuigen") Sum_function "gewicht")
-      (ov_ite (ov_compound All 0 [ ov_greater t "3"; ov_jcmp "ervaring" "5" ]) (ov_lit "1") t)
+    ov_let "t" (ov_fold Filled_count "gewicht")
+      (ov_ite (ov_greater t "3") (ov_lit "10") (ov_ite (ov_greater t "2") (ov_lit "20") t))
   in
   let doc =
-    ov_jdoc ~jutter:[ "ervaring" ] ~jchars:[ "bijzonder" ] ~vondst:[ "gewicht"; "getuigen" ]
+    ov_jdoc ~jchars:[ "bijzonder" ] ~vondst:[ "gewicht" ]
       [ ov_jattribution "bijzonder"
-          (Comparison { op = Equal; left_side = Some keur; right_side = Some (ov_lit "21"); time_period = None; source_name = None }) ]
+          (Comparison { op = Equal; left_side = Some keur; right_side = Some (ov_lit "2"); time_period = None; source_name = None }) ]
   in
   let row name v2 want =
     let id = "closure-of-a-binder-" ^ name in
-    let input = ov_j1 [ ("V1", [ ("gewicht", "20"); ("getuigen", "2") ], []); ("V2", ("gewicht", "1") :: v2, []) ] in
-    let input = { (List.hd input) with ov_attrs = [ ("ervaring", "3") ] } :: List.tl input in
-    ov_row ("WV-1.5-" ^ id) (fun () -> ov_run id doc input) (fun w -> ov_char w "J1" "bijzonder") want
+    ov_row ("WV-1.5-" ^ id)
+      (fun () -> ov_run id doc (ov_j1 [ ("V1", [ ("gewicht", "20") ], []); ("V2", v2, []) ]))
+      (fun w -> ov_char w "J1" "bijzonder") want
   in
   row "open" [] "open";
-  row "holds" [ ("getuigen", "1") ] "holds";
+  row "holds" [ ("gewicht", "1") ] "holds";
   let doc =
     ov_doc
-      [ ov_vondst [ "taxatie"; "schade"; "gewicht"; "uitkering" ] [] ]
+      [ ov_vondst [ "taxatie"; "schade"; "uitkering" ] [] ]
       [ ov_calc "uitkering"
           (ov_let "t"
              (ov_bin Plus (ov_bin Divided_by (ov_ref "taxatie") (ov_lit "0")) (ov_ref "schade"))
-             (ov_ite (ov_compound All 0 [ ov_greater t "3"; ov_cmp Greater "gewicht" "10" ]) (ov_lit "1") (ov_lit "0"))) ]
+             (ov_ite
+                (Predicate
+                   { variety = Filled; operand = Some (ov_binder "t"); day_kind = None; negation = false; digit_chars = 0;
+                     time_period = None; source_name = None })
+                (ov_lit "1") (ov_lit "0"))) ]
   in
   let row name schade want =
     let id = "binder-broken-off-" ^ name in
     ov_row ("WV-1.5-" ^ id)
-      (fun () -> ov_run id doc (ov_v1 (schade @ [ ("taxatie", "50"); ("gewicht", "5") ])))
+      (fun () -> ov_run id doc (ov_v1 (schade @ [ ("taxatie", "50") ])))
       (fun w -> ov_attr w "V1" "uitkering" ^ " [" ^ String.concat "; " (ov_channel w) ^ "]")
       want
   in
   row "open" [] "0 []";
-  row "given" [ ("schade", "5") ] "0 [uitkering V1 EF-005]"
+  row "given" [ ("schade", "5") ] "1 [uitkering V1 EF-005]"
 
 (* WV-1.5-closure-before-a-fault: a fault passes no closure on. "De schadetoeslag
    van een Vondst is 1 als alle van: zijn gewicht is groter dan 10, (1 als zijn
@@ -17166,8 +17215,7 @@ let () =
       "compound-all"; "compound-any"; "compound-counting"; "compound-none"; "consistency"; "defaults-characteristic";
       "defaults-stack"; "defaults-subtype"; "empty-by-fault"; "exact-digits"; "fact-creation"; "filled-test";
       "filled-test-not-closure"; "initialisation"; "input-above-computation"; "input-above-computation-open"; "let";
-      "listed-fold"; "marker";
-      "navigated-read"; "object-creation"; "quantifier-fold"; "set-fold"; "settled-empty"; "settled-empty-date";
+      "let-closure"; "listed-fold"; "marker"; "navigated-read"; "object-creation"; "quantifier-fold"; "set-fold"; "settled-empty"; "settled-empty-date";
       "settled-empty-fold"; "settled-empty-stack" ]
   in
   List.iter
@@ -17385,6 +17433,24 @@ let () =
     @ on_object (default_form 1) "V1" [ "0 Compound true"; "1 Literal 10"; "HOLDS" ]
     @ on_object (default_form 0) "V2" [ "0 CharacteristicCheck true"; "1 Literal 0"; "HOLDS" ]
     @ on_object (default_form 1) "V2" [ "0 Compound true"; "1 Literal 10"; "DISPLACED" ])
+
+(* WV-5.12-closure-of-a-binder: every read of a binder tells its own boundary the
+   closure its computation applied (ch. 1.5): in the fixture let-closure, the
+   document of WV-1.5-closure-of-a-binder-*, the comparison and each of the two
+   conditions on the binder is false for itself and undetermined for another,
+   and without a closure each is one truth *)
+let () =
+  let fixture = strict_fixture "let-closure" in
+  let conditions case =
+    List.filter
+      (fun l -> List.mem "Comparison" (String.split_on_char ' ' l))
+      (readings_named (fixture ^ "ir.json") (fixture ^ case) [ rule_form 0 ])
+  in
+  let lines cells = on_object (rule_form 0) "J1" (List.map (fun (k, found) -> Printf.sprintf "%d Comparison %s" k found) cells) in
+  lines_equal "WV-5.12-closure-of-a-binder (after a closure)" (conditions "case2-gewicht-open.json")
+    (lines [ (0, "false closure"); (5, "false closure"); (10, "false closure") ]);
+  lines_equal "WV-5.12-closure-of-a-binder (without one)" (conditions "case1-volledig.json")
+    (lines [ (0, "true"); (5, "false"); (10, "false") ])
 
 (* WV-5.12-open-composite: a composite reads its members until its judgement
    for another form stands; an undetermined member does not stop the read, and
@@ -17656,6 +17722,8 @@ let () =
       (("if-then-else-else-open", "V1.taxatie"), [ "V1.bergtoeslag 5" ]);
       (("complete-characteristic-named", "V1 drijfhout"), [ "V1 drijfhout not"; "V1.drijftoeslag 2" ]);
       (("past-undetermined-filter-later-not", "V1 gemerkt"), [ "V1 gemerkt not" ]);
+      (("binder-broken-off-given", "V1.schade"), [ "V1.uitkering 0" ]);
+      (("binder-broken-off-given", "V1.taxatie"), [ "V1.uitkering 0" ]);
       (("closure-before-a-barrier-leeg-test-false-beside-a-gewicht", "V1.gewicht"), [ "V1.gewicht leeg" ]);
       (("closure-before-a-barrier-leeg-test-false-beside-a-gewicht", "V1.getuigen"), [ "J1.keurgewicht 4" ]);
       (("closure-before-a-barrier-leeg-test-filled", "V1.gewicht"), [ "V1.gewicht leeg" ]);

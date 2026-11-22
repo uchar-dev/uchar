@@ -470,18 +470,23 @@ on the table, kept as the decision's rationale:
 
 ### 1.5 A document that infers nothing from an empty value
 
-A document with `inferFromEmpty: false` (IR-SPEC ch. 2) reads a value in
-three states instead of two. This section says what that changes; what it does not name
-reads as ch. 1.2–1.4 lay down. It defines the reading for a rule (an
-equation, a calculation, a characteristic attribution, an initialisation), a
-defaults group on a target without a timeline, a creation off a cycle, a
-consistency rule, and a condition or an expression without a timeline, a
-quantifier fold, a fold over a set and an IfThenElse among them; for every other form the
-reading is not defined here, and
-IR-SPEC ch. 2 says what an executor does with a document that holds one. Each
-example is a test of the reference interpreter's suite under the name given;
-the examples are from the Jutterswet, on a Vondst whose attributes are whole
-numbers.
+A document with `inferFromEmpty: false` (IR-SPEC ch. 2) reads a member of an
+object, an attribute or a characteristic, in three states instead of two:
+filled, settled leeg, or open, where neither stands. Where ch. 1.2–1.4 read an
+input member that the case leaves out as leeg, it is open here, unless its
+declaration says that its input is complete. A form that reads an open member
+draws nothing from it, unless its outcome stands without that read, or the form
+says in so many words what it does where the member is absent (a closure,
+below). This section says what that changes; what it does not name reads as ch.
+1.2–1.4 lay down. It defines the reading for a rule (an equation, a
+calculation, a characteristic attribution, an initialisation), a defaults group
+on a target without a timeline, a creation off a cycle, a consistency rule, and
+a condition or an expression without a timeline, a quantifier fold, a fold over
+a set and an IfThenElse among them; for every other form the reading is not
+defined here, and IR-SPEC ch. 2 says what an executor does with a document that
+holds one. Each example is a test of the reference interpreter's suite under
+the name given; the examples are from the Jutterswet, on a Vondst whose
+attributes are whole numbers.
 
 **The three states.** A member of an object is *filled* (an attribute has a
 value, a characteristic holds), *settled leeg* (it stands that the attribute
@@ -589,34 +594,42 @@ taxatie 2000; at gewicht 20 the session faults with EF-011 (ch. 8.2), and at
 gewicht 5 the read stops at the first member. In a document without the
 property every member stands, and nothing is read provisionally
 (WV-1.5-past-undetermined-ordinary). Whether a member read provisionally reads
-a binder of a `Let` around it (ch. 10.6) does not stand either, and this
-section gives no reading to a binder there: a document in which a member of a
-composite other than its first, or the filter or the matrix of a quantifier
-fold, reads one is refused (`let-in-composite`, below). Example
-(WV-1.5-let-in-composite-*): "de uitkering van een Vondst is, daarbij geldt: de
-toeslag is zijn vindloon, 10 als ten minste één van: zijn gewicht is groter dan
-10, de toeslag is groter dan 5; anders 0" is refused, and so is the uitkering
-with the condition "alle van: zijn gewicht is groter dan 10, ten minste één
-van: de toeslag is groter dan 5, zijn schade is groter dan 1"; without the
-property the first is 10 at taxatie 2000 without a gewicht. With the condition
-"ten minste één van: de toeslag is groter dan 5, zijn gewicht is groter dan 10"
-the uitkering has a reading (WV-1.5-let-in-composite-not-*): without a gewicht
-it is 10 at taxatie 2000 and settled leeg at taxatie 50, where the read of the
-leeg toeslag ends the Let; without a taxatie it is 10 at gewicht 20 and open
-at gewicht 5. So has "7 als alle van: zijn gewicht is groter dan 10, zijn
-schade is groter dan 1; anders de toeslag", which reads the binder outside
-every condition: without a gewicht, at schade 0, it is 10 at taxatie 2000 and
-settled leeg at taxatie 50. Example (WV-1.5-atom, WV-1.5-table-*): "een Vondst
-is zwaar indien zijn gewicht groter is dan 100" is undetermined without a
-gewicht. With "een Vondst is opvallend indien [Q] van: zijn gewicht groter is
-dan 100 (A), zijn schatting groter is dan 1000 (B), zijn lengte groter is dan
-2 (C)": `all` over A undetermined and B false is false; `atLeast 1` over A
-undetermined and B true is true; over A true, B true and C undetermined,
-`atLeast 2` is true and `atMost 1` and `exactly 1` are false; over A true, B
-false and C undetermined, all three are undetermined; over A false, B false
-and C undetermined, `atLeast 2` is false, `atMost 1` true and `exactly 1`
-undetermined. The suite holds all nine rows of `all`, `atLeast 1` and `none`
-over A and B, and the three rows of "niet A".
+a binder of a `Let` around it (ch. 10.6) does not stand either, and in a first
+member the read of a leeg binder ends the `Let`, where with the binder open a
+later member can decide the composite. This section gives no reading to a
+binder there: a document in which a member of a composite with more than one
+member, or the filter or the matrix of a quantifier fold, reads one is refused
+(`let-in-composite`, below). Example (WV-1.5-let-in-composite-*): "de uitkering
+van een Vondst is, daarbij geldt: de toeslag is zijn vindloon, 10 als ten
+minste één van: de toeslag is groter dan 5, zijn gewicht is groter dan 10;
+anders 0" is refused, also with the two members exchanged, and so is the
+uitkering with the condition "alle van: zijn gewicht is groter dan 10, ten
+minste één van: de toeslag is groter dan 5, zijn schade is groter dan 1";
+without the property the first is 10 at taxatie 2000 without a gewicht. So is
+"het vondstloon van een Jutter is, daarbij geldt: t is zijn vindloon, de som
+van het gewicht van zijn vondsten waarvan ten minste één van: t is groter dan
+5, zijn gewicht is groter dan 10", with "het vindloon van een Jutter is 10
+indien zijn taxatie groter is dan 1000": over one vondst of gewicht 20 an open
+t would leave the sum at 20, and a leeg t would end the Let. With the condition
+"ten minste één van: de toeslag is groter dan 5", a composite of one member,
+the uitkering has a reading (WV-1.5-let-in-composite-not-*): it is 10 at
+taxatie 2000, settled leeg at taxatie 50, where the read of the leeg toeslag
+ends the Let, and open without a taxatie. So has the vondstloon with the filter
+"t is groter dan 5", over that vondst 20 at taxatie 2000, settled leeg at
+taxatie 50 and open without a taxatie, and so has the uitkering with "7 als
+alle van: zijn gewicht is groter dan 10, zijn schade is groter dan 1; anders de
+toeslag", which reads the binder outside every condition: without a gewicht, at
+schade 0, it is 10 at taxatie 2000 and settled leeg at taxatie 50. Example
+(WV-1.5-atom, WV-1.5-table-*): "een Vondst is zwaar indien zijn gewicht groter
+is dan 100" is undetermined without a gewicht. With "een Vondst is opvallend
+indien [Q] van: zijn gewicht groter is dan 100 (A), zijn schatting groter is
+dan 1000 (B), zijn lengte groter is dan 2 (C)": `all` over A undetermined and B
+false is false; `atLeast 1` over A undetermined and B true is true; over A
+true, B true and C undetermined, `atLeast 2` is true and `atMost 1` and
+`exactly 1` are false; over A true, B false and C undetermined, all three are
+undetermined; over A false, B false and C undetermined, `atLeast 2` is false,
+`atMost 1` true and `exactly 1` undetermined. The suite holds all nine rows of
+`all`, `atLeast 1` and `none` over A and B, and the three rows of "niet A".
 
 **For the form itself and for another.** The judgement of a condition is a
 pair: its truth for the form whose condition it is, and its truth for another
@@ -957,33 +970,31 @@ totaal is de som van het gewicht van zijn vondsten waarvan het gewicht
 gevuld is" is 50 there; over vondsten that all lack a gewicht it is open, and
 over no vondst settled leeg. A binder of a `Let` (ch. 10.6) whose computation
 applied a closure rests on it at every read: each read tells its own boundary.
-Example (WV-1.5-closure-of-a-binder-*): "een Jutter is bijzonder indien
-(daarbij geldt: t is de som van het gewicht van zijn vondsten waarvan getuigen
-gevuld is, 1 als alle van: t is groter dan 3, zijn ervaring is groter dan 5;
-anders t) gelijk is aan 21", at ervaring 3, over a vondst of gewicht 20 with
-getuigen and one of gewicht 1, holds where the second has getuigen; where it
-has none, the composite is false by its second member, for another form as
-well, the else branch reads t, 20 after a closure, and bijzonder is open. The
-computation of a binder is one value: one that reads an open value deposits
-nothing. Example (WV-1.5-binder-broken-off-*): "de uitkering van een Vondst is,
-daarbij geldt: t is zijn taxatie gedeeld door 0 plus zijn schade, 1 als alle
-van: t is groter dan 3, zijn gewicht is groter dan 10; anders 0", at taxatie 50
-and gewicht 5, is 0 with the EF-005 fact of the division at schade 5, and 0
-without a fact where the schade is open. Where the barrier of a Let ends an
-atomic condition, that condition has no judgement, and the closures applied in
-it count for the value of the Let, which is leeg. Example
-(WV-1.5-closure-before-a-barrier): "het keurgewicht van een Jutter is, daarbij
-geldt: t is de som van het gewicht van zijn vondsten waarvan getuigen gevuld
-is, 1 als t gelijk is aan 3, anders t", over a vondst of gewicht 5, is 5 at
-getuigen 2; without getuigen the comparison reads the leeg t, and the
-keurgewicht is open. A closure applied before a fault does not count: what
-faulted has no value and no judgement. Example (WV-1.5-closure-before-a-fault):
-"de schadetoeslag van een Vondst is 1 als alle van: zijn gewicht is groter dan
-10, (1 als zijn getuigen leeg is, anders 0) plus het Rekenjaar is groter dan 3,
-zijn schade is groter dan 100; anders zijn vindloon", without a gewicht,
-getuigen and an evaluation date, at schade 3 and taxatie 50: the second member
-faults and is undetermined, the third is false, and the schadetoeslag is
-settled leeg, as the vindloon is.
+Example (WV-1.5-closure-of-a-binder-*, WV-5.12-closure-of-a-binder): "een
+Jutter is bijzonder indien (daarbij geldt: t is het aantal gevulde gewichten
+van zijn vondsten, 10 als t groter is dan 3, anders 20 als t groter is dan 2,
+anders t) gelijk is aan 2", over a vondst of gewicht 20 and one of gewicht 1,
+holds; where the second has no gewicht, t is 1 after a closure, each of the two
+conditions on t is false for the form itself and undetermined for another, and
+bijzonder is open. The computation of a binder is one value: one that reads an
+open value deposits nothing. Example (WV-1.5-binder-broken-off-*): "de
+uitkering van een Vondst is, daarbij geldt: t is zijn taxatie gedeeld door 0
+plus zijn schade, 1 als t gevuld is, anders 0", at taxatie 50, is 1 with the
+EF-005 fact of the division at schade 5, and 0 without a fact where the schade
+is open. Where the barrier of a Let ends an atomic condition, that condition
+has no judgement, and the closures applied in it count for the value of the
+Let, which is leeg. Example (WV-1.5-closure-before-a-barrier): "het keurgewicht
+van een Jutter is, daarbij geldt: t is de som van het gewicht van zijn vondsten
+waarvan getuigen gevuld is, 1 als t gelijk is aan 3, anders t", over a vondst
+of gewicht 5, is 5 at getuigen 2; without getuigen the comparison reads the
+leeg t, and the keurgewicht is open. A closure applied before a fault does not
+count: what faulted has no value and no judgement. Example
+(WV-1.5-closure-before-a-fault): "de schadetoeslag van een Vondst is 1 als alle
+van: zijn gewicht is groter dan 10, (1 als zijn getuigen leeg is, anders 0)
+plus het Rekenjaar is groter dan 3, zijn schade is groter dan 100; anders zijn
+vindloon", without a gewicht, getuigen and an evaluation date, at schade 3 and
+taxatie 50: the second member faults and is undetermined, the third is false,
+and the schadetoeslag is settled leeg, as the vindloon is.
 
 **An IfThenElse in a value** (ch. 10.2) reads its condition as a judgement,
 and then the branch it chooses and no other. Where the condition is
@@ -1042,24 +1053,29 @@ state.
 **The two requirements.** *Monotonicity*: giving an input member a value adds
 outcomes and changes none — an outcome being a value, a settled leeg
 attribute, a characteristic that holds or stands not to hold, or a §9.5 fact
-— except through a closure: a leeg test or a gevuld assertion over an open
-value (the form's own negation of a gevuld test among them), a
-filled-value count and a fold filter that tests on gevuld over an open value,
-an initialisation, and a member declared complete. A value the case gives a
-derived member is no input member's: where every writer fills nothing it
-stands in place of settled leeg. *Preservation with complete knowledge*: where nothing is open,
-every input member given or complete, the outcomes are those of ch. 1.2–1.4.
-Example (WV-1.5-monotone,
-WV-1.5-preserved): every example of this section, run once with each input
-member it gives left out, and once with every input member complete against
-the same document without the property; the closures the first meets are
-listed in the test, with the outcomes each adds. Gate 5 holds both over the
-corpus: every golden whose forms the reference interpreter carries, with the
-property, plays its own cases with every input member complete; and per case
-and per input member it gives, the end state without that input (ch. 5.12a)
-keeps its every outcome in the end state with it, a run in which a closure
-decided, and one whose member left out is not open there (a member declared
-complete among them), counted apart.
+— except through a closure: a test on leeg or gevuld, or a gevuld assertion,
+over an open value (the form's own negation of a gevuld test among them), a
+filled-value count and a filter of a fold, over a set or with a quantifier,
+that tests on gevuld over an open value, an initialisation, and a member
+declared complete. A value the case gives a derived member is no input
+member's: where every writer fills nothing it stands in place of settled leeg.
+The requirement is over the input members of the objects of a case: its links
+are complete (but where a creation could still lay one), and adding a link or
+an object is not giving a member a value. It holds where both sessions end: an
+input given can make a session fault that ended without it, where an evaluation
+then reaches a fault, or a member that faults is no longer read provisionally.
+*Preservation with complete knowledge*: where nothing is open, every input
+member given or complete, the outcomes are those of ch. 1.2–1.4. Example
+(WV-1.5-monotone, WV-1.5-preserved): every example of this section, run once
+with each input member it gives left out, and once with every input member
+complete against the same document without the property; the closures the first
+meets are listed in the test, with the outcomes each adds. Gate 5 holds both
+over the corpus: every golden whose forms the reference interpreter carries,
+with the property, plays its own cases with every input member complete; and
+per case and per input member it gives, the end state without that input (ch.
+5.12a) keeps its every outcome in the end state with it, a run in which a
+closure decided, and one whose member left out is not open there (a member
+declared complete among them), counted apart.
 
 Broader examples, a document per form with cases whose expectations were
 computed by hand (`spec/proposals/STRICT-EMPTY.md` §5), are in the suite
@@ -1095,7 +1111,7 @@ several, it names the first of this list:
 | `whole-period` | the whole-period qualifier (ch. 3.9) |
 | `time-window` | a period window (ch. 3.10) |
 | `rule-status-check` | a check of the status of a rule version |
-| `let-in-composite` | a `Let` (ch. 10.6) whose body holds, at any depth, a read of its binder in a member of a composite other than the first, or in the filter or the matrix of a quantifier fold |
+| `let-in-composite` | a `Let` (ch. 10.6) whose body holds, at any depth, a read of its binder in a member of a composite with more than one member, or in the filter or the matrix of a quantifier fold |
 
 The suite holds this table to the slugs the reference interpreter refuses
 with, in this order (`WV-1.5-uncarried-forms`).
