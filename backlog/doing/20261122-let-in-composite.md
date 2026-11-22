@@ -10,10 +10,10 @@ In een document met `inferFromEmpty: false` leest een samengestelde voorwaarde d
 zo'n later lid wordt voorlopig gelezen (ch. 1.5). Leest dat lid een lokale naam van een `Let` eromheen ("daarbij geldt"),
 dan staat niet vast of die naam gelezen mag worden. Ch. 1.5 legt daarvoor twee regels vast: de barrière van een `Let` is
 dan een open lezing, en wat het berekenen van de naam deponeert wacht op een gewone lezing. De eigenaar wil die regels
-niet: geen enkele regelset kan ze gebruiken zolang de Drools-backend ze niet draagt, en in het corpus komt de vorm niet
-voor (32 goldens met een `Let`, één met een samengestelde voorwaarde in de romp, geen enkele die de naam in een later lid
-leest). De vorm wordt daarom een vorm zonder lezing, die elke executor bij naam weigert. Is zij later nodig, dan komt er
-een eigen kaart.
+niet: geen enkele regelset kan ze gebruiken zolang de Drools-backend ze niet draagt, en in het corpus komt de vorm in één
+golden voor (32 goldens met een `Let`; geen enkele leest de naam in een later lid van een samenstelling,
+`jutterswet-grens-per-jutter` leest haar in het filter en in de toets van een kwantorvouw, zonder de eigenschap). De vorm
+wordt daarom een vorm zonder lezing, die elke executor bij naam weigert. Is zij later nodig, dan komt er een eigen kaart.
 
 Los daarvan staan in ref twee fouten in de lezing van ch. 1.5, gevonden doordat de clingo-vertaling op duizenden gevallen
 naast ref gelegd werd:
@@ -76,6 +76,9 @@ volgende bouwdeel). Deze kaart raakt `ref/` en ch. 1.5.
 | `c089dc027` | de vorm `let-in-composite`: de rij in de tabel van ch. 1.5, de weigering in `refuse_uncarried`, de getuigen; de twee regels en hun voorbeelden uit ch. 1.5, de verwijzingen uit ch. 5.12 |
 | `d8bfceeb2` | ref verkleind: de binding van een `Let` is weer `Later of (unit -> Value.t)`, `judge_cond` vangt bij een voorlopig gelezen lid alleen een fout |
 | `dce71935b` | `written_member`: het lid dat een regel schrijft, op één plaats naar zijn soort |
+| `0c94b54d4` | de berekening van een binder is één waarde met haar eigen grens: elke lezing meldt haar sluiting, en een berekening met een open lezing deponeert niets; ch. 1.5 "A closure inside a value" |
+| `0b32ac9da` | `World.Open_read` draagt het lid met zijn soort; `open_text` zoekt de spelling bij die soort; ch. 5.12 |
+| `e00bf19df` | de drie floors van gate 5, met mandaat van de hoofdsessie voor precies die drie regels |
 
 De weigering is een wandeling over het document, zonder evaluatie: per binder van een omsluitende `Let` houdt zij bij of
 de plaats binnen de romp van die `Let` in een later lid van een samenstelling of in een kwantorvouw staat. Een binder met
@@ -93,9 +96,17 @@ rust: een vaststaand leeg doel werd open. Getuige `WV-1.5-closure-before-a-fault
 sluiting doorgeeft, geeft daar "open" waar "leeg" verwacht is, en geen andere getuige valt. Een fout die niet gevangen
 wordt, beëindigt de evaluatie van de vorm zonder uitkomst (`fault_evaluation`).
 
+### Een gewoon document
+
+Zonder open lezing doet `open_read_boundary` niets anders dan de berekening zonder grens: de deponeringen gaan in hun
+volgorde door, een fout gaat door met de deponeringen van daarvoor, en er is geen sluiting te melden. Gemeten: elke case
+van `corpus/golden` en `corpus/red` (1313, waarvan 1300 zonder de eigenschap en 70 daarvan met een `Let`) door de runner
+van deze branch en die van de basis, als replay, met `--end-state` en met `--trace`: uitvoer, foutuitvoer en exitcode
+byte-gelijk, 0 verschillen. Gate 5 speelt 1211 goldencases met hun verwachting en gate 7 weerlegt er 1169.
+
 ### De getuigen per eis
 
-Alle in de ref-suite, die gate 5 draait: 4194 voorbeelden (4082 op `main`; floor 489).
+Alle in de ref-suite, die gate 5 draait: 4217 voorbeelden (4082 op `main`; floor 489).
 
 | eis | getuige | stand op de code van vóór de wijziging |
 |---|---|---|
@@ -107,6 +118,9 @@ Alle in de ref-suite, die gate 5 draait: 4194 voorbeelden (4082 op `main`; floor
 | fout 1 | `WV-1.5-shared-name-*`: 15 rijen (twee defaults-groepen, twee regels, kenmerk als invoer, attribuut als invoer, een gemaakt object) | 9 rood, en 2 rijen van `WV-1.5-monotone` |
 | fout 2 | `WV-1.5-closure-before-a-barrier-*`: 11 rijen | 4 rood, en 5 rijen van `WV-1.5-monotone` |
 | een fout geeft niets door | `WV-1.5-closure-before-a-fault` | groen vóór en na; rood op de mutant hierboven |
+| elke lezing van een binder draagt haar sluiting | `WV-1.5-closure-of-a-binder-*` | `-open` rood ("not", verwacht "open") en 2 rijen van `WV-1.5-monotone` rood ("bijzonder stond vast als niet" verdwijnt met een ingevuld gegeven) |
+| een afgebroken berekening deponeert niets | `WV-1.5-binder-broken-off-*` | `-open` rood ("0 [uitkering V1 EF-005]", verwacht "0 []") |
+| een open lezing noemt haar lid | `WV-5.12-open-shared-name` | rood (het kenmerk "toeslag" heette "Toeslag") |
 | tabel en code noemen dezelfde vormen | `WV-1.5-uncarried-forms` | groen |
 
 Twee hulpen van de suite zijn mee: de functie `written` in `WV-1.5-monotone` vraagt de schrijvers per soort lid, en de
@@ -125,13 +139,12 @@ leeg over een open waarde).
 
 ### Gates
 
-- Gate 1: `check-self-contained: PASS`, vóór elke commit.
-- Gate 3, 6, 7 en 14, op `dce71935b`: PASS (gate 3: 510 golden clean, 657 negative rejected; gate 6: backend suite 3231
-  checks, 1169 cases ref = clingo, 12 goldens in het weigerkanaal; gate 7: 1169 cases, 42 survivors; gate 14: 164 checks,
-  3 goldens).
-- Gate 8: het ref- en het clingo-been en `check-exec-codes` zonder een rode regel (gedraaid op `d8bfceeb2` met een PATH
-  zonder `mvn`); het Drools-been is niet gedraaid, en dat is de ene FAIL-regel van die run.
-- Gate 5 **rood op drie floors**, en met `gate5-floors.diff` groen (hieronder).
+- Gate 1, 3, 5, 7 en 14 op `e00bf19df`: PASS. Gate 3: 510 golden clean, 657 negative rejected. Gate 5: suite 4217, 1211
+  cases replayed exactly, 279 goldens en 782 cases behouden, 152 goldens geweigerd per vorm (`let-in-composite` 1), 2226
+  monotonie-runs, 401 met een sluiting apart. Gate 7: 1169 cases, 42 survivors. Gate 14: 164 checks, 3 goldens.
+- Gate 6 op `dce71935b`: PASS (backend suite 3231 checks, 1169 cases ref = clingo, 12 goldens in het weigerkanaal).
+- Gate 8 op `d8bfceeb2`, met een PATH zonder `mvn`: het ref- en het clingo-been en `check-exec-codes` zonder een rode
+  regel; het Drools-been is niet gedraaid, en dat is de ene FAIL-regel van die run.
 
 ### Gate 5: waarom drie getallen verschuiven
 
@@ -145,15 +158,9 @@ leeg over een open waarde).
 De ene oorzaak is de golden `jutterswet-grens-per-jutter`: vier van haar zes regels lezen de binder van een `Let` in de
 toets van een kwantorvouw en één in het filter. Haar strikte kopie, die alleen gate 5 maakt, is nu geweigerd
 (`let-in-composite 1` in de samenvatting); 2 cases en 2 × 25 runs vervallen. Zonder de eigenschap speelt zij in elke gate
-als tevoren. De zin in de Aanleiding dat de vorm in het corpus niet voorkomt, geldt voor de samenstelling en niet voor de
-kwantorvouw.
+als tevoren.
 
-`scripts/` valt buiten "May touch", dus de drie floors zijn niet gewijzigd. Het voorstel staat als `gate5-floors.diff` in
-de werkmap: `EXPECTED_MIN_PRESERVED_GOLDENS` 279, `EXPECTED_MIN_PRESERVED_CASES` 782, `EXPECTED_MIN_MONOTONE_RUNS` 2226,
-met de reden per regel. In een losse boom op `dce71935b` met dat voorstel: `check-oracle: PASS (ref suite 4194 worked
-examples; 1211 cases replayed exactly; 279 goldens and 782 cases play; 152 goldens refused per form (…, let-in-composite
-1, …); 794 cases, 2226 runs without one input compared, 401 with a closure apart, 101 of a member not open without its
-value)`.
+De floors zijn 279, 782 en 2226, met de reden per regel (`scripts/check-oracle.sh`).
 
 ### Voorlopige besluiten
 
@@ -163,7 +170,8 @@ value)`.
 3. De soort van een lid is een sum type (`World.member`), en een relatie is er een van; de sleutel leunt niet meer op een
    naam die geen lid kan spellen.
 4. Ch. 1.5 krijgt een voorbeeld voor elk van de twee fouten (`WV-1.5-shared-name-*`, `WV-1.5-closure-before-a-barrier`,
-   `WV-1.5-closure-before-a-fault`), zodat clingo en Drools dezelfde tekst hebben.
+   `WV-1.5-closure-before-a-fault`), zodat clingo en Drools dezelfde tekst hebben. De lezing van een binder (hierboven)
+   verandert ref voor een vorm die clingo draagt.
 5. Er staat geen vangnet voor een barrière die een voorlopig gelezen lid verlaat: `evaluate` weigert de vorm vóór het
    evalueren.
 
@@ -174,29 +182,13 @@ creation on a cycle is refused by name (`creation-cycle`), and refuses a documen
 fault leaves it undetermined (ch. 1.5); a `Let` whose binder a member of a composite other than the first, or the filter
 or the matrix of a quantifier fold, reads is refused by name (`let-in-composite`), and so is a creation on a cycle
 (`creation-cycle`); it refuses a document with another form by name …". Bij de witnesses: `WV-1.5-let-in-composite-*`,
-`WV-1.5-shared-name-*`, `WV-1.5-closure-before-a-barrier`, `WV-1.5-closure-before-a-fault`.
+`WV-1.5-shared-name-*`, `WV-1.5-closure-before-a-barrier`, `WV-1.5-closure-before-a-fault`,
+`WV-1.5-closure-of-a-binder-*`, `WV-1.5-binder-broken-off-*`, `WV-5.12-open-shared-name`.
 
 De alinea's van de gates in `CLAUDE.md` veranderen niet.
 
 ### Open punten
 
-1. **ref verliest een sluiting bij de tweede lezing van een binder** (fout, buiten de kaart, niet hersteld). De sluiting
-   in de berekening van een binder wordt alleen bij de eerste lezing gemeld. Gemeten: "een Jutter is bijzonder indien
-   (daarbij geldt: t is de som van het gewicht van zijn vondsten waarvan getuigen gevuld is, 1 als alle van: t is groter
-   dan 3, zijn ervaring is groter dan 5; anders t) gelijk is aan 21", ervaring 3, over een vondst van 20 met getuigen en
-   een van 1: zonder de getuigen van de tweede "staat vast als niet", met die getuigen "houdt". Een gegeven invullen
-   verandert dus een uitkomst. Het eerste lid leest t na een sluiting, het tweede lid beslist de samenstelling, en de
-   sluiting verdwijnt met het oordeel; de lezing van t in de anders-tak meldt haar niet. Ch. 1.5: open. Een voorstel met
-   getuigen staat als `open-punt-tweede-lezing.diff` in de werkmap: de berekening van een binder wordt als één waarde
-   gelezen (`open_read_boundary`) en elke lezing meldt haar sluiting; 11 regels code in de plaats van 2, vier getuigen rood
-   zonder, suite 4216 groen en gate 5 (met de floors hierboven) groen met dezelfde tellingen. Het verandert ref voor een vorm die clingo ook draagt.
-2. **Een deponering van een binder waarvan de berekening een open lezing heeft, blijft staan** waar ch. 1.5 haar laat
-   vallen. Gemeten: "de uitkering is, daarbij geldt: t is zijn taxatie gedeeld door 0 plus zijn schade, 1 als alle van: t
-   is groter dan 3, zijn gewicht is groter dan 10; anders 0", taxatie 50, gewicht 5, schade open: 0 met het feit EF-005;
-   met de uitdrukking zonder `Let` in het lid: 0 zonder feit. Geen schending van monotonie. Het voorstel van punt 1
-   herstelt het ook.
-3. `open_text` (ch. 5.12) zoekt de gespelde naam van een open lid eerst onder de attributen en dan onder de kenmerken.
-   Delen een attribuut en een kenmerk een naam in verschillende hoofdletters, dan schrijft een open kenmerk zich in de
-   spelling van het attribuut. Alleen de spelling in een lezing; niet hersteld.
-4. clingo (`card/open-values-in-clingo`) neemt de slug over, en de twee herstelde fouten: attribuut en kenmerk van één
-   naam, en de sluiting die met de barrière meegaat.
+1. clingo (`card/open-values-in-clingo`) neemt over: de slug `let-in-composite`, attribuut en kenmerk van één naam als twee
+   leden, de sluiting die met de barrière meegaat, en de binder die bij elke lezing op de sluiting van haar berekening
+   rust en bij een afgebroken berekening niets deponeert.
