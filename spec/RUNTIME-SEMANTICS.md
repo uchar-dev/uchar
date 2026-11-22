@@ -947,7 +947,21 @@ gevulde gewichten van zijn vondsten gelijk is aan 3" is open there: false for
 itself, undetermined for another; "… groter is dan 1" holds. "Het gewogen
 totaal is de som van het gewicht van zijn vondsten waarvan het gewicht
 gevuld is" is 50 there; over vondsten that all lack a gewicht it is open, and
-over no vondst settled leeg.
+over no vondst settled leeg. Where the barrier of a `Let` (ch. 10.6) ends an
+atomic condition, that condition has no judgement, and the closures applied in
+it count for the value of the Let, which is leeg. Example
+(WV-1.5-closure-before-a-barrier): "het keurgewicht van een Jutter is, daarbij
+geldt: t is de som van het gewicht van zijn vondsten waarvan getuigen gevuld
+is, 1 als t gelijk is aan 3, anders t", over a vondst of gewicht 5, is 5 at
+getuigen 2; without getuigen the comparison reads the leeg t, and the
+keurgewicht is open. A closure applied before a fault does not count: what
+faulted has no value and no judgement. Example (WV-1.5-closure-before-a-fault):
+"de schadetoeslag van een Vondst is 1 als alle van: zijn gewicht is groter dan
+10, (1 als zijn getuigen leeg is, anders 0) plus het Rekenjaar is groter dan 3,
+zijn schade is groter dan 100; anders zijn vindloon", without a gewicht,
+getuigen and an evaluation date, at schade 3 and taxatie 50: the second member
+faults and is undetermined, the third is false, and the schadetoeslag is
+settled leeg, as the vindloon is.
 
 **An IfThenElse in a value** (ch. 10.2) reads its condition as a judgement,
 and then the branch it chooses and no other. Where the condition is

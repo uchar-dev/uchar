@@ -16819,6 +16819,103 @@ let () =
   row "else-open" (ov_v1 [ ("taxatie", "50") ]) "open 0 holds";
   row "condition-open" (ov_v1 [ ("gewicht", "3") ]) "open 5 open"
 
+(* WV-1.5-closure-before-a-barrier: the barrier of a Let (ch. 10.6) that ends an
+   atomic condition passes on the closure applied there: the Let is leeg after
+   a closure, so its target is open and an atomic condition over it is
+   undetermined for another form. "Het keurgewicht van een Jutter is, daarbij
+   geldt: t is de som van het gewicht van zijn vondsten waarvan getuigen gevuld
+   is, 1 als t gelijk is aan 3, anders t", over one vondst of gewicht 5: without
+   getuigen the filter leaves it out, t is leeg and the keurgewicht open; with
+   getuigen 2 it is 5. "… waarvan getuigen leeg is", the gewicht complete and
+   not given: without getuigen t is leeg after the closure and the keurgewicht
+   is open, at getuigen 2 the filter stands to be false and it is settled leeg,
+   and at gewicht 4 and getuigen 2 as well; at gewicht 4 without getuigen it is
+   4 and at gewicht 3 it is 1. The barrier passes the closure on from the test
+   on gevuld as well ("1 als t gevuld is, anders t"), and "een Jutter is keurig
+   indien (daarbij geldt …, 1 als t gelijk is aan 3, anders t) groter is dan 4"
+   is open over the vondst of gewicht 5 without getuigen and holds with them *)
+let () =
+  let t : Ir_v0.Ast.expr = Binder_ref { ident = "t"; source_name = None } in
+  let ite condition then_ else_ : Ir_v0.Ast.expr =
+    If_then_else { typ = Some num0; condition; then_; else_; source_name = None }
+  in
+  let is_three : Ir_v0.Ast.condition_expr =
+    Comparison { op = Equal; left_side = Some t; right_side = Some (ov_lit "3"); time_period = None; source_name = None }
+  and is_filled : Ir_v0.Ast.condition_expr =
+    Predicate
+      { variety = Filled; operand = Some t; day_kind = None; negation = false; digit_chars = 0; time_period = None;
+        source_name = None }
+  in
+  let keurgewicht variety condition : Ir_v0.Ast.expr =
+    Let
+      { typ = Some num0; binder = "t"; value = ov_fold ~filter:(ov_test variety "getuigen") Sum_function "gewicht";
+        body = ite condition (ov_lit "1") t; source_name = None }
+  in
+  let doc variety condition =
+    ov_jdoc ~jutter:[ "keurgewicht" ] ~vondst:[ "gewicht"; "getuigen" ] [ ov_jcalc "keurgewicht" (keurgewicht variety condition) ]
+  in
+  let row name doc v1 want =
+    let id = "closure-before-a-barrier-" ^ name in
+    ov_row ("WV-1.5-" ^ id) (fun () -> ov_run id doc (ov_j1 [ ("V1", v1, []) ])) (fun w -> ov_attr w "J1" "keurgewicht") want
+  in
+  let given = doc Filled is_three in
+  row "open" given [ ("gewicht", "5") ] "open";
+  row "filled" given [ ("gewicht", "5"); ("getuigen", "2") ] "5";
+  let complete = ov_complete [ "gewicht" ] (doc Empty_predicate is_three) in
+  row "leeg-test-open" complete [] "open";
+  row "leeg-test-false" complete [ ("getuigen", "2") ] "leeg";
+  row "leeg-test-false-beside-a-gewicht" complete [ ("gewicht", "4"); ("getuigen", "2") ] "leeg";
+  row "leeg-test-filled" complete [ ("gewicht", "4") ] "4";
+  row "leeg-test-three" complete [ ("gewicht", "3") ] "1";
+  row "gevuld-test-open" (doc Filled is_filled) [ ("gewicht", "5") ] "open";
+  row "gevuld-test-filled" (doc Filled is_filled) [ ("gewicht", "5"); ("getuigen", "2") ] "1";
+  let doc =
+    ov_jdoc ~jchars:[ "keurig" ] ~vondst:[ "gewicht"; "getuigen" ]
+      [ ov_jattribution "keurig"
+          (Comparison
+             { op = Greater; left_side = Some (keurgewicht Filled is_three); right_side = Some (ov_lit "4");
+               time_period = None; source_name = None }) ]
+  in
+  let row name v1 want =
+    let id = "closure-before-a-barrier-" ^ name in
+    ov_row ("WV-1.5-" ^ id) (fun () -> ov_run id doc (ov_j1 [ ("V1", v1, []) ])) (fun w -> ov_char w "J1" "keurig") want
+  in
+  row "condition-open" [ ("gewicht", "5") ] "open";
+  row "condition-holds" [ ("gewicht", "5"); ("getuigen", "2") ] "holds"
+
+(* WV-1.5-closure-before-a-fault: a fault passes no closure on. "De schadetoeslag
+   van een Vondst is 1 als alle van: zijn gewicht is groter dan 10, (1 als zijn
+   getuigen leeg is, anders 0) plus het Rekenjaar is groter dan 3, zijn schade is
+   groter dan 100; anders zijn vindloon", with the vindloon of the card at
+   taxatie 50, schade 3, no gewicht, no getuigen and no evaluation date: the
+   second member closes over the getuigen and faults, so it is undetermined
+   and decides nothing; the third is false, and the schadetoeslag is the settled
+   leeg vindloon, settled leeg and not leeg after a closure *)
+let () =
+  let ite condition then_ else_ : Ir_v0.Ast.expr =
+    If_then_else { typ = Some num0; condition; then_; else_; source_name = None }
+  in
+  let rekenjaar : Ir_v0.Ast.expr =
+    Context_value { ident = Some Ir_v0.Spelling.evaluation_year; typ = Some num0; source_name = None }
+  in
+  let condition =
+    ov_compound All 0
+      [ ov_cmp Greater "gewicht" "10";
+        Comparison
+          { op = Greater;
+            left_side = Some (ov_bin Plus (ite (ov_test Empty_predicate "getuigen") (ov_lit "1") (ov_lit "0")) rekenjaar);
+            right_side = Some (ov_lit "3"); time_period = None; source_name = None };
+        ov_cmp Greater "schade" "100" ]
+  in
+  let doc =
+    ov_doc
+      [ ov_vondst [ "taxatie"; "vindloon"; "gewicht"; "getuigen"; "schade"; "schadetoeslag" ] [] ]
+      [ ov_vindloon; ov_calc "schadetoeslag" (ite condition (ov_lit "1") (ov_ref "vindloon")) ]
+  in
+  ov_expect "WV-1.5-closure-before-a-fault"
+    (ov_attr (ov_run "closure-before-a-fault" doc (ov_v1 [ ("taxatie", "50"); ("schade", "3") ])) "V1" "schadetoeslag")
+    "leeg"
+
 (* WV-1.5-direct-reads: every read of a member while a form is evaluated goes
    through World.read_attr, read_char, read_timeline or read_char_periods,
    and every read of a relation through World.read_links, which raise
@@ -17401,7 +17498,7 @@ let () =
    changes one. The named exceptions are the closures, each listed here with
    the outcomes it adds: a test that says an open value is leeg, a consistency
    that says an open value must be gevuld, a filled-value count and a fold
-   filter on gevuld over an open value, an initialisation, and a member
+   filter on leeg or gevuld over an open value, an initialisation, and a member
    declared complete. A
    link is no input that can be open (ch. 1.5) and is not left out, and
    neither is a value the case gives a member a rule writes on the object's
@@ -17428,7 +17525,11 @@ let () =
       (("if-then-else-else", "V1.taxatie"), [ "V1.bergtoeslag 5" ]);
       (("if-then-else-else-open", "V1.taxatie"), [ "V1.bergtoeslag 5" ]);
       (("complete-characteristic-named", "V1 drijfhout"), [ "V1 drijfhout not"; "V1.drijftoeslag 2" ]);
-      (("past-undetermined-filter-later-not", "V1 gemerkt"), [ "V1 gemerkt not" ]) ]
+      (("past-undetermined-filter-later-not", "V1 gemerkt"), [ "V1 gemerkt not" ]);
+      (("closure-before-a-barrier-leeg-test-false-beside-a-gewicht", "V1.gewicht"), [ "V1.gewicht leeg" ]);
+      (("closure-before-a-barrier-leeg-test-false-beside-a-gewicht", "V1.getuigen"), [ "J1.keurgewicht 4" ]);
+      (("closure-before-a-barrier-leeg-test-filled", "V1.gewicht"), [ "V1.gewicht leeg" ]);
+      (("closure-before-a-barrier-leeg-test-three", "V1.gewicht"), [ "V1.gewicht leeg" ]) ]
   in
   let used = ref [] in
   let written (doc : Ir_v0.Ast.document) (i : ov_input) ~characteristic member =

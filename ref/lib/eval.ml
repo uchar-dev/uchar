@@ -1731,7 +1731,12 @@ let signal_closure read =
    their order; or [Error (label, member)] where it read [member] of [label]
    open, its deposits dropped. Any other exception — a fault, the barrier of a
    Let (ch. 10.6) — passes on with the deposits made before it, as it does
-   without the boundary *)
+   without the boundary. The barrier of a Let passes the closure on as well: it
+   is the value of that Let, leeg, and its evaluation applied the closure. A
+   fault is no value and no judgement, so no outcome rests on what its
+   evaluation closed over; passed on, the closure of a member that a fault
+   leaves undetermined ([judge_cond ~past]) would count for the value around a
+   composite that another member decides *)
 let open_read_boundary ~err f =
   let deposits = ref [] in
   let closed = ref None in
@@ -1750,6 +1755,7 @@ let open_read_boundary ~err f =
       let trace = Printexc.get_raw_backtrace () in
       boundaries := outer;
       pass ();
+      (match e with Let_barrier _ -> Option.iter signal_closure !closed | _ -> ());
       Printexc.raise_with_backtrace e trace
 
 (* The closure over the value [f] evaluates: where [f] reads an open value the
