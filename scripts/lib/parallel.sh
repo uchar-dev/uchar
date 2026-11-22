@@ -58,7 +58,8 @@
 #   process had done, one of which may be the cause, and the end of what it wrote itself; when a process ends with
 #   a status other than 0 after its last task, or wrote on its own standard output, a line no task's file
 #   holds; and when DIR holds a .rc of no recorded task. Nothing is started again: to find the document, run
-#   the task alone, with the command that takes its arguments without a batch.
+#   the task alone, with the command that takes its arguments without a batch. A process that does not end is
+#   at the first task of its list, DIR/.batch/<list>.tasks, without a .rc.
 # parallel_jobs D
 #   prints the number of processes: the number of cores (getconf _NPROCESSORS_ONLN) divided by D, at least
 #   1. There is no knob: each gate states its D and the measurement it rests on. A machine that gives no
@@ -84,7 +85,10 @@ PARALLEL_JVM_FLAGS='-XX:TieredStopAtLevel=1 -XX:+UseSerialGC -Xmx3g'
 PARALLEL_BATCH_JVM_FLAGS="$PARALLEL_JVM_FLAGS -XX:+ExitOnOutOfMemoryError"
 # PARALLEL_BATCH_TASKS
 #   the most tasks one process runs: it bounds what the tasks before one leave in its JVM (classes, memory) and
-#   how many tasks end with a process.
+#   how many tasks end with a process. Measured 2026-11-22 on 16 cores, the 433 goldens with a case file, exec
+#   model and DRL text, eight processes: the limit 25 (24 lists) 4.0 s and 7.0 s, 50 (16 lists) 3.1 s and 5.6 s,
+#   100 (8 lists) 2.4 s and 4.3 s, where a JVM per golden takes 35 s and 50 s. The heap after a collection stays
+#   under 60 MB at each limit, and at 89 MB with every replay and reading of the corpus, 1732 tasks, in one JVM.
 PARALLEL_BATCH_TASKS=50
 
 # the shell that runs one task: $1 the directory, $2 the key
