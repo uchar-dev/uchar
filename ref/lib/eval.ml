@@ -30,10 +30,8 @@ let norm = Ir_v0.Checks.norm
    reused after (call-by-need), and a read whose value evaluates leeg raises
    the owning Let's barrier instead of yielding leeg. [Later] carries that
    read as a closure, so the barrier it raises carries the identity of the
-   owning Let's evaluation — a nested Let can never catch an enclosing one's.
-   [provisional]: the read is made inside a member read provisionally (ch.
-   1.5, [judge_cond ~past]), which passes no deposit of the value on. *)
-type binding = Now of Value.t | Later of { read : provisional:bool -> Value.t; provisional : bool }
+   owning Let's evaluation — a nested Let can never catch an enclosing one's. *)
+type binding = Now of Value.t | Later of (unit -> Value.t)
 
 (* the barrier of a Let (ch. 10.6), with the identity of the evaluation of
    the Let it belongs to; [let_evaluations] counts those evaluations *)
@@ -2133,7 +2131,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
          [day_kind_binding] puts one. *)
       match SMap.find_opt day_kind_binder env.locals with
       | Some (Now v) -> v
-      | Some (Later { read; provisional }) -> read ~provisional
+      | Some (Later read) -> read ()
       | None ->
           Value.faultc "EF-010"
             "a BoundDay is the bound day of a day-kind definition (ch. 3.7); outside a day-kind \
@@ -2296,7 +2294,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
          and raises the owning Let's barrier if that value is leeg. *)
       match SMap.find_opt (norm ident) env.locals with
       | Some (Now v) -> v
-      | Some (Later { read; provisional }) -> read ~provisional
+      | Some (Later read) -> read ()
       | None -> Value.fault "unbound binder %S (the verifier should preclude this)" ident)
   | Let { binder; value; body; _ } ->
       (* ch. 10.6, the three clauses. (1) LAZY, ONCE: [value] is evaluated in
@@ -2311,35 +2309,12 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
          identity and passes an enclosing handler by (it belongs to the Let
          that bound the binder that was read). (3) AN UNREAD BINDER EVALUATES
          NOTHING: a body that never reads the binder never forces [memo] — no
-         leeg, no fault, no channel fact — and its outcome IS the Let's. The
-         value is computed once with its deposits kept beside it, and the
-         first read that is not provisional (ch. 1.5) passes them on to [err]
-         in their order; a fault or an open read of the computation is raised
-         again at every read *)
+         leeg, no fault, no channel fact — and its outcome IS the Let's. *)
       incr let_evaluations;
       let mine = !let_evaluations in
-      let memo =
-        lazy
-          (let deposits = ref [] in
-           let result =
-             match eval_expr env world self ~err:(fun d -> deposits := d :: !deposits) value with
-             | v -> Ok v
-             | exception e -> Error (e, Printexc.get_raw_backtrace ())
-           in
-           (result, List.rev !deposits))
-      in
-      let passed = ref false in
-      let read ~provisional =
-        let result, deposits = Lazy.force memo in
-        if not (provisional || !passed) then (
-          passed := true;
-          List.iter err deposits);
-        match result with
-        | Ok Value.Empty -> raise (Let_barrier mine)
-        | Ok v -> v
-        | Error (e, trace) -> Printexc.raise_with_backtrace e trace
-      in
-      let locals = SMap.add (norm binder) (Later { read; provisional = false }) env.locals in
+      let memo = lazy (eval_expr env world self ~err value) in
+      let read () = match Lazy.force memo with Value.Empty -> raise (Let_barrier mine) | v -> v in
+      let locals = SMap.add (norm binder) (Later read) env.locals in
       let btypes = SMap.add (norm binder) (bound_of env value, static_type env value) env.btypes in
       (try eval_expr { env with locals; btypes } world self ~err body with Let_barrier id when id = mine -> Value.Empty)
   | Struct_literal { field_list; typ; _ } ->
@@ -3372,21 +3347,13 @@ and eval_cond env world (self : World.instance) ~err (c : condition_expr) : bool
    stand for another, the open read of the first such. Whether the ordinary
    reading reaches [c] then does not stand, so what [c] deposits is dropped
    and a fault leaves it undetermined by that read, for the form itself and
-   for another; its truth counts as any member's. The barrier of a Let around
-   [c] (ch. 10.6) is that open read instead: whether the Let is leeg does not
-   stand, so the value it stands in has an open read. A Let inside [c]
-   catches its own barrier before. A binder of a Let around [c] is read
-   provisionally there: its value is computed at the first read, and its
-   deposits wait for the first read that is not provisional *)
+   for another; its truth counts as any member's. No binder of a Let around
+   [c] is read there (let-in-composite, [refuse_uncarried]) *)
 and judge_cond ?past env world (self : World.instance) ~err (c : condition_expr) : judgement =
   let node () =
     match past with
     | None -> judge_cond_node env world self ~err c
-    | Some ((label, member) as read) -> (
-        let locals = SMap.map (function Later l -> Later { l with provisional = true } | b -> b) env.locals in
-        try judge_cond_node { env with locals } world self ~err:ignore c with
-        | Value.Fault _ -> undetermined read
-        | Let_barrier _ -> raise (World.Open_read { label; member }))
+    | Some read -> ( try judge_cond_node env world self ~err:ignore c with Value.Fault _ -> undetermined read)
   in
   match !observer with None -> node () | Some o -> o.cond c node
 
@@ -3521,7 +3488,7 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
       let d =
         match SMap.find_opt day_kind_binder env.locals with
         | Some (Now v) -> v
-        | Some (Later { read; provisional }) -> read ~provisional
+        | Some (Later read) -> read ()
         | None -> assert false (* guarded by the [when] above *)
       in
       let hit =
@@ -3822,19 +3789,17 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
             let locals =
               SMap.mapi
                 (fun name -> function
-                  | Later l ->
+                  | Later _ ->
                       Later
-                        { l with
-                          read =
-                            (fun ~provisional:_ ->
-                              failwith
-                                (Printf.sprintf
-                                   "ref/lib/eval.ml: the reading records the table of a quantifier \
-                                    fold whose matrix reads %S, a binder of an enclosing Let (ch. \
-                                    10.6), for a member the evaluation did not reach; a fold with a \
-                                    reading of its own stands where no such binder is in scope \
-                                    (WF-077), so this is a fault of ref"
-                                   name)) }
+                        (fun () ->
+                          failwith
+                            (Printf.sprintf
+                               "ref/lib/eval.ml: the reading records the table of a quantifier \
+                                fold whose matrix reads %S, a binder of an enclosing Let (ch. \
+                                10.6), for a member the evaluation did not reach; a fold with a \
+                                reading of its own stands where no such binder is in scope \
+                                (WF-077), so this is a fault of ref"
+                               name))
                   | b -> b)
                 env.locals
             in
