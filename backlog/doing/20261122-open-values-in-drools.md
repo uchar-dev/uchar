@@ -710,3 +710,117 @@ Elk los gedraaid op `ed453f529`; daarna veranderde geen code.
 De JUnit-suite: 2039 tests, geen overgeslagen (was 2024). Geen floor, lijst of verwachting van een gate veranderde. De diff van
 `backends/drools/src/main`: 15 bestanden, 565 regels erbij en 159 eraf (`TmsTranspiler` 151, `ComputeHelpers` 116, `DrlRendering`
 70, `PatternDslRendering` 50, `FoldOpen` 47 en `Boundary` 38 nieuw).
+
+## Result van deel 3: de lezingen en de eindstand
+
+### Wat er is
+
+Commits op `card/open-values-in-drools`: `51fff2be2` (de lezing en de eindstand), `3c106cb3d` (gate 17) en `1222cdd28` (een vouw
+in een filter, de pins).
+
+- **De opname.** `RecordingRendering` rekent met de functies van de regel, dus opent zij de grenzen die de uitvoering opent
+  (`ATOM`, `emptyTestOverOpen`, de waarde in `ComputeHelpers.valued`). Elke knoop die een open lezing of een oordeel dat niet
+  staat passeert, krijgt het (`Outcome.judgement`): onbepaald met de open lezing, of een waarheid door een sluiting. Een lid van
+  een samengestelde voorwaarde of van een kwantorvouw dat voorlopig gelezen wordt en faalt, is onbepaald door de lezing ervoor
+  (`Composite.past`); de knopen erbinnen houden hun fout. `ATOM` en `STANDING_COUNT` hebben geen knoop.
+- **De status.** `Status.OPEN` volgt de drie uitkomsten van ch. 1.5; een consistentie volgt haar bewering voor zichzelf
+  (`ReadingRule.assertion`).
+- **De eerste in de volgorde.** In een build met lezingen draagt `FoldOpen` de plaats van zijn lid: het filter (of de toets) vóór de
+  waarde, dan de selectie, dan de plaats per to-many stap. De bijdrageregel bindt haar zoals de filterfoutregel, alleen waar het lid
+  open kan zijn. `standingCount` en `quantifierVerdictOverOpen` lezen de lijst in die volgorde, ook in een vouw in een filter; een
+  kwantorvouw telt een lid dat langs twee routes bereikt wordt één keer. Zonder lezingen: geen plaats, dezelfde regels.
+- **De stapel** vroeg geen code: de leesregel van de beurt staat onder de feiten van elke stapel (`Decides.open`, `Outcome OPEN`), die
+  buiten de beurt leest de verdrongen default, en de initialisatie sluit, ook de onderste van twee.
+- **De eindstand**: `EndState.EndObject.open`, gelijk aan de `open`-regels van ref; `link … open` hoort bij een creatie (geweigerd).
+- **De records**: `NodeReading` heeft `closure` en `open` (`Fixpoint.OpenValue`), `Contributor` heeft `undetermined`. De vier
+  begrippen staan in de README ("Open values") en in de javadoc van `Status`, `NodeReading` en `EndState`.
+- **De weigering**: de slug `reading` is weg. Een vouw in een filter wordt gedragen; `set-fold` is alleen nog een som met een
+  terugval die open kan zijn. Nieuw in de build met lezingen: een vouw die open kan zijn over een relatie met twee to-many rollen
+  (DROOLS-318), want haar leden hebben hier geen plaats; zonder lezingen speelt zij.
+- **Gate 17**: `READINGS_REFUSED` leeg, `OPEN` als status, vijf rijen voor de vergelijkingsregel en de teller, en twee vloeren
+  (`EXPECTED_MIN_UNDETERMINED_LINES` 65, `EXPECTED_MIN_STATE_OPEN` 79). `TmsDocuments.hasReadings` en de acht overslagen zijn weg;
+  `ReadingsCorpusWitnessTest` houdt een open lezing aan de open leden van het fixpunt en `OPEN` aan de `LeftOpen` van de vorm.
+
+### Gemeten (eenmalig, programma's in de werkmap)
+
+Elke regel die gate 17 vergelijkt, met haar vergelijkingsregel, en de eindstand, op beide weergaven, tegen `runner --trace`; en van elke
+run de eindstand van de build met lezingen gelijk aan die van de build zonder (een lezing deponeert en schrijft niets).
+
+| wat | documenten | runs | leesregels (per weergave) | verschillen |
+|---|---|---|---|---|
+| elke golden, getuige en elk document van `open-values/` met de eigenschap, elke case als zij is en met elke invoer weggelaten | 308 | 7808 | 131 827 | 0 |
+| dezelfde, willekeurig deel van invoer, parameters en rekendatum weggelaten | 308 | 14 400 | 165 198 | 0 |
+| een vouw in een filter: sluiting, open waarde, fout en deponering (EF-005) in de binnenste, kwantorvouw op volgorde, unie van drie overlappende selecties, twee niveaus | 1 | 3200 | 239 700 | 0 |
+| samengestelde voorwaarden en kwantorvouwen in elkaar; een lid langs twee routes (ruit) | 2 | 2000 | 69 950 | 0 |
+
+In de eerste rij: 19 762 onbepaalde knopen, 1384 sluitingen, 1743 afgebroken vouwen, 800 onbepaalde kwantorvouwen, 1181 onbepaalde
+bijdragen, 2618 verdrongen lezingen, 9434 keer `OPEN`, 15 793 onbereikte knopen; in de laatste 166 knopen met een fout in een
+voorlopig lid. Een fout van ref is een fout van de backend (8, 138, 650 en 428 runs).
+
+Van de goldens met de eigenschap weigeren alleen met lezingen: `anchor/jutterswet-bootberging`, `jutterswet-ketenkwantor` en
+`jutterswet-muntketen` (DROOLS-318).
+
+### Een document zonder de eigenschap, en zonder lezingen
+
+De DRL-tekst van elke golden en elk rood document, zonder en met lezingen: **1014 teksten van 507 documenten byte-gelijk, 0 andere**. De
+tekst zonder lezingen van de 478 documenten van de meting met de eigenschap: 474 byte-gelijk aan die van het begin van dit deel; de
+vier andere hebben een vouw in een filter, die toen weigerde. Over de 228 goldens die met lezingen gebouwd worden: gewoon zonder en met
+lezingen 30 641 en 43 486 regels (1545 en 2491 `rule`s), strikt 33 555 en 48 696 (1770 en 2716): met lezingen +12,0% regels en +9,0%
+`rule`s tegenover gewoon met lezingen (zonder lezingen +9,5% regels).
+
+### Acceptance
+
+- **De voorbeelden** (`OpenReadingsWitnessTest`, 12 tests): `wv_5_12_afleiden_uit_leeg` (ook `WV-5.12a-`), `-open-composite`,
+  `-open-past-undetermined`, `-open-quantifier-fold` (zonder filter), `-open-fold-over-a-set`, `-open-stack`, `-open-path`,
+  `-open-status`; `-open-creation` en `WV-5.12a-open-link` als weigering. De pins zijn 76 cases met de regels van `runner --trace`
+  (`src/test/resources/open-readings/`). `-open-shared-name`: de backend weigert het document (DROOLS-054, één bean-eigenschap voor
+  beide leden); leest geen regel het kenmerk, dan zijn lezing en eindstand die van ref (los gemeten).
+- **Een vouw in een filter**: `open-values/fold-in-a-filter`, vier cases met met de hand gerekende verwachtingen, en een wijziging van
+  een binnenste lid tussen twee keer vuren (`a_value_on_the_bean_between_two_fires`).
+- **Rood eerst**: op de jar van `e0461147e` weigert de build met lezingen elk document met `form: reading`, en
+  `fold-in-a-filter` met `form: set-fold`.
+- **Geen test verzwakt.** Vervallen: de test dat de build met lezingen weigert, en de regel van een golden met een vouw in een filter in
+  de weigertest, die nu in de test van de gedragen documenten staat.
+
+### Voorlopige besluiten
+
+1. De plaats staat op `FoldOpen` en alleen in een build met lezingen (ontwerpnotitie, door de hoofdsessie en een tweede lezer gelezen).
+2. Een vouw over een relatie met twee to-many rollen die open kan zijn, weigert met lezingen (DROOLS-318) in plaats van een lid te kiezen.
+3. De open leden van de eindstand zijn een eigen lijst naast `members`, zodat een afnemer die `members` leest alleen waarden ziet.
+4. Code DROOLS-372: een lid dat open kan zijn zonder `ListPlace` (contractbreuk, zoals 357–359).
+5. Twee eigen vloeren in gate 17, want de bestaande tellen de onbepaalde regels niet apart.
+6. De pins zijn de trace van het orakel als tekst; de suite draait ref niet.
+
+### Voorstellen voor beschermde teksten
+
+- `CLAUDE.md`, gate 17: de vloeren `EXPECTED_MIN_UNDETERMINED_LINES` en `EXPECTED_MIN_STATE_OPEN` achter
+  `EXPECTED_MIN_STATE_MADE`; de zin over `READINGS_REFUSED` kan blijven (de lijst is leeg).
+- `spec/CONSTRUCTS.md` rij 48: "… among them a quantifier fold whose filter can be open and a sum whose fallback can be open; its
+  build with readings gives the readings and the end state of ch. 5.12 and 5.12a, and refuses a fold that can be open over a
+  relation of two to-many roles (DROOLS-318)."
+
+### Open punten
+
+1. De volgorde van de leden van een relatie met twee to-many rollen (ch. 5.7a) stelt de case-invoer niet; met haar vervalt punt 2
+   van de besluiten, en DROOLS-318 in het algemeen.
+2. Blijft geweigerd: een kwantorvouw met een open filter, een geankerde lezing van open invoer, creaties, `IfThenElse`, ongeordende
+   groepen met een initialisatie, een terugval die open kan zijn.
+3. Een attribuut en een kenmerk op één bean-eigenschap, door geen regel gelezen: gemeten met een kenmerk naast een getal; de eindstand
+   van een booleaans attribuut naast zo'n kenmerk is niet gemeten.
+4. Voor de distributie bij haar pin: `Status` heeft `OPEN` (een `switch` zonder default compileert niet meer), `NodeReading`,
+   `Contributor` en `EndObject` hebben componenten erbij, en een afnemer die `NodeReading.value` null als leeg toont, vraagt eerst
+   `undetermined()`.
+
+### Gates
+
+Elk los gedraaid op `1222cdd28`; daarna veranderde geen code.
+
+- 1 `check-self-contained: PASS`
+- 8 `check-red: PASS (102 red cases fault observably in ref and clingo …)`
+- 12 `check-drools: PASS`: played 386, DRL-text branch 386, JUnit 2050 tests; `check-drools-codes: PASS — 372 codes …`
+- 13 `check-reftype-derivation: PASS (129 unit annotations twisted over 42 goldens …)`
+- 15 `check-graph: PASS`
+- 17 `check-readings: PASS (ref traced 1211 golden case files … on both branches 387 goldens and 1085 case files compared, 8587
+  readings, 27572 node lines …)`, 65 onbepaald, 79 open leden
+
+De JUnit-suite: 2050 tests, geen overgeslagen (was 2039). Geen verwachting, pin of bestaande vloer van een gate veranderde.
