@@ -818,9 +818,9 @@ final class SessionReaders {
 
     /**
      * The members open at the fixpoint of {@code session} (RUNTIME-SEMANTICS ch. 1.5), as the standing rules read them
-     * ({@link TmsTranspiler#attributeStateRules}): an attribute on which no {@link Value} stands, of the values
-     * {@code perTarget} groups, where a writer leaves it open ({@link LeftOpen}) or where its input is not complete
-     * ({@link OpenInput}) and the bean holds no value; a characteristic that neither the bean nor a
+     * and the reads of an input ({@link ComputeHelpers#input}) read them: an attribute on which no {@link Value} stands,
+     * of the values {@code perTarget} groups, where a writer leaves it open ({@link LeftOpen}) or where its input is not
+     * complete ({@link OpenInput}) and the bean holds no value; a characteristic that neither the bean nor a
      * {@link HasCharacteristic} makes hold, where a writer leaves it open or its input is not complete.
      */
     private List<Fixpoint.OpenValue> openValues(KieSession session, Map<Object, Map<ElementKey, List<Value>>> perTarget) {
@@ -831,7 +831,8 @@ final class SessionReaders {
             candidates.computeIfAbsent(l.subject(), k -> new LinkedHashSet<>()).add(l.member());
         }
         for (Object f : session.getObjects(o -> o instanceof OpenInput))
-            candidates.computeIfAbsent(((OpenInput) f).subject(), k -> new LinkedHashSet<>()).add(((OpenInput) f).member());
+            ((OpenInput) f).members().forEach((subject, members) ->
+                    candidates.computeIfAbsent(subject, k -> new LinkedHashSet<>()).addAll(members));
         Map<Object, Set<ElementKey>> holding = new IdentityHashMap<>();
         for (Object f : session.getObjects(o -> o instanceof HasCharacteristic))
             holding.computeIfAbsent(((HasCharacteristic) f).subject(), k -> new HashSet<>())

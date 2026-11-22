@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.transpiler.tms.plan.StaticFunction;
@@ -156,7 +157,8 @@ final class ClosureRendering {
             case VORM -> test;
             case CONDITION, WITHOUT_FAULT -> open ? thrown(test, true, e -> ComputeHelpers.holdsForItself(e, withoutFault))
                     : withoutFault ? withoutFault(test) : test;
-            case LEAVES_OPEN -> thrown(test, false, ComputeHelpers::leavesOpen);
+            case ACTS -> w -> ComputeHelpers.acts(outcome(test, w, false));
+            case ACTS_WITHOUT_FAULT -> w -> ComputeHelpers.acts(outcome(test, w, true));
             case FAULT -> open ? thrown(test, false, ComputeHelpers::faulted) : w -> fault(test, w) != null;
             case DEPOSIT -> {
                 int depositFlag = t.depositFlag();
@@ -180,6 +182,15 @@ final class ClosureRendering {
                 return thrown.test(e);
             }
         };
+    }
+
+    /** The outcome over {@code w} of the writer whose condition is {@code test} ({@link ComputeHelpers#outcome}). */
+    static Boolean outcome(Predicate<Object[]> test, Object[] w, boolean withoutFault) {
+        try {
+            return test.test(w);
+        } catch (RuntimeException e) {
+            return ComputeHelpers.outcome(e, withoutFault);
+        }
     }
 
     /** {@code test} evaluated over {@code w} with the fresh probe {@code depositFlag} in its slot: a fault is the fault
@@ -473,6 +484,7 @@ final class ClosureRendering {
             case RS_ENUM_NAME -> x -> RegelSpraakRuntime.rsEnumNaam(x[0]);
             case EMPTY_TEST -> x -> ComputeHelpers.emptyTest(x[0], (Boolean) x[1]);
             case READ -> x -> ComputeHelpers.read(x[0]);
+            case READ_INPUT -> x -> ComputeHelpers.readInput(x[0], x[1], x[2], (ElementKey) x[3]);
             case NUMERIEK_MET_EXACT -> x -> ComputeHelpers.exactDigits(x[0], (Integer) x[1], (Boolean) x[2]);
             case KENMERK -> x -> ComputeHelpers.characteristic(x[0], (Boolean) x[1]);
             case SAME_OBJECT -> x -> ComputeHelpers.sameObject(x[0], x[1], (Boolean) x[2]);

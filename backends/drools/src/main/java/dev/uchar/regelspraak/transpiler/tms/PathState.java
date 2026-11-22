@@ -5,10 +5,10 @@ import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 import java.util.Objects;
 
 /**
- * A member read through its standing over a path of roles from one object, total: exactly one per (object, path, member)
- * at the fixpoint, also where a link on the path is absent. The value is the standing of the member on the object the
- * path reaches ({@link CharacteristicState}'s truth value, {@link State}'s value, or the {@link OpenMember} of either),
- * and null where a link is absent. A read over an
+ * A derived member, or one that can be open, read over a path of roles from one object, total: exactly one per (object,
+ * path, member) at the fixpoint, also where a link on the path is absent. The value is the standing of the member on the
+ * object the path reaches ({@link CharacteristicState}'s truth value, {@link State}'s value, the input of a member no
+ * form writes, or its {@link OpenMember}), and null where a link is absent. A read over an
  * absent link is leeg (RUNTIME-SEMANTICS ch. 5.8 rule 1), and a characteristic check over it holds in neither
  * polarity (rule 3), so for a characteristic the value has three states: waar, onwaar, and null for absent. Without
  * this fact the rule would have to join the reached object's standing directly, and a subject without the link would

@@ -55,8 +55,8 @@ public sealed interface Consequence {
      * place of the value and of a deposit; otherwise the deposit first ({@code deposit}: the rule's probe, which
      * hears only the places the evaluation of the value reaches, so a probe of the condition alone hears nothing here;
      * null where the rule has no probe). Where {@code open}, the value reads a member that can be open, and where its
-     * evaluation reads an open value (ch. 1.5) the consequence inserts that {@code writer} leaves {@code target} open
-     * ({@link LeftOpen}), and no value and no deposit.
+     * evaluation reads an open value (ch. 1.5) the consequence inserts that {@code writer} leaves {@code target} open, a
+     * {@code LeftOpen}, and no value and no deposit.
      */
     record Value(String subject, ElementKey target, String writer, Term value, List<Integer> slots,
                   int size, boolean collapse, boolean writesEmpty, Deposit deposit, FaultName fault, boolean open,
@@ -75,10 +75,22 @@ public sealed interface Consequence {
     /** The characteristic {@code characteristic} of the object {@code subject} binds. */
     record Characteristic(String subject, ElementKey characteristic, Insertion insertion) implements Consequence {}
 
-    /** The writer {@code writer} leaves {@code member} of the object {@code subject} binds open (RUNTIME-SEMANTICS ch.
-     *  1.5, "A rule"): the {@code LeftOpen} fact of the rule of that outcome. A {@link Value} inserts the same fact in
-     *  place of the value where the value has an open read. */
-    record LeftOpen(String subject, ElementKey member, String writer, Insertion insertion) implements Consequence {}
+    /**
+     * The two outcomes on which the writer {@code writer} of {@code member} acts, where its condition can be undetermined
+     * (RUNTIME-SEMANTICS ch. 1.5, "A rule"): {@code condition}, which the test of the rule asked whether the writer acts
+     * ({@link TestItem.Role#ACTS}), evaluated again over the bound values at {@code slots} of a value array of
+     * {@code size}, without its fault where {@code withoutFault}; where it is true for the form itself {@code decides},
+     * a {@link Value} or a {@link Characteristic}, and else a {@code LeftOpen} of the member on the object
+     * {@code subject} binds. The third outcome, that the writer fills nothing, is where the test does not hold.
+     */
+    record Judged(String subject, Term condition, boolean withoutFault, List<Integer> slots, int size, Consequence decides,
+                  ElementKey member, String writer, Insertion insertion) implements Consequence {
+        public Judged {
+            slots = List.copyOf(slots);
+            if (!(decides instanceof Value) && !(decides instanceof Characteristic))
+                throw new IllegalArgumentException("a writer decides a value or a characteristic, not " + decides);
+        }
+    }
 
     /**
      * The fault of a condition, evaluated again over the value array of {@code size} slots with the bound values at
@@ -171,28 +183,36 @@ public sealed interface Consequence {
     /** Where a standing takes what it states from, as the left-hand side of its rule decided: the input on the object's
      *  bean ({@code INPUT}); a derivation, the fact a form inserted ({@code DERIVATION}); neither, so that a
      *  characteristic is onwaar ({@code GEEN}); the standing of a member on the object a path reaches
-     *  ({@code REACHED}); or no object, where a link on the path is absent ({@code MISSING_LINK}). */
-    enum StateSource { INPUT, DERIVATION, NONE, REACHED, MISSING_LINK }
+     *  ({@code REACHED}); no object, where a link on the path is absent ({@code MISSING_LINK}); or the input on the
+     *  object's bean, or on the bean a path reaches, of a member whose input need not be complete
+     *  ({@code INCOMPLETE_INPUT}, RUNTIME-SEMANTICS ch. 1.5): where that bean holds none and the session's
+     *  {@code OpenInput}, which {@link #OPEN_INPUT} binds, names the member on that object, its {@code OpenMember}, and
+     *  else as from {@code INPUT}, {@code NONE} or {@code REACHED}. */
+    enum StateSource { INPUT, DERIVATION, NONE, REACHED, MISSING_LINK, INCOMPLETE_INPUT }
+
+    /** The variable that binds the session's {@code OpenInput} in every plan that reads it. */
+    String OPEN_INPUT = "$openinvoer";
 
     /**
      * The standing of characteristic {@code characteristic} on the object {@code subject} binds, {@code waar} or onwaar:
      * waar from the input or from a derivation ({@code source}), onwaar where neither holds. Where both hold, the two
-     * waar standings are equal facts, which truth maintenance keeps as one with a justification each. The third state of
-     * a characteristic that can be open is {@link OpenStanding}.
+     * waar standings are equal facts, which truth maintenance keeps as one with a justification each. Where neither
+     * holds and the input of the characteristic need not be complete ({@code INCOMPLETE_INPUT}), onwaar or open.
      */
     record InsertCharacteristicState(String subject, ElementKey characteristic, StateSource source, boolean holds, Insertion insertion)
             implements Consequence {
         public InsertCharacteristicState {
             if (source != StateSource.INPUT && source != StateSource.DERIVATION && source != StateSource.NONE
-                    || holds == (source == StateSource.NONE))
+                    && source != StateSource.INCOMPLETE_INPUT
+                    || holds == (source == StateSource.NONE || source == StateSource.INCOMPLETE_INPUT))
                 throw new IllegalArgumentException("a characteristic standing is true from the input or a derivation and false"
                         + " from neither, not " + holds + " from " + source);
         }
     }
 
-    /** The open standing of {@code member} on the object {@code subject} binds (RUNTIME-SEMANTICS ch. 1.5): a
-     *  {@code State} or a {@code CharacteristicState} that carries the {@code OpenMember} of the member on that object
-     *  in place of a value or a truth value. */
+    /** The standing of {@code member} on the object {@code subject} binds where a writer leaves it open
+     *  (RUNTIME-SEMANTICS ch. 1.5): a {@code State} or a {@code CharacteristicState} that carries the {@code OpenMember}
+     *  of the member on that object in place of a value or a truth value. */
     record OpenStanding(String subject, ElementKey member, Insertion insertion) implements Consequence {}
 
     /**
@@ -202,28 +222,19 @@ public sealed interface Consequence {
      * ({@code BucketScalar}, RUNTIME-SEMANTICS ch. 8.4), which the consequence takes from the bound timeline. Where
      * {@code cell} is not null, the standing is that of a cell of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c),
      * and its input the entry of the key {@code cell} in the bound map of the attribute's cells, leeg where the map or
-     * the entry is absent. Where {@code incomplete}, the input is not complete (ch. 1.5, "Complete input"): where the
-     * bean holds no value, the standing carries the {@code OpenMember} of the attribute on that object.
+     * the entry is absent.
      */
     record State(String subject, ElementKey attribute, StateSource source, int value, boolean bucketScalar,
-                 List<String> cell, boolean incomplete, Insertion insertion) implements Consequence {
+                 List<String> cell, Insertion insertion) implements Consequence {
         public State {
-            if (incomplete && (source != StateSource.INPUT || bucketScalar || cell != null))
-                throw new IllegalArgumentException("only the input of an attribute that holds one value is incomplete, not "
-                        + source + (bucketScalar ? " as a bucket scalar" : "") + (cell != null ? " of a cell" : ""));
-            if (source != StateSource.INPUT && source != StateSource.DERIVATION || bucketScalar && source != StateSource.INPUT)
+            if (source != StateSource.INPUT && source != StateSource.DERIVATION && source != StateSource.INCOMPLETE_INPUT
+                    || bucketScalar && source != StateSource.INPUT)
                 throw new IllegalArgumentException("a standing comes from the input or a derivation, and only the input"
                         + " stands as a bucket scalar, not " + source + (bucketScalar ? " as a bucket scalar" : ""));
             if (cell != null && (source != StateSource.INPUT || bucketScalar))
                 throw new IllegalArgumentException("only the input of a cell takes it from the map, not " + source
                         + (bucketScalar ? " as a bucket scalar" : ""));
             cell = cell == null ? null : List.copyOf(cell);
-        }
-
-        /** A standing that cannot be open. */
-        public State(String subject, ElementKey attribute, StateSource source, int value, boolean bucketScalar,
-                     List<String> cell, Insertion insertion) {
-            this(subject, attribute, source, value, bucketScalar, cell, false, insertion);
         }
     }
 
@@ -237,9 +248,9 @@ public sealed interface Consequence {
     record InsertPathState(String subject, String path, ElementKey member, StateSource source, int value, String reached,
                            Insertion insertion) implements Consequence {
         public InsertPathState {
-            if (source != StateSource.REACHED && source != StateSource.MISSING_LINK
-                    || (source == StateSource.REACHED) != (value >= 0)
-                    || (source == StateSource.REACHED) != (reached != null))
+            if (source != StateSource.REACHED && source != StateSource.MISSING_LINK && source != StateSource.INCOMPLETE_INPUT
+                    || (source != StateSource.MISSING_LINK) != (value >= 0)
+                    || (source != StateSource.MISSING_LINK) != (reached != null))
                 throw new IllegalArgumentException("a path standing takes the standing on the reached object from a slot and"
                         + " that object from a variable, or is empty at a missing link, without slot and without"
                         + " object; not " + source + " with slot " + value + " and object " + reached);

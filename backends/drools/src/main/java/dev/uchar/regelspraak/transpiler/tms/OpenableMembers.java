@@ -75,6 +75,11 @@ public final class OpenableMembers {
         return new OpenableMembers(inputOf, openInput, leftOpen);
     }
 
+    /** Whether no member can be open. */
+    public boolean isEmpty() {
+        return openInput.isEmpty() && leftOpen.isEmpty();
+    }
+
     /** Whether {@code member} can be open on an object. */
     boolean contains(ElementKey member) {
         return openInput.contains(member) || leftOpen.contains(member);

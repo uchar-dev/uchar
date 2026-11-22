@@ -168,11 +168,20 @@ final class PatternDslRendering {
     @SuppressWarnings("rawtypes")
     private RuleItemBuilder<?> consequence(Consequence g, Function<String, Global<?>> globals) {
         return switch (g) {
-            case Consequence.Value x -> value(x);
+            case Consequence.Value x -> consequenceItem(x.subject(), x.slots(), x.size(), value(x));
+            case Consequence.Judged x -> {
+                Predicate<Object[]> condition = ClosureRendering.test(x.condition());
+                ConsequenceFunction decides = x.decides() instanceof Consequence.Value v ? value(v)
+                        : (drools, subject, w) -> insert(drools, x.insertion(),
+                                new HasCharacteristic(subject, ((Consequence.Characteristic) x.decides()).characteristic()));
+                yield consequenceItem(x.subject(), x.slots(), x.size(), (drools, subject, w) -> {
+                    if (ComputeHelpers.decides(ClosureRendering.outcome(condition, w, x.withoutFault())))
+                        decides.run(drools, subject, w);
+                    else insert(drools, x.insertion(), new LeftOpen(subject, x.member(), x.writer()));
+                });
+            }
             case Consequence.Characteristic x -> new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
                     insert(drools, x.insertion(), new HasCharacteristic(a[0], x.characteristic())));
-            case Consequence.LeftOpen x -> new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
-                    insert(drools, x.insertion(), new LeftOpen(a[0], x.member(), x.writer())));
             case Consequence.TestFault x -> testFault(x);
             case Consequence.Fault x -> new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
                     insert(drools, x.insertion(), new Fault(a[0], x.fault().form(),
@@ -201,18 +210,29 @@ final class PatternDslRendering {
                     insert(drools, x.insertion(), new ParameterState(x.parameter(), a[0])));
             case Consequence.EvaluationDateState x -> new VariadicConsequence(new Variable[]{globals.apply(x.global())}, (drools, a) ->
                     insert(drools, x.insertion(), new EvaluationDate((LocalDate) a[0])));
-            case Consequence.InsertCharacteristicState x -> new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
-                    insert(drools, x.insertion(), new CharacteristicState(a[0], x.characteristic(), x.holds())));
+            case Consequence.InsertCharacteristicState x -> x.source() == Consequence.StateSource.INCOMPLETE_INPUT
+                    ? new VariadicConsequence(new Variable[]{known(x.subject()), known(Consequence.OPEN_INPUT)}, (drools, a) ->
+                            insert(drools, x.insertion(), new CharacteristicState(a[0], x.characteristic(),
+                                    ComputeHelpers.input(x.holds(), a[1], a[0], x.characteristic()))))
+                    : new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
+                            insert(drools, x.insertion(), new CharacteristicState(a[0], x.characteristic(), x.holds())));
             case Consequence.OpenStanding x -> new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) -> {
                 OpenMember open = ComputeHelpers.open(a[0], x.member());
                 insert(drools, x.insertion(), x.member().characteristic()
                         ? new CharacteristicState(a[0], x.member(), open) : new State(a[0], x.member(), open));
             });
+            case Consequence.State x when x.source() == Consequence.StateSource.INCOMPLETE_INPUT ->
+                    new VariadicConsequence(new Variable[]{known(x.subject()), variable(x.value()),
+                            known(Consequence.OPEN_INPUT)}, (drools, a) -> insert(drools, x.insertion(),
+                            new State(a[0], x.attribute(), ComputeHelpers.input(a[1], a[2], a[0], x.attribute()))));
             case Consequence.State x -> new VariadicConsequence(new Variable[]{known(x.subject()), variable(x.value())},
                     (drools, a) -> insert(drools, x.insertion(), new State(a[0], x.attribute(),
                             x.bucketScalar() ? ComputeHelpers.bucketScalarOf(a[1])
-                                    : x.cell() != null ? ComputeHelpers.cell(a[1], x.cell())
-                                    : x.incomplete() ? ComputeHelpers.incompleteInput(a[1], a[0], x.attribute()) : a[1])));
+                                    : x.cell() != null ? ComputeHelpers.cell(a[1], x.cell()) : a[1])));
+            case Consequence.InsertPathState x when x.source() == Consequence.StateSource.INCOMPLETE_INPUT ->
+                    new VariadicConsequence(new Variable[]{known(x.subject()), variable(x.value()), known(x.reached()),
+                            known(Consequence.OPEN_INPUT)}, (drools, a) -> insert(drools, x.insertion(), new PathState(a[0],
+                            x.path(), x.member(), ComputeHelpers.input(a[1], a[3], a[2], x.member()), a[2])));
             case Consequence.InsertPathState x -> x.source() == Consequence.StateSource.MISSING_LINK
                     ? new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
                             insert(drools, x.insertion(), new PathState(a[0], x.path(), x.member(), null, null)))
@@ -413,10 +433,10 @@ final class PatternDslRendering {
 
     /** The value of {@link Consequence.Value}: computed from the bound values, with its fault, its deposit and its leeg
      *  policy as the plan says. */
-    private RuleItemBuilder<?> value(Consequence.Value g) {
+    private static ConsequenceFunction value(Consequence.Value g) {
         ValueFunction value = ClosureRendering.valueFunction(g.value());
         Consequence.Deposit deposit = g.deposit();
-        return consequenceItem(g.subject(), g.slots(), g.size(), (drools, subject, w) -> {
+        return (drools, subject, w) -> {
             // the probe hears every §6.5 and §6.6 place the evaluation reaches, and only those (Sonde)
             Object s = deposit == null ? null : ComputeHelpers.depositFlag();
             if (s != null) w[deposit.depositFlag()] = s;
@@ -437,7 +457,7 @@ final class PatternDslRendering {
                         ComputeHelpers.depositCodes(s)));
             if (!ComputeHelpers.isEmpty(v) || g.writesEmpty())
                 insert(drools, g.insertion(), new Value(subject, g.target(), v, g.writer()));
-        });
+        };
     }
 
     /**
@@ -885,8 +905,6 @@ final class PatternDslRendering {
         field(HasCharacteristic.class, "characteristic", HasCharacteristic::characteristic);
         field(LeftOpen.class, "subject", LeftOpen::subject);
         field(LeftOpen.class, "member", LeftOpen::member);
-        field(OpenInput.class, "subject", OpenInput::subject);
-        field(OpenInput.class, "member", OpenInput::member);
         field(BucketInput.class, "subject", BucketInput::subject);
         field(BucketInput.class, "attribute", BucketInput::attribute);
         field(PathState.class, "subject", PathState::subject);

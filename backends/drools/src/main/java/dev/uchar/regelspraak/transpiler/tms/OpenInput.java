@@ -2,35 +2,45 @@ package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 
-import java.util.Objects;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * An input member of {@code subject} whose input is not complete (RUNTIME-SEMANTICS ch. 1.5, "The three states",
- * "Complete input"): where the bean holds no value for it, an attribute without one or a characteristic that does not
- * hold, the member is open, not settled leeg. Stated beside the beans by {@code DroolsBackend.insert}, for the members
- * the analysis finds ({@link OpenableMembers#incompleteInput}); a characteristic the case states not to hold
- * ({@code characteristicsAbsent}) has none, and a session that treats every input member as complete has none at all.
- * The standing of the member reads it together with the bean, so a value a consumer puts on the bean later fills the
- * member ({@code TmsTranspiler#attributeStateRules}).
+ * The input members of the objects of one session that are not complete (RUNTIME-SEMANTICS ch. 1.5, "The three states",
+ * "Complete input"): where the bean holds no value for one, an attribute without one or a characteristic that does not
+ * hold, the member is open on that object, not settled leeg. One fact, stated beside the beans by
+ * {@code DroolsBackend.insert} in a document in which a member can be open ({@link OpenableMembers}), for the members the
+ * analysis finds ({@link OpenableMembers#incompleteInput}); a characteristic the case states not to hold
+ * ({@code characteristicsAbsent}) is not among them, and a session that treats every input member as complete has none.
+ * An object it does not name, one a creation made, has no such member.
  *
- * <p>Keyed and compared as {@link HasCharacteristic} is: the member on its declaring type, the subject by identity.
+ * <p>A rule that reads such a member binds this fact beside the bean's value, as it binds the evaluation date, and the
+ * read takes both ({@link ComputeHelpers#readInput}): it says only which members are open where the bean holds nothing,
+ * so a value a consumer puts on the bean between two fires fills the member.
  */
-public record OpenInput(Object subject, ElementKey member) {
+public final class OpenInput {
 
-    public OpenInput {
-        Objects.requireNonNull(subject, "subject");
-        Objects.requireNonNull(member, "member");
+    private final Map<Object, Set<ElementKey>> members;
+
+    /** The members {@code members} per object, by identity. */
+    public OpenInput(Map<Object, Set<ElementKey>> members) {
+        this.members = Collections.unmodifiableMap(new IdentityHashMap<>(members));
     }
 
-    @Override public boolean equals(Object o) {
-        return o instanceof OpenInput i && i.subject == subject && i.member.equals(member);
+    /** Whether the input of {@code member} of {@code subject} is not complete. */
+    public boolean incomplete(Object subject, ElementKey member) {
+        return members.getOrDefault(subject, Set.of()).contains(member);
     }
 
-    @Override public int hashCode() {
-        return 31 * System.identityHashCode(subject) + member.hashCode();
+    /** Per object, by identity, the members whose input is not complete. */
+    Map<Object, Set<ElementKey>> members() {
+        return members;
     }
 
     @Override public String toString() {
-        return "OpenInput(" + FactNames.object(subject) + ", " + FactNames.member(member) + ")";
+        return "OpenInput(" + members.values().stream().mapToInt(Set::size).sum() + " members of " + members.size()
+                + " objects)";
     }
 }

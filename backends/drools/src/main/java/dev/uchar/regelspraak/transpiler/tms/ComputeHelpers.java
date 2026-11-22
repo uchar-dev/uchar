@@ -564,10 +564,17 @@ public final class ComputeHelpers {
         return new OpenMember(subject, member);
     }
 
-    /** The standing of the attribute {@code member} of {@code subject} whose input {@code input} is not complete: the
-     *  input, or its open member where the bean holds no value. */
-    public static Object incompleteInput(Object input, Object subject, ElementKey member) {
-        return input == null ? new OpenMember(subject, member) : input;
+    /** The input {@code value} of {@code member} of {@code subject}, as its bean holds it: {@code value}, or the open
+     *  member where the bean holds none, no value or no characteristic that holds, and {@code openInput}, the session's
+     *  {@link OpenInput}, says that the input is not complete. */
+    public static Object input(Object value, Object openInput, Object subject, ElementKey member) {
+        boolean filled = member.characteristic() ? Boolean.TRUE.equals(value) : value != null;
+        return filled || !((OpenInput) openInput).incomplete(subject, member) ? value : new OpenMember(subject, member);
+    }
+
+    /** The read of that input ({@link #input}): an open member breaks the evaluation off. */
+    public static Object readInput(Object value, Object openInput, Object subject, ElementKey member) {
+        return read(input(value, openInput, subject, member));
     }
 
     /** The mark of a closure over the open read {@code read}: the operand of a test on leeg and gevuld that read an open
@@ -598,15 +605,26 @@ public final class ComputeHelpers {
         throw e;
     }
 
-    /** The answer of the test that a condition leaves its writer undecided, neither true for the form itself nor false
-     *  for another, where its evaluation threw {@code e}: true for an open read and for a judgement that is not true
-     *  for the form itself; false for an evaluation fault, which the rule of the fault takes; any other exception
-     *  passes on. A condition that answers is established for both, so it decides or fills nothing. */
-    public static boolean leavesOpen(RuntimeException e) {
-        if (e instanceof Undetermined u) return !Boolean.TRUE.equals(u.own());
-        if (e instanceof OpenRead) return true;
-        caught(e);
-        return false;
+    /** The outcome of a writer whose condition threw {@code e}: that it decides ({@code TRUE}), for a closure that
+     *  holds for the form itself; that it leaves its target open ({@code null}), for an open read and any other
+     *  judgement that does not stand for another form; and where {@code withoutFault}, that it does not act
+     *  ({@code FALSE}), for an evaluation fault, which the rule of the fault takes; any other exception passes on. A
+     *  condition that answers is established for both, and its truth is the outcome: it decides, or fills nothing. */
+    public static Boolean outcome(RuntimeException e, boolean withoutFault) {
+        if (e instanceof Undetermined u) return Boolean.TRUE.equals(u.own()) ? Boolean.TRUE : null;
+        if (e instanceof OpenRead) return null;
+        if (withoutFault && ComputeFault.isEvaluationFault(e)) return Boolean.FALSE;
+        throw e;
+    }
+
+    /** Whether a writer acts on {@code outcome}, its outcome ({@link #outcome}): it decides or leaves its target open. */
+    public static boolean acts(Object outcome) {
+        return !Boolean.FALSE.equals(outcome);
+    }
+
+    /** Whether {@code outcome}, the outcome of a writer ({@link #outcome}), is that it decides. */
+    public static boolean decides(Object outcome) {
+        return Boolean.TRUE.equals(outcome);
     }
 
     /** The answer of the test that a condition faults, where its evaluation threw {@code e}: true for an evaluation

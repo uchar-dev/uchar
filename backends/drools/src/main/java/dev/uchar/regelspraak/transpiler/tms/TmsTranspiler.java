@@ -328,8 +328,7 @@ public final class TmsTranspiler {
      *  through is the bean property of the declared spelling, which the key does not carry. */
     private final Map<ElementKey, Member> derived = new LinkedHashMap<>();
     /** The members a lowered rule reads through their standing, on its subject or at the end of a path: the derived
-     *  ones, those that can be open ({@link OpenableMembers}), and every attribute on a timeline ({@link Reads#timeline}).
-     *  Each gets its standing rules. */
+     *  ones, and every attribute on a timeline ({@link Reads#timeline}). Each gets its standing rules. */
     private final Map<ElementKey, Member> read = new LinkedHashMap<>();
     /** The onwaar standings outside a narrowing host that the lowered rules read ({@link Reads#narrowed}). */
     private final Map<String, Outside> outsideStandings = new LinkedHashMap<>();
@@ -680,9 +679,6 @@ public final class TmsTranspiler {
             /** The rule that inserts the fault of a condition that can fault: a form's condition or assertion, a
              *  default's justification. */
             CONDITION_FAULT("condition-fault", Kind.FORM, Kind.DEFAULT),
-            /** The rule that inserts that a form leaves its target open, where its condition neither holds for the form
-             *  itself nor fails for another (RUNTIME-SEMANTICS ch. 1.5, "A rule"). */
-            LEFT_OPEN("left-open", Kind.FORM),
             /** The rule that deposits the §9.5 inconsistency where the evaluation of a form's condition, or of the
              *  justification of a default that decides, divides a filled dividend by a leeg divisor or takes the root of
              *  a negative number (ch. 1.2, 7.1). */
@@ -1421,18 +1417,17 @@ public final class TmsTranspiler {
         Noted noted = endReading();
         Ends ends = reads.ends();
         reads.stop();
-        List<LhsItem> items = reads.plan(Asked.DECIDES, ends, testTerm, read);
+        List<LhsItem> items = reads.plan(ends.open() ? Asked.ACTS : Asked.DECIDES, ends, testTerm, read);
         ElementKey key = member.key();
         derived.put(key, member);
         reads.recorder();
         String ruleName = model.emittedRuleName(r.name());
         List<RulePlan> out = new ArrayList<>();
-        out.add(as(RuleOrigin.Role.OWN, reads.rulePlan(ruleName, items,
-                new Consequence.Characteristic(SUBJECT, key, Consequence.Insertion.LOGICAL))));
+        out.add(as(RuleOrigin.Role.OWN, reads.rulePlan(ruleName, items, judged(ends, testTerm, read, Set.of(), reads, r.name(),
+                key, new Consequence.Characteristic(SUBJECT, key, Consequence.Insertion.LOGICAL)))));
         if (noted != null && testTerm != null)
             conditionReadingRule(ruleName, positions.versionOf(r), reads, reads.readingPlan(List.of(), false),
                     testTerm, r.condition(), noted, r.validity(), false);
-        out.addAll(openRule(ends, r.name(), ruleName, fresh, r.condition(), null, key));
         out.addAll(conditionSideRules(ends, ruleName, fresh, r.condition(), r.name(), null, r.name(), null, null));
         return out;
     }
@@ -2625,7 +2620,7 @@ public final class TmsTranspiler {
         boolean openValue = reads.ends().open();
         reads.stop();
         int depositFlag = reads.depositFlagSlot();
-        List<LhsItem> items = reads.plan(Asked.DECIDES, ends, testTerm, read);
+        List<LhsItem> items = reads.plan(ends.open() ? Asked.ACTS : Asked.DECIDES, ends, testTerm, read);
         List<LhsItem> blockadeItems = blockade == null ? List.of() : blockade.apply(reads);
         items.addAll(blockadeItems);
         String name = r.name();
@@ -2638,7 +2633,8 @@ public final class TmsTranspiler {
         derived.put(key, member);
         reads.recorder();
         List<RulePlan> out = new ArrayList<>();
-        out.add(as(RuleOrigin.Role.OWN, reads.rulePlan(ruleName, items, consequence)));
+        out.add(as(RuleOrigin.Role.OWN, reads.rulePlan(ruleName, items, judged(ends, testTerm, read, use, reads, name, key,
+                consequence))));
         // every form this writes computes a value, so it has a reading also without a condition (RUNTIME-SEMANTICS
         // ch. 5.12): the reading of its value, where it is at its turn
         if (noted != null) {
@@ -2650,7 +2646,6 @@ public final class TmsTranspiler {
                     r.condition(), r.value(), noted, r.validity(), blockade != null, null, null);
         }
         if (perPeriod) return out;
-        out.addAll(openRule(ends, name, ruleName, fresh, r.condition(), blockade, key));
         out.addAll(conditionSideRules(ends, ruleName, fresh, r.condition(), name, blockade, name, blockade, null));
         return out;
     }
@@ -2765,28 +2760,21 @@ public final class TmsTranspiler {
     }
 
     /**
-     * The rule of the open outcome of the writer {@code form} of {@code member}, beside its rule {@code ruleName}, whose
-     * condition is {@code c}, ending as {@code ends} says (RUNTIME-SEMANTICS ch. 1.5, "A rule"): the left-hand side of
-     * that rule built again over fresh declarations ({@code fresh}), with the test that the condition leaves the writer
-     * undecided ({@link Asked#LEAVES_OPEN}) and {@code blockade} after it, and a consequence that inserts that the form
-     * leaves {@code member} of the subject open ({@link LeftOpen}). It fires exactly where the form's rule tests the
-     * condition and the condition neither holds for the form itself nor fails for another, and the fact goes when a read
-     * it rested on changes. Where the condition fails for another form, no rule of the form fires: it stands that the
-     * form fills nothing. A value with an open read leaves the target open from the form's own rule
-     * ({@link Consequence.Value}). Empty for a form whose condition always stands.
+     * The consequence of the writer {@code form} of {@code member}, whose rule asks {@code testTerm}, its condition over
+     * the values at {@code read} ending as {@code ends} says: {@code decides}, which reads the values at {@code use}; and
+     * where the condition can be undetermined, that consequence or the fact that the form leaves {@code member} of the
+     * subject open, as the condition holds for the form itself or not (RUNTIME-SEMANTICS ch. 1.5, "A rule"). Where the
+     * condition fails for another form, the rule does not fire ({@link Asked#ACTS}): it stands that the form fills
+     * nothing. A value with an open read leaves the target open from {@code decides} itself
+     * ({@link Consequence.Value#open}).
      */
-    private List<RulePlan> openRule(Ends ends, String form, String ruleName, Supplier<Reads> fresh, Condition c,
-                                    Function<Reads, List<LhsItem>> blockade, ElementKey member) {
-        if (!ends.open()) return List.of();
-        Reads reads = fresh.get();
-        Set<Integer> read = reads.follow();
-        Term testTerm = conditionTerm(c, reads);
-        reads.stop();
-        List<LhsItem> items = reads.plan(Asked.LEAVES_OPEN, ends, testTerm, read);
-        if (blockade != null) items.addAll(blockade.apply(reads));
-        reads.recorder();
-        return List.of(as(RuleOrigin.Role.LEFT_OPEN, reads.rulePlan(ruleName + ": laat open", items,
-                new Consequence.LeftOpen(SUBJECT, member, form, Consequence.Insertion.LOGICAL))));
+    private static Consequence judged(Ends ends, Term testTerm, Set<Integer> read, Set<Integer> use, Reads reads, String form,
+                                      ElementKey member, Consequence decides) {
+        if (!ends.open()) return decides;
+        Set<Integer> slots = new TreeSet<>(read);
+        slots.addAll(use);
+        return new Consequence.Judged(SUBJECT, testTerm, ends.fault(), List.copyOf(slots), reads.size(), decides, member,
+                form, Consequence.Insertion.LOGICAL);
     }
 
     /** How the evaluation of a condition or a value can end beside its outcome: in an evaluation fault, and in an open
@@ -2797,14 +2785,15 @@ public final class TmsTranspiler {
     private record Opened(Term term, boolean open) {}
 
     /**
-     * What the test of a rule asks of a condition of the IR (RUNTIME-SEMANTICS ch. 1.5): one of the outcomes of its
-     * form, or what its evaluation does beside them. A form decides where its condition holds for the form itself
-     * ({@code DECIDES}); it leaves its target open where the condition neither holds for the form itself nor fails for
-     * another ({@code LEAVES_OPEN}, a {@link LeftOpen}); and it fills nothing where the condition fails for another
-     * form, which no rule tests, since it is the absence of the other two. Beside them the condition can fault
-     * ({@code FAULTS}) and deposit ({@code DEPOSITS}). {@link Reads#conditionTest} turns each into a test.
+     * What the test of a rule asks of a condition of the IR (RUNTIME-SEMANTICS ch. 1.5): the outcomes of its form on
+     * which the rule fires, or what the evaluation does beside them. A form decides where its condition holds for the
+     * form itself ({@code DECIDES}). The rule of a writer whose condition can be undetermined fires also where the
+     * condition neither holds for the form itself nor fails for another, so that the writer leaves its target open
+     * ({@code ACTS}), and its consequence says which of the two ({@link #judged}). Where the condition fails for another
+     * form, the form fills nothing, and its rule does not fire. Beside these the condition can fault ({@code FAULTS})
+     * and deposit ({@code DEPOSITS}). {@link Reads#conditionTest} turns each into a test.
      */
-    private enum Asked { DECIDES, LEAVES_OPEN, FAULTS, DEPOSITS }
+    private enum Asked { DECIDES, ACTS, FAULTS, DEPOSITS }
 
     /**
      * The rule that deposits the §9.5 inconsistency of RUNTIME-SEMANTICS ch. 1.2 for the condition {@code c} of
@@ -5712,7 +5701,7 @@ public final class TmsTranspiler {
             case Term.Call a -> {
                 Boolean first = readsFirst(a.arguments(), slot);
                 yield first != null ? first
-                        : a.function().canFail() || a.function() == StaticFunction.READ ? Boolean.FALSE : null;
+                        : a.function().canFail() || a.function().readsOpen() ? Boolean.FALSE : null;
             }
             // a test on leeg and gevuld is a condition, as a composite is
             case Term.ClosureOverOpen o -> Boolean.FALSE;
@@ -7137,14 +7126,13 @@ public final class TmsTranspiler {
         if (path == null) {
             if (a.objectType() != reads.subject)
                 throw new Refusal(DroolsCode.OWN_READ_FOREIGN_SUBJECT.reason("objectType", a.objectType().name, "subject", reads.subject.name, "snippet", snippet(a.source())));
-            Member own = member(reads.subject, a.attribute(), false);
-            return reads.memberTerm(reads.own(own), own, source(a.source()));
+            return reads.own(member(reads.subject, a.attribute(), false), source(a.source()));
         }
         Path p = path(reads.subject, path, a.objectType(), Msg.drools("PART.desc.read", "snippet", snippet(a.source())));
         Member reached = member(p.reaches(), a.attribute(), false);
         int i = reads.navigated(p, reached);
         noteObject(a, reads, i);
-        return reads.memberTerm(i, reached, source(a.source()));
+        return reads.standing(i, reached, source(a.source()));
     }
 
     // ---------------- conditions ----------------
@@ -7233,7 +7221,7 @@ public final class TmsTranspiler {
             if (member.declarant() != k.owner())
                 throw new Refusal(DroolsCode.NARROWING_HOST_NOT_CARRIED.reason("snippet", snippet(k)));
             int i = reads.narrowed(member);
-            return new Term.Call(StaticFunction.KENMERK, List.of(reads.memberTerm(i, member, null), constant(!k.negation())),
+            return new Term.Call(StaticFunction.KENMERK, List.of(reads.standing(i, member, null), constant(!k.negation())),
                     source(k.source()));
         }
         if (!Host.hostOp(k, reads.subject))
@@ -7247,15 +7235,14 @@ public final class TmsTranspiler {
         if (nav == null) {
             if (k.navigation() != null)
                 throw new Refusal(DroolsCode.NAVIGATION_WITHOUT_BINDING.reason("snippet", snippet(k)));
-            Member own = member(reads.subject, k.characteristic(), true);
-            return new Term.Call(StaticFunction.KENMERK, List.of(reads.memberTerm(reads.own(own), own, null), constant(desired)),
-                    source(k.source()));
+            return new Term.Call(StaticFunction.KENMERK, List.of(reads.own(member(reads.subject, k.characteristic(), true),
+                    null), constant(desired)), source(k.source()));
         }
         Path p = path(reads.subject, nav, null, Msg.drools("PART.desc.characteristic-check", "snippet", snippet(k)));
         Member reached = member(p.reaches(), k.characteristic(), true);
         int i = reads.navigated(p, reached);
         noteObject(k, reads, i);
-        return new Term.Call(StaticFunction.CHARACTERISTIC_CHECK_ALONG_PATH, List.of(reads.memberTerm(i, reached, null), constant(desired)),
+        return new Term.Call(StaticFunction.CHARACTERISTIC_CHECK_ALONG_PATH, List.of(reads.standing(i, reached, null), constant(desired)),
                 source(k.source()));
     }
 
@@ -7734,9 +7721,9 @@ public final class TmsTranspiler {
 
     /**
      * The reads of one rule, each bound once in its left-hand side and numbered in the order they are met: a member of
-     * the subject that no form writes and that cannot be open off the subject's bean pattern, over a path through the
-     * reference fields read in the same binding; any other member of the subject off its standing, and over a path off
-     * its {@link PathState}; a parameter through a declaration of its own. The numbers are the indices of the value arrays
+     * the subject that no form writes off the subject's bean pattern, and over a path, where it cannot be open, through the
+     * reference fields read in the same binding; a derived member of the subject off its standing; a derived member over a
+     * path, or one that can be open, off its {@link PathState}; a parameter through a declaration of its own. The numbers are the indices of the value arrays
      * the condition's test and the consequence receive. The standings and path standings a rule reads are registered
      * with the transpiler only when the rule lowers ({@link #recorder}).
      *
@@ -7934,14 +7921,14 @@ public final class TmsTranspiler {
          * The test that asks {@code asked} of {@code testTerm}, a condition of the IR compiled, ending as {@code ends}
          * says, over the values at {@code read}: the one place where a condition becomes the test of a rule, so that
          * every form reads the outcomes of RUNTIME-SEMANTICS ch. 1.5 alike ({@link Asked}). Where the condition can
-         * fault, the tests of the form's outcomes answer false on a fault, which the rule of the fault takes
+         * fault, the test of the form's own rule answers false on a fault, which the rule of the fault takes
          * ({@link #conditionFaultRule}). Where its judgement can be undetermined, every test answers for that end too
-         * ({@link TestItem#open}); where it cannot, no rule asks whether it leaves its target open.
+         * ({@link TestItem#open}).
          */
         private TestItem conditionTest(Asked asked, Ends ends, Term testTerm, Set<Integer> read) {
             TestItem.Role role = switch (asked) {
                 case DECIDES -> ends.fault() ? TestItem.Role.WITHOUT_FAULT : TestItem.Role.CONDITION;
-                case LEAVES_OPEN -> TestItem.Role.LEAVES_OPEN;
+                case ACTS -> ends.fault() ? TestItem.Role.ACTS_WITHOUT_FAULT : TestItem.Role.ACTS;
                 case FAULTS -> TestItem.Role.FAULT;
                 case DEPOSITS -> TestItem.Role.DEPOSIT;
             };
@@ -8065,12 +8052,32 @@ public final class TmsTranspiler {
             return out;
         }
 
-        /** The read of {@code member}, bound at {@code slot}: the bound value, and where the member can be open, through
-         *  the read that breaks the evaluation off where it is ({@link StaticFunction#READ}). */
-        Term memberTerm(int slot, Member member, String source) {
+        /** The read of {@code member} off a standing, bound at {@code slot}: the bound value, and where the member can be
+         *  open, through the read that breaks the evaluation off where it is ({@link StaticFunction#READ}). */
+        Term standing(int slot, Member member, String source) {
             if (!openable.contains(member.key())) return new Term.SlotValue(slot, source);
             open = true;
             return new Term.Call(StaticFunction.READ, List.of(new Term.SlotValue(slot, null)), source);
+        }
+
+        /** The read of {@code member} of the subject ({@link #own(Member)}): off its standing where a form writes it, and
+         *  else off the bean, through the read that breaks the evaluation off where the input is not complete and the
+         *  bean holds none ({@link StaticFunction#READ_INPUT}). */
+        Term own(Member member, String source) {
+            int i = own(member);
+            if (writers.containsKey(member.key()) || !openable.contains(member.key())) return standing(i, member, source);
+            open = true;
+            return new Term.Call(StaticFunction.READ_INPUT, List.of(new Term.SlotValue(i, null),
+                    new Term.SlotValue(openInput(), null), new Term.SlotValue(member(), null), constant(member.key())), source);
+        }
+
+        /** The session's input members that are not complete, its {@link OpenInput}, joined to no subject. */
+        int openInput() {
+            if (atForm) return unscoped(this::openInput);
+            int known = existing("open invoer");
+            if (known >= 0) return known;
+            parameters(openInputPattern());
+            return allocateSlot(ReadKind.OPEN_INPUT, "open invoer", Consequence.OPEN_INPUT);
         }
 
         /** Registers what the lowered rule reads with the transpiler: the standings, path standings and channel
@@ -8080,7 +8087,7 @@ public final class TmsTranspiler {
             outsideHost.forEach(outsideStandings::putIfAbsent);
             for (PathRead p : paths.values()) {
                 pathReads.putIfAbsent(p.key(), p);
-                if (throughStanding(p.member()) || timelineAttribute(p.member()))
+                if (writers.containsKey(p.member().key()) || timelineAttribute(p.member()))
                     read.putIfAbsent(p.member().key(), p.member());
             }
             channels.addAll(channelNames);
@@ -8526,7 +8533,7 @@ public final class TmsTranspiler {
             if (known >= 0) return known;
             String w = readName(member.name());
             ElementKey lk = member.key();
-            if (throughStanding(member)) {
+            if (writers.containsKey(lk)) {
                 if (member.characteristic()) {
                     states(state(CharacteristicState.class, "$stand_" + slots.size(), "characteristic", lk, "holds", w));
                     derived.put(lk, member);
@@ -8536,8 +8543,7 @@ public final class TmsTranspiler {
                 derived.put(lk, member);
                 return allocateSlot(ReadKind.STATE, key, w);
             }
-            // input that is never open: no form writes it, so it does not change while the session fires and is read off
-            // the bean
+            // input: no form writes it, so it does not change while the session fires and is read off the bean
             bindSubject(new Binding(w, List.of(), new Binding.Field(member.javaClass(), member.name()),
                     member.characteristic() ? Binding.ReadForm.WAAR : Binding.ReadForm.VALUE, null));
             return allocateSlot(ReadKind.INPUT, key, w);
@@ -8596,7 +8602,7 @@ public final class TmsTranspiler {
             // a derived member or one that can be open, an attribute on a timeline, or any member at the end of a path
             // whose links a form creates: through the path's standing, whose rules bind every link and the member in
             // their left-hand sides
-            if (throughStanding(member) || timelineAttribute(member) || path.created()) {
+            if (writers.containsKey(lk) || openable.contains(lk) || timelineAttribute(member) || path.created()) {
                 PathRead p = new PathRead(path, member);
                 String ps = path.key();
                 String st = "$padstand_" + slots.size();
@@ -8734,6 +8740,12 @@ public final class TmsTranspiler {
                 Term z = withoutDepositFlag(w.value());
                 return z == w.value() ? w : new Consequence.Value(w.subject(), w.target(), w.writer(), z, w.slots(),
                         w.size(), w.collapse(), w.writesEmpty(), null, w.fault(), w.open(), w.insertion());
+            }
+            case Consequence.Judged j -> {
+                Term z = withoutDepositFlag(j.condition());
+                Consequence d = withoutUnfilledDepositFlag(j.decides());
+                return z == j.condition() && d == j.decides() ? j : new Consequence.Judged(j.subject(), z, j.withoutFault(),
+                        j.slots(), j.size(), d, j.member(), j.writer(), j.insertion());
             }
             case Consequence.TestFault f -> {
                 Term z = withoutDepositFlag(f.test());
@@ -8927,31 +8939,31 @@ public final class TmsTranspiler {
 
     // ---------------- standings ----------------
 
-    /** Whether {@code member}, which holds one value, is read through its standing: a form writes it, or it can be open
-     *  ({@link OpenableMembers}). Any other is input that stands as the bean holds it. */
-    private boolean throughStanding(Member member) {
-        return writers.containsKey(member.key()) || openable.contains(member.key());
-    }
-
     /** The pattern of the {@link LeftOpen} facts of {@code member} on the subject: a writer leaves it open. */
     private FactPattern leftOpen(ElementKey member) {
         return new FactPattern(LeftOpen.class, "$opengelaten", List.of(equal(id("opengelaten"), "member", member)),
                 List.of(onSubject(id("opengelaten-onderwerp"))), List.of());
     }
 
-    /** The pattern of the {@link OpenInput} of {@code member} on the subject: its input is not complete. */
-    private FactPattern openInput(ElementKey member) {
-        return new FactPattern(OpenInput.class, "$openinvoer", List.of(equal(id("openinvoer"), "member", member)),
-                List.of(onSubject(id("openinvoer-onderwerp"))), List.of());
+    /** The pattern of the session's {@link OpenInput}, one fact, joined to nothing. */
+    private static FactPattern openInputPattern() {
+        return new FactPattern(OpenInput.class, Consequence.OPEN_INPUT, List.of(), List.of(), List.of());
     }
 
-    /** That nothing leaves {@code member} of the subject open: no writer, where one can, and no input that is not
-     *  complete, where the member can be such an input. Empty for a member that cannot be open. */
-    private List<LhsItem> notOpen(ElementKey member) {
+    /** What the rule of the standing of {@code member} that no writer fills has beside the rest of its left-hand side: a
+     *  {@code not} over the writers that leave it open, where one can, and the session's {@link OpenInput}, where its
+     *  input need not be complete ({@link #inputSource}). Empty for a member that cannot be open. */
+    private List<LhsItem> settled(ElementKey member) {
         List<LhsItem> out = new ArrayList<>();
         if (openable.leftOpen(member)) out.add(new Not(leftOpen(member)));
-        if (openable.openInput(member)) out.add(new Not(openInput(member)));
+        if (openable.openInput(member)) out.add(openInputPattern());
         return out;
+    }
+
+    /** The source of a standing of {@code member} that its input gives: {@code complete}, or an input that need not be
+     *  complete, which the consequence reads with the session's {@link OpenInput}. */
+    private Consequence.StateSource inputSource(ElementKey member, Consequence.StateSource complete) {
+        return openable.openInput(member) ? Consequence.StateSource.INCOMPLETE_INPUT : complete;
     }
 
     /**
@@ -8964,9 +8976,9 @@ public final class TmsTranspiler {
      * holds: a characteristic on a timeline is never read through it ({@link Reads#timeline}).
      *
      * <p>A characteristic that can be open (RUNTIME-SEMANTICS ch. 1.5, {@link OpenableMembers}) has a third standing,
-     * where neither holds: open where a writer leaves it open ({@link LeftOpen}) and where its input is not complete
-     * ({@link OpenInput}), each a rule under the same negation, built where that can be, and the onwaar rule stands under
-     * a {@code not} over both facts.
+     * where neither holds: open where a writer leaves it open ({@link LeftOpen}), a rule under the same negation, built
+     * where that can be, and the onwaar rule stands under a {@code not} over that fact; and open where its input is not
+     * complete ({@link OpenInput}), which the consequence of the onwaar rule says where that can be.
      */
     private List<RulePlan> characteristicStateRules(Member member) {
         ElementKey key = member.key();
@@ -8982,23 +8994,22 @@ public final class TmsTranspiler {
         Supplier<List<LhsItem>> neither = () -> new ArrayList<>(List.of(new Subject(member.javaClass(), SUBJECT,
                 List.of(inputTrue(id("geen-invoer"), member, false)), List.of(), List.of()), new Not(derived(key))));
         List<RulePlan> out = new ArrayList<>(List.of(inputData, derivation));
-        if (openable.leftOpen(key))
-            out.add(openStateRule(member, name + "open door een schrijver", neither.get(), leftOpen(key)));
-        if (openable.openInput(key))
-            out.add(openStateRule(member, name + "open invoer", neither.get(), openInput(key)));
-        List<LhsItem> settled = neither.get();
-        settled.addAll(notOpen(key));
-        out.add(new RulePlan(name + "onwaar", null, null, new ReadTable(List.of()), settled,
-                new Consequence.InsertCharacteristicState(SUBJECT, key, Consequence.StateSource.NONE, false, Consequence.Insertion.LOGICAL)));
+        if (openable.leftOpen(key)) out.add(openStateRule(member, name, neither.get()));
+        List<LhsItem> onwaar = neither.get();
+        onwaar.addAll(settled(key));
+        out.add(new RulePlan(name + "onwaar", null, null, new ReadTable(List.of()), onwaar,
+                new Consequence.InsertCharacteristicState(SUBJECT, key, inputSource(key, Consequence.StateSource.NONE), false,
+                        Consequence.Insertion.LOGICAL)));
         return out;
     }
 
-    /** The rule {@code name} of the open standing of {@code member}: where {@code unfilled}, the subject on which nothing
-     *  fills it, and a fact of {@code opens} on it. */
-    private RulePlan openStateRule(Member member, String name, List<LhsItem> unfilled, FactPattern opens) {
+    /** The rule of the standing of {@code member} that a writer leaves open, of the standing rules {@code name} names:
+     *  where {@code unfilled}, the subject on which nothing fills it, and a {@link LeftOpen} of it. */
+    private RulePlan openStateRule(Member member, String name, List<LhsItem> unfilled) {
+        FactPattern opens = leftOpen(member.key());
         List<LhsItem> items = new ArrayList<>(unfilled);
         items.add(new Exists(List.of(opens), List.of(opens.name()), List.of(SUBJECT)));
-        return new RulePlan(name, null, null, new ReadTable(List.of()), items,
+        return new RulePlan(name + "open door een schrijver", null, null, new ReadTable(List.of()), items,
                 new Consequence.OpenStanding(SUBJECT, member.key(), Consequence.Insertion.LOGICAL));
     }
 
@@ -9044,15 +9055,15 @@ public final class TmsTranspiler {
      * The generic rules that keep one {@link State} per object of the declaring type: the derived value where a
      * {@link Value} exists, else the input on the bean, read in the left-hand side, leeg included. An input rule
      * carries {@code not Waarde}, so a derivation that appears later retracts the input standing and every value that
-     * read it. A member no form writes has no derivation; it is read through its standing where it is an attribute on
-     * a timeline ({@link Reads#timeline}) or can be open.
+     * read it. A member no form writes has no derivation, and only an attribute on a timeline is read through its
+     * standing then ({@link Reads#timeline}).
      *
-     * <p>An attribute that can be open (RUNTIME-SEMANTICS ch. 1.5, {@link OpenableMembers}) has a third standing: where
-     * no {@link Value} stands, open where a writer leaves it open ({@link LeftOpen}), whatever its input, which then
-     * stands no more than the writer's leeg would (ch. 7.8); and where its input is not complete ({@link OpenInput}),
-     * which is only where no form writes it on the object, the input where the bean holds one and else open. Each is a
-     * rule, built where that can be, and the input rule stands under a {@code not} over both facts. The bean's value is
-     * read beside the {@link OpenInput}, so a value a consumer puts there between two fires fills the member.
+     * <p>An attribute that can be open (RUNTIME-SEMANTICS ch. 1.5, {@link OpenableMembers}) has a third standing, where
+     * no {@link Value} stands: open where a writer leaves it open ({@link LeftOpen}), whatever its input, which then
+     * stands no more than the writer's leeg would (ch. 7.8), a rule built where that can be, and the input rule stands
+     * under a {@code not} over that fact; and open where the bean holds none and its input is not complete
+     * ({@link OpenInput}), which is only where no form writes it on the object: the consequence of the input rule says so
+     * where that can be.
      *
      * <p>The input timeline of a member on a timeline stands in the form a {@link Value} carries one,
      * {@code List<Period>} ({@link Period#list}), so every standing of the member holds one representation, except
@@ -9082,15 +9093,13 @@ public final class TmsTranspiler {
 
         if (member.time() == null || member.characteristic()) {
             if (openable.leftOpen(key))
-                out.add(openStateRule(member, name + "open door een schrijver", List.of(new Subject(member.javaClass(),
-                        SUBJECT, List.of(), List.of(), List.of()), noValue(key)), leftOpen(key)));
-            out.add(inputStateRule(member, name + "uit de invoer", null, false));
-            if (openable.openInput(key))
-                out.add(inputStateRule(member, name + "uit de onvolledige invoer", null, true));
+                out.add(openStateRule(member, name, List.of(new Subject(member.javaClass(), SUBJECT, List.of(), List.of(),
+                        List.of()), noValue(key))));
+            out.add(inputStateRule(member, name + "uit de invoer", null));
             return out;
         }
-        out.add(inputStateRule(member, name + "uit de invoer", false, false));
-        out.add(inputStateRule(member, name + "uit de invoer, een emmerscalair", true, false));
+        out.add(inputStateRule(member, name + "uit de invoer", false));
+        out.add(inputStateRule(member, name + "uit de invoer, een emmerscalair", true));
         return out;
     }
 
@@ -9145,9 +9154,8 @@ public final class TmsTranspiler {
      *  only where an {@link BucketInput} of the member on the object exists ({@code true}), the input then standing as
      *  its {@link BucketScalar}, or does not ({@code false}). The bucket is taken in the consequence, from the bound
      *  timeline: a binding is computed for every object the subject pattern matches, also one whose input is a full
-     *  timeline. Where {@code incomplete}, the rule of an input that is not complete: where an {@link OpenInput} of the
-     *  member stands on the object; and else where nothing leaves the member open ({@link #notOpen}). */
-    private RulePlan inputStateRule(Member member, String name, Boolean bucket, boolean incomplete) {
+     *  timeline. */
+    private RulePlan inputStateRule(Member member, String name, Boolean bucket) {
         ElementKey key = member.key();
         List<LhsItem> items = new ArrayList<>();
         items.add(new Subject(member.javaClass(), SUBJECT, List.of(), List.of(), List.of(new Binding("$invoer", List.of(),
@@ -9159,13 +9167,10 @@ public final class TmsTranspiler {
             items.add(bucket ? new Exists(List.of(p), List.of(p.name()), List.of(SUBJECT)) : new Not(p));
         }
         items.add(noValue(key));
-        if (incomplete) {
-            FactPattern p = openInput(key);
-            items.add(new Exists(List.of(p), List.of(p.name()), List.of(SUBJECT)));
-        } else items.addAll(notOpen(key));
+        items.addAll(settled(key));
         return new RulePlan(name, null, null, oneSlot(ReadKind.INPUT, "invoer " + key, "$invoer"),
-                items, new Consequence.State(SUBJECT, key, Consequence.StateSource.INPUT, 0, Boolean.TRUE.equals(bucket),
-                        member.cell(), incomplete, Consequence.Insertion.LOGICAL));
+                items, new Consequence.State(SUBJECT, key, inputSource(key, Consequence.StateSource.INPUT), 0,
+                        Boolean.TRUE.equals(bucket), member.cell(), Consequence.Insertion.LOGICAL));
     }
 
     /** The value array of a standing rule whose consequence reads one value: slot 0, of {@code category}, which the
@@ -9175,9 +9180,11 @@ public final class TmsTranspiler {
     }
 
     /**
-     * The two generic rules that keep one {@link PathState} per object of the subject type for a derived member read over
-     * a path: where every link on the path is present, the standing of the member on the object the path reaches,
-     * joined on that object, and that object; where a link is absent, null for both. The links are input, read off the
+     * The two generic rules that keep one {@link PathState} per object of the subject type for a member read over
+     * a path, a derived one or one that can be open: where every link on the path is present, the standing of the member on
+     * the object the path reaches, joined on that object, or where no form writes it its input on that object's bean, open
+     * where the bean holds none and the input is not complete ({@link OpenInput}), and that object; where a link is
+     * absent, null for both. The links are input, read off the
      * bean in the left-hand side, and do not change while the session fires, so exactly one of the two holds for each
      * object. Both rules read the path along its reference fields ({@link Path#fields}): the test whether it reaches an
      * object, and the binding of that object, which walks to the last field and reads it there.
@@ -9195,16 +9202,28 @@ public final class TmsTranspiler {
         Alpha link = alongPath(id("link"), fields, Alpha.Comparator.GEVULD);
         Binding reaches = new Binding("$bereikt", fields.subList(0, fields.size() - 1), fields.get(fields.size() - 1),
                 Binding.ReadForm.VALUE, null);
-        Class<?> stateClass = member.characteristic() ? CharacteristicState.class : State.class;
-        FactPattern state = new FactPattern(stateClass, "$stand",
-                List.of(equal(id("stand"), member.characteristic() ? "characteristic" : "attribute", lk)),
-                List.of(new Join(id("stand-bereikt"), "subject", "$bereikt")),
-                List.of(Binding.of("$v", stateClass, member.characteristic() ? "holds" : "value")));
-        RulePlan present = new RulePlan(name + "link aanwezig", null, null,
-                oneSlot(ReadKind.REACHED_STATE, "stand " + ps + " " + lk, "$v"),
-                List.of(new Subject(javaClass, SUBJECT, List.of(link), List.of(), List.of(reaches)), state),
-                new Consequence.InsertPathState(SUBJECT, ps, lk, Consequence.StateSource.REACHED, 0, "$bereikt",
-                        Consequence.Insertion.LOGICAL));
+        Subject linked = new Subject(javaClass, SUBJECT, List.of(link), List.of(), List.of(reaches));
+        RulePlan present;
+        if (writers.containsKey(lk) || timelineAttribute(member)) {
+            Class<?> stateClass = member.characteristic() ? CharacteristicState.class : State.class;
+            FactPattern state = new FactPattern(stateClass, "$stand",
+                    List.of(equal(id("stand"), member.characteristic() ? "characteristic" : "attribute", lk)),
+                    List.of(new Join(id("stand-bereikt"), "subject", "$bereikt")),
+                    List.of(Binding.of("$v", stateClass, member.characteristic() ? "holds" : "value")));
+            present = new RulePlan(name + "link aanwezig", null, null,
+                    oneSlot(ReadKind.REACHED_STATE, "stand " + ps + " " + lk, "$v"), List.of(linked, state),
+                    new Consequence.InsertPathState(SUBJECT, ps, lk, Consequence.StateSource.REACHED, 0, "$bereikt",
+                            Consequence.Insertion.LOGICAL));
+        } else {
+            // the bean the path reaches is a pattern of its own, so an update of it between two fires is seen here
+            FactPattern bean = new FactPattern(member.javaClass(), "$stap_" + id("keten"), List.of(),
+                    List.of(new Join(id("bean-bereikt"), null, "$bereikt")), List.of(new Binding("$v", List.of(),
+                            new Binding.Field(member.javaClass(), member.name()), inputForm(member), null)));
+            present = new RulePlan(name + "link aanwezig", null, null,
+                    oneSlot(ReadKind.REACHED_INPUT, "invoer " + ps + " " + lk, "$v"),
+                    List.of(linked, bean, openInputPattern()), new Consequence.InsertPathState(SUBJECT, ps, lk,
+                            Consequence.StateSource.INCOMPLETE_INPUT, 0, "$bereikt", Consequence.Insertion.LOGICAL));
+        }
 
         Alpha noLink = alongPath(id("geen-link"), fields, Alpha.Comparator.LEEG);
         RulePlan absent = new RulePlan(name + "link afwezig", null, null, new ReadTable(List.of()),
@@ -9225,8 +9244,8 @@ public final class TmsTranspiler {
      * gains links while the session fires, so the path is a chain of patterns in the left-hand side, a hop over a
      * created relation joining its {@link RelationLink} facts and a hop over an input relation the reference field of the
      * near bean, each ending in a pattern over the reached bean ({@link #chain}). Where the chain reaches an object the
-     * standing carries the member's value there, read off that bean where no form writes the member and through its
-     * standing where one does, or where it is an attribute on a timeline, whose standing carries the case's input
+     * standing carries the member's value there, read off that bean where no form writes the member, with the session's
+     * {@link OpenInput} where it can be open, and through its standing where one does, or where it is an attribute on a timeline, whose standing carries the case's input
      * convention, and the object it reaches is the one the chain's last pattern binds; where it does not, the value and
      * the object are null, under a {@code not} over the same chain. A link that a creation adds takes the standing
      * along.
@@ -9243,8 +9262,9 @@ public final class TmsTranspiler {
         List<LhsItem> items = new ArrayList<>();
         items.add(new Subject(javaClass, SUBJECT, List.of(), List.of(), List.of()));
         List<FactPattern> chain = chain(path.hops(), SUBJECT, null);
+        Consequence.StateSource source = Consequence.StateSource.REACHED;
         ReadTable value;
-        if (throughStanding(member) || timelineAttribute(member)) {
+        if (writers.containsKey(lk) || timelineAttribute(member)) {
             items.addAll(chain);
             Class<?> stateClass = member.characteristic() ? CharacteristicState.class : State.class;
             items.add(new FactPattern(stateClass, "$stand",
@@ -9258,10 +9278,14 @@ public final class TmsTranspiler {
             items.add(withBinding(chain.get(chain.size() - 1), new Binding("$v", List.of(),
                     new Binding.Field(member.javaClass(), member.name()), inputForm(member), null)));
             value = oneSlot(ReadKind.REACHED_INPUT, "invoer " + ps + " " + lk, "$v");
+            if (openable.openInput(lk)) {
+                items.add(openInputPattern());
+                source = Consequence.StateSource.INCOMPLETE_INPUT;
+            }
         }
         RulePlan present = new RulePlan(name + "link aanwezig", null, null, value, items,
-                new Consequence.InsertPathState(SUBJECT, ps, lk, Consequence.StateSource.REACHED, 0,
-                        chain.get(chain.size() - 1).name(), Consequence.Insertion.LOGICAL));
+                new Consequence.InsertPathState(SUBJECT, ps, lk, source, 0, chain.get(chain.size() - 1).name(),
+                        Consequence.Insertion.LOGICAL));
 
         // no combination of the chain's objects: what the chain declares lives inside the negation, and it reads the
         // subject alone from before it

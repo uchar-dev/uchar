@@ -141,9 +141,12 @@ public enum Route {
     /** The answer of a test that a condition holds for the form itself, where its evaluation threw
      *  ({@link TestItem#open}). */
     HOLDS_FOR_ITSELF(ComputeHelpers.class, "holdsForItself"),
-    /** The answer of a test that a condition leaves its writer undecided, where its evaluation threw
-     *  ({@link TestItem.Role#LEAVES_OPEN}). */
-    LEAVES_OPEN(ComputeHelpers.class, "leavesOpen"),
+    /** The outcome of a writer whose condition threw ({@link TestItem.Role#ACTS}). */
+    OUTCOME(ComputeHelpers.class, "outcome"),
+    /** Whether an outcome of a writer is not that it fills nothing ({@link TestItem.Role#ACTS}). */
+    ACTS(ComputeHelpers.class, "acts"),
+    /** Whether an outcome of a writer is that it decides ({@link Consequence.Judged}). */
+    DECIDES(ComputeHelpers.class, "decides"),
     /** The answer of a test that a condition faults, where its evaluation threw ({@link TestItem#open}). */
     FAULTED(ComputeHelpers.class, "faulted"),
     /** What a test of deposits keeps where the evaluation of its condition threw ({@link TestItem#open}). */
@@ -155,9 +158,9 @@ public enum Route {
     IS_OPEN(ComputeHelpers.class, "isOpen"),
     /** The open standing of a member on an object ({@link Consequence.OpenStanding}). */
     OPEN(ComputeHelpers.class, "open"),
-    /** The input of an attribute that is not complete, or its open member where the bean holds no value
-     *  ({@link Consequence.State#incomplete}). */
-    INCOMPLETE_INPUT(ComputeHelpers.class, "incompleteInput"),
+    /** The input of a member, or its open member where the bean holds none and the input is not complete
+     *  ({@link Consequence.StateSource#INCOMPLETE_INPUT}). */
+    INPUT(ComputeHelpers.class, "input"),
     /** The verdict of a matrix as a member's contribution, 1 or 0 ({@link Consequence.Input.Verdict}). */
     VERDICT(ComputeHelpers.class, "verdict"),
     /** A decision of a defaults stack on a target with declared decimals: the decision where it fits them, as a

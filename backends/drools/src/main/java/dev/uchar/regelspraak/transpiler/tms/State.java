@@ -6,7 +6,7 @@ import java.util.Objects;
 
 /**
  * The standing of one attribute on one object, total: at the fixpoint there is exactly one per (object, attribute) a
- * rule reads through it, a derived attribute or one that can be open, carrying the value of the {@link Value} a rule
+ * rule reads through it, a derived attribute, carrying the value of the {@link Value} a rule
  * derived where there is one, and otherwise the value the case input put on the bean, leeg included; where the attribute
  * is open on the object (RUNTIME-SEMANTICS ch. 1.5), its {@link OpenMember}: no {@link Value} stands, and a writer leaves
  * it open ({@link LeftOpen}), or its input is not complete ({@link OpenInput}) and the bean holds none. A condition or

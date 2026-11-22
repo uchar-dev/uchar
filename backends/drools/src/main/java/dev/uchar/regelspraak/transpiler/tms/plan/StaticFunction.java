@@ -329,6 +329,10 @@ public enum StaticFunction {
     /** The read of a member that can be open, off its standing (ch. 1.5): the bound value, and an open read that breaks
      *  the evaluation off where the member is open. */
     READ(ComputeHelpers.class, "read", false),
+    /** The read of an input member that no form writes and that can be open (ch. 1.5): the value bound off the bean, with
+     *  the session's {@code OpenInput}, the object and the member, and an open read where the bean holds none and its
+     *  input is not complete. */
+    READ_INPUT(ComputeHelpers.class, "readInput", false),
     /** The exact-digit test of a value ({@code rsNumeriekMetExact}, §8.1.4) with an {@code Integer} constant of
      *  digits, whose verdict a {@code Boolean} constant must equal. */
     NUMERIEK_MET_EXACT(ComputeHelpers.class, "exactDigits", false),
@@ -436,4 +440,7 @@ public enum StaticFunction {
 
     /** Whether a call can raise an evaluation fault. */
     public boolean canFail() { return canFail; }
+
+    /** Whether a call is the read of a member that can be open, which breaks the evaluation off where it is. */
+    public boolean readsOpen() { return this == READ || this == READ_INPUT; }
 }

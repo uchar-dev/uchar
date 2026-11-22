@@ -300,7 +300,7 @@ final class DrlRendering {
             case Term.SlotValue x -> true;
             case Term.Input i -> inert(i.object());
             case Term.Restate h -> inert(h.term());
-            case Term.Call a -> !a.function().canFail() && a.function() != StaticFunction.READ
+            case Term.Call a -> !a.function().canFail() && !a.function().readsOpen()
                     && a.arguments().stream().allMatch(DrlRendering::inert);
             default -> false;
         };
@@ -340,6 +340,7 @@ final class DrlRendering {
         if (w instanceof LocalDateTime d)
             return new Expr("java.time.LocalDateTime.parse(" + str(d.toString()) + ")", LocalDateTime.class);
         if (w instanceof Enum<?> e) return new Expr(enumlabel(e), e.getDeclaringClass());
+        if (w instanceof ElementKey e) return new Expr(key(e), ElementKey.class);
         if (w instanceof Class<?> k) {
             if (isBean(k)) throw new Refusal(DroolsCode.DRL_BEAN_CLASS_CONSTANT.reason("category", DroolsCode.DRL_BEAN_CLASS_CONSTANT.part("bean-class")));
             return new Expr(typeName(k) + ".class", Class.class);
@@ -575,6 +576,8 @@ final class DrlRendering {
          *  one whose statements a test carries. Each goes as a comment line into the body of the function it went
          *  into ({@link #sentences}), so that no sentence of the source is lost with its function. */
         private final List<String> absorbed = new ArrayList<>();
+        /** The call of the function of the outcome of the writer of the rule, where its test asks it ({@link #acts}). */
+        private String outcome;
         /** Per place of {@link #functions} the length of {@link #absorbed} when it was reserved: the sentences after it
          *  went into that function or into one written inside it. */
         private final List<Integer> absorbedMarks = new ArrayList<>();
@@ -926,6 +929,7 @@ final class DrlRendering {
          * function of a composite, as the functions of the fault and of the deposit of a consequence do.
          */
         private String test(TestItem t) {
+            if (t.role() == TestItem.Role.ACTS || t.role() == TestItem.Role.ACTS_WITHOUT_FAULT) return acts(t);
             int place = reserveer();
             String name = name("toets", place);
             boolean deposit = t.role() == TestItem.Role.DEPOSIT;
@@ -939,16 +943,38 @@ final class DrlRendering {
                     yield withoutFault ? tryCatch(returning(t.test(), c, "        "), caught + "        return false;\n")
                             : returning(t.test(), c, "    ");
                 }
-                case LEAVES_OPEN, FAULT -> tryCatch("        boolean uitkomst = " + bool(t.test(), c)
-                        + ";\n        return false;\n", t.role() == TestItem.Role.LEAVES_OPEN
-                        ? "        return " + route(Route.LEAVES_OPEN) + "(e);\n"
-                        : t.open() ? "        return " + route(Route.FAULTED) + "(e);\n"
-                        : caught + "        return true;\n");
+                case ACTS, ACTS_WITHOUT_FAULT -> throw new IllegalStateException("a test of an outcome is its own");
+                case FAULT -> tryCatch("        boolean uitkomst = " + bool(t.test(), c) + ";\n        return false;\n",
+                        t.open() ? "        return " + route(Route.FAULTED) + "(e);\n" : caught + "        return true;\n");
                 case DEPOSIT -> evaluated(t.test(), t.open(), c) + "    return " + route(Route.REPORTED) + "("
                         + DEPOSIT_FLAG + ");\n";
             };
             fill(place, t.test().source(), "boolean " + name + "(" + c.declaration() + ")", body);
             return "eval( " + name + "(" + c.arguments() + ") )";
+        }
+
+        /** The test that the writer of the rule acts: the function of its outcome ({@code ComputeHelpers.outcome}), which
+         *  the consequence calls again ({@link Consequence.Judged}). */
+        private String acts(TestItem t) {
+            int place = reserveer();
+            String name = name("oordeel", place);
+            Context c = context(t.slots(), -1, null, t.test());
+            fill(place, t.test().source(), "Boolean " + name + "(" + c.declaration() + ")",
+                    tryCatch(returning(t.test(), c, "        "), "        return " + route(Route.OUTCOME) + "(e, "
+                            + (t.role() == TestItem.Role.ACTS_WITHOUT_FAULT) + ");\n"));
+            outcome = name + "(" + c.arguments() + ")";
+            return "eval( " + route(Route.ACTS) + "(" + outcome + ") )";
+        }
+
+        /** The consequence of a writer whose condition can be undetermined: what it decides where the outcome its test
+         *  asked is that it decides, and else that it leaves its target open. */
+        private void judged(Consequence.Judged x, StringBuilder b) {
+            if (outcome == null) throw new IllegalStateException(plan.name() + " tests no outcome of its writer");
+            b.append("    if (").append(route(Route.DECIDES)).append("(").append(outcome).append(")) {\n");
+            for (String line : consequence(x.decides()).split("\n")) b.append("    ").append(line).append('\n');
+            b.append("    } else {\n");
+            insert(b, "        ", x.insertion(), leftOpen(x.subject(), x.member(), x.writer()));
+            b.append("    }\n");
         }
 
         /** The statements that evaluate {@code condition} for the probe of the function alone: a fault is the fault
@@ -1307,7 +1333,7 @@ final class DrlRendering {
                 case Consequence.Value x -> value(x, b);
                 case Consequence.Characteristic x -> insert(b, "    ", x.insertion(), "new " + typeName(HasCharacteristic.class) + "("
                         + x.subject() + ", " + key(x.characteristic()) + ")");
-                case Consequence.LeftOpen x -> insert(b, "    ", x.insertion(), leftOpen(x.subject(), x.member(), x.writer()));
+                case Consequence.Judged x -> judged(x, b);
                 case Consequence.TestFault x -> testFault(x, b);
                 case Consequence.Fault x -> insert(b, "    ", x.insertion(), "new " + typeName(Fault.class) + "("
                         + x.subject() + ", " + str(x.fault().form()) + ", " + route(Route.COMPUTE_FAULT) + "("
@@ -1329,7 +1355,9 @@ final class DrlRendering {
                 case Consequence.EvaluationDateState x -> insert(b, "    ", x.insertion(), "new " + typeName(EvaluationDate.class)
                         + "(" + x.global() + ")");
                 case Consequence.InsertCharacteristicState x -> insert(b, "    ", x.insertion(), "new " + typeName(CharacteristicState.class)
-                        + "(" + x.subject() + ", " + key(x.characteristic()) + ", " + x.holds() + ")");
+                        + "(" + x.subject() + ", " + key(x.characteristic()) + ", "
+                        + (x.source() == Consequence.StateSource.INCOMPLETE_INPUT
+                        ? input(String.valueOf(x.holds()), x.subject(), x.characteristic()) : x.holds()) + ")");
                 case Consequence.OpenStanding x -> insert(b, "    ", x.insertion(), "new "
                         + typeName(x.member().characteristic() ? CharacteristicState.class : State.class) + "("
                         + x.subject() + ", " + key(x.member()) + ", " + route(Route.OPEN) + "(" + x.subject() + ", "
@@ -1339,13 +1367,15 @@ final class DrlRendering {
                         ? route(Route.BUCKET_SCALAR) + "(" + variable(x.value()) + ")"
                         : x.cell() != null ? route(Route.CELL) + "(" + variable(x.value()) + ", "
                                 + consequenceConstant(x.cell()).text() + ")"
-                        : x.incomplete() ? route(Route.INCOMPLETE_INPUT) + "(" + variable(x.value()) + ", " + x.subject()
-                                + ", " + key(x.attribute()) + ")"
+                        : x.source() == Consequence.StateSource.INCOMPLETE_INPUT
+                        ? input(variable(x.value()), x.subject(), x.attribute())
                         : variable(x.value())) + ")");
                 case Consequence.InsertPathState x -> insert(b, "    ", x.insertion(), "new " + typeName(PathState.class) + "("
                         + x.subject() + ", " + str(x.path()) + ", " + key(x.member()) + ", "
                         + (x.source() == Consequence.StateSource.MISSING_LINK ? "null, null"
-                                : variable(x.value()) + ", " + x.reached()) + ")");
+                                : (x.source() == Consequence.StateSource.INCOMPLETE_INPUT
+                                        ? input(variable(x.value()), x.reached(), x.member()) : variable(x.value()))
+                                        + ", " + x.reached()) + ")");
                 case Consequence.Contribution x -> contribution(x, b);
                 case Consequence.FilterDeposit x -> insert(b, "    ", x.insertion(), "new "
                         + typeName(FilterDeposit.class) + "(" + str(x.fold()) + ", " + x.subject() + ", "
@@ -1465,6 +1495,11 @@ final class DrlRendering {
                 b.append(in).append("}\n");
             }
             if (!carried) b.append("    }\n");
+        }
+
+        /** The input {@code value} of {@code member} of the object {@code object} binds, or its open member. */
+        private String input(String value, String object, ElementKey member) {
+            return route(Route.INPUT) + "(" + value + ", " + Consequence.OPEN_INPUT + ", " + object + ", " + key(member) + ")";
         }
 
         /** The fact that {@code writer} leaves {@code member} of the object {@code subject} binds open. */

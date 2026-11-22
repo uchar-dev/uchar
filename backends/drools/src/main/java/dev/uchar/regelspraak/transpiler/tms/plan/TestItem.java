@@ -7,8 +7,8 @@ import java.util.List;
  * after the patterns that bind them. {@code test} is the condition as a tree of calls over a value array of
  * {@code size} slots with the read values at {@code slots}, a truth value, from which a rendering into the executable
  * model makes a predicate and one into DRL text makes the calls. {@code role} says what the test asks of the condition,
- * which a rendering cannot tell from the condition itself: that it holds, that it holds without a fault, that it
- * leaves its writer undecided, that it faults, or that it deposits, with the probe in slot {@code depositFlag} (-1 for
+ * which a rendering cannot tell from the condition itself: that it holds, that it holds without a fault, that its
+ * writer acts on it, that it faults, or that it deposits, with the probe in slot {@code depositFlag} (-1 for
  * every other role). Where {@code open}, the condition reads a member that can be open, so its judgement can be
  * undetermined (ch. 1.5) and its evaluation can end in an open read; a rendering then answers the role for such an end
  * as well ({@code ComputeHelpers.holdsForItself} and the routes beside it).
@@ -21,9 +21,9 @@ public record TestItem(String id, Role role, Term test, int depositFlag, List<In
         if ((role == Role.DEPOSIT) != (depositFlag >= 0))
             throw new IllegalArgumentException("only a deposit test has a probe, and it always does: " + role
                     + " with probe " + depositFlag);
-        if (role == Role.LEAVES_OPEN && !open || role == Role.VORM && open)
-            throw new IllegalArgumentException("a condition whose judgement always stands leaves nothing open, and a test a"
-                    + " form composes itself always stands: " + role + (open ? " open" : " established"));
+        if ((role == Role.ACTS || role == Role.ACTS_WITHOUT_FAULT) && !open || role == Role.VORM && open)
+            throw new IllegalArgumentException("a writer acts on a condition that can be undetermined, and a test a form"
+                    + " composes itself always stands: " + role + (open ? " open" : " established"));
     }
 
     /** A test of a condition whose judgement always stands. */
@@ -43,9 +43,12 @@ public record TestItem(String id, Role role, Term test, int depositFlag, List<In
         /** The condition holds and its evaluation does not fault: where it faults, the rule of the fault takes it
          *  ({@link #FAULT}), and this test does not hold. */
         WITHOUT_FAULT,
-        /** The condition leaves the writer whose condition it is undecided (ch. 1.5, "A rule"): it is neither true for
-         *  the form itself nor false for another form, and its evaluation does not fault. */
-        LEAVES_OPEN,
+        /** The writer whose condition it is decides or leaves its target open (ch. 1.5, "A rule"): the condition is not
+         *  false for another form, for which it would stand that the writer fills nothing; which of the two, the
+         *  consequence says ({@link Consequence.Judged}). It cannot fault. */
+        ACTS,
+        /** As {@link #ACTS}, and its evaluation does not fault: where it faults, the rule of the fault takes it. */
+        ACTS_WITHOUT_FAULT,
         /** The evaluation of the condition faults: the test of the rule that inserts the fault. */
         FAULT,
         /** The evaluation of the condition reaches a place that deposits (§6.5, §6.6): the test puts a fresh probe in

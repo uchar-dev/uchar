@@ -204,32 +204,44 @@ class OpenValuesWitnessTest {
     }
 
     /** A value a consumer puts on a bean between two fires fills an input that is not complete, and one it takes away
-     *  leaves it open again: the standing reads the bean beside the {@code OpenInput} that {@code insert} stated once. */
+     *  leaves it open again: a read takes the bean beside the {@code OpenInput} that {@code insert} stated once, also of
+     *  a bean a path reaches. */
     @Test void a_value_on_the_bean_between_two_fires() throws Exception {
-        Path dir = FIXTURES.resolve("open-input");
-        JsonNode json = JSON.readTree(Files.readString(dir.resolve("case1-vindloon-open.json")));
-        for (DroolsBackend.Branch branch : DroolsBackend.Branch.values())
-            CaseRunner.forMeasurement(dir.resolve("ir.json"), branch).withSession(json, (build, session, labels) -> {
-                Object v1 = labels.get("V1");
-                org.kie.api.runtime.rule.FactHandle handle = session.getFactHandle(v1);
-                assertEquals("uitbetaling open", uitbetaling(build, session), branch::name);
-                CaseRunner.call(v1, "setVindloon", java.math.BigDecimal.class, java.math.BigDecimal.valueOf(4));
-                session.update(handle, v1);
-                assertEquals("uitbetaling 7", uitbetaling(build, session), branch::name);
-                CaseRunner.call(v1, "setVindloon", java.math.BigDecimal.class, null);
-                session.update(handle, v1);
-                assertEquals("uitbetaling open", uitbetaling(build, session), branch::name);
-                return null;
-            });
+        for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
+            between("open-input", "case1-vindloon-open.json", branch, "V1", "uitbetaling", "V1", "setVindloon", 4,
+                    "open", "7");
+            between("link", "case1-links.json", branch, "V2", "vindpremie", "J1", "setBonus", 20, "open", "120");
+        }
     }
 
-    /** The uitbetaling of the one object of {@code session} after a fire, its value or open. */
-    private static String uitbetaling(DroolsBackend.Build build, org.kie.api.runtime.KieSession session) {
+    /** Plays case {@code name} of {@code fixture} on {@code branch}: attribute {@code attribute} of the object {@code of}
+     *  is {@code without}, {@code with} after a fire on the number {@code value} that {@code setter} puts on the bean
+     *  {@code at}, and {@code without} again after one on leeg. */
+    private static void between(String fixture, String name, DroolsBackend.Branch branch, String of, String attribute,
+                                String at, String setter, int value, String without, String with) throws Exception {
+        Path dir = FIXTURES.resolve(fixture);
+        JsonNode json = JSON.readTree(Files.readString(dir.resolve(name)));
+        CaseRunner.forMeasurement(dir.resolve("ir.json"), branch).withSession(json, (build, session, labels) -> {
+            Object bean = labels.get(at);
+            assertEquals(without, fired(build, session, labels.get(of), attribute), branch::name);
+            CaseRunner.call(bean, setter, java.math.BigDecimal.class, java.math.BigDecimal.valueOf(value));
+            session.update(session.getFactHandle(bean), bean);
+            assertEquals(with, fired(build, session, labels.get(of), attribute), branch::name);
+            CaseRunner.call(bean, setter, java.math.BigDecimal.class, null);
+            session.update(session.getFactHandle(bean), bean);
+            assertEquals(without, fired(build, session, labels.get(of), attribute), branch::name);
+            return null;
+        });
+    }
+
+    /** Attribute {@code attribute} of {@code object} after a fire of {@code session}: its value, or open. */
+    private static String fired(DroolsBackend.Build build, org.kie.api.runtime.KieSession session, Object object,
+                                String attribute) {
         assertNull(DroolsBackend.fire(build, session).noFixpoint());
         dev.uchar.regelspraak.transpiler.tms.Fixpoint fp = DroolsBackend.fixpointOf(build, session);
         List<String> out = new ArrayList<>();
-        for (var v : fp.values()) if (v.attribute().equals("uitbetaling")) out.add("uitbetaling " + v.value());
-        for (var o : fp.open()) if (o.member().equals("uitbetaling")) out.add("uitbetaling open");
+        for (var v : fp.values()) if (v.object() == object && v.attribute().equals(attribute)) out.add(String.valueOf(v.value()));
+        for (var o : fp.open()) if (o.object() == object && o.member().equals(attribute)) out.add("open");
         return String.join(", ", out);
     }
 

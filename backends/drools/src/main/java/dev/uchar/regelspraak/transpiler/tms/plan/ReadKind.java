@@ -39,6 +39,8 @@ public enum ReadKind {
     PARAMETER,
     /** The session's evaluation date, through its {@code EvaluationDate} ({@code rekendatum}). */
     REKENDATUM,
+    /** The session's input members that are not complete, its {@code OpenInput} ({@code openInput}). */
+    OPEN_INPUT,
     /** The number of contributions to a fold on the subject ({@code vouw}). */
     FOLD_COUNT,
     /** The folded value of the contributions ({@code vouw}). */
@@ -82,9 +84,9 @@ public enum ReadKind {
     /** The standing of a member on the object a path reaches, off its {@code State} or {@code CharacteristicState}: what the
      *  standing of the path carries ({@code TmsTranspiler.pathStateRules}). */
     REACHED_STATE,
-    /** The input of a member on the object a path over a relation a form creates reaches, off that bean as the
-     *  binding's form of reading says: what the standing of such a path carries where no form writes the member
-     *  ({@code TmsTranspiler.linkPathStateRules}). */
+    /** The input of a member on the object a path reaches, off that bean as the binding's form of reading says: what the
+     *  standing of the path carries where no form writes the member and the path goes over a relation a form creates
+     *  ({@code TmsTranspiler.linkPathStateRules}) or the member can be open ({@code TmsTranspiler.pathStateRules}). */
     REACHED_INPUT,
     /** The number of keys of a uniqueness that collide with the key the rule binds, itself included, off an accumulate
      *  ({@code TmsTranspiler.unionUniquenessRules}). */

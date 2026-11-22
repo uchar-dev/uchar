@@ -66,9 +66,12 @@ final class FormsPlan {
             "new CharacteristicState(", "ComputeHelpers.bucketScalarOf(", "new PathState(", "new Reading($onderwerp, ",
             "lezing_lezing(", "ComputeHelpers.read(", "ComputeHelpers.composite(", "lezing.read(lid);", "sluiting1_openDeponering(",
             "ComputeHelpers.mark(sonde)", "ComputeHelpers.closed(e, sonde, merk)", "ComputeHelpers.holdsForItself(e, false)",
-            "ComputeHelpers.holdsForItself(e, true)", "ComputeHelpers.leavesOpen(e)", "ComputeHelpers.faulted(e)",
-            "ComputeHelpers.caughtDeposit(e, sonde)", "ComputeHelpers.caughtOpen(e)", "ComputeHelpers.isOpen(v)",
-            "new LeftOpen($onderwerp, ", "ComputeHelpers.open($onderwerp, ", "ComputeHelpers.incompleteInput($uitkijkbonus, ");
+            "ComputeHelpers.holdsForItself(e, true)", "ComputeHelpers.faulted(e)", "ComputeHelpers.caughtDeposit(e, sonde)",
+            "ComputeHelpers.caughtOpen(e)", "ComputeHelpers.isOpen(v)", "new LeftOpen($onderwerp, ",
+            "ComputeHelpers.open($onderwerp, ", "$openinvoer : OpenInput()", "ComputeHelpers.readInput($uitkijkbonus, ",
+            "ComputeHelpers.input($uitkijkbonus, $openinvoer, ", "ComputeHelpers.input(false, $openinvoer, ",
+            "oordeel_schrijverVanEenWaarde(", "ComputeHelpers.outcome(e, true)", "ComputeHelpers.outcome(e, false)",
+            "eval( ComputeHelpers.acts(", "if (ComputeHelpers.decides(");
 
     private static final String O = "$onderwerp";
 
@@ -564,8 +567,8 @@ final class FormsPlan {
      */
     /** The forms of a member that can be open (RUNTIME-SEMANTICS ch. 1.5): the test of every role over a condition whose
      *  judgement can be undetermined, a composite with a test on leeg and gevuld over a read that can be open and a
-     *  probe; a value with an open read; the fact of a writer that leaves its target open; the open standings and the
-     *  input that is not complete. */
+     *  probe; the writers of a value with an open read and of a characteristic, which leave their target open; the
+     *  standing a writer leaves open, and the standings of an input that need not be complete. */
     private static List<RulePlan> openForms(Subject subject, ReadTable one, Consequence.FaultName faultName) {
         ReadTable probed = new ReadTable(List.of(new Read(0, ReadKind.INPUT, "uitkijkbonus", "$uitkijkbonus"),
                 new Read(1, ReadKind.DEPOSIT_FLAG, null, null)));
@@ -581,24 +584,43 @@ final class FormsPlan {
                 "zijn uitkijkbonus groter is dan 1");
         ElementKey bonus = ElementKey.of("wachter", "uitkijkbonus", false);
         ElementKey watch = ElementKey.of("wachter", "gevarenwacht", true);
+        FactPattern input = new FactPattern(OpenInput.class, Consequence.OPEN_INPUT, List.of(), List.of(), List.of());
+        ReadTable withInput = new ReadTable(List.of(new Read(0, ReadKind.INPUT, "uitkijkbonus", "$uitkijkbonus"),
+                new Read(1, ReadKind.OPEN_INPUT, "open invoer", Consequence.OPEN_INPUT),
+                new Read(2, ReadKind.SUBJECT, "onderwerp zelf", O)));
+        Term inputRead = new Term.Call(StaticFunction.READ_INPUT, List.of(readOf(0), readOf(1), readOf(2),
+                new Term.Const(bonus, null, null)), "zijn uitkijkbonus");
+        Term inputTest = new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(inputRead, number("1"), text(">")),
+                "zijn uitkijkbonus groter is dan 1");
         List<RulePlan> rules = new ArrayList<>();
-        for (TestItem.Role role : List.of(TestItem.Role.CONDITION, TestItem.Role.WITHOUT_FAULT, TestItem.Role.LEAVES_OPEN,
-                TestItem.Role.FAULT))
+        for (TestItem.Role role : List.of(TestItem.Role.CONDITION, TestItem.Role.WITHOUT_FAULT, TestItem.Role.FAULT))
             rules.add(new RulePlan("open " + role, "proef", null, one, List.of(subject,
                     new TestItem("open", role, withoutProbe, -1, List.of(0), 1, true)),
-                    new Consequence.LeftOpen(O, bonus, "proef", Consequence.Insertion.LOGICAL)));
+                    new Consequence.Inconsistency(O, "proef", List.of(), Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("open deponering", "proef", null, probed, List.of(subject,
                 new TestItem("open", TestItem.Role.DEPOSIT, composite, 1, List.of(0), 2, true)),
                 new Consequence.ConditionDeposit(O, "proef", composite, 1, List.of(0), 2, true,
                         Consequence.Insertion.LOGICAL)));
-        rules.add(new RulePlan("open waarde", "proef", null, one, List.of(subject),
-                new Consequence.Value(O, bonus, "proef", read, List.of(0), 1, false, false, null, faultName, true,
-                        Consequence.Insertion.LOGICAL)));
+        rules.add(new RulePlan("schrijver van een waarde", "proef", null, withInput, List.of(subject, input,
+                new TestItem("oordeel", TestItem.Role.ACTS_WITHOUT_FAULT, inputTest, -1, List.of(0, 1, 2), 3, true)),
+                new Consequence.Judged(O, inputTest, true, List.of(0, 1, 2), 3, new Consequence.Value(O, bonus, "proef",
+                        inputRead, List.of(0, 1, 2), 3, false, false, null, faultName, true, Consequence.Insertion.LOGICAL),
+                        bonus, "proef", Consequence.Insertion.LOGICAL)));
+        rules.add(new RulePlan("schrijver van een kenmerk", "proef", null, one, List.of(subject,
+                new TestItem("oordeel", TestItem.Role.ACTS, withoutProbe, -1, List.of(0), 1, true)),
+                new Consequence.Judged(O, withoutProbe, false, List.of(0), 1, new Consequence.Characteristic(O, watch,
+                        Consequence.Insertion.LOGICAL), watch, "proef", Consequence.Insertion.LOGICAL)));
         for (ElementKey member : List.of(bonus, watch))
             rules.add(new RulePlan("open stand " + member.name(), null, null, new ReadTable(List.of()), List.of(subject),
                     new Consequence.OpenStanding(O, member, Consequence.Insertion.LOGICAL)));
-        rules.add(new RulePlan("onvolledige invoer", null, null, one, List.of(subject),
-                new Consequence.State(O, bonus, Consequence.StateSource.INPUT, 0, false, null, true,
+        rules.add(new RulePlan("onvolledige invoer", null, null, one, List.of(subject, input),
+                new Consequence.State(O, bonus, Consequence.StateSource.INCOMPLETE_INPUT, 0, false, null,
+                        Consequence.Insertion.LOGICAL)));
+        rules.add(new RulePlan("onvolledige kenmerkinvoer", null, null, one, List.of(subject, input),
+                new Consequence.InsertCharacteristicState(O, watch, Consequence.StateSource.INCOMPLETE_INPUT, false,
+                        Consequence.Insertion.LOGICAL)));
+        rules.add(new RulePlan("onvolledige invoer langs een pad", null, null, one, List.of(subject, input),
+                new Consequence.InsertPathState(O, "Wachter:post", bonus, Consequence.StateSource.INCOMPLETE_INPUT, 0, O,
                         Consequence.Insertion.LOGICAL)));
         return rules;
     }
