@@ -162,9 +162,9 @@ staat een naam, regel of casus van een regelset buiten deze repository.
 
 | commit | wat |
 |---|---|
-| `cf70ced33` | runner: `--program` schrijft het programma zonder op te lossen (de meting per document en case) |
-| `6804621b5` | de kern: standen, grens, oordeel als paar, regel, consistentie, case, modelcontrole, weigering bij naam; de frames WV-1.5-* en WV-1.5-witness-* in de suite; README, `codes.tsv`; runner `--closed-inputs` |
-| `9976c7297` | gate 6: de reden in de kanaallijst van `jutterswet-afleiden-uit-leeg` (code ongewijzigd, CLINGO-049) |
+| `1bf43f5b8` | runner: `--program` schrijft het programma zonder op te lossen (de meting per document en case) |
+| `f12549e9b` | de kern: standen, grens, oordeel als paar, regel, consistentie, case, modelcontrole, weigering bij naam; de frames WV-1.5-* en WV-1.5-witness-* in de suite; README, `codes.tsv`; runner `--closed-inputs` |
+| `48654d2ed` | gate 6: de reden in de kanaallijst van `jutterswet-afleiden-uit-leeg` (code ongewijzigd, CLINGO-049) |
 | (slotcommit) | dit Result |
 
 De predicaten in een document met `inferFromEmpty: false` (alleen daar geschreven):
@@ -325,7 +325,7 @@ Geen: de alinea's van gate 6 en 8 noemen geen document met de eigenschap.
 
 ### Gates, los gedraaid
 
-Op `6804621b5` + `9976c7297` (logs in de werkmap):
+Op `f12549e9b` + `48654d2ed` (logs in de werkmap):
 
 - gate 1 (`1-10-check-self-contained.log`): check-self-contained: PASS
 - gate 3 (`1-10-check-verifier.log`): check-verifier: PASS (the verifier's dune files name no library of another project of the workspace: 4 names (ir_v0 yojson zarith); 509 golden clean; 657 negati …
@@ -345,16 +345,16 @@ Op `6804621b5` + `9976c7297` (logs in de werkmap):
 
 | commit | wat |
 |---|---|
-| `67f769971` | suite: de getuigen na de kaart `complete-member` |
-| `281e31d4e` | de stapel (kenmerkstapel, uitzonderingsgroepen, ongeordende groep, effectieve stapel van een subtype), het veld `complete`, de kwantorvouw |
-| `45f467c07` | de vouwen over een verzameling, de sluiting binnen een waarde, `IfThenElse`, object- en feitcreatie |
-| `2652c0b72` | suite: de weigeringen na deel 2, de versmallende host, de melding van de modelcontrole |
-| `4fb79aa09` | gate 6: de goldens `jutterswet-afleiden-uit-leeg` en `jutterswet-volledig-gegeven` uit `EXPECTED_CHANNEL` |
-| `0dd91ac0e` | een oordeel in een filter of kwantortoets per paar van vormonderwerp en lid; het filter van een vouw één keer, met zijn deponeringen en fouten op hun plaats; wat een creatie open laat; de limiet in een voorlopig gelezen lid |
-| `55bf3a48d` | de telling over een unie van instantieverzamelingen (de eigen slug `instance-set-union` vervalt); README |
-| `6e684d265` | de stand van een zuiver invoerattribuut als feit (`given/2`); de poort van een fout in een filter loopt langs de links van de case |
-| `75b6f6c77` | een oordeel zonder sluiting deelt zijn hulppredicaten met het oordeel voor een ander (architectuurpunt 2) |
-| `f86f96406` | README bij de lezing van open waarden |
+| `dd8405c0d` | suite: de getuigen na de kaart `complete-member` |
+| `36b14634d` | de stapel (kenmerkstapel, uitzonderingsgroepen, ongeordende groep, effectieve stapel van een subtype), het veld `complete`, de kwantorvouw |
+| `b498d71c4` | de vouwen over een verzameling, de sluiting binnen een waarde, `IfThenElse`, object- en feitcreatie |
+| `136728f46` | suite: de weigeringen na deel 2, de versmallende host, de melding van de modelcontrole |
+| `eec84b93c` | gate 6: de goldens `jutterswet-afleiden-uit-leeg` en `jutterswet-volledig-gegeven` uit `EXPECTED_CHANNEL` |
+| `a07d9432c` | een oordeel in een filter of kwantortoets per paar van vormonderwerp en lid; het filter van een vouw één keer, met zijn deponeringen en fouten op hun plaats; wat een creatie open laat; de limiet in een voorlopig gelezen lid |
+| `b0483ca17` | de telling over een unie van instantieverzamelingen (de eigen slug `instance-set-union` vervalt); README |
+| `22e244be3` | de stand van een zuiver invoerattribuut als feit (`given/2`); de poort van een fout in een filter loopt langs de links van de case |
+| `dfd9353ce` | een oordeel zonder sluiting deelt zijn hulppredicaten met het oordeel voor een ander (architectuurpunt 2) |
+| `da9f4720f` | README bij de lezing van open waarden |
 | (slotcommit) | dit Result |
 
 De predicaten die deel 2 toevoegt, alleen in een document met `inferFromEmpty: false`:
@@ -476,9 +476,9 @@ ontsuikering in `translate_guarded` en dat boven `uncarried_forms` beschrijft de
 De suite van nu in de losse worktree `logs/2-red-wt` (opgeruimd), met in de kopie de fout van `ov_fault_frame` en van de
 limiet-check afgevangen:
 
-- op `67f769971` (vóór deel 2): 192 van 4237 checks rood, alle over documenten met de eigenschap; elke kant van ref groen,
+- op `dd8405c0d` (vóór deel 2): 192 van 4237 checks rood, alle over documenten met de eigenschap; elke kant van ref groen,
   elk frame zonder de eigenschap groen (log `2b-16-red-67f769971.log`).
-- op `4fb79aa09` (vóór 2b): 23 rood, de frames van de herstellingen onder a en van de unie (log `2b-17-red-4fb79aa09.log`).
+- op `eec84b93c` (vóór 2b): 23 rood, de frames van de herstellingen onder a en van de unie (log `2b-17-red-4fb79aa09.log`).
 
 ### Byte-gelijk
 
@@ -519,7 +519,7 @@ drie predicaten en een grens bij, een kwantorvouw een tabel van tien predicaten 
 
 De groei met het bereik (`tools/scale.py`, één Jutter met 400 vondsten): een gefilterde som 8 → 12 ms, gewone regels 8 → 13
 ms, een kwantorvouw 8 → 54 ms, kwadratisch in het bereik (de stop van ch. 3.9a telt per lid de leden ervoor; de gewone
-vertaling doet dat alleen waar een fout in de matrix staat). Vóór `6e684d265` kostte de gefilterde som 680 ms: `stands/2`
+vertaling doet dat alleen waar een fout in de matrix staat). Vóór `22e244be3` kostte de gefilterde som 680 ms: `stands/2`
 ligt op de component van `val/3`, dus geen element van de som was een feit en clingo somde de mogelijke sommen op; dat is
 hersteld met `given/2`. Een vouw over een afgeleid attribuut groeit lineair (400 vondsten: 9 → 12 ms, ook met open leden).
 
@@ -629,7 +629,7 @@ Geen: gate 6 en 8 noemen geen document met de eigenschap.
 
 ### Gates, los gedraaid
 
-Op `75b6f6c77` (`f86f96406` wijzigt daarna alleen de README; logs in de werkmap). Gate 13 startte eenmaal terwijl een andere
+Op `dfd9353ce` (`da9f4720f` wijzigt daarna alleen de README; logs in de werkmap). Gate 13 startte eenmaal terwijl een andere
 bouwer net `make gates` begon; gestopt op procesgroep en opnieuw gedraaid toen die klaar was.
 
 - gate 1 (`2b-30-check-self-contained.log`): check-self-contained: PASS
@@ -641,3 +641,153 @@ bouwer net `make gates` begon; gestopt op procesgroep en opnieuw gedraaid toen d
 - gate 9 (`2b-30-check-catala.log`): check-catala: PASS — frontend suite green (262 checks, floor 201); 13 catala golden(s) regenerate byte-identically (floor 12)
 - gate 13 (`2b-35-gate13.log`): check-reftype-derivation: PASS (129 unit annotations twisted over 42 goldens, floor 38; 242 executor replays reproduce the untouched outcome, 40 of them PLAYED by the DRL-text branch, equal to the exec-model branch; 0 pinned survivors)
 - gate 14 (`2b-30-check-flogic.log`): check-flogic: PASS — frontend suite green (164 checks, floor 81); 3 flogic golden(s) re-emit byte-identically (floor 1)
+
+## Result (deel 3)
+
+*Bouwer deel 3, 2026-11-22. Branch `card/open-values-in-clingo`, op `0c27516df` (main met de kaart `let-in-composite`). De
+hashes in de tabellen van deel 1 en 2 zijn die na de rebase.*
+
+### Wat er is
+
+| commit | wat |
+|---|---|
+| `f575f0261` | de slug `let-in-composite` in `refuse_uncarried`, met de vormgrens van ref; de eigen slug `let-in-filter`; README |
+| `79d55954c` | een sluiting die de berekening van een binder toepaste, geldt bij elke lezing van die binder (`computation`, `li_closed`, `note_binder_read`); de getuigen `WV-1.5-closure-before-a-barrier` en `WV-1.5-shared-name` naast ref |
+| `8754c89de` | een operand die leeg als nul leest (`coalesce0`) draagt in een filter het vormonderwerp in zijn sleutel, in een document met de eigenschap |
+| `bc1e7d71b` | twee initialisaties in één stapel: elke beslist waar niets erboven beslist, ook onder een open initialisatie (`translate_chain`) |
+| (slotcommit) | dit Result |
+
+**De slug.** `uncarried_forms` is nu de 23 vormen van ch. 1.5 in hun volgorde (de suite houdt haar aan
+`Uchar_ref.Eval.uncarried_forms`) en daarna `let-binder-not-first` en `let-in-filter`. De wandeling houdt per binder bij of
+de plaats binnen de romp van zijn `Let` in een later lid van een samenstelling of in een kwantorvouw staat, zoals ref. Het
+register `codes.tsv` verandert niet: de code, haar parameter en de functie zijn dezelfde, en de slugs staan er niet in.
+
+**Wat vervalt.** In `translate.ml` en `model.ml` niets. Een samenstelling of kwantorvouw in de voorwaarde van een
+`IfThenElse` vertaalt clingo in geen document (CLINGO-023), en de twee getuigen van de vervallen regels weigerde hij al met
+`let-binder-not-first`: er was geen code die de barrière of de deponering van een binder in een voorlopig gelezen lid droeg.
+Wat van een binder in een filter over is (`judged_at`, de sleutel per paar), draagt het eerste lid en het atomaire filter en
+blijft. Vervallen zijn de frames `WV-1.5-past-undetermined-barrier` en `-binder`; hun documenten staan er als
+`WV-1.5-let-in-composite (the condition of a choice, …)`. Het frame "README [L3] with the property" verwacht nu
+`let-in-composite` in plaats van `let-binder-not-first`: de matrix van een kwantorvouw leest de binder, en de tabel gaat voor.
+
+**De bindersluiting.** clingo hield de sluiting alleen bij de grens van de waarde. Waar het filter van een vouw in de romp de
+binder las, stond de grens van dat filter er los van, en een later lid van het filter werd gelezen als ch. 5.10 in plaats van
+voorlopig: de deponering bleef staan en de fout ontstond. De berekening heeft nu binnen haar grens een eigen atoom `oc<n>`; elke
+lezing van de binder in een andere grens meldt het daar, op het bereik van die lezing (een binder als deler van een leeg deeltal
+is niet gelezen). De getuigen van ch. 1.5 zelf (`WV-1.5-closure-of-a-binder-*` met de else-tak, `WV-1.5-binder-broken-off-*`)
+weigert clingo met `let-binder-not-first` (de voorwaarde van de keuze is een samenstelling). Dat een afgebroken berekening niets
+deponeert, volgt waar clingo een Let draagt uit de grens eromheen: de romp leest de binder eerst, dus een open lezing in de
+berekening is een open lezing van die grens.
+
+**De ref-fouten** (open punt 1 en 2 van deel 2) zijn op `main` hersteld. `anchor/jutterswet-toelagegronden`, de case met alles
+wat zij niet geeft open, zonder elk invoerattribuut apart en met elk lid volledig op één na: 49 runs gelijk aan ref, geen
+verschil (was 2, in case 2). `letclosure.py`: de vijf documenten open in ref en in clingo (de twee met een `IfThenElse` waren in
+ref vaststaand leeg). Beide staan als frames met ref ernaast in de suite: `WV-1.5-shared-name` (11 frames, met defaults-groepen
+en een gemaakt object: een regel op zo'n naam is WF-022) en `WV-1.5-closure-before-a-barrier` (7; "1 als t gevuld is" is
+CLINGO-023).
+
+**Twee initialisaties in één stapel** (aanvulling van de hoofdsessie). clingo maakte het doel open in drie gevallen waar ch. 1.5
+het een waarde geeft ("it decides where nothing above it decides, also where a default above it is open"): de default open en de
+geërfde initialisatie geeft voorrang, de default open en de geërfde open, en de default geeft voorrang en de geërfde is open. Nu
+5 in alle drie. ref op `0c27516df` geeft in het derde geval 5 en in de eerste twee open; die twee staan daarom als verwachting
+van clingo alleen in de suite (`WV-1.5-stack-two-initialisations`), de andere zeven met ref ernaast. Zodra ref de correctie op
+`main` heeft, horen de twee rijen in dezelfde lijst.
+
+### Getuigen
+
+Suite 4238 → 4450 checks, 0 rood. Rood op de code van vóór elke wijziging (`logs/3-03-suite-red.log`, `binderplus.py`,
+`logs/3-09-twoinit-red.log`):
+
+| eis | frame | rood |
+|---|---|---|
+| de slug, in de volgorde van de tabel | `WV-1.5-uncarried-forms: the forms of ch. 1.5 head the list` | ja |
+| een later lid, genest, de toets en het filter van een kwantorvouw, de waarde van een Let in een later lid, een keuze | `WV-1.5-let-in-composite (…)`, 8 documenten | 8 keer ("speelt", of `let-binder-not-first`) |
+| zonder de eigenschap speelt elk | dezelfde zes documenten met een vouw | groen vóór en na |
+| het eerste lid, en een binder die in een later lid gebonden is, wordt gelezen | `WV-1.5-let-in-composite (… is read, …)`, 11 frames | groen vóór en na |
+| [L3] | `README [L3] with the property` | ja |
+| de bindersluiting | `WV-1.5-closure-of-a-binder (…)`: 4 deponeringen en 3 fouten, elk met de getuigen open en volledig; "a read that is not reached" | 7 keer, alleen met de getuigen open |
+| een Let in een filter | `WV-1.5-set-fold (a binder of a Let in an outer filter)` | ja (60 in plaats van 30) |
+| een operand onder een operator in een filter | `WV-1.5-set-fold (the form subject under an operator in a filter, …)`, 4 frames | 3 keer een ander bedrag (16 in plaats van 1), 1 keer een kale fout |
+| twee initialisaties | `WV-1.5-stack-two-initialisations (…)`, 9 frames | 3 keer |
+
+### Byte-gelijk
+
+`dump_programs.py` op de tip tegen `logs/2-programs-base` (de stand van vóór de kaart): 1313 paren, 1300 van documenten zonder de
+eigenschap, 0 verschillen (`logs/3-12-dump.log`); de 12 andere zijn de cases van de twee goldens met de eigenschap.
+
+### Zoeken naast de suite
+
+Niet in de repository (`tools/`), op de tip, elke uitkomst tegen ref (`--end-state`: per lid gevuld, vaststaand leeg of open, getallen,
+kanaal met codes):
+
+- `fuzz3.py`, willekeurige documenten met een Let in de meeste regels (een sluiting in de berekening, een vouw in de romp met een filter
+  dat de binder in het eerste lid leest, Lets in filters): 1219 verifier-schone documenten, 4876 cases gelijk, 0 verschillen, 0
+  geweigerd (`logs/3-21-fuzz.log`). Op de standen ervoor 9812 cases gelijk en 2 verschillen, beide open punt 3 van deel 2 (een
+  deponering in de matrix van een kwantorvouw over een bereik met een gemaakt lid).
+- `fuzz.py`, de generator van deel 2: 862 documenten, 3448 cases gelijk, 0 verschillen, 0 geweigerd (`logs/3-23-fuzz.log`). De kale fout
+  van open punt 7 van deel 2 (een optelling met een verankerde lezing in een filter) komt in een document met de eigenschap niet meer voor.
+- behoud (elke golden met de eigenschap en `--closed-inputs`): 737 cases spelen in ref en clingo, 29 cases van 12 goldens weigert
+  clingo met `let-binder-not-first` en geen met `let-in-filter`, 16 met dezelfde limiet als zonder de eigenschap, 417 weigeren beide met dezelfde slug
+  (`logs/3-22-preservation.log`; de golden `jutterswet-grens-per-jutter` weigeren beide nu met `let-in-composite`).
+
+### Voorlopige besluiten
+
+1. **`let-in-filter` is een eigen slug**, en geen sleutel over drie variabelen: een Let in een filter of kwantortoets waarvan een
+   dieper filter de binder leest, gaf zonder melding een fout bedrag. Dragen vraagt het lid van het buitenste filter in de sleutel
+   van elk oordeel, elke grens en elk hulppredicaat; geen golden en geen getuige heeft de vorm.
+2. **De sleutel van `coalesce0` alleen in een document met de eigenschap**: zonder haar zou het programma van een gewoon document
+   met zo'n filter veranderen (open punt 1).
+3. **Een sluiting van een binder wordt gemeld in elke andere grens dan die van zijn Let**; die laatste draagt haar al bij het
+   binden, omdat de romp de binder eerst leest.
+
+### Voorgestelde rij voor `spec/CONSTRUCTS.md`
+
+Rij 48, in plaats van het voorstel van deel 2: "ref, clingo and the Drools build refuse a document that carries it …" wordt "A
+document with a form an executor does not carry is refused before it is evaluated, translated or built, with `REF-014`,
+`CLINGO-049` and `DROOLS-370` (key `infer-from-empty-false`, parameter `form`)". Na de zin over ref: "clingo carries the reading
+for the same forms, the IfThenElse over a comparison; settled leeg is derived positively (`settled/2`, `hasnot/2`), open is the
+absence of every atom, and a value, a judgement and a deposit stand only where no read of their boundary is open. After the forms
+of ch. 1.5 it refuses, by a slug of its own, `let-binder-not-first` (a Let whose body reads something before its binder) and
+`let-in-filter` (a Let in the filter of a fold or in a quantifier test whose binder a filter in its body reads)." De zin "The golden
+`jutterswet-afleiden-uit-leeg` plays in ref and is refused by name by clingo (gate 6) …" verliest clingo: hij speelt haar.
+Getuigenkolom: "WV-1.5-* and WV-1.5-witness-* in the suite of gate 6 (32 of the 34 witnesses play); goldens
+`jutterswet-afleiden-uit-leeg`, `jutterswet-volledig-gegeven`". Rij 49: "clingo reads the field (`input_states`)".
+
+### Voorstel voor `CLAUDE.md`
+
+Geen.
+
+### Open punten
+
+1. **Een binder onder een operator in het filter van een vouw mengt in een gewoon document de vormonderwerpen**, zonder melding, op
+   `main`: "het grenstotaal van een Jutter is, daarbij geldt: de grens is zijn drempel, de grens plus de som van het gewicht van
+   zijn vondsten waarvan het gewicht plus de grens groter is dan 12", over J1 (drempel 10, vondsten van 20 en 5) en J2 (drempel 1,
+   vondsten van 5 en 10): ref 35 en 1, clingo 35 en 16. Ook bij min, verminderd met en maal, en onder een afronding of grens. De
+   oorzaak is `coalesce0` (een hulppredicaat op het lid alleen); `helper_key`, zoals nu in een document met de eigenschap, herstelt
+   het, met 0 programma's anders over het corpus, maar maakt een tellende samenstelling met zo'n lid in een filter ("hoogstens 1
+   van") een grondingsfout, omdat haar hulppredicaat (`cq<n>_m`) het vormonderwerp niet draagt. Dezelfde grondingsfout geeft een
+   tellende samenstelling met een vergelijking `=` of `≠` met de binder nu al (luid). Geen golden heeft een van deze vormen.
+2. **Een Let in een filter waarvan een dieper filter de binder leest, met `=` of `≠`**, geeft in een gewoon document op `main` een
+   ander bedrag dan ref (60 in plaats van 50 bij "gelijk aan", leeg in plaats van 60 bij "ongelijk aan", op het document van het frame
+   "a binder of a Let in an outer filter"); met "groter dan" speelt het. Zelfde oorzaak: de sleutel van het hulppredicaat kent het
+   lid van het buitenste filter niet. Met de eigenschap geweigerd (`let-in-filter`).
+3. **`WV-1.5-stack-two-initialisations`**: twee rijen alleen voor clingo, tot ref de correctie draagt (hierboven).
+4. Van deel 2 blijven staan: 3 (een deponering in de matrix over een bereik met een gemaakt lid, in elk document), 4
+   (`let-binder-not-first`), 5 (een kwantorvouw groeit kwadratisch), 6 (`arithmetic`, `exact-digits`); 1 en 2 zijn hersteld, 7 geldt
+   nog in een gewoon document.
+5. De vijf open punten van `backlog/done/20261121-clingo-filled-test.md`, de poot van gate 6 en de sectie in
+   `spec/ASP-TRANSLATION.md` zijn niet gebouwd (aanwijzing van de eigenaar).
+
+### Gates, los gedraaid
+
+Op de inhoud van `bc1e7d71b`, één tegelijk, steeds wanneer geen andere bouwer een zware run had (`logs/3-20-*`).
+
+- gate 1: check-self-contained: PASS
+- gate 3: check-verifier: PASS (the verifier's dune files name no library of another project of the workspace: 4 names (ir_v0 yojson zarith); 510 golden clean; 657 negative rejected for their declared rule, floor 568; 502 on their declared arm (expect.txt), floor 411, 2 …
+- gate 5: check-oracle: PASS (ref suite 4217 worked examples, floor 489; 1211 cases replayed exactly, floor 427; preservation with complete knowledge: 279 goldens and 782 cases play, floors 279 and 782; 152 goldens refused per form (timeline-member 49, allocation 21, day-kind 17, list-family 16, dimension-cel …
+- gate 6: check-clingo: PASS (backend suite 4450 checks, floor 83; 1181 cases replay exactly through clingo — ref = clingo over the corpus; 10 golden(s) in the refusal channel, by name, 30 cases refused with the pinned codes; the channel rule passes 22 rows of its own)
+- gate 7: check-noop: PASS (1169 cases refute a do-nothing executor; 42 pinned survivors pin defeasible standing)
+- gate 8, met een PATH zonder mvn: `check-exec-codes: PASS — 14 REF codes and 50 CLINGO codes …`; het ref- en het clingo-been zonder een rode regel. De ene FAIL-regel is die van het
+  Drools-been, dat niet gedraaid is (mvn ontbreekt).
+- gate 14: check-flogic: PASS — frontend suite green (164 checks, floor 81); 3 flogic golden(s) re-emit byte-identically (floor 1)
+- gate 12, 13, 17 en `make gates`: niet gedraaid (hoofdsessie).
