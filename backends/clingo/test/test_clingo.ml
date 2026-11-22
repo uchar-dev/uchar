@@ -11292,19 +11292,19 @@ let () =
   pinned_loud ~entry:"L3"
     ~name:"a barrier raised in the matrix of a fold over created schuiten, ref reads 3 first (l3-3-8)"
     ~ir:(doc ~creations:[ made "3"; made "8" ] l3) ~case_text:(pf_case ~instances:(h1 ()) hb) ~needle:(pf_reason "p");
-  (* the same Let in a document with inferFromEmpty false: refused, since its
-     body reads a werf before k *)
+  (* the same Let in a document with inferFromEmpty false: refused, since the
+     matrix of a quantifier fold reads k *)
   (let strict =
      match Yojson.Safe.from_string (doc ~creations:[ made "3"; made "8" ] l3) with
      | `Assoc (format :: rest) -> Yojson.Safe.to_string (`Assoc (format :: ("inferFromEmpty", `Bool false) :: rest))
      | _ -> invalid_arg "README [L3] with the property"
    in
    let d, c = load_pair ~ir:strict ~case_text:(pf_case ~instances:(h1 ()) hb) in
-   check "README [L3] with the property: CLINGO-049, form let-binder-not-first"
+   check "README [L3] with the property: CLINGO-049, form let-in-composite"
      (match Translate.translate d c with
       | _ -> false
       | exception Uchar_ref.Value.Fault { code; params; _ } ->
-          code = Some "CLINGO-049" && params = [ ("form", "let-binder-not-first") ]));
+          code = Some "CLINGO-049" && params = [ ("form", "let-in-composite") ]));
   (* tr-w-1: the read of k in a part inside the value of j *)
   let trw ?precondition () =
     pf_rule ~ot:"Werf" ~objective:"bonus" ?precondition
@@ -20471,6 +20471,14 @@ let () =
   ov_frame ~name:"WV-1.5-let (filled)" ~ir ~case_text:(ov_case (ov_v1 [ ("gewicht", "10"); ("schade", "2") ]) [ ov_attr_is "drempelgewicht" "24" ]) ();
   ov_frame ~name:"WV-1.5-let (schade open)" ~ir ~case_text:(ov_case (ov_v1 [ ("gewicht", "10") ]) [ ov_attr_is "drempelgewicht" "open" ]) ()
 
+let ov_refused ~name ~ir slug =
+  verifier_clean ~name ~ir;
+  let doc, case = load_pair ~ir ~case_text:(ov_case (ov_v1 []) [ ov_consistent ]) in
+  check (Printf.sprintf "%s: CLINGO-049, form %s" name slug)
+    (match Translate.translate doc case with
+     | _ -> false
+     | exception Uchar_ref.Value.Fault { code; params; _ } -> code = Some "CLINGO-049" && params = [ ("form", slug) ])
+
 (* the refusal (RUNTIME-SEMANTICS ch. 1.5, "Forms without the reading"): the
    slugs of the table, in its order, are the first of this encoding's list, as
    ref lists them; the slug after them names the form ref carries and this
@@ -20481,18 +20489,10 @@ let () =
   let ch15 = Uchar_ref.Eval.uncarried_forms in
   check "WV-1.5-uncarried-forms: the forms of ch. 1.5 head the list, in their order"
     (List.filteri (fun i _ -> i < List.length ch15) Translate.uncarried_forms = ch15);
-  let refused ~name ~ir slug =
-    verifier_clean ~name ~ir;
-    let doc, case = load_pair ~ir ~case_text:(ov_case (ov_v1 []) [ ov_consistent ]) in
-    check (Printf.sprintf "%s: CLINGO-049, form %s" name slug)
-      (match Translate.translate doc case with
-       | _ -> false
-       | exception Uchar_ref.Value.Fault { code; params; _ } -> code = Some "CLINGO-049" && params = [ ("form", slug) ])
-  in
   let vondst = ov_vondst [ "gewicht"; "schade"; "vindloon"; "drempelgewicht" ] [ "zwaar" ] in
   (* the binder example of WV-1.5-reached: the body reads the vindloon before
      the binder *)
-  refused ~name:"WV-1.5-reached (binder)"
+  ov_refused ~name:"WV-1.5-reached (binder)"
     ~ir:
       (ov_doc [ vondst ]
          [ ov_rule ~name:"drempelgewicht" "drempelgewicht"
@@ -20502,7 +20502,7 @@ let () =
      in ((1 plus bel) plus TARIEF); the body of the outer Let reads DREMPEL
      before k, which it reads in an arm *)
   let ite c t e = Printf.sprintf {|{"node": "IfThenElse", "condition": %s, "then": %s, "else": %s, "type": %s, %s}|} c t e ov_num (ov_src "als") in
-  refused ~name:"README [S1] with the property"
+  ov_refused ~name:"README [S1] with the property"
     ~ir:
       (ov_doc ~parameters:[ "TARIEF"; "DREMPEL" ] [ vondst ]
          [ ov_rule ~name:"drempelgewicht" "drempelgewicht"
@@ -20523,14 +20523,15 @@ let () =
     ov_rule ~name:"drempelgewicht" "drempelgewicht"
       (Some (ov_let "k" (ov_attr "schade") (ov_bin "plus" (ov_attr "gewicht") (ov_binder "k"))))
   in
-  (* WV-1.5-past-undetermined-barrier, WV-1.5-past-undetermined-binder: "de
-     uitkering van een Vondst is, daarbij geldt: g is zijn gewicht en de
-     toeslag is zijn vindloon, 10 als ten minste één van (alle van): g is
-     groter dan 10, de toeslag is groter dan 5; anders 0" (the condition of a
-     value reads binders, WF-077): the composite reads g before the toeslag *)
+  (* WV-1.5-let-in-composite: "de uitkering van een Vondst is, daarbij geldt: g
+     is zijn gewicht en de toeslag is zijn vindloon, 10 als ten minste één van
+     (alle van): g is groter dan 10, de toeslag is groter dan 5; anders 0" (the
+     condition of a value reads binders, WF-077): a later member reads the
+     toeslag. The body reads g before it as well, and the form of ch. 1.5 is the
+     one named *)
   List.iter
     (fun (name, q, k) ->
-      refused ~name
+      ov_refused ~name
         ~ir:
           (ov_doc [ ov_vondst [ "gewicht"; "taxatie"; "vindloon"; "uitkering" ] [] ]
              [ ov_vindloon;
@@ -20541,9 +20542,29 @@ let () =
                           (ite
                              (ov_compound q k [ ov_cmp "greater" (ov_binder "g") (ov_lit "10"); ov_cmp "greater" (ov_binder "toeslag") (ov_lit "5") ])
                              (ov_lit "10") (ov_lit "0"))))) ])
+        "let-in-composite")
+    [ ("WV-1.5-let-in-composite (the condition of a choice, at least one)", "atLeast", 1);
+      ("WV-1.5-let-in-composite (the condition of a choice, all)", "all", 0) ];
+  (* WV-1.5-closure-of-a-binder-*, WV-1.5-binder-broken-off-*: "… 1 als alle van:
+     t is groter dan 3, DREMPEL is groter dan 5; anders t" and "… anders 0" read
+     the binder in the first member, and the condition of the choice is a
+     composite *)
+  List.iter
+    (fun (name, value, otherwise) ->
+      ov_refused ~name
+        ~ir:
+          (ov_doc ~parameters:[ "DREMPEL" ] [ vondst ]
+             [ ov_rule ~name:"drempelgewicht" "drempelgewicht"
+                 (Some
+                    (ov_let "t" value
+                       (ite
+                          (ov_compound "all" 0
+                             [ ov_cmp "greater" (ov_binder "t") (ov_lit "3"); ov_cmp "greater" (ov_param "DREMPEL") (ov_lit "5") ])
+                          (ov_lit "1") otherwise))) ])
         "let-binder-not-first")
-    [ ("WV-1.5-past-undetermined-barrier", "atLeast", 1); ("WV-1.5-past-undetermined-binder", "all", 0) ];
-  refused ~name:"WV-1.5-uncarried-forms (the table before the own form)"
+    [ ("WV-1.5-closure-of-a-binder (the condition of a choice)", ov_attr "gewicht", ov_binder "t");
+      ("WV-1.5-binder-broken-off (the condition of a choice)", ov_bin "plus" (ov_div (ov_attr "gewicht") (ov_lit "0")) (ov_attr "schade"), ov_lit "0") ];
+  ov_refused ~name:"WV-1.5-uncarried-forms (the table before the own form)"
     ~ir:
       (replace ~tok:{|{"node": "Parameter", "name": "TARIEF", "datatype": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}}|}
          ~by:{|{"node": "Parameter", "name": "TARIEF", "datatype": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}, "timeline": {"node": "TimelineFacet", "granularity": "month", "count": 1}}|}
@@ -21299,6 +21320,112 @@ let () =
       ov_frame ~name:(Printf.sprintf "WV-1.5-read-for-another (%d complete)" (List.length complete)) ~ir
         ~case_text:(ov_case (ov_v1 [ ("taxatie", "50") ]) [ ov_attr_is "vrijstelling" "1"; ov_consistent ]) ())
     [ [ "getuigen" ]; [ "getuigen"; "gewicht" ] ]
+
+(* --- a binder of a Let in the filter of a fold in its body ----------------- *)
+
+(* "het grenstotaal van een Jutter is, daarbij geldt: de grens is …, de grens
+   plus de som van het gewicht van zijn vondsten waarvan [filter]": the body
+   reads the binder first, and the filter reads it again *)
+let ov_boven_grens = ov_cmp "greater" (ov_attr "gewicht") (ov_binder "grens")
+let ov_grens_body filter = ov_bin "plus" (ov_binder "grens") (ov_fold ~filter "sum" "gewicht")
+
+let ov_grens_doc ?strict ?(complete = []) ?parameters value =
+  ov_doc ?strict ~fact_types:[ ov_aanmelding ] ?parameters
+    [ ov_type "Jutter" [ "drempel"; "grenstotaal" ] []; ov_type ~complete "Vondst" [ "gewicht"; "schade"; "getuigen"; "taxatie" ] [] ]
+    [ ov_rule ~ty:"Jutter" ~name:"grenstotaal" "grenstotaal" (Some value) ]
+
+(* the path from a Vondst to the vondsten of its Jutter *)
+let ov_medevondsten =
+  {|"sourcePath": [{"node": "RoleBinding", "factType": "aanmelding", "role": "aanmeldende jutter"}, {"node": "RoleBinding", "factType": "aanmelding", "role": "vondst"}]|}
+
+(* WV-1.5-let-in-composite: a binder of a Let read in the body in a member of a
+   composite other than its first, at any depth, or in the filter or the test
+   of a quantifier fold is refused by name; without the property each document
+   plays. Over drempel 10 and vondsten of gewicht 20 (schade 3), 5 (schade 3)
+   and 30 (schade 0) *)
+let () =
+  let boven = ov_boven_grens and schade = ov_gt "schade" "1" in
+  let any = ov_compound "atLeast" 1 and all = ov_compound "all" 0 in
+  let ir ?strict filter = ov_grens_doc ?strict (ov_let "grens" (ov_attr ~ty:"Jutter" "drempel") (ov_grens_body filter)) in
+  let medevondsten quantifier ?filter test =
+    Printf.sprintf {|{"node": "QuantifierFold", "quantifier": "%s", "elementType": "Vondst"%s, "test": %s, %s, %s}|} quantifier
+      (match filter with Some f -> {|, "filter": |} ^ f | None -> "")
+      test (ov_src "medevondsten") ov_medevondsten
+  in
+  let of_grens = ov_let "verhoogd" (ov_bin "plus" (ov_binder "grens") (ov_lit "1")) (ov_bin "plus" (ov_binder "verhoogd") (ov_attr "gewicht")) in
+  let case ?(v1 = [ ("gewicht", "20"); ("schade", "3") ]) ?(v2 = [ ("gewicht", "5"); ("schade", "3") ])
+      ?(v3 = [ ("gewicht", "30"); ("schade", "0") ]) want =
+    ov_case
+      (ov_jutter ~attrs:[ ("drempel", "10") ] [ ("V1", v1, [], []); ("V2", v2, [], []); ("V3", v3, [], []) ])
+      [ ov_attr_is ~label:"J1" "grenstotaal" want ]
+  in
+  List.iter
+    (fun (name, filter, want) ->
+      let name = "WV-1.5-let-in-composite (" ^ name in
+      ov_refused ~name:(name ^ ")") ~ir:(ir filter) "let-in-composite";
+      ov_frame ~name:(name ^ ", without the property)") ~ir:(ir ~strict:false filter) ~case_text:(case want) ())
+    [ ("a later member", all [ schade; boven ], "30");
+      ("a later member of a first member", all [ any [ schade; boven ]; schade ], "35");
+      ("a first member of a later member", all [ schade; any [ boven; schade ] ], "35");
+      ("the value of a Let in a later member", all [ schade; ov_cmp "greater" of_grens (ov_lit "20") ], "30");
+      ("the filter of a quantifier fold", medevondsten "none" ~filter:boven (ov_gt "schade" "5"), "65");
+      ("the test of a quantifier fold", medevondsten "all" boven, "10") ];
+  (* the first member, at any depth, and a binder of the same name or another
+     bound inside a later member are read as before *)
+  List.iter
+    (fun (name, filter, rows) ->
+      List.iter
+        (fun (row, v3, want) ->
+          ov_frame
+            ~name:(Printf.sprintf "WV-1.5-let-in-composite (%s is read, %s)" name row)
+            ~ir:(ir filter) ~case_text:(case ~v3 want) ())
+        rows)
+    [ ( "the first member", all [ boven; schade ],
+        [ ("given", [ ("gewicht", "30"); ("schade", "0") ], "30"); ("gewicht open", [ ("schade", "0") ], "30");
+          ("schade open", [ ("gewicht", "30") ], "open"); ("a member it leaves out", [ ("gewicht", "8") ], "30") ] );
+      ( "the first member of a first member", all [ any [ boven; schade ]; schade ],
+        [ ("given", [ ("gewicht", "30"); ("schade", "3") ], "65"); ("gewicht open", [ ("schade", "0") ], "35");
+          ("schade open", [ ("gewicht", "30") ], "open") ] );
+      ( "a binder of the same name in a later member",
+        all [ schade; ov_cmp "greater" (ov_let "grens" (ov_attr "schade") (ov_bin "plus" (ov_binder "grens") (ov_lit "1"))) (ov_lit "3") ],
+        [ ("given", [ ("gewicht", "30"); ("schade", "0") ], "35"); ("schade open", [ ("gewicht", "30") ], "open") ] );
+      ( "a binder of its own in a later member",
+        all [ schade; ov_cmp "greater" (ov_let "maat" (ov_attr "gewicht") (ov_bin "plus" (ov_binder "maat") (ov_lit "1"))) (ov_lit "5") ],
+        [ ("given", [ ("gewicht", "30"); ("schade", "0") ], "35"); ("gewicht open", [ ("schade", "0") ], "35") ] ) ]
+
+(* a Let in the filter of a fold whose binder a filter inside its body reads:
+   "de som van het gewicht van zijn vondsten waarvan (daarbij geldt: de maat is
+   zijn gewicht, de maat plus de som van het gewicht van de medevondsten met een
+   gewicht groter dan de maat) groter is dan 35" is refused, since the inner
+   judgement would stand for the form subject and the inner member alone. A
+   filter that does not read it plays *)
+let () =
+  let ir ?strict filter =
+    let medegewicht =
+      Printf.sprintf {|{"node": "Aggregation", "kind": "sum", "arguments": [%s], "elementType": "Vondst", "filter": %s, %s, "type": %s, %s}|}
+        (ov_attr "gewicht") filter ov_medevondsten ov_num (ov_src "som")
+    in
+    ov_doc ?strict ~fact_types:[ ov_aanmelding ]
+      [ ov_type "Jutter" [ "totaal" ] []; ov_type "Vondst" [ "gewicht" ] [] ]
+      [ ov_rule ~ty:"Jutter" ~name:"totaal" "totaal"
+          (Some
+             (ov_fold
+                ~filter:(ov_cmp "greater" (ov_let "maat" (ov_attr "gewicht") (ov_bin "plus" (ov_binder "maat") medegewicht)) (ov_lit "35"))
+                "sum" "gewicht")) ]
+  in
+  let case_text v3 want =
+    ov_case
+      (ov_jutter [ ("V1", [ ("gewicht", "10") ], [], []); ("V2", [ ("gewicht", "20") ], [], []); ("V3", v3, [], []) ])
+      [ ov_attr_is ~label:"J1" "totaal" want ]
+  in
+  let boven_maat = ov_cmp "greater" (ov_attr "gewicht") (ov_binder "maat") in
+  ov_refused ~name:"WV-1.5-set-fold (a binder of a Let in an outer filter)" ~ir:(ir boven_maat) "let-in-filter";
+  ov_frame ~name:"WV-1.5-set-fold (a binder of a Let in an outer filter, without the property)" ~ir:(ir ~strict:false boven_maat)
+    ~case_text:(case_text [ ("gewicht", "30") ] "30") ();
+  List.iter
+    (fun (name, v3, want) ->
+      ov_frame ~name:("WV-1.5-set-fold (a Let in a filter, " ^ name ^ ")") ~ir:(ir (ov_gt "gewicht" "15")) ~case_text:(case_text v3 want) ())
+    [ ("given", [ ("gewicht", "30") ], "60"); ("open", [], "open") ]
 
 (* a document of the corpus with the property *)
 let ov_strict_corpus rel =

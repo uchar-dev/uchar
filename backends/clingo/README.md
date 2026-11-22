@@ -526,9 +526,12 @@ spec bug.
 
   Every other form is refused before translation with CLINGO-049 and the
   slug of the form (`Translate.uncarried_forms`): the slugs of the table
-  of ch. 1.5, in its order, and after them `let-binder-not-first`, a Let
-  whose body reads something before its binder, the form of [S1] and
-  [L3].
+  of ch. 1.5, in its order (`let-in-composite` is the form of [L3]), and
+  after them `let-binder-not-first`, a Let whose body reads something
+  before its binder, the form of [S1], and `let-in-filter`, a Let in the
+  filter of a fold or in a quantifier test whose binder a filter in its
+  body reads: a judgement in that filter holds of the form subject and
+  its own member, and would not tell the members of the outer one apart.
 - Constructs outside the corpus-exercised subset fault the translator —
   fail fast, never a silent SKIP.
 

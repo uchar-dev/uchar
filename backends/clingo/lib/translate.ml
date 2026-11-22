@@ -16811,18 +16811,23 @@ let refuse_functor_collisions (doc : document) =
    answer what the document excludes. A document with the property that holds
    one is refused by name before anything is translated, the form named by its
    slug: the forms of ch. 1.5, "Forms without the reading", by its slugs and
-   in its order, and after them the form the reference interpreter carries and
+   in its order, and after them the forms the reference interpreter carries and
    this translation does not. Where the document holds several, the first of
    this list is named. *)
 let uncarried_forms =
   [ "allocation"; "creation-cycle"; "uniqueness"; "start-point"; "day-kind"; "function-def"; "timeline-member";
     "dimension-cell"; "dimension-fold"; "time-proportional-part"; "temporal-total"; "builtin-filter";
     "variable-reference"; "unresolved"; "temporal-read"; "match"; "record"; "list-family"; "invoke"; "whole-period";
-    "time-window"; "rule-status-check";
+    "time-window"; "rule-status-check"; "let-in-composite";
     (* a Let whose body reads something before its binder: the lowering keeps
        the binder's value beside every read of the body, so a read its first
-       read of the binder does not reach would count (README [S1], [L3]) *)
-    "let-binder-not-first" ]
+       read of the binder does not reach would count (README [S1]) *)
+    "let-binder-not-first";
+    (* a Let in the filter of a fold or in a quantifier test, whose binder a
+       filter in its body reads: a judgement there holds of the form subject
+       and the member of that filter ([judged_at]), and would not tell the
+       members of the outer one apart *)
+    "let-in-filter" ]
 
 (* what the evaluation of an expression reads first, in the order of ch.
    5.11: nothing, the binder [b], or something else *)
@@ -16845,6 +16850,15 @@ let rec first_read (e : expr) =
   | If_then_else { condition = Comparison { left_side; right_side; _ }; _ } -> first [ left_side; right_side ]
   | If_then_else { condition = Predicate { operand; _ }; _ } -> first [ operand ]
   | _ -> Other
+
+(* a place of [refuse_uncarried]'s walk: whether it is in the filter of a fold
+   or in a quantifier fold, and the binders of the Lets around it. Of a binder:
+   whether its Let is in one itself, and the form a read of it at this place is,
+   if it is one: in a member of a composite other than its first or in a
+   quantifier fold, within the body of its Let, and in the filter of a fold
+   within the body of a Let that is in one itself *)
+type let_around = { in_member : bool; read_is : string option }
+type place = { member : bool; lets : let_around Uchar_ref.World.SMap.t }
 
 let refuse_uncarried (doc : document) =
   if not doc.infer_from_empty then begin
@@ -16875,20 +16889,29 @@ let refuse_uncarried (doc : document) =
         then refuse "timeline-member")
       doc.object_types;
     List.iter (fun (_, (p : parameter)) -> if p.par_granularity <> None then refuse "timeline-member") doc.parameters;
-    let rec expr (e : expr) =
+    let module SMap = Uchar_ref.World.SMap in
+    let past p = { p with lets = SMap.map (fun l -> { l with read_is = Some "let-in-composite" }) p.lets } in
+    let filtered p =
+      { member = true;
+        lets = SMap.map (fun l -> if l.in_member && l.read_is = None then { l with read_is = Some "let-in-filter" } else l) p.lets }
+    in
+    let rec expr p (e : expr) =
+      let opt = Option.iter (expr p) in
       match e with
-      | Literal _ | Parameter_ref _ | Context_value _ | Binder_ref _ | Attribute_reference _ -> ()
+      | Literal _ | Parameter_ref _ | Context_value _ | Attribute_reference _ -> ()
+      | Binder_ref { ident; _ } ->
+          Option.iter (fun l -> Option.iter refuse l.read_is) (SMap.find_opt (norm ident) p.lets)
       | Text_composition { pieces; _ } ->
-          List.iter (function Embedded_expression { expr = Some e; _ } -> expr e | _ -> ()) pieces
+          List.iter (function Embedded_expression { expr = Some e; _ } -> expr p e | _ -> ()) pieces
       | Binary { left_side; right_side; _ } -> opt left_side; opt right_side
       | Rounding { base_expr; _ } -> opt base_expr
       | Clamp { base_expr; minimum; maximum; _ } -> opt base_expr; opt minimum; opt maximum
       | Construct { argument; _ } -> opt argument
-      | Payload_access { base; _ } -> expr base
+      | Payload_access { base; _ } -> expr p base
       | Let { binder; value; body; _ } ->
           if first_read body <> Binder (norm binder) then refuse "let-binder-not-first";
-          expr value;
-          expr body
+          expr p value;
+          expr { p with lets = SMap.add (norm binder) { in_member = p.member; read_is = None } p.lets } body
       | Function_call
           { kind; call_arguments; element_object_type; filter; dimension_selections; grain; source_role; source_path;
             empty_fallback; _ } -> (
@@ -16898,17 +16921,18 @@ let refuse_uncarried (doc : document) =
           | Time_proportional_part -> refuse "time-proportional-part"
           | Day_count -> refuse "day-kind"
           | (Sum_function | Total | Count | Filled_count | Minimum | Maximum | First | Last) when ranged ->
-              Option.iter cond filter;
-              List.iter expr call_arguments;
+              Option.iter (cond (filtered p)) filter;
+              List.iter (expr p) call_arguments;
               opt empty_fallback
           | Count when (match call_arguments with [ Instance_set_union _ ] -> filter = None | _ -> false) ->
-              List.iter expr call_arguments
+              List.iter (expr p) call_arguments
           | Sum_function | Total | Count | Filled_count -> refuse "temporal-total"
           | _ when filter <> None || grain <> None -> refuse "builtin-filter"
           | Minimum | Maximum | First | Last | Square_root | Absolute_value | Concatenation | Duration
           | Absolute_duration | Easter_sunday | Year_of | Month_of | Day_of | Date_with | Date_time_with ->
-              List.iter expr call_arguments)
-      | Instance_set_union { branches; _ } -> List.iter (fun (b : instance_set_branch) -> Option.iter cond b.isb_filter) branches
+              List.iter (expr p) call_arguments)
+      | Instance_set_union { branches; _ } ->
+          List.iter (fun (b : instance_set_branch) -> Option.iter (cond (filtered p)) b.isb_filter) branches
       | Dimension_cell_read _ -> refuse "dimension-cell"
       | Variable_reference _ -> refuse "variable-reference"
       | Expr_unresolved _ -> refuse "unresolved"
@@ -16918,12 +16942,12 @@ let refuse_uncarried (doc : document) =
       | Struct_literal _ | Field_access _ -> refuse "record"
       | List_literal _ | Lambda _ | Fold _ | Map_list _ | Filter_list _ | List_length _ -> refuse "list-family"
       | If_then_else { condition; then_; else_; _ } ->
-          cond condition;
-          expr then_;
-          expr else_
+          cond p condition;
+          expr p then_;
+          expr p else_
       | Invoke _ -> refuse "invoke"
-    and opt = function Some e -> expr e | None -> ()
-    and cond (c : condition_expr) =
+    and cond p (c : condition_expr) =
+      let opt = Option.iter (expr p) in
       match c with
       | Comparison { time_period = Some _; _ } | Predicate { time_period = Some _; _ }
       | Characteristic_check { time_period = Some _; _ } ->
@@ -16932,14 +16956,15 @@ let refuse_uncarried (doc : document) =
       | Predicate { variety = Day_kind_predicate; _ } -> refuse "day-kind"
       | Predicate { operand; _ } -> opt operand
       | Characteristic_check _ | Role_membership _ | Identity_check _ -> ()
-      | Compound { components; _ } -> List.iter cond components
+      | Compound { components; _ } -> List.iteri (fun i c -> cond (if i = 0 then p else past p) c) components
       | Quantifier_fold { kv_filter; kv_test; _ } ->
-          Option.iter cond kv_filter;
-          Option.iter cond kv_test
+          List.iter (Option.iter (cond { (past p) with member = true })) [ kv_filter; kv_test ]
       | Time_window _ -> refuse "time-window"
       | Rule_status_check _ -> refuse "rule-status-check"
       | Condition_unresolved _ -> refuse "unresolved"
     in
+    let form_level = { member = false; lets = SMap.empty } in
+    let expr = expr form_level and cond = cond form_level in
     List.iter
       (fun (r : resolved_rule) ->
         (match r.objective with Some (Dimension_cell_read _) -> refuse "dimension-cell" | _ -> ());
