@@ -409,7 +409,8 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
     equal per golden case file, on both branches; the two share no code (gate 1). The trace reads every golden case
     file, a document with `inferFromEmpty: false` included, except those of a golden `TRACE_REFUSED` names with the
     REF code of its refusal (empty), which the backend must exclude as well; per golden both branches end in `READINGS <n>`, n its case files, or in the `EXCLUDE` line the plain replay
-    prints; an `ERROR` fails unless `READINGS_ERROR_KNOWN` lists it. Every reading line is compared verbatim — the
+    prints; `READINGS_REFUSED` names a golden the replay plays and whose build with readings the backend refuses, with its
+    DROOLS code, and its readings end in that `EXCLUDE` on both branches and are compared with nothing; an `ERROR` fails unless `READINGS_ERROR_KNOWN` lists it. Every reading line is compared verbatim — the
     object a role path reached (`on "<object>"`, `on none`) and a `DISPLACED` default's node lines included — except
     the position of a contributor of a quantifier fold: member and verdict, value or fault are compared verbatim, the
     position (`reached`/`unreached`) where both write one (`unordered` where the session keeps no order), and where
@@ -417,7 +418,7 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
     too). A difference fails unless `DEVIATIONS` names case and branch. The end state — every object, of the input
     and made by a creation, with its type; every attribute with a value, a timeline as its segments; every
     characteristic that holds; every link; the §9.5 facts — is compared line for line, verbatim; a difference fails
-    unless `STATE_DEVIATIONS` names case and branch. The four lists are reason-carrying and stale-failing in both
+    unless `STATE_DEVIATIONS` names case and branch. The five lists are reason-carrying and stale-failing in both
     directions, and the comparison rule, the tripwire, the object reader, the displaced counter, the end-state
     comparison and its counter pass rows of their own. Traces run on one process per core. Floors:
     `EXPECTED_MIN_TRACED_CASES`, `EXPECTED_MIN_COMPARED_GOLDENS`, `EXPECTED_MIN_COMPARED_CASES`,
